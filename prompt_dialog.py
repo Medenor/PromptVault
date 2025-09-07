@@ -1,20 +1,22 @@
 import difflib
 from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLineEdit,
                              QPushButton, QMessageBox, QDialogButtonBox, QLabel,
-                             QTextEdit, QComboBox, QToolTip, QCheckBox, QSizePolicy)
-from PyQt6.QtCore import Qt, pyqtSignal # Added pyqtSignal
+                             QTextEdit, QComboBox, QToolTip, QCheckBox, QSizePolicy,
+                             QCompleter, QListWidget, QListWidgetItem, QInputDialog) # Added QCompleter, QListWidget, QListWidgetItem, QInputDialog
+from PyQt6.QtCore import Qt, pyqtSignal, QStringListModel, QEvent # Added pyqtSignal, QStringListModel, QEvent
 
 class PromptDialog(QDialog):
     # Define custom signals for panel mode
     accepted = pyqtSignal()
     rejected = pyqtSignal()
 
-    def __init__(self, parent=None, data=None, history=None, categories=None, is_panel=False):
+    def __init__(self, parent=None, data=None, history=None, categories=None, all_tags=None, is_panel=False):
         super().__init__(parent)
         self.history_data = history if history else []
         self.current_data = data
         self.history_purged = False
         self.categories = categories if categories else []
+        self.all_tags = all_tags if all_tags is not None else [] # Store all available tags
         self.is_panel = is_panel # New flag to indicate panel mode
         self.initUI(data)
         if self.is_panel:
@@ -106,11 +108,40 @@ class PromptDialog(QDialog):
         layout.addWidget(self.categoryCombo)
 
 
-        layout.addWidget(QLabel('Tags (comma separated):'))
-        self.tagsEdit = QLineEdit()
-        if data:
-            self.tagsEdit.setText(", ".join(data.get('tags', [])))
-        layout.addWidget(self.tagsEdit)
+        layout.addWidget(QLabel('Tags:'))
+        
+        # New layout for tag input and list
+        tag_input_layout = QHBoxLayout()
+        self.tagInputEdit = QLineEdit()
+        self.tagInputEdit.setPlaceholderText("Type a tag and press Enter or click Add")
+        tag_input_layout.addWidget(self.tagInputEdit)
+
+        self.addTagButton = QPushButton("Add Tag")
+        self.addTagButton.clicked.connect(self._add_tag_from_input)
+        tag_input_layout.addWidget(self.addTagButton)
+        layout.addLayout(tag_input_layout)
+
+        self.tagsListWidget = QListWidget()
+        self.tagsListWidget.setSelectionMode(QListWidget.SelectionMode.ExtendedSelection)
+        if data and 'tags' in data:
+            for tag in data['tags']:
+                self.tagsListWidget.addItem(tag)
+        layout.addWidget(self.tagsListWidget)
+
+        self.removeTagButton = QPushButton("Remove Selected Tags")
+        self.removeTagButton.clicked.connect(self._remove_selected_tags)
+        layout.addWidget(self.removeTagButton)
+
+        # Setup QCompleter for the new tagInputEdit
+        self.tag_completer = QCompleter(self)
+        self.tag_model = QStringListModel(self.all_tags)
+        self.tag_completer.setModel(self.tag_model)
+        self.tag_completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+        self.tag_completer.setFilterMode(Qt.MatchFlag.MatchContains)
+
+        self.tagInputEdit.setCompleter(self.tag_completer)
+        self.tagInputEdit.textEdited.connect(self._update_completer_prefix)
+        self.tagInputEdit.returnPressed.connect(self._add_tag_from_input) # Add tag on Enter key press
 
         layout.addWidget(QLabel('Prompt:'))
         self.promptEdit = QTextEdit()
@@ -267,13 +298,15 @@ class PromptDialog(QDialog):
         super().accept()
 
     def getPromptData(self):
-        tags_text = self.tagsEdit.text()
-        tags = [tag_text.strip() for tag_text in tags_text.split(',') if tag_text.strip()]
+        tags = []
+        for i in range(self.tagsListWidget.count()):
+            tags.append(self.tagsListWidget.item(i).text())
+        
         return {
             'title': self.titleEdit.text(),
             'favorite': self.favoriteCheckbox.isChecked(),
             'category': self.categoryCombo.currentText(),
-            'tags': tags,
+            'tags': sorted(list(set(tags))), # Ensure unique and sorted tags
             'prompt': self.promptEdit.toPlainText(),
             'note': self.noteEdit.toPlainText()
         }
@@ -296,3 +329,24 @@ class PromptDialog(QDialog):
 
     def _cancel_clicked(self):
         self.rejected.emit() # Emit custom rejected signal
+
+    def _add_tag_from_input(self):
+        tag_text = self.tagInputEdit.text().strip()
+        if tag_text and tag_text not in [self.tagsListWidget.item(i).text() for i in range(self.tagsListWidget.count())]:
+            self.tagsListWidget.addItem(tag_text)
+            self.tagInputEdit.clear()
+            # Optionally add the new tag to the completer model if it's not already there
+            if tag_text not in self.all_tags:
+                self.all_tags.append(tag_text)
+                self.all_tags.sort()
+                self.tag_model.setStringList(self.all_tags)
+
+    def _remove_selected_tags(self):
+        for item in self.tagsListWidget.selectedItems():
+            self.tagsListWidget.takeItem(self.tagsListWidget.row(item))
+
+    def _update_completer_prefix(self, text):
+        # For single tag input, the prefix is simply the current text
+        self.tag_completer.setCompletionPrefix(text)
+        if text and not self.tag_completer.popup().isVisible():
+            self.tag_completer.complete()

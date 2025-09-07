@@ -342,11 +342,12 @@ class PromptManager(QWidget):
             default_category = self.categories[0]
 
         initial_data = {'category': default_category, 'favorite': False}
+        all_available_tags = sorted(list(self.global_tags.union(self._get_all_tags_from_prompts())))
 
         self.clear_editor_panel() # Clear any previous content
 
         # Create a new PromptDialog instance, but don't show it as a dialog
-        self.current_editor_instance = PromptDialog(self, data=initial_data, categories=self.categories, is_panel=True)
+        self.current_editor_instance = PromptDialog(self, data=initial_data, categories=self.categories, all_tags=all_available_tags, is_panel=True)
         
         # Add the dialog's layout to the dock's content widget
         self.editor_content_widget.layout().addWidget(self.current_editor_instance)
@@ -379,11 +380,12 @@ class PromptManager(QWidget):
 
         current_data = self.prompts[prompt_id]['data']
         history = self.prompts[prompt_id]['history']
+        all_available_tags = sorted(list(self.global_tags.union(self._get_all_tags_from_prompts())))
 
         self.clear_editor_panel() # Clear any previous content
 
         # Create a new PromptDialog instance, but don't show it as a dialog
-        self.current_editor_instance = PromptDialog(self, current_data, history=history, categories=self.categories, is_panel=True)
+        self.current_editor_instance = PromptDialog(self, current_data, history=history, categories=self.categories, all_tags=all_available_tags, is_panel=True)
         self.current_editor_instance.setProperty("editing_prompt_id", prompt_id) # Store the ID being edited
         
         # Add the dialog's layout to the dock's content widget
@@ -848,8 +850,9 @@ class PromptManager(QWidget):
             print("Category management cancelled.")
 
     def manageTags(self):
-        # Pass the current global_tags to the dialog
-        dialog = TagDialog(self, tags=list(self.global_tags))
+        # Pass all unique tags (global and from prompts) to the dialog
+        all_unique_tags = self.global_tags.union(self._get_all_tags_from_prompts())
+        dialog = TagDialog(self, tags=list(all_unique_tags))
 
         if dialog.exec() == QDialog.DialogCode.Accepted:
             renamed_tags, removed_tags, added_tags = dialog.getChanges()
@@ -909,6 +912,12 @@ class PromptManager(QWidget):
                 print("No changes detected in tags.")
         else:
             print("Tag management cancelled.")
+
+    def _get_all_tags_from_prompts(self):
+        all_tags = set()
+        for prompt_info in self.prompts.values():
+            all_tags.update(prompt_info['data'].get('tags', []))
+        return all_tags
 
     def _save_prompt_from_panel(self):
         if not self.current_editor_instance:
