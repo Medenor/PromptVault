@@ -194,7 +194,12 @@ class PromptDialog(QDialog):
             self.titleEdit.setText(version_data.get('title', ''))
             self.favoriteCheckbox.setChecked(version_data.get('favorite', False))
             self.categoryCombo.setCurrentText(version_data.get('category', 'No category'))
-            self.tagsEdit.setText(", ".join(version_data.get('tags', [])))
+            
+            # Update the new tagsListWidget
+            self.tagsListWidget.clear()
+            for tag in version_data.get('tags', []):
+                self.tagsListWidget.addItem(tag)
+
             self.promptEdit.setPlainText(version_data.get('prompt', ''))
             self.noteEdit.setPlainText(version_data.get('note', ''))
             
