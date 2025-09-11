@@ -69,6 +69,17 @@ PromptVault includes a robust, Git-like version control system for all prompts, 
 *   **Diff Visualization**: Easily compare any two versions to see precise changes in prompt content, title, notes, categories, and tags.
 *   **Revert Functionality**: Users can revert a prompt to any previous version, which creates a new commit reflecting the reverted state.
 
+### Architecture
+
+PromptVault follows a modular architecture with dedicated service classes for different functionalities:
+
+*   **PromptDataService**: Handles all data-related operations including loading, saving, and migration of prompt data
+*   **PromptFilterService**: Manages filtering and searching logic for prompts
+*   **PromptVersioningService**: Handles version control operations for prompts
+*   **PromptImportExportService**: Manages import and export operations in various formats (CSV, Markdown)
+
+This modular design improves code maintainability, testability, and extensibility.
+
 <details>
 <summary>Screenshots</summary>
 <br>
