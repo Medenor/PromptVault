@@ -16,21 +16,32 @@ from category_dialog import CategoryDialog
 from tag_dialog import TagDialog
 from version_history_dialog import VersionHistoryDialog # Import the new dialog
 
+from prompt_data_service import PromptDataService
+from prompt_filter_service import PromptFilterService
+from prompt_versioning_service import PromptVersioningService
+from prompt_import_export_service import PromptImportExportService
+
 class PromptManager(QWidget):
     # Define a signal to request the main window to show/hide the editor panel
     showEditorPanel = pyqtSignal(bool)
 
-    def __init__(self):
+    def __init__(self, data_file_path: str = None):
         super().__init__()
 
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        self.data_file = os.path.join(script_dir, "prompts_data.json")
+        # Initialize services
+        self.data_service = PromptDataService(data_file_path)
+        self.filter_service = PromptFilterService()
+        self.versioning_service = PromptVersioningService()
+        self.import_export_service = PromptImportExportService()
 
-        self.prompts = {}
-        self.next_id = 0
-        self.categories = []
-        self.global_tags = set() # New attribute for globally managed tags
-        self.load_prompts()
+        # Load data using the data service
+        self.data_service.load_prompts()
+        
+        # Expose data service properties for backward compatibility
+        self.prompts = self.data_service.prompts
+        self.next_id = self.data_service.next_id
+        self.categories = self.data_service.categories
+        self.global_tags = self.data_service.global_tags
         
         self.editor_dock = None
         self.editor_content_widget = None
@@ -185,8 +196,14 @@ class PromptManager(QWidget):
 
     def update_prompt_list(self, filter_category=None, filter_tag=None, search_term="", filter_favorites=False):
         self.promptList.clear()
-        filtered_prompts = self._filter_prompts(filter_category, filter_tag, search_term, filter_favorites)
-        sorted_prompts = sorted(filtered_prompts, key=lambda p: p.get('title', ''))
+        case_sensitive = self.caseSensitiveCheckbox.isChecked()
+        
+        # Use the filter service to filter prompts
+        filtered_prompts = self.filter_service.filter_prompts(
+            self.prompts, filter_category, filter_tag, search_term, filter_favorites, case_sensitive)
+        
+        # Use the filter service to sort prompts
+        sorted_prompts = self.filter_service.sort_prompts(filtered_prompts)
 
         for prompt_data in sorted_prompts:
             prompt_id = prompt_data['id']
@@ -391,9 +408,10 @@ class PromptManager(QWidget):
             QMessageBox.critical(self, "Error", f"Could not find prompt with ID {prompt_id}.")
             return
 
-        current_data = self.prompts[prompt_id]['data']
-        # Pass the versions list to PromptDialog for history display
-        versions = self.prompts[prompt_id].get('versions', [])
+        # Use the data service to get prompt data
+        current_data = self.data_service.get_prompt_data(prompt_id)
+        # Use the data service to get prompt versions
+        versions = self.data_service.get_prompt_versions(prompt_id)
         all_available_tags = sorted(list(self.global_tags.union(self._get_all_tags_from_prompts())))
 
         self.clear_editor_panel() # Clear any previous content
@@ -441,12 +459,14 @@ class PromptManager(QWidget):
         if msgBox.clickedButton() == yesButton:
             deleted_count = 0
             for prompt_id in selected_ids:
-                if prompt_id in self.prompts:
-                    del self.prompts[prompt_id]
+                # Use the data service to delete the prompt
+                if self.data_service.delete_prompt(prompt_id):
                     deleted_count += 1
                     print(f"Prompt ID {prompt_id} deleted.")
 
             if deleted_count > 0:
+                # Update local prompts reference
+                self.prompts = self.data_service.prompts
                 print(f"{deleted_count} prompt(s) deleted.")
                 self.update_category_list()
                 self.update_tag_list()
@@ -465,72 +485,26 @@ class PromptManager(QWidget):
         return selected_items[0].text() if selected_items else None
 
     def save_prompts(self):
-        try:
-            self.categories.sort()
-            with open(self.data_file, 'w', encoding='utf-8') as f:
-                prompts_to_save = {}
-                for k, v in self.prompts.items():
-                    # Ensure 'history' is not saved in the new structure
-                    v_copy = v.copy()
-                    if 'history' in v_copy:
-                        del v_copy['history']
-                    prompts_to_save[str(k)] = v_copy
-
-                save_data = {
-                    'next_id': self.next_id,
-                    'prompts': prompts_to_save,
-                    'categories': self.categories,
-                    'global_tags': sorted(list(self.global_tags)) # Save as sorted list
-                }
-                json.dump(save_data, f, ensure_ascii=False, indent=4)
-        except IOError as e:
-            QMessageBox.critical(self, "Save Error", f"Could not save prompts: {e}")
-        except Exception as e:
-             QMessageBox.critical(self, "Unknown Save Error", f"An unexpected error occurred while saving: {e}")
+        # Update data service properties before saving
+        self.data_service.prompts = self.prompts
+        self.data_service.next_id = self.next_id
+        self.data_service.categories = self.categories
+        self.data_service.global_tags = self.global_tags
+        
+        if not self.data_service.save_prompts():
+            QMessageBox.critical(self, "Save Error", "Could not save prompts.")
 
 
     def load_prompts(self):
-        if not os.path.exists(self.data_file):
-            self.prompts = {}
-            self.next_id = 0
-            self.categories = []
-            self.global_tags = set() # Initialize global_tags if file doesn't exist
-            return
-        try:
-            with open(self.data_file, 'r', encoding='utf-8') as f:
-                loaded_data = json.load(f)
-                self.next_id = loaded_data.get('next_id', 0)
-                loaded_prompts = {}
-                for k, v in loaded_data.get('prompts', {}).items():
-                    try:
-                        prompt_id = int(k)
-                        if isinstance(v, dict):
-                            v = self._migrate_old_data_structure(prompt_id, v)
-                            loaded_prompts[prompt_id] = v
-                        else:
-                            print(f"Warning: Invalid structure for prompt ID '{k}', ignored.")
-                    except ValueError:
-                        print(f"Warning: Invalid prompt key '{k}', ignored.")
-
-                self.prompts = loaded_prompts
-                self.categories = loaded_data.get('categories', [])
-                self.prompts = loaded_prompts
-                self.categories = loaded_data.get('categories', [])
-                self.categories.sort()
-                self.global_tags = set(loaded_data.get('global_tags', [])) # Load global_tags
-
-        except (IOError, json.JSONDecodeError) as e:
-            QMessageBox.critical(self, "Load Error", f"Could not load prompts from {self.data_file}: {e}")
-            self.prompts = {}
-            self.next_id = 0
-            self.categories = []
-            self.global_tags = set() # Reset global_tags on error
-        except Exception as e:
-            QMessageBox.critical(self, "Unknown Error", f"An unexpected error occurred while loading: {e}")
-            self.prompts = {}
-            self.next_id = 0
-            self.categories = []
-            self.global_tags = set() # Reset global_tags on error
+        # Load data using the data service
+        if self.data_service.load_prompts():
+            # Update local properties from data service
+            self.prompts = self.data_service.prompts
+            self.next_id = self.data_service.next_id
+            self.categories = self.data_service.categories
+            self.global_tags = self.data_service.global_tags
+        else:
+            QMessageBox.critical(self, "Load Error", "Could not load prompts.")
 
     def _migrate_old_data_structure(self, prompt_id, prompt_info):
         # Migration logic for old data structure
@@ -660,9 +634,11 @@ class PromptManager(QWidget):
             QMessageBox.critical(self, "Error", f"Could not find prompt with ID {prompt_id}.")
             return
 
-        prompt_info = self.prompts[prompt_id]
-        prompt_title = prompt_info['data'].get('title', 'Untitled')
-        versions = prompt_info.get('versions', [])
+        # Use the data service to get prompt data and versions
+        prompt_data = self.data_service.get_prompt_data(prompt_id)
+        versions = self.data_service.get_prompt_versions(prompt_id)
+        
+        prompt_title = prompt_data.get('title', 'Untitled')
 
         if not versions:
             QMessageBox.information(self, "No History", "This prompt has no version history yet.")
@@ -678,25 +654,14 @@ class PromptManager(QWidget):
             QMessageBox.critical(self, "Error", f"Could not find prompt with ID {prompt_id} to revert.")
             return
 
-        current_prompt_info = self.prompts[prompt_id]
-        
-        # Create a new version with the reverted data
-        parent_version_id = current_prompt_info['branches'].get("main")
-        parents = [parent_version_id] if parent_version_id else []
-
-        version_id = self._generate_version_id(reverted_data, commit_message)
-        new_version = {
-            'version_id': version_id,
-            'timestamp': self._get_current_timestamp(),
-            'author': self._get_current_user(),
-            'message': commit_message,
-            'data': reverted_data,
-            'parents': parents
-        }
-        current_prompt_info['versions'].append(new_version)
-        current_prompt_info['data'] = reverted_data # Update current data to the reverted version
-        current_prompt_info['branches']["main"] = version_id
-        print(f"Prompt ID {prompt_id} reverted to version {version_id} with message: {commit_message}.")
+        # Use the data service to revert the prompt to a specific version
+        if self.data_service.revert_prompt_to_version(prompt_id, reverted_data, commit_message):
+            # Update local prompts reference
+            self.prompts = self.data_service.prompts
+            print(f"Prompt ID {prompt_id} reverted with message: {commit_message}.")
+        else:
+            print(f"Failed to revert prompt ID {prompt_id}.")
+            return
 
         self.update_category_list()
         self.update_tag_list()
@@ -728,12 +693,19 @@ class PromptManager(QWidget):
             if prompt_id in self.prompts:
                 current_favorite = self.prompts[prompt_id]['data'].get('favorite', False)
                 if current_favorite != new_favorite_state:
-                    self.prompts[prompt_id]['data']['favorite'] = new_favorite_state
-                    # Update the latest version's data as well
-                    if self.prompts[prompt_id]['versions']:
-                        self.prompts[prompt_id]['versions'][-1]['data']['favorite'] = new_favorite_state
-                    prompts_changed = True
-                    print(f"Prompt ID {prompt_id} favorite toggled to {new_favorite_state}.")
+                    # Update the prompt data using the data service
+                    prompt_data = self.data_service.get_prompt_data(prompt_id)
+                    prompt_data['favorite'] = new_favorite_state
+                    
+                    # Create a new version with the updated favorite status
+                    commit_message = f"Toggle favorite status to {new_favorite_state}"
+                    if self.data_service.update_prompt(prompt_id, prompt_data, commit_message):
+                        # Update local prompts reference
+                        self.prompts = self.data_service.prompts
+                        prompts_changed = True
+                        print(f"Prompt ID {prompt_id} favorite toggled to {new_favorite_state}.")
+                    else:
+                        print(f"Failed to toggle favorite status for prompt ID {prompt_id}.")
 
         if prompts_changed:
             self.update_prompt_list(filter_category=self.current_filter_category(),
@@ -784,45 +756,22 @@ class PromptManager(QWidget):
                 QMessageBox.critical(self, "Export Error", f"Failed to export prompts: {e}")
 
     def _export_to_csv(self, file_path, prompt_ids=None):
-        with open(file_path, 'w', newline='', encoding='utf-8') as csvfile:
-            fieldnames = ['title', 'prompt', 'note', 'category', 'tags', 'favorite']
-            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-            writer.writeheader()
+        prompts_to_export = list(self.prompts.items())
+        if prompt_ids is not None:
+            prompts_to_export = [(pid, self.prompts[pid]) for pid in prompt_ids if pid in self.prompts]
             
-            prompts_to_export = self.prompts.items()
-            if prompt_ids is not None:
-                prompts_to_export = [(pid, self.prompts[pid]) for pid in prompt_ids if pid in self.prompts]
-
-            for prompt_id, prompt_info in prompts_to_export:
-                data = prompt_info['data'] # Export current data, not history
-                row = {
-                    'title': data.get('title', ''),
-                    'prompt': data.get('prompt', ''),
-                    'note': data.get('note', ''),
-                    'category': data.get('category', 'No category'),
-                    'tags': ', '.join(data.get('tags', [])),
-                    'favorite': 'Yes' if data.get('favorite', False) else 'No'
-                }
-                writer.writerow(row)
+        # Use the import/export service to export to CSV
+        if not self.import_export_service.export_to_csv(file_path, prompts_to_export):
+            raise Exception("Failed to export to CSV")
 
     def _export_to_markdown(self, file_path, prompt_ids=None):
-        with open(file_path, 'w', encoding='utf-8') as mdfile:
-            prompts_to_export = self.prompts.items()
-            if prompt_ids is not None:
-                prompts_to_export = [(pid, self.prompts[pid]) for pid in prompt_ids if pid in self.prompts]
-
-            for prompt_id, prompt_info in prompts_to_export:
-                data = prompt_info['data'] # Export current data, not history
-                mdfile.write(f"# {data.get('title', 'Untitled')}\n\n")
-                mdfile.write(f"**Category:** {data.get('category', 'No category')}\n")
-                mdfile.write(f"**Tags:** {', '.join(data.get('tags', []))}\n")
-                mdfile.write(f"**Favorite:** {'Yes' if data.get('favorite', False) else 'No'}\n\n")
-                mdfile.write("## Prompt\n")
-                mdfile.write(f"{data.get('prompt', '')}\n\n")
-                if data.get('note'):
-                    mdfile.write("## Note\n")
-                    mdfile.write(f"{data.get('note', '')}\n\n")
-                mdfile.write("---\n\n") # Separator
+        prompts_to_export = list(self.prompts.items())
+        if prompt_ids is not None:
+            prompts_to_export = [(pid, self.prompts[pid]) for pid in prompt_ids if pid in self.prompts]
+            
+        # Use the import/export service to export to Markdown
+        if not self.import_export_service.export_to_markdown(file_path, prompts_to_export):
+            raise Exception("Failed to export to Markdown")
 
     def import_prompts(self):
         file_name, _ = QFileDialog.getOpenFileName(self, "Import Prompts", "",
@@ -860,76 +809,12 @@ class PromptManager(QWidget):
                 QMessageBox.critical(self, "Import Error", f"Failed to import prompts: {e}")
 
     def _import_from_csv(self, file_path):
-        prompts = []
-        with open(file_path, 'r', newline='', encoding='utf-8') as csvfile:
-            reader = csv.DictReader(csvfile)
-            for row in reader:
-                # Convert 'Yes'/'No' to boolean for 'favorite'
-                row['favorite'] = row.get('favorite', 'No').lower() == 'yes'
-                # Convert tags string to list
-                if 'tags' in row and row['tags']:
-                    row['tags'] = [tag.strip() for tag in row['tags'].split(',')]
-                else:
-                    row['tags'] = []
-                
-                # Remove 'history' if it somehow exists in the imported data
-                if 'history' in row:
-                    del row['history']
-                
-                prompts.append(row)
-        return prompts
+        # Use the import/export service to import from CSV
+        return self.import_export_service.import_from_csv(file_path)
 
     def _import_from_markdown(self, file_path):
-        prompts = []
-        current_prompt = {}
-        current_section = None
-        with open(file_path, 'r', encoding='utf-8') as mdfile:
-            content = mdfile.read()
-            # Split by '---' separator, then process each block
-            blocks = content.split('---')
-            for block in blocks:
-                if not block.strip():
-                    continue
-
-                lines = block.strip().split('\n')
-                current_prompt = {'title': '', 'prompt': '', 'note': '', 'category': 'No category', 'tags': [], 'favorite': False}
-                current_section = None
-                
-                for line in lines:
-                    line = line.strip()
-                    if not line:
-                        continue
-
-                    if line.startswith('# '): # Title
-                        current_prompt['title'] = line[2:].strip()
-                        current_section = 'title'
-                    elif line.startswith('## Prompt'):
-                        current_section = 'prompt'
-                    elif line.startswith('## Note'):
-                        current_section = 'note'
-                    elif line.startswith('**Category:**'):
-                        current_prompt['category'] = line.replace('**Category:**', '').strip()
-                    elif line.startswith('**Tags:**'):
-                        tags_str = line.replace('**Tags:**', '').strip()
-                        current_prompt['tags'] = [tag.strip() for tag in tags_str.split(',') if tag.strip()]
-                    elif line.startswith('**Favorite:**'):
-                        current_prompt['favorite'] = line.replace('**Favorite:**', '').strip().lower() == 'yes'
-                    elif current_section == 'prompt':
-                        current_prompt['prompt'] += line + '\n'
-                    elif current_section == 'note':
-                        current_prompt['note'] += line + '\n'
-                
-                # Clean up trailing newlines
-                current_prompt['prompt'] = current_prompt['prompt'].strip()
-                current_prompt['note'] = current_prompt['note'].strip()
-
-                # Remove 'history' if it somehow exists in the imported data
-                if 'history' in current_prompt:
-                    del current_prompt['history']
-
-                if current_prompt.get('title') or current_prompt.get('prompt'): # Only add if it has some content
-                    prompts.append(current_prompt)
-        return prompts
+        # Use the import/export service to import from Markdown
+        return self.import_export_service.import_from_markdown(file_path)
 
     def _handle_imported_prompt(self, imported_data):
         # Check for existing prompt with the same title
@@ -955,70 +840,34 @@ class PromptManager(QWidget):
             msg_box.exec()
 
             if msg_box.clickedButton() == overwrite_button:
-                # Overwrite existing prompt, create a new version
-                current_prompt_info = self.prompts[existing_prompt_id]
-                parent_version_id = current_prompt_info['branches'].get("main")
-                parents = [parent_version_id] if parent_version_id else []
-
+                # Overwrite existing prompt, create a new version using the data service
                 commit_message = f"Import overwrite: {imported_data.get('title', 'Untitled')}"
-                version_id = self._generate_version_id(imported_data, commit_message)
-                new_version = {
-                    'version_id': version_id,
-                    'timestamp': self._get_current_timestamp(),
-                    'author': self._get_current_user(),
-                    'message': commit_message,
-                    'data': imported_data,
-                    'parents': parents
-                }
-                current_prompt_info['versions'].append(new_version)
-                current_prompt_info['data'] = imported_data
-                current_prompt_info['branches']["main"] = version_id
-                print(f"Prompt '{imported_data.get('title')}' overwritten with new version {version_id}.")
-                return True
+                if self.data_service.update_prompt(existing_prompt_id, imported_data, commit_message):
+                    # Update local prompts reference
+                    self.prompts = self.data_service.prompts
+                    print(f"Prompt '{imported_data.get('title')}' overwritten.")
+                    return True
+                else:
+                    print(f"Failed to overwrite prompt '{imported_data.get('title')}'.")
+                    return False
             elif msg_box.clickedButton() == keep_both_button:
-                # Add as a new prompt with initial version
-                prompt_id = self.next_id
-                self.next_id += 1
-                commit_message = f"Initial import: {imported_data.get('title', 'Untitled')}"
-                version_id = self._generate_version_id(imported_data, commit_message)
-                new_version = {
-                    'version_id': version_id,
-                    'timestamp': self._get_current_timestamp(),
-                    'author': self._get_current_user(),
-                    'message': commit_message,
-                    'data': imported_data,
-                    'parents': []
-                }
-                self.prompts[prompt_id] = {
-                    'data': imported_data,
-                    'versions': [new_version],
-                    'branches': {"main": version_id}
-                }
-                print(f"Prompt '{imported_data.get('title')}' imported as new with version {version_id}.")
+                # Add as a new prompt with initial version using the data service
+                prompt_id = self.data_service.add_new_prompt(imported_data)
+                # Update local prompts reference
+                self.prompts = self.data_service.prompts
+                self.next_id = self.data_service.next_id
+                print(f"Prompt '{imported_data.get('title')}' imported as new.")
                 return True
             else: # Skip
                 print(f"Prompt '{imported_data.get('title')}' skipped.")
                 return False
         else:
-            # No duplicate, add as a new prompt with initial version
-            prompt_id = self.next_id
-            self.next_id += 1
-            commit_message = f"Initial import: {imported_data.get('title', 'Untitled')}"
-            version_id = self._generate_version_id(imported_data, commit_message)
-            new_version = {
-                'version_id': version_id,
-                'timestamp': self._get_current_timestamp(),
-                'author': self._get_current_user(),
-                'message': commit_message,
-                'data': imported_data,
-                'parents': []
-            }
-            self.prompts[prompt_id] = {
-                'data': imported_data,
-                'versions': [new_version],
-                'branches': {"main": version_id}
-            }
-            print(f"Prompt '{imported_data.get('title')}' imported with version {version_id}.")
+            # No duplicate, add as a new prompt with initial version using the data service
+            prompt_id = self.data_service.add_new_prompt(imported_data)
+            # Update local prompts reference
+            self.prompts = self.data_service.prompts
+            self.next_id = self.data_service.next_id
+            print(f"Prompt '{imported_data.get('title')}' imported.")
             return True
 
     def manageCategories(self):
@@ -1038,12 +887,19 @@ class PromptManager(QWidget):
                     for prompt_id, prompt_info in self.prompts.items():
                         current_category = prompt_info['data'].get('category', 'No category')
                         if current_category in removed_categories:
-                            prompt_info['data']['category'] = 'No category'
-                            # Update the latest version's data as well
-                            if prompt_info['versions']:
-                                 prompt_info['versions'][-1]['data']['category'] = 'No category'
-                            print(f"Prompt ID {prompt_id} moved to 'No category' because its category '{current_category}' was removed.")
-                            prompts_updated = True
+                            # Update the prompt data using the data service
+                            prompt_data = self.data_service.get_prompt_data(prompt_id)
+                            prompt_data['category'] = 'No category'
+                            
+                            # Create a new version with the updated category
+                            commit_message = f"Move to 'No category' because '{current_category}' was removed"
+                            if self.data_service.update_prompt(prompt_id, prompt_data, commit_message):
+                                # Update local prompts reference
+                                self.prompts = self.data_service.prompts
+                                print(f"Prompt ID {prompt_id} moved to 'No category' because its category '{current_category}' was removed.")
+                                prompts_updated = True
+                            else:
+                                print(f"Failed to update category for prompt ID {prompt_id}.")
 
                 self.update_category_list()
                 self.update_prompt_list(filter_category=self.current_filter_category(),
@@ -1088,12 +944,19 @@ class PromptManager(QWidget):
 
                 if tags_changed_for_prompt:
                     sorted_new_tags = sorted(list(new_prompt_tags))
-                    prompt_info['data']['tags'] = sorted_new_tags
-                    # Update the latest version's data as well
-                    if prompt_info['versions']:
-                        prompt_info['versions'][-1]['data']['tags'] = sorted_new_tags
-                    print(f"Tags updated for Prompt ID {prompt_id}: {sorted_new_tags}")
-                    prompts_updated = True
+                    # Update the prompt data using the data service
+                    prompt_data = self.data_service.get_prompt_data(prompt_id)
+                    prompt_data['tags'] = sorted_new_tags
+                    
+                    # Create a new version with the updated tags
+                    commit_message = f"Update tags: {', '.join(sorted_new_tags)}"
+                    if self.data_service.update_prompt(prompt_id, prompt_data, commit_message):
+                        # Update local prompts reference
+                        self.prompts = self.data_service.prompts
+                        print(f"Tags updated for Prompt ID {prompt_id}: {sorted_new_tags}")
+                        prompts_updated = True
+                    else:
+                        print(f"Failed to update tags for prompt ID {prompt_id}.")
 
             # Update global_tags based on changes from the dialog
             for old_name, new_name in renamed_tags.items():
@@ -1123,10 +986,8 @@ class PromptManager(QWidget):
             print("Tag management cancelled.")
 
     def _get_all_tags_from_prompts(self):
-        all_tags = set()
-        for prompt_info in self.prompts.values():
-            all_tags.update(prompt_info['data'].get('tags', []))
-        return all_tags
+        # Use the data service to get all tags from prompts
+        return self.data_service.get_all_tags_from_prompts()
 
     def _save_prompt_from_panel(self):
         if not self.current_editor_instance:
@@ -1143,52 +1004,28 @@ class PromptManager(QWidget):
         commit_message = data.pop('commit_message', "No commit message provided.") # Extract commit message
 
         if prompt_id is None: # This is an add operation
-            prompt_id = self.next_id
-            self.next_id += 1
-            
-            version_id = self._generate_version_id(data, commit_message)
-            new_version = {
-                'version_id': version_id,
-                'timestamp': self._get_current_timestamp(),
-                'author': self._get_current_user(),
-                'message': commit_message,
-                'data': data,
-                'parents': []
-            }
-            self.prompts[prompt_id] = {
-                'data': data,
-                'versions': [new_version],
-                'branches': {"main": version_id}
-            }
-            print(f"New prompt ID {prompt_id} added from panel with initial version {version_id}.")
+            # Use the data service to add a new prompt
+            prompt_id = self.data_service.add_new_prompt(data)
+            # Update local prompts reference
+            self.prompts = self.data_service.prompts
+            self.next_id = self.data_service.next_id
+            print(f"New prompt ID {prompt_id} added from panel.")
         else: # This is an edit operation
             if prompt_id not in self.prompts:
                 QMessageBox.critical(self, "Error", f"Could not find prompt with ID {prompt_id} to save.")
                 return
 
-            current_prompt_info = self.prompts[prompt_id]
-            current_data = current_prompt_info['data']
-            
+            current_data = self.prompts[prompt_id]['data']
             data_changed = data != current_data
 
             if data_changed:
-                # Get the parent version_id (current head of 'main' branch)
-                parent_version_id = current_prompt_info['branches'].get("main")
-                parents = [parent_version_id] if parent_version_id else []
-
-                version_id = self._generate_version_id(data, commit_message)
-                new_version = {
-                    'version_id': version_id,
-                    'timestamp': self._get_current_timestamp(),
-                    'author': self._get_current_user(),
-                    'message': commit_message,
-                    'data': data,
-                    'parents': parents
-                }
-                current_prompt_info['versions'].append(new_version)
-                current_prompt_info['data'] = data
-                current_prompt_info['branches']["main"] = version_id
-                print(f"New version {version_id} committed for ID {prompt_id} from panel.")
+                # Use the data service to update the prompt
+                if self.data_service.update_prompt(prompt_id, data, commit_message):
+                    # Update local prompts reference
+                    self.prompts = self.data_service.prompts
+                    print(f"Prompt ID {prompt_id} updated from panel.")
+                else:
+                    print(f"Failed to update prompt ID {prompt_id} from panel.")
             else:
                 print(f"No changes detected for ID {prompt_id}, no new version created from panel.")
 
