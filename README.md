@@ -73,9 +73,13 @@ PromptVault includes a robust, Git-like version control system for all prompts, 
 <summary>Screenshots</summary>
 <br>
 
-| Home Page | Prompt Editor | Categories Management |
+| Main Window | Prompt Editor Panel | Version History |
 | :---: | :---: | :---: |
-| <img src="docs/images/promptvault_screenshot_homepage.jpg" title="Home Page" width="100%"> | <img src="docs/images/promptvault_screenshot_prompt_editor.jpg" title="Prompt Editor" width="100%"> | <img src="docs/images/promptvault_screenshot_categories_management.jpg" title="Categories Management" width="100%"> |
+| <img src="docs/images/promptvault_main_window.jpg" title="Main Window" width="100%"> | <img src="docs/images/promptvault_prompt_edit_panel.jpg" title="Prompt Editor Panel" width="100%"> | <img src="docs/images/promptvault_version_history.jpg" title="Version History" width="100%"> |
+
+| Manage Tags | Export Prompts |
+| :---: | :---: |
+| <img src="docs/images/promptvault_manage_tags.jpg" title="Manage Tags" width="100%"> | <img src="docs/images/promptvault_export.jpg" title="Export Prompts" width="100%"> |
 
 </details>
 

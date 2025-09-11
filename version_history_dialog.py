@@ -1,7 +1,7 @@
 import difflib
 from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QPushButton,
                              QTextEdit, QListWidget, QListWidgetItem, QLabel,
-                             QSizePolicy, QSplitter, QInputDialog, QMessageBox) # Added QInputDialog, QMessageBox
+                             QSizePolicy, QSplitter, QInputDialog, QMessageBox, QWidget) # Added QWidget, QInputDialog, QMessageBox
 from PyQt6.QtCore import Qt, pyqtSignal # Added pyqtSignal
 
 class VersionHistoryDialog(QDialog):
