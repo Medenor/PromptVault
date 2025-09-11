@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Refactored `PromptManager` to use new service classes
 - Made data file path configurable
 - Improved code maintainability and extensibility through modular design
+- Updated version identifier description in README.md
 
 ### Notes
 - Initial release with refactored architecture
