@@ -2,6 +2,7 @@ import json
 import os
 from collections import defaultdict
 import csv
+import uuid # Added for UUID generation
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLineEdit,
                              QPushButton, QMessageBox, QLabel, QListWidget,
                              QListWidgetItem, QApplication, QAbstractItemView,
@@ -52,7 +53,14 @@ class PromptManager(QWidget):
         self.setWindowTitle('Prompt Manager')
 
         main_layout = QHBoxLayout(self)
+        
+        left_layout = self._init_left_panel()
+        right_layout = self._init_right_panel()
 
+        main_layout.addLayout(left_layout, 1)
+        main_layout.addLayout(right_layout, 9)
+
+    def _init_left_panel(self):
         left_layout = QVBoxLayout()
 
         left_layout.addWidget(QLabel("Categories"))
@@ -95,9 +103,9 @@ class PromptManager(QWidget):
         left_layout.addWidget(self.showAllButton)
 
         left_layout.addSpacerItem(QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
+        return left_layout
 
-        main_layout.addLayout(left_layout, 1) # Decrease left column stretch (using integer ratio)
-
+    def _init_right_panel(self):
         right_layout = QVBoxLayout()
 
         search_layout = QHBoxLayout()
@@ -139,8 +147,7 @@ class PromptManager(QWidget):
 
 
         right_layout.addLayout(button_layout)
-
-        main_layout.addLayout(right_layout, 9) # Increase right column stretch (using integer ratio)
+        return right_layout
 
     def clear_editor_panel(self):
         if self.editor_content_widget:
@@ -178,13 +185,23 @@ class PromptManager(QWidget):
 
     def update_prompt_list(self, filter_category=None, filter_tag=None, search_term="", filter_favorites=False):
         self.promptList.clear()
+        filtered_prompts = self._filter_prompts(filter_category, filter_tag, search_term, filter_favorites)
+        sorted_prompts = sorted(filtered_prompts, key=lambda p: p.get('title', ''))
 
+        for prompt_data in sorted_prompts:
+            prompt_id = prompt_data['id']
+            title = prompt_data.get('title', 'Untitled')
+            is_favorite = prompt_data.get('favorite', False)
+
+            list_item, item_widget = self._create_prompt_list_item(prompt_id, title, is_favorite)
+            self.promptList.addItem(list_item)
+            self.promptList.setItemWidget(list_item, item_widget)
+
+    def _filter_prompts(self, filter_category, filter_tag, search_term, filter_favorites):
         case_sensitive = self.caseSensitiveCheckbox.isChecked()
-
         processed_search_term = search_term if case_sensitive else search_term.lower()
-
+        
         filtered_prompts = []
-
         for prompt_id, prompt_info in self.prompts.items():
             data = prompt_info['data']
             category = data.get('category') if data.get('category') else 'No category'
@@ -208,50 +225,44 @@ class PromptManager(QWidget):
                 processed_search_term in processed_note
             )
             favorite_match = (not filter_favorites) or is_favorite
+            
             if category_match and tag_match and search_match and favorite_match:
                 filtered_prompts.append({'id': prompt_id, **data})
+        return filtered_prompts
 
-        sorted_prompts = sorted(filtered_prompts, key=lambda p: p.get('title', ''))
+    def _create_prompt_list_item(self, prompt_id, title, is_favorite):
+        item_widget = QWidget()
+        item_layout = QHBoxLayout(item_widget)
+        item_layout.setContentsMargins(2, 5, 2, 5)
+        item_layout.setSpacing(5)
 
-        for prompt_data in sorted_prompts:
-            prompt_id = prompt_data['id']
-            title = prompt_data.get('title', 'Untitled')
-            is_favorite = prompt_data.get('favorite', False)
+        if is_favorite:
+            fav_label = QLabel("⭐")
+            item_layout.addWidget(fav_label, 0)
 
-            item_widget = QWidget()
-            item_layout = QHBoxLayout(item_widget)
-            item_layout.setContentsMargins(2, 5, 2, 5)
-            item_layout.setSpacing(5)
+        title_label = QLabel(title)
+        item_layout.addWidget(title_label, 1)
 
-            if is_favorite:
-                fav_label = QLabel("⭐")
-                item_layout.addWidget(fav_label, 0)
+        copy_button = QPushButton()
+        copy_button.setObjectName("copyPromptButton") # Add objectName for QSS targeting
+        copy_button.setFixedSize(QSize(24, 24))
+        copy_button.setToolTip(f"Copy prompt '{title}'")
+        copy_button.setStyleSheet("""
+            QPushButton { border: none; background-color: transparent; padding: 0px; }
+            QPushButton:hover { background-color: rgba(128, 128, 128, 50); }
+            QPushButton:pressed { background-color: rgba(128, 128, 128, 100); }
+        """)
+        copy_button.setProperty("prompt_id", prompt_id)
+        copy_button.clicked.connect(self.copy_prompt_text_from_button)
+        copy_button.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        item_layout.addWidget(copy_button, 0)
 
-            title_label = QLabel(title)
-            item_layout.addWidget(title_label, 1)
+        item_widget.setLayout(item_layout)
 
-            copy_button = QPushButton()
-            copy_button.setObjectName("copyPromptButton") # Add objectName for QSS targeting
-            copy_button.setFixedSize(QSize(24, 24))
-            copy_button.setToolTip(f"Copy prompt '{title}'")
-            copy_button.setStyleSheet("""
-                QPushButton { border: none; background-color: transparent; padding: 0px; }
-                QPushButton:hover { background-color: rgba(128, 128, 128, 50); }
-                QPushButton:pressed { background-color: rgba(128, 128, 128, 100); }
-            """)
-            copy_button.setProperty("prompt_id", prompt_id)
-            copy_button.clicked.connect(self.copy_prompt_text_from_button)
-            copy_button.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-            item_layout.addWidget(copy_button, 0)
-
-            item_widget.setLayout(item_layout)
-
-            list_item = QListWidgetItem(self.promptList)
-            list_item.setSizeHint(item_widget.sizeHint())
-            list_item.setData(Qt.ItemDataRole.UserRole, prompt_id)
-
-            self.promptList.addItem(list_item)
-            self.promptList.setItemWidget(list_item, item_widget)
+        list_item = QListWidgetItem(self.promptList)
+        list_item.setSizeHint(item_widget.sizeHint())
+        list_item.setData(Qt.ItemDataRole.UserRole, prompt_id)
+        return list_item, item_widget
 
     def copy_prompt_text_from_button(self):
         sender_button = self.sender()
@@ -494,87 +505,15 @@ class PromptManager(QWidget):
                     try:
                         prompt_id = int(k)
                         if isinstance(v, dict):
-                            # Migration logic for old data structure
-                            if 'data' in v and 'history' in v and 'versions' not in v:
-                                print(f"Migrating old prompt structure for ID {prompt_id}")
-                                current_data = v['data']
-                                history_entries = v['history']
-
-                                versions = []
-                                # Create initial version from the first history entry or current data
-                                if history_entries:
-                                    first_data = history_entries[0]
-                                    first_version_id = self._generate_version_id(first_data, "Initial import")
-                                    versions.append({
-                                        'version_id': first_version_id,
-                                        'timestamp': self._get_current_timestamp(),
-                                        'author': self._get_current_user(),
-                                        'message': "Initial import",
-                                        'data': first_data,
-                                        'parents': []
-                                    })
-                                    # Add subsequent history entries as new versions
-                                    for i in range(1, len(history_entries)):
-                                        prev_version_id = versions[-1]['version_id']
-                                        new_data = history_entries[i]
-                                        new_version_id = self._generate_version_id(new_data, "History migration")
-                                        versions.append({
-                                            'version_id': new_version_id,
-                                            'timestamp': self._get_current_timestamp(), # Use current time for migration
-                                            'author': self._get_current_user(),
-                                            'message': "History migration",
-                                            'data': new_data,
-                                            'parents': [prev_version_id]
-                                        })
-                                else: # No history, just current data
-                                    initial_version_id = self._generate_version_id(current_data, "Initial import")
-                                    versions.append({
-                                        'version_id': initial_version_id,
-                                        'timestamp': self._get_current_timestamp(),
-                                        'author': self._get_current_user(),
-                                        'message': "Initial import",
-                                        'data': current_data,
-                                        'parents': []
-                                    })
-                                
-                                # Ensure current_data is the latest in versions
-                                if versions and versions[-1]['data'] != current_data:
-                                    latest_version_id = self._generate_version_id(current_data, "Current state after migration")
-                                    versions.append({
-                                        'version_id': latest_version_id,
-                                        'timestamp': self._get_current_timestamp(),
-                                        'author': self._get_current_user(),
-                                        'message': "Current state after migration",
-                                        'data': current_data,
-                                        'parents': [versions[-1]['version_id']] if versions else []
-                                    })
-
-                                v = {
-                                    'data': current_data,
-                                    'versions': versions,
-                                    'branches': {"main": versions[-1]['version_id']} if versions else {}
-                                }
-                            
-                            # Ensure new fields exist for all prompts
-                            if 'versions' not in v:
-                                v['versions'] = []
-                            if 'branches' not in v:
-                                v['branches'] = {}
-                            if 'data' not in v: # Should not happen with current structure, but for safety
-                                v['data'] = {}
-
-                            # Ensure category and favorite defaults
-                            if 'category' not in v['data'] or not v['data']['category']:
-                                v['data']['category'] = 'No category'
-                            if 'favorite' not in v['data']:
-                                v['data']['favorite'] = False
-                            
+                            v = self._migrate_old_data_structure(prompt_id, v)
                             loaded_prompts[prompt_id] = v
                         else:
                             print(f"Warning: Invalid structure for prompt ID '{k}', ignored.")
                     except ValueError:
                         print(f"Warning: Invalid prompt key '{k}', ignored.")
 
+                self.prompts = loaded_prompts
+                self.categories = loaded_data.get('categories', [])
                 self.prompts = loaded_prompts
                 self.categories = loaded_data.get('categories', [])
                 self.categories.sort()
@@ -592,6 +531,84 @@ class PromptManager(QWidget):
             self.next_id = 0
             self.categories = []
             self.global_tags = set() # Reset global_tags on error
+
+    def _migrate_old_data_structure(self, prompt_id, prompt_info):
+        # Migration logic for old data structure
+        if 'data' in prompt_info and 'history' in prompt_info and 'versions' not in prompt_info:
+            print(f"Migrating old prompt structure for ID {prompt_id}")
+            current_data = prompt_info['data']
+            history_entries = prompt_info['history']
+
+            versions = []
+            # Create initial version from the first history entry or current data
+            if history_entries:
+                first_data = history_entries[0]
+                first_version_id = self._generate_version_id(first_data, "Initial import")
+                versions.append({
+                    'version_id': first_version_id,
+                    'timestamp': self._get_current_timestamp(),
+                    'author': self._get_current_user(),
+                    'message': "Initial import",
+                    'data': first_data,
+                    'parents': []
+                })
+                # Add subsequent history entries as new versions
+                for i in range(1, len(history_entries)):
+                    prev_version_id = versions[-1]['version_id']
+                    new_data = history_entries[i]
+                    new_version_id = self._generate_version_id(new_data, "History migration")
+                    versions.append({
+                        'version_id': new_version_id,
+                        'timestamp': self._get_current_timestamp(), # Use current time for migration
+                        'author': self._get_current_user(),
+                        'message': "History migration",
+                        'data': new_data,
+                        'parents': [prev_version_id]
+                    })
+            else: # No history, just current data
+                initial_version_id = self._generate_version_id(current_data, "Initial import")
+                versions.append({
+                    'version_id': initial_version_id,
+                    'timestamp': self._get_current_timestamp(),
+                    'author': self._get_current_user(),
+                    'message': "Initial import",
+                    'data': current_data,
+                    'parents': []
+                })
+            
+            # Ensure current_data is the latest in versions
+            if versions and versions[-1]['data'] != current_data:
+                latest_version_id = self._generate_version_id(current_data, "Current state after migration")
+                versions.append({
+                    'version_id': latest_version_id,
+                    'timestamp': self._get_current_timestamp(),
+                    'author': self._get_current_user(),
+                    'message': "Current state after migration",
+                    'data': current_data,
+                    'parents': [versions[-1]['version_id']] if versions else []
+                })
+
+            prompt_info = {
+                'data': current_data,
+                'versions': versions,
+                'branches': {"main": versions[-1]['version_id']} if versions else {}
+            }
+        
+        # Ensure new fields exist for all prompts
+        if 'versions' not in prompt_info:
+            prompt_info['versions'] = []
+        if 'branches' not in prompt_info:
+            prompt_info['branches'] = {}
+        if 'data' not in prompt_info: # Should not happen with current structure, but for safety
+            prompt_info['data'] = {}
+
+        # Ensure category and favorite defaults
+        if 'category' not in prompt_info['data'] or not prompt_info['data']['category']:
+            prompt_info['data']['category'] = 'No category'
+        if 'favorite' not in prompt_info['data']:
+            prompt_info['data']['favorite'] = False
+        
+        return prompt_info
 
     def show_context_menu(self, position):
         menu = QMenu()
@@ -1192,14 +1209,8 @@ class PromptManager(QWidget):
         print("Prompt edit/add cancelled and panel closed.")
 
     def _generate_version_id(self, data, message):
-        import hashlib
-        import json
-        # Create a consistent string representation of the data for hashing
-        # Ensure dictionary keys are sorted for consistent hashing
-        sorted_data_str = json.dumps(data, sort_keys=True, ensure_ascii=False)
-        # Include message in the hash to ensure unique ID for different messages on same data
-        hash_input = f"{sorted_data_str}-{message}-{self._get_current_timestamp()}"
-        return hashlib.sha256(hash_input.encode('utf-8')).hexdigest()
+        # Using UUID for simpler, unique ID generation
+        return str(uuid.uuid4())
 
     def _get_current_timestamp(self):
         from datetime import datetime
