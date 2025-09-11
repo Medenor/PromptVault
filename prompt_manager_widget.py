@@ -13,6 +13,7 @@ from PyQt6.QtCore import Qt, QSize, pyqtSignal # Added pyqtSignal
 from prompt_dialog import PromptDialog
 from category_dialog import CategoryDialog
 from tag_dialog import TagDialog
+from version_history_dialog import VersionHistoryDialog # Import the new dialog
 
 class PromptManager(QWidget):
     # Define a signal to request the main window to show/hide the editor panel
@@ -347,7 +348,8 @@ class PromptManager(QWidget):
         self.clear_editor_panel() # Clear any previous content
 
         # Create a new PromptDialog instance, but don't show it as a dialog
-        self.current_editor_instance = PromptDialog(self, data=initial_data, categories=self.categories, all_tags=all_available_tags, is_panel=True)
+        # For a new prompt, there are no existing versions, so pass an empty list
+        self.current_editor_instance = PromptDialog(self, data=initial_data, versions=[], categories=self.categories, all_tags=all_available_tags, is_panel=True)
         
         # Add the dialog's layout to the dock's content widget
         self.editor_content_widget.layout().addWidget(self.current_editor_instance)
@@ -379,13 +381,14 @@ class PromptManager(QWidget):
             return
 
         current_data = self.prompts[prompt_id]['data']
-        history = self.prompts[prompt_id]['history']
+        # Pass the versions list to PromptDialog for history display
+        versions = self.prompts[prompt_id].get('versions', [])
         all_available_tags = sorted(list(self.global_tags.union(self._get_all_tags_from_prompts())))
 
         self.clear_editor_panel() # Clear any previous content
 
-        # Create a new PromptDialog instance, but don't show it as a dialog
-        self.current_editor_instance = PromptDialog(self, current_data, history=history, categories=self.categories, all_tags=all_available_tags, is_panel=True)
+        # Create a new PromptDialog instance, passing versions for history display
+        self.current_editor_instance = PromptDialog(self, data=current_data, versions=versions, categories=self.categories, all_tags=all_available_tags, is_panel=True)
         self.current_editor_instance.setProperty("editing_prompt_id", prompt_id) # Store the ID being edited
         
         # Add the dialog's layout to the dock's content widget
@@ -454,8 +457,14 @@ class PromptManager(QWidget):
         try:
             self.categories.sort()
             with open(self.data_file, 'w', encoding='utf-8') as f:
-                prompts_to_save = {str(k): v for k, v in self.prompts.items()}
-                # Save global_tags along with other data
+                prompts_to_save = {}
+                for k, v in self.prompts.items():
+                    # Ensure 'history' is not saved in the new structure
+                    v_copy = v.copy()
+                    if 'history' in v_copy:
+                        del v_copy['history']
+                    prompts_to_save[str(k)] = v_copy
+
                 save_data = {
                     'next_id': self.next_id,
                     'prompts': prompts_to_save,
@@ -484,19 +493,87 @@ class PromptManager(QWidget):
                 for k, v in loaded_data.get('prompts', {}).items():
                     try:
                         prompt_id = int(k)
-                        if isinstance(v, dict) and 'data' in v and 'history' in v:
-                             if 'category' not in v['data'] or not v['data']['category']:
-                                 v['data']['category'] = 'No category'
-                             if 'favorite' not in v['data']:
-                                 v['data']['favorite'] = False
-                             for history_entry in v.get('history', []):
-                                 if 'favorite' not in history_entry:
-                                     history_entry['favorite'] = False
-                             loaded_prompts[prompt_id] = v
+                        if isinstance(v, dict):
+                            # Migration logic for old data structure
+                            if 'data' in v and 'history' in v and 'versions' not in v:
+                                print(f"Migrating old prompt structure for ID {prompt_id}")
+                                current_data = v['data']
+                                history_entries = v['history']
+
+                                versions = []
+                                # Create initial version from the first history entry or current data
+                                if history_entries:
+                                    first_data = history_entries[0]
+                                    first_version_id = self._generate_version_id(first_data, "Initial import")
+                                    versions.append({
+                                        'version_id': first_version_id,
+                                        'timestamp': self._get_current_timestamp(),
+                                        'author': self._get_current_user(),
+                                        'message': "Initial import",
+                                        'data': first_data,
+                                        'parents': []
+                                    })
+                                    # Add subsequent history entries as new versions
+                                    for i in range(1, len(history_entries)):
+                                        prev_version_id = versions[-1]['version_id']
+                                        new_data = history_entries[i]
+                                        new_version_id = self._generate_version_id(new_data, "History migration")
+                                        versions.append({
+                                            'version_id': new_version_id,
+                                            'timestamp': self._get_current_timestamp(), # Use current time for migration
+                                            'author': self._get_current_user(),
+                                            'message': "History migration",
+                                            'data': new_data,
+                                            'parents': [prev_version_id]
+                                        })
+                                else: # No history, just current data
+                                    initial_version_id = self._generate_version_id(current_data, "Initial import")
+                                    versions.append({
+                                        'version_id': initial_version_id,
+                                        'timestamp': self._get_current_timestamp(),
+                                        'author': self._get_current_user(),
+                                        'message': "Initial import",
+                                        'data': current_data,
+                                        'parents': []
+                                    })
+                                
+                                # Ensure current_data is the latest in versions
+                                if versions and versions[-1]['data'] != current_data:
+                                    latest_version_id = self._generate_version_id(current_data, "Current state after migration")
+                                    versions.append({
+                                        'version_id': latest_version_id,
+                                        'timestamp': self._get_current_timestamp(),
+                                        'author': self._get_current_user(),
+                                        'message': "Current state after migration",
+                                        'data': current_data,
+                                        'parents': [versions[-1]['version_id']] if versions else []
+                                    })
+
+                                v = {
+                                    'data': current_data,
+                                    'versions': versions,
+                                    'branches': {"main": versions[-1]['version_id']} if versions else {}
+                                }
+                            
+                            # Ensure new fields exist for all prompts
+                            if 'versions' not in v:
+                                v['versions'] = []
+                            if 'branches' not in v:
+                                v['branches'] = {}
+                            if 'data' not in v: # Should not happen with current structure, but for safety
+                                v['data'] = {}
+
+                            # Ensure category and favorite defaults
+                            if 'category' not in v['data'] or not v['data']['category']:
+                                v['data']['category'] = 'No category'
+                            if 'favorite' not in v['data']:
+                                v['data']['favorite'] = False
+                            
+                            loaded_prompts[prompt_id] = v
                         else:
-                             print(f"Warning: Invalid structure for prompt ID '{k}', ignored.")
+                            print(f"Warning: Invalid structure for prompt ID '{k}', ignored.")
                     except ValueError:
-                         print(f"Warning: Invalid prompt key '{k}', ignored.")
+                        print(f"Warning: Invalid prompt key '{k}', ignored.")
 
                 self.prompts = loaded_prompts
                 self.categories = loaded_data.get('categories', [])
@@ -524,12 +601,14 @@ class PromptManager(QWidget):
         copy_prompt_action = menu.addAction("Copy Prompt")
         export_action = menu.addAction("Export")
         toggle_favorite_action = menu.addAction("Add to Favorites" if not self.is_selected_prompt_favorite() else "Remove from Favorites")
+        view_history_action = menu.addAction("View Version History") # New action
 
         edit_action.triggered.connect(self.editPrompt)
         delete_action.triggered.connect(self.deleteSelectedPrompts)
         copy_prompt_action.triggered.connect(self.copy_selected_prompt_text)
         export_action.triggered.connect(self.export_selected_prompts)
         toggle_favorite_action.triggered.connect(self.toggle_selected_prompt_favorite)
+        view_history_action.triggered.connect(self.view_prompt_history) # Connect new action
 
         selected_items = self.promptList.selectedItems()
         num_selected = len(selected_items)
@@ -554,6 +633,64 @@ class PromptManager(QWidget):
         else:
             QMessageBox.warning(self, "Copy Failed", "Please select a prompt to copy.")
 
+    def view_prompt_history(self):
+        prompt_id = self.get_selected_prompt_id()
+        if prompt_id is None:
+            QMessageBox.warning(self, "No Selection", "Please select a prompt to view its version history.")
+            return
+
+        if prompt_id not in self.prompts:
+            QMessageBox.critical(self, "Error", f"Could not find prompt with ID {prompt_id}.")
+            return
+
+        prompt_info = self.prompts[prompt_id]
+        prompt_title = prompt_info['data'].get('title', 'Untitled')
+        versions = prompt_info.get('versions', [])
+
+        if not versions:
+            QMessageBox.information(self, "No History", "This prompt has no version history yet.")
+            return
+
+        dialog = VersionHistoryDialog(self, prompt_title=prompt_title, versions=versions)
+        dialog.revertVersion.connect(self._handle_revert_version)
+        dialog.exec()
+        print(f"Viewed version history for prompt ID {prompt_id}.")
+
+    def _handle_revert_version(self, prompt_id, reverted_data, commit_message):
+        if prompt_id not in self.prompts:
+            QMessageBox.critical(self, "Error", f"Could not find prompt with ID {prompt_id} to revert.")
+            return
+
+        current_prompt_info = self.prompts[prompt_id]
+        
+        # Create a new version with the reverted data
+        parent_version_id = current_prompt_info['branches'].get("main")
+        parents = [parent_version_id] if parent_version_id else []
+
+        version_id = self._generate_version_id(reverted_data, commit_message)
+        new_version = {
+            'version_id': version_id,
+            'timestamp': self._get_current_timestamp(),
+            'author': self._get_current_user(),
+            'message': commit_message,
+            'data': reverted_data,
+            'parents': parents
+        }
+        current_prompt_info['versions'].append(new_version)
+        current_prompt_info['data'] = reverted_data # Update current data to the reverted version
+        current_prompt_info['branches']["main"] = version_id
+        print(f"Prompt ID {prompt_id} reverted to version {version_id} with message: {commit_message}.")
+
+        self.update_category_list()
+        self.update_tag_list()
+        self.update_prompt_list(filter_category=self.current_filter_category(),
+                                filter_tag=self.current_filter_tag(),
+                                search_term=self.searchBar.text(),
+                                filter_favorites=self.is_favorites_filter_active())
+        self.save_prompts()
+        QMessageBox.information(self, "Revert Successful", f"Prompt '{reverted_data.get('title', 'Untitled')}' successfully reverted.")
+
+
     def is_selected_prompt_favorite(self):
         selected_ids = self.get_selected_prompt_ids()
         if not selected_ids:
@@ -575,8 +712,9 @@ class PromptManager(QWidget):
                 current_favorite = self.prompts[prompt_id]['data'].get('favorite', False)
                 if current_favorite != new_favorite_state:
                     self.prompts[prompt_id]['data']['favorite'] = new_favorite_state
-                    if self.prompts[prompt_id]['history']:
-                        self.prompts[prompt_id]['history'][-1]['favorite'] = new_favorite_state
+                    # Update the latest version's data as well
+                    if self.prompts[prompt_id]['versions']:
+                        self.prompts[prompt_id]['versions'][-1]['data']['favorite'] = new_favorite_state
                     prompts_changed = True
                     print(f"Prompt ID {prompt_id} favorite toggled to {new_favorite_state}.")
 
@@ -639,7 +777,7 @@ class PromptManager(QWidget):
                 prompts_to_export = [(pid, self.prompts[pid]) for pid in prompt_ids if pid in self.prompts]
 
             for prompt_id, prompt_info in prompts_to_export:
-                data = prompt_info['data']
+                data = prompt_info['data'] # Export current data, not history
                 row = {
                     'title': data.get('title', ''),
                     'prompt': data.get('prompt', ''),
@@ -657,7 +795,7 @@ class PromptManager(QWidget):
                 prompts_to_export = [(pid, self.prompts[pid]) for pid in prompt_ids if pid in self.prompts]
 
             for prompt_id, prompt_info in prompts_to_export:
-                data = prompt_info['data']
+                data = prompt_info['data'] # Export current data, not history
                 mdfile.write(f"# {data.get('title', 'Untitled')}\n\n")
                 mdfile.write(f"**Category:** {data.get('category', 'No category')}\n")
                 mdfile.write(f"**Tags:** {', '.join(data.get('tags', []))}\n")
@@ -716,6 +854,11 @@ class PromptManager(QWidget):
                     row['tags'] = [tag.strip() for tag in row['tags'].split(',')]
                 else:
                     row['tags'] = []
+                
+                # Remove 'history' if it somehow exists in the imported data
+                if 'history' in row:
+                    del row['history']
+                
                 prompts.append(row)
         return prompts
 
@@ -763,6 +906,10 @@ class PromptManager(QWidget):
                 current_prompt['prompt'] = current_prompt['prompt'].strip()
                 current_prompt['note'] = current_prompt['note'].strip()
 
+                # Remove 'history' if it somehow exists in the imported data
+                if 'history' in current_prompt:
+                    del current_prompt['history']
+
                 if current_prompt.get('title') or current_prompt.get('prompt'): # Only add if it has some content
                     prompts.append(current_prompt)
         return prompts
@@ -791,27 +938,70 @@ class PromptManager(QWidget):
             msg_box.exec()
 
             if msg_box.clickedButton() == overwrite_button:
-                # Overwrite existing prompt
-                self.prompts[existing_prompt_id]['data'] = imported_data
-                self.prompts[existing_prompt_id]['history'].append(imported_data) # Add to history
-                print(f"Prompt '{imported_data.get('title')}' overwritten.")
+                # Overwrite existing prompt, create a new version
+                current_prompt_info = self.prompts[existing_prompt_id]
+                parent_version_id = current_prompt_info['branches'].get("main")
+                parents = [parent_version_id] if parent_version_id else []
+
+                commit_message = f"Import overwrite: {imported_data.get('title', 'Untitled')}"
+                version_id = self._generate_version_id(imported_data, commit_message)
+                new_version = {
+                    'version_id': version_id,
+                    'timestamp': self._get_current_timestamp(),
+                    'author': self._get_current_user(),
+                    'message': commit_message,
+                    'data': imported_data,
+                    'parents': parents
+                }
+                current_prompt_info['versions'].append(new_version)
+                current_prompt_info['data'] = imported_data
+                current_prompt_info['branches']["main"] = version_id
+                print(f"Prompt '{imported_data.get('title')}' overwritten with new version {version_id}.")
                 return True
             elif msg_box.clickedButton() == keep_both_button:
-                # Add as a new prompt
+                # Add as a new prompt with initial version
                 prompt_id = self.next_id
                 self.next_id += 1
-                self.prompts[prompt_id] = {'data': imported_data, 'history': [imported_data]}
-                print(f"Prompt '{imported_data.get('title')}' imported as new.")
+                commit_message = f"Initial import: {imported_data.get('title', 'Untitled')}"
+                version_id = self._generate_version_id(imported_data, commit_message)
+                new_version = {
+                    'version_id': version_id,
+                    'timestamp': self._get_current_timestamp(),
+                    'author': self._get_current_user(),
+                    'message': commit_message,
+                    'data': imported_data,
+                    'parents': []
+                }
+                self.prompts[prompt_id] = {
+                    'data': imported_data,
+                    'versions': [new_version],
+                    'branches': {"main": version_id}
+                }
+                print(f"Prompt '{imported_data.get('title')}' imported as new with version {version_id}.")
                 return True
             else: # Skip
                 print(f"Prompt '{imported_data.get('title')}' skipped.")
                 return False
         else:
-            # No duplicate, add as a new prompt
+            # No duplicate, add as a new prompt with initial version
             prompt_id = self.next_id
             self.next_id += 1
-            self.prompts[prompt_id] = {'data': imported_data, 'history': [imported_data]}
-            print(f"Prompt '{imported_data.get('title')}' imported.")
+            commit_message = f"Initial import: {imported_data.get('title', 'Untitled')}"
+            version_id = self._generate_version_id(imported_data, commit_message)
+            new_version = {
+                'version_id': version_id,
+                'timestamp': self._get_current_timestamp(),
+                'author': self._get_current_user(),
+                'message': commit_message,
+                'data': imported_data,
+                'parents': []
+            }
+            self.prompts[prompt_id] = {
+                'data': imported_data,
+                'versions': [new_version],
+                'branches': {"main": version_id}
+            }
+            print(f"Prompt '{imported_data.get('title')}' imported with version {version_id}.")
             return True
 
     def manageCategories(self):
@@ -832,8 +1022,9 @@ class PromptManager(QWidget):
                         current_category = prompt_info['data'].get('category', 'No category')
                         if current_category in removed_categories:
                             prompt_info['data']['category'] = 'No category'
-                            if prompt_info['history']:
-                                 prompt_info['history'][-1]['category'] = 'No category'
+                            # Update the latest version's data as well
+                            if prompt_info['versions']:
+                                 prompt_info['versions'][-1]['data']['category'] = 'No category'
                             print(f"Prompt ID {prompt_id} moved to 'No category' because its category '{current_category}' was removed.")
                             prompts_updated = True
 
@@ -881,8 +1072,9 @@ class PromptManager(QWidget):
                 if tags_changed_for_prompt:
                     sorted_new_tags = sorted(list(new_prompt_tags))
                     prompt_info['data']['tags'] = sorted_new_tags
-                    if prompt_info['history']:
-                        prompt_info['history'][-1]['tags'] = sorted_new_tags
+                    # Update the latest version's data as well
+                    if prompt_info['versions']:
+                        prompt_info['versions'][-1]['data']['tags'] = sorted_new_tags
                     print(f"Tags updated for Prompt ID {prompt_id}: {sorted_new_tags}")
                     prompts_updated = True
 
@@ -931,34 +1123,57 @@ class PromptManager(QWidget):
 
         prompt_id = self.current_editor_instance.property("editing_prompt_id")
 
+        commit_message = data.pop('commit_message', "No commit message provided.") # Extract commit message
+
         if prompt_id is None: # This is an add operation
             prompt_id = self.next_id
             self.next_id += 1
-            self.prompts[prompt_id] = {'data': data, 'history': [data]}
-            print(f"New prompt ID {prompt_id} added from panel.")
+            
+            version_id = self._generate_version_id(data, commit_message)
+            new_version = {
+                'version_id': version_id,
+                'timestamp': self._get_current_timestamp(),
+                'author': self._get_current_user(),
+                'message': commit_message,
+                'data': data,
+                'parents': []
+            }
+            self.prompts[prompt_id] = {
+                'data': data,
+                'versions': [new_version],
+                'branches': {"main": version_id}
+            }
+            print(f"New prompt ID {prompt_id} added from panel with initial version {version_id}.")
         else: # This is an edit operation
             if prompt_id not in self.prompts:
                 QMessageBox.critical(self, "Error", f"Could not find prompt with ID {prompt_id} to save.")
                 return
 
-            current_data = self.prompts[prompt_id]['data']
-            history = self.prompts[prompt_id]['history']
+            current_prompt_info = self.prompts[prompt_id]
+            current_data = current_prompt_info['data']
             
             data_changed = data != current_data
 
-            if self.current_editor_instance.history_purged:
-                self.prompts[prompt_id]['history'] = [data]
-                self.prompts[prompt_id]['data'] = data
-                print(f"History purged and updated for ID {prompt_id} from panel.")
-            elif data_changed:
-                self.prompts[prompt_id]['data'] = data
-                if not self.prompts[prompt_id]['history'] or data != self.prompts[prompt_id]['history'][-1]:
-                    self.prompts[prompt_id]['history'].append(data)
-                    print(f"New version added to history for ID {prompt_id} from panel.")
-                else:
-                    print(f"Data identical to last history version for ID {prompt_id}, history not modified from panel.")
+            if data_changed:
+                # Get the parent version_id (current head of 'main' branch)
+                parent_version_id = current_prompt_info['branches'].get("main")
+                parents = [parent_version_id] if parent_version_id else []
+
+                version_id = self._generate_version_id(data, commit_message)
+                new_version = {
+                    'version_id': version_id,
+                    'timestamp': self._get_current_timestamp(),
+                    'author': self._get_current_user(),
+                    'message': commit_message,
+                    'data': data,
+                    'parents': parents
+                }
+                current_prompt_info['versions'].append(new_version)
+                current_prompt_info['data'] = data
+                current_prompt_info['branches']["main"] = version_id
+                print(f"New version {version_id} committed for ID {prompt_id} from panel.")
             else:
-                print(f"No changes detected for ID {prompt_id}, history not modified from panel.")
+                print(f"No changes detected for ID {prompt_id}, no new version created from panel.")
 
         self.update_category_list()
         self.update_tag_list()
@@ -975,3 +1190,24 @@ class PromptManager(QWidget):
         self.clear_editor_panel()
         self.show_editor_panel(False) # Hide the panel
         print("Prompt edit/add cancelled and panel closed.")
+
+    def _generate_version_id(self, data, message):
+        import hashlib
+        import json
+        # Create a consistent string representation of the data for hashing
+        # Ensure dictionary keys are sorted for consistent hashing
+        sorted_data_str = json.dumps(data, sort_keys=True, ensure_ascii=False)
+        # Include message in the hash to ensure unique ID for different messages on same data
+        hash_input = f"{sorted_data_str}-{message}-{self._get_current_timestamp()}"
+        return hashlib.sha256(hash_input.encode('utf-8')).hexdigest()
+
+    def _get_current_timestamp(self):
+        from datetime import datetime
+        return datetime.utcnow().isoformat() + 'Z' # ISO 8601 format with UTC indicator
+
+    def _get_current_user(self):
+        import getpass
+        try:
+            return getpass.getuser()
+        except Exception:
+            return "unknown"

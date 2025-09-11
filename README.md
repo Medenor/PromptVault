@@ -32,6 +32,7 @@
 
 - [About](#about)
   - [Built With](#built-with)
+  - [Version Control](#version-control)
 - [Getting Started](#getting-started)
   - [Prerequisites](#prerequisites)
   - [Installation](#installation)
@@ -53,6 +54,21 @@
 
 PromptVault is a prompt management application designed to help users easily organize, store, and retrieve their prompts for various AI applications, software development, content marketing, and much more. Whether you are a developer, writer, marketer, or simply a user of AI-based tools, PromptVault allows you to centralize your prompts and improve your productivity.
 
+### Built With
+
+*   [Python](https://www.python.org/)
+*   [PyQt6](https://riverbankcomputing.com/software/pyqt/)
+
+### Version Control
+
+PromptVault includes a robust, Git-like version control system for all prompts, ensuring full traceability and a clear history of changes. Key features include:
+
+*   **Unique Version Identifiers**: Each prompt version is assigned a unique SHA-256 hash, similar to Git commit IDs.
+*   **Detailed Metadata**: Every version tracks essential metadata such as timestamp, author, and a mandatory commit message.
+*   **Version History View**: A dedicated dialog allows users to browse a prompt's complete version history, displaying each commit with its details.
+*   **Diff Visualization**: Easily compare any two versions to see precise changes in prompt content, title, notes, categories, and tags.
+*   **Revert Functionality**: Users can revert a prompt to any previous version, which creates a new commit reflecting the reverted state.
+
 <details>
 <summary>Screenshots</summary>
 <br>
@@ -62,11 +78,6 @@ PromptVault is a prompt management application designed to help users easily org
 | <img src="docs/images/promptvault_screenshot_homepage.jpg" title="Home Page" width="100%"> | <img src="docs/images/promptvault_screenshot_prompt_editor.jpg" title="Prompt Editor" width="100%"> | <img src="docs/images/promptvault_screenshot_categories_management.jpg" title="Categories Management" width="100%"> |
 
 </details>
-
-### Built With
-
-*   [Python](https://www.python.org/)
-*   [PyQt6](https://riverbankcomputing.com/software/pyqt/)
 
 ## Getting Started
 

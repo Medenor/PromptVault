@@ -10,11 +10,10 @@ class PromptDialog(QDialog):
     accepted = pyqtSignal()
     rejected = pyqtSignal()
 
-    def __init__(self, parent=None, data=None, history=None, categories=None, all_tags=None, is_panel=False):
+    def __init__(self, parent=None, data=None, versions=None, categories=None, all_tags=None, is_panel=False):
         super().__init__(parent)
-        self.history_data = history if history else []
+        self.versions_data = versions if versions else [] # Use versions_data instead of history_data
         self.current_data = data
-        self.history_purged = False
         self.categories = categories if categories else []
         self.all_tags = all_tags if all_tags is not None else [] # Store all available tags
         self.is_panel = is_panel # New flag to indicate panel mode
@@ -61,11 +60,12 @@ class PromptDialog(QDialog):
         self.setWindowTitle('Add/Edit Prompt')
         layout = QVBoxLayout(self)
 
-        if self.history_data and len(self.history_data) > 1:
+        if self.versions_data and len(self.versions_data) > 1: # Use versions_data
             history_layout = QHBoxLayout()
             self.historyCombo = QComboBox()
-            for i, version_data in enumerate(reversed(self.history_data)):
-                version_label = f"Version {len(self.history_data) - i}"
+            # Populate with version IDs and commit messages
+            for i, version_info in enumerate(reversed(self.versions_data)):
+                version_label = f"{version_info.get('version_id', 'N/A')[:7]} - {version_info.get('message', 'No message')}"
                 if i == 0:
                     version_label += " (Current)"
                 self.historyCombo.addItem(version_label, i)
@@ -74,10 +74,10 @@ class PromptDialog(QDialog):
             history_layout.addWidget(QLabel("History:"), 0)
             history_layout.addWidget(self.historyCombo, 1)
 
-            self.purgeHistoryButton = QPushButton("Purge")
-            self.purgeHistoryButton.setToolTip("Delete all history except the current version")
-            self.purgeHistoryButton.clicked.connect(self.purge_history)
-            history_layout.addWidget(self.purgeHistoryButton, 0)
+            # The purge history button and its functionality are removed as they are not compatible
+            # with the new Git-like versioning system.
+            # If a similar feature is desired in the future, it should be re-designed
+            # to work with the new 'versions' data structure and branching model.
 
             layout.addLayout(history_layout)
 
@@ -163,6 +163,11 @@ class PromptDialog(QDialog):
         self.diffOutput.setPlaceholderText("Diff will appear here when comparing history versions.")
         layout.addWidget(self.diffOutput)
 
+        layout.addWidget(QLabel('Commit Message:'))
+        self.commitMessageEdit = QLineEdit()
+        self.commitMessageEdit.setPlaceholderText("Enter a commit message for this change (required)")
+        layout.addWidget(self.commitMessageEdit)
+
         if self.is_panel:
             # For panel mode, use custom buttons and signals
             panel_button_layout = QHBoxLayout()
@@ -183,19 +188,21 @@ class PromptDialog(QDialog):
             layout.addWidget(buttonBox)
 
     def display_history_version(self, index):
-        if not self.history_data or index < 0:
+        if not self.versions_data or index < 0:
             return
 
-        original_history_index = len(self.history_data) - 1 - index
-        if 0 <= original_history_index < len(self.history_data):
-            version_data = self.history_data[original_history_index]
+        # The versions_data is already ordered from oldest to newest.
+        # We display it reversed in the combo box, so we need to map the index back.
+        original_version_index = len(self.versions_data) - 1 - index
+        if 0 <= original_version_index < len(self.versions_data):
+            version_info = self.versions_data[original_version_index]
+            version_data = version_info.get('data', {}) # Get the actual prompt data from the version object
             
-            # Update fields with selected history version
+            # Update fields with selected history version's data
             self.titleEdit.setText(version_data.get('title', ''))
             self.favoriteCheckbox.setChecked(version_data.get('favorite', False))
             self.categoryCombo.setCurrentText(version_data.get('category', 'No category'))
             
-            # Update the new tagsListWidget
             self.tagsListWidget.clear()
             for tag in version_data.get('tags', []):
                 self.tagsListWidget.addItem(tag)
@@ -203,9 +210,19 @@ class PromptDialog(QDialog):
             self.promptEdit.setPlainText(version_data.get('prompt', ''))
             self.noteEdit.setPlainText(version_data.get('note', ''))
             
-            print(f"Displaying history version index {original_history_index}")
+            # If displaying the current version, allow editing the commit message
+            if original_version_index == len(self.versions_data) - 1:
+                self.commitMessageEdit.clear()
+                self.commitMessageEdit.setPlaceholderText("Enter a commit message for this change (required)")
+                self.commitMessageEdit.setReadOnly(False)
+            else:
+                self.commitMessageEdit.setText(version_info.get('message', 'No message')) # Corrected to setText
+                self.commitMessageEdit.setPlaceholderText(f"Commit message: {version_info.get('message', 'No message')} (by {version_info.get('author', 'unknown')} at {version_info.get('timestamp', 'N/A')})")
+                self.commitMessageEdit.setReadOnly(True) # Make it read-only when viewing history
 
-            # Generate and display diff
+            print(f"Displaying history version ID {version_info.get('version_id', 'N/A')[:7]}")
+
+            # Generate and display diff against the current working data
             if self.current_data:
                 current_title = self.current_data.get('title', '')
                 current_prompt = self.current_data.get('prompt', '')
@@ -223,7 +240,7 @@ class PromptDialog(QDialog):
 
                 full_diff_html = []
 
-                if original_history_index == len(self.history_data) - 1: # If it's the current version
+                if original_version_index == len(self.versions_data) - 1: # If it's the current version
                     self.diffOutput.setHtml("<b>No changes (this is the current version).</b>")
                     return
 
@@ -261,34 +278,10 @@ class PromptDialog(QDialog):
             else:
                 self.diffOutput.setHtml("<b>Cannot show diff: Current prompt data is not available.</b>")
 
-    def purge_history(self):
-        if not self.history_data or len(self.history_data) <= 1:
-            QMessageBox.information(self, "No History", "There is no history to purge.")
-            return
-
-        message = "Are you sure you want to delete all history for this prompt?\n\nOnly the version displayed as '(Current)' will be kept after clicking Save."
-        msgBox = QMessageBox(self)
-        msgBox.setWindowTitle("History Purge Confirmation")
-        msgBox.setText(message)
-        msgBox.setIcon(QMessageBox.Icon.Warning)
-        yesButton = msgBox.addButton("Yes, purge", QMessageBox.ButtonRole.YesRole)
-        noButton = msgBox.addButton("No, cancel", QMessageBox.ButtonRole.NoRole)
-        msgBox.setDefaultButton(noButton)
-
-        reply = msgBox.exec()
-
-        if msgBox.clickedButton() == yesButton:
-            self.history_purged = True
-            self.purgeHistoryButton.setEnabled(False)
-            self.historyCombo.setEnabled(False)
-            self.purgeHistoryButton.setText("Purged (on Save)")
-            QToolTip.showText(self.purgeHistoryButton.mapToGlobal(self.purgeHistoryButton.rect().bottomLeft()),
-                              "History will be purged when you click on Save.", msecShowTime=3000)
-            print("Marked for purge.")
-
     def accept(self):
         title = self.titleEdit.text().strip()
         prompt_text = self.promptEdit.toPlainText().strip()
+        commit_message = self.commitMessageEdit.text().strip()
 
         if not title:
             QMessageBox.warning(self, "Missing Required Field", "The 'Prompt Title' field cannot be empty.")
@@ -298,6 +291,11 @@ class PromptDialog(QDialog):
         if not prompt_text:
             QMessageBox.warning(self, "Missing Required Field", "The 'Prompt' field cannot be empty.")
             self.promptEdit.setFocus()
+            return
+        
+        if not commit_message:
+            QMessageBox.warning(self, "Missing Required Field", "A 'Commit Message' is required to save changes.")
+            self.commitMessageEdit.setFocus()
             return
 
         super().accept()
@@ -313,12 +311,14 @@ class PromptDialog(QDialog):
             'category': self.categoryCombo.currentText(),
             'tags': sorted(list(set(tags))), # Ensure unique and sorted tags
             'prompt': self.promptEdit.toPlainText(),
-            'note': self.noteEdit.toPlainText()
+            'note': self.noteEdit.toPlainText(),
+            'commit_message': self.commitMessageEdit.text().strip() # Include commit message
         }
 
     def _save_clicked(self):
         title = self.titleEdit.text().strip()
         prompt_text = self.promptEdit.toPlainText().strip()
+        commit_message = self.commitMessageEdit.text().strip()
 
         if not title:
             QMessageBox.warning(self, "Missing Required Field", "The 'Prompt Title' field cannot be empty.")
@@ -328,6 +328,11 @@ class PromptDialog(QDialog):
         if not prompt_text:
             QMessageBox.warning(self, "Missing Required Field", "The 'Prompt' field cannot be empty.")
             self.promptEdit.setFocus()
+            return
+        
+        if not commit_message:
+            QMessageBox.warning(self, "Missing Required Field", "A 'Commit Message' is required to save changes.")
+            self.commitMessageEdit.setFocus()
             return
         
         self.accepted.emit() # Emit custom accepted signal
