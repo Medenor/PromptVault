@@ -161,6 +161,7 @@ The project follows a modular structure:
 - `assets/`: Static assets (images, themes)
 - `data/`: Application data files
 - `docs/`: Documentation and screenshots
+- `i18n/`: Translation files
 
 ## Roadmap
 
