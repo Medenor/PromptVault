@@ -63,7 +63,7 @@ PromptVault is a prompt management application designed to help users easily org
 
 PromptVault includes a robust, Git-like version control system for all prompts, ensuring full traceability and a clear history of changes. Key features include:
 
-*   **Unique Version Identifiers**: Each prompt version is assigned a unique UUID identifier.
+*   **Unique Version Identifiers**: Each prompt version is assigned a UUID.
 *   **Detailed Metadata**: Every version tracks essential metadata such as timestamp, author, and a mandatory commit message.
 *   **Version History View**: A dedicated dialog allows users to browse a prompt's complete version history, displaying each commit with its details.
 *   **Diff Visualization**: Easily compare any two versions to see precise changes in prompt content, title, notes, categories, and tags.
