@@ -9,15 +9,25 @@
                 "tags": ["Python", "Script", "Calculation"],
                 "favorite": false
             },
-            "history": [
+            "versions": [
                 {
-                    "title": "Generate a simple Python code",
-                    "prompt": "Write a Python script that calculates the sum of two numbers.",
-                    "category": "Software Development",
-                    "tags": ["Python", "Script", "Calculation"],
-                    "favorite": false
+                    "version_id": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+                    "timestamp": "2025-09-12T09:23:53.123456Z",
+                    "author": "auto_migrated",
+                    "message": "Initial import",
+                    "data": {
+                        "title": "Generate a simple Python code",
+                        "prompt": "Write a Python script that calculates the sum of two numbers.",
+                        "category": "Software Development",
+                        "tags": ["Python", "Script", "Calculation"],
+                        "favorite": false
+                    },
+                    "parents": []
                 }
-            ]
+            ],
+            "branches": {
+                "main": "a1b2c3d4-e5f6-7890-1234-567890abcdef"
+            }
         },
         "2": {
             "data": {
@@ -27,15 +37,25 @@
                 "tags": ["AI", "Blog", "Ideas"],
                 "favorite": false
             },
-            "history": [
+            "versions": [
                 {
-                    "title": "Content ideas for a blog",
-                    "prompt": "Suggest 5 blog article ideas about artificial intelligence.",
-                    "category": "Content Marketing",
-                    "tags": ["AI", "Blog", "Ideas"],
-                    "favorite": false
+                    "version_id": "b2c3d4e5-f6a7-8901-2345-67890abcdef0",
+                    "timestamp": "2025-09-12T09:23:54.123456Z",
+                    "author": "auto_migrated",
+                    "message": "Initial import",
+                    "data": {
+                        "title": "Content ideas for a blog",
+                        "prompt": "Suggest 5 blog article ideas about artificial intelligence.",
+                        "category": "Content Marketing",
+                        "tags": ["AI", "Blog", "Ideas"],
+                        "favorite": false
+                    },
+                    "parents": []
                 }
-            ]
+            ],
+            "branches": {
+                "main": "b2c3d4e5-f6a7-8901-2345-67890abcdef0"
+            }
         },
         "3": {
             "data": {
@@ -45,15 +65,25 @@
                 "tags": ["Email", "Professional", "Interview"],
                 "favorite": false
             },
-            "history": [
+            "versions": [
                 {
-                    "title": "Write a thank-you email",
-                    "prompt": "Draft a professional thank-you email after a job interview.",
-                    "category": "Communication",
-                    "tags": ["Email", "Professional", "Interview"],
-                    "favorite": false
+                    "version_id": "c3d4e5f6-a7b8-9012-3456-7890abcdef01",
+                    "timestamp": "2025-09-12T09:23:55.123456Z",
+                    "author": "auto_migrated",
+                    "message": "Initial import",
+                    "data": {
+                        "title": "Write a thank-you email",
+                        "prompt": "Draft a professional thank-you email after a job interview.",
+                        "category": "Communication",
+                        "tags": ["Email", "Professional", "Interview"],
+                        "favorite": false
+                    },
+                    "parents": []
                 }
-            ]
+            ],
+            "branches": {
+                "main": "c3d4e5f6-a7b8-9012-3456-7890abcdef01"
+            }
         }
     },
     "categories": [
