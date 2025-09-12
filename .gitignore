@@ -1,3 +1,5 @@
 prompts_data.json
 __pycache__/
 .DS_Store
+git note.md
+*.qm

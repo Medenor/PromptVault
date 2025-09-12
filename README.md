@@ -129,6 +129,27 @@ PYTHONPATH=. python -m src.main
 
 The application will open, allowing you to start managing your prompts.
 
+### Internationalization
+
+PromptVault supports multiple languages. The application will automatically detect your system language, but you can also change languages from the View → Language menu.
+
+#### For Developers
+
+**Translation Files:**
+- `.ts` files (source): Human-readable XML files containing translatable strings
+- `.qm` files (compiled): Binary files used by Qt at runtime
+
+**Building Translations:**
+Before packaging or distribution, compile the translation files:
+
+```bash
+python build_translations.py
+```
+
+This will generate `.qm` files from all `.ts` files in the `i18n/` directory.
+
+**Note:** Only `.ts` files are tracked in version control. `.qm` files are generated during build and are ignored by git.
+
 ### Project Structure
 
 The project follows a modular structure:
