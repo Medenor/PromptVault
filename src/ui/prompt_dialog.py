@@ -57,7 +57,7 @@ class PromptDialog(QDialog):
         return "".join(html_diff)
 
     def initUI(self, data=None):
-        self.setWindowTitle('Add/Edit Prompt')
+        self.setWindowTitle(self.tr('Add/Edit Prompt'))
         layout = QVBoxLayout(self)
 
         if self.versions_data and len(self.versions_data) > 1: # Use versions_data
@@ -71,7 +71,7 @@ class PromptDialog(QDialog):
                 self.historyCombo.addItem(version_label, i)
             self.historyCombo.currentIndexChanged.connect(self.display_history_version)
             self.historyCombo.setCurrentIndex(0)
-            history_layout.addWidget(QLabel("History:"), 0)
+            history_layout.addWidget(QLabel(self.tr("History:")), 0)
             history_layout.addWidget(self.historyCombo, 1)
 
             # The purge history button and its functionality are removed as they are not compatible
@@ -81,19 +81,19 @@ class PromptDialog(QDialog):
 
             layout.addLayout(history_layout)
 
-        layout.addWidget(QLabel('Prompt Title:'))
+        layout.addWidget(QLabel(self.tr('Prompt Title:')))
         self.titleEdit = QLineEdit()
-        self.titleEdit.setPlaceholderText("Add prompt title here")
+        self.titleEdit.setPlaceholderText(self.tr("Add prompt title here"))
         if data:
             self.titleEdit.setText(data.get('title', ''))
         layout.addWidget(self.titleEdit)
 
-        self.favoriteCheckbox = QCheckBox("Mark as favorite")
+        self.favoriteCheckbox = QCheckBox(self.tr("Mark as favorite"))
         if data:
             self.favoriteCheckbox.setChecked(data.get('favorite', False))
         layout.addWidget(self.favoriteCheckbox)
 
-        layout.addWidget(QLabel('Category:'))
+        layout.addWidget(QLabel(self.tr('Category:')))
         self.categoryCombo = QComboBox()
         display_categories = list(self.categories)
         if 'No category' not in display_categories:
@@ -108,15 +108,15 @@ class PromptDialog(QDialog):
         layout.addWidget(self.categoryCombo)
 
 
-        layout.addWidget(QLabel('Tags:'))
-        
+        layout.addWidget(QLabel(self.tr('Tags:')))
+
         # New layout for tag input and list
         tag_input_layout = QHBoxLayout()
         self.tagInputEdit = QLineEdit()
-        self.tagInputEdit.setPlaceholderText("Type a tag and press Enter or click Add")
+        self.tagInputEdit.setPlaceholderText(self.tr("Type a tag and press Enter or click Add"))
         tag_input_layout.addWidget(self.tagInputEdit)
 
-        self.addTagButton = QPushButton("Add Tag")
+        self.addTagButton = QPushButton(self.tr("Add Tag"))
         self.addTagButton.clicked.connect(self._add_tag_from_input)
         tag_input_layout.addWidget(self.addTagButton)
         layout.addLayout(tag_input_layout)
@@ -128,7 +128,7 @@ class PromptDialog(QDialog):
                 self.tagsListWidget.addItem(tag)
         layout.addWidget(self.tagsListWidget)
 
-        self.removeTagButton = QPushButton("Remove Selected Tags")
+        self.removeTagButton = QPushButton(self.tr("Remove Selected Tags"))
         self.removeTagButton.clicked.connect(self._remove_selected_tags)
         layout.addWidget(self.removeTagButton)
 
@@ -143,16 +143,16 @@ class PromptDialog(QDialog):
         self.tagInputEdit.textEdited.connect(self._update_completer_prefix)
         self.tagInputEdit.returnPressed.connect(self._add_tag_from_input) # Add tag on Enter key press
 
-        layout.addWidget(QLabel('Prompt:'))
+        layout.addWidget(QLabel(self.tr('Prompt:')))
         self.promptEdit = QTextEdit()
-        self.promptEdit.setPlaceholderText("Add prompt here")
+        self.promptEdit.setPlaceholderText(self.tr("Add prompt here"))
         if data:
             self.promptEdit.setPlainText(data.get('prompt', ''))
         layout.addWidget(self.promptEdit)
 
-        layout.addWidget(QLabel('Note:'))
+        layout.addWidget(QLabel(self.tr('Note:')))
         self.noteEdit = QTextEdit()
-        self.noteEdit.setPlaceholderText("Add additional notes or information here...")
+        self.noteEdit.setPlaceholderText(self.tr("Add additional notes or information here..."))
         if data:
             self.noteEdit.setPlainText(data.get('note', ''))
         layout.addWidget(self.noteEdit)
@@ -160,19 +160,19 @@ class PromptDialog(QDialog):
         self.diffOutput = QTextEdit()
         self.diffOutput.setReadOnly(True)
         self.diffOutput.setLineWrapMode(QTextEdit.LineWrapMode.NoWrap)
-        self.diffOutput.setPlaceholderText("Diff will appear here when comparing history versions.")
+        self.diffOutput.setPlaceholderText(self.tr("Diff will appear here when comparing history versions."))
         layout.addWidget(self.diffOutput)
 
-        layout.addWidget(QLabel('Commit Message:'))
+        layout.addWidget(QLabel(self.tr('Commit Message:')))
         self.commitMessageEdit = QLineEdit()
-        self.commitMessageEdit.setPlaceholderText("Enter a commit message for this change (required)")
+        self.commitMessageEdit.setPlaceholderText(self.tr("Enter a commit message for this change (required)"))
         layout.addWidget(self.commitMessageEdit)
 
         if self.is_panel:
             # For panel mode, use custom buttons and signals
             panel_button_layout = QHBoxLayout()
-            self.saveButton = QPushButton("Save")
-            self.cancelButton = QPushButton("Cancel")
+            self.saveButton = QPushButton(self.tr("Save"))
+            self.cancelButton = QPushButton(self.tr("Cancel"))
             panel_button_layout.addStretch(1)
             panel_button_layout.addWidget(self.saveButton)
             panel_button_layout.addWidget(self.cancelButton)
@@ -213,7 +213,7 @@ class PromptDialog(QDialog):
             # If displaying the current version, allow editing the commit message
             if original_version_index == len(self.versions_data) - 1:
                 self.commitMessageEdit.clear()
-                self.commitMessageEdit.setPlaceholderText("Enter a commit message for this change (required)")
+                self.commitMessageEdit.setPlaceholderText(self.tr("Enter a commit message for this change (required)"))
                 self.commitMessageEdit.setReadOnly(False)
             else:
                 self.commitMessageEdit.setText(version_info.get('message', 'No message')) # Corrected to setText
@@ -284,17 +284,17 @@ class PromptDialog(QDialog):
         commit_message = self.commitMessageEdit.text().strip()
 
         if not title:
-            QMessageBox.warning(self, "Missing Required Field", "The 'Prompt Title' field cannot be empty.")
+            QMessageBox.warning(self, self.tr("Missing Required Field"), self.tr("The 'Prompt Title' field cannot be empty."))
             self.titleEdit.setFocus()
             return
 
         if not prompt_text:
-            QMessageBox.warning(self, "Missing Required Field", "The 'Prompt' field cannot be empty.")
+            QMessageBox.warning(self, self.tr("Missing Required Field"), self.tr("The 'Prompt' field cannot be empty."))
             self.promptEdit.setFocus()
             return
-        
+
         if not commit_message:
-            QMessageBox.warning(self, "Missing Required Field", "A 'Commit Message' is required to save changes.")
+            QMessageBox.warning(self, self.tr("Missing Required Field"), self.tr("A 'Commit Message' is required to save changes."))
             self.commitMessageEdit.setFocus()
             return
 
@@ -321,20 +321,20 @@ class PromptDialog(QDialog):
         commit_message = self.commitMessageEdit.text().strip()
 
         if not title:
-            QMessageBox.warning(self, "Missing Required Field", "The 'Prompt Title' field cannot be empty.")
+            QMessageBox.warning(self, self.tr("Missing Required Field"), self.tr("The 'Prompt Title' field cannot be empty."))
             self.titleEdit.setFocus()
             return
 
         if not prompt_text:
-            QMessageBox.warning(self, "Missing Required Field", "The 'Prompt' field cannot be empty.")
+            QMessageBox.warning(self, self.tr("Missing Required Field"), self.tr("The 'Prompt' field cannot be empty."))
             self.promptEdit.setFocus()
             return
-        
+
         if not commit_message:
-            QMessageBox.warning(self, "Missing Required Field", "A 'Commit Message' is required to save changes.")
+            QMessageBox.warning(self, self.tr("Missing Required Field"), self.tr("A 'Commit Message' is required to save changes."))
             self.commitMessageEdit.setFocus()
             return
-        
+
         self.accepted.emit() # Emit custom accepted signal
 
     def _cancel_clicked(self):

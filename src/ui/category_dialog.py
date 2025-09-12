@@ -10,7 +10,7 @@ class CategoryDialog(QDialog):
         self.initUI()
 
     def initUI(self):
-        self.setWindowTitle('Manage Categories')
+        self.setWindowTitle(self.tr('Manage Categories'))
         layout = QVBoxLayout(self)
 
         self.categoryList = QListWidget()
@@ -19,11 +19,11 @@ class CategoryDialog(QDialog):
         layout.addWidget(self.categoryList)
 
         button_layout = QHBoxLayout()
-        self.addButton = QPushButton('Add')
+        self.addButton = QPushButton(self.tr('Add'))
         self.addButton.clicked.connect(self.addCategory)
         button_layout.addWidget(self.addButton)
 
-        self.removeButton = QPushButton('Remove')
+        self.removeButton = QPushButton(self.tr('Remove'))
         self.removeButton.clicked.connect(self.removeCategory)
         button_layout.addWidget(self.removeButton)
 
@@ -35,32 +35,32 @@ class CategoryDialog(QDialog):
         layout.addWidget(buttonBox)
 
     def addCategory(self):
-        category, ok = QInputDialog.getText(self, 'Add Category', 'Category Name:')
+        category, ok = QInputDialog.getText(self, self.tr('Add Category'), self.tr('Category Name:'))
         if ok and category:
             if category == 'No category':
-                 QMessageBox.warning(self, "Reserved Name", "'No category' is a reserved name.")
+                 QMessageBox.warning(self, self.tr("Reserved Name"), self.tr("'No category' is a reserved name."))
                  return
             if category not in self.categories:
                 self.categories.append(category)
                 self.categoryList.addItem(category)
                 self.categoryList.sortItems(Qt.SortOrder.AscendingOrder)
             else:
-                QMessageBox.warning(self, "Category Exists", "This category already exists.")
+                QMessageBox.warning(self, self.tr("Category Exists"), self.tr("This category already exists."))
 
     def removeCategory(self):
         selected_items = self.categoryList.selectedItems()
         if not selected_items:
-            QMessageBox.warning(self, "No Selection", "Please select a category to remove.")
+            QMessageBox.warning(self, self.tr("No Selection"), self.tr("Please select a category to remove."))
             return
 
         category_to_remove = selected_items[0].text()
 
         if category_to_remove == 'No category':
-             QMessageBox.warning(self, "Deletion Impossible", "The category 'No category' cannot be deleted.")
+             QMessageBox.warning(self, self.tr("Deletion Impossible"), self.tr("The category 'No category' cannot be deleted."))
              return
 
-        reply = QMessageBox.question(self, 'Confirmation',
-                                     f"Delete category '{category_to_remove}'?\nAssociated prompts will be moved to 'No category'.",
+        reply = QMessageBox.question(self, self.tr('Confirmation'),
+                                     self.tr("Delete category '{0}'?\nAssociated prompts will be moved to 'No category'.").format(category_to_remove),
                                      QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No)
 
         if reply == QMessageBox.StandardButton.Yes:

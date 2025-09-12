@@ -17,7 +17,7 @@ class TagDialog(QDialog):
         self.initUI()
 
     def initUI(self):
-        self.setWindowTitle('Manage Tags')
+        self.setWindowTitle(self.tr('Manage Tags'))
         layout = QVBoxLayout(self)
 
         self.tagListWidget = QListWidget()
@@ -25,15 +25,15 @@ class TagDialog(QDialog):
         layout.addWidget(self.tagListWidget)
 
         button_layout = QHBoxLayout()
-        self.addButton = QPushButton('Add')
+        self.addButton = QPushButton(self.tr('Add'))
         self.addButton.clicked.connect(self.addTag)
         button_layout.addWidget(self.addButton)
 
-        self.renameButton = QPushButton('Rename')
+        self.renameButton = QPushButton(self.tr('Rename'))
         self.renameButton.clicked.connect(self.renameTag)
         button_layout.addWidget(self.renameButton)
 
-        self.removeButton = QPushButton('Remove')
+        self.removeButton = QPushButton(self.tr('Remove'))
         self.removeButton.clicked.connect(self.removeTag)
         button_layout.addWidget(self.removeButton)
 
@@ -50,11 +50,11 @@ class TagDialog(QDialog):
             self.tagListWidget.addItem(tag)
 
     def addTag(self):
-        tag, ok = QInputDialog.getText(self, 'Add Tag', 'Tag Name:')
+        tag, ok = QInputDialog.getText(self, self.tr('Add Tag'), self.tr('Tag Name:'))
         tag = tag.strip()
         if ok and tag:
             if tag in self.current_tags:
-                QMessageBox.warning(self, "Tag Exists", f"The tag '{tag}' already exists.")
+                QMessageBox.warning(self, self.tr("Tag Exists"), self.tr("The tag '{0}' already exists.").format(tag))
                 return
             self.current_tags.add(tag)
             self.added_tags.add(tag)
@@ -66,20 +66,20 @@ class TagDialog(QDialog):
     def renameTag(self):
         selected_items = self.tagListWidget.selectedItems()
         if not selected_items:
-            QMessageBox.warning(self, "No Selection", "Please select a tag to rename.")
+            QMessageBox.warning(self, self.tr("No Selection"), self.tr("Please select a tag to rename."))
             return
         if len(selected_items) > 1:
-             QMessageBox.warning(self, "Multiple Selection", "Please select only one tag to rename.")
+             QMessageBox.warning(self, self.tr("Multiple Selection"), self.tr("Please select only one tag to rename."))
              return
 
         old_name = selected_items[0].text()
 
-        new_name, ok = QInputDialog.getText(self, 'Rename Tag', f"New name for '{old_name}':", text=old_name)
+        new_name, ok = QInputDialog.getText(self, self.tr('Rename Tag'), self.tr("New name for '{0}':").format(old_name), text=old_name)
         new_name = new_name.strip()
 
         if ok and new_name and new_name != old_name:
             if new_name in self.current_tags:
-                QMessageBox.warning(self, "Tag Exists", f"The tag '{new_name}' already exists.")
+                QMessageBox.warning(self, self.tr("Tag Exists"), self.tr("The tag '{0}' already exists.").format(new_name))
                 return
 
             self.current_tags.remove(old_name)
@@ -110,13 +110,13 @@ class TagDialog(QDialog):
     def removeTag(self):
         selected_items = self.tagListWidget.selectedItems()
         if not selected_items:
-            QMessageBox.warning(self, "No Selection", "Please select at least one tag to remove.")
+            QMessageBox.warning(self, self.tr("No Selection"), self.tr("Please select at least one tag to remove."))
             return
 
         tags_to_remove = {item.text() for item in selected_items}
 
-        reply = QMessageBox.question(self, 'Confirmation',
-                                     f"Delete selected tag(s)?\nThey will be removed from all prompts.",
+        reply = QMessageBox.question(self, self.tr('Confirmation'),
+                                     self.tr("Delete selected tag(s)?\nThey will be removed from all prompts."),
                                      QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No)
 
         if reply == QMessageBox.StandardButton.Yes:

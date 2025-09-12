@@ -61,7 +61,7 @@ class PromptManager(QWidget):
 
     def initUI(self):
         self.setGeometry(200, 200, 950, 600)
-        self.setWindowTitle('Prompt Manager')
+        self.setWindowTitle(self.tr('Prompt Manager'))
 
         main_layout = QHBoxLayout(self)
         
@@ -74,10 +74,10 @@ class PromptManager(QWidget):
     def _init_left_panel(self):
         left_layout = QVBoxLayout()
 
-        left_layout.addWidget(QLabel("Categories"))
+        left_layout.addWidget(QLabel(self.tr("Categories")))
 
-        self.manageCategoriesButton = QPushButton('Manage Categories')
-        self.manageCategoriesButton.setToolTip("Manage prompt categories")
+        self.manageCategoriesButton = QPushButton(self.tr('Manage Categories'))
+        self.manageCategoriesButton.setToolTip(self.tr("Manage prompt categories"))
         self.manageCategoriesButton.clicked.connect(self.manageCategories)
         left_layout.addWidget(self.manageCategoriesButton)
 
@@ -85,10 +85,10 @@ class PromptManager(QWidget):
         self.categoryList.itemClicked.connect(self.filter_prompts_by_category)
         left_layout.addWidget(self.categoryList)
 
-        left_layout.addWidget(QLabel("Tags"))
+        left_layout.addWidget(QLabel(self.tr("Tags")))
 
-        self.manageTagsButton = QPushButton('Manage Tags')
-        self.manageTagsButton.setToolTip("Manage tags globally")
+        self.manageTagsButton = QPushButton(self.tr('Manage Tags'))
+        self.manageTagsButton.setToolTip(self.tr("Manage tags globally"))
         self.manageTagsButton.clicked.connect(self.manageTags)
         left_layout.addWidget(self.manageTagsButton)
 
@@ -101,15 +101,15 @@ class PromptManager(QWidget):
         line.setFrameShadow(QFrame.Shadow.Sunken)
         left_layout.addWidget(line)
 
-        left_layout.addWidget(QLabel("Filters"))
+        left_layout.addWidget(QLabel(self.tr("Filters")))
 
-        self.showFavoritesButton = QPushButton("⭐ Show Favorites")
+        self.showFavoritesButton = QPushButton(self.tr("⭐ Show Favorites"))
         self.showFavoritesButton.setCheckable(True)
-        self.showFavoritesButton.setToolTip("Show only prompts marked as favorites")
+        self.showFavoritesButton.setToolTip(self.tr("Show only prompts marked as favorites"))
         self.showFavoritesButton.clicked.connect(self.toggle_favorites_filter)
         left_layout.addWidget(self.showFavoritesButton)
 
-        self.showAllButton = QPushButton("🔄 Show All")
+        self.showAllButton = QPushButton(self.tr("🔄 Show All"))
         self.showAllButton.clicked.connect(self.show_all_prompts)
         left_layout.addWidget(self.showAllButton)
 
@@ -121,12 +121,12 @@ class PromptManager(QWidget):
 
         search_layout = QHBoxLayout()
         self.searchBar = QLineEdit()
-        self.searchBar.setPlaceholderText("Search in title, prompt, note...")
+        self.searchBar.setPlaceholderText(self.tr("Search in title, prompt, note..."))
         self.searchBar.textChanged.connect(self.filter_prompts_by_search)
         search_layout.addWidget(self.searchBar, 1)
 
-        self.caseSensitiveCheckbox = QCheckBox("Case Sensitive")
-        self.caseSensitiveCheckbox.setToolTip("Enable case-sensitive search")
+        self.caseSensitiveCheckbox = QCheckBox(self.tr("Case Sensitive"))
+        self.caseSensitiveCheckbox.setToolTip(self.tr("Enable case-sensitive search"))
         self.caseSensitiveCheckbox.stateChanged.connect(self.filter_prompts_by_search)
         search_layout.addWidget(self.caseSensitiveCheckbox, 0)
 
@@ -141,18 +141,18 @@ class PromptManager(QWidget):
 
 
         button_layout = QHBoxLayout()
-        self.addButton = QPushButton('Add')
-        self.addButton.setToolTip("Add a new prompt")
+        self.addButton = QPushButton(self.tr('Add'))
+        self.addButton.setToolTip(self.tr("Add a new prompt"))
         self.addButton.clicked.connect(self.addPrompt)
         button_layout.addWidget(self.addButton)
 
-        self.editButton = QPushButton('Edit')
-        self.editButton.setToolTip("Edit selected prompt")
+        self.editButton = QPushButton(self.tr('Edit'))
+        self.editButton.setToolTip(self.tr("Edit selected prompt"))
         self.editButton.clicked.connect(self.editPrompt)
         button_layout.addWidget(self.editButton)
 
-        self.deleteButton = QPushButton('Delete')
-        self.deleteButton.setToolTip("Delete selected prompt(s)")
+        self.deleteButton = QPushButton(self.tr('Delete'))
+        self.deleteButton.setToolTip(self.tr("Delete selected prompt(s)"))
         self.deleteButton.clicked.connect(self.deleteSelectedPrompts)
         button_layout.addWidget(self.deleteButton)
 
@@ -263,7 +263,7 @@ class PromptManager(QWidget):
         copy_button = QPushButton()
         copy_button.setObjectName("copyPromptButton") # Add objectName for QSS targeting
         copy_button.setFixedSize(QSize(24, 24))
-        copy_button.setToolTip(f"Copy prompt '{title}'")
+        copy_button.setToolTip(self.tr("Copy prompt '{0}'").format(title))
         copy_button.setStyleSheet("""
             QPushButton { border: none; background-color: transparent; padding: 0px; }
             QPushButton:hover { background-color: rgba(128, 128, 128, 50); }
@@ -290,7 +290,7 @@ class PromptManager(QWidget):
                 clipboard = QApplication.clipboard()
                 clipboard.setText(prompt_text)
                 QToolTip.showText(sender_button.mapToGlobal(sender_button.rect().bottomLeft()),
-                                  "Prompt copied!", widget=sender_button, msecShowTime=1500)
+                                  self.tr("Prompt copied!"), widget=sender_button, msecShowTime=1500)
                 print(f"Prompt ID {prompt_id} copied via integrated button.")
             else:
                 print(f"Error: Could not find prompt ID {prompt_id} from button.")
@@ -387,7 +387,7 @@ class PromptManager(QWidget):
         self.current_editor_instance.rejected.connect(self._cancel_prompt_edit_from_panel)
 
         self.show_editor_panel(True) # Show the dock widget
-        self.editor_dock.setWindowTitle("Add New Prompt")
+        self.editor_dock.setWindowTitle(self.tr("Add New Prompt"))
         print("Opened Add Prompt panel.")
 
     def editPrompt(self):
@@ -396,16 +396,16 @@ class PromptManager(QWidget):
         if prompt_id is None:
              selected_ids = self.get_selected_prompt_ids()
              if not selected_ids:
-                 QMessageBox.warning(self, "No Selection", "Please select a prompt to edit.")
+                 QMessageBox.warning(self, self.tr("No Selection"), self.tr("Please select a prompt to edit."))
                  return
              if len(selected_ids) > 1:
-                 QMessageBox.warning(self, "Multiple Selection", "Please select only one prompt to edit.")
+                 QMessageBox.warning(self, self.tr("Multiple Selection"), self.tr("Please select only one prompt to edit."))
                  return
              prompt_id = selected_ids[0]
 
 
         if prompt_id not in self.prompts:
-            QMessageBox.critical(self, "Error", f"Could not find prompt with ID {prompt_id}.")
+            QMessageBox.critical(self, self.tr("Error"), self.tr("Could not find prompt with ID {0}.").format(prompt_id))
             return
 
         # Use the data service to get prompt data
@@ -428,30 +428,30 @@ class PromptManager(QWidget):
         self.current_editor_instance.rejected.connect(self._cancel_prompt_edit_from_panel)
 
         self.show_editor_panel(True) # Show the dock widget
-        self.editor_dock.setWindowTitle(f"Edit Prompt: {current_data.get('title', 'Untitled')}")
+        self.editor_dock.setWindowTitle(self.tr("Edit Prompt: {0}").format(current_data.get('title', 'Untitled')))
         print(f"Opened Edit Prompt panel for ID {prompt_id}.")
 
     def deleteSelectedPrompts(self):
         selected_ids = self.get_selected_prompt_ids()
 
         if not selected_ids:
-            QMessageBox.warning(self, "No Selection", "Please select at least one prompt to delete.")
+            QMessageBox.warning(self, self.tr("No Selection"), self.tr("Please select at least one prompt to delete."))
             return
 
         prompts_to_delete_titles = [self.prompts[pid]['data'].get('title', 'Untitled') for pid in selected_ids if pid in self.prompts]
 
         count = len(selected_ids)
         if count == 1:
-            message = f"Are you sure you want to delete the prompt '{prompts_to_delete_titles[0]}'?"
+            message = self.tr("Are you sure you want to delete the prompt '{0}'?").format(prompts_to_delete_titles[0])
         else:
-            message = f"Are you sure you want to delete the {count} selected prompts?"
+            message = self.tr("Are you sure you want to delete the {0} selected prompts?").format(count)
 
         msgBox = QMessageBox(self)
-        msgBox.setWindowTitle('Deletion Confirmation')
+        msgBox.setWindowTitle(self.tr('Deletion Confirmation'))
         msgBox.setText(message)
         msgBox.setIcon(QMessageBox.Icon.Question)
-        yesButton = msgBox.addButton("Yes", QMessageBox.ButtonRole.YesRole)
-        noButton = msgBox.addButton("No", QMessageBox.ButtonRole.NoRole)
+        yesButton = msgBox.addButton(self.tr("Yes"), QMessageBox.ButtonRole.YesRole)
+        noButton = msgBox.addButton(self.tr("No"), QMessageBox.ButtonRole.NoRole)
         msgBox.setDefaultButton(noButton)
 
         reply = msgBox.exec()
@@ -492,7 +492,7 @@ class PromptManager(QWidget):
         self.data_service.global_tags = self.global_tags
         
         if not self.data_service.save_prompts():
-            QMessageBox.critical(self, "Save Error", "Could not save prompts.")
+            QMessageBox.critical(self, self.tr("Save Error"), self.tr("Could not save prompts."))
 
 
     def load_prompts(self):
@@ -504,7 +504,7 @@ class PromptManager(QWidget):
             self.categories = self.data_service.categories
             self.global_tags = self.data_service.global_tags
         else:
-            QMessageBox.critical(self, "Load Error", "Could not load prompts.")
+            QMessageBox.critical(self, self.tr("Load Error"), self.tr("Could not load prompts."))
 
     def _migrate_old_data_structure(self, prompt_id, prompt_info):
         # Migration logic for old data structure
@@ -587,12 +587,12 @@ class PromptManager(QWidget):
     def show_context_menu(self, position):
         menu = QMenu()
 
-        edit_action = menu.addAction("Edit")
-        delete_action = menu.addAction("Delete")
-        copy_prompt_action = menu.addAction("Copy Prompt")
-        export_action = menu.addAction("Export")
-        toggle_favorite_action = menu.addAction("Add to Favorites" if not self.is_selected_prompt_favorite() else "Remove from Favorites")
-        view_history_action = menu.addAction("View Version History") # New action
+        edit_action = menu.addAction(self.tr("Edit"))
+        delete_action = menu.addAction(self.tr("Delete"))
+        copy_prompt_action = menu.addAction(self.tr("Copy Prompt"))
+        export_action = menu.addAction(self.tr("Export"))
+        toggle_favorite_action = menu.addAction(self.tr("Add to Favorites") if not self.is_selected_prompt_favorite() else self.tr("Remove from Favorites"))
+        view_history_action = menu.addAction(self.tr("View Version History")) # New action
 
         edit_action.triggered.connect(self.editPrompt)
         delete_action.triggered.connect(self.deleteSelectedPrompts)
@@ -619,29 +619,29 @@ class PromptManager(QWidget):
             clipboard = QApplication.clipboard()
             clipboard.setText(prompt_text)
             QToolTip.showText(self.promptList.mapToGlobal(self.promptList.viewport().rect().center()),
-                              "Prompt copied!", msecShowTime=1500)
+                              self.tr("Prompt copied!"), msecShowTime=1500)
             print(f"Prompt ID {prompt_id} copied via context menu.")
         else:
-            QMessageBox.warning(self, "Copy Failed", "Please select a prompt to copy.")
+            QMessageBox.warning(self, self.tr("Copy Failed"), self.tr("Please select a prompt to copy."))
 
     def view_prompt_history(self):
         prompt_id = self.get_selected_prompt_id()
         if prompt_id is None:
-            QMessageBox.warning(self, "No Selection", "Please select a prompt to view its version history.")
+            QMessageBox.warning(self, self.tr("No Selection"), self.tr("Please select a prompt to view its version history."))
             return
 
         if prompt_id not in self.prompts:
-            QMessageBox.critical(self, "Error", f"Could not find prompt with ID {prompt_id}.")
+            QMessageBox.critical(self, self.tr("Error"), self.tr("Could not find prompt with ID {0}.").format(prompt_id))
             return
 
         # Use the data service to get prompt data and versions
         prompt_data = self.data_service.get_prompt_data(prompt_id)
         versions = self.data_service.get_prompt_versions(prompt_id)
-        
+
         prompt_title = prompt_data.get('title', 'Untitled')
 
         if not versions:
-            QMessageBox.information(self, "No History", "This prompt has no version history yet.")
+            QMessageBox.information(self, self.tr("No History"), self.tr("This prompt has no version history yet."))
             return
 
         dialog = VersionHistoryDialog(self, prompt_id=prompt_id, prompt_title=prompt_title, versions=versions)
@@ -651,7 +651,7 @@ class PromptManager(QWidget):
 
     def _handle_revert_version(self, prompt_id, reverted_data, commit_message):
         if prompt_id not in self.prompts:
-            QMessageBox.critical(self, "Error", f"Could not find prompt with ID {prompt_id} to revert.")
+            QMessageBox.critical(self, self.tr("Error"), self.tr("Could not find prompt with ID {0} to revert.").format(prompt_id))
             return
 
         # Use the data service to revert the prompt to a specific version
@@ -670,7 +670,7 @@ class PromptManager(QWidget):
                                 search_term=self.searchBar.text(),
                                 filter_favorites=self.is_favorites_filter_active())
         self.save_prompts()
-        QMessageBox.information(self, "Revert Successful", f"Prompt '{reverted_data.get('title', 'Untitled')}' successfully reverted.")
+        QMessageBox.information(self, self.tr("Revert Successful"), self.tr("Prompt '{0}' successfully reverted.").format(reverted_data.get('title', 'Untitled')))
 
 
     def is_selected_prompt_favorite(self):
@@ -682,7 +682,7 @@ class PromptManager(QWidget):
     def toggle_selected_prompt_favorite(self):
         selected_ids = self.get_selected_prompt_ids()
         if not selected_ids:
-            QMessageBox.warning(self, "No Selection", "Please select at least one prompt to change its favorite status.")
+            QMessageBox.warning(self, self.tr("No Selection"), self.tr("Please select at least one prompt to change its favorite status."))
             return
 
         current_state_all_favorite = self.is_selected_prompt_favorite()
@@ -714,18 +714,18 @@ class PromptManager(QWidget):
                                     filter_favorites=self.is_favorites_filter_active())
             self.save_prompts()
             QToolTip.showText(self.promptList.mapToGlobal(self.promptList.viewport().rect().center()),
-                              f"Favorite status updated for {len(selected_ids)} prompt(s)!", msecShowTime=1500)
+                              self.tr("Favorite status updated for {0} prompt(s)!").format(len(selected_ids)), msecShowTime=1500)
         else:
             print("No favorite status change necessary.")
 
     def export_selected_prompts(self):
         selected_ids = self.get_selected_prompt_ids()
         if not selected_ids:
-            QMessageBox.warning(self, "No Selection", "Please select at least one prompt to export.")
+            QMessageBox.warning(self, self.tr("No Selection"), self.tr("Please select at least one prompt to export."))
             return
 
-        file_name, _ = QFileDialog.getSaveFileName(self, "Export Selected Prompts", "",
-                                                  "CSV Files (*.csv);;Markdown Files (*.md);;All Files (*)")
+        file_name, _ = QFileDialog.getSaveFileName(self, self.tr("Export Selected Prompts"), "",
+                                                  self.tr("CSV Files (*.csv);;Markdown Files (*.md);;All Files (*)"))
         if file_name:
             try:
                 if file_name.lower().endswith('.csv'):
@@ -733,15 +733,15 @@ class PromptManager(QWidget):
                 elif file_name.lower().endswith('.md'):
                     self._export_to_markdown(file_name, selected_ids)
                 else:
-                    QMessageBox.warning(self, "Export Error", "Unsupported file format. Please use .csv or .md")
+                    QMessageBox.warning(self, self.tr("Export Error"), self.tr("Unsupported file format. Please use .csv or .md"))
                     return
-                QMessageBox.information(self, "Export Successful", f"Selected prompts exported to {file_name}")
+                QMessageBox.information(self, self.tr("Export Successful"), self.tr("Selected prompts exported to {0}").format(file_name))
             except Exception as e:
-                QMessageBox.critical(self, "Export Error", f"Failed to export selected prompts: {e}")
+                QMessageBox.critical(self, self.tr("Export Error"), self.tr("Failed to export selected prompts: {0}").format(e))
 
     def export_prompts(self):
-        file_name, _ = QFileDialog.getSaveFileName(self, "Export Prompts", "",
-                                                  "CSV Files (*.csv);;Markdown Files (*.md);;All Files (*)")
+        file_name, _ = QFileDialog.getSaveFileName(self, self.tr("Export Prompts"), "",
+                                                  self.tr("CSV Files (*.csv);;Markdown Files (*.md);;All Files (*)"))
         if file_name:
             try:
                 if file_name.lower().endswith('.csv'):
@@ -749,11 +749,11 @@ class PromptManager(QWidget):
                 elif file_name.lower().endswith('.md'):
                     self._export_to_markdown(file_name)
                 else:
-                    QMessageBox.warning(self, "Export Error", "Unsupported file format. Please use .csv or .md")
+                    QMessageBox.warning(self, self.tr("Export Error"), self.tr("Unsupported file format. Please use .csv or .md"))
                     return
-                QMessageBox.information(self, "Export Successful", f"Prompts exported to {file_name}")
+                QMessageBox.information(self, self.tr("Export Successful"), self.tr("Prompts exported to {0}").format(file_name))
             except Exception as e:
-                QMessageBox.critical(self, "Export Error", f"Failed to export prompts: {e}")
+                QMessageBox.critical(self, self.tr("Export Error"), self.tr("Failed to export prompts: {0}").format(e))
 
     def _export_to_csv(self, file_path, prompt_ids=None):
         prompts_to_export = list(self.prompts.items())
@@ -774,8 +774,8 @@ class PromptManager(QWidget):
             raise Exception("Failed to export to Markdown")
 
     def import_prompts(self):
-        file_name, _ = QFileDialog.getOpenFileName(self, "Import Prompts", "",
-                                                  "CSV Files (*.csv);;Markdown Files (*.md);;All Files (*)")
+        file_name, _ = QFileDialog.getOpenFileName(self, self.tr("Import Prompts"), "",
+                                                  self.tr("CSV Files (*.csv);;Markdown Files (*.md);;All Files (*)"))
         if file_name:
             try:
                 imported_prompts = []
@@ -784,11 +784,11 @@ class PromptManager(QWidget):
                 elif file_name.lower().endswith('.md'):
                     imported_prompts = self._import_from_markdown(file_name)
                 else:
-                    QMessageBox.warning(self, "Import Error", "Unsupported file format. Please use .csv or .md")
+                    QMessageBox.warning(self, self.tr("Import Error"), self.tr("Unsupported file format. Please use .csv or .md"))
                     return
 
                 if not imported_prompts:
-                    QMessageBox.information(self, "Import Complete", "No prompts found in the selected file.")
+                    QMessageBox.information(self, self.tr("Import Complete"), self.tr("No prompts found in the selected file."))
                     return
 
                 imported_count = 0
@@ -803,10 +803,10 @@ class PromptManager(QWidget):
                                         search_term=self.searchBar.text(),
                                         filter_favorites=self.is_favorites_filter_active())
                 self.save_prompts()
-                QMessageBox.information(self, "Import Successful", f"Successfully imported {imported_count} prompt(s).")
+                QMessageBox.information(self, self.tr("Import Successful"), self.tr("Successfully imported {0} prompt(s).").format(imported_count))
 
             except Exception as e:
-                QMessageBox.critical(self, "Import Error", f"Failed to import prompts: {e}")
+                QMessageBox.critical(self, self.tr("Import Error"), self.tr("Failed to import prompts: {0}").format(e))
 
     def _import_from_csv(self, file_path):
         # Use the import/export service to import from CSV
@@ -818,16 +818,16 @@ class PromptManager(QWidget):
 
     def _handle_duplicate_prompt(self, imported_data, existing_prompt_id):
         msg_box = QMessageBox(self)
-        msg_box.setWindowTitle("Duplicate Prompt Detected")
-        msg_box.setText(f"A prompt with the title '{imported_data.get('title', 'Untitled')}' already exists.")
-        msg_box.setInformativeText("What would you like to do?")
-        
-        skip_button = msg_box.addButton("Skip", QMessageBox.ButtonRole.RejectRole)
-        overwrite_button = msg_box.addButton("Overwrite", QMessageBox.ButtonRole.AcceptRole)
-        keep_both_button = msg_box.addButton("Keep Both", QMessageBox.ButtonRole.ActionRole)
-        
+        msg_box.setWindowTitle(self.tr("Duplicate Prompt Detected"))
+        msg_box.setText(self.tr("A prompt with the title '{0}' already exists.").format(imported_data.get('title', 'Untitled')))
+        msg_box.setInformativeText(self.tr("What would you like to do?"))
+
+        skip_button = msg_box.addButton(self.tr("Skip"), QMessageBox.ButtonRole.RejectRole)
+        overwrite_button = msg_box.addButton(self.tr("Overwrite"), QMessageBox.ButtonRole.AcceptRole)
+        keep_both_button = msg_box.addButton(self.tr("Keep Both"), QMessageBox.ButtonRole.ActionRole)
+
         msg_box.setDefaultButton(skip_button)
-        
+
         msg_box.exec()
 
         if msg_box.clickedButton() == overwrite_button:
@@ -999,7 +999,7 @@ class PromptManager(QWidget):
 
         data = self.current_editor_instance.getPromptData()
         if not data['title']:
-            QMessageBox.warning(self, "Missing Title", "Prompt title cannot be empty.")
+            QMessageBox.warning(self, self.tr("Missing Title"), self.tr("Prompt title cannot be empty."))
             return
 
         prompt_id = self.current_editor_instance.property("editing_prompt_id")
@@ -1015,7 +1015,7 @@ class PromptManager(QWidget):
             print(f"New prompt ID {prompt_id} added from panel.")
         else: # This is an edit operation
             if prompt_id not in self.prompts:
-                QMessageBox.critical(self, "Error", f"Could not find prompt with ID {prompt_id} to save.")
+                QMessageBox.critical(self, self.tr("Error"), self.tr("Could not find prompt with ID {0} to save.").format(prompt_id))
                 return
 
             current_data = self.prompts[prompt_id]['data']
