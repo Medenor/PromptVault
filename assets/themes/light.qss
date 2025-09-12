@@ -77,7 +77,7 @@ QComboBox::drop-down {
 }
 
 QComboBox::down-arrow {
-    image: url(./images/down_arrow_light.png);
+    image: url(assets:images/down_arrow_light.png);
     max-width: 20px;
 }
 
@@ -127,7 +127,7 @@ QTabBar::tab:!selected {
 }
 
 QPushButton#copyPromptButton {
-    image: url(./images/copy_light.png);
+    image: url(assets:images/copy_light.png);
     padding: 0px; /* Remove padding to make icon fit better */
     border: none; /* Remove border */
     background-color: transparent; /* Ensure background is transparent */

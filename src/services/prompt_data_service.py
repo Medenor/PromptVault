@@ -17,8 +17,8 @@ class PromptDataService:
             data_file_path (str): Path to the data file. If None, uses default location.
         """
         if data_file_path is None:
-            script_dir = os.path.dirname(os.path.abspath(__file__))
-            self.data_file = os.path.join(script_dir, "prompts_data.json")
+            script_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+            self.data_file = os.path.join(script_dir, "data", "prompts_data.json")
         else:
             self.data_file = data_file_path
             

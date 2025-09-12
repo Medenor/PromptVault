@@ -11,15 +11,15 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLineEdit,
 from PyQt6.QtGui import QIcon, QPixmap, QPainter, QColor, QAction
 from PyQt6.QtCore import Qt, QSize, pyqtSignal # Added pyqtSignal
 
-from prompt_dialog import PromptDialog
-from category_dialog import CategoryDialog
-from tag_dialog import TagDialog
-from version_history_dialog import VersionHistoryDialog # Import the new dialog
+from .prompt_dialog import PromptDialog
+from .category_dialog import CategoryDialog
+from .tag_dialog import TagDialog
+from .version_history_dialog import VersionHistoryDialog # Import the new dialog
 
-from prompt_data_service import PromptDataService
-from prompt_filter_service import PromptFilterService
-from prompt_versioning_service import PromptVersioningService
-from prompt_import_export_service import PromptImportExportService
+from ..services.prompt_data_service import PromptDataService
+from ..services.prompt_filter_service import PromptFilterService
+from ..services.prompt_versioning_service import PromptVersioningService
+from ..services.prompt_import_export_service import PromptImportExportService
 
 class PromptManager(QWidget):
     # Define a signal to request the main window to show/hide the editor panel
@@ -644,7 +644,7 @@ class PromptManager(QWidget):
             QMessageBox.information(self, "No History", "This prompt has no version history yet.")
             return
 
-        dialog = VersionHistoryDialog(self, prompt_title=prompt_title, versions=versions)
+        dialog = VersionHistoryDialog(self, prompt_id=prompt_id, prompt_title=prompt_title, versions=versions)
         dialog.revertVersion.connect(self._handle_revert_version)
         dialog.exec()
         print(f"Viewed version history for prompt ID {prompt_id}.")
@@ -816,6 +816,43 @@ class PromptManager(QWidget):
         # Use the import/export service to import from Markdown
         return self.import_export_service.import_from_markdown(file_path)
 
+    def _handle_duplicate_prompt(self, imported_data, existing_prompt_id):
+        msg_box = QMessageBox(self)
+        msg_box.setWindowTitle("Duplicate Prompt Detected")
+        msg_box.setText(f"A prompt with the title '{imported_data.get('title', 'Untitled')}' already exists.")
+        msg_box.setInformativeText("What would you like to do?")
+        
+        skip_button = msg_box.addButton("Skip", QMessageBox.ButtonRole.RejectRole)
+        overwrite_button = msg_box.addButton("Overwrite", QMessageBox.ButtonRole.AcceptRole)
+        keep_both_button = msg_box.addButton("Keep Both", QMessageBox.ButtonRole.ActionRole)
+        
+        msg_box.setDefaultButton(skip_button)
+        
+        msg_box.exec()
+
+        if msg_box.clickedButton() == overwrite_button:
+            # Overwrite existing prompt, create a new version using the data service
+            commit_message = f"Import overwrite: {imported_data.get('title', 'Untitled')}"
+            if self.data_service.update_prompt(existing_prompt_id, imported_data, commit_message):
+                # Update local prompts reference
+                self.prompts = self.data_service.prompts
+                print(f"Prompt '{imported_data.get('title')}' overwritten.")
+                return True
+            else:
+                print(f"Failed to overwrite prompt '{imported_data.get('title')}'.")
+                return False
+        elif msg_box.clickedButton() == keep_both_button:
+            # Add as a new prompt with initial version using the data service
+            prompt_id = self.data_service.add_new_prompt(imported_data)
+            # Update local prompts reference
+            self.prompts = self.data_service.prompts
+            self.next_id = self.data_service.next_id
+            print(f"Prompt '{imported_data.get('title')}' imported as new.")
+            return True
+        else: # Skip
+            print(f"Prompt '{imported_data.get('title')}' skipped.")
+            return False
+
     def _handle_imported_prompt(self, imported_data):
         # Check for existing prompt with the same title
         existing_prompt_id = None
@@ -825,42 +862,8 @@ class PromptManager(QWidget):
                 break
 
         if existing_prompt_id is not None:
-            # Duplicate found, ask user for action
-            msg_box = QMessageBox(self)
-            msg_box.setWindowTitle("Duplicate Prompt Detected")
-            msg_box.setText(f"A prompt with the title '{imported_data.get('title', 'Untitled')}' already exists.")
-            msg_box.setInformativeText("What would you like to do?")
-            
-            skip_button = msg_box.addButton("Skip", QMessageBox.ButtonRole.RejectRole)
-            overwrite_button = msg_box.addButton("Overwrite", QMessageBox.ButtonRole.AcceptRole)
-            keep_both_button = msg_box.addButton("Keep Both", QMessageBox.ButtonRole.ActionRole)
-            
-            msg_box.setDefaultButton(skip_button)
-            
-            msg_box.exec()
-
-            if msg_box.clickedButton() == overwrite_button:
-                # Overwrite existing prompt, create a new version using the data service
-                commit_message = f"Import overwrite: {imported_data.get('title', 'Untitled')}"
-                if self.data_service.update_prompt(existing_prompt_id, imported_data, commit_message):
-                    # Update local prompts reference
-                    self.prompts = self.data_service.prompts
-                    print(f"Prompt '{imported_data.get('title')}' overwritten.")
-                    return True
-                else:
-                    print(f"Failed to overwrite prompt '{imported_data.get('title')}'.")
-                    return False
-            elif msg_box.clickedButton() == keep_both_button:
-                # Add as a new prompt with initial version using the data service
-                prompt_id = self.data_service.add_new_prompt(imported_data)
-                # Update local prompts reference
-                self.prompts = self.data_service.prompts
-                self.next_id = self.data_service.next_id
-                print(f"Prompt '{imported_data.get('title')}' imported as new.")
-                return True
-            else: # Skip
-                print(f"Prompt '{imported_data.get('title')}' skipped.")
-                return False
+            # Duplicate found, delegate to helper method
+            return self._handle_duplicate_prompt(imported_data, existing_prompt_id)
         else:
             # No duplicate, add as a new prompt with initial version using the data service
             prompt_id = self.data_service.add_new_prompt(imported_data)

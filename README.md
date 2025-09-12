@@ -121,13 +121,25 @@ This modular design improves code maintainability, testability, and extensibilit
 
 ## Usage
 
-To launch the application, run the `main.py` script:
+To launch the application, run the main module from the project root:
 
 ```bash
-python main.py
+PYTHONPATH=. python -m src.main
 ```
 
 The application will open, allowing you to start managing your prompts.
+
+### Project Structure
+
+The project follows a modular structure:
+
+- `src/`: Main source code directory
+  - `src/main.py`: Application entry point
+  - `src/ui/`: User interface components (dialogs, widgets)
+  - `src/services/`: Business logic and data services
+- `assets/`: Static assets (images, themes)
+- `data/`: Application data files
+- `docs/`: Documentation and screenshots
 
 ## Roadmap
 

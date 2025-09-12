@@ -5,7 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.0] - 2025-11-09
+## [1.0.1] - 2025-09-12
+
+### Changed
+- **Project Structure Reorganization**: Restructured the codebase for better organization and maintainability
+  * Created `src/` directory as main source code container
+  * Moved UI components to `src/ui/` (dialogs, widgets)
+  * Moved business logic to `src/services/` (data, filter, versioning, import/export services)
+  * Consolidated assets in `assets/` directory (images, themes)
+  * Moved data files to `data/` directory
+  * Added `__init__.py` files to create proper Python packages
+  * Updated all import statements to use relative imports
+  * Updated README.md with new project structure and run instructions
+- Changed application launch command to `PYTHONPATH=. python -m src.main`
+- Extracted duplicate prompt handling logic into `_handle_duplicate_prompt` method for improved clarity and maintainability.
+- **Asset Path Fixes**:
+  * Corrected image paths in `assets/themes/dark.qss` and `assets/themes/light.qss` to use `assets:images/` aliases.
+  * Added `assets` as a search path in `src/main.py` to ensure proper loading of resources referenced in QSS files.
+- **Bug Fix: Revert Functionality**:
+  * Addressed a `NameError` in `src/ui/version_history_dialog.py` by adding `QLineEdit` to its imports.
+  * Fixed an issue where the `prompt_id` was not correctly passed to `VersionHistoryDialog` from `src/ui/prompt_manager_widget.py`, resolving the "Could not find prompt with ID XXXXX to revert" error.
+
+## [1.0.0] - 2025-09-11
 
 ### Added
 - Dedicated service classes for improved modularity:

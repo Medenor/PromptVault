@@ -3,8 +3,8 @@ import os
 from PyQt6.QtWidgets import QApplication, QMainWindow, QMenuBar, QMenu, QDockWidget, QWidget, QVBoxLayout, QHBoxLayout, QMessageBox, QDialog, QLabel, QPushButton
 from PyQt6.QtGui import QAction, QDesktopServices, QPixmap
 from PyQt6.QtCore import QDir, Qt, QUrl, QSize
-from prompt_manager_widget import PromptManager
-from theme_manager import ThemeManager
+from .ui.prompt_manager_widget import PromptManager
+from .theme_manager import ThemeManager
 
 # Custom About Dialog for displaying SVG and text
 class AboutDialog(QDialog):
@@ -16,7 +16,7 @@ class AboutDialog(QDialog):
         layout = QVBoxLayout(self)
 
         # Load and display SVG logo
-        logo_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "docs", "images", "promptvault_logo.svg")
+        logo_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "docs", "images", "promptvault_logo.svg")
         logo_label = QLabel(self)
         pixmap = QPixmap(logo_path)
         if not pixmap.isNull():
@@ -53,7 +53,9 @@ class MainWindow(QMainWindow):
     def initUI(self):
         # Initialize ThemeManager
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        themes_path = os.path.join(current_dir, "themes")
+        assets_path = os.path.join(current_dir, "..", "assets")
+        QDir.addSearchPath("assets", assets_path)
+        themes_path = os.path.join(assets_path, "themes")
         QDir.addSearchPath("themes", themes_path)
         self.theme_manager = ThemeManager(QApplication.instance(), themes_path)
         self.theme_manager.load_theme("light") # Set initial theme
