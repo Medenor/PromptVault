@@ -202,7 +202,7 @@ PromptVault is provided **"as is"** without any **warranty**. Use at your own ri
 
 ## License
 
-This project is licensed under the **MIT license**.
+This project is licensed under the **GNU AGPLv3 license**.
 
 See [LICENSE](LICENSE) for more information.
 
