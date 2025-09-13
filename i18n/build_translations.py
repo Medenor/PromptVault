@@ -10,7 +10,7 @@ import sys
 
 def build_translations():
     """Generate .qm files from all .ts files in the i18n directory."""
-    i18n_dir = "i18n"
+    i18n_dir = "."
 
     if not os.path.exists(i18n_dir):
         print(f"Error: {i18n_dir} directory not found!")
