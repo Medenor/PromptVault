@@ -3,8 +3,13 @@ import os
 from PyQt6.QtWidgets import QApplication, QMainWindow, QMenuBar, QMenu, QDockWidget, QWidget, QVBoxLayout, QHBoxLayout, QMessageBox, QDialog, QLabel, QPushButton
 from PyQt6.QtGui import QAction, QDesktopServices, QPixmap
 from PyQt6.QtCore import QDir, Qt, QUrl, QSize, QLocale, QTranslator, QSettings
-from .ui.prompt_manager_widget import PromptManager
-from .theme_manager import ThemeManager
+
+# Add the parent directory of 'src' to the Python path
+# This allows absolute imports from 'src'
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from src.ui.prompt_manager_widget import PromptManager
+from src.theme_manager import ThemeManager
 
 __version__ = "0.1.1"
 
@@ -51,6 +56,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(self.tr('Prompt Manager'))
         self.setGeometry(200, 200, 950, 600)  # Set a default size
         self.initUI()
+        self.load_settings() # Load settings after UI is initialized
 
     def initUI(self):
         # Initialize ThemeManager
@@ -74,25 +80,11 @@ class MainWindow(QMainWindow):
         # Set the central widget container as the central widget
         self.setCentralWidget(central_widget_container)
 
-        # Create the right panel (QDockWidget)
-        self.right_dock = QDockWidget(self.tr("Prompt Editor"), self)
-        self.right_dock.setAllowedAreas(Qt.DockWidgetArea.RightDockWidgetArea)
-        self.right_dock.setFeatures(QDockWidget.DockWidgetFeature.DockWidgetMovable | QDockWidget.DockWidgetFeature.DockWidgetClosable)
-        self.right_dock.setVisible(True) # Set to visible by default
-        self.right_dock.setMinimumWidth(800) # Double the minimum width for the dock widget
-
-        # Create a placeholder widget for the dock content
-        # This will be replaced by PromptDialog content later
-        prompt_editor_panel_content = QWidget()
-        prompt_editor_panel_content.setLayout(QVBoxLayout()) # Use a layout for future content
-        self.right_dock.setWidget(prompt_editor_panel_content)
-        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.right_dock)
-
-        # Pass the dock widget and its content widget to PromptManager
-        self.prompt_manager.set_editor_panel(self.right_dock, prompt_editor_panel_content)
-
         # Create the menu bar
         menubar = self.menuBar()
+        
+        # Initialize QSettings
+        self.settings = QSettings('PromptVault', 'PromptVault')
         
         # Create PromptVault menu (first position)
         self.promptvault_menu = menubar.addMenu(self.tr('PromptVault'))
@@ -133,17 +125,6 @@ class MainWindow(QMainWindow):
         self.dark_theme_action = QAction(self.tr('Dark Theme'), self)
         self.dark_theme_action.triggered.connect(self.theme_manager.set_dark_theme)
         self.view_menu.addAction(self.dark_theme_action)
-
-        # Add separator
-        self.view_menu.addSeparator()
-
-        # Create Toggle Prompt Editor Panel action
-        self.toggle_editor_panel_action = QAction(self.tr('Toggle Prompt Editor Panel'), self)
-        self.toggle_editor_panel_action.setCheckable(True)
-        self.toggle_editor_panel_action.setChecked(self.right_dock.isVisible())
-        self.toggle_editor_panel_action.triggered.connect(self.right_dock.setVisible)
-        self.right_dock.visibilityChanged.connect(self.toggle_editor_panel_action.setChecked) # Keep menu item in sync
-        self.view_menu.addAction(self.toggle_editor_panel_action)
 
         # Create Toggle Fullscreen action
         self.fullscreen_action = QAction(self.tr('Toggle Fullscreen'), self)
@@ -228,7 +209,6 @@ class MainWindow(QMainWindow):
     def retranslateUi(self):
         """Retranslate all UI elements after language change"""
         self.setWindowTitle(self.tr('Prompt Manager'))
-        self.right_dock.setWindowTitle(self.tr("Prompt Editor"))
 
         # Update menu titles
         self.promptvault_menu.setTitle(self.tr('PromptVault'))
@@ -243,7 +223,6 @@ class MainWindow(QMainWindow):
         self.export_action.setText(self.tr('Export'))
         self.light_theme_action.setText(self.tr('Light Theme'))
         self.dark_theme_action.setText(self.tr('Dark Theme'))
-        self.toggle_editor_panel_action.setText(self.tr('Toggle Prompt Editor Panel'))
         self.fullscreen_action.setText(self.tr('Toggle Fullscreen'))
 
         # Update language change messages
@@ -251,6 +230,28 @@ class MainWindow(QMainWindow):
         self.language_changed_message = self.tr("Language has been changed. Some elements may require a restart to display correctly.")
         self.translation_error_title = self.tr("Translation Error")
         self.translation_error_message = self.tr("Could not load translation for the selected language.")
+
+    def closeEvent(self, event):
+        self.save_settings()
+        super().closeEvent(event)
+
+    def save_settings(self):
+        self.settings.setValue('geometry', self.saveGeometry())
+        self.settings.setValue('windowState', self.saveState())
+        self.settings.setValue('promptManagerMainSplitterSizes', self.prompt_manager.main_splitter.saveState())
+        self.settings.setValue('promptManagerRightSplitterSizes', self.prompt_manager.right_splitter.saveState())
+        print("Settings saved.")
+
+    def load_settings(self):
+        if self.settings.contains('geometry'):
+            self.restoreGeometry(self.settings.value('geometry'))
+        if self.settings.contains('windowState'):
+            self.restoreState(self.settings.value('windowState'))
+        if self.settings.contains('promptManagerMainSplitterSizes'):
+            self.prompt_manager.main_splitter.restoreState(self.settings.value('promptManagerMainSplitterSizes'))
+        if self.settings.contains('promptManagerRightSplitterSizes'):
+            self.prompt_manager.right_splitter.restoreState(self.settings.value('promptManagerRightSplitterSizes'))
+        print("Settings loaded.")
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

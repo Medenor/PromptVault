@@ -7,7 +7,7 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLineEdit,
                              QPushButton, QMessageBox, QLabel, QListWidget,
                              QListWidgetItem, QApplication, QAbstractItemView,
                              QToolTip, QDialog, QCheckBox, QSizePolicy,
-                             QSpacerItem, QFrame, QMenu, QFileDialog, QStackedWidget) # Added QStackedWidget
+                             QSpacerItem, QFrame, QMenu, QFileDialog, QStackedWidget, QSplitter) # Added QStackedWidget, QSplitter
 from PyQt6.QtGui import QIcon, QPixmap, QPainter, QColor, QAction
 from PyQt6.QtCore import Qt, QSize, pyqtSignal # Added pyqtSignal
 
@@ -23,8 +23,6 @@ from ..services.prompt_import_export_service import PromptImportExportService
 
 class PromptManager(QWidget):
     # Define a signal to request the main window to show/hide the editor panel
-    showEditorPanel = pyqtSignal(bool)
-
     def __init__(self, data_file_path: str = None):
         super().__init__()
 
@@ -43,36 +41,42 @@ class PromptManager(QWidget):
         self.categories = self.data_service.categories
         self.global_tags = self.data_service.global_tags
         
-        self.editor_dock = None
-        self.editor_content_widget = None
         self.current_editor_instance = None # To keep track of the active PromptDialog instance
+        self.prompt_editor_widget = None # Reference to the prompt editor widget
 
         self.initUI()
         self.update_category_list()
         self.update_tag_list()
         self.update_prompt_list()
 
-    def set_editor_panel(self, dock_widget, content_widget):
-        self.editor_dock = dock_widget
-        self.editor_content_widget = content_widget
-        # Connect the dock's visibilityChanged signal to our own signal
-        self.editor_dock.visibilityChanged.connect(self.showEditorPanel)
-
-
     def initUI(self):
         self.setGeometry(200, 200, 950, 600)
         self.setWindowTitle(self.tr('Prompt Manager'))
 
-        main_layout = QHBoxLayout(self)
+        # Create the main splitter
+        self.main_splitter = QSplitter(Qt.Orientation.Horizontal)
         
+        # Create widget to hold the left panel layout
+        left_panel_widget = QWidget()
         left_layout = self._init_left_panel()
-        right_layout = self._init_right_panel()
+        left_panel_widget.setLayout(left_layout)
 
-        main_layout.addLayout(left_layout, 1)
-        main_layout.addLayout(right_layout, 9)
+        # The right panel is now a QSplitter directly
+        right_splitter_widget = self._init_right_panel()
+
+        # Add widgets to the main splitter
+        self.main_splitter.addWidget(left_panel_widget)
+        self.main_splitter.addWidget(right_splitter_widget)
+
+        # Set initial sizes (e.g., 1 for left, 4 for right)
+        self.main_splitter.setSizes([self.width() // 4, self.width() * 3 // 4])
+
+        main_layout = QVBoxLayout(self) # Changed to QVBoxLayout for the main widget
+        main_layout.addWidget(self.main_splitter)
 
     def _init_left_panel(self):
         left_layout = QVBoxLayout()
+        left_layout.setContentsMargins(0, 0, 0, 0) # Remove margins
 
         left_layout.addWidget(QLabel(self.tr("Categories")))
 
@@ -117,7 +121,13 @@ class PromptManager(QWidget):
         return left_layout
 
     def _init_right_panel(self):
-        right_layout = QVBoxLayout()
+        # Create a splitter for the right side (prompt list and editor)
+        self.right_splitter = QSplitter(Qt.Orientation.Horizontal)
+
+        # Widget for the prompt list
+        prompt_list_widget = QWidget()
+        prompt_list_layout = QVBoxLayout(prompt_list_widget)
+        prompt_list_layout.setContentsMargins(0, 0, 0, 0) # Remove margins
 
         search_layout = QHBoxLayout()
         self.searchBar = QLineEdit()
@@ -130,14 +140,14 @@ class PromptManager(QWidget):
         self.caseSensitiveCheckbox.stateChanged.connect(self.filter_prompts_by_search)
         search_layout.addWidget(self.caseSensitiveCheckbox, 0)
 
-        right_layout.addLayout(search_layout)
+        prompt_list_layout.addLayout(search_layout)
 
         self.promptList = QListWidget()
         self.promptList.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
         self.promptList.itemDoubleClicked.connect(self.editPrompt)
         self.promptList.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.promptList.customContextMenuRequested.connect(self.show_context_menu)
-        right_layout.addWidget(self.promptList)
+        prompt_list_layout.addWidget(self.promptList)
 
 
         button_layout = QHBoxLayout()
@@ -157,21 +167,35 @@ class PromptManager(QWidget):
         button_layout.addWidget(self.deleteButton)
 
 
-        right_layout.addLayout(button_layout)
-        return right_layout
+        prompt_list_layout.addLayout(button_layout)
+
+        # Widget for the prompt editor
+        self.prompt_editor_widget = QWidget()
+        self.prompt_editor_widget.setLayout(QVBoxLayout()) # Use a layout for future content
+        self.prompt_editor_widget.layout().setContentsMargins(0, 0, 0, 0) # Remove margins
+        self.prompt_editor_widget.setMinimumWidth(300) # Set a minimum width for the editor
+
+        # Add widgets to the right splitter
+        self.right_splitter.addWidget(prompt_list_widget)
+        self.right_splitter.addWidget(self.prompt_editor_widget)
+
+        # Set initial sizes for the right splitter
+        self.right_splitter.setSizes([self.width() // 2, self.width() // 2])
+
+        return self.right_splitter # Return the splitter, not a layout
 
     def clear_editor_panel(self):
-        if self.editor_content_widget:
+        if self.prompt_editor_widget and self.prompt_editor_widget.layout():
             # Remove all widgets from the layout
-            while self.editor_content_widget.layout().count():
-                child = self.editor_content_widget.layout().takeAt(0)
+            while self.prompt_editor_widget.layout().count():
+                child = self.prompt_editor_widget.layout().takeAt(0)
                 if child.widget():
                     child.widget().deleteLater()
             self.current_editor_instance = None # Clear reference to old editor
 
     def show_editor_panel(self, show=True):
-        if self.editor_dock:
-            self.editor_dock.setVisible(show)
+        if self.prompt_editor_widget:
+            self.prompt_editor_widget.setVisible(show)
 
     def update_category_list(self):
         self.categoryList.clear()
@@ -379,15 +403,15 @@ class PromptManager(QWidget):
         # For a new prompt, there are no existing versions, so pass an empty list
         self.current_editor_instance = PromptDialog(self, data=initial_data, versions=[], categories=self.categories, all_tags=all_available_tags, is_panel=True)
         
-        # Add the dialog's layout to the dock's content widget
-        self.editor_content_widget.layout().addWidget(self.current_editor_instance)
+        # Add the dialog's layout to the editor panel widget
+        self.prompt_editor_widget.layout().addWidget(self.current_editor_instance)
         
         # Connect signals for saving and canceling
         self.current_editor_instance.accepted.connect(self._save_prompt_from_panel)
         self.current_editor_instance.rejected.connect(self._cancel_prompt_edit_from_panel)
 
-        self.show_editor_panel(True) # Show the dock widget
-        self.editor_dock.setWindowTitle(self.tr("Add New Prompt"))
+        self.show_editor_panel(True) # Show the editor panel
+        # No dock widget title to set anymore
         print("Opened Add Prompt panel.")
 
     def editPrompt(self):
@@ -420,15 +444,15 @@ class PromptManager(QWidget):
         self.current_editor_instance = PromptDialog(self, data=current_data, versions=versions, categories=self.categories, all_tags=all_available_tags, is_panel=True)
         self.current_editor_instance.setProperty("editing_prompt_id", prompt_id) # Store the ID being edited
         
-        # Add the dialog's layout to the dock's content widget
-        self.editor_content_widget.layout().addWidget(self.current_editor_instance)
+        # Add the dialog's layout to the editor panel widget
+        self.prompt_editor_widget.layout().addWidget(self.current_editor_instance)
         
         # Connect signals for saving and canceling
         self.current_editor_instance.accepted.connect(self._save_prompt_from_panel)
         self.current_editor_instance.rejected.connect(self._cancel_prompt_edit_from_panel)
 
-        self.show_editor_panel(True) # Show the dock widget
-        self.editor_dock.setWindowTitle(self.tr("Edit Prompt: {0}").format(current_data.get('title', 'Untitled')))
+        self.show_editor_panel(True) # Show the editor panel
+        # No dock widget title to set anymore
         print(f"Opened Edit Prompt panel for ID {prompt_id}.")
 
     def deleteSelectedPrompts(self):
