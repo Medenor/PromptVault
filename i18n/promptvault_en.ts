@@ -43,66 +43,6 @@
       <source>Failed to export prompts: {0}</source>
       <translation>Failed to export prompts: {0}</translation>
     </message>
-    <message>
-      <location filename="../src/ui/prompt_manager_widget.py" line="754" />
-      <source>Prompts exported to {0}</source>
-      <translation>Prompts exported to {0}</translation>
-    </message>
-    <message>
-      <location filename="../src/ui/prompt_manager_widget.py" line="756" />
-      <source>Failed to export prompts: {0}</source>
-      <translation>Failed to export prompts: {0}</translation>
-    </message>
-    <message>
-      <location filename="../src/ui/prompt_manager_widget.py" line="754" />
-      <source>Prompts exported to {0}</source>
-      <translation>Prompts exported to {0}</translation>
-    </message>
-    <message>
-      <location filename="../src/ui/prompt_manager_widget.py" line="756" />
-      <source>Failed to export prompts: {0}</source>
-      <translation>Failed to export prompts: {0}</translation>
-    </message>
-    <message>
-      <location filename="../src/ui/prompt_manager_widget.py" line="754" />
-      <source>Prompts exported to {0}</source>
-      <translation>Prompts exported to {0}</translation>
-    </message>
-    <message>
-      <location filename="../src/ui/prompt_manager_widget.py" line="756" />
-      <source>Failed to export prompts: {0}</source>
-      <translation>Failed to export prompts: {0}</translation>
-    </message>
-    <message>
-      <location filename="../src/ui/prompt_manager_widget.py" line="754" />
-      <source>Prompts exported to {0}</source>
-      <translation>Prompts exported to {0}</translation>
-    </message>
-    <message>
-      <location filename="../src/ui/prompt_manager_widget.py" line="756" />
-      <source>Failed to export prompts: {0}</source>
-      <translation>Failed to export prompts: {0}</translation>
-    </message>
-    <message>
-      <location filename="../src/ui/prompt_manager_widget.py" line="754" />
-      <source>Prompts exported to {0}</source>
-      <translation>Prompts exported to {0}</translation>
-    </message>
-    <message>
-      <location filename="../src/ui/prompt_manager_widget.py" line="756" />
-      <source>Failed to export prompts: {0}</source>
-      <translation>Failed to export prompts: {0}</translation>
-    </message>
-    <message>
-      <location filename="../src/ui/prompt_manager_widget.py" line="754" />
-      <source>Prompts exported to {0}</source>
-      <translation>Prompts exported to {0}</translation>
-    </message>
-    <message>
-      <location filename="../src/ui/prompt_manager_widget.py" line="756" />
-      <source>Failed to export prompts: {0}</source>
-      <translation>Failed to export prompts: {0}</translation>
-    </message>
   </context>
   <context>
     <name>MainWindow</name>
@@ -153,6 +93,36 @@
       <location filename="../src/main.py" line="120" />
       <source>Export</source>
       <translation>Export</translation>
+    </message>
+    <message>
+      <location filename="../src/main.py" line="248" />
+      <source>Create Backup</source>
+      <translation>Create Backup</translation>
+    </message>
+    <message>
+      <location filename="../src/main.py" line="252" />
+      <source>Backup &amp;&amp; Restore</source>
+      <translation>Backup &amp;&amp; Restore</translation>
+    </message>
+    <message>
+      <location filename="../src/main.py" line="285" />
+      <source>Backup Created</source>
+      <translation>Backup Created</translation>
+    </message>
+    <message>
+      <location filename="../src/main.py" line="286" />
+      <source>Manual backup created successfully.\nBackup ID: {0}</source>
+      <translation>Manual backup created successfully.\nBackup ID: {0}</translation>
+    </message>
+    <message>
+      <location filename="../src/main.py" line="289" />
+      <source>Backup Failed</source>
+      <translation>Backup Failed</translation>
+    </message>
+    <message>
+      <location filename="../src/main.py" line="290" />
+      <source>Failed to create manual backup. Check the console for details.</source>
+      <translation>Failed to create manual backup. Check the console for details.</translation>
     </message>
     <message>
       <location filename="../src/main.py" line="236" />
@@ -879,10 +849,6 @@ They will be removed from all prompts.</source>
       <translation>Delete selected tag(s)?
 They will be removed from all prompts.</translation>
     </message>
-    <message>
-      <source>Delete selected tag(s)?\nThey will be removed from all prompts.</source>
-      <translation type="vanished">Delete selected tag(s)?\nThey will be removed from all prompts.</translation>
-    </message>
   </context>
   <context>
     <name>VersionHistoryDialog</name>
@@ -937,6 +903,289 @@ They will be removed from all prompts.</translation>
     <message>
       <source>A commit message is required to perform a revert.</source>
       <translation type="vanished">A commit message is required to perform a revert.</translation>
+    </message>
+  </context>
+  <context>
+    <name>BackupRestoreDialog</name>
+    <message>
+      <location filename="../src/ui/backup_restore_dialog.py" line="17" />
+      <source>Backup &amp;&amp; Restore</source>
+      <translation>Backup &amp; Restore</translation>
+    </message>
+    <message>
+      <location filename="../src/ui/backup_restore_dialog.py" line="25" />
+      <source>Backup &amp;&amp; Restore Management</source>
+      <translation>Backup &amp; Restore Management</translation>
+    </message>
+    <message>
+      <location filename="../src/ui/backup_restore_dialog.py" line="32" />
+      <source>Available Backups:</source>
+      <translation>Available Backups:</translation>
+    </message>
+    <message>
+      <location filename="../src/ui/backup_restore_dialog.py" line="42" />
+      <source>Refresh</source>
+      <translation>Refresh</translation>
+    </message>
+    <message>
+      <location filename="../src/ui/backup_restore_dialog.py" line="46" />
+      <source>Create Backup</source>
+      <translation>Create Backup</translation>
+    </message>
+    <message>
+      <location filename="../src/ui/backup_restore_dialog.py" line="54" />
+      <source>Backup Details:</source>
+      <translation>Backup Details:</translation>
+    </message>
+    <message>
+      <location filename="../src/ui/backup_restore_dialog.py" line="56" />
+      <source>Property</source>
+      <translation>Property</translation>
+    </message>
+    <message>
+      <location filename="../src/ui/backup_restore_dialog.py" line="57" />
+      <source>Value</source>
+      <translation>Value</translation>
+    </message>
+    <message>
+      <location filename="../src/ui/backup_restore_dialog.py" line="66" />
+      <source>Actions:</source>
+      <translation>Actions:</translation>
+    </message>
+    <message>
+      <location filename="../src/ui/backup_restore_dialog.py" line="68" />
+      <source>Restore Selected</source>
+      <translation>Restore Selected</translation>
+    </message>
+    <message>
+      <location filename="../src/ui/backup_restore_dialog.py" line="84" />
+      <source>Delete Selected</source>
+      <translation>Delete Selected</translation>
+    </message>
+    <message>
+      <location filename="../src/ui/backup_restore_dialog.py" line="92" />
+      <source>Backup Statistics:</source>
+      <translation>Backup Statistics:</translation>
+    </message>
+    <message>
+      <location filename="../src/ui/backup_restore_dialog.py" line="108" />
+      <source>Close</source>
+      <translation>Close</translation>
+    </message>
+    <message>
+      <location filename="../src/ui/backup_restore_dialog.py" line="112" />
+      <source>Cleanup Old Backups</source>
+      <translation>Cleanup Old Backups</translation>
+    </message>
+    <message>
+      <location filename="../src/ui/backup_restore_dialog.py" line="119" />
+      <source>Remove backups older than (days):</source>
+      <translation>Remove backups older than (days):</translation>
+    </message>
+    <message>
+      <location filename="../src/ui/backup_restore_dialog.py" line="125" />
+      <source>Cleanup Complete</source>
+      <translation>Cleanup Complete</translation>
+    </message>
+    <message>
+      <location filename="../src/ui/backup_restore_dialog.py" line="126" />
+      <source>{0} old backups removed.</source>
+      <translation>{0} old backups removed.</translation>
+    </message>
+    <message>
+      <location filename="../src/ui/backup_restore_dialog.py" line="135" />
+      <source>Error</source>
+      <translation>Error</translation>
+    </message>
+    <message>
+      <location filename="../src/ui/backup_restore_dialog.py" line="136" />
+      <source>Failed to load backups: {0}</source>
+      <translation>Failed to load backups: {0}</translation>
+    </message>
+    <message>
+      <location filename="../src/ui/backup_restore_dialog.py" line="145" />
+      <source>No backups found</source>
+      <translation>No backups found</translation>
+    </message>
+    <message>
+      <location filename="../src/ui/backup_restore_dialog.py" line="152" />
+      <source>Unknown</source>
+      <translation>Unknown</translation>
+    </message>
+    <message>
+      <location filename="../src/ui/backup_restore_dialog.py" line="153" />
+      <source>Unknown time</source>
+      <translation>Unknown time</translation>
+    </message>
+    <message>
+      <location filename="../src/ui/backup_restore_dialog.py" line="184" />
+      <source>Total Backups: {0}\nTotal Size: {1}\nOldest Backup: {2}\nNewest Backup: {3}\nCompressed: {4}</source>
+      <translation>Total Backups: {0}\nTotal Size: {1}\nOldest Backup: {2}\nNewest Backup: {3}\nCompressed: {4}</translation>
+    </message>
+    <message>
+      <location filename="../src/ui/backup_restore_dialog.py" line="193" />
+      <source>Backup Created</source>
+      <translation>Backup Created</translation>
+    </message>
+    <message>
+      <location filename="../src/ui/backup_restore_dialog.py" line="194" />
+      <source>Backup created successfully.\nBackup ID: {0}</source>
+      <translation>Backup created successfully.\nBackup ID: {0}</translation>
+    </message>
+    <message>
+      <location filename="../src/ui/backup_restore_dialog.py" line="197" />
+      <source>Backup Failed</source>
+      <translation>Backup Failed</translation>
+    </message>
+    <message>
+      <location filename="../src/ui/backup_restore_dialog.py" line="198" />
+      <source>Failed to create backup. Check the console for details.</source>
+      <translation>Failed to create backup. Check the console for details.</translation>
+    </message>
+    <message>
+      <location filename="../src/ui/backup_restore_dialog.py" line="207" />
+      <source>Confirm Restore</source>
+      <translation>Confirm Restore</translation>
+    </message>
+    <message>
+      <location filename="../src/ui/backup_restore_dialog.py" line="208" />
+      <source>Are you sure you want to restore this backup?</source>
+      <translation>Are you sure you want to restore this backup?</translation>
+    </message>
+    <message>
+      <location filename="../src/ui/backup_restore_dialog.py" line="212" />
+      <source>This will:\n• Replace all current data with backup from {0}\n• Create a pre-restore backup automatically\n• Cannot be undone\n\nContinue?</source>
+      <translation>This will:\n• Replace all current data with backup from {0}\n• Create a pre-restore backup automatically\n• Cannot be undone\n\nContinue?</translation>
+    </message>
+    <message>
+      <location filename="../src/ui/backup_restore_dialog.py" line="221" />
+      <source>Restoring Backup</source>
+      <translation>Restoring Backup</translation>
+    </message>
+    <message>
+      <location filename="../src/ui/backup_restore_dialog.py" line="230" />
+      <source>Restore Successful</source>
+      <translation>Restore Successful</translation>
+    </message>
+    <message>
+      <location filename="../src/ui/backup_restore_dialog.py" line="231" />
+      <source>Backup restored successfully. Please restart the application to see changes.</source>
+      <translation>Backup restored successfully. Please restart the application to see changes.</translation>
+    </message>
+    <message>
+      <location filename="../src/ui/backup_restore_dialog.py" line="234" />
+      <source>Restore Failed</source>
+      <translation>Restore Failed</translation>
+    </message>
+    <message>
+      <location filename="../src/ui/backup_restore_dialog.py" line="235" />
+      <source>Failed to restore backup. Check the console for details.</source>
+      <translation>Failed to restore backup. Check the console for details.</translation>
+    </message>
+    <message>
+      <location filename="../src/ui/backup_restore_dialog.py" line="244" />
+      <source>Confirm Delete</source>
+      <translation>Confirm Delete</translation>
+    </message>
+    <message>
+      <location filename="../src/ui/backup_restore_dialog.py" line="245" />
+      <source>Are you sure you want to delete this backup?</source>
+      <translation>Are you sure you want to delete this backup?</translation>
+    </message>
+    <message>
+      <location filename="../src/ui/backup_restore_dialog.py" line="247" />
+      <source>Backup from {0} will be permanently deleted.</source>
+      <translation>Backup from {0} will be permanently deleted.</translation>
+    </message>
+    <message>
+      <location filename="../src/ui/backup_restore_dialog.py" line="257" />
+      <source>Delete Successful</source>
+      <translation>Delete Successful</translation>
+    </message>
+    <message>
+      <location filename="../src/ui/backup_restore_dialog.py" line="258" />
+      <source>Backup deleted successfully.</source>
+      <translation>Backup deleted successfully.</translation>
+    </message>
+    <message>
+      <location filename="../src/ui/backup_restore_dialog.py" line="261" />
+      <source>Delete Failed</source>
+      <translation>Delete Failed</translation>
+    </message>
+    <message>
+      <location filename="../src/ui/backup_restore_dialog.py" line="262" />
+      <source>Could not find backup files to delete.</source>
+      <translation>Could not find backup files to delete.</translation>
+    </message>
+    <message>
+      <location filename="../src/ui/backup_restore_dialog.py" line="265" />
+      <source>Delete Error</source>
+      <translation>Delete Error</translation>
+    </message>
+    <message>
+      <location filename="../src/ui/backup_restore_dialog.py" line="266" />
+      <source>Failed to delete backup: {0}</source>
+      <translation>Failed to delete backup: {0}</translation>
+    </message>
+    <message>
+      <location filename="../src/ui/backup_restore_dialog.py" line="178" />
+      <source>No backups available</source>
+      <translation>No backups available</translation>
+    </message>
+    <message>
+      <location filename="../src/ui/backup_restore_dialog.py" line="200" />
+      <source>Backup ID</source>
+      <translation>Backup ID</translation>
+    </message>
+    <message>
+      <location filename="../src/ui/backup_restore_dialog.py" line="201" />
+      <source>Created</source>
+      <translation>Created</translation>
+    </message>
+    <message>
+      <location filename="../src/ui/backup_restore_dialog.py" line="202" />
+      <source>Size</source>
+      <translation>Size</translation>
+    </message>
+    <message>
+      <location filename="../src/ui/backup_restore_dialog.py" line="203" />
+      <source>Prompts</source>
+      <translation>Prompts</translation>
+    </message>
+    <message>
+      <location filename="../src/ui/backup_restore_dialog.py" line="204" />
+      <source>Created By</source>
+      <translation>Created By</translation>
+    </message>
+    <message>
+      <location filename="../src/ui/backup_restore_dialog.py" line="205" />
+      <source>Data File Modified</source>
+      <translation>Data File Modified</translation>
+    </message>
+    <message>
+      <location filename="../src/ui/backup_restore_dialog.py" line="184" />
+      <source>Total Backups:</source>
+      <translation>Total Backups:</translation>
+    </message>
+    <message>
+      <location filename="../src/ui/backup_restore_dialog.py" line="184" />
+      <source>Total Size:</source>
+      <translation>Total Size:</translation>
+    </message>
+    <message>
+      <location filename="../src/ui/backup_restore_dialog.py" line="184" />
+      <source>Oldest Backup:</source>
+      <translation>Oldest Backup:</translation>
+    </message>
+    <message>
+      <location filename="../src/ui/backup_restore_dialog.py" line="184" />
+      <source>Newest Backup:</source>
+      <translation>Newest Backup:</translation>
+    </message>
+    <message>
+      <location filename="../src/ui/backup_restore_dialog.py" line="184" />
+      <source>Compressed:</source>
+      <translation>Compressed:</translation>
     </message>
   </context>
 </TS>

@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "promptvault"
+version = "0.1.1"
+description = "Desktop prompt manager built with PyQt6."
+readme = "README.md"
+requires-python = ">=3.8"
+license = { file = "LICENSE" }
+authors = [
+  { name = "Medenor" }
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: End Users/Desktop",
+  "License :: OSI Approved :: GNU Affero General Public License v3",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Utilities",
+  "Topic :: Software Development :: User Interfaces",
+]
+dependencies = [
+  "PyQt6==6.9.1",
+  "PyQt6-Qt6==6.9.1",
+  "PyQt6_sip==13.10.2",
+]
+
+[project.urls]
+Homepage = "https://codeberg.org/medenor/promptvault"
+Repository = "https://codeberg.org/medenor/promptvault"
+Issues = "https://codeberg.org/medenor/promptvault/issues"
+
+[tool.setuptools]
+package-dir = { "" = "." }
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]

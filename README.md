@@ -24,7 +24,7 @@
 [![Pull Requests welcome](https://img.shields.io/badge/PRs-welcome-ff69b4.svg?style=flat-square)](https://codeberg.org/medenor/promptvault/issues)
 [![Vibe-coded with love by Medenor](https://img.shields.io/badge/%3C%2F%3E%20with%20%E2%99%A5%20by-Medenor-ff1414.svg?style=flat-square)](https://codeberg.org/medenor)
 [![Switched to Codeberg](https://img.shields.io/badge/Switched_to-Codeberg-blue?style=flat-square&logo=codeberg&logoColor=white)](https://codeberg.org/medenor/promptvault/)
-[![Visual Studio Code](https://custom-icon-badges.demolab.com/badge/Visual%20Studio%20Code-0078d7.svg?logo=vsc&logoColor=white)](#)
+[![Visual Studio Code](https://custom-icon-badges.demolab.com/badge/Visual%20Studio%20Code-0078d7.svg?logo=vsc&logoColor=white)](https://code.visualstudio.com)
 </div>
 
 <details open="open">
@@ -56,29 +56,42 @@ PromptVault is a prompt management application designed to help users easily org
 
 ### Built With
 
-*   [Python](https://www.python.org/)
-*   [PyQt6](https://riverbankcomputing.com/software/pyqt/)
+- [Python](https://www.python.org/)
+- [PyQt6](https://riverbankcomputing.com/software/pyqt/)
 
 ### Version Control
 
 PromptVault includes a robust, Git-like version control system for all prompts, ensuring full traceability and a clear history of changes. Key features include:
 
-*   **Unique Version Identifiers**: Each prompt version is assigned an UUID.
-*   **Detailed Metadata**: Every version tracks essential metadata such as timestamp, author, and a mandatory commit message.
-*   **Version History View**: A dedicated dialog allows users to browse a prompt's complete version history, displaying each commit with its details.
-*   **Diff Visualization**: Easily compare any two versions to see precise changes in prompt content, title, notes, categories, and tags.
-*   **Revert Functionality**: Users can revert a prompt to any previous version, which creates a new commit reflecting the reverted state.
+- **Unique Version Identifiers**: Each prompt version is assigned an UUID.
+- **Detailed Metadata**: Every version tracks essential metadata such as timestamp, author, and a mandatory commit message.
+- **Version History View**: A dedicated dialog allows users to browse a prompt's complete version history, displaying each commit with its details.
+- **Diff Visualization**: Easily compare any two versions to see precise changes in prompt content, title, notes, categories, and tags.
+- **Revert Functionality**: Users can revert a prompt to any previous version, which creates a new commit reflecting the reverted state.
 
 ### Architecture
 
 PromptVault follows a modular architecture with dedicated service classes for different functionalities:
 
-*   **PromptDataService**: Handles all data-related operations including loading, saving, and migration of prompt data
-*   **PromptFilterService**: Manages filtering and searching logic for prompts
-*   **PromptVersioningService**: Handles version control operations for prompts
-*   **PromptImportExportService**: Manages import and export operations in various formats (CSV, Markdown)
+- **PromptDataService**: Handles all data-related operations including loading, saving, and migration of prompt data
+- **PromptFilterService**: Manages filtering and searching logic for prompts
+- **PromptVersioningService**: Handles version control operations for prompts
+- **PromptImportExportService**: Manages import and export operations in various formats (CSV, Markdown)
+- **BackupService**: Provides comprehensive data backup and restoration capabilities with automatic pre-operation backups
 
 This modular design improves code maintainability, testability, and extensibility.
+
+### Data Backup System
+
+PromptVault includes a robust backup system to prevent data loss and enable easy recovery:
+
+- **Automatic Backups**: Pre-operation backups are created automatically before risky operations (import, bulk delete, bulk update)
+- **Manual Backups**: Users can create manual backups at any time through the File menu
+- **Backup Management**: Full-featured backup dialog for viewing, restoring, and managing all backups
+- **Smart Retention**: Configurable cleanup policies to remove old backups and save disk space
+- **Compression**: Automatic compression of older backups to optimize storage usage
+- **Safety Features**: Pre-restore backups ensure no data loss during restoration operations
+- **Complete Metadata**: Every backup includes comprehensive metadata (timestamp, size, prompt count, author)
 
 <details>
 <summary>Screenshots</summary>
@@ -98,25 +111,34 @@ This modular design improves code maintainability, testability, and extensibilit
 
 ### Prerequisites
 
-*   Python 3.6+
+- Python 3.8+
 
 ### Installation
 
-1.  **Clone the repository**:
+1. **Clone the repository**:
+
     ```bash
     git clone https://codeberg.org/medenor/promptvault.git
     cd PromptVault
     ```
 
-2.  **Create a virtual environment** (recommended):
+2. **Create a virtual environment** (recommended):
+
     ```bash
     python -m venv venv
     source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
     ```
 
-3.  **Install dependencies**:
+3. **Install PromptVault and its dependencies**:
+
     ```bash
-    pip install -r requirements.txt
+    pip install .
+    ```
+
+    For development work you can install in editable mode:
+
+    ```bash
+    pip install -e .
     ```
 
 ## Usage
@@ -136,6 +158,7 @@ PromptVault supports multiple languages. The application will automatically dete
 #### For Developers
 
 **Translation Files:**
+
 - `.ts` files (source): Human-readable XML files containing translatable strings
 - `.qm` files (compiled): Binary files used by Qt at runtime
 
@@ -143,7 +166,7 @@ PromptVault supports multiple languages. The application will automatically dete
 Before packaging or distribution, compile the translation files:
 
 ```bash
-python build_translations.py
+python3 i18n/build_translations.py
 ```
 
 This will generate `.qm` files from all `.ts` files in the `i18n/` directory.
@@ -164,6 +187,11 @@ The project follows a modular structure:
 - `i18n/`: Translation files
 
 ## Roadmap
+
+- [ ] **Input Validation & Sanitization:** Ensures data integrity and prevents injection attacks by validating all user inputs.
+- [x] **Data Backup System:** Automatically creates backups to prevent data loss and enable recovery from corruption.
+- [ ] **Error Handling & Logging:** Implements centralized logging and comprehensive error handling for better debugging and user experience.
+- [ ] **Unit Tests:** Establishes comprehensive test coverage for core functionality to catch bugs early and enable safe refactoring.
 
 See the [open issues](https://codeberg.org/medenor/promptvault/issues) for a list of proposed features (and known issues).
 
@@ -208,5 +236,5 @@ See [LICENSE](LICENSE) for more information.
 
 ## Acknowledgements
 
-*   Repository files templates provided by [dec0dOS/amazing-github-template](https://github.com/dec0dOS/amazing-github-template)
-*   Icons by [icons8.com](https://icons8.com)
+- Repository files templates provided by [dec0dOS/amazing-github-template](https://github.com/dec0dOS/amazing-github-template)
+- Icons by [icons8.com](https://icons8.com)

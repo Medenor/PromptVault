@@ -7,17 +7,18 @@ Run this script to compile translations before packaging or distribution.
 import os
 import subprocess
 import sys
+from pathlib import Path
 
 def build_translations():
     """Generate .qm files from all .ts files in the i18n directory."""
-    i18n_dir = "."
+    i18n_dir = Path(__file__).resolve().parent
 
-    if not os.path.exists(i18n_dir):
+    if not i18n_dir.exists():
         print(f"Error: {i18n_dir} directory not found!")
         return False
 
     # Find all .ts files
-    ts_files = [f for f in os.listdir(i18n_dir) if f.endswith('.ts')]
+    ts_files = [f for f in i18n_dir.iterdir() if f.suffix == '.ts']
 
     if not ts_files:
         print(f"No .ts files found in {i18n_dir}")
@@ -26,16 +27,16 @@ def build_translations():
     success_count = 0
 
     for ts_file in ts_files:
-        ts_path = os.path.join(i18n_dir, ts_file)
-        qm_file = ts_file.replace('.ts', '.qm')
-        qm_path = os.path.join(i18n_dir, qm_file)
+        ts_path = ts_file
+        qm_file = ts_file.with_suffix('.qm').name
+        qm_path = i18n_dir / qm_file
 
-        print(f"Compiling {ts_file} -> {qm_file}...")
+        print(f"Compiling {ts_file.name} -> {qm_file}...")
 
         try:
             # Run lrelease to compile the translation
             result = subprocess.run(
-                ['lrelease', ts_path, '-qm', qm_path],
+                ['lrelease', str(ts_path), '-qm', str(qm_path)],
                 capture_output=True,
                 text=True,
                 check=True

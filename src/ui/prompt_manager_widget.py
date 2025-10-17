@@ -20,6 +20,7 @@ from ..services.prompt_data_service import PromptDataService
 from ..services.prompt_filter_service import PromptFilterService
 from ..services.prompt_versioning_service import PromptVersioningService
 from ..services.prompt_import_export_service import PromptImportExportService
+from ..services.backup_service import BackupService
 
 class PromptManager(QWidget):
     # Define a signal to request the main window to show/hide the editor panel
@@ -31,6 +32,7 @@ class PromptManager(QWidget):
         self.filter_service = PromptFilterService()
         self.versioning_service = PromptVersioningService()
         self.import_export_service = PromptImportExportService()
+        self.backup_service = BackupService()
 
         # Load data using the data service
         self.data_service.load_prompts()
@@ -481,6 +483,13 @@ class PromptManager(QWidget):
         reply = msgBox.exec()
 
         if msgBox.clickedButton() == yesButton:
+            # Create pre-delete backup for bulk operations
+            if count > 1:
+                print("Creating pre-bulk-delete backup...")
+                pre_delete_backup = self.backup_service.create_backup("pre_bulk_delete")
+                if not pre_delete_backup:
+                    print("Warning: Could not create pre-bulk-delete backup")
+
             deleted_count = 0
             for prompt_id in selected_ids:
                 # Use the data service to delete the prompt
@@ -712,6 +721,13 @@ class PromptManager(QWidget):
         current_state_all_favorite = self.is_selected_prompt_favorite()
         new_favorite_state = not current_state_all_favorite
 
+        # Create pre-bulk-update backup for multiple prompts
+        if len(selected_ids) > 1:
+            print("Creating pre-bulk-favorite-update backup...")
+            pre_update_backup = self.backup_service.create_backup("pre_bulk_favorite_update")
+            if not pre_update_backup:
+                print("Warning: Could not create pre-bulk-favorite-update backup")
+
         prompts_changed = False
         for prompt_id in selected_ids:
             if prompt_id in self.prompts:
@@ -720,7 +736,7 @@ class PromptManager(QWidget):
                     # Update the prompt data using the data service
                     prompt_data = self.data_service.get_prompt_data(prompt_id)
                     prompt_data['favorite'] = new_favorite_state
-                    
+
                     # Create a new version with the updated favorite status
                     commit_message = f"Toggle favorite status to {new_favorite_state}"
                     if self.data_service.update_prompt(prompt_id, prompt_data, commit_message):
@@ -802,6 +818,12 @@ class PromptManager(QWidget):
                                                   self.tr("CSV Files (*.csv);;Markdown Files (*.md);;All Files (*)"))
         if file_name:
             try:
+                # Create pre-import backup
+                print("Creating pre-import backup...")
+                pre_import_backup = self.backup_service.create_backup("pre_import")
+                if not pre_import_backup:
+                    print("Warning: Could not create pre-import backup")
+
                 imported_prompts = []
                 if file_name.lower().endswith('.csv'):
                     imported_prompts = self._import_from_csv(file_name)

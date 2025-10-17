@@ -10,8 +10,10 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 from src.ui.prompt_manager_widget import PromptManager
 from src.theme_manager import ThemeManager
+from src.services.backup_service import BackupService
+from src.ui.backup_restore_dialog import BackupRestoreDialog
 
-__version__ = "0.1.1"
+__version__ = "0.3.0"
 
 # Custom About Dialog for displaying SVG and text
 class AboutDialog(QDialog):
@@ -55,6 +57,10 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle(self.tr('Prompt Manager'))
         self.setGeometry(200, 200, 950, 600)  # Set a default size
+
+        # Initialize backup service
+        self.backup_service = BackupService()
+
         self.initUI()
         self.load_settings() # Load settings after UI is initialized
 
@@ -112,6 +118,19 @@ class MainWindow(QMainWindow):
         self.export_action = QAction(self.tr('Export'), self)
         self.export_action.triggered.connect(self.prompt_manager.export_prompts)
         self.file_menu.addAction(self.export_action)
+
+        # Add separator before backup actions
+        self.file_menu.addSeparator()
+
+        # Create Manual Backup action
+        self.manual_backup_action = QAction(self.tr('Create Backup'), self)
+        self.manual_backup_action.triggered.connect(self.create_manual_backup)
+        self.file_menu.addAction(self.manual_backup_action)
+
+        # Create Backup & Restore action
+        self.backup_restore_action = QAction(self.tr('Backup && Restore'), self)
+        self.backup_restore_action.triggered.connect(self.show_backup_restore_dialog)
+        self.file_menu.addAction(self.backup_restore_action)
 
         # Create the View menu for themes
         self.view_menu = menubar.addMenu(self.tr('View'))
@@ -252,6 +271,21 @@ class MainWindow(QMainWindow):
         if self.settings.contains('promptManagerRightSplitterSizes'):
             self.prompt_manager.right_splitter.restoreState(self.settings.value('promptManagerRightSplitterSizes'))
         print("Settings loaded.")
+
+    def create_manual_backup(self):
+        """Create a manual backup of current data."""
+        backup_id = self.backup_service.create_backup("manual")
+        if backup_id:
+            QMessageBox.information(self, self.tr("Backup Created"),
+                                  self.tr("Manual backup created successfully.\nBackup ID: {0}").format(backup_id))
+        else:
+            QMessageBox.critical(self, self.tr("Backup Failed"),
+                               self.tr("Failed to create manual backup. Check the console for details."))
+
+    def show_backup_restore_dialog(self):
+        """Show the backup and restore dialog."""
+        dialog = BackupRestoreDialog(self.backup_service, self)
+        dialog.exec()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
