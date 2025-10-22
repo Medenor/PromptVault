@@ -3,24 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PromptVault Web</title>
+    <title>PromptVault</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon.png">
     <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://unpkg.com/i18next@23.7.6/i18next.min.js"></script>
+    <script src="https://unpkg.com/i18next-browser-languagedetector@7.2.0/i18nextBrowserLanguageDetector.min.js"></script>
+    <script src="https://unpkg.com/i18next-http-backend@2.4.2/i18nextHttpBackend.min.js"></script>
 </head>
 <body>
     <div class="app">
         <header class="header">
             <h1>PromptVault</h1>
             <div class="header-actions">
-                <button id="new-prompt-btn">New Prompt</button>
-                <button id="import-btn">Import</button>
-                <button id="export-btn">Export</button>
+                <select id="language-selector" class="language-selector">
+                    <option value="en">English</option>
+                    <option value="fr">Français</option>
+                    <option value="es">Español</option>
+                    <option value="de">Deutsch</option>
+                </select>
+                <button id="new-prompt-btn" data-i18n="nav.newPrompt">New Prompt</button>
+                <button id="import-export-btn" onclick="window.location.href='/import-export'" data-i18n="nav.importExport">Import/Export</button>
             </div>
         </header>
 
         <div class="main-content">
             <div class="sidebar">
                 <div class="sidebar-section">
-                    <h3>Categories</h3>
+                    <h3 data-i18n="nav.categories">Categories</h3>
                     <ul id="categories-list">
                         <li data-category="all" class="active">All Prompts</li>
                         {% for category in categories %}
@@ -30,7 +39,7 @@
                 </div>
 
                 <div class="sidebar-section">
-                    <h3>Tags</h3>
+                    <h3 data-i18n="nav.tags">Tags</h3>
                     <ul id="tags-list">
                         <li data-tag="all" class="active">All Tags</li>
                         {% for tag in tags %}
@@ -40,8 +49,10 @@
                 </div>
 
                 <div class="sidebar-section">
+                    <h3 data-i18n="nav.filters">Filters</h3>
                     <label>
-                        <input type="checkbox" id="favorites-filter"> Show Favorites Only
+                        <input type="checkbox" id="favorites-filter">
+                        <span data-i18n="nav.showFavorites">⭐ Show Favorites</span>
                     </label>
                 </div>
             </div>
@@ -75,17 +86,17 @@
                 <div class="prompt-editor" id="prompt-editor" style="display: none;">
                     <form id="prompt-form">
                         <div class="form-group">
-                            <label for="prompt-title">Title:</label>
-                            <input type="text" id="prompt-title" name="title" required>
+                            <label for="prompt-title" data-i18n="form.title">Title:</label>
+                            <input type="text" id="prompt-title" name="title" data-i18n="[placeholder]form.titlePlaceholder" required>
                         </div>
 
                         <div class="form-group">
-                            <label for="prompt-content">Content:</label>
-                            <textarea id="prompt-content" name="prompt" rows="10" required></textarea>
+                            <label for="prompt-content" data-i18n="form.content">Content:</label>
+                            <textarea id="prompt-content" name="prompt" data-i18n="" rows="10" required></textarea>
                         </div>
 
                         <div class="form-group">
-                            <label for="prompt-category">Category:</label>
+                            <label for="prompt-category" data-i18n="form.category">Category:</label>
                             <select id="prompt-category" name="category">
                                 <option value="">No category</option>
                                 {% for category in categories %}
@@ -95,13 +106,13 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="prompt-tags">Tags (comma-separated):</label>
-                            <input type="text" id="prompt-tags" name="tags">
+                            <label for="prompt-tags" data-i18n="form.tags">Tags (comma-separated):</label>
+                            <input type="text" id="prompt-tags" name="tags" data-i18n="[placeholder]form.tagPlaceholder">
                         </div>
 
                         <div class="form-actions">
-                            <button type="submit">Save</button>
-                            <button type="button" id="cancel-btn">Cancel</button>
+                            <button type="submit" data-i18n="actions.save">Save</button>
+                            <button type="button" id="cancel-btn" data-i18n="actions.cancel">Cancel</button>
                         </div>
                     </form>
                 </div>

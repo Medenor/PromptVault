@@ -1,9 +1,53 @@
 // PromptVault Web App JavaScript
 
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize the app
-    initializeApp();
-});
+// Initialize i18next
+i18next
+    .use(i18nextHttpBackend)
+    .use(i18nextBrowserLanguageDetector)
+    .init({
+        fallbackLng: 'en',
+        debug: false,
+        backend: {
+            loadPath: '/static/locales/{{lng}}.json'
+        }
+    }, function(err, t) {
+        // Initialize the app after i18next is ready
+        if (document.readyState === 'loading') {
+            // DOM is still loading
+            document.addEventListener('DOMContentLoaded', function() {
+                updateStaticTranslations();
+                initializeApp();
+            });
+        } else {
+            // DOM is already loaded
+            updateStaticTranslations();
+            initializeApp();
+        }
+    });
+
+function updateStaticTranslations() {
+    // Update elements with data-i18n attributes
+    document.querySelectorAll('[data-i18n]').forEach(element => {
+        const key = element.getAttribute('data-i18n');
+        if (key) {
+            element.textContent = i18next.t(key);
+        }
+    });
+
+    // Update placeholders
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(element => {
+        const key = element.getAttribute('data-i18n-placeholder');
+        if (key) {
+            element.placeholder = i18next.t(key);
+        }
+    });
+
+    // Update language selector
+    const languageSelector = document.getElementById('language-selector');
+    if (languageSelector) {
+        languageSelector.value = i18next.language;
+    }
+}
 
 function initializeApp() {
     // Event listeners
@@ -16,12 +60,16 @@ function initializeApp() {
 }
 
 function setupEventListeners() {
+    // Language selector
+    document.getElementById('language-selector').addEventListener('change', handleLanguageChange);
+
     // New prompt button
     document.getElementById('new-prompt-btn').addEventListener('click', showNewPromptForm);
 
-    // Import/Export buttons
-    document.getElementById('import-btn').addEventListener('click', handleImport);
-    document.getElementById('export-btn').addEventListener('click', handleExport);
+    // Import/Export button (navigates to import/export page)
+    document.getElementById('import-export-btn').addEventListener('click', function() {
+        window.location.href = '/import-export';
+    });
 
     // Form handling
     document.getElementById('prompt-form').addEventListener('submit', handlePromptSubmit);
@@ -92,22 +140,30 @@ function createPromptElement(id, prompt) {
 
     div.innerHTML = `
         <div class="prompt-header">
-            <h4>${prompt.data.title}</h4>
+            <h4>${prompt.title}</h4>
             <div class="prompt-actions">
                 <button class="favorite-btn" data-id="${id}">
-                    ${prompt.data.favorite ? '★' : '☆'}
+                    ${prompt.favorite ? '★' : '☆'}
                 </button>
-                <button class="copy-btn" data-id="${id}">Copy</button>
-                <button class="edit-btn" data-id="${id}">Edit</button>
-                <button class="delete-btn" data-id="${id}">Delete</button>
+                <button class="copy-btn" data-id="${id}" data-i18n="actions.copy">Copy</button>
+                <button class="edit-btn" data-id="${id}" data-i18n="actions.edit">Edit</button>
+                <button class="delete-btn" data-id="${id}" data-i18n="actions.delete">Delete</button>
             </div>
         </div>
         <div class="prompt-meta">
-            <span class="category">${prompt.data.category || 'No category'}</span>
-            ${prompt.data.tags ? `<span class="tags">${prompt.data.tags.join(', ')}</span>` : ''}
+            <span class="category">${prompt.category || i18next.t('categories.noCategory')}</span>
+            ${prompt.tags ? `<span class="tags">${prompt.tags.join(', ')}</span>` : ''}
         </div>
-        <div class="prompt-content">${truncateText(prompt.data.prompt, 100)}</div>
+        <div class="prompt-content">${truncateText(prompt.prompt, 100)}</div>
     `;
+
+    // Update translations for dynamically created elements
+    div.querySelectorAll('[data-i18n]').forEach(element => {
+        const key = element.getAttribute('data-i18n');
+        if (key) {
+            element.textContent = i18next.t(key);
+        }
+    });
 
     // Add event listeners
     div.querySelector('.copy-btn').addEventListener('click', () => copyPrompt(id));
@@ -200,11 +256,11 @@ async function handlePromptSubmit(event) {
             delete form.dataset.mode;
             delete form.dataset.id;
         } else {
-            alert(`Error saving prompt: ${responseData.error || 'Unknown error'}`);
+            alert(`${i18next.t('messages.error')}: ${responseData.error || i18next.t('messages.unknownError')}`);
         }
     } catch (error) {
         console.error('Error saving prompt:', error);
-        alert('Error saving prompt');
+        alert(i18next.t('messages.error'));
     }
 }
 
@@ -213,15 +269,57 @@ async function copyPrompt(id) {
         const response = await fetch(`/api/prompts/${id}`);
         const prompt = await response.json();
 
-        navigator.clipboard.writeText(prompt.data.prompt).then(() => {
-            // Show temporary feedback
-            const btn = document.querySelector(`.copy-btn[data-id="${id}"]`);
-            const originalText = btn.textContent;
-            btn.textContent = 'Copied!';
-            setTimeout(() => btn.textContent = originalText, 2000);
-        });
+        const textToCopy = prompt.prompt;
+
+        // Try modern Clipboard API first
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(textToCopy);
+            showCopyFeedback(id, 'Copied!');
+        } else {
+            // Fallback for older browsers or non-HTTPS
+            fallbackCopyTextToClipboard(textToCopy, id);
+        }
     } catch (error) {
         console.error('Error copying prompt:', error);
+        showCopyFeedback(id, 'Copy failed');
+    }
+}
+
+function fallbackCopyTextToClipboard(text, id) {
+    // Create a temporary textarea element
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    document.body.appendChild(textArea);
+
+    try {
+        textArea.focus();
+        textArea.select();
+
+        const successful = document.execCommand('copy');
+        if (successful) {
+            showCopyFeedback(id, 'Copied!');
+        } else {
+            showCopyFeedback(id, 'Copy failed');
+        }
+    } catch (error) {
+        console.error('Fallback copy failed:', error);
+        showCopyFeedback(id, 'Copy failed');
+    } finally {
+        document.body.removeChild(textArea);
+    }
+}
+
+function showCopyFeedback(id, message) {
+    const btn = document.querySelector(`.copy-btn[data-id="${id}"]`);
+    if (btn) {
+        const originalText = btn.textContent;
+        // Use translated message if it's a key, otherwise use as-is
+        const translatedMessage = i18next.t(message) !== message ? i18next.t(message) : message;
+        btn.textContent = translatedMessage;
+        setTimeout(() => btn.textContent = originalText, 2000);
     }
 }
 
@@ -237,10 +335,10 @@ async function editPrompt(id) {
         document.getElementById('prompts-list').style.display = 'none';
 
         // Populate form
-        document.getElementById('prompt-title').value = prompt.data.title || '';
-        document.getElementById('prompt-content').value = prompt.data.prompt || '';
-        document.getElementById('prompt-category').value = prompt.data.category || '';
-        document.getElementById('prompt-tags').value = prompt.data.tags ? prompt.data.tags.join(', ') : '';
+        document.getElementById('prompt-title').value = prompt.title || '';
+        document.getElementById('prompt-content').value = prompt.prompt || '';
+        document.getElementById('prompt-category').value = prompt.category || '';
+        document.getElementById('prompt-tags').value = prompt.tags ? prompt.tags.join(', ') : '';
 
         // Change form to update mode
         const form = document.getElementById('prompt-form');
@@ -253,7 +351,7 @@ async function editPrompt(id) {
 }
 
 async function deletePrompt(id) {
-    if (!confirm('Are you sure you want to delete this prompt?')) {
+    if (!confirm(i18next.t('messages.confirmDelete'))) {
         return;
     }
 
@@ -265,17 +363,18 @@ async function deletePrompt(id) {
         if (response.ok) {
             loadPrompts(); // Refresh the list
         } else {
-            alert('Error deleting prompt');
+            alert(i18next.t('messages.error'));
         }
     } catch (error) {
         console.error('Error deleting prompt:', error);
+        alert(i18next.t('messages.error'));
     }
 }
 
 async function toggleFavorite(id) {
     // This would need a specific endpoint for toggling favorite
     // For now, we'll implement a basic version
-    alert('Favorite toggle not yet implemented');
+    alert(i18next.t('messages.favoriteNotImplemented'));
 }
 
 function handleCategoryFilter(event) {
@@ -339,6 +438,20 @@ function filterPrompts(filters) {
     });
 }
 
+function handleLanguageChange(event) {
+    const selectedLanguage = event.target.value;
+    i18next.changeLanguage(selectedLanguage, (err, t) => {
+        if (err) {
+            console.error('Error changing language:', err);
+            return;
+        }
+        // Update all translations on the page
+        updateStaticTranslations();
+        // Re-render prompts to update dynamic content
+        loadPrompts();
+    });
+}
+
 function handleImport() {
     // Create file input
     const input = document.createElement('input');
@@ -364,6 +477,7 @@ function hideModal() {
 }
 
 function truncateText(text, maxLength) {
+    if (!text) return '';
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + '...';
 }
