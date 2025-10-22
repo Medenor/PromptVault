@@ -5,6 +5,92 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2025-10-22
+
+### Added
+
+- **🚀 Web Application Architecture**: Complete transformation from PyQt6 desktop application to modern web-based application
+  - **FastAPI Backend**: High-performance ASGI web framework replacing PyQt6 GUI
+  - **REST API**: Full CRUD operations via RESTful endpoints (`/api/prompts`, `/api/categories`, `/api/tags`)
+  - **Web UI**: Responsive HTML interface with Jinja2 templating
+  - **Interactive Frontend**: JavaScript-based client-side functionality for seamless user experience
+  - **Real-time Updates**: Dynamic prompt list updates without page refreshes
+
+- **🐳 Docker Containerization**: Production-ready deployment with Docker
+  - **Dockerfile**: Multi-stage build with Python slim image and GCC for dependencies
+  - **Docker Compose**: One-command deployment with volume mounting for data persistence
+  - **Volume Management**: Secure data storage outside container (`./data:/app/data`)
+  - **Health Checks**: Built-in container health monitoring
+
+- **🔒 Security Enhancements**: Enterprise-grade security practices
+  - **Data Isolation**: Personal data excluded from Docker images (no sensitive data in containers)
+  - **Volume Mounting**: Data stored on host filesystem with proper access controls
+  - **Clean Builds**: `--no-cache` builds ensure no residual data in images
+
+- **📱 Responsive Web Design**: Modern, accessible user interface
+  - **Mobile-First**: Works seamlessly on desktop, tablet, and mobile devices
+  - **CSS Framework**: Clean, maintainable stylesheets with theming support
+  - **Progressive Enhancement**: Graceful degradation for older browsers
+
+- **🔧 Developer Experience**: Improved development workflow
+  - **Hot Reload**: Development server with automatic code reloading
+  - **Debug Logging**: Comprehensive client and server-side logging for troubleshooting
+  - **Modular Architecture**: Clean separation between web, services, and legacy components
+
+### Changed
+
+- **Breaking Change**: Desktop application moved to legacy status
+  - Original PyQt6 application preserved in `src/main.py` and `src/ui/`
+  - Desktop version marked as deprecated, web version now primary
+  - Data format remains compatible between versions
+
+- **Project Structure**: Web-first architecture with clear separation
+  - `src/web/` promoted to primary application module
+  - `src/services/` shared between web and desktop versions
+  - Legacy desktop components moved to `src/ui/` and `src/main.py`
+
+- **Dependencies**: Complete technology stack modernization
+  - **Removed**: PyQt6, Qt dependencies (desktop GUI framework)
+  - **Added**: FastAPI, Uvicorn, Jinja2, python-multipart (web framework)
+  - **Updated**: Python packaging to modern `pyproject.toml` standards
+
+### Removed
+
+- **PyQt6 Dependencies**: Desktop GUI framework completely removed from web deployment
+- **Legacy UI Components**: Desktop-specific widgets and dialogs deprecated
+- **Personal Data in Images**: Sensitive data no longer included in Docker containers
+
+### Fixed
+
+- **Data Persistence**: Fixed critical bug where prompt changes weren't saved to disk
+- **API Endpoints**: Resolved type conversion issues between string URLs and integer IDs
+- **Template Rendering**: Fixed Jinja2 template errors with incorrect field references
+- **Form Validation**: Improved client-side validation and error handling
+
+### Dependencies
+
+- **Added**:
+  - `fastapi` - Modern web framework
+  - `uvicorn[standard]` - ASGI server with hot reload
+  - `jinja2` - Template engine
+  - `python-multipart` - Form data handling
+  - `aiofiles` - Async file operations
+- **Removed**:
+  - `PyQt6` and all Qt-related packages
+  - `PyQt6-Qt6` system dependencies
+
+### Migration Guide
+
+**For Existing Users:**
+1. **Data Preservation**: Your existing `data/prompts_data.json` file is fully compatible
+2. **Web Migration**: Use `docker-compose up --build` for new web deployment
+3. **Legacy Access**: Desktop version still available via `PYTHONPATH=. python -m src.main`
+
+**For Developers:**
+- Web application runs on `http://localhost:8001` (Docker) or `http://localhost:8000` (development)
+- API endpoints available at `/api/*` routes
+- All original functionality preserved with improved performance
+
 ## [0.4.0] - 2025-10-17
 
 ### Added

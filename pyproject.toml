@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "promptvault"
 version = "0.1.1"
-description = "Desktop prompt manager built with PyQt6."
+description = "Web-based prompt manager for organizing and versioning AI prompts."
 readme = "README.md"
 requires-python = ">=3.8"
 license = { file = "LICENSE" }
@@ -22,13 +22,16 @@ classifiers = [
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
+  "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
   "Topic :: Utilities",
-  "Topic :: Software Development :: User Interfaces",
+  "Framework :: FastAPI",
 ]
 dependencies = [
-  "PyQt6==6.9.1",
-  "PyQt6-Qt6==6.9.1",
-  "PyQt6_sip==13.10.2",
+  "fastapi==0.104.1",
+  "uvicorn[standard]==0.24.0",
+  "jinja2==3.1.2",
+  "python-multipart==0.0.6",
+  "aiofiles==23.2.1",
 ]
 
 [project.urls]

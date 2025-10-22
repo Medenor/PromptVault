@@ -60,20 +60,20 @@ class PromptDataService:
             print(f"Unknown Save Error: An unexpected error occurred while saving: {e}")
             return False
 
-    def load_prompts(self) -> bool:
+    def load_prompts(self) -> Dict[int, Dict]:
         """
         Load prompts from the data file.
-        
+
         Returns:
-            bool: True if successful, False otherwise
+            Dict[int, Dict]: The loaded prompts
         """
         if not os.path.exists(self.data_file):
             self.prompts = {}
             self.next_id = 0
             self.categories = []
             self.global_tags = set()
-            return True
-            
+            return self.prompts
+
         try:
             with open(self.data_file, 'r', encoding='utf-8') as f:
                 loaded_data = json.load(f)
@@ -94,21 +94,21 @@ class PromptDataService:
                 self.categories = loaded_data.get('categories', [])
                 self.categories.sort()
                 self.global_tags = set(loaded_data.get('global_tags', []))
-            return True
+            return self.prompts
         except (IOError, json.JSONDecodeError) as e:
             print(f"Load Error: Could not load prompts from {self.data_file}: {e}")
             self.prompts = {}
             self.next_id = 0
             self.categories = []
             self.global_tags = set()
-            return False
+            return self.prompts
         except Exception as e:
             print(f"Unknown Error: An unexpected error occurred while loading: {e}")
             self.prompts = {}
             self.next_id = 0
             self.categories = []
             self.global_tags = set()
-            return False
+            return self.prompts
 
     def _migrate_old_data_structure(self, prompt_id: int, prompt_info: Dict) -> Dict:
         """
@@ -387,3 +387,33 @@ class PromptDataService:
         current_prompt_info['data'] = reverted_data
         current_prompt_info['branches']["main"] = version_id
         return True
+
+    def create_prompt(self, data: Dict[str, Any]) -> int:
+        """
+        Create a new prompt (alias for add_new_prompt).
+
+        Args:
+            data (Dict[str, Any]): The prompt data
+
+        Returns:
+            int: The ID of the new prompt
+        """
+        return self.add_new_prompt(data)
+
+    def get_categories(self) -> List[str]:
+        """
+        Get all categories.
+
+        Returns:
+            List[str]: List of categories
+        """
+        return self.categories
+
+    def get_tags(self) -> List[str]:
+        """
+        Get all tags.
+
+        Returns:
+            List[str]: List of tags
+        """
+        return sorted(list(self.global_tags))

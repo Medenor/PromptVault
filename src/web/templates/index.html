@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PromptVault Web</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="app">
+        <header class="header">
+            <h1>PromptVault</h1>
+            <div class="header-actions">
+                <button id="new-prompt-btn">New Prompt</button>
+                <button id="import-btn">Import</button>
+                <button id="export-btn">Export</button>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <div class="sidebar">
+                <div class="sidebar-section">
+                    <h3>Categories</h3>
+                    <ul id="categories-list">
+                        <li data-category="all" class="active">All Prompts</li>
+                        {% for category in categories %}
+                        <li data-category="{{ category }}">{{ category }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3>Tags</h3>
+                    <ul id="tags-list">
+                        <li data-tag="all" class="active">All Tags</li>
+                        {% for tag in tags %}
+                        <li data-tag="{{ tag }}">{{ tag }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <div class="sidebar-section">
+                    <label>
+                        <input type="checkbox" id="favorites-filter"> Show Favorites Only
+                    </label>
+                </div>
+            </div>
+
+            <div class="content">
+                <div class="prompts-list" id="prompts-list">
+                    {% for prompt_id, prompt_info in prompts.items() %}
+                    <div class="prompt-item" data-id="{{ prompt_id }}">
+                        <div class="prompt-header">
+                            <h4>{{ prompt_info.data.title }}</h4>
+                            <div class="prompt-actions">
+                                <button class="favorite-btn" data-id="{{ prompt_id }}">
+                                    {% if prompt_info.data.favorite %}★{% else %}☆{% endif %}
+                                </button>
+                                <button class="copy-btn" data-id="{{ prompt_id }}">Copy</button>
+                                <button class="edit-btn" data-id="{{ prompt_id }}">Edit</button>
+                                <button class="delete-btn" data-id="{{ prompt_id }}">Delete</button>
+                            </div>
+                        </div>
+                        <div class="prompt-meta">
+                            <span class="category">{{ prompt_info.data.category }}</span>
+                            {% if prompt_info.data.tags %}
+                            <span class="tags">{{ prompt_info.data.tags|join(', ') }}</span>
+                            {% endif %}
+                        </div>
+                        <div class="prompt-content">{{ prompt_info.data.prompt[:100] }}{% if prompt_info.data.prompt|length > 100 %}...{% endif %}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="prompt-editor" id="prompt-editor" style="display: none;">
+                    <form id="prompt-form">
+                        <div class="form-group">
+                            <label for="prompt-title">Title:</label>
+                            <input type="text" id="prompt-title" name="title" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="prompt-content">Content:</label>
+                            <textarea id="prompt-content" name="prompt" rows="10" required></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="prompt-category">Category:</label>
+                            <select id="prompt-category" name="category">
+                                <option value="">No category</option>
+                                {% for category in categories %}
+                                <option value="{{ category }}">{{ category }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="prompt-tags">Tags (comma-separated):</label>
+                            <input type="text" id="prompt-tags" name="tags">
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit">Save</button>
+                            <button type="button" id="cancel-btn">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="prompt-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="modal-title">Edit Prompt</h2>
+            <!-- Form will be inserted here -->
+        </div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

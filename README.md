@@ -52,12 +52,15 @@
 
 ## About
 
-PromptVault is a prompt management application designed to help users easily organize, store, and retrieve their prompts for various AI applications, software development, content marketing, and much more. Whether you are a developer, writer, marketer, or simply a user of AI-based tools, PromptVault allows you to centralize your prompts and improve your productivity.
+PromptVault is a modern web-based prompt management application designed to help users easily organize, store, and retrieve their prompts for various AI applications, software development, content marketing, and much more. Whether you are a developer, writer, marketer, or simply a user of AI-based tools, PromptVault allows you to centralize your prompts and improve your productivity through a responsive web interface accessible from any browser.
 
 ### Built With
 
 - [Python](https://www.python.org/)
-- [PyQt6](https://riverbankcomputing.com/software/pyqt/)
+- [FastAPI](https://fastapi.tiangolo.com/) - Modern web framework
+- [Uvicorn](https://www.uvicorn.org/) - High-performance ASGI server
+- [Jinja2](https://jinja.palletsprojects.com/) - Template engine
+- [Docker](https://www.docker.com/) - Containerization platform
 
 ### Version Control
 
@@ -112,8 +115,21 @@ PromptVault includes a robust backup system to prevent data loss and enable easy
 ### Prerequisites
 
 - Python 3.8+
+- Docker (recommended for production deployment)
 
-### Installation
+### Quick Start with Docker
+
+The fastest way to get started is using Docker:
+
+```bash
+git clone https://codeberg.org/medenor/promptvault.git
+cd PromptVault
+docker-compose up --build
+```
+
+Then open your browser to `http://localhost:8001`
+
+### Manual Installation
 
 1. **Clone the repository**:
 
@@ -143,13 +159,55 @@ PromptVault includes a robust backup system to prevent data loss and enable easy
 
 ## Usage
 
-To launch the application, run the main module from the project root:
+### Web Application (Recommended)
+
+PromptVault is primarily a web-based application that runs in your browser and can be deployed as a Docker container.
+
+#### Running with Docker (Production)
+
+```bash
+docker-compose up --build
+```
+
+Open your browser and go to `http://localhost:8001`
+
+#### Running Locally (Development)
+
+1. Install dependencies:
+```bash
+pip install -e .
+```
+
+2. Run the web application:
+```bash
+python run_web.py
+```
+
+3. Open your browser and go to `http://localhost:8000`
+
+### Desktop Application (Legacy)
+
+The original desktop application is still available but is now considered legacy. To launch it:
 
 ```bash
 PYTHONPATH=. python -m src.main
 ```
 
-The application will open, allowing you to start managing your prompts.
+**Note:** The desktop version uses PyQt6 and may require additional system dependencies. The web version is recommended for all new deployments.
+
+### Features
+
+Both versions provide the same core functionality:
+
+- **Prompt Management**: Create, edit, delete, and organize prompts
+- **Version Control**: Git-like versioning system for all prompts
+- **Categories & Tags**: Organize prompts with categories and tags
+- **Search & Filter**: Find prompts quickly with advanced filtering
+- **Import/Export**: Support for CSV and Markdown formats
+- **Backup System**: Automatic and manual data backups
+- **Responsive Design**: Works on desktop and mobile devices
+
+Your data is stored persistently in the `data/` directory and is compatible between web and desktop versions.
 
 ### Internationalization
 
@@ -175,16 +233,23 @@ This will generate `.qm` files from all `.ts` files in the `i18n/` directory.
 
 ### Project Structure
 
-The project follows a modular structure:
+The project follows a modular structure with web-first architecture:
 
 - `src/`: Main source code directory
-  - `src/main.py`: Application entry point
-  - `src/ui/`: User interface components (dialogs, widgets)
-  - `src/services/`: Business logic and data services
+  - `src/web/`: **Primary web application module**
+    - `src/web/app.py`: FastAPI application and REST API routes
+    - `src/web/templates/`: Jinja2 HTML templates
+    - `src/web/static/`: CSS stylesheets and JavaScript files
+  - `src/services/`: Business logic and data services (shared between web/desktop)
+  - `src/main.py`: Legacy desktop application entry point
+  - `src/ui/`: Legacy desktop UI components (dialogs, widgets)
 - `assets/`: Static assets (images, themes)
-- `data/`: Application data files
+- `data/`: Application data files (JSON storage, mounted as Docker volume)
 - `docs/`: Documentation and screenshots
-- `i18n/`: Translation files
+- `i18n/`: Translation files (Qt-based, legacy)
+- `run_web.py`: Web application startup script
+- `Dockerfile`: Docker container configuration
+- `docker-compose.yml`: Docker Compose configuration for easy deployment
 
 ## Roadmap
 
