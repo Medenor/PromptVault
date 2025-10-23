@@ -49,6 +49,8 @@ function updateStaticTranslations() {
     }
 }
 
+let promptCache = {};
+
 function initializeApp() {
     // Event listeners
     setupEventListeners();
@@ -124,6 +126,7 @@ async function loadTags() {
 }
 
 function renderPrompts(prompts) {
+    promptCache = { ...prompts };
     const container = document.getElementById('prompts-list');
     container.innerHTML = '';
 
@@ -264,49 +267,82 @@ async function handlePromptSubmit(event) {
     }
 }
 
-async function copyPrompt(id) {
-    try {
-        const response = await fetch(`/api/prompts/${id}`);
-        const prompt = await response.json();
+function copyPrompt(id) {
+    const cachedPrompt = promptCache[id];
 
-        const textToCopy = prompt.prompt;
-
-        // Try modern Clipboard API first
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-            await navigator.clipboard.writeText(textToCopy);
-            showCopyFeedback(id, 'Copied!');
-        } else {
-            // Fallback for older browsers or non-HTTPS
-            fallbackCopyTextToClipboard(textToCopy, id);
-        }
-    } catch (error) {
-        console.error('Error copying prompt:', error);
-        showCopyFeedback(id, 'Copy failed');
+    if (cachedPrompt && typeof cachedPrompt.prompt === 'string') {
+        copyTextToClipboard(cachedPrompt.prompt, id);
+        return;
     }
+
+    fetch(`/api/prompts/${id}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Failed to load prompt ${id}: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(prompt => {
+            promptCache[id] = prompt;
+            copyTextToClipboard(prompt.prompt, id);
+        })
+        .catch(error => {
+            console.error('Error copying prompt:', error);
+            showCopyFeedback(id, 'messages.copyFailed');
+        });
+}
+
+function copyTextToClipboard(textToCopy, id) {
+    if (typeof textToCopy !== 'string') {
+        showCopyFeedback(id, 'messages.copyFailed');
+        return;
+    }
+
+    // Try modern Clipboard API first
+    if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+        navigator.clipboard.writeText(textToCopy)
+            .then(() => {
+                showCopyFeedback(id, 'messages.copied');
+            })
+            .catch(error => {
+                console.warn('Clipboard API write failed, falling back to execCommand.', error);
+                fallbackCopyTextToClipboard(textToCopy, id);
+            });
+        return;
+    }
+
+    // Fallback for older browsers or non-HTTPS
+    fallbackCopyTextToClipboard(textToCopy, id);
 }
 
 function fallbackCopyTextToClipboard(text, id) {
     // Create a temporary textarea element
     const textArea = document.createElement('textarea');
     textArea.value = text;
+    textArea.setAttribute('readonly', '');
     textArea.style.position = 'fixed';
-    textArea.style.left = '-999999px';
-    textArea.style.top = '-999999px';
+    textArea.style.top = '0';
+    textArea.style.left = '0';
+    textArea.style.width = '1px';
+    textArea.style.height = '1px';
+    textArea.style.opacity = '0';
+    textArea.style.pointerEvents = 'none';
     document.body.appendChild(textArea);
 
     try {
         textArea.focus();
         textArea.select();
+        textArea.setSelectionRange(0, textArea.value.length);
 
         const successful = document.execCommand('copy');
         if (successful) {
-            showCopyFeedback(id, 'Copied!');
+            showCopyFeedback(id, 'messages.copied');
         } else {
-            showCopyFeedback(id, 'Copy failed');
+            showCopyFeedback(id, 'messages.copyFailed');
         }
     } catch (error) {
         console.error('Fallback copy failed:', error);
-        showCopyFeedback(id, 'Copy failed');
+        showCopyFeedback(id, 'messages.copyFailed');
     } finally {
         document.body.removeChild(textArea);
     }
@@ -327,6 +363,8 @@ async function editPrompt(id) {
     try {
         const response = await fetch(`/api/prompts/${id}`);
         const prompt = await response.json();
+
+        promptCache[id] = prompt;
 
         console.log('Editing prompt:', prompt); // Debug log
 
