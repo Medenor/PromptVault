@@ -63,8 +63,3 @@ Thumbs.db
 
 # Notes
 commit_summary.md
-
-# Frontend build artifacts
-src/web/static/dist/
-src/web/static/node_modules/
-src/web/static/package-lock.json

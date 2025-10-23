@@ -60,7 +60,6 @@ PromptVault is a modern web-based prompt management application designed to help
 - [FastAPI](https://fastapi.tiangolo.com/) - Modern web framework
 - [Uvicorn](https://www.uvicorn.org/) - High-performance ASGI server
 - [Jinja2](https://jinja.palletsprojects.com/) - Template engine
-- [TypeScript](https://www.typescriptlang.org/) - Type-safe JavaScript for frontend
 - [Docker](https://www.docker.com/) - Containerization platform
 
 ### Version Control
@@ -232,54 +231,6 @@ This will generate `.qm` files from all `.ts` files in the `i18n/` directory.
 
 **Note:** Only `.ts` files are tracked in version control. `.qm` files are generated during build and are ignored by git.
 
-### Frontend Development
-
-The web frontend has been migrated from vanilla JavaScript to TypeScript for improved type safety and developer experience.
-
-#### Frontend Technology Stack
-
-- **TypeScript**: Type-safe JavaScript with compile-time error checking
-- **ES2018**: Modern JavaScript features for browser compatibility
-- **i18next**: Internationalization framework for multi-language support
-- **Modular Architecture**: Separate modules for main app and import/export functionality
-
-#### Frontend Build Process
-
-The frontend uses a TypeScript build system with the following structure:
-
-```
-src/web/static/
-├── js/                    # TypeScript source files
-│   ├── types.ts          # Type definitions
-│   ├── app.ts            # Main application logic
-│   └── import_export.ts  # Import/export functionality
-├── dist/                 # Compiled JavaScript (generated)
-│   ├── app.js           # Compiled main app
-│   ├── import_export.js # Compiled import/export
-│   └── *.js.map         # Source maps for debugging
-├── package.json         # Node.js dependencies and scripts
-├── tsconfig.json        # TypeScript configuration
-└── README.md           # Frontend development documentation
-```
-
-#### Building the Frontend
-
-For development with automatic recompilation:
-
-```bash
-cd src/web/static
-npm run dev
-```
-
-For production builds:
-
-```bash
-cd src/web/static
-npm run build
-```
-
-The compiled JavaScript files are automatically served by the FastAPI application and are referenced in the HTML templates.
-
 ### Project Structure
 
 The project follows a modular structure with web-first architecture:
@@ -288,7 +239,7 @@ The project follows a modular structure with web-first architecture:
   - `src/web/`: **Primary web application module**
     - `src/web/app.py`: FastAPI application and REST API routes
     - `src/web/templates/`: Jinja2 HTML templates
-    - `src/web/static/`: CSS stylesheets, TypeScript source, and compiled JavaScript
+    - `src/web/static/`: CSS stylesheets and JavaScript files
   - `src/services/`: Business logic and data services (shared between web/desktop)
   - `src/main.py`: Legacy desktop application entry point
   - `src/ui/`: Legacy desktop UI components (dialogs, widgets)
