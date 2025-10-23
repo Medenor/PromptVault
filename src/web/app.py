@@ -138,6 +138,31 @@ async def delete_prompt(prompt_id: str):
         data_service.save_prompts()  # Save to disk
     return {"success": success}
 
+@app.put("/api/prompts/{prompt_id}/favorite")
+async def toggle_favorite(prompt_id: str):
+    """Toggle favorite status of a prompt"""
+    try:
+        prompt_id_int = int(prompt_id)
+    except ValueError:
+        return JSONResponse(status_code=400, content={"error": "Invalid prompt ID"})
+
+    # Get current prompt data
+    prompt_data = data_service.get_prompt_data(prompt_id_int)
+    if not prompt_data:
+        return JSONResponse(status_code=404, content={"error": "Prompt not found"})
+
+    # Toggle favorite status
+    current_favorite = prompt_data.get('favorite', False)
+    prompt_data['favorite'] = not current_favorite
+
+    # Update the prompt
+    success = data_service.update_prompt(prompt_id_int, prompt_data, "Toggle favorite")
+    if success:
+        data_service.save_prompts()  # Save to disk
+        return {"success": True, "favorite": prompt_data['favorite']}
+    else:
+        return JSONResponse(status_code=500, content={"error": "Failed to update favorite status"})
+
 @app.get("/api/categories")
 async def get_categories():
     """Get all categories"""

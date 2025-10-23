@@ -49,8 +49,7 @@
     "missingTitle": "Titre manquant",
     "missingContent": "Contenu manquant",
     "missingCommitMessage": "Champ requis manquant",
-    "unknownError": "Erreur inconnue",
-    "favoriteNotImplemented": "Basculement favori pas encore implémenté"
+    "unknownError": "Erreur inconnue"
   },
   "validation": {
     "titleRequired": "Le champ 'Titre de l'invite' ne peut pas être vide.",

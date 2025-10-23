@@ -49,8 +49,7 @@
     "missingTitle": "Título Faltante",
     "missingContent": "Contenido Faltante",
     "missingCommitMessage": "Campo Requerido Faltante",
-    "unknownError": "Error desconocido",
-    "favoriteNotImplemented": "Alternancia de favorito no implementada aún"
+    "unknownError": "Error desconocido"
   },
   "validation": {
     "titleRequired": "El campo 'Título del Prompt' no puede estar vacío.",

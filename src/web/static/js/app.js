@@ -410,9 +410,62 @@ async function deletePrompt(id) {
 }
 
 async function toggleFavorite(id) {
-    // This would need a specific endpoint for toggling favorite
-    // For now, we'll implement a basic version
-    alert(i18next.t('messages.favoriteNotImplemented'));
+    try {
+        // Optimistic update - immediately toggle the UI
+        const favoriteBtn = document.querySelector(`.favorite-btn[data-id="${id}"]`);
+        if (favoriteBtn) {
+            const currentIcon = favoriteBtn.textContent;
+            const newIcon = currentIcon === '★' ? '☆' : '★';
+            favoriteBtn.textContent = newIcon;
+
+            // Also update the cached prompt data
+            if (promptCache[id]) {
+                promptCache[id].favorite = !promptCache[id].favorite;
+            }
+        }
+
+        // Make API call to persist the change
+        const response = await fetch(`/api/prompts/${id}/favorite`, {
+            method: 'PUT'
+        });
+
+        if (!response.ok) {
+            // Revert optimistic update on error
+            const favoriteBtn = document.querySelector(`.favorite-btn[data-id="${id}"]`);
+            if (favoriteBtn) {
+                const currentIcon = favoriteBtn.textContent;
+                const revertedIcon = currentIcon === '★' ? '☆' : '★';
+                favoriteBtn.textContent = revertedIcon;
+
+                // Also revert the cached prompt data
+                if (promptCache[id]) {
+                    promptCache[id].favorite = !promptCache[id].favorite;
+                }
+            }
+
+            const errorData = await response.json();
+            alert(`${i18next.t('messages.error')}: ${errorData.error || i18next.t('messages.unknownError')}`);
+        } else {
+            const result = await response.json();
+            console.log(`Favorite toggled for prompt ${id}: ${result.favorite}`);
+        }
+    } catch (error) {
+        // Revert optimistic update on network error
+        const favoriteBtn = document.querySelector(`.favorite-btn[data-id="${id}"]`);
+        if (favoriteBtn) {
+            const currentIcon = favoriteBtn.textContent;
+            const revertedIcon = currentIcon === '★' ? '☆' : '★';
+            favoriteBtn.textContent = revertedIcon;
+
+            // Also revert the cached prompt data
+            if (promptCache[id]) {
+                promptCache[id].favorite = !promptCache[id].favorite;
+            }
+        }
+
+        console.error('Error toggling favorite:', error);
+        alert(i18next.t('messages.error'));
+    }
 }
 
 function handleCategoryFilter(event) {

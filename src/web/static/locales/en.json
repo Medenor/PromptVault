@@ -49,8 +49,7 @@
     "missingTitle": "Missing Title",
     "missingContent": "Missing Content",
     "missingCommitMessage": "Missing Required Field",
-    "unknownError": "Unknown error",
-    "favoriteNotImplemented": "Favorite toggle not yet implemented"
+    "unknownError": "Unknown error"
   },
   "validation": {
     "titleRequired": "The 'Prompt Title' field cannot be empty.",

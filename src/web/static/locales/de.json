@@ -49,8 +49,7 @@
     "missingTitle": "Fehlender Titel",
     "missingContent": "Fehlender Inhalt",
     "missingCommitMessage": "Erforderliches Feld fehlt",
-    "unknownError": "Unbekannter Fehler",
-    "favoriteNotImplemented": "Favoriten-Umschaltung noch nicht implementiert"
+    "unknownError": "Unbekannter Fehler"
   },
   "validation": {
     "titleRequired": "Das Feld 'Prompt-Titel' darf nicht leer sein.",
