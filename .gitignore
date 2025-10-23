@@ -55,11 +55,20 @@ venv.bak/
 ehthumbs.db
 Thumbs.db
 
-# Qt
-*.qm
-
 # Docker
 .dockerignore
 
-# Notes
+# Development files
 commit_summary.md
+
+# Build outputs
+dist/
+*.min.js
+*.min.css
+
+# Legacy directories (removed)
+i18n/
+assets/
+src/ui/
+src/main.py
+src/theme_manager.py

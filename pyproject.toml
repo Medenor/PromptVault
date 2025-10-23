@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "promptvault"
-version = "0.1.1"
+version = "1.0.0"
 description = "Web-based prompt manager for organizing and versioning AI prompts."
 readme = "README.md"
 requires-python = ">=3.8"
@@ -15,6 +15,7 @@ authors = [
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Intended Audience :: End Users/Desktop",
+  "Intended Audience :: Developers",
   "License :: OSI Approved :: GNU Affero General Public License v3",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.8",
@@ -25,6 +26,7 @@ classifiers = [
   "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
   "Topic :: Utilities",
   "Framework :: FastAPI",
+  "Operating System :: OS Independent",
 ]
 dependencies = [
   "fastapi==0.104.1",

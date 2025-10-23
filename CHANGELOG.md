@@ -82,11 +82,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Migration Guide
 
 **For Existing Users:**
+
 1. **Data Preservation**: Your existing `data/prompts_data.json` file is fully compatible
 2. **Web Migration**: Use `docker-compose up --build` for new web deployment
 3. **Legacy Access**: Desktop version still available via `PYTHONPATH=. python -m src.main`
 
 **For Developers:**
+
 - Web application runs on `http://localhost:8001` (Docker) or `http://localhost:8000` (development)
 - API endpoints available at `/api/*` routes
 - All original functionality preserved with improved performance

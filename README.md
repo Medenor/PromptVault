@@ -62,7 +62,7 @@ PromptVault is a modern web-based prompt management application designed to help
 - [Jinja2](https://jinja.palletsprojects.com/) - Template engine
 - [Docker](https://www.docker.com/) - Containerization platform
 
-### Version Control
+### Version Control (WIP since migration to WebApp)
 
 PromptVault includes a robust, Git-like version control system for all prompts, ensuring full traceability and a clear history of changes. Key features include:
 
@@ -84,7 +84,7 @@ PromptVault follows a modular architecture with dedicated service classes for di
 
 This modular design improves code maintainability, testability, and extensibility.
 
-### Data Backup System
+### Data Backup System (WIP since migration to WebApp)
 
 PromptVault includes a robust backup system to prevent data loss and enable easy recovery:
 
@@ -100,14 +100,18 @@ PromptVault includes a robust backup system to prevent data loss and enable easy
 <summary>Screenshots</summary>
 <br>
 
-| Main Window | Prompt Editor Panel | Version History |
-| :---: | :---: | :---: |
-| <img src="docs/images/promptvault_main_window.jpg" title="Main Window" width="100%"> | <img src="docs/images/promptvault_prompt_edit_panel.jpg" title="Prompt Editor Panel" width="100%"> | <img src="docs/images/promptvault_version_history.jpg" title="Version History" width="100%"> |
+<div align="center">
 
-| Manage Tags | Export Prompts |
-| :---: | :---: |
-| <img src="docs/images/promptvault_manage_tags.jpg" title="Manage Tags" width="100%"> | <img src="docs/images/promptvault_export.jpg" title="Export Prompts" width="100%"> |
+### Main Interface
+<img src="docs/images/promptvault_main_interface.jpg" alt="PromptVault Main Interface" width="80%">
 
+### Import/Export Management
+<img src="docs/images/promptvault_import_export.jpg" alt="Import/Export Management Interface" width="80%">
+
+### Prompt Editor
+<img src="docs/images/promptvault_prompt_editor.jpg" alt="Prompt Editor Interface" width="80%">
+
+</div>
 </details>
 
 ## Getting Started
@@ -174,89 +178,72 @@ Open your browser and go to `http://localhost:8001`
 #### Running Locally (Development)
 
 1. Install dependencies:
+
 ```bash
 pip install -e .
 ```
 
 2. Run the web application:
+
 ```bash
 python run_web.py
 ```
 
 3. Open your browser and go to `http://localhost:8000`
 
-### Desktop Application (Legacy)
-
-The original desktop application is still available but is now considered legacy. To launch it:
-
-```bash
-PYTHONPATH=. python -m src.main
-```
-
-**Note:** The desktop version uses PyQt6 and may require additional system dependencies. The web version is recommended for all new deployments.
+**Note:** PromptVault is now a web-only application. The desktop version has been deprecated and removed.
 
 ### Features
 
-Both versions provide the same core functionality:
-
-- **Prompt Management**: Create, edit, delete, and organize prompts
-- **Version Control**: Git-like versioning system for all prompts
-- **Categories & Tags**: Organize prompts with categories and tags
-- **Search & Filter**: Find prompts quickly with advanced filtering
-- **Import/Export**: Support for CSV and Markdown formats
-- **Backup System**: Automatic and manual data backups
-- **Responsive Design**: Works on desktop and mobile devices
-
-Your data is stored persistently in the `data/` directory and is compatible between web and desktop versions.
+- **Prompt Management**: Create, edit, delete, and organize prompts through an intuitive web interface
+- **Version Control (WIP since migration to WebApp)**: Git-like versioning system for all prompts with full history tracking
+- **Categories & Tags**: Organize prompts with categories and tags for easy discovery
+- **Search & Filter (WIP since migration to WebApp)**: Find prompts quickly with advanced filtering and search capabilities
+- **Import/Export (WIP since migration to WebApp)**: Support for CSV, Markdown, and JSON formats with preview functionality
+- **Backup System (WIP since migration to WebApp)**: Comprehensive data backup and restoration with automatic and manual options
+- **Responsive Design**: Modern, mobile-friendly interface that works on all devices
+- **Multi-language Support**: Internationalization with English, French, Spanish, and German
 
 ### Internationalization
 
-PromptVault supports multiple languages. The application will automatically detect your system language, but you can also change languages from the View → Language menu.
-
-#### For Developers
+PromptVault supports multiple languages (English, French, Spanish, German). The application will automatically detect your system language, but you can also change languages from the language selector in the header.
 
 **Translation Files:**
 
-- `.ts` files (source): Human-readable XML files containing translatable strings
-- `.qm` files (compiled): Binary files used by Qt at runtime
-
-**Building Translations:**
-Before packaging or distribution, compile the translation files:
-
-```bash
-python3 i18n/build_translations.py
-```
-
-This will generate `.qm` files from all `.ts` files in the `i18n/` directory.
-
-**Note:** Only `.ts` files are tracked in version control. `.qm` files are generated during build and are ignored by git.
+- Web interface uses JSON translation files in `src/web/static/locales/`
+- Translations are loaded dynamically using i18next
 
 ### Project Structure
 
-The project follows a modular structure with web-first architecture:
+The project follows a clean, modular web-first architecture:
 
 - `src/`: Main source code directory
   - `src/web/`: **Primary web application module**
     - `src/web/app.py`: FastAPI application and REST API routes
     - `src/web/templates/`: Jinja2 HTML templates
-    - `src/web/static/`: CSS stylesheets and JavaScript files
-  - `src/services/`: Business logic and data services (shared between web/desktop)
-  - `src/main.py`: Legacy desktop application entry point
-  - `src/ui/`: Legacy desktop UI components (dialogs, widgets)
-- `assets/`: Static assets (images, themes)
+    - `src/web/static/`: CSS stylesheets, JavaScript files, and locales
+  - `src/services/`: Business logic and data services
+    - `src/services/backup_service.py`: Data backup and restoration
+    - `src/services/prompt_data_service.py`: Core data operations
+    - `src/services/prompt_filter_service.py`: Search and filtering
+    - `src/services/prompt_import_export_service.py`: Import/export functionality
+    - `src/services/prompt_versioning_service.py`: Version control system
 - `data/`: Application data files (JSON storage, mounted as Docker volume)
 - `docs/`: Documentation and screenshots
-- `i18n/`: Translation files (Qt-based, legacy)
+- `tests/`: Test suite
 - `run_web.py`: Web application startup script
 - `Dockerfile`: Docker container configuration
 - `docker-compose.yml`: Docker Compose configuration for easy deployment
+- `pyproject.toml`: Python project configuration and dependencies
 
 ## Roadmap
 
+- [ ] **Features restoration:** Restoring features like searching, import/export, and Git versioning that were available in the desktop version but need to be reimplemented following the migration to the WebApp.
 - [ ] **Input Validation & Sanitization:** Ensures data integrity and prevents injection attacks by validating all user inputs.
 - [x] **Data Backup System:** Automatically creates backups to prevent data loss and enable recovery from corruption.
 - [ ] **Error Handling & Logging:** Implements centralized logging and comprehensive error handling for better debugging and user experience.
 - [ ] **Unit Tests:** Establishes comprehensive test coverage for core functionality to catch bugs early and enable safe refactoring.
+- [ ] **Typescript transition:** Adopt TypeScript to bring static typing, safer refactors, richer editor help, and modern tooling into the app as the next roadmap milestone.
 
 See the [open issues](https://codeberg.org/medenor/promptvault/issues) for a list of proposed features (and known issues).
 
