@@ -185,11 +185,11 @@ async def import_export_page(request: Request):
 
     # Calculate statistics
     total_prompts = len(prompts)
-    favorite_prompts = sum(1 for p in prompts.values() if p.get('favorite', False))
-    unique_categories = len(set(p.get('category', 'No category') for p in prompts.values()))
+    favorite_prompts = sum(1 for p in prompts.values() if p.get('data', {}).get('favorite', False))
+    unique_categories = len(set(p.get('data', {}).get('category', 'No category') for p in prompts.values()))
     all_tags = set()
     for p in prompts.values():
-        all_tags.update(p.get('tags', []))
+        all_tags.update(p.get('data', {}).get('tags', []))
     unique_tags = len(all_tags)
 
     return templates.TemplateResponse("import_export.html", {
@@ -213,7 +213,7 @@ async def export_prompts(
 
         # Filter prompts if needed
         if include_favorites:
-            prompts = {k: v for k, v in prompts.items() if v.get('favorite', False)}
+            prompts = {k: v for k, v in prompts.items() if v.get('data', {}).get('favorite', False)}
 
         # Convert to list format for export service
         prompt_list = [(int(k), v) for k, v in prompts.items()]
@@ -314,7 +314,7 @@ async def import_prompts(
                 # Check if prompt with same title exists
                 existing_prompts = data_service.load_prompts()
                 exists = any(
-                    p.get('title') == prompt_data.get('title')
+                    p.get('data', {}).get('title') == prompt_data.get('title')
                     for p in existing_prompts.values()
                 )
                 if not exists:
