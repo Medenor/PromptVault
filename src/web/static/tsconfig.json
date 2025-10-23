@@ -1,0 +1,34 @@
+{
+  "compilerOptions": {
+    "target": "ES2018",
+    "module": "ES2015",
+    "lib": ["ES2018", "DOM", "DOM.Iterable"],
+    "outDir": "./dist",
+    "rootDir": "./js",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "declaration": false,
+    "sourceMap": true,
+    "removeComments": false,
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "types": ["node", "i18next"]
+  },
+  "include": [
+    "js/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
+}
