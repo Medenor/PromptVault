@@ -50,14 +50,34 @@
 
                 <div class="sidebar-section">
                     <h3 data-i18n="nav.filters">Filters</h3>
+
+                    <!-- Search Input -->
+                    <div class="search-container">
+                        <input type="text" id="search-input" placeholder="Search prompts..." data-i18n="[placeholder]nav.searchPlaceholder">
+                        <button id="clear-search-btn" class="clear-search-btn" title="Clear search">✕</button>
+                    </div>
+
+                    <!-- Case Sensitive Toggle -->
+                    <label class="case-sensitive-label">
+                        <input type="checkbox" id="case-sensitive-toggle">
+                        <span data-i18n="nav.caseSensitive">Case Sensitive</span>
+                    </label>
+
+                    <!-- Favorites Filter -->
                     <label>
                         <input type="checkbox" id="favorites-filter">
                         <span data-i18n="nav.showFavorites">⭐ Show Favorites</span>
                     </label>
+
+                    <!-- Clear All Filters Button -->
+                    <button id="clear-all-filters-btn" class="clear-filters-btn" data-i18n="nav.clearFilters">Clear All Filters</button>
                 </div>
             </div>
 
             <div class="content">
+                <!-- Search Results Info -->
+                <div class="search-results-info" id="search-results-info"></div>
+
                 <div class="prompts-list" id="prompts-list">
                     {% for prompt_id, prompt_info in prompts.items() %}
                     <div class="prompt-item" data-id="{{ prompt_id }}">

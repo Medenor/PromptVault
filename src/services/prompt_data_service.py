@@ -316,10 +316,7 @@ class PromptDataService:
             'branches': {"main": version_id}
         }
 
-        # Clear cached categories and tags so they get rebuilt
-        self.categories = []
-        self.global_tags = set()
-
+        # Note: Do not clear categories and tags to preserve predefined ones
         return prompt_id
 
     def update_prompt(self, prompt_id: int, data: Dict[str, Any], commit_message: str = "Update") -> bool:
@@ -357,10 +354,7 @@ class PromptDataService:
         current_prompt_info['data'] = data
         current_prompt_info['branches']["main"] = version_id
 
-        # Clear cached categories and tags so they get rebuilt
-        self.categories = []
-        self.global_tags = set()
-
+        # Note: Do not clear categories and tags to preserve predefined ones
         return True
 
     def delete_prompt(self, prompt_id: int) -> bool:
@@ -375,9 +369,7 @@ class PromptDataService:
         """
         if prompt_id in self.prompts:
             del self.prompts[prompt_id]
-            # Clear cached categories and tags so they get rebuilt
-            self.categories = []
-            self.global_tags = set()
+            # Note: Do not clear categories and tags to preserve predefined ones
             return True
         return False
 
@@ -463,10 +455,7 @@ class PromptDataService:
         current_prompt_info['data'] = reverted_data
         current_prompt_info['branches']["main"] = version_id
 
-        # Clear cached categories and tags so they get rebuilt
-        self.categories = []
-        self.global_tags = set()
-
+        # Note: Do not clear categories and tags to preserve predefined ones
         return True
 
     def create_prompt(self, data: Dict[str, Any]) -> int:
@@ -488,14 +477,8 @@ class PromptDataService:
         Returns:
             List[str]: List of categories
         """
-        # Update categories from current prompts if empty
-        if not self.categories:
-            self.categories = list(set(
-                prompt_info['data'].get('category', 'No category')
-                for prompt_info in self.prompts.values()
-            ))
-            self.categories.sort()
-
+        # Always update categories from current prompts to ensure they are current
+        self._update_categories_and_tags()
         return self.categories
 
     def get_tags(self) -> List[str]:
@@ -505,13 +488,6 @@ class PromptDataService:
         Returns:
             List[str]: List of tags
         """
-        # Update tags from current prompts if empty
-        if not self.global_tags:
-            all_tags = set()
-            for prompt_info in self.prompts.values():
-                prompt_tags = prompt_info['data'].get('tags', [])
-                if isinstance(prompt_tags, list):
-                    all_tags.update(prompt_tags)
-            self.global_tags = all_tags
-
+        # Always update tags from current prompts to ensure they are current
+        self._update_categories_and_tags()
         return sorted(list(self.global_tags))

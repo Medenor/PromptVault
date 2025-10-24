@@ -7,6 +7,9 @@
     "showFavorites": "⭐ Show Favorites",
     "showAll": "🔄 Show All",
     "search": "Search in title, prompt, note...",
+    "searchPlaceholder": "Search prompts...",
+    "caseSensitive": "Case Sensitive",
+    "clearFilters": "Clear All Filters",
     "importExport": "Import/Export",
     "backToMain": "Back to Main"
   },

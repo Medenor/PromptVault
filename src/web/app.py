@@ -79,6 +79,67 @@ async def create_prompt(
     data_service.save_prompts()  # Save to disk
     return {"success": True, "prompt_id": prompt_id}
 
+@app.get("/api/prompts/search")
+async def search_prompts(
+    search: str = "",
+    category: str = "",
+    tag: str = "",
+    favorites: bool = False,
+    case_sensitive: bool = False
+):
+    """
+    Search and filter prompts based on various criteria.
+
+    Query parameters:
+    - search: Text to search for in title, prompt content, or notes
+    - category: Filter by specific category (empty string means no filter)
+    - tag: Filter by specific tag (empty string means no filter)
+    - favorites: Show only favorite prompts if true
+    - case_sensitive: Enable case-sensitive search if true
+    """
+    try:
+        # Load all prompts
+        prompts = data_service.load_prompts()
+
+        # Convert to the format expected by filter service
+        # The filter service expects Dict[int, Dict[str, Any]] where inner dict has 'data' key
+        filter_prompts = {}
+        for prompt_id, prompt_info in prompts.items():
+            if 'data' in prompt_info:
+                filter_prompts[prompt_id] = prompt_info
+            else:
+                # Fallback for prompts without 'data' wrapper
+                filter_prompts[prompt_id] = {'data': prompt_info}
+
+        # Apply filters using the filter service
+        filtered_prompts = filter_service.filter_prompts(
+            prompts=filter_prompts,
+            filter_category=category if category else None,
+            filter_tag=tag if tag else None,
+            search_term=search,
+            filter_favorites=favorites,
+            case_sensitive=case_sensitive
+        )
+
+        # Sort the results
+        sorted_prompts = filter_service.sort_prompts(filtered_prompts)
+
+        # Convert back to the format expected by frontend
+        result = {}
+        for prompt in sorted_prompts:
+            prompt_id = prompt['id']
+            # Remove the 'id' field that was added by filter service
+            prompt_data = {k: v for k, v in prompt.items() if k != 'id'}
+            result[str(prompt_id)] = prompt_data
+
+        return {"prompts": result}
+
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"error": f"Search failed: {str(e)}"}
+        )
+
 @app.get("/api/prompts/{prompt_id}")
 async def get_prompt(prompt_id: str):
     """Get a specific prompt"""

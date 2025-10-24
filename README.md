@@ -249,6 +249,7 @@ The project follows a clean, modular web-first architecture:
 - [ ] **Error Handling & Logging:** Implements centralized logging and comprehensive error handling for better debugging and user experience.
 - [ ] **Unit Tests:** Establishes comprehensive test coverage for core functionality to catch bugs early and enable safe refactoring.
 - [ ] **Typescript transition:** Adopt TypeScript to bring static typing, safer refactors, richer editor help, and modern tooling into the app as the next roadmap milestone.
+- [ ] **Tags & categories management:** Allows to manage and update tags/categories independently from the prompts management. 
 
 See the [open issues](https://codeberg.org/medenor/promptvault/issues) for a list of proposed features (and known issues).
 

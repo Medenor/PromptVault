@@ -82,6 +82,16 @@ function initializeApp() {
     loadTags();
 }
 
+// Global search state
+let searchState = {
+    searchTerm: '',
+    category: 'all',
+    tag: 'all',
+    favorites: false,
+    caseSensitive: false,
+    isLoading: false
+};
+
 function setupEventListeners() {
     // Language selector
     document.getElementById('language-selector').addEventListener('change', handleLanguageChange);
@@ -141,6 +151,9 @@ function setupEventListeners() {
 
     // Add tooltips
     addTooltips();
+
+    // Search functionality
+    setupSearchEventListeners();
 }
 
 async function loadPrompts() {
@@ -150,6 +163,13 @@ async function loadPrompts() {
         const data = await response.json();
         console.log('Loaded prompts data:', data);
         console.log('Number of prompts:', Object.keys(data.prompts || {}).length);
+
+        // Hide search results info when loading all prompts initially
+        const searchResultsInfo = document.getElementById('search-results-info');
+        if (searchResultsInfo) {
+            hideElement(searchResultsInfo);
+        }
+
         renderPrompts(data.prompts);
     } catch (error) {
         console.error('Error loading prompts:', error);
@@ -179,7 +199,17 @@ async function loadTags() {
 function renderPrompts(prompts) {
     promptCache = { ...prompts };
     const container = document.getElementById('prompts-list');
+    const searchResultsInfo = document.getElementById('search-results-info');
     container.innerHTML = '';
+
+    // Handle case when there are no prompts at all
+    if (Object.keys(prompts).length === 0) {
+        container.innerHTML = '<div class="no-results-message">No prompts found. Create your first prompt to get started!</div>';
+        if (searchResultsInfo) {
+            hideElement(searchResultsInfo);
+        }
+        return;
+    }
 
     for (const [id, prompt] of Object.entries(prompts)) {
         const promptElement = createPromptElement(id, prompt);
@@ -564,9 +594,9 @@ function handleCategoryFilter(event) {
         document.querySelectorAll('#categories-list li').forEach(li => li.classList.remove('active'));
         event.target.classList.add('active');
 
-        // Filter prompts (simplified - would need backend filtering)
-        const category = event.target.dataset.category;
-        filterPrompts({ category });
+        // Update search state and trigger search
+        searchState.category = event.target.dataset.category;
+        performSearch();
     }
 }
 
@@ -576,47 +606,16 @@ function handleTagFilter(event) {
         document.querySelectorAll('#tags-list li').forEach(li => li.classList.remove('active'));
         event.target.classList.add('active');
 
-        // Filter prompts
-        const tag = event.target.dataset.tag;
-        filterPrompts({ tag });
+        // Update search state and trigger search
+        searchState.tag = event.target.dataset.tag;
+        performSearch();
     }
 }
 
 function handleFavoritesFilter(event) {
-    filterPrompts({ favorites: event.target.checked });
-}
-
-function filterPrompts(filters) {
-    // This is a simplified client-side filter
-    // In a real app, you'd want server-side filtering
-    const promptItems = document.querySelectorAll('.prompt-item');
-
-    promptItems.forEach(item => {
-        let show = true;
-
-        if (filters.category && filters.category !== 'all') {
-            const category = item.querySelector('.category').textContent;
-            if (category !== filters.category) {
-                show = false;
-            }
-        }
-
-        if (filters.tag && filters.tag !== 'all') {
-            const tags = item.querySelector('.tags');
-            if (!tags || !tags.textContent.includes(filters.tag)) {
-                show = false;
-            }
-        }
-
-        if (filters.favorites) {
-            const favoriteBtn = item.querySelector('.favorite-btn');
-            if (favoriteBtn.textContent !== '★') {
-                show = false;
-            }
-        }
-
-        toggleElement(item, show);
-    });
+    // Update search state and trigger search
+    searchState.favorites = event.target.checked;
+    performSearch();
 }
 
 function handleLanguageChange(event) {
@@ -680,6 +679,275 @@ function truncateText(text, maxLength) {
     if (!text) return '';
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + '...';
+}
+
+// Search and Filter Functions
+let searchTimeout = null;
+
+function setupSearchEventListeners() {
+    // Search input with debouncing
+    const searchInput = document.getElementById('search-input');
+    if (searchInput) {
+        searchInput.addEventListener('input', handleSearchInput);
+        searchInput.addEventListener('keydown', function(event) {
+            // Clear search on Escape
+            if (event.key === 'Escape') {
+                clearAllFilters();
+            }
+        });
+    }
+
+    // Clear search button
+    const clearSearchBtn = document.getElementById('clear-search-btn');
+    if (clearSearchBtn) {
+        clearSearchBtn.addEventListener('click', function() {
+            const searchInput = document.getElementById('search-input');
+            if (searchInput) {
+                searchInput.value = '';
+                searchState.searchTerm = '';
+                toggleElement(clearSearchBtn, false);
+                performSearch();
+            }
+        });
+    }
+
+    // Case sensitive toggle
+    const caseSensitiveToggle = document.getElementById('case-sensitive-toggle');
+    if (caseSensitiveToggle) {
+        caseSensitiveToggle.addEventListener('change', function() {
+            searchState.caseSensitive = this.checked;
+            performSearch();
+        });
+    }
+
+    // Clear all filters button
+    const clearAllFiltersBtn = document.getElementById('clear-all-filters-btn');
+    if (clearAllFiltersBtn) {
+        clearAllFiltersBtn.addEventListener('click', clearAllFilters);
+    }
+}
+
+function handleSearchInput(event) {
+    const searchTerm = event.target.value;
+    searchState.searchTerm = searchTerm;
+
+    // Show/hide clear search button
+    const clearSearchBtn = document.getElementById('clear-search-btn');
+    if (clearSearchBtn) {
+        toggleElement(clearSearchBtn, searchTerm.length > 0);
+    }
+
+    // Clear previous timeout
+    if (searchTimeout) {
+        clearTimeout(searchTimeout);
+    }
+
+    // Debounce search
+    searchTimeout = setTimeout(() => {
+        performSearch();
+    }, 300);
+}
+
+async function performSearch() {
+    if (searchState.isLoading) {
+        return; // Don't start new search if one is already running
+    }
+
+    searchState.isLoading = true;
+
+    try {
+        // Show loading state
+        const promptsList = document.getElementById('prompts-list');
+        if (promptsList) {
+            promptsList.style.opacity = '0.6';
+            promptsList.style.pointerEvents = 'none';
+        }
+
+        // Build query parameters
+        const params = new URLSearchParams();
+
+        if (searchState.searchTerm) {
+            params.append('search', searchState.searchTerm);
+        }
+
+        if (searchState.category && searchState.category !== 'all') {
+            params.append('category', searchState.category);
+        }
+
+        if (searchState.tag && searchState.tag !== 'all') {
+            params.append('tag', searchState.tag);
+        }
+
+        if (searchState.favorites) {
+            params.append('favorites', 'true');
+        }
+
+        if (searchState.caseSensitive) {
+            params.append('case_sensitive', 'true');
+        }
+
+        // Make API call
+        const response = await fetch(`/api/prompts/search?${params.toString()}`);
+
+        if (!response.ok) {
+            throw new Error(`Search failed: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        // Update prompts list
+        renderPrompts(data.prompts);
+
+        // Update result count and handle empty results
+        updateSearchResultsInfo(data.prompts);
+
+    } catch (error) {
+        console.error('Search error:', error);
+        showNotification('Search failed. Please try again.', 'error');
+
+        // Fallback to showing all prompts
+        loadPrompts();
+    } finally {
+        searchState.isLoading = false;
+
+        // Remove loading state
+        const promptsList = document.getElementById('prompts-list');
+        if (promptsList) {
+            promptsList.style.opacity = '';
+            promptsList.style.pointerEvents = '';
+        }
+    }
+}
+
+function updateSearchResultsInfo(prompts) {
+    const resultCount = Object.keys(prompts || {}).length;
+    const totalCount = Object.keys(promptCache).length;
+    const searchResultsInfo = document.getElementById('search-results-info');
+    const promptsList = document.getElementById('prompts-list');
+
+    // Handle empty results
+    if (resultCount === 0) {
+        // Show "No results found" message
+        if (searchResultsInfo) {
+            searchResultsInfo.className = 'search-results-info no-results';
+            searchResultsInfo.textContent = 'No prompts found matching your criteria.';
+            showElement(searchResultsInfo);
+        }
+
+        // Show empty state in prompts list
+        if (promptsList) {
+            promptsList.innerHTML = '<div class="no-results-message">No prompts found. Try adjusting your search or filters.</div>';
+        }
+
+        // Hide clear filters button
+        const clearAllFiltersBtn = document.getElementById('clear-all-filters-btn');
+        if (clearAllFiltersBtn) {
+            hideElement(clearAllFiltersBtn);
+        }
+
+        return;
+    }
+
+    // Show results count info
+    if (searchResultsInfo) {
+        searchResultsInfo.className = 'search-results-info';
+
+        let infoText = `Showing ${resultCount} prompt${resultCount !== 1 ? 's' : ''}`;
+        if (resultCount !== totalCount) {
+            infoText += ` of ${totalCount} total`;
+        }
+
+        // Add active filter indicators
+        const activeFilters = [];
+        if (searchState.searchTerm) {
+            activeFilters.push(`search: "${searchState.searchTerm}"`);
+        }
+        if (searchState.category && searchState.category !== 'all') {
+            activeFilters.push(`category: ${searchState.category}`);
+        }
+        if (searchState.tag && searchState.tag !== 'all') {
+            activeFilters.push(`tag: ${searchState.tag}`);
+        }
+        if (searchState.favorites) {
+            activeFilters.push('favorites only');
+        }
+        if (searchState.caseSensitive) {
+            activeFilters.push('case sensitive');
+        }
+
+        if (activeFilters.length > 0) {
+            infoText += ` (filtered by: ${activeFilters.join(', ')})`;
+        }
+
+        searchResultsInfo.textContent = infoText;
+        showElement(searchResultsInfo);
+    }
+
+    // Update the clear filters button text to show result count
+    const clearAllFiltersBtn = document.getElementById('clear-all-filters-btn');
+    if (clearAllFiltersBtn) {
+        if (resultCount !== totalCount || searchState.searchTerm || searchState.category !== 'all' ||
+            searchState.tag !== 'all' || searchState.favorites || searchState.caseSensitive) {
+            clearAllFiltersBtn.textContent = `Clear Filters (${resultCount} shown)`;
+            showElement(clearAllFiltersBtn);
+        } else {
+            hideElement(clearAllFiltersBtn);
+        }
+    }
+}
+
+function clearAllFilters() {
+    // Reset search state
+    searchState = {
+        searchTerm: '',
+        category: 'all',
+        tag: 'all',
+        favorites: false,
+        caseSensitive: false,
+        isLoading: false
+    };
+
+    // Reset UI elements
+    const searchInput = document.getElementById('search-input');
+    if (searchInput) {
+        searchInput.value = '';
+    }
+
+    const clearSearchBtn = document.getElementById('clear-search-btn');
+    if (clearSearchBtn) {
+        hideElement(clearSearchBtn);
+    }
+
+    const caseSensitiveToggle = document.getElementById('case-sensitive-toggle');
+    if (caseSensitiveToggle) {
+        caseSensitiveToggle.checked = false;
+    }
+
+    const favoritesFilter = document.getElementById('favorites-filter');
+    if (favoritesFilter) {
+        favoritesFilter.checked = false;
+    }
+
+    // Reset active states in sidebar
+    document.querySelectorAll('#categories-list li').forEach(li => li.classList.remove('active'));
+    document.querySelector('[data-category="all"]').classList.add('active');
+
+    document.querySelectorAll('#tags-list li').forEach(li => li.classList.remove('active'));
+    document.querySelector('[data-tag="all"]').classList.add('active');
+
+    // Hide clear filters button and search results info
+    const clearAllFiltersBtn = document.getElementById('clear-all-filters-btn');
+    if (clearAllFiltersBtn) {
+        hideElement(clearAllFiltersBtn);
+    }
+
+    const searchResultsInfo = document.getElementById('search-results-info');
+    if (searchResultsInfo) {
+        hideElement(searchResultsInfo);
+    }
+
+    // Load all prompts
+    loadPrompts();
 }
 
 // Version Control Functions
