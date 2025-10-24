@@ -67,6 +67,7 @@
                                 <button class="favorite-btn" data-id="{{ prompt_id }}">
                                     {% if prompt_info.data.favorite %}★{% else %}☆{% endif %}
                                 </button>
+                                <button class="history-btn" data-id="{{ prompt_id }}" data-i18n="version.history">History</button>
                                 <button class="copy-btn" data-id="{{ prompt_id }}">Copy</button>
                                 <button class="edit-btn" data-id="{{ prompt_id }}">Edit</button>
                                 <button class="delete-btn" data-id="{{ prompt_id }}">Delete</button>
@@ -110,6 +111,11 @@
                             <input type="text" id="prompt-tags" name="tags" data-i18n="[placeholder]form.tagPlaceholder">
                         </div>
 
+                        <div class="form-group">
+                            <label for="commit-message" data-i18n="version.commitMessage">Commit Message:</label>
+                            <input type="text" id="commit-message" name="commit_message" data-i18n="[placeholder]version.commitMessagePlaceholder" placeholder="Describe your changes...">
+                        </div>
+
                         <div class="form-actions">
                             <button type="submit" data-i18n="actions.save">Save</button>
                             <button type="button" id="cancel-btn" data-i18n="actions.cancel">Cancel</button>
@@ -126,6 +132,78 @@
             <span class="close">&times;</span>
             <h2 id="modal-title">Edit Prompt</h2>
             <!-- Form will be inserted here -->
+        </div>
+    </div>
+
+    <!-- Version History Modal -->
+    <div id="version-history-modal" class="modal" style="display: none;">
+        <div class="modal-content version-history-modal">
+            <div class="modal-header">
+                <h2 data-i18n="version.history">Version History</h2>
+                <span class="close" onclick="hideVersionHistoryModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="version-controls">
+                    <input type="text" id="version-search" class="version-search" placeholder="Search versions..." data-i18n="[placeholder]version.searchPlaceholder">
+                </div>
+                <div id="version-list" class="version-list">
+                    <div class="loading" data-i18n="messages.loading">Loading...</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="compare-versions-btn" class="btn btn-primary" data-i18n="version.compare" style="display: none;">Compare Selected</button>
+                <button id="close-version-history-btn" class="btn btn-secondary" data-i18n="actions.close">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Diff Viewer Modal -->
+    <div id="diff-modal" class="modal" style="display: none;">
+        <div class="modal-content diff-modal">
+            <div class="modal-header">
+                <h2 data-i18n="version.compareVersions">Compare Versions</h2>
+                <span class="close" onclick="hideDiffModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="diff-controls">
+                    <div class="version-selector">
+                        <label data-i18n="version.version1">Version 1:</label>
+                        <select id="diff-v1-selector" class="version-selector-dropdown"></select>
+                    </div>
+                    <div class="version-selector">
+                        <label data-i18n="version.version2">Version 2:</label>
+                        <select id="diff-v2-selector" class="version-selector-dropdown"></select>
+                    </div>
+                    <button id="refresh-diff-btn" class="btn-primary" data-i18n="actions.refresh">Refresh</button>
+                </div>
+                <div id="diff-view" class="diff-view">
+                    <div class="loading" data-i18n="messages.loading">Loading...</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="close-diff-btn" class="btn-secondary" data-i18n="actions.close">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Revert Confirmation Modal -->
+    <div id="revert-confirmation-modal" class="modal" style="display: none;">
+        <div class="modal-content revert-modal">
+            <div class="modal-header">
+                <h2 data-i18n="version.confirmRevert">Confirm Revert</h2>
+                <span class="close" onclick="hideRevertConfirmationModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p data-i18n="version.revertWarning">Are you sure you want to revert to this version? This will create a new version with the reverted content.</p>
+                <div class="form-group">
+                    <label for="revert-commit-message" data-i18n="version.commitMessage">Commit Message:</label>
+                    <input type="text" id="revert-commit-message" class="form-control" placeholder="Describe why you're reverting..." data-i18n="[placeholder]version.revertMessagePlaceholder">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="confirm-revert-btn" class="btn-danger" data-i18n="version.revert">Revert</button>
+                <button id="cancel-revert-btn" class="btn-secondary" data-i18n="actions.cancel">Cancel</button>
+            </div>
         </div>
     </div>
 

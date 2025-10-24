@@ -62,15 +62,20 @@ PromptVault is a modern web-based prompt management application designed to help
 - [Jinja2](https://jinja.palletsprojects.com/) - Template engine
 - [Docker](https://www.docker.com/) - Containerization platform
 
-### Version Control (WIP since migration to WebApp)
+### Version Control ✅
 
-PromptVault includes a robust, Git-like version control system for all prompts, ensuring full traceability and a clear history of changes. Key features include:
+PromptVault includes a robust, Git-like version control system for all prompts, ensuring full traceability and a clear history of changes. This feature is **fully implemented and production-ready**. Key features include:
 
-- **Unique Version Identifiers**: Each prompt version is assigned an UUID.
-- **Detailed Metadata**: Every version tracks essential metadata such as timestamp, author, and a mandatory commit message.
-- **Version History View**: A dedicated dialog allows users to browse a prompt's complete version history, displaying each commit with its details.
-- **Diff Visualization**: Easily compare any two versions to see precise changes in prompt content, title, notes, categories, and tags.
-- **Revert Functionality**: Users can revert a prompt to any previous version, which creates a new commit reflecting the reverted state.
+- **Automatic Versioning**: Every update to a prompt automatically creates a new version with complete metadata
+- **Unique Version Identifiers**: Each prompt version is assigned a UUID for reliable tracking
+- **Detailed Metadata**: Every version tracks essential metadata including timestamp, author, and commit message
+- **Version History View**: A dedicated modal dialog allows users to browse a prompt's complete version history with all commits and details
+- **Diff Visualization**: Easily compare any two versions to see precise changes in prompt content, title, category, and tags with color-coded highlighting
+- **Revert Functionality**: Users can safely revert a prompt to any previous version, which creates a new commit reflecting the reverted state (history is never lost)
+- **Keyboard Shortcuts**: Quick access with Cmd+H (Mac) or Ctrl+H (Windows/Linux) to open version history
+- **Multi-language Support**: Version control UI available in English, French, Spanish, and German
+
+For detailed usage instructions, see [Version Control Documentation](docs/VERSION_CONTROL.md).
 
 ### Architecture
 
@@ -196,10 +201,10 @@ python run_web.py
 ### Features
 
 - **Prompt Management**: Create, edit, delete, and organize prompts through an intuitive web interface
-- **Version Control (WIP since migration to WebApp)**: Git-like versioning system for all prompts with full history tracking
+- **Version Control**: Git-like versioning system with full history tracking, diff visualization, and safe revert functionality
 - **Categories & Tags**: Organize prompts with categories and tags for easy discovery
 - **Search & Filter (WIP since migration to WebApp)**: Find prompts quickly with advanced filtering and search capabilities
-- **Import/Export (WIP since migration to WebApp)**: Support for CSV, Markdown, and JSON formats with preview functionality
+- **Import/Export**: Support for CSV, Markdown, and JSON formats with preview functionality
 - **Backup System (WIP since migration to WebApp)**: Comprehensive data backup and restoration with automatic and manual options
 - **Responsive Design**: Modern, mobile-friendly interface that works on all devices
 - **Multi-language Support**: Internationalization with English, French, Spanish, and German
@@ -218,7 +223,7 @@ PromptVault supports multiple languages (English, French, Spanish, German). The 
 The project follows a clean, modular web-first architecture:
 
 - `src/`: Main source code directory
-  - `src/web/`: **Primary web application module**
+  - `src/web/`:
     - `src/web/app.py`: FastAPI application and REST API routes
     - `src/web/templates/`: Jinja2 HTML templates
     - `src/web/static/`: CSS stylesheets, JavaScript files, and locales
@@ -238,9 +243,9 @@ The project follows a clean, modular web-first architecture:
 
 ## Roadmap
 
-- [ ] **Features restoration:** Restoring features like searching, import/export, and Git versioning that were available in the desktop version but need to be reimplemented following the migration to the WebApp.
+- [x] **Version Control System:** Git-like versioning with history tracking, diff visualization, and revert functionality (✅ Completed)
+- [ ] **Search restoration:** Restoring searching & filtering, automatic backup features that were available in the desktop version but need to be reimplemented following the migration to the WebApp.
 - [ ] **Input Validation & Sanitization:** Ensures data integrity and prevents injection attacks by validating all user inputs.
-- [x] **Data Backup System:** Automatically creates backups to prevent data loss and enable recovery from corruption.
 - [ ] **Error Handling & Logging:** Implements centralized logging and comprehensive error handling for better debugging and user experience.
 - [ ] **Unit Tests:** Establishes comprehensive test coverage for core functionality to catch bugs early and enable safe refactoring.
 - [ ] **Typescript transition:** Adopt TypeScript to bring static typing, safer refactors, richer editor help, and modern tooling into the app as the next roadmap milestone.

@@ -113,5 +113,24 @@
     "validationPassed": "All data validated successfully",
     "operationCancelled": "Operation cancelled",
     "clearBtn": "Clear"
+  },
+  "version": {
+    "history": "History",
+    "compareVersions": "Compare Versions",
+    "compare": "Compare Selected",
+    "select": "Select",
+    "revert": "Revert",
+    "confirmRevert": "Confirm Revert",
+    "revertWarning": "Are you sure you want to revert to this version? This will create a new version with the reverted content.",
+    "commitMessage": "Commit Message",
+    "commitMessagePlaceholder": "Describe your changes...",
+    "revertMessagePlaceholder": "Describe why you're reverting...",
+    "searchPlaceholder": "Search versions...",
+    "author": "Author",
+    "version1": "Version 1",
+    "version2": "Version 2",
+    "noVersions": "No versions available",
+    "revertSuccess": "Successfully reverted to previous version",
+    "revertError": "Failed to revert version"
   }
 }

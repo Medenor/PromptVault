@@ -105,13 +105,18 @@ async def update_prompt(
     title: str = Form(...),
     prompt: str = Form(...),
     category: str = Form(""),
-    tags: str = Form("")
+    tags: str = Form(""),
+    commit_message: str = Form("Update")
 ):
     """Update a prompt"""
     try:
         prompt_id_int = int(prompt_id)
     except ValueError:
         return JSONResponse(status_code=400, content={"error": "Invalid prompt ID"})
+
+    prompts = data_service.load_prompts()
+    if prompt_id_int not in prompts:
+        return JSONResponse(status_code=404, content={"error": "Prompt not found"})
 
     prompt_data = {
         "title": title,
@@ -120,10 +125,12 @@ async def update_prompt(
         "tags": tags.split(",") if tags else []
     }
 
-    success = data_service.update_prompt(prompt_id_int, prompt_data)
+    success = data_service.update_prompt(prompt_id_int, prompt_data, commit_message)
     if success:
         data_service.save_prompts()  # Save to disk
-    return {"success": success}
+        return {"success": True}
+    else:
+        return JSONResponse(status_code=500, content={"error": "Failed to update prompt"})
 
 @app.delete("/api/prompts/{prompt_id}")
 async def delete_prompt(prompt_id: str):
@@ -264,7 +271,7 @@ async def export_prompts(
 async def import_prompts(
     file: UploadFile = File(...),
     mode: str = Form("append"),
-    validate: bool = Form(True)
+    validate_data: bool = Form(True)
 ):
     """Import prompts from uploaded file"""
     try:
@@ -301,7 +308,7 @@ async def import_prompts(
                         raise ValueError("Invalid JSON format: expected array or object")
 
         # Validate if requested
-        if validate:
+        if validate_data:
             valid_prompts = []
             for prompt in imported_prompts:
                 if prompt.get('title') and prompt.get('prompt'):
@@ -404,3 +411,153 @@ async def get_import_export_stats():
             status_code=500,
             content={"error": f"Failed to get statistics: {str(e)}"}
         )
+
+
+# Version Control Endpoints
+@app.get("/api/prompts/{prompt_id}/versions")
+async def get_version_history(prompt_id: str):
+    """Get version history for a specific prompt"""
+    try:
+        prompt_id_int = int(prompt_id)
+    except ValueError:
+        return JSONResponse(status_code=400, content={"error": "Invalid prompt ID"})
+
+    prompts = data_service.load_prompts()
+    if prompt_id_int not in prompts:
+        return JSONResponse(status_code=404, content={"error": "Prompt not found"})
+
+    versions = data_service.get_prompt_versions(prompt_id_int)
+    
+    # Sort by timestamp (newest first)
+    sorted_versions = sorted(versions, key=lambda v: v.get('timestamp', ''), reverse=True)
+    
+    # Return version metadata without full data to reduce payload
+    version_list = []
+    for version in sorted_versions:
+        version_list.append({
+            'version_id': version.get('version_id'),
+            'timestamp': version.get('timestamp'),
+            'author': version.get('author'),
+            'message': version.get('message'),
+            'parents': version.get('parents', [])
+        })
+    
+    return JSONResponse(content={"versions": version_list})
+
+
+@app.get("/api/prompts/{prompt_id}/versions/compare")
+async def compare_versions(prompt_id: str, v1: str = None, v2: str = None):
+    """Compare two versions of a prompt"""
+    try:
+        prompt_id_int = int(prompt_id)
+    except ValueError:
+        return JSONResponse(status_code=400, content={"error": "Invalid prompt ID"})
+
+    if not v1 or not v2:
+        return JSONResponse(status_code=400, content={"error": "Both v1 and v2 version IDs are required"})
+
+    prompts = data_service.load_prompts()
+    if prompt_id_int not in prompts:
+        return JSONResponse(status_code=404, content={"error": "Prompt not found"})
+
+    versions = data_service.get_prompt_versions(prompt_id_int)
+    
+    # Find both versions
+    version1 = None
+    version2 = None
+    for version in versions:
+        if version.get('version_id') == v1:
+            version1 = version
+        if version.get('version_id') == v2:
+            version2 = version
+    
+    if not version1 or not version2:
+        return JSONResponse(status_code=404, content={"error": "One or both versions not found"})
+
+    # Compare the data
+    data1 = version1.get('data', {})
+    data2 = version2.get('data', {})
+    
+    diff = {
+        'v1_id': v1,
+        'v2_id': v2,
+        'changes': {}
+    }
+    
+    # Compare each field
+    fields = ['title', 'prompt', 'category', 'tags', 'note']
+    for field in fields:
+        val1 = data1.get(field)
+        val2 = data2.get(field)
+        if val1 != val2:
+            diff['changes'][field] = {
+                'old': val1,
+                'new': val2
+            }
+    
+    return JSONResponse(content=diff)
+
+
+@app.get("/api/prompts/{prompt_id}/versions/{version_id}")
+async def get_specific_version(prompt_id: str, version_id: str):
+    """Get a specific version of a prompt"""
+    try:
+        prompt_id_int = int(prompt_id)
+    except ValueError:
+        return JSONResponse(status_code=400, content={"error": "Invalid prompt ID"})
+
+    prompts = data_service.load_prompts()
+    if prompt_id_int not in prompts:
+        return JSONResponse(status_code=404, content={"error": "Prompt not found"})
+
+    versions = data_service.get_prompt_versions(prompt_id_int)
+    
+    # Find the specific version
+    for version in versions:
+        if version.get('version_id') == version_id:
+            return JSONResponse(content=version)
+    
+    return JSONResponse(status_code=404, content={"error": "Version not found"})
+
+
+@app.post("/api/prompts/{prompt_id}/versions/{version_id}/revert")
+async def revert_to_version(prompt_id: str, version_id: str, commit_message: str = Form("Revert to previous version")):
+    """Revert a prompt to a specific version"""
+    try:
+        prompt_id_int = int(prompt_id)
+    except ValueError:
+        return JSONResponse(status_code=400, content={"error": "Invalid prompt ID"})
+
+    prompts = data_service.load_prompts()
+    if prompt_id_int not in prompts:
+        return JSONResponse(status_code=404, content={"error": "Prompt not found"})
+
+    versions = data_service.get_prompt_versions(prompt_id_int)
+    
+    # Find the version to revert to
+    version_to_revert = None
+    for version in versions:
+        if version.get('version_id') == version_id:
+            version_to_revert = version
+            break
+    
+    if not version_to_revert:
+        return JSONResponse(status_code=404, content={"error": "Version not found"})
+
+    # Get the data from the version to revert to
+    reverted_data = version_to_revert.get('data', {}).copy()
+    
+    # Create a new version with the reverted data
+    success = data_service.revert_prompt_to_version(prompt_id_int, reverted_data, commit_message)
+    
+    if success:
+        data_service.save_prompts()
+        new_versions = data_service.get_prompt_versions(prompt_id_int)
+        new_version_id = new_versions[-1].get('version_id') if new_versions else None
+        return JSONResponse(content={
+            "success": True,
+            "message": f"Reverted to version {version_id}",
+            "new_version_id": new_version_id
+        })
+    else:
+        return JSONResponse(status_code=500, content={"error": "Failed to revert version"})
