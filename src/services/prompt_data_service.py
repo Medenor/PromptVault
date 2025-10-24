@@ -268,21 +268,24 @@ class PromptDataService:
         """
         Update categories and tags from current prompts.
         This ensures they stay in sync with the actual prompt data.
+        Preserves predefined categories and tags while adding any new ones in use.
         """
-        # Update categories from current prompts
+        # Update categories from current prompts - merge with existing predefined categories
         current_categories = set(
             prompt_info['data'].get('category', 'No category')
             for prompt_info in self.prompts.values()
         )
-        self.categories = sorted(list(current_categories))
+        # Preserve existing predefined categories and add any new ones in use
+        self.categories = sorted(list(set(self.categories) | current_categories))
 
-        # Update tags from current prompts
+        # Update tags from current prompts - merge with existing predefined tags
         all_tags = set()
         for prompt_info in self.prompts.values():
             prompt_tags = prompt_info['data'].get('tags', [])
             if isinstance(prompt_tags, list):
                 all_tags.update(prompt_tags)
-        self.global_tags = all_tags
+        # Preserve existing predefined tags and add any new ones in use
+        self.global_tags = self.global_tags | all_tags
 
     def add_new_prompt(self, data: Dict[str, Any]) -> int:
         """
