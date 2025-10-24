@@ -313,10 +313,10 @@ class PromptDataService:
     def delete_prompt(self, prompt_id: int) -> bool:
         """
         Delete a prompt.
-        
+
         Args:
             prompt_id (int): The ID of the prompt to delete
-            
+
         Returns:
             bool: True if successful, False otherwise
         """
@@ -324,6 +324,26 @@ class PromptDataService:
             del self.prompts[prompt_id]
             return True
         return False
+
+    def clear_all_prompts(self) -> bool:
+        """
+        Clear all prompts and reset the data service to initial state.
+
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        try:
+            # Clear all data in memory
+            self.prompts = {}
+            self.next_id = 0
+            self.categories = []
+            self.global_tags = set()
+
+            # Save the empty state to disk
+            return self.save_prompts()
+        except Exception as e:
+            print(f"Error clearing all prompts: {e}")
+            return False
 
     def get_prompt_data(self, prompt_id: int) -> Dict[str, Any]:
         """

@@ -99,7 +99,13 @@ class PromptImportExportService:
                     # Remove 'history' if it somehow exists in the imported data
                     if 'history' in row:
                         del row['history']
-                    
+
+                    # Ensure required fields have defaults
+                    if 'category' not in row or not row['category']:
+                        row['category'] = 'No category'
+                    if 'favorite' not in row:
+                        row['favorite'] = False
+
                     prompts.append(row)
         except Exception as e:
             print(f"Import Error: Failed to import prompts from CSV: {e}")

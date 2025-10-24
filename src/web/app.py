@@ -291,8 +291,14 @@ async def import_prompts(
                     for prompt_id, prompt_info in data['prompts'].items():
                         imported_prompts.append(prompt_info['data'])
                 else:
-                    # Handle direct JSON format
-                    imported_prompts = data
+                    # Handle direct JSON format - ensure it's a list
+                    if isinstance(data, list):
+                        imported_prompts = data
+                    elif isinstance(data, dict):
+                        # Single prompt object, wrap in list
+                        imported_prompts = [data]
+                    else:
+                        raise ValueError("Invalid JSON format: expected array or object")
 
         # Validate if requested
         if validate:
@@ -307,7 +313,6 @@ async def import_prompts(
         if mode == "replace":
             # Clear existing data
             data_service.clear_all_prompts()
-            added_count = len(imported_prompts)
 
         for prompt_data in imported_prompts:
             if mode == "merge":
@@ -320,8 +325,12 @@ async def import_prompts(
                 if not exists:
                     data_service.create_prompt(prompt_data)
                     added_count += 1
+            elif mode == "replace":
+                # Replace mode: add all prompts (existing data already cleared)
+                data_service.create_prompt(prompt_data)
+                added_count += 1
             else:
-                # Append mode
+                # Append mode: add all prompts
                 data_service.create_prompt(prompt_data)
                 added_count += 1
 
