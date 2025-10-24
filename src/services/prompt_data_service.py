@@ -30,12 +30,14 @@ class PromptDataService:
     def save_prompts(self) -> bool:
         """
         Save prompts to the data file.
-        
+
         Returns:
             bool: True if successful, False otherwise
         """
         try:
-            self.categories.sort()
+            # Update categories and tags from current prompts before saving
+            self._update_categories_and_tags()
+
             with open(self.data_file, 'w', encoding='utf-8') as f:
                 prompts_to_save = {}
                 for k, v in self.prompts.items():
@@ -91,9 +93,27 @@ class PromptDataService:
                         print(f"Warning: Invalid prompt key '{k}', ignored.")
 
                 self.prompts = loaded_prompts
+
+                # Load categories and tags from file if they exist (for backward compatibility)
                 self.categories = loaded_data.get('categories', [])
-                self.categories.sort()
                 self.global_tags = set(loaded_data.get('global_tags', []))
+
+                # If no categories/tags in file, build them from current prompts
+                if not self.categories:
+                    self.categories = list(set(
+                        prompt_info['data'].get('category', 'No category')
+                        for prompt_info in self.prompts.values()
+                    ))
+                    self.categories.sort()
+
+                if not self.global_tags:
+                    all_tags = set()
+                    for prompt_info in self.prompts.values():
+                        prompt_tags = prompt_info['data'].get('tags', [])
+                        if isinstance(prompt_tags, list):
+                            all_tags.update(prompt_tags)
+                    self.global_tags = all_tags
+
             return self.prompts
         except (IOError, json.JSONDecodeError) as e:
             print(f"Load Error: Could not load prompts from {self.data_file}: {e}")
@@ -235,7 +255,7 @@ class PromptDataService:
     def get_all_tags_from_prompts(self) -> Set[str]:
         """
         Get all unique tags from all prompts.
-        
+
         Returns:
             Set[str]: Set of all tags
         """
@@ -244,19 +264,39 @@ class PromptDataService:
             all_tags.update(prompt_info['data'].get('tags', []))
         return all_tags
 
+    def _update_categories_and_tags(self) -> None:
+        """
+        Update categories and tags from current prompts.
+        This ensures they stay in sync with the actual prompt data.
+        """
+        # Update categories from current prompts
+        current_categories = set(
+            prompt_info['data'].get('category', 'No category')
+            for prompt_info in self.prompts.values()
+        )
+        self.categories = sorted(list(current_categories))
+
+        # Update tags from current prompts
+        all_tags = set()
+        for prompt_info in self.prompts.values():
+            prompt_tags = prompt_info['data'].get('tags', [])
+            if isinstance(prompt_tags, list):
+                all_tags.update(prompt_tags)
+        self.global_tags = all_tags
+
     def add_new_prompt(self, data: Dict[str, Any]) -> int:
         """
         Add a new prompt with initial version.
-        
+
         Args:
             data (Dict[str, Any]): The prompt data
-            
+
         Returns:
             int: The ID of the new prompt
         """
         prompt_id = self.next_id
         self.next_id += 1
-        
+
         commit_message = data.pop('commit_message', "Initial commit")
         version_id = self._generate_version_id(data, commit_message)
         new_version = {
@@ -272,17 +312,22 @@ class PromptDataService:
             'versions': [new_version],
             'branches': {"main": version_id}
         }
+
+        # Clear cached categories and tags so they get rebuilt
+        self.categories = []
+        self.global_tags = set()
+
         return prompt_id
 
     def update_prompt(self, prompt_id: int, data: Dict[str, Any], commit_message: str = "Update") -> bool:
         """
         Update an existing prompt with a new version.
-        
+
         Args:
             prompt_id (int): The ID of the prompt to update
             data (Dict[str, Any]): The updated prompt data
             commit_message (str): The commit message
-            
+
         Returns:
             bool: True if successful, False otherwise
         """
@@ -291,7 +336,7 @@ class PromptDataService:
 
         current_prompt_info = self.prompts[prompt_id]
         current_data = current_prompt_info['data']
-        
+
         # Get the parent version_id (current head of 'main' branch)
         parent_version_id = current_prompt_info['branches'].get("main")
         parents = [parent_version_id] if parent_version_id else []
@@ -308,6 +353,11 @@ class PromptDataService:
         current_prompt_info['versions'].append(new_version)
         current_prompt_info['data'] = data
         current_prompt_info['branches']["main"] = version_id
+
+        # Clear cached categories and tags so they get rebuilt
+        self.categories = []
+        self.global_tags = set()
+
         return True
 
     def delete_prompt(self, prompt_id: int) -> bool:
@@ -322,6 +372,9 @@ class PromptDataService:
         """
         if prompt_id in self.prompts:
             del self.prompts[prompt_id]
+            # Clear cached categories and tags so they get rebuilt
+            self.categories = []
+            self.global_tags = set()
             return True
         return False
 
@@ -376,12 +429,12 @@ class PromptDataService:
     def revert_prompt_to_version(self, prompt_id: int, reverted_data: Dict[str, Any], commit_message: str) -> bool:
         """
         Revert a prompt to a specific version.
-        
+
         Args:
             prompt_id (int): The ID of the prompt to revert
             reverted_data (Dict[str, Any]): The data to revert to
             commit_message (str): The commit message
-            
+
         Returns:
             bool: True if successful, False otherwise
         """
@@ -389,7 +442,7 @@ class PromptDataService:
             return False
 
         current_prompt_info = self.prompts[prompt_id]
-        
+
         # Create a new version with the reverted data
         parent_version_id = current_prompt_info['branches'].get("main")
         parents = [parent_version_id] if parent_version_id else []
@@ -406,6 +459,11 @@ class PromptDataService:
         current_prompt_info['versions'].append(new_version)
         current_prompt_info['data'] = reverted_data
         current_prompt_info['branches']["main"] = version_id
+
+        # Clear cached categories and tags so they get rebuilt
+        self.categories = []
+        self.global_tags = set()
+
         return True
 
     def create_prompt(self, data: Dict[str, Any]) -> int:
@@ -427,6 +485,14 @@ class PromptDataService:
         Returns:
             List[str]: List of categories
         """
+        # Update categories from current prompts if empty
+        if not self.categories:
+            self.categories = list(set(
+                prompt_info['data'].get('category', 'No category')
+                for prompt_info in self.prompts.values()
+            ))
+            self.categories.sort()
+
         return self.categories
 
     def get_tags(self) -> List[str]:
@@ -436,4 +502,13 @@ class PromptDataService:
         Returns:
             List[str]: List of tags
         """
+        # Update tags from current prompts if empty
+        if not self.global_tags:
+            all_tags = set()
+            for prompt_info in self.prompts.values():
+                prompt_tags = prompt_info['data'].get('tags', [])
+                if isinstance(prompt_tags, list):
+                    all_tags.update(prompt_tags)
+            self.global_tags = all_tags
+
         return sorted(list(self.global_tags))
