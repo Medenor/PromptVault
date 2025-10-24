@@ -9,275 +9,6 @@
     <script src="https://unpkg.com/i18next@23.7.6/i18next.min.js"></script>
     <script src="https://unpkg.com/i18next-browser-languagedetector@7.2.0/i18nextBrowserLanguageDetector.min.js"></script>
     <script src="https://unpkg.com/i18next-http-backend@2.4.2/i18nextHttpBackend.min.js"></script>
-    <style>
-        /* Import/Export specific styles */
-        .import-export-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        .import-export-header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        .import-export-content {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 30px;
-            margin-bottom: 30px;
-        }
-
-        .section-card {
-            background: #fafafa;
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .section-title {
-            font-size: 1.2em;
-            font-weight: bold;
-            margin-bottom: 15px;
-            color: #2c3e50;
-            border-bottom: 2px solid #3498db;
-            padding-bottom: 8px;
-        }
-
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 500;
-            color: #2c3e50;
-        }
-
-        .form-group input:not([type="checkbox"]),
-        .form-group select,
-        .form-group textarea {
-            width: 100%;
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            background: white;
-            color: #333;
-            font-size: 14px;
-        }
-
-        .form-group input[type="checkbox"] {
-            width: auto;
-            margin-right: 8px;
-        }
-
-        .checkbox-group {
-            margin-bottom: 10px;
-        }
-
-        .checkbox-label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: normal;
-            color: #2c3e50;
-        }
-
-        .checkbox-label:last-child {
-            margin-bottom: 0;
-        }
-
-        .checkbox-label input[type="checkbox"] {
-            margin-right: 8px;
-            transform: translateY(1px);
-        }
-
-        .form-group textarea {
-            min-height: 100px;
-            resize: vertical;
-        }
-
-        .form-select {
-            width: 100%;
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            background: white;
-            color: #333;
-            font-size: 14px;
-        }
-
-        .button-group {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        .btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: background-color 0.2s;
-        }
-
-        .btn-primary {
-            background: #27ae60;
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: #219a52;
-        }
-
-        .btn-secondary {
-            background: #95a5a6;
-            color: white;
-        }
-
-        .btn-secondary:hover {
-            background: #7f8c8d;
-        }
-
-        .btn-danger {
-            background: #e74c3c;
-            color: white;
-        }
-
-        .btn-danger:hover {
-            background: #c0392b;
-        }
-
-        .statistics-panel {
-            background: #ecf0f1;
-            border-radius: 8px;
-            padding: 20px;
-            margin-top: 20px;
-        }
-
-        .stat-item {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 8px;
-        }
-
-        .stat-label {
-            font-weight: 500;
-            color: #7f8c8d;
-        }
-
-        .stat-value {
-            font-weight: bold;
-            color: #2c3e50;
-        }
-
-        .history-list {
-            max-height: 300px;
-            overflow-y: auto;
-            border: 1px solid #bdc3c7;
-            border-radius: 4px;
-        }
-
-        .history-item {
-            padding: 10px;
-            border-bottom: 1px solid #bdc3c7;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .history-item:last-child {
-            border-bottom: none;
-        }
-
-        .history-info {
-            flex: 1;
-        }
-
-        .history-timestamp {
-            font-size: 0.9em;
-            color: #7f8c8d;
-        }
-
-        .history-details {
-            font-size: 0.8em;
-            color: #95a5a6;
-            margin-top: 2px;
-        }
-
-        .preview-panel {
-            margin-top: 20px;
-            background: #ecf0f1;
-            border-radius: 8px;
-            padding: 20px;
-        }
-
-        .preview-content {
-            background: white;
-            border: 1px solid #bdc3c7;
-            border-radius: 4px;
-            padding: 15px;
-            max-height: 200px;
-            overflow-y: auto;
-            font-family: monospace;
-            font-size: 12px;
-            white-space: pre-wrap;
-        }
-
-        .progress-container {
-            margin-top: 15px;
-            display: none;
-        }
-
-        .progress-bar {
-            width: 100%;
-            height: 20px;
-            background: #ecf0f1;
-            border-radius: 10px;
-            overflow: hidden;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: #3498db;
-            width: 0%;
-            transition: width 0.3s;
-        }
-
-        .status-message {
-            margin-top: 10px;
-            padding: 8px 12px;
-            border-radius: 4px;
-            font-size: 14px;
-        }
-
-        .status-success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .status-error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-
-        .status-info {
-            background: #d1ecf1;
-            color: #0c5460;
-            border: 1px solid #bee5eb;
-        }
-
-        @media (max-width: 768px) {
-            .import-export-content {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
 </head>
 <body>
     <div class="app">
@@ -338,7 +69,7 @@
                         <button class="btn btn-secondary" onclick="clearExportSettings()" data-i18n="importExport.clearBtn">Clear</button>
                     </div>
 
-                    <div class="progress-container" id="export-progress">
+                    <div class="progress-container is-hidden" id="export-progress">
                         <div class="progress-bar">
                             <div class="progress-fill" id="export-progress-fill"></div>
                         </div>
@@ -382,7 +113,7 @@
                         <button class="btn btn-secondary" onclick="previewImport()" data-i18n="importExport.previewBtn">Preview</button>
                     </div>
 
-                    <div class="progress-container" id="import-progress">
+                    <div class="progress-container is-hidden" id="import-progress">
                         <div class="progress-bar">
                             <div class="progress-fill" id="import-progress-fill"></div>
                         </div>
@@ -392,7 +123,7 @@
             </div>
 
             <!-- Preview Panel -->
-            <div class="preview-panel" id="preview-panel" style="display: none;">
+            <div class="preview-panel is-hidden" id="preview-panel">
                 <h3 class="section-title" data-i18n="importExport.previewTitle">Preview</h3>
                 <div class="preview-content" id="preview-content"></div>
                 <div class="button-group">

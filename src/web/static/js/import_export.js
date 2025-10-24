@@ -4,6 +4,26 @@
 let currentOperation = null; // 'export' or 'import'
 let previewData = null;
 
+const HIDDEN_CLASS = 'is-hidden';
+
+function showElement(element) {
+    if (element) {
+        element.classList.remove(HIDDEN_CLASS);
+    }
+}
+
+function hideElement(element) {
+    if (element) {
+        element.classList.add(HIDDEN_CLASS);
+    }
+}
+
+function toggleElement(element, shouldShow) {
+    if (element) {
+        element.classList.toggle(HIDDEN_CLASS, !shouldShow);
+    }
+}
+
 // Initialize i18next for translations
 i18next
     .use(i18nextHttpBackend)
@@ -299,7 +319,7 @@ function readFileContent(file) {
 }
 
 function showPreview(titleKey, content) {
-    document.getElementById('preview-panel').style.display = 'block';
+    showElement(document.getElementById('preview-panel'));
     document.getElementById('preview-content').textContent = content;
 
     // Update confirm button text
@@ -312,7 +332,7 @@ function showPreview(titleKey, content) {
 }
 
 function hidePreview() {
-    document.getElementById('preview-panel').style.display = 'none';
+    hideElement(document.getElementById('preview-panel'));
     previewData = null;
 }
 
@@ -356,7 +376,7 @@ async function performExport() {
             const blob = await response.blob();
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
-            a.style.display = 'none';
+            a.classList.add(HIDDEN_CLASS);
             a.href = url;
             a.download = filename;
             document.body.appendChild(a);
@@ -430,14 +450,14 @@ function showProgress(operation, messageKey) {
     const progressContainer = document.getElementById(`${operation}-progress`);
     const statusElement = document.getElementById(`${operation}-status`);
 
-    progressContainer.style.display = 'block';
+    showElement(progressContainer);
     statusElement.textContent = i18next.t(`importExport.${messageKey}`);
     statusElement.className = 'status-message status-info';
 }
 
 function hideProgress(operation) {
     const progressContainer = document.getElementById(`${operation}-progress`);
-    progressContainer.style.display = 'none';
+    hideElement(progressContainer);
 }
 
 function showStatus(operation, message, type) {
@@ -484,5 +504,5 @@ function clearExportSettings() {
 }
 
 function hideModal() {
-    document.getElementById('prompt-modal').style.display = 'none';
+    hideElement(document.getElementById('prompt-modal'));
 }

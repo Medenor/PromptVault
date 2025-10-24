@@ -52,6 +52,26 @@ function updateStaticTranslations() {
 let promptCache = {};
 let lastSelectedPromptId = null; // Track the last selected prompt for keyboard shortcuts
 
+const HIDDEN_CLASS = 'is-hidden';
+
+function showElement(element) {
+    if (element) {
+        element.classList.remove(HIDDEN_CLASS);
+    }
+}
+
+function hideElement(element) {
+    if (element) {
+        element.classList.add(HIDDEN_CLASS);
+    }
+}
+
+function toggleElement(element, shouldShow) {
+    if (element) {
+        element.classList.toggle(HIDDEN_CLASS, !shouldShow);
+    }
+}
+
 function initializeApp() {
     // Event listeners
     setupEventListeners();
@@ -275,14 +295,20 @@ function renderTags(tags) {
 }
 
 function showNewPromptForm() {
-    document.getElementById('prompt-editor').style.display = 'block';
+    const promptEditor = document.getElementById('prompt-editor');
+    const promptsList = document.getElementById('prompts-list');
+
+    showElement(promptEditor);
     document.getElementById('prompt-form').reset();
-    document.getElementById('prompts-list').style.display = 'none';
+    hideElement(promptsList);
 }
 
 function hidePromptEditor() {
-    document.getElementById('prompt-editor').style.display = 'none';
-    document.getElementById('prompts-list').style.display = 'flex';
+    const promptEditor = document.getElementById('prompt-editor');
+    const promptsList = document.getElementById('prompts-list');
+
+    hideElement(promptEditor);
+    showElement(promptsList);
 }
 
 async function handlePromptSubmit(event) {
@@ -389,13 +415,7 @@ function fallbackCopyTextToClipboard(text, id) {
     const textArea = document.createElement('textarea');
     textArea.value = text;
     textArea.setAttribute('readonly', '');
-    textArea.style.position = 'fixed';
-    textArea.style.top = '0';
-    textArea.style.left = '0';
-    textArea.style.width = '1px';
-    textArea.style.height = '1px';
-    textArea.style.opacity = '0';
-    textArea.style.pointerEvents = 'none';
+    textArea.className = 'clipboard-helper';
     document.body.appendChild(textArea);
 
     try {
@@ -438,8 +458,8 @@ async function editPrompt(id) {
         console.log('Editing prompt:', prompt); // Debug log
 
         // Show editor without resetting form
-        document.getElementById('prompt-editor').style.display = 'block';
-        document.getElementById('prompts-list').style.display = 'none';
+        showElement(document.getElementById('prompt-editor'));
+        hideElement(document.getElementById('prompts-list'));
 
         // Populate form
         document.getElementById('prompt-title').value = prompt.title || '';
@@ -595,7 +615,7 @@ function filterPrompts(filters) {
             }
         }
 
-        item.style.display = show ? 'block' : 'none';
+        toggleElement(item, show);
     });
 }
 
@@ -653,7 +673,7 @@ function handleExport() {
 }
 
 function hideModal() {
-    document.getElementById('prompt-modal').style.display = 'none';
+    hideElement(document.getElementById('prompt-modal'));
 }
 
 function truncateText(text, maxLength) {
@@ -672,7 +692,7 @@ const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
 function showVersionHistoryModal(promptId) {
     currentVersionPromptId = promptId;
     selectedVersions.clear();
-    document.getElementById('version-history-modal').style.display = 'block';
+    showElement(document.getElementById('version-history-modal'));
     // Update search placeholder with current language
     const searchInput = document.getElementById('version-search');
     if (searchInput) {
@@ -682,17 +702,17 @@ function showVersionHistoryModal(promptId) {
 }
 
 function hideVersionHistoryModal() {
-    document.getElementById('version-history-modal').style.display = 'none';
+    hideElement(document.getElementById('version-history-modal'));
     currentVersionPromptId = null;
     selectedVersions.clear();
 }
 
 function hideDiffModal() {
-    document.getElementById('diff-modal').style.display = 'none';
+    hideElement(document.getElementById('diff-modal'));
 }
 
 function hideRevertConfirmationModal() {
-    document.getElementById('revert-confirmation-modal').style.display = 'none';
+    hideElement(document.getElementById('revert-confirmation-modal'));
 }
 
 async function loadVersionHistory(promptId) {
@@ -797,16 +817,12 @@ function selectVersionForComparison(versionId) {
 function updateCompareButton() {
     const compareBtn = document.getElementById('compare-versions-btn');
     if (compareBtn) {
-        if (selectedVersions.size === 2) {
-            compareBtn.style.display = 'inline-block';
-        } else {
-            compareBtn.style.display = 'none';
-        }
+        toggleElement(compareBtn, selectedVersions.size === 2);
     }
 }
 
 function showRevertConfirmation(versionId) {
-    document.getElementById('revert-confirmation-modal').style.display = 'block';
+    showElement(document.getElementById('revert-confirmation-modal'));
     document.getElementById('confirm-revert-btn').onclick = function() {
         performRevert(versionId);
     };
@@ -844,17 +860,6 @@ function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
     notification.className = `notification notification-${type}`;
     notification.textContent = message;
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 1rem;
-        background-color: ${type === 'success' ? '#27ae60' : type === 'error' ? '#e74c3c' : '#3498db'};
-        color: white;
-        border-radius: 4px;
-        z-index: 2000;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-    `;
     document.body.appendChild(notification);
     setTimeout(() => notification.remove(), 3000);
 }
@@ -868,7 +873,7 @@ async function showDiffModal() {
         return;
     }
 
-    document.getElementById('diff-modal').style.display = 'block';
+    showElement(document.getElementById('diff-modal'));
     const versionIds = Array.from(selectedVersions);
     
     // Populate version selectors
@@ -1070,11 +1075,9 @@ function setLoadingState(element, isLoading) {
     if (isLoading) {
         element.classList.add('loading-state');
         element.disabled = true;
-        element.style.opacity = '0.6';
     } else {
         element.classList.remove('loading-state');
         element.disabled = false;
-        element.style.opacity = '1';
     }
 }
 
