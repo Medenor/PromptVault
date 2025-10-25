@@ -62,7 +62,19 @@ PromptVault is a modern web-based prompt management application designed to help
 - [Jinja2](https://jinja.palletsprojects.com/) - Template engine
 - [Docker](https://www.docker.com/) - Containerization platform
 
-### Version Control ✅
+### Architecture
+
+PromptVault follows a modular architecture with dedicated service classes for different functionalities:
+
+- **PromptDataService**: Handles all data-related operations including loading, saving, and migration of prompt data
+- **PromptFilterService**: Manages filtering and searching logic for prompts
+- **PromptVersioningService**: Handles version control operations for prompts
+- **PromptImportExportService**: Manages import and export operations in various formats (CSV, Markdown)
+- **BackupService**: Provides comprehensive data backup and restoration capabilities with automatic pre-operation backups
+
+This modular design improves code maintainability, testability, and extensibility.
+
+### Version Control
 
 PromptVault includes a robust, Git-like version control system for all prompts, ensuring full traceability and a clear history of changes. This feature is **fully implemented and production-ready**. Key features include:
 
@@ -77,29 +89,19 @@ PromptVault includes a robust, Git-like version control system for all prompts, 
 
 For detailed usage instructions, see [Version Control Documentation](docs/VERSION_CONTROL.md).
 
-### Architecture
+### Data Backup System
 
-PromptVault follows a modular architecture with dedicated service classes for different functionalities:
+PromptVault includes a comprehensive, production-ready backup system to prevent data loss and enable easy recovery:
 
-- **PromptDataService**: Handles all data-related operations including loading, saving, and migration of prompt data
-- **PromptFilterService**: Manages filtering and searching logic for prompts
-- **PromptVersioningService**: Handles version control operations for prompts
-- **PromptImportExportService**: Manages import and export operations in various formats (CSV, Markdown)
-- **BackupService**: Provides comprehensive data backup and restoration capabilities with automatic pre-operation backups
-
-This modular design improves code maintainability, testability, and extensibility.
-
-### Data Backup System (WIP since migration to WebApp)
-
-PromptVault includes a robust backup system to prevent data loss and enable easy recovery:
-
-- **Automatic Backups**: Pre-operation backups are created automatically before risky operations (import, bulk delete, bulk update)
-- **Manual Backups**: Users can create manual backups at any time through the File menu
-- **Backup Management**: Full-featured backup dialog for viewing, restoring, and managing all backups
+- **Automatic Backups**: Pre-operation backups are created automatically before risky operations (delete prompts, replace imports)
+- **Manual Backups**: Users can create custom-named backups at any time through the web interface
+- **Backup Management**: Full-featured backup management page (`/backup-management`) for viewing, restoring, and managing all backups
 - **Smart Retention**: Configurable cleanup policies to remove old backups and save disk space
-- **Compression**: Automatic compression of older backups to optimize storage usage
+- **Compression**: Automatic gzip compression of older backups to optimize storage usage
 - **Safety Features**: Pre-restore backups ensure no data loss during restoration operations
 - **Complete Metadata**: Every backup includes comprehensive metadata (timestamp, size, prompt count, author)
+- **Maintenance Tools**: Built-in cleanup and compression utilities with progress indicators
+- **Statistics Dashboard**: Real-time backup statistics and storage information
 
 <details>
 <summary>Screenshots</summary>
@@ -108,12 +110,15 @@ PromptVault includes a robust backup system to prevent data loss and enable easy
 <div align="center">
 
 ### Main Interface
+
 <img src="docs/images/promptvault_main_interface.jpg" alt="PromptVault Main Interface" width="80%">
 
 ### Import/Export Management
+
 <img src="docs/images/promptvault_import_export.jpg" alt="Import/Export Management Interface" width="80%">
 
 ### Prompt Editor
+
 <img src="docs/images/promptvault_prompt_editor.jpg" alt="Prompt Editor Interface" width="80%">
 
 </div>
@@ -205,7 +210,7 @@ python run_web.py
 - **Categories & Tags**: Organize prompts with categories and tags for easy discovery
 - **Search & Filter**: Find prompts quickly with advanced filtering and search capabilities
 - **Import/Export**: Support for CSV, Markdown, and JSON formats with preview functionality
-- **Backup System (WIP since migration to WebApp)**: Comprehensive data backup and restoration with automatic and manual options
+- **Data Backup System**: Comprehensive backup and restoration with automatic pre-operation backups, manual backups, cleanup, and compression
 - **Responsive Design**: Modern, mobile-friendly interface that works on all devices
 - **Multi-language Support**: Internationalization with English, French, Spanish, and German
 
@@ -223,34 +228,61 @@ PromptVault supports multiple languages (English, French, Spanish, German). The 
 The project follows a clean, modular web-first architecture:
 
 - `src/`: Main source code directory
-  - `src/web/`:
+  - `src/web/`: Web application layer
     - `src/web/app.py`: FastAPI application and REST API routes
     - `src/web/templates/`: Jinja2 HTML templates
-    - `src/web/static/`: CSS stylesheets, JavaScript files, and locales
+      - `src/web/templates/index.html`: Main application page
+      - `src/web/templates/import_export.html`: Import/export management interface
+      - `src/web/templates/backup_management.html`: Backup management interface
+    - `src/web/static/`: Static assets
+      - `src/web/static/favicon.png`: Application favicon
+      - `src/web/static/css/`: Stylesheets
+        - `src/web/static/css/style.css`: Main application styles
+      - `src/web/static/js/`: JavaScript files
+        - `src/web/static/js/app.js`: Main application logic
+        - `src/web/static/js/import_export.js`: Import/export functionality
+        - `src/web/static/js/backup_management.js`: Backup management functionality
+        - `src/web/static/js/types/`: TypeScript type definitions
+      - `src/web/static/locales/`: Internationalization files
   - `src/services/`: Business logic and data services
     - `src/services/backup_service.py`: Data backup and restoration
     - `src/services/prompt_data_service.py`: Core data operations
     - `src/services/prompt_filter_service.py`: Search and filtering
     - `src/services/prompt_import_export_service.py`: Import/export functionality
     - `src/services/prompt_versioning_service.py`: Version control system
+    - `src/services/version_compression_service.py`: Version compression utilities
+    - `src/services/version_export_service.py`: Version export functionality
+    - `src/services/version_tagging_service.py`: Version tagging system
 - `data/`: Application data files (JSON storage, mounted as Docker volume)
 - `docs/`: Documentation and screenshots
+  - `docs/CODE_OF_CONDUCT.md`: Code of conduct
+  - `docs/CONTRIBUTING.md`: Contributing guidelines
+  - `docs/SECURITY.md`: Security policy
+  - `docs/images/`: Screenshots and documentation images
 - `tests/`: Test suite
+  - `tests/test_backup_system.py`: Backup system tests
+  - `tests/test_version_api.py`: Version API tests
+  - `tests/test_version_integration.py`: Version integration tests
+- `htmlcov/`: Test coverage reports
 - `run_web.py`: Web application startup script
 - `Dockerfile`: Docker container configuration
 - `docker-compose.yml`: Docker Compose configuration for easy deployment
 - `pyproject.toml`: Python project configuration and dependencies
+- `CHANGELOG.md`: Project changelog
+- `LICENSE`: Project license
+- `README.md`: This file
+- `.gitignore`: Git ignore patterns
 
 ## Roadmap
 
-- [x] **Version Control System:** Git-like versioning with history tracking, diff visualization, and revert functionality (✅ Completed)
+- [x] **Version Control System:** Git-like versioning with history tracking, diff visualization, and revert functionality
 - [x] **Search restoration:** Restoring searching & filtering that was available in the desktop version but need to be reimplemented following the migration to the WebApp.
-- [ ] **Automated backup system:** Restoring automatic backup features that was available in the desktop version but need to be reimplemented following the migration to the WebApp.
+- [x] **Data Backup System:** Comprehensive backup and restoration with automatic pre-operation backups, manual backups, cleanup, and compression
 - [ ] **Input Validation & Sanitization:** Ensures data integrity and prevents injection attacks by validating all user inputs.
 - [ ] **Error Handling & Logging:** Implements centralized logging and comprehensive error handling for better debugging and user experience.
 - [ ] **Unit Tests:** Establishes comprehensive test coverage for core functionality to catch bugs early and enable safe refactoring.
 - [ ] **Typescript transition:** Adopt TypeScript to bring static typing, safer refactors, richer editor help, and modern tooling into the app as the next roadmap milestone.
-- [ ] **Tags & categories management:** Allows to manage and update tags/categories independently from the prompts management. 
+- [ ] **Tags & categories management:** Allows to manage and update tags/categories independently from the prompts management.
 
 See the [open issues](https://codeberg.org/medenor/promptvault/issues) for a list of proposed features (and known issues).
 
