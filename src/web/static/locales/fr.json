@@ -7,6 +7,9 @@
     "showFavorites": "⭐ Afficher les favoris",
     "showAll": "🔄 Afficher tout",
     "search": "Rechercher dans le titre, le prompt, la note...",
+    "searchPlaceholder": "Rechercher des prompts...",
+    "caseSensitive": "Sensible à la casse",
+    "clearFilters": "Effacer tous les filtres",
     "importExport": "Importer/Exporter",
     "backToMain": "Retour au menu principal"
   },

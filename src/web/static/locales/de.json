@@ -7,6 +7,9 @@
     "showFavorites": "⭐ Favoriten anzeigen",
     "showAll": "🔄 Alles anzeigen",
     "search": "In Titel, Prompt, Notiz suchen...",
+    "searchPlaceholder": "Prompts durchsuchen...",
+    "caseSensitive": "Groß-/Kleinschreibung beachten",
+    "clearFilters": "Alle Filter löschen",
     "importExport": "Importieren/Exportieren",
     "backToMain": "Zurück zum Hauptmenü"
   },

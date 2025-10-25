@@ -203,7 +203,7 @@ python run_web.py
 - **Prompt Management**: Create, edit, delete, and organize prompts through an intuitive web interface
 - **Version Control**: Git-like versioning system with full history tracking, diff visualization, and safe revert functionality
 - **Categories & Tags**: Organize prompts with categories and tags for easy discovery
-- **Search & Filter (WIP since migration to WebApp)**: Find prompts quickly with advanced filtering and search capabilities
+- **Search & Filter**: Find prompts quickly with advanced filtering and search capabilities
 - **Import/Export**: Support for CSV, Markdown, and JSON formats with preview functionality
 - **Backup System (WIP since migration to WebApp)**: Comprehensive data backup and restoration with automatic and manual options
 - **Responsive Design**: Modern, mobile-friendly interface that works on all devices
@@ -244,7 +244,8 @@ The project follows a clean, modular web-first architecture:
 ## Roadmap
 
 - [x] **Version Control System:** Git-like versioning with history tracking, diff visualization, and revert functionality (✅ Completed)
-- [ ] **Search restoration:** Restoring searching & filtering, automatic backup features that were available in the desktop version but need to be reimplemented following the migration to the WebApp.
+- [x] **Search restoration:** Restoring searching & filtering that was available in the desktop version but need to be reimplemented following the migration to the WebApp.
+- [ ] **Automated backup system:** Restoring automatic backup features that was available in the desktop version but need to be reimplemented following the migration to the WebApp.
 - [ ] **Input Validation & Sanitization:** Ensures data integrity and prevents injection attacks by validating all user inputs.
 - [ ] **Error Handling & Logging:** Implements centralized logging and comprehensive error handling for better debugging and user experience.
 - [ ] **Unit Tests:** Establishes comprehensive test coverage for core functionality to catch bugs early and enable safe refactoring.

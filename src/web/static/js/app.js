@@ -30,11 +30,25 @@ function updateStaticTranslations() {
     document.querySelectorAll('[data-i18n]').forEach(element => {
         const key = element.getAttribute('data-i18n');
         if (key) {
-            element.textContent = i18next.t(key);
+            // Handle special syntax like [placeholder]key or [value]key
+            if (key.includes('[') && key.includes(']')) {
+                const match = key.match(/\[(\w+)\](.+)/);
+                if (match) {
+                    const attribute = match[1]; // e.g., 'placeholder'
+                    const translationKey = match[2]; // e.g., 'nav.searchPlaceholder'
+                    const translation = i18next.t(translationKey);
+                    if (translation) {
+                        element.setAttribute(attribute, translation);
+                    }
+                }
+            } else {
+                // Regular text content translation
+                element.textContent = i18next.t(key);
+            }
         }
     });
 
-    // Update placeholders
+    // Update placeholders using legacy data-i18n-placeholder attribute
     document.querySelectorAll('[data-i18n-placeholder]').forEach(element => {
         const key = element.getAttribute('data-i18n-placeholder');
         if (key) {
