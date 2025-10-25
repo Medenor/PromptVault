@@ -11,6 +11,7 @@
     "caseSensitive": "Sensible à la casse",
     "clearFilters": "Effacer tous les filtres",
     "importExport": "Importer/Exporter",
+    "backupManagement": "Sauvegarde",
     "backToMain": "Retour au menu principal"
   },
   "actions": {
@@ -137,5 +138,34 @@
     "noVersions": "Aucune version disponible",
     "revertSuccess": "Retour à la version précédente réussi",
     "revertError": "Échec du retour à la version"
+  },
+  "backup": {
+    "title": "Gestion des sauvegardes",
+    "description": "Gérez vos sauvegardes de données avec des capacités complètes de sauvegarde et de restauration",
+    "createTitle": "Créer une sauvegarde",
+    "listTitle": "Sauvegardes disponibles",
+    "maintenanceTitle": "Maintenance",
+    "statisticsTitle": "Statistiques des sauvegardes",
+    "backupName": "Nom de la sauvegarde (optionnel):",
+    "backupNamePlaceholder": "Saisir un nom de sauvegarde personnalisé",
+    "createBtn": "Créer une sauvegarde",
+    "clearBtn": "Effacer",
+    "cleanupTitle": "Nettoyer les anciennes sauvegardes",
+    "compressTitle": "Compresser les anciennes sauvegardes",
+    "retentionDays": "Conserver les sauvegardes pendant (jours):",
+    "compressDays": "Compresser les sauvegardes antérieures à (jours):",
+    "cleanupBtn": "Nettoyer",
+    "compressBtn": "Compresser",
+    "totalBackups": "Total des sauvegardes:",
+    "totalSize": "Taille totale:",
+    "compressedCount": "Compressées:",
+    "newestBackup": "Sauvegarde la plus récente:",
+    "oldestBackup": "Sauvegarde la plus ancienne:",
+    "confirmRestore": "Confirmer la restauration",
+    "restoreWarning": "Êtes-vous sûr de vouloir restaurer depuis cette sauvegarde? Cela remplacera vos données actuelles.",
+    "restoreBtn": "Restaurer",
+    "confirmDelete": "Confirmer la suppression",
+    "deleteWarning": "Êtes-vous sûr de vouloir supprimer cette sauvegarde? Cette action ne peut pas être annulée.",
+    "deleteBtn": "Supprimer"
   }
 }

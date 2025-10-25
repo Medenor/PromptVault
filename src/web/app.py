@@ -201,6 +201,11 @@ async def delete_prompt(prompt_id: str):
     except ValueError:
         return JSONResponse(status_code=400, content={"error": "Invalid prompt ID"})
 
+    # Create automatic backup before deletion
+    backup_id = backup_service.create_backup(f"pre_delete_prompt_{prompt_id}")
+    if backup_id:
+        print(f"Automatic backup created before deleting prompt {prompt_id}: {backup_id}")
+
     success = data_service.delete_prompt(prompt_id_int)
     if success:
         data_service.save_prompts()  # Save to disk
@@ -379,6 +384,11 @@ async def import_prompts(
         # Import based on mode
         added_count = 0
         if mode == "replace":
+            # Create automatic backup before replacing all data
+            backup_id = backup_service.create_backup("pre_replace_import")
+            if backup_id:
+                print(f"Automatic backup created before replace import: {backup_id}")
+
             # Clear existing data
             data_service.clear_all_prompts()
 
@@ -473,6 +483,92 @@ async def get_import_export_stats():
             content={"error": f"Failed to get statistics: {str(e)}"}
         )
 
+
+# Backup Management Endpoints
+@app.get("/backup-management", response_class=HTMLResponse)
+async def backup_management_page(request: Request):
+    """Backup management page"""
+    # Get backup statistics
+    stats = backup_service.get_backup_stats()
+
+    return templates.TemplateResponse("backup_management.html", {
+        "request": request,
+        "backup_stats": stats
+    })
+
+@app.get("/api/backups")
+async def get_backups():
+    """Get list of all backups"""
+    backups = backup_service.list_backups()
+    return {"backups": backups}
+
+@app.post("/api/backups")
+async def create_manual_backup(name: str = Form(None)):
+    """Create a manual backup"""
+    backup_id = backup_service.create_backup(name)
+    if backup_id:
+        return {"success": True, "backup_id": backup_id}
+    else:
+        return JSONResponse(status_code=500, content={"error": "Failed to create backup"})
+
+@app.post("/api/backups/{backup_id}/restore")
+async def restore_backup(backup_id: str):
+    """Restore from a specific backup"""
+    success = backup_service.restore_backup(backup_id)
+    if success:
+        return {"success": True}
+    else:
+        return JSONResponse(status_code=500, content={"error": "Failed to restore backup"})
+
+@app.delete("/api/backups/{backup_id}")
+async def delete_backup(backup_id: str):
+    """Delete a specific backup"""
+    try:
+        # Find and remove backup files
+        backups = backup_service.list_backups()
+        backup_info = None
+        for backup in backups:
+            if backup['backup_id'] == backup_id:
+                backup_info = backup
+                break
+
+        if not backup_info:
+            return JSONResponse(status_code=404, content={"error": "Backup not found"})
+
+        # Remove backup file
+        backup_filename = backup_info['filename']
+        backup_path = os.path.join(backup_service.backups_dir, backup_filename)
+        if os.path.exists(backup_path):
+            os.remove(backup_path)
+
+        # Remove metadata file
+        metadata_filename = backup_filename.replace('.json', '_metadata.json')
+        metadata_path = os.path.join(backup_service.backups_dir, metadata_filename)
+        if os.path.exists(metadata_path):
+            os.remove(metadata_path)
+
+        return {"success": True}
+
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": f"Failed to delete backup: {str(e)}"})
+
+@app.post("/api/backups/cleanup")
+async def cleanup_backups(retention_days: int = Form(30)):
+    """Clean up old backups"""
+    removed_count = backup_service.cleanup_old_backups(retention_days)
+    return {"success": True, "removed_count": removed_count}
+
+@app.post("/api/backups/compress")
+async def compress_backups(days_threshold: int = Form(7)):
+    """Compress old backups"""
+    compressed_count = backup_service.compress_old_backups(days_threshold)
+    return {"success": True, "compressed_count": compressed_count}
+
+@app.get("/api/backups/stats")
+async def get_backup_stats():
+    """Get backup statistics"""
+    stats = backup_service.get_backup_stats()
+    return stats
 
 # Version Control Endpoints
 @app.get("/api/prompts/{prompt_id}/versions")

@@ -11,6 +11,7 @@
     "caseSensitive": "Sensible a mayúsculas",
     "clearFilters": "Limpiar todos los filtros",
     "importExport": "Importar/Exportar",
+    "backupManagement": "Copia de seguridad",
     "backToMain": "Volver al menú principal"
   },
   "actions": {
@@ -137,5 +138,34 @@
     "noVersions": "No hay versiones disponibles",
     "revertSuccess": "Reversión a versión anterior exitosa",
     "revertError": "Error al revertir versión"
+  },
+  "backup": {
+    "title": "Gestión de copias de seguridad",
+    "description": "Gestione sus copias de seguridad de datos con capacidades completas de respaldo y restauración",
+    "createTitle": "Crear copia de seguridad",
+    "listTitle": "Copias de seguridad disponibles",
+    "maintenanceTitle": "Mantenimiento",
+    "statisticsTitle": "Estadísticas de copias de seguridad",
+    "backupName": "Nombre de la copia de seguridad (opcional):",
+    "backupNamePlaceholder": "Introducir nombre de copia de seguridad personalizado",
+    "createBtn": "Crear copia de seguridad",
+    "clearBtn": "Limpiar",
+    "cleanupTitle": "Limpiar copias de seguridad antiguas",
+    "compressTitle": "Comprimir copias de seguridad antiguas",
+    "retentionDays": "Mantener copias de seguridad por (días):",
+    "compressDays": "Comprimir copias de seguridad anteriores a (días):",
+    "cleanupBtn": "Limpiar",
+    "compressBtn": "Comprimir",
+    "totalBackups": "Total de copias de seguridad:",
+    "totalSize": "Tamaño total:",
+    "compressedCount": "Comprimidas:",
+    "newestBackup": "Copia de seguridad más reciente:",
+    "oldestBackup": "Copia de seguridad más antigua:",
+    "confirmRestore": "Confirmar restauración",
+    "restoreWarning": "¿Está seguro de que desea restaurar desde esta copia de seguridad? Esto reemplazará sus datos actuales.",
+    "restoreBtn": "Restaurar",
+    "confirmDelete": "Confirmar eliminación",
+    "deleteWarning": "¿Está seguro de que desea eliminar esta copia de seguridad? Esta acción no se puede deshacer.",
+    "deleteBtn": "Eliminar"
   }
 }

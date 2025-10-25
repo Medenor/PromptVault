@@ -11,6 +11,7 @@
     "caseSensitive": "Groß-/Kleinschreibung beachten",
     "clearFilters": "Alle Filter löschen",
     "importExport": "Importieren/Exportieren",
+    "backupManagement": "Sicherung",
     "backToMain": "Zurück zum Hauptmenü"
   },
   "actions": {
@@ -137,5 +138,34 @@
     "noVersions": "Keine Versionen verfügbar",
     "revertSuccess": "Erfolgreich zur vorherigen Version zurückgekehrt",
     "revertError": "Fehler beim Zurücksetzen der Version"
+  },
+  "backup": {
+    "title": "Sicherungsverwaltung",
+    "description": "Verwalten Sie Ihre Datensicherungen mit umfassenden Sicherungs- und Wiederherstellungsfunktionen",
+    "createTitle": "Sicherung erstellen",
+    "listTitle": "Verfügbare Sicherungen",
+    "maintenanceTitle": "Wartung",
+    "statisticsTitle": "Sicherungsstatistiken",
+    "backupName": "Sicherungsname (optional):",
+    "backupNamePlaceholder": "Benutzerdefinierten Sicherungsnamen eingeben",
+    "createBtn": "Sicherung erstellen",
+    "clearBtn": "Löschen",
+    "cleanupTitle": "Alte Sicherungen bereinigen",
+    "compressTitle": "Alte Sicherungen komprimieren",
+    "retentionDays": "Sicherungen behalten für (Tage):",
+    "compressDays": "Sicherungen komprimieren, die älter sind als (Tage):",
+    "cleanupBtn": "Bereinigen",
+    "compressBtn": "Komprimieren",
+    "totalBackups": "Gesamtzahl der Sicherungen:",
+    "totalSize": "Gesamtgröße:",
+    "compressedCount": "Komprimiert:",
+    "newestBackup": "Neueste Sicherung:",
+    "oldestBackup": "Älteste Sicherung:",
+    "confirmRestore": "Wiederherstellung bestätigen",
+    "restoreWarning": "Sind Sie sicher, dass Sie aus dieser Sicherung wiederherstellen möchten? Dies ersetzt Ihre aktuellen Daten.",
+    "restoreBtn": "Wiederherstellen",
+    "confirmDelete": "Löschen bestätigen",
+    "deleteWarning": "Sind Sie sicher, dass Sie diese Sicherung löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.",
+    "deleteBtn": "Löschen"
   }
 }

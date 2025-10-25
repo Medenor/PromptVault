@@ -11,6 +11,7 @@
     "caseSensitive": "Case Sensitive",
     "clearFilters": "Clear All Filters",
     "importExport": "Import/Export",
+    "backupManagement": "Backup",
     "backToMain": "Back to Main"
   },
   "actions": {
@@ -21,7 +22,9 @@
     "cancel": "Cancel",
     "copy": "Copy",
     "export": "Export",
-    "import": "Import"
+    "import": "Import",
+    "close": "Close",
+    "refresh": "Refresh"
   },
   "form": {
     "title": "Prompt Title:",
@@ -135,5 +138,34 @@
     "noVersions": "No versions available",
     "revertSuccess": "Successfully reverted to previous version",
     "revertError": "Failed to revert version"
+  },
+  "backup": {
+    "title": "Backup Management",
+    "description": "Manage your data backups with comprehensive backup and restoration capabilities",
+    "createTitle": "Create Backup",
+    "listTitle": "Available Backups",
+    "maintenanceTitle": "Maintenance",
+    "statisticsTitle": "Backup Statistics",
+    "backupName": "Backup Name (optional):",
+    "backupNamePlaceholder": "Enter custom backup name",
+    "createBtn": "Create Backup",
+    "clearBtn": "Clear",
+    "cleanupTitle": "Cleanup Old Backups",
+    "compressTitle": "Compress Old Backups",
+    "retentionDays": "Keep backups for (days):",
+    "compressDays": "Compress backups older than (days):",
+    "cleanupBtn": "Cleanup",
+    "compressBtn": "Compress",
+    "totalBackups": "Total Backups:",
+    "totalSize": "Total Size:",
+    "compressedCount": "Compressed:",
+    "newestBackup": "Newest Backup:",
+    "oldestBackup": "Oldest Backup:",
+    "confirmRestore": "Confirm Restore",
+    "restoreWarning": "Are you sure you want to restore from this backup? This will replace your current data.",
+    "restoreBtn": "Restore",
+    "confirmDelete": "Confirm Delete",
+    "deleteWarning": "Are you sure you want to delete this backup? This action cannot be undone.",
+    "deleteBtn": "Delete"
   }
 }
