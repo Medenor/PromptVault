@@ -524,30 +524,14 @@ async def restore_backup(backup_id: str):
 async def delete_backup(backup_id: str):
     """Delete a specific backup"""
     try:
-        # Find and remove backup files
-        backups = backup_service.list_backups()
-        backup_info = None
-        for backup in backups:
-            if backup['backup_id'] == backup_id:
-                backup_info = backup
-                break
-
+        backup_info = backup_service.get_backup_info(backup_id)
         if not backup_info:
             return JSONResponse(status_code=404, content={"error": "Backup not found"})
 
-        # Remove backup file
-        backup_filename = backup_info['filename']
-        backup_path = os.path.join(backup_service.backups_dir, backup_filename)
-        if os.path.exists(backup_path):
-            os.remove(backup_path)
-
-        # Remove metadata file
-        metadata_filename = backup_filename.replace('.json', '_metadata.json')
-        metadata_path = os.path.join(backup_service.backups_dir, metadata_filename)
-        if os.path.exists(metadata_path):
-            os.remove(metadata_path)
-
-        return {"success": True}
+        if backup_service.delete_backup(backup_id):
+            return {"success": True}
+        else:
+            return JSONResponse(status_code=500, content={"error": "Failed to delete backup"})
 
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": f"Failed to delete backup: {str(e)}"})

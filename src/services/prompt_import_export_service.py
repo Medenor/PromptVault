@@ -88,25 +88,32 @@ class PromptImportExportService:
             with open(file_path, 'r', newline='', encoding='utf-8') as csvfile:
                 reader = csv.DictReader(csvfile)
                 for row in reader:
-                    # Convert 'Yes'/'No' to boolean for 'favorite'
-                    row['favorite'] = row.get('favorite', 'No').lower() == 'yes'
-                    # Convert tags string to list
-                    if 'tags' in row and row['tags']:
-                        row['tags'] = [tag.strip() for tag in row['tags'].split(',')]
-                    else:
-                        row['tags'] = []
-                    
-                    # Remove 'history' if it somehow exists in the imported data
-                    if 'history' in row:
-                        del row['history']
+                    try:
+                        title = (row.get('title') or '').strip()
+                        prompt_text = (row.get('prompt') or '').strip()
+                        if not title and not prompt_text:
+                            continue  # Skip completely empty rows
 
-                    # Ensure required fields have defaults
-                    if 'category' not in row or not row['category']:
-                        row['category'] = 'No category'
-                    if 'favorite' not in row:
-                        row['favorite'] = False
+                        favorite_raw = (row.get('favorite') or 'No').strip().lower()
+                        favorite = favorite_raw in ('yes', 'true', '1')
 
-                    prompts.append(row)
+                        tags_field = row.get('tags')
+                        tags = [tag.strip() for tag in tags_field.split(',')] if tags_field else []
+
+                        category = (row.get('category') or 'No category').strip() or 'No category'
+                        note = (row.get('note') or '').strip()
+
+                        prompts.append({
+                            'title': title,
+                            'prompt': prompt_text,
+                            'note': note,
+                            'category': category,
+                            'tags': tags,
+                            'favorite': favorite
+                        })
+                    except Exception as row_error:
+                        print(f"Import Warning: Skipping malformed CSV row: {row_error}")
+                        continue
         except Exception as e:
             print(f"Import Error: Failed to import prompts from CSV: {e}")
         return prompts

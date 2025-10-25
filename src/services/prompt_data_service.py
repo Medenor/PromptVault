@@ -79,7 +79,11 @@ class PromptDataService:
         try:
             with open(self.data_file, 'r', encoding='utf-8') as f:
                 loaded_data = json.load(f)
-                self.next_id = loaded_data.get('next_id', 0)
+                raw_next_id = loaded_data.get('next_id', 0)
+                try:
+                    self.next_id = int(raw_next_id)
+                except (TypeError, ValueError):
+                    self.next_id = 0
                 loaded_prompts = {}
                 for k, v in loaded_data.get('prompts', {}).items():
                     try:
@@ -95,8 +99,14 @@ class PromptDataService:
                 self.prompts = loaded_prompts
 
                 # Load categories and tags from file if they exist (for backward compatibility)
-                self.categories = loaded_data.get('categories', [])
-                self.global_tags = set(loaded_data.get('global_tags', []))
+                categories_data = loaded_data.get('categories')
+                self.categories = categories_data if isinstance(categories_data, list) else []
+
+                raw_global_tags = loaded_data.get('global_tags', [])
+                if isinstance(raw_global_tags, list):
+                    self.global_tags = set(raw_global_tags)
+                else:
+                    self.global_tags = set()
 
                 # If no categories/tags in file, build them from current prompts
                 if not self.categories:

@@ -199,7 +199,13 @@ pip install -e .
 python run_web.py
 ```
 
-3. Open your browser and go to `http://localhost:8000`
+By default, the application will run on port 8000. To use a different port, set the `PORT` environment variable:
+
+```bash
+PORT=8001 python run_web.py
+```
+
+3. Open your browser and go to `http://localhost:8000` (or the port you specified)
 
 **Note:** PromptVault is now a web-only application. The desktop version has been deprecated and removed.
 
@@ -260,9 +266,19 @@ The project follows a clean, modular web-first architecture:
   - `docs/SECURITY.md`: Security policy
   - `docs/images/`: Screenshots and documentation images
 - `tests/`: Test suite
-  - `tests/test_backup_system.py`: Backup system tests
-  - `tests/test_version_api.py`: Version API tests
-  - `tests/test_version_integration.py`: Version integration tests
+  - `tests/conftest.py`: Shared fixtures, factories, and API client helpers
+  - `tests/test_prompt_data_service.py`: Core CRUD, persistence, and migration coverage
+  - `tests/test_prompt_filter_service.py`: Category/tag/search/favorites filtering
+  - `tests/test_prompt_import_export_service.py`: CSV/Markdown import-export scenarios
+  - `tests/test_backup_service_extended.py`: Backup/restore/compression edge cases
+  - `tests/test_version_compression_service.py`: Compression thresholds and stats
+  - `tests/test_version_tagging_service.py`: Tag creation, management, and analytics
+  - `tests/test_version_export_service.py`: History/single/comparison exports
+  - `tests/test_prompt_versioning_service.py`: Version metadata helpers
+  - `tests/test_api_endpoints.py`: FastAPI integration and error handling
+  - `tests/test_malformed_data.py`: Corrupted/invalid JSON safeguards
+  - `tests/test_performance.py`: Large dataset and export/backup benchmarks
+  - `tests/test_backup_system.py`, `tests/test_version_api.py`, `tests/test_version_integration.py`: Legacy regression suites
 - `htmlcov/`: Test coverage reports
 - `run_web.py`: Web application startup script
 - `Dockerfile`: Docker container configuration
@@ -273,6 +289,48 @@ The project follows a clean, modular web-first architecture:
 - `README.md`: This file
 - `.gitignore`: Git ignore patterns
 
+## Testing
+
+PromptVault ships with a comprehensive pytest suite that exercises core services, FastAPI endpoints, malformed data handling, and performance characteristics.
+
+### Install test dependencies
+
+```bash
+pip install -e .[test]
+```
+
+### Run the full suite with coverage
+
+```bash
+pytest
+```
+
+The default configuration (see `pytest.ini`) enables `--cov=src --cov-report=term-missing --cov-report=html:htmlcov --cov-fail-under=85`, so the run will fail if core coverage drops below 85%. View the detailed HTML report at `htmlcov/index.html`.
+
+### Targeted suites
+
+- Core services only: `pytest tests/test_prompt_data_service.py tests/test_prompt_filter_service.py`
+- API endpoints: `pytest tests/test_api_endpoints.py`
+- Skip heavy performance tests: `pytest -m "not performance"`
+- Performance benchmarks only: `pytest -m performance`
+
+### Performance guardrails
+
+Performance tests in `tests/test_performance.py` enforce the following baselines using synthetic datasets:
+
+- Load/save 1,000 prompts in under 5 seconds
+- Load 2,000 version records in under 10 seconds
+- Filter/search/sort across 1,000 prompts in under 1 second per operation
+- Export 1,000 prompts to CSV/Markdown in under 5 seconds
+
+These targets keep the full suite under ~60 seconds on a modern laptop. Adjust the thresholds by editing the assertions if your deployment environment has different guarantees.
+
+### CI/CD recommendations
+
+1. Pull request gate: `pytest --maxfail=1 --disable-warnings -m "not performance"`
+2. Nightly/per-release job: `pytest` (full run, including performance markers)
+3. Publish the HTML coverage artifact (`htmlcov/`) to easily inspect regressions.
+
 ## Roadmap
 
 - [x] **Version Control System:** Git-like versioning with history tracking, diff visualization, and revert functionality
@@ -280,7 +338,7 @@ The project follows a clean, modular web-first architecture:
 - [x] **Data Backup System:** Comprehensive backup and restoration with automatic pre-operation backups, manual backups, cleanup, and compression
 - [ ] **Input Validation & Sanitization:** Ensures data integrity and prevents injection attacks by validating all user inputs.
 - [ ] **Error Handling & Logging:** Implements centralized logging and comprehensive error handling for better debugging and user experience.
-- [ ] **Unit Tests:** Establishes comprehensive test coverage for core functionality to catch bugs early and enable safe refactoring.
+- [x] **Unit Tests:** Establishes comprehensive test coverage for core functionality to catch bugs early and enable safe refactoring.
 - [ ] **Typescript transition:** Adopt TypeScript to bring static typing, safer refactors, richer editor help, and modern tooling into the app as the next roadmap milestone.
 - [ ] **Tags & categories management:** Allows to manage and update tags/categories independently from the prompts management.
 

@@ -34,13 +34,15 @@ class PromptFilterService:
         filtered_prompts = []
         for prompt_id, prompt_info in prompts.items():
             data = prompt_info['data']
-            category = data.get('category') if data.get('category') else 'No category'
-            tags = data.get('tags', [])
-            is_favorite = data.get('favorite', False)
+            category = data.get('category') or 'No category'
+            tags = data.get('tags') or []
+            if not isinstance(tags, list):
+                tags = []
+            is_favorite = bool(data.get('favorite', False))
 
-            title_text = data.get('title', '')
-            prompt_text = data.get('prompt', '')
-            note_text = data.get('note', '')
+            title_text = data.get('title') or ''
+            prompt_text = data.get('prompt') or ''
+            note_text = data.get('note') or ''
 
             processed_title = title_text if case_sensitive else title_text.lower()
             processed_prompt = prompt_text if case_sensitive else prompt_text.lower()

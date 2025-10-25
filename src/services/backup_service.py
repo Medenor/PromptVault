@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import shutil
 import gzip
 from datetime import datetime, timedelta
@@ -47,7 +48,12 @@ class BackupService:
 
             # Generate backup filename
             if custom_name:
-                backup_filename = f"backup_{custom_name}.json"
+                safe_suffix = self._sanitize_backup_name(custom_name)
+                if safe_suffix:
+                    backup_filename = f"backup_{safe_suffix}.json"
+                else:
+                    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+                    backup_filename = f"backup_{timestamp}.json"
             else:
                 timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
                 backup_filename = f"backup_{timestamp}.json"
@@ -74,7 +80,8 @@ class BackupService:
                 'size_bytes': backup_size,
                 'prompt_count': prompt_count,
                 'created_by': self._get_current_user(),
-                'data_file_modified': datetime.fromtimestamp(os.path.getmtime(self.data_file)).isoformat()
+                'data_file_modified': datetime.fromtimestamp(os.path.getmtime(self.data_file)).isoformat(),
+                'compressed': False,
             }
 
             # Save metadata
@@ -129,12 +136,13 @@ class BackupService:
             bool: True if successful, False otherwise
         """
         try:
-            # Find the backup file
-            backup_filename = f"{backup_id}.json"
-            backup_path = os.path.join(self.backups_dir, backup_filename)
+            backup_path = self._resolve_backup_path(backup_id)
+            if not backup_path or not os.path.exists(backup_path):
+                print(f"Restore Error: Backup file for ID {backup_id} does not exist")
+                return False
 
-            if not os.path.exists(backup_path):
-                print(f"Restore Error: Backup file {backup_filename} does not exist")
+            if not self._is_valid_backup_file(backup_path):
+                print(f"Restore Error: Backup {backup_id} appears to be corrupted")
                 return False
 
             # Create a pre-restore backup automatically
@@ -143,8 +151,12 @@ class BackupService:
             if not pre_restore_backup:
                 print("Warning: Could not create pre-restore backup")
 
-            # Restore the backup
-            shutil.copy2(backup_path, self.data_file)
+            # Restore the backup (handle compressed files transparently)
+            if backup_path.endswith('.gz'):
+                with gzip.open(backup_path, 'rb') as src, open(self.data_file, 'wb') as dst:
+                    shutil.copyfileobj(src, dst)
+            else:
+                shutil.copy2(backup_path, self.data_file)
 
             print(f"Backup {backup_id} restored successfully")
             return True
@@ -285,7 +297,8 @@ class BackupService:
                 'total_size': 0,
                 'oldest_backup': None,
                 'newest_backup': None,
-                'compressed_count': 0
+                'compressed_count': 0,
+                'compressed_backups': 0,
             }
 
         total_size = sum(backup.get('size_bytes', 0) for backup in backups)
@@ -296,8 +309,47 @@ class BackupService:
             'total_size': total_size,
             'oldest_backup': backups[-1]['timestamp'] if backups else None,
             'newest_backup': backups[0]['timestamp'] if backups else None,
-            'compressed_count': compressed_count
+            'compressed_count': compressed_count,
+            'compressed_backups': compressed_count,
         }
+
+    def delete_backup(self, backup_id: str) -> bool:
+        """
+        Delete a backup and its metadata files.
+
+        Args:
+            backup_id (str): Backup ID to delete
+
+        Returns:
+            bool: True if any files were removed, False otherwise
+        """
+        try:
+            metadata = self.get_backup_info(backup_id)
+            filename = metadata.get('filename') if metadata else None
+            candidates = set()
+
+            base_json = os.path.join(self.backups_dir, f"{backup_id}.json")
+            candidates.add(base_json)
+            candidates.add(f"{base_json}.gz")
+
+            if filename:
+                candidates.add(os.path.join(self.backups_dir, filename))
+
+            removed = False
+            for path in candidates:
+                if path and os.path.exists(path):
+                    os.remove(path)
+                    removed = True
+
+            metadata_path = self._metadata_path_from_filename(filename or f"{backup_id}.json")
+            if metadata_path and os.path.exists(metadata_path):
+                os.remove(metadata_path)
+                removed = True
+
+            return removed
+        except Exception as e:
+            print(f"Delete Error: Failed to delete backup {backup_id}: {e}")
+            return False
 
     def _get_current_user(self) -> str:
         """
@@ -310,3 +362,51 @@ class BackupService:
             return getpass.getuser()
         except Exception:
             return "unknown"
+
+    def _sanitize_backup_name(self, name: str) -> str:
+        """Sanitize custom backup names for safe filenames."""
+        if not name:
+            return ""
+        cleaned = re.sub(r'[^A-Za-z0-9_-]+', '_', name.strip())
+        return cleaned[:64]
+
+    def _metadata_path_from_filename(self, filename: str) -> Optional[str]:
+        """Derive metadata path from a backup filename."""
+        if not filename:
+            return None
+        if filename.endswith('.json.gz'):
+            base = filename[:-len('.json.gz')]
+        elif filename.endswith('.json'):
+            base = filename[:-len('.json')]
+        else:
+            base = filename
+        return os.path.join(self.backups_dir, f"{base}_metadata.json")
+
+    def _resolve_backup_path(self, backup_id: str) -> Optional[str]:
+        """Resolve the on-disk path for a backup, checking compressed variants."""
+        candidate = os.path.join(self.backups_dir, f"{backup_id}.json")
+        if os.path.exists(candidate):
+            return candidate
+        gz_candidate = f"{candidate}.gz"
+        if os.path.exists(gz_candidate):
+            return gz_candidate
+        metadata = self.get_backup_info(backup_id)
+        if metadata:
+            meta_candidate = os.path.join(self.backups_dir, metadata.get('filename', ''))
+            if meta_candidate and os.path.exists(meta_candidate):
+                return meta_candidate
+        return None
+
+    def _is_valid_backup_file(self, backup_path: str) -> bool:
+        """Validate that a backup file contains readable JSON."""
+        try:
+            if backup_path.endswith('.gz'):
+                with gzip.open(backup_path, 'rt', encoding='utf-8') as f:
+                    json.load(f)
+            else:
+                with open(backup_path, 'r', encoding='utf-8') as f:
+                    json.load(f)
+            return True
+        except (OSError, json.JSONDecodeError) as e:
+            print(f"Backup Validation Error: {e}")
+            return False

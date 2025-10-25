@@ -176,8 +176,9 @@ class VersionExportService:
             if 'category' in data:
                 lines.append(f"### Category\n{data['category']}\n")
             if 'tags' in data and isinstance(data['tags'], list):
-                lines.append(f"### Tags\n{', '.join(data['tags'])}\n")
-        
+                formatted_tags = ', '.join([f"`{tag}`" for tag in data['tags']])
+                lines.append(f"### Tags\n{formatted_tags}\n")
+
         return '\n'.join(lines)
 
     def export_version_comparison(self, v1: Dict[str, Any], v2: Dict[str, Any], 

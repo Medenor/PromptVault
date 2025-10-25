@@ -147,15 +147,12 @@ function createBackupItem(backup) {
 // Create backup
 async function createBackup() {
     const backupName = document.getElementById('backup-name').value.trim();
-    const name = backupName || null;
 
     showProgress('backup-progress', 'Creating backup...');
 
     try {
         const formData = new FormData();
-        if (name) {
-            formData.append('name', name);
-        }
+        formData.append('name', backupName);
 
         const response = await fetch('/api/backups', {
             method: 'POST',
