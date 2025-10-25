@@ -303,6 +303,8 @@ body {
 .prompt-actions {
     display: flex;
     gap: 0.25rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
 }
 
 .prompt-actions button {
@@ -336,6 +338,24 @@ body {
 .delete-btn {
     color: #e74c3c;
     border-color: #e74c3c;
+}
+
+@media (max-width: 640px) {
+    .prompt-header {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .prompt-actions {
+        width: 100%;
+        justify-content: flex-start;
+        row-gap: 0.35rem;
+    }
+
+    .prompt-actions button {
+        flex: 1 1 calc(50% - 0.25rem);
+        text-align: center;
+    }
 }
 
 .prompt-meta {
