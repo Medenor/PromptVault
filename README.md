@@ -207,7 +207,7 @@ PORT=8001 python run_web.py
 
 3. Open your browser and go to `http://localhost:8000` (or the port you specified)
 
-**Note:** PromptVault is now a web-only application. The desktop version has been deprecated and removed.
+**Note:** PromptVault is now a web-only application. The legacy desktop version has been deprecated and its startup scripts removed.
 
 ### Features
 

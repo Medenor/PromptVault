@@ -2,14 +2,8 @@ from fastapi import FastAPI, Request, Form, File, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-import os
-import sys
 import json
 from datetime import datetime
-from pathlib import Path
-
-# Add the parent directory to the Python path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.services.prompt_data_service import PromptDataService
 from src.services.prompt_filter_service import PromptFilterService
