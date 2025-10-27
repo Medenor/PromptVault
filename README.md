@@ -339,16 +339,45 @@ These targets keep the full suite under ~60 seconds on a modern laptop. Adjust t
 
 ## Roadmap
 
-- [x] **Version Control System:** Git-like versioning with history tracking, diff visualization, and revert functionality
-- [x] **Search restoration:** Restoring searching & filtering that was available in the desktop version but need to be reimplemented following the migration to the WebApp.
-- [x] **Data Backup System:** Comprehensive backup and restoration with automatic pre-operation backups, manual backups, cleanup, and compression
-- [ ] **Input Validation & Sanitization:** Ensures data integrity and prevents injection attacks by validating all user inputs.
-- [ ] **Error Handling & Logging:** Implements centralized logging and comprehensive error handling for better debugging and user experience.
-- [x] **Unit Tests:** Establishes comprehensive test coverage for core functionality to catch bugs early and enable safe refactoring.
-- [ ] **Typescript transition:** Adopt TypeScript to bring static typing, safer refactors, richer editor help, and modern tooling into the app as the next roadmap milestone.
-- [ ] **Tags & categories management:** Allows to manage and update tags/categories independently from the prompts management.
+For a comprehensive feature improvement roadmap with detailed implementation plans, see [ROADMAP.md](ROADMAP.md).
 
-See the [open issues](https://codeberg.org/medenor/promptvault/issues) for a list of proposed features (and known issues).
+### Completed Features
+
+- [x] **Version Control System:** Git-like versioning with history tracking, diff visualization, and revert functionality
+- [x] **Search & Filtering:** Advanced searching and filtering capabilities across all prompts
+- [x] **Data Backup System:** Comprehensive backup and restoration with automatic pre-operation backups, manual backups, cleanup, and compression
+- [x] **Unit Tests:** Comprehensive test coverage (85%+) for core functionality with performance benchmarks
+
+### Phase 1: Foundation Strengthening (Priority: High)
+
+- [ ] **Input Validation & Sanitization:** Comprehensive validation framework preventing injection attacks and ensuring data integrity
+- [ ] **Error Handling & Logging:** Centralized logging infrastructure with structured logs and audit trails
+- [ ] **Performance Monitoring:** Real-time monitoring with APM, error tracking, and analytics dashboards
+- [ ] **Accessibility Compliance:** WCAG 2.1 AA compliance with full keyboard navigation and screen reader support
+
+### Phase 2: Security & Architecture (Priority: High)
+
+- [ ] **Authentication & Authorization:** User management with JWT tokens and role-based access control
+- [ ] **Database Migration:** Transition from JSON to SQLite/PostgreSQL for improved performance and reliability
+- [ ] **TypeScript Migration:** Convert frontend to TypeScript for type safety and better developer experience
+- [ ] **API Documentation:** Interactive OpenAPI/Swagger documentation with client SDKs
+
+### Phase 3: User Experience (Priority: Medium)
+
+- [ ] **Pagination & Lazy Loading:** Server-side pagination for handling large datasets efficiently
+- [ ] **Advanced Search:** Full-text search, fuzzy matching, saved searches, and advanced filters
+- [ ] **Tag & Category Management:** Dedicated interface for managing taxonomy with merge and bulk operations
+- [ ] **Mobile UI Enhancements:** Touch-optimized controls, offline support, and mobile-friendly gestures
+
+### Phase 4: Collaboration & Integration (Priority: Medium)
+
+- [ ] **Collaborative Editing:** Real-time updates with WebSockets, presence indicators, and conflict resolution
+- [ ] **Enhanced Backup System:** Scheduled backups, cloud storage integration, incremental backups, and encryption
+- [ ] **Export & Sharing:** PDF/HTML export, public sharing links, and integrations (Notion, Confluence, Slack)
+
+See [ROADMAP.md](ROADMAP.md) for detailed task breakdowns, implementation estimates, and success metrics.
+
+For proposed features and known issues, visit the [open issues](https://codeberg.org/medenor/promptvault/issues) page.
 
 ## Support
 
