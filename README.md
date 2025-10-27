@@ -22,6 +22,12 @@
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![Pull Requests welcome](https://img.shields.io/badge/PRs-welcome-ff69b4.svg?style=flat-square)](https://codeberg.org/medenor/promptvault/issues)
+![Python](https://img.shields.io/badge/python-3.8+-blue.svg)
+![Framework](https://img.shields.io/badge/Framework-FastAPI-blue)
+![Testing](https://img.shields.io/badge/Testing-Pytest-blue)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Docker](httpshttps://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)](https://hub.docker.com/r/user/promptvault)
+[![codecov](https://codecov.io/gh/medenor/promptvault/branch/main/graph/badge.svg?token=YOUR_TOKEN_HERE)](https://codecov.io/gh/medenor/promptvault)
 [![Vibe-coded with love by Medenor](https://img.shields.io/badge/%3C%2F%3E%20with%20%E2%99%A5%20by-Medenor-ff1414.svg?style=flat-square)](https://codeberg.org/medenor)
 [![Switched to Codeberg](https://img.shields.io/badge/Switched_to-Codeberg-blue?style=flat-square&logo=codeberg&logoColor=white)](https://codeberg.org/medenor/promptvault/)
 [![Visual Studio Code](https://custom-icon-badges.demolab.com/badge/Visual%20Studio%20Code-0078d7.svg?logo=vsc&logoColor=white)](https://code.visualstudio.com)
