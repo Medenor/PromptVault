@@ -426,11 +426,40 @@ class TestCategoriesAndTags:
         assert isinstance(tags, list)
         assert len(tags) > 0
 
-    def test_categories_sorted(self, populated_data_service):
-        """Test that categories are returned sorted."""
+    def test_categories_preserve_defined_order(self, populated_data_service):
+        """Categories should preserve predefined ordering."""
         categories = populated_data_service.get_categories()
 
-        assert categories == sorted(categories)
+        assert categories == [
+            "Programming",
+            "Development",
+            "Database",
+            "Documentation",
+            "Security",
+        ]
+
+    def test_save_preserves_category_order_from_file(self, temp_data_file, sample_prompt_data):
+        """Category ordering defined in the data file should remain intact after save/load cycles."""
+        service = PromptDataService(temp_data_file)
+
+        manual_order = [
+            "Développement personnel",
+            "Écriture",
+            "Éducation et apprentissage",
+            "No category",
+        ]
+
+        service.add_new_prompt(sample_prompt_data(category="Développement personnel"))
+        service.add_new_prompt(sample_prompt_data(category="Écriture"))
+        service.add_new_prompt(sample_prompt_data(category="Éducation et apprentissage"))
+
+        service.categories = manual_order[:]
+        service.save_prompts()
+
+        loaded_service = PromptDataService(temp_data_file)
+        loaded_service.load_prompts()
+
+        assert loaded_service.get_categories() == manual_order
 
     def test_tags_sorted(self, populated_data_service):
         """Test that tags are returned sorted."""

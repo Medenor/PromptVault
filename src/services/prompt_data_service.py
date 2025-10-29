@@ -320,16 +320,38 @@ class PromptDataService:
     def _update_categories_and_tags(self) -> None:
         """
         Update categories and tags from current prompts.
-        This ensures they stay in sync with the actual prompt data.
-        Preserves predefined categories and tags while adding any new ones in use.
+
+        Keeps existing category ordering while appending any new categories in the
+        order they are first observed. This ensures the persisted category list
+        respects the configuration file ordering while still learning new values.
         """
-        # Update categories from current prompts - merge with existing predefined categories
-        current_categories = set(
-            prompt_info['data'].get('category', 'No category')
-            for prompt_info in self.prompts.values()
-        )
-        # Preserve existing predefined categories and add any new ones in use
-        self.categories = sorted(list(set(self.categories) | current_categories))
+        def normalize_category(raw_value: Any) -> str:
+            if isinstance(raw_value, str):
+                cleaned = raw_value.strip()
+                if cleaned:
+                    return cleaned
+            return "No category"
+
+        ordered_categories: List[str] = []
+        seen_categories: Set[str] = set()
+
+        for predefined in self.categories:
+            normalized = normalize_category(predefined)
+            if normalized not in seen_categories:
+                ordered_categories.append(normalized)
+                seen_categories.add(normalized)
+
+        for prompt_info in self.prompts.values():
+            raw_category = prompt_info['data'].get('category', 'No category')
+            normalized = normalize_category(raw_category)
+            if normalized not in seen_categories:
+                ordered_categories.append(normalized)
+                seen_categories.add(normalized)
+
+        if not ordered_categories:
+            ordered_categories.append("No category")
+
+        self.categories = ordered_categories
 
         # Update tags from current prompts - merge with existing predefined tags
         all_tags = set()
