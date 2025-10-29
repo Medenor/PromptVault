@@ -3,7 +3,7 @@ import os
 import uuid
 from datetime import datetime
 import getpass
-from typing import Dict, Any, Set, List, Tuple
+from typing import Dict, Any, Set, List, Tuple, Iterable
 
 
 class PromptDataService:
@@ -26,6 +26,44 @@ class PromptDataService:
         self.next_id = 0
         self.categories = []
         self.global_tags = set()
+
+    def _normalize_tags(self, tags: Iterable[Any]) -> List[str]:
+        """
+        Normalize a collection of tags by trimming whitespace and dropping blanks.
+
+        Args:
+            tags (Iterable[Any]): Raw tag values.
+
+        Returns:
+            List[str]: Cleaned tag strings preserving input order.
+        """
+        normalized: List[str] = []
+        for tag in tags or []:
+            if not isinstance(tag, str):
+                continue
+            cleaned = tag.strip()
+            if cleaned:
+                normalized.append(cleaned)
+        return normalized
+
+    def _normalize_prompt_payload(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Normalize prompt payload fields such as tags prior to persistence.
+
+        Args:
+            data (Dict[str, Any]): Prompt data to normalize.
+
+        Returns:
+            Dict[str, Any]: Normalized prompt data.
+        """
+        if not isinstance(data, dict):
+            return {}
+        tags = data.get('tags', [])
+        if isinstance(tags, list):
+            data['tags'] = self._normalize_tags(tags)
+        else:
+            data['tags'] = []
+        return data
 
     def save_prompts(self) -> bool:
         """
@@ -90,6 +128,11 @@ class PromptDataService:
                         prompt_id = int(k)
                         if isinstance(v, dict):
                             v = self._migrate_old_data_structure(prompt_id, v)
+                            if 'data' in v and isinstance(v['data'], dict):
+                                v['data'] = self._normalize_prompt_payload(v['data'])
+                            for version in v.get('versions', []):
+                                if isinstance(version, dict) and isinstance(version.get('data'), dict):
+                                    version['data'] = self._normalize_prompt_payload(version['data'])
                             loaded_prompts[prompt_id] = v
                         else:
                             print(f"Warning: Invalid structure for prompt ID '{k}', ignored.")
@@ -104,7 +147,7 @@ class PromptDataService:
 
                 raw_global_tags = loaded_data.get('global_tags', [])
                 if isinstance(raw_global_tags, list):
-                    self.global_tags = set(raw_global_tags)
+                    self.global_tags = set(self._normalize_tags(raw_global_tags))
                 else:
                     self.global_tags = set()
 
@@ -307,6 +350,8 @@ class PromptDataService:
         Returns:
             int: The ID of the new prompt
         """
+        data = self._normalize_prompt_payload(data.copy())
+
         prompt_id = self.next_id
         self.next_id += 1
 
@@ -344,8 +389,9 @@ class PromptDataService:
         if prompt_id not in self.prompts:
             return False
 
+        data = self._normalize_prompt_payload(data.copy())
+
         current_prompt_info = self.prompts[prompt_id]
-        current_data = current_prompt_info['data']
 
         # Get the parent version_id (current head of 'main' branch)
         parent_version_id = current_prompt_info['branches'].get("main")

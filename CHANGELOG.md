@@ -66,6 +66,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **API Endpoints**: Resolved type conversion issues between string URLs and integer IDs
 - **Template Rendering**: Fixed Jinja2 template errors with incorrect field references
 - **Form Validation**: Improved client-side validation and error handling
+- **Tag Normalization**: Trim tag whitespace during save to avoid duplicate entries with leading spaces
 
 ### Dependencies
 

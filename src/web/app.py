@@ -4,6 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import json
 from datetime import datetime
+from typing import List
 
 from src.services.prompt_data_service import PromptDataService
 from src.services.prompt_filter_service import PromptFilterService
@@ -25,6 +26,26 @@ filter_service = PromptFilterService()
 versioning_service = PromptVersioningService()
 import_export_service = PromptImportExportService()
 backup_service = BackupService()
+
+
+def _parse_tags_field(tags: str) -> List[str]:
+    """
+    Normalize a comma-delimited tag string into a list with trimmed entries.
+
+    Args:
+        tags (str): Raw tag field from the form submission.
+
+    Returns:
+        List[str]: Cleaned tags with whitespace removed and empty values filtered out.
+    """
+    if not tags:
+        return []
+    normalized_tags = []
+    for tag in tags.split(","):
+        cleaned = tag.strip()
+        if cleaned:
+            normalized_tags.append(cleaned)
+    return normalized_tags
 
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
@@ -66,7 +87,7 @@ async def create_prompt(
         "title": title,
         "prompt": prompt,
         "category": category,
-        "tags": tags.split(",") if tags else []
+        "tags": _parse_tags_field(tags)
     }
 
     prompt_id = data_service.create_prompt(prompt_data)
@@ -177,7 +198,7 @@ async def update_prompt(
         "title": title,
         "prompt": prompt,
         "category": category,
-        "tags": tags.split(",") if tags else []
+        "tags": _parse_tags_field(tags)
     }
 
     success = data_service.update_prompt(prompt_id_int, prompt_data, commit_message)

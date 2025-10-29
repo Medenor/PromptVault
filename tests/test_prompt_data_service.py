@@ -87,6 +87,19 @@ class TestPromptCreation:
         versions = empty_data_service.prompts[prompt_id]['versions']
         assert versions[0]['message'] == "Custom initial commit"
 
+    def test_create_prompt_trims_tag_whitespace(self, empty_data_service):
+        """Tags should be sanitized before persistence."""
+        prompt_data = {
+            "title": "Whitespace Tags",
+            "prompt": "Content",
+            "tags": [" vision", "creativity ", "  ", "focus"]
+        }
+
+        prompt_id = empty_data_service.add_new_prompt(prompt_data)
+        saved_tags = empty_data_service.prompts[prompt_id]['data']['tags']
+
+        assert saved_tags == ["vision", "creativity", "focus"]
+
 
 class TestPromptUpdate:
     """Test prompt update functionality."""

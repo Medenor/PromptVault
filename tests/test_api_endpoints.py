@@ -46,6 +46,23 @@ class TestPromptCrudEndpoints:
         assert payload['success'] is True
         assert isinstance(payload['prompt_id'], int)
 
+    def test_create_prompt_trims_tag_whitespace(self, api_client):
+        response = api_client.post(
+            "/api/prompts",
+            data={
+                "title": "Tagged Prompt",
+                "prompt": "Body",
+                "category": "Testing",
+                "tags": "vision, creativity ,  focus  , ,"
+            }
+        )
+        assert response.status_code == 200
+        prompt_id = response.json()['prompt_id']
+
+        retrieved = api_client.get(f"/api/prompts/{prompt_id}")
+        assert retrieved.status_code == 200
+        assert retrieved.json()['tags'] == ["vision", "creativity", "focus"]
+
     def test_create_prompt_validation_error(self, api_client):
         # Missing required 'prompt' field
         response = api_client.post("/api/prompts", data={"title": "Invalid"})
