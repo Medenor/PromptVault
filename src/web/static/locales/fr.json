@@ -1,6 +1,7 @@
 {
   "nav": {
     "newPrompt": "Nouveau Prompt",
+    "prompts": "Prompts",
     "categories": "Catégories",
     "tags": "Étiquettes",
     "filters": "Filtres",

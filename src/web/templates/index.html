@@ -29,24 +29,8 @@
 
         <div class="main-content">
             <div class="sidebar">
-                <div class="sidebar-section">
-                    <h3 data-i18n="nav.categories">Categories</h3>
-                    <ul id="categories-list">
-                        <li data-category="all" class="active">All Prompts</li>
-                        {% for category in categories %}
-                        <li data-category="{{ category }}">{{ category }}</li>
-                        {% endfor %}
-                    </ul>
-                </div>
-
-                <div class="sidebar-section">
-                    <h3 data-i18n="nav.tags">Tags</h3>
-                    <ul id="tags-list">
-                        <li data-tag="all" class="active">All Tags</li>
-                        {% for tag in tags %}
-                        <li data-tag="{{ tag }}">{{ tag }}</li>
-                        {% endfor %}
-                    </ul>
+                <div class="sidebar-header">
+                    <h2 data-i18n="nav.prompts">Prompts</h2>
                 </div>
 
                 <div class="sidebar-section">
@@ -72,6 +56,26 @@
 
                     <!-- Clear All Filters Button -->
                     <button id="clear-all-filters-btn" class="clear-filters-btn" data-i18n="nav.clearFilters">Clear All Filters</button>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3 data-i18n="nav.categories">Categories</h3>
+                    <ul id="categories-list">
+                        <li data-category="all" class="active">All Prompts</li>
+                        {% for category in categories %}
+                        <li data-category="{{ category }}">{{ category }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3 data-i18n="nav.tags">Tags</h3>
+                    <ul id="tags-list">
+                        <li data-tag="all" class="active">All Tags</li>
+                        {% for tag in tags %}
+                        <li data-tag="{{ tag }}">{{ tag }}</li>
+                        {% endfor %}
+                    </ul>
                 </div>
             </div>
 
