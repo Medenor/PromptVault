@@ -121,6 +121,25 @@
     "operationCancelled": "Vorgang abgebrochen",
     "clearBtn": "Löschen"
   },
+  "search": {
+    "emptyState": "Keine Prompts gefunden. Erstellen Sie Ihren ersten Prompt, um zu starten!",
+    "error": "Suche fehlgeschlagen. Bitte versuchen Sie es erneut.",
+    "noResultsInfo": "Keine Prompts entsprechen Ihren Kriterien.",
+    "noResultsMessage": "Keine Prompts gefunden. Passen Sie Ihre Suche oder Filter an.",
+    "resultsCount": "Zeige {{count}} Prompt",
+    "resultsCount_plural": "Zeige {{count}} Prompts",
+    "resultsCountWithTotal": "Zeige {{count}} von {{total}} Prompt",
+    "resultsCountWithTotal_plural": "Zeige {{count}} von {{total}} Prompts",
+    "filteredBy": "(gefiltert nach: {{filters}})",
+    "clearFiltersWithCount": "Filter löschen ({{count}} angezeigt)",
+    "filter": {
+      "search": "Suche: \"{{term}}\"",
+      "category": "Kategorie: {{category}}",
+      "tag": "Tag: {{tag}}",
+      "favorites": "nur Favoriten",
+      "caseSensitive": "Groß-/Kleinschreibung beachten"
+    }
+  },
   "version": {
     "history": "Verlauf",
     "compareVersions": "Versionen vergleichen",

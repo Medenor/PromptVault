@@ -121,6 +121,25 @@
     "operationCancelled": "Operación cancelada",
     "clearBtn": "Limpiar"
   },
+  "search": {
+    "emptyState": "No se encontraron prompts. ¡Crea tu primer prompt para comenzar!",
+    "error": "La búsqueda falló. Por favor, inténtalo de nuevo.",
+    "noResultsInfo": "No se encontraron prompts que coincidan con tus criterios.",
+    "noResultsMessage": "No se encontraron prompts. Intenta ajustar tu búsqueda o filtros.",
+    "resultsCount": "Mostrando {{count}} prompt",
+    "resultsCount_plural": "Mostrando {{count}} prompts",
+    "resultsCountWithTotal": "Mostrando {{count}} de {{total}} prompt",
+    "resultsCountWithTotal_plural": "Mostrando {{count}} de {{total}} prompts",
+    "filteredBy": "(filtrado por: {{filters}})",
+    "clearFiltersWithCount": "Limpiar filtros ({{count}} mostrados)",
+    "filter": {
+      "search": "búsqueda: \"{{term}}\"",
+      "category": "categoría: {{category}}",
+      "tag": "etiqueta: {{tag}}",
+      "favorites": "solo favoritos",
+      "caseSensitive": "sensible a mayúsculas"
+    }
+  },
   "version": {
     "history": "Historial",
     "compareVersions": "Comparar versiones",

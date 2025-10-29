@@ -7,10 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
+### ✨ New Features
 
-- **Tag Normalization**: Trim tag whitespace during save to avoid duplicate entries with leading spaces
+- **Search & Filter UI improved**: Moving search/filter block on top of windows to ease the use of this feature - [`01a40cf`]
 
+### 🔧 Fixed
+
+- **Tag normalization**: Trim tag whitespace during save to avoid duplicate entries with leading spaces - [`dd53bc3`]
+- **Category sorting**: Preserve category order from configuration when saving prompts - [`b8ef70e`]
+- **Search localization**: Replaced hardcoded English text in the search/filter experience, added matching translation keys in all locales, and stopped HTML entities from showing up in filter summaries.
 
 ## [1.0.0] - 2025-10-22
 

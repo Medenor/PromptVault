@@ -121,6 +121,25 @@
     "operationCancelled": "Opération annulée",
     "clearBtn": "Effacer"
   },
+  "search": {
+    "emptyState": "Aucun prompt trouvé. Créez votre premier prompt pour commencer !",
+    "error": "La recherche a échoué. Veuillez réessayer.",
+    "noResultsInfo": "Aucun prompt ne correspond à vos critères.",
+    "noResultsMessage": "Aucun prompt trouvé. Essayez d'ajuster votre recherche ou vos filtres.",
+    "resultsCount": "Affichage de {{count}} prompt",
+    "resultsCount_plural": "Affichage de {{count}} prompts",
+    "resultsCountWithTotal": "Affichage de {{count}} sur {{total}} prompt",
+    "resultsCountWithTotal_plural": "Affichage de {{count}} sur {{total}} prompts",
+    "filteredBy": "(filtré par : {{filters}})",
+    "clearFiltersWithCount": "Effacer les filtres ({{count}} affichés)",
+    "filter": {
+      "search": "recherche : \"{{term}}\"",
+      "category": "catégorie : {{category}}",
+      "tag": "étiquette : {{tag}}",
+      "favorites": "favoris uniquement",
+      "caseSensitive": "sensible à la casse"
+    }
+  },
   "version": {
     "history": "Historique",
     "compareVersions": "Comparer les versions",

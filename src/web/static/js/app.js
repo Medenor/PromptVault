@@ -218,7 +218,7 @@ function renderPrompts(prompts) {
 
     // Handle case when there are no prompts at all
     if (Object.keys(prompts).length === 0) {
-        container.innerHTML = '<div class="no-results-message">No prompts found. Create your first prompt to get started!</div>';
+        container.innerHTML = `<div class="no-results-message">${i18next.t('search.emptyState')}</div>`;
         if (searchResultsInfo) {
             hideElement(searchResultsInfo);
         }
@@ -817,7 +817,7 @@ async function performSearch() {
 
     } catch (error) {
         console.error('Search error:', error);
-        showNotification('Search failed. Please try again.', 'error');
+        showNotification(i18next.t('search.error'), 'error');
 
         // Fallback to showing all prompts
         loadPrompts();
@@ -844,13 +844,13 @@ function updateSearchResultsInfo(prompts) {
         // Show "No results found" message
         if (searchResultsInfo) {
             searchResultsInfo.className = 'search-results-info no-results';
-            searchResultsInfo.textContent = 'No prompts found matching your criteria.';
+            searchResultsInfo.textContent = i18next.t('search.noResultsInfo');
             showElement(searchResultsInfo);
         }
 
         // Show empty state in prompts list
         if (promptsList) {
-            promptsList.innerHTML = '<div class="no-results-message">No prompts found. Try adjusting your search or filters.</div>';
+            promptsList.innerHTML = `<div class="no-results-message">${i18next.t('search.noResultsMessage')}</div>`;
         }
 
         // Hide clear filters button
@@ -866,31 +866,53 @@ function updateSearchResultsInfo(prompts) {
     if (searchResultsInfo) {
         searchResultsInfo.className = 'search-results-info';
 
-        let infoText = `Showing ${resultCount} prompt${resultCount !== 1 ? 's' : ''}`;
-        if (resultCount !== totalCount) {
-            infoText += ` of ${totalCount} total`;
+        const hasAllResults = resultCount === totalCount;
+        let infoText;
+
+        if (hasAllResults) {
+            infoText = i18next.t('search.resultsCount', { count: resultCount });
+        } else {
+            infoText = i18next.t('search.resultsCountWithTotal', { count: resultCount, total: totalCount });
         }
 
         // Add active filter indicators
         const activeFilters = [];
         if (searchState.searchTerm) {
-            activeFilters.push(`search: "${searchState.searchTerm}"`);
+            activeFilters.push(
+                i18next.t('search.filter.search', {
+                    term: searchState.searchTerm,
+                    interpolation: { escapeValue: false }
+                })
+            );
         }
         if (searchState.category && searchState.category !== 'all') {
-            activeFilters.push(`category: ${searchState.category}`);
+            activeFilters.push(
+                i18next.t('search.filter.category', {
+                    category: searchState.category,
+                    interpolation: { escapeValue: false }
+                })
+            );
         }
         if (searchState.tag && searchState.tag !== 'all') {
-            activeFilters.push(`tag: ${searchState.tag}`);
+            activeFilters.push(
+                i18next.t('search.filter.tag', {
+                    tag: searchState.tag,
+                    interpolation: { escapeValue: false }
+                })
+            );
         }
         if (searchState.favorites) {
-            activeFilters.push('favorites only');
+            activeFilters.push(i18next.t('search.filter.favorites'));
         }
         if (searchState.caseSensitive) {
-            activeFilters.push('case sensitive');
+            activeFilters.push(i18next.t('search.filter.caseSensitive'));
         }
 
         if (activeFilters.length > 0) {
-            infoText += ` (filtered by: ${activeFilters.join(', ')})`;
+            infoText += ` ${i18next.t('search.filteredBy', {
+                filters: activeFilters.join(', '),
+                interpolation: { escapeValue: false }
+            })}`;
         }
 
         searchResultsInfo.textContent = infoText;
@@ -902,7 +924,7 @@ function updateSearchResultsInfo(prompts) {
     if (clearAllFiltersBtn) {
         if (resultCount !== totalCount || searchState.searchTerm || searchState.category !== 'all' ||
             searchState.tag !== 'all' || searchState.favorites || searchState.caseSensitive) {
-            clearAllFiltersBtn.textContent = `Clear Filters (${resultCount} shown)`;
+            clearAllFiltersBtn.textContent = i18next.t('search.clearFiltersWithCount', { count: resultCount });
             showElement(clearAllFiltersBtn);
         } else {
             hideElement(clearAllFiltersBtn);

@@ -121,6 +121,25 @@
     "operationCancelled": "Operation cancelled",
     "clearBtn": "Clear"
   },
+  "search": {
+    "emptyState": "No prompts found. Create your first prompt to get started!",
+    "error": "Search failed. Please try again.",
+    "noResultsInfo": "No prompts found matching your criteria.",
+    "noResultsMessage": "No prompts found. Try adjusting your search or filters.",
+    "resultsCount": "Showing {{count}} prompt",
+    "resultsCount_plural": "Showing {{count}} prompts",
+    "resultsCountWithTotal": "Showing {{count}} of {{total}} prompt",
+    "resultsCountWithTotal_plural": "Showing {{count}} of {{total}} prompts",
+    "filteredBy": "(filtered by: {{filters}})",
+    "clearFiltersWithCount": "Clear Filters ({{count}} shown)",
+    "filter": {
+      "search": "search: \"{{term}}\"",
+      "category": "category: {{category}}",
+      "tag": "tag: {{tag}}",
+      "favorites": "favorites only",
+      "caseSensitive": "case sensitive"
+    }
+  },
   "version": {
     "history": "History",
     "compareVersions": "Compare Versions",
