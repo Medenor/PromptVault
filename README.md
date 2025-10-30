@@ -161,8 +161,8 @@ Then open your browser to `http://localhost:8001`
 2. **Create a virtual environment** (recommended):
 
     ```bash
-    python -m venv venv
-    source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
+    python3 -m venv .venv
+    source .venv/bin/activate  # On Windows, use `.venv\Scripts\activate`
     ```
 
 3. **Install PromptVault and its dependencies**:
@@ -202,16 +202,18 @@ pip install -e .
 2. Run the web application:
 
 ```bash
-python run_web.py
+python3 run_web.py
 ```
 
 By default, the application will run on port 8000. To use a different port, set the `PORT` environment variable:
 
 ```bash
-PORT=8001 python run_web.py
+PORT=8001 python3 run_web.py
 ```
 
 3. Open your browser and go to `http://localhost:8000` (or the port you specified)
+
+4. To stop the web application, press `Ctrl+C` in the terminal where the server is running
 
 **Note:** PromptVault is now a web-only application. The legacy desktop version has been deprecated and its startup scripts removed.
 
