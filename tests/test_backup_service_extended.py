@@ -27,7 +27,9 @@ class TestBackupEdgeCases:
         # Check that it doesn't crash
         assert backup_id is None or isinstance(backup_id, str)
 
-    def test_backup_with_very_long_description(self, temp_data_dir, populated_data_service):
+    def test_backup_with_very_long_description(
+        self, temp_data_dir, populated_data_service
+    ):
         """Test creating backup with very long description."""
         data_file = Path(temp_data_dir) / "prompts_data.json"
         populated_data_service.data_file = str(data_file)
@@ -41,9 +43,11 @@ class TestBackupEdgeCases:
         assert backup_id is not None
 
         backups = backup_service.list_backups()
-        assert any(b['backup_id'] == backup_id for b in backups)
+        assert any(b["backup_id"] == backup_id for b in backups)
 
-    def test_backup_with_special_characters_in_description(self, temp_data_dir, populated_data_service):
+    def test_backup_with_special_characters_in_description(
+        self, temp_data_dir, populated_data_service
+    ):
         """Test creating backup with special characters in description."""
         data_file = Path(temp_data_dir) / "prompts_data.json"
         populated_data_service.data_file = str(data_file)
@@ -79,7 +83,7 @@ class TestBackupEdgeCases:
     def test_backup_with_empty_data_file(self, temp_data_dir):
         """Test creating backup with empty data file."""
         data_file = Path(temp_data_dir) / "prompts_data.json"
-        data_file.write_text("{}", encoding='utf-8')
+        data_file.write_text("{}", encoding="utf-8")
 
         backup_service = BackupService(temp_data_dir)
 
@@ -113,7 +117,7 @@ class TestBackupRestoration:
 
         # Corrupt the backup file
         backup_path = Path(backup_service.backups_dir) / f"{backup_id}.json"
-        backup_path.write_text("{invalid json}", encoding='utf-8')
+        backup_path.write_text("{invalid json}", encoding="utf-8")
 
         # Try to restore
         result = backup_service.restore_backup(backup_id)
@@ -134,7 +138,7 @@ class TestBackupRestoration:
 
         # Corrupt the metadata file
         metadata_path = Path(backup_service.backups_dir) / f"{backup_id}_metadata.json"
-        metadata_path.write_text("{}", encoding='utf-8')
+        metadata_path.write_text("{}", encoding="utf-8")
 
         # Try to restore
         result = backup_service.restore_backup(backup_id)
@@ -142,7 +146,9 @@ class TestBackupRestoration:
         # Might still work if main backup file is valid
         assert isinstance(result, bool)
 
-    def test_restore_creates_pre_restore_backup(self, temp_data_dir, populated_data_service):
+    def test_restore_creates_pre_restore_backup(
+        self, temp_data_dir, populated_data_service
+    ):
         """Test that restore creates a pre-restore safety backup."""
         data_file = Path(temp_data_dir) / "prompts_data.json"
         populated_data_service.data_file = str(data_file)
@@ -166,14 +172,16 @@ class TestBackupRestoration:
         final_backup_count = len(backup_service.list_backups())
         assert final_backup_count > initial_backup_count
 
-    def test_restore_maintains_data_integrity(self, temp_data_dir, populated_data_service):
+    def test_restore_maintains_data_integrity(
+        self, temp_data_dir, populated_data_service
+    ):
         """Test that restored data matches original backup data."""
         data_file = Path(temp_data_dir) / "prompts_data.json"
         populated_data_service.data_file = str(data_file)
         populated_data_service.save_prompts()
 
         # Save original data
-        with open(data_file, 'r', encoding='utf-8') as f:
+        with open(data_file, "r", encoding="utf-8") as f:
             original_data = json.load(f)
 
         backup_service = BackupService(temp_data_dir)
@@ -182,14 +190,16 @@ class TestBackupRestoration:
         backup_id = backup_service.create_backup("original")
 
         # Modify data
-        populated_data_service.add_new_prompt({"title": "Modified", "prompt": "Modified"})
+        populated_data_service.add_new_prompt(
+            {"title": "Modified", "prompt": "Modified"}
+        )
         populated_data_service.save_prompts()
 
         # Restore
         backup_service.restore_backup(backup_id)
 
         # Load restored data
-        with open(data_file, 'r', encoding='utf-8') as f:
+        with open(data_file, "r", encoding="utf-8") as f:
             restored_data = json.load(f)
 
         # Should match original
@@ -207,7 +217,9 @@ class TestBackupCleanup:
 
         assert removed_count == 0
 
-    def test_cleanup_doesnt_remove_recent_backups(self, temp_data_dir, populated_data_service):
+    def test_cleanup_doesnt_remove_recent_backups(
+        self, temp_data_dir, populated_data_service
+    ):
         """Test that cleanup doesn't remove recent backups."""
         data_file = Path(temp_data_dir) / "prompts_data.json"
         populated_data_service.data_file = str(data_file)
@@ -227,7 +239,9 @@ class TestBackupCleanup:
         backups = backup_service.list_backups()
         assert len(backups) == 1
 
-    def test_cleanup_invalid_retention_days(self, temp_data_dir, populated_data_service):
+    def test_cleanup_invalid_retention_days(
+        self, temp_data_dir, populated_data_service
+    ):
         """Test cleanup with invalid retention days."""
         data_file = Path(temp_data_dir) / "prompts_data.json"
         populated_data_service.data_file = str(data_file)
@@ -247,7 +261,9 @@ class TestBackupCleanup:
 class TestBackupCompression:
     """Test backup compression functionality."""
 
-    def test_compress_already_compressed_backup(self, temp_data_dir, populated_data_service):
+    def test_compress_already_compressed_backup(
+        self, temp_data_dir, populated_data_service
+    ):
         """Test compressing a backup that's already compressed."""
         data_file = Path(temp_data_dir) / "prompts_data.json"
         populated_data_service.data_file = str(data_file)
@@ -273,7 +289,9 @@ class TestBackupCompression:
 
         assert compressed_count == 0
 
-    def test_compress_removes_original_file(self, temp_data_dir, populated_data_service):
+    def test_compress_removes_original_file(
+        self, temp_data_dir, populated_data_service
+    ):
         """Test that compression removes the original uncompressed file."""
         data_file = Path(temp_data_dir) / "prompts_data.json"
         populated_data_service.data_file = str(data_file)
@@ -311,7 +329,7 @@ class TestBackupCompression:
         compressed_path = Path(backup_service.backups_dir) / f"{backup_id}.json.gz"
 
         # Try to decompress and verify
-        with gzip.open(compressed_path, 'rt', encoding='utf-8') as f:
+        with gzip.open(compressed_path, "rt", encoding="utf-8") as f:
             decompressed_data = json.load(f)
 
         # Should be valid JSON
@@ -327,10 +345,10 @@ class TestBackupStatistics:
 
         stats = backup_service.get_backup_stats()
 
-        assert stats['total_backups'] == 0
-        assert stats['total_size'] == 0
-        assert stats['newest_backup'] is None
-        assert stats['oldest_backup'] is None
+        assert stats["total_backups"] == 0
+        assert stats["total_size"] == 0
+        assert stats["newest_backup"] is None
+        assert stats["oldest_backup"] is None
 
     def test_stats_with_single_backup(self, temp_data_dir, populated_data_service):
         """Test statistics with a single backup."""
@@ -344,12 +362,14 @@ class TestBackupStatistics:
 
         stats = backup_service.get_backup_stats()
 
-        assert stats['total_backups'] == 1
-        assert stats['total_size'] > 0
-        assert stats['newest_backup'] is not None
-        assert stats['oldest_backup'] is not None
+        assert stats["total_backups"] == 1
+        assert stats["total_size"] > 0
+        assert stats["newest_backup"] is not None
+        assert stats["oldest_backup"] is not None
 
-    def test_stats_with_mixed_compressed_uncompressed(self, temp_data_dir, populated_data_service):
+    def test_stats_with_mixed_compressed_uncompressed(
+        self, temp_data_dir, populated_data_service
+    ):
         """Test statistics with mix of compressed and uncompressed backups."""
         data_file = Path(temp_data_dir) / "prompts_data.json"
         populated_data_service.data_file = str(data_file)
@@ -367,8 +387,8 @@ class TestBackupStatistics:
 
         stats = backup_service.get_backup_stats()
 
-        assert stats['total_backups'] == 3
-        assert stats['compressed_backups'] == 3
+        assert stats["total_backups"] == 3
+        assert stats["compressed_backups"] == 3
 
 
 class TestBackupInfo:
@@ -387,9 +407,9 @@ class TestBackupInfo:
         info = backup_service.get_backup_info(backup_id)
 
         assert info is not None
-        assert info['backup_id'] == backup_id
-        assert 'timestamp' in info
-        assert 'size_bytes' in info
+        assert info["backup_id"] == backup_id
+        assert "timestamp" in info
+        assert "size_bytes" in info
 
     def test_get_backup_info_nonexistent(self, temp_data_dir):
         """Test getting info for a nonexistent backup."""
@@ -459,7 +479,9 @@ class TestBackupDeletion:
 class TestBackupListOrdering:
     """Test backup listing and ordering."""
 
-    def test_list_backups_ordered_by_timestamp(self, temp_data_dir, populated_data_service):
+    def test_list_backups_ordered_by_timestamp(
+        self, temp_data_dir, populated_data_service
+    ):
         """Test that backups are listed in chronological order."""
         data_file = Path(temp_data_dir) / "prompts_data.json"
         populated_data_service.data_file = str(data_file)
@@ -474,10 +496,14 @@ class TestBackupListOrdering:
         backups = backup_service.list_backups()
 
         # Check that they're ordered by timestamp (newest first or oldest first)
-        timestamps = [b['timestamp'] for b in backups]
-        assert timestamps == sorted(timestamps) or timestamps == sorted(timestamps, reverse=True)
+        timestamps = [b["timestamp"] for b in backups]
+        assert timestamps == sorted(timestamps) or timestamps == sorted(
+            timestamps, reverse=True
+        )
 
-    def test_list_backups_includes_all_metadata(self, temp_data_dir, populated_data_service):
+    def test_list_backups_includes_all_metadata(
+        self, temp_data_dir, populated_data_service
+    ):
         """Test that list_backups includes all metadata fields."""
         data_file = Path(temp_data_dir) / "prompts_data.json"
         populated_data_service.data_file = str(data_file)
@@ -493,7 +519,7 @@ class TestBackupListOrdering:
         backup = backups[0]
 
         # Check required fields
-        assert 'backup_id' in backup
-        assert 'filename' in backup
-        assert 'timestamp' in backup
-        assert 'size_bytes' in backup
+        assert "backup_id" in backup
+        assert "filename" in backup
+        assert "timestamp" in backup
+        assert "size_bytes" in backup

@@ -14,7 +14,9 @@ from src.services.prompt_data_service import PromptDataService
 class TestPromptCreation:
     """Test prompt creation functionality."""
 
-    def test_create_prompt_with_all_fields(self, empty_data_service, sample_prompt_data):
+    def test_create_prompt_with_all_fields(
+        self, empty_data_service, sample_prompt_data
+    ):
         """Test creating a prompt with all fields populated."""
         prompt_data = sample_prompt_data(
             title="Complete Prompt",
@@ -22,7 +24,7 @@ class TestPromptCreation:
             note="Detailed note",
             category="Testing",
             tags=["tag1", "tag2", "tag3"],
-            favorite=True
+            favorite=True,
         )
 
         prompt_id = empty_data_service.add_new_prompt(prompt_data)
@@ -32,26 +34,23 @@ class TestPromptCreation:
         assert prompt_id in empty_data_service.prompts
 
         saved_prompt = empty_data_service.prompts[prompt_id]
-        assert saved_prompt['data']['title'] == "Complete Prompt"
-        assert saved_prompt['data']['prompt'] == "Full content"
-        assert saved_prompt['data']['note'] == "Detailed note"
-        assert saved_prompt['data']['category'] == "Testing"
-        assert saved_prompt['data']['tags'] == ["tag1", "tag2", "tag3"]
-        assert saved_prompt['data']['favorite'] is True
+        assert saved_prompt["data"]["title"] == "Complete Prompt"
+        assert saved_prompt["data"]["prompt"] == "Full content"
+        assert saved_prompt["data"]["note"] == "Detailed note"
+        assert saved_prompt["data"]["category"] == "Testing"
+        assert saved_prompt["data"]["tags"] == ["tag1", "tag2", "tag3"]
+        assert saved_prompt["data"]["favorite"] is True
 
     def test_create_prompt_with_minimal_fields(self, empty_data_service):
         """Test creating a prompt with only required fields."""
-        minimal_data = {
-            "title": "Minimal",
-            "prompt": "Content"
-        }
+        minimal_data = {"title": "Minimal", "prompt": "Content"}
 
         prompt_id = empty_data_service.add_new_prompt(minimal_data)
 
         assert prompt_id >= 0
         saved_prompt = empty_data_service.prompts[prompt_id]
-        assert saved_prompt['data']['title'] == "Minimal"
-        assert saved_prompt['data']['prompt'] == "Content"
+        assert saved_prompt["data"]["title"] == "Minimal"
+        assert saved_prompt["data"]["prompt"] == "Content"
 
     def test_create_prompt_increments_id(self, empty_data_service, sample_prompt_data):
         """Test that creating prompts increments the ID correctly."""
@@ -64,39 +63,43 @@ class TestPromptCreation:
         assert id3 == 2
         assert empty_data_service.next_id == 3
 
-    def test_create_prompt_creates_initial_version(self, empty_data_service, sample_prompt_data):
+    def test_create_prompt_creates_initial_version(
+        self, empty_data_service, sample_prompt_data
+    ):
         """Test that creating a prompt creates an initial version."""
         prompt_data = sample_prompt_data(title="Versioned")
         prompt_id = empty_data_service.add_new_prompt(prompt_data)
 
-        versions = empty_data_service.prompts[prompt_id]['versions']
+        versions = empty_data_service.prompts[prompt_id]["versions"]
         assert len(versions) == 1
-        assert versions[0]['message'] == "Initial commit"
-        assert versions[0]['parents'] == []
-        assert 'version_id' in versions[0]
-        assert 'timestamp' in versions[0]
-        assert 'author' in versions[0]
+        assert versions[0]["message"] == "Initial commit"
+        assert versions[0]["parents"] == []
+        assert "version_id" in versions[0]
+        assert "timestamp" in versions[0]
+        assert "author" in versions[0]
 
-    def test_create_prompt_with_custom_commit_message(self, empty_data_service, sample_prompt_data):
+    def test_create_prompt_with_custom_commit_message(
+        self, empty_data_service, sample_prompt_data
+    ):
         """Test creating a prompt with a custom commit message."""
         prompt_data = sample_prompt_data(title="Custom Message")
-        prompt_data['commit_message'] = "Custom initial commit"
+        prompt_data["commit_message"] = "Custom initial commit"
 
         prompt_id = empty_data_service.add_new_prompt(prompt_data)
 
-        versions = empty_data_service.prompts[prompt_id]['versions']
-        assert versions[0]['message'] == "Custom initial commit"
+        versions = empty_data_service.prompts[prompt_id]["versions"]
+        assert versions[0]["message"] == "Custom initial commit"
 
     def test_create_prompt_trims_tag_whitespace(self, empty_data_service):
         """Tags should be sanitized before persistence."""
         prompt_data = {
             "title": "Whitespace Tags",
             "prompt": "Content",
-            "tags": [" vision", "creativity ", "  ", "focus"]
+            "tags": [" vision", "creativity ", "  ", "focus"],
         }
 
         prompt_id = empty_data_service.add_new_prompt(prompt_data)
-        saved_tags = empty_data_service.prompts[prompt_id]['data']['tags']
+        saved_tags = empty_data_service.prompts[prompt_id]["data"]["tags"]
 
         assert saved_tags == ["vision", "creativity", "focus"]
 
@@ -112,15 +115,17 @@ class TestPromptUpdate:
             "prompt": "Updated content",
             "category": "Updated Category",
             "tags": ["updated"],
-            "favorite": True
+            "favorite": True,
         }
 
-        result = populated_data_service.update_prompt(prompt_id, updated_data, "Update test")
+        result = populated_data_service.update_prompt(
+            prompt_id, updated_data, "Update test"
+        )
 
         assert result is True
-        saved_data = populated_data_service.prompts[prompt_id]['data']
-        assert saved_data['title'] == "Updated Title"
-        assert saved_data['prompt'] == "Updated content"
+        saved_data = populated_data_service.prompts[prompt_id]["data"]
+        assert saved_data["title"] == "Updated Title"
+        assert saved_data["prompt"] == "Updated content"
 
     def test_update_nonexistent_prompt(self, populated_data_service):
         """Test updating a prompt that doesn't exist."""
@@ -131,40 +136,48 @@ class TestPromptUpdate:
     def test_update_creates_new_version(self, populated_data_service):
         """Test that updating a prompt creates a new version."""
         prompt_id = 0
-        initial_version_count = len(populated_data_service.prompts[prompt_id]['versions'])
+        initial_version_count = len(
+            populated_data_service.prompts[prompt_id]["versions"]
+        )
 
         updated_data = {"title": "New Version", "prompt": "New content"}
         populated_data_service.update_prompt(prompt_id, updated_data, "Version 2")
 
-        versions = populated_data_service.prompts[prompt_id]['versions']
+        versions = populated_data_service.prompts[prompt_id]["versions"]
         assert len(versions) == initial_version_count + 1
-        assert versions[-1]['message'] == "Version 2"
+        assert versions[-1]["message"] == "Version 2"
 
     def test_update_maintains_version_chain(self, populated_data_service):
         """Test that updates maintain proper version parent relationships."""
         prompt_id = 0
 
         # Get initial version ID
-        initial_version_id = populated_data_service.prompts[prompt_id]['versions'][0]['version_id']
+        initial_version_id = populated_data_service.prompts[prompt_id]["versions"][0][
+            "version_id"
+        ]
 
         # Update prompt
-        populated_data_service.update_prompt(prompt_id, {"title": "V2", "prompt": "C2"}, "Update 1")
+        populated_data_service.update_prompt(
+            prompt_id, {"title": "V2", "prompt": "C2"}, "Update 1"
+        )
 
-        versions = populated_data_service.prompts[prompt_id]['versions']
+        versions = populated_data_service.prompts[prompt_id]["versions"]
         latest_version = versions[-1]
 
-        assert initial_version_id in latest_version['parents']
+        assert initial_version_id in latest_version["parents"]
 
     def test_update_updates_branch_head(self, populated_data_service):
         """Test that updating a prompt updates the main branch head."""
         prompt_id = 0
 
         # Update prompt
-        populated_data_service.update_prompt(prompt_id, {"title": "New", "prompt": "New"}, "Update")
+        populated_data_service.update_prompt(
+            prompt_id, {"title": "New", "prompt": "New"}, "Update"
+        )
 
-        versions = populated_data_service.prompts[prompt_id]['versions']
-        latest_version_id = versions[-1]['version_id']
-        branch_head = populated_data_service.prompts[prompt_id]['branches']['main']
+        versions = populated_data_service.prompts[prompt_id]["versions"]
+        latest_version_id = versions[-1]["version_id"]
+        branch_head = populated_data_service.prompts[prompt_id]["branches"]["main"]
 
         assert branch_head == latest_version_id
 
@@ -207,8 +220,8 @@ class TestPromptRetrieval:
         data = populated_data_service.get_prompt_data(prompt_id)
 
         assert isinstance(data, dict)
-        assert 'title' in data
-        assert 'prompt' in data
+        assert "title" in data
+        assert "prompt" in data
 
     def test_get_prompt_data_nonexistent(self, populated_data_service):
         """Test getting data for a nonexistent prompt."""
@@ -223,8 +236,8 @@ class TestPromptRetrieval:
 
         assert isinstance(versions, list)
         assert len(versions) > 0
-        assert 'version_id' in versions[0]
-        assert 'timestamp' in versions[0]
+        assert "version_id" in versions[0]
+        assert "timestamp" in versions[0]
 
     def test_get_prompt_versions_nonexistent(self, populated_data_service):
         """Test getting versions for a nonexistent prompt."""
@@ -236,7 +249,9 @@ class TestPromptRetrieval:
 class TestDataPersistence:
     """Test save and load functionality."""
 
-    def test_save_prompts_creates_file(self, empty_data_service, temp_data_file, sample_prompt_data):
+    def test_save_prompts_creates_file(
+        self, empty_data_service, temp_data_file, sample_prompt_data
+    ):
         """Test that saving prompts creates the data file."""
         empty_data_service.add_new_prompt(sample_prompt_data())
         result = empty_data_service.save_prompts()
@@ -257,7 +272,7 @@ class TestDataPersistence:
         service2.load_prompts()
 
         assert prompt_id in service2.prompts
-        assert service2.prompts[prompt_id]['data']['title'] == "Save Test"
+        assert service2.prompts[prompt_id]["data"]["title"] == "Save Test"
 
     def test_load_nonexistent_file(self, temp_data_file):
         """Test loading when the data file doesn't exist."""
@@ -273,7 +288,7 @@ class TestDataPersistence:
         prompt_data = sample_prompt_data(
             title="Special: <>&\"'",
             prompt="Content with 你好 unicode ñ é",
-            note="Emoji test 🚀 ⭐ 🎉"
+            note="Emoji test 🚀 ⭐ 🎉",
         )
         service.add_new_prompt(prompt_data)
         service.save_prompts()
@@ -282,17 +297,21 @@ class TestDataPersistence:
         service2 = PromptDataService(temp_data_file)
         service2.load_prompts()
 
-        loaded_data = service2.prompts[0]['data']
-        assert loaded_data['title'] == "Special: <>&\"'"
-        assert "你好" in loaded_data['prompt']
-        assert "🚀" in loaded_data['note']
+        loaded_data = service2.prompts[0]["data"]
+        assert loaded_data["title"] == "Special: <>&\"'"
+        assert "你好" in loaded_data["prompt"]
+        assert "🚀" in loaded_data["note"]
 
     def test_save_updates_categories_and_tags(self, temp_data_file, sample_prompt_data):
         """Test that saving updates categories and tags from prompts."""
         service = PromptDataService(temp_data_file)
 
-        service.add_new_prompt(sample_prompt_data(category="Cat1", tags=["tag1", "tag2"]))
-        service.add_new_prompt(sample_prompt_data(category="Cat2", tags=["tag2", "tag3"]))
+        service.add_new_prompt(
+            sample_prompt_data(category="Cat1", tags=["tag1", "tag2"])
+        )
+        service.add_new_prompt(
+            sample_prompt_data(category="Cat2", tags=["tag2", "tag3"])
+        )
         service.save_prompts()
 
         # Load and check
@@ -320,17 +339,17 @@ class TestDataMigration:
                         "title": "Old Format",
                         "prompt": "Current content",
                         "category": "Test",
-                        "tags": []
+                        "tags": [],
                     },
                     "history": [
                         {"title": "Old Format", "prompt": "First content"},
-                        {"title": "Old Format", "prompt": "Second content"}
-                    ]
+                        {"title": "Old Format", "prompt": "Second content"},
+                    ],
                 }
-            }
+            },
         }
 
-        with open(temp_data_file, 'w', encoding='utf-8') as f:
+        with open(temp_data_file, "w", encoding="utf-8") as f:
             json.dump(old_data, f)
 
         # Load and check migration
@@ -341,52 +360,44 @@ class TestDataMigration:
         prompt_info = service.prompts[0]
 
         # Should have versions now, not history
-        assert 'versions' in prompt_info
-        assert 'history' not in prompt_info
-        assert len(prompt_info['versions']) > 0
+        assert "versions" in prompt_info
+        assert "history" not in prompt_info
+        assert len(prompt_info["versions"]) > 0
 
     def test_migrate_ensures_versioned_structure(self, temp_data_file):
         """Test that migration ensures proper versioned structure."""
         # Create data without versions or branches
         incomplete_data = {
             "next_id": 1,
-            "prompts": {
-                "0": {
-                    "data": {"title": "Test", "prompt": "Content"}
-                }
-            }
+            "prompts": {"0": {"data": {"title": "Test", "prompt": "Content"}}},
         }
 
-        with open(temp_data_file, 'w', encoding='utf-8') as f:
+        with open(temp_data_file, "w", encoding="utf-8") as f:
             json.dump(incomplete_data, f)
 
         service = PromptDataService(temp_data_file)
         service.load_prompts()
 
         prompt_info = service.prompts[0]
-        assert 'versions' in prompt_info
-        assert 'branches' in prompt_info
-        assert isinstance(prompt_info['versions'], list)
-        assert isinstance(prompt_info['branches'], dict)
+        assert "versions" in prompt_info
+        assert "branches" in prompt_info
+        assert isinstance(prompt_info["versions"], list)
+        assert isinstance(prompt_info["branches"], dict)
 
     def test_migrate_sets_default_category(self, temp_data_file):
         """Test that migration sets default category if missing."""
         data = {
             "next_id": 1,
-            "prompts": {
-                "0": {
-                    "data": {"title": "Test", "prompt": "Content"}
-                }
-            }
+            "prompts": {"0": {"data": {"title": "Test", "prompt": "Content"}}},
         }
 
-        with open(temp_data_file, 'w', encoding='utf-8') as f:
+        with open(temp_data_file, "w", encoding="utf-8") as f:
             json.dump(data, f)
 
         service = PromptDataService(temp_data_file)
         service.load_prompts()
 
-        assert service.prompts[0]['data']['category'] == 'No category'
+        assert service.prompts[0]["data"]["category"] == "No category"
 
     def test_migrate_sets_default_favorite(self, temp_data_file):
         """Test that migration sets default favorite status."""
@@ -396,16 +407,16 @@ class TestDataMigration:
                 "0": {
                     "data": {"title": "Test", "prompt": "Content", "category": "Test"}
                 }
-            }
+            },
         }
 
-        with open(temp_data_file, 'w', encoding='utf-8') as f:
+        with open(temp_data_file, "w", encoding="utf-8") as f:
             json.dump(data, f)
 
         service = PromptDataService(temp_data_file)
         service.load_prompts()
 
-        assert service.prompts[0]['data']['favorite'] is False
+        assert service.prompts[0]["data"]["favorite"] is False
 
 
 class TestCategoriesAndTags:
@@ -438,7 +449,9 @@ class TestCategoriesAndTags:
             "Security",
         ]
 
-    def test_save_preserves_category_order_from_file(self, temp_data_file, sample_prompt_data):
+    def test_save_preserves_category_order_from_file(
+        self, temp_data_file, sample_prompt_data
+    ):
         """Category ordering defined in the data file should remain intact after save/load cycles."""
         service = PromptDataService(temp_data_file)
 
@@ -451,7 +464,9 @@ class TestCategoriesAndTags:
 
         service.add_new_prompt(sample_prompt_data(category="Développement personnel"))
         service.add_new_prompt(sample_prompt_data(category="Écriture"))
-        service.add_new_prompt(sample_prompt_data(category="Éducation et apprentissage"))
+        service.add_new_prompt(
+            sample_prompt_data(category="Éducation et apprentissage")
+        )
 
         service.categories = manual_order[:]
         service.save_prompts()
@@ -483,17 +498,19 @@ class TestCategoriesAndTags:
 
         # Each tag should have 'name' and 'count' fields
         for tag in tags_with_counts:
-            assert 'name' in tag
-            assert 'count' in tag
-            assert isinstance(tag['name'], str)
-            assert isinstance(tag['count'], int)
-            assert tag['count'] >= 0
+            assert "name" in tag
+            assert "count" in tag
+            assert isinstance(tag["name"], str)
+            assert isinstance(tag["count"], int)
+            assert tag["count"] >= 0
 
         # Tags should be sorted by name
-        tag_names = [tag['name'] for tag in tags_with_counts]
+        tag_names = [tag["name"] for tag in tags_with_counts]
         assert tag_names == sorted(tag_names)
 
-    def test_get_tags_with_counts_accuracy(self, empty_data_service, sample_prompt_data):
+    def test_get_tags_with_counts_accuracy(
+        self, empty_data_service, sample_prompt_data
+    ):
         """Test that tag counts are accurate."""
         # Create prompts with overlapping tags
         empty_data_service.add_new_prompt(sample_prompt_data(tags=["python", "ai"]))
@@ -503,12 +520,12 @@ class TestCategoriesAndTags:
         tags_with_counts = empty_data_service.get_tags_with_counts()
 
         # Convert to dict for easier checking
-        tag_dict = {tag['name']: tag['count'] for tag in tags_with_counts}
+        tag_dict = {tag["name"]: tag["count"] for tag in tags_with_counts}
 
-        assert tag_dict['python'] == 2
-        assert tag_dict['ai'] == 2
-        assert tag_dict['web'] == 1
-        assert tag_dict['ml'] == 1
+        assert tag_dict["python"] == 2
+        assert tag_dict["ai"] == 2
+        assert tag_dict["web"] == 1
+        assert tag_dict["ml"] == 1
 
 
 class TestVersionOperations:
@@ -521,30 +538,24 @@ class TestVersionOperations:
 
         # Update prompt
         populated_data_service.update_prompt(
-            prompt_id,
-            {"title": "Modified", "prompt": "Modified content"},
-            "Modify"
+            prompt_id, {"title": "Modified", "prompt": "Modified content"}, "Modify"
         )
 
         # Revert to initial data
         result = populated_data_service.revert_prompt_to_version(
-            prompt_id,
-            initial_data,
-            "Revert to initial"
+            prompt_id, initial_data, "Revert to initial"
         )
 
         assert result is True
 
         # Check that data was reverted
         current_data = populated_data_service.get_prompt_data(prompt_id)
-        assert current_data['title'] == initial_data['title']
+        assert current_data["title"] == initial_data["title"]
 
     def test_revert_nonexistent_prompt(self, populated_data_service):
         """Test reverting a nonexistent prompt."""
         result = populated_data_service.revert_prompt_to_version(
-            9999,
-            {"title": "Test"},
-            "Revert"
+            9999, {"title": "Test"}, "Revert"
         )
 
         assert result is False
@@ -552,18 +563,18 @@ class TestVersionOperations:
     def test_revert_creates_new_version(self, populated_data_service):
         """Test that revert creates a new version."""
         prompt_id = 0
-        initial_version_count = len(populated_data_service.get_prompt_versions(prompt_id))
+        initial_version_count = len(
+            populated_data_service.get_prompt_versions(prompt_id)
+        )
 
         initial_data = populated_data_service.get_prompt_data(prompt_id).copy()
         populated_data_service.revert_prompt_to_version(
-            prompt_id,
-            initial_data,
-            "Revert test"
+            prompt_id, initial_data, "Revert test"
         )
 
         versions = populated_data_service.get_prompt_versions(prompt_id)
         assert len(versions) == initial_version_count + 1
-        assert versions[-1]['message'] == "Revert test"
+        assert versions[-1]["message"] == "Revert test"
 
 
 class TestClearAllPrompts:
@@ -581,7 +592,9 @@ class TestClearAllPrompts:
         assert len(populated_data_service.categories) == 0
         assert len(populated_data_service.global_tags) == 0
 
-    def test_clear_all_prompts_saves_state(self, temp_data_file, populated_data_service):
+    def test_clear_all_prompts_saves_state(
+        self, temp_data_file, populated_data_service
+    ):
         """Test that clearing all prompts saves the empty state."""
         populated_data_service.clear_all_prompts()
 
@@ -597,7 +610,7 @@ class TestErrorHandling:
 
     def test_load_corrupted_json(self, temp_data_file):
         """Test loading a file with corrupted JSON."""
-        with open(temp_data_file, 'w') as f:
+        with open(temp_data_file, "w") as f:
             f.write("{invalid json content}")
 
         service = PromptDataService(temp_data_file)
@@ -611,14 +624,10 @@ class TestErrorHandling:
         """Test loading data with invalid prompt keys."""
         invalid_data = {
             "next_id": 1,
-            "prompts": {
-                "not_a_number": {
-                    "data": {"title": "Test"}
-                }
-            }
+            "prompts": {"not_a_number": {"data": {"title": "Test"}}},
         }
 
-        with open(temp_data_file, 'w', encoding='utf-8') as f:
+        with open(temp_data_file, "w", encoding="utf-8") as f:
             json.dump(invalid_data, f)
 
         service = PromptDataService(temp_data_file)
@@ -629,14 +638,9 @@ class TestErrorHandling:
 
     def test_load_invalid_prompt_structure(self, temp_data_file):
         """Test loading data with invalid prompt structure."""
-        invalid_data = {
-            "next_id": 1,
-            "prompts": {
-                "0": "not a dict"
-            }
-        }
+        invalid_data = {"next_id": 1, "prompts": {"0": "not a dict"}}
 
-        with open(temp_data_file, 'w', encoding='utf-8') as f:
+        with open(temp_data_file, "w", encoding="utf-8") as f:
             json.dump(invalid_data, f)
 
         service = PromptDataService(temp_data_file)

@@ -19,7 +19,9 @@ class BackupService:
             data_dir (str): Path to the data directory. If None, uses default location.
         """
         if data_dir is None:
-            script_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+            script_dir = os.path.dirname(
+                os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            )
             self.data_dir = os.path.join(script_dir, "data")
         else:
             self.data_dir = data_dir
@@ -67,26 +69,28 @@ class BackupService:
             backup_size = os.path.getsize(backup_path)
 
             # Load data to count prompts
-            with open(backup_path, 'r', encoding='utf-8') as f:
+            with open(backup_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
-                prompt_count = len(data.get('prompts', {}))
+                prompt_count = len(data.get("prompts", {}))
 
             # Create backup metadata
-            backup_id = backup_filename.replace('.json', '')
+            backup_id = backup_filename.replace(".json", "")
             metadata = {
-                'backup_id': backup_id,
-                'filename': backup_filename,
-                'timestamp': datetime.now().isoformat(),
-                'size_bytes': backup_size,
-                'prompt_count': prompt_count,
-                'created_by': self._get_current_user(),
-                'data_file_modified': datetime.fromtimestamp(os.path.getmtime(self.data_file)).isoformat(),
-                'compressed': False,
+                "backup_id": backup_id,
+                "filename": backup_filename,
+                "timestamp": datetime.now().isoformat(),
+                "size_bytes": backup_size,
+                "prompt_count": prompt_count,
+                "created_by": self._get_current_user(),
+                "data_file_modified": datetime.fromtimestamp(
+                    os.path.getmtime(self.data_file)
+                ).isoformat(),
+                "compressed": False,
             }
 
             # Save metadata
-            metadata_path = backup_path.replace('.json', '_metadata.json')
-            with open(metadata_path, 'w', encoding='utf-8') as f:
+            metadata_path = backup_path.replace(".json", "_metadata.json")
+            with open(metadata_path, "w", encoding="utf-8") as f:
                 json.dump(metadata, f, indent=2)
 
             print(f"Backup created successfully: {backup_filename}")
@@ -108,17 +112,19 @@ class BackupService:
         try:
             # Look for backup metadata files
             for filename in os.listdir(self.backups_dir):
-                if filename.endswith('_metadata.json'):
+                if filename.endswith("_metadata.json"):
                     metadata_path = os.path.join(self.backups_dir, filename)
                     try:
-                        with open(metadata_path, 'r', encoding='utf-8') as f:
+                        with open(metadata_path, "r", encoding="utf-8") as f:
                             metadata = json.load(f)
                             backups.append(metadata)
                     except (json.JSONDecodeError, IOError) as e:
-                        print(f"Warning: Could not read backup metadata {filename}: {e}")
+                        print(
+                            f"Warning: Could not read backup metadata {filename}: {e}"
+                        )
 
             # Sort by timestamp (newest first)
-            backups.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
+            backups.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
 
         except Exception as e:
             print(f"Error listing backups: {e}")
@@ -152,8 +158,10 @@ class BackupService:
                 print("Warning: Could not create pre-restore backup")
 
             # Restore the backup (handle compressed files transparently)
-            if backup_path.endswith('.gz'):
-                with gzip.open(backup_path, 'rb') as src, open(self.data_file, 'wb') as dst:
+            if backup_path.endswith(".gz"):
+                with gzip.open(backup_path, "rb") as src, open(
+                    self.data_file, "wb"
+                ) as dst:
                     shutil.copyfileobj(src, dst)
             else:
                 shutil.copy2(backup_path, self.data_file)
@@ -182,13 +190,17 @@ class BackupService:
             backups = self.list_backups()
 
             for backup in backups:
-                backup_date = datetime.fromisoformat(backup['timestamp'].replace('Z', '+00:00'))
+                backup_date = datetime.fromisoformat(
+                    backup["timestamp"].replace("Z", "+00:00")
+                )
 
                 if backup_date < cutoff_date:
                     # Remove backup files
-                    backup_filename = backup['filename']
+                    backup_filename = backup["filename"]
                     backup_path = os.path.join(self.backups_dir, backup_filename)
-                    metadata_filename = backup_filename.replace('.json', '_metadata.json')
+                    metadata_filename = backup_filename.replace(
+                        ".json", "_metadata.json"
+                    )
                     metadata_path = os.path.join(self.backups_dir, metadata_filename)
 
                     try:
@@ -199,7 +211,9 @@ class BackupService:
                         removed_count += 1
                         print(f"Removed old backup: {backup_filename}")
                     except OSError as e:
-                        print(f"Warning: Could not remove backup {backup_filename}: {e}")
+                        print(
+                            f"Warning: Could not remove backup {backup_filename}: {e}"
+                        )
 
             if removed_count > 0:
                 print(f"Cleanup completed: {removed_count} old backups removed")
@@ -221,7 +235,7 @@ class BackupService:
         """
         backups = self.list_backups()
         for backup in backups:
-            if backup['backup_id'] == backup_id:
+            if backup["backup_id"] == backup_id:
                 return backup
         return None
 
@@ -242,37 +256,45 @@ class BackupService:
             backups = self.list_backups()
 
             for backup in backups:
-                backup_date = datetime.fromisoformat(backup['timestamp'].replace('Z', '+00:00'))
+                backup_date = datetime.fromisoformat(
+                    backup["timestamp"].replace("Z", "+00:00")
+                )
 
                 if backup_date < cutoff_date:
-                    backup_filename = backup['filename']
+                    backup_filename = backup["filename"]
                     backup_path = os.path.join(self.backups_dir, backup_filename)
-                    metadata_path = backup_path.replace('.json', '_metadata.json')
+                    metadata_path = backup_path.replace(".json", "_metadata.json")
 
-                    if os.path.exists(backup_path) and not backup_filename.endswith('.gz'):
+                    if os.path.exists(backup_path) and not backup_filename.endswith(
+                        ".gz"
+                    ):
                         try:
                             # Compress the backup file
-                            with open(backup_path, 'rb') as f_in:
-                                with gzip.open(f"{backup_path}.gz", 'wb') as f_out:
+                            with open(backup_path, "rb") as f_in:
+                                with gzip.open(f"{backup_path}.gz", "wb") as f_out:
                                     shutil.copyfileobj(f_in, f_out)
 
                             # Remove original file
                             os.remove(backup_path)
 
                             # Update metadata
-                            backup['filename'] = f"{backup_filename}.gz"
-                            backup['compressed'] = True
-                            backup['original_size'] = backup['size_bytes']
-                            backup['compressed_size'] = os.path.getsize(f"{backup_path}.gz")
+                            backup["filename"] = f"{backup_filename}.gz"
+                            backup["compressed"] = True
+                            backup["original_size"] = backup["size_bytes"]
+                            backup["compressed_size"] = os.path.getsize(
+                                f"{backup_path}.gz"
+                            )
 
-                            with open(metadata_path, 'w', encoding='utf-8') as f:
+                            with open(metadata_path, "w", encoding="utf-8") as f:
                                 json.dump(backup, f, indent=2)
 
                             compressed_count += 1
                             print(f"Compressed backup: {backup_filename}")
 
                         except Exception as e:
-                            print(f"Warning: Could not compress backup {backup_filename}: {e}")
+                            print(
+                                f"Warning: Could not compress backup {backup_filename}: {e}"
+                            )
 
             if compressed_count > 0:
                 print(f"Compression completed: {compressed_count} backups compressed")
@@ -293,24 +315,26 @@ class BackupService:
 
         if not backups:
             return {
-                'total_backups': 0,
-                'total_size': 0,
-                'oldest_backup': None,
-                'newest_backup': None,
-                'compressed_count': 0,
-                'compressed_backups': 0,
+                "total_backups": 0,
+                "total_size": 0,
+                "oldest_backup": None,
+                "newest_backup": None,
+                "compressed_count": 0,
+                "compressed_backups": 0,
             }
 
-        total_size = sum(backup.get('size_bytes', 0) for backup in backups)
-        compressed_count = sum(1 for backup in backups if backup.get('compressed', False))
+        total_size = sum(backup.get("size_bytes", 0) for backup in backups)
+        compressed_count = sum(
+            1 for backup in backups if backup.get("compressed", False)
+        )
 
         return {
-            'total_backups': len(backups),
-            'total_size': total_size,
-            'oldest_backup': backups[-1]['timestamp'] if backups else None,
-            'newest_backup': backups[0]['timestamp'] if backups else None,
-            'compressed_count': compressed_count,
-            'compressed_backups': compressed_count,
+            "total_backups": len(backups),
+            "total_size": total_size,
+            "oldest_backup": backups[-1]["timestamp"] if backups else None,
+            "newest_backup": backups[0]["timestamp"] if backups else None,
+            "compressed_count": compressed_count,
+            "compressed_backups": compressed_count,
         }
 
     def delete_backup(self, backup_id: str) -> bool:
@@ -325,7 +349,7 @@ class BackupService:
         """
         try:
             metadata = self.get_backup_info(backup_id)
-            filename = metadata.get('filename') if metadata else None
+            filename = metadata.get("filename") if metadata else None
             candidates = set()
 
             base_json = os.path.join(self.backups_dir, f"{backup_id}.json")
@@ -341,7 +365,9 @@ class BackupService:
                     os.remove(path)
                     removed = True
 
-            metadata_path = self._metadata_path_from_filename(filename or f"{backup_id}.json")
+            metadata_path = self._metadata_path_from_filename(
+                filename or f"{backup_id}.json"
+            )
             if metadata_path and os.path.exists(metadata_path):
                 os.remove(metadata_path)
                 removed = True
@@ -367,17 +393,17 @@ class BackupService:
         """Sanitize custom backup names for safe filenames."""
         if not name:
             return ""
-        cleaned = re.sub(r'[^A-Za-z0-9_-]+', '_', name.strip())
+        cleaned = re.sub(r"[^A-Za-z0-9_-]+", "_", name.strip())
         return cleaned[:64]
 
     def _metadata_path_from_filename(self, filename: str) -> Optional[str]:
         """Derive metadata path from a backup filename."""
         if not filename:
             return None
-        if filename.endswith('.json.gz'):
-            base = filename[:-len('.json.gz')]
-        elif filename.endswith('.json'):
-            base = filename[:-len('.json')]
+        if filename.endswith(".json.gz"):
+            base = filename[: -len(".json.gz")]
+        elif filename.endswith(".json"):
+            base = filename[: -len(".json")]
         else:
             base = filename
         return os.path.join(self.backups_dir, f"{base}_metadata.json")
@@ -392,7 +418,9 @@ class BackupService:
             return gz_candidate
         metadata = self.get_backup_info(backup_id)
         if metadata:
-            meta_candidate = os.path.join(self.backups_dir, metadata.get('filename', ''))
+            meta_candidate = os.path.join(
+                self.backups_dir, metadata.get("filename", "")
+            )
             if meta_candidate and os.path.exists(meta_candidate):
                 return meta_candidate
         return None
@@ -400,11 +428,11 @@ class BackupService:
     def _is_valid_backup_file(self, backup_path: str) -> bool:
         """Validate that a backup file contains readable JSON."""
         try:
-            if backup_path.endswith('.gz'):
-                with gzip.open(backup_path, 'rt', encoding='utf-8') as f:
+            if backup_path.endswith(".gz"):
+                with gzip.open(backup_path, "rt", encoding="utf-8") as f:
                     json.load(f)
             else:
-                with open(backup_path, 'r', encoding='utf-8') as f:
+                with open(backup_path, "r", encoding="utf-8") as f:
                     json.load(f)
             return True
         except (OSError, json.JSONDecodeError) as e:

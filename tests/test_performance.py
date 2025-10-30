@@ -40,8 +40,7 @@ class TestLargeDatasetLoading:
         # Create 100 prompts each with 20 versions
         for i in range(100):
             prompt_data = sample_prompt_data(
-                title=f"Versioned Prompt {i}",
-                prompt=f"Content {i}"
+                title=f"Versioned Prompt {i}", prompt=f"Content {i}"
             )
             prompt_id = service.add_new_prompt(prompt_data)
 
@@ -49,7 +48,7 @@ class TestLargeDatasetLoading:
             for v in range(19):
                 updated_data = sample_prompt_data(
                     title=f"Versioned Prompt {i} v{v+2}",
-                    prompt=f"Updated content {v+2}"
+                    prompt=f"Updated content {v+2}",
                 )
                 service.update_prompt(prompt_id, updated_data, f"Update {v+2}")
 
@@ -63,7 +62,7 @@ class TestLargeDatasetLoading:
 
         assert len(service2.prompts) == 100
         # Total of 2000 versions (100 prompts * 20 versions each)
-        total_versions = sum(len(p['versions']) for p in service2.prompts.values())
+        total_versions = sum(len(p["versions"]) for p in service2.prompts.values())
         assert total_versions == 2000
 
         # Should load in reasonable time
@@ -91,7 +90,9 @@ class TestLargeDatasetLoading:
 class TestSearchPerformance:
     """Test search and filter performance with large datasets."""
 
-    def test_filter_by_category_large_dataset(self, large_dataset_service, filter_service):
+    def test_filter_by_category_large_dataset(
+        self, large_dataset_service, filter_service
+    ):
         """Test filtering 1000 prompts by category."""
         prompts = large_dataset_service.prompts
 
@@ -131,7 +132,9 @@ class TestSearchPerformance:
         assert len(filtered) > 0
         assert elapsed < 1.0, f"Search took {elapsed:.2f}s, expected < 1s"
 
-    def test_combined_filters_large_dataset(self, large_dataset_service, filter_service):
+    def test_combined_filters_large_dataset(
+        self, large_dataset_service, filter_service
+    ):
         """Test combined filtering on large dataset."""
         prompts = large_dataset_service.prompts
 
@@ -142,7 +145,7 @@ class TestSearchPerformance:
             filter_category="Programming",
             filter_tag="python",
             search_term="Test",
-            filter_favorites=False
+            filter_favorites=False,
         )
 
         elapsed = time.time() - start_time
@@ -165,18 +168,23 @@ class TestSearchPerformance:
         assert elapsed < 1.0, f"Sorting took {elapsed:.2f}s, expected < 1s"
 
         # Verify it's actually sorted
-        titles = [p['title'] for p in sorted_prompts]
+        titles = [p["title"] for p in sorted_prompts]
         assert titles == sorted(titles)
 
 
 class TestExportPerformance:
     """Test export performance with large datasets."""
 
-    def test_export_1000_prompts_to_csv(self, large_dataset_service, import_export_service, temp_data_dir):
+    def test_export_1000_prompts_to_csv(
+        self, large_dataset_service, import_export_service, temp_data_dir
+    ):
         """Test exporting 1000 prompts to CSV."""
         output_file = Path(temp_data_dir) / "large_export.csv"
 
-        prompts = [(pid, large_dataset_service.prompts[pid]) for pid in large_dataset_service.prompts.keys()]
+        prompts = [
+            (pid, large_dataset_service.prompts[pid])
+            for pid in large_dataset_service.prompts.keys()
+        ]
 
         start_time = time.time()
 
@@ -192,11 +200,16 @@ class TestExportPerformance:
         file_size = output_file.stat().st_size
         assert file_size > 10 * 1024  # At least 10KB
 
-    def test_export_1000_prompts_to_markdown(self, large_dataset_service, import_export_service, temp_data_dir):
+    def test_export_1000_prompts_to_markdown(
+        self, large_dataset_service, import_export_service, temp_data_dir
+    ):
         """Test exporting 1000 prompts to Markdown."""
         output_file = Path(temp_data_dir) / "large_export.md"
 
-        prompts = [(pid, large_dataset_service.prompts[pid]) for pid in large_dataset_service.prompts.keys()]
+        prompts = [
+            (pid, large_dataset_service.prompts[pid])
+            for pid in large_dataset_service.prompts.keys()
+        ]
 
         start_time = time.time()
 
@@ -213,7 +226,7 @@ class TestExportPerformance:
         csv_file = Path(temp_data_dir) / "large_import.csv"
 
         # Generate large CSV
-        with open(csv_file, 'w', encoding='utf-8') as f:
+        with open(csv_file, "w", encoding="utf-8") as f:
             f.write("title,prompt,note,category,tags,favorite\n")
             for i in range(1000):
                 f.write(f"Title {i},Content {i},Note {i},Category,tag1,No\n")
@@ -313,14 +326,12 @@ class TestVersionHistoryPerformance:
 
         # Get first version
         versions = service.get_prompt_versions(prompt_id)
-        first_version_data = versions[0]['data']
+        first_version_data = versions[0]["data"]
 
         start_time = time.time()
 
         result = service.revert_prompt_to_version(
-            prompt_id,
-            first_version_data,
-            "Performance test revert"
+            prompt_id, first_version_data, "Performance test revert"
         )
 
         elapsed = time.time() - start_time
@@ -343,7 +354,7 @@ class TestMemoryUsage:
                         "title": f"Prompt {prompt_id}",
                         "prompt": f"Content {prompt_id}" * 10,
                         "category": f"Category {batch}",
-                        "tags": [f"tag{batch}"]
+                        "tags": [f"tag{batch}"],
                     }
                     large_dataset_service.prompts[prompt_id] = {
                         "data": data,
@@ -354,10 +365,10 @@ class TestMemoryUsage:
                                 "author": "test",
                                 "message": "test",
                                 "data": data,
-                                "parents": []
+                                "parents": [],
                             }
                         ],
-                        "branches": {}
+                        "branches": {},
                     }
 
         # Should handle 2000 prompts without issues
@@ -390,7 +401,7 @@ class TestConcurrentOperations:
             updated_data = {
                 "title": f"Updated {i}",
                 "prompt": f"Content {i}",
-                "category": "Test"
+                "category": "Test",
             }
             populated_data_service.update_prompt(prompt_id, updated_data, f"Update {i}")
 
@@ -408,14 +419,13 @@ class TestConcurrentOperations:
 
         # Perform 100 different filter operations
         for i in range(100):
-            filter_service.filter_prompts(
-                prompts,
-                search_term=f"Prompt {i}"
-            )
+            filter_service.filter_prompts(prompts, search_term=f"Prompt {i}")
 
         elapsed = time.time() - start_time
 
-        assert elapsed < 5.0, f"100 filter operations took {elapsed:.2f}s, expected < 5s"
+        assert (
+            elapsed < 5.0
+        ), f"100 filter operations took {elapsed:.2f}s, expected < 5s"
 
 
 class TestScalability:
@@ -458,7 +468,7 @@ class TestScalability:
             prompt_data = sample_prompt_data(
                 title=f"Prompt {i}",
                 category=f"Category {i % 50}",  # 50 unique categories
-                tags=[f"tag{j}" for j in range(i % 10)]  # Varying number of tags
+                tags=[f"tag{j}" for j in range(i % 10)],  # Varying number of tags
             )
             service.add_new_prompt(prompt_data)
 

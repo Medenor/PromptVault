@@ -16,7 +16,7 @@ class TestJSONParsingErrors:
 
     def test_load_completely_invalid_json(self, temp_data_file):
         """Test loading a file with completely invalid JSON."""
-        with open(temp_data_file, 'w') as f:
+        with open(temp_data_file, "w") as f:
             f.write("{this is not valid json at all!}")
 
         service = PromptDataService(temp_data_file)
@@ -29,7 +29,7 @@ class TestJSONParsingErrors:
 
     def test_load_truncated_json(self, temp_data_file):
         """Test loading a truncated JSON file."""
-        with open(temp_data_file, 'w') as f:
+        with open(temp_data_file, "w") as f:
             f.write('{"next_id": 5, "prompts": {"0": {"data":')
 
         service = PromptDataService(temp_data_file)
@@ -39,7 +39,7 @@ class TestJSONParsingErrors:
 
     def test_load_json_with_trailing_comma(self, temp_data_file):
         """Test loading JSON with invalid trailing comma."""
-        with open(temp_data_file, 'w') as f:
+        with open(temp_data_file, "w") as f:
             f.write('{"next_id": 1, "prompts": {},}')
 
         service = PromptDataService(temp_data_file)
@@ -59,14 +59,16 @@ class TestJSONParsingErrors:
 
     def test_load_json_with_comments(self, temp_data_file):
         """Test loading JSON with comments (which aren't valid JSON)."""
-        with open(temp_data_file, 'w') as f:
-            f.write('''
+        with open(temp_data_file, "w") as f:
+            f.write(
+                """
 {
     // This is a comment
     "next_id": 1,
     "prompts": {}
 }
-''')
+"""
+            )
 
         service = PromptDataService(temp_data_file)
         prompts = service.load_prompts()
@@ -82,7 +84,7 @@ class TestMissingRootFields:
         """Test loading data without next_id field."""
         data = {"prompts": {}}
 
-        with open(temp_data_file, 'w', encoding='utf-8') as f:
+        with open(temp_data_file, "w", encoding="utf-8") as f:
             json.dump(data, f)
 
         service = PromptDataService(temp_data_file)
@@ -95,7 +97,7 @@ class TestMissingRootFields:
         """Test loading data without prompts field."""
         data = {"next_id": 5}
 
-        with open(temp_data_file, 'w', encoding='utf-8') as f:
+        with open(temp_data_file, "w", encoding="utf-8") as f:
             json.dump(data, f)
 
         service = PromptDataService(temp_data_file)
@@ -107,7 +109,7 @@ class TestMissingRootFields:
         """Test loading data with null next_id."""
         data = {"next_id": None, "prompts": {}}
 
-        with open(temp_data_file, 'w', encoding='utf-8') as f:
+        with open(temp_data_file, "w", encoding="utf-8") as f:
             json.dump(data, f)
 
         service = PromptDataService(temp_data_file)
@@ -120,7 +122,7 @@ class TestMissingRootFields:
         """Test loading data with null prompts."""
         data = {"next_id": 1, "prompts": None}
 
-        with open(temp_data_file, 'w', encoding='utf-8') as f:
+        with open(temp_data_file, "w", encoding="utf-8") as f:
             json.dump(data, f)
 
         service = PromptDataService(temp_data_file)
@@ -135,12 +137,9 @@ class TestWrongDataTypes:
 
     def test_load_prompts_as_list(self, temp_data_file):
         """Test loading with prompts as list instead of dict."""
-        data = {
-            "next_id": 1,
-            "prompts": ["not", "a", "dict"]
-        }
+        data = {"next_id": 1, "prompts": ["not", "a", "dict"]}
 
-        with open(temp_data_file, 'w', encoding='utf-8') as f:
+        with open(temp_data_file, "w", encoding="utf-8") as f:
             json.dump(data, f)
 
         service = PromptDataService(temp_data_file)
@@ -151,12 +150,9 @@ class TestWrongDataTypes:
 
     def test_load_next_id_as_string(self, temp_data_file):
         """Test loading with next_id as string."""
-        data = {
-            "next_id": "not_a_number",
-            "prompts": {}
-        }
+        data = {"next_id": "not_a_number", "prompts": {}}
 
-        with open(temp_data_file, 'w', encoding='utf-8') as f:
+        with open(temp_data_file, "w", encoding="utf-8") as f:
             json.dump(data, f)
 
         service = PromptDataService(temp_data_file)
@@ -167,13 +163,9 @@ class TestWrongDataTypes:
 
     def test_load_categories_as_dict(self, temp_data_file):
         """Test loading with categories as dict instead of list."""
-        data = {
-            "next_id": 1,
-            "prompts": {},
-            "categories": {"not": "a", "list": "here"}
-        }
+        data = {"next_id": 1, "prompts": {}, "categories": {"not": "a", "list": "here"}}
 
-        with open(temp_data_file, 'w', encoding='utf-8') as f:
+        with open(temp_data_file, "w", encoding="utf-8") as f:
             json.dump(data, f)
 
         service = PromptDataService(temp_data_file)
@@ -184,13 +176,9 @@ class TestWrongDataTypes:
 
     def test_load_tags_as_string(self, temp_data_file):
         """Test loading with global_tags as string instead of list."""
-        data = {
-            "next_id": 1,
-            "prompts": {},
-            "global_tags": "not_a_list"
-        }
+        data = {"next_id": 1, "prompts": {}, "global_tags": "not_a_list"}
 
-        with open(temp_data_file, 'w', encoding='utf-8') as f:
+        with open(temp_data_file, "w", encoding="utf-8") as f:
             json.dump(data, f)
 
         service = PromptDataService(temp_data_file)
@@ -210,13 +198,13 @@ class TestInvalidPromptStructures:
             "prompts": {
                 "0": {
                     "versions": [],
-                    "branches": {}
+                    "branches": {},
                     # Missing 'data' field
                 }
-            }
+            },
         }
 
-        with open(temp_data_file, 'w', encoding='utf-8') as f:
+        with open(temp_data_file, "w", encoding="utf-8") as f:
             json.dump(data, f)
 
         service = PromptDataService(temp_data_file)
@@ -224,29 +212,23 @@ class TestInvalidPromptStructures:
 
         # Should add default data field
         if 0 in service.prompts:
-            assert 'data' in service.prompts[0]
+            assert "data" in service.prompts[0]
 
     def test_load_prompt_data_as_string(self, temp_data_file):
         """Test loading prompt with data as string instead of dict."""
         data = {
             "next_id": 1,
-            "prompts": {
-                "0": {
-                    "data": "not_a_dict",
-                    "versions": [],
-                    "branches": {}
-                }
-            }
+            "prompts": {"0": {"data": "not_a_dict", "versions": [], "branches": {}}},
         }
 
-        with open(temp_data_file, 'w', encoding='utf-8') as f:
+        with open(temp_data_file, "w", encoding="utf-8") as f:
             json.dump(data, f)
 
         service = PromptDataService(temp_data_file)
         prompts = service.load_prompts()
 
         # Should skip invalid prompt
-        assert len(prompts) == 0 or isinstance(prompts[0]['data'], dict)
+        assert len(prompts) == 0 or isinstance(prompts[0]["data"], dict)
 
     def test_load_invalid_prompt_id(self, temp_data_file):
         """Test loading with invalid prompt ID keys."""
@@ -256,17 +238,17 @@ class TestInvalidPromptStructures:
                 "not_a_number": {
                     "data": {"title": "Test"},
                     "versions": [],
-                    "branches": {}
+                    "branches": {},
                 },
                 "also_invalid!": {
                     "data": {"title": "Test2"},
                     "versions": [],
-                    "branches": {}
-                }
-            }
+                    "branches": {},
+                },
+            },
         }
 
-        with open(temp_data_file, 'w', encoding='utf-8') as f:
+        with open(temp_data_file, "w", encoding="utf-8") as f:
             json.dump(data, f)
 
         service = PromptDataService(temp_data_file)
@@ -280,15 +262,11 @@ class TestInvalidPromptStructures:
         data = {
             "next_id": 1,
             "prompts": {
-                "-1": {
-                    "data": {"title": "Test"},
-                    "versions": [],
-                    "branches": {}
-                }
-            }
+                "-1": {"data": {"title": "Test"}, "versions": [], "branches": {}}
+            },
         }
 
-        with open(temp_data_file, 'w', encoding='utf-8') as f:
+        with open(temp_data_file, "w", encoding="utf-8") as f:
             json.dump(data, f)
 
         service = PromptDataService(temp_data_file)
@@ -315,12 +293,12 @@ class TestInvalidVersionData:
                             # Missing timestamp, author, message, data, parents
                         }
                     ],
-                    "branches": {"main": "v1"}
+                    "branches": {"main": "v1"},
                 }
-            }
+            },
         }
 
-        with open(temp_data_file, 'w', encoding='utf-8') as f:
+        with open(temp_data_file, "w", encoding="utf-8") as f:
             json.dump(data, f)
 
         service = PromptDataService(temp_data_file)
@@ -343,15 +321,15 @@ class TestInvalidVersionData:
                             "author": "test",
                             "message": "test",
                             "data": {},
-                            "parents": []
+                            "parents": [],
                         }
                     ],
-                    "branches": {}
+                    "branches": {},
                 }
-            }
+            },
         }
 
-        with open(temp_data_file, 'w', encoding='utf-8') as f:
+        with open(temp_data_file, "w", encoding="utf-8") as f:
             json.dump(data, f)
 
         service = PromptDataService(temp_data_file)
@@ -374,7 +352,7 @@ class TestInvalidVersionData:
                             "author": "test",
                             "message": "test",
                             "data": {},
-                            "parents": ["v2"]  # References v2, which references v1
+                            "parents": ["v2"],  # References v2, which references v1
                         },
                         {
                             "version_id": "v2",
@@ -382,15 +360,15 @@ class TestInvalidVersionData:
                             "author": "test",
                             "message": "test",
                             "data": {},
-                            "parents": ["v1"]  # Circular reference
-                        }
+                            "parents": ["v1"],  # Circular reference
+                        },
                     ],
-                    "branches": {}
+                    "branches": {},
                 }
-            }
+            },
         }
 
-        with open(temp_data_file, 'w', encoding='utf-8') as f:
+        with open(temp_data_file, "w", encoding="utf-8") as f:
             json.dump(data, f)
 
         service = PromptDataService(temp_data_file)
@@ -403,7 +381,9 @@ class TestInvalidVersionData:
 class TestDataIntegrityAfterErrors:
     """Test that data integrity is maintained after errors."""
 
-    def test_partial_save_failure_recovery(self, temp_data_file, populated_data_service):
+    def test_partial_save_failure_recovery(
+        self, temp_data_file, populated_data_service
+    ):
         """Test recovery from partial save failure."""
         populated_data_service.data_file = temp_data_file
 
@@ -433,7 +413,7 @@ class TestDataIntegrityAfterErrors:
         service.save_prompts()
 
         # Corrupt the file
-        with open(temp_data_file, 'w') as f:
+        with open(temp_data_file, "w") as f:
             f.write("{corrupted}")
 
         # Try to load - should fail gracefully
@@ -479,7 +459,7 @@ class TestUnicodeAndSpecialCharacters:
     def test_load_file_with_invalid_encoding(self, temp_data_file):
         """Test loading file with invalid UTF-8 encoding."""
         # Write invalid UTF-8 bytes
-        with open(temp_data_file, 'wb') as f:
+        with open(temp_data_file, "wb") as f:
             f.write(b'{"\xff\xfe": "invalid"}')
 
         service = PromptDataService(temp_data_file)
@@ -494,7 +474,7 @@ class TestUnicodeAndSpecialCharacters:
 
         prompt_data = sample_prompt_data(
             title="Test\x00\x01\x02",  # Null and control characters
-            prompt="Content with\x00null"
+            prompt="Content with\x00null",
         )
 
         service.add_new_prompt(prompt_data)
@@ -508,8 +488,8 @@ class TestUnicodeAndSpecialCharacters:
         # Create JSON with mixed line endings
         json_str = '{\r\n"next_id": 1,\n"prompts": {}\r}'
 
-        with open(temp_data_file, 'wb') as f:
-            f.write(json_str.encode('utf-8'))
+        with open(temp_data_file, "wb") as f:
+            f.write(json_str.encode("utf-8"))
 
         service = PromptDataService(temp_data_file)
         prompts = service.load_prompts()
@@ -523,12 +503,9 @@ class TestExtremeValues:
 
     def test_load_extremely_large_next_id(self, temp_data_file):
         """Test loading with extremely large next_id."""
-        data = {
-            "next_id": 999999999999,
-            "prompts": {}
-        }
+        data = {"next_id": 999999999999, "prompts": {}}
 
-        with open(temp_data_file, 'w', encoding='utf-8') as f:
+        with open(temp_data_file, "w", encoding="utf-8") as f:
             json.dump(data, f)
 
         service = PromptDataService(temp_data_file)
@@ -547,16 +524,10 @@ class TestExtremeValues:
 
         data = {
             "next_id": 1,
-            "prompts": {
-                "0": {
-                    "data": nested,
-                    "versions": [],
-                    "branches": {}
-                }
-            }
+            "prompts": {"0": {"data": nested, "versions": [], "branches": {}}},
         }
 
-        with open(temp_data_file, 'w', encoding='utf-8') as f:
+        with open(temp_data_file, "w", encoding="utf-8") as f:
             json.dump(data, f)
 
         service = PromptDataService(temp_data_file)
@@ -572,10 +543,7 @@ class TestExtremeValues:
         # Create prompt with 1MB of content
         long_content = "A" * (1024 * 1024)
 
-        prompt_data = sample_prompt_data(
-            title="Long Content",
-            prompt=long_content
-        )
+        prompt_data = sample_prompt_data(title="Long Content", prompt=long_content)
 
         service.add_new_prompt(prompt_data)
         result = service.save_prompts()

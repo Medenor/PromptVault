@@ -19,9 +19,9 @@ class TestVersionHistoryExport:
         result = export_service.export_version_history("123", versions, format="json")
         payload = json.loads(result)
 
-        assert payload['prompt_id'] == "123"
-        assert payload['total_versions'] == 2
-        assert payload['versions'][1]['message'] == "Update"
+        assert payload["prompt_id"] == "123"
+        assert payload["total_versions"] == 2
+        assert payload["versions"][1]["message"] == "Update"
 
     def test_export_history_as_csv(self, export_service, sample_version_data):
         versions = [
@@ -29,17 +29,19 @@ class TestVersionHistoryExport:
                 version_id="v1",
                 message="Message, with, commas",
                 parents=[],
-                data={"title": "Title"}
+                data={"title": "Title"},
             ),
             sample_version_data(
                 version_id="v2",
                 message="Second",
                 parents=["v1"],
                 data={"title": "Other"},
-                )
+            ),
         ]
 
-        csv_output = export_service.export_version_history("123", versions, format="csv")
+        csv_output = export_service.export_version_history(
+            "123", versions, format="csv"
+        )
 
         lines = csv_output.splitlines()
         assert lines[0].startswith("Version ID")
@@ -52,7 +54,9 @@ class TestVersionHistoryExport:
             sample_version_data(version_id="def67890", message="Update"),
         ]
 
-        markdown = export_service.export_version_history("321", versions, format="markdown")
+        markdown = export_service.export_version_history(
+            "321", versions, format="markdown"
+        )
 
         assert "# Version History for Prompt 321" in markdown
         assert "**Total Versions:** 2" in markdown
@@ -68,15 +72,17 @@ class TestVersionHistoryExport:
         versions = [
             sample_version_data(
                 message="Unicode 🚀",
-                data={"title": "你好", "prompt": "Contenido", "category": "Test"}
+                data={"title": "你好", "prompt": "Contenido", "category": "Test"},
             )
         ]
 
-        json_output = export_service.export_version_history("unicode", versions, format="json")
+        json_output = export_service.export_version_history(
+            "unicode", versions, format="json"
+        )
         payload = json.loads(json_output)
 
-        assert payload['versions'][0]['message'] == "Unicode 🚀"
-        assert payload['versions'][0]['data']['title'] == "你好"
+        assert payload["versions"][0]["message"] == "Unicode 🚀"
+        assert payload["versions"][0]["data"]["title"] == "你好"
 
     def test_export_history_invalid_format(self, export_service, sample_version_data):
         versions = [sample_version_data()]
@@ -94,7 +100,7 @@ class TestSingleVersionExport:
         output = export_service.export_single_version(version, format="json")
 
         payload = json.loads(output)
-        assert payload['version_id'] == "solo"
+        assert payload["version_id"] == "solo"
 
     def test_export_single_version_markdown(self, export_service, sample_version_data):
         version = sample_version_data(
@@ -103,9 +109,9 @@ class TestSingleVersionExport:
                 "title": "API Prompt",
                 "prompt": "Explain FastAPI",
                 "category": "Docs",
-                "tags": ["fastapi", "docs"]
+                "tags": ["fastapi", "docs"],
             },
-            message="Documented"
+            message="Documented",
         )
 
         markdown = export_service.export_single_version(version, format="markdown")
@@ -122,7 +128,9 @@ class TestSingleVersionExport:
         assert "Version v1" in markdown
         assert "Partial data" in markdown
 
-    def test_export_single_version_invalid_format(self, export_service, sample_version_data):
+    def test_export_single_version_invalid_format(
+        self, export_service, sample_version_data
+    ):
         version = sample_version_data()
 
         with pytest.raises(ValueError):
@@ -137,21 +145,29 @@ class TestComparisonExport:
         v2 = sample_version_data(version_id="a2", data={"title": "Second"})
         changes = {"title": {"old": "First", "new": "Second"}}
 
-        output = export_service.export_version_comparison(v1, v2, changes, format="json")
+        output = export_service.export_version_comparison(
+            v1, v2, changes, format="json"
+        )
         payload = json.loads(output)
 
-        assert payload['v1_id'] == "a1"
-        assert payload['changes']['title']['new'] == "Second"
+        assert payload["v1_id"] == "a1"
+        assert payload["changes"]["title"]["new"] == "Second"
 
     def test_export_comparison_markdown(self, export_service, sample_version_data):
-        v1 = sample_version_data(version_id="11111111", timestamp="2024-01-01T00:00:00Z")
-        v2 = sample_version_data(version_id="22222222", timestamp="2024-01-02T00:00:00Z")
+        v1 = sample_version_data(
+            version_id="11111111", timestamp="2024-01-01T00:00:00Z"
+        )
+        v2 = sample_version_data(
+            version_id="22222222", timestamp="2024-01-02T00:00:00Z"
+        )
         changes = {
             "prompt": {"old": "Old content", "new": "New content"},
             "note": {"old": "Old note", "new": "New note"},
         }
 
-        markdown = export_service.export_version_comparison(v1, v2, changes, format="markdown")
+        markdown = export_service.export_version_comparison(
+            v1, v2, changes, format="markdown"
+        )
 
         assert "Version Comparison" in markdown
         assert "Old content" in markdown
@@ -161,7 +177,9 @@ class TestComparisonExport:
         v1 = sample_version_data(version_id="abc")
         v2 = sample_version_data(version_id="def")
 
-        markdown = export_service.export_version_comparison(v1, v2, {}, format="markdown")
+        markdown = export_service.export_version_comparison(
+            v1, v2, {}, format="markdown"
+        )
 
         assert "No changes between these versions." in markdown
 

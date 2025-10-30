@@ -12,7 +12,7 @@ import tempfile
 from datetime import datetime
 
 # Add the src directory to the path for imports
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from src.services.backup_service import BackupService
 
@@ -20,33 +20,33 @@ from src.services.backup_service import BackupService
 def create_test_data():
     """Create test data file for backup testing."""
     test_data = {
-        'next_id': 3,
-        'prompts': {
-            '1': {
-                'data': {
-                    'title': 'Test Prompt 1',
-                    'prompt': 'This is a test prompt for backup testing.',
-                    'category': 'Test',
-                    'tags': ['test', 'backup'],
-                    'favorite': True
+        "next_id": 3,
+        "prompts": {
+            "1": {
+                "data": {
+                    "title": "Test Prompt 1",
+                    "prompt": "This is a test prompt for backup testing.",
+                    "category": "Test",
+                    "tags": ["test", "backup"],
+                    "favorite": True,
                 },
-                'versions': [],
-                'branches': {}
+                "versions": [],
+                "branches": {},
             },
-            '2': {
-                'data': {
-                    'title': 'Test Prompt 2',
-                    'prompt': 'Another test prompt for backup verification.',
-                    'category': 'Test',
-                    'tags': ['test'],
-                    'favorite': False
+            "2": {
+                "data": {
+                    "title": "Test Prompt 2",
+                    "prompt": "Another test prompt for backup verification.",
+                    "category": "Test",
+                    "tags": ["test"],
+                    "favorite": False,
                 },
-                'versions': [],
-                'branches': {}
-            }
+                "versions": [],
+                "branches": {},
+            },
         },
-        'categories': ['Test', 'Work'],
-        'global_tags': ['test', 'backup', 'important']
+        "categories": ["Test", "Work"],
+        "global_tags": ["test", "backup", "important"],
     }
 
     return test_data
@@ -59,8 +59,8 @@ def test_backup_creation():
     # Create temporary directory for testing
     with tempfile.TemporaryDirectory() as temp_dir:
         # Create test data file
-        data_file = os.path.join(temp_dir, 'prompts_data.json')
-        with open(data_file, 'w', encoding='utf-8') as f:
+        data_file = os.path.join(temp_dir, "prompts_data.json")
+        with open(data_file, "w", encoding="utf-8") as f:
             json.dump(create_test_data(), f, indent=2)
 
         # Initialize backup service
@@ -74,7 +74,7 @@ def test_backup_creation():
         # Verify backup files exist
         backup_filename = f"{backup_id}.json"
         backup_path = os.path.join(backup_service.backups_dir, backup_filename)
-        metadata_path = backup_path.replace('.json', '_metadata.json')
+        metadata_path = backup_path.replace(".json", "_metadata.json")
 
         assert os.path.exists(backup_path), "Backup file not found"
         assert os.path.exists(metadata_path), "Backup metadata file not found"
@@ -83,7 +83,7 @@ def test_backup_creation():
         # Test listing backups
         backups = backup_service.list_backups()
         assert len(backups) == 1, "Backup not found in list"
-        assert backups[0]['backup_id'] == backup_id, "Backup ID mismatch"
+        assert backups[0]["backup_id"] == backup_id, "Backup ID mismatch"
         print("✓ Backup listing works correctly")
 
         return True
@@ -96,8 +96,8 @@ def test_backup_restoration():
     with tempfile.TemporaryDirectory() as temp_dir:
         # Create original data
         original_data = create_test_data()
-        data_file = os.path.join(temp_dir, 'prompts_data.json')
-        with open(data_file, 'w', encoding='utf-8') as f:
+        data_file = os.path.join(temp_dir, "prompts_data.json")
+        with open(data_file, "w", encoding="utf-8") as f:
             json.dump(original_data, f, indent=2)
 
         backup_service = BackupService(temp_dir)
@@ -108,8 +108,8 @@ def test_backup_restoration():
 
         # Modify original data
         modified_data = original_data.copy()
-        modified_data['prompts']['1']['data']['title'] = 'Modified Title'
-        with open(data_file, 'w', encoding='utf-8') as f:
+        modified_data["prompts"]["1"]["data"]["title"] = "Modified Title"
+        with open(data_file, "w", encoding="utf-8") as f:
             json.dump(modified_data, f, indent=2)
 
         # Restore backup
@@ -118,10 +118,12 @@ def test_backup_restoration():
         print("✓ Backup restored successfully")
 
         # Verify data was restored
-        with open(data_file, 'r', encoding='utf-8') as f:
+        with open(data_file, "r", encoding="utf-8") as f:
             restored_data = json.load(f)
 
-        assert restored_data['prompts']['1']['data']['title'] == 'Test Prompt 1', "Data not properly restored"
+        assert (
+            restored_data["prompts"]["1"]["data"]["title"] == "Test Prompt 1"
+        ), "Data not properly restored"
         print("✓ Restored data matches original")
 
         return True
@@ -133,8 +135,8 @@ def test_backup_cleanup():
 
     with tempfile.TemporaryDirectory() as temp_dir:
         # Create test data file
-        data_file = os.path.join(temp_dir, 'prompts_data.json')
-        with open(data_file, 'w', encoding='utf-8') as f:
+        data_file = os.path.join(temp_dir, "prompts_data.json")
+        with open(data_file, "w", encoding="utf-8") as f:
             json.dump(create_test_data(), f, indent=2)
 
         backup_service = BackupService(temp_dir)
@@ -170,8 +172,8 @@ def test_backup_compression():
 
     with tempfile.TemporaryDirectory() as temp_dir:
         # Create test data file
-        data_file = os.path.join(temp_dir, 'prompts_data.json')
-        with open(data_file, 'w', encoding='utf-8') as f:
+        data_file = os.path.join(temp_dir, "prompts_data.json")
+        with open(data_file, "w", encoding="utf-8") as f:
             json.dump(create_test_data(), f, indent=2)
 
         backup_service = BackupService(temp_dir)
@@ -187,12 +189,16 @@ def test_backup_compression():
 
         # Verify compressed file exists
         backup_filename = f"{backup_id}.json"
-        compressed_path = os.path.join(backup_service.backups_dir, f"{backup_filename}.gz")
+        compressed_path = os.path.join(
+            backup_service.backups_dir, f"{backup_filename}.gz"
+        )
         assert os.path.exists(compressed_path), "Compressed backup file not found"
 
         # Verify original file is removed
         original_path = os.path.join(backup_service.backups_dir, backup_filename)
-        assert not os.path.exists(original_path), "Original backup file should be removed after compression"
+        assert not os.path.exists(
+            original_path
+        ), "Original backup file should be removed after compression"
         print("✓ Original backup file removed after compression")
 
         return True
@@ -204,15 +210,15 @@ def test_backup_stats():
 
     with tempfile.TemporaryDirectory() as temp_dir:
         # Create test data file
-        data_file = os.path.join(temp_dir, 'prompts_data.json')
-        with open(data_file, 'w', encoding='utf-8') as f:
+        data_file = os.path.join(temp_dir, "prompts_data.json")
+        with open(data_file, "w", encoding="utf-8") as f:
             json.dump(create_test_data(), f, indent=2)
 
         backup_service = BackupService(temp_dir)
 
         # Test stats with no backups
         stats = backup_service.get_backup_stats()
-        assert stats['total_backups'] == 0, "Stats should show 0 backups initially"
+        assert stats["total_backups"] == 0, "Stats should show 0 backups initially"
         print("✓ Empty backup stats work correctly")
 
         # Create a backup and test stats
@@ -220,9 +226,11 @@ def test_backup_stats():
         assert backup_id is not None, "Backup creation failed"
 
         stats = backup_service.get_backup_stats()
-        assert stats['total_backups'] == 1, "Stats should show 1 backup"
-        assert stats['total_size'] > 0, "Stats should show backup size"
-        assert stats['newest_backup'] is not None, "Stats should show newest backup timestamp"
+        assert stats["total_backups"] == 1, "Stats should show 1 backup"
+        assert stats["total_size"] > 0, "Stats should show backup size"
+        assert (
+            stats["newest_backup"] is not None
+        ), "Stats should show newest backup timestamp"
         print("✓ Backup statistics work correctly")
 
         return True
