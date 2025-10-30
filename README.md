@@ -20,16 +20,33 @@
 <div align="center">
 <br />
 
-[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
-[![Pull Requests welcome](https://img.shields.io/badge/PRs-welcome-ff69b4.svg?style=flat-square)](https://codeberg.org/medenor/promptvault/issues)
-![Python](https://img.shields.io/badge/python-3.8+-blue.svg)
-![Framework](https://img.shields.io/badge/Framework-FastAPI-blue)
-![Testing](https://img.shields.io/badge/Testing-Pytest-blue)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=fff)](https://www.docker.com/)
-[![Vibe-coded with love by Medenor](https://img.shields.io/badge/%3C%2F%3E%20with%20%E2%99%A5%20by-Medenor-ff1414.svg?style=flat-square)](https://codeberg.org/medenor)
-[![Switched to Codeberg](https://img.shields.io/badge/Switched_to-Codeberg-blue?style=flat-square&logo=codeberg&logoColor=white)](https://codeberg.org/medenor/promptvault/)
-[![Visual Studio Code](https://custom-icon-badges.demolab.com/badge/Visual%20Studio%20Code-0078d7.svg?logo=vsc&logoColor=white)](https://code.visualstudio.com)
+<a href="https://www.gnu.org/licenses/agpl-3.0">
+  <img src="https://img.shields.io/badge/License-AGPL%20v3-blue?style=for-the-badge&logo=gnu&logoColor=white" alt="AGPL v3 License">
+</a>
+<a href="https://www.python.org/">
+  <img src="https://img.shields.io/badge/Python-3.8%2B-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.8+">
+</a>
+<a href="https://fastapi.tiangolo.com/">
+  <img src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI">
+</a>
+<a href="https://www.docker.com/">
+  <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker">
+</a>
+<a href="https://docs.pytest.org/">
+  <img src="https://img.shields.io/badge/Pytest-0A9EDC?style=for-the-badge&logo=pytest&logoColor=white" alt="Pytest">
+</a>
+<a href="https://github.com/psf/black">
+  <img src="https://img.shields.io/badge/Code%20Style-Black-000000?style=for-the-badge&logo=python&logoColor=white" alt="Code style: Black">
+</a>
+<a href="https://codeberg.org/medenor/promptvault/issues">
+  <img src="https://img.shields.io/badge/PRs-Welcome-brightgreen?style=for-the-badge&logo=git&logoColor=white" alt="Pull Requests Welcome">
+</a>
+<a href="https://codeberg.org/medenor/promptvault/">
+  <img src="https://img.shields.io/badge/Hosted%20on-Codeberg-2185D0?style=for-the-badge&logo=codeberg&logoColor=white" alt="Hosted on Codeberg">
+</a>
+<a href="https://codeberg.org/medenor">
+  <img src="https://img.shields.io/badge/%3C%2F%3E%20with%20%E2%99%A5%20by-Medenor-ff1414?style=for-the-badge" alt="Created with love by Medenor">
+</a>
 </div>
 
 <details open="open">
