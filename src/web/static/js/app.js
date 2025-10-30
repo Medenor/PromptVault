@@ -168,6 +168,9 @@ function setupEventListeners() {
 
     // Search functionality
     setupSearchEventListeners();
+
+    // Tag autocomplete
+    setupTagAutocomplete();
 }
 
 async function loadPrompts() {
@@ -332,8 +335,14 @@ function renderTags(tags) {
 
     tags.forEach(tag => {
         const li = document.createElement('li');
-        li.dataset.tag = tag;
-        li.textContent = tag;
+        // Handle both old format (string) and new format (object with name and count)
+        if (typeof tag === 'string') {
+            li.dataset.tag = tag;
+            li.textContent = tag;
+        } else {
+            li.dataset.tag = tag.name;
+            li.textContent = `${tag.name} (${tag.count})`;
+        }
         list.appendChild(li);
     });
 }
@@ -394,6 +403,8 @@ async function handlePromptSubmit(event) {
             // Clear version cache for this prompt since a new version was created
             clearVersionCache(promptId);
             loadPrompts(); // Refresh the list
+            loadAvailableTags(); // Refresh tag counts for autocomplete
+            loadTags(); // Refresh sidebar tag list
             // Reset form mode
             delete form.dataset.mode;
             delete form.dataset.id;
@@ -534,6 +545,8 @@ async function deletePrompt(id) {
 
         if (response.ok) {
             loadPrompts(); // Refresh the list
+            loadAvailableTags(); // Refresh tag counts for autocomplete
+            loadTags(); // Refresh sidebar tag list
         } else {
             alert(i18next.t('messages.error'));
         }
@@ -1154,7 +1167,9 @@ async function performRevert(versionId) {
         clearVersionCache(currentVersionPromptId);
         loadVersionHistory(currentVersionPromptId);
         loadPrompts(); // Refresh main list
-    } catch (error) {
+        loadAvailableTags(); // Refresh tag counts for autocomplete
+        loadTags(); // Refresh sidebar tag list
+    } catch (error){
         console.error('Error reverting version:', error);
         showNotification(i18next.t('version.revertError'), 'error');
     }
@@ -1498,6 +1513,315 @@ window.fetch = function(...args) {
         return response;
     });
 };
+
+// Tag Autocomplete Implementation
+let availableTags = [];
+let tagAutocompleteState = {
+    isOpen: false,
+    highlightedIndex: -1,
+    filteredTags: [],
+    currentPartialTag: ''
+};
+
+async function loadAvailableTags() {
+    try {
+        const response = await fetch('/api/tags');
+        const data = await response.json();
+        // Store tags with counts
+        availableTags = data.tags || [];
+    } catch (error) {
+        console.error('Error loading tags:', error);
+        availableTags = [];
+    }
+}
+
+function setupTagAutocomplete() {
+    const tagInput = document.getElementById('prompt-tags');
+    const autocompleteDiv = document.getElementById('tag-autocomplete');
+
+    if (!tagInput || !autocompleteDiv) {
+        return;
+    }
+
+    // Load available tags when setting up
+    loadAvailableTags();
+
+    // Input event - show suggestions as user types
+    tagInput.addEventListener('input', function(event) {
+        handleTagInput(event.target);
+    });
+
+    // Keydown event - handle keyboard navigation
+    tagInput.addEventListener('keydown', function(event) {
+        handleTagInputKeydown(event);
+    });
+
+    // Focus event - show suggestions if there's partial input
+    tagInput.addEventListener('focus', function(event) {
+        handleTagInput(event.target);
+    });
+
+    // Blur event - close dropdown with delay to allow clicks
+    tagInput.addEventListener('blur', function(event) {
+        setTimeout(() => {
+            closeTagAutocomplete();
+        }, 200);
+    });
+
+    // Click outside to close
+    document.addEventListener('click', function(event) {
+        if (!tagInput.contains(event.target) && !autocompleteDiv.contains(event.target)) {
+            closeTagAutocomplete();
+        }
+    });
+}
+
+function handleTagInput(input) {
+    const value = input.value;
+    const cursorPosition = input.selectionStart;
+
+    // Find the current tag being typed (based on cursor position)
+    const beforeCursor = value.substring(0, cursorPosition);
+    const lastCommaIndex = beforeCursor.lastIndexOf(',');
+    const partialTag = beforeCursor.substring(lastCommaIndex + 1).trim();
+
+    tagAutocompleteState.currentPartialTag = partialTag;
+
+    // Get already entered tags to filter them out
+    const enteredTags = getEnteredTags(input);
+
+    // Filter available tags
+    const filtered = filterTags(partialTag, enteredTags);
+    tagAutocompleteState.filteredTags = filtered;
+    tagAutocompleteState.highlightedIndex = -1;
+
+    // Show or hide autocomplete
+    if (filtered.length > 0 || partialTag.length > 0) {
+        showTagAutocomplete(filtered);
+    } else {
+        closeTagAutocomplete();
+    }
+}
+
+function getEnteredTags(input) {
+    const value = input.value;
+    const tags = value.split(',').map(tag => tag.trim().toLowerCase()).filter(tag => tag.length > 0);
+    return new Set(tags);
+}
+
+function filterTags(partialTag, enteredTags) {
+    if (!availableTags || availableTags.length === 0) {
+        return [];
+    }
+
+    // Case-insensitive filtering
+    const searchTerm = partialTag.toLowerCase();
+
+    return availableTags
+        .filter(tag => {
+            const tagName = typeof tag === 'string' ? tag : tag.name;
+            const tagLower = tagName.toLowerCase();
+            // Don't suggest tags already entered
+            if (enteredTags.has(tagLower)) {
+                return false;
+            }
+            // Match tags that contain the search term
+            return tagLower.includes(searchTerm);
+        })
+        .sort((a, b) => {
+            // Sort by count (descending)
+            const countA = typeof a === 'string' ? 0 : (a.count || 0);
+            const countB = typeof b === 'string' ? 0 : (b.count || 0);
+            return countB - countA;
+        })
+        .slice(0, 10); // Limit to 10 suggestions
+}
+
+function showTagAutocomplete(filteredTags) {
+    const autocompleteDiv = document.getElementById('tag-autocomplete');
+    if (!autocompleteDiv) {
+        return;
+    }
+
+    autocompleteDiv.innerHTML = '';
+
+    if (filteredTags.length === 0) {
+        // Show "No matching tags" message
+        const noResults = document.createElement('div');
+        noResults.className = 'tag-autocomplete-no-results';
+        noResults.textContent = 'No matching tags';
+        autocompleteDiv.appendChild(noResults);
+    } else {
+        // Show tag suggestions
+        filteredTags.forEach((tag, index) => {
+            const tagName = typeof tag === 'string' ? tag : tag.name;
+            const tagCount = typeof tag === 'string' ? null : tag.count;
+
+            const item = document.createElement('div');
+            item.className = 'tag-autocomplete-item';
+            item.dataset.index = index;
+            item.dataset.tagName = tagName;
+
+            const nameSpan = document.createElement('span');
+            nameSpan.className = 'tag-autocomplete-item-name';
+            nameSpan.textContent = tagName;
+            item.appendChild(nameSpan);
+
+            if (tagCount !== null) {
+                const countSpan = document.createElement('span');
+                countSpan.className = 'tag-autocomplete-item-count';
+                countSpan.textContent = `(${tagCount})`;
+                item.appendChild(countSpan);
+            }
+
+            // Click handler
+            item.addEventListener('click', function() {
+                selectTag(tagName);
+            });
+
+            // Hover handler
+            item.addEventListener('mouseenter', function() {
+                highlightTagItem(index);
+            });
+
+            autocompleteDiv.appendChild(item);
+        });
+    }
+
+    showElement(autocompleteDiv);
+    tagAutocompleteState.isOpen = true;
+}
+
+function closeTagAutocomplete() {
+    const autocompleteDiv = document.getElementById('tag-autocomplete');
+    if (autocompleteDiv) {
+        hideElement(autocompleteDiv);
+    }
+    tagAutocompleteState.isOpen = false;
+    tagAutocompleteState.highlightedIndex = -1;
+}
+
+function handleTagInputKeydown(event) {
+    if (!tagAutocompleteState.isOpen) {
+        return;
+    }
+
+    const filteredTags = tagAutocompleteState.filteredTags;
+
+    switch (event.key) {
+        case 'ArrowDown':
+            event.preventDefault();
+            if (filteredTags.length > 0) {
+                tagAutocompleteState.highlightedIndex =
+                    (tagAutocompleteState.highlightedIndex + 1) % filteredTags.length;
+                highlightTagItem(tagAutocompleteState.highlightedIndex);
+            }
+            break;
+
+        case 'ArrowUp':
+            event.preventDefault();
+            if (filteredTags.length > 0) {
+                tagAutocompleteState.highlightedIndex =
+                    tagAutocompleteState.highlightedIndex <= 0
+                        ? filteredTags.length - 1
+                        : tagAutocompleteState.highlightedIndex - 1;
+                highlightTagItem(tagAutocompleteState.highlightedIndex);
+            }
+            break;
+
+        case 'Enter':
+            if (tagAutocompleteState.highlightedIndex >= 0 &&
+                tagAutocompleteState.highlightedIndex < filteredTags.length) {
+                event.preventDefault();
+                const selectedTag = filteredTags[tagAutocompleteState.highlightedIndex];
+                const tagName = typeof selectedTag === 'string' ? selectedTag : selectedTag.name;
+                selectTag(tagName);
+            }
+            break;
+
+        case 'Escape':
+            event.preventDefault();
+            event.stopPropagation();
+            closeTagAutocomplete();
+            break;
+
+        case 'Tab':
+            if (tagAutocompleteState.highlightedIndex >= 0 &&
+                tagAutocompleteState.highlightedIndex < filteredTags.length) {
+                event.preventDefault();
+                const selectedTag = filteredTags[tagAutocompleteState.highlightedIndex];
+                const tagName = typeof selectedTag === 'string' ? selectedTag : selectedTag.name;
+                selectTag(tagName);
+            }
+            break;
+    }
+}
+
+function highlightTagItem(index) {
+    const autocompleteDiv = document.getElementById('tag-autocomplete');
+    if (!autocompleteDiv) {
+        return;
+    }
+
+    // Remove previous highlight
+    autocompleteDiv.querySelectorAll('.tag-autocomplete-item').forEach(item => {
+        item.classList.remove('highlighted');
+    });
+
+    // Add new highlight
+    const items = autocompleteDiv.querySelectorAll('.tag-autocomplete-item');
+    if (items[index]) {
+        items[index].classList.add('highlighted');
+        // Scroll into view if needed
+        items[index].scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+
+    tagAutocompleteState.highlightedIndex = index;
+}
+
+function selectTag(tagName) {
+    const tagInput = document.getElementById('prompt-tags');
+    if (!tagInput) {
+        return;
+    }
+
+    const value = tagInput.value;
+    const cursorPosition = tagInput.selectionStart;
+
+    // Find the position of the last comma before cursor
+    const beforeCursor = value.substring(0, cursorPosition);
+    const lastCommaIndex = beforeCursor.lastIndexOf(',');
+
+    // Build the new value
+    let newValue;
+    let newCursorPosition;
+
+    if (lastCommaIndex === -1) {
+        // No comma yet - replace entire input
+        newValue = tagName + ', ';
+        newCursorPosition = newValue.length;
+    } else {
+        // Replace text after last comma
+        const beforeTag = value.substring(0, lastCommaIndex + 1);
+        const afterCursor = value.substring(cursorPosition);
+        // Remove any existing partial tag and add the selected tag
+        newValue = beforeTag + ' ' + tagName + ', ' + afterCursor;
+        newCursorPosition = (beforeTag + ' ' + tagName + ', ').length;
+    }
+
+    // Update input
+    tagInput.value = newValue;
+    tagInput.setSelectionRange(newCursorPosition, newCursorPosition);
+    tagInput.focus();
+
+    // Close autocomplete
+    closeTagAutocomplete();
+
+    // Trigger input event to potentially show new suggestions
+    setTimeout(() => {
+        handleTagInput(tagInput);
+    }, 50);
+}
 
 // Initialize lazy loading on app start
 initializeLazyLoading();

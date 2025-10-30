@@ -474,6 +474,42 @@ class TestCategoriesAndTags:
         assert isinstance(tags, set)
         assert len(tags) > 0
 
+    def test_get_tags_with_counts(self, populated_data_service):
+        """Test getting tags with their usage counts."""
+        tags_with_counts = populated_data_service.get_tags_with_counts()
+
+        assert isinstance(tags_with_counts, list)
+        assert len(tags_with_counts) > 0
+
+        # Each tag should have 'name' and 'count' fields
+        for tag in tags_with_counts:
+            assert 'name' in tag
+            assert 'count' in tag
+            assert isinstance(tag['name'], str)
+            assert isinstance(tag['count'], int)
+            assert tag['count'] >= 0
+
+        # Tags should be sorted by name
+        tag_names = [tag['name'] for tag in tags_with_counts]
+        assert tag_names == sorted(tag_names)
+
+    def test_get_tags_with_counts_accuracy(self, empty_data_service, sample_prompt_data):
+        """Test that tag counts are accurate."""
+        # Create prompts with overlapping tags
+        empty_data_service.add_new_prompt(sample_prompt_data(tags=["python", "ai"]))
+        empty_data_service.add_new_prompt(sample_prompt_data(tags=["python", "web"]))
+        empty_data_service.add_new_prompt(sample_prompt_data(tags=["ai", "ml"]))
+
+        tags_with_counts = empty_data_service.get_tags_with_counts()
+
+        # Convert to dict for easier checking
+        tag_dict = {tag['name']: tag['count'] for tag in tags_with_counts}
+
+        assert tag_dict['python'] == 2
+        assert tag_dict['ai'] == 2
+        assert tag_dict['web'] == 1
+        assert tag_dict['ml'] == 1
+
 
 class TestVersionOperations:
     """Test version-related operations."""

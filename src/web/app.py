@@ -260,9 +260,9 @@ async def get_categories():
 
 @app.get("/api/tags")
 async def get_tags():
-    """Get all tags"""
-    tags = data_service.get_tags()
-    return {"tags": tags}
+    """Get all tags with usage counts"""
+    tags_with_counts = data_service.get_tags_with_counts()
+    return {"tags": tags_with_counts}
 
 # Import/Export endpoints
 @app.get("/import-export", response_class=HTMLResponse)

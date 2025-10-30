@@ -225,7 +225,20 @@ class TestCategoryAndTagEndpoints:
         response = api_client.get("/api/tags")
         assert response.status_code == 200
         tags = response.json()['tags']
-        assert "api" in tags
+        # Tags should now be a list of dictionaries with 'name' and 'count'
+        assert isinstance(tags, list)
+        assert len(tags) > 0
+        # Check that each tag has the required fields
+        for tag in tags:
+            assert 'name' in tag
+            assert 'count' in tag
+            assert isinstance(tag['name'], str)
+            assert isinstance(tag['count'], int)
+        # Check that 'api' tag is present
+        tag_names = [tag['name'] for tag in tags]
+        assert "api" in tag_names
+        # Verify at least one tag has a non-zero count
+        assert any(tag['count'] > 0 for tag in tags)
 
 
 class TestExportEndpoints:

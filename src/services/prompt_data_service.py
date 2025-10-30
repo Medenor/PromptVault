@@ -569,3 +569,33 @@ class PromptDataService:
         # Always update tags from current prompts to ensure they are current
         self._update_categories_and_tags()
         return sorted(list(self.global_tags))
+
+    def get_tags_with_counts(self) -> List[Dict[str, Any]]:
+        """
+        Get all tags with their usage counts.
+
+        Returns:
+            List[Dict[str, Any]]: List of dictionaries with 'name' and 'count' keys,
+                                  sorted by tag name
+        """
+        # Always update tags from current prompts to ensure they are current
+        self._update_categories_and_tags()
+
+        # Count tag usage across all prompts
+        tag_counts: Dict[str, int] = {}
+        for prompt_info in self.prompts.values():
+            prompt_tags = prompt_info['data'].get('tags', [])
+            if isinstance(prompt_tags, list):
+                for tag in prompt_tags:
+                    if isinstance(tag, str):
+                        tag_counts[tag] = tag_counts.get(tag, 0) + 1
+
+        # Build result list with all tags (including unused ones with count 0)
+        result = []
+        for tag in sorted(self.global_tags):
+            result.append({
+                'name': tag,
+                'count': tag_counts.get(tag, 0)
+            })
+
+        return result
