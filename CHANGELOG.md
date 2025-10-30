@@ -9,7 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### ✨ New Features
 
+- _No changes yet._
+
+### 🔧 Fixed
+
+- _No changes yet._
+
+## [1.1.0] - 2025-10-30
+
+### ✨ New Features
+
 - **Search & Filter UI improved**: Moving search/filter block on top of windows to ease the use of this feature - [`01a40cf`]
+- **Tags autocompletion**: Added tag autocomplete with usage counts for prompt tags in the web UI, leveraging the new get_tags_with_counts() service method - [`62644ec`]
 
 ### 🔧 Fixed
 
