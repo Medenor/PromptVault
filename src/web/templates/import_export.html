@@ -6,6 +6,7 @@
     <title>PromptVault - Import/Export</title>
     <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon.png">
     <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/validation.css">
     <script src="https://unpkg.com/i18next@23.7.6/i18next.min.js"></script>
     <script src="https://unpkg.com/i18next-browser-languagedetector@7.2.0/i18nextBrowserLanguageDetector.min.js"></script>
     <script src="https://unpkg.com/i18next-http-backend@2.4.2/i18nextHttpBackend.min.js"></script>
@@ -60,7 +61,15 @@
 
                     <div class="form-group">
                         <label for="export-filename" data-i18n="importExport.filename">Filename:</label>
-                        <input type="text" id="export-filename" value="promptvault_export" placeholder="Enter filename">
+                        <input
+                            type="text"
+                            id="export-filename"
+                            value="promptvault_export"
+                            placeholder="Enter filename"
+                            maxlength="255"
+                            pattern="[A-Za-z0-9_-]+"
+                            aria-describedby="export-filename-error">
+                        <div class="validation-error" id="export-filename-error" role="alert" aria-live="assertive"></div>
                     </div>
 
                     <div class="button-group">
@@ -83,7 +92,12 @@
 
                     <div class="form-group">
                         <label data-i18n="importExport.selectFile">Select File:</label>
-                        <input type="file" id="import-file" accept=".csv,.md,.markdown,.json">
+                        <input
+                            type="file"
+                            id="import-file"
+                            accept=".csv,.md,.markdown,.json,text/csv,application/json,text/markdown,text/plain"
+                            aria-describedby="import-file-error">
+                        <div class="validation-error" id="import-file-error" role="alert" aria-live="assertive"></div>
                     </div>
 
                     <div class="form-group">
@@ -170,6 +184,9 @@
         </div>
     </div>
 
+    <script type="module" src="/static/js/validation_constants.js"></script>
+    <script type="module" src="/static/js/validators.js"></script>
+    <script type="module" src="/static/js/form_validation.js"></script>
     <script src="/static/js/import_export.js"></script>
 </body>
 </html>
