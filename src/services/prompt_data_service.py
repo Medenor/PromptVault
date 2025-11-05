@@ -430,7 +430,7 @@ class PromptDataService:
                 ordered_categories.append(normalized)
                 seen_categories.add(normalized)
 
-        if not ordered_categories:
+        if not ordered_categories and self.prompts:
             ordered_categories.append("No category")
 
         self.categories = ordered_categories

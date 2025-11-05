@@ -1,59 +1,21 @@
 import pytest
-import json
-from fastapi.testclient import TestClient
 from pathlib import Path
 import sys
-import tempfile
-import shutil
 
-# Add the parent directory to the Python path for imports
+# Ensure application package is importable when running tests directly
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.web.app import app
-from src.services.prompt_data_service import PromptDataService
+
+@pytest.fixture
+def client(api_client_context):
+    """Provide a TestClient bound to an isolated dataset."""
+    return api_client_context["client"]
 
 
 @pytest.fixture
-def client():
-    """Create a test client"""
-    return TestClient(app)
-
-
-@pytest.fixture
-def temp_data_file():
-    """Create a temporary data file for testing"""
-    temp_dir = tempfile.mkdtemp()
-    temp_file = Path(temp_dir) / "test_prompts.json"
-    yield temp_file
-    # Cleanup
-    shutil.rmtree(temp_dir)
-
-
-@pytest.fixture
-def test_data_service(temp_data_file):
-    """Create a test data service with temporary file"""
-    service = PromptDataService(str(temp_data_file))
-
-    # Create test prompts
-    prompt1_data = {
-        "title": "Test Prompt 1",
-        "prompt": "This is a test prompt",
-        "category": "Test",
-        "tags": ["test", "example"],
-    }
-
-    prompt2_data = {
-        "title": "Test Prompt 2",
-        "prompt": "This is another test prompt",
-        "category": "Test",
-        "tags": ["test"],
-    }
-
-    service.create_prompt(prompt1_data)
-    service.create_prompt(prompt2_data)
-    service.save_prompts()
-
-    return service
+def test_data_service(api_client_context):
+    """Expose the isolated PromptDataService used by the API client."""
+    return api_client_context["data_service"]
 
 
 class TestVersionHistoryEndpoint:

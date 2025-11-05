@@ -1,53 +1,27 @@
 import pytest
-import json
-from fastapi.testclient import TestClient
 from pathlib import Path
 import sys
-import tempfile
-import shutil
 
-# Add the parent directory to the Python path for imports
+# Ensure application package is importable when running tests directly
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.web.app import app
-from src.services.prompt_data_service import PromptDataService
 
-client = TestClient(app)
+@pytest.fixture
+def client(api_client_context):
+    """Provide a TestClient bound to an isolated dataset."""
+    return api_client_context["client"]
 
 
 @pytest.fixture
-def temp_data_file():
-    """Create a temporary data file for testing"""
-    temp_dir = tempfile.mkdtemp()
-    temp_file = Path(temp_dir) / "test_prompts.json"
-    yield temp_file
-    # Cleanup
-    shutil.rmtree(temp_dir)
-
-
-@pytest.fixture
-def test_data_service(temp_data_file):
-    """Create a test data service with temporary file"""
-    service = PromptDataService(str(temp_data_file))
-
-    # Create test prompts
-    prompt_data = {
-        "title": "Integration Test Prompt",
-        "prompt": "This is the initial prompt content",
-        "category": "Testing",
-        "tags": ["test", "integration"],
-    }
-
-    service.create_prompt(prompt_data)
-    service.save_prompts()
-
-    return service
+def test_data_service(api_client_context):
+    """Expose the isolated PromptDataService used by the API client."""
+    return api_client_context["data_service"]
 
 
 class TestVersionWorkflow:
     """Integration tests for complete version control workflows"""
 
-    def test_create_update_view_workflow(self, test_data_service):
+    def test_create_update_view_workflow(self, client, test_data_service):
         """Test: Create prompt -> Update it -> View history"""
         # Step 1: Create a new prompt
         create_response = client.post(
@@ -90,7 +64,7 @@ class TestVersionWorkflow:
         latest_version = updated_history["versions"][0]
         assert latest_version["message"] == "Added more details to the prompt"
 
-    def test_compare_and_revert_workflow(self, test_data_service):
+    def test_compare_and_revert_workflow(self, client, test_data_service):
         """Test: Create -> Update -> Compare -> Revert workflow"""
         prompt_id = 0
 
@@ -152,7 +126,7 @@ class TestVersionWorkflow:
         latest = final_history["versions"][0]
         assert latest["message"] == "Reverting to initial state"
 
-    def test_multiple_updates_version_chain(self, test_data_service):
+    def test_multiple_updates_version_chain(self, client, test_data_service):
         """Test: Multiple updates create proper version chain"""
         prompt_id = 0
 
@@ -183,7 +157,7 @@ class TestVersionWorkflow:
         assert versions[3]["message"] == "Update number 2"
         assert versions[4]["message"] == "Update number 1"
 
-    def test_diff_with_multiple_field_changes(self, test_data_service):
+    def test_diff_with_multiple_field_changes(self, client, test_data_service):
         """Test: Diff correctly identifies changes in multiple fields"""
         prompt_id = 0
 
@@ -221,7 +195,7 @@ class TestVersionWorkflow:
         assert "category" in changes
         assert "tags" in changes
 
-    def test_revert_creates_new_version(self, test_data_service):
+    def test_revert_creates_new_version(self, client, test_data_service):
         """Test: Reverting creates a new version, not replacing"""
         prompt_id = 0
 
@@ -260,7 +234,7 @@ class TestVersionWorkflow:
         latest = history3["versions"][0]
         assert latest["message"] == "Reverting"
 
-    def test_version_metadata_accuracy(self, test_data_service):
+    def test_version_metadata_accuracy(self, client, test_data_service):
         """Test: Version metadata (timestamp, author) is accurate"""
         prompt_id = 0
 
@@ -283,7 +257,7 @@ class TestVersionWorkflow:
             # Verify author is not empty
             assert len(version["author"]) > 0
 
-    def test_concurrent_version_operations(self, test_data_service):
+    def test_concurrent_version_operations(self, client, test_data_service):
         """Test: Multiple version operations work correctly"""
         prompt_id = 0
 
@@ -348,17 +322,17 @@ class TestVersionWorkflow:
 class TestVersionErrorHandling:
     """Test error handling in version operations"""
 
-    def test_invalid_version_id_comparison(self, test_data_service):
+    def test_invalid_version_id_comparison(self, client, test_data_service):
         """Test: Comparing with invalid version IDs returns error"""
         response = client.get("/api/prompts/0/versions/compare?v1=invalid1&v2=invalid2")
         assert response.status_code == 404
 
-    def test_invalid_prompt_id_for_versions(self):
+    def test_invalid_prompt_id_for_versions(self, client):
         """Test: Invalid prompt ID returns error"""
         response = client.get("/api/prompts/99999/versions")
         assert response.status_code == 404
 
-    def test_revert_nonexistent_version(self, test_data_service):
+    def test_revert_nonexistent_version(self, client, test_data_service):
         """Test: Reverting nonexistent version returns error"""
         response = client.post(
             "/api/prompts/0/versions/nonexistent/revert",

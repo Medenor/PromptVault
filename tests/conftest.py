@@ -226,11 +226,19 @@ def prompt_with_versions(temp_data_file, sample_prompt_data):
 
 
 @pytest.fixture
-def test_client():
-    """Create a FastAPI test client."""
-    from src.web.app import app
+def test_client(temp_data_dir):
+    """Provide a FastAPI TestClient backed by an isolated temp dataset."""
+    from src.web import app as web_app
 
-    return TestClient(app)
+    data_dir = Path(temp_data_dir)
+    data_file = data_dir / "prompts_data.json"
+
+    web_app.configure_services(data_file=str(data_file), data_dir=str(data_dir))
+    client = TestClient(web_app.app)
+    try:
+        yield client
+    finally:
+        client.close()
 
 
 @pytest.fixture
@@ -242,8 +250,20 @@ def api_client_context(temp_data_dir, sample_prompt_data):
     """
     from src.web import app as web_app
 
-    data_file = Path(temp_data_dir) / "prompts_data.json"
-    data_service = PromptDataService(str(data_file))
+    original_services = (
+        web_app.data_service,
+        web_app.backup_service,
+        web_app.filter_service,
+        web_app.import_export_service,
+        web_app.versioning_service,
+    )
+
+    data_dir = Path(temp_data_dir)
+    data_file = data_dir / "prompts_data.json"
+
+    web_app.configure_services(data_file=str(data_file), data_dir=str(data_dir))
+
+    data_service = web_app.data_service
 
     # Seed data with two prompts
     data_service.add_new_prompt(
@@ -266,22 +286,6 @@ def api_client_context(temp_data_dir, sample_prompt_data):
     )
     data_service.save_prompts()
 
-    backup_service = BackupService(temp_data_dir)
-    filter_service = PromptFilterService()
-    import_export_service = PromptImportExportService()
-
-    original_services = (
-        web_app.data_service,
-        web_app.backup_service,
-        web_app.filter_service,
-        web_app.import_export_service,
-    )
-
-    web_app.data_service = data_service
-    web_app.backup_service = backup_service
-    web_app.filter_service = filter_service
-    web_app.import_export_service = import_export_service
-
     client = TestClient(web_app.app)
 
     try:
@@ -297,6 +301,7 @@ def api_client_context(temp_data_dir, sample_prompt_data):
             web_app.backup_service,
             web_app.filter_service,
             web_app.import_export_service,
+            web_app.versioning_service,
         ) = original_services
 
 

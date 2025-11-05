@@ -9,7 +9,7 @@ import pydantic_core
 import json
 import os
 from datetime import datetime
-from typing import List
+from typing import List, Optional, Tuple
 
 from src.services.prompt_data_service import PromptDataService
 from src.services.prompt_filter_service import PromptFilterService
@@ -43,12 +43,61 @@ app.mount("/static", StaticFiles(directory="src/web/static"), name="static")
 # Templates
 templates = Jinja2Templates(directory="src/web/templates")
 
-# Initialize services
-data_service = PromptDataService()
-filter_service = PromptFilterService()
-versioning_service = PromptVersioningService()
-import_export_service = PromptImportExportService()
-backup_service = BackupService()
+def _resolve_data_locations(
+    override_file: Optional[str] = None, override_dir: Optional[str] = None
+) -> Tuple[Optional[str], Optional[str]]:
+    """
+    Determine data file and directory locations, allowing environment overrides.
+
+    Args:
+        override_file (Optional[str]): Explicit data file path.
+        override_dir (Optional[str]): Explicit data directory path.
+
+    Returns:
+        Tuple[Optional[str], Optional[str]]: Absolute paths for data file and directory.
+    """
+    data_file_env = override_file or os.getenv("PROMPTVAULT_DATA_FILE")
+    data_dir_env = override_dir or os.getenv("PROMPTVAULT_DATA_DIR")
+
+    data_file: Optional[str] = None
+    data_dir: Optional[str] = None
+
+    if data_file_env:
+        data_file = os.path.abspath(data_file_env.strip())
+        if not data_dir_env:
+            data_dir_env = os.path.dirname(data_file)
+
+    if data_dir_env:
+        data_dir = os.path.abspath(data_dir_env.strip())
+        if not data_file:
+            data_file = os.path.join(data_dir, "prompts_data.json")
+
+    return data_file, data_dir
+
+
+def configure_services(
+    data_file: Optional[str] = None, data_dir: Optional[str] = None
+) -> None:
+    """
+    Initialize global service instances, honoring optional overrides.
+
+    Args:
+        data_file (Optional[str]): Explicit data file path.
+        data_dir (Optional[str]): Explicit data directory path.
+    """
+    global data_service, filter_service, versioning_service, import_export_service, backup_service
+
+    resolved_file, resolved_dir = _resolve_data_locations(data_file, data_dir)
+
+    data_service = PromptDataService(resolved_file)
+    filter_service = PromptFilterService()
+    versioning_service = PromptVersioningService()
+    import_export_service = PromptImportExportService()
+    backup_service = BackupService(resolved_dir)
+
+
+# Initialize services using environment configuration (if provided)
+configure_services()
 
 
 # Custom validation error handler
