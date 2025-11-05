@@ -439,3 +439,4 @@ See [LICENSE](LICENSE) for more information.
 ## Acknowledgements
 
 - Repository files templates provided by [dec0dOS/amazing-github-template](https://github.com/dec0dOS/amazing-github-template)
+- Repository icon: [Reading icons created by Freepik - Flaticon](https://www.flaticon.com/free-icons/reading)
