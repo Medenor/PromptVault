@@ -1,7 +1,11 @@
-from fastapi import FastAPI, Request, Form, File, UploadFile
+from fastapi import FastAPI, Request, Form, File, UploadFile, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse as FastAPIJSONResponse
+from pydantic import ValidationError
+import pydantic_core
 import json
 import os
 from datetime import datetime
@@ -12,6 +16,24 @@ from src.services.prompt_filter_service import PromptFilterService
 from src.services.prompt_versioning_service import PromptVersioningService
 from src.services.prompt_import_export_service import PromptImportExportService
 from src.services.backup_service import BackupService
+from src.web.models import (
+    PromptCreateRequest,
+    PromptUpdateRequest,
+    ExportRequest,
+    ImportRequest,
+    BackupCreateRequest,
+    BackupCleanupRequest,
+    BackupCompressRequest,
+    VersionRevertRequest,
+    ExportFormat,
+    ImportMode,
+)
+from src.web.validators import (
+    sanitize_filename,
+    validate_upload_file,
+    create_secure_temp_file,
+    get_file_extension_from_format,
+)
 
 app = FastAPI(title="PromptVault Web", version="0.1.0")
 
@@ -27,6 +49,102 @@ filter_service = PromptFilterService()
 versioning_service = PromptVersioningService()
 import_export_service = PromptImportExportService()
 backup_service = BackupService()
+
+
+# Custom validation error handler
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    """Handle Pydantic validation errors with user-friendly messages."""
+    errors = exc.errors()
+    error_messages = []
+    sanitized_errors = []
+
+    for error in errors:
+        field = " -> ".join(str(loc) for loc in error["loc"] if loc != "body")
+        message = error["msg"]
+        error_messages.append(f"{field}: {message}")
+
+        # Sanitize error dict for JSON serialization
+        sanitized_error = {
+            "type": error.get("type"),
+            "loc": error.get("loc"),
+            "msg": error.get("msg"),
+            "input": str(error.get("input"))[:100] if error.get("input") else None,
+        }
+        sanitized_errors.append(sanitized_error)
+
+    return JSONResponse(
+        status_code=422,
+        content={
+            "error": "Validation failed",
+            "details": error_messages,
+            "errors": sanitized_errors,
+        },
+    )
+
+
+@app.exception_handler(ValidationError)
+async def pydantic_validation_exception_handler(request: Request, exc: ValidationError):
+    """Handle Pydantic ValidationError raised in endpoint functions."""
+    errors = exc.errors()
+    error_messages = []
+    sanitized_errors = []
+
+    for error in errors:
+        field = " -> ".join(str(loc) for loc in error["loc"])
+        message = error["msg"]
+        error_messages.append(f"{field}: {message}")
+
+        # Sanitize error dict for JSON serialization
+        sanitized_error = {
+            "type": error.get("type"),
+            "loc": error.get("loc"),
+            "msg": error.get("msg"),
+            "input": str(error.get("input"))[:100] if error.get("input") else None,
+        }
+        sanitized_errors.append(sanitized_error)
+
+    return JSONResponse(
+        status_code=422,
+        content={
+            "error": "Validation failed",
+            "details": error_messages,
+            "errors": sanitized_errors,
+        },
+    )
+
+
+@app.exception_handler(pydantic_core.ValidationError)
+async def pydantic_core_validation_exception_handler(
+    request: Request, exc: pydantic_core.ValidationError
+):
+    """Handle pydantic_core ValidationError raised in endpoint functions."""
+    errors = exc.errors()
+    error_messages = []
+    sanitized_errors = []
+
+    for error in errors:
+        field = " -> ".join(str(loc) for loc in error["loc"])
+        message = error["msg"]
+        error_messages.append(f"{field}: {message}")
+
+        # Sanitize error dict for JSON serialization
+        sanitized_error = {
+            "type": error.get("type"),
+            "loc": error.get("loc"),
+            "msg": error.get("msg"),
+            "input": str(error.get("input"))[:100] if error.get("input") else None,
+        }
+        sanitized_errors.append(sanitized_error)
+
+    return JSONResponse(
+        status_code=422,
+        content={
+            "error": "Validation failed",
+            "details": error_messages,
+            "errors": sanitized_errors,
+        },
+    )
 
 
 def _parse_tags_field(tags: str) -> List[str]:
@@ -89,17 +207,55 @@ async def create_prompt(
     category: str = Form(""),
     tags: str = Form(""),
 ):
-    """Create a new prompt"""
-    prompt_data = {
-        "title": title,
-        "prompt": prompt,
-        "category": category,
-        "tags": _parse_tags_field(tags),
-    }
+    """Create a new prompt with validation."""
+    try:
+        # Validate using Pydantic model
+        validated_data = PromptCreateRequest(
+            title=title,
+            prompt=prompt,
+            category=category,
+            tags=tags,
+        )
 
-    prompt_id = data_service.create_prompt(prompt_data)
-    data_service.save_prompts()  # Save to disk
-    return {"success": True, "prompt_id": prompt_id}
+        # Convert to dict for service layer
+        prompt_data = {
+            "title": validated_data.title,
+            "prompt": validated_data.prompt,
+            "category": validated_data.category,
+            "tags": _parse_tags_field(validated_data.tags),
+        }
+
+        prompt_id = data_service.create_prompt(prompt_data)
+        data_service.save_prompts()  # Save to disk
+        return {"success": True, "prompt_id": prompt_id}
+
+    except (ValidationError, pydantic_core.ValidationError) as e:
+        errors = e.errors() if hasattr(e, "errors") else []
+        error_messages = []
+        sanitized_errors = []
+
+        for error in errors:
+            field = " -> ".join(str(loc) for loc in error["loc"])
+            message = error["msg"]
+            error_messages.append(f"{field}: {message}")
+
+            # Sanitize error dict for JSON serialization
+            sanitized_error = {
+                "type": error.get("type"),
+                "loc": error.get("loc"),
+                "msg": error.get("msg"),
+                "input": str(error.get("input"))[:100] if error.get("input") else None,  # Truncate long inputs
+            }
+            sanitized_errors.append(sanitized_error)
+
+        return JSONResponse(
+            status_code=422,
+            content={
+                "error": "Validation failed",
+                "details": error_messages,
+                "errors": sanitized_errors,
+            },
+        )
 
 
 @app.get("/api/prompts/search")
@@ -193,7 +349,7 @@ async def update_prompt(
     tags: str = Form(""),
     commit_message: str = Form("Update"),
 ):
-    """Update a prompt"""
+    """Update a prompt with validation."""
     try:
         prompt_id_int = int(prompt_id)
     except ValueError:
@@ -203,20 +359,39 @@ async def update_prompt(
     if prompt_id_int not in prompts:
         return JSONResponse(status_code=404, content={"error": "Prompt not found"})
 
-    prompt_data = {
-        "title": title,
-        "prompt": prompt,
-        "category": category,
-        "tags": _parse_tags_field(tags),
-    }
+    try:
+        # Validate using Pydantic model
+        validated_data = PromptUpdateRequest(
+            title=title,
+            prompt=prompt,
+            category=category,
+            tags=tags,
+            commit_message=commit_message,
+        )
 
-    success = data_service.update_prompt(prompt_id_int, prompt_data, commit_message)
-    if success:
-        data_service.save_prompts()  # Save to disk
-        return {"success": True}
-    else:
+        # Convert to dict for service layer
+        prompt_data = {
+            "title": validated_data.title,
+            "prompt": validated_data.prompt,
+            "category": validated_data.category,
+            "tags": _parse_tags_field(validated_data.tags),
+        }
+
+        success = data_service.update_prompt(
+            prompt_id_int, prompt_data, validated_data.commit_message
+        )
+        if success:
+            data_service.save_prompts()  # Save to disk
+            return {"success": True}
+        else:
+            return JSONResponse(
+                status_code=500, content={"error": "Failed to update prompt"}
+            )
+
+    except ValidationError as e:
         return JSONResponse(
-            status_code=500, content={"error": "Failed to update prompt"}
+            status_code=422,
+            content={"error": "Validation failed", "details": e.errors()},
         )
 
 
@@ -323,12 +498,32 @@ async def export_prompts(
     include_favorites: bool = Form(False),
     include_metadata: bool = Form(True),
 ):
-    """Export prompts in specified format"""
+    """Export prompts in specified format with validation and secure file handling."""
     try:
+        # Validate format enum first
+        try:
+            format_enum = ExportFormat(format.lower())
+        except ValueError:
+            return JSONResponse(
+                status_code=422,
+                content={
+                    "error": "Validation failed",
+                    "details": [f"Invalid format '{format}'. Must be one of: csv, markdown, json"],
+                },
+            )
+
+        # Validate using Pydantic model
+        validated_data = ExportRequest(
+            format=format_enum,
+            filename=filename,
+            include_favorites=include_favorites,
+            include_metadata=include_metadata,
+        )
+
         prompts = data_service.load_prompts()
 
         # Filter prompts if needed
-        if include_favorites:
+        if validated_data.include_favorites:
             prompts = {
                 k: v
                 for k, v in prompts.items()
@@ -338,19 +533,20 @@ async def export_prompts(
         # Convert to list format for export service
         prompt_list = [(int(k), v) for k, v in prompts.items()]
 
-        # Generate filename with extension
-        if not filename.endswith(f".{format}"):
-            filename = f"{filename}.{format}"
+        # Sanitize filename and add proper extension
+        safe_filename = sanitize_filename(validated_data.filename)
+        file_extension = get_file_extension_from_format(validated_data.format.value)
+        final_filename = f"{safe_filename}{file_extension}"
 
-        # Create temporary file
-        temp_file = f"/tmp/{filename}"
+        # Create secure temporary file
+        temp_file = create_secure_temp_file(final_filename)
 
         success = False
-        if format.lower() == "csv":
+        if validated_data.format == ExportFormat.CSV:
             success = import_export_service.export_to_csv(temp_file, prompt_list)
-        elif format.lower() == "markdown":
+        elif validated_data.format == ExportFormat.MARKDOWN:
             success = import_export_service.export_to_markdown(temp_file, prompt_list)
-        elif format.lower() == "json":
+        elif validated_data.format == ExportFormat.JSON:
             # Export as JSON
             export_data = {
                 "export_timestamp": datetime.now().isoformat(),
@@ -364,15 +560,26 @@ async def export_prompts(
         if success:
             # Return file for download
             return FileResponse(
-                temp_file, media_type="application/octet-stream", filename=filename
+                temp_file, media_type="application/octet-stream", filename=final_filename
             )
         else:
+            # Clean up temp file on failure
+            if os.path.exists(temp_file):
+                os.remove(temp_file)
             return JSONResponse(
                 status_code=400,
-                content={"error": f"Failed to export in {format} format"},
+                content={"error": f"Failed to export in {validated_data.format.value} format"},
             )
 
+    except ValidationError as e:
+        return JSONResponse(
+            status_code=422,
+            content={"error": "Validation failed", "details": e.errors()},
+        )
     except Exception as e:
+        # Clean up temp file on error
+        if "temp_file" in locals() and os.path.exists(temp_file):
+            os.remove(temp_file)
         return JSONResponse(
             status_code=500, content={"error": f"Export failed: {str(e)}"}
         )
@@ -384,12 +591,29 @@ async def import_prompts(
     mode: str = Form("append"),
     validate_data: bool = Form(True),
 ):
-    """Import prompts from uploaded file"""
+    """Import prompts from uploaded file with comprehensive security validation."""
+    temp_file_path = None
     try:
-        # Save uploaded file temporarily
-        temp_file = f"/tmp/{file.filename}"
-        with open(temp_file, "wb") as buffer:
-            content = await file.read()
+        # Validate request parameters
+        validated_params = ImportRequest(
+            mode=ImportMode(mode.lower()),
+            validate_data=validate_data,
+        )
+
+        # Comprehensive file upload validation
+        is_valid, error_message = await validate_upload_file(file)
+        if not is_valid:
+            return JSONResponse(
+                status_code=400,
+                content={"error": error_message},
+            )
+
+        # Create secure temporary file
+        temp_file_path = create_secure_temp_file(file.filename)
+
+        # Write uploaded content to secure temp file
+        content = await file.read()
+        with open(temp_file_path, "wb") as buffer:
             buffer.write(content)
 
         imported_prompts = []
@@ -397,12 +621,12 @@ async def import_prompts(
         # Determine format from filename
         filename = file.filename.lower()
         if filename.endswith(".csv"):
-            imported_prompts = import_export_service.import_from_csv(temp_file)
+            imported_prompts = import_export_service.import_from_csv(temp_file_path)
         elif filename.endswith((".md", ".markdown")):
-            imported_prompts = import_export_service.import_from_markdown(temp_file)
+            imported_prompts = import_export_service.import_from_markdown(temp_file_path)
         elif filename.endswith(".json"):
             # Import from JSON
-            with open(temp_file, "r", encoding="utf-8") as f:
+            with open(temp_file_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 if "prompts" in data:
                     # Handle exported JSON format
@@ -421,7 +645,7 @@ async def import_prompts(
                         )
 
         # Validate if requested
-        if validate_data:
+        if validated_params.validate_data:
             valid_prompts = []
             for prompt in imported_prompts:
                 if prompt.get("title") and prompt.get("prompt"):
@@ -430,7 +654,7 @@ async def import_prompts(
 
         # Import based on mode
         added_count = 0
-        if mode == "replace":
+        if validated_params.mode == ImportMode.REPLACE:
             # Create automatic backup before replacing all data
             backup_id = backup_service.create_backup("pre_replace_import")
             if backup_id:
@@ -440,7 +664,7 @@ async def import_prompts(
             data_service.clear_all_prompts()
 
         for prompt_data in imported_prompts:
-            if mode == "merge":
+            if validated_params.mode == ImportMode.MERGE:
                 # Check if prompt with same title exists
                 existing_prompts = data_service.load_prompts()
                 exists = any(
@@ -450,7 +674,7 @@ async def import_prompts(
                 if not exists:
                     data_service.create_prompt(prompt_data)
                     added_count += 1
-            elif mode == "replace":
+            elif validated_params.mode == ImportMode.REPLACE:
                 # Replace mode: add all prompts (existing data already cleared)
                 data_service.create_prompt(prompt_data)
                 added_count += 1
@@ -463,22 +687,30 @@ async def import_prompts(
         data_service.save_prompts()
 
         # Clean up temp file
-        if os.path.exists(temp_file):
-            os.remove(temp_file)
+        if temp_file_path and os.path.exists(temp_file_path):
+            os.remove(temp_file_path)
 
         return JSONResponse(
             content={
                 "success": True,
                 "imported_count": len(imported_prompts),
                 "added_count": added_count,
-                "mode": mode,
+                "mode": validated_params.mode.value,
             }
         )
 
+    except ValidationError as e:
+        # Clean up temp file on validation error
+        if temp_file_path and os.path.exists(temp_file_path):
+            os.remove(temp_file_path)
+        return JSONResponse(
+            status_code=422,
+            content={"error": "Validation failed", "details": e.errors()},
+        )
     except Exception as e:
         # Clean up temp file on error
-        if "temp_file" in locals() and os.path.exists(temp_file):
-            os.remove(temp_file)
+        if temp_file_path and os.path.exists(temp_file_path):
+            os.remove(temp_file_path)
         return JSONResponse(
             status_code=500, content={"error": f"Import failed: {str(e)}"}
         )
@@ -555,19 +787,30 @@ async def get_backups():
 
 @app.post("/api/backups")
 async def create_manual_backup(name: str = Form(None)):
-    """Create a manual backup"""
-    backup_id = backup_service.create_backup(name)
-    if backup_id:
-        return {"success": True, "backup_id": backup_id}
-    else:
+    """Create a manual backup with validation."""
+    try:
+        # Validate using Pydantic model
+        validated_data = BackupCreateRequest(name=name)
+
+        backup_id = backup_service.create_backup(validated_data.name)
+        if backup_id:
+            return {"success": True, "backup_id": backup_id}
+        else:
+            return JSONResponse(
+                status_code=500, content={"error": "Failed to create backup"}
+            )
+
+    except ValidationError as e:
         return JSONResponse(
-            status_code=500, content={"error": "Failed to create backup"}
+            status_code=422,
+            content={"error": "Validation failed", "details": e.errors()},
         )
 
 
 @app.post("/api/backups/{backup_id}/restore")
 async def restore_backup(backup_id: str):
-    """Restore from a specific backup"""
+    """Restore from a specific backup."""
+    # Note: backup_id validation happens in service layer via _resolve_backup_path
     success = backup_service.restore_backup(backup_id)
     if success:
         return {"success": True}
@@ -579,7 +822,7 @@ async def restore_backup(backup_id: str):
 
 @app.delete("/api/backups/{backup_id}")
 async def delete_backup(backup_id: str):
-    """Delete a specific backup"""
+    """Delete a specific backup."""
     try:
         backup_info = backup_service.get_backup_info(backup_id)
         if not backup_info:
@@ -600,16 +843,36 @@ async def delete_backup(backup_id: str):
 
 @app.post("/api/backups/cleanup")
 async def cleanup_backups(retention_days: int = Form(30)):
-    """Clean up old backups"""
-    removed_count = backup_service.cleanup_old_backups(retention_days)
-    return {"success": True, "removed_count": removed_count}
+    """Clean up old backups with validation."""
+    try:
+        # Validate using Pydantic model
+        validated_data = BackupCleanupRequest(retention_days=retention_days)
+
+        removed_count = backup_service.cleanup_old_backups(validated_data.retention_days)
+        return {"success": True, "removed_count": removed_count}
+
+    except ValidationError as e:
+        return JSONResponse(
+            status_code=422,
+            content={"error": "Validation failed", "details": e.errors()},
+        )
 
 
 @app.post("/api/backups/compress")
 async def compress_backups(days_threshold: int = Form(7)):
-    """Compress old backups"""
-    compressed_count = backup_service.compress_old_backups(days_threshold)
-    return {"success": True, "compressed_count": compressed_count}
+    """Compress old backups with validation."""
+    try:
+        # Validate using Pydantic model
+        validated_data = BackupCompressRequest(days_threshold=days_threshold)
+
+        compressed_count = backup_service.compress_old_backups(validated_data.days_threshold)
+        return {"success": True, "compressed_count": compressed_count}
+
+    except ValidationError as e:
+        return JSONResponse(
+            status_code=422,
+            content={"error": "Validation failed", "details": e.errors()},
+        )
 
 
 @app.get("/api/backups/stats")
@@ -734,11 +997,19 @@ async def revert_to_version(
     version_id: str,
     commit_message: str = Form("Revert to previous version"),
 ):
-    """Revert a prompt to a specific version"""
+    """Revert a prompt to a specific version with validation."""
     try:
+        # Validate commit message
+        validated_data = VersionRevertRequest(commit_message=commit_message)
+
         prompt_id_int = int(prompt_id)
     except ValueError:
         return JSONResponse(status_code=400, content={"error": "Invalid prompt ID"})
+    except ValidationError as e:
+        return JSONResponse(
+            status_code=422,
+            content={"error": "Validation failed", "details": e.errors()},
+        )
 
     prompts = data_service.load_prompts()
     if prompt_id_int not in prompts:
@@ -761,7 +1032,7 @@ async def revert_to_version(
 
     # Create a new version with the reverted data
     success = data_service.revert_prompt_to_version(
-        prompt_id_int, reverted_data, commit_message
+        prompt_id_int, reverted_data, validated_data.commit_message
     )
 
     if success:
