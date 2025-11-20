@@ -92,6 +92,7 @@ function clearPromptFormErrors() {
         const el = document.getElementById(id);
         if (el) {
             el.textContent = '';
+            delete el.dataset.errorKey;
             el.classList.remove(ERROR_VISIBLE_CLASS);
         }
     });
@@ -115,6 +116,7 @@ function showPromptFieldError(fieldId, errorId, messageKey) {
     const message = i18next.t(messageKey);
     if (errorEl) {
         errorEl.textContent = message;
+        errorEl.dataset.errorKey = messageKey;
         errorEl.classList.add(ERROR_VISIBLE_CLASS);
     }
     if (field) {

@@ -41,6 +41,18 @@ import {
     getDuplicateTags,
 } from './validators.js';
 
+function translateCharCounter(counterId, length, maxLength, required = false) {
+    const counter = document.getElementById(counterId);
+    if (!counter) return;
+
+    const remaining = getRemainingChars(length, maxLength);
+    const translationKey = remaining === 1 ? 'validation.charRemaining' : 'validation.charsRemaining';
+    const state = getValidationState(length, maxLength, required, true);
+
+    counter.textContent = i18next.t(translationKey, { count: remaining });
+    counter.className = `char-counter char-counter-${state}`;
+}
+
 /**
  * Initialize validation for a text field with character counter.
  *
@@ -90,10 +102,12 @@ export function initFieldValidation(
             if (errorEl) {
                 if (result.valid) {
                     errorEl.textContent = '';
+                    delete errorEl.dataset.errorKey;
                     errorEl.className = 'validation-error';
                     field.setAttribute('aria-invalid', 'false');
                 } else {
                     errorEl.textContent = i18next.t(result.error);
+                    errorEl.dataset.errorKey = result.error;
                     errorEl.className = 'validation-error validation-error-visible';
                     field.setAttribute('aria-invalid', 'true');
                 }
@@ -153,6 +167,70 @@ export function initFieldValidation(
 
     // Initial update
     updateField();
+}
+
+/**
+ * Refresh counters and warnings when language changes or after i18n loads.
+ */
+export function refreshValidationText() {
+    const titleField = document.getElementById('prompt-title');
+    const contentField = document.getElementById('prompt-content');
+    const commitField = document.getElementById('commit-message');
+    const tagsField = document.getElementById('prompt-tags');
+    const errorEls = document.querySelectorAll('.validation-error[data-error-key]');
+
+    if (titleField) {
+        translateCharCounter('prompt-title-counter', (titleField.value || '').length, MAX_TITLE_LENGTH, true);
+    }
+
+    if (contentField) {
+        translateCharCounter('prompt-content-counter', (contentField.value || '').length, MAX_PROMPT_LENGTH, true);
+    }
+
+    if (commitField) {
+        translateCharCounter('commit-message-counter', (commitField.value || '').length, MAX_COMMIT_MESSAGE_LENGTH, false);
+    }
+
+    if (tagsField) {
+        const counter = document.getElementById('prompt-tags-counter');
+        const duplicatesEl = document.getElementById('prompt-tags-duplicates');
+        const tags = (tagsField.value || '').split(',').map(t => t.trim()).filter(Boolean);
+        const tagCount = tags.length;
+        const remaining = MAX_TAG_COUNT - tagCount;
+        const translationKey = tagCount === 1 ? 'validation.tagCount' : 'validation.tagsCount';
+        const warningKey = remaining === 1 ? 'validation.tagRemaining' : 'validation.tagsRemaining';
+
+        if (counter) {
+            let counterText = i18next.t(translationKey, { count: tagCount });
+            if (tagCount > 0) {
+                counterText += ' • ' + i18next.t(warningKey, { count: remaining });
+            }
+            counter.textContent = counterText;
+        }
+
+        if (duplicatesEl) {
+            const duplicates = getDuplicateTags(tags);
+            if (duplicates.length > 0) {
+                duplicatesEl.textContent = i18next.t('validation.duplicateTags', {
+                    tags: duplicates.join(', ')
+                });
+                duplicatesEl.className = 'validation-warning validation-warning-visible';
+            } else {
+                duplicatesEl.textContent = '';
+                duplicatesEl.className = 'validation-warning';
+            }
+        }
+    }
+
+    // Retranslate any existing field errors
+    if (errorEls && errorEls.length) {
+        errorEls.forEach(el => {
+            const key = el.dataset.errorKey;
+            if (key) {
+                el.textContent = i18next.t(key);
+            }
+        });
+    }
 }
 
 /**
@@ -222,10 +300,12 @@ export function initTagFieldValidation(fieldId, counterId, errorId, duplicatesId
         if (errorEl) {
             if (result.valid) {
                 errorEl.textContent = '';
+                delete errorEl.dataset.errorKey;
                 errorEl.className = 'validation-error';
                 field.setAttribute('aria-invalid', 'false');
             } else {
                 errorEl.textContent = i18next.t(result.error);
+                errorEl.dataset.errorKey = result.error;
                 errorEl.className = 'validation-error validation-error-visible';
                 field.setAttribute('aria-invalid', 'true');
             }
@@ -471,6 +551,7 @@ export function validateFormBeforeSubmit(form, isUpdate = false) {
         const errorEl = document.getElementById(errorId);
         if (errorEl) {
             errorEl.textContent = i18next.t(result.errors[fieldName]);
+            errorEl.dataset.errorKey = result.errors[fieldName];
             errorEl.className = 'validation-error validation-error-visible';
         }
 
@@ -551,4 +632,18 @@ if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initAllValidations);
 } else {
     initAllValidations();
+}
+
+// Refresh counters and error text when i18n initializes or language changes
+if (window.i18next) {
+    const attachListeners = () => {
+        refreshValidationText();
+        i18next.on('languageChanged', refreshValidationText);
+    };
+
+    if (i18next.isInitialized) {
+        attachListeners();
+    } else {
+        i18next.on('initialized', attachListeners);
+    }
 }
