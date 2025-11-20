@@ -34,8 +34,10 @@ from src.web.validators import (
     create_secure_temp_file,
     get_file_extension_from_format,
 )
+from src.web.monitoring import ValidationMonitor
 
 app = FastAPI(title="PromptVault Web", version="0.1.0")
+validation_monitor: Optional[ValidationMonitor] = None
 
 # Mount static files
 app.mount("/static", StaticFiles(directory="src/web/static"), name="static")
@@ -85,7 +87,7 @@ def configure_services(
         data_file (Optional[str]): Explicit data file path.
         data_dir (Optional[str]): Explicit data directory path.
     """
-    global data_service, filter_service, versioning_service, import_export_service, backup_service
+    global data_service, filter_service, versioning_service, import_export_service, backup_service, validation_monitor
 
     resolved_file, resolved_dir = _resolve_data_locations(data_file, data_dir)
 
@@ -95,9 +97,41 @@ def configure_services(
     import_export_service = PromptImportExportService()
     backup_service = BackupService(resolved_dir)
 
+    # Initialize validation monitor using the data directory for persistence
+    logs_base = resolved_dir or "data"
+    logs_dir = os.path.join(logs_base, "logs")
+    metrics_file = os.path.join(logs_dir, "validation_metrics.json")
+    validation_monitor = ValidationMonitor(metrics_file)
+
 
 # Initialize services using environment configuration (if provided)
 configure_services()
+
+
+def record_validation_event(
+    endpoint: str,
+    success: bool,
+    errors: Optional[List[str]] = None,
+    client: Optional[str] = None,
+) -> None:
+    """
+    Record a validation success or failure for monitoring.
+
+    Args:
+        endpoint: API path identifier.
+        success: Whether validation passed.
+        errors: Optional list of error strings.
+        client: Optional client identification (ip/user-agent).
+    """
+    if not validation_monitor:
+        return
+
+    try:
+        validation_monitor.record_event(
+            endpoint=endpoint, success=success, errors=errors, client=client
+        )
+    except Exception as exc:  # pragma: no cover - defensive
+        print(f"[ValidationMonitor] Unable to record event for {endpoint}: {exc}")
 
 
 # Custom validation error handler
@@ -121,6 +155,13 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
             "input": str(error.get("input"))[:100] if error.get("input") else None,
         }
         sanitized_errors.append(sanitized_error)
+
+    record_validation_event(
+        endpoint=str(request.url.path),
+        success=False,
+        errors=error_messages,
+        client=request.client.host if request.client else None,
+    )
 
     return JSONResponse(
         status_code=422,
@@ -152,6 +193,13 @@ async def pydantic_validation_exception_handler(request: Request, exc: Validatio
             "input": str(error.get("input"))[:100] if error.get("input") else None,
         }
         sanitized_errors.append(sanitized_error)
+
+    record_validation_event(
+        endpoint=str(request.url.path),
+        success=False,
+        errors=error_messages,
+        client=request.client.host if request.client else None,
+    )
 
     return JSONResponse(
         status_code=422,
@@ -185,6 +233,13 @@ async def pydantic_core_validation_exception_handler(
             "input": str(error.get("input"))[:100] if error.get("input") else None,
         }
         sanitized_errors.append(sanitized_error)
+
+    record_validation_event(
+        endpoint=str(request.url.path),
+        success=False,
+        errors=error_messages,
+        client=request.client.host if request.client else None,
+    )
 
     return JSONResponse(
         status_code=422,
@@ -274,6 +329,11 @@ async def create_prompt(
             "tags": _parse_tags_field(validated_data.tags),
         }
 
+        record_validation_event(
+            endpoint="/api/prompts",
+            success=True,
+        )
+
         prompt_id = data_service.create_prompt(prompt_data)
         data_service.save_prompts()  # Save to disk
         return {"success": True, "prompt_id": prompt_id}
@@ -296,6 +356,12 @@ async def create_prompt(
                 "input": str(error.get("input"))[:100] if error.get("input") else None,  # Truncate long inputs
             }
             sanitized_errors.append(sanitized_error)
+
+        record_validation_event(
+            endpoint="/api/prompts",
+            success=False,
+            errors=error_messages,
+        )
 
         return JSONResponse(
             status_code=422,
@@ -426,6 +492,11 @@ async def update_prompt(
             "tags": _parse_tags_field(validated_data.tags),
         }
 
+        record_validation_event(
+            endpoint="/api/prompts/update",
+            success=True,
+        )
+
         success = data_service.update_prompt(
             prompt_id_int, prompt_data, validated_data.commit_message
         )
@@ -435,9 +506,14 @@ async def update_prompt(
         else:
             return JSONResponse(
                 status_code=500, content={"error": "Failed to update prompt"}
-            )
+        )
 
     except ValidationError as e:
+        record_validation_event(
+            endpoint="/api/prompts/update",
+            success=False,
+            errors=[err.get("msg", "") for err in e.errors()],
+        )
         return JSONResponse(
             status_code=422,
             content={"error": "Validation failed", "details": e.errors()},
@@ -553,6 +629,11 @@ async def export_prompts(
         try:
             format_enum = ExportFormat(format.lower())
         except ValueError:
+            record_validation_event(
+                endpoint="/api/export",
+                success=False,
+                errors=[f"Invalid format '{format}'"],
+            )
             return JSONResponse(
                 status_code=422,
                 content={
@@ -608,6 +689,7 @@ async def export_prompts(
 
         if success:
             # Return file for download
+            record_validation_event(endpoint="/api/export", success=True)
             return FileResponse(
                 temp_file, media_type="application/octet-stream", filename=final_filename
             )
@@ -621,6 +703,11 @@ async def export_prompts(
             )
 
     except ValidationError as e:
+        record_validation_event(
+            endpoint="/api/export",
+            success=False,
+            errors=[err.get("msg", "") for err in e.errors()],
+        )
         return JSONResponse(
             status_code=422,
             content={"error": "Validation failed", "details": e.errors()},
@@ -652,6 +739,11 @@ async def import_prompts(
         # Comprehensive file upload validation
         is_valid, error_message = await validate_upload_file(file)
         if not is_valid:
+            record_validation_event(
+                endpoint="/api/import",
+                success=False,
+                errors=[error_message],
+            )
             return JSONResponse(
                 status_code=400,
                 content={"error": error_message},
@@ -739,6 +831,11 @@ async def import_prompts(
         if temp_file_path and os.path.exists(temp_file_path):
             os.remove(temp_file_path)
 
+        record_validation_event(
+            endpoint="/api/import",
+            success=True,
+        )
+
         return JSONResponse(
             content={
                 "success": True,
@@ -752,6 +849,11 @@ async def import_prompts(
         # Clean up temp file on validation error
         if temp_file_path and os.path.exists(temp_file_path):
             os.remove(temp_file_path)
+        record_validation_event(
+            endpoint="/api/import",
+            success=False,
+            errors=[err.get("msg", "") for err in e.errors()],
+        )
         return JSONResponse(
             status_code=422,
             content={"error": "Validation failed", "details": e.errors()},
@@ -843,6 +945,10 @@ async def create_manual_backup(name: str = Form(None)):
 
         backup_id = backup_service.create_backup(validated_data.name)
         if backup_id:
+            record_validation_event(
+                endpoint="/api/backups",
+                success=True,
+            )
             return {"success": True, "backup_id": backup_id}
         else:
             return JSONResponse(
@@ -850,6 +956,11 @@ async def create_manual_backup(name: str = Form(None)):
             )
 
     except ValidationError as e:
+        record_validation_event(
+            endpoint="/api/backups",
+            success=False,
+            errors=[err.get("msg", "") for err in e.errors()],
+        )
         return JSONResponse(
             status_code=422,
             content={"error": "Validation failed", "details": e.errors()},
@@ -898,9 +1009,18 @@ async def cleanup_backups(retention_days: int = Form(30)):
         validated_data = BackupCleanupRequest(retention_days=retention_days)
 
         removed_count = backup_service.cleanup_old_backups(validated_data.retention_days)
+        record_validation_event(
+            endpoint="/api/backups/cleanup",
+            success=True,
+        )
         return {"success": True, "removed_count": removed_count}
 
     except ValidationError as e:
+        record_validation_event(
+            endpoint="/api/backups/cleanup",
+            success=False,
+            errors=[err.get("msg", "") for err in e.errors()],
+        )
         return JSONResponse(
             status_code=422,
             content={"error": "Validation failed", "details": e.errors()},
@@ -915,9 +1035,18 @@ async def compress_backups(days_threshold: int = Form(7)):
         validated_data = BackupCompressRequest(days_threshold=days_threshold)
 
         compressed_count = backup_service.compress_old_backups(validated_data.days_threshold)
+        record_validation_event(
+            endpoint="/api/backups/compress",
+            success=True,
+        )
         return {"success": True, "compressed_count": compressed_count}
 
     except ValidationError as e:
+        record_validation_event(
+            endpoint="/api/backups/compress",
+            success=False,
+            errors=[err.get("msg", "") for err in e.errors()],
+        )
         return JSONResponse(
             status_code=422,
             content={"error": "Validation failed", "details": e.errors()},
@@ -929,6 +1058,18 @@ async def get_backup_stats():
     """Get backup statistics"""
     stats = backup_service.get_backup_stats()
     return stats
+
+
+@app.get("/api/validation/stats")
+async def get_validation_stats():
+    """Return validation monitoring snapshot."""
+    if not validation_monitor:
+        return JSONResponse(
+            status_code=503,
+            content={"error": "Validation monitoring not initialized"},
+        )
+
+    return JSONResponse(content=validation_monitor.snapshot())
 
 
 # Version Control Endpoints
@@ -1055,6 +1196,11 @@ async def revert_to_version(
     except ValueError:
         return JSONResponse(status_code=400, content={"error": "Invalid prompt ID"})
     except ValidationError as e:
+        record_validation_event(
+            endpoint="/api/prompts/version/revert",
+            success=False,
+            errors=[err.get("msg", "") for err in e.errors()],
+        )
         return JSONResponse(
             status_code=422,
             content={"error": "Validation failed", "details": e.errors()},
@@ -1088,6 +1234,10 @@ async def revert_to_version(
         data_service.save_prompts()
         new_versions = data_service.get_prompt_versions(prompt_id_int)
         new_version_id = new_versions[-1].get("version_id") if new_versions else None
+        record_validation_event(
+            endpoint="/api/prompts/version/revert",
+            success=True,
+        )
         return JSONResponse(
             content={
                 "success": True,
