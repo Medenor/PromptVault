@@ -8,6 +8,7 @@ from pydantic import ValidationError
 import pydantic_core
 import json
 import os
+import time
 from datetime import datetime
 from typing import List, Optional, Tuple
 
@@ -16,6 +17,7 @@ from src.services.prompt_filter_service import PromptFilterService
 from src.services.prompt_versioning_service import PromptVersioningService
 from src.services.prompt_import_export_service import PromptImportExportService
 from src.services.backup_service import BackupService
+from src.services.logging_service import logging_service
 from src.web.models import (
     PromptCreateRequest,
     PromptUpdateRequest,
@@ -38,6 +40,8 @@ from src.web.monitoring import ValidationMonitor
 
 app = FastAPI(title="PromptVault Web", version="0.1.0")
 validation_monitor: Optional[ValidationMonitor] = None
+logger = logging_service.get_logger(__name__)
+audit_logger = logging_service.get_audit_logger()
 
 # Mount static files
 app.mount("/static", StaticFiles(directory="src/web/static"), name="static")
@@ -92,6 +96,9 @@ def configure_services(
     resolved_file, resolved_dir = _resolve_data_locations(data_file, data_dir)
 
     data_service = PromptDataService(resolved_file)
+    data_dir_base = resolved_dir or os.path.dirname(data_service.data_file)
+    logs_dir = os.path.join(data_dir_base, "logs")
+    logging_service.configure_logging(log_dir=logs_dir)
     filter_service = PromptFilterService()
     versioning_service = PromptVersioningService()
     import_export_service = PromptImportExportService()
@@ -131,7 +138,60 @@ def record_validation_event(
             endpoint=endpoint, success=success, errors=errors, client=client
         )
     except Exception as exc:  # pragma: no cover - defensive
-        print(f"[ValidationMonitor] Unable to record event for {endpoint}: {exc}")
+        logger.warning(
+            "Validation monitor failed to record event",
+            extra={
+                "event": "validation.monitor.error",
+                "action": endpoint,
+                "resource_id": endpoint,
+                "status": "failure",
+            },
+            exc_info=exc,
+        )
+
+
+@app.middleware("http")
+async def request_logging_middleware(request: Request, call_next):
+    """Attach request IDs and emit structured request logs."""
+    request_id = request.headers.get("X-Request-ID") or logging_service.generate_request_id()
+    actor = (
+        request.headers.get("X-PromptVault-Actor")
+        or request.headers.get("X-Forwarded-User")
+        or "anonymous"
+    )
+    start_time = time.perf_counter()
+    with logging_service.request_context(request_id=request_id, actor=actor):
+        try:
+            response = await call_next(request)
+        except Exception:
+            duration_ms = round((time.perf_counter() - start_time) * 1000, 2)
+            logger.exception(
+                "Unhandled exception during request",
+                extra={
+                    "event": "http.request.error",
+                    "action": f"{request.method} {request.url.path}",
+                    "resource_id": str(request.url.path),
+                    "status": 500,
+                    "duration_ms": duration_ms,
+                    "client": request.client.host if request.client else None,
+                },
+            )
+            raise
+
+        duration_ms = round((time.perf_counter() - start_time) * 1000, 2)
+        logger.info(
+            "Request handled",
+            extra={
+                "event": "http.request",
+                "action": f"{request.method} {request.url.path}",
+                "resource_id": str(request.url.path),
+                "status": response.status_code,
+                "duration_ms": duration_ms,
+                "client": request.client.host if request.client else None,
+            },
+        )
+        response.headers["X-Request-ID"] = request_id
+        return response
 
 
 # Custom validation error handler
@@ -531,8 +591,14 @@ async def delete_prompt(prompt_id: str):
     # Create automatic backup before deletion
     backup_id = backup_service.create_backup(f"pre_delete_prompt_{prompt_id}")
     if backup_id:
-        print(
-            f"Automatic backup created before deleting prompt {prompt_id}: {backup_id}"
+        audit_logger.info(
+            "Automatic backup created before deleting prompt",
+            extra={
+                "event": "backup.auto",
+                "action": "backup_before_delete",
+                "resource_id": str(prompt_id),
+                "backup_id": backup_id,
+            },
         )
 
     success = data_service.delete_prompt(prompt_id_int)
@@ -799,7 +865,15 @@ async def import_prompts(
             # Create automatic backup before replacing all data
             backup_id = backup_service.create_backup("pre_replace_import")
             if backup_id:
-                print(f"Automatic backup created before replace import: {backup_id}")
+                audit_logger.info(
+                    "Automatic backup created before replace import",
+                    extra={
+                        "event": "backup.auto",
+                        "action": "backup_before_replace_import",
+                        "resource_id": "import",
+                        "backup_id": backup_id,
+                    },
+                )
 
             # Clear existing data
             data_service.clear_all_prompts()

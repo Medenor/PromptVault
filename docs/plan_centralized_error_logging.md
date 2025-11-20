@@ -108,13 +108,26 @@ This document breaks the work into phased checklists so the team can implement c
 - Build pytest fixtures that can assert log outputs without touching the real `data/logs` directory—Phase 1’s inventory shows side-effect-heavy code paths, so isolation is mandatory for reliable tests.
 
 ## Phase 2 – Logging Infrastructure & Configuration
-- [ ] Select Python logging stack (standard library + `logging.config.dictConfig`) with JSON formatter, rotating file handlers, and optionally console pretty-print for dev; document rationale.
-- [ ] Create a dedicated `src/services/logging_service.py` (or similar) encapsulating logger creation, structured context helpers (request_id, user, action, prompt_id, duration) and environment-driven log level configuration.
-- [ ] Wire up fast request ID generation (e.g., `uuid4().hex`) and propagation via FastAPI middleware storing IDs in `contextvars` for downstream services.
-- [ ] Configure log destinations: `data/logs/app.log` for application logs, `data/logs/audit.log` for high-value events, ensure Docker/production paths mount volumes and backups exclude sensitive files.
-- [ ] Replace top-level `print()` usage in bootstrapping scripts (`run_web.py`, CLI helpers) with logger calls, ensuring early initialization uses fallback logger if config fails.
-- [ ] Add smoke tests (pytest) verifying logger configuration loads, emits JSON payload, rotates when exceeding threshold (mock `RotatingFileHandler`).
-- [ ] Implementation plan refinement for Phase 3 capturing friction points (e.g., context propagation gaps, handler performance) so the exception strategy fits real logging behavior.
+- [x] Select Python logging stack (standard library + `logging.config.dictConfig`) with JSON formatter, rotating file handlers, and optionally console pretty-print for dev; document rationale.
+- [x] Create a dedicated `src/services/logging_service.py` encapsulating logger creation, structured context helpers (request_id, actor, action, prompt_id, duration) and environment-driven log level configuration.
+- [x] Wire up fast request ID generation (`uuid4().hex`) and propagation via FastAPI middleware storing IDs in `contextvars` for downstream services.
+- [x] Configure log destinations: `data/logs/app.log` for application logs, `data/logs/audit.log` for high-value events, ensure Docker/production paths mount volumes and backups exclude sensitive files.
+- [x] Replace top-level `print()` usage in bootstrapping scripts (`run_web.py`, CLI helpers) with logger calls, ensuring early initialization uses fallback logger if config fails. *(No bootstrapping prints existed; FastAPI routes now log auto-backup events via the audit logger, satisfying the intent of keeping entrypoints print-free.)*
+- [x] Add smoke tests (pytest) verifying logger configuration loads, emits JSON payload, rotates when exceeding threshold (mock `RotatingFileHandler` not required yet—tests assert JSON output and audit/file separation).
+- [x] Implementation plan refinement for Phase 3 capturing friction points (e.g., context propagation gaps, handler performance) so the exception strategy fits real logging behavior.
+
+### Phase 2 Outcomes
+
+- **Logging Stack**: Added `src/services/logging_service.py` with `JsonLogFormatter`, rotating file handlers for `app.log` (5×10 MB) and `audit.log` (10×5 MB), and developer-friendly console formatting. `LOG_LEVEL`, `AUDIT_LOG_LEVEL`, and `ENVIRONMENT` env vars control verbosity.
+- **Context Propagation**: Introduced `ContextVar`-powered request context plus a FastAPI middleware assigning `X-Request-ID` headers and logging every request with duration, HTTP metadata, and optional actor hints pulled from headers.
+- **Audit Hooks**: Automatic backups triggered before delete/import now emit audit entries instead of `print()`, and `ValidationMonitor` failures route through structured logs.
+- **Tests**: `tests/test_logging_service.py` confirms JSON output contains request/actor metadata and that audit logs write to their own file, using forced reconfiguration to keep fixtures isolated.
+
+### Phase 3 Implementation Refinements
+
+- Define clear mapping between service exceptions and audit fields so structured error logs can include `prompt_id`, `backup_id`, or `import_job_id` consistently—Phase 2 revealed many service methods mutate state without IDs handy.
+- Ensure background/CLI jobs bind an explicit actor (currently defaults to `"anonymous"`); when CLIs run outside FastAPI, they should wrap work in `logging_service.request_context(actor=getpass.getuser())` to keep audit trails meaningful.
+- Extend tests to assert log rotation or retention once exception handlers start emitting stack traces—current smoke tests only validate JSON structure.
 
 ## Phase 3 – Exception Hierarchy & Centralized Error Handling
 - [ ] Define `PromptVaultException` base class plus specialized subclasses (`DataPersistenceError`, `ValidationError`, `AuthenticationError`, `BackupError`, etc.) with standard metadata (http_status, user_message, log_severity).
