@@ -271,7 +271,16 @@ PromptVault is a modern web-based prompt management application built with FastA
 - **Single Responsibility**: Each function/class should have one clear purpose
 - **Code Organization**: Group related functionality together in modules
 - **Constants**: Define magic numbers and strings as named constants
-- **Logging**: Use print statements for errors (no logging framework currently configured)
+- **Logging**: Legacy code still uses `print()` for error reporting, but Issue #10 requires migrating to centralized structured logging with JSON payloads, request IDs, and rotating files in `data/logs/`. Reference `docs/plan_centralized_error_logging.md` for the mandated fields and retention targets, and prefer the shared logging helpers once they land. Use direct `print()` only as a short-lived fallback when no logger is injected yet.
+
+### Observability Requirements (Issue #10)
+
+- **Structured Output**: Application logs (`data/logs/app.log`) and audit logs (`data/logs/audit.log`) must emit JSON objects containing `timestamp`, `level`, `event`, `request_id`, `actor`, `action`, `resource_id`, `status`, and `duration_ms`. Avoid logging prompt or note bodies—stick to metadata.
+- **Request Correlation**: Each FastAPI request must receive a request ID (UUIDv4 hex) propagated via `contextvars` into all services and included in every downstream log event.
+- **Retention & Rotation**: Target five 10 MB app log files (~2 weeks) and ten 5 MB audit files (~30 days). The `./data` host volume (mounted as `/app/data` in Docker) already persists logs; no extra volume is required, but operators need to copy `data/logs/` if they want log backups.
+- **Audit Coverage**: Emit audit entries for prompt CRUD, version reverts, import/export actions, backup lifecycle events, cleanup/compression operations, and any automated intervention (auto backups before deletes/imports). Include actor identity (`getpass.getuser()` until auth ships) and outcome (`success`, `failure`).
+- **Configurability**: Support `LOG_LEVEL` and `AUDIT_LOG_LEVEL` env vars (default `INFO`) plus developer-friendly console formatting when `ENVIRONMENT=development`. Provide documentation in README/AGENTS describing the knobs.
+- **Health Signals**: ValidationMonitor write failures, frontend error reports, and logging subsystem issues must be logged through the structured logger so ops teams can alert on them.
 
 ## Testing Guidelines
 

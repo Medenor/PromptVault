@@ -44,6 +44,12 @@
   - Create log analysis scripts or integrate with monitoring tools (ELK stack, Grafana)
   - Add logging documentation to AGENTS.md with examples and best practices
   - Write tests validating that critical actions generate audit logs
+  - **Success Metrics**:
+    - `rg "print(" src run_web.py` (tests excluded) must return zero matches in CI, ensuring no regressions to `print()`-based logging.
+    - Every FastAPI endpoint emits a structured request log with request ID, method, path, status code, latency, and actor metadata—validated by integration tests that capture logger output.
+    - Each critical workflow (prompt CRUD, version revert, import/export, backup create/restore/cleanup/compress/delete) produces at least one audit log entry capturing actor, action, resource identifier, and outcome.
+    - All exceptions raised from services descend from `PromptVaultException` (or subclasses) and bubble through centralized handlers that both log structured errors and respond with a JSON payload containing the correlation/request ID.
+    - ValidationMonitor plus frontend telemetry emit heartbeat logs at least every 15 minutes so operators can detect logging stalls.
 
 ### 3. Authentication & Authorization System
 
