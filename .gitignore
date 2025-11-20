@@ -26,6 +26,7 @@ coverage.xml
 .pytest_cache
 .hypothesis
 htmlcov/
+*.egg-info/
 
 # Virtual environments
 .env

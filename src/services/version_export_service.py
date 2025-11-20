@@ -2,7 +2,12 @@
 
 import json
 from typing import Dict, Any, List, Optional
-from datetime import datetime
+from datetime import datetime, timezone
+
+
+def _utc_now_iso_z() -> str:
+    """Return current UTC time in ISO format with Z suffix."""
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
 class VersionExportService:
@@ -48,7 +53,7 @@ class VersionExportService:
         """
         export_data = {
             "prompt_id": prompt_id,
-            "export_date": datetime.utcnow().isoformat() + "Z",
+            "export_date": _utc_now_iso_z(),
             "total_versions": len(versions),
             "versions": versions,
         }
@@ -98,7 +103,7 @@ class VersionExportService:
         """
         lines = []
         lines.append(f"# Version History for Prompt {prompt_id}\n")
-        lines.append(f"**Export Date:** {datetime.utcnow().isoformat()}Z\n")
+        lines.append(f"**Export Date:** {_utc_now_iso_z()}\n")
         lines.append(f"**Total Versions:** {len(versions)}\n")
         lines.append("---\n")
 
@@ -274,7 +279,7 @@ class VersionExportService:
         Returns:
             str: Filename
         """
-        timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
         extension = format if format in ["json", "csv", "md"] else "txt"
         if format == "markdown":
             extension = "md"

@@ -4,7 +4,17 @@ import json
 import zlib
 import base64
 from typing import Dict, Any, List, Optional
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+
+
+def _utc_now() -> datetime:
+    """Return aware UTC now."""
+    return datetime.now(timezone.utc)
+
+
+def _utc_now_iso_z() -> str:
+    """Return ISO string for UTC with Z suffix."""
+    return _utc_now().isoformat().replace("+00:00", "Z")
 
 
 class VersionCompressionService:
@@ -35,7 +45,9 @@ class VersionCompressionService:
         timestamp_str = version.get("timestamp", "")
         try:
             version_date = datetime.fromisoformat(timestamp_str.replace("Z", "+00:00"))
-            age_days = (datetime.utcnow() - version_date.replace(tzinfo=None)).days
+            if version_date.tzinfo is None:
+                version_date = version_date.replace(tzinfo=timezone.utc)
+            age_days = (_utc_now() - version_date).days
             return age_days >= self.compression_threshold_days
         except (ValueError, AttributeError):
             return False
@@ -72,7 +84,7 @@ class VersionCompressionService:
                 "data": encoded_data,
             }
             compressed_version["compressed"] = True
-            compressed_version["compressed_at"] = datetime.utcnow().isoformat() + "Z"
+            compressed_version["compressed_at"] = _utc_now_iso_z()
 
         return compressed_version
 
@@ -210,7 +222,7 @@ class VersionCompressionService:
         archived = []
         kept = []
 
-        cutoff_date = datetime.utcnow() - timedelta(days=days_threshold)
+        cutoff_date = _utc_now() - timedelta(days=days_threshold)
 
         for version in versions:
             timestamp_str = version.get("timestamp", "")
@@ -218,7 +230,9 @@ class VersionCompressionService:
                 version_date = datetime.fromisoformat(
                     timestamp_str.replace("Z", "+00:00")
                 )
-                if version_date.replace(tzinfo=None) < cutoff_date:
+                if version_date.tzinfo is None:
+                    version_date = version_date.replace(tzinfo=timezone.utc)
+                if version_date < cutoff_date:
                     archived.append(version)
                 else:
                     kept.append(version)
@@ -230,7 +244,7 @@ class VersionCompressionService:
             "kept_count": len(kept),
             "archived_versions": archived,
             "kept_versions": kept,
-            "archive_date": datetime.utcnow().isoformat() + "Z",
+            "archive_date": _utc_now_iso_z(),
             "threshold_days": days_threshold,
         }
 
