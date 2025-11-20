@@ -243,6 +243,7 @@ PORT=8001 python3 run_web.py
 - **Data Backup System**: Comprehensive backup and restoration with automatic pre-operation backups, manual backups, cleanup, and compression
 - **Responsive Design**: Modern, mobile-friendly interface that works on all devices
 - **Multi-language Support**: Internationalization with English, French, Spanish, and German
+- **Validation & Monitoring**: End-to-end validation/sanitization across API, server, and client with `/api/validation/stats` metrics (see below)
 
 ### Internationalization
 
@@ -252,6 +253,17 @@ PromptVault supports multiple languages (English, French, Spanish, German). The 
 
 - Web interface uses JSON translation files in `src/web/static/locales/`
 - Translations are loaded dynamically using i18next
+
+### Validation & Monitoring
+
+PromptVault ships with an end-to-end input validation and sanitization framework:
+
+- **API contracts**: All POST/PUT endpoints use Pydantic schemas with length, pattern, and enum constraints (prompts, export/import, backups, version revert).
+- **Server sanitization**: Safe filename/backup handling, upload MIME/size checks, control-character stripping, whitespace normalization, tag deduplication.
+- **Client parity**: Real-time validation, character counters, duplicate-tag warnings, ARIA/i18n (en/fr/es/de), suppression of native browser prompts.
+- **Monitoring**: Validation metrics persisted to `data/logs/validation_metrics.json` and exposed via `GET /api/validation/stats` (success/failure counts, per-endpoint breakdown, recent failures, failure_rate).
+
+See `docs/API_VALIDATION_AND_MONITORING.md` and `docs/VALIDATION_TEST_CHECKLIST.md` for usage and test steps.
 
 ### Project Structure
 

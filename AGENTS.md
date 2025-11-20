@@ -360,6 +360,7 @@ When working on a development session:
 5. **Update Tests**: Ensure test coverage remains above 85%
 6. **Test Your Changes**: Run relevant tests before committing
 7. **Document Changes**: Update CHANGELOG.md with user-facing changes
+8. **Validation Framework**: Verify client/server validation parity, `/api/validation/stats` monitoring, and keep `docs/API_VALIDATION_AND_MONITORING.md` + `docs/VALIDATION_TEST_CHECKLIST.md` aligned
 
 ### Before Making Changes
 
