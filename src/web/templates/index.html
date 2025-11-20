@@ -6,6 +6,7 @@
     <title>PromptVault</title>
     <link rel="icon" type="image/png" sizes="32x32" href="static/favicon.png">
     <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/validation.css">
     <script src="https://unpkg.com/i18next@23.7.6/i18next.min.js"></script>
     <script src="https://unpkg.com/i18next-browser-languagedetector@7.2.0/i18nextBrowserLanguageDetector.min.js"></script>
     <script src="https://unpkg.com/i18next-http-backend@2.4.2/i18nextHttpBackend.min.js"></script>
@@ -110,38 +111,80 @@
                 </div>
 
                 <div class="prompt-editor is-hidden" id="prompt-editor">
-                    <form id="prompt-form">
+                    <form id="prompt-form" novalidate>
                         <div class="form-group">
                             <label for="prompt-title" data-i18n="form.title">Title:</label>
-                            <input type="text" id="prompt-title" name="title" data-i18n="[placeholder]form.titlePlaceholder" required>
+                            <input
+                                type="text"
+                                id="prompt-title"
+                                name="title"
+                                data-i18n="[placeholder]form.titlePlaceholder"
+                                required
+                                maxlength="200"
+                                aria-required="true"
+                                aria-describedby="prompt-title-counter prompt-title-error">
+                            <div class="char-counter" id="prompt-title-counter" aria-live="polite"></div>
+                            <div class="validation-error" id="prompt-title-error" role="alert" aria-live="assertive"></div>
                         </div>
 
                         <div class="form-group">
                             <label for="prompt-content" data-i18n="form.content">Content:</label>
-                            <textarea id="prompt-content" name="prompt" data-i18n="" rows="10" required></textarea>
+                            <textarea
+                                id="prompt-content"
+                                name="prompt"
+                                data-i18n=""
+                                rows="10"
+                                required
+                                maxlength="50000"
+                                aria-required="true"
+                                aria-describedby="prompt-content-counter prompt-content-error"></textarea>
+                            <div class="char-counter" id="prompt-content-counter" aria-live="polite"></div>
+                            <div class="validation-error" id="prompt-content-error" role="alert" aria-live="assertive"></div>
                         </div>
 
                         <div class="form-group">
                             <label for="prompt-category" data-i18n="form.category">Category:</label>
-                            <select id="prompt-category" name="category">
+                            <select
+                                id="prompt-category"
+                                name="category"
+                                aria-describedby="prompt-category-error">
                                 <option value="">No category</option>
                                 {% for category in categories %}
                                 <option value="{{ category }}">{{ category }}</option>
                                 {% endfor %}
                             </select>
+                            <div class="validation-error" id="prompt-category-error" role="alert" aria-live="assertive"></div>
                         </div>
 
                         <div class="form-group">
                             <label for="prompt-tags" data-i18n="form.tags">Tags (comma-separated):</label>
                             <div class="tag-input-wrapper">
-                                <input type="text" id="prompt-tags" name="tags" data-i18n="[placeholder]form.tagPlaceholder" autocomplete="off">
+                                <input
+                                    type="text"
+                                    id="prompt-tags"
+                                    name="tags"
+                                    data-i18n="[placeholder]form.tagPlaceholder"
+                                    autocomplete="off"
+                                    aria-describedby="prompt-tags-counter prompt-tags-error prompt-tags-duplicates">
                                 <div id="tag-autocomplete" class="tag-autocomplete is-hidden"></div>
                             </div>
+                            <div class="char-counter" id="prompt-tags-counter" aria-live="polite"></div>
+                            <div class="validation-warning" id="prompt-tags-duplicates" role="status" aria-live="polite"></div>
+                            <div class="validation-error" id="prompt-tags-error" role="alert" aria-live="assertive"></div>
                         </div>
 
                         <div class="form-group">
                             <label for="commit-message" data-i18n="version.commitMessage">Commit Message:</label>
-                            <input type="text" id="commit-message" name="commit_message" data-i18n="[placeholder]version.commitMessagePlaceholder" placeholder="Describe your changes...">
+                            <input
+                                type="text"
+                                id="commit-message"
+                                name="commit_message"
+                                data-i18n="[placeholder]version.commitMessagePlaceholder"
+                                placeholder="Describe your changes..."
+                                maxlength="500"
+                                aria-describedby="commit-message-counter commit-message-error">
+                            <div class="char-counter" id="commit-message-counter" aria-live="polite"></div>
+                            <div class="validation-error" id="commit-message-error" role="alert" aria-live="assertive"></div>
                         </div>
 
                         <div class="form-actions">
@@ -225,7 +268,16 @@
                 <p data-i18n="version.revertWarning">Are you sure you want to revert to this version? This will create a new version with the reverted content.</p>
                 <div class="form-group">
                     <label for="revert-commit-message" data-i18n="version.commitMessage">Commit Message:</label>
-                    <input type="text" id="revert-commit-message" class="form-control" placeholder="Describe why you're reverting..." data-i18n="[placeholder]version.revertMessagePlaceholder">
+                    <input
+                        type="text"
+                        id="revert-commit-message"
+                        class="form-control"
+                        placeholder="Describe why you're reverting..."
+                        data-i18n="[placeholder]version.revertMessagePlaceholder"
+                        maxlength="500"
+                        aria-describedby="revert-commit-counter revert-commit-error">
+                    <div class="char-counter" id="revert-commit-counter" aria-live="polite"></div>
+                    <div class="validation-error" id="revert-commit-error" role="alert" aria-live="assertive"></div>
                 </div>
             </div>
             <div class="modal-footer">
@@ -235,6 +287,9 @@
         </div>
     </div>
 
+    <script type="module" src="/static/js/validation_constants.js"></script>
+    <script type="module" src="/static/js/validators.js"></script>
+    <script type="module" src="/static/js/form_validation.js"></script>
     <script src="/static/js/app.js"></script>
 </body>
 </html>

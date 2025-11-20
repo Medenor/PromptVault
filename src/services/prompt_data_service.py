@@ -5,6 +5,18 @@ from datetime import datetime
 import getpass
 from typing import Dict, Any, Set, List, Tuple, Iterable
 
+# Import sanitization utilities from validators
+from src.web.validators import (
+    sanitize_text_field,
+    sanitize_tags,
+    MAX_TITLE_LENGTH,
+    MAX_PROMPT_LENGTH,
+    MAX_CATEGORY_LENGTH,
+    MAX_NOTE_LENGTH,
+    MAX_TAG_COUNT,
+    MAX_TAG_LENGTH,
+)
+
 
 class PromptDataService:
     """Service for handling prompt data operations including loading, saving, and migration."""
@@ -52,19 +64,56 @@ class PromptDataService:
         """
         Normalize prompt payload fields such as tags prior to persistence.
 
+        This provides defense-in-depth by sanitizing data at the service layer,
+        even if API validation is bypassed or data comes from other sources.
+
         Args:
             data (Dict[str, Any]): Prompt data to normalize.
 
         Returns:
             Dict[str, Any]: Normalized prompt data.
+
+        Sanitization applied:
+            - Title: Control character removal, whitespace normalization, length limit
+            - Prompt: Control character removal (preserves newlines), length limit
+            - Category: Control character removal, whitespace normalization, length limit
+            - Note: Control character removal (preserves newlines), length limit
+            - Tags: Deduplication, sanitization, length limits
         """
         if not isinstance(data, dict):
             return {}
+
+        # Sanitize title
+        if "title" in data and data["title"]:
+            data["title"] = sanitize_text_field(
+                str(data["title"]), max_length=MAX_TITLE_LENGTH, allow_newlines=False
+            )
+
+        # Sanitize prompt content
+        if "prompt" in data and data["prompt"]:
+            data["prompt"] = sanitize_text_field(
+                str(data["prompt"]), max_length=MAX_PROMPT_LENGTH, allow_newlines=True
+            )
+
+        # Sanitize category
+        if "category" in data and data["category"]:
+            data["category"] = sanitize_text_field(
+                str(data["category"]), max_length=MAX_CATEGORY_LENGTH, allow_newlines=False
+            )
+
+        # Sanitize note
+        if "note" in data and data["note"]:
+            data["note"] = sanitize_text_field(
+                str(data["note"]), max_length=MAX_NOTE_LENGTH, allow_newlines=True
+            )
+
+        # Sanitize and deduplicate tags
         tags = data.get("tags", [])
         if isinstance(tags, list):
-            data["tags"] = self._normalize_tags(tags)
+            data["tags"] = sanitize_tags(tags, max_count=MAX_TAG_COUNT, max_length_per_tag=MAX_TAG_LENGTH)
         else:
             data["tags"] = []
+
         return data
 
     def save_prompts(self) -> bool:
@@ -381,7 +430,7 @@ class PromptDataService:
                 ordered_categories.append(normalized)
                 seen_categories.add(normalized)
 
-        if not ordered_categories:
+        if not ordered_categories and self.prompts:
             ordered_categories.append("No category")
 
         self.categories = ordered_categories

@@ -1,7 +1,12 @@
 import uuid
-from datetime import datetime
 import getpass
+from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional
+
+
+def _utc_now_iso_z() -> str:
+    """Return current UTC time in ISO format with Z suffix."""
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
 class PromptVersioningService:
@@ -27,7 +32,7 @@ class PromptVersioningService:
         Returns:
             str: Current timestamp
         """
-        return datetime.utcnow().isoformat() + "Z"
+        return _utc_now_iso_z()
 
     def get_current_user(self) -> str:
         """

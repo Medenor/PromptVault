@@ -67,6 +67,7 @@ let promptCache = {};
 let lastSelectedPromptId = null; // Track the last selected prompt for keyboard shortcuts
 
 const HIDDEN_CLASS = 'is-hidden';
+const ERROR_VISIBLE_CLASS = 'validation-error-visible';
 
 function showElement(element) {
     if (element) {
@@ -77,6 +78,51 @@ function showElement(element) {
 function hideElement(element) {
     if (element) {
         element.classList.add(HIDDEN_CLASS);
+    }
+}
+
+function clearPromptFormErrors() {
+    const errorFields = [
+        'prompt-title-error',
+        'prompt-content-error',
+        'prompt-tags-error',
+        'commit-message-error'
+    ];
+    errorFields.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.textContent = '';
+            delete el.dataset.errorKey;
+            el.classList.remove(ERROR_VISIBLE_CLASS);
+        }
+    });
+    const inputs = ['prompt-title', 'prompt-content', 'prompt-tags', 'commit-message'];
+    inputs.forEach(id => {
+        const field = document.getElementById(id);
+        if (field) {
+            field.classList.remove('field-error');
+            field.removeAttribute('aria-invalid');
+        }
+    });
+    const banner = document.getElementById('validation-error-banner');
+    if (banner) {
+        banner.style.display = 'none';
+    }
+}
+
+function showPromptFieldError(fieldId, errorId, messageKey) {
+    const errorEl = document.getElementById(errorId);
+    const field = document.getElementById(fieldId);
+    const message = i18next.t(messageKey);
+    if (errorEl) {
+        errorEl.textContent = message;
+        errorEl.dataset.errorKey = messageKey;
+        errorEl.classList.add(ERROR_VISIBLE_CLASS);
+    }
+    if (field) {
+        field.classList.add('field-error');
+        field.setAttribute('aria-invalid', 'true');
+        field.focus();
     }
 }
 
@@ -371,6 +417,27 @@ async function handlePromptSubmit(event) {
     const formData = new FormData(form);
     const isEditMode = form.dataset.mode === 'edit';
     const promptId = form.dataset.id;
+
+    clearPromptFormErrors();
+
+    // Client-side required checks to avoid native browser messages
+    const title = formData.get('title') ? formData.get('title').trim() : '';
+    const promptContent = formData.get('prompt') ? formData.get('prompt').trim() : '';
+    let hasError = false;
+
+    if (!title) {
+        showPromptFieldError('prompt-title', 'prompt-title-error', 'validation.titleRequired');
+        hasError = true;
+    }
+
+    if (!promptContent) {
+        showPromptFieldError('prompt-content', 'prompt-content-error', 'validation.contentRequired');
+        hasError = true;
+    }
+
+    if (hasError) {
+        return;
+    }
 
     // Debug logging
     console.log('Form submission:', { isEditMode, promptId });

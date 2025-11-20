@@ -1,7 +1,12 @@
 """Service for handling version tagging and labeling operations."""
 
 from typing import Dict, Any, List, Optional
-from datetime import datetime
+from datetime import datetime, timezone
+
+
+def _utc_now_iso_z() -> str:
+    """Return current UTC time in ISO format with Z suffix."""
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
 class VersionTaggingService:
@@ -30,7 +35,7 @@ class VersionTaggingService:
             "version_id": version_id,
             "tag_name": tag_name,
             "description": description,
-            "created_at": datetime.utcnow().isoformat() + "Z",
+            "created_at": _utc_now_iso_z(),
             "color": self._get_tag_color(tag_name),
         }
 
@@ -85,7 +90,7 @@ class VersionTaggingService:
         new_tag = {
             "tag_name": tag_name,
             "description": description,
-            "created_at": datetime.utcnow().isoformat() + "Z",
+            "created_at": _utc_now_iso_z(),
             "color": self._get_tag_color(tag_name),
         }
         version_info["tags"].append(new_tag)

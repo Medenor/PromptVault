@@ -258,11 +258,12 @@ class TestExportEndpoints:
             },
         )
         assert response.status_code == 200
-        assert response.headers["content-disposition"].endswith('.csv"')
-
-        export_path = Path("/tmp") / f"{filename}.csv"
-        assert export_path.exists()
-        export_path.unlink(missing_ok=True)
+        # Verify correct content-disposition header with sanitized filename
+        assert '.csv"' in response.headers["content-disposition"]
+        assert "api_export_csv" in response.headers["content-disposition"]
+        # Verify response contains CSV content
+        assert len(response.content) > 0
+        # Note: Secure temp files use randomized names, so we can't check /tmp path
 
     def test_export_prompts_markdown(self, api_client):
         filename = "api_export_md"
@@ -276,10 +277,11 @@ class TestExportEndpoints:
             },
         )
         assert response.status_code == 200
-
-        export_path = Path("/tmp") / f"{filename}.markdown"
-        assert export_path.exists()
-        export_path.unlink(missing_ok=True)
+        # Verify correct content-disposition header with sanitized filename
+        assert '.md"' in response.headers["content-disposition"]
+        assert "api_export_md" in response.headers["content-disposition"]
+        # Verify response contains markdown content
+        assert len(response.content) > 0
 
     def test_export_prompts_json(self, api_client):
         filename = "api_export_json"
@@ -293,18 +295,23 @@ class TestExportEndpoints:
             },
         )
         assert response.status_code == 200
-
-        export_path = Path("/tmp") / f"{filename}.json"
-        with open(export_path, "r", encoding="utf-8") as f:
-            payload = json.load(f)
+        # Verify correct content-disposition header with sanitized filename
+        assert '.json"' in response.headers["content-disposition"]
+        assert "api_export_json" in response.headers["content-disposition"]
+        # Verify response contains valid JSON with expected structure
+        payload = json.loads(response.content)
+        assert "total_prompts" in payload
         assert payload["total_prompts"] >= 2
-        export_path.unlink(missing_ok=True)
 
     def test_export_invalid_format_returns_error(self, api_client):
         response = api_client.post(
             "/api/export", data={"format": "xml", "filename": "bad_export"}
         )
-        assert response.status_code == 400
+        # Pydantic validation returns 422 for invalid enum values
+        assert response.status_code == 422
+        # Verify error message indicates validation failure
+        data = response.json()
+        assert "error" in data or "detail" in data
 
 
 class TestImportEndpoints:
@@ -512,12 +519,10 @@ class TestImportExportPages:
             },
         )
         assert response.status_code == 200
-
-        export_path = Path("/tmp") / f"{filename}.json"
-        with open(export_path, "r", encoding="utf-8") as handle:
-            payload = json.load(handle)
+        # Verify content is in the response (secure temp files use random names)
+        payload = json.loads(response.content)
+        assert "total_prompts" in payload
         assert payload["total_prompts"] == 1
-        export_path.unlink(missing_ok=True)
 
     def test_export_handles_exception(self, api_client, monkeypatch):
         def _explode(*args, **kwargs):
@@ -648,11 +653,12 @@ class TestBackupManagementEndpoints:
         assert delete.status_code == 200
         assert delete.json()["success"] is True
 
-        cleanup = api_client.post("/api/backups/cleanup", data={"retention_days": 0})
+        # Use minimum valid values (validation requires >= 1)
+        cleanup = api_client.post("/api/backups/cleanup", data={"retention_days": 1})
         assert cleanup.status_code == 200
         assert cleanup.json()["success"] is True
 
-        compress = api_client.post("/api/backups/compress", data={"days_threshold": 0})
+        compress = api_client.post("/api/backups/compress", data={"days_threshold": 1})
         assert compress.status_code == 200
         assert compress.json()["success"] is True
 
