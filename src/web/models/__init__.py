@@ -9,6 +9,7 @@ from .requests import (
     BackupCleanupRequest,
     BackupCompressRequest,
     VersionRevertRequest,
+    FrontendLogEntry,
 )
 from .enums import ExportFormat, ImportMode
 
@@ -21,6 +22,7 @@ __all__ = [
     "BackupCleanupRequest",
     "BackupCompressRequest",
     "VersionRevertRequest",
+    "FrontendLogEntry",
     "ExportFormat",
     "ImportMode",
 ]

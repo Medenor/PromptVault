@@ -68,6 +68,20 @@ let lastSelectedPromptId = null; // Track the last selected prompt for keyboard 
 
 const HIDDEN_CLASS = 'is-hidden';
 const ERROR_VISIBLE_CLASS = 'validation-error-visible';
+const APP_COMPONENT = 'app';
+
+function reportAppIssue(action, error, metadata = {}, severity = 'error') {
+    const logger = window.FrontendLogger;
+    if (logger && typeof logger.reportError === 'function') {
+        logger.reportError(APP_COMPONENT, action, error, metadata, severity);
+    }
+    const message = `[PromptVault][app] ${action}`;
+    if (severity === 'warning') {
+        console.warn(message, error, metadata);
+    } else {
+        console.error(message, error, metadata);
+    }
+}
 
 function showElement(element) {
     if (element) {
@@ -221,11 +235,8 @@ function setupEventListeners() {
 
 async function loadPrompts() {
     try {
-        console.log('Loading prompts...');
         const response = await fetch('/api/prompts');
         const data = await response.json();
-        console.log('Loaded prompts data:', data);
-        console.log('Number of prompts:', Object.keys(data.prompts || {}).length);
 
         // Hide search results info when loading all prompts initially
         const searchResultsInfo = document.getElementById('search-results-info');
@@ -235,7 +246,7 @@ async function loadPrompts() {
 
         renderPrompts(data.prompts);
     } catch (error) {
-        console.error('Error loading prompts:', error);
+        reportAppIssue('loadPrompts', error);
     }
 }
 
@@ -245,7 +256,7 @@ async function loadCategories() {
         const data = await response.json();
         renderCategories(data.categories);
     } catch (error) {
-        console.error('Error loading categories:', error);
+        reportAppIssue('loadCategories', error);
     }
 }
 
@@ -255,7 +266,7 @@ async function loadTags() {
         const data = await response.json();
         renderTags(data.tags);
     } catch (error) {
-        console.error('Error loading tags:', error);
+        reportAppIssue('loadTags', error);
     }
 }
 
@@ -439,12 +450,6 @@ async function handlePromptSubmit(event) {
         return;
     }
 
-    // Debug logging
-    console.log('Form submission:', { isEditMode, promptId });
-    for (let [key, value] of formData.entries()) {
-        console.log(`${key}: ${value}`);
-    }
-
     try {
         let url = '/api/prompts';
         let method = 'POST';
@@ -454,16 +459,12 @@ async function handlePromptSubmit(event) {
             method = 'PUT';
         }
 
-        console.log(`Sending ${method} request to ${url}`);
-
         const response = await fetch(url, {
             method: method,
             body: formData
         });
 
-        console.log('Response status:', response.status);
         const responseData = await response.json();
-        console.log('Response data:', responseData);
 
         if (response.ok) {
             hidePromptEditor();
@@ -479,7 +480,10 @@ async function handlePromptSubmit(event) {
             alert(`${i18next.t('messages.error')}: ${responseData.error || i18next.t('messages.unknownError')}`);
         }
     } catch (error) {
-        console.error('Error saving prompt:', error);
+        reportAppIssue('savePrompt', error, {
+            mode: isEditMode ? 'edit' : 'create',
+            promptId: promptId || null
+        });
         alert(i18next.t('messages.error'));
     }
 }
@@ -504,7 +508,7 @@ function copyPrompt(id) {
             copyTextToClipboard(prompt.prompt, id);
         })
         .catch(error => {
-            console.error('Error copying prompt:', error);
+            reportAppIssue('copyPrompt', error, { promptId: id });
             showCopyFeedback(id, 'messages.copyFailed');
         });
 }
@@ -522,7 +526,7 @@ function copyTextToClipboard(textToCopy, id) {
                 showCopyFeedback(id, 'messages.copied');
             })
             .catch(error => {
-                console.warn('Clipboard API write failed, falling back to execCommand.', error);
+                reportAppIssue('clipboardWrite', error, { strategy: 'navigator.clipboard' }, 'warning');
                 fallbackCopyTextToClipboard(textToCopy, id);
             });
         return;
@@ -552,7 +556,7 @@ function fallbackCopyTextToClipboard(text, id) {
             showCopyFeedback(id, 'messages.copyFailed');
         }
     } catch (error) {
-        console.error('Fallback copy failed:', error);
+        reportAppIssue('clipboardFallback', error, {}, 'warning');
         showCopyFeedback(id, 'messages.copyFailed');
     } finally {
         document.body.removeChild(textArea);
@@ -577,8 +581,6 @@ async function editPrompt(id) {
 
         promptCache[id] = prompt;
 
-        console.log('Editing prompt:', prompt); // Debug log
-
         // Show editor without resetting form
         showElement(document.getElementById('prompt-editor'));
         hideElement(document.getElementById('prompts-list'));
@@ -596,7 +598,7 @@ async function editPrompt(id) {
         form.dataset.id = id;
 
     } catch (error) {
-        console.error('Error loading prompt for edit:', error);
+        reportAppIssue('loadPromptForEdit', error, { promptId: id });
     }
 }
 
@@ -618,7 +620,7 @@ async function deletePrompt(id) {
             alert(i18next.t('messages.error'));
         }
     } catch (error) {
-        console.error('Error deleting prompt:', error);
+        reportAppIssue('deletePrompt', error, { promptId: id });
         alert(i18next.t('messages.error'));
     }
 }
@@ -660,8 +662,7 @@ async function toggleFavorite(id) {
             const errorData = await response.json();
             alert(`${i18next.t('messages.error')}: ${errorData.error || i18next.t('messages.unknownError')}`);
         } else {
-            const result = await response.json();
-            console.log(`Favorite toggled for prompt ${id}: ${result.favorite}`);
+            await response.json();
         }
     } catch (error) {
         // Revert optimistic update on network error
@@ -677,7 +678,7 @@ async function toggleFavorite(id) {
             }
         }
 
-        console.error('Error toggling favorite:', error);
+        reportAppIssue('toggleFavorite', error, { promptId: id });
         alert(i18next.t('messages.error'));
     }
 }
@@ -716,7 +717,7 @@ function handleLanguageChange(event) {
     const selectedLanguage = event.target.value;
     i18next.changeLanguage(selectedLanguage, (err, t) => {
         if (err) {
-            console.error('Error changing language:', err);
+            reportAppIssue('changeLanguage', err, { language: selectedLanguage });
             return;
         }
         // Update all translations on the page
@@ -896,7 +897,15 @@ async function performSearch() {
         updateSearchResultsInfo(data.prompts);
 
     } catch (error) {
-        console.error('Search error:', error);
+        reportAppIssue('searchPrompts', error, {
+            filters: {
+                searchTerm: searchState.searchTerm,
+                category: searchState.category,
+                tag: searchState.tag,
+                favorites: searchState.favorites,
+                caseSensitive: searchState.caseSensitive
+            }
+        });
         showNotification(i18next.t('search.error'), 'error');
 
         // Fallback to showing all prompts
@@ -1132,7 +1141,7 @@ async function loadVersionHistory(promptId) {
         renderVersionHistory(data.versions || []);
         updateCompareButton();
     } catch (error) {
-        console.error('Error loading version history:', error);
+        reportAppIssue('loadVersionHistory', error, { promptId });
         document.getElementById('version-list').innerHTML = '<div class="loading">Error loading versions</div>';
     }
 }
@@ -1237,7 +1246,10 @@ async function performRevert(versionId) {
         loadAvailableTags(); // Refresh tag counts for autocomplete
         loadTags(); // Refresh sidebar tag list
     } catch (error){
-        console.error('Error reverting version:', error);
+        reportAppIssue('revertVersion', error, {
+            promptId: currentVersionPromptId,
+            versionId
+        });
         showNotification(i18next.t('version.revertError'), 'error');
     }
 }
@@ -1333,7 +1345,11 @@ async function loadAndDisplayDiff(v1Id, v2Id) {
         
         displayDiff(diff);
     } catch (error) {
-        console.error('Error loading diff:', error);
+        reportAppIssue('loadDiff', error, {
+            promptId: currentVersionPromptId,
+            fromVersion: v1Id,
+            toVersion: v2Id
+        });
         document.getElementById('diff-view').innerHTML = '<div class="loading">Error loading diff</div>';
     }
 }
@@ -1597,7 +1613,7 @@ async function loadAvailableTags() {
         // Store tags with counts
         availableTags = data.tags || [];
     } catch (error) {
-        console.error('Error loading tags:', error);
+        reportAppIssue('loadTagsAutocomplete', error);
         availableTags = [];
     }
 }

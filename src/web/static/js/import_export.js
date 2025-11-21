@@ -3,6 +3,20 @@
 // Global state
 let currentOperation = null; // 'export' or 'import'
 let previewData = null;
+const IMPORT_EXPORT_COMPONENT = 'importExport';
+
+function reportImportExportIssue(action, error, metadata = {}, severity = 'error') {
+    const logger = window.FrontendLogger;
+    if (logger && typeof logger.reportError === 'function') {
+        logger.reportError(IMPORT_EXPORT_COMPONENT, action, error, metadata, severity);
+    }
+    const prefix = `[PromptVault][import-export] ${action}`;
+    if (severity === 'warning') {
+        console.warn(prefix, error, metadata);
+    } else {
+        console.error(prefix, error, metadata);
+    }
+}
 
 const HIDDEN_CLASS = 'is-hidden';
 
@@ -152,7 +166,7 @@ async function loadStatistics() {
         updateActivityHistory();
 
     } catch (error) {
-        console.error('Error loading statistics:', error);
+        reportImportExportIssue('loadStatistics', error);
     }
 }
 
@@ -200,7 +214,10 @@ async function previewExport() {
         hideProgress('export');
 
     } catch (error) {
-        console.error('Error generating export preview:', error);
+        reportImportExportIssue('previewExport', error, {
+            format,
+            includeFavorites
+        });
         showStatus('export', 'exportFailed', 'error');
     }
 }
@@ -227,7 +244,7 @@ async function previewImport() {
         hideProgress('import');
 
     } catch (error) {
-        console.error('Error generating import preview:', error);
+        reportImportExportIssue('previewImport', error, { filename: file.name });
         showStatus('import', 'importFailed', 'error');
     }
 }
@@ -392,7 +409,12 @@ async function performExport() {
         }
 
     } catch (error) {
-        console.error('Export error:', error);
+        reportImportExportIssue('performExport', error, {
+            format,
+            filename,
+            includeFavorites,
+            includeMetadata
+        });
         showStatus('export', 'exportFailed', 'error');
     } finally {
         hideProgress('export');
@@ -439,7 +461,11 @@ async function performImport() {
         }
 
     } catch (error) {
-        console.error('Import error:', error);
+        reportImportExportIssue('performImport', error, {
+            mode,
+            validate,
+            filename: file.name
+        });
         showStatus('import', 'importFailed', 'error');
     } finally {
         hideProgress('import');
@@ -478,7 +504,7 @@ function handleLanguageChange(event) {
     const selectedLanguage = event.target.value;
     i18next.changeLanguage(selectedLanguage, (err, t) => {
         if (err) {
-            console.error('Error changing language:', err);
+            reportImportExportIssue('changeLanguage', err, { language: selectedLanguage });
             return;
         }
         updateStaticTranslations();

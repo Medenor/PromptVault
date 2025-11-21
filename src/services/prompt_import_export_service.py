@@ -2,6 +2,12 @@ import csv
 import os
 from typing import List, Dict, Any, Tuple
 
+from src.services.exceptions import ImportExportError
+from src.services.logging_service import logging_service
+
+
+logger = logging_service.get_logger(__name__)
+
 
 class PromptImportExportService:
     """Service for handling prompt import and export operations."""
@@ -41,9 +47,16 @@ class PromptImportExportService:
                     }
                     writer.writerow(row)
             return True
-        except Exception as e:
-            print(f"Export Error: Failed to export prompts to CSV: {e}")
-            return False
+        except Exception as exc:
+            logger.error(
+                "Failed to export prompts to CSV",
+                extra={"event": "prompts.export.csv.failure", "resource_id": file_path},
+                exc_info=exc,
+            )
+            raise ImportExportError(
+                "Failed to export prompts to CSV.",
+                context={"file_path": file_path},
+            ) from exc
 
     def export_to_markdown(
         self, file_path: str, prompts: List[Tuple[int, Dict[str, Any]]]
@@ -77,9 +90,19 @@ class PromptImportExportService:
                         mdfile.write(f"{data.get('note', '')}\n\n")
                     mdfile.write("---\n\n")  # Separator
             return True
-        except Exception as e:
-            print(f"Export Error: Failed to export prompts to Markdown: {e}")
-            return False
+        except Exception as exc:
+            logger.error(
+                "Failed to export prompts to Markdown",
+                extra={
+                    "event": "prompts.export.markdown.failure",
+                    "resource_id": file_path,
+                },
+                exc_info=exc,
+            )
+            raise ImportExportError(
+                "Failed to export prompts to Markdown.",
+                context={"file_path": file_path},
+            ) from exc
 
     def import_from_csv(self, file_path: str) -> List[Dict[str, Any]]:
         """
@@ -128,12 +151,35 @@ class PromptImportExportService:
                             }
                         )
                     except Exception as row_error:
-                        print(
-                            f"Import Warning: Skipping malformed CSV row: {row_error}"
+                        logger.warning(
+                            "Skipping malformed CSV row",
+                            extra={
+                                "event": "prompts.import.csv.warning",
+                                "resource_id": file_path,
+                            },
+                            exc_info=row_error,
                         )
                         continue
-        except Exception as e:
-            print(f"Import Error: Failed to import prompts from CSV: {e}")
+        except FileNotFoundError as exc:
+            logger.error(
+                "CSV import file not found",
+                extra={
+                    "event": "prompts.import.csv.not_found",
+                    "resource_id": file_path,
+                },
+                exc_info=exc,
+            )
+            return prompts
+        except Exception as exc:
+            logger.error(
+                "Failed to import prompts from CSV",
+                extra={"event": "prompts.import.csv.failure", "resource_id": file_path},
+                exc_info=exc,
+            )
+            raise ImportExportError(
+                "Failed to import prompts from CSV.",
+                context={"file_path": file_path},
+            ) from exc
         return prompts
 
     def import_from_markdown(self, file_path: str) -> List[Dict[str, Any]]:
@@ -212,6 +258,27 @@ class PromptImportExportService:
                         "prompt"
                     ):  # Only add if it has some content
                         prompts.append(current_prompt)
-        except Exception as e:
-            print(f"Import Error: Failed to import prompts from Markdown: {e}")
+        except FileNotFoundError as exc:
+            logger.error(
+                "Markdown import file not found",
+                extra={
+                    "event": "prompts.import.markdown.not_found",
+                    "resource_id": file_path,
+                },
+                exc_info=exc,
+            )
+            return prompts
+        except Exception as exc:
+            logger.error(
+                "Failed to import prompts from Markdown",
+                extra={
+                    "event": "prompts.import.markdown.failure",
+                    "resource_id": file_path,
+                },
+                exc_info=exc,
+            )
+            raise ImportExportError(
+                "Failed to import prompts from Markdown.",
+                context={"file_path": file_path},
+            ) from exc
         return prompts

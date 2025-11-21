@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 
 from src.services.prompt_data_service import PromptDataService
+from src.services.exceptions import DataPersistenceError
 
 
 class TestJSONParsingErrors:
@@ -391,10 +392,10 @@ class TestDataIntegrityAfterErrors:
         result1 = populated_data_service.save_prompts()
         assert result1 is True
 
-        # Try to save to invalid location (should fail)
+        # Try to save to invalid location (should raise persistence error)
         populated_data_service.data_file = "/invalid/path/prompts.json"
-        result2 = populated_data_service.save_prompts()
-        assert result2 is False
+        with pytest.raises(DataPersistenceError):
+            populated_data_service.save_prompts()
 
         # Original file should still be intact
         assert Path(temp_data_file).exists()

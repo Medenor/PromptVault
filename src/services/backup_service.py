@@ -3,9 +3,15 @@ import os
 import re
 import shutil
 import gzip
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Any, Optional, Tuple
 import getpass
+
+from src.services.exceptions import BackupError
+from src.services.logging_service import logging_service
+
+
+logger = logging_service.get_logger(__name__)
 
 
 class BackupService:
@@ -45,8 +51,20 @@ class BackupService:
         try:
             # Check if data file exists
             if not os.path.exists(self.data_file):
-                print(f"Backup Error: Data file {self.data_file} does not exist")
-                return None
+                context = {"data_file": self.data_file}
+                logger.error(
+                    "Backup creation failed because data file is missing",
+                    extra={
+                        "event": "backup.create.failure",
+                        "resource_id": self.data_file,
+                    },
+                )
+                raise BackupError(
+                    "Data file does not exist.",
+                    user_message="Cannot create backup because the data file is missing.",
+                    context=context,
+                    http_status=404,
+                )
 
             # Generate backup filename
             if custom_name:
@@ -93,12 +111,34 @@ class BackupService:
             with open(metadata_path, "w", encoding="utf-8") as f:
                 json.dump(metadata, f, indent=2)
 
-            print(f"Backup created successfully: {backup_filename}")
+            logger.info(
+                "Backup created successfully",
+                extra={
+                    "event": "backup.create.success",
+                    "resource_id": backup_id,
+                    "backup_id": backup_id,
+                },
+            )
+            logging_service.log_audit_event(
+                action="backup.create",
+                resource_type="backup",
+                resource_id=backup_id,
+                size_bytes=backup_size,
+                prompt_count=prompt_count,
+            )
             return backup_id
 
-        except Exception as e:
-            print(f"Backup Error: Failed to create backup: {e}")
-            return None
+        except Exception as exc:
+            context = {"data_file": self.data_file}
+            logger.error(
+                "Failed to create backup",
+                extra={"event": "backup.create.failure"},
+                exc_info=exc,
+            )
+            raise BackupError(
+                "Failed to create backup.",
+                context=context,
+            ) from exc
 
     def list_backups(self) -> List[Dict[str, Any]]:
         """
@@ -118,16 +158,29 @@ class BackupService:
                         with open(metadata_path, "r", encoding="utf-8") as f:
                             metadata = json.load(f)
                             backups.append(metadata)
-                    except (json.JSONDecodeError, IOError) as e:
-                        print(
-                            f"Warning: Could not read backup metadata {filename}: {e}"
+                    except (json.JSONDecodeError, IOError) as exc:
+                        logger.warning(
+                            "Could not read backup metadata",
+                            extra={
+                                "event": "backup.metadata.warning",
+                                "resource_id": filename,
+                            },
+                            exc_info=exc,
                         )
 
             # Sort by timestamp (newest first)
             backups.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
 
-        except Exception as e:
-            print(f"Error listing backups: {e}")
+        except Exception as exc:
+            logger.error(
+                "Failed to list backups",
+                extra={"event": "backup.list.failure"},
+                exc_info=exc,
+            )
+            raise BackupError(
+                "Unable to list backups.",
+                context={"backups_dir": self.backups_dir},
+            ) from exc
 
         return backups
 
@@ -144,18 +197,40 @@ class BackupService:
         try:
             backup_path = self._resolve_backup_path(backup_id)
             if not backup_path or not os.path.exists(backup_path):
-                print(f"Restore Error: Backup file for ID {backup_id} does not exist")
-                return False
+                logger.error(
+                    "Backup file does not exist",
+                    extra={
+                        "event": "backup.restore.failure",
+                        "resource_id": backup_id,
+                    },
+                )
+                raise BackupError(
+                    "Backup file does not exist.",
+                    context={"backup_id": backup_id},
+                    http_status=404,
+                )
 
             if not self._is_valid_backup_file(backup_path):
-                print(f"Restore Error: Backup {backup_id} appears to be corrupted")
-                return False
+                logger.error(
+                    "Backup appears to be corrupted",
+                    extra={
+                        "event": "backup.restore.failure",
+                        "resource_id": backup_id,
+                    },
+                )
+                raise BackupError(
+                    "Backup appears to be corrupted.",
+                    context={"backup_id": backup_id},
+                    http_status=400,
+                )
 
             # Create a pre-restore backup automatically
-            print("Creating pre-restore backup...")
             pre_restore_backup = self.create_backup("pre_restore")
             if not pre_restore_backup:
-                print("Warning: Could not create pre-restore backup")
+                logger.warning(
+                    "Could not create pre-restore backup",
+                    extra={"event": "backup.restore.warning"},
+                )
 
             # Restore the backup (handle compressed files transparently)
             if backup_path.endswith(".gz"):
@@ -166,12 +241,35 @@ class BackupService:
             else:
                 shutil.copy2(backup_path, self.data_file)
 
-            print(f"Backup {backup_id} restored successfully")
+            logger.info(
+                "Backup restored successfully",
+                extra={
+                    "event": "backup.restore.success",
+                    "resource_id": backup_id,
+                },
+            )
+            logging_service.log_audit_event(
+                action="backup.restore",
+                resource_type="backup",
+                resource_id=backup_id,
+            )
             return True
 
-        except Exception as e:
-            print(f"Restore Error: Failed to restore backup {backup_id}: {e}")
-            return False
+        except BackupError:
+            raise
+        except Exception as exc:
+            logger.error(
+                "Failed to restore backup",
+                extra={
+                    "event": "backup.restore.failure",
+                    "resource_id": backup_id,
+                },
+                exc_info=exc,
+            )
+            raise BackupError(
+                "Failed to restore backup.",
+                context={"backup_id": backup_id},
+            ) from exc
 
     def cleanup_old_backups(self, retention_days: int = 30) -> int:
         """
@@ -186,15 +284,15 @@ class BackupService:
         removed_count = 0
 
         try:
-            cutoff_date = datetime.now() - timedelta(days=retention_days)
+            cutoff_date = datetime.now().astimezone(timezone.utc) - timedelta(
+                days=retention_days
+            )
             backups = self.list_backups()
 
             for backup in backups:
-                backup_date = datetime.fromisoformat(
-                    backup["timestamp"].replace("Z", "+00:00")
-                )
+                backup_date = self._parse_backup_timestamp(backup["timestamp"])
 
-                if backup_date < cutoff_date:
+                if retention_days <= 0 or backup_date < cutoff_date:
                     # Remove backup files
                     backup_filename = backup["filename"]
                     backup_path = os.path.join(self.backups_dir, backup_filename)
@@ -209,17 +307,48 @@ class BackupService:
                         if os.path.exists(metadata_path):
                             os.remove(metadata_path)
                         removed_count += 1
-                        print(f"Removed old backup: {backup_filename}")
-                    except OSError as e:
-                        print(
-                            f"Warning: Could not remove backup {backup_filename}: {e}"
+                        logger.info(
+                            "Removed old backup during cleanup",
+                            extra={
+                                "event": "backup.cleanup.removal",
+                                "resource_id": backup_filename,
+                            },
+                        )
+                    except OSError as exc:
+                        logger.warning(
+                            "Could not remove backup during cleanup",
+                            extra={
+                                "event": "backup.cleanup.warning",
+                                "resource_id": backup_filename,
+                            },
+                            exc_info=exc,
                         )
 
             if removed_count > 0:
-                print(f"Cleanup completed: {removed_count} old backups removed")
+                logger.info(
+                    "Cleanup completed",
+                    extra={
+                        "event": "backup.cleanup.success",
+                        "removed_count": removed_count,
+                    },
+                )
+                logging_service.log_audit_event(
+                    action="backup.cleanup",
+                    resource_type="backup",
+                    resource_id="multiple",
+                    removed_count=removed_count,
+                )
 
-        except Exception as e:
-            print(f"Cleanup Error: Failed to cleanup old backups: {e}")
+        except Exception as exc:
+            logger.error(
+                "Failed to cleanup old backups",
+                extra={"event": "backup.cleanup.failure"},
+                exc_info=exc,
+            )
+            raise BackupError(
+                "Failed to cleanup old backups.",
+                context={"retention_days": retention_days},
+            ) from exc
 
         return removed_count
 
@@ -252,15 +381,15 @@ class BackupService:
         compressed_count = 0
 
         try:
-            cutoff_date = datetime.now() - timedelta(days=days_threshold)
+            cutoff_date = datetime.now().astimezone(timezone.utc) - timedelta(
+                days=days_threshold
+            )
             backups = self.list_backups()
 
             for backup in backups:
-                backup_date = datetime.fromisoformat(
-                    backup["timestamp"].replace("Z", "+00:00")
-                )
+                backup_date = self._parse_backup_timestamp(backup["timestamp"])
 
-                if backup_date < cutoff_date:
+                if days_threshold <= 0 or backup_date < cutoff_date:
                     backup_filename = backup["filename"]
                     backup_path = os.path.join(self.backups_dir, backup_filename)
                     metadata_path = backup_path.replace(".json", "_metadata.json")
@@ -289,18 +418,49 @@ class BackupService:
                                 json.dump(backup, f, indent=2)
 
                             compressed_count += 1
-                            print(f"Compressed backup: {backup_filename}")
+                            logger.info(
+                                "Compressed backup file",
+                                extra={
+                                    "event": "backup.compress.success",
+                                    "resource_id": backup_filename,
+                                },
+                            )
 
-                        except Exception as e:
-                            print(
-                                f"Warning: Could not compress backup {backup_filename}: {e}"
+                        except Exception as exc:
+                            logger.warning(
+                                "Could not compress backup",
+                                extra={
+                                    "event": "backup.compress.warning",
+                                    "resource_id": backup_filename,
+                                },
+                                exc_info=exc,
                             )
 
             if compressed_count > 0:
-                print(f"Compression completed: {compressed_count} backups compressed")
+                logger.info(
+                    "Compression completed",
+                    extra={
+                        "event": "backup.compress.summary",
+                        "compressed_count": compressed_count,
+                    },
+                )
+                logging_service.log_audit_event(
+                    action="backup.compress",
+                    resource_type="backup",
+                    resource_id="multiple",
+                    compressed_count=compressed_count,
+                )
 
-        except Exception as e:
-            print(f"Compression Error: Failed to compress old backups: {e}")
+        except Exception as exc:
+            logger.error(
+                "Failed to compress old backups",
+                extra={"event": "backup.compress.failure"},
+                exc_info=exc,
+            )
+            raise BackupError(
+                "Failed to compress old backups.",
+                context={"days_threshold": days_threshold},
+            ) from exc
 
         return compressed_count
 
@@ -372,10 +532,23 @@ class BackupService:
                 os.remove(metadata_path)
                 removed = True
 
+            if removed:
+                logging_service.log_audit_event(
+                    action="backup.delete",
+                    resource_type="backup",
+                    resource_id=backup_id,
+                )
             return removed
-        except Exception as e:
-            print(f"Delete Error: Failed to delete backup {backup_id}: {e}")
-            return False
+        except Exception as exc:
+            logger.error(
+                "Failed to delete backup",
+                extra={"event": "backup.delete.failure", "resource_id": backup_id},
+                exc_info=exc,
+            )
+            raise BackupError(
+                "Failed to delete backup.",
+                context={"backup_id": backup_id},
+            ) from exc
 
     def _get_current_user(self) -> str:
         """
@@ -435,6 +608,17 @@ class BackupService:
                 with open(backup_path, "r", encoding="utf-8") as f:
                     json.load(f)
             return True
-        except (OSError, json.JSONDecodeError) as e:
-            print(f"Backup Validation Error: {e}")
+        except (OSError, json.JSONDecodeError) as exc:
+            logger.warning(
+                "Backup validation error",
+                extra={"event": "backup.validation.failure", "resource_id": backup_path},
+                exc_info=exc,
+            )
             return False
+    @staticmethod
+    def _parse_backup_timestamp(raw: str) -> datetime:
+        """Return timezone-aware datetime for backup metadata."""
+        parsed = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=timezone.utc)
+        return parsed

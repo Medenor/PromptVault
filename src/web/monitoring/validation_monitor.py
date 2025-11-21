@@ -10,6 +10,10 @@ import os
 import time
 from typing import Dict, List, Optional
 
+from src.services.logging_service import logging_service
+
+logger = logging_service.get_logger(__name__)
+
 
 class ValidationMonitor:
     """Track validation successes and failures with persistence."""
@@ -51,7 +55,15 @@ class ValidationMonitor:
                 if isinstance(data, dict):
                     self.metrics.update(data)
         except Exception as exc:  # pragma: no cover - defensive
-            print(f"[ValidationMonitor] Failed to load metrics: {exc}")
+            logger.warning(
+                "ValidationMonitor failed to load metrics",
+                extra={
+                    "event": "validation.monitor.load",
+                    "resource_id": self.metrics_file,
+                    "status": "failure",
+                },
+                exc_info=exc,
+            )
 
     def _persist(self) -> None:
         """Persist metrics to disk."""
@@ -60,7 +72,15 @@ class ValidationMonitor:
             with open(self.metrics_file, "w", encoding="utf-8") as f:
                 json.dump(self.metrics, f, indent=2)
         except Exception as exc:  # pragma: no cover - defensive
-            print(f"[ValidationMonitor] Failed to write metrics: {exc}")
+            logger.error(
+                "ValidationMonitor failed to persist metrics",
+                extra={
+                    "event": "validation.monitor.persist",
+                    "resource_id": self.metrics_file,
+                    "status": "failure",
+                },
+                exc_info=exc,
+            )
 
     def record_event(
         self,

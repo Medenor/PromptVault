@@ -5,6 +5,9 @@ from datetime import datetime
 import getpass
 from typing import Dict, Any, Set, List, Tuple, Iterable
 
+from src.services.exceptions import DataPersistenceError
+from src.services.logging_service import logging_service
+
 # Import sanitization utilities from validators
 from src.web.validators import (
     sanitize_text_field,
@@ -16,6 +19,9 @@ from src.web.validators import (
     MAX_TAG_COUNT,
     MAX_TAG_LENGTH,
 )
+
+
+logger = logging_service.get_logger(__name__)
 
 
 class PromptDataService:
@@ -144,12 +150,27 @@ class PromptDataService:
                 }
                 json.dump(save_data, f, ensure_ascii=False, indent=4)
             return True
-        except IOError as e:
-            print(f"Save Error: Could not save prompts: {e}")
-            return False
-        except Exception as e:
-            print(f"Unknown Save Error: An unexpected error occurred while saving: {e}")
-            return False
+        except IOError as exc:
+            context = {"data_file": self.data_file}
+            logger.error(
+                "Failed to save prompts to disk",
+                extra={"event": "prompts.save.failure", "resource_id": self.data_file},
+                exc_info=exc,
+            )
+            raise DataPersistenceError(
+                "Could not save prompts to disk.",
+                context=context,
+            ) from exc
+        except Exception as exc:  # pragma: no cover - unexpected
+            context = {"data_file": self.data_file}
+            logger.exception(
+                "Unexpected error while saving prompts",
+                extra={"event": "prompts.save.failure", "resource_id": self.data_file},
+            )
+            raise DataPersistenceError(
+                "Unexpected error while saving prompts.",
+                context=context,
+            ) from exc
 
     def load_prompts(self) -> Dict[int, Dict]:
         """
@@ -190,11 +211,21 @@ class PromptDataService:
                                     )
                             loaded_prompts[prompt_id] = v
                         else:
-                            print(
-                                f"Warning: Invalid structure for prompt ID '{k}', ignored."
+                            logger.warning(
+                                "Invalid structure for prompt ID, ignoring entry",
+                                extra={
+                                    "event": "prompts.load.warning",
+                                    "resource_id": str(k),
+                                },
                             )
                     except ValueError:
-                        print(f"Warning: Invalid prompt key '{k}', ignored.")
+                        logger.warning(
+                            "Invalid prompt key, ignoring entry",
+                            extra={
+                                "event": "prompts.load.warning",
+                                "resource_id": str(k),
+                            },
+                        )
 
                 self.prompts = loaded_prompts
 
@@ -229,19 +260,20 @@ class PromptDataService:
                     self.global_tags = all_tags
 
             return self.prompts
-        except (IOError, json.JSONDecodeError) as e:
-            print(f"Load Error: Could not load prompts from {self.data_file}: {e}")
-            self.prompts = {}
-            self.next_id = 0
-            self.categories = []
-            self.global_tags = set()
+        except (IOError, json.JSONDecodeError) as exc:
+            self._reset_state()
+            logger.error(
+                "Failed to load prompts",
+                extra={"event": "prompts.load.failure", "resource_id": self.data_file},
+                exc_info=exc,
+            )
             return self.prompts
-        except Exception as e:
-            print(f"Unknown Error: An unexpected error occurred while loading: {e}")
-            self.prompts = {}
-            self.next_id = 0
-            self.categories = []
-            self.global_tags = set()
+        except Exception as exc:  # pragma: no cover - unexpected
+            self._reset_state()
+            logger.exception(
+                "Unexpected error while loading prompts",
+                extra={"event": "prompts.load.failure", "resource_id": self.data_file},
+            )
             return self.prompts
 
     def _migrate_old_data_structure(self, prompt_id: int, prompt_info: Dict) -> Dict:
@@ -261,7 +293,13 @@ class PromptDataService:
             and "history" in prompt_info
             and "versions" not in prompt_info
         ):
-            print(f"Migrating old prompt structure for ID {prompt_id}")
+            logger.info(
+                "Migrating legacy prompt data",
+                extra={
+                    "event": "prompts.migration",
+                    "resource_id": str(prompt_id),
+                },
+            )
             current_data = prompt_info["data"]
             history_entries = prompt_info["history"]
 
@@ -475,6 +513,14 @@ class PromptDataService:
             "branches": {"main": version_id},
         }
 
+        logging_service.log_audit_event(
+            action="prompt.create",
+            resource_type="prompt",
+            resource_id=str(prompt_id),
+            title=data.get("title"),
+            version_id=version_id,
+            commit_message=commit_message,
+        )
         # Note: Do not clear categories and tags to preserve predefined ones
         return prompt_id
 
@@ -516,6 +562,13 @@ class PromptDataService:
         current_prompt_info["data"] = data
         current_prompt_info["branches"]["main"] = version_id
 
+        logging_service.log_audit_event(
+            action="prompt.update",
+            resource_type="prompt",
+            resource_id=str(prompt_id),
+            version_id=version_id,
+            commit_message=commit_message,
+        )
         # Note: Do not clear categories and tags to preserve predefined ones
         return True
 
@@ -531,6 +584,11 @@ class PromptDataService:
         """
         if prompt_id in self.prompts:
             del self.prompts[prompt_id]
+            logging_service.log_audit_event(
+                action="prompt.delete",
+                resource_type="prompt",
+                resource_id=str(prompt_id),
+            )
             # Note: Do not clear categories and tags to preserve predefined ones
             return True
         return False
@@ -550,10 +608,31 @@ class PromptDataService:
             self.global_tags = set()
 
             # Save the empty state to disk
-            return self.save_prompts()
-        except Exception as e:
-            print(f"Error clearing all prompts: {e}")
-            return False
+            result = self.save_prompts()
+            if result:
+                logging_service.log_audit_event(
+                    action="prompt.clear_all",
+                    resource_type="prompt",
+                    resource_id="all",
+                )
+            return result
+        except Exception as exc:
+            logger.error(
+                "Failed to clear prompt storage",
+                extra={"event": "prompts.clear.failure"},
+                exc_info=exc,
+            )
+            raise DataPersistenceError(
+                "Unable to clear prompt storage.",
+                context={"data_file": self.data_file},
+            ) from exc
+
+    def _reset_state(self) -> None:
+        """Reset in-memory storage to a clean state."""
+        self.prompts = {}
+        self.next_id = 0
+        self.categories = []
+        self.global_tags = set()
 
     def get_prompt_data(self, prompt_id: int) -> Dict[str, Any]:
         """
@@ -619,6 +698,13 @@ class PromptDataService:
         current_prompt_info["data"] = reverted_data
         current_prompt_info["branches"]["main"] = version_id
 
+        logging_service.log_audit_event(
+            action="prompt.revert",
+            resource_type="prompt",
+            resource_id=str(prompt_id),
+            version_id=version_id,
+            commit_message=commit_message,
+        )
         # Note: Do not clear categories and tags to preserve predefined ones
         return True
 

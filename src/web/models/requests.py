@@ -5,7 +5,7 @@ implementing the constraints specified in the Phase 0 specification.
 """
 
 from pydantic import BaseModel, Field, field_validator, model_validator
-from typing import List, Optional
+from typing import Any, Dict, List, Optional, Literal
 import re
 from .enums import ExportFormat, ImportMode
 
@@ -327,3 +327,22 @@ class VersionRevertRequest(BaseModel):
         if v:
             return v.strip()
         return v
+
+
+class FrontendLogEntry(BaseModel):
+    """Telemetry payload sent from the frontend error reporter."""
+
+    component: str = Field(..., min_length=1, max_length=100)
+    action: str = Field(..., min_length=1, max_length=100)
+    message: str = Field(..., min_length=1, max_length=500)
+    severity: Literal["error", "warning", "info"] = "error"
+    stack: Optional[str] = Field(default=None, max_length=2000)
+    url: Optional[str] = Field(default=None, max_length=500)
+    context: Dict[str, Any] = Field(default_factory=dict)
+
+    @field_validator("component", "action", "message", "stack", "url")
+    @classmethod
+    def strip_strings(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        return v.strip()

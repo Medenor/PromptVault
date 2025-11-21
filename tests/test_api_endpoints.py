@@ -662,6 +662,14 @@ class TestBackupManagementEndpoints:
         assert compress.status_code == 200
         assert compress.json()["success"] is True
 
+    def test_restore_invalid_backup_returns_structured_error(self, api_client):
+        response = api_client.post("/api/backups/unknown-id/restore")
+        assert response.status_code == 404
+        payload = response.json()
+        assert "error" in payload
+        assert "request_id" in payload
+        assert response.headers.get("x-request-id")
+
 
 class TestVersionEndpointCoverage:
     """Ensure version comparison and revert branches execute under test."""
@@ -702,3 +710,41 @@ class TestVersionEndpointCoverage:
         )
         assert revert.status_code == 200
         assert revert.json()["success"] is True
+
+
+class TestFrontendLogging:
+    """Verify frontend telemetry endpoint."""
+
+    def setup_method(self):
+        from src.web import app as web_app
+
+        web_app.frontend_log_rate.clear()
+
+    def _payload(self):
+        return {
+            "component": "sidebar",
+            "action": "load.prompts",
+            "message": "ReferenceError: prompts is undefined",
+            "severity": "error",
+            "stack": "ReferenceError: prompts is undefined at loadPrompts (app.js:10:5)",
+            "url": "http://testserver/",
+            "context": {"detail": "test case"},
+        }
+
+    def test_frontend_logging_success(self, api_client):
+        response = api_client.post("/api/logs/frontend", json=self._payload())
+        assert response.status_code == 200
+        assert response.json()["success"] is True
+
+    def test_frontend_logging_validation_error(self, api_client):
+        response = api_client.post(
+            "/api/logs/frontend",
+            json={"component": "", "action": "", "message": ""},
+        )
+        assert response.status_code == 422
+
+    def test_frontend_logging_rate_limit(self, api_client):
+        for _ in range(10):
+            assert api_client.post("/api/logs/frontend", json=self._payload()).status_code == 200
+        response = api_client.post("/api/logs/frontend", json=self._payload())
+        assert response.status_code == 429

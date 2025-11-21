@@ -10,6 +10,7 @@ from pathlib import Path
 import pytest
 
 from src.services.backup_service import BackupService
+from src.services.exceptions import BackupError
 
 
 SAMPLE_DATA = {
@@ -73,7 +74,8 @@ class TestCreateBackupBranches:
 
         monkeypatch.setattr("shutil.copy2", raise_copy_error)
 
-        assert backup_service.create_backup("failing") is None
+        with pytest.raises(BackupError):
+            backup_service.create_backup("failing")
 
 
 class TestListBackupsBranches:
@@ -102,7 +104,8 @@ class TestListBackupsBranches:
 
         monkeypatch.setattr("os.listdir", raise_list_error)
 
-        assert backup_service.list_backups() == []
+        with pytest.raises(BackupError):
+            backup_service.list_backups()
 
 
 class TestRestoreBackupBranches:
@@ -164,7 +167,8 @@ class TestRestoreBackupBranches:
             lambda _backup_id: (_ for _ in ()).throw(RuntimeError("resolve failure")),
         )
 
-        assert backup_service.restore_backup("missing") is False
+        with pytest.raises(BackupError):
+            backup_service.restore_backup("missing")
 
 
 class TestCleanupOldBackups:
@@ -199,7 +203,8 @@ class TestCleanupOldBackups:
             lambda: (_ for _ in ()).throw(RuntimeError("listing failed")),
         )
 
-        assert backup_service.cleanup_old_backups() == 0
+        with pytest.raises(BackupError):
+            backup_service.cleanup_old_backups()
 
 
 class TestCompressOldBackups:
@@ -235,7 +240,8 @@ class TestCompressOldBackups:
             lambda: (_ for _ in ()).throw(RuntimeError("listing failed")),
         )
 
-        assert backup_service.compress_old_backups() == 0
+        with pytest.raises(BackupError):
+            backup_service.compress_old_backups()
 
 
 class TestDeleteAndUtilityHelpers:
@@ -252,7 +258,8 @@ class TestDeleteAndUtilityHelpers:
             lambda _backup_id: (_ for _ in ()).throw(RuntimeError("info failure")),
         )
 
-        assert backup_service.delete_backup("any") is False
+        with pytest.raises(BackupError):
+            backup_service.delete_backup("any")
 
     def test_get_current_user_fallback(
         self, temp_data_dir: str, monkeypatch: pytest.MonkeyPatch

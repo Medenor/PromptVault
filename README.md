@@ -367,6 +367,13 @@ These targets keep the full suite under ~60 seconds on a modern laptop. Adjust t
 2. Nightly/per-release job: `pytest` (full run, including performance markers)
 3. Publish the HTML coverage artifact (`htmlcov/`) to easily inspect regressions.
 
+## Observability & Telemetry
+
+- **Structured Logs**: Application and audit logs live in `data/logs/` as newline-delimited JSON. Use tools like `jq` (`tail -f data/logs/audit.log | jq '.action,.resource_id'`) when troubleshooting in development.
+- **Frontend Reporter**: `src/web/static/js/telemetry.js` registers a global `window.FrontendLogger`. Call `window.FrontendLogger.reportError('component', 'action', error, { extra: 'context' });` to capture handled failures. All payloads are sanitized (strings truncated to 500–2,000 chars) and rate limited (10 reports per client IP per minute).
+- **Opt-out Controls**: Developers/testers can disable reporting via `window.FrontendLogger.disable()` or by setting `localStorage.setItem('promptvault.telemetry.optOut', 'true')`. Call `window.FrontendLogger.enable()` to re-enable. The reporter only sends when enabled and still logs to the browser console for debugging.
+- **Server Endpoint**: The `/api/logs/frontend` route receives telemetry, enriches it with the caller IP/request metadata, and stores it through the same logging infrastructure so alerts/exports see both backend and frontend failures.
+
 ## Roadmap
 
 For a comprehensive feature improvement roadmap with detailed implementation plans, see [ROADMAP.md](ROADMAP.md).
@@ -380,8 +387,8 @@ For a comprehensive feature improvement roadmap with detailed implementation pla
 
 ### Phase 1: Foundation Strengthening (Priority: High)
 
-- [ ] **Input Validation & Sanitization:** Comprehensive validation framework preventing injection attacks and ensuring data integrity
-- [ ] **Error Handling & Logging:** Centralized logging infrastructure with structured logs and audit trails
+- [x] **Input Validation & Sanitization:** Comprehensive validation framework preventing injection attacks and ensuring data integrity
+- [x] **Error Handling & Logging:** Centralized logging infrastructure with structured logs and audit trails
 - [ ] **Performance Monitoring:** Real-time monitoring with APM, error tracking, and analytics dashboards
 - [ ] **Accessibility Compliance:** WCAG 2.1 AA compliance with full keyboard navigation and screen reader support
 
