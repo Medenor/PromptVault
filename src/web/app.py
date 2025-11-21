@@ -10,13 +10,15 @@ import json
 import os
 import time
 from datetime import datetime
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Dict, Deque, Any
+from collections import defaultdict, deque
 
 from src.services.prompt_data_service import PromptDataService
 from src.services.prompt_filter_service import PromptFilterService
 from src.services.prompt_versioning_service import PromptVersioningService
 from src.services.prompt_import_export_service import PromptImportExportService
 from src.services.backup_service import BackupService
+from src.services.exceptions import PromptVaultException
 from src.services.logging_service import logging_service
 from src.web.models import (
     PromptCreateRequest,
@@ -27,6 +29,7 @@ from src.web.models import (
     BackupCleanupRequest,
     BackupCompressRequest,
     VersionRevertRequest,
+    FrontendLogEntry,
     ExportFormat,
     ImportMode,
 )
@@ -42,6 +45,9 @@ app = FastAPI(title="PromptVault Web", version="0.1.0")
 validation_monitor: Optional[ValidationMonitor] = None
 logger = logging_service.get_logger(__name__)
 audit_logger = logging_service.get_audit_logger()
+FRONTEND_LOG_WINDOW = 60.0
+FRONTEND_LOG_LIMIT = 10
+frontend_log_rate: Dict[str, Deque[float]] = defaultdict(deque)
 
 # Mount static files
 app.mount("/static", StaticFiles(directory="src/web/static"), name="static")
@@ -115,6 +121,18 @@ def configure_services(
 configure_services()
 
 
+def _is_frontend_rate_limited(client_ip: str) -> bool:
+    """Return True if the client has exceeded telemetry limits."""
+    now = time.monotonic()
+    bucket = frontend_log_rate[client_ip]
+    while bucket and now - bucket[0] > FRONTEND_LOG_WINDOW:
+        bucket.popleft()
+    if len(bucket) >= FRONTEND_LOG_LIMIT:
+        return True
+    bucket.append(now)
+    return False
+
+
 def record_validation_event(
     endpoint: str,
     success: bool,
@@ -148,6 +166,97 @@ def record_validation_event(
             },
             exc_info=exc,
         )
+
+
+@app.exception_handler(PromptVaultException)
+async def promptvault_exception_handler(
+    request: Request, exc: PromptVaultException
+) -> JSONResponse:
+    """Translate PromptVaultException into structured API responses."""
+    log_extra = {
+        "event": "api.error",
+        "action": str(request.url.path),
+        "resource_id": str(request.url.path),
+        **exc.context,
+    }
+    log_method = getattr(logger, exc.log_level, logger.error)
+    log_method(exc.message, extra=log_extra)
+
+    if exc.context.get("backup_id"):
+        audit_logger.error(
+            "Audit: service failure",
+            extra={
+                "event": "audit.error",
+                "resource_id": exc.context.get("backup_id"),
+                "status": "failure",
+            },
+        )
+
+    response_payload = exc.to_dict()
+    request_id = logging_service.get_request_id()
+    response_payload["request_id"] = request_id
+    response = JSONResponse(status_code=exc.http_status, content=response_payload)
+    if request_id:
+        response.headers["X-Request-ID"] = request_id
+    return response
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    """Catch-all exception handler to ensure JSON responses."""
+    logger.exception(
+        "Unhandled server error",
+        extra={"event": "api.error", "action": str(request.url.path)},
+    )
+    response_payload = {
+        "error": "Internal server error.",
+        "request_id": logging_service.get_request_id(),
+    }
+    response = JSONResponse(status_code=500, content=response_payload)
+    request_id = logging_service.get_request_id()
+    if request_id:
+        response.headers["X-Request-ID"] = request_id
+    return response
+
+
+def _sanitize_text(value: Optional[str], max_length: int) -> Optional[str]:
+    if not value:
+        return None
+    return value.strip()[:max_length]
+
+
+@app.post("/api/logs/frontend")
+async def log_frontend_error(entry: FrontendLogEntry, request: Request):
+    """Accept client-side error reports with basic rate limiting."""
+    client_ip = request.client.host if request.client else "unknown"
+    if _is_frontend_rate_limited(client_ip):
+        return JSONResponse(
+            status_code=429,
+            content={"error": "Too many error reports. Please slow down."},
+        )
+
+    context_payload: Dict[str, Any] = {}
+    for key, value in entry.context.items():
+        if isinstance(value, str):
+            context_payload[key] = value[:200]
+        else:
+            context_payload[key] = value
+
+    logger.warning(
+        "Frontend error reported",
+        extra={
+            "event": "frontend.error",
+            "component": entry.component,
+            "action": entry.action,
+            "severity": entry.severity,
+            "error_message": _sanitize_text(entry.message, 500),
+            "stacktrace": _sanitize_text(entry.stack, 2000),
+            "url": _sanitize_text(entry.url, 500),
+            "client": client_ip,
+            "context": context_payload,
+        },
+    )
+    return {"success": True}
 
 
 @app.middleware("http")
@@ -754,6 +863,15 @@ async def export_prompts(
             success = True
 
         if success:
+            logging_service.log_audit_event(
+                action="export.prompts",
+                resource_type="export",
+                resource_id=final_filename,
+                format=validated_data.format.value,
+                prompt_count=len(prompt_list),
+                include_favorites=validated_data.include_favorites,
+                include_metadata=validated_data.include_metadata,
+            )
             # Return file for download
             record_validation_event(endpoint="/api/export", success=True)
             return FileResponse(
@@ -908,6 +1026,14 @@ async def import_prompts(
         record_validation_event(
             endpoint="/api/import",
             success=True,
+        )
+        logging_service.log_audit_event(
+            action="import.prompts",
+            resource_type="import",
+            resource_id="import",
+            imported_count=len(imported_prompts),
+            added_count=added_count,
+            mode=validated_params.mode.value,
         )
 
         return JSONResponse(

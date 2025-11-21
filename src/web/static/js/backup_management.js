@@ -1,6 +1,20 @@
 // Backup Management JavaScript
 let currentBackups = [];
 let selectedBackupId = null;
+const BACKUP_COMPONENT = 'backupManagement';
+
+function reportBackupIssue(action, error, metadata = {}, severity = 'error') {
+    const logger = window.FrontendLogger;
+    if (logger && typeof logger.reportError === 'function') {
+        logger.reportError(BACKUP_COMPONENT, action, error, metadata, severity);
+    }
+    const prefix = `[PromptVault][backup] ${action}`;
+    if (severity === 'warning') {
+        console.warn(prefix, error, metadata);
+    } else {
+        console.error(prefix, error, metadata);
+    }
+}
 
 // Initialize the page
 document.addEventListener('DOMContentLoaded', function() {
@@ -65,7 +79,7 @@ async function loadBackups() {
         currentBackups = data.backups || [];
         renderBackupList(currentBackups);
     } catch (error) {
-        console.error('Error loading backups:', error);
+        reportBackupIssue('loadBackups', error);
         showStatus('backup-status', 'Error loading backups', 'error');
     }
 }
@@ -78,7 +92,7 @@ async function loadBackupStats() {
 
         updateStatsDisplay(stats);
     } catch (error) {
-        console.error('Error loading backup stats:', error);
+        reportBackupIssue('loadBackupStats', error);
     }
 }
 
@@ -170,7 +184,7 @@ async function createBackup() {
             showStatus('backup-status', 'Failed to create backup', 'error');
         }
     } catch (error) {
-        console.error('Error creating backup:', error);
+        reportBackupIssue('createBackup', error, { backupName });
         showStatus('backup-status', 'Error creating backup', 'error');
     } finally {
         hideProgress('backup-progress');
@@ -226,7 +240,7 @@ async function confirmRestore() {
             showStatus('backup-status', 'Failed to restore backup', 'error');
         }
     } catch (error) {
-        console.error('Error restoring backup:', error);
+        reportBackupIssue('restoreBackup', error, { backupId: backupIdToRestore });
         showStatus('backup-status', 'Error restoring backup', 'error');
     } finally {
         hideProgress('backup-progress');
@@ -279,7 +293,7 @@ async function confirmDelete() {
             showStatus('backup-status', 'Failed to delete backup', 'error');
         }
     } catch (error) {
-        console.error('Error deleting backup:', error);
+        reportBackupIssue('deleteBackup', error, { backupId: backupIdToDelete });
         showStatus('backup-status', 'Error deleting backup', 'error');
     } finally {
         hideProgress('backup-progress');
@@ -311,7 +325,7 @@ async function cleanupBackups() {
             showStatus('maintenance-status', 'Cleanup failed', 'error');
         }
     } catch (error) {
-        console.error('Error cleaning up backups:', error);
+        reportBackupIssue('cleanupBackups', error, { retentionDays });
         showStatus('maintenance-status', 'Error cleaning up backups', 'error');
     } finally {
         hideProgress('maintenance-progress');
@@ -343,7 +357,7 @@ async function compressBackups() {
             showStatus('maintenance-status', 'Compression failed', 'error');
         }
     } catch (error) {
-        console.error('Error compressing backups:', error);
+        reportBackupIssue('compressBackups', error, { daysThreshold: compressDays });
         showStatus('maintenance-status', 'Error compressing backups', 'error');
     } finally {
         hideProgress('maintenance-progress');
@@ -430,7 +444,7 @@ function handleLanguageChange(event) {
     const selectedLanguage = event.target.value;
     i18next.changeLanguage(selectedLanguage, (err, t) => {
         if (err) {
-            console.error('Error changing language:', err);
+            reportBackupIssue('changeLanguage', err, { language: selectedLanguage });
             return;
         }
         // Update all translations on the page

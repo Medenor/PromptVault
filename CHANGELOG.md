@@ -9,7 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### ✨ New Features
 
-- _No changes yet._
+- **Input Sanitization & Validation**: comprehensive input validation and sanitization across all user-facing forms and API endpoints to prevent injection attacks, ensure data integrity, and improve user experience with clear validation feedback.
+- **Frontend Telemetry Reporting**: `telemetry.js` now captures browser errors via `window.FrontendLogger`, pipes them into the `/api/logs/frontend` endpoint with rate limiting/sanitization, and exposes opt-out controls plus helper wrappers across the UI.
 
 ### 🔧 Fixed
 

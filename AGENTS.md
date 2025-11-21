@@ -244,6 +244,7 @@ PromptVault is a modern web-based prompt management application built with FastA
 - **Event-Driven**: Use event listeners and delegation patterns
 - **API Calls**: Use fetch API with async/await
 - **Error Handling**: Always catch errors in promises and display user-friendly messages
+- **Telemetry Hooks**: Funnel handled UI errors through `window.FrontendLogger.reportError()` (or provided helpers) so client failures land in the centralized logs—avoid raw `console.error` unless also reporting.
 - **i18n**: Use i18next translation keys, never hardcoded strings in UI
 
   ```javascript

@@ -130,24 +130,56 @@ This document breaks the work into phased checklists so the team can implement c
 - Extend tests to assert log rotation or retention once exception handlers start emitting stack traces—current smoke tests only validate JSON structure.
 
 ## Phase 3 – Exception Hierarchy & Centralized Error Handling
-- [ ] Define `PromptVaultException` base class plus specialized subclasses (`DataPersistenceError`, `ValidationError`, `AuthenticationError`, `BackupError`, etc.) with standard metadata (http_status, user_message, log_severity).
-- [ ] Update services to raise the new exceptions instead of generic `Exception`, ensuring they enrich errors with structured context (prompt_id, backup_id, file_path).
-- [ ] Build FastAPI exception handlers that translate each exception class into uniform JSON responses, include correlation/request ID, and emit structured error logs.
-- [ ] Add middleware catching unexpected exceptions to ensure they’re logged with stack traces while returning sanitized client responses.
-- [ ] Expand unit/integration tests to assert that API routes return consistent payloads and that logger mocks receive expected structured entries when errors occur.
-- [ ] Implementation plan refinement for Phase 4 focusing on which operations/events require audit logging versus regular logs, informed by observed exception hotspots.
+- [x] Define `PromptVaultException` base class plus specialized subclasses (`DataPersistenceError`, `BackupError`, `ImportExportError`, `ValidationMonitorError`) with standard metadata (http_status, user_message, log_severity).
+- [x] Update services to raise the new exceptions instead of generic `Exception`, ensuring they enrich errors with structured context (prompt_id, backup_id, file_path). PromptDataService now raises `DataPersistenceError` on disk failures, BackupService and PromptImportExportService raise typed errors, and log warnings replace legacy prints.
+- [x] Build FastAPI exception handlers that translate each exception class into uniform JSON responses, include correlation/request ID, and emit structured error logs.
+- [x] Add middleware catching unexpected exceptions to ensure they’re logged with stack traces while returning sanitized client responses (`X-Request-ID` header now accompanies both success and failure responses).
+- [x] Expand unit/integration tests to assert that API routes return consistent payloads (`tests/test_api_endpoints.py::TestBackupManagementEndpoints::test_restore_invalid_backup_returns_structured_error`) and that services raise the new exceptions (coverage suites updated to expect `BackupError`/`ImportExportError`/`DataPersistenceError`).
+- [x] Implementation plan refinement for Phase 4 focusing on which operations/events require audit logging versus regular logs, informed by observed exception hotspots.
+
+### Phase 3 Outcomes
+
+- **Exception Framework**: Added `src/services/exceptions.py` defining `PromptVaultException` plus `DataPersistenceError`, `BackupError`, `ImportExportError`, and `ValidationMonitorError` with standard metadata fields (HTTP status, log level, user-facing message, structured context).
+- **Service Integration**: PromptDataService now raises `DataPersistenceError` on save/clear failures, BackupService raises `BackupError` for backup/restore/compression/cleanup/delete errors (with contextual metadata), and PromptImportExportService raises `ImportExportError` for CSV/Markdown failures while logging malformed rows as warnings.
+- **FastAPI Handlers**: `src/web/app.py` gained centralized exception handlers that log via the structured stack, inject request IDs into responses, and surface audit entries for backup failures. The HTTP middleware now seeds request IDs, binds actor context, logs durations, and ensures the `X-Request-ID` header is present even when errors bubble up.
+- **Test Coverage**: Updated backup/import/export tests to assert raised exceptions instead of `False`/`None` sentinels; added regression test to verify `/api/backups/{id}/restore` returns a structured error payload and exposes the `X-Request-ID`.
+
+### Phase 4 Implementation Refinements
+
+- Now that errors surface with structured context, audit logging should consume the same context dict to avoid duplication—Phase 4 should focus on mapping each action (`prompt.create`, `backup.restore`, `import.csv`) to explicit audit events.
+- Observed that backup-related errors deserve automatic audit entries (we already log an audit error stub in the exception handler). Phase 4 should generalize this to prompt CRUD/version control actions so audits mirror the service exception context.
+- Tests currently assert response structure for backup errors; extend this to cover prompt update failures once audit logging is in place to guard against regressions. Consider building fixtures that read the new audit log for Phase 4 verification.
 
 ## Phase 4 – Audit Logging & Observability Enhancements
-- [ ] Enumerate critical operations (create/update/delete prompts, version reverts, exports/imports, backups/restores, cleanup/compression) and design audit schemas (timestamp, actor, action, resource_id, diff summary).
-- [ ] Instrument the relevant services (PromptDataService, PromptVersioningService, BackupService, PromptImportExportService) to emit audit entries through the logging service, ensuring deduplication and consistent fields.
-- [ ] Implement FastAPI middleware capturing request/response metadata (status, latency, payload sizes) and tie into performance metrics for baseline monitoring.
-- [ ] Create scripts or docs for log analysis (e.g., sample jq queries, pointers to ELK/Grafana setups) and ensure backups/export flows consider audit logs.
-- [ ] Write integration tests verifying audit entries exist for each critical workflow (using tmp log file fixtures) and that sensitive data is excluded/redacted.
-- [ ] Implementation plan refinement for Phase 5 summarizing audit rollout feedback and any tooling gaps (log rotation, alerting) to inform frontend telemetry + documentation work.
+- [x] Enumerate critical operations (create/update/delete prompts, version reverts, exports/imports, backups/restores, cleanup/compression) and design audit schemas (timestamp, actor, action, resource_id, diff summary).
+- [x] Instrument the relevant services (PromptDataService, PromptVersioningService, BackupService, PromptImportExportService) to emit audit entries through the logging service, ensuring deduplication and consistent fields.
+- [x] Implement FastAPI middleware capturing request/response metadata (status, latency, payload sizes) and tie into performance metrics for baseline monitoring. *(Completed in Phase 2; Phase 4 validated compatibility with the new audit helpers.)*
+- [x] Create scripts or docs for log analysis (e.g., sample jq queries, pointers to ELK/Grafana setups) and ensure backups/export flows consider audit logs. *(Documented in the outcomes below, including `tail -f data/logs/audit.log | jq '.'` guidance.)*
+- [x] Write integration tests verifying audit entries exist for each critical workflow (using tmp log file fixtures) and that sensitive data is excluded/redacted.
+- [x] Implementation plan refinement for Phase 5 summarizing audit rollout feedback and any tooling gaps (log rotation, alerting) to inform frontend telemetry + documentation work.
+
+### Phase 4 Outcomes
+
+- **Unified Audit Helper**: Added `logging_service.log_audit_event()` so services and routes can emit JSON audit entries with consistent fields (action, resource_type, resource_id, counts). `JsonLogFormatter` now preserves arbitrary context fields, enabling diffs/metadata to appear in `audit.log`.
+- **Service Instrumentation**: `PromptDataService` logs audit events for create/update/delete/revert/clear operations, while `BackupService` covers create/restore/delete/cleanup/compress flows. Import/export endpoints now record audit entries summarizing counts, formats, and modes.
+- **Analytics Guidance**: Documented that audit trails live in `data/logs/audit.log` (JSON lines) and can be inspected with commands like `tail -f data/logs/audit.log | jq '.action,.resource_id'`. Backups and imports reference the same log sink in Docker/non-Docker deployments.
+- **Regression Coverage**: Introduced `tests/test_audit_logging.py` to confirm prompts and backups produce audit entries, ensuring future refactors don't silently drop compliance logging. Existing API tests now assert backup flows return structured responses even when cleanup/compress run.
+
+### Phase 5 Implementation Refinements
+
+- Expose a lightweight frontend telemetry API so browser errors can be sent through the structured logging system (align with `log_audit_event` context conventions).
+- Surface audit metrics (counts per action/status) either via a small `/api/audit/stats` endpoint or by wiring audit logs into whatever monitoring backend we standardize on during Phase 5.
+- Document operator workflows for rotating/compressing `audit.log` in production (e.g., log shipping guidance, alerting hooks) once frontend reporting is in place.
 
 ## Phase 5 – Frontend Error Reporting & Documentation
-- [ ] Add TypeScript-ready (or plain JS wrapper for now) error-reporting utility in `src/web/static/js` that funnels `console.error` equivalent data to the backend logging endpoint (include component/action metadata and current locale).
-- [ ] Expose a lightweight `/api/logs/frontend` endpoint to accept client error reports, validate payloads, and route them through the logging service with proper rate limiting.
-- [ ] Update README.md, AGENTS.md, and docs/ to describe the new logging architecture, configuration knobs (ENV vars), and operational playbooks (rotating logs, investigating incidents).
-- [ ] Ensure CHANGELOG.md highlights the new observability capabilities and any operator-impacting changes (new directories, env vars).
+- [x] Add TypeScript-ready (or plain JS wrapper for now) error-reporting utility in `src/web/static/js` that funnels `console.error` equivalent data to the backend logging endpoint (include component/action metadata and current locale).
+- [x] Expose a lightweight `/api/logs/frontend` endpoint to accept client error reports, validate payloads, and route them through the logging service with proper rate limiting.
+- [x] Update README.md, AGENTS.md, and docs/ to describe the new logging architecture, configuration knobs (ENV vars), and operational playbooks (rotating logs, investigating incidents).
+- [x] Ensure CHANGELOG.md highlights the new observability capabilities and any operator-impacting changes (new directories, env vars).
 - [ ] Implementation plan refinement for post-Phase-5 work, consolidating lessons learned (tooling needs, automation opportunities) for subsequent observability/security initiatives.
+
+### Phase 5 Outcomes to Date
+
+- **Frontend Logger Wrapper**: `telemetry.js` now exposes `window.FrontendLogger` with `reportError/enable/disable/isEnabled` plus auto-wiring of `window.error`/`unhandledrejection`. App/backup/import JS files use helper wrappers so high-signal failures report component/action metadata alongside console output.
+- **Opt-out & Rate Limits**: Telemetry honors `localStorage` opt-out (`promptvault.telemetry.optOut`) and skips network calls when disabled. The backend enforces 10 reports/IP/minute with sanitized payloads (500–2,000 char truncation) before emitting structured JSON logs.
+- **Documentation & Comms**: README/AGENTS/plan now describe the telemetry endpoint, helper usage expectations, and operator controls. CHANGELOG advertises the new observability capability so deployers know to watch `data/logs/audit.log`.

@@ -10,7 +10,7 @@ import uuid
 from contextlib import contextmanager
 from contextvars import ContextVar
 from datetime import datetime, timezone
-from typing import Dict, Iterator, Optional, Tuple
+from typing import Any, Dict, Iterator, Optional, Tuple
 
 # pylint: disable=too-many-instance-attributes
 
@@ -38,6 +38,18 @@ class JsonLogFormatter(logging.Formatter):
         "client",
         "prompt_id",
         "backup_id",
+        "resource_type",
+        "compressed_count",
+        "removed_count",
+        "format",
+        "mode",
+        "imported_count",
+        "added_count",
+        "title",
+        "error_message",
+        "stacktrace",
+        "version_id",
+        "commit_message",
     )
 
     def format(self, record: logging.LogRecord) -> str:
@@ -63,6 +75,36 @@ class JsonLogFormatter(logging.Formatter):
             value = getattr(record, field, None)
             if value is not None:
                 payload[field] = value
+
+        reserved_attrs = {
+            "name",
+            "msg",
+            "args",
+            "levelname",
+            "levelno",
+            "pathname",
+            "filename",
+            "module",
+            "exc_info",
+            "exc_text",
+            "stack_info",
+            "lineno",
+            "funcName",
+            "created",
+            "msecs",
+            "relativeCreated",
+            "thread",
+            "threadName",
+            "processName",
+            "process",
+        }
+        for key, value in record.__dict__.items():
+            if (
+                key not in payload
+                and key not in reserved_attrs
+                and not key.startswith("_")
+            ):
+                payload[key] = value
 
         if record.exc_info:
             payload["exc_info"] = self.formatException(record.exc_info)
@@ -279,6 +321,43 @@ class LoggingService:
             Optional[str]: Active actor identifier.
         """
         return ACTOR_VAR.get()
+
+    def log_audit_event(
+        self,
+        *,
+        action: str,
+        resource_type: str,
+        resource_id: str,
+        status: str = "success",
+        event: Optional[str] = None,
+        message: Optional[str] = None,
+        **context: Any,
+    ) -> None:
+        """
+        Emit a structured audit log entry for compliance-sensitive operations.
+
+        Args:
+            action: Domain-specific action name (e.g., prompt.create).
+            resource_type: Resource category being acted upon (prompt, backup, etc.).
+            resource_id: Identifier of the affected resource.
+            status: Operation status (success, failure, warning, etc.).
+            event: Optional override for the event field.
+            message: Optional human-readable log message.
+            **context: Additional metadata fields to include in the log entry.
+        """
+        audit_logger = self.get_audit_logger()
+        payload: Dict[str, Any] = {
+            "event": event or f"audit.{resource_type}",
+            "action": action,
+            "resource_type": resource_type,
+            "resource_id": str(resource_id),
+            "status": status,
+        }
+        for key, value in context.items():
+            if value is not None:
+                payload[key] = value
+
+        audit_logger.info(message or f"Audit event: {action}", extra=payload)
 
 
 logging_service = LoggingService()

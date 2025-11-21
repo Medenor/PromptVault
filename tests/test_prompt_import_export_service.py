@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 
 from src.services.prompt_import_export_service import PromptImportExportService
+from src.services.exceptions import ImportExportError
 
 
 class TestCSVExport:
@@ -567,17 +568,13 @@ class TestEdgeCases:
 
     def test_export_csv_invalid_path(self, import_export_service):
         """Test exporting to an invalid path."""
-        result = import_export_service.export_to_csv("/invalid/path/file.csv", [])
-
-        # Should fail gracefully
-        assert result is False
+        with pytest.raises(ImportExportError):
+            import_export_service.export_to_csv("/invalid/path/file.csv", [])
 
     def test_export_markdown_invalid_path(self, import_export_service):
         """Test exporting Markdown to an invalid path."""
-        result = import_export_service.export_to_markdown("/invalid/path/file.md", [])
-
-        # Should fail gracefully
-        assert result is False
+        with pytest.raises(ImportExportError):
+            import_export_service.export_to_markdown("/invalid/path/file.md", [])
 
     def test_import_csv_malformed_rows(self, import_export_service, temp_data_dir):
         """Test importing CSV with malformed rows."""

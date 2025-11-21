@@ -11,6 +11,7 @@ from pathlib import Path
 from datetime import datetime, timedelta
 
 from src.services.backup_service import BackupService
+from src.services.exceptions import BackupError
 
 
 class TestBackupEdgeCases:
@@ -20,12 +21,8 @@ class TestBackupEdgeCases:
         """Test creating backup when data file doesn't exist."""
         backup_service = BackupService(temp_data_dir)
 
-        # Should handle gracefully
-        backup_id = backup_service.create_backup("test_nonexistent")
-
-        # Might return None or handle it differently
-        # Check that it doesn't crash
-        assert backup_id is None or isinstance(backup_id, str)
+        with pytest.raises(BackupError):
+            backup_service.create_backup("test_nonexistent")
 
     def test_backup_with_very_long_description(
         self, temp_data_dir, populated_data_service
@@ -89,8 +86,7 @@ class TestBackupEdgeCases:
 
         backup_id = backup_service.create_backup("empty_data")
 
-        # Should handle empty file
-        assert backup_id is None or isinstance(backup_id, str)
+        assert isinstance(backup_id, str)
 
 
 class TestBackupRestoration:
@@ -100,9 +96,8 @@ class TestBackupRestoration:
         """Test restoring a backup that doesn't exist."""
         backup_service = BackupService(temp_data_dir)
 
-        result = backup_service.restore_backup("nonexistent_backup_id")
-
-        assert result is False
+        with pytest.raises(BackupError):
+            backup_service.restore_backup("nonexistent_backup_id")
 
     def test_restore_corrupted_backup_file(self, temp_data_dir, populated_data_service):
         """Test restoring a corrupted backup file."""
@@ -120,10 +115,8 @@ class TestBackupRestoration:
         backup_path.write_text("{invalid json}", encoding="utf-8")
 
         # Try to restore
-        result = backup_service.restore_backup(backup_id)
-
-        # Should fail gracefully
-        assert result is False
+        with pytest.raises(BackupError):
+            backup_service.restore_backup(backup_id)
 
     def test_restore_with_invalid_metadata(self, temp_data_dir, populated_data_service):
         """Test restoring backup with invalid metadata."""
