@@ -25,7 +25,11 @@
     "export": "Exportar",
     "import": "Importar",
     "close": "Cerrar",
-    "refresh": "Actualizar"
+    "refresh": "Actualizar",
+    "bulkDelete": "Eliminar seleccionados",
+    "selectAll": "Seleccionar todo",
+    "clearSelection": "Limpiar selección",
+    "confirmDelete": "Confirmar eliminación"
   },
   "form": {
     "title": "Título del Prompt:",
@@ -194,6 +198,15 @@
     "noVersions": "No hay versiones disponibles",
     "revertSuccess": "Reversión a versión anterior exitosa",
     "revertError": "Error al revertir versión"
+  },
+  "bulkDelete": {
+    "confirmTitle": "Confirmar eliminación masiva",
+    "confirmMessage": "Está a punto de eliminar",
+    "prompts": "prompt(s)",
+    "warningMessage": "Esta acción creará una copia de seguridad automática, pero la eliminación no se puede deshacer sin restaurar desde la copia de seguridad.",
+    "selectedCount": "{{count}} seleccionado(s)",
+    "successMessage": "{{deleted}} prompt(s) eliminado(s) correctamente. {{failed}} fallido(s).",
+    "errorMessage": "Error al eliminar prompts. Por favor, inténtelo de nuevo."
   },
   "backup": {
     "title": "Gestión de copias de seguridad",

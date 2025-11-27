@@ -65,6 +65,7 @@ function updateStaticTranslations() {
 
 let promptCache = {};
 let lastSelectedPromptId = null; // Track the last selected prompt for keyboard shortcuts
+let selectedPromptIds = new Set(); // Track selected prompts for bulk operations
 
 const HIDDEN_CLASS = 'is-hidden';
 const ERROR_VISIBLE_CLASS = 'validation-error-visible';
@@ -149,6 +150,7 @@ function toggleElement(element, shouldShow) {
 function initializeApp() {
     // Event listeners
     setupEventListeners();
+    initializeBulkActions();
 
     // Load initial data
     loadPrompts();
@@ -296,6 +298,22 @@ function createPromptElement(id, prompt) {
     div.className = 'prompt-item';
     div.dataset.id = id;
 
+    // Add selected class if prompt is in selection
+    if (selectedPromptIds.has(parseInt(id))) {
+        div.classList.add('selected');
+    }
+
+    // Create checkbox for bulk selection
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.className = 'prompt-checkbox';
+    checkbox.dataset.promptId = id;
+    checkbox.checked = selectedPromptIds.has(parseInt(id));
+    checkbox.addEventListener('change', (e) => {
+        handleCheckboxChange(parseInt(id), e.target.checked);
+        e.stopPropagation(); // Prevent triggering the div click event
+    });
+
     div.innerHTML = `
         <div class="prompt-header">
             <h4>${prompt.title}</h4>
@@ -315,6 +333,9 @@ function createPromptElement(id, prompt) {
         </div>
         <div class="prompt-content">${truncateText(prompt.prompt, 100)}</div>
     `;
+
+    // Insert checkbox at the beginning of div
+    div.insertBefore(checkbox, div.firstChild);
 
     // Update translations for dynamically created elements
     div.querySelectorAll('[data-i18n]').forEach(element => {
@@ -1904,6 +1925,174 @@ function selectTag(tagName) {
     setTimeout(() => {
         handleTagInput(tagInput);
     }, 50);
+}
+
+// ============================================
+// Bulk Actions & Selection Functions
+// ============================================
+
+function initializeBulkActions() {
+    const selectAllCheckbox = document.getElementById('select-all-checkbox');
+    const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
+    const clearSelectionBtn = document.getElementById('clear-selection-btn');
+    const confirmBulkDeleteBtn = document.getElementById('confirm-bulk-delete-btn');
+    const cancelBulkDeleteBtn = document.getElementById('cancel-bulk-delete-btn');
+
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', handleSelectAll);
+    }
+
+    if (bulkDeleteBtn) {
+        bulkDeleteBtn.addEventListener('click', showBulkDeleteConfirmation);
+    }
+
+    if (clearSelectionBtn) {
+        clearSelectionBtn.addEventListener('click', clearSelection);
+    }
+
+    if (confirmBulkDeleteBtn) {
+        confirmBulkDeleteBtn.addEventListener('click', performBulkDelete);
+    }
+
+    if (cancelBulkDeleteBtn) {
+        cancelBulkDeleteBtn.addEventListener('click', hideBulkDeleteModal);
+    }
+}
+
+function handleCheckboxChange(promptId, isChecked) {
+    if (isChecked) {
+        selectedPromptIds.add(promptId);
+    } else {
+        selectedPromptIds.delete(promptId);
+    }
+    updateBulkActionsUI();
+}
+
+function handleSelectAll(event) {
+    const isChecked = event.target.checked;
+    const checkboxes = document.querySelectorAll('.prompt-checkbox');
+
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = isChecked;
+        const promptId = parseInt(checkbox.dataset.promptId);
+        if (isChecked) {
+            selectedPromptIds.add(promptId);
+        } else {
+            selectedPromptIds.delete(promptId);
+        }
+    });
+
+    updateBulkActionsUI();
+}
+
+function updateBulkActionsUI() {
+    const toolbar = document.getElementById('bulk-actions-toolbar');
+    const countElement = document.getElementById('selected-count');
+    const selectAllCheckbox = document.getElementById('select-all-checkbox');
+
+    if (selectedPromptIds.size > 0) {
+        toolbar.style.display = 'block';
+        countElement.textContent = i18next.t('bulkDelete.selectedCount', { count: selectedPromptIds.size });
+    } else {
+        toolbar.style.display = 'none';
+    }
+
+    // Update select all checkbox state
+    const allCheckboxes = document.querySelectorAll('.prompt-checkbox');
+    const allChecked = allCheckboxes.length > 0 &&
+                       selectedPromptIds.size === allCheckboxes.length;
+    if (selectAllCheckbox) {
+        selectAllCheckbox.checked = allChecked;
+    }
+
+    // Update selected styling on prompt items
+    allCheckboxes.forEach(checkbox => {
+        const promptId = parseInt(checkbox.dataset.promptId);
+        const promptItem = checkbox.closest('.prompt-item');
+        if (promptItem) {
+            if (selectedPromptIds.has(promptId)) {
+                promptItem.classList.add('selected');
+            } else {
+                promptItem.classList.remove('selected');
+            }
+        }
+    });
+}
+
+function clearSelection() {
+    selectedPromptIds.clear();
+    const checkboxes = document.querySelectorAll('.prompt-checkbox');
+    checkboxes.forEach(checkbox => checkbox.checked = false);
+    updateBulkActionsUI();
+}
+
+function showBulkDeleteConfirmation() {
+    if (selectedPromptIds.size === 0) return;
+
+    const modal = document.getElementById('bulk-delete-modal');
+    const countElement = document.getElementById('bulk-delete-count');
+    countElement.textContent = selectedPromptIds.size;
+    modal.classList.remove(HIDDEN_CLASS);
+}
+
+function hideBulkDeleteModal() {
+    const modal = document.getElementById('bulk-delete-modal');
+    modal.classList.add(HIDDEN_CLASS);
+}
+
+async function performBulkDelete() {
+    if (selectedPromptIds.size === 0) return;
+
+    const promptIdsArray = Array.from(selectedPromptIds);
+
+    try {
+        const response = await fetch('/api/prompts/bulk', {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                prompt_ids: promptIdsArray
+            })
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+            hideBulkDeleteModal();
+            clearSelection();
+
+            // Show success message
+            const message = i18next.t('bulkDelete.successMessage', {
+                deleted: result.deleted_count,
+                failed: result.failed_count
+            });
+            alert(message);
+
+            // Refresh UI
+            await loadPrompts();
+            await loadAvailableTags();
+            await loadTags();
+
+            // Report errors if any
+            if (result.failed_count > 0) {
+                reportAppIssue(
+                    'bulk-delete-partial-failure',
+                    new Error(`${result.failed_count} prompts failed to delete`),
+                    { failed_ids: result.failed_ids },
+                    'warning'
+                );
+            }
+        } else {
+            throw new Error(result.detail || 'Bulk deletion failed');
+        }
+    } catch (error) {
+        console.error('Bulk delete error:', error);
+        alert(i18next.t('bulkDelete.errorMessage'));
+        reportAppIssue('bulk-delete-failed', error, {
+            prompt_ids: promptIdsArray
+        });
+    }
 }
 
 // Initialize lazy loading on app start

@@ -25,7 +25,11 @@
     "export": "Exporter",
     "import": "Importer",
     "close": "Fermer",
-    "refresh": "Actualiser"
+    "refresh": "Actualiser",
+    "bulkDelete": "Supprimer la sélection",
+    "selectAll": "Tout sélectionner",
+    "clearSelection": "Effacer la sélection",
+    "confirmDelete": "Confirmer la suppression"
   },
   "form": {
     "title": "Titre du Prompt:",
@@ -194,6 +198,15 @@
     "noVersions": "Aucune version disponible",
     "revertSuccess": "Retour à la version précédente réussi",
     "revertError": "Échec du retour à la version"
+  },
+  "bulkDelete": {
+    "confirmTitle": "Confirmer la suppression groupée",
+    "confirmMessage": "Vous êtes sur le point de supprimer",
+    "prompts": "prompt(s)",
+    "warningMessage": "Cette action créera une sauvegarde automatique, mais la suppression ne peut pas être annulée sans restaurer depuis la sauvegarde.",
+    "selectedCount": "{{count}} sélectionné(s)",
+    "successMessage": "{{deleted}} prompt(s) supprimé(s) avec succès. {{failed}} échec(s).",
+    "errorMessage": "Échec de la suppression des prompts. Veuillez réessayer."
   },
   "backup": {
     "title": "Gestion des sauvegardes",

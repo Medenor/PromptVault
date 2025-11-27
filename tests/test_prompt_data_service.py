@@ -657,3 +657,73 @@ class TestErrorHandling:
 
         assert prompt_id >= 0
         assert prompt_id in empty_data_service.prompts
+
+
+
+# Bulk Deletion Tests
+
+def test_delete_prompts_bulk_all_exist(populated_data_service):
+    """Test bulk deletion when all prompts exist."""
+    service = populated_data_service
+    initial_count = len(service.prompts)
+
+    # Get first 3 IDs
+    ids_to_delete = list(service.prompts.keys())[:3]
+
+    result = service.delete_prompts_bulk(ids_to_delete)
+
+    assert result["deleted_count"] == 3
+    assert result["failed_count"] == 0
+    assert len(result["deleted_ids"]) == 3
+    assert len(result["failed_ids"]) == 0
+    assert len(service.prompts) == initial_count - 3
+
+    # Verify deleted IDs are not in prompts
+    for prompt_id in ids_to_delete:
+        assert prompt_id not in service.prompts
+
+
+def test_delete_prompts_bulk_partial(populated_data_service):
+    """Test bulk deletion with mixed existing/non-existing IDs."""
+    service = populated_data_service
+
+    existing_id = list(service.prompts.keys())[0]
+    ids_to_delete = [existing_id, 999, 1000]
+
+    result = service.delete_prompts_bulk(ids_to_delete)
+
+    assert result["deleted_count"] == 1
+    assert result["failed_count"] == 2
+    assert existing_id in result["deleted_ids"]
+    assert 999 in result["failed_ids"]
+    assert 1000 in result["failed_ids"]
+    assert existing_id not in service.prompts
+
+
+def test_delete_prompts_bulk_empty_list(empty_data_service):
+    """Test bulk deletion with empty list."""
+    service = empty_data_service
+
+    result = service.delete_prompts_bulk([])
+
+    assert result["deleted_count"] == 0
+    assert result["failed_count"] == 0
+    assert len(result["deleted_ids"]) == 0
+    assert len(result["failed_ids"]) == 0
+
+
+def test_delete_prompts_bulk_all_nonexistent(populated_data_service):
+    """Test bulk deletion when no IDs exist."""
+    service = populated_data_service
+    initial_count = len(service.prompts)
+
+    ids_to_delete = [999, 1000, 1001]
+
+    result = service.delete_prompts_bulk(ids_to_delete)
+
+    assert result["deleted_count"] == 0
+    assert result["failed_count"] == 3
+    assert len(result["deleted_ids"]) == 0
+    assert len(result["failed_ids"]) == 3
+    assert len(service.prompts) == initial_count
+

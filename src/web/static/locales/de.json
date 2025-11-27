@@ -25,7 +25,11 @@
     "export": "Exportieren",
     "import": "Importieren",
     "close": "Schließen",
-    "refresh": "Aktualisieren"
+    "refresh": "Aktualisieren",
+    "bulkDelete": "Ausgewählte löschen",
+    "selectAll": "Alle auswählen",
+    "clearSelection": "Auswahl aufheben",
+    "confirmDelete": "Löschen bestätigen"
   },
   "form": {
     "title": "Prompt-Titel:",
@@ -194,6 +198,15 @@
     "noVersions": "Keine Versionen verfügbar",
     "revertSuccess": "Erfolgreich zur vorherigen Version zurückgekehrt",
     "revertError": "Fehler beim Zurücksetzen der Version"
+  },
+  "bulkDelete": {
+    "confirmTitle": "Massenlöschung bestätigen",
+    "confirmMessage": "Sie sind dabei zu löschen",
+    "prompts": "Prompt(s)",
+    "warningMessage": "Diese Aktion erstellt eine automatische Sicherung, aber das Löschen kann nicht ohne Wiederherstellung aus der Sicherung rückgängig gemacht werden.",
+    "selectedCount": "{{count}} ausgewählt",
+    "successMessage": "{{deleted}} Prompt(s) erfolgreich gelöscht. {{failed}} fehlgeschlagen.",
+    "errorMessage": "Fehler beim Löschen von Prompts. Bitte versuchen Sie es erneut."
   },
   "backup": {
     "title": "Sicherungsverwaltung",

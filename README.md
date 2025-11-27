@@ -236,6 +236,7 @@ PORT=8001 python3 run_web.py
 ### Features
 
 - **Prompt Management**: Create, edit, delete, and organize prompts through an intuitive web interface
+- **Bulk Operations**: Multi-select prompts with checkboxes and delete multiple prompts in a single operation with automatic backups
 - **Version Control**: Git-like versioning system with full history tracking, diff visualization, and safe revert functionality
 - **Categories & Tags**: Organize prompts with categories and tags for easy discovery
 - **Search & Filter**: Find prompts quickly with advanced filtering and search capabilities

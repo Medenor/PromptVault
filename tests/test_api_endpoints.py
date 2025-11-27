@@ -748,3 +748,142 @@ class TestFrontendLogging:
             assert api_client.post("/api/logs/frontend", json=self._payload()).status_code == 200
         response = api_client.post("/api/logs/frontend", json=self._payload())
         assert response.status_code == 429
+
+
+
+# Bulk Deletion API Tests
+
+def test_bulk_delete_success(api_client_context):
+    """Test successful bulk deletion."""
+    client = api_client_context["client"]
+    data_service = api_client_context["data_service"]
+
+    # Create test prompts
+    ids = []
+    for i in range(5):
+        prompt_id = data_service.add_new_prompt({
+            "title": f"Test Prompt {i}",
+            "prompt": f"Content {i}",
+            "category": "Test",
+            "tags": []
+        })
+        ids.append(prompt_id)
+    data_service.save_prompts()
+
+    # Bulk delete
+    response = client.request(
+        "DELETE",
+        "/api/prompts/bulk",
+        json={"prompt_ids": ids[:3]}
+    )
+
+    assert response.status_code == 200
+    result = response.json()
+    assert result["success"] is True
+    assert result["deleted_count"] == 3
+    assert result["failed_count"] == 0
+    assert len(result["failed_ids"]) == 0
+
+    # Verify prompts are deleted
+    for prompt_id in ids[:3]:
+        assert prompt_id not in data_service.prompts
+
+
+def test_bulk_delete_partial_failure(api_client_context):
+    """Test bulk deletion with some non-existent IDs."""
+    client = api_client_context["client"]
+    data_service = api_client_context["data_service"]
+
+    # Create one prompt
+    prompt_id = data_service.add_new_prompt({
+        "title": "Test Prompt",
+        "prompt": "Content",
+        "category": "Test",
+        "tags": []
+    })
+    data_service.save_prompts()
+
+    # Try to delete existing + non-existent
+    response = client.request(
+        "DELETE",
+        "/api/prompts/bulk",
+        json={"prompt_ids": [prompt_id, 999, 1000]}
+    )
+
+    assert response.status_code == 200
+    result = response.json()
+    assert result["deleted_count"] == 1
+    assert result["failed_count"] == 2
+    assert 999 in result["failed_ids"]
+    assert 1000 in result["failed_ids"]
+
+
+def test_bulk_delete_validation_empty_list(api_client_context):
+    """Test bulk deletion validation with empty list."""
+    client = api_client_context["client"]
+
+    # Empty list
+    response = client.request(
+        "DELETE",
+        "/api/prompts/bulk",
+        json={"prompt_ids": []}
+    )
+    assert response.status_code == 422
+
+
+def test_bulk_delete_validation_duplicate_ids(api_client_context):
+    """Test bulk deletion validation with duplicate IDs."""
+    client = api_client_context["client"]
+
+    # Duplicate IDs
+    response = client.request(
+        "DELETE",
+        "/api/prompts/bulk",
+        json={"prompt_ids": [1, 2, 1]}
+    )
+    assert response.status_code == 422
+
+
+def test_bulk_delete_validation_too_many_ids(api_client_context):
+    """Test bulk deletion validation with too many IDs."""
+    client = api_client_context["client"]
+
+    # Too many IDs (> 1000)
+    response = client.request(
+        "DELETE",
+        "/api/prompts/bulk",
+        json={"prompt_ids": list(range(1, 1002))}
+    )
+    assert response.status_code == 422
+
+
+def test_bulk_delete_creates_backup(api_client_context):
+    """Test that bulk deletion creates an automatic backup."""
+    client = api_client_context["client"]
+    data_service = api_client_context["data_service"]
+
+    # Create test prompts
+    ids = []
+    for i in range(3):
+        prompt_id = data_service.add_new_prompt({
+            "title": f"Test Prompt {i}",
+            "prompt": f"Content {i}",
+            "category": "Test",
+            "tags": []
+        })
+        ids.append(prompt_id)
+    data_service.save_prompts()
+
+    # Bulk delete
+    response = client.request(
+        "DELETE",
+        "/api/prompts/bulk",
+        json={"prompt_ids": ids}
+    )
+
+    assert response.status_code == 200
+    result = response.json()
+    assert result["success"] is True
+    assert "backup_id" in result
+    assert result["backup_id"] is not None
+
