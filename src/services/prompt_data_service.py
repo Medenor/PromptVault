@@ -593,6 +593,52 @@ class PromptDataService:
             return True
         return False
 
+    def delete_prompts_bulk(self, prompt_ids: List[int]) -> Dict[str, Any]:
+        """
+        Delete multiple prompts in a single operation.
+
+        Args:
+            prompt_ids (List[int]): List of prompt IDs to delete
+
+        Returns:
+            Dict[str, Any]: Dictionary containing:
+                - deleted_ids: List of successfully deleted IDs
+                - failed_ids: List of IDs that failed (non-existent)
+                - deleted_count: Number of successful deletions
+                - failed_count: Number of failures
+        """
+        deleted_ids = []
+        failed_ids = []
+
+        for prompt_id in prompt_ids:
+            if prompt_id in self.prompts:
+                del self.prompts[prompt_id]
+                deleted_ids.append(prompt_id)
+                # Audit log each deletion
+                logging_service.log_audit_event(
+                    action="prompt.delete",
+                    resource_type="prompt",
+                    resource_id=str(prompt_id),
+                    status="success",
+                )
+            else:
+                failed_ids.append(prompt_id)
+                logging_service.log_audit_event(
+                    action="prompt.delete",
+                    resource_type="prompt",
+                    resource_id=str(prompt_id),
+                    status="failure",
+                    error="Prompt not found",
+                )
+
+        # Note: Do not clear categories and tags to preserve predefined ones
+        return {
+            "deleted_ids": deleted_ids,
+            "failed_ids": failed_ids,
+            "deleted_count": len(deleted_ids),
+            "failed_count": len(failed_ids),
+        }
+
     def clear_all_prompts(self) -> bool:
         """
         Clear all prompts and reset the data service to initial state.

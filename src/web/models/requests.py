@@ -346,3 +346,37 @@ class FrontendLogEntry(BaseModel):
         if v is None:
             return v
         return v.strip()
+
+
+class BulkDeleteRequest(BaseModel):
+    """Request model for bulk deleting prompts.
+
+    Field constraints:
+    - prompt_ids: List of 1-1000 integer prompt IDs
+    - No duplicate IDs allowed
+    """
+
+    prompt_ids: List[int] = Field(
+        ...,
+        min_length=1,
+        max_length=1000,
+        description="List of prompt IDs to delete",
+    )
+
+    @field_validator("prompt_ids")
+    @classmethod
+    def validate_unique_ids(cls, v: List[int]) -> List[int]:
+        """Ensure all IDs are unique.
+
+        Args:
+            v: List of prompt IDs
+
+        Returns:
+            List[int]: Validated list of unique IDs
+
+        Raises:
+            ValueError: If duplicate IDs are found
+        """
+        if len(v) != len(set(v)):
+            raise ValueError("Duplicate prompt IDs not allowed")
+        return v

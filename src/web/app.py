@@ -30,6 +30,7 @@ from src.web.models import (
     BackupCompressRequest,
     VersionRevertRequest,
     FrontendLogEntry,
+    BulkDeleteRequest,
     ExportFormat,
     ImportMode,
 )
@@ -687,6 +688,69 @@ async def update_prompt(
             status_code=422,
             content={"error": "Validation failed", "details": e.errors()},
         )
+
+
+@app.delete("/api/prompts/bulk")
+async def delete_prompts_bulk(body: BulkDeleteRequest):
+    """Delete multiple prompts in bulk.
+
+    Creates automatic backup before deletion.
+    Returns statistics on successful and failed deletions.
+    """
+    try:
+        # Create automatic backup with timestamp
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        backup_id = backup_service.create_backup(f"pre_bulk_delete_{timestamp}")
+
+        if backup_id:
+            audit_logger.info(
+                "Automatic backup created before bulk deletion",
+                extra={
+                    "event": "backup.auto",
+                    "action": "backup.create",
+                    "resource_type": "backup",
+                    "resource_id": backup_id,
+                    "trigger": "bulk_delete",
+                    "prompt_count": len(body.prompt_ids),
+                },
+            )
+
+        # Perform bulk deletion
+        result = data_service.delete_prompts_bulk(body.prompt_ids)
+
+        # Save changes to disk
+        data_service.save_prompts()
+
+        # Log bulk operation summary
+        audit_logger.info(
+            "Bulk prompt deletion completed",
+            extra={
+                "event": "prompt.bulk_delete",
+                "action": "prompt.bulk_delete",
+                "resource_type": "prompt",
+                "resource_id": "multiple",
+                "deleted_count": result["deleted_count"],
+                "failed_count": result["failed_count"],
+                "backup_id": backup_id,
+            },
+        )
+
+        return JSONResponse(
+            content={
+                "success": True,
+                "deleted_count": result["deleted_count"],
+                "failed_count": result["failed_count"],
+                "failed_ids": result["failed_ids"],
+                "backup_id": backup_id,
+            }
+        )
+
+    except Exception as e:
+        logger.error(
+            "Bulk deletion failed",
+            extra={"error": str(e), "prompt_ids": body.prompt_ids},
+        )
+        raise HTTPException(status_code=500, detail="Failed to delete prompts")
 
 
 @app.delete("/api/prompts/{prompt_id}")

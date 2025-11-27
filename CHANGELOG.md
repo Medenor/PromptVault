@@ -9,12 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### ✨ New Features
 
+- **Bulk Prompt Deletion**: Multi-select prompts with checkboxes and delete multiple prompts in a single operation
+  - **Multi-select UI**: Checkboxes on each prompt card with "Select All" functionality
+  - **Bulk Actions Toolbar**: Shows selection count and delete button when prompts are selected
+  - **Bulk Delete API**: `DELETE /api/prompts/bulk` endpoint accepting 1-1000 unique prompt IDs
+  - **Automatic Backups**: Pre-deletion backup created automatically before bulk operations
+  - **Validation**: Pydantic validation prevents duplicate IDs and enforces limits
+  - **Confirmation Dialog**: Shows count of prompts to be deleted with safety warning
+  - **Success Feedback**: Displays statistics on successful and failed deletions
+  - **Internationalization**: Full translation support in English, French, Spanish, and German
+  - **Comprehensive Testing**: 10 tests covering API endpoints, service layer, and validation
 - **Input Sanitization & Validation**: comprehensive input validation and sanitization across all user-facing forms and API endpoints to prevent injection attacks, ensure data integrity, and improve user experience with clear validation feedback.
 - **Frontend Telemetry Reporting**: `telemetry.js` now captures browser errors via `window.FrontendLogger`, pipes them into the `/api/logs/frontend` endpoint with rate limiting/sanitization, and exposes opt-out controls plus helper wrappers across the UI.
 
 ### 🔧 Fixed
 
-- _No changes yet._
+- **Route Ordering**: Fixed bulk delete endpoint route ordering - moved `/api/prompts/bulk` before `/api/prompts/{prompt_id}` to prevent "bulk" being interpreted as a prompt ID
 
 ## [1.1.0] - 2025-10-30
 

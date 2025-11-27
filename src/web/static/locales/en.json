@@ -25,7 +25,11 @@
     "export": "Export",
     "import": "Import",
     "close": "Close",
-    "refresh": "Refresh"
+    "refresh": "Refresh",
+    "bulkDelete": "Delete Selected",
+    "selectAll": "Select All",
+    "clearSelection": "Clear Selection",
+    "confirmDelete": "Confirm Delete"
   },
   "form": {
     "title": "Prompt Title:",
@@ -194,6 +198,15 @@
     "noVersions": "No versions available",
     "revertSuccess": "Successfully reverted to previous version",
     "revertError": "Failed to revert version"
+  },
+  "bulkDelete": {
+    "confirmTitle": "Confirm Bulk Deletion",
+    "confirmMessage": "You are about to delete",
+    "prompts": "prompt(s)",
+    "warningMessage": "This action will create an automatic backup, but deletion cannot be undone without restoring from backup.",
+    "selectedCount": "{{count}} selected",
+    "successMessage": "Successfully deleted {{deleted}} prompt(s). {{failed}} failed.",
+    "errorMessage": "Failed to delete prompts. Please try again."
   },
   "backup": {
     "title": "Backup Management",
