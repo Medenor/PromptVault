@@ -38,7 +38,7 @@ PromptVault is a modern web-based prompt management application built with FastA
 
    - **PromptDataService** ([`prompt_data_service.py`](src/services/prompt_data_service.py)): Core data persistence layer
      - Handles all CRUD operations for prompts
-     - Manages JSON file storage and loading
+     - Manages JSON file storage and loading #TODO: Correct this file, no longer json based
      - Data structure migration and validation
      - Category and tag management
      - Maintains `next_id` counter for prompt IDs
