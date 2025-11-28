@@ -18,10 +18,7 @@ Example URLs:
 
 import os
 from typing import Optional
-try:
-    from pydantic_settings import BaseSettings
-except ImportError:
-    from pydantic.settings import BaseSettings
+from pydantic_settings import BaseSettings
 
 
 class DatabaseSettings(BaseSettings):
@@ -45,6 +42,7 @@ class DatabaseSettings(BaseSettings):
         env_file = ".env"
         env_file_encoding = "utf-8"
         case_sensitive = True
+        extra = "allow"
 
     @property
     def is_sqlite(self) -> bool:
