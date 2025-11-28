@@ -3,11 +3,11 @@ title: Database Migration: JSON to Relational (SQLite / PostgreSQL)
 version: 1.0
 date_created: 2025-11-28
 last_updated: 2025-11-28
-owner: PromptVault Engineering
+owner: medenor
 tags: [infrastructure, schema, design, database, migration]
 ---
 
-# Database Migration Specification
+## Database Migration Specification
 
 This specification describes the architecture, schema design, migration strategy, and operational and testing requirements for migrating PromptVault from JSON-file storage to an RDBMS using SQLite for development/small deployments and PostgreSQL for production.
 
@@ -161,6 +161,7 @@ Indices & Search considerations:
 Data contracts (JSON payload examples):
 
 Example POST /prompts (create):
+
 ```json
 {
   "title": "Design an onboarding prompt",
@@ -173,6 +174,7 @@ Example POST /prompts (create):
 ```
 
 Example Response (API consistent with existing behavior):
+
 ```json
 {
   "id": "prompt-1",
@@ -284,6 +286,7 @@ Edge Case: Attachment or external binary data
   - Continue referencing local files with metadata, without in-lining them in DB fields.
 
 Example SQLAlchemy model outline (pseudocode)
+
 ```python
 class Prompt(Base):
     __tablename__ = 'prompts'
@@ -296,6 +299,7 @@ class Prompt(Base):
 ```
 
 Migration example
+
 ```bash
 # Run migrations
 alembic upgrade head
@@ -314,10 +318,10 @@ python scripts/migrate_json_to_db.py --source data/prompts_data.json --db-url $D
 ## 11. Related Specifications / Further Reading
 
 - docs/SPECS/spec-backup-restore.md (if the project has one) or [BackupService design]
-- PostgreSQL: https://www.postgresql.org/docs/current/index.html
-- SQLAlchemy: https://www.sqlalchemy.org/docs/
-- Alembic: https://alembic.sqlalchemy.org/en/latest/
-- SQLite FTS5: https://www.sqlite.org/fts5.html
+- PostgreSQL: [PostgreSQL Documentation](https://www.postgresql.org/docs/current/index.html)
+- SQLAlchemy: [SQLAlchemy Documentation](https://www.sqlalchemy.org/docs/)
+- Alembic: [Alembic Documentation](https://alembic.sqlalchemy.org/en/latest/)
+- SQLite FTS5: [SQLite FTS5](https://www.sqlite.org/fts5.html)
 
 ## Implementation Checklist & Migration Steps (Suggested)
 
@@ -337,6 +341,7 @@ python scripts/migrate_json_to_db.py --source data/prompts_data.json --db-url $D
 ## 12. Appendices: Environment & Example Configs
 
 `.env.example`
+
 ```bash
 # Development SQLite (default)
 DATABASE_URL=sqlite+pysqlite:///./data/promptvault.db
@@ -349,6 +354,7 @@ DB_POOL_TIMEOUT=30
 ```
 
 Docker Compose example snippet (development with Postgres)
+
 ```yaml
 services:
   db:
