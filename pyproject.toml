@@ -36,8 +36,10 @@ dependencies = [
   "aiofiles==23.2.1",
   "sqlalchemy>=2.0.25",
   "alembic>=1.13.1",
-  "psycopg[binary]>=3.1.16",
+  "psycopg2-binary>=2.9.9",
   "greenlet>=3.0.3",
+  "pydantic>=2.0.0",
+  "pydantic-settings>=2.0.0",
 ]
 
 [project.optional-dependencies]

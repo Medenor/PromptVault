@@ -36,8 +36,8 @@ class Prompt(Base):
     """
     __tablename__ = "prompts"
 
-    # Preserve existing integer IDs from JSON migration
-    id = Column(Integer, primary_key=True, autoincrement=False)
+    # Integer IDs with autoincrement (migration can override with explicit IDs)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     title = Column(String(200), nullable=False)
     prompt = Column(Text, nullable=False)
     category_id = Column(Integer, ForeignKey("categories.id"))

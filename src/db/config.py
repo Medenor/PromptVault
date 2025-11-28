@@ -18,7 +18,10 @@ Example URLs:
 
 import os
 from typing import Optional
-from pydantic_settings import BaseSettings
+try:
+    from pydantic_settings import BaseSettings
+except ImportError:
+    from pydantic.settings import BaseSettings
 
 
 class DatabaseSettings(BaseSettings):

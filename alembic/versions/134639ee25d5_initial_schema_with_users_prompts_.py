@@ -105,13 +105,13 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['parent_version_id'], ['prompt_versions.version_id'], name=op.f('fk_prompt_versions_parent_version_id_prompt_versions')),
     sa.ForeignKeyConstraint(['prompt_id'], ['prompts.id'], name=op.f('fk_prompt_versions_prompt_id_prompts'), ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_prompt_versions')),
-    sa.UniqueConstraint('prompt_id', 'version_number', name='uq_prompt_version_number')
+    sa.UniqueConstraint('prompt_id', 'version_number', name='uq_prompt_version_number'),
+    sa.UniqueConstraint('version_id', name='uq_version_id')
     )
     op.create_index('idx_versions_created', 'prompt_versions', ['created_at'], unique=False)
     op.create_index('idx_versions_parent', 'prompt_versions', ['parent_version_id'], unique=False)
     op.create_index('idx_versions_prompt', 'prompt_versions', ['prompt_id'], unique=False)
     op.create_index(op.f('ix_prompt_versions_created_at'), 'prompt_versions', ['created_at'], unique=False)
-    op.create_index(op.f('ix_prompt_versions_version_id'), 'prompt_versions', ['version_id'], unique=True)
     op.create_table('prompt_branches',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('prompt_id', sa.Integer(), nullable=False),

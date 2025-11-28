@@ -9,6 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### ✨ New Features
 
+- **Database Migration (Phases 1-11)**: Complete transition from JSON file storage to relational database backend
+  - **SQLAlchemy ORM**: Type-safe database operations with declarative models for Prompt, PromptVersion, Category, Tag, User, and Backup
+  - **Repository Pattern**: Clean data access layer with specialized repositories (PromptRepository, VersionRepository, CategoryRepository, TagRepository)
+  - **Database Support**: Production-ready PostgreSQL and development-friendly SQLite backends
+  - **Alembic Migrations**: Version-controlled database schema evolution with `alembic upgrade/downgrade`
+  - **Transaction Safety**: Context managers with automatic commit/rollback for data consistency
+  - **Session Management**: Connection pooling for PostgreSQL with configurable pool size and timeout
+  - **Migration Script**: Automated JSON to database migration with dry-run mode and verbose logging (`scripts/migrate_json_to_db.py`)
+  - **Backward Compatibility**: 100% API compatibility maintained - existing endpoints return identical responses
+  - **Database Backups**: SQLite file copy and PostgreSQL pg_dump integration with metadata tracking
+  - **Comprehensive Testing**: 42+ passing tests for repositories, services, and integration workflows using in-memory SQLite
+  - **Docker Integration**: Production-ready Docker Compose setup with PostgreSQL service and health checks
+  - **Complete Documentation**: Deployment guide, migration guide, and technical specification (see `docs/DEPLOYMENT.md`, `docs/MIGRATION_GUIDE.md`, `docs/SPECS/SPEC_DATABASE.md`)
+  - **Performance**: Indexed queries, eager loading to prevent N+1, pagination support for large datasets
+  - **Security**: Parameterized queries (SQL injection prevention), SSL/TLS support, environment-based credentials
 - **Bulk Prompt Deletion**: Multi-select prompts with checkboxes and delete multiple prompts in a single operation
   - **Multi-select UI**: Checkboxes on each prompt card with "Select All" functionality
   - **Bulk Actions Toolbar**: Shows selection count and delete button when prompts are selected
@@ -25,6 +40,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### 🔧 Fixed
 
 - **Route Ordering**: Fixed bulk delete endpoint route ordering - moved `/api/prompts/bulk` before `/api/prompts/{prompt_id}` to prevent "bulk" being interpreted as a prompt ID
+
+### 📚 Documentation
+
+- **Deployment Guide** (`docs/DEPLOYMENT.md`): Complete guide for Docker Compose, Docker, and manual deployment with PostgreSQL/SQLite setup
+- **Migration Guide** (`docs/MIGRATION_GUIDE.md`): Step-by-step instructions for migrating from JSON to database storage with rollback procedures
+- **Database Specification** (`docs/SPECS/SPEC_DATABASE.md`): Technical specification with requirements, architecture, schema, and acceptance criteria
+- **Phase Documentation**: Detailed implementation reports for Phases 1-11 covering dependencies, models, configuration, migrations, repositories, services, backups, testing, and deployment
+
+### 🔄 Changed
+
+- **Python Version**: Minimum required Python version updated to 3.11+ (was 3.8+)
+- **Data Storage**: Database backend (PostgreSQL/SQLite) is now the recommended storage method; JSON file storage marked as deprecated
+- **Docker Configuration**: Enhanced Dockerfile with PostgreSQL client, non-root user, and integrated health checks
+- **Docker Compose**: Complete rewrite with PostgreSQL service, health checks, and environment-based configuration
 
 ## [1.1.0] - 2025-10-30
 
