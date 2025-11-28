@@ -66,7 +66,7 @@ class TestVersionWorkflow:
 
     def test_compare_and_revert_workflow(self, client, test_data_service):
         """Test: Create -> Update -> Compare -> Revert workflow"""
-        prompt_id = 0
+        prompt_id = list(test_data_service.prompts.keys())[0]
 
         # Get initial version
         history1 = client.get(f"/api/prompts/{prompt_id}/versions").json()
@@ -128,7 +128,7 @@ class TestVersionWorkflow:
 
     def test_multiple_updates_version_chain(self, client, test_data_service):
         """Test: Multiple updates create proper version chain"""
-        prompt_id = 0
+        prompt_id = list(test_data_service.prompts.keys())[0]
 
         # Make 5 sequential updates
         for i in range(5):
@@ -159,7 +159,7 @@ class TestVersionWorkflow:
 
     def test_diff_with_multiple_field_changes(self, client, test_data_service):
         """Test: Diff correctly identifies changes in multiple fields"""
-        prompt_id = 0
+        prompt_id = list(test_data_service.prompts.keys())[0]
 
         # Get initial version
         history1 = client.get(f"/api/prompts/{prompt_id}/versions").json()
@@ -197,7 +197,7 @@ class TestVersionWorkflow:
 
     def test_revert_creates_new_version(self, client, test_data_service):
         """Test: Reverting creates a new version, not replacing"""
-        prompt_id = 0
+        prompt_id = list(test_data_service.prompts.keys())[0]
 
         # Get initial version count
         history1 = client.get(f"/api/prompts/{prompt_id}/versions").json()
@@ -236,7 +236,7 @@ class TestVersionWorkflow:
 
     def test_version_metadata_accuracy(self, client, test_data_service):
         """Test: Version metadata (timestamp, author) is accurate"""
-        prompt_id = 0
+        prompt_id = list(test_data_service.prompts.keys())[0]
 
         # Get version history
         history = client.get(f"/api/prompts/{prompt_id}/versions").json()
@@ -259,7 +259,7 @@ class TestVersionWorkflow:
 
     def test_concurrent_version_operations(self, client, test_data_service):
         """Test: Multiple version operations work correctly"""
-        prompt_id = 0
+        prompt_id = list(test_data_service.prompts.keys())[0]
 
         # Get initial version
         history1 = client.get(f"/api/prompts/{prompt_id}/versions").json()

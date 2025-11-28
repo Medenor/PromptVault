@@ -429,7 +429,7 @@ class TestEdgeCases:
         empty_data_service.add_new_prompt(prompt_data)
 
         # Manually set to trigger 'No category' logic
-        prompt_id = 0
+        prompt_id = list(empty_data_service.prompts.keys())[0]
         empty_data_service.prompts[prompt_id]["data"]["category"] = None
 
         prompts = empty_data_service.prompts
