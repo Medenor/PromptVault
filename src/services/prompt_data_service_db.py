@@ -5,6 +5,8 @@ SQLAlchemy repositories for data persistence. The dict-based interface is
 maintained for backward compatibility with existing API endpoints.
 """
 
+import json
+import os
 import uuid
 import warnings
 from datetime import datetime
@@ -200,7 +202,32 @@ class PromptDataService:
             "save_prompts() called (no-op with database backend)",
             extra={"event": "prompts.save.noop"}
         )
-        return True
+        if not self.data_file:
+            return True
+
+        payload = {
+            "next_id": self.next_id,
+            "prompts": self.load_prompts(),
+            "categories": self.get_categories(),
+            "global_tags": list(self.global_tags),
+        }
+
+        try:
+            data_dir = os.path.dirname(self.data_file) or "."
+            os.makedirs(data_dir, exist_ok=True)
+            with open(self.data_file, "w", encoding="utf-8") as f:
+                json.dump(payload, f, indent=2)
+            return True
+        except Exception as exc:
+            logger.error(
+                "Failed to persist prompts to data file",
+                extra={"event": "prompts.save.failure", "resource_id": self.data_file},
+                exc_info=exc,
+            )
+            raise DataPersistenceError(
+                "Failed to persist prompts to data file.",
+                context={"data_file": self.data_file},
+            ) from exc
 
     def load_prompts(self) -> Dict[int, Dict]:
         """Load prompts from database.

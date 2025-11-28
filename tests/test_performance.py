@@ -393,7 +393,9 @@ class TestConcurrentOperations:
 
     def test_rapid_prompt_updates(self, populated_data_service):
         """Test updating prompts rapidly."""
-        prompt_id = 0
+        prompts = populated_data_service.load_prompts()
+        assert prompts, "Expected populated_data_service to seed prompts"
+        prompt_id = next(iter(prompts.keys()))
 
         start_time = time.time()
 

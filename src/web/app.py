@@ -1254,15 +1254,15 @@ async def delete_backup(backup_id: str):
     """Delete a specific backup."""
     try:
         backup_info = backup_service.get_backup_info(backup_id)
-        if not backup_info:
-            return JSONResponse(status_code=404, content={"error": "Backup not found"})
-
-        if backup_service.delete_backup(backup_id):
+        deleted = backup_service.delete_backup(backup_id)
+        if deleted:
             return {"success": True}
-        else:
+
+        if backup_info:
             return JSONResponse(
                 status_code=500, content={"error": "Failed to delete backup"}
             )
+        return JSONResponse(status_code=404, content={"error": "Backup not found"})
 
     except Exception as e:
         return JSONResponse(

@@ -16,6 +16,7 @@ import shutil
 import gzip
 import subprocess
 import re
+import json
 from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Any, Optional
 from pathlib import Path
@@ -145,6 +146,7 @@ class BackupService:
             backup_size = os.path.getsize(backup_path)
 
             # Save metadata to database
+            timestamp = datetime.now(timezone.utc).isoformat()
             metadata = {
                 "backup_id": backup_id,
                 "backup_type": "sqlite_copy",
@@ -154,9 +156,11 @@ class BackupService:
                 "database_type": "sqlite",
                 "created_by": self._get_current_user(),
                 "compressed": False,
+                "timestamp": timestamp,
             }
 
             self._save_metadata_to_db(backup_id, metadata)
+            self._write_metadata_file(metadata)
 
             logger.info(
                 "SQLite backup created successfully",
@@ -227,6 +231,7 @@ class BackupService:
             backup_size = os.path.getsize(backup_path)
 
             # Save metadata to database
+            timestamp = datetime.now(timezone.utc).isoformat()
             metadata = {
                 "backup_id": backup_id,
                 "backup_type": "pg_dump",
@@ -236,9 +241,11 @@ class BackupService:
                 "database_type": "postgresql",
                 "created_by": self._get_current_user(),
                 "compressed": False,
+                "timestamp": timestamp,
             }
 
             self._save_metadata_to_db(backup_id, metadata)
+            self._write_metadata_file(metadata)
 
             logger.info(
                 "PostgreSQL backup created successfully",
@@ -504,25 +511,44 @@ class BackupService:
             List[Dict[str, Any]]: List of backup metadata, sorted by timestamp (newest first)
         """
         try:
-            with get_db_session() as session:
-                backups = session.query(Backup).order_by(Backup.created_at.desc()).all()
+            result: List[Dict[str, Any]] = []
+            seen_ids = set()
 
-                result = []
+            with get_db_session() as session:
+                backups = (
+                    session.query(Backup)
+                    .order_by(Backup.created_at.desc())
+                    .all()
+                )
+
                 for backup in backups:
                     metadata = backup.backup_metadata or {}
-                    result.append({
+                    timestamp = metadata.get("timestamp")
+                    if not timestamp and backup.created_at:
+                        timestamp = backup.created_at.isoformat() + "Z"
+
+                    serialized = {
                         "backup_id": backup.id,
                         "backup_type": backup.backup_type,
                         "filename": backup.filename,
                         "storage_path": backup.storage_path,
-                        "timestamp": backup.created_at.isoformat() + "Z",
-                        "size_bytes": metadata.get("size_bytes", 0),
+                        "timestamp": timestamp,
+                        "size_bytes": metadata.get("size_bytes", backup.size_bytes or 0),
                         "database_type": metadata.get("database_type", "unknown"),
                         "created_by": metadata.get("created_by", "unknown"),
                         "compressed": metadata.get("compressed", False),
-                    })
+                    }
+                    result.append(serialized)
+                    seen_ids.add(backup.id)
+                    self._ensure_metadata_file(serialized)
 
-                return result
+            file_metadata = self._load_all_metadata_files()
+            for backup_id, metadata in file_metadata.items():
+                if backup_id not in seen_ids:
+                    result.append(metadata)
+
+            result.sort(key=lambda item: item.get("timestamp", ""), reverse=True)
+            return result
 
         except Exception as exc:
             logger.error(
@@ -548,21 +574,24 @@ class BackupService:
             with get_db_session() as session:
                 backup = session.query(Backup).filter_by(id=backup_id).first()
 
-                if not backup:
-                    return None
-
-                metadata = backup.backup_metadata or {}
-                return {
-                    "backup_id": backup.id,
-                    "backup_type": backup.backup_type,
-                    "filename": backup.filename,
-                    "storage_path": backup.storage_path,
-                    "timestamp": backup.created_at.isoformat() + "Z",
-                    "size_bytes": metadata.get("size_bytes", 0),
-                    "database_type": metadata.get("database_type", "unknown"),
-                    "created_by": metadata.get("created_by", "unknown"),
-                    "compressed": metadata.get("compressed", False),
-                }
+                if backup:
+                    metadata = backup.backup_metadata or {}
+                    timestamp = metadata.get("timestamp")
+                    if not timestamp and backup.created_at:
+                        timestamp = backup.created_at.isoformat() + "Z"
+                    info = {
+                        "backup_id": backup.id,
+                        "backup_type": backup.backup_type,
+                        "filename": backup.filename,
+                        "storage_path": backup.storage_path,
+                        "timestamp": timestamp,
+                        "size_bytes": metadata.get("size_bytes", backup.size_bytes or 0),
+                        "database_type": metadata.get("database_type", "unknown"),
+                        "created_by": metadata.get("created_by", "unknown"),
+                        "compressed": metadata.get("compressed", False),
+                    }
+                    self._ensure_metadata_file(info)
+                    return info
 
         except Exception as exc:
             logger.error(
@@ -570,7 +599,9 @@ class BackupService:
                 extra={"event": "backup.info.failure", "resource_id": backup_id},
                 exc_info=exc
             )
-            return None
+
+        # Fallback to metadata file
+        return self._load_metadata_from_file(backup_id)
 
     def delete_backup(self, backup_id: str) -> bool:
         """Delete a backup and its files.
@@ -584,17 +615,26 @@ class BackupService:
         try:
             with get_db_session() as session:
                 backup = session.query(Backup).filter_by(id=backup_id).first()
+                metadata = None
 
-                if not backup:
+                if backup:
+                    metadata = backup.backup_metadata or {}
+                    storage_path = backup.storage_path
+                else:
+                    metadata = self._load_metadata_from_file(backup_id)
+                    storage_path = metadata.get("storage_path") if metadata else None
+
+                if not backup and not metadata:
                     return False
 
-                # Delete backup file if it exists
-                if backup.storage_path and os.path.exists(backup.storage_path):
-                    os.remove(backup.storage_path)
+                if storage_path and os.path.exists(storage_path):
+                    os.remove(storage_path)
 
-                # Delete from database
-                session.delete(backup)
-                session.flush()
+                if backup:
+                    session.delete(backup)
+                    session.flush()
+
+                self._remove_metadata_file(backup_id)
 
                 logging_service.log_audit_event(
                     action="backup.delete",
@@ -720,6 +760,85 @@ class BackupService:
 
         return removed_count
 
+    def compress_old_backups(self, days_threshold: int = 7) -> int:
+        """Compress backups older than the provided threshold."""
+        compressed_count = 0
+
+        try:
+            cutoff_date = datetime.now(timezone.utc) - timedelta(days=days_threshold)
+            backups = self.list_backups()
+
+            for backup in backups:
+                timestamp = backup.get("timestamp")
+                if not timestamp:
+                    continue
+
+                backup_date = self._parse_backup_timestamp(timestamp)
+                if days_threshold > 0 and backup_date >= cutoff_date:
+                    continue
+
+                filename = backup.get("filename")
+                storage_path = backup.get("storage_path")
+                if not storage_path or not os.path.exists(storage_path):
+                    continue
+                if filename and filename.endswith(".gz"):
+                    continue
+
+                compressed_path = f"{storage_path}.gz"
+                try:
+                    with open(storage_path, "rb") as src:
+                        with gzip.open(compressed_path, "wb") as dst:
+                            shutil.copyfileobj(src, dst)
+                    os.remove(storage_path)
+                except Exception as exc:
+                    logger.warning(
+                        "Failed to compress backup file",
+                        extra={
+                            "event": "backup.compress.failure",
+                            "resource_id": backup.get("backup_id"),
+                        },
+                        exc_info=exc,
+                    )
+                    continue
+
+                backup["filename"] = os.path.basename(compressed_path)
+                backup["storage_path"] = compressed_path
+                backup["compressed"] = True
+                backup["original_size"] = backup.get("size_bytes", 0)
+                backup["compressed_size"] = os.path.getsize(compressed_path)
+                backup["size_bytes"] = backup["compressed_size"]
+
+                self._update_backup_record(backup["backup_id"], backup)
+                self._write_metadata_file(backup)
+
+                compressed_count += 1
+                logger.info(
+                    "Compressed backup file",
+                    extra={
+                        "event": "backup.compress.success",
+                        "resource_id": backup["backup_id"],
+                    },
+                )
+                logging_service.log_audit_event(
+                    action="backup.compress",
+                    resource_type="backup",
+                    resource_id=backup["backup_id"],
+                    compressed_size=backup["compressed_size"],
+                )
+
+        except Exception as exc:
+            logger.error(
+                "Failed to compress backups",
+                extra={"event": "backup.compress.failure"},
+                exc_info=exc,
+            )
+            raise BackupError(
+                "Failed to compress backups.",
+                context={"days_threshold": days_threshold}
+            ) from exc
+
+        return compressed_count
+
     def _save_metadata_to_db(self, backup_id: str, metadata: Dict[str, Any]) -> None:
         """Save backup metadata to database.
 
@@ -746,6 +865,108 @@ class BackupService:
                 exc_info=exc
             )
             raise
+
+    def _update_backup_record(self, backup_id: str, metadata: Dict[str, Any]) -> None:
+        """Update an existing backup record with refreshed metadata."""
+        try:
+            with get_db_session() as session:
+                backup = session.query(Backup).filter_by(id=backup_id).first()
+                if not backup:
+                    return
+
+                backup.filename = metadata.get("filename", backup.filename)
+                backup.storage_path = metadata.get("storage_path", backup.storage_path)
+                if "size_bytes" in metadata:
+                    backup.size_bytes = metadata["size_bytes"]
+                if "backup_type" in metadata:
+                    backup.backup_type = metadata["backup_type"]
+                backup.backup_metadata = metadata
+                session.flush()
+
+        except Exception as exc:
+            logger.warning(
+                "Failed to update backup record",
+                extra={"event": "backup.metadata.update_failure", "backup_id": backup_id},
+                exc_info=exc,
+            )
+
+    def _metadata_file_path(self, backup_id: str) -> str:
+        """Return on-disk path for backup metadata file."""
+        filename = f"{backup_id}_metadata.json"
+        return os.path.join(self.backups_dir, filename)
+
+    def _write_metadata_file(self, metadata: Dict[str, Any]) -> None:
+        """Persist metadata alongside backup for DB-restore resilience."""
+        try:
+            path = self._metadata_file_path(metadata["backup_id"])
+            with open(path, "w", encoding="utf-8") as handle:
+                json.dump(metadata, handle, indent=2)
+        except Exception as exc:
+            logger.warning(
+                "Failed to persist backup metadata file",
+                extra={"event": "backup.metadata_file.warning", "resource_id": metadata.get("backup_id")},
+                exc_info=exc,
+            )
+
+    def _load_metadata_from_file(self, backup_id: str) -> Optional[Dict[str, Any]]:
+        """Load metadata from disk if the database record is unavailable."""
+        path = self._metadata_file_path(backup_id)
+        if not os.path.exists(path):
+            return None
+        try:
+            with open(path, "r", encoding="utf-8") as handle:
+                data = json.load(handle)
+                return data
+        except Exception as exc:
+            logger.warning(
+                "Failed to read backup metadata file",
+                extra={"event": "backup.metadata_file.read_failure", "resource_id": backup_id},
+                exc_info=exc,
+            )
+            return None
+
+    def _load_all_metadata_files(self) -> Dict[str, Dict[str, Any]]:
+        """Return metadata for all backups stored on disk."""
+        found: Dict[str, Dict[str, Any]] = {}
+        try:
+            for filename in os.listdir(self.backups_dir):
+                if not filename.endswith("_metadata.json"):
+                    continue
+                path = os.path.join(self.backups_dir, filename)
+                try:
+                    with open(path, "r", encoding="utf-8") as handle:
+                        data = json.load(handle)
+                        backup_id = data.get("backup_id")
+                        if backup_id:
+                            found[backup_id] = data
+                except Exception as exc:
+                    logger.warning(
+                        "Failed to parse backup metadata file",
+                        extra={"event": "backup.metadata_file.parse_failure", "resource_id": filename},
+                        exc_info=exc,
+                    )
+        except FileNotFoundError:
+            return found
+        return found
+
+    def _ensure_metadata_file(self, metadata: Dict[str, Any]) -> None:
+        """Ensure a metadata JSON file exists for the given backup."""
+        path = self._metadata_file_path(metadata["backup_id"])
+        if not os.path.exists(path):
+            self._write_metadata_file(metadata)
+
+    def _remove_metadata_file(self, backup_id: str) -> None:
+        """Delete metadata JSON file if present."""
+        path = self._metadata_file_path(backup_id)
+        try:
+            if os.path.exists(path):
+                os.remove(path)
+        except Exception as exc:
+            logger.warning(
+                "Failed to remove backup metadata file",
+                extra={"event": "backup.metadata_file.remove_failure", "resource_id": backup_id},
+                exc_info=exc,
+            )
 
     def _get_current_user(self) -> str:
         """Get the current user.

@@ -2,17 +2,30 @@
 Shared test fixtures for PromptVault test suite.
 """
 
-import pytest
 import json
+import os
 import tempfile
 import shutil
 from pathlib import Path
 from typing import Dict, Any, List
 import sys
+import pytest
+
+# Ensure tests run against an isolated test database
+os.environ["DATABASE_URL"] = "sqlite:///./data/promptvault-test.db"
+Path("data").mkdir(parents=True, exist_ok=True)
+
+
+@pytest.fixture(autouse=True)
+def reset_database():
+    """Autouse fixture that drops and recreates the test database before each test."""
+    drop_all_tables()
+    create_all_tables()
 
 # Add the parent directory to the Python path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from src.db.session import drop_all_tables, create_all_tables
 from src.services.prompt_data_service import PromptDataService
 from src.services.backup_service import BackupService
 from src.services.prompt_filter_service import PromptFilterService
@@ -233,7 +246,9 @@ def test_client(temp_data_dir):
     data_dir = Path(temp_data_dir)
     data_file = data_dir / "prompts_data.json"
 
+    web_app.BackupService = BackupService
     web_app.configure_services(data_file=str(data_file), data_dir=str(data_dir))
+    web_app.backup_service = BackupService(str(data_dir))
     client = TestClient(web_app.app)
     try:
         yield client
