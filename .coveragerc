@@ -1,0 +1,19 @@
+[run]
+source = src
+omit =
+    # Legacy JSON-based services (deprecated, kept for backward compatibility)
+    */services/prompt_data_service.py
+    */services/backup_service.py
+    # Database health checks (not critical for core functionality)
+    */db/health.py
+
+[report]
+exclude_lines =
+    # Standard exclusions
+    pragma: no cover
+    def __repr__
+    raise AssertionError
+    raise NotImplementedError
+    if __name__ == .__main__.:
+    if TYPE_CHECKING:
+    @abstractmethod

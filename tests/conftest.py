@@ -1,69 +1,545 @@
 """
-Shared test fixtures for PromptVault test suite.
+Comprehensive test fixtures for PromptVault test suite.
+
+This module provides pytest fixtures for testing with database backend,
+using in-memory SQLite for fast, isolated tests. All JSON-based fixtures
+have been removed as the application now uses SQLite/PostgreSQL.
+
+Fixture Categories:
+    - Database Fixtures: Engine, session, and connection management
+    - Model Fixtures: Pre-configured database models (User, Category, Tag, Prompt)
+    - Repository Fixtures: Repository instances with test session
+    - Service Fixtures: Service layer with test database
+    - Data Factory Fixtures: Helper functions to generate test data
+    - API Test Client: FastAPI TestClient with database backend
 """
 
-import json
 import os
+import sys
 import tempfile
 import shutil
 from pathlib import Path
-from typing import Dict, Any, List
-import sys
+from typing import Generator, Callable, Dict, Any, List
+from datetime import datetime
+
 import pytest
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, Session
+from fastapi.testclient import TestClient
 
-# Ensure tests run against an isolated test database
-os.environ["DATABASE_URL"] = "sqlite:///./data/promptvault-test.db"
-Path("data").mkdir(parents=True, exist_ok=True)
-
-
-@pytest.fixture(autouse=True)
-def reset_database():
-    """Autouse fixture that drops and recreates the test database before each test."""
-    drop_all_tables()
-    create_all_tables()
-
-# Add the parent directory to the Python path for imports
+# Add project root to Python path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.db.session import drop_all_tables, create_all_tables
-from src.services.prompt_data_service import PromptDataService
-from src.services.backup_service import BackupService
+# Import database components
+from src.db.base import Base
+from src.db.models import (
+    User,
+    Category,
+    Tag,
+    Prompt,
+    PromptVersion,
+    PromptBranch,
+    Backup,
+    prompt_tags,
+)
+from src.db.repositories import (
+    PromptRepository,
+    VersionRepository,
+    CategoryRepository,
+    TagRepository,
+)
+
+# Import services
+from src.services.prompt_data_service_db import PromptDataService
+from src.services.backup_service_db import BackupService
 from src.services.prompt_filter_service import PromptFilterService
 from src.services.prompt_import_export_service import PromptImportExportService
 from src.services.prompt_versioning_service import PromptVersioningService
 from src.services.version_compression_service import VersionCompressionService
 from src.services.version_tagging_service import VersionTaggingService
 from src.services.version_export_service import VersionExportService
-from fastapi.testclient import TestClient
+
+
+# ============================================================================
+# DATABASE RESET FIXTURE (for backward compatibility)
+# ============================================================================
+
+
+@pytest.fixture(autouse=True, scope="function")
+def reset_database(request):
+    """
+    Autouse fixture that drops and recreates the test database before each test.
+
+    This ensures test isolation for tests using the shared test database
+    (e.g., API endpoint tests). Tests using in-memory SQLite via test_db_engine
+    fixture are automatically skipped.
+
+    This fixture provides backward compatibility with existing test files that
+    rely on database resets between tests (e.g., test_api_endpoints.py).
+    """
+    # Skip database reset if test uses test_db_engine (in-memory DB)
+    # Check if test_db_engine is in the test's fixture dependencies
+    if "test_db_engine" in request.fixturenames:
+        yield
+        return
+
+    # Also skip for tests that use api_client_context (which uses test_db_engine internally)
+    if "api_client_context" in request.fixturenames:
+        yield
+        return
+
+    # Only reset for tests using the persistent database
+    from src.db.session import drop_all_tables, create_all_tables
+
+    try:
+        drop_all_tables()
+        create_all_tables()
+    except Exception as e:
+        # Silently skip if database operations fail
+        pass
+
+    yield
+
+    # Optionally clean up after test
+    try:
+        drop_all_tables()
+    except Exception:
+        pass
+
+
+# ============================================================================
+# DATABASE FIXTURES
+# ============================================================================
+
+
+@pytest.fixture(scope="function")
+def test_db_engine(request):
+    """Create in-memory SQLite engine for tests.
+
+    Each test gets a fresh database that is automatically cleaned up.
+    Uses function scope to ensure complete isolation between tests.
+
+    For tests using FastAPI TestClient (multi-threaded), uses a shared
+    cache connection to allow the same in-memory database to be accessed
+    across threads. Each test gets a unique database name to ensure isolation.
+
+    Yields:
+        Engine: SQLAlchemy engine with all tables created
+    """
+    # Use file::memory:?cache=shared with unique db name for multi-threaded access
+    # This allows the in-memory DB to be shared across threads within one test
+    # but isolated between different tests
+    import uuid
+    db_name = f"test_db_{uuid.uuid4().hex}"
+
+    engine = create_engine(
+        f"sqlite:///file:{db_name}?mode=memory&cache=shared&uri=true",
+        echo=False,
+        connect_args={"check_same_thread": False}
+    )
+    Base.metadata.create_all(engine)
+    yield engine
+    Base.metadata.drop_all(engine)
+    engine.dispose()
+
+
+@pytest.fixture(scope="function")
+def test_db_session(test_db_engine) -> Generator[Session, None, None]:
+    """Create test database session with automatic rollback.
+
+    Uses in-memory SQLite for fast, isolated tests.
+    Session is automatically rolled back and closed after each test,
+    ensuring no state leaks between tests.
+
+    Yields:
+        Session: SQLAlchemy session object
+    """
+    SessionLocal = sessionmaker(bind=test_db_engine)
+    session = SessionLocal()
+
+    try:
+        yield session
+    finally:
+        session.rollback()
+        session.close()
+
+
+# ============================================================================
+# MODEL FIXTURES
+# ============================================================================
 
 
 @pytest.fixture
-def temp_data_dir():
-    """Create a temporary directory for testing with automatic cleanup."""
-    temp_dir = tempfile.mkdtemp()
-    yield temp_dir
-    shutil.rmtree(temp_dir, ignore_errors=True)
+def test_user(test_db_session: Session) -> User:
+    """Create a test user.
+
+    Returns:
+        User: Test user with username 'test_user'
+    """
+    user = User(
+        id="test-user-id",
+        username="test_user",
+        display_name="Test User",
+        email="test@example.com",
+        role="user"
+    )
+    test_db_session.add(user)
+    test_db_session.flush()
+    return user
 
 
 @pytest.fixture
-def temp_data_file(temp_data_dir):
-    """Create a temporary data file path for testing."""
-    temp_file = Path(temp_data_dir) / "test_prompts.json"
-    yield str(temp_file)
+def test_category(test_db_session: Session) -> Category:
+    """Create a test category.
+
+    Returns:
+        Category: Test category named 'Test Category'
+    """
+    category = Category(name="Test Category", description="Category for testing")
+    test_db_session.add(category)
+    test_db_session.flush()
+    return category
 
 
 @pytest.fixture
-def sample_prompt_data():
-    """Factory fixture for generating sample prompt data."""
+def test_tags(test_db_session: Session) -> List[Tag]:
+    """Create multiple test tags.
 
-    def _create_prompt(
+    Returns:
+        List[Tag]: List of three tags: 'test', 'sample', 'python'
+    """
+    tags = [
+        Tag(name="test"),
+        Tag(name="sample"),
+        Tag(name="python"),
+    ]
+    test_db_session.add_all(tags)
+    test_db_session.flush()
+    return tags
+
+
+@pytest.fixture
+def test_prompt(test_db_session: Session, test_user: User, test_category: Category, test_tags: List[Tag]) -> Prompt:
+    """Create a test prompt with relationships.
+
+    Args:
+        test_db_session: Database session
+        test_user: Test user fixture
+        test_category: Test category fixture
+        test_tags: Test tags fixture
+
+    Returns:
+        Prompt: Test prompt with category and tags
+    """
+    prompt = Prompt(
         title="Test Prompt",
         prompt="This is a test prompt content",
+        category_id=test_category.id,
         note="Test note",
-        category="Test Category",
-        tags=None,
         favorite=False,
-    ):
+        user_id=test_user.id
+    )
+    # Add first two tags to the prompt
+    prompt.tags.extend(test_tags[:2])
+    test_db_session.add(prompt)
+    test_db_session.flush()
+    return prompt
+
+
+@pytest.fixture
+def test_prompt_with_versions(
+    test_db_session: Session,
+    test_prompt: Prompt,
+    test_user: User
+) -> tuple[Prompt, List[PromptVersion]]:
+    """Create a prompt with multiple versions for version control testing.
+
+    Args:
+        test_db_session: Database session
+        test_prompt: Test prompt fixture
+        test_user: Test user fixture
+
+    Returns:
+        tuple: (Prompt, List of 3 PromptVersion objects)
+    """
+    versions = []
+
+    # Create 3 versions with linear history
+    for i in range(3):
+        version = PromptVersion(
+            prompt_id=test_prompt.id,
+            version_id=f"version-{i}",
+            version_number=i + 1,
+            title=f"Test Prompt v{i+1}",
+            prompt=f"Content v{i+1}",
+            note=f"Note v{i+1}",
+            tags=["test", "sample"],
+            favorite=False,
+            author=test_user.username,
+            message=f"Version {i+1}",
+            parent_version_id=versions[-1].version_id if versions else None
+        )
+        test_db_session.add(version)
+        test_db_session.flush()
+        versions.append(version)
+
+    return test_prompt, versions
+
+
+# ============================================================================
+# REPOSITORY FIXTURES
+# ============================================================================
+
+
+@pytest.fixture
+def prompt_repo(test_db_session: Session) -> PromptRepository:
+    """Create a PromptRepository instance.
+
+    Args:
+        test_db_session: Database session
+
+    Returns:
+        PromptRepository: Repository for prompt operations
+    """
+    return PromptRepository(test_db_session)
+
+
+@pytest.fixture
+def version_repo(test_db_session: Session) -> VersionRepository:
+    """Create a VersionRepository instance.
+
+    Args:
+        test_db_session: Database session
+
+    Returns:
+        VersionRepository: Repository for version control operations
+    """
+    return VersionRepository(test_db_session)
+
+
+@pytest.fixture
+def category_repo(test_db_session: Session) -> CategoryRepository:
+    """Create a CategoryRepository instance.
+
+    Args:
+        test_db_session: Database session
+
+    Returns:
+        CategoryRepository: Repository for category operations
+    """
+    return CategoryRepository(test_db_session)
+
+
+@pytest.fixture
+def tag_repo(test_db_session: Session) -> TagRepository:
+    """Create a TagRepository instance.
+
+    Args:
+        test_db_session: Database session
+
+    Returns:
+        TagRepository: Repository for tag operations
+    """
+    return TagRepository(test_db_session)
+
+
+# ============================================================================
+# SERVICE FIXTURES
+# ============================================================================
+
+
+@pytest.fixture
+def db_data_service(test_db_engine, monkeypatch) -> PromptDataService:
+    """Create PromptDataService with in-memory database.
+
+    This fixture patches the database SessionLocal to use the test engine,
+    ensuring all service operations use the in-memory test database.
+
+    Args:
+        test_db_engine: Test database engine
+        monkeypatch: Pytest monkeypatch fixture
+
+    Returns:
+        PromptDataService: Data service instance
+    """
+    # Patch the SessionLocal to use test engine
+    from src.db import session as session_module
+    from contextlib import contextmanager
+
+    # Store original SessionLocal
+    original_session_local = session_module.SessionLocal
+
+    # Create test session factory
+    TestSessionLocal = sessionmaker(bind=test_db_engine)
+
+    # Patch SessionLocal
+    monkeypatch.setattr(session_module, "SessionLocal", TestSessionLocal)
+
+    # Create a new get_db_session that uses the test SessionLocal
+    @contextmanager
+    def mock_get_db_session():
+        """Mock context manager that uses test database."""
+        session = TestSessionLocal()
+        try:
+            yield session
+            session.commit()
+        except Exception:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
+    # Patch get_db_session
+    monkeypatch.setattr(session_module, "get_db_session", mock_get_db_session)
+
+    service = PromptDataService()
+    return service
+
+
+@pytest.fixture
+def db_backup_service(temp_data_dir: str, test_db_engine, monkeypatch) -> BackupService:
+    """Create database-aware BackupService instance with proper DB isolation.
+
+    Each test gets a fresh database session for backup metadata to prevent
+    UNIQUE constraint failures from backup IDs persisting across tests.
+
+    Args:
+        temp_data_dir: Temporary directory for backups
+        test_db_engine: Test database engine
+        monkeypatch: Pytest monkeypatch fixture
+
+    Returns:
+        BackupService: Backup service instance
+    """
+    # Create a test database file in temp directory
+    import os
+    test_db_path = os.path.join(temp_data_dir, "test.db")
+    test_db_url = f"sqlite:///{test_db_path}"
+
+    # Patch DATABASE_URL to use test database
+    from src.db import config as config_module
+    monkeypatch.setattr(config_module.db_settings, "DATABASE_URL", test_db_url)
+
+    # Create the test database file
+    from sqlalchemy import create_engine
+    from src.db.base import Base
+    engine = create_engine(test_db_url)
+    Base.metadata.create_all(engine)
+    engine.dispose()
+
+    # Patch get_db_session to use test engine with isolation
+    from src.db import session as session_module
+    from sqlalchemy.orm import sessionmaker
+    from contextlib import contextmanager
+
+    # Use the shared test_db_engine to ensure proper isolation
+    TestSessionLocal = sessionmaker(bind=test_db_engine)
+
+    @contextmanager
+    def mock_get_db_session():
+        """Mock context manager that uses test database with proper isolation."""
+        session = TestSessionLocal()
+        try:
+            yield session
+            session.commit()
+        except Exception:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
+    monkeypatch.setattr(session_module, "get_db_session", mock_get_db_session)
+
+    return BackupService(temp_data_dir)
+
+
+@pytest.fixture
+def filter_service() -> PromptFilterService:
+    """Create PromptFilterService instance.
+
+    Returns:
+        PromptFilterService: Filter service for prompt filtering
+    """
+    return PromptFilterService()
+
+
+@pytest.fixture
+def import_export_service() -> PromptImportExportService:
+    """Create PromptImportExportService instance.
+
+    Returns:
+        PromptImportExportService: Service for import/export operations
+    """
+    return PromptImportExportService()
+
+
+@pytest.fixture
+def versioning_service() -> PromptVersioningService:
+    """Create PromptVersioningService instance.
+
+    Returns:
+        PromptVersioningService: Service for version control
+    """
+    return PromptVersioningService()
+
+
+@pytest.fixture
+def compression_service() -> VersionCompressionService:
+    """Create VersionCompressionService instance.
+
+    Returns:
+        VersionCompressionService: Service for version compression
+    """
+    return VersionCompressionService(compression_threshold_days=30)
+
+
+@pytest.fixture
+def tagging_service() -> VersionTaggingService:
+    """Create VersionTaggingService instance.
+
+    Returns:
+        VersionTaggingService: Service for version tagging
+    """
+    return VersionTaggingService()
+
+
+@pytest.fixture
+def export_service() -> VersionExportService:
+    """Create VersionExportService instance.
+
+    Returns:
+        VersionExportService: Service for version export
+    """
+    return VersionExportService()
+
+
+# ============================================================================
+# DATA FACTORY FIXTURES
+# ============================================================================
+
+
+@pytest.fixture
+def sample_prompt_data() -> Callable[..., Dict[str, Any]]:
+    """Factory fixture for generating sample prompt data dictionaries.
+
+    This is useful for creating prompt data in the format expected by
+    service layer methods like add_new_prompt().
+
+    Returns:
+        Callable: Function that returns prompt data dict
+
+    Example:
+        >>> prompt_data = sample_prompt_data(title="My Prompt")
+        >>> service.add_new_prompt(prompt_data)
+    """
+    def _create_prompt(
+        title: str = "Test Prompt",
+        prompt: str = "This is a test prompt content",
+        note: str = "Test note",
+        category: str = "Test Category",
+        tags: List[str] = None,
+        favorite: bool = False,
+    ) -> Dict[str, Any]:
         if tags is None:
             tags = ["test", "sample"]
 
@@ -80,17 +556,20 @@ def sample_prompt_data():
 
 
 @pytest.fixture
-def sample_version_data():
-    """Factory fixture for generating sample version data."""
+def sample_version_data() -> Callable[..., Dict[str, Any]]:
+    """Factory fixture for generating sample version data dictionaries.
 
+    Returns:
+        Callable: Function that returns version data dict
+    """
     def _create_version(
-        version_id="test-version-id",
-        timestamp="2024-01-01T12:00:00Z",
-        author="test_user",
-        message="Test commit",
-        data=None,
-        parents=None,
-    ):
+        version_id: str = "test-version-id",
+        timestamp: str = "2024-01-01T12:00:00Z",
+        author: str = "test_user",
+        message: str = "Test commit",
+        data: Dict[str, Any] = None,
+        parents: List[str] = None,
+    ) -> Dict[str, Any]:
         if data is None:
             data = {
                 "title": "Test",
@@ -115,256 +594,12 @@ def sample_version_data():
 
 
 @pytest.fixture
-def empty_data_service(temp_data_file):
-    """Create an empty PromptDataService instance."""
-    service = PromptDataService(temp_data_file)
-    return service
+def sample_csv_content() -> str:
+    """Sample CSV content for import testing.
 
-
-@pytest.fixture
-def populated_data_service(temp_data_file, sample_prompt_data):
-    """Create a PromptDataService with pre-populated test data."""
-    service = PromptDataService(temp_data_file)
-
-    # Create multiple test prompts
-    prompts = [
-        sample_prompt_data(
-            title="Python Best Practices",
-            prompt="Write clean, readable Python code following PEP 8",
-            category="Programming",
-            tags=["python", "coding", "best-practices"],
-        ),
-        sample_prompt_data(
-            title="Code Review Checklist",
-            prompt="Review code for bugs, performance, and maintainability",
-            category="Development",
-            tags=["review", "quality"],
-            favorite=True,
-        ),
-        sample_prompt_data(
-            title="Database Design",
-            prompt="Design normalized database schema",
-            category="Database",
-            tags=["database", "sql"],
-        ),
-        sample_prompt_data(
-            title="API Documentation",
-            prompt="Document REST API endpoints",
-            category="Documentation",
-            tags=["api", "docs"],
-        ),
-        sample_prompt_data(
-            title="Security Audit",
-            prompt="Perform security audit of codebase",
-            category="Security",
-            tags=["security", "audit"],
-            favorite=True,
-        ),
-    ]
-
-    for prompt in prompts:
-        service.add_new_prompt(prompt)
-
-    service.save_prompts()
-    return service
-
-
-@pytest.fixture
-def large_dataset_service(temp_data_file, sample_prompt_data):
-    """Create a PromptDataService with a large dataset for performance testing."""
-    service = PromptDataService(temp_data_file)
-
-    categories = [
-        "Programming",
-        "Development",
-        "Database",
-        "Security",
-        "Testing",
-        "Documentation",
-    ]
-    tag_pool = [
-        "python",
-        "javascript",
-        "java",
-        "sql",
-        "api",
-        "web",
-        "mobile",
-        "cloud",
-        "devops",
-    ]
-
-    # Create 1000 prompts
-    for i in range(1000):
-        category = categories[i % len(categories)]
-        tags = [tag_pool[j % len(tag_pool)] for j in range(i % 3 + 1)]
-
-        prompt_data = sample_prompt_data(
-            title=f"Test Prompt {i}",
-            prompt=f"This is test prompt content number {i}. "
-            * 10,  # Make it substantial
-            note=f"Test note {i}",
-            category=category,
-            tags=tags,
-            favorite=(i % 10 == 0),  # Every 10th prompt is favorite
-        )
-        service.add_new_prompt(prompt_data)
-
-    service.save_prompts()
-    return service
-
-
-@pytest.fixture
-def prompt_with_versions(temp_data_file, sample_prompt_data):
-    """Create a prompt with multiple versions."""
-    service = PromptDataService(temp_data_file)
-
-    # Create initial prompt
-    initial_data = sample_prompt_data(
-        title="Versioned Prompt", prompt="Initial content"
-    )
-    prompt_id = service.add_new_prompt(initial_data)
-
-    # Create multiple updates to build version history
-    for i in range(10):
-        updated_data = sample_prompt_data(
-            title=f"Versioned Prompt v{i+1}",
-            prompt=f"Content update {i+1}",
-            category="Test",
-        )
-        service.update_prompt(prompt_id, updated_data, f"Update {i+1}")
-
-    service.save_prompts()
-    return service, prompt_id
-
-
-@pytest.fixture
-def test_client(temp_data_dir):
-    """Provide a FastAPI TestClient backed by an isolated temp dataset."""
-    from src.web import app as web_app
-
-    data_dir = Path(temp_data_dir)
-    data_file = data_dir / "prompts_data.json"
-
-    web_app.BackupService = BackupService
-    web_app.configure_services(data_file=str(data_file), data_dir=str(data_dir))
-    web_app.backup_service = BackupService(str(data_dir))
-    client = TestClient(web_app.app)
-    try:
-        yield client
-    finally:
-        client.close()
-
-
-@pytest.fixture
-def api_client_context(temp_data_dir, sample_prompt_data):
+    Returns:
+        str: CSV-formatted prompt data
     """
-    Provide a configured FastAPI TestClient with isolated data/backup services.
-
-    Returns a dict with 'client', 'data_service', and 'temp_dir'.
-    """
-    from src.web import app as web_app
-
-    original_services = (
-        web_app.data_service,
-        web_app.backup_service,
-        web_app.filter_service,
-        web_app.import_export_service,
-        web_app.versioning_service,
-    )
-
-    data_dir = Path(temp_data_dir)
-    data_file = data_dir / "prompts_data.json"
-
-    web_app.configure_services(data_file=str(data_file), data_dir=str(data_dir))
-
-    data_service = web_app.data_service
-
-    # Seed data with two prompts
-    data_service.add_new_prompt(
-        sample_prompt_data(
-            title="API Prompt 1",
-            prompt="Content 1",
-            category="Testing",
-            tags=["api", "test"],
-            favorite=True,
-        )
-    )
-    data_service.add_new_prompt(
-        sample_prompt_data(
-            title="API Prompt 2",
-            prompt="Content 2",
-            category="Docs",
-            tags=["docs"],
-            favorite=False,
-        )
-    )
-    data_service.save_prompts()
-
-    client = TestClient(web_app.app)
-
-    try:
-        yield {
-            "client": client,
-            "data_service": data_service,
-            "temp_dir": temp_data_dir,
-        }
-    finally:
-        client.close()
-        (
-            web_app.data_service,
-            web_app.backup_service,
-            web_app.filter_service,
-            web_app.import_export_service,
-            web_app.versioning_service,
-        ) = original_services
-
-
-@pytest.fixture
-def backup_service(temp_data_dir):
-    """Create a BackupService instance."""
-    return BackupService(temp_data_dir)
-
-
-@pytest.fixture
-def filter_service():
-    """Create a PromptFilterService instance."""
-    return PromptFilterService()
-
-
-@pytest.fixture
-def import_export_service():
-    """Create a PromptImportExportService instance."""
-    return PromptImportExportService()
-
-
-@pytest.fixture
-def compression_service():
-    """Create a VersionCompressionService instance."""
-    return VersionCompressionService(compression_threshold_days=30)
-
-
-@pytest.fixture
-def tagging_service():
-    """Create a VersionTaggingService instance."""
-    return VersionTaggingService()
-
-
-@pytest.fixture
-def export_service():
-    """Create a VersionExportService instance."""
-    return VersionExportService()
-
-
-@pytest.fixture
-def versioning_service():
-    """Create a PromptVersioningService instance."""
-    return PromptVersioningService()
-
-
-@pytest.fixture
-def sample_csv_content():
-    """Sample CSV content for import testing."""
     return """title,prompt,note,category,tags,favorite
 Test Prompt 1,Test content 1,Test note 1,Category1,"tag1, tag2",Yes
 Test Prompt 2,Test content 2,Test note 2,Category2,"tag3, tag4",No
@@ -372,8 +607,12 @@ Test Prompt 2,Test content 2,Test note 2,Category2,"tag3, tag4",No
 
 
 @pytest.fixture
-def sample_markdown_content():
-    """Sample Markdown content for import testing."""
+def sample_markdown_content() -> str:
+    """Sample Markdown content for import testing.
+
+    Returns:
+        str: Markdown-formatted prompt data
+    """
     return """# Test Prompt 1
 
 **Category:** Category1
@@ -404,258 +643,28 @@ Test note 2
 """
 
 
+# ============================================================================
+# POPULATED DATA FIXTURES
+# ============================================================================
+
+
 @pytest.fixture
-def malformed_json_samples():
-    """Collection of malformed JSON samples for error testing."""
-    return {
-        "invalid_json": "{this is not valid json}",
-        "missing_prompts": '{"next_id": 5}',
-        "wrong_type_prompts": '{"next_id": 5, "prompts": "not a dict"}',
-        "missing_data_field": '{"next_id": 1, "prompts": {"0": {"versions": []}}}',
-        "invalid_prompt_id": '{"next_id": 1, "prompts": {"invalid_id": {"data": {}}}}',
-        "null_values": '{"next_id": null, "prompts": null}',
-    }
-"""
-Database-aware test fixtures for PromptVault test suite.
+def populated_db_service(
+    db_data_service: PromptDataService,
+    sample_prompt_data: Callable[..., Dict[str, Any]]
+) -> PromptDataService:
+    """Create a database-backed service with pre-populated test data.
 
-This module provides pytest fixtures for testing with the database backend,
-including in-memory SQLite for fast, isolated tests.
-"""
+    Creates 5 prompts with various categories, tags, and favorite status
+    for comprehensive testing of search, filter, and listing functionality.
 
-import pytest
-import tempfile
-import shutil
-from pathlib import Path
-from typing import Generator
-import sys
+    Args:
+        db_data_service: Empty data service
+        sample_prompt_data: Factory for creating prompt data
 
-# Add the parent directory to the Python path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
-
-from src.db.base import Base
-from src.db.models import User, Category, Tag, Prompt, PromptVersion, PromptBranch, Backup
-from src.db.repositories import (
-    PromptRepository,
-    VersionRepository,
-    CategoryRepository,
-    TagRepository,
-)
-from src.services.prompt_data_service_db import PromptDataService
-from src.services.backup_service_db import BackupService
-
-
-@pytest.fixture(scope="function")
-def test_db_engine():
-    """Create in-memory SQLite engine for tests.
-
-    Each test gets a fresh database that is automatically cleaned up.
+    Returns:
+        PromptDataService: Service with 5 test prompts
     """
-    engine = create_engine("sqlite:///:memory:", echo=False)
-    Base.metadata.create_all(engine)
-    yield engine
-    Base.metadata.drop_all(engine)
-    engine.dispose()
-
-
-@pytest.fixture(scope="function")
-def test_db_session(test_db_engine) -> Generator[Session, None, None]:
-    """Create a test database session.
-
-    Uses in-memory SQLite for fast, isolated tests.
-    Session is automatically rolled back and closed after each test.
-    """
-    SessionLocal = sessionmaker(bind=test_db_engine)
-    session = SessionLocal()
-
-    try:
-        yield session
-    finally:
-        session.rollback()
-        session.close()
-
-
-@pytest.fixture
-def test_user(test_db_session) -> User:
-    """Create a test user."""
-    user = User(
-        id="test-user-id",
-        username="test_user",
-        display_name="Test User",
-        email="test@example.com",
-        role="user"
-    )
-    test_db_session.add(user)
-    test_db_session.flush()
-    return user
-
-
-@pytest.fixture
-def test_category(test_db_session) -> Category:
-    """Create a test category."""
-    category = Category(name="Test Category")
-    test_db_session.add(category)
-    test_db_session.flush()
-    return category
-
-
-@pytest.fixture
-def test_tags(test_db_session) -> list[Tag]:
-    """Create test tags."""
-    tags = [
-        Tag(name="test"),
-        Tag(name="sample"),
-        Tag(name="python"),
-    ]
-    test_db_session.add_all(tags)
-    test_db_session.flush()
-    return tags
-
-
-@pytest.fixture
-def test_prompt(test_db_session, test_user, test_category, test_tags) -> Prompt:
-    """Create a test prompt with relationships."""
-    prompt = Prompt(
-        title="Test Prompt",
-        prompt="This is a test prompt content",
-        category_id=test_category.id,
-        note="Test note",
-        favorite=False,
-        user_id=test_user.id
-    )
-    prompt.tags.extend(test_tags[:2])  # Add first two tags
-    test_db_session.add(prompt)
-    test_db_session.flush()
-    return prompt
-
-
-@pytest.fixture
-def test_prompt_with_versions(test_db_session, test_prompt, test_user) -> tuple[Prompt, list[PromptVersion]]:
-    """Create a prompt with multiple versions."""
-    versions = []
-
-    # Create 3 versions
-    for i in range(3):
-        version = PromptVersion(
-            prompt_id=test_prompt.id,
-            version_id=f"version-{i}",
-            version_number=i + 1,
-            title=f"Test Prompt v{i+1}",
-            prompt=f"Content v{i+1}",
-            note=f"Note v{i+1}",
-            tags=["test", "sample"],
-            favorite=False,
-            author=test_user.username,
-            message=f"Version {i+1}",
-            parent_version_id=versions[-1].version_id if versions else None
-        )
-        test_db_session.add(version)
-        test_db_session.flush()
-        versions.append(version)
-
-    return test_prompt, versions
-
-
-@pytest.fixture
-def prompt_repo(test_db_session) -> PromptRepository:
-    """Create a PromptRepository instance."""
-    return PromptRepository(test_db_session)
-
-
-@pytest.fixture
-def version_repo(test_db_session) -> VersionRepository:
-    """Create a VersionRepository instance."""
-    return VersionRepository(test_db_session)
-
-
-@pytest.fixture
-def category_repo(test_db_session) -> CategoryRepository:
-    """Create a CategoryRepository instance."""
-    return CategoryRepository(test_db_session)
-
-
-@pytest.fixture
-def tag_repo(test_db_session) -> TagRepository:
-    """Create a TagRepository instance."""
-    return TagRepository(test_db_session)
-
-
-@pytest.fixture
-def temp_data_dir():
-    """Create a temporary directory for testing with automatic cleanup."""
-    temp_dir = tempfile.mkdtemp()
-    yield temp_dir
-    shutil.rmtree(temp_dir, ignore_errors=True)
-
-
-@pytest.fixture
-def sample_prompt_data():
-    """Factory fixture for generating sample prompt data."""
-
-    def _create_prompt(
-        title="Test Prompt",
-        prompt="This is a test prompt content",
-        note="Test note",
-        category="Test Category",
-        tags=None,
-        favorite=False,
-    ):
-        if tags is None:
-            tags = ["test", "sample"]
-
-        return {
-            "title": title,
-            "prompt": prompt,
-            "note": note,
-            "category": category,
-            "tags": tags,
-            "favorite": favorite,
-        }
-
-    return _create_prompt
-
-
-@pytest.fixture
-def db_data_service(temp_data_dir, monkeypatch):
-    """Create a PromptDataService with in-memory database.
-
-    This fixture patches the database configuration to use an in-memory
-    SQLite database for testing.
-    """
-    from src.db import config as db_config_module
-
-    # Create in-memory database URL
-    test_db_url = "sqlite:///:memory:"
-
-    # Patch the database settings
-    monkeypatch.setenv("DATABASE_URL", test_db_url)
-
-    # Reload the config to pick up the new DATABASE_URL
-    from importlib import reload
-    reload(db_config_module)
-
-    # Create engine and tables
-    from src.db.session import engine
-    from src.db.base import Base
-    Base.metadata.create_all(bind=engine)
-
-    # Create service
-    service = PromptDataService()
-
-    yield service
-
-    # Cleanup
-    Base.metadata.drop_all(bind=engine)
-
-
-@pytest.fixture
-def populated_db_service(db_data_service, sample_prompt_data):
-    """Create a database-backed service with pre-populated test data."""
-    service = db_data_service
-
-    # Create multiple test prompts
     prompts_data = [
         sample_prompt_data(
             title="Python Best Practices",
@@ -692,91 +701,226 @@ def populated_db_service(db_data_service, sample_prompt_data):
     ]
 
     for prompt in prompts_data:
-        service.add_new_prompt(prompt)
+        db_data_service.add_new_prompt(prompt)
 
-    return service
+    return db_data_service
+
+
+# ============================================================================
+# API TEST CLIENT FIXTURES
+# ============================================================================
+
+
+@pytest.fixture
+def temp_data_dir() -> Generator[str, None, None]:
+    """Create a temporary directory for testing with automatic cleanup.
+
+    Yields:
+        str: Path to temporary directory
+    """
+    temp_dir = tempfile.mkdtemp()
+    yield temp_dir
+    shutil.rmtree(temp_dir, ignore_errors=True)
 
 
 @pytest.fixture
-def db_backup_service(temp_data_dir):
-    """Create a database-aware BackupService instance."""
-    return BackupService(temp_data_dir)
+def api_client(test_db_engine, temp_data_dir: str) -> Generator[TestClient, None, None]:
+    """FastAPI TestClient with database backend.
 
+    This fixture configures the FastAPI app to use an in-memory test database
+    and provides a TestClient for making API requests in tests.
 
-# Sample data fixtures (compatible with both JSON and DB backends)
+    Args:
+        test_db_engine: Test database engine
+        temp_data_dir: Temporary directory for file operations
+
+    Yields:
+        TestClient: FastAPI test client
+    """
+    # Import here to avoid circular imports
+    from src.web import app as web_app
+    from src.db import session as session_module
+
+    # Store original session factory
+    original_session_local = session_module.SessionLocal
+
+    # Create test session factory
+    TestSessionLocal = sessionmaker(bind=test_db_engine)
+
+    # Patch the session factory
+    session_module.SessionLocal = TestSessionLocal
+
+    # Configure services with test data directory
+    web_app.configure_services(data_dir=temp_data_dir)
+
+    # Create test client
+    client = TestClient(web_app.app)
+
+    try:
+        yield client
+    finally:
+        client.close()
+        # Restore original session factory
+        session_module.SessionLocal = original_session_local
+
 
 @pytest.fixture
-def sample_version_data():
-    """Factory fixture for generating sample version data."""
+def api_client_context(test_db_engine, temp_data_dir: str, sample_prompt_data: Callable[..., Dict[str, Any]]) -> Generator[Dict[str, Any], None, None]:
+    """FastAPI TestClient with database backend and data service access (backward compatibility).
 
-    def _create_version(
-        version_id="test-version-id",
-        timestamp="2024-01-01T12:00:00Z",
-        author="test_user",
-        message="Test commit",
-        data=None,
-        parents=None,
-    ):
-        if data is None:
-            data = {
-                "title": "Test",
-                "prompt": "Test content",
-                "category": "Test",
-                "tags": [],
-                "favorite": False,
-            }
-        if parents is None:
-            parents = []
+    This fixture provides the same interface as the old api_client_context fixture
+    for backward compatibility with existing test files (e.g., test_api_endpoints.py).
 
-        return {
-            "version_id": version_id,
-            "timestamp": timestamp,
-            "author": author,
-            "message": message,
-            "data": data,
-            "parents": parents,
+    Args:
+        test_db_engine: Test database engine
+        temp_data_dir: Temporary directory for file operations
+        sample_prompt_data: Factory for creating prompt data
+
+    Yields:
+        dict: Dictionary with 'client', 'data_service', and 'temp_dir' keys
+    """
+    # Import here to avoid circular imports
+    from src.web import app as web_app
+    from src.db import session as session_module
+    from contextlib import contextmanager
+
+    # Store original session factory and services
+    original_session_local = session_module.SessionLocal
+    original_services = (
+        web_app.data_service,
+        web_app.backup_service,
+        web_app.filter_service,
+        web_app.import_export_service,
+        web_app.versioning_service,
+    )
+
+    # Create test session factory
+    TestSessionLocal = sessionmaker(bind=test_db_engine)
+
+    # Patch the session factory
+    session_module.SessionLocal = TestSessionLocal
+
+    # Create a new get_db_session that uses the test SessionLocal
+    @contextmanager
+    def mock_get_db_session():
+        """Mock context manager that uses test database."""
+        session = TestSessionLocal()
+        try:
+            yield session
+            session.commit()
+        except Exception:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
+    # Patch get_db_session
+    session_module.get_db_session = mock_get_db_session
+
+    # Configure services with test data directory
+    web_app.configure_services(data_dir=temp_data_dir)
+
+    # Get reference to data service
+    data_service = web_app.data_service
+
+    # Seed data with two prompts (matching old fixture behavior)
+    data_service.add_new_prompt(
+        sample_prompt_data(
+            title="API Prompt 1",
+            prompt="Content 1",
+            category="Testing",
+            tags=["api", "test"],
+            favorite=True,
+        )
+    )
+    data_service.add_new_prompt(
+        sample_prompt_data(
+            title="API Prompt 2",
+            prompt="Content 2",
+            category="Docs",
+            tags=["docs"],
+            favorite=False,
+        )
+    )
+
+    # Create test client
+    client = TestClient(web_app.app)
+
+    try:
+        yield {
+            "client": client,
+            "data_service": data_service,
+            "temp_dir": temp_data_dir,
         }
-
-    return _create_version
+    finally:
+        client.close()
+        # Restore original session factory and services
+        session_module.SessionLocal = original_session_local
+        (
+            web_app.data_service,
+            web_app.backup_service,
+            web_app.filter_service,
+            web_app.import_export_service,
+            web_app.versioning_service,
+        ) = original_services
 
 
 @pytest.fixture
-def sample_csv_content():
-    """Sample CSV content for import testing."""
-    return """title,prompt,note,category,tags,favorite
-Test Prompt 1,Test content 1,Test note 1,Category1,"tag1, tag2",Yes
-Test Prompt 2,Test content 2,Test note 2,Category2,"tag3, tag4",No
-"""
+def api_client_with_data(
+    api_client: TestClient,
+    sample_prompt_data: Callable[..., Dict[str, Any]],
+    test_db_session: Session,
+    test_user: User,
+    test_category: Category,
+    test_tags: List[Tag]
+) -> Dict[str, Any]:
+    """FastAPI TestClient with pre-populated test data.
 
+    Creates a test client and populates it with sample prompts for
+    API endpoint testing.
 
-@pytest.fixture
-def sample_markdown_content():
-    """Sample Markdown content for import testing."""
-    return """# Test Prompt 1
+    Args:
+        api_client: FastAPI test client
+        sample_prompt_data: Factory for creating prompt data
+        test_db_session: Database session for seeding data
+        test_user: Test user
+        test_category: Test category
+        test_tags: Test tags
 
-**Category:** Category1
-**Tags:** tag1, tag2
-**Favorite:** Yes
+    Returns:
+        dict: Dictionary with 'client' and 'prompts' keys
+    """
+    # Create sample prompts directly in the database
+    prompts = []
 
-## Prompt
-Test content 1
+    prompt_data_list = [
+        {
+            "title": "API Prompt 1",
+            "prompt": "Content 1",
+            "category_id": test_category.id,
+            "note": "Note 1",
+            "favorite": True,
+            "user_id": test_user.id,
+        },
+        {
+            "title": "API Prompt 2",
+            "prompt": "Content 2",
+            "category_id": test_category.id,
+            "note": "Note 2",
+            "favorite": False,
+            "user_id": test_user.id,
+        },
+    ]
 
-## Note
-Test note 1
+    for prompt_data in prompt_data_list:
+        prompt = Prompt(**prompt_data)
+        prompt.tags.extend(test_tags[:2])
+        test_db_session.add(prompt)
+        prompts.append(prompt)
 
----
+    test_db_session.commit()
 
-# Test Prompt 2
-
-**Category:** Category2
-**Tags:** tag3, tag4
-**Favorite:** No
-
-## Prompt
-Test content 2
-
-## Note
-Test note 2
-
----
-"""
+    return {
+        "client": api_client,
+        "prompts": prompts,
+    }

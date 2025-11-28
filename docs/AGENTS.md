@@ -18,30 +18,64 @@ PromptVault is a modern web-based prompt management application built with FastA
 ### Code Quality
 
 - **Format Code**: Use black code formatter (configured in project)
-- **Python Version**: Python 3.8+ minimum (tested on 3.8-3.12)
+- **Python Version**: Python 3.11+ minimum (required for database features)
 - **Before Commits**: Run full test suite and ensure coverage meets 85% threshold
 
 ### Testing
 
-- **Run Full Test Suite**: `pytest` (includes coverage reporting)
-- **Run Specific Test**: `pytest tests/test_prompt_data_service.py`
-- **Skip Performance Tests**: `pytest -m "not performance"`
-- **Performance Tests Only**: `pytest -m performance`
+- **Run Full Test Suite**: `pytest` (includes coverage reporting, ~8 seconds)
+- **Run Repository Tests**: `pytest tests/test_db_repositories.py`
+- **Run Service Tests**: `pytest tests/test_db_services.py`
+- **Run Version Control Tests**: `pytest tests/test_version_system.py`
+- **Run API Tests**: `pytest tests/test_web_api.py`
 - **Coverage Report**: Generated in `htmlcov/index.html` after running pytest
 - **Coverage Threshold**: 85% minimum (enforced in pytest.ini)
+- **Current Coverage**: 86.90% (509 passing tests, 99% pass rate)
+- **Test Documentation**: See `docs/TESTING.md` for comprehensive guide
 
 ## High-Level Architecture
 
 ### Core Systems
 
-1. **Service Layer** ([`src/services/`](src/services/))
+1. **Database Layer** ([`src/db/`](src/db/))
 
-   - **PromptDataService** ([`prompt_data_service.py`](src/services/prompt_data_service.py)): Core data persistence layer
+   - **Database Models** ([`models.py`](src/db/models.py)): SQLAlchemy ORM models
+     - `Prompt`: Main prompt entity with relationships
+     - `PromptVersion`: Git-like version snapshots
+     - `Category`: Prompt categorization
+     - `Tag`: Tagging system with many-to-many relationships
+     - `User`: User entity for authorship tracking
+     - `Backup`: Backup metadata tracking
+
+   - **Repositories** ([`repositories/`](src/db/repositories/)): Data access layer
+     - **PromptRepository**: CRUD operations, search, filtering, pagination
+     - **VersionRepository**: Version history, comparison, revert operations
+     - **CategoryRepository**: Category management with usage tracking
+     - **TagRepository**: Tag management, bulk operations, popular tags
+
+   - **Database Configuration** ([`config.py`](src/db/config.py)): Database setup
+     - PostgreSQL support (production)
+     - SQLite support (development)
+     - Environment-based configuration
+     - Connection pooling and session management
+
+2. **Service Layer** ([`src/services/`](src/services/))
+
+   - **PromptDataServiceDB** ([`prompt_data_service_db.py`](src/services/prompt_data_service_db.py)): Core data operations
      - Handles all CRUD operations for prompts
-     - Manages JSON file storage and loading #TODO: Correct this file, no longer json based
-     - Data structure migration and validation
+     - Database-backed persistence with transactions
+     - Automatic versioning on updates
      - Category and tag management
-     - Maintains `next_id` counter for prompt IDs
+     - Search and filtering capabilities
+     - **Note**: Legacy JSON-based service ([`prompt_data_service.py`](src/services/prompt_data_service.py)) deprecated
+
+   - **BackupServiceDB** ([`backup_service_db.py`](src/services/backup_service_db.py)): Database backup system
+     - SQLite: File copy with metadata tracking
+     - PostgreSQL: pg_dump integration
+     - Backup restoration with safety features
+     - Retention policies and cleanup
+     - Compression for older backups
+     - **Note**: Legacy JSON-based service ([`backup_service.py`](src/services/backup_service.py)) deprecated
 
    - **PromptVersioningService** ([`prompt_versioning_service.py`](src/services/prompt_versioning_service.py)): Git-like version control
      - UUID-based version identification

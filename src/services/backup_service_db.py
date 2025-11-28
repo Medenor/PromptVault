@@ -327,12 +327,14 @@ class BackupService:
                     http_status=404
                 )
 
-            # Create pre-restore backup
+            # Create pre-restore backup with unique timestamp
+            from datetime import datetime, timezone
+            timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
             logger.info(
                 "Creating pre-restore backup",
                 extra={"event": "backup.restore.pre_backup"}
             )
-            pre_restore_backup = self.create_backup("pre_restore")
+            pre_restore_backup = self.create_backup(f"pre_restore_{timestamp}")
             if not pre_restore_backup:
                 logger.warning(
                     "Could not create pre-restore backup",
