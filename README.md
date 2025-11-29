@@ -24,7 +24,7 @@
   <img src="https://img.shields.io/badge/License-AGPL%20v3-blue?style=for-the-badge&logo=gnu&logoColor=white" alt="AGPL v3 License">
 </a>
 <a href="https://www.python.org/">
-  <img src="https://img.shields.io/badge/Python-3.8%2B-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.8+">
+  <img src="https://img.shields.io/badge/Python-3.11%2B-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.11+">
 </a>
 <a href="https://fastapi.tiangolo.com/">
   <img src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI">
@@ -114,6 +114,8 @@ PromptVault follows a clean, layered architecture with clear separation of conce
 
 This modular design improves code maintainability, testability, and extensibility while providing flexibility in deployment options.
 
+For detailed technical specifications and database schema, see [Database Specification](docs/SPECS/SPEC_DATABASE.md). For development guidelines and codebase structure, see [AGENTS.md](docs/AGENTS.md).
+
 ### Version Control
 
 PromptVault includes a robust, Git-like version control system for all prompts, ensuring full traceability and a clear history of changes. This feature is **fully implemented and production-ready**. Key features include:
@@ -197,39 +199,13 @@ docker-compose exec web python scripts/migrate_json_to_db.py
 
 Then open your browser to `http://localhost:8001`
 
-For detailed deployment instructions, database setup, and migration guides, see:
+### Additional Installation Options
+
+For detailed deployment instructions including manual installation, environment configuration, and production setup, see:
 
 - **[Deployment Guide](docs/DEPLOYMENT.md)** - Complete deployment instructions for Docker, Docker Compose, and manual deployment
 - **[Migration Guide](docs/MIGRATION_GUIDE.md)** - Step-by-step guide for migrating from JSON to database storage
 - **[Database Specification](docs/SPECS/SPEC_DATABASE.md)** - Technical specification and architecture details
-
-### Manual Installation
-
-1. **Clone the repository**:
-
-    ```bash
-    git clone https://codeberg.org/medenor/promptvault.git
-    cd PromptVault
-    ```
-
-2. **Create a virtual environment** (recommended):
-
-    ```bash
-    python3 -m venv .venv
-    source .venv/bin/activate  # On Windows, use `.venv\Scripts\activate`
-    ```
-
-3. **Install PromptVault and its dependencies**:
-
-    ```bash
-    pip install .
-    ```
-
-    For development work you can install in editable mode:
-
-    ```bash
-    pip install -e .
-    ```
 
 ## Usage
 
@@ -306,127 +282,46 @@ See `docs/API_VALIDATION_AND_MONITORING.md` and `docs/VALIDATION_TEST_CHECKLIST.
 
 ### Project Structure
 
-The project follows a clean, modular web-first architecture:
+PromptVault follows a clean, layered architecture:
 
-- `src/`: Main source code directory
-  - `src/web/`: Web application layer
-    - `src/web/app.py`: FastAPI application and REST API routes
-    - `src/web/templates/`: Jinja2 HTML templates
-      - `src/web/templates/index.html`: Main application page
-      - `src/web/templates/import_export.html`: Import/export management interface
-      - `src/web/templates/backup_management.html`: Backup management interface
-    - `src/web/static/`: Static assets
-      - `src/web/static/favicon.png`: Application favicon
-      - `src/web/static/css/`: Stylesheets
-        - `src/web/static/css/style.css`: Main application styles
-      - `src/web/static/js/`: JavaScript files
-        - `src/web/static/js/app.js`: Main application logic
-        - `src/web/static/js/import_export.js`: Import/export functionality
-        - `src/web/static/js/backup_management.js`: Backup management functionality
-        - `src/web/static/js/types/`: TypeScript type definitions
-      - `src/web/static/locales/`: Internationalization files
-  - `src/services/`: Business logic and data services
-    - `src/services/backup_service.py`: Data backup and restoration (JSON-based)
-    - `src/services/backup_service_db.py`: Database-aware backup service
-    - `src/services/prompt_data_service.py`: Core data operations (JSON-based)
-    - `src/services/prompt_data_service_db.py`: Database-backed data service
-    - `src/services/prompt_filter_service.py`: Search and filtering
-    - `src/services/prompt_import_export_service.py`: Import/export functionality
-    - `src/services/prompt_versioning_service.py`: Version control system
-    - `src/services/version_compression_service.py`: Version compression utilities
-    - `src/services/version_export_service.py`: Version export functionality
-    - `src/services/version_tagging_service.py`: Version tagging system
-  - `src/db/`: Database layer (SQLAlchemy ORM)
-    - `src/db/models/`: Database models (Prompt, PromptVersion, Category, Tag, User, Backup)
-    - `src/db/repositories/`: Repository pattern implementations (PromptRepository, VersionRepository, etc.)
-    - `src/db/base.py`: SQLAlchemy declarative base
-    - `src/db/session.py`: Database session management
-    - `src/db/config.py`: Database configuration (Pydantic settings)
-- `scripts/`: Utility scripts
-  - `scripts/migrate_json_to_db.py`: JSON to database migration script
-  - `scripts/test_db_operations.py`: Database operation tests
-- `alembic/`: Database migrations
-  - `alembic/versions/`: Migration version files
-  - `alembic.ini`: Alembic configuration
-- `data/`: Application data files
-  - `data/prompts.json`: Legacy JSON storage (deprecated)
-  - `data/promptvault.db`: SQLite database (development)
-  - `data/backups/`: Backup files
-  - `data/logs/`: Application and audit logs
-- `docs/`: Documentation and screenshots
-  - `docs/DEPLOYMENT.md`: Deployment guide for Docker and manual deployment
-  - `docs/MIGRATION_GUIDE.md`: JSON to database migration guide
-  - `docs/SPECS/SPEC_DATABASE.md`: Database technical specification
-  - `docs/phase*.md`: Implementation phase documentation
-  - `docs/CODE_OF_CONDUCT.md`: Code of conduct
-  - `docs/CONTRIBUTING.md`: Contributing guidelines
-  - `docs/SECURITY.md`: Security policy
-  - `docs/images/`: Screenshots and documentation images
-- `tests/`: Test suite
-  - `tests/conftest.py`: Shared fixtures, factories, and API client helpers
-  - `tests/test_prompt_data_service.py`: Core CRUD, persistence, and migration coverage
-  - `tests/test_prompt_filter_service.py`: Category/tag/search/favorites filtering
-  - `tests/test_prompt_import_export_service.py`: CSV/Markdown import-export scenarios
-  - `tests/test_backup_service_extended.py`: Backup/restore/compression edge cases
-  - `tests/test_version_compression_service.py`: Compression thresholds and stats
-  - `tests/test_version_tagging_service.py`: Tag creation, management, and analytics
-  - `tests/test_version_export_service.py`: History/single/comparison exports
-  - `tests/test_prompt_versioning_service.py`: Version metadata helpers
-  - `tests/test_api_endpoints.py`: FastAPI integration and error handling
-  - `tests/test_malformed_data.py`: Corrupted/invalid JSON safeguards
-  - `tests/test_performance.py`: Large dataset and export/backup benchmarks
-  - `tests/test_backup_system.py`, `tests/test_version_api.py`, `tests/test_version_integration.py`: Legacy regression suites
-- `htmlcov/`: Test coverage reports
-- `run_web.py`: Web application startup script
-- `Dockerfile`: Docker container configuration
-- `docker-compose.yml`: Docker Compose configuration for easy deployment
-- `pyproject.toml`: Python project configuration and dependencies
-- `CHANGELOG.md`: Project changelog
-- `LICENSE`: Project license
-- `README.md`: This file
-- `.gitignore`: Git ignore patterns
+- **`src/web/`** - FastAPI web application, templates, and static assets
+- **`src/services/`** - Business logic layer (data services, filtering, versioning, import/export, backups)
+- **`src/db/`** - Database layer with SQLAlchemy models and repositories
+- **`scripts/`** - Utility scripts (database migration, operations testing)
+- **`alembic/`** - Database migration version control
+- **`data/`** - Application data (database, backups, logs)
+- **`tests/`** - Comprehensive test suite (509 tests, 86.90% coverage)
+- **`docs/`** - Documentation and specifications
+
+For detailed project structure and development guidelines, see [AGENTS.md](docs/AGENTS.md).
 
 ## Testing
 
-PromptVault ships with a comprehensive pytest suite that exercises core services, FastAPI endpoints, malformed data handling, and performance characteristics.
+PromptVault includes a comprehensive pytest suite with **509 passing tests** and **86.90% code coverage**.
 
-### Install test dependencies
+### Quick Start
 
 ```bash
+# Install test dependencies
 pip install -e .[test]
-```
 
-### Run the full suite with coverage
-
-```bash
+# Run full suite with coverage
 pytest
+
+# Run specific test files
+pytest tests/test_db_repositories.py
+pytest tests/test_db_services.py
+pytest tests/test_version_system.py
+
+# Skip performance tests
+pytest -m "not performance"
 ```
 
-The default configuration (see `pytest.ini`) enables `--cov=src --cov-report=term-missing --cov-report=html:htmlcov --cov-fail-under=85`, so the run will fail if core coverage drops below 85%. View the detailed HTML report at `htmlcov/index.html`.
+The test suite uses in-memory SQLite for fast, isolated testing and completes in ~8 seconds.
 
-### Targeted suites
+### Comprehensive Testing Documentation
 
-- Core services only: `pytest tests/test_prompt_data_service.py tests/test_prompt_filter_service.py`
-- API endpoints: `pytest tests/test_api_endpoints.py`
-- Skip heavy performance tests: `pytest -m "not performance"`
-- Performance benchmarks only: `pytest -m performance`
-
-### Performance guardrails
-
-Performance tests in `tests/test_performance.py` enforce the following baselines using synthetic datasets:
-
-- Load/save 1,000 prompts in under 5 seconds
-- Load 2,000 version records in under 10 seconds
-- Filter/search/sort across 1,000 prompts in under 1 second per operation
-- Export 1,000 prompts to CSV/Markdown in under 5 seconds
-
-These targets keep the full suite under ~60 seconds on a modern laptop. Adjust the thresholds by editing the assertions if your deployment environment has different guarantees.
-
-### CI/CD recommendations
-
-1. Pull request gate: `pytest --maxfail=1 --disable-warnings -m "not performance"`
-2. Nightly/per-release job: `pytest` (full run, including performance markers)
-3. Publish the HTML coverage artifact (`htmlcov/`) to easily inspect regressions.
+For detailed information about the test suite architecture, fixtures, coverage requirements, and CI/CD recommendations, see **[TESTING.md](docs/TESTING.md)**.
 
 ## Observability & Telemetry
 
