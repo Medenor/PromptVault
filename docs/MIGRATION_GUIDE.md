@@ -252,9 +252,9 @@ from src.services.prompt_data_service_db import PromptDataService
 uvicorn src.web.app:app --reload
 
 # Test in another terminal
-curl http://localhost:8000/api/prompts
-curl http://localhost:8000/api/categories
-curl http://localhost:8000/api/tags
+curl http://localhost:8003/api/prompts
+curl http://localhost:8003/api/categories
+curl http://localhost:8003/api/tags
 ```
 
 ---

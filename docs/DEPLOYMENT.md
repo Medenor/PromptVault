@@ -227,10 +227,10 @@ python scripts/test_db_operations.py
 
 ```bash
 # Development mode (with auto-reload)
-uvicorn src.web.app:app --host 0.0.0.0 --port 8000 --reload
+uvicorn src.web.app:app --host 0.0.0.0 --port 8003 --reload
 
 # Production mode
-uvicorn src.web.app:app --host 0.0.0.0 --port 8000 --workers 4
+uvicorn src.web.app:app --host 0.0.0.0 --port 8003 --workers 4
 ```
 
 ---
@@ -412,7 +412,7 @@ PromptVault includes a health check endpoint at `/api/health`:
 
 ```bash
 # Check health
-curl http://localhost:8000/api/health
+curl http://localhost:8003/api/health
 
 # Expected response
 {
@@ -428,7 +428,7 @@ The Dockerfile includes automatic health checks:
 
 ```dockerfile
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:8000/api/health || exit 1
+    CMD curl -f http://localhost:8003/api/health || exit 1
 ```
 
 Check container health:
@@ -600,10 +600,10 @@ DB_POOL_RECYCLE=1800
 **Use production server:**
 ```bash
 # Multiple workers
-uvicorn src.web.app:app --workers 4 --host 0.0.0.0 --port 8000
+uvicorn src.web.app:app --workers 4 --host 0.0.0.0 --port 8003
 
 # With Gunicorn
-gunicorn src.web.app:app -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
+gunicorn src.web.app:app -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8003
 ```
 
 ---

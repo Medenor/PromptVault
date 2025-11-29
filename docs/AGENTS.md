@@ -10,7 +10,7 @@ PromptVault is a modern web-based prompt management application built with FastA
 
 ### Build & Development
 
-- **Run Development Server**: `python run_web.py` (default port 8000)
+- **Run Development Server**: `python run_web.py` (default port 8003)
 - **Run with Custom Port**: `PORT=8001 python run_web.py`
 - **Run with Docker**: `docker-compose up --build` (production, port 8001)
 - **NEVER manually start uvicorn** - Always use the provided startup scripts

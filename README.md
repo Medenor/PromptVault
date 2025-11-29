@@ -235,13 +235,13 @@ pip install -e .
 python3 run_web.py
 ```
 
-By default, the application will run on port 8000. To use a different port, set the `PORT` environment variable:
+By default, the application will run on port 8003. To use a different port, set the `PORT` environment variable:
 
 ```bash
 PORT=8001 python3 run_web.py
 ```
 
-3. Open your browser and go to `http://localhost:8000` (or the port you specified)
+3. Open your browser and go to `http://localhost:8003` (or the port you specified)
 
 4. To stop the web application, press `Ctrl+C` in the terminal where the server is running
 

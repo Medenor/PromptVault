@@ -171,7 +171,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **For Developers:**
 
-- Web application runs on `http://localhost:8001` (Docker) or `http://localhost:8000` (development)
+- Web application runs on `http://localhost:8001` (Docker) or `http://localhost:8003` (development)
 - API endpoints available at `/api/*` routes
 - All original functionality preserved with improved performance
 
