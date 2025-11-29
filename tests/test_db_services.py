@@ -671,6 +671,7 @@ class TestBackupService:
         import shutil
         from src.db import config as config_module
         from src.db import session as session_module
+        from src.services import backup_service_db as backup_service_module
         from sqlalchemy.orm import sessionmaker
         from sqlalchemy import create_engine
         from src.db.base import Base
@@ -705,7 +706,9 @@ class TestBackupService:
             finally:
                 session.close()
 
+        # Monkeypatch BOTH the session module AND the backup_service module
         monkeypatch.setattr(session_module, "get_db_session", mock_get_db_session)
+        monkeypatch.setattr(backup_service_module, "get_db_session", mock_get_db_session)
 
         fresh_service = BackupService(temp_data_dir)
         backups = fresh_service.list_backups()
@@ -900,6 +903,7 @@ class TestBackupService:
         import shutil
         from src.db import config as config_module
         from src.db import session as session_module
+        from src.services import backup_service_db as backup_service_module
         from sqlalchemy.orm import sessionmaker
         from sqlalchemy import create_engine
         from src.db.base import Base
@@ -934,7 +938,9 @@ class TestBackupService:
             finally:
                 session.close()
 
+        # Monkeypatch BOTH the session module AND the backup_service module
         monkeypatch.setattr(session_module, "get_db_session", mock_get_db_session)
+        monkeypatch.setattr(backup_service_module, "get_db_session", mock_get_db_session)
 
         fresh_service = BackupService(temp_data_dir)
         stats = fresh_service.get_backup_stats()
