@@ -23,15 +23,25 @@ def api_data_service(api_client_context):
     return api_client_context["data_service"]
 
 
+@pytest.fixture
+def seeded_prompt_id(api_client):
+    """Get the ID of the seeded 'API Prompt 1' prompt."""
+    prompts = api_client.get("/api/prompts").json()["prompts"]
+    for prompt_id, payload in prompts.items():
+        if payload["title"] == "API Prompt 1":
+            return prompt_id
+    pytest.fail("Seeded prompt 'API Prompt 1' not found")
+
+
 class TestPromptCrudEndpoints:
     """CRUD endpoint coverage."""
 
-    def test_get_prompts_returns_seed_data(self, api_client):
+    def test_get_prompts_returns_seed_data(self, api_client, seeded_prompt_id):
         response = api_client.get("/api/prompts")
         assert response.status_code == 200
         data = response.json()["prompts"]
         assert len(data) == 2
-        assert data["0"]["title"] == "API Prompt 1"
+        assert data[seeded_prompt_id]["title"] == "API Prompt 1"
 
     def test_create_prompt_success(self, api_client):
         response = api_client.post(
@@ -70,8 +80,8 @@ class TestPromptCrudEndpoints:
         response = api_client.post("/api/prompts", data={"title": "Invalid"})
         assert response.status_code == 422
 
-    def test_get_prompt_by_id(self, api_client):
-        response = api_client.get("/api/prompts/0")
+    def test_get_prompt_by_id(self, api_client, seeded_prompt_id):
+        response = api_client.get(f"/api/prompts/{seeded_prompt_id}")
         assert response.status_code == 200
         data = response.json()
         assert data["title"] == "API Prompt 1"
@@ -84,9 +94,9 @@ class TestPromptCrudEndpoints:
         response = api_client.get("/api/prompts/abc")
         assert response.status_code == 404
 
-    def test_update_prompt_success(self, api_client):
+    def test_update_prompt_success(self, api_client, seeded_prompt_id):
         response = api_client.put(
-            "/api/prompts/0",
+            f"/api/prompts/{seeded_prompt_id}",
             data={
                 "title": "Updated Title",
                 "prompt": "Updated body",
@@ -98,7 +108,7 @@ class TestPromptCrudEndpoints:
         assert response.status_code == 200
         assert response.json()["success"] is True
 
-        refreshed = api_client.get("/api/prompts/0")
+        refreshed = api_client.get(f"/api/prompts/{seeded_prompt_id}")
         assert refreshed.json()["title"] == "Updated Title"
 
     def test_update_prompt_not_found(self, api_client):
@@ -153,8 +163,8 @@ class TestPromptCrudEndpoints:
         response = api_client.delete("/api/prompts/not-a-number")
         assert response.status_code == 400
 
-    def test_toggle_favorite_success(self, api_client):
-        response = api_client.put("/api/prompts/0/favorite")
+    def test_toggle_favorite_success(self, api_client, seeded_prompt_id):
+        response = api_client.put(f"/api/prompts/{seeded_prompt_id}/favorite")
         assert response.status_code == 200
         data = response.json()
         assert data["success"] is True
@@ -221,7 +231,8 @@ class TestCategoryAndTagEndpoints:
         assert response.status_code == 200
         categories = response.json()["categories"]
         assert "Testing" in categories
-        assert categories == ["Testing", "Docs"]
+        assert len(categories) == 2
+        assert set(categories) == {"Testing", "Docs"}
 
     def test_get_tags(self, api_client):
         response = api_client.get("/api/tags")
@@ -468,14 +479,14 @@ class TestApiErrorPaths:
         assert payload["error"].startswith("Search failed")
 
     def test_update_prompt_failure_returns_500(
-        self, api_client, api_data_service, monkeypatch
+        self, api_client, api_data_service, monkeypatch, seeded_prompt_id
     ):
         monkeypatch.setattr(
             api_data_service, "update_prompt", lambda *args, **kwargs: False
         )
 
         response = api_client.put(
-            "/api/prompts/0",
+            f"/api/prompts/{seeded_prompt_id}",
             data={
                 "title": "Will Fail",
                 "prompt": "Body",
@@ -488,13 +499,13 @@ class TestApiErrorPaths:
         assert response.json()["error"] == "Failed to update prompt"
 
     def test_toggle_favorite_failure_returns_500(
-        self, api_client, api_data_service, monkeypatch
+        self, api_client, api_data_service, monkeypatch, seeded_prompt_id
     ):
         monkeypatch.setattr(
             api_data_service, "update_prompt", lambda *args, **kwargs: False
         )
 
-        response = api_client.put("/api/prompts/0/favorite")
+        response = api_client.put(f"/api/prompts/{seeded_prompt_id}/favorite")
         assert response.status_code == 500
         assert response.json()["error"] == "Failed to update favorite status"
 
@@ -674,9 +685,9 @@ class TestBackupManagementEndpoints:
 class TestVersionEndpointCoverage:
     """Ensure version comparison and revert branches execute under test."""
 
-    def test_compare_and_revert_flow(self, api_client):
+    def test_compare_and_revert_flow(self, api_client, seeded_prompt_id):
         update = api_client.put(
-            "/api/prompts/0",
+            f"/api/prompts/{seeded_prompt_id}",
             data={
                 "title": "API Prompt 1 Updated",
                 "prompt": "Content 1 updated",
@@ -687,25 +698,29 @@ class TestVersionEndpointCoverage:
         )
         assert update.status_code == 200
 
-        history = api_client.get("/api/prompts/0/versions").json()["versions"]
+        history = api_client.get(
+            f"/api/prompts/{seeded_prompt_id}/versions"
+        ).json()["versions"]
         assert len(history) >= 2
         latest_version = history[0]["version_id"]
         previous_version = history[1]["version_id"]
 
         comparison = api_client.get(
-            f"/api/prompts/0/versions/compare",
+            f"/api/prompts/{seeded_prompt_id}/versions/compare",
             params={"v1": previous_version, "v2": latest_version},
         )
         assert comparison.status_code == 200
         changes = comparison.json()["changes"]
         assert "prompt" in changes
 
-        version_detail = api_client.get(f"/api/prompts/0/versions/{previous_version}")
+        version_detail = api_client.get(
+            f"/api/prompts/{seeded_prompt_id}/versions/{previous_version}"
+        )
         assert version_detail.status_code == 200
         assert version_detail.json()["version_id"] == previous_version
 
         revert = api_client.post(
-            f"/api/prompts/0/versions/{previous_version}/revert",
+            f"/api/prompts/{seeded_prompt_id}/versions/{previous_version}/revert",
             data={"commit_message": "Revert update"},
         )
         assert revert.status_code == 200
@@ -886,4 +901,3 @@ def test_bulk_delete_creates_backup(api_client_context):
     assert result["success"] is True
     assert "backup_id" in result
     assert result["backup_id"] is not None
-

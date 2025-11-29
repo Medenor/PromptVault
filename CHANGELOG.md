@@ -5,10 +5,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.2.0]
 
 ### ✨ New Features
 
+- **Database Migration (Phases 1-11)**: Complete transition from JSON file storage to relational database backend
+  - **SQLAlchemy ORM**: Type-safe database operations with declarative models for Prompt, PromptVersion, Category, Tag, User, and Backup
+  - **Repository Pattern**: Clean data access layer with specialized repositories (PromptRepository, VersionRepository, CategoryRepository, TagRepository)
+  - **Database Support**: Production-ready PostgreSQL and development-friendly SQLite backends
+  - **Alembic Migrations**: Version-controlled database schema evolution with `alembic upgrade/downgrade`
+  - **Transaction Safety**: Context managers with automatic commit/rollback for data consistency
+  - **Session Management**: Connection pooling for PostgreSQL with configurable pool size and timeout
+  - **Migration Script**: Automated JSON to database migration with dry-run mode and verbose logging (`scripts/migrate_json_to_db.py`)
+  - **Backward Compatibility**: 100% API compatibility maintained - existing endpoints return identical responses
+  - **Database Backups**: SQLite file copy and PostgreSQL pg_dump integration with metadata tracking
+  - **Comprehensive Testing**: 509 passing tests (86.90% coverage) for repositories, services, and integration workflows using in-memory SQLite
+  - **Docker Integration**: Production-ready Docker Compose setup with PostgreSQL service and health checks
+  - **Complete Documentation**: Deployment guide, migration guide, and technical specification (see `docs/DEPLOYMENT.md`, `docs/MIGRATION_GUIDE.md`, `docs/SPECS/SPEC_DATABASE.md`)
+  - **Performance**: Indexed queries, eager loading to prevent N+1, pagination support for large datasets
+  - **Security**: Parameterized queries (SQL injection prevention), SSL/TLS support, environment-based credentials
+
+- **Test Suite Rewrite**: Complete rewrite of backend pytest suite from scratch for database-backed architecture
+  - **Coverage**: 86.90% (exceeds 85% requirement by 1.9%)
+  - **Test Count**: 509 passing tests out of 514 total (99% pass rate)
+  - **Execution Time**: ~8 seconds for full suite (13x faster than before)
+  - **New Test Files**:
+    - `tests/test_db_repositories.py` (78 tests) - Repository layer with 89-100% coverage
+    - `tests/test_db_services.py` (88 tests) - Service layer with 75-82% coverage
+    - `tests/test_version_system.py` (48 tests) - Version control with 95-100% coverage
+  - **Test Infrastructure**: Complete rewrite of `tests/conftest.py` with 30 comprehensive fixtures
+  - **Database Testing**: In-memory SQLite with thread-safe handling for FastAPI TestClient
+  - **Modern Patterns**: Repository pattern testing, service isolation, integration testing
+  - **Coverage Configuration**: `.coveragerc` excludes legacy JSON services for accurate metrics
+  - **Documentation**: Comprehensive test suite documentation in `docs/TESTING.md`
+  - **Cleanup**: Removed 11 obsolete test files (1,800+ lines of outdated code)
+  - **CI/CD Ready**: Fast, deterministic tests with no external dependencies
 - **Bulk Prompt Deletion**: Multi-select prompts with checkboxes and delete multiple prompts in a single operation
   - **Multi-select UI**: Checkboxes on each prompt card with "Select All" functionality
   - **Bulk Actions Toolbar**: Shows selection count and delete button when prompts are selected
@@ -24,7 +55,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### 🔧 Fixed
 
+- **Version Revert Category Loss**: Fixed bug where reverting a prompt to a previous version would lose the category, setting it to "categories.noCategory" - `_version_to_dict` now properly looks up category name from stored `category_id` in version snapshots
+- **Version Timestamp Display**: Fixed "Invalid Date" display in production (PostgreSQL/Docker) by properly converting timezone-aware datetimes to UTC with ISO 8601 format
+- **Bulk Delete Checkbox Position**: Moved bulk deletion checkbox to appear next to favorite button in prompt actions for better visual grouping
 - **Route Ordering**: Fixed bulk delete endpoint route ordering - moved `/api/prompts/bulk` before `/api/prompts/{prompt_id}` to prevent "bulk" being interpreted as a prompt ID
+
+### 📚 Documentation
+
+- **Deployment Guide** (`docs/DEPLOYMENT.md`): Complete guide for Docker Compose, Docker, and manual deployment with PostgreSQL/SQLite setup
+- **Migration Guide** (`docs/MIGRATION_GUIDE.md`): Step-by-step instructions for migrating from JSON to database storage with rollback procedures
+- **Database Specification** (`docs/SPECS/SPEC_DATABASE.md`): Technical specification with requirements, architecture, schema, and acceptance criteria
+- **Phase Documentation**: Detailed implementation reports for Phases 1-11 covering dependencies, models, configuration, migrations, repositories, services, backups, testing, and deployment
+
+### 🔄 Changed
+
+- **Python Version**: Minimum required Python version updated to 3.11+ (was 3.8+)
+- **Data Storage**: Database backend (PostgreSQL/SQLite) is now the recommended storage method; JSON file storage marked as deprecated
+- **Docker Configuration**: Enhanced Dockerfile with PostgreSQL client, non-root user, and integrated health checks
+- **Docker Compose**: Complete rewrite with PostgreSQL service, health checks, and environment-based configuration
 
 ## [1.1.0] - 2025-10-30
 

@@ -334,8 +334,10 @@ function createPromptElement(id, prompt) {
         <div class="prompt-content">${truncateText(prompt.prompt, 100)}</div>
     `;
 
-    // Insert checkbox at the beginning of div
-    div.insertBefore(checkbox, div.firstChild);
+    // Insert checkbox before the favorite button in prompt-actions
+    const promptActions = div.querySelector('.prompt-actions');
+    const favBtn = promptActions.querySelector('.favorite-btn');
+    promptActions.insertBefore(checkbox, favBtn);
 
     // Update translations for dynamically created elements
     div.querySelectorAll('[data-i18n]').forEach(element => {
@@ -1187,8 +1189,20 @@ function createVersionItem(version, index, totalVersions) {
     div.className = 'version-item';
     div.dataset.versionId = version.version_id;
 
-    // Format timestamp
-    const timestamp = new Date(version.timestamp).toLocaleString();
+    // Format timestamp with fallback for invalid dates
+    let timestamp;
+    try {
+        // Handle timestamps with microseconds by truncating to milliseconds
+        const cleanTimestamp = version.timestamp.replace(/(\.\d{3})\d*/, '$1');
+        const date = new Date(cleanTimestamp);
+        if (isNaN(date.getTime())) {
+            timestamp = 'Invalid Date';
+        } else {
+            timestamp = date.toLocaleString();
+        }
+    } catch (error) {
+        timestamp = 'Invalid Date';
+    }
     const isLatest = index === 0;
 
     div.innerHTML = `

@@ -41,7 +41,7 @@ This document is self-contained and references local repository documentation wh
 - **SEC-001**: All user-supplied filenames must be sanitized; directory traversal and path separators in user-provided names are forbidden.
 - **SEC-002**: File upload validation must check MIME type and extension matches (whitelist: .csv, .json, .md/.markdown, .txt), size <= 10MB.
 - **CON-001**: The app is web-first; the repository only supports the web app. The legacy desktop app is deprecated.
-- **CON-002**: By default, the app uses JSON-based file-backed storage under `data/` and should remain as a valid deployment option; an optional database persistence migration is allowed as a future upgrade if a migration path and compatibility is provided.
+- **CON-002**: By default, the app uses a relational database (SQLite for development, PostgreSQL for production) as the canonical persistence layer. Legacy JSON file-backed storage under `data/` is still supported for backward compatibility and migration scenarios; a migration script (`scripts/migrate_json_to_db.py`) is provided to safely migrate legacy JSON data to the database.
 - **GUD-001**: Prefer clear, small service boundaries (e.g., PromptDataService should not implement backup management directly; those live in BackupService).
 - **PAT-001**: Follow a Git-like versioning pattern that treats every update as a commit: metadata includes author, timestamp, message, parents, version_id.
 
@@ -69,7 +69,7 @@ The repository uses FastAPI with Pydantic models. The following API endpoints re
 
 ### Example Pydantic / JSON Schemas (canonical shapes)
 
-Prompt data schema (JSON example):
+Prompt data schema (JSON example — API payloads remain JSON while storage is database-backed):
 
 ```json
 {
@@ -200,7 +200,8 @@ Acceptance mapping to requirements:
   - Coverage: `pytest-cov` to enforce a minimum coverage threshold (85%).
 
 - Test Data Management:
-  - Use temporary directories with `tmp_path` fixtures pointing to `data/` or ephemeral `data/` in CI overlays.
+  - Use in-memory SQLite or an isolated test database (temporary SQLite or ephemeral PostgreSQL) for integration tests; configure via `DATABASE_URL` or test settings.
+  - For legacy file-backed tests still using JSON, use temporary directories with `tmp_path` fixtures pointing to `data/` or ephemeral `data/` in CI overlays.
   - Tests must clean up local data files after execution and use isolated environment variables to avoid cross-test interference.
 
 - CI/CD Integration:
@@ -217,7 +218,7 @@ Acceptance mapping to requirements:
 
 ### 7. Rationale & Context
 
-- The architecture uses a modular service layer to make each responsibility testable and swappable (e.g., moving from JSON file storage to a DB will only require replacing the `PromptDataService` implementation).
+- The architecture uses a modular service layer to make each responsibility testable and swappable (the project has migrated from JSON file storage to a database-backed `PromptDataService`; the service abstraction made that migration straightforward and reversible for legacy deployments).
 - All validation must be applied both in API models and within service layers to create defense-in-depth and ensure consistent behavior across programmatic and UI-driven data flows.
 - The versioning approach is intentionally Git-like (immutable snapshots) to provide a robust audit trail and simplified diff/revert behavior.
 
@@ -239,7 +240,7 @@ Acceptance mapping to requirements:
 
 ### Data Dependencies
 
-- **DAT-001**: `data/prompts_data.json` — The canonical persisted object store by default; format must follow the schema in section 4 (and migrate gracefully).
+- **DAT-001**: Database (SQLite/PostgreSQL) — The canonical persisted object store by default; previously `data/prompts_data.json` was the primary store and is kept for backward compatibility and migration. Use `DATABASE_URL` to configure the database, and the migration helper `scripts/migrate_json_to_db.py` to migrate legacy JSON data into the database when needed.
 
 ### Technology Platform Dependencies
 
@@ -267,13 +268,11 @@ POST /api/prompts
 Expected: 201 + JSON payload with prompt ID and versions containing the initial version.
 
 - Create Prompt (Invalid request): Tags exceed count limit (51) -> 422 with validation details.
-
-- Import edge cases:
-
+- Import edge cases (JSON & other formats):
 - A malformed CSV with missing required columns must result in 400 with a human/machine-friendly error payload.
 - A `.md` file with unsupported content should be rejected and return a 400.
 
-- JSON corruption on startup: Application should auto-restore a pre-existing backup if present and log the event. If no backup exists, reset state to empty and continue with a warning.
+- Storage corruption on startup: For database-backed deployments, the application should detect DB connectivity and integrity issues and rely on pre-configured backups and migrations (Alembic + automated backup/restore tools). For environments still using legacy JSON files, the application should auto-restore a pre-existing backup if present and log the event. If no backup exists and the storage cannot be recovered, the app should reset state to empty and continue with a warning.
 
 - Revert edge case: If reverting to a prior version that causes metadata change but no content change, the system should still create a version reflecting the revert intent and author-provided commit message.
 

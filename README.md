@@ -78,15 +78,20 @@ PromptVault is a modern web-based prompt management application designed to help
 
 ### Built With
 
-- [Python](https://www.python.org/)
+- [Python](https://www.python.org/) 3.11+
 - [FastAPI](https://fastapi.tiangolo.com/) - Modern web framework
 - [Uvicorn](https://www.uvicorn.org/) - High-performance ASGI server
 - [Jinja2](https://jinja.palletsprojects.com/) - Template engine
+- [SQLAlchemy](https://www.sqlalchemy.org/) - Database ORM
+- [PostgreSQL](https://www.postgresql.org/) / [SQLite](https://www.sqlite.org/) - Database backends
+- [Alembic](https://alembic.sqlalchemy.org/) - Database migrations
 - [Docker](https://www.docker.com/) - Containerization platform
 
 ### Architecture
 
-PromptVault follows a modular architecture with dedicated service classes for different functionalities:
+PromptVault follows a clean, layered architecture with clear separation of concerns:
+
+**Service Layer:**
 
 - **PromptDataService**: Handles all data-related operations including loading, saving, and migration of prompt data
 - **PromptFilterService**: Manages filtering and searching logic for prompts
@@ -94,7 +99,20 @@ PromptVault follows a modular architecture with dedicated service classes for di
 - **PromptImportExportService**: Manages import and export operations in various formats (CSV, Markdown)
 - **BackupService**: Provides comprehensive data backup and restoration capabilities with automatic pre-operation backups
 
-This modular design improves code maintainability, testability, and extensibility.
+**Data Layer (Database Backend):**
+
+- **Repository Pattern**: Abstract data access through specialized repositories (PromptRepository, VersionRepository, CategoryRepository, TagRepository)
+- **ORM Models**: SQLAlchemy models for type-safe database operations
+- **Session Management**: Context managers for transaction safety and automatic rollback
+- **Migration Support**: Alembic-based database versioning and schema evolution
+
+**Storage Options:**
+
+- **PostgreSQL**: Production-ready relational database for high-performance, concurrent access (recommended for production)
+- **SQLite**: Lightweight embedded database for development and small deployments
+- **JSON (Legacy)**: File-based storage for backward compatibility (deprecated)
+
+This modular design improves code maintainability, testability, and extensibility while providing flexibility in deployment options.
 
 ### Version Control
 
@@ -150,20 +168,40 @@ PromptVault includes a comprehensive, production-ready backup system to prevent 
 
 ### Prerequisites
 
-- Python 3.8+
-- Docker (recommended for production deployment)
+- Python 3.11+
+- PostgreSQL 15+ (for production) or SQLite 3.x (for development)
+- Docker and Docker Compose (recommended for production deployment)
 
-### Quick Start with Docker
+### Quick Start with Docker Compose
 
-The fastest way to get started is using Docker:
+The fastest way to get started with full database support:
 
 ```bash
+# Clone repository
 git clone https://codeberg.org/medenor/promptvault.git
 cd PromptVault
-docker-compose up --build
+
+# Configure environment
+cp .env.example .env
+# Edit .env and set POSTGRES_PASSWORD
+
+# Start services (PostgreSQL + PromptVault)
+docker-compose up -d
+
+# Run database migrations
+docker-compose exec web alembic upgrade head
+
+# (Optional) Migrate existing JSON data
+docker-compose exec web python scripts/migrate_json_to_db.py
 ```
 
 Then open your browser to `http://localhost:8001`
+
+For detailed deployment instructions, database setup, and migration guides, see:
+
+- **[Deployment Guide](docs/DEPLOYMENT.md)** - Complete deployment instructions for Docker, Docker Compose, and manual deployment
+- **[Migration Guide](docs/MIGRATION_GUIDE.md)** - Step-by-step guide for migrating from JSON to database storage
+- **[Database Specification](docs/SPECS/SPEC_DATABASE.md)** - Technical specification and architecture details
 
 ### Manual Installation
 
@@ -288,16 +326,38 @@ The project follows a clean, modular web-first architecture:
         - `src/web/static/js/types/`: TypeScript type definitions
       - `src/web/static/locales/`: Internationalization files
   - `src/services/`: Business logic and data services
-    - `src/services/backup_service.py`: Data backup and restoration
-    - `src/services/prompt_data_service.py`: Core data operations
+    - `src/services/backup_service.py`: Data backup and restoration (JSON-based)
+    - `src/services/backup_service_db.py`: Database-aware backup service
+    - `src/services/prompt_data_service.py`: Core data operations (JSON-based)
+    - `src/services/prompt_data_service_db.py`: Database-backed data service
     - `src/services/prompt_filter_service.py`: Search and filtering
     - `src/services/prompt_import_export_service.py`: Import/export functionality
     - `src/services/prompt_versioning_service.py`: Version control system
     - `src/services/version_compression_service.py`: Version compression utilities
     - `src/services/version_export_service.py`: Version export functionality
     - `src/services/version_tagging_service.py`: Version tagging system
-- `data/`: Application data files (JSON storage, mounted as Docker volume)
+  - `src/db/`: Database layer (SQLAlchemy ORM)
+    - `src/db/models/`: Database models (Prompt, PromptVersion, Category, Tag, User, Backup)
+    - `src/db/repositories/`: Repository pattern implementations (PromptRepository, VersionRepository, etc.)
+    - `src/db/base.py`: SQLAlchemy declarative base
+    - `src/db/session.py`: Database session management
+    - `src/db/config.py`: Database configuration (Pydantic settings)
+- `scripts/`: Utility scripts
+  - `scripts/migrate_json_to_db.py`: JSON to database migration script
+  - `scripts/test_db_operations.py`: Database operation tests
+- `alembic/`: Database migrations
+  - `alembic/versions/`: Migration version files
+  - `alembic.ini`: Alembic configuration
+- `data/`: Application data files
+  - `data/prompts.json`: Legacy JSON storage (deprecated)
+  - `data/promptvault.db`: SQLite database (development)
+  - `data/backups/`: Backup files
+  - `data/logs/`: Application and audit logs
 - `docs/`: Documentation and screenshots
+  - `docs/DEPLOYMENT.md`: Deployment guide for Docker and manual deployment
+  - `docs/MIGRATION_GUIDE.md`: JSON to database migration guide
+  - `docs/SPECS/SPEC_DATABASE.md`: Database technical specification
+  - `docs/phase*.md`: Implementation phase documentation
   - `docs/CODE_OF_CONDUCT.md`: Code of conduct
   - `docs/CONTRIBUTING.md`: Contributing guidelines
   - `docs/SECURITY.md`: Security policy
@@ -385,20 +445,23 @@ For a comprehensive feature improvement roadmap with detailed implementation pla
 - [x] **Search & Filtering:** Advanced searching and filtering capabilities across all prompts
 - [x] **Data Backup System:** Comprehensive backup and restoration with automatic pre-operation backups, manual backups, cleanup, and compression
 - [x] **Unit Tests:** Comprehensive test coverage (85%+) for core functionality with performance benchmarks
+- [x] **Database Migration:** Complete transition from JSON to SQLite/PostgreSQL with backward compatibility (see [Migration Guide](docs/MIGRATION_GUIDE.md))
+- [x] **Docker & Deployment:** Production-ready Docker setup with PostgreSQL integration and health checks (see [Deployment Guide](docs/DEPLOYMENT.md))
 
 ### Phase 1: Foundation Strengthening (Priority: High)
 
 - [x] **Input Validation & Sanitization:** Comprehensive validation framework preventing injection attacks and ensuring data integrity
 - [x] **Error Handling & Logging:** Centralized logging infrastructure with structured logs and audit trails
+- [x] **Database Backend:** SQLAlchemy ORM with repository pattern, Alembic migrations, and PostgreSQL/SQLite support
 - [ ] **Performance Monitoring:** Real-time monitoring with APM, error tracking, and analytics dashboards
 - [ ] **Accessibility Compliance:** WCAG 2.1 AA compliance with full keyboard navigation and screen reader support
 
 ### Phase 2: Security & Architecture (Priority: High)
 
 - [ ] **Authentication & Authorization:** User management with JWT tokens and role-based access control
-- [ ] **Database Migration:** Transition from JSON to SQLite/PostgreSQL for improved performance and reliability
 - [ ] **TypeScript Migration:** Convert frontend to TypeScript for type safety and better developer experience
 - [ ] **API Documentation:** Interactive OpenAPI/Swagger documentation with client SDKs
+- [ ] **Full-Text Search:** PostgreSQL FTS for advanced search capabilities with ranking and relevance scoring
 
 ### Phase 3: User Experience (Priority: Medium)
 

@@ -13,11 +13,11 @@ from datetime import datetime
 from typing import List, Optional, Tuple, Dict, Deque, Any
 from collections import defaultdict, deque
 
-from src.services.prompt_data_service import PromptDataService
+from src.services.prompt_data_service_db import PromptDataService
 from src.services.prompt_filter_service import PromptFilterService
 from src.services.prompt_versioning_service import PromptVersioningService
 from src.services.prompt_import_export_service import PromptImportExportService
-from src.services.backup_service import BackupService
+from src.services.backup_service_db import BackupService
 from src.services.exceptions import PromptVaultException
 from src.services.logging_service import logging_service
 from src.web.models import (
@@ -103,7 +103,12 @@ def configure_services(
     resolved_file, resolved_dir = _resolve_data_locations(data_file, data_dir)
 
     data_service = PromptDataService(resolved_file)
-    data_dir_base = resolved_dir or os.path.dirname(data_service.data_file)
+    # Handle database service which may not have a data_file attribute
+    if hasattr(data_service, 'data_file') and data_service.data_file:
+        data_dir_base = resolved_dir or os.path.dirname(data_service.data_file)
+    else:
+        # For database service, use resolved_dir or default to "data"
+        data_dir_base = resolved_dir or "data"
     logs_dir = os.path.join(data_dir_base, "logs")
     logging_service.configure_logging(log_dir=logs_dir)
     filter_service = PromptFilterService()
@@ -698,9 +703,9 @@ async def delete_prompts_bulk(body: BulkDeleteRequest):
     Returns statistics on successful and failed deletions.
     """
     try:
-        # Create automatic backup with timestamp
+        # Create automatic backup with timestamp (keep short for DB constraint)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        backup_id = backup_service.create_backup(f"pre_bulk_delete_{timestamp}")
+        backup_id = backup_service.create_backup(f"bulk_del_{timestamp}")
 
         if backup_id:
             audit_logger.info(
@@ -1249,15 +1254,15 @@ async def delete_backup(backup_id: str):
     """Delete a specific backup."""
     try:
         backup_info = backup_service.get_backup_info(backup_id)
-        if not backup_info:
-            return JSONResponse(status_code=404, content={"error": "Backup not found"})
-
-        if backup_service.delete_backup(backup_id):
+        deleted = backup_service.delete_backup(backup_id)
+        if deleted:
             return {"success": True}
-        else:
+
+        if backup_info:
             return JSONResponse(
                 status_code=500, content={"error": "Failed to delete backup"}
             )
+        return JSONResponse(status_code=404, content={"error": "Backup not found"})
 
     except Exception as e:
         return JSONResponse(
