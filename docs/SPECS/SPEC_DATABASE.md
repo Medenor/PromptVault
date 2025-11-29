@@ -1,13 +1,16 @@
-# SPEC: Database Migration for PromptVault
-
-**Version:** 1.0
-**Status:** Implemented
-**Last Updated:** 2025-01-28
-**Authors:** medenor
-
+---
+title: Database Migration for PromptVault
+version: 1.0
+date_created: 2025-11-29
+last_updated: 2025-11-27
+owner: medenor
+status: published
+dependencies: [SPEC_APP.md]
+tags: [database, SQLite, PostgreSQL]
+priority: HIGH (Phase 2)
 ---
 
-## 1. Overview
+## 1. Executive Summary
 
 ### 1.1 Purpose
 

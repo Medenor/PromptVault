@@ -4,6 +4,7 @@ version: 1.0
 date_created: 2025-11-27
 last_updated: 2025-11-27
 owner: medenor
+status: published
 tags: [architecture, app, prompt-management, design]
 ---
 
