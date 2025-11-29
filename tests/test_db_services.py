@@ -668,12 +668,19 @@ class TestBackupService:
         """Test listing backups when none exist."""
         # Create a fresh backup service with clean temp dir and completely isolated DB
         import os
+        import shutil
         from src.db import config as config_module
         from src.db import session as session_module
         from sqlalchemy.orm import sessionmaker
         from sqlalchemy import create_engine
         from src.db.base import Base
         from contextlib import contextmanager
+
+        # Clean the backups directory to ensure no metadata files from previous tests
+        backups_dir = os.path.join(temp_data_dir, "backups")
+        if os.path.exists(backups_dir):
+            shutil.rmtree(backups_dir)
+        os.makedirs(backups_dir)
 
         # Create a completely fresh isolated test DB (not shared with other tests)
         test_db_path = os.path.join(temp_data_dir, "empty_test.db")
@@ -890,12 +897,19 @@ class TestBackupService:
         """Test statistics when no backups exist."""
         # Create a fresh backup service with clean temp dir and completely isolated DB
         import os
+        import shutil
         from src.db import config as config_module
         from src.db import session as session_module
         from sqlalchemy.orm import sessionmaker
         from sqlalchemy import create_engine
         from src.db.base import Base
         from contextlib import contextmanager
+
+        # Clean the backups directory to ensure no metadata files from previous tests
+        backups_dir = os.path.join(temp_data_dir, "backups")
+        if os.path.exists(backups_dir):
+            shutil.rmtree(backups_dir)
+        os.makedirs(backups_dir)
 
         # Create a completely fresh isolated test DB (not shared with other tests)
         test_db_path = os.path.join(temp_data_dir, "empty_stats_test.db")

@@ -68,8 +68,8 @@ class BackupService:
             Optional[str]: Backup ID if successful, None otherwise
         """
         try:
-            # Generate backup ID
-            timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+            # Generate backup ID with microseconds for uniqueness
+            timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")[:21]  # Include microseconds, truncate to milliseconds
             if custom_name:
                 safe_suffix = self._sanitize_backup_name(custom_name)
                 backup_id = f"backup_{safe_suffix}" if safe_suffix else f"backup_{timestamp}"
@@ -329,7 +329,7 @@ class BackupService:
 
             # Create pre-restore backup with unique timestamp
             from datetime import datetime, timezone
-            timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+            timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")[:21]  # Include microseconds for uniqueness
             logger.info(
                 "Creating pre-restore backup",
                 extra={"event": "backup.restore.pre_backup"}
