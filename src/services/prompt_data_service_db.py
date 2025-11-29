@@ -319,6 +319,14 @@ class PromptDataService:
             # Naive datetime (SQLite): assume UTC
             timestamp = version.created_at.isoformat() + "Z"
 
+        # Get category name from category_id
+        category_name = ""
+        if version.category_id:
+            with get_db_session() as session:
+                category = session.query(Category).filter_by(id=version.category_id).first()
+                if category:
+                    category_name = category.name
+
         return {
             "version_id": version.version_id,
             "timestamp": timestamp,
@@ -327,7 +335,7 @@ class PromptDataService:
             "data": {
                 "title": version.title,
                 "prompt": version.prompt,
-                "category": "",  # Category name not stored in version
+                "category": category_name,  # Now returns actual category name
                 "tags": version.tags or [],
                 "note": version.note or "",
                 "favorite": version.favorite,

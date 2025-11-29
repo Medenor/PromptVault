@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.2.0]
 
 ### ✨ New Features
 
@@ -55,6 +55,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### 🔧 Fixed
 
+- **Version Revert Category Loss**: Fixed bug where reverting a prompt to a previous version would lose the category, setting it to "categories.noCategory" - `_version_to_dict` now properly looks up category name from stored `category_id` in version snapshots
+- **Version Timestamp Display**: Fixed "Invalid Date" display in production (PostgreSQL/Docker) by properly converting timezone-aware datetimes to UTC with ISO 8601 format
+- **Bulk Delete Checkbox Position**: Moved bulk deletion checkbox to appear next to favorite button in prompt actions for better visual grouping
 - **Route Ordering**: Fixed bulk delete endpoint route ordering - moved `/api/prompts/bulk` before `/api/prompts/{prompt_id}` to prevent "bulk" being interpreted as a prompt ID
 
 ### 📚 Documentation

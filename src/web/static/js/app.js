@@ -334,8 +334,10 @@ function createPromptElement(id, prompt) {
         <div class="prompt-content">${truncateText(prompt.prompt, 100)}</div>
     `;
 
-    // Insert checkbox at the beginning of div
-    div.insertBefore(checkbox, div.firstChild);
+    // Insert checkbox before the favorite button in prompt-actions
+    const promptActions = div.querySelector('.prompt-actions');
+    const favBtn = promptActions.querySelector('.favorite-btn');
+    promptActions.insertBefore(checkbox, favBtn);
 
     // Update translations for dynamically created elements
     div.querySelectorAll('[data-i18n]').forEach(element => {

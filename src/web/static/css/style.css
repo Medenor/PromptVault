@@ -1297,11 +1297,12 @@ body {
 
 /* Prompt Selection Checkbox */
 .prompt-checkbox {
-    margin-right: 12px;
+    margin-right: 0.25rem; /* Match gap between buttons */
     width: 18px;
     height: 18px;
     cursor: pointer;
     flex-shrink: 0;
+    align-self: center; /* Vertically align with buttons */
 }
 
 /* Selected Prompt Styling */
