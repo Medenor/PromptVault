@@ -38,11 +38,11 @@ This checklist provides a comprehensive testing guide for the database migration
   - [X] ~~*App starts without errors*~~ [2025-11-29]
 
 - [ ] **CRUD Operations**
-  - [ ] Create a new prompt via web UI
-  - [ ] Update the prompt (verify version created)
-  - [ ] Delete the prompt
-  - [ ] Create prompt with category and tags
-  - [ ] Toggle favorite status
+  - [X] ~~*Create a new prompt via web UI*~~ [2025-11-29]
+  - [X] ~~*Update the prompt (verify version created)*~~ [2025-11-29]
+  - [X] ~~*Delete the prompt*~~ [2025-11-29]
+  - [X] ~~*Create prompt with category and tags*~~ [2025-11-29]
+  - [ ] Toggle favorite status #TODO: fix the favorite toggle bug, when it is first clicked, it remains visually as before despite actually being changed.
   - [ ] Search/filter prompts
 
 - [ ] **Version Control**

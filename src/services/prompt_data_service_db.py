@@ -9,7 +9,7 @@ import json
 import os
 import uuid
 import warnings
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, Set, List, Optional, Iterable
 
 from src.db.session import get_db_session
@@ -311,9 +311,17 @@ class PromptDataService:
         Returns:
             Dict with version details
         """
+        # Convert to UTC and format as ISO 8601 with Z suffix
+        if version.created_at.tzinfo is not None:
+            # Timezone-aware (PostgreSQL): convert to UTC
+            timestamp = version.created_at.astimezone(timezone.utc).isoformat().replace('+00:00', 'Z')
+        else:
+            # Naive datetime (SQLite): assume UTC
+            timestamp = version.created_at.isoformat() + "Z"
+
         return {
             "version_id": version.version_id,
-            "timestamp": version.created_at.isoformat() + "Z",
+            "timestamp": timestamp,
             "author": version.author,
             "message": version.message,
             "data": {
