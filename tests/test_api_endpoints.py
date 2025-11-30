@@ -787,7 +787,6 @@ def test_bulk_delete_success(api_client_context):
             "tags": []
         })
         ids.append(prompt_id)
-    data_service.save_prompts()
 
     # Bulk delete
     response = client.request(
@@ -820,7 +819,6 @@ def test_bulk_delete_partial_failure(api_client_context):
         "category": "Test",
         "tags": []
     })
-    data_service.save_prompts()
 
     # Try to delete existing + non-existent
     response = client.request(
@@ -891,7 +889,6 @@ def test_bulk_delete_creates_backup(api_client_context):
             "tags": []
         })
         ids.append(prompt_id)
-    data_service.save_prompts()
 
     # Bulk delete
     response = client.request(

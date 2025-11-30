@@ -22,6 +22,7 @@ Example URLs:
 
 import os
 from typing import Optional
+from pydantic import ConfigDict
 from pydantic_settings import BaseSettings
 
 
@@ -41,12 +42,12 @@ class DatabaseSettings(BaseSettings):
     DB_POOL_RECYCLE: int = 3600
     DB_ECHO: bool = False
 
-    class Config:
-        """Pydantic configuration."""
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        case_sensitive = True
-        extra = "allow"
+    model_config = ConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=True,
+        extra="allow"
+    )
 
     @property
     def is_sqlite(self) -> bool:

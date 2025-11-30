@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### 🔧 Fixed
+
+- **Pytest Warnings**: Eliminated all 80 pytest warnings for clean test output
+  - Updated Pydantic V2 configuration in `src/db/config.py` - replaced deprecated class-based `Config` with `model_config = ConfigDict()`
+  - Removed 10 deprecated `save_prompts()` calls (7 in `src/web/app.py`, 3 in tests) - no longer needed with database backend as transactions auto-persist
+  - Fixed `data_file_path` deprecation in `src/web/app.py` - database now uses `DATABASE_URL` environment variable exclusively
+  - Test results: 514/514 passing (100% pass rate), 86.12% coverage, 0 warnings
+
+### 📚 Documentation
+
+- **Testing Documentation**: Updated all documentation to reflect correct pytest usage
+  - Updated `docs/TESTING.md` with `python3 -m pytest` commands and comprehensive troubleshooting section
+  - Updated `docs/SPECS/SPEC_APP.md` with testing framework requirements
+  - Updated `README.md` with correct test commands and metrics (514 tests, 86.46% coverage)
+  - Updated `docs/AGENTS.md` with testing quick reference and explanation
+  - Added troubleshooting for version conflicts and dependency issues
+
 ## [1.2.0]
 
 ### ✨ New Features

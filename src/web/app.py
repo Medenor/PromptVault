@@ -106,7 +106,8 @@ def configure_services(
 
     resolved_file, resolved_dir = _resolve_data_locations(data_file, data_dir)
 
-    data_service = PromptDataService(resolved_file)
+    # Initialize data service without data_file_path (database uses DATABASE_URL env var)
+    data_service = PromptDataService()
     # Handle database service which may not have a data_file attribute
     if hasattr(data_service, 'data_file') and data_service.data_file:
         data_dir_base = resolved_dir or os.path.dirname(data_service.data_file)
@@ -514,7 +515,6 @@ async def create_prompt(
         )
 
         prompt_id = data_service.create_prompt(prompt_data)
-        data_service.save_prompts()  # Save to disk
         return {"success": True, "prompt_id": prompt_id}
 
     except (ValidationError, pydantic_core.ValidationError) as e:
@@ -680,7 +680,6 @@ async def update_prompt(
             prompt_id_int, prompt_data, validated_data.commit_message
         )
         if success:
-            data_service.save_prompts()  # Save to disk
             return {"success": True}
         else:
             return JSONResponse(
@@ -726,9 +725,6 @@ async def delete_prompts_bulk(body: BulkDeleteRequest):
 
         # Perform bulk deletion
         result = data_service.delete_prompts_bulk(body.prompt_ids)
-
-        # Save changes to disk
-        data_service.save_prompts()
 
         # Log bulk operation summary
         audit_logger.info(
@@ -784,8 +780,6 @@ async def delete_prompt(prompt_id: str):
         )
 
     success = data_service.delete_prompt(prompt_id_int)
-    if success:
-        data_service.save_prompts()  # Save to disk
     return {"success": success}
 
 
@@ -809,7 +803,6 @@ async def toggle_favorite(prompt_id: str):
     # Update the prompt
     success = data_service.update_prompt(prompt_id_int, prompt_data, "Toggle favorite")
     if success:
-        data_service.save_prompts()  # Save to disk
         return {"success": True, "favorite": prompt_data["favorite"]}
     else:
         return JSONResponse(
@@ -1088,9 +1081,6 @@ async def import_prompts(
                 # Append mode: add all prompts
                 data_service.create_prompt(prompt_data)
                 added_count += 1
-
-        # Save changes
-        data_service.save_prompts()
 
         # Clean up temp file
         if temp_file_path and os.path.exists(temp_file_path):
@@ -1504,7 +1494,6 @@ async def revert_to_version(
     )
 
     if success:
-        data_service.save_prompts()
         new_versions = data_service.get_prompt_versions(prompt_id_int)
         new_version_id = new_versions[-1].get("version_id") if new_versions else None
         record_validation_event(
