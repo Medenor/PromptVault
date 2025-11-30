@@ -199,6 +199,7 @@ Acceptance mapping to requirements:
   - Python: `pytest` and built-in fixtures.
   - Assertion: built-in `pytest` assertions with `pytest-mock` or equivalent for mocking.
   - Coverage: `pytest-cov` to enforce a minimum coverage threshold (85%).
+  - **Important:** Always run pytest using `python3 -m pytest` (not `pytest` directly) to ensure correct dependency versions.
 
 - Test Data Management:
   - Use in-memory SQLite or an isolated test database (temporary SQLite or ephemeral PostgreSQL) for integration tests; configure via `DATABASE_URL` or test settings.
@@ -206,8 +207,8 @@ Acceptance mapping to requirements:
   - Tests must clean up local data files after execution and use isolated environment variables to avoid cross-test interference.
 
 - CI/CD Integration:
-  - Run unit and integration tests in PR gate with `pytest --maxfail=1 --disable-warnings -m "not performance"` as recommended in `README.md`.
-  - Nightly or release regression should run full (`pytest`) and publish coverage HTML artifacts.
+  - Run unit and integration tests in PR gate with `python3 -m pytest --maxfail=1 --disable-warnings -m "not performance"` as recommended in `README.md`.
+  - Nightly or release regression should run full (`python3 -m pytest`) and publish coverage HTML artifacts.
 
 - Coverage Requirements:
   - Minimum: 85% coverage across `src/`.

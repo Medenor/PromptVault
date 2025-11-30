@@ -23,14 +23,16 @@ PromptVault is a modern web-based prompt management application built with FastA
 
 ### Testing
 
-- **Run Full Test Suite**: `pytest` (includes coverage reporting, ~8 seconds)
-- **Run Repository Tests**: `pytest tests/test_db_repositories.py`
-- **Run Service Tests**: `pytest tests/test_db_services.py`
-- **Run Version Control Tests**: `pytest tests/test_version_system.py`
-- **Run API Tests**: `pytest tests/test_web_api.py`
+> **Important:** Always use `python3 -m pytest` instead of `pytest` directly to ensure correct dependency versions.
+
+- **Run Full Test Suite**: `python3 -m pytest` (includes coverage reporting, ~10 seconds)
+- **Run Repository Tests**: `python3 -m pytest tests/test_db_repositories.py`
+- **Run Service Tests**: `python3 -m pytest tests/test_db_services.py`
+- **Run Version Control Tests**: `python3 -m pytest tests/test_version_system.py`
+- **Run API Tests**: `python3 -m pytest tests/test_web_api.py`
 - **Coverage Report**: Generated in `htmlcov/index.html` after running pytest
 - **Coverage Threshold**: 85% minimum (enforced in pytest.ini)
-- **Current Coverage**: 86.90% (509 passing tests, 99% pass rate)
+- **Current Coverage**: 86.46% (514 passing tests, 100% pass rate)
 - **Test Documentation**: See `docs/TESTING.md` for comprehensive guide
 
 ## High-Level Architecture
@@ -419,7 +421,7 @@ When working on a development session:
 
 ### After Making Changes
 
-- **Run Tests**: `pytest` to ensure all tests pass
+- **Run Tests**: `python3 -m pytest` to ensure all tests pass
 - **Check Coverage**: Verify coverage remains ≥ 85%
 - **Update Documentation**: Update docstrings and comments
 - **Verify Functionality**: Manually test the feature if possible
@@ -514,28 +516,31 @@ docker-compose up --build
 ### Testing (Quick Reference)
 
 ```bash
-# Full test suite with coverage (~8 seconds)
-pytest
+# Full test suite with coverage (~10 seconds)
+# IMPORTANT: Use python3 -m pytest (not pytest directly)
+python3 -m pytest
 
 # Repository layer tests
-pytest tests/test_db_repositories.py
+python3 -m pytest tests/test_db_repositories.py
 
 # Service layer tests
-pytest tests/test_db_services.py
+python3 -m pytest tests/test_db_services.py
 
 # Version control tests
-pytest tests/test_version_system.py
+python3 -m pytest tests/test_version_system.py
 
 # API endpoint tests
-pytest tests/test_web_api.py
+python3 -m pytest tests/test_web_api.py
 
-# View coverage report (current: 86.90%)
+# View coverage report (current: 86.46%)
 open htmlcov/index.html  # macOS
 xdg-open htmlcov/index.html  # Linux
 
 # See comprehensive testing guide
 cat docs/TESTING.md
 ```
+
+> **Why `python3 -m pytest`?** This ensures pytest runs with the correct Python environment and dependency versions, avoiding conflicts with globally installed packages like httpx, fastapi, or starlette.
 
 ### Project URLs
 

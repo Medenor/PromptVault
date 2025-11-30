@@ -1,14 +1,14 @@
 # PromptVault Test Suite Documentation
 
-**Version:** 2.0
-**Last Updated:** 2025-11-28
+**Version:** 2.1
+**Last Updated:** 2025-11-30
 **Status:** Production Ready ✅
 
 ---
 
 ## Overview
 
-The PromptVault test suite has been completely rewritten from scratch to provide comprehensive coverage of the database-backed architecture. The suite achieves **86.90% code coverage** (exceeding the 85% requirement) with **509 passing tests** and a **99% pass rate**.
+The PromptVault test suite has been completely rewritten from scratch to provide comprehensive coverage of the database-backed architecture. The suite achieves **86.46% code coverage** (exceeding the 85% requirement) with **514 passing tests** and a **100% pass rate**.
 
 ## Quick Start
 
@@ -16,26 +16,28 @@ The PromptVault test suite has been completely rewritten from scratch to provide
 # Install test dependencies
 pip install -e .[test]
 
-# Run full test suite
-pytest
+# Run full test suite (use python3 -m pytest to ensure correct version)
+python3 -m pytest
 
 # Run with coverage report
-pytest --cov=src --cov-report=html:htmlcov
+python3 -m pytest --cov=src --cov-report=html:htmlcov
 
 # View coverage report
 open htmlcov/index.html  # macOS
 ```
+
+> **Important:** Always use `python3 -m pytest` instead of `pytest` directly to ensure the correct pytest version and dependencies are used. This avoids version conflicts with globally installed packages.
 
 ## Test Suite Metrics
 
 | Metric | Value | Status |
 |--------|-------|--------|
 | **Total Tests** | 514 | - |
-| **Passing Tests** | 509 | ✅ |
-| **Failing Tests** | 5 (1%) | ⚠️ Minor DB isolation issues |
-| **Code Coverage** | 86.90% | ✅ Exceeds 85% target |
-| **Execution Time** | ~8 seconds | ✅ Very fast |
-| **Pass Rate** | 99.0% | ✅ Excellent |
+| **Passing Tests** | 514 | ✅ |
+| **Failing Tests** | 0 | ✅ |
+| **Code Coverage** | 86.46% | ✅ Exceeds 85% target |
+| **Execution Time** | ~10 seconds | ✅ Very fast |
+| **Pass Rate** | 100% | ✅ Excellent |
 
 ---
 
@@ -277,74 +279,76 @@ addopts =
 ### Basic Usage
 
 ```bash
-# Run all tests
-pytest
+# Run all tests (always use python3 -m pytest)
+python3 -m pytest
 
 # Run specific test file
-pytest tests/test_db_repositories.py
+python3 -m pytest tests/test_db_repositories.py
 
 # Run specific test class
-pytest tests/test_db_repositories.py::TestPromptRepository
+python3 -m pytest tests/test_db_repositories.py::TestPromptRepository
 
 # Run specific test
-pytest tests/test_db_repositories.py::TestPromptRepository::test_create_prompt
+python3 -m pytest tests/test_db_repositories.py::TestPromptRepository::test_create_prompt
 
 # Run with verbose output
-pytest -v
+python3 -m pytest -v
 
 # Run with quiet output
-pytest -q
+python3 -m pytest -q
 ```
+
+> **Note:** Using `python3 -m pytest` instead of `pytest` directly ensures you're using the project's installed version rather than a potentially incompatible global installation.
 
 ### Coverage Reports
 
 ```bash
 # Generate HTML coverage report
-pytest --cov=src --cov-report=html:htmlcov
+python3 -m pytest --cov=src --cov-report=html:htmlcov
 
 # Generate terminal coverage report
-pytest --cov=src --cov-report=term-missing
+python3 -m pytest --cov=src --cov-report=term-missing
 
 # Check coverage threshold
-pytest --cov=src --cov-fail-under=85
+python3 -m pytest --cov=src --cov-fail-under=85
 ```
 
 ### Test Selection
 
 ```bash
 # Run only repository tests
-pytest tests/test_db_repositories.py
+python3 -m pytest tests/test_db_repositories.py
 
 # Run only service tests
-pytest tests/test_db_services.py
+python3 -m pytest tests/test_db_services.py
 
 # Run only version control tests
-pytest tests/test_version_system.py
+python3 -m pytest tests/test_version_system.py
 
 # Run tests matching pattern
-pytest -k "test_create"
+python3 -m pytest -k "test_create"
 
 # Run tests by marker
-pytest -m integration
+python3 -m pytest -m integration
 ```
 
 ### Debugging
 
 ```bash
 # Run with print output
-pytest -s
+python3 -m pytest -s
 
 # Stop on first failure
-pytest -x
+python3 -m pytest -x
 
 # Show local variables on failure
-pytest -l
+python3 -m pytest -l
 
 # Enter debugger on failure
-pytest --pdb
+python3 -m pytest --pdb
 
 # Show full diff on assertions
-pytest --tb=long
+python3 -m pytest --tb=long
 ```
 
 ---
@@ -362,12 +366,12 @@ pytest --tb=long
 | **CategoryRepository** | 36 | 4 | 89% | ✅ |
 | **TagRepository** | 60 | 4 | 93% | ✅ |
 | **Services (DB)** | 849 | 200 | 76% | ✅ |
-| **PromptDataServiceDB** | 289 | 53 | 82% | ✅ |
-| **BackupServiceDB** | 371 | 94 | 75% | ✅ |
-| **Version Services** | 312 | 12 | 96% | ✅ |
+| **PromptDataServiceDB** | 298 | 54 | 82% | ✅ |
+| **BackupServiceDB** | 371 | 102 | 73% | ✅ |
+| **Version Services** | 312 | 9 | 97% | ✅ |
 | **Web API** | 624 | 112 | 82% | ✅ |
-| **Validators** | 187 | 46 | 75% | ✅ |
-| **TOTAL** | 2,732 | 358 | **86.90%** | ✅ |
+| **Validators** | 187 | 31 | 83% | ✅ |
+| **TOTAL** | 2,741 | 371 | **86.46%** | ✅ |
 
 ### Coverage Gaps
 
@@ -491,7 +495,7 @@ jobs:
 
     - name: Run tests with coverage
       run: |
-        pytest --cov=src --cov-report=term --cov-report=xml
+        python3 -m pytest --cov=src --cov-report=term --cov-report=xml
 
     - name: Upload coverage reports
       uses: codecov/codecov-action@v3
@@ -504,6 +508,26 @@ jobs:
 ## Troubleshooting
 
 ### Common Issues
+
+#### Error: "Client.__init__() got an unexpected keyword argument 'app'"
+**Problem:** Version incompatibility between FastAPI, Starlette, and httpx packages.
+
+**Solution:** Reinstall dependencies from pyproject.toml:
+```bash
+pip install -e .[test] --force-reinstall --no-cache-dir
+```
+
+Then always use `python3 -m pytest` instead of the `pytest` command.
+
+#### Error: "ModuleNotFoundError: No module named 'pygments'"
+**Problem:** System pytest is using a different Python environment.
+
+**Solution:** Always use `python3 -m pytest` to run tests:
+```bash
+python3 -m pytest
+```
+
+This ensures pytest runs in the correct Python environment with all dependencies.
 
 #### Tests Fail with "Database is locked"
 **Solution:** The in-memory SQLite database should prevent this, but if it occurs:
@@ -523,14 +547,25 @@ pip install -e .
 #### Coverage Below 85%
 **Solution:** Check which files are included:
 ```bash
-pytest --cov=src --cov-report=term-missing
+python3 -m pytest --cov=src --cov-report=term-missing
 ```
 
 #### Slow Tests
-**Solution:** Tests should be fast (~8s). If slow:
+**Solution:** Tests should be fast (~10s). If slow:
 - Check for external API calls
 - Ensure using in-memory SQLite
 - Verify no unnecessary file I/O
+
+#### Version Conflicts with Global Packages
+**Problem:** Your system has globally installed packages (mcp, google-genai, chromadb, etc.) that conflict with PromptVault's pinned versions.
+
+**Solution:** These conflicts can be ignored if you're only running PromptVault tests. The warnings don't affect the test suite. Alternatively, use a virtual environment:
+```bash
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install -e .[test]
+python3 -m pytest
+```
 
 ---
 
@@ -565,10 +600,9 @@ The test suite was completely rewritten. Key changes:
 5. Add property-based testing with Hypothesis
 
 ### Current Limitations
-1. 5 BackupService tests have minor DB isolation issues
-2. No tests for PostgreSQL-specific features
-3. Limited concurrent operation testing
-4. No chaos/fault injection testing
+1. No tests for PostgreSQL-specific features
+2. Limited concurrent operation testing
+3. No chaos/fault injection testing
 
 ---
 
@@ -585,11 +619,21 @@ The test suite was completely rewritten. Key changes:
 ## Summary
 
 The PromptVault test suite provides:
-- ✅ **86.90% code coverage** (exceeds 85% requirement)
-- ✅ **509 passing tests** (99% pass rate)
-- ✅ **Fast execution** (~8 seconds)
+- ✅ **86.46% code coverage** (exceeds 85% requirement)
+- ✅ **514 passing tests** (100% pass rate)
+- ✅ **Fast execution** (~10 seconds)
 - ✅ **Comprehensive coverage** of database operations
 - ✅ **Modern infrastructure** with proper isolation
 - ✅ **CI/CD ready** with no external dependencies
 
 The test suite is **production-ready** and provides excellent confidence in the database-backed codebase.
+
+### Running Tests - Quick Reference
+
+```bash
+# Always use python3 -m pytest (not pytest directly)
+python3 -m pytest                    # Run all tests
+python3 -m pytest -x                 # Stop on first failure
+python3 -m pytest -v                 # Verbose output
+python3 -m pytest tests/test_*.py    # Run specific test file
+```

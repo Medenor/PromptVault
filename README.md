@@ -297,7 +297,7 @@ For detailed project structure and development guidelines, see [AGENTS.md](docs/
 
 ## Testing
 
-PromptVault includes a comprehensive pytest suite with **509 passing tests** and **86.90% code coverage**.
+PromptVault includes a comprehensive pytest suite with **514 passing tests** and **86.46% code coverage**.
 
 ### Quick Start
 
@@ -305,19 +305,21 @@ PromptVault includes a comprehensive pytest suite with **509 passing tests** and
 # Install test dependencies
 pip install -e .[test]
 
-# Run full suite with coverage
-pytest
+# Run full suite with coverage (use python3 -m pytest)
+python3 -m pytest
 
 # Run specific test files
-pytest tests/test_db_repositories.py
-pytest tests/test_db_services.py
-pytest tests/test_version_system.py
+python3 -m pytest tests/test_db_repositories.py
+python3 -m pytest tests/test_db_services.py
+python3 -m pytest tests/test_version_system.py
 
 # Skip performance tests
-pytest -m "not performance"
+python3 -m pytest -m "not performance"
 ```
 
-The test suite uses in-memory SQLite for fast, isolated testing and completes in ~8 seconds.
+> **Important:** Always use `python3 -m pytest` instead of `pytest` directly to ensure correct dependency versions and avoid conflicts with globally installed packages.
+
+The test suite uses in-memory SQLite for fast, isolated testing and completes in ~10 seconds.
 
 ### Comprehensive Testing Documentation
 
