@@ -20,8 +20,8 @@
 <div align="center">
 <br />
 
-<a href="https://www.gnu.org/licenses/agpl-3.0">
-  <img src="https://img.shields.io/badge/License-AGPL%20v3-blue?style=for-the-badge&logo=gnu&logoColor=white" alt="AGPL v3 License">
+<a href="https://www.mozilla.org/en-US/MPL/2.0/">
+  <img src="https://img.shields.io/badge/MPL--2.0-blue?style=for-the-badge&logo=mozilla&logoColor=white" alt="MPL-2.0 License">
 </a>
 <a href="https://www.python.org/">
   <img src="https://img.shields.io/badge/Python-3.11%2B-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.11+">
@@ -410,7 +410,7 @@ PromptVault is provided **"as is"** without any **warranty**. Use at your own ri
 
 ## License
 
-This project is licensed under the **GNU AGPLv3 license**.
+This project is licensed under the **MPL 2.0 license**.
 
 See [LICENSE](LICENSE) for more information.
 

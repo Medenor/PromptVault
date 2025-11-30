@@ -249,7 +249,13 @@ Acceptance mapping to requirements:
 
 ### Compliance Dependencies
 
-- **COM-001**: AGPLv3 license — The project must remain AGPLv3-compliant with a contributor license policy.
+- **COM-001**: MPL 2.0 license — The project must remain MPL 2.0-compliant. The following frontmatter license must be to each source code file in the project:
+
+```text
+This Source Code Form is subject to the terms of the Mozilla Public
+License, v. 2.0. If a copy of the MPL was not distributed with this
+file, You can obtain one at https://mozilla.org/MPL/2.0/.
+```
 
 ### 9. Examples & Edge Cases
 

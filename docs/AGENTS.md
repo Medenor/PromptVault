@@ -541,7 +541,7 @@ cat docs/TESTING.md
 
 - **Repository**: <https://codeberg.org/medenor/promptvault>
 - **Issues**: <https://codeberg.org/medenor/promptvault/issues>
-- **License**: AGPL v3
+- **License**: MPL 2.0
 
 ### Key Files
 
