@@ -24,12 +24,29 @@ services:
       timeout: 5s
       retries: 5
 
+  # Redis Cache - Used for rate limiting and session storage
+  redis:
+    image: redis:7-alpine
+    container_name: promptvault-redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    # Port 6379 not exposed externally - accessible only within Docker network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # PromptVault Web Application
   web:
     build: .
     container_name: promptvault-web
     depends_on:
       db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     ports:
       - "8001:8000"
@@ -39,6 +56,7 @@ services:
     environment:
       - PYTHONPATH=/app
       - DATABASE_URL=postgresql://promptvault:${POSTGRES_PASSWORD:-changeme}@db:5432/promptvault
+      - REDIS_URL=redis://redis:6379/0
       - DATA_DIR=/app/data
     restart: unless-stopped
     healthcheck:
@@ -50,3 +68,4 @@ services:
 
 volumes:
   postgres_data:
+  redis_data:

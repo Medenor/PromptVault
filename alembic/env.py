@@ -16,6 +16,8 @@ from src.db.base import Base
 # Import all models to ensure they're registered with Base.metadata
 # This is critical for autogenerate to detect all tables
 from src.db.models.user import User
+from src.db.models.user_session import UserSession
+from src.db.models.password_reset_token import PasswordResetToken
 from src.db.models.category import Category
 from src.db.models.tag import Tag
 from src.db.models.prompt import Prompt
