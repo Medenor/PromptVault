@@ -157,7 +157,7 @@ def _log_admin_action(
     },
 )
 async def list_users(
-    params: Annotated[UserListParams, Query()],
+    params: Annotated[UserListParams, Depends()],  # Fixed: Changed Query() to Depends() for Pydantic model
     admin: User = Depends(require_role(["admin"])),
     db: Session = Depends(get_db),
 ) -> UserListResponse:

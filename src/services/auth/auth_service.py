@@ -517,6 +517,7 @@ class AuthService:
         self.session_repo.update_session_token(family_id, new_jti)
         self.db.commit()
 
+        # Fixed: Include all required UserResponse fields to prevent Pydantic validation error
         return {
             "access_token": new_access_token,
             "refresh_token": new_refresh_token,
@@ -527,6 +528,10 @@ class AuthService:
                 "username": user.username,
                 "email": user.email,
                 "role": user.role,
+                "is_active": user.is_active,
+                "email_verified": user.email_verified,
+                "created_at": user.created_at,
+                "updated_at": user.updated_at,
             },
         }
 
@@ -798,6 +803,7 @@ class AuthService:
         )
         self.db.commit()
 
+        # Fixed: Include all required UserResponse fields to prevent Pydantic validation error
         return {
             "access_token": access_token,
             "refresh_token": refresh_token,
@@ -808,5 +814,9 @@ class AuthService:
                 "username": user.username,
                 "email": user.email,
                 "role": user.role,
+                "is_active": user.is_active,
+                "email_verified": user.email_verified,
+                "created_at": user.created_at,
+                "updated_at": user.updated_at,
             },
         }

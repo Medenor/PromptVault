@@ -85,7 +85,7 @@ from src.services.auth.auth_service import AuthService
 from src.services.auth.password_reset_service import PasswordResetService
 from src.services.auth.password_service import PasswordService
 from src.db.repositories.user_repository import UserRepository
-from src.db.repositories.refresh_token_repository import RefreshTokenRepository
+from src.db.repositories.session_repository import SessionRepository
 from src.db.repositories.password_reset_token_repository import PasswordResetTokenRepository
 from src.db.models.user import User
 from src.web.dependencies.auth import (
