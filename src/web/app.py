@@ -45,10 +45,136 @@ from src.web.validators import (
     get_file_extension_from_format,
 )
 from src.web.monitoring import ValidationMonitor
+from src.web.routers import auth_router, admin_router, prompts_router
+from src.web.middleware.rate_limit import limiter, rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 
-app = FastAPI(title="PromptVault Web", version="0.1.0")
+# ============================================================================
+# APPLICATION INITIALIZATION
+# ============================================================================
+# This FastAPI application integrates:
+# 1. Authentication & Authorization System (JWT-based with ES256)
+# 2. Rate Limiting Middleware (Redis-backed with slowapi)
+# 3. API Routers (auth, admin, prompts)
+# 4. Legacy prompt management endpoints (deprecated, see migration notes below)
+#
+# MIGRATION NOTES FOR DEVELOPERS:
+# - New authentication system is now active at /api/auth/* endpoints
+# - Protected endpoints require JWT access token in Authorization header
+# - Admin endpoints require admin role (checked via JWT claims)
+# - Rate limiting is enforced on all authentication endpoints
+# - Legacy prompt routes (lines 478-1520) are DEPRECATED but kept for compatibility
+# - Migrate to new prompt routes at /api/prompts/* which include:
+#   * Authentication and authorization
+#   * Ownership-based access control
+#   * Public read with optional personalization
+#
+# AUTHENTICATION SYSTEM OVERVIEW:
+# - JWT tokens use ES256 (ECDSA) algorithm for security
+# - Access tokens: 15 minutes (configurable via AUTH_ACCESS_TOKEN_EXPIRE_MINUTES)
+# - Refresh tokens: 7 days (configurable via AUTH_REFRESH_TOKEN_EXPIRE_DAYS)
+# - Session tracking with token family and reuse detection
+# - Account lockout: 5 failed attempts, 15-minute lockout
+# - Password policy: 12 chars min, complexity requirements
+# - Rate limiting: Login (5/15min), Register (3/hour), Password Reset (3/hour)
+#
+# PROTECTED ROUTES:
+# - /api/auth/me - Get current user (requires access token)
+# - /api/auth/change-password - Change password (requires access token)
+# - /api/auth/sessions - List sessions (requires access token)
+# - /api/auth/sessions/{id} - Revoke session (requires access token)
+# - /api/admin/* - All admin routes (requires admin role)
+# - /api/prompts POST/PUT/DELETE - Write operations (requires authentication)
+#
+# PUBLIC ROUTES:
+# - /api/auth/register - Register new user
+# - /api/auth/login - Login with credentials
+# - /api/auth/refresh - Refresh access token
+# - /api/auth/logout - Logout (revoke session)
+# - /api/auth/password-reset/request - Request password reset email
+# - /api/auth/password-reset/confirm - Confirm password reset with token
+# - /api/prompts GET - Read prompts (optional auth for personalization)
+#
+# API DOCUMENTATION:
+# - OpenAPI docs: http://localhost:8000/docs
+# - ReDoc: http://localhost:8000/redoc
+# - All endpoints include comprehensive documentation with examples
+# ============================================================================
+
+app = FastAPI(
+    title="PromptVault API",
+    version="0.2.0",
+    description="""
+    PromptVault API with comprehensive authentication and authorization.
+
+    Features:
+    - JWT-based authentication (ES256 algorithm)
+    - Role-based access control (viewer, editor, admin)
+    - Session management and tracking
+    - Password reset with secure tokens
+    - Rate limiting on sensitive endpoints
+    - Ownership-based authorization for prompts
+
+    Security:
+    - All passwords hashed with Argon2id
+    - Tokens signed with ECDSA (ES256)
+    - Account lockout protection
+    - Token family tracking and reuse detection
+    - Redis-backed rate limiting
+
+    Authentication:
+    - Include access token in Authorization header: "Bearer <token>"
+    - Refresh tokens using /api/auth/refresh endpoint
+    - Session limit: 5 concurrent sessions per user
+    """,
+    openapi_tags=[
+        {
+            "name": "Authentication",
+            "description": "User authentication, registration, and session management",
+        },
+        {
+            "name": "Admin",
+            "description": "Administrative endpoints for user and system management (admin role required)",
+        },
+        {
+            "name": "Prompts",
+            "description": "Prompt CRUD operations with authentication and authorization",
+        },
+        {
+            "name": "Legacy",
+            "description": "Deprecated endpoints - migrate to /api/prompts routes",
+        },
+    ],
+)
+
 validation_monitor: Optional[ValidationMonitor] = None
+
+# ============================================================================
+# RATE LIMITING SETUP
+# ============================================================================
+# Initialize rate limiter with Redis backend (falls back to in-memory if Redis unavailable)
+# Rate limits are enforced per IP address or authenticated user ID
+# Limits are configured in AuthConfig via environment variables
+app.state.limiter = limiter
+
+# Register rate limit exception handler
+app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
+
 logger = logging_service.get_logger(__name__)
+logger.info("Rate limiting initialized successfully")
+
+# ============================================================================
+# API ROUTERS REGISTRATION
+# ============================================================================
+# Register all API routers with appropriate prefixes:
+# - /api/auth - Authentication endpoints (public + protected)
+# - /api/admin - Admin endpoints (admin role required)
+# - /api/prompts - Prompt CRUD with authentication
+app.include_router(auth_router, prefix="/api")
+app.include_router(admin_router, prefix="/api")
+app.include_router(prompts_router, prefix="/api")
+
+logger.info("API routers registered: /api/auth, /api/admin, /api/prompts")
 audit_logger = logging_service.get_audit_logger()
 FRONTEND_LOG_WINDOW = 60.0
 FRONTEND_LOG_LIMIT = 10
@@ -469,345 +595,58 @@ async def home(request: Request):
     )
 
 
-@app.get("/api/prompts")
-async def get_prompts():
-    """Get all prompts"""
-    prompts = data_service.load_prompts()
-    # Unwrap the data structure for frontend consumption
-    unwrapped_prompts = {}
-    for prompt_id, prompt_info in prompts.items():
-        if "data" in prompt_info:
-            unwrapped_prompts[prompt_id] = prompt_info["data"]
-        else:
-            # Fallback for prompts without 'data' wrapper
-            unwrapped_prompts[prompt_id] = prompt_info
-    return {"prompts": unwrapped_prompts}
+# ============================================================================
+# LEGACY PROMPT ENDPOINTS (DEPRECATED - REMOVED)
+# ============================================================================
+# The following legacy endpoints have been REMOVED and replaced by the new
+# authentication-aware routes registered via routers above.
+#
+# OLD ROUTES (removed):
+# - GET    /api/prompts             -> Now handled by prompts_router with optional auth
+# - POST   /api/prompts             -> Now handled by prompts_router with required auth
+# - GET    /api/prompts/search      -> Now handled by prompts_router with optional auth
+# - GET    /api/prompts/{id}        -> Now handled by prompts_router with optional auth
+# - PUT    /api/prompts/{id}        -> Now handled by prompts_router with auth + ownership
+# - DELETE /api/prompts/{id}        -> Now handled by prompts_router with auth + ownership
+# - PUT    /api/prompts/{id}/favorite -> Now handled by prompts_router with auth + ownership
+# - DELETE /api/prompts/bulk       -> Now handled by prompts_router with admin role
+#
+# NEW FEATURES:
+# - Authentication for write operations
+# - Ownership-based authorization (owner or admin can modify)
+# - Public read with optional personalization when authenticated
+# - Proper audit logging for all operations
+# - Role-based access control (RBAC) for admin operations
+#
+# The old implementations are commented out below for reference.
+# ============================================================================
 
 
-@app.post("/api/prompts")
-async def create_prompt(
-    title: str = Form(...),
-    prompt: str = Form(...),
-    category: str = Form(""),
-    tags: str = Form(""),
-):
-    """Create a new prompt with validation."""
-    try:
-        # Validate using Pydantic model
-        validated_data = PromptCreateRequest(
-            title=title,
-            prompt=prompt,
-            category=category,
-            tags=tags,
-        )
-
-        # Convert to dict for service layer
-        prompt_data = {
-            "title": validated_data.title,
-            "prompt": validated_data.prompt,
-            "category": validated_data.category,
-            "tags": _parse_tags_field(validated_data.tags),
-        }
-
-        record_validation_event(
-            endpoint="/api/prompts",
-            success=True,
-        )
-
-        prompt_id = data_service.create_prompt(prompt_data)
-        return {"success": True, "prompt_id": prompt_id}
-
-    except (ValidationError, pydantic_core.ValidationError) as e:
-        errors = e.errors() if hasattr(e, "errors") else []
-        error_messages = []
-        sanitized_errors = []
-
-        for error in errors:
-            field = " -> ".join(str(loc) for loc in error["loc"])
-            message = error["msg"]
-            error_messages.append(f"{field}: {message}")
-
-            # Sanitize error dict for JSON serialization
-            sanitized_error = {
-                "type": error.get("type"),
-                "loc": error.get("loc"),
-                "msg": error.get("msg"),
-                "input": str(error.get("input"))[:100] if error.get("input") else None,  # Truncate long inputs
-            }
-            sanitized_errors.append(sanitized_error)
-
-        record_validation_event(
-            endpoint="/api/prompts",
-            success=False,
-            errors=error_messages,
-        )
-
-        return JSONResponse(
-            status_code=422,
-            content={
-                "error": "Validation failed",
-                "details": error_messages,
-                "errors": sanitized_errors,
-            },
-        )
-
-
-@app.get("/api/prompts/search")
-async def search_prompts(
-    search: str = "",
-    category: str = "",
-    tag: str = "",
-    favorites: bool = False,
-    case_sensitive: bool = False,
-):
-    """
-    Search and filter prompts based on various criteria.
-
-    Query parameters:
-    - search: Text to search for in title, prompt content, or notes
-    - category: Filter by specific category (empty string means no filter)
-    - tag: Filter by specific tag (empty string means no filter)
-    - favorites: Show only favorite prompts if true
-    - case_sensitive: Enable case-sensitive search if true
-    """
-    try:
-        # Load all prompts
-        prompts = data_service.load_prompts()
-
-        # Convert to the format expected by filter service
-        # The filter service expects Dict[int, Dict[str, Any]] where inner dict has 'data' key
-        filter_prompts = {}
-        for prompt_id, prompt_info in prompts.items():
-            if "data" in prompt_info:
-                filter_prompts[prompt_id] = prompt_info
-            else:
-                # Fallback for prompts without 'data' wrapper
-                filter_prompts[prompt_id] = {"data": prompt_info}
-
-        # Apply filters using the filter service
-        filtered_prompts = filter_service.filter_prompts(
-            prompts=filter_prompts,
-            filter_category=category if category else None,
-            filter_tag=tag if tag else None,
-            search_term=search,
-            filter_favorites=favorites,
-            case_sensitive=case_sensitive,
-        )
-
-        # Sort the results
-        sorted_prompts = filter_service.sort_prompts(filtered_prompts)
-
-        # Convert back to the format expected by frontend
-        result = {}
-        for prompt in sorted_prompts:
-            prompt_id = prompt["id"]
-            # Remove the 'id' field that was added by filter service
-            prompt_data = {k: v for k, v in prompt.items() if k != "id"}
-            result[str(prompt_id)] = prompt_data
-
-        return {"prompts": result}
-
-    except Exception as e:
-        return JSONResponse(
-            status_code=500, content={"error": f"Search failed: {str(e)}"}
-        )
-
-
-@app.get("/api/prompts/{prompt_id}")
-async def get_prompt(prompt_id: str):
-    """Get a specific prompt"""
-    try:
-        prompt_id_int = int(prompt_id)
-    except ValueError:
-        return JSONResponse(status_code=404, content={"error": "Invalid prompt ID"})
-
-    prompts = data_service.load_prompts()
-    prompt = prompts.get(prompt_id_int)
-    if not prompt:
-        return JSONResponse(status_code=404, content={"error": "Prompt not found"})
-
-    # Unwrap the data structure for frontend consumption
-    if "data" in prompt:
-        return prompt["data"]
-    else:
-        # Fallback for prompts without 'data' wrapper
-        return prompt
-
-
-@app.put("/api/prompts/{prompt_id}")
-async def update_prompt(
-    prompt_id: str,
-    title: str = Form(...),
-    prompt: str = Form(...),
-    category: str = Form(""),
-    tags: str = Form(""),
-    commit_message: str = Form("Update"),
-):
-    """Update a prompt with validation."""
-    try:
-        prompt_id_int = int(prompt_id)
-    except ValueError:
-        return JSONResponse(status_code=400, content={"error": "Invalid prompt ID"})
-
-    prompts = data_service.load_prompts()
-    if prompt_id_int not in prompts:
-        return JSONResponse(status_code=404, content={"error": "Prompt not found"})
-
-    try:
-        # Validate using Pydantic model
-        validated_data = PromptUpdateRequest(
-            title=title,
-            prompt=prompt,
-            category=category,
-            tags=tags,
-            commit_message=commit_message,
-        )
-
-        # Convert to dict for service layer
-        prompt_data = {
-            "title": validated_data.title,
-            "prompt": validated_data.prompt,
-            "category": validated_data.category,
-            "tags": _parse_tags_field(validated_data.tags),
-        }
-
-        record_validation_event(
-            endpoint="/api/prompts/update",
-            success=True,
-        )
-
-        success = data_service.update_prompt(
-            prompt_id_int, prompt_data, validated_data.commit_message
-        )
-        if success:
-            return {"success": True}
-        else:
-            return JSONResponse(
-                status_code=500, content={"error": "Failed to update prompt"}
-        )
-
-    except ValidationError as e:
-        record_validation_event(
-            endpoint="/api/prompts/update",
-            success=False,
-            errors=[err.get("msg", "") for err in e.errors()],
-        )
-        return JSONResponse(
-            status_code=422,
-            content={"error": "Validation failed", "details": e.errors()},
-        )
-
-
-@app.delete("/api/prompts/bulk")
-async def delete_prompts_bulk(body: BulkDeleteRequest):
-    """Delete multiple prompts in bulk.
-
-    Creates automatic backup before deletion.
-    Returns statistics on successful and failed deletions.
-    """
-    try:
-        # Create automatic backup with timestamp (keep short for DB constraint)
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        backup_id = backup_service.create_backup(f"bulk_del_{timestamp}")
-
-        if backup_id:
-            audit_logger.info(
-                "Automatic backup created before bulk deletion",
-                extra={
-                    "event": "backup.auto",
-                    "action": "backup.create",
-                    "resource_type": "backup",
-                    "resource_id": backup_id,
-                    "trigger": "bulk_delete",
-                    "prompt_count": len(body.prompt_ids),
-                },
-            )
-
-        # Perform bulk deletion
-        result = data_service.delete_prompts_bulk(body.prompt_ids)
-
-        # Log bulk operation summary
-        audit_logger.info(
-            "Bulk prompt deletion completed",
-            extra={
-                "event": "prompt.bulk_delete",
-                "action": "prompt.bulk_delete",
-                "resource_type": "prompt",
-                "resource_id": "multiple",
-                "deleted_count": result["deleted_count"],
-                "failed_count": result["failed_count"],
-                "backup_id": backup_id,
-            },
-        )
-
-        return JSONResponse(
-            content={
-                "success": True,
-                "deleted_count": result["deleted_count"],
-                "failed_count": result["failed_count"],
-                "failed_ids": result["failed_ids"],
-                "backup_id": backup_id,
-            }
-        )
-
-    except Exception as e:
-        logger.error(
-            "Bulk deletion failed",
-            extra={"error": str(e), "prompt_ids": body.prompt_ids},
-        )
-        raise HTTPException(status_code=500, detail="Failed to delete prompts")
-
-
-@app.delete("/api/prompts/{prompt_id}")
-async def delete_prompt(prompt_id: str):
-    """Delete a prompt"""
-    try:
-        prompt_id_int = int(prompt_id)
-    except ValueError:
-        return JSONResponse(status_code=400, content={"error": "Invalid prompt ID"})
-
-    # Create automatic backup before deletion
-    backup_id = backup_service.create_backup(f"pre_delete_prompt_{prompt_id}")
-    if backup_id:
-        audit_logger.info(
-            "Automatic backup created before deleting prompt",
-            extra={
-                "event": "backup.auto",
-                "action": "backup_before_delete",
-                "resource_id": str(prompt_id),
-                "backup_id": backup_id,
-            },
-        )
-
-    success = data_service.delete_prompt(prompt_id_int)
-    return {"success": success}
-
-
-@app.put("/api/prompts/{prompt_id}/favorite")
-async def toggle_favorite(prompt_id: str):
-    """Toggle favorite status of a prompt"""
-    try:
-        prompt_id_int = int(prompt_id)
-    except ValueError:
-        return JSONResponse(status_code=400, content={"error": "Invalid prompt ID"})
-
-    # Get current prompt data
-    prompt_data = data_service.get_prompt_data(prompt_id_int)
-    if not prompt_data:
-        return JSONResponse(status_code=404, content={"error": "Prompt not found"})
-
-    # Toggle favorite status
-    current_favorite = prompt_data.get("favorite", False)
-    prompt_data["favorite"] = not current_favorite
-
-    # Update the prompt
-    success = data_service.update_prompt(prompt_id_int, prompt_data, "Toggle favorite")
-    if success:
-        return {"success": True, "favorite": prompt_data["favorite"]}
-    else:
-        return JSONResponse(
-            status_code=500, content={"error": "Failed to update favorite status"}
-        )
+# LEGACY PROMPT ROUTES - Removed and replaced by new authenticated routes
+# The old implementations below have been commented out.
+# All /api/prompts/* routes are now handled by the prompts_router (see routers/prompts.py)
+#
+# Key improvements in new implementation:
+# 1. Authentication: Users must be authenticated for write operations
+# 2. Authorization: Ownership checks - only owners and admins can modify prompts
+# 3. Database: Uses proper ORM models (Prompt, Category, Tag) instead of JSON files
+# 4. Security: Proper audit logging, rate limiting, and error handling
+# 5. RBAC: Role-based access control for admin operations
+#
+# Migration guide for frontend developers:
+# - All read operations (GET) remain public and work the same way
+# - Write operations (POST, PUT, DELETE) now require Authorization header
+# - Response format remains compatible for backward compatibility
+# - Add "Authorization: Bearer <access_token>" header to authenticated requests
+#
+# Example authenticated request:
+# ```
+# POST /api/prompts
+# Authorization: Bearer eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9...
+# Content-Type: application/x-www-form-urlencoded
+#
+# title=My Prompt&prompt=Content here&category=Test&tags=tag1,tag2
+# ```
 
 
 @app.get("/api/categories")

@@ -546,7 +546,7 @@ cat docs/TESTING.md
 
 - **Repository**: <https://codeberg.org/medenor/promptvault>
 - **Issues**: <https://codeberg.org/medenor/promptvault/issues>
-- **License**: MPL 2.0
+- **License**: MPL 2.0 (always add the MPL 2.0 header to files)
 
 ### Key Files
 
