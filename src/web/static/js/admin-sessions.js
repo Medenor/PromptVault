@@ -23,7 +23,7 @@ i18next
     });
 
 // Constants
-const API_BASE = '/admin';
+const API_BASE = '/api/admin';
 const HIDDEN_CLASS = 'is-hidden';
 
 // State
@@ -36,10 +36,9 @@ let currentSessionId = null;
 
 // Utility Functions
 function getAuthHeaders() {
-    const token = localStorage.getItem('access_token');
+    // With HTTP-only cookies, credentials are sent automatically
     return {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+        'Content-Type': 'application/json'
     };
 }
 
@@ -108,6 +107,7 @@ async function loadAllSessions() {
     try {
         // First, get all users
         const usersResponse = await fetch(`${API_BASE}/users?limit=1000`, {
+            credentials: 'include',
             headers: getAuthHeaders()
         });
 
@@ -132,6 +132,7 @@ async function loadAllSessions() {
         for (const user of users) {
             try {
                 const sessionsResponse = await fetch(`${API_BASE}/users/${user.id}/sessions`, {
+            credentials: 'include',
                     headers: getAuthHeaders()
                 });
 
@@ -170,8 +171,9 @@ function populateUserFilter(users) {
 
     users.forEach(user => {
         const option = document.createElement('option');
-        option.value = user.username;
+        option.value = user.id;  // Use user ID, not username
         option.textContent = user.username;
+        option.dataset.username = user.username;  // Store username for display
         userFilter.appendChild(option);
     });
 
@@ -187,6 +189,9 @@ function displaySessions() {
     // Apply filters
     let filteredSessions = allSessions;
 
+    // Filter out revoked sessions by default (only show active ones)
+    filteredSessions = filteredSessions.filter(session => !session.is_revoked);
+
     if (currentFilters.search) {
         const searchLower = currentFilters.search.toLowerCase();
         filteredSessions = filteredSessions.filter(session =>
@@ -198,13 +203,13 @@ function displaySessions() {
 
     if (currentFilters.user !== 'all') {
         filteredSessions = filteredSessions.filter(session =>
-            session.username === currentFilters.user
+            session.userId === currentFilters.user
         );
     }
 
     // Render sessions
     if (filteredSessions.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="7" class="loading-cell">No sessions found</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="7" class="loading-cell">No active sessions found</td></tr>';
     } else {
         tableBody.innerHTML = filteredSessions.map(session => `
             <tr>
@@ -216,7 +221,7 @@ function displaySessions() {
                 <td>${formatDate(session.expires_at)}</td>
                 <td>
                     <div class="action-buttons">
-                        <button class="action-btn revoke" onclick="showRevokeConfirmation(${session.userId}, '${session.id}', '${session.username}')">Revoke</button>
+                        <button class="action-btn revoke" onclick="showRevokeConfirmation('${session.userId}', '${session.id}', '${session.username}')">Revoke</button>
                     </div>
                 </td>
             </tr>
@@ -230,19 +235,25 @@ function truncateText(text, maxLength) {
 }
 
 function updateStats() {
-    document.getElementById('total-sessions').textContent = allSessions.length;
+    // Count only non-revoked sessions for "Total Sessions"
+    const nonRevokedSessions = allSessions.filter(session => !session.is_revoked).length;
+    document.getElementById('total-sessions').textContent = nonRevokedSessions;
 
-    // Count active sessions (not expired)
+    // Count active sessions (not revoked AND not expired)
     const now = new Date();
     const activeSessions = allSessions.filter(session => {
         const expiresAt = new Date(session.expires_at);
-        return expiresAt > now;
+        return !session.is_revoked && expiresAt > now;
     }).length;
     document.getElementById('active-sessions').textContent = activeSessions;
 
-    // Count unique users
-    const uniqueUsers = new Set(allSessions.map(s => s.username)).size;
-    document.getElementById('unique-users').textContent = uniqueUsers;
+    // Count unique users with active sessions
+    const usersWithActiveSessions = new Set(
+        allSessions
+            .filter(session => !session.is_revoked)
+            .map(s => s.username)
+    );
+    document.getElementById('unique-users').textContent = usersWithActiveSessions.size;
 }
 
 // Revoke Session
@@ -260,10 +271,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const { userId, sessionId, username } = currentSessionId;
 
             try {
-                const response = await fetch(`${API_BASE}/users/${userId}/sessions`, {
+                const response = await fetch(`${API_BASE}/users/${userId}/sessions/${sessionId}`, {
+                    credentials: 'include',
                     method: 'DELETE',
-                    headers: getAuthHeaders(),
-                    body: JSON.stringify({ session_id: sessionId })
+                    headers: getAuthHeaders()
                 });
 
                 if (response.ok) {
@@ -332,6 +343,48 @@ function initAdminSessionsPage() {
         refreshBtn.addEventListener('click', loadAllSessions);
     }
 
+    const revokeAllBtn = document.getElementById('revoke-all-sessions-btn');
+    if (revokeAllBtn) {
+        revokeAllBtn.addEventListener('click', revokeAllSessions);
+    }
+
     setupFilters();
     loadAllSessions();
+}
+
+// Revoke All Sessions Function
+async function revokeAllSessions() {
+    const userFilter = document.getElementById('user-filter');
+    const selectedUserId = userFilter.value;
+
+    if (selectedUserId === 'all') {
+        showNotification('Please select a specific user to revoke all their sessions', 'error');
+        return;
+    }
+
+    const selectedUserText = userFilter.options[userFilter.selectedIndex].text;
+
+    if (!confirm(`Are you sure you want to revoke ALL sessions for user "${selectedUserText}"? They will be logged out of all devices.`)) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE}/users/${selectedUserId}/sessions`, {
+            method: 'DELETE',
+            credentials: 'include',
+            headers: getAuthHeaders()
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            showNotification(`${data.revoked_count} session(s) revoked for ${selectedUserText}`, 'success');
+            await loadAllSessions();
+        } else {
+            const data = await response.json();
+            showNotification(data.detail || 'Failed to revoke sessions', 'error');
+        }
+    } catch (error) {
+        console.error('Error revoking sessions:', error);
+        showNotification('Failed to revoke sessions', 'error');
+    }
 }

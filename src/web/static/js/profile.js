@@ -23,15 +23,14 @@ i18next
     });
 
 // Constants
-const API_BASE = '/auth';
+const API_BASE = '/api/auth';
 const HIDDEN_CLASS = 'is-hidden';
 
 // Utility Functions
 function getAuthHeaders() {
-    const token = localStorage.getItem('access_token');
+    // With HTTP-only cookies, credentials are sent automatically
     return {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+        'Content-Type': 'application/json'
     };
 }
 
@@ -174,6 +173,7 @@ function setupPasswordToggle(toggleButtonId, passwordInputId) {
 async function loadUserInfo() {
     try {
         const response = await fetch(`${API_BASE}/me`, {
+            credentials: 'include',
             headers: getAuthHeaders()
         });
 
@@ -192,6 +192,14 @@ async function loadUserInfo() {
             // Update stats
             document.getElementById('user-created').textContent = formatDate(user.created_at);
             document.getElementById('user-last-login').textContent = formatDate(user.last_login);
+
+            // Show admin button if user is admin
+            if (user.role === 'admin') {
+                const adminBtn = document.getElementById('admin-btn');
+                if (adminBtn) {
+                    adminBtn.style.display = '';
+                }
+            }
 
             // Load sessions
             await loadSessions();
@@ -214,6 +222,7 @@ async function loadSessions() {
 
     try {
         const response = await fetch(`${API_BASE}/sessions`, {
+            credentials: 'include',
             headers: getAuthHeaders()
         });
 
@@ -261,6 +270,7 @@ window.revokeSession = async function(sessionId) {
 
     try {
         const response = await fetch(`${API_BASE}/sessions/${sessionId}`, {
+            credentials: 'include',
             method: 'DELETE',
             headers: getAuthHeaders()
         });
@@ -328,6 +338,7 @@ function setupChangePasswordForm() {
 
         try {
             const response = await fetch(`${API_BASE}/change-password`, {
+                credentials: 'include',
                 method: 'POST',
                 headers: getAuthHeaders(),
                 body: JSON.stringify({
@@ -369,6 +380,7 @@ function setupLogout() {
                 const refreshToken = localStorage.getItem('refresh_token');
                 if (refreshToken) {
                     await fetch(`${API_BASE}/logout`, {
+                        credentials: 'include',
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'

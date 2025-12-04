@@ -611,9 +611,100 @@ async def get_user_sessions(
 
 
 @router.delete(
+    "/users/{user_id}/sessions/{session_id}",
+    response_model=RevokeSessionResponse,
+    summary="Revoke specific session",
+    description="""
+    Revoke a specific session for a user.
+
+    **Effect:**
+    - Single session is revoked
+    - User will be logged out of that specific device
+    - Refresh token for that session becomes invalid
+
+    **Use Cases:**
+    - Force logout from specific device
+    - Remove suspicious session
+    - Security incident response
+
+    **Security:**
+    - Requires admin role
+    - Audit logged
+    """,
+    responses={
+        200: {"description": "Session revoked successfully"},
+        403: {"description": "Admin role required"},
+        404: {"description": "User or session not found"},
+    },
+)
+async def revoke_single_session(
+    user_id: str,
+    session_id: str,
+    admin: User = Depends(require_role(["admin"])),
+    db: Session = Depends(get_db),
+) -> RevokeSessionResponse:
+    """Revoke a specific session for a user.
+
+    Args:
+        user_id: User's UUID
+        session_id: Session's UUID
+        admin: Authenticated admin user
+        db: Database session
+
+    Returns:
+        RevokeSessionResponse with revocation confirmation
+
+    Raises:
+        HTTPException: 404 if user or session not found
+    """
+    user_repo = UserRepository(db)
+    session_repo = SessionRepository(db)
+
+    # Verify user exists
+    user = user_repo.get_by_id(user_id)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"User with ID {user_id} not found",
+        )
+
+    # Get session and verify it belongs to the user
+    session = session_repo.get_by_id(session_id)
+    if not session:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Session with ID {session_id} not found",
+        )
+
+    if session.user_id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Session with ID {session_id} not found for user {user.username}",
+        )
+
+    # Revoke the session
+    revoked = session_repo.revoke_session_by_id(session_id)
+    db.commit()
+
+    # Log admin action
+    _log_admin_action(
+        admin.id,
+        admin.username,
+        "REVOKE_USER_SESSION",
+        user_id,
+        f"username={user.username}, session_id={session_id}, revoked={revoked}",
+    )
+
+    return RevokeSessionResponse(
+        message=f"Session revoked for user {user.username}",
+        revoked_count=1 if revoked else 0,
+    )
+
+
+@router.delete(
     "/users/{user_id}/sessions",
     response_model=RevokeSessionResponse,
-    summary="Revoke user's sessions",
+    summary="Revoke all user's sessions",
     description="""
     Revoke all sessions for a specific user.
 

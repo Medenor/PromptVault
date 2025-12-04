@@ -25,6 +25,7 @@
                     <option value="es">Español</option>
                     <option value="de">Deutsch</option>
                 </select>
+                <button id="admin-btn" onclick="window.location.href='/admin/users'" data-i18n="nav.admin" style="display: none;">Admin</button>
                 <button onclick="window.location.href='/'" data-i18n="nav.backToMain">Back to Main</button>
                 <button id="logout-btn" data-i18n="auth.profile.logout">Logout</button>
             </div>
@@ -167,6 +168,6 @@
     </div>
 
     <script src="/static/js/telemetry.js" defer></script>
-    <script type="module" src="/static/js/profile.js"></script>
+    <script type="module" src="/static/js/profile.js?v=4"></script>
 </body>
 </html>

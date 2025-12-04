@@ -13,6 +13,7 @@
     "clearFilters": "Clear All Filters",
     "importExport": "Import/Export",
     "backupManagement": "Backup",
+    "admin": "Admin",
     "logout": "Logout",
     "backToMain": "Back to Main"
   },
@@ -345,8 +346,9 @@
       "filterStatus": "Status",
       "allRoles": "All Roles",
       "allStatuses": "All Statuses",
+      "roleViewer": "Viewer",
+      "roleEditor": "Editor",
       "roleAdmin": "Admin",
-      "roleUser": "User",
       "statusActive": "Active",
       "statusInactive": "Inactive",
       "statusLocked": "Locked",
@@ -368,13 +370,14 @@
       "activeAccount": "Active Account",
       "emailVerified": "Email Verified",
       "confirmDelete": "Confirm Delete",
-      "deleteWarning": "Are you sure you want to deactivate this user? This action can be reversed by reactivating the account."
+      "deleteWarning": "Are you sure you want to permanently delete this user? This action cannot be undone and will remove all user data from the database."
     },
     "sessions": {
       "title": "Session Management",
       "searchPlaceholder": "Search by username...",
       "filterUser": "User",
       "allUsers": "All Users",
+      "revokeAll": "Revoke All Sessions",
       "totalSessions": "Total Sessions",
       "activeSessions": "Active Now",
       "uniqueUsers": "Unique Users",

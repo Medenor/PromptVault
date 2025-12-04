@@ -13,6 +13,7 @@
     "clearFilters": "Effacer tous les filtres",
     "importExport": "Importer/Exporter",
     "backupManagement": "Sauvegarde",
+    "admin": "Administration",
     "logout": "Déconnexion",
     "backToMain": "Retour au menu principal"
   },
@@ -345,8 +346,9 @@
       "filterStatus": "Statut",
       "allRoles": "Tous les rôles",
       "allStatuses": "Tous les statuts",
+      "roleViewer": "Visualiseur",
+      "roleEditor": "Éditeur",
       "roleAdmin": "Admin",
-      "roleUser": "Utilisateur",
       "statusActive": "Actif",
       "statusInactive": "Inactif",
       "statusLocked": "Verrouillé",
@@ -368,13 +370,14 @@
       "activeAccount": "Compte actif",
       "emailVerified": "Email vérifié",
       "confirmDelete": "Confirmer la suppression",
-      "deleteWarning": "Êtes-vous sûr de vouloir désactiver cet utilisateur ? Cette action peut être inversée en réactivant le compte."
+      "deleteWarning": "Êtes-vous sûr de vouloir supprimer définitivement cet utilisateur ? Cette action ne peut pas être annulée et supprimera toutes les données de l'utilisateur de la base de données."
     },
     "sessions": {
       "title": "Gestion des sessions",
       "searchPlaceholder": "Rechercher par nom d'utilisateur...",
       "filterUser": "Utilisateur",
       "allUsers": "Tous les utilisateurs",
+      "revokeAll": "Révoquer toutes les sessions",
       "totalSessions": "Total des sessions",
       "activeSessions": "Actives maintenant",
       "uniqueUsers": "Utilisateurs uniques",

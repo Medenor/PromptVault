@@ -86,6 +86,19 @@ class SessionRepository(BaseRepository[UserSession]):
             UserSession.refresh_token_jti == refresh_token_jti
         ).first()
 
+    def get_by_id(self, session_id: str) -> Optional[UserSession]:
+        """Find session by session ID.
+
+        Args:
+            session_id: Session UUID
+
+        Returns:
+            UserSession instance or None if not found
+        """
+        return self.session.query(UserSession).filter(
+            UserSession.id == session_id
+        ).first()
+
     def get_user_sessions(
         self,
         user_id: str,
@@ -164,6 +177,22 @@ class SessionRepository(BaseRepository[UserSession]):
         """
         session = self.get_by_family_id(family_id)
         if session:
+            session.is_revoked = True
+            self.session.flush()
+            return True
+        return False
+
+    def revoke_session_by_id(self, session_id: str) -> bool:
+        """Revoke a session by session ID.
+
+        Args:
+            session_id: Session UUID
+
+        Returns:
+            True if revoked, False if not found or already revoked
+        """
+        session = self.get_by_id(session_id)
+        if session and not session.is_revoked:
             session.is_revoked = True
             self.session.flush()
             return True

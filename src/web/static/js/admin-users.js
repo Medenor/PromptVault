@@ -23,7 +23,7 @@ i18next
     });
 
 // Constants
-const API_BASE = '/admin';
+const API_BASE = '/api/admin';
 const HIDDEN_CLASS = 'is-hidden';
 
 // State
@@ -37,11 +37,22 @@ let currentFilters = {
 
 // Utility Functions
 function getAuthHeaders() {
-    const token = localStorage.getItem('access_token');
+    // Return headers for fetch - cookies are sent automatically with credentials: 'include'
     return {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+        'Content-Type': 'application/json'
     };
+}
+
+function getFetchOptions(method = 'GET', body = null) {
+    const options = {
+        method,
+        credentials: 'include', // Send cookies automatically
+        headers: getAuthHeaders()
+    };
+    if (body) {
+        options.body = JSON.stringify(body);
+    }
+    return options;
 }
 
 function showNotification(message, type = 'info') {
@@ -129,6 +140,7 @@ async function loadUsers() {
         }
 
         const response = await fetch(`${API_BASE}/users?${params.toString()}`, {
+            credentials: 'include',
             headers: getAuthHeaders()
         });
 
@@ -154,9 +166,9 @@ async function loadUsers() {
                         <td>${user.session_count || 0}</td>
                         <td>
                             <div class="action-buttons">
-                                <button class="action-btn view" onclick="viewUser(${user.id})">View</button>
-                                <button class="action-btn edit" onclick="editUser(${user.id})">Edit</button>
-                                <button class="action-btn delete" onclick="deleteUser(${user.id}, '${user.username}')">Delete</button>
+                                <button class="action-btn view" onclick="viewUser('${user.id}')">View</button>
+                                <button class="action-btn edit" onclick="editUser('${user.id}')">Edit</button>
+                                <button class="action-btn delete" onclick="deleteUser('${user.id}', '${user.username}')">Delete</button>
                             </div>
                         </td>
                     </tr>
@@ -226,6 +238,7 @@ window.viewUser = async function(userId) {
 
     try {
         const response = await fetch(`${API_BASE}/users/${userId}`, {
+            credentials: 'include',
             headers: getAuthHeaders()
         });
 
@@ -280,6 +293,7 @@ window.viewUser = async function(userId) {
 window.editUser = async function(userId) {
     try {
         const response = await fetch(`${API_BASE}/users/${userId}`, {
+            credentials: 'include',
             headers: getAuthHeaders()
         });
 
@@ -312,6 +326,7 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const response = await fetch(`${API_BASE}/users/${userId}`, {
                     method: 'PUT',
+                    credentials: 'include',
                     headers: getAuthHeaders(),
                     body: JSON.stringify({
                         role: role,
@@ -351,13 +366,14 @@ window.deleteUser = function(userId, username) {
     const confirmBtn = document.getElementById('confirm-delete-btn');
     confirmBtn.onclick = async () => {
         try {
-            const response = await fetch(`${API_BASE}/users/${userId}`, {
+            const response = await fetch(`${API_BASE}/users/${userId}?hard_delete=true`, {
                 method: 'DELETE',
+                credentials: 'include',
                 headers: getAuthHeaders()
             });
 
             if (response.ok) {
-                showNotification('User deleted successfully', 'success');
+                showNotification('User permanently deleted from database', 'success');
                 hideModal('confirm-delete-modal');
                 loadUsers();
             } else {

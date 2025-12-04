@@ -90,6 +90,11 @@ class UserResponse(BaseModel):
         description="Account last update timestamp",
         examples=["2025-12-02T10:30:00Z"],
     )
+    last_login: Optional[datetime] = Field(
+        None,
+        description="Last login timestamp",
+        examples=["2025-12-02T10:30:00Z", None],
+    )
 
     model_config = ConfigDict(
         from_attributes=True,  # Allow creation from ORM models

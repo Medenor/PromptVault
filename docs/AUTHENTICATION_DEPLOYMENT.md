@@ -442,7 +442,7 @@ open http://localhost:8000/docs
 #### Register a New User
 
 ```bash
-curl -X POST http://localhost:8000/auth/register \
+curl -X POST http://localhost:8000/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "username": "testuser",
@@ -455,7 +455,7 @@ curl -X POST http://localhost:8000/auth/register \
 #### Login
 
 ```bash
-curl -X POST http://localhost:8000/auth/login \
+curl -X POST http://localhost:8000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "username_or_email": "testuser",
@@ -468,7 +468,7 @@ Save the `access_token` from the response.
 #### Get Current User
 
 ```bash
-curl http://localhost:8000/auth/me \
+curl http://localhost:8000/api/auth/me \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
@@ -476,7 +476,7 @@ curl http://localhost:8000/auth/me \
 
 ```bash
 # Login as admin
-curl -X POST http://localhost:8000/auth/login \
+curl -X POST http://localhost:8000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "username_or_email": "admin",
@@ -484,11 +484,11 @@ curl -X POST http://localhost:8000/auth/login \
   }'
 
 # List all users (admin only)
-curl http://localhost:8000/admin/users \
+curl http://localhost:8000/api/admin/users \
   -H "Authorization: Bearer ADMIN_ACCESS_TOKEN"
 
 # Get system stats (admin only)
-curl http://localhost:8000/admin/stats \
+curl http://localhost:8000/api/admin/stats \
   -H "Authorization: Bearer ADMIN_ACCESS_TOKEN"
 ```
 
@@ -509,7 +509,8 @@ Before deploying to production, verify the following:
 
 ### Application Security
 
-- [ ] HTTPS is enabled (TLS/SSL certificate)
+- [ ] HTTPS is enabled (TLS/SSL certificate) 
+<!-- TODO: support HTTPS (TLS/SSL certificate) -->
 - [ ] `APP_BASE_URL` uses `https://` (not `http://`)
 - [ ] Strong password policy is enforced
 - [ ] Rate limiting is enabled (Redis is running)

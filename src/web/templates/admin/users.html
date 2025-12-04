@@ -47,8 +47,9 @@
                     <label for="role-filter" data-i18n="admin.users.filterRole">Role:</label>
                     <select id="role-filter" class="filter-select">
                         <option value="all" data-i18n="admin.users.allRoles">All Roles</option>
+                        <option value="viewer" data-i18n="admin.users.roleViewer">Viewer</option>
+                        <option value="editor" data-i18n="admin.users.roleEditor">Editor</option>
                         <option value="admin" data-i18n="admin.users.roleAdmin">Admin</option>
-                        <option value="user" data-i18n="admin.users.roleUser">User</option>
                     </select>
                 </div>
                 <div class="filter-group">
@@ -144,7 +145,8 @@
                     <div class="form-group">
                         <label for="edit-role" data-i18n="admin.users.role">Role:</label>
                         <select id="edit-role" name="role" class="form-control">
-                            <option value="user" data-i18n="admin.users.roleUser">User</option>
+                            <option value="viewer" data-i18n="admin.users.roleViewer">Viewer</option>
+                            <option value="editor" data-i18n="admin.users.roleEditor">Editor</option>
                             <option value="admin" data-i18n="admin.users.roleAdmin">Admin</option>
                         </select>
                     </div>
@@ -179,7 +181,7 @@
                 <span class="close" onclick="closeConfirmDeleteModal()">&times;</span>
             </div>
             <div class="modal-body">
-                <p data-i18n="admin.users.deleteWarning">Are you sure you want to deactivate this user? This action can be reversed by reactivating the account.</p>
+                <p data-i18n="admin.users.deleteWarning">Are you sure you want to permanently delete this user? This action cannot be undone and will remove all user data from the database.</p>
                 <p class="warning-text"><strong id="delete-username"></strong></p>
             </div>
             <div class="modal-footer">
@@ -190,6 +192,6 @@
     </div>
 
     <script src="/static/js/telemetry.js" defer></script>
-    <script type="module" src="/static/js/admin-users.js"></script>
+    <script type="module" src="/static/js/admin-users.js?v=5"></script>
 </body>
 </html>

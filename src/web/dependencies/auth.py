@@ -75,7 +75,7 @@ Example Usage:
 """
 
 from typing import Callable, Optional
-from fastapi import Depends, Header, HTTPException, Request, status
+from fastapi import Cookie, Depends, Header, HTTPException, Request, status
 from sqlalchemy.orm import Session
 from jwt.exceptions import (
     ExpiredSignatureError,
@@ -157,16 +157,18 @@ def get_jwt_service(config: AuthConfig = Depends(get_auth_config)) -> JWTService
 
 def get_current_user_token(
     authorization: Optional[str] = Header(None, description="Bearer token in format: Bearer <token>"),
+    access_token_cookie: Optional[str] = Cookie(None, alias="access_token"),
     jwt_service: JWTService = Depends(get_jwt_service),
 ) -> dict:
-    """Extract and validate access token from Authorization header.
+    """Extract and validate access token from Authorization header or cookie.
 
-    This dependency extracts the JWT token from the Authorization header,
-    validates the Bearer scheme format, and verifies the token signature,
-    expiration, and claims.
+    This dependency extracts the JWT token from the Authorization header or
+    HTTP-only cookie, validates the Bearer scheme format (for header), and
+    verifies the token signature, expiration, and claims.
 
     Args:
         authorization: Authorization header value (injected)
+        access_token_cookie: Access token from HTTP-only cookie (injected)
         jwt_service: JWT service instance (injected)
 
     Returns:
@@ -177,6 +179,8 @@ def get_current_user_token(
 
     Token Format:
         Authorization: Bearer <jwt_token>
+        OR
+        Cookie: access_token=<jwt_token>
 
     Example:
         >>> @router.get("/token-info")
@@ -193,25 +197,33 @@ def get_current_user_token(
         - Checks expiration to prevent stale tokens
         - Validates issuer and audience claims
         - Returns 401 with WWW-Authenticate header per RFC 6750
+        - Supports both header and HTTP-only cookie authentication
     """
-    # Check if Authorization header is present
-    if not authorization:
+    token = None
+
+    # Check Authorization header first
+    if authorization:
+        # Validate Bearer scheme format
+        parts = authorization.split()
+        if len(parts) != 2 or parts[0].lower() != "bearer":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid authentication scheme. Expected: Bearer <token>",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        token = parts[1]
+
+    # Fall back to cookie if no header
+    elif access_token_cookie:
+        token = access_token_cookie
+
+    # No token found in either location
+    if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Missing authentication token",
             headers={"WWW-Authenticate": "Bearer"},
         )
-
-    # Validate Bearer scheme format
-    parts = authorization.split()
-    if len(parts) != 2 or parts[0].lower() != "bearer":
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authentication scheme. Expected: Bearer <token>",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    token = parts[1]
 
     # Validate JWT token
     try:
@@ -307,6 +319,19 @@ def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found",
             headers={"WWW-Authenticate": 'Bearer error="invalid_token", error_description="User not found"'},
+        )
+
+    # Check if user has at least one active (non-revoked) session
+    # This ensures revoked sessions invalidate access tokens
+    from src.db.repositories.session_repository import SessionRepository
+    session_repo = SessionRepository(session)
+    active_session_count = session_repo.count_user_sessions(user_id, active_only=True)
+
+    if active_session_count == 0:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="All sessions have been revoked. Please log in again.",
+            headers={"WWW-Authenticate": 'Bearer error="invalid_token", error_description="Session revoked"'},
         )
 
     return user
