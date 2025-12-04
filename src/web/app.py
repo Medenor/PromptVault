@@ -452,7 +452,7 @@ async def request_logging_middleware(request: Request, call_next):
         if auth_header and auth_header.startswith("Bearer "):
             try:
                 token = auth_header.split(" ")[1]
-                payload = jwt_service_for_logging.decode_access_token(token)
+                payload = jwt_service_for_logging.validate_access_token(token)
                 actor = payload.get("username", "anonymous")
                 logger.debug(f"Extracted actor from Authorization header: {actor}")
             except Exception as e:
@@ -464,14 +464,12 @@ async def request_logging_middleware(request: Request, call_next):
             access_token_cookie = request.cookies.get("access_token")
             if access_token_cookie:
                 try:
-                    payload = jwt_service_for_logging.decode_access_token(access_token_cookie)
+                    payload = jwt_service_for_logging.validate_access_token(access_token_cookie)
                     actor = payload.get("username", "anonymous")
                     logger.debug(f"Extracted actor from cookie: {actor}")
                 except Exception as e:
                     # Token invalid or expired, keep as anonymous
                     logger.debug(f"Failed to decode JWT from cookie: {e}")
-            else:
-                logger.debug("No access_token cookie found in request")
 
     # Fallback to custom headers (for proxy/gateway scenarios)
     if actor == "anonymous":
