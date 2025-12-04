@@ -602,7 +602,32 @@ def _parse_tags_field(tags: str) -> List[str]:
 
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
-    """Main page"""
+    """Main page - redirects to login if not authenticated, otherwise shows prompts.
+
+    This endpoint checks for authentication via the Authorization header or cookies.
+    Unauthenticated users are redirected to /auth/login.
+    Authenticated users see the main prompt management interface.
+
+    Args:
+        request: FastAPI request object
+
+    Returns:
+        RedirectResponse to /auth/login if not authenticated
+        HTMLResponse with index.html if authenticated
+    """
+    from fastapi.responses import RedirectResponse
+
+    # Check if user is authenticated (simple check for auth token)
+    auth_header = request.headers.get("Authorization")
+    auth_cookie = request.cookies.get("access_token")
+
+    if not auth_header and not auth_cookie:
+        # No authentication provided, redirect to login
+        return RedirectResponse(url="/auth/login", status_code=302)
+
+    # User appears to be authenticated, show the main app
+    # Note: The JavaScript will validate the token on the client side
+    # and redirect to login if it's invalid
     prompts = data_service.load_prompts()
     categories = data_service.get_categories()
     tags = data_service.get_tags()
