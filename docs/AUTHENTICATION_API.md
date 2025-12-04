@@ -71,14 +71,14 @@ These endpoints do not require authentication.
 
 ---
 
-### POST /auth/register
+### POST /api/auth/register
 
 Register a new user account.
 
 #### Request
 
 ```http
-POST /auth/register
+POST /api/auth/register
 Content-Type: application/json
 ```
 
@@ -142,14 +142,14 @@ Content-Type: application/json
 
 ---
 
-### POST /auth/login
+### POST /api/auth/login
 
 Login with username/email and password.
 
 #### Request
 
 ```http
-POST /auth/login
+POST /api/auth/login
 Content-Type: application/json
 ```
 
@@ -201,14 +201,14 @@ Content-Type: application/json
 
 ---
 
-### POST /auth/refresh
+### POST /api/auth/refresh
 
 Refresh access token using refresh token.
 
 #### Request
 
 ```http
-POST /auth/refresh
+POST /api/auth/refresh
 Content-Type: application/json
 ```
 
@@ -263,14 +263,14 @@ Content-Type: application/json
 
 ---
 
-### POST /auth/logout
+### POST /api/auth/logout
 
 Logout and revoke refresh token.
 
 #### Request
 
 ```http
-POST /auth/logout
+POST /api/auth/logout
 Content-Type: application/json
 ```
 
@@ -304,14 +304,14 @@ Content-Type: application/json
 
 ---
 
-### POST /auth/password-reset/request
+### POST /api/auth/password-reset/request
 
 Request password reset email.
 
 #### Request
 
 ```http
-POST /auth/password-reset/request
+POST /api/auth/password-reset/request
 Content-Type: application/json
 ```
 
@@ -352,14 +352,14 @@ Content-Type: application/json
 
 ---
 
-### POST /auth/password-reset/confirm
+### POST /api/auth/password-reset/confirm
 
 Confirm password reset with token from email.
 
 #### Request
 
 ```http
-POST /auth/password-reset/confirm
+POST /api/auth/password-reset/confirm
 Content-Type: application/json
 ```
 
@@ -405,14 +405,14 @@ These endpoints require authentication via Bearer token.
 
 ---
 
-### GET /auth/me
+### GET /api/auth/me
 
 Get current authenticated user information.
 
 #### Request
 
 ```http
-GET /auth/me
+GET /api/auth/me
 Authorization: Bearer <access_token>
 ```
 
@@ -441,14 +441,14 @@ Authorization: Bearer <access_token>
 
 ---
 
-### POST /auth/change-password
+### POST /api/auth/change-password
 
 Change user password (requires current password).
 
 #### Request
 
 ```http
-POST /auth/change-password
+POST /api/auth/change-password
 Authorization: Bearer <access_token>
 Content-Type: application/json
 ```
@@ -490,14 +490,14 @@ Content-Type: application/json
 
 ---
 
-### GET /auth/sessions
+### GET /api/auth/sessions
 
 List all active sessions for the authenticated user.
 
 #### Request
 
 ```http
-GET /auth/sessions
+GET /api/auth/sessions
 Authorization: Bearer <access_token>
 ```
 
@@ -541,14 +541,14 @@ Authorization: Bearer <access_token>
 
 ---
 
-### DELETE /auth/sessions/{session_id}
+### DELETE /api/auth/sessions/{session_id}
 
 Revoke a specific session by ID.
 
 #### Request
 
 ```http
-DELETE /auth/sessions/650e8400-e29b-41d4-a716-446655440000
+DELETE /api/auth/sessions/650e8400-e29b-41d4-a716-446655440000
 Authorization: Bearer <access_token>
 ```
 
@@ -572,14 +572,14 @@ Authorization: Bearer <access_token>
 
 ---
 
-### DELETE /auth/sessions
+### DELETE /api/auth/sessions
 
 Revoke all sessions except the current one.
 
 #### Request
 
 ```http
-DELETE /auth/sessions
+DELETE /api/auth/sessions
 Authorization: Bearer <access_token>
 ```
 
@@ -993,7 +993,7 @@ Retry-After: 900
 ### 1. Register New User
 
 ```bash
-curl -X POST http://localhost:8000/auth/register \
+curl -X POST http://localhost:8000/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "username": "alice",
@@ -1006,7 +1006,7 @@ curl -X POST http://localhost:8000/auth/register \
 ### 2. Login
 
 ```bash
-curl -X POST http://localhost:8000/auth/login \
+curl -X POST http://localhost:8000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "username_or_email": "alice",
@@ -1019,14 +1019,14 @@ Save the `access_token` and `refresh_token` from response.
 ### 3. Access Protected Resource
 
 ```bash
-curl http://localhost:8000/auth/me \
+curl http://localhost:8000/api/auth/me \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
 ### 4. Refresh Token (when access token expires)
 
 ```bash
-curl -X POST http://localhost:8000/auth/refresh \
+curl -X POST http://localhost:8000/api/auth/refresh \
   -H "Content-Type: application/json" \
   -d '{
     "refresh_token": "YOUR_REFRESH_TOKEN"
@@ -1036,7 +1036,7 @@ curl -X POST http://localhost:8000/auth/refresh \
 ### 5. Change Password
 
 ```bash
-curl -X POST http://localhost:8000/auth/change-password \
+curl -X POST http://localhost:8000/api/auth/change-password \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -1049,14 +1049,14 @@ curl -X POST http://localhost:8000/auth/change-password \
 ### 6. List Active Sessions
 
 ```bash
-curl http://localhost:8000/auth/sessions \
+curl http://localhost:8000/api/auth/sessions \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
 ### 7. Logout
 
 ```bash
-curl -X POST http://localhost:8000/auth/logout \
+curl -X POST http://localhost:8000/api/auth/logout \
   -H "Content-Type: application/json" \
   -d '{
     "refresh_token": "YOUR_REFRESH_TOKEN"
