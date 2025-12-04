@@ -164,6 +164,24 @@ logger = logging_service.get_logger(__name__)
 logger.info("Rate limiting initialized successfully")
 
 # ============================================================================
+# JWT SERVICE INITIALIZATION (for middleware)
+# ============================================================================
+# Initialize JWT service once for actor extraction in logging middleware
+jwt_service_for_logging = None
+try:
+    from src.services.auth.jwt_service import JWTService
+    from src.config.auth_config import auth_settings
+    jwt_service_for_logging = JWTService(auth_settings)
+    print(f"✓ JWT service initialized for logging middleware")
+    logger.info("JWT service initialized for logging middleware")
+except Exception as e:
+    print(f"✗ JWT service initialization failed: {e}")
+    import traceback
+    traceback.print_exc()
+    logger.warning(f"JWT service initialization failed for logging: {e}")
+    jwt_service_for_logging = None
+
+# ============================================================================
 # API ROUTERS REGISTRATION
 # ============================================================================
 # Register all API routers with appropriate prefixes:
@@ -423,11 +441,46 @@ async def log_frontend_error(entry: FrontendLogEntry, request: Request):
 async def request_logging_middleware(request: Request, call_next):
     """Attach request IDs and emit structured request logs."""
     request_id = request.headers.get("X-Request-ID") or logging_service.generate_request_id()
-    actor = (
-        request.headers.get("X-PromptVault-Actor")
-        or request.headers.get("X-Forwarded-User")
-        or "anonymous"
-    )
+
+    # Try to extract actor from JWT token
+    actor = "anonymous"
+
+    # Only attempt JWT decoding if service is available
+    if jwt_service_for_logging:
+        # Check for JWT in Authorization header
+        auth_header = request.headers.get("Authorization")
+        if auth_header and auth_header.startswith("Bearer "):
+            try:
+                token = auth_header.split(" ")[1]
+                payload = jwt_service_for_logging.decode_access_token(token)
+                actor = payload.get("username", "anonymous")
+                logger.debug(f"Extracted actor from Authorization header: {actor}")
+            except Exception as e:
+                # Token invalid or expired, keep as anonymous
+                logger.debug(f"Failed to decode JWT from Authorization header: {e}")
+
+        # Check for JWT in cookie if not in header
+        if actor == "anonymous":
+            access_token_cookie = request.cookies.get("access_token")
+            if access_token_cookie:
+                try:
+                    payload = jwt_service_for_logging.decode_access_token(access_token_cookie)
+                    actor = payload.get("username", "anonymous")
+                    logger.debug(f"Extracted actor from cookie: {actor}")
+                except Exception as e:
+                    # Token invalid or expired, keep as anonymous
+                    logger.debug(f"Failed to decode JWT from cookie: {e}")
+            else:
+                logger.debug("No access_token cookie found in request")
+
+    # Fallback to custom headers (for proxy/gateway scenarios)
+    if actor == "anonymous":
+        actor = (
+            request.headers.get("X-PromptVault-Actor")
+            or request.headers.get("X-Forwarded-User")
+            or "anonymous"
+        )
+
     start_time = time.perf_counter()
     with logging_service.request_context(request_id=request_id, actor=actor):
         try:
