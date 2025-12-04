@@ -301,8 +301,56 @@ Each session tracks:
 
 **Enforcement**:
 - When limit reached, oldest session is revoked
-- User can manually revoke sessions via `/auth/sessions`
-- Admin can revoke user sessions via `/admin/users/{id}/sessions`
+- User can manually revoke sessions via `/auth/sessions/{session_id}`
+- Admin can revoke individual sessions via `/admin/users/{user_id}/sessions/{session_id}`
+- Admin can revoke all user sessions via `/admin/users/{user_id}/sessions`
+
+### Session Revocation Enforcement
+
+**Critical Security Feature**: Session revocation is immediately enforced at the API level.
+
+**How It Works**:
+
+1. **Database Check**: Every authenticated request checks if the user has at least one active (non-revoked) session
+2. **Immediate Invalidation**: If all sessions are revoked, access tokens are immediately rejected
+3. **Frontend Protection**: Main app UI blocks content rendering until session is verified
+4. **Privacy Protection**: Loading overlay prevents content flash before redirect
+
+**Implementation**:
+```python
+# In get_current_user() dependency (src/web/dependencies/auth.py)
+active_session_count = session_repo.count_user_sessions(user_id, active_only=True)
+
+if active_session_count == 0:
+    raise HTTPException(
+        status_code=401,
+        detail="All sessions have been revoked. Please log in again."
+    )
+```
+
+**Access Token Behavior**:
+- **Access tokens** (15 min lifetime) remain cryptographically valid after session revocation
+- However, every API request checks session status in the database
+- If no active sessions exist, the access token is rejected despite being valid JWT
+- This provides **immediate revocation** without complex token blacklisting
+
+**Frontend Security Flow**:
+1. Page loads with full-screen "Verifying session..." overlay
+2. Authentication check runs: `GET /api/auth/me`
+3. If 401 (revoked): Immediate redirect to login (content never shown)
+4. If 200 (valid): Hide overlay, show content
+5. No content flash - prevents privacy leaks
+
+**Why This Matters**:
+- Prevents unauthorized access even with valid JWT tokens
+- Admin session revocation takes effect immediately (not after token expiry)
+- User cannot access app after session revocation
+- Protects against token theft scenarios
+
+**Performance Impact**:
+- Minimal: Single database query per request to count active sessions
+- Query is fast (indexed on user_id and is_revoked)
+- Acceptable overhead for security benefit
 
 ### Session Timeout
 

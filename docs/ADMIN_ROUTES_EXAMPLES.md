@@ -255,9 +255,35 @@ curl -X GET "http://localhost:8000/api/admin/users/550e8400-e29b-41d4-a716-44665
 
 ---
 
-### 6. Revoke User Sessions - `DELETE /admin/users/{user_id}/sessions`
+### 6. Revoke Single Session - `DELETE /admin/users/{user_id}/sessions/{session_id}`
 
-Revoke all sessions for a specific user (force logout).
+Revoke a specific session for a user (force logout from one device).
+
+**Example:**
+```bash
+curl -X DELETE "http://localhost:8000/api/admin/users/550e8400-e29b-41d4-a716-446655440000/sessions/650e8400-e29b-41d4-a716-446655440000" \
+  -H "Authorization: Bearer <admin_token>"
+```
+
+**Response:**
+```json
+{
+  "message": "Session revoked for user alice",
+  "revoked_count": 1
+}
+```
+
+**Notes:**
+- Session must belong to the specified user
+- Returns 404 if session doesn't exist or doesn't belong to user
+- User is immediately logged out from that specific device
+- Access tokens for that session become invalid immediately
+
+---
+
+### 7. Revoke All User Sessions - `DELETE /admin/users/{user_id}/sessions`
+
+Revoke all sessions for a specific user (force logout from all devices).
 
 **Example:**
 ```bash
@@ -273,9 +299,15 @@ curl -X DELETE "http://localhost:8000/api/admin/users/550e8400-e29b-41d4-a716-44
 }
 ```
 
+**Notes:**
+- Revokes ALL active sessions for the user
+- User is logged out from all devices
+- All access tokens become invalid immediately
+- Returns `revoked_count: 0` if user has no active sessions
+
 ---
 
-### 7. Get System Statistics - `GET /admin/stats`
+### 8. Get System Statistics - `GET /admin/stats`
 
 Get comprehensive system statistics.
 
