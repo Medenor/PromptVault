@@ -326,7 +326,7 @@ After migration, you should see:
 - `prompt_branches` - Branch management
 - `categories` - Prompt categories
 - `tags` - Prompt tags
-- `prompt_category` - Association table
+- `prompt_category` - Association table (only needed for many-to-many relationships)
 - `prompt_tag` - Association table
 - `alembic_version` - Migration tracking
 
@@ -421,7 +421,7 @@ redis-server
 
 ```bash
 # Development mode with auto-reload
-uvicorn src.web.app:app --reload --host 0.0.0.0 --port 8000
+uvicorn src.web.app:app --reload --host 0.0.0.0 --port 8003
 
 # Production mode
 uvicorn src.web.app:app --host 0.0.0.0 --port 8000 --workers 4

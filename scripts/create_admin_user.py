@@ -39,7 +39,7 @@ from src.db.session import SessionLocal
 from src.db.models.user import User
 from src.db.repositories.user_repository import UserRepository
 from src.services.auth.password_service import PasswordService
-from src.services.exceptions import ValidationError
+from src.services.exceptions import PasswordPolicyError
 
 
 def print_banner():
@@ -90,7 +90,7 @@ def get_input(prompt: str, validator=None, allow_empty: bool = False) -> str:
             if validator:
                 try:
                     validator(value)
-                except (ValueError, ValidationError) as e:
+                except (ValueError, PasswordPolicyError) as e:
                     print(f"  Error: {e}")
                     continue
 
@@ -156,7 +156,7 @@ def get_password(password_service: PasswordService) -> str:
             # Validate password
             try:
                 password_service.validate_password_policy(password)
-            except ValidationError as e:
+            except PasswordPolicyError as e:
                 print(f"  Error: {e}")
                 continue
 

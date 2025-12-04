@@ -181,6 +181,23 @@ app.include_router(pages_router)
 
 logger.info("API routers registered: /api/auth, /api/admin, /api/prompts")
 logger.info("HTML page routes registered: /auth/*, /admin/*")
+
+# ============================================================================
+# HEALTH CHECK ENDPOINT
+# ============================================================================
+@app.get("/health", tags=["System"])
+async def health_check():
+    """Health check endpoint for monitoring and load balancers.
+
+    Returns:
+        JSON response with status and timestamp
+    """
+    return {
+        "status": "healthy",
+        "timestamp": datetime.utcnow().isoformat(),
+        "service": "PromptVault API"
+    }
+
 audit_logger = logging_service.get_audit_logger()
 FRONTEND_LOG_WINDOW = 60.0
 FRONTEND_LOG_LIMIT = 10
