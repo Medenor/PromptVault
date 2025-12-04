@@ -405,17 +405,46 @@ def login(
 
         # Log successful login (without sensitive data)
         logger.info(
-            f"User logged in successfully: {result['user'].username} "
-            f"(ID: {result['user'].id}) from {ip_address}"
+            f"User logged in successfully: {user_response.username} "
+            f"(ID: {user_response.id}) from {ip_address}"
         )
 
-        return TokenResponse(
+        # Create response with tokens
+        response = TokenResponse(
             access_token=result["access_token"],
             refresh_token=result["refresh_token"],
             token_type="Bearer",
             expires_in=result["expires_in"],
             user=user_response,
         )
+
+        # Set HTTP-only cookies for web clients
+        from fastapi.responses import JSONResponse
+        json_response = JSONResponse(content=response.model_dump(mode='json'))
+
+        # Set access token cookie (30 minutes)
+        json_response.set_cookie(
+            key="access_token",
+            value=result["access_token"],
+            httponly=True,
+            secure=False,  # Set to True in production with HTTPS
+            samesite="lax",
+            max_age=result["expires_in"],
+            path="/"
+        )
+
+        # Set refresh token cookie (7 days)
+        json_response.set_cookie(
+            key="refresh_token",
+            value=result["refresh_token"],
+            httponly=True,
+            secure=False,  # Set to True in production with HTTPS
+            samesite="lax",
+            max_age=7 * 24 * 60 * 60,  # 7 days
+            path="/api/auth"
+        )
+
+        return json_response
 
     except InvalidCredentialsError as e:
         logger.warning(
