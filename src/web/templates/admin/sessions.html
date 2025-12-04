@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+     License, v. 2.0. If a copy of the MPL was not distributed with this
+     file, You can obtain one at https://mozilla.org/MPL/2.0/. -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Session Management - PromptVault Admin</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon.png">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/admin.css">
+    <script src="https://unpkg.com/i18next@23.7.6/i18next.min.js"></script>
+    <script src="https://unpkg.com/i18next-browser-languagedetector@7.2.0/i18nextBrowserLanguageDetector.min.js"></script>
+    <script src="https://unpkg.com/i18next-http-backend@2.4.2/i18nextHttpBackend.min.js"></script>
+</head>
+<body>
+    <div class="app">
+        <header class="header">
+            <h1>PromptVault Admin</h1>
+            <div class="header-actions">
+                <select id="language-selector" class="language-selector">
+                    <option value="en">English</option>
+                    <option value="fr">Français</option>
+                    <option value="es">Español</option>
+                    <option value="de">Deutsch</option>
+                </select>
+                <button onclick="window.location.href='/admin/users'" data-i18n="admin.nav.users">Users</button>
+                <button onclick="window.location.href='/auth/profile'" data-i18n="admin.nav.profile">Profile</button>
+                <button onclick="window.location.href='/'" data-i18n="nav.backToMain">Back to Main</button>
+            </div>
+        </header>
+
+        <div class="admin-container">
+            <div class="admin-header">
+                <h2 data-i18n="admin.sessions.title">Session Management</h2>
+                <div class="admin-actions">
+                    <button id="refresh-sessions-btn" class="btn btn-secondary" data-i18n="actions.refresh">Refresh</button>
+                </div>
+            </div>
+
+            <div class="admin-filters">
+                <div class="filter-group">
+                    <input type="text" id="search-input" placeholder="Search by username..." data-i18n="[placeholder]admin.sessions.searchPlaceholder" class="search-input">
+                </div>
+                <div class="filter-group">
+                    <label for="user-filter" data-i18n="admin.sessions.filterUser">User:</label>
+                    <select id="user-filter" class="filter-select">
+                        <option value="all" data-i18n="admin.sessions.allUsers">All Users</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="admin-stats">
+                <div class="stat-card">
+                    <div class="stat-value" id="total-sessions">0</div>
+                    <div class="stat-label" data-i18n="admin.sessions.totalSessions">Total Sessions</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="active-sessions">0</div>
+                    <div class="stat-label" data-i18n="admin.sessions.activeSessions">Active Now</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="unique-users">0</div>
+                    <div class="stat-label" data-i18n="admin.sessions.uniqueUsers">Unique Users</div>
+                </div>
+            </div>
+
+            <div class="sessions-table-container">
+                <table class="sessions-table">
+                    <thead>
+                        <tr>
+                            <th data-i18n="admin.sessions.username">Username</th>
+                            <th data-i18n="admin.sessions.ipAddress">IP Address</th>
+                            <th data-i18n="admin.sessions.userAgent">User Agent</th>
+                            <th data-i18n="admin.sessions.createdAt">Created</th>
+                            <th data-i18n="admin.sessions.lastUsed">Last Used</th>
+                            <th data-i18n="admin.sessions.expiresAt">Expires</th>
+                            <th data-i18n="admin.sessions.actions">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sessions-table-body">
+                        <tr>
+                            <td colspan="7" class="loading-cell">
+                                <div class="loading" data-i18n="messages.loading">Loading...</div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="pagination" id="pagination">
+                <button id="prev-page" class="btn btn-secondary" disabled data-i18n="admin.sessions.previous">Previous</button>
+                <span id="page-info" class="page-info">Page 1 of 1</span>
+                <button id="next-page" class="btn btn-secondary" disabled data-i18n="admin.sessions.next">Next</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Session Detail Modal -->
+    <div id="session-detail-modal" class="modal is-hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 data-i18n="admin.sessions.sessionDetails">Session Details</h2>
+                <span class="close" onclick="closeSessionDetailModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div id="session-detail-content" class="session-detail-content">
+                    <div class="loading" data-i18n="messages.loading">Loading...</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="revoke-session-btn" class="btn btn-danger" data-i18n="admin.sessions.revokeSession">Revoke Session</button>
+                <button id="close-session-detail-btn" class="btn btn-secondary" data-i18n="actions.close">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Revoke Modal -->
+    <div id="confirm-revoke-modal" class="modal is-hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 data-i18n="admin.sessions.confirmRevoke">Confirm Revoke</h2>
+                <span class="close" onclick="closeConfirmRevokeModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p data-i18n="admin.sessions.revokeWarning">Are you sure you want to revoke this session? The user will be logged out immediately.</p>
+            </div>
+            <div class="modal-footer">
+                <button id="confirm-revoke-btn" class="btn btn-danger" data-i18n="admin.sessions.confirmRevokeButton">Revoke</button>
+                <button id="cancel-revoke-btn" class="btn btn-secondary" data-i18n="actions.cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/telemetry.js" defer></script>
+    <script type="module" src="/static/js/admin-sessions.js"></script>
+</body>
+</html>

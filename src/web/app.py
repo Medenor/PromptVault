@@ -45,7 +45,7 @@ from src.web.validators import (
     get_file_extension_from_format,
 )
 from src.web.monitoring import ValidationMonitor
-from src.web.routers import auth_router, admin_router, prompts_router
+from src.web.routers import auth_router, admin_router, prompts_router, pages_router
 from src.web.middleware.rate_limit import limiter, rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
@@ -174,7 +174,13 @@ app.include_router(auth_router, prefix="/api")
 app.include_router(admin_router, prefix="/api")
 app.include_router(prompts_router, prefix="/api")
 
+# Register HTML page routes (no /api prefix)
+# - /auth/* - Authentication pages (login, register, profile, etc.)
+# - /admin/* - Admin pages (users, sessions)
+app.include_router(pages_router)
+
 logger.info("API routers registered: /api/auth, /api/admin, /api/prompts")
+logger.info("HTML page routes registered: /auth/*, /admin/*")
 audit_logger = logging_service.get_audit_logger()
 FRONTEND_LOG_WINDOW = 60.0
 FRONTEND_LOG_LIMIT = 10

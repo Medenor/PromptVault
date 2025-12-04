@@ -7,5 +7,6 @@
 from src.web.routers.auth import router as auth_router
 from src.web.routers.admin import router as admin_router
 from src.web.routers.prompts import router as prompts_router
+from src.web.routers.pages import router as pages_router
 
-__all__ = ["auth_router", "admin_router", "prompts_router"]
+__all__ = ["auth_router", "admin_router", "prompts_router", "pages_router"]
