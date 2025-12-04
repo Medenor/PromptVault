@@ -13,6 +13,7 @@
     "clearFilters": "Clear All Filters",
     "importExport": "Import/Export",
     "backupManagement": "Backup",
+    "logout": "Logout",
     "backToMain": "Back to Main"
   },
   "actions": {

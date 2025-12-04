@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - 5 JavaScript files (1,917 lines) with auth logic, password strength, session management
     - 2 CSS files (1,105 lines) with responsive authentication UI
     - 156 i18n keys in English (ready for FR, ES, DE translations)
+    - **Logout Button**: [Added logout button to main navigation header for easier access](http://localhost:8003/auth/login)
   - **Database Schema**:
     - Enhanced `users` table with authentication fields (password_hash, email_verified, is_active, failed_login_attempts, locked_until)
     - `user_sessions` table for token family tracking and session management

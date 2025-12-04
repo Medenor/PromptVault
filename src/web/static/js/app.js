@@ -184,6 +184,12 @@ function setupEventListeners() {
         window.location.href = '/import-export';
     });
 
+    // Logout button
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', logout);
+    }
+
     // Form handling
     document.getElementById('prompt-form').addEventListener('submit', handlePromptSubmit);
     document.getElementById('cancel-btn').addEventListener('click', hidePromptEditor);
@@ -2115,3 +2121,30 @@ async function performBulkDelete() {
 
 // Initialize lazy loading on app start
 initializeLazyLoading();
+
+// Logout function
+async function logout() {
+    try {
+        const token = localStorage.getItem('access_token');
+        if (token) {
+            await fetch('/api/auth/logout', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Logout error:', error);
+        reportAppIssue('logout-error', error, {}, 'warning');
+    } finally {
+        // Always clear storage and redirect
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        localStorage.removeItem('user');
+        sessionStorage.clear();
+        
+        window.location.href = '/auth/login';
+    }
+}
+

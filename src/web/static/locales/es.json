@@ -13,6 +13,7 @@
     "clearFilters": "Limpiar todos los filtros",
     "importExport": "Importar/Exportar",
     "backupManagement": "Copia de seguridad",
+    "logout": "Cerrar sesión",
     "backToMain": "Volver al menú principal"
   },
   "actions": {
