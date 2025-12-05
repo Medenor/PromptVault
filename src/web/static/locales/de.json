@@ -13,6 +13,8 @@
     "clearFilters": "Alle Filter löschen",
     "importExport": "Importieren/Exportieren",
     "backupManagement": "Sicherung",
+    "profile": "Profil",
+    "admin": "Verwaltung",
     "logout": "Abmelden",
     "backToMain": "Zurück zum Hauptmenü"
   },

@@ -16,9 +16,9 @@
             100% { transform: rotate(360deg); }
         }
     </style>
-    <script src="https://unpkg.com/i18next@23.7.6/i18next.min.js"></script>
-    <script src="https://unpkg.com/i18next-browser-languagedetector@7.2.0/i18nextBrowserLanguageDetector.min.js"></script>
-    <script src="https://unpkg.com/i18next-http-backend@2.4.2/i18nextHttpBackend.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/i18next@23.7.6/i18next.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/i18next-browser-languagedetector@7.2.0/i18nextBrowserLanguageDetector.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/i18next-http-backend@2.4.2/i18nextHttpBackend.min.js"></script>
 </head>
 <body>
     <!-- Authentication loading overlay -->
@@ -40,6 +40,7 @@
                 <button id="new-prompt-btn" data-i18n="nav.newPrompt">New Prompt</button>
                 <button id="import-export-btn" onclick="window.location.href='/import-export'" data-i18n="nav.importExport">Import/Export</button>
                 <button id="backup-btn" onclick="window.location.href='/backup-management'" data-i18n="nav.backupManagement">Backup</button>
+                <button id="profile-btn" onclick="window.location.href='/auth/profile'" data-i18n="nav.profile">Profile</button>
                 <button id="admin-btn" onclick="window.location.href='/admin/users'" data-i18n="nav.admin" style="display: none;">Admin</button>
                 <button id="logout-btn" data-i18n="nav.logout">Logout</button>
             </div>
