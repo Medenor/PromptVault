@@ -2140,6 +2140,287 @@ _________________________________
 
 ---
 
+## 8A. Admin User Creation (11 test cases)
+
+### AUTH-ADMIN-CREATE-001: Open Create User Modal
+- **Priority**: 🔴 High
+- **Status**: ⬜
+
+**Preconditions:**
+- User `admin1` has role `admin`
+- User Management page open at `/admin/users`
+
+**Test Steps:**
+1. Click "Add User" button at top of user list
+2. Observe modal opening
+
+**Expected Results:**
+- Modal `#create-user-modal` opens
+- Modal shows "Create New User" title
+- Form fields displayed: username, email, password, confirm password, role, email verified
+- All form fields empty and focused on first field
+- Cancel and Create buttons visible
+- Modal overlay prevents interaction with background
+
+**Notes:**
+_________________________________
+
+---
+
+### AUTH-ADMIN-CREATE-002: Form Validation - Username Required
+- **Priority**: 🔴 High
+- **Status**: ⬜
+
+**Preconditions:**
+- Create User modal open
+
+**Test Steps:**
+1. Leave username field empty
+2. Fill in other fields with valid data
+3. Click "Create User" button
+
+**Expected Results:**
+- Validation error displayed: "Username is required"
+- Error shown in red below username field
+- Form submission blocked
+- Create button remains visible for retry
+
+**Notes:**
+_________________________________
+
+---
+
+### AUTH-ADMIN-CREATE-003: Form Validation - Username Too Short
+- **Priority**: 🔴 High
+- **Status**: ⬜
+
+**Preconditions:**
+- Create User modal open
+
+**Test Steps:**
+1. Enter username: `ab` (2 characters)
+2. Tab to next field
+3. Observe validation
+
+**Expected Results:**
+- Real-time validation error: "Username must be 3-32 characters"
+- Error shown in red
+- Form submission blocked
+
+**Notes:**
+_________________________________
+
+---
+
+### AUTH-ADMIN-CREATE-004: Form Validation - Username Invalid Characters
+- **Priority**: 🔴 High
+- **Status**: ⬜
+
+**Preconditions:**
+- Create User modal open
+
+**Test Steps:**
+1. Enter username: `test@user!` (invalid characters)
+2. Tab to next field
+
+**Expected Results:**
+- Validation error: "Username can only contain letters, numbers, underscore, and hyphen"
+- Error displayed in real-time
+- Form submission blocked
+
+**Notes:**
+_________________________________
+
+---
+
+### AUTH-ADMIN-CREATE-005: Password Strength Indicator
+- **Priority**: 🔴 High
+- **Status**: ⬜
+
+**Preconditions:**
+- Create User modal open
+
+**Test Steps:**
+1. Enter weak password: `weak`
+   - Observe strength indicator
+2. Enter medium password: `Test123`
+   - Observe strength indicator
+3. Enter strong password: `SecureP@ss123`
+   - Observe strength indicator
+
+**Expected Results:**
+- Weak password: Red bar (0-33%), "Weak" label
+- Medium password: Orange bar (34-66%), "Medium" label
+- Strong password: Green bar (67-100%), "Strong" label
+- Strength bar updates in real-time
+- Requirements checklist updates live
+
+**Notes:**
+_________________________________
+
+---
+
+### AUTH-ADMIN-CREATE-006: Password Requirements Checklist
+- **Priority**: 🔴 High
+- **Status**: ⬜
+
+**Preconditions:**
+- Create User modal open
+
+**Test Steps:**
+1. Enter password that meets requirements one by one
+2. Observe checklist items
+
+**Expected Results:**
+- ○ At least 12 characters - checked when password >= 12
+- ○ One uppercase letter - checked when uppercase present
+- ○ One lowercase letter - checked when lowercase present
+- ○ One digit - checked when digit present
+- ○ One special character - checked when special char (!@#$%^&*) present
+- Met items display ✓ with green color
+- Items update real-time as user types
+- All items can be met with valid password
+
+**Notes:**
+_________________________________
+
+---
+
+### AUTH-ADMIN-CREATE-007: Password Visibility Toggle
+- **Priority**: 🔴 High
+- **Status**: ⬜
+
+**Preconditions:**
+- Create User modal open
+- Password field has content
+
+**Test Steps:**
+1. Enter password in password field
+2. Click eye toggle icon (⊙)
+3. Verify password visible
+4. Click eye toggle again
+5. Verify password hidden
+
+**Expected Results:**
+- Password field initially type="password" (hidden)
+- After toggle: type="text" (visible)
+- After toggle again: type="password" (hidden)
+- Toggle works for both password AND confirm password fields
+- Icon doesn't change (same ⊙ icon used)
+
+**Notes:**
+_________________________________
+
+---
+
+### AUTH-ADMIN-CREATE-008: Create Valid User
+- **Priority**: 🔴 High
+- **Status**: ⬜
+
+**Preconditions:**
+- Create User modal open
+
+**Test Steps:**
+1. Enter username: `newuser001`
+2. Enter email: `newuser001@example.com`
+3. Enter password: `SecureP@ssw0rd123!`
+4. Enter confirm password: `SecureP@ssw0rd123!`
+5. Select role: `Editor`
+6. Check "Mark email as verified"
+7. Click "Create User" button
+8. Observe response
+
+**Expected Results:**
+- HTTP 201 Created response
+- Success message displayed
+- Modal closes automatically
+- User appears in user list
+- User can be found with search
+- Refresh table to verify creation
+- User has role "Editor"
+- User marked active
+- User email verified
+
+**Notes:**
+_________________________________
+
+---
+
+### AUTH-ADMIN-CREATE-009: Prevent Duplicate Username
+- **Priority**: 🔴 High
+- **Status**: ⬜
+
+**Preconditions:**
+- User `existinguser` already exists
+- Create User modal open
+
+**Test Steps:**
+1. Enter username: `existinguser`
+2. Enter unique email
+3. Fill remaining fields with valid data
+4. Click "Create User"
+
+**Expected Results:**
+- HTTP 409 Conflict error
+- Error message: "Username already exists"
+- Modal remains open
+- Form data preserved
+- User NOT created
+
+**Notes:**
+_________________________________
+
+---
+
+### AUTH-ADMIN-CREATE-010: Prevent Duplicate Email
+- **Priority**: 🔴 High
+- **Status**: ⬜
+
+**Preconditions:**
+- User with email `existing@example.com` exists
+- Create User modal open
+
+**Test Steps:**
+1. Enter unique username
+2. Enter email: `existing@example.com`
+3. Fill remaining fields with valid data
+4. Click "Create User"
+
+**Expected Results:**
+- HTTP 409 Conflict error
+- Error message: "Email already exists"
+- Modal remains open
+- Form preserved
+- User NOT created
+
+**Notes:**
+_________________________________
+
+---
+
+### AUTH-ADMIN-CREATE-011: Password Mismatch Error
+- **Priority**: 🔴 High
+- **Status**: ⬜
+
+**Preconditions:**
+- Create User modal open
+
+**Test Steps:**
+1. Enter password: `SecureP@ssw0rd123!`
+2. Enter confirm password: `DifferentP@ss456!`
+3. Click "Create User"
+
+**Expected Results:**
+- Validation error: "Passwords do not match"
+- Error shown in red
+- Form submission blocked
+- User NOT created
+
+**Notes:**
+_________________________________
+
+---
+
 ## 9. Admin Session Management (8 test cases)
 
 ### AUTH-ADMIN-SESSION-001: View All Sessions Across All Users
@@ -2956,12 +3237,12 @@ _________________________________
 
 ## Test Summary
 
-**Total Test Cases**: 123
+**Total Test Cases**: 134
 
 **By Priority:**
-- 🔴 High: 71 tests
+- 🔴 High: 81 tests
 - 🟡 Medium: 38 tests
-- 🟢 Low: 14 tests
+- 🟢 Low: 15 tests
 
 **By Category:**
 1. User Registration: 15 tests
@@ -2972,17 +3253,18 @@ _________________________________
 6. User Profile: 10 tests
 7. Role-Based Access Control: 15 tests
 8. Admin User Management: 12 tests
+8A. Admin User Creation: 11 tests (NEW)
 9. Admin Session Management: 8 tests
 10. Security Features: 15 tests
 11. Frontend UI/UX: 10 tests
 12. API Endpoints: 20 tests (reference to above tests)
 
 **Completion Tracking:**
-- Not Started: ⬜ _____ / 123
-- In Progress: 🔄 _____ / 123
-- Passed: ✅ _____ / 123
-- Failed: ❌ _____ / 123
-- Skipped: ⏭️ _____ / 123
+- Not Started: ⬜ _____ / 134
+- In Progress: 🔄 _____ / 134
+- Passed: ✅ _____ / 134
+- Failed: ❌ _____ / 134
+- Skipped: ⏭️ _____ / 134
 
 ---
 

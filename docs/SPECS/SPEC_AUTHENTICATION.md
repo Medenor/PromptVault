@@ -13,14 +13,15 @@ priority: HIGH (Phase 2)
 
 ## Implementation Status
 
-**STATUS**: ✅ IMPLEMENTED (December 4, 2025)
+**STATUS**: ✅ IMPLEMENTED (December 5, 2025)
 
 This specification has been fully implemented and is now in production. All features, security measures, and API endpoints described in this document are complete and tested.
 
 - **Test Coverage**: 481 passing tests (99.8% coverage)
 - **Security**: OWASP compliant with Argon2id password hashing and ES256 JWT tokens
 - **Documentation**: Complete deployment, API, and security guides available
-- **Translation**: Frontend UI implemented in English (French, Spanish, German pending)
+- **Translation**: Frontend UI fully implemented in English, French, Spanish, German
+- **Admin User Creation**: NEW - Admin endpoint and UI modal for creating users directly from User Management page
 
 For implementation details, see:
 - [Authentication Deployment Guide](../AUTHENTICATION_DEPLOYMENT.md)
@@ -44,10 +45,11 @@ This specification defines the complete authentication and authorization system 
 - Session management with token rotation and expiration
 - Password reset flow with email-based tokens
 - User profile management
-- Admin user management endpoints
+- Admin user management endpoints (list, edit, delete, create)
+- Admin user creation via modal UI with password strength validation
 - Ownership-based prompt access control
 - Migration of existing prompts to default admin user
-- Frontend authentication UI (login, registration, profile)
+- Frontend authentication UI (login, registration, profile, admin user creation)
 - Comprehensive test coverage for auth flows
 
 **Out of Scope (Future Phases):**
@@ -671,6 +673,55 @@ Content-Type: application/json
 }
 ```
 
+#### 3.3.5 Create New User (Admin)
+
+```
+POST /api/admin/users
+Authorization: Bearer <admin_access_token>
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "username": "newuser",
+  "email": "newuser@example.com",
+  "password": "SecureP@ssw0rd123",
+  "confirm_password": "SecureP@ssw0rd123",
+  "role": "editor",  // viewer, editor, or admin
+  "email_verified": false
+}
+```
+
+**Validation Rules:**
+- `username`: 3-32 chars, alphanumeric + underscore, unique
+- `email`: Valid email format, unique, max 255 chars
+- `password`: Min 12 chars, must contain uppercase, lowercase, digit, special char
+- `confirm_password`: Must match password exactly
+- `role`: One of viewer, editor, admin
+- `email_verified`: Boolean, optional (default false)
+
+**Response (201 Created):**
+```json
+{
+  "user": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "username": "newuser",
+    "email": "newuser@example.com",
+    "role": "editor",
+    "is_active": true,
+    "email_verified": false,
+    "created_at": "2025-12-05T10:30:00Z"
+  },
+  "message": "User created successfully"
+}
+```
+
+**Error Responses:**
+- `400`: Validation failed (weak password, invalid email, password mismatch)
+- `409`: Username or email already exists
+- `422`: Pydantic validation error
+
 ---
 
 ## 4. Authorization & Access Control
@@ -1248,7 +1299,133 @@ function calculatePasswordStrength(password) {
 3. **Security**: change password, view active sessions, enable 2FA (future)
 4. **Danger Zone**: delete account
 
-### 7.4 Authentication Middleware (Frontend)
+### 7.4 Admin User Management Page (`src/web/templates/admin/users.html`)
+
+**Features**:
+- List all users with pagination, search, and filtering
+- Filter by role (viewer, editor, admin)
+- Filter by status (active, inactive, locked)
+- View detailed user information
+- Edit user properties (role, active status, email verified)
+- Delete users with optional prompt transfer
+- **Add User Button**: Opens modal for creating new users
+
+#### 7.4.1 Create User Modal (`#create-user-modal`)
+
+**Modal Form Fields**:
+1. **Username** (text input)
+   - 3-32 characters
+   - Alphanumeric, underscore, hyphen only
+   - Real-time validation feedback
+   - Shows error if username already exists
+
+2. **Email** (email input)
+   - Valid email format required
+   - Real-time validation feedback
+   - Shows error if email already exists
+
+3. **Password** (password input)
+   - 12-128 characters required
+   - Must contain: uppercase, lowercase, digit, special character
+   - Password visibility toggle (⊙ icon)
+   - Real-time strength indicator bar showing:
+     - **Weak** (red): < 33% criteria met
+     - **Medium** (orange): 33-66% criteria met
+     - **Strong** (green): > 66% criteria met
+
+4. **Password Requirements Checklist** (real-time validation)
+   - ○ At least 12 characters
+   - ○ One uppercase letter (A-Z)
+   - ○ One lowercase letter (a-z)
+   - ○ One digit (0-9)
+   - ○ One special character (!@#$%^&*)
+   - Items marked with ✓ when requirement met
+   - Visual indicator changes to green when satisfied
+
+5. **Confirm Password** (password input)
+   - Must match password field exactly
+   - Password visibility toggle
+   - Shows error if passwords don't match
+
+6. **Role Selection** (dropdown)
+   - Options: Viewer, Editor, Admin
+   - Default: Viewer
+   - Describes each role's permissions
+
+7. **Email Verified Checkbox** (optional)
+   - Allows admin to mark email as pre-verified
+   - Default: unchecked
+   - Useful for internal accounts
+
+**Modal Actions**:
+- **Create User Button**: Submits form and creates new user
+- **Cancel Button**: Closes modal without saving
+- **Close (×) Button**: Closes modal without saving
+
+**Modal Behavior**:
+- Opens with empty form
+- Updates translations when modal opens
+- Shows validation errors inline next to fields
+- Disables Create button while form is invalid
+- Shows loading state during submission
+- Displays success message on creation
+- Displays error messages on failure
+- Auto-closes on successful creation
+- Clears form data on close
+
+**Frontend Implementation** (`src/web/static/js/admin-users.js`):
+
+```javascript
+// Password strength detection
+function checkPasswordStrength(password) {
+  let checks = {
+    length: password.length >= 12,
+    uppercase: /[A-Z]/.test(password),
+    lowercase: /[a-z]/.test(password),
+    digit: /[0-9]/.test(password),
+    special: /[!@#$%^&*]/.test(password)
+  };
+
+  let score = Object.values(checks).filter(Boolean).length;
+  return {
+    score,
+    checks,
+    strength: score <= 1 ? 'Weak' : score <= 3 ? 'Medium' : 'Strong'
+  };
+}
+
+// Update password requirements display
+function updatePasswordRequirements(password) {
+  const result = checkPasswordStrength(password);
+
+  // Update each requirement item
+  document.getElementById('req-length')?.classList.toggle('met', result.checks.length);
+  document.getElementById('req-uppercase')?.classList.toggle('met', result.checks.uppercase);
+  document.getElementById('req-lowercase')?.classList.toggle('met', result.checks.lowercase);
+  document.getElementById('req-digit')?.classList.toggle('met', result.checks.digit);
+  document.getElementById('req-special')?.classList.toggle('met', result.checks.special);
+
+  updatePasswordStrengthDisplay(result);
+}
+
+// Setup password toggle
+function setupPasswordToggle() {
+  // Toggles between password and text input types
+  // Prevents default form submission
+  // Works for both password and confirm password fields
+}
+```
+
+**CSS Classes** (in `src/web/static/css/admin.css`):
+- `.password-strength`: Container for strength bar
+- `.strength-bar`: Background bar (gray)
+- `.strength-bar-fill.strength-weak`: Red fill (0-33%)
+- `.strength-bar-fill.strength-medium`: Orange fill (34-66%)
+- `.strength-bar-fill.strength-strong`: Green fill (67-100%)
+- `.password-requirements`: Container for requirement items
+- `.requirement.met`: Green text + checkmark icon
+
+### 7.5 Authentication Middleware (Frontend)
 
 ```javascript
 // Check authentication on page load
@@ -1857,6 +2034,9 @@ auth_config = AuthConfig()
 - ✅ **AC-AUTH-010**: Failed login attempts lock account after 5 attempts
 - ✅ **AC-AUTH-011**: User can view and revoke active sessions
 - ✅ **AC-AUTH-012**: Migration assigns all existing prompts to default admin
+- ✅ **AC-AUTH-013**: Admin can create new users from User Management page
+- ✅ **AC-AUTH-014**: Admin user creation includes password strength validation
+- ✅ **AC-AUTH-015**: Real-time password requirements checklist in user creation form
 
 ### 10.2 Security Requirements
 
