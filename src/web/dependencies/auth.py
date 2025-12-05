@@ -124,8 +124,16 @@ def get_auth_config() -> AuthConfig:
     from src.config.auth_config import auth_settings
     if isinstance(auth_settings, AuthConfig):
         return auth_settings
+
+    def _export_settings():
+        # Prefer Pydantic v2 export, fall back to v1
+        exporter = getattr(auth_settings, "model_dump", None) or getattr(auth_settings, "dict", None)
+        if callable(exporter):
+            return exporter()
+        return {}
+
     try:
-        return AuthConfig(**getattr(auth_settings, "dict", lambda: {})())
+        return AuthConfig(**_export_settings())
     except Exception:
         return AuthConfig()
 

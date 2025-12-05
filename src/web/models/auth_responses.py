@@ -18,7 +18,7 @@ All response models include:
 from datetime import datetime
 from typing import Literal, Optional
 
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, field_serializer
 
 
 class UserResponse(BaseModel):
@@ -98,8 +98,11 @@ class UserResponse(BaseModel):
 
     model_config = ConfigDict(
         from_attributes=True,  # Allow creation from ORM models
-        json_encoders={datetime: lambda v: v.isoformat()},
     )
+
+    @field_serializer("created_at", "updated_at", "last_login", when_used="json")
+    def _serialize_datetime(self, value: Optional[datetime]) -> Optional[str]:
+        return value.isoformat() if value else None
 
 
 class TokenResponse(BaseModel):
