@@ -33,12 +33,14 @@ def api_data_service(api_client_context):
 
 
 @pytest.fixture
-def api_auth_headers() -> Dict[str, str]:
+def api_auth_headers(api_client_context) -> Dict[str, str]:
     """Create authentication headers with valid API user access token."""
-    from src.config.auth_config import auth_settings
     from src.services.auth.jwt_service import JWTService
 
-    jwt_service = JWTService(auth_settings)
+    # Use the patched auth_settings from the module
+    from src.config import auth_config
+
+    jwt_service = JWTService(auth_config.auth_settings)
 
     # Generate access token for the test user created in api_client_context
     access_token = jwt_service.generate_access_token(
@@ -52,9 +54,12 @@ def api_auth_headers() -> Dict[str, str]:
 
 
 @pytest.fixture
-def seeded_prompt_id(api_client, api_auth_headers):
+def seeded_prompt_id(api_client):
     """Get the ID of the seeded 'API Prompt 1' prompt."""
-    prompts = api_client.get("/api/prompts", headers=api_auth_headers).json()["prompts"]
+    response = api_client.get("/api/prompts")
+    if response.status_code != 200:
+        pytest.fail(f"Failed to get prompts: {response.status_code} - {response.content}")
+    prompts = response.json()["prompts"]
     for prompt_id, payload in prompts.items():
         if payload["title"] == "API Prompt 1":
             return prompt_id
@@ -87,9 +92,10 @@ class TestPromptCrudEndpoints:
         assert payload["success"] is True
         assert isinstance(payload["prompt_id"], int)
 
-    def test_create_prompt_trims_tag_whitespace(self, api_client):
+    def test_create_prompt_trims_tag_whitespace(self, api_client, api_auth_headers):
         response = api_client.post(
             "/api/prompts",
+            headers=api_auth_headers,
             data={
                 "title": "Tagged Prompt",
                 "prompt": "Body",
@@ -97,16 +103,16 @@ class TestPromptCrudEndpoints:
                 "tags": "vision, creativity ,  focus  , ,",
             },
         )
-        assert response.status_code == 200
+        assert response.status_code == 201
         prompt_id = response.json()["prompt_id"]
 
         retrieved = api_client.get(f"/api/prompts/{prompt_id}")
         assert retrieved.status_code == 200
         assert retrieved.json()["tags"] == ["vision", "creativity", "focus"]
 
-    def test_create_prompt_validation_error(self, api_client):
+    def test_create_prompt_validation_error(self, api_client, api_auth_headers):
         # Missing required 'prompt' field
-        response = api_client.post("/api/prompts", data={"title": "Invalid"})
+        response = api_client.post("/api/prompts", headers=api_auth_headers, data={"title": "Invalid"})
         assert response.status_code == 422
 
     def test_get_prompt_by_id(self, api_client, seeded_prompt_id):
@@ -121,11 +127,12 @@ class TestPromptCrudEndpoints:
 
     def test_get_prompt_invalid_id(self, api_client):
         response = api_client.get("/api/prompts/abc")
-        assert response.status_code == 404
+        assert response.status_code == 422
 
-    def test_update_prompt_success(self, api_client, seeded_prompt_id):
+    def test_update_prompt_success(self, api_client, api_auth_headers, seeded_prompt_id):
         response = api_client.put(
             f"/api/prompts/{seeded_prompt_id}",
+            headers=api_auth_headers,
             data={
                 "title": "Updated Title",
                 "prompt": "Updated body",
@@ -140,22 +147,24 @@ class TestPromptCrudEndpoints:
         refreshed = api_client.get(f"/api/prompts/{seeded_prompt_id}")
         assert refreshed.json()["title"] == "Updated Title"
 
-    def test_update_prompt_not_found(self, api_client):
+    def test_update_prompt_not_found(self, api_client, api_auth_headers):
         response = api_client.put(
             "/api/prompts/999",
+            headers=api_auth_headers,
             data={
                 "title": "Missing",
                 "prompt": "Body",
-                "category": "",
+                "category": "Testing",
                 "tags": "",
                 "commit_message": "test",
             },
         )
         assert response.status_code == 404
 
-    def test_update_prompt_invalid_id(self, api_client):
+    def test_update_prompt_invalid_id(self, api_client, api_auth_headers):
         response = api_client.put(
             "/api/prompts/invalid",
+            headers=api_auth_headers,
             data={
                 "title": "Invalid",
                 "prompt": "Body",
@@ -164,12 +173,13 @@ class TestPromptCrudEndpoints:
                 "commit_message": "test",
             },
         )
-        assert response.status_code == 400
+        assert response.status_code == 422
 
-    def test_delete_prompt_success(self, api_client):
+    def test_delete_prompt_success(self, api_client, api_auth_headers):
         # Create prompt to delete
         create = api_client.post(
             "/api/prompts",
+            headers=api_auth_headers,
             data={
                 "title": "Delete Me",
                 "prompt": "Remove this",
@@ -179,33 +189,32 @@ class TestPromptCrudEndpoints:
         )
         prompt_id = create.json()["prompt_id"]
 
-        response = api_client.delete(f"/api/prompts/{prompt_id}")
+        response = api_client.delete(f"/api/prompts/{prompt_id}", headers=api_auth_headers)
         assert response.status_code == 200
         assert response.json()["success"] is True
 
-    def test_delete_prompt_not_found(self, api_client):
-        response = api_client.delete("/api/prompts/999")
-        assert response.status_code == 200
-        assert response.json()["success"] is False
+    def test_delete_prompt_not_found(self, api_client, api_auth_headers):
+        response = api_client.delete("/api/prompts/999", headers=api_auth_headers)
+        assert response.status_code == 404
 
-    def test_delete_prompt_invalid_id(self, api_client):
-        response = api_client.delete("/api/prompts/not-a-number")
-        assert response.status_code == 400
+    def test_delete_prompt_invalid_id(self, api_client, api_auth_headers):
+        response = api_client.delete("/api/prompts/not-a-number", headers=api_auth_headers)
+        assert response.status_code == 422
 
-    def test_toggle_favorite_success(self, api_client, seeded_prompt_id):
-        response = api_client.put(f"/api/prompts/{seeded_prompt_id}/favorite")
+    def test_toggle_favorite_success(self, api_client, api_auth_headers, seeded_prompt_id):
+        response = api_client.put(f"/api/prompts/{seeded_prompt_id}/favorite", headers=api_auth_headers)
         assert response.status_code == 200
         data = response.json()
         assert data["success"] is True
         assert isinstance(data["favorite"], bool)
 
-    def test_toggle_favorite_not_found(self, api_client):
-        response = api_client.put("/api/prompts/999/favorite")
+    def test_toggle_favorite_not_found(self, api_client, api_auth_headers):
+        response = api_client.put("/api/prompts/999/favorite", headers=api_auth_headers)
         assert response.status_code == 404
 
-    def test_toggle_favorite_invalid_id(self, api_client):
-        response = api_client.put("/api/prompts/abc/favorite")
-        assert response.status_code == 400
+    def test_toggle_favorite_invalid_id(self, api_client, api_auth_headers):
+        response = api_client.put("/api/prompts/abc/favorite", headers=api_auth_headers)
+        assert response.status_code == 422
 
 
 class TestSearchAndFilterEndpoints:
@@ -225,8 +234,8 @@ class TestSearchAndFilterEndpoints:
         results = response.json()["prompts"]
         assert len(results) >= 1
 
-    def test_search_prompts_favorites_only(self, api_client):
-        response = api_client.get("/api/prompts/search", params={"favorites": True})
+    def test_search_prompts_favorites_only(self, api_client, api_auth_headers):
+        response = api_client.get("/api/prompts/search", params={"favorites": True}, headers=api_auth_headers)
         assert response.status_code == 200
         results = response.json()["prompts"]
         assert all(prompt["favorite"] is True for prompt in results.values())
@@ -508,7 +517,7 @@ class TestApiErrorPaths:
         assert payload["error"].startswith("Search failed")
 
     def test_update_prompt_failure_returns_500(
-        self, api_client, api_data_service, monkeypatch, seeded_prompt_id
+        self, api_client, api_auth_headers, api_data_service, monkeypatch, seeded_prompt_id
     ):
         monkeypatch.setattr(
             api_data_service, "update_prompt", lambda *args, **kwargs: False
@@ -516,6 +525,7 @@ class TestApiErrorPaths:
 
         response = api_client.put(
             f"/api/prompts/{seeded_prompt_id}",
+            headers=api_auth_headers,
             data={
                 "title": "Will Fail",
                 "prompt": "Body",

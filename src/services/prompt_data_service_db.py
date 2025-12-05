@@ -387,11 +387,12 @@ class PromptDataService:
         """Get all tags as a set."""
         return set(self.get_tags())
 
-    def add_new_prompt(self, data: Dict[str, Any]) -> int:
+    def add_new_prompt(self, data: Dict[str, Any], user_id: Optional[str] = None) -> int:
         """Add a new prompt with initial version.
 
         Args:
             data (Dict[str, Any]): The prompt data
+            user_id (Optional[str]): The ID of the user who owns the prompt
 
         Returns:
             int: The ID of the new prompt
@@ -414,8 +415,11 @@ class PromptDataService:
                 tag_names = data.pop("tags", [])
                 tags = tag_repo.get_or_create_many(tag_names)
 
-                # Get default user
-                user = session.query(User).filter_by(username="system").first()
+                # Get user (specified user_id or default system user)
+                if user_id:
+                    user = session.query(User).filter_by(id=user_id).first()
+                else:
+                    user = session.query(User).filter_by(username="system").first()
 
                 # Create prompt
                 prompt = prompt_repo.create(

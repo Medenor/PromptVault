@@ -95,12 +95,19 @@ def test_db_session_admin(test_db_engine):
         Session: SQLAlchemy session object
     """
     from sqlalchemy.orm import sessionmaker
+    from sqlalchemy.exc import ProgrammingError
     SessionLocal = sessionmaker(bind=test_db_engine)
     session = SessionLocal()
     try:
         yield session
     finally:
-        session.rollback()
+        # Handle case where connection might be closed by TestClient
+        try:
+            if not session.connection().closed:
+                session.rollback()
+        except ProgrammingError:
+            # Connection is closed, skip rollback
+            pass
         session.close()
 
 

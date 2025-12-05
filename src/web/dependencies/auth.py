@@ -120,6 +120,8 @@ def get_auth_config() -> AuthConfig:
         ...         "description": config.password_policy_description
         ...     }
     """
+    # Import fresh auth_settings to handle test environment reloading
+    from src.config.auth_config import auth_settings
     return auth_settings
 
 
@@ -444,9 +446,51 @@ def get_optional_user(
 
     # Token provided - must be valid
     try:
-        # Reuse token validation logic
-        token_data = get_current_user_token(authorization, jwt_service)
-        user = get_current_user(token_data, session)
+        # Extract token from Bearer scheme
+        parts = authorization.split()
+        if len(parts) != 2 or parts[0].lower() != "bearer":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid authentication scheme. Expected: Bearer <token>",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        token = parts[1]
+
+        # Validate JWT token
+        claims = jwt_service.validate_access_token(token)
+
+        # Get user from database
+        user_id = claims.get("sub")
+        if not user_id:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token: missing user identifier",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+        # Retrieve user from database
+        user_repo = UserRepository(session)
+        user = user_repo.get_by_id(user_id)
+
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User not found",
+                headers={"WWW-Authenticate": 'Bearer error="invalid_token", error_description="User not found"'},
+            )
+
+        # Check if user has at least one active (non-revoked) session
+        # This ensures revoked sessions invalidate access tokens
+        from src.db.repositories.session_repository import SessionRepository
+        session_repo = SessionRepository(session)
+        active_session_count = session_repo.count_user_sessions(user_id, active_only=True)
+
+        if active_session_count == 0:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="All sessions have been revoked. Please log in again.",
+                headers={"WWW-Authenticate": 'Bearer error="invalid_token", error_description="Session revoked"'},
+            )
 
         # Optionally check if user is active (recommended)
         if not user.is_active:

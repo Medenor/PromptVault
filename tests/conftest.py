@@ -799,6 +799,52 @@ def api_client_context(test_db_engine, temp_data_dir: str, sample_prompt_data: C
         web_app.versioning_service,
     )
 
+    # Generate test JWT keys
+    from cryptography.hazmat.primitives.asymmetric import ec
+    from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.backends import default_backend
+    import os
+
+    # Generate test private key
+    private_key = ec.generate_private_key(ec.SECP256R1(), default_backend())
+    private_pem = private_key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.PKCS8,
+        encryption_algorithm=serialization.NoEncryption()
+    )
+
+    # Generate test public key
+    public_key = private_key.public_key()
+    public_pem = public_key.public_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo
+    )
+
+    # Write test keys to temp directory
+    private_key_path = os.path.join(temp_data_dir, "test_private_key.pem")
+    public_key_path = os.path.join(temp_data_dir, "test_public_key.pem")
+
+    with open(private_key_path, "wb") as f:
+        f.write(private_pem)
+    with open(public_key_path, "wb") as f:
+        f.write(public_pem)
+
+    # Patch auth_settings directly
+    from src.config import auth_config
+    from src.config.auth_config import AuthConfig
+
+    # Store original auth_settings
+    original_auth_settings = auth_config.auth_settings
+
+    # Create test config with test key paths
+    test_config = AuthConfig(
+        jwt_private_key_path=private_key_path,
+        jwt_public_key_path=public_key_path,
+    )
+
+    # Patch the module-level variable
+    auth_config.auth_settings = test_config
+
     # Create test session factory
     TestSessionLocal = sessionmaker(bind=test_db_engine)
 
@@ -821,6 +867,11 @@ def api_client_context(test_db_engine, temp_data_dir: str, sample_prompt_data: C
 
     # Patch get_db_session
     session_module.get_db_session = mock_get_db_session
+
+    # Force reload of auth config before configuring services
+    from src.config import auth_config
+    import importlib
+    importlib.reload(auth_config)
 
     # Configure services with test data directory
     web_app.configure_services(data_dir=temp_data_dir)
@@ -870,7 +921,7 @@ def api_client_context(test_db_engine, temp_data_dir: str, sample_prompt_data: C
     finally:
         test_session.close()
 
-    # Seed data with two prompts (matching old fixture behavior)
+    # Seed data with two prompts owned by the test user (matching old fixture behavior)
     data_service.add_new_prompt(
         sample_prompt_data(
             title="API Prompt 1",
@@ -878,7 +929,8 @@ def api_client_context(test_db_engine, temp_data_dir: str, sample_prompt_data: C
             category="Testing",
             tags=["api", "test"],
             favorite=True,
-        )
+        ),
+        user_id="api-test-user-id"  # Set the owner
     )
     data_service.add_new_prompt(
         sample_prompt_data(
@@ -887,7 +939,8 @@ def api_client_context(test_db_engine, temp_data_dir: str, sample_prompt_data: C
             category="Docs",
             tags=["docs"],
             favorite=False,
-        )
+        ),
+        user_id="api-test-user-id"  # Set the owner
     )
 
     # Create test client
@@ -910,6 +963,12 @@ def api_client_context(test_db_engine, temp_data_dir: str, sample_prompt_data: C
             web_app.import_export_service,
             web_app.versioning_service,
         ) = original_services
+
+        # Restore original auth_settings
+        auth_config.auth_settings = original_auth_settings
+
+        # Force reload of auth config again
+        importlib.reload(auth_config)
 
 
 @pytest.fixture
