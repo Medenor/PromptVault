@@ -74,7 +74,7 @@ OpenAPI Documentation:
 """
 
 import logging
-from typing import List
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
@@ -84,6 +84,7 @@ from src.db.session import get_db
 from src.services.auth.auth_service import AuthService
 from src.services.auth.password_reset_service import PasswordResetService
 from src.services.auth.password_service import PasswordService
+from src.services.auth.jwt_service import JWTService
 from src.db.repositories.user_repository import UserRepository
 from src.db.repositories.session_repository import SessionRepository
 from src.db.repositories.password_reset_token_repository import PasswordResetTokenRepository
@@ -196,6 +197,22 @@ def get_password_reset_service(
         token_repository=token_repository,
         user_repository=user_repository,
     )
+
+
+def get_jwt_service(
+    config: AuthConfig = Depends(get_auth_config),
+) -> JWTService:
+    """Provide JWTService instance with dependencies.
+
+    This dependency creates a JWTService instance for JWT token operations.
+
+    Args:
+        config: Authentication configuration (injected)
+
+    Returns:
+        JWTService: Configured JWT service instance
+    """
+    return JWTService(config)
 
 
 # ============================================================================
@@ -922,21 +939,40 @@ def change_password(
     },
 )
 def get_user_sessions(
+    request: Request,
     current_user: User = Depends(get_current_active_user),
     auth_service: AuthService = Depends(get_auth_service),
+    jwt_service: JWTService = Depends(get_jwt_service),
 ) -> SessionListResponse:
     """Get user's active sessions.
 
     Args:
+        request: HTTP request object (to extract access token)
         current_user: Authenticated active user (injected)
         auth_service: Authentication service instance (injected)
+        jwt_service: JWT service instance (injected)
 
     Returns:
         SessionListResponse: List of active sessions with metadata
     """
     try:
+        # Extract current session's family_id from JWT token
+        current_family_id = None
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer "):
+            token = auth_header[7:]  # Remove "Bearer " prefix
+            try:
+                claims = jwt_service.decode_token(token)
+                current_family_id = claims.get("family_id")
+            except Exception:
+                # If token decode fails, continue without marking current session
+                pass
+
         # Get user's sessions from auth service
-        sessions = auth_service.get_user_sessions(user_id=current_user.id)
+        sessions = auth_service.get_user_sessions(
+            user_id=current_user.id,
+            current_family_id=current_family_id
+        )
 
         # Convert session models to response models
         session_responses = [

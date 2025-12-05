@@ -640,26 +640,29 @@ class AuthService:
 
         return True
 
-    def get_user_sessions(self, user_id: str) -> List[Dict[str, any]]:
+    def get_user_sessions(self, user_id: str, current_family_id: Optional[str] = None) -> List[Dict[str, any]]:
         """Get all active sessions for a user.
 
         Args:
             user_id: User's UUID
+            current_family_id: Family ID of the current session (optional, to mark as current)
 
         Returns:
             List of session dictionaries with:
                 - id: Session ID
                 - family_id: Token family ID
-                - device_info: User agent string
+                - user_agent: User agent string
                 - ip_address: Client IP address
                 - created_at: Session creation timestamp
                 - last_used_at: Last token refresh timestamp
                 - expires_at: Session expiration timestamp
+                - is_revoked: Session revocation status
+                - is_current: Whether this is the current session
 
         Example:
-            >>> sessions = auth_service.get_user_sessions("123")
+            >>> sessions = auth_service.get_user_sessions("123", "family-123")
             >>> for session in sessions:
-            ...     print(session["device_info"])
+            ...     print(session["user_agent"])
         """
         sessions = self.session_repo.get_user_sessions(user_id, active_only=True)
 
@@ -667,13 +670,15 @@ class AuthService:
             {
                 "id": session.id,
                 "family_id": session.family_id,
-                "device_info": session.device_info,
+                "user_agent": session.device_info,
                 "ip_address": session.ip_address,
                 "created_at": session.created_at.isoformat(),
                 "last_used_at": session.last_used_at.isoformat()
                 if session.last_used_at
                 else None,
                 "expires_at": session.expires_at.isoformat(),
+                "is_revoked": session.is_revoked,
+                "is_current": session.family_id == current_family_id if current_family_id else False,
             }
             for session in sessions
         ]

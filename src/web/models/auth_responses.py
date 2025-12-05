@@ -237,6 +237,11 @@ class SessionResponse(BaseModel):
         description="Session revocation status",
         examples=[False, True],
     )
+    is_current: bool = Field(
+        ...,
+        description="Whether this is the current session",
+        examples=[True, False],
+    )
 
     model_config = ConfigDict(
         from_attributes=True,

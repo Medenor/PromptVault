@@ -592,8 +592,24 @@ async def get_user_sessions(
     # Get all sessions (including revoked)
     sessions = session_repo.get_user_sessions(user_id, active_only=False)
 
+    # Convert ORM objects to dictionaries with correct field names
+    session_dicts = [
+        {
+            "id": s.id,
+            "family_id": s.family_id,
+            "user_agent": s.device_info,  # device_info -> user_agent
+            "ip_address": s.ip_address,
+            "created_at": s.created_at.isoformat(),
+            "last_used_at": s.last_used_at.isoformat() if s.last_used_at else None,
+            "expires_at": s.expires_at.isoformat(),
+            "is_revoked": s.is_revoked,
+            "is_current": False,  # Admin viewing other user's sessions, so never current
+        }
+        for s in sessions
+    ]
+
     # Convert to response models
-    session_responses = [SessionResponse.model_validate(s) for s in sessions]
+    session_responses = [SessionResponse.model_validate(d) for d in session_dicts]
 
     # Log admin action
     _log_admin_action(
