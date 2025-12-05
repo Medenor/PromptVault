@@ -9,7 +9,7 @@ This script identifies and deletes categories and tags that are not referenced b
 It's safe to run multiple times - only unused items will be deleted.
 
 Usage:
-    python scripts/cleanup_unused_categories.py
+    python scripts/cleanup_unused_categories_tags.py
 
 The script will:
 1. Display all categories and tags with their prompt counts
