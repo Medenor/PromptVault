@@ -204,7 +204,7 @@ def get_auth_login_limit() -> str:
         return f"{attempts}/{minutes}minutes" if minutes > 1 else f"{attempts}/minute"
     else:
         hours = window_seconds // 3600
-        return f"{attempts}/{hours}hours" if hours > 1 else f"{attempts}/hour"
+        return f"{attempts}/{hours}hour{hours > 1 and 's' or ''}"
 
 
 def get_auth_register_limit() -> str:
@@ -227,7 +227,7 @@ def get_auth_register_limit() -> str:
         return f"{attempts}/{minutes}minutes" if minutes > 1 else f"{attempts}/minute"
     else:
         hours = window_seconds // 3600
-        return f"{attempts}/{hours}hours" if hours > 1 else f"{attempts}/hour"
+        return f"{attempts}/hour" if hours == 1 else f"{attempts}/{hours}hours"
 
 
 def get_password_reset_limit() -> str:
