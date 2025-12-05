@@ -342,9 +342,9 @@ function setupChangePasswordForm() {
                 method: 'POST',
                 headers: getAuthHeaders(),
                 body: JSON.stringify({
-                    current_password: currentPassword,
+                    old_password: currentPassword,
                     new_password: newPassword,
-                    confirm_password: confirmNewPassword
+                    confirm_new_password: confirmNewPassword
                 })
             });
 
