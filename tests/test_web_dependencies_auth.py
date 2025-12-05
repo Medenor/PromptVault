@@ -64,7 +64,7 @@ class TestTokenExtraction:
     def test_get_current_user_token_missing_header(self):
         """Test error when Authorization header is missing."""
         with pytest.raises(HTTPException) as exc_info:
-            get_current_user_token(None, self.jwt_service)
+            get_current_user_token(authorization=None, access_token_cookie=None, jwt_service=self.jwt_service)
 
         assert exc_info.value.status_code == 401
         assert "Missing authentication token" in exc_info.value.detail
@@ -73,7 +73,7 @@ class TestTokenExtraction:
     def test_get_current_user_token_invalid_scheme(self):
         """Test error when Bearer scheme is not used."""
         with pytest.raises(HTTPException) as exc_info:
-            get_current_user_token("Basic dXNlcjpwYXNz", self.jwt_service)
+            get_current_user_token(authorization="Basic dXNlcjpwYXNz", jwt_service=self.jwt_service)
 
         assert exc_info.value.status_code == 401
         assert "Invalid authentication scheme" in exc_info.value.detail
@@ -81,7 +81,7 @@ class TestTokenExtraction:
     def test_get_current_user_token_malformed_header(self):
         """Test error when Authorization header is malformed."""
         with pytest.raises(HTTPException) as exc_info:
-            get_current_user_token("Bearer", self.jwt_service)
+            get_current_user_token(authorization="Bearer", jwt_service=self.jwt_service)
 
         assert exc_info.value.status_code == 401
 
@@ -97,7 +97,7 @@ class TestTokenExtraction:
 
         self.jwt_service.validate_access_token.return_value = claims
 
-        result = get_current_user_token(f"Bearer {token}", self.jwt_service)
+        result = get_current_user_token(authorization=f"Bearer {token}", jwt_service=self.jwt_service)
 
         assert result == claims
         self.jwt_service.validate_access_token.assert_called_once_with(token)
@@ -110,7 +110,7 @@ class TestTokenExtraction:
         self.jwt_service.validate_access_token.side_effect = ExpiredSignatureError()
 
         with pytest.raises(HTTPException) as exc_info:
-            get_current_user_token(f"Bearer {token}", self.jwt_service)
+            get_current_user_token(authorization=f"Bearer {token}", jwt_service=self.jwt_service)
 
         assert exc_info.value.status_code == 401
         assert "expired" in exc_info.value.detail.lower()
@@ -123,7 +123,7 @@ class TestTokenExtraction:
         self.jwt_service.validate_access_token.side_effect = InvalidSignatureError()
 
         with pytest.raises(HTTPException) as exc_info:
-            get_current_user_token(f"Bearer {token}", self.jwt_service)
+            get_current_user_token(authorization=f"Bearer {token}", jwt_service=self.jwt_service)
 
         assert exc_info.value.status_code == 401
         assert "signature" in exc_info.value.detail.lower()

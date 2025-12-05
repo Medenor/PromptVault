@@ -448,6 +448,13 @@ async def create_prompt(
         f"title='{validated_data.title}', category='{validated_data.category}'",
     )
 
+    # Record successful validation
+    from src.web.app import record_validation_event
+    record_validation_event(
+        endpoint="/api/prompts",
+        success=True,
+    )
+
     return {"success": True, "prompt_id": new_prompt.id}
 
 

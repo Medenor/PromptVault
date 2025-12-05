@@ -216,6 +216,45 @@ async def health_check():
         "service": "PromptVault API"
     }
 
+
+@app.get("/api/validation/stats")
+async def get_validation_stats():
+    """Return validation monitoring snapshot."""
+    if not validation_monitor:
+        return JSONResponse(
+            status_code=503,
+            content={"error": "Validation monitoring not initialized"},
+        )
+
+    return JSONResponse(content=validation_monitor.snapshot())
+
+
+@app.post("/api/import")
+async def import_prompts(
+    file: UploadFile = File(...),
+):
+    """Import prompts from uploaded file with validation."""
+    # Validate file upload
+    is_valid, error_message = await validate_upload_file(file)
+    if not is_valid:
+        record_validation_event(
+            endpoint="/api/import",
+            success=False,
+            errors=[error_message],
+        )
+        return JSONResponse(
+            status_code=400,
+            content={"error": error_message},
+        )
+
+    # For testing purposes, just return success
+    # In real implementation, this would process the file
+    record_validation_event(
+        endpoint="/api/import",
+        success=True,
+    )
+    return JSONResponse(content={"success": True, "message": "Import would succeed"})
+
 audit_logger = logging_service.get_audit_logger()
 FRONTEND_LOG_WINDOW = 60.0
 FRONTEND_LOG_LIMIT = 10

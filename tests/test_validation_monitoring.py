@@ -14,6 +14,18 @@ def test_monitor_tracks_prompt_validation(api_client_context, tmp_path):
     temp_dir = Path(api_client_context["temp_dir"])
     metrics_file = temp_dir / "logs" / "validation_metrics.json"
 
+    # Create authentication headers
+    from src.config.auth_config import auth_settings
+    from src.services.auth.jwt_service import JWTService
+    jwt_service = JWTService(auth_settings)
+    access_token = jwt_service.generate_access_token(
+        user_id="api-test-user-id",
+        username="apiuser",
+        email="api@example.com",
+        role="editor",
+    )
+    auth_headers = {"Authorization": f"Bearer {access_token}"}
+
     # Reset metrics file for deterministic assertions
     if metrics_file.exists():
         metrics_file.unlink()
@@ -21,6 +33,7 @@ def test_monitor_tracks_prompt_validation(api_client_context, tmp_path):
     # Valid prompt creation (success)
     success_response = client.post(
         "/api/prompts",
+        headers=auth_headers,
         data={
             "title": "Monitored Prompt",
             "prompt": "Observed content",
@@ -28,11 +41,12 @@ def test_monitor_tracks_prompt_validation(api_client_context, tmp_path):
             "tags": "metrics,validation",
         },
     )
-    assert success_response.status_code == 200
+    assert success_response.status_code == 201
 
     # Invalid prompt (failure)
     failure_response = client.post(
         "/api/prompts",
+        headers=auth_headers,
         data={
             "title": "",
             "prompt": "Missing title should fail",
