@@ -509,8 +509,7 @@ Before deploying to production, verify the following:
 
 ### Application Security
 
-- [ ] HTTPS is enabled (TLS/SSL certificate) 
-<!-- TODO: support HTTPS (TLS/SSL certificate) -->
+- [ ] HTTPS is enabled (TLS/SSL certificate)
 - [ ] `APP_BASE_URL` uses `https://` (not `http://`)
 - [ ] Strong password policy is enforced
 - [ ] Rate limiting is enabled (Redis is running)
