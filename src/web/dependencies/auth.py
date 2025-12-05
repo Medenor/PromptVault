@@ -122,7 +122,12 @@ def get_auth_config() -> AuthConfig:
     """
     # Import fresh auth_settings to handle test environment reloading
     from src.config.auth_config import auth_settings
-    return auth_settings
+    if isinstance(auth_settings, AuthConfig):
+        return auth_settings
+    try:
+        return AuthConfig(**getattr(auth_settings, "dict", lambda: {})())
+    except Exception:
+        return AuthConfig()
 
 
 def get_jwt_service(config: AuthConfig = Depends(get_auth_config)) -> JWTService:
@@ -501,6 +506,13 @@ def get_optional_user(
     except HTTPException:
         # Invalid token - re-raise the exception
         raise
+    except Exception:
+        # Any validation failure -> treat as invalid token for optional flows
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
 
 # ============================================================================

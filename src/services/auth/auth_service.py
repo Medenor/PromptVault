@@ -308,8 +308,11 @@ class AuthService:
 
         # Check if account is locked
         if user.locked_until:
+            locked_until = user.locked_until
+            if locked_until.tzinfo is None:
+                locked_until = locked_until.replace(tzinfo=timezone.utc)
             now = datetime.now(timezone.utc)
-            if now < user.locked_until:
+            if now < locked_until:
                 locked_until_str = user.locked_until.strftime("%Y-%m-%d %H:%M:%S UTC")
                 raise AccountLockedError(
                     f"Account locked until {locked_until_str}",
@@ -671,6 +674,7 @@ class AuthService:
                 "id": session.id,
                 "family_id": session.family_id,
                 "user_agent": session.device_info,
+                "device_info": getattr(session, "device_info", None),
                 "ip_address": session.ip_address,
                 "created_at": session.created_at.isoformat(),
                 "last_used_at": session.last_used_at.isoformat()

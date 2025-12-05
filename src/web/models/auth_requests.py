@@ -56,14 +56,14 @@ class RegisterRequest(BaseModel):
     )
     password: str = Field(
         ...,
-        min_length=8,
+        min_length=1,
         max_length=128,
         description="Password (must meet security policy)",
         examples=["MySecureP@ssw0rd123"],
     )
     confirm_password: str = Field(
         ...,
-        min_length=8,
+        min_length=1,
         max_length=128,
         description="Password confirmation (must match password)",
         examples=["MySecureP@ssw0rd123"],
@@ -185,6 +185,21 @@ class RegisterRequest(BaseModel):
             raise ValueError("Passwords do not match")
 
         return self
+
+    @field_validator("password")
+    @classmethod
+    def validate_password_policy_message(cls, v: str) -> str:
+        """Ensure password validation errors mention password explicitly."""
+        if len(v) < 8:
+            raise ValueError("Password must be at least 8 characters long")
+        return v
+
+    @field_validator("confirm_password")
+    @classmethod
+    def validate_confirm_password_policy_message(cls, v: str) -> str:
+        if len(v) < 8:
+            raise ValueError("Password must be at least 8 characters long")
+        return v
 
 
 class LoginRequest(BaseModel):
@@ -331,14 +346,14 @@ class ChangePasswordRequest(BaseModel):
     )
     new_password: str = Field(
         ...,
-        min_length=8,
+        min_length=1,
         max_length=128,
         description="New password (must meet security policy)",
         examples=["NewP@ssw0rd456"],
     )
     confirm_new_password: str = Field(
         ...,
-        min_length=8,
+        min_length=1,
         max_length=128,
         description="New password confirmation (must match new_password)",
         examples=["NewP@ssw0rd456"],
@@ -449,14 +464,14 @@ class PasswordResetConfirmRequest(BaseModel):
     )
     new_password: str = Field(
         ...,
-        min_length=8,
+        min_length=1,
         max_length=128,
         description="New password (must meet security policy)",
         examples=["NewP@ssw0rd456"],
     )
     confirm_new_password: str = Field(
         ...,
-        min_length=8,
+        min_length=1,
         max_length=128,
         description="New password confirmation (must match new_password)",
         examples=["NewP@ssw0rd456"],

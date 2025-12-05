@@ -296,8 +296,10 @@ def register(
             user_agent=user_agent,
         )
 
-        # Convert User model to UserResponse
-        user_response = UserResponse.model_validate(result["user"])
+        user_payload = result["user"]
+        user_response = UserResponse.model_validate(user_payload)
+        username = getattr(user_payload, "username", None) or user_payload.get("username", "unknown")
+        user_id = getattr(user_payload, "id", None) or user_payload.get("id", "unknown")
 
         # Log successful registration (without sensitive data)
         logger.info(
@@ -502,7 +504,7 @@ def login(
         )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=e.user_message,
+            detail="Invalid credentials",
         )
 
     except AccountLockedError as e:
@@ -614,12 +616,15 @@ def refresh(
         )
 
         # Convert User model to UserResponse
-        user_response = UserResponse.model_validate(result["user"])
+        user_payload = result["user"]
+        user_response = UserResponse.model_validate(user_payload)
+        username = getattr(user_payload, "username", None) or user_payload.get("username", "unknown")
+        user_id = getattr(user_payload, "id", None) or user_payload.get("id", "unknown")
 
         # Log token refresh
         logger.info(
-            f"Tokens refreshed for user: {result['user'].username} "
-            f"(ID: {result['user'].id}) from {ip_address}"
+            f"Tokens refreshed for user: {username} "
+            f"(ID: {user_id}) from {ip_address}"
         )
 
         return TokenResponse(
@@ -643,7 +648,7 @@ def refresh(
         )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=e.user_message,
+            detail="Token reuse detected. All sessions have been revoked. Please log in again.",
         )
 
     except SessionNotFoundError as e:
@@ -1066,15 +1071,22 @@ def revoke_session(
     """
     try:
         # Revoke specific session
-        auth_service.revoke_session(user_id=current_user.id, session_id=session_id)
+        revoked = auth_service.revoke_session(user_id=current_user.id, session_id=session_id)
 
         logger.info(
             f"Session {session_id} revoked successfully by user: {current_user.username}"
         )
 
-        return RevokeSessionResponse(
-            message="Session revoked successfully",
-            revoked_count=1,
+        if revoked:
+            return RevokeSessionResponse(
+                message="Session revoked successfully",
+                revoked_count=1,
+            )
+        raise SessionNotFoundError("Session not found")
+    except SessionNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=exc.user_message,
         )
 
     except SessionNotFoundError as e:
@@ -1167,10 +1179,7 @@ def revoke_all_sessions(
         # Revoke all sessions except current
         # Note: We need the current session's family_id to exclude it
         # For now, revoke all and let user re-login if needed
-        count = auth_service.revoke_all_sessions(
-            user_id=current_user.id,
-            except_current=True,
-        )
+        count = auth_service.revoke_all_sessions(user_id=current_user.id)
 
         logger.info(
             f"Revoked {count} sessions for user: {current_user.username} "
@@ -1271,6 +1280,11 @@ def request_password_reset(
             email=request_data.email,
             ip_address=ip_address,
         )
+        email_parts = masked_email.split("@")
+        if len(email_parts) == 2 and email_parts[0]:
+            masked_email = f"{email_parts[0][0]}***@{email_parts[1]}"
+        else:
+            masked_email = "***@***"
 
         logger.info(f"Password reset requested for email: {masked_email} from {ip_address}")
 

@@ -830,6 +830,24 @@ class PromptDataService:
             return []
 
     def get_tags_with_counts(self) -> List[Dict[str, Any]]:
+        """Return tags with usage counts for legacy endpoints/tests."""
+        try:
+            with get_db_session() as session:
+                tag_repo = TagRepository(session)
+                results = tag_repo.list_all_with_counts()
+                return [
+                    {"name": tag.name, "count": count or 0}
+                    for tag, count in results
+                ]
+        except Exception as exc:
+            logger.error(
+                "Failed to get tags with counts",
+                extra={"event": "tags.get_counts.failure"},
+                exc_info=exc,
+            )
+            return []
+
+    def get_tags_with_counts(self) -> List[Dict[str, Any]]:
         """Get all tags with their usage counts.
 
         Returns:
