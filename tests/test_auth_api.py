@@ -228,7 +228,7 @@ class TestRegisterEndpoint:
         assert "email" in response.json()["detail"].lower()
 
     def test_register_password_policy_violation(self, auth_client: TestClient):
-        """Test registration with weak password returns 400."""
+        """Test registration with weak password returns 422 (Pydantic validation)."""
         response = auth_client.post(
             "/api/auth/register",
             json={
@@ -239,8 +239,15 @@ class TestRegisterEndpoint:
             },
         )
 
-        assert response.status_code == 400
-        assert "password" in response.json()["detail"].lower()
+        assert response.status_code == 422
+        data = response.json()
+        # For Pydantic validation errors, detail is a list of error objects
+        if isinstance(data["detail"], list):
+            # Check if any error message contains "password"
+            error_messages = [str(error.get("msg", "")) for error in data["detail"]]
+            assert any("password" in msg.lower() for msg in error_messages)
+        else:
+            assert "password" in data["detail"].lower()
 
     def test_register_password_mismatch(self, auth_client: TestClient):
         """Test registration with password confirmation mismatch returns 422."""

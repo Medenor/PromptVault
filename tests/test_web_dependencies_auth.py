@@ -362,7 +362,7 @@ class TestRequestMetadata:
     def test_get_user_agent_unknown(self):
         """Test User-Agent fallback when header is missing."""
         request = Mock(spec=Request)
-        request.headers.get.return_value = None
+        request.headers.get.side_effect = lambda key, default=None: default if key == "User-Agent" else None
 
         user_agent = get_user_agent(request)
         assert user_agent == "unknown"

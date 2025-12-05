@@ -86,12 +86,14 @@ class PromptDataService:
         """Ensure default 'system' user exists."""
         try:
             with get_db_session() as session:
-                user = session.query(User).filter_by(username="system").first()
+                user = session.query(User).filter_by(email="system@promptvault.local").first()
                 if not user:
                     user = User(
                         id=str(uuid.uuid4()),
                         username="system",
                         display_name="System User",
+                        email="system@promptvault.local",
+                        password_hash="system",  # Not used for system user
                         role="system"
                     )
                     session.add(user)

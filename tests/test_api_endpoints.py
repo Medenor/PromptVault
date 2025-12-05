@@ -9,10 +9,15 @@ Integration-style tests for FastAPI endpoints covering CRUD, filters, and import
 import io
 import json
 from pathlib import Path
+from datetime import datetime, timedelta, timezone
+from typing import Dict, Any
 
 import pytest
+from sqlalchemy.orm import Session
 
 from src.web import app as web_app
+from src.db.models.user import User
+from src.db.models.user_session import UserSession
 
 
 @pytest.fixture
@@ -28,9 +33,28 @@ def api_data_service(api_client_context):
 
 
 @pytest.fixture
-def seeded_prompt_id(api_client):
+def api_auth_headers() -> Dict[str, str]:
+    """Create authentication headers with valid API user access token."""
+    from src.config.auth_config import auth_settings
+    from src.services.auth.jwt_service import JWTService
+
+    jwt_service = JWTService(auth_settings)
+
+    # Generate access token for the test user created in api_client_context
+    access_token = jwt_service.generate_access_token(
+        user_id="api-test-user-id",
+        username="apiuser",
+        email="api@example.com",
+        role="editor",
+    )
+
+    return {"Authorization": f"Bearer {access_token}"}
+
+
+@pytest.fixture
+def seeded_prompt_id(api_client, api_auth_headers):
     """Get the ID of the seeded 'API Prompt 1' prompt."""
-    prompts = api_client.get("/api/prompts").json()["prompts"]
+    prompts = api_client.get("/api/prompts", headers=api_auth_headers).json()["prompts"]
     for prompt_id, payload in prompts.items():
         if payload["title"] == "API Prompt 1":
             return prompt_id
@@ -47,9 +71,10 @@ class TestPromptCrudEndpoints:
         assert len(data) == 2
         assert data[seeded_prompt_id]["title"] == "API Prompt 1"
 
-    def test_create_prompt_success(self, api_client):
+    def test_create_prompt_success(self, api_client, api_auth_headers):
         response = api_client.post(
             "/api/prompts",
+            headers=api_auth_headers,
             data={
                 "title": "Created Prompt",
                 "prompt": "Generated content",
@@ -57,7 +82,7 @@ class TestPromptCrudEndpoints:
                 "tags": "new,creation",
             },
         )
-        assert response.status_code == 200
+        assert response.status_code == 201
         payload = response.json()
         assert payload["success"] is True
         assert isinstance(payload["prompt_id"], int)

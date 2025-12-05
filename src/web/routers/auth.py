@@ -334,11 +334,14 @@ def register(
             key="refresh_token",
             value=result["refresh_token"],
             httponly=True,
-            secure=False,
+            secure=False,  # Set to True in production with HTTPS
             samesite="lax",
             max_age=7 * 24 * 60 * 60,
             path="/api/auth"
         )
+
+        # Set status code to 201 for successful registration
+        json_response.status_code = status.HTTP_201_CREATED
 
         return json_response
 

@@ -24,7 +24,7 @@ import tempfile
 import shutil
 from pathlib import Path
 from typing import Generator, Callable, Dict, Any, List
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 import pytest
 from sqlalchemy import create_engine
@@ -185,6 +185,7 @@ def test_user(test_db_session: Session) -> User:
         username="test_user",
         display_name="Test User",
         email="test@example.com",
+        password_hash="hashed_password_placeholder",  # Required field
         role="user"
     )
     test_db_session.add(user)
@@ -826,6 +827,48 @@ def api_client_context(test_db_engine, temp_data_dir: str, sample_prompt_data: C
 
     # Get reference to data service
     data_service = web_app.data_service
+
+    # Create test user for authenticated API tests
+    from src.services.auth.password_service import PasswordService
+    from src.config.auth_config import auth_settings
+    from src.db.models.user import User
+    from src.db.models.user_session import UserSession
+
+    password_service = PasswordService(auth_settings)
+    password_hash = password_service.hash_password("ApiUserP@ssw0rd123")
+
+    # Create a session to add the user
+    test_session = TestSessionLocal()
+    try:
+        test_user = User(
+            id="api-test-user-id",
+            username="apiuser",
+            email="api@example.com",
+            password_hash=password_hash,
+            role="editor",
+            is_active=True,
+            email_verified=True,
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
+        )
+        test_session.add(test_user)
+        test_session.flush()
+
+        # Create an active session for the user
+        user_session = UserSession(
+            user_id=test_user.id,
+            family_id="api-test-family",
+            refresh_token_jti="api-test-jti",
+            ip_address="127.0.0.1",
+            device_info="Test Agent",
+            created_at=datetime.now(timezone.utc),
+            expires_at=datetime.now(timezone.utc) + timedelta(days=30),
+            is_revoked=False,
+        )
+        test_session.add(user_session)
+        test_session.commit()
+    finally:
+        test_session.close()
 
     # Seed data with two prompts (matching old fixture behavior)
     data_service.add_new_prompt(

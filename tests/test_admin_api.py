@@ -55,26 +55,14 @@ def admin_client(test_db_engine, temp_data_dir: str):
     """FastAPI TestClient configured for admin testing.
 
     Creates a test client with in-memory database, proper session management,
-    and test configuration. Uses only the admin router to avoid issues with
-    other routers during testing.
+    and test configuration. Uses the full app but only tests admin endpoints.
 
     Yields:
         TestClient: Configured test client for API testing
     """
-    from fastapi import FastAPI
-    import importlib.util
-    import sys
-    from pathlib import Path
+    from src.web import app as web_app
     from src.db import session as session_module
     from sqlalchemy.orm import sessionmaker
-
-    # Import admin router directly without going through __init__.py
-    admin_module_path = Path(__file__).parent.parent / "src" / "web" / "routers" / "admin.py"
-    spec = importlib.util.spec_from_file_location("admin_router_module", admin_module_path)
-    admin_router_module = importlib.util.module_from_spec(spec)
-    sys.modules["admin_router_module"] = admin_router_module
-    spec.loader.exec_module(admin_router_module)
-    admin_router = admin_router_module.router
 
     # Store original session factory
     original_session_local = session_module.SessionLocal
@@ -85,12 +73,11 @@ def admin_client(test_db_engine, temp_data_dir: str):
     # Patch the session factory
     session_module.SessionLocal = TestSessionLocal
 
-    # Create minimal FastAPI app with just admin router
-    app = FastAPI(title="PromptVault Admin Test")
-    app.include_router(admin_router, prefix="/api")
+    # Configure services with test data directory
+    web_app.configure_services(data_dir=temp_data_dir)
 
     # Create test client
-    client = TestClient(app)
+    client = TestClient(web_app.app)
 
     try:
         yield client
@@ -126,6 +113,7 @@ def admin_user(test_db_session_admin: Session) -> Dict[str, Any]:
     """
     from src.services.auth.password_service import PasswordService
     from src.config.auth_config import auth_settings
+    from src.db.models.user_session import UserSession
 
     password_service = PasswordService(auth_settings)
     password_hash = password_service.hash_password("AdminP@ssw0rd123")
@@ -142,6 +130,20 @@ def admin_user(test_db_session_admin: Session) -> Dict[str, Any]:
         updated_at=datetime.now(timezone.utc),
     )
     test_db_session_admin.add(user)
+    test_db_session_admin.flush()
+
+    # Create an active session for the user
+    session = UserSession(
+        user_id=user.id,
+        family_id="test-family",
+        refresh_token_jti="test-jti",
+        ip_address="127.0.0.1",
+        device_info="Test Agent",
+        created_at=datetime.now(timezone.utc),
+        expires_at=datetime.now(timezone.utc) + timedelta(days=30),
+        is_revoked=False,
+    )
+    test_db_session_admin.add(session)
     test_db_session_admin.commit()
     test_db_session_admin.refresh(user)
 
@@ -189,6 +191,7 @@ def editor_user(test_db_session_admin: Session) -> Dict[str, Any]:
     """
     from src.services.auth.password_service import PasswordService
     from src.config.auth_config import auth_settings
+    from src.db.models.user_session import UserSession
 
     password_service = PasswordService(auth_settings)
     password_hash = password_service.hash_password("EditorP@ssw0rd123")
@@ -205,6 +208,20 @@ def editor_user(test_db_session_admin: Session) -> Dict[str, Any]:
         updated_at=datetime.now(timezone.utc),
     )
     test_db_session_admin.add(user)
+    test_db_session_admin.flush()
+
+    # Create an active session for the user
+    session = UserSession(
+        user_id=user.id,
+        family_id="editor-test-family",
+        refresh_token_jti="editor-test-jti",
+        ip_address="127.0.0.1",
+        device_info="Test Agent",
+        created_at=datetime.now(timezone.utc),
+        expires_at=datetime.now(timezone.utc) + timedelta(days=30),
+        is_revoked=False,
+    )
+    test_db_session_admin.add(session)
     test_db_session_admin.commit()
     test_db_session_admin.refresh(user)
 
@@ -250,6 +267,7 @@ def viewer_user(test_db_session_admin: Session) -> Dict[str, Any]:
     """
     from src.services.auth.password_service import PasswordService
     from src.config.auth_config import auth_settings
+    from src.db.models.user_session import UserSession
 
     password_service = PasswordService(auth_settings)
     password_hash = password_service.hash_password("ViewerP@ssw0rd123")
@@ -266,6 +284,20 @@ def viewer_user(test_db_session_admin: Session) -> Dict[str, Any]:
         updated_at=datetime.now(timezone.utc),
     )
     test_db_session_admin.add(user)
+    test_db_session_admin.flush()
+
+    # Create an active session for the user
+    session = UserSession(
+        user_id=user.id,
+        family_id="viewer-test-family",
+        refresh_token_jti="viewer-test-jti",
+        ip_address="127.0.0.1",
+        device_info="Test Agent",
+        created_at=datetime.now(timezone.utc),
+        expires_at=datetime.now(timezone.utc) + timedelta(days=30),
+        is_revoked=False,
+    )
+    test_db_session_admin.add(session)
     test_db_session_admin.commit()
     test_db_session_admin.refresh(user)
 

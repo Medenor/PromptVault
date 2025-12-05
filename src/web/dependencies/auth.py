@@ -711,20 +711,20 @@ def get_user_agent(request: Request) -> str:
 # ============================================================================
 
 
-def get_admin_user(user: User = Depends(require_role(["admin"]))) -> User:
+def get_admin_user(user: User = Depends(get_current_active_user)) -> User:
     """Get current user and verify admin role.
 
     Convenience dependency that combines authentication and admin authorization.
-    Equivalent to require_role(["admin"]) but with a more descriptive name.
+    Checks that the user has admin role.
 
     Args:
-        user: Authenticated user with admin role (injected)
+        user: Authenticated active user (injected)
 
     Returns:
         User: Admin user instance
 
     Raises:
-        HTTPException: 401 if not authenticated, 403 if not admin
+        HTTPException: 401 if not authenticated/active, 403 if not admin
 
     Example:
         >>> @router.delete("/users/{user_id}")
@@ -735,23 +735,28 @@ def get_admin_user(user: User = Depends(require_role(["admin"]))) -> User:
         ...     # Only admins can delete users
         ...     return {"deleted": user_id}
     """
+    if user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Access denied. This operation requires 'admin' role. Your role: '{user.role}'",
+        )
     return user
 
 
-def get_editor_or_admin_user(user: User = Depends(require_role(["admin", "editor"]))) -> User:
+def get_editor_or_admin_user(user: User = Depends(get_current_active_user)) -> User:
     """Get current user and verify editor or admin role.
 
     Convenience dependency for routes that require content editing permissions.
     Allows both editors and admins to access the route.
 
     Args:
-        user: Authenticated user with editor or admin role (injected)
+        user: Authenticated active user (injected)
 
     Returns:
         User: Editor or admin user instance
 
     Raises:
-        HTTPException: 401 if not authenticated, 403 if not editor/admin
+        HTTPException: 401 if not authenticated/active, 403 if not editor/admin
 
     Example:
         >>> @router.post("/prompts")
@@ -762,4 +767,9 @@ def get_editor_or_admin_user(user: User = Depends(require_role(["admin", "editor
         ...     # Editors and admins can create prompts
         ...     return {"created": True, "user_id": user.id}
     """
+    if user.role not in ["admin", "editor"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Access denied. This operation requires 'admin' or 'editor' role. Your role: '{user.role}'",
+        )
     return user
