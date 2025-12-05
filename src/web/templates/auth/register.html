@@ -77,8 +77,8 @@
                             autocomplete="new-password"
                             aria-required="true"
                             aria-describedby="password-error password-strength password-policy">
-                        <button type="button" class="password-toggle" id="toggle-password" aria-label="Toggle password visibility">
-                            <span class="password-toggle-icon">👁️</span>
+                        <button type="button" class="password-toggle" id="toggle-password" aria-label="Toggle password visibility" onclick="return false;">
+                            <span class="password-toggle-icon">⊙</span>
                         </button>
                     </div>
                     <div id="password-strength" class="password-strength" aria-live="polite">
@@ -102,8 +102,8 @@
                             autocomplete="new-password"
                             aria-required="true"
                             aria-describedby="confirm-password-error">
-                        <button type="button" class="password-toggle" id="toggle-confirm-password" aria-label="Toggle password visibility">
-                            <span class="password-toggle-icon">👁️</span>
+                        <button type="button" class="password-toggle" id="toggle-confirm-password" aria-label="Toggle password visibility" onclick="return false;">
+                            <span class="password-toggle-icon">⊙</span>
                         </button>
                     </div>
                     <div class="validation-error" id="confirm-password-error" role="alert" aria-live="assertive"></div>

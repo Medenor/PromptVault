@@ -31,6 +31,7 @@ Available Endpoints:
 
 import math
 import logging
+import uuid
 from datetime import datetime, timezone
 from typing import Annotated
 
@@ -38,13 +39,18 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_, func
 
+from src.config.auth_config import AuthConfig
+from src.services.auth.auth_service import AuthService
+from src.services.auth.password_service import PasswordService
+from src.web.dependencies.auth import get_auth_config
+
 from src.db.session import get_db
 from src.db.models.user import User
 from src.db.models.user_session import UserSession
 from src.db.repositories.user_repository import UserRepository
 from src.db.repositories.session_repository import SessionRepository
 from src.web.dependencies.auth import require_role
-from src.web.models.admin_requests import UpdateUserRequest, UserListParams
+from src.web.models.admin_requests import CreateUserRequest, UpdateUserRequest, UserListParams
 from src.web.models.admin_responses import (
     UserDetailResponse,
     UserListResponse,
@@ -232,6 +238,135 @@ async def list_users(
         page_size=params.page_size,
         total_pages=total_pages,
     )
+
+
+@router.post(
+    "/users",
+    response_model=UserDetailResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create a new user",
+    description="""
+    Create a new user account via admin panel.
+
+    **Features:**
+    - Validates password policy (12+ chars, uppercase, lowercase, digit, special char)
+    - Prevents duplicate usernames and emails
+    - Auto-generates UUID for user ID
+    - Creates session with IP/User-Agent tracking
+    - Marks email as verified if specified
+    - Audit logged
+
+    **Security:**
+    - Requires admin role
+    - Password is hashed with Argon2id
+    - No plaintext passwords in logs
+    - Rate limited
+    """,
+    responses={
+        201: {"description": "User created successfully"},
+        400: {"description": "Validation failed (weak password, invalid email)"},
+        403: {"description": "Admin role required"},
+        409: {"description": "Username or email already exists"},
+        422: {"description": "Pydantic validation error"},
+    },
+)
+async def create_user(
+    request_data: CreateUserRequest,
+    admin: User = Depends(require_role(["admin"])),
+    config: AuthConfig = Depends(get_auth_config),
+    db: Session = Depends(get_db),
+) -> UserDetailResponse:
+    """Create a new user account.
+
+    Args:
+        request_data: User creation request with username, email, password, role
+        admin: Authenticated admin user
+        config: Authentication configuration
+        db: Database session
+
+    Returns:
+        UserDetailResponse with created user details
+
+    Raises:
+        HTTPException: 400 if validation failed, 409 if duplicate, 422 if invalid
+    """
+    user_repo = UserRepository(db)
+    password_service = PasswordService(config)
+
+    # Check if username already exists
+    if user_repo.username_exists(request_data.username):
+        _log_admin_action(
+            admin.id,
+            admin.username,
+            "CREATE_USER_FAILED",
+            "N/A",
+            f"username={request_data.username} (already exists)",
+        )
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Username '{request_data.username}' already exists",
+        )
+
+    # Check if email already exists
+    if user_repo.email_exists(request_data.email):
+        _log_admin_action(
+            admin.id,
+            admin.username,
+            "CREATE_USER_FAILED",
+            "N/A",
+            f"email={request_data.email} (already exists)",
+        )
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Email '{request_data.email}' is already registered",
+        )
+
+    try:
+        # Hash password
+        password_hash = password_service.hash_password(request_data.password)
+
+        # Create user
+        new_user = User(
+            id=str(uuid.uuid4()),
+            username=request_data.username,
+            email=request_data.email,
+            password_hash=password_hash,
+            role=request_data.role,
+            email_verified=request_data.email_verified,
+            is_active=True,
+            created_at=datetime.now(timezone.utc),
+        )
+
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+
+        # Log success
+        _log_admin_action(
+            admin.id,
+            admin.username,
+            "CREATE_USER",
+            new_user.id,
+            f"username={request_data.username}, email={request_data.email}, role={request_data.role}",
+        )
+
+        # Return user details
+        return _user_to_detail_response(new_user, session_count=0)
+
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error creating user: {str(e)}", exc_info=True)
+        _log_admin_action(
+            admin.id,
+            admin.username,
+            "CREATE_USER_FAILED",
+            "N/A",
+            f"error={str(e)}",
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create user. Please try again.",
+        )
 
 
 @router.get(

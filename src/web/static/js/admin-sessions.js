@@ -155,6 +155,9 @@ async function loadAllSessions() {
 
         // Filter and display sessions
         displaySessions();
+
+        // Update translations for action buttons
+        updateTranslations();
     } catch (error) {
         console.error('Error loading sessions:', error);
         tableBody.innerHTML = '<tr><td colspan="7" class="loading-cell">Error loading sessions</td></tr>';
@@ -221,11 +224,13 @@ function displaySessions() {
                 <td>${formatDate(session.expires_at)}</td>
                 <td>
                     <div class="action-buttons">
-                        <button class="action-btn revoke" onclick="showRevokeConfirmation('${session.userId}', '${session.id}', '${session.username}')">Revoke</button>
+                        <button class="action-btn revoke" onclick="showRevokeConfirmation('${session.userId}', '${session.id}', '${session.username}')" data-i18n="actions.revoke">Revoke</button>
                     </div>
                 </td>
             </tr>
         `).join('');
+        // Update translations for newly rendered buttons
+        updateTranslations();
     }
 }
 

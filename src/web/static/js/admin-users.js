@@ -112,6 +112,10 @@ function hideModal(modalId) {
 window.closeUserDetailModal = () => hideModal('user-detail-modal');
 window.closeEditUserModal = () => hideModal('edit-user-modal');
 window.closeConfirmDeleteModal = () => hideModal('confirm-delete-modal');
+window.closeCreateUserModal = () => {
+    hideModal('create-user-modal');
+    clearCreateUserForm();
+};
 
 // Load Users
 async function loadUsers() {
@@ -166,17 +170,18 @@ async function loadUsers() {
                         <td>${user.session_count || 0}</td>
                         <td>
                             <div class="action-buttons">
-                                <button class="action-btn view" onclick="viewUser('${user.id}')">View</button>
-                                <button class="action-btn edit" onclick="editUser('${user.id}')">Edit</button>
-                                <button class="action-btn delete" onclick="deleteUser('${user.id}', '${user.username}')">Delete</button>
+                                <button class="action-btn view" onclick="viewUser('${user.id}')" data-i18n="actions.view">View</button>
+                                <button class="action-btn edit" onclick="editUser('${user.id}')" data-i18n="actions.edit">Edit</button>
+                                <button class="action-btn delete" onclick="deleteUser('${user.id}', '${user.username}')" data-i18n="actions.delete">Delete</button>
                             </div>
                         </td>
                     </tr>
                 `).join('');
             }
 
-            // Update pagination
+            // Update pagination and translations
             updatePagination();
+            updateTranslations();
         } else if (response.status === 401) {
             localStorage.removeItem('access_token');
             localStorage.removeItem('refresh_token');
@@ -476,5 +481,256 @@ function initAdminUsersPage() {
 
     setupFilters();
     setupPagination();
+    setupCreateUserForm();
     loadUsers();
+}
+
+// ============================================================================
+// Create User Modal Functions
+// ============================================================================
+
+function setupCreateUserForm() {
+    const addUserBtn = document.getElementById('add-user-btn');
+    if (addUserBtn) {
+        addUserBtn.addEventListener('click', openCreateUserModal);
+    }
+
+    const cancelBtn = document.getElementById('create-user-cancel-btn');
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', closeCreateUserModal);
+    }
+
+    const submitBtn = document.getElementById('create-user-submit-btn');
+    if (submitBtn) {
+        submitBtn.addEventListener('click', submitCreateUserForm);
+    }
+
+    const passwordInput = document.getElementById('create-password');
+    if (passwordInput) {
+        passwordInput.addEventListener('input', updatePasswordRequirements);
+    }
+
+    // Setup password toggle buttons
+    setupPasswordToggle('toggle-password-create', 'create-password');
+    setupPasswordToggle('toggle-confirm-password-create', 'create-confirm-password');
+}
+
+function setupPasswordToggle(toggleButtonId, passwordInputId) {
+    const toggleButton = document.getElementById(toggleButtonId);
+    const passwordInput = document.getElementById(passwordInputId);
+
+    if (toggleButton && passwordInput) {
+        toggleButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            const type = passwordInput.type === 'password' ? 'text' : 'password';
+            passwordInput.type = type;
+        });
+    }
+}
+
+function openCreateUserModal() {
+    showModal('create-user-modal');
+    clearCreateUserForm();
+    updateTranslations();
+}
+
+function closeCreateUserModal() {
+    hideModal('create-user-modal');
+    clearCreateUserForm();
+}
+
+function clearCreateUserForm() {
+    const form = document.getElementById('create-user-form');
+    if (form) {
+        form.reset();
+    }
+    clearAllCreateUserErrors();
+    resetPasswordRequirements();
+}
+
+function clearAllCreateUserErrors() {
+    document.getElementById('create-username-error').textContent = '';
+    document.getElementById('create-email-error').textContent = '';
+    document.getElementById('create-password-error').textContent = '';
+    document.getElementById('create-confirm-password-error').textContent = '';
+    document.getElementById('create-form-error').textContent = '';
+}
+
+function showError(elementId, message) {
+    const element = document.getElementById(elementId);
+    if (element) {
+        element.textContent = message;
+    }
+}
+
+function checkPasswordStrength(password) {
+    let strength = 0;
+    const checks = {
+        length: password.length >= 12,
+        uppercase: /[A-Z]/.test(password),
+        lowercase: /[a-z]/.test(password),
+        digit: /[0-9]/.test(password),
+        special: /[!@#$%^&*()_+\-=\[\]{};':\"\\|,.<>\/?]/.test(password)
+    };
+
+    Object.values(checks).forEach(check => {
+        if (check) strength++;
+    });
+
+    return { strength, checks };
+}
+
+function updatePasswordRequirements() {
+    const password = document.getElementById('create-password').value;
+    const { strength, checks } = checkPasswordStrength(password);
+
+    const requirements = {
+        'req-length': checks.length,
+        'req-uppercase': checks.uppercase,
+        'req-lowercase': checks.lowercase,
+        'req-digit': checks.digit,
+        'req-special': checks.special
+    };
+
+    Object.entries(requirements).forEach(([id, met]) => {
+        const el = document.getElementById(id);
+        if (el) {
+            if (met) {
+                el.classList.add('met');
+            } else {
+                el.classList.remove('met');
+            }
+        }
+    });
+
+    // Update password strength bar
+    updatePasswordStrengthDisplay(strength);
+}
+
+function updatePasswordStrengthDisplay(strength) {
+    const strengthBar = document.getElementById('create-strength-bar-fill');
+    const strengthText = document.getElementById('create-strength-text');
+
+    if (!strengthBar || !strengthText) return;
+
+    strengthBar.className = 'strength-bar-fill';
+    if (strength >= 5) {
+        strengthBar.classList.add('strength-strong');
+        strengthText.textContent = i18next.t('auth.register.strengthStrong') || 'Strong password';
+        strengthText.className = 'strength-text strength-strong';
+    } else if (strength >= 3) {
+        strengthBar.classList.add('strength-medium');
+        strengthText.textContent = i18next.t('auth.register.strengthMedium') || 'Medium password';
+        strengthText.className = 'strength-text strength-medium';
+    } else if (strength > 0) {
+        strengthBar.classList.add('strength-weak');
+        strengthText.textContent = i18next.t('auth.register.strengthWeak') || 'Weak password';
+        strengthText.className = 'strength-text strength-weak';
+    } else {
+        strengthText.textContent = '';
+    }
+}
+
+function resetPasswordRequirements() {
+    ['req-length', 'req-uppercase', 'req-lowercase', 'req-digit', 'req-special'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.classList.remove('met');
+        }
+    });
+}
+
+
+async function submitCreateUserForm() {
+    clearAllCreateUserErrors();
+
+    const username = document.getElementById('create-username').value.trim();
+    const email = document.getElementById('create-email').value.trim();
+    const password = document.getElementById('create-password').value;
+    const confirmPassword = document.getElementById('create-confirm-password').value;
+    const role = document.getElementById('create-role').value;
+    const emailVerified = document.getElementById('create-email-verified').checked;
+
+    // Validation
+    let hasErrors = false;
+
+    if (!username) {
+        showError('create-username-error', i18next.t('validation.required') || 'Username is required');
+        hasErrors = true;
+    }
+
+    if (!email) {
+        showError('create-email-error', i18next.t('validation.required') || 'Email is required');
+        hasErrors = true;
+    }
+
+    if (!password) {
+        showError('create-password-error', i18next.t('validation.required') || 'Password is required');
+        hasErrors = true;
+    }
+
+    if (!confirmPassword) {
+        showError('create-confirm-password-error', i18next.t('validation.required') || 'Confirm password is required');
+        hasErrors = true;
+    }
+
+    if (password && confirmPassword && password !== confirmPassword) {
+        showError('create-confirm-password-error', i18next.t('auth.register.passwordMismatch') || 'Passwords do not match');
+        hasErrors = true;
+    }
+
+    if (hasErrors) {
+        return;
+    }
+
+    const submitBtn = document.getElementById('create-user-submit-btn');
+    submitBtn.disabled = true;
+    submitBtn.textContent = i18next.t('messages.loading') || 'Creating...';
+
+    try {
+        const response = await fetch(`${API_BASE}/users`, {
+            ...getFetchOptions('POST', {
+                username,
+                email,
+                password,
+                confirm_password: confirmPassword,
+                role,
+                email_verified: emailVerified
+            })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            showNotification(i18next.t('admin.users.userCreated') || 'User created successfully', 'success');
+            closeCreateUserModal();
+            currentPage = 1; // Reset to first page
+            loadUsers(); // Reload user list
+        } else {
+            // Handle validation errors from backend
+            if (response.status === 422) {
+                if (data.detail && Array.isArray(data.detail)) {
+                    data.detail.forEach(error => {
+                        if (error.loc && error.loc.length > 1) {
+                            const field = error.loc[1];
+                            const errorMsg = error.msg || error.detail || 'Validation error';
+                            showError(`create-${field}-error`, errorMsg);
+                        }
+                    });
+                } else {
+                    showError('create-form-error', data.detail || i18next.t('messages.error') || 'Validation failed');
+                }
+            } else if (response.status === 409) {
+                showError('create-form-error', data.detail || i18next.t('admin.users.userExists') || 'User already exists');
+            } else {
+                showError('create-form-error', data.detail || i18next.t('messages.error') || 'Failed to create user');
+            }
+        }
+    } catch (error) {
+        console.error('Error creating user:', error);
+        showError('create-form-error', i18next.t('messages.error') || 'Failed to create user');
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = i18next.t('actions.create') || 'Create User';
+    }
 }
