@@ -1368,12 +1368,22 @@ async function showDiffModal() {
     }
 
     showElement(document.getElementById('diff-modal'));
-    const versionIds = Array.from(selectedVersions);
-    
+    let versionIds = Array.from(selectedVersions);
+
+    // Sort versions by their version_number to ensure older is first (for old/new comparison)
+    const versionsWithNumbers = versionIds.map(vId => {
+        const version = allVersions.find(v => v.version_id === vId);
+        return { id: vId, number: version ? version.version_number : 0 };
+    });
+
+    // Sort by version number (ascending - older first)
+    versionsWithNumbers.sort((a, b) => a.number - b.number);
+    versionIds = versionsWithNumbers.map(v => v.id);
+
     // Populate version selectors
     populateDiffSelectors(versionIds);
-    
-    // Load and display diff
+
+    // Load and display diff - older version as v1 (old), newer as v2 (new)
     await loadAndDisplayDiff(versionIds[0], versionIds[1]);
 }
 

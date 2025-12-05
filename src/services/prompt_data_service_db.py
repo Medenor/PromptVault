@@ -333,6 +333,7 @@ class PromptDataService:
 
         return {
             "version_id": version.version_id,
+            "version_number": version.version_number,
             "timestamp": timestamp,
             "author": version.author,
             "message": version.message,

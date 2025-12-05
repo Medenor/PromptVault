@@ -43,6 +43,7 @@ from src.db.models.tag import Tag
 from src.db.repositories.prompt_repository import PromptRepository
 from src.db.repositories.category_repository import CategoryRepository
 from src.db.repositories.tag_repository import TagRepository
+from src.db.repositories.version_repository import VersionRepository
 from src.web.dependencies.auth import (
     get_current_active_user,
     get_optional_user,
@@ -50,6 +51,7 @@ from src.web.dependencies.auth import (
 )
 from src.web.models.requests import PromptCreateRequest, PromptUpdateRequest, BulkDeleteRequest
 from src.web.models.auth_responses import MessageResponse
+from src.db.models.prompt_branch import PromptBranch
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -521,6 +523,7 @@ async def update_prompt(
     prompt_repo = PromptRepository(db)
     category_repo = CategoryRepository(db)
     tag_repo = TagRepository(db)
+    version_repo = VersionRepository(db)
 
     # Get prompt
     existing_prompt = prompt_repo.get_with_relationships(prompt_id)
@@ -552,8 +555,36 @@ async def update_prompt(
     existing_prompt.tags = tag_objects
     existing_prompt.updated_at = datetime.now(timezone.utc)
 
-    # Save changes
+    # Flush to ensure prompt is updated
     db.flush()
+
+    # Get current version ID (parent for new version)
+    main_branch = next(
+        (b for b in existing_prompt.branches if b.branch_name == "main"),
+        None
+    )
+    parent_version_id = main_branch.current_version_id if main_branch else None
+
+    # Create new version with the updated prompt data
+    version = version_repo.create_version(
+        prompt=existing_prompt,
+        author=user.username,
+        message=validated_data.commit_message,
+        parent_version_id=parent_version_id
+    )
+
+    # Update main branch to point to new version
+    if main_branch:
+        main_branch.current_version_id = version.version_id
+    else:
+        main_branch = PromptBranch(
+            prompt_id=existing_prompt.id,
+            branch_name="main",
+            current_version_id=version.version_id
+        )
+        db.add(main_branch)
+
+    # Commit all changes
     db.commit()
 
     # Log action

@@ -1299,6 +1299,7 @@ async def get_version_history(prompt_id: str):
         version_list.append(
             {
                 "version_id": version.get("version_id"),
+                "version_number": version.get("version_number"),
                 "timestamp": version.get("timestamp"),
                 "author": version.get("author"),
                 "message": version.get("message"),
