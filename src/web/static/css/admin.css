@@ -185,6 +185,16 @@
     color: white;
 }
 
+.role-badge.editor {
+    background: #eaaa66;
+    color: white;
+}
+
+.role-badge.viewer {
+    background: #66ea92;
+    color: white;
+}
+
 .role-badge.user {
     background: #e0e0e0;
     color: #333;

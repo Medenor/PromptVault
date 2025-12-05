@@ -104,12 +104,14 @@ def get_my_token_info(token_data: dict = Depends(get_current_user_token)):
 ```
 
 **Request Format:**
+
 ```http
 GET /token-info HTTP/1.1
 Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGc...
 ```
 
 **Error Responses:**
+
 - `401 Unauthorized` - Token missing, invalid, or expired
 - Includes `WWW-Authenticate` header per RFC 6750
 
@@ -159,11 +161,13 @@ def create_prompt(
 ```
 
 **Validation:**
+
 - ✅ User exists in database
 - ✅ `is_active == True`
 - ✅ `locked_until` is None or expired
 
 **Error Responses:**
+
 - `401 Unauthorized` - Account inactive or locked
 
 ### get_optional_user()
@@ -191,6 +195,7 @@ def list_prompts(
 ```
 
 **Behavior:**
+
 - No token → Returns `None` (not an error)
 - Invalid token → Raises `401` error
 - Valid token → Returns `User`
@@ -228,11 +233,13 @@ def create_prompt(
 ```
 
 **Available Roles:**
+
 - `viewer` - Can view content
 - `editor` - Can create and edit content
 - `admin` - Full administrative access
 
 **Error Response:**
+
 - `403 Forbidden` - User lacks required role
 
 ### require_verified_email()
@@ -259,6 +266,7 @@ def create_api_key(user: User = Depends(require_verified_email)):
 ```
 
 **Error Response:**
+
 - `403 Forbidden` - Email not verified
 
 ## Request Metadata Dependencies
@@ -290,6 +298,7 @@ def login(
 ```
 
 **Priority Order:**
+
 1. `X-Forwarded-For` header (first IP)
 2. `X-Real-IP` header
 3. `request.client.host`

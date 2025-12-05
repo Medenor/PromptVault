@@ -452,7 +452,7 @@ _________________________________
 ### AUTH-LOGIN-001: Login with Username and Password
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ✅
 
 **Preconditions:**
 
@@ -482,7 +482,7 @@ _________________________________
 ### AUTH-LOGIN-002: Login with Email and Password
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ✅
 
 **Preconditions:**
 
@@ -509,7 +509,7 @@ _________________________________
 ### AUTH-LOGIN-003: Invalid Username
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ✅
 
 **Preconditions:**
 
@@ -537,7 +537,7 @@ _________________________________
 ### AUTH-LOGIN-004: Invalid Password
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ✅
 
 **Preconditions:**
 
@@ -565,7 +565,7 @@ _________________________________
 ### AUTH-LOGIN-005: Account Lockout After 5 Failures
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ✅
 
 **Preconditions:**
 

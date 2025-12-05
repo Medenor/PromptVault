@@ -98,6 +98,17 @@ function formatDate(dateString) {
     return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
 }
 
+function getTranslatedRole(role) {
+    const roleTranslations = {
+        'viewer': 'roleViewer',
+        'editor': 'roleEditor',
+        'admin': 'roleAdmin',
+        'user': 'roleUser'
+    };
+    const translationKey = roleTranslations[role] || role;
+    return i18next.t(`admin.users.${translationKey}`) || role;
+}
+
 function showModal(modalId) {
     const modal = document.getElementById(modalId);
     if (modal) modal.classList.remove(HIDDEN_CLASS);
@@ -164,7 +175,7 @@ async function loadUsers() {
                     <tr>
                         <td>${user.username}</td>
                         <td>${user.email}</td>
-                        <td><span class="role-badge ${user.role}">${user.role}</span></td>
+                        <td><span class="role-badge ${user.role}">${getTranslatedRole(user.role)}</span></td>
                         <td><span class="status-badge ${getStatusClass(user)}">${getStatusText(user)}</span></td>
                         <td>${formatDate(user.last_login)}</td>
                         <td>${user.session_count || 0}</td>
@@ -260,7 +271,7 @@ window.viewUser = async function(userId) {
                 </div>
                 <div class="detail-row">
                     <div class="detail-label">Role:</div>
-                    <div class="detail-value"><span class="role-badge ${user.role}">${user.role}</span></div>
+                    <div class="detail-value"><span class="role-badge ${user.role}">${getTranslatedRole(user.role)}</span></div>
                 </div>
                 <div class="detail-row">
                     <div class="detail-label">Status:</div>
