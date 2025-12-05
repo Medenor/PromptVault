@@ -23,7 +23,7 @@ i18next
     });
 
 // Constants
-const API_BASE = '/auth';
+const API_BASE = '/api/auth';
 const HIDDEN_CLASS = 'is-hidden';
 
 // Utility Functions

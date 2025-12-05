@@ -593,7 +593,7 @@ _________________________________
 ### AUTH-LOGIN-006: Lockout Expiry After 15 Minutes
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ✅
 
 **Preconditions:**
 
@@ -619,7 +619,7 @@ _________________________________
 ### AUTH-LOGIN-007: Session Creation
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ✅
 
 **Preconditions:**
 
@@ -650,7 +650,7 @@ _________________________________
 ### AUTH-LOGIN-008: Remember Me Functionality
 
 - **Priority**: 🟡 Medium
-- **Status**: ⬜
+- **Status**: ⏭️ N/A - "Remember me" checkbox not implemented in login form
 
 **Preconditions:**
 
@@ -678,7 +678,7 @@ _________________________________
 ### AUTH-LOGIN-009: Redirect After Successful Login
 
 - **Priority**: 🟡 Medium
-- **Status**: ⬜
+- **Status**: ✅
 
 **Preconditions:**
 
@@ -703,7 +703,7 @@ _________________________________
 ### AUTH-LOGIN-010: Failed Login Resets on Success
 
 - **Priority**: 🟡 Medium
-- **Status**: ⬜
+- **Status**: ✅
 
 **Preconditions:**
 
@@ -728,7 +728,7 @@ _________________________________
 ### AUTH-LOGIN-011: Inactive User Cannot Login
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ✅
 
 **Preconditions:**
 
@@ -752,7 +752,7 @@ _________________________________
 ### AUTH-LOGIN-012: Token Storage
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ✅
 
 **Preconditions:**
 
@@ -783,7 +783,7 @@ _________________________________
 ### AUTH-RESET-001: Request Password Reset with Valid Email
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ✅
 
 **Preconditions:**
 
@@ -811,7 +811,7 @@ _________________________________
 ### AUTH-RESET-002: Request with Non-Existent Email
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ✅
 
 **Preconditions:**
 
@@ -839,7 +839,7 @@ _________________________________
 ### AUTH-RESET-003: Rate Limiting on Reset Requests
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ❌ Implementation Issue - Rate limiting not functioning, all requests return 200 OK
 
 **Preconditions:**
 
@@ -867,7 +867,7 @@ _________________________________
 ### AUTH-RESET-004: Reset Token Expiration
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ⏭️ N/A - Token generation not working (API returns 200 but no tokens created)
 
 **Preconditions:**
 
@@ -895,7 +895,7 @@ _________________________________
 ### AUTH-RESET-005: Valid Password Reset Flow
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ⏭️ N/A - Token generation not working
 
 **Preconditions:**
 
@@ -926,7 +926,7 @@ _________________________________
 ### AUTH-RESET-006: Token Single-Use Enforcement
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ⏭️ N/A - Token generation not working
 
 **Preconditions:**
 
@@ -952,7 +952,7 @@ _________________________________
 ### AUTH-RESET-007: New Password Validation
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ⏭️ N/A - Token generation not working
 
 **Preconditions:**
 
@@ -978,7 +978,7 @@ _________________________________
 ### AUTH-RESET-008: Session Revocation on Password Reset
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ⏭️ N/A - Token generation not working
 
 **Preconditions:**
 
@@ -1006,7 +1006,7 @@ _________________________________
 ### AUTH-RESET-009: Login with New Password
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ⏭️ N/A - Token generation not working
 
 **Preconditions:**
 
@@ -1033,7 +1033,7 @@ _________________________________
 ### AUTH-RESET-010: Old Password No Longer Works
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ⏭️ N/A - Token generation not working
 
 **Preconditions:**
 

@@ -1263,6 +1263,7 @@ def request_password_reset(
     request_data: PasswordResetRequestRequest,
     ip_address: str = Depends(get_client_ip),
     password_reset_service: PasswordResetService = Depends(get_password_reset_service),
+    session: Session = Depends(get_db),
 ) -> PasswordResetRequestResponse:
     """Request password reset email.
 
@@ -1287,6 +1288,9 @@ def request_password_reset(
             masked_email = "***@***"
 
         logger.info(f"Password reset requested for email: {masked_email} from {ip_address}")
+        
+        # Commit the session to persist the password reset token
+        session.commit()
 
         return PasswordResetRequestResponse(
             message="If an account exists with this email, a password reset link has been sent.",

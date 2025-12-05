@@ -1249,7 +1249,7 @@ python scripts/migrate_to_authentication.py
 **Features**:
 
 - Username/email + password fields
-- "Remember me" checkbox (longer refresh token)
+- "Remember me" checkbox (longer refresh token) <!-- TODO: to be implemented for AUTH-LOGIN-008	-->
 - "Forgot password?" link
 - "Register" link
 - CSRF protection
@@ -1339,7 +1339,7 @@ function logout() {
 - Email (with format validation)
 - Password (with strength meter)
 - Confirm password
-- Display name (optional) <!-- TODO: Implement Display Name -->
+- Display name (optional) <!-- TODO: Implement Display Name for AUTH-PROFILE-002 -->
 - Terms of service checkbox
 
 **Password Strength Meter**:
