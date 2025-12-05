@@ -125,6 +125,66 @@ class PasswordService:
             type=Type.ID           # Argon2id - hybrid of Argon2i and Argon2d
         )
 
+    def _is_common_password_variation(self, password: str) -> bool:
+        """Check if password is a common password or a variation of one.
+
+        This method detects common passwords even when users try to obfuscate them
+        by adding special characters or numbers. For example, "Password123!" is a
+        variation of the common password "Password123".
+
+        Detection strategy:
+            1. Direct match: Check if password exactly matches a common password
+            2. Strip trailing special chars: Remove ! @ # $ % ^ & * etc. from end
+            3. Strip trailing digits: Remove numbers from end
+            4. Strip both: Remove trailing special chars and numbers
+            5. Remove all special chars: Check without any special characters
+
+        Args:
+            password: Plain text password to check (lowercase)
+
+        Returns:
+            True if password or any stripped variation is in COMMON_PASSWORDS, False otherwise
+
+        Security Notes:
+            - This is case-insensitive (caller should pass lowercase version)
+            - Helps prevent users from thinking they're secure by adding ! or 123
+            - Prevents social engineering where users slightly modify common passwords
+
+        Example:
+            >>> service._is_common_password_variation("password123")  # True
+            >>> service._is_common_password_variation("password123!")  # True
+            >>> service._is_common_password_variation("password123!!!")  # True
+            >>> service._is_common_password_variation("mySecurePass123!")  # False
+        """
+        pwd_lower = password.lower() if isinstance(password, str) else ""
+
+        # Strategy 1: Direct match
+        if pwd_lower in COMMON_PASSWORDS:
+            return True
+
+        # Strategy 2: Strip trailing special characters (!, @, #, $, %, ^, &, *, etc.)
+        pwd_no_special = re.sub(r'[!@#$%^&*\-_.~()[\]{};:,.<>?/\\|`~]+$', '', pwd_lower)
+        if pwd_no_special != pwd_lower and pwd_no_special in COMMON_PASSWORDS:
+            return True
+
+        # Strategy 3: Strip trailing digits
+        pwd_no_digits = re.sub(r'\d+$', '', pwd_lower)
+        if pwd_no_digits != pwd_lower and pwd_no_digits in COMMON_PASSWORDS:
+            return True
+
+        # Strategy 4: Strip both trailing special chars and digits
+        pwd_no_special_digits = re.sub(r'[!@#$%^&*\-_.~()[\]{};:,.<>?/\\|`~\d]+$', '', pwd_lower)
+        if pwd_no_special_digits != pwd_lower and pwd_no_special_digits in COMMON_PASSWORDS:
+            return True
+
+        # Strategy 5: Remove ALL special characters (not just trailing)
+        # This catches patterns like "P@ssw0rd" -> "Password"
+        pwd_alphanumeric = re.sub(r'[^a-z0-9]', '', pwd_lower)
+        if pwd_alphanumeric != pwd_lower and pwd_alphanumeric in COMMON_PASSWORDS:
+            return True
+
+        return False
+
     def hash_password(self, password: str) -> str:
         """Hash a password using Argon2id algorithm.
 
@@ -290,10 +350,10 @@ class PasswordService:
                     "(e.g., !@#$%^&*)"
                 )
 
-        # Check against common passwords (case-insensitive)
-        if password.lower() in COMMON_PASSWORDS:
+        # Check against common passwords (including variations with special chars/numbers)
+        if self._is_common_password_variation(password):
             errors.append(
-                "Password is too common and easily guessable. "
+                "This password is too common and easily guessable. "
                 "Please choose a more unique password"
             )
 
@@ -422,7 +482,7 @@ class PasswordService:
         if char_diversity < len(password) * 0.5:
             feedback.append("Use more unique characters (avoid repetition)")
 
-        if password.lower() in COMMON_PASSWORDS:
+        if self._is_common_password_variation(password):
             feedback.append("This is a commonly used password - choose something unique")
             level = 'weak'  # Override level for common passwords
 

@@ -1339,7 +1339,7 @@ function logout() {
 - Email (with format validation)
 - Password (with strength meter)
 - Confirm password
-- Display name (optional)
+- Display name (optional) <!-- TODO: Implement Display Name -->
 - Terms of service checkbox
 
 **Password Strength Meter**:
