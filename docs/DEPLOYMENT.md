@@ -4,6 +4,7 @@ This guide covers deploying PromptVault with database support using Docker, Dock
 
 ## Table of Contents
 
+- [⚠️ Pre-Deployment Checklist](#-pre-deployment-checklist)
 - [Quick Start with Docker Compose](#quick-start-with-docker-compose)
 - [JWT Key Generation](#jwt-key-generation)
 - [Docker Deployment](#docker-deployment)
@@ -13,6 +14,75 @@ This guide covers deploying PromptVault with database support using Docker, Dock
 - [Migration from JSON](#migration-from-json)
 - [Health Checks](#health-checks)
 - [Troubleshooting](#troubleshooting)
+
+---
+
+## ⚠️ Pre-Deployment Checklist
+
+**BEFORE upgrading PromptVault to a new version, ALWAYS:**
+
+### 1. **Backup Your Database** (CRITICAL)
+
+```bash
+# PostgreSQL backup
+docker-compose exec db pg_dump -U promptvault -d promptvault --verbose | gzip > \
+  data/backups/promptvault-backup-$(date +%Y%m%d_%H%M%S).sql.gz
+
+# SQLite backup (if applicable)
+cp data/promptvault.db data/backups/promptvault-backup-$(date +%Y%m%d_%H%M%S).db
+```
+
+### 2. **Verify Backup Integrity**
+
+```bash
+# Test PostgreSQL backup restoration (on test database)
+gunzip -c data/backups/promptvault-backup-*.sql.gz | psql -U promptvault -d test_promptvault
+
+# Verify file size (should be reasonable, not empty)
+ls -lh data/backups/promptvault-backup-*.sql.gz | tail -1
+```
+
+### 3. **Document Current State**
+
+```bash
+# Save version and configuration
+docker-compose images > backup_images_$(date +%Y%m%d).txt
+docker-compose config > backup_compose_$(date +%Y%m%d).yml
+```
+
+### 4. **Test Migration Path**
+
+```bash
+# Never deploy directly to production first
+# Always test on staging/dev environment first
+docker-compose -f docker-compose.test.yml up -d
+docker-compose -f docker-compose.test.yml exec web alembic upgrade head
+```
+
+### 5. **Review Release Notes**
+
+Check `CHANGELOG.md` for breaking changes or migration instructions specific to your target version.
+
+### Disaster Recovery - Restore from Backup
+
+If something goes wrong after upgrade:
+
+```bash
+# Stop application
+docker-compose stop web
+
+# Restore database from backup
+docker-compose exec -T db psql -U promptvault postgres -c "DROP DATABASE promptvault;"
+docker-compose exec -T db psql -U promptvault postgres -c "CREATE DATABASE promptvault;"
+gunzip -c data/backups/promptvault-backup-YYYYMMDD_HHMMSS.sql.gz | \
+  docker-compose exec -T db psql -U promptvault -d promptvault
+
+# Restart application
+docker-compose up -d web
+
+# Verify restoration
+docker-compose exec -T db psql -U promptvault -d promptvault -c "SELECT COUNT(*) FROM prompts;"
+```
 
 ---
 
