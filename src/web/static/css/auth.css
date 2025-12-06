@@ -19,6 +19,17 @@
     color: white;
 }
 
+.auth-header .header-logo {
+    display: flex;
+    align-items: center;
+    margin-right: 1rem;
+}
+
+.auth-header .logo {
+    height: 50px;
+    width: auto;
+}
+
 .auth-header h1 {
     font-size: 1.8rem;
     margin: 0;

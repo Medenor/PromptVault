@@ -67,3 +67,8 @@ dist/
 *.min.js
 *.min.css
 node_modules/
+
+# Test reports
+playwright-report/
+test-results/
+.nyc_output/

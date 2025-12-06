@@ -67,7 +67,7 @@ async function test008_httpOnlyCookies(page) {
     // Verify from network request headers that HttpOnly flag is set
     const response = await page.goto(`${BASE_URL}/api/auth/login`, {
       method: 'POST',
-      data: JSON.stringify({ username_or_email: 'medenor', password: 'VzAL$5kJL$*$B7' }),
+      data: JSON.stringify({ username_or_email: 'medenor', password: 'xxx' }),
       headers: { 'Content-Type': 'application/json' }
     }).catch(() => null);
     
@@ -93,7 +93,7 @@ async function test009_csrfProtection(page) {
     const csrfResponse = await page.context().request.post(`${BASE_URL}/api/auth/login`, {
       data: {
         username_or_email: 'medenor',
-        password: 'VzAL$5kJL$*$B7'
+        password: 'xxx'
       }
     });
     
@@ -181,7 +181,7 @@ async function test003_tokenExpiration(page) {
     
     // Enter credentials
     await page.fill('input[placeholder*="utilisateur"]', 'medenor');
-    await page.fill('input[placeholder*="Mot de passe"]', 'VzAL$5kJL$*$B7');
+    await page.fill('input[placeholder*="Mot de passe"]', 'xxx');
     
     // Submit login
     await page.click('button:has-text("Se connecter")');

@@ -50,7 +50,7 @@ test_003_token_expiration_v2() {
     # Login to get token
     RESPONSE=$(curl -s -X POST "$BASE_URL/api/auth/login" \
         -H "Content-Type: application/json" \
-        -d '{"username_or_email":"medenor","password":"VzAL$5kJL$*$B7"}')
+        -d '{"username_or_email":"medenor","password":"xxx"}')
     
     TOKEN=$(echo "$RESPONSE" | jq -r '.access_token' 2>/dev/null)
     
@@ -289,7 +289,7 @@ test_015_token_revocation_v2() {
     # Login first
     LOGIN_RESPONSE=$(curl -s -X POST "$BASE_URL/api/auth/login" \
         -H "Content-Type: application/json" \
-        -d '{"username_or_email":"medenor","password":"VzAL$5kJL$*$B7"}')
+        -d '{"username_or_email":"medenor","password":"xxx"}')
     
     TOKEN=$(echo "$LOGIN_RESPONSE" | jq -r '.access_token' 2>/dev/null)
     
