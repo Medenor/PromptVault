@@ -989,7 +989,9 @@ def get_user_sessions(
         session_responses = []
         for session in sessions:
             # Parse user agent to extract device/browser/os
-            ua_info = parser.parse_user_agent(session.user_agent)
+            # Handle both dict and object types
+            user_agent = session.get("user_agent") if isinstance(session, dict) else session.user_agent
+            ua_info = parser.parse_user_agent(user_agent)
             
             # Create response model with parsed metadata
             response = SessionResponse.model_validate(session)
