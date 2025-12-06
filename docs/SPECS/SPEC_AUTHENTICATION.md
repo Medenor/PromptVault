@@ -2,7 +2,7 @@
 title: PromptVault Authentication System Specification
 version: 1.0
 date_created: 2025-11-29
-last_updated: 2025-12-04
+last_updated: 2025-12-06
 date_implemented: 2025-12-04
 owner: medenor
 status: IMPLEMENTED
@@ -13,15 +13,16 @@ priority: HIGH (Phase 2)
 
 ## Implementation Status
 
-**STATUS**: ✅ IMPLEMENTED (December 5, 2025)
+**STATUS**: ✅ IMPLEMENTED (December 6, 2025)
 
 This specification has been fully implemented and is now in production. All features, security measures, and API endpoints described in this document are complete and tested.
 
-- **Test Coverage**: 481 passing tests (99.8% coverage)
+- **Test Coverage**: 1087 passing tests (83.62% coverage)
 - **Security**: OWASP compliant with Argon2id password hashing and ES256 JWT tokens
 - **Documentation**: Complete deployment, API, and security guides available
 - **Translation**: Frontend UI fully implemented in English, French, Spanish, German
-- **Admin User Creation**: NEW - Admin endpoint and UI modal for creating users directly from User Management page
+- **Admin User Creation**: Admin endpoint and UI modal for creating users directly from User Management page
+- **Profile Management** (NEW): PATCH /auth/me for profile updates, GET /auth/me/stats for account statistics
 
 For implementation details, see:
 
@@ -516,7 +517,7 @@ Authorization: Bearer <access_token>
 #### 3.2.2 Update Profile
 
 ```
-PUT /api/auth/me
+PATCH /api/auth/me
 Authorization: Bearer <access_token>
 Content-Type: application/json
 ```
@@ -526,23 +527,75 @@ Content-Type: application/json
 ```json
 {
   "display_name": "John Smith",
-  "email": "john.smith@example.com"  // Triggers re-verification
+  "email": "john.smith@example.com"
 }
+```
+
+**Notes:**
+- Both fields are optional
+- At least one field must be provided
+- Email must be unique (returns 409 Conflict if already taken)
+- Email verification is reset to false when email is changed
+- Display name is trimmed of whitespace
+
+**Response (200 OK):**
+
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "username": "john_doe",
+  "email": "john.smith@example.com",
+  "display_name": "John Smith",
+  "role": "editor",
+  "email_verified": false,
+  "is_active": true,
+  "created_at": "2025-10-01T08:00:00Z",
+  "updated_at": "2025-12-06T14:30:00Z",
+  "last_login": "2025-12-06T10:30:00Z"
+}
+```
+
+**Error Responses:**
+- `400`: Validation error (invalid email, no fields provided)
+- `401`: Invalid or expired token
+- `409`: Email already in use by another user
+
+#### 3.2.3 Get Account Statistics
+
+```
+GET /api/auth/me/stats
+Authorization: Bearer <access_token>
 ```
 
 **Response (200 OK):**
 
 ```json
 {
-  "user": { ... },
-  "message": "Profile updated. Email verification required for new address."
+  "user_id": "550e8400-e29b-41d4-a716-446655440000",
+  "username": "john_doe",
+  "account_created_at": "2025-10-01T08:00:00Z",
+  "last_login": "2025-12-06T10:30:00Z",
+  "password_changed_at": null,
+  "active_sessions_count": 2,
+  "total_sessions_count": 15,
+  "failed_login_attempts": 0,
+  "is_locked": false,
+  "locked_until": null,
+  "days_since_creation": 66,
+  "days_since_last_login": 1
 }
 ```
 
-#### 3.2.3 Change Password
+**Use Cases:**
+- Users can monitor their account security
+- Identify unauthorized sessions
+- Track login activity
+- Security-conscious users audit their account
+
+#### 3.2.4 Change Password
 
 ```
-POST /api/auth/me/change-password
+POST /api/auth/change-password
 Authorization: Bearer <access_token>
 Content-Type: application/json
 ```
@@ -551,8 +604,9 @@ Content-Type: application/json
 
 ```json
 {
-  "current_password": "SecureP@ssw0rd123",
-  "new_password": "NewSecureP@ssw0rd456"
+  "old_password": "SecureP@ssw0rd123",
+  "new_password": "NewSecureP@ssw0rd456",
+  "confirm_new_password": "NewSecureP@ssw0rd456"
 }
 ```
 
@@ -560,16 +614,24 @@ Content-Type: application/json
 
 ```json
 {
-  "message": "Password changed successfully. Please login again."
+  "message": "Password changed successfully",
+  "detail": "Your password has been updated. All sessions remain active."
 }
 ```
 
 **Behavior:**
 
-- Revoke all sessions except current
-- Update `password_changed_at` timestamp
+- Verifies current password with Argon2id hash comparison
+- Validates new password against password policy
+- Updates `password_changed_at` timestamp
+- Maintains active sessions (no forced logout)
+- Returns appropriate error codes for failed validation
 
-#### 3.2.4 Delete Account
+**Error Responses:**
+- `400`: Password policy violation or passwords don't match
+- `401`: Current password is incorrect
+
+#### 3.2.5 Delete Account
 
 ```
 DELETE /api/auth/me
@@ -600,6 +662,44 @@ Content-Type: application/json
 - Soft delete or transfer prompts to admin (configurable)
 - Revoke all sessions
 - GDPR compliance: actual deletion vs anonymization
+
+#### 3.2.6 Session Management
+
+```
+GET /api/auth/sessions
+Authorization: Bearer <access_token>
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "sessions": [
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "created_at": "2025-12-01T10:00:00Z",
+      "last_used": "2025-12-06T14:30:00Z",
+      "expires_at": "2025-12-20T14:30:00Z",
+      "ip_address": "192.168.1.100",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    }
+  ]
+}
+```
+
+**Revoke Specific Session:**
+
+```
+DELETE /api/auth/sessions/{session_id}
+Authorization: Bearer <access_token>
+```
+
+**Revoke All Sessions:**
+
+```
+DELETE /api/auth/sessions
+Authorization: Bearer <access_token>
+```
 
 ### 3.3 Admin Endpoints
 

@@ -557,6 +557,129 @@ class AuthService:
             },
         }
 
+    def update_user_profile(
+        self,
+        user_id: str,
+        display_name: Optional[str] = None,
+        email: Optional[str] = None,
+    ) -> User:
+        """Update user profile (email and/or display_name).
+
+        Args:
+            user_id: User's UUID
+            display_name: New display name (optional)
+            email: New email address (optional)
+
+        Returns:
+            Updated User instance
+
+        Raises:
+            UserNotFoundError: If user not found
+            EmailAlreadyExistsError: If email already in use by another user
+
+        Example:
+            >>> user = auth_service.update_user_profile(
+            ...     user_id="user-uuid",
+            ...     display_name="New Name",
+            ...     email="newemail@example.com"
+            ... )
+        """
+        from datetime import datetime, timezone
+
+        user = self.user_repo.get_by_id(user_id)
+        if not user:
+            raise UserNotFoundError(f"User not found: {user_id}")
+
+        # Update email if provided and different
+        if email is not None and email != user.email:
+            # Check uniqueness
+            if self.user_repo.email_exists(email):
+                raise EmailAlreadyExistsError(f"Email '{email}' is already in use")
+            user.email = email
+            # Reset email verification when email changes
+            user.email_verified = False
+
+        # Update display_name if provided
+        if display_name is not None:
+            user.display_name = display_name
+
+        # Update timestamp
+        user.updated_at = datetime.now(timezone.utc)
+        self.db.flush()
+        self.db.commit()
+        self.db.refresh(user)
+
+        return user
+
+    def get_user_stats(self, user_id: str) -> Dict[str, any]:
+        """Get account statistics for a user.
+
+        Provides comprehensive statistics including:
+        - Account creation and login dates
+        - Session information (active and total count)
+        - Security status (lockout, failed attempts)
+
+        Args:
+            user_id: User's UUID
+
+        Returns:
+            Dictionary with user statistics
+
+        Raises:
+            UserNotFoundError: If user not found
+
+        Example:
+            >>> stats = auth_service.get_user_stats("user-uuid")
+            >>> print(f"Active sessions: {stats['active_sessions_count']}")
+        """
+        from datetime import datetime, timezone
+
+        user = self.user_repo.get_by_id(user_id)
+        if not user:
+            raise UserNotFoundError(f"User not found: {user_id}")
+
+        # Count sessions
+        active_sessions = self.session_repo.count_user_sessions(user_id, active_only=True)
+        all_sessions = self.session_repo.count_user_sessions(user_id, active_only=False)
+
+        # Calculate days since account creation
+        now = datetime.now(timezone.utc)
+        created_at = user.created_at
+        if created_at.tzinfo is None:
+            created_at = created_at.replace(tzinfo=timezone.utc)
+        days_since_creation = (now - created_at).days
+
+        # Calculate days since last login
+        days_since_last_login = None
+        if user.last_login:
+            last_login = user.last_login
+            if last_login.tzinfo is None:
+                last_login = last_login.replace(tzinfo=timezone.utc)
+            days_since_last_login = (now - last_login).days
+
+        # Check if locked
+        is_locked = False
+        if user.locked_until:
+            locked_until = user.locked_until
+            if locked_until.tzinfo is None:
+                locked_until = locked_until.replace(tzinfo=timezone.utc)
+            is_locked = now < locked_until
+
+        return {
+            "user_id": user.id,
+            "username": user.username,
+            "account_created_at": user.created_at,
+            "last_login": user.last_login,
+            "password_changed_at": user.password_changed_at,
+            "active_sessions_count": active_sessions,
+            "total_sessions_count": all_sessions,
+            "failed_login_attempts": user.failed_login_attempts or 0,
+            "is_locked": is_locked,
+            "locked_until": user.locked_until if is_locked else None,
+            "days_since_creation": days_since_creation,
+            "days_since_last_login": days_since_last_login,
+        }
+
     def logout(self, refresh_token: str) -> bool:
         """Revoke refresh token and end session.
 

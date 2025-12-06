@@ -31,17 +31,20 @@ class UserResponse(BaseModel):
         id: User's unique identifier (UUID)
         username: User's username
         email: User's email address
+        display_name: User's display name (optional)
         role: User's role (viewer/editor/admin)
         is_active: Account active status
         email_verified: Email verification status
         created_at: Account creation timestamp
         updated_at: Account last update timestamp
+        last_login: Last login timestamp (optional)
 
     Example:
         >>> user = UserResponse(
         ...     id="550e8400-e29b-41d4-a716-446655440000",
         ...     username="alice",
         ...     email="alice@example.com",
+        ...     display_name="Alice Smith",
         ...     role="viewer",
         ...     is_active=True,
         ...     email_verified=False,
@@ -64,6 +67,11 @@ class UserResponse(BaseModel):
         ...,
         description="User's email address",
         examples=["alice@example.com"],
+    )
+    display_name: Optional[str] = Field(
+        default=None,
+        description="User's display name",
+        examples=["Alice Smith", "Bob Johnson"],
     )
     role: str = Field(
         ...,
@@ -465,3 +473,123 @@ class RevokeSessionResponse(BaseModel):
             }
         }
     )
+
+
+class UserStatsResponse(BaseModel):
+    """Response model for user account statistics.
+
+    Provides comprehensive statistics about a user's account including
+    login history, session information, and security status.
+
+    Attributes:
+        user_id: User's unique identifier (UUID)
+        username: User's username
+        account_created_at: Account creation date
+        last_login: Last successful login timestamp (nullable)
+        password_changed_at: Last password change timestamp (nullable)
+        active_sessions_count: Number of currently active sessions
+        total_sessions_count: Total number of sessions (including revoked)
+        failed_login_attempts: Current failed login counter
+        is_locked: Whether account is currently locked out
+        locked_until: Account lockout expiration time (if locked)
+        days_since_creation: Number of days since account creation
+        days_since_last_login: Days since last login (nullable)
+
+    Example:
+        >>> stats = UserStatsResponse(
+        ...     user_id="550e8400-e29b-41d4-a716-446655440000",
+        ...     username="alice",
+        ...     account_created_at=datetime.now(),
+        ...     last_login=datetime.now(),
+        ...     password_changed_at=None,
+        ...     active_sessions_count=2,
+        ...     total_sessions_count=15,
+        ...     failed_login_attempts=0,
+        ...     is_locked=False,
+        ...     locked_until=None,
+        ...     days_since_creation=45,
+        ...     days_since_last_login=2
+        ... )
+    """
+
+    user_id: str = Field(
+        ...,
+        description="User's unique identifier (UUID)",
+        examples=["550e8400-e29b-41d4-a716-446655440000"],
+    )
+    username: str = Field(
+        ...,
+        description="User's username",
+        examples=["alice", "bob_smith"],
+    )
+    account_created_at: datetime = Field(
+        ...,
+        description="Account creation date and time",
+    )
+    last_login: Optional[datetime] = Field(
+        default=None,
+        description="Last successful login date and time",
+    )
+    password_changed_at: Optional[datetime] = Field(
+        default=None,
+        description="Last password change date and time",
+    )
+    active_sessions_count: int = Field(
+        ...,
+        ge=0,
+        description="Number of currently active sessions",
+        examples=[1, 2, 5],
+    )
+    total_sessions_count: int = Field(
+        ...,
+        ge=0,
+        description="Total number of sessions (including revoked)",
+        examples=[5, 15, 50],
+    )
+    failed_login_attempts: int = Field(
+        default=0,
+        ge=0,
+        description="Current failed login attempts counter",
+        examples=[0, 1, 3],
+    )
+    is_locked: bool = Field(
+        default=False,
+        description="Whether account is currently locked out",
+    )
+    locked_until: Optional[datetime] = Field(
+        default=None,
+        description="Account lockout expiration time (if locked)",
+    )
+    days_since_creation: int = Field(
+        ...,
+        ge=0,
+        description="Number of days since account creation",
+        examples=[1, 45, 365],
+    )
+    days_since_last_login: Optional[int] = Field(
+        default=None,
+        ge=0,
+        description="Number of days since last login",
+        examples=[0, 2, 30],
+    )
+
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_schema_extra={
+            "example": {
+                "user_id": "550e8400-e29b-41d4-a716-446655440000",
+                "username": "alice",
+                "account_created_at": "2025-10-01T10:00:00Z",
+                "last_login": "2025-12-04T15:30:00Z",
+                "password_changed_at": None,
+                "active_sessions_count": 2,
+                "total_sessions_count": 12,
+                "failed_login_attempts": 0,
+                "is_locked": False,
+                "locked_until": None,
+                "days_since_creation": 66,
+                "days_since_last_login": 2
+            }
+        }
+    )
+

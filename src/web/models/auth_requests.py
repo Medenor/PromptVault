@@ -586,3 +586,90 @@ class RevokeSessionRequest(BaseModel):
             raise ValueError("Invalid session ID format (must be UUID)")
 
         return v.lower()
+
+
+class UpdateProfileRequest(BaseModel):
+    """Request model for updating user profile.
+
+    Allows authenticated users to update their display name and/or email address.
+
+    Field constraints:
+        - display_name: 1-200 characters (optional)
+        - email: Valid email format, must be unique (optional)
+        - At least one field must be provided
+
+    Example:
+        >>> request = UpdateProfileRequest(
+        ...     display_name="Alice Smith",
+        ...     email="newemail@example.com"
+        ... )
+    """
+
+    display_name: Optional[str] = Field(
+        default=None,
+        min_length=1,
+        max_length=200,
+        description="Display name (1-200 characters)",
+        examples=["Alice Smith", "Bob Johnson"],
+    )
+    email: Optional[str] = Field(
+        default=None,
+        min_length=5,
+        max_length=255,
+        description="Email address (must be unique)",
+        examples=["newemail@example.com"],
+    )
+
+    @field_validator("display_name")
+    @classmethod
+    def validate_display_name(cls, v: Optional[str]) -> Optional[str]:
+        """Validate and normalize display name.
+
+        Args:
+            v: Display name to validate
+
+        Returns:
+            Validated and normalized display name or None
+
+        Raises:
+            ValueError: If display name is empty or only whitespace
+        """
+        if v is not None:
+            v = v.strip()
+            if not v:
+                raise ValueError("Display name cannot be empty or whitespace only")
+
+        return v
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, v: Optional[str]) -> Optional[str]:
+        """Validate email format and normalize.
+
+        Args:
+            v: Email to validate
+
+        Returns:
+            Validated and normalized email or None
+
+        Raises:
+            ValueError: If email format is invalid
+        """
+        if v is not None:
+            v = v.strip().lower()
+            if "@" not in v or "." not in v.split("@")[1]:
+                raise ValueError("Invalid email address format")
+
+        return v
+
+    @model_validator(mode="after")
+    def validate_at_least_one_field(self):
+        """Ensure at least one field is provided for update.
+
+        Raises:
+            ValueError: If both fields are None
+        """
+        if self.display_name is None and self.email is None:
+            raise ValueError("At least one field (display_name or email) must be provided")
+
+        return self
