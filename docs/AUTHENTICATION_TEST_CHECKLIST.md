@@ -867,7 +867,7 @@ _________________________________
 ### AUTH-RESET-004: Reset Token Expiration
 
 - **Priority**: 🔴 High
-- **Status**: ⏭️ N/A - Token generation not working (API returns 200 but no tokens created)
+- **Status**: ✅ PASS
 
 **Preconditions:**
 
@@ -895,7 +895,7 @@ _________________________________
 ### AUTH-RESET-005: Valid Password Reset Flow
 
 - **Priority**: 🔴 High
-- **Status**: ⏭️ N/A - Token generation not working
+- **Status**: ✅ PASS
 
 **Preconditions:**
 
@@ -926,7 +926,7 @@ _________________________________
 ### AUTH-RESET-006: Token Single-Use Enforcement
 
 - **Priority**: 🔴 High
-- **Status**: ⏭️ N/A - Token generation not working
+- **Status**: ✅ PASS
 
 **Preconditions:**
 
@@ -952,7 +952,7 @@ _________________________________
 ### AUTH-RESET-007: New Password Validation
 
 - **Priority**: 🔴 High
-- **Status**: ⏭️ N/A - Token generation not working
+- **Status**: ✅ PASS
 
 **Preconditions:**
 
@@ -978,7 +978,7 @@ _________________________________
 ### AUTH-RESET-008: Session Revocation on Password Reset
 
 - **Priority**: 🔴 High
-- **Status**: ⏭️ N/A - Token generation not working
+- **Status**: ✅ PASS (sessions marked as revoked)
 
 **Preconditions:**
 
@@ -1006,7 +1006,7 @@ _________________________________
 ### AUTH-RESET-009: Login with New Password
 
 - **Priority**: 🔴 High
-- **Status**: ⏭️ N/A - Token generation not working
+- **Status**: ✅ PASS
 
 **Preconditions:**
 
@@ -1033,7 +1033,7 @@ _________________________________
 ### AUTH-RESET-010: Old Password No Longer Works
 
 - **Priority**: 🔴 High
-- **Status**: ⏭️ N/A - Token generation not working
+- **Status**: ✅ PASS
 
 **Preconditions:**
 
@@ -1062,7 +1062,7 @@ _________________________________
 ### AUTH-TOKEN-001: Access Token Expiration
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ✅ PASS
 
 **Preconditions:**
 
@@ -1089,7 +1089,7 @@ _________________________________
 ### AUTH-TOKEN-002: Automatic Token Refresh
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ✅ PASS
 
 **Preconditions:**
 
@@ -1118,7 +1118,7 @@ _________________________________
 ### AUTH-TOKEN-003: Manual Token Refresh
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ✅ PASS
 
 **Preconditions:**
 
@@ -1146,7 +1146,7 @@ _________________________________
 ### AUTH-TOKEN-004: Refresh Token Rotation
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ✅ PASS
 
 **Preconditions:**
 
@@ -1173,7 +1173,7 @@ _________________________________
 ### AUTH-TOKEN-005: Token Family Tracking
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ⏭️ N/A - Session ID not in token claims
 
 **Preconditions:**
 
@@ -1199,7 +1199,7 @@ _________________________________
 ### AUTH-TOKEN-006: Token Reuse Detection
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ✅ PASS
 
 **Preconditions:**
 
@@ -1229,7 +1229,7 @@ _________________________________
 ### AUTH-TOKEN-007: Logout Token Revocation
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ✅ PASS
 
 **Preconditions:**
 
@@ -1258,7 +1258,7 @@ _________________________________
 ### AUTH-TOKEN-008: Logout from All Devices
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ✅ PASS
 
 **Preconditions:**
 
