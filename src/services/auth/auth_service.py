@@ -942,6 +942,7 @@ class AuthService:
             user: User instance
             ip_address: Client IP address
             user_agent: Client user agent
+            remember_me: Use extended refresh token lifetime when True
 
         Returns:
             Dictionary with tokens and user info
