@@ -441,7 +441,49 @@ function initProfilePage() {
         });
     }
 
+    checkAdminAccess();
     loadUserInfo();
     setupChangePasswordForm();
     setupLogout();
+}
+
+// Check admin access and show admin button if user is admin
+async function checkAdminAccess() {
+    try {
+        console.log('Checking authentication...');
+        const response = await fetch('/api/auth/me', {
+            credentials: 'include'
+        });
+
+        console.log('Response status:', response.status);
+        if (response.ok) {
+            const data = await response.json();
+            console.log('User data:', data);
+            console.log('User role:', data.role);
+
+            if (data.role === 'admin') {
+                console.log('User is admin, showing button');
+                const adminBtn = document.getElementById('admin-btn');
+                console.log('Admin button element:', adminBtn);
+                if (adminBtn) {
+                    adminBtn.style.display = '';
+                    console.log('Admin button should now be visible');
+                }
+            } else {
+                console.log('User is not admin, role is:', data.role);
+            }
+        } else if (response.status === 401) {
+            // Session revoked or expired, redirect to login immediately
+            console.log('Session invalid, redirecting to login');
+            window.location.href = '/auth/login';
+        } else {
+            console.log('Response not OK:', response.statusText);
+            // For other errors, also redirect to login for security
+            window.location.href = '/auth/login';
+        }
+    } catch (error) {
+        console.error('Failed to check authentication:', error);
+        // On error, redirect to login for security
+        window.location.href = '/auth/login';
+    }
 }
