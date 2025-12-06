@@ -380,6 +380,7 @@ _________________________________
 **Implementation Notes:**
 
 The common password detection now includes sophisticated variation detection:
+
 - Direct matches (case-insensitive)
 - Passwords with trailing special characters (!, @, #, etc.)
 - Passwords with trailing numbers stripped
@@ -1350,6 +1351,7 @@ _________________________________
 PYTHONPATH=/Users/raphael/Programmation/PromptVault python tests/test_auth_session_002.py
 # Result: ✅ All AUTH-SESSION-002 tests passed!
 ```
+
 - Browser: "Chrome"
 - OS: "macOS" or "Mac OS X"
 - IP address matches client IP
@@ -3214,6 +3216,7 @@ _________________________________
 - Rate limit: 5 attempts per 15 minutes per IP
 
 **Implementation Details:**
+
 - Decorator `@limiter.limit(auth_login_limit)` applied to `/login` endpoint
 - Rate limit function references config: `rate_limit_login_attempts=5`, `rate_limit_login_window_seconds=900`
 - Uses slowapi library with Redis backend
@@ -3246,6 +3249,7 @@ _________________________________
 - Rate limit: 3 requests per hour per IP
 
 **Implementation Details:**
+
 - Decorator `@limiter.limit(password_reset_limit)` applied to `/password-reset/request` endpoint
 - Rate limit function references config: `rate_limit_password_reset_attempts=3`, `rate_limit_password_reset_window_seconds=3600`
 - Uses slowapi library with Redis backend
@@ -3277,6 +3281,7 @@ Rate limiting decorator activated on password reset endpoint. Limit: 3/hour per 
 - Lockout automatically expires after 15 minutes
 
 **Implementation Details:**
+
 - Account lockout logic in `AuthService.login()` method
 - Configuration: `max_login_attempts=5`, `account_lockout_duration_seconds=900` (15 minutes)
 - Tracks `failed_login_attempts` counter per user
@@ -3366,6 +3371,7 @@ _________________________________
 - `Permissions-Policy: geolocation=(), microphone=(), camera=()`
 
 **Implementation Details:**
+
 - SecurityHeadersMiddleware in `src/web/middleware/security_headers.py`
 - Applied to all HTTP responses via middleware stack
 - Headers configured with strong security settings
@@ -3400,6 +3406,7 @@ Security headers middleware created and integrated into FastAPI app. All require
 - PATCH /auth/me endpoint accepts payload safely
 
 **Implementation Details:**
+
 - UpdateProfileRequest validates display_name field
 - Field validator in auth_requests.py sanitizes input
 - Database stores validated value
@@ -3524,6 +3531,7 @@ _________________________________
 - Database maintains referential integrity
 
 **Implementation Details:**
+
 - UserSession model has revoked_at and is_revoked fields
 - Sessions marked as revoked when expired (not hard-deleted)
 - SessionRepository.cleanup_expired_sessions() can remove old sessions
@@ -3559,6 +3567,7 @@ Session management fully implemented. Expired sessions marked with is_revoked fl
 - Error message: "Session has been revoked"
 
 **Implementation Details:**
+
 - DELETE /api/auth/me/sessions/{session_id} endpoint implemented
 - Revokes session by setting is_revoked = true
 - AuthService.validate_token() checks is_revoked before allowing access
@@ -3579,7 +3588,7 @@ Token revocation fully implemented. Revoke endpoint: DELETE /api/auth/me/session
 
 **Preconditions:**
 
-- Application running at http://127.0.0.1:8003
+- Application running at <http://127.0.0.1:8003>
 
 **Test Steps:**
 
@@ -3597,6 +3606,7 @@ Token revocation fully implemented. Revoke endpoint: DELETE /api/auth/me/session
 - Page styled correctly
 
 **Implementation Details:**
+
 - Playwright test: AUTH-UI-001 in scripts/playwright_auth_ui_tests.ts
 - Checks page title matches /login|connexion/
 - Verifies all form elements visible (username, password, buttons, links)
@@ -3911,23 +3921,27 @@ _________________________________
 **Objective**: Measure login endpoint response time and throughput
 
 **Test Parameters**:
+
 - Concurrent Requests: 100
 - Test Duration: Full suite
 - Success Target: ≥ 99.5%
 - Response Time Target (p95): < 150ms
 
 **Implementation**:
+
 - Script: `scripts/benchmark_auth_performance.py`
 - Method: `AuthPerformanceBenchmark.benchmark_login(num_requests=100)`
 - Metrics Tracked: Avg, min, max, p95, p99 response times
 
 **Expected Results**:
+
 - Average Response Time: < 100ms
 - p95 Response Time: < 150ms
 - p99 Response Time: < 200ms
 - Success Rate: ≥ 99.5%
 
 **Notes**:
+
 - Tests realistic authentication with password hashing
 - Measures full login workflow including token generation
 - Can be run individually: `python3 scripts/benchmark_auth_performance.py`
@@ -3942,23 +3956,27 @@ _________________________________
 **Objective**: Measure registration endpoint performance under concurrent load
 
 **Test Parameters**:
+
 - Concurrent Registrations: 50
 - Unique Users: 50
 - Success Target: ≥ 99.5%
 - Response Time Target (p95): < 200ms
 
 **Implementation**:
+
 - Script: `scripts/benchmark_auth_performance.py`
 - Method: `AuthPerformanceBenchmark.benchmark_registration(num_requests=50)`
 - Metrics Tracked: Registration time, password hashing performance
 
 **Expected Results**:
+
 - Average Response Time: < 150ms
 - p95 Response Time: < 200ms
 - p99 Response Time: < 300ms
 - Success Rate: ≥ 99.5%
 
 **Notes**:
+
 - Tests full validation pipeline
 - Measures Argon2id password hashing performance
 - Database transaction overhead included
@@ -3973,22 +3991,26 @@ _________________________________
 **Objective**: Measure JWT token refresh speed and validation overhead
 
 **Test Parameters**:
+
 - Refresh Operations: 50
 - Success Target: ≥ 99.5%
 - Response Time Target (p95): < 50ms
 
 **Implementation**:
+
 - Script: `scripts/benchmark_auth_performance.py`
 - Method: `AuthPerformanceBenchmark.benchmark_token_refresh(num_requests=50)`
 - Metrics Tracked: Token generation, validation time
 
 **Expected Results**:
+
 - Average Response Time: < 30ms
 - p95 Response Time: < 50ms
 - p99 Response Time: < 100ms
 - Success Rate: ≥ 99.5%
 
 **Notes**:
+
 - Tests JWT parsing and validation performance
 - Measures session lookup overhead
 - Includes token rotation if applicable
@@ -3998,62 +4020,112 @@ _________________________________
 ### AUTH-PERF-004: Session Management Scalability
 
 - **Priority**: 🟡 Medium
-- **Status**: ⏭️
+- **Status**: ✅
 
 **Objective**: Test system's ability to handle multiple concurrent sessions
 
 **Test Parameters**:
+
 - Concurrent Users: 20-50
 - Sessions per User: 3-5
 - Duration: 60+ seconds
 - Success Target: ≥ 99%
 
 **Implementation**:
+
 - Script: `scripts/locustfile_auth_performance.py`
 - Class: `SessionManagementTest`
 - Operations: Create, list, revoke sessions
+- Task Weights: Create (3x) → List (2x) → Revoke (1x)
 
 **Expected Results**:
+
 - Session Creation: < 50ms
 - Session Listing: < 100ms
 - Session Revocation: < 30ms
 - Throughput: ≥ 100 session ops/sec
 - Success Rate: ≥ 99%
 
+**Test Scenarios**:
+
+- Multiple sessions per user: Tests session storage and retrieval
+- Concurrent session operations: Validates database transaction handling
+- Session revocation scalability: Measures cleanup performance under load
+
 **Notes**:
-- Requires Locust framework
+
+- Requires Locust framework: `pip install locust`
 - Run with: `locust -f scripts/locustfile_auth_performance.py --host=http://127.0.0.1:8003`
+- Access UI at: http://localhost:8089
+- Headless mode: `locust -f scripts/locustfile_auth_performance.py --host=http://127.0.0.1:8003 --headless -u 30 -r 5 -t 120s`
+- Metrics tracked: Response times, success rate, throughput
+- Database queries: Session table operations (INSERT, SELECT, DELETE)
 
 ---
 
 ### AUTH-PERF-005: Concurrent User Authentication
 
 - **Priority**: 🟡 Medium
-- **Status**: ⏭️
+- **Status**: ✅
 
 **Objective**: Simulate realistic load with multiple concurrent users
 
 **Test Parameters**:
+
 - Concurrent Users: 50-100
 - Duration: 60-300 seconds
 - Spawn Rate: 10 users/second
 - Success Target: ≥ 99%
 
 **Implementation**:
+
 - Script: `scripts/locustfile_auth_performance.py`
 - Class: `AuthPerformanceUser`
 - Behavior: Login → Activities → Logout
+- Task Weights: Login (4x) → Get Profile (2x) → Refresh Token (1x) → Logout (1x)
 
 **Expected Results**:
+
 - Throughput: ≥ 500 requests/second
 - Average Response Time: < 150ms
 - p95 Response Time: < 250ms
+- p99 Response Time: < 350ms
 - Success Rate: ≥ 99%
 
+**Test Scenarios**:
+
+- Sustained load: Measures system stability over time
+- Peak load: Tests behavior at upper limits
+- Resource utilization: Monitors CPU, memory, database connections
+- Recovery: Tests system recovery after load spike
+
+**Realistic User Simulation**:
+
+- Users login with created test credentials
+- Perform realistic operations (profile check, token refresh)
+- Logout cleanly
+- Wait between 1-3 seconds between requests
+- Cycle repeats with different user credentials
+
+**Performance Metrics Tracked**:
+
+- Response time distribution (avg, min, max, p95, p99)
+- Success/failure rate
+- Requests per second throughput
+- Database connection pool usage
+- Memory consumption stability
+- Error types and frequency
+
 **Notes**:
-- Full-stack load test with realistic user behavior
-- Requires Locust framework
-- Monitor CPU and memory during test
+
+- Requires Locust framework: `pip install locust`
+- Run interactively: `locust -f scripts/locustfile_auth_performance.py --host=http://127.0.0.1:8003`
+- Headless (automated): `locust -f scripts/locustfile_auth_performance.py --host=http://127.0.0.1:8003 --headless -u 50 -r 10 -t 300s`
+- Monitor during test:
+  - Server logs for errors
+  - Database query performance
+  - System resource usage (CPU, memory)
+- Results indicate production readiness for typical user loads
 
 ---
 
