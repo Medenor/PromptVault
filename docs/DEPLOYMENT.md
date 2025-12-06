@@ -5,6 +5,7 @@ This guide covers deploying PromptVault with database support using Docker, Dock
 ## Table of Contents
 
 - [Quick Start with Docker Compose](#quick-start-with-docker-compose)
+- [JWT Key Generation](#jwt-key-generation)
 - [Docker Deployment](#docker-deployment)
 - [Manual Deployment](#manual-deployment)
 - [Environment Configuration](#environment-configuration)
@@ -18,6 +19,17 @@ This guide covers deploying PromptVault with database support using Docker, Dock
 ## Quick Start with Docker Compose
 
 The fastest way to get PromptVault running with PostgreSQL:
+
+### Important: Generate JWT Keys First
+
+Before starting, you MUST generate JWT keys locally. See [JWT Key Generation](#jwt-key-generation) section for detailed instructions.
+
+```bash
+# Quick key generation
+mkdir -p secrets/jwt
+openssl ecparam -name prime256v1 -genkey -noout -out secrets/jwt/private_key.pem
+openssl ec -in secrets/jwt/private_key.pem -pubout -out secrets/jwt/public_key.pem
+```
 
 ### 1. Clone and Configure
 
@@ -69,6 +81,91 @@ docker-compose down
 
 # Stop and remove data
 docker-compose down -v
+```
+
+---
+
+## JWT Key Generation
+
+### Security Warning ⚠️
+
+**NEVER commit JWT keys to Git!** Keys must be:
+- ✅ Generated locally on each deployment
+- ✅ Stored in `secrets/jwt/` (ignored by .gitignore)
+- ✅ Backed up in a secure location
+- ❌ NEVER committed to version control
+- ❌ NEVER shared in email or chat
+- ❌ NEVER exposed in logs or error messages
+
+### Generate JWT Keys
+
+Generate ES256 (ECDSA P-256) keys for JWT signing:
+
+```bash
+# Generate private key
+openssl ecparam -name prime256v1 -genkey -noout -out secrets/jwt/private_key.pem
+
+# Generate public key
+openssl ec -in secrets/jwt/private_key.pem -pubout -out secrets/jwt/public_key.pem
+
+# Verify keys
+ls -la secrets/jwt/
+```
+
+### Docker Compose Setup
+
+If using Docker Compose, mount the keys as a volume:
+
+```yaml
+# docker-compose.yml
+services:
+  web:
+    volumes:
+      - ./secrets/jwt:/app/secrets/jwt:ro  # Read-only mount
+```
+
+### Manual Setup
+
+For manual deployment:
+
+```bash
+# 1. Generate keys
+mkdir -p secrets/jwt
+openssl ecparam -name prime256v1 -genkey -noout -out secrets/jwt/private_key.pem
+openssl ec -in secrets/jwt/private_key.pem -pubout -out secrets/jwt/public_key.pem
+
+# 2. Set permissions (secure)
+chmod 600 secrets/jwt/private_key.pem
+chmod 644 secrets/jwt/public_key.pem
+
+# 3. Configure environment
+echo "JWT_PRIVATE_KEY_PATH=$(pwd)/secrets/jwt/private_key.pem" >> .env
+echo "JWT_PUBLIC_KEY_PATH=$(pwd)/secrets/jwt/public_key.pem" >> .env
+
+# 4. Verify
+cat .env | grep JWT
+```
+
+### Rotate Keys (Emergency)
+
+If keys are compromised:
+
+```bash
+# 1. Generate new keys
+rm secrets/jwt/*.pem
+openssl ecparam -name prime256v1 -genkey -noout -out secrets/jwt/private_key.pem
+openssl ec -in secrets/jwt/private_key.pem -pubout -out secrets/jwt/public_key.pem
+
+# 2. Restart application
+docker-compose restart web
+# or
+sudo systemctl restart promptvault
+
+# 3. Force logout all users (requires admin token)
+curl -X POST http://localhost:8001/api/admin/sessions -H "Authorization: Bearer <admin_token>"
+
+# 4. Backup old keys (safe location)
+tar czf /secure/backup/jwt_keys_$(date +%Y%m%d_%H%M%S).tar.gz secrets/jwt/
 ```
 
 ---
@@ -647,6 +744,7 @@ gunicorn src.web.app:app -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:80
 
 Before deploying to production:
 
+- [ ] ⚠️ **JWT keys generated locally and stored in `secrets/jwt/`** (NEVER in Git!)
 - [ ] Set strong `POSTGRES_PASSWORD`
 - [ ] Configure `DATABASE_URL` with production credentials
 - [ ] Set `ENVIRONMENT=production`
