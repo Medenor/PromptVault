@@ -245,6 +245,21 @@ class SessionResponse(BaseModel):
         description="Whether this is the current session",
         examples=[True, False],
     )
+    device: Optional[str] = Field(
+        default=None,
+        description="Parsed device type (Desktop, iPhone, etc.)",
+        examples=["Desktop", "iPhone 12", "Samsung Galaxy S21"],
+    )
+    browser: Optional[str] = Field(
+        default=None,
+        description="Parsed browser name and version",
+        examples=["Chrome 91.0", "Safari 14.1.1", "Firefox 89.0"],
+    )
+    os: Optional[str] = Field(
+        default=None,
+        description="Parsed operating system",
+        examples=["Mac OS X 10.15.7", "Windows 10", "iOS 14.6"],
+    )
 
     model_config = ConfigDict(
         from_attributes=True,

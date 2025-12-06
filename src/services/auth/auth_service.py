@@ -518,6 +518,24 @@ class AuthService:
 
         # Update session with new JTI
         self.session_repo.update_session_token(family_id, new_jti)
+        
+        # ENHANCED: Check and enforce maximum sessions limit
+        if not self.config.unlimited_sessions:
+            active_sessions = self.session_repo.count_user_sessions(user.id, active_only=True)
+            if active_sessions > self.config.max_sessions_per_user:
+                # Revoke oldest sessions to maintain limit
+                while active_sessions > self.config.max_sessions_per_user:
+                    oldest_session = self.session_repo.get_oldest_user_session(user.id)
+                    if oldest_session and oldest_session.family_id != family_id:
+                        self.session_repo.revoke_session(oldest_session.family_id)
+                        logger.info(
+                            f"Auto-revoked oldest session {oldest_session.family_id} "
+                            f"to maintain session limit for user {user.id}"
+                        )
+                        active_sessions -= 1
+                    else:
+                        break  # Can't revoke more without affecting current session
+        
         self.db.commit()
 
         # Fixed: Include all required UserResponse fields to prevent Pydantic validation error

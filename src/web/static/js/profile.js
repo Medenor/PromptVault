@@ -95,6 +95,23 @@ function formatDate(dateString) {
     return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
 }
 
+// Check if session expires soon (within 24 hours) or has already expired
+function getExpirationStatus(expiresAtString) {
+    if (!expiresAtString) return { status: 'unknown', class: '', message: '' };
+    
+    const now = new Date();
+    const expiresAt = new Date(expiresAtString);
+    const hoursUntilExpiry = (expiresAt - now) / (1000 * 60 * 60);
+    
+    if (expiresAt <= now) {
+        return { status: 'expired', class: 'expired', message: '(Expired)' };
+    } else if (hoursUntilExpiry < 24) {
+        return { status: 'expiring-soon', class: 'expires-soon', message: `(Expires in ${Math.round(hoursUntilExpiry)}h)` };
+    } else {
+        return { status: 'active', class: 'active', message: '' };
+    }
+}
+
 // Password Strength Checker
 function checkPasswordStrength(password) {
     const checks = {
@@ -237,14 +254,26 @@ async function loadSessions() {
             if (sessions.length === 0) {
                 sessionsList.innerHTML = '<p>No active sessions</p>';
             } else {
-                sessionsList.innerHTML = sessions.map(session => `
-                    <div class="session-item ${session.is_current ? 'current-session' : ''}" data-session-id="${session.id}">
+                sessionsList.innerHTML = sessions.map(session => {
+                    const expirationStatus = getExpirationStatus(session.expires_at);
+                    const deviceDisplay = session.device || 'Unknown Device';
+                    const browserDisplay = session.browser ? `${session.browser}` : 'Unknown Browser';
+                    const osDisplay = session.os ? `${session.os}` : 'Unknown OS';
+                    
+                    return `
+                    <div class="session-item ${session.is_current ? 'current-session' : ''} ${expirationStatus.class}" data-session-id="${session.id}">
                         <div class="session-info">
-                            <div class="session-device">${session.user_agent || 'Unknown Device'}</div>
-                            <div class="session-details">
-                                IP: ${session.ip_address || 'Unknown'} |
-                                Last used: ${formatDate(session.last_used_at)}
-                                ${session.is_current ? ' | <strong>Current Session</strong>' : ''}
+                            <div class="session-header">
+                                <div class="session-device">${deviceDisplay}</div>
+                                ${session.is_current ? '<span class="badge current-badge">Current Session</span>' : ''}
+                            </div>
+                            <div class="session-metadata">
+                                <div class="device-details">${browserDisplay} on ${osDisplay}</div>
+                                <div class="session-details">
+                                    IP: ${session.ip_address || 'Unknown'} |
+                                    Last used: ${formatDate(session.last_used_at)} |
+                                    Expires: ${formatDate(session.expires_at)} <span class="expiration-badge">${expirationStatus.message}</span>
+                                </div>
                             </div>
                         </div>
                         <div class="session-actions">
@@ -253,7 +282,7 @@ async function loadSessions() {
                             </button>
                         </div>
                     </div>
-                `).join('');
+                `}).join('');
             }
         }
     } catch (error) {

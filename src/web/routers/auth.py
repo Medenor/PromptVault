@@ -961,8 +961,10 @@ def get_user_sessions(
         jwt_service: JWT service instance (injected)
 
     Returns:
-        SessionListResponse: List of active sessions with metadata
+        SessionListResponse: List of active sessions with parsed metadata
     """
+    from src.services.user_agent_parser import UserAgentParser
+    
     try:
         # Extract current session's family_id from JWT token
         current_family_id = None
@@ -982,10 +984,19 @@ def get_user_sessions(
             current_family_id=current_family_id
         )
 
-        # Convert session models to response models
-        session_responses = [
-            SessionResponse.model_validate(session) for session in sessions
-        ]
+        # Convert session models to response models with parsed metadata
+        parser = UserAgentParser()
+        session_responses = []
+        for session in sessions:
+            # Parse user agent to extract device/browser/os
+            ua_info = parser.parse_user_agent(session.user_agent)
+            
+            # Create response model with parsed metadata
+            response = SessionResponse.model_validate(session)
+            response.device = ua_info.get("device", "Unknown Device")
+            response.browser = ua_info.get("browser", "Unknown Browser")
+            response.os = ua_info.get("os", "Unknown OS")
+            session_responses.append(response)
 
         logger.info(f"Retrieved {len(sessions)} sessions for user: {current_user.username}")
 
@@ -1163,23 +1174,40 @@ def revoke_session(
     },
 )
 def revoke_all_sessions(
+    request: Request,
     current_user: User = Depends(get_current_active_user),
     auth_service: AuthService = Depends(get_auth_service),
+    jwt_service: JWTService = Depends(get_jwt_service),
 ) -> RevokeSessionResponse:
     """Revoke all sessions except current.
 
     Args:
+        request: HTTP request object (for extracting Authorization header)
         current_user: Authenticated active user (injected)
         auth_service: Authentication service instance (injected)
+        jwt_service: JWT service instance (injected)
 
     Returns:
         RevokeSessionResponse: Revocation confirmation with count
     """
     try:
+        # Extract current session's family_id from JWT token
+        current_family_id = None
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer "):
+            token = auth_header[7:]
+            try:
+                claims = jwt_service.decode_token(token)
+                current_family_id = claims.get("family_id")
+                logger.debug(f"Extracted current family_id: {current_family_id}")
+            except Exception as e:
+                logger.warning(f"Failed to extract family_id from token: {e}")
+        
         # Revoke all sessions except current
-        # Note: We need the current session's family_id to exclude it
-        # For now, revoke all and let user re-login if needed
-        count = auth_service.revoke_all_sessions(user_id=current_user.id)
+        count = auth_service.revoke_all_sessions(
+            user_id=current_user.id,
+            except_family_id=current_family_id
+        )
 
         logger.info(
             f"Revoked {count} sessions for user: {current_user.username} "

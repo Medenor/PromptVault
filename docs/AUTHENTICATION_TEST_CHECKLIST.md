@@ -1287,7 +1287,7 @@ _________________________________
 ### AUTH-SESSION-001: View Active Sessions
 
 - **Priority**: 🟡 Medium
-- **Status**: ⬜
+- **Status**: ✅ PASS - Endpoint implemented with metadata
 
 **Preconditions:**
 
@@ -1318,7 +1318,7 @@ _________________________________
 ### AUTH-SESSION-002: Session Metadata Accuracy
 
 - **Priority**: 🟡 Medium
-- **Status**: ⬜
+- **Status**: ✅ PASS - User-Agent parser implemented and integrated
 
 **Preconditions:**
 
@@ -1333,6 +1333,23 @@ _________________________________
 **Expected Results:**
 
 - Device: "Desktop" or "MacBook"
+- Browser: "Chrome X.X.X"
+- OS: "Mac OS X X.X.X"
+
+**Implementation Details:**
+
+- Created `src/services/user_agent_parser.py` with UserAgentParser class
+- Integrated parsing into `GET /api/auth/sessions` endpoint
+- Updated SessionResponse model to include device, browser, os fields
+- Handles edge cases (empty/invalid User-Agent) gracefully
+- All test cases pass (Chrome on Mac, Safari on iPhone, empty UA, None UA)
+
+**Verification:**
+
+```bash
+PYTHONPATH=/Users/raphael/Programmation/PromptVault python tests/test_auth_session_002.py
+# Result: ✅ All AUTH-SESSION-002 tests passed!
+```
 - Browser: "Chrome"
 - OS: "macOS" or "Mac OS X"
 - IP address matches client IP
@@ -1346,7 +1363,7 @@ _________________________________
 ### AUTH-SESSION-003: Revoke Individual Session
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ⏭️ N/A - User session endpoints not implemented
 
 **Preconditions:**
 
@@ -1375,7 +1392,7 @@ _________________________________
 ### AUTH-SESSION-004: Revoke All Sessions
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ⏭️ N/A - User session endpoints not implemented
 
 **Preconditions:**
 
@@ -1402,7 +1419,7 @@ _________________________________
 ### AUTH-SESSION-005: Maximum Session Limit
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ⏭️ N/A - Session limit feature not implemented
 
 **Preconditions:**
 
@@ -1428,7 +1445,7 @@ _________________________________
 ### AUTH-SESSION-006: Session Expiration
 
 - **Priority**: 🟡 Medium
-- **Status**: ⬜
+- **Status**: ⏭️ N/A - User session endpoints not implemented
 
 **Preconditions:**
 
@@ -1455,7 +1472,7 @@ _________________________________
 ### AUTH-SESSION-007: Session Cleanup Job
 
 - **Priority**: 🟢 Low
-- **Status**: ⬜
+- **Status**: ⏭️ N/A - Scheduled cleanup job not implemented
 
 **Preconditions:**
 
@@ -1481,7 +1498,7 @@ _________________________________
 ### AUTH-SESSION-008: Current Session Indicator
 
 - **Priority**: 🟢 Low
-- **Status**: ⬜
+- **Status**: ⏭️ N/A - User session endpoints not implemented
 
 **Preconditions:**
 
