@@ -6,6 +6,9 @@ data/
 prompts_data.json
 data/backups/
 
+# Security - JWT keys and secrets must NEVER be committed
+secrets/
+
 # Python
 __pycache__/
 *.pyc
@@ -64,3 +67,8 @@ dist/
 *.min.js
 *.min.css
 node_modules/
+
+# Test reports
+playwright-report/
+test-results/
+.nyc_output/

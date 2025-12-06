@@ -9,13 +9,16 @@ business logic from database operations.
 
 Repositories available:
     - BaseRepository: Generic base repository with common CRUD operations
+    - UserRepository: User authentication and account management
+    - SessionRepository: JWT refresh token session management
+    - PasswordResetTokenRepository: Password reset token management
     - PromptRepository: Advanced prompt search and filtering
     - VersionRepository: Version control operations
     - CategoryRepository: Category management with statistics
     - TagRepository: Tag management with usage tracking
 
 Usage:
-    from src.db.repositories import PromptRepository, TagRepository
+    from src.db.repositories import PromptRepository, TagRepository, UserRepository
     from src.db import get_db_session
 
     with get_db_session() as session:
@@ -24,6 +27,9 @@ Usage:
 """
 
 from src.db.repositories.base import BaseRepository
+from src.db.repositories.user_repository import UserRepository
+from src.db.repositories.session_repository import SessionRepository
+from src.db.repositories.password_reset_token_repository import PasswordResetTokenRepository
 from src.db.repositories.prompt_repository import PromptRepository
 from src.db.repositories.version_repository import VersionRepository
 from src.db.repositories.category_repository import CategoryRepository
@@ -31,6 +37,9 @@ from src.db.repositories.tag_repository import TagRepository
 
 __all__ = [
     "BaseRepository",
+    "UserRepository",
+    "SessionRepository",
+    "PasswordResetTokenRepository",
     "PromptRepository",
     "VersionRepository",
     "CategoryRepository",

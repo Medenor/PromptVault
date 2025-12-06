@@ -8,10 +8,12 @@ This module exports all SQLAlchemy ORM models for the PromptVault application.
 Import models from this module for use throughout the application.
 
 Usage:
-    from src.db.models import Prompt, PromptVersion, User, Category, Tag
+    from src.db.models import Prompt, PromptVersion, User, UserSession, Category, Tag
 
 Models exported:
     - User: User accounts
+    - UserSession: JWT refresh token sessions
+    - PasswordResetToken: Password reset tokens
     - Category: Prompt categories
     - Tag: Flexible tags for prompts
     - Prompt: Main prompt entity with current state
@@ -22,6 +24,8 @@ Models exported:
 """
 
 from src.db.models.user import User
+from src.db.models.user_session import UserSession
+from src.db.models.password_reset_token import PasswordResetToken
 from src.db.models.category import Category
 from src.db.models.tag import Tag
 from src.db.models.prompt import Prompt
@@ -32,6 +36,8 @@ from src.db.models.associations import prompt_tags
 
 __all__ = [
     "User",
+    "UserSession",
+    "PasswordResetToken",
     "Category",
     "Tag",
     "Prompt",

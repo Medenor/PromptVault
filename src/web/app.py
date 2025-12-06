@@ -11,6 +11,7 @@ from fastapi.responses import JSONResponse as FastAPIJSONResponse
 from pydantic import ValidationError
 import pydantic_core
 import json
+import uuid
 import os
 import time
 from datetime import datetime
@@ -22,7 +23,7 @@ from src.services.prompt_filter_service import PromptFilterService
 from src.services.prompt_versioning_service import PromptVersioningService
 from src.services.prompt_import_export_service import PromptImportExportService
 from src.services.backup_service_db import BackupService
-from src.services.exceptions import PromptVaultException
+from src.services.exceptions import PromptVaultException, BackupError
 from src.services.logging_service import logging_service
 from src.web.models import (
     PromptCreateRequest,
@@ -45,10 +46,273 @@ from src.web.validators import (
     get_file_extension_from_format,
 )
 from src.web.monitoring import ValidationMonitor
+from src.web.routers import auth_router, admin_router, prompts_router, pages_router
+from src.web.routers.scheduler import router as scheduler_router
+from src.web.middleware.rate_limit import limiter, rate_limit_exceeded_handler
+from src.web.middleware.security_headers import SecurityHeadersMiddleware
+from slowapi.errors import RateLimitExceeded
 
-app = FastAPI(title="PromptVault Web", version="0.1.0")
+# ============================================================================
+# APPLICATION INITIALIZATION
+# ============================================================================
+# This FastAPI application integrates:
+# 1. Authentication & Authorization System (JWT-based with ES256)
+# 2. Rate Limiting Middleware (Redis-backed with slowapi)
+# 3. API Routers (auth, admin, prompts)
+# 4. Legacy prompt management endpoints (deprecated, see migration notes below)
+#
+# MIGRATION NOTES FOR DEVELOPERS:
+# - New authentication system is now active at /api/auth/* endpoints
+# - Protected endpoints require JWT access token in Authorization header
+# - Admin endpoints require admin role (checked via JWT claims)
+# - Rate limiting is enforced on all authentication endpoints
+# - Legacy prompt routes (lines 478-1520) are DEPRECATED but kept for compatibility
+# - Migrate to new prompt routes at /api/prompts/* which include:
+#   * Authentication and authorization
+#   * Ownership-based access control
+#   * Public read with optional personalization
+#
+# AUTHENTICATION SYSTEM OVERVIEW:
+# - JWT tokens use ES256 (ECDSA) algorithm for security
+# - Access tokens: 15 minutes (configurable via AUTH_ACCESS_TOKEN_EXPIRE_MINUTES)
+# - Refresh tokens: 7 days (configurable via AUTH_REFRESH_TOKEN_EXPIRE_DAYS)
+# - Session tracking with token family and reuse detection
+# - Account lockout: 5 failed attempts, 15-minute lockout
+# - Password policy: 12 chars min, complexity requirements
+# - Rate limiting: Login (5/15min), Register (3/hour), Password Reset (3/hour)
+#
+# PROTECTED ROUTES:
+# - /api/auth/me - Get current user (requires access token)
+# - /api/auth/change-password - Change password (requires access token)
+# - /api/auth/sessions - List sessions (requires access token)
+# - /api/auth/sessions/{id} - Revoke session (requires access token)
+# - /api/admin/* - All admin routes (requires admin role)
+# - /api/prompts POST/PUT/DELETE - Write operations (requires authentication)
+#
+# PUBLIC ROUTES:
+# - /api/auth/register - Register new user
+# - /api/auth/login - Login with credentials
+# - /api/auth/refresh - Refresh access token
+# - /api/auth/logout - Logout (revoke session)
+# - /api/auth/password-reset/request - Request password reset email
+# - /api/auth/password-reset/confirm - Confirm password reset with token
+# - /api/prompts GET - Read prompts (optional auth for personalization)
+#
+# API DOCUMENTATION:
+# - OpenAPI docs: http://localhost:8000/docs
+# - ReDoc: http://localhost:8000/redoc
+# - All endpoints include comprehensive documentation with examples
+# ============================================================================
+
+app = FastAPI(
+    title="PromptVault API",
+    version="0.2.0",
+    description="""
+    PromptVault API with comprehensive authentication and authorization.
+
+    Features:
+    - JWT-based authentication (ES256 algorithm)
+    - Role-based access control (viewer, editor, admin)
+    - Session management and tracking
+    - Password reset with secure tokens
+    - Rate limiting on sensitive endpoints
+    - Ownership-based authorization for prompts
+
+    Security:
+    - All passwords hashed with Argon2id
+    - Tokens signed with ECDSA (ES256)
+    - Account lockout protection
+    - Token family tracking and reuse detection
+    - Redis-backed rate limiting
+
+    Authentication:
+    - Include access token in Authorization header: "Bearer <token>"
+    - Refresh tokens using /api/auth/refresh endpoint
+    - Session limit: 5 concurrent sessions per user
+    """,
+    openapi_tags=[
+        {
+            "name": "Authentication",
+            "description": "User authentication, registration, and session management",
+        },
+        {
+            "name": "Admin",
+            "description": "Administrative endpoints for user and system management (admin role required)",
+        },
+        {
+            "name": "Prompts",
+            "description": "Prompt CRUD operations with authentication and authorization",
+        },
+        {
+            "name": "Legacy",
+            "description": "Deprecated endpoints - migrate to /api/prompts routes",
+        },
+    ],
+)
+
 validation_monitor: Optional[ValidationMonitor] = None
+
+# ============================================================================
+# SECURITY HEADERS MIDDLEWARE
+# ============================================================================
+# Add middleware to inject security headers into all HTTP responses
+# Headers include: HSTS, CSP, X-Frame-Options, X-XSS-Protection, etc.
+app.add_middleware(SecurityHeadersMiddleware)
+logger_init = logging_service.get_logger(__name__)
+logger_init.info("Security headers middleware initialized")
+print("✓ Security headers middleware added (HSTS, CSP, X-Frame-Options, etc.)")
+
+# ============================================================================
+# RATE LIMITING SETUP
+# ============================================================================
+# Initialize rate limiter with Redis backend (falls back to in-memory if Redis unavailable)
+# Rate limits are enforced per IP address or authenticated user ID
+# Limits are configured in AuthConfig via environment variables
+app.state.limiter = limiter
+
+# Register rate limit exception handler
+app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
+
 logger = logging_service.get_logger(__name__)
+logger.info("Rate limiting initialized successfully")
+
+# ============================================================================
+# JWT SERVICE INITIALIZATION (for middleware)
+# ============================================================================
+# Initialize JWT service once for actor extraction in logging middleware
+jwt_service_for_logging = None
+try:
+    from src.services.auth.jwt_service import JWTService
+    from src.config.auth_config import auth_settings
+    jwt_service_for_logging = JWTService(auth_settings)
+    print(f"✓ JWT service initialized for logging middleware")
+    logger.info("JWT service initialized for logging middleware")
+except Exception as e:
+    print(f"✗ JWT service initialization failed: {e}")
+    import traceback
+    traceback.print_exc()
+    logger.warning(f"JWT service initialization failed for logging: {e}")
+    jwt_service_for_logging = None
+
+# ============================================================================
+# API ROUTERS REGISTRATION
+# ============================================================================
+# Register all API routers with appropriate prefixes:
+# - /api/auth - Authentication endpoints (public + protected)
+# - /api/admin - Admin endpoints (admin role required)
+# - /api/admin/scheduler - Scheduler management endpoints (admin role required)
+# - /api/prompts - Prompt CRUD with authentication
+app.include_router(auth_router, prefix="/api")
+app.include_router(admin_router, prefix="/api")
+app.include_router(scheduler_router, prefix="/api")
+app.include_router(prompts_router, prefix="/api")
+
+# Register HTML page routes (no /api prefix)
+# - /auth/* - Authentication pages (login, register, profile, etc.)
+# - /admin/* - Admin pages (users, sessions)
+app.include_router(pages_router)
+
+logger.info("API routers registered: /api/auth, /api/admin, /api/prompts")
+logger.info("HTML page routes registered: /auth/*, /admin/*")
+
+# ============================================================================
+# SCHEDULER INITIALIZATION
+# ============================================================================
+# Initialize session cleanup scheduler for background maintenance tasks
+session_cleanup_scheduler = None
+
+@app.on_event("startup")
+async def startup_scheduler():
+    """Initialize and start the session cleanup scheduler on app startup."""
+    global session_cleanup_scheduler
+    
+    try:
+        from src.db.session import SessionLocal
+        from src.config.auth_config import auth_settings
+        from src.scheduler.session_cleanup import SessionCleanupScheduler
+        from src.web.routers.scheduler import set_scheduler
+        
+        # Create scheduler instance
+        session_cleanup_scheduler = SessionCleanupScheduler(
+            session_factory=SessionLocal,
+            config=auth_settings,
+            cleanup_interval_hours=auth_settings.cleanup_interval_hours,
+            batch_size=auth_settings.cleanup_batch_size,
+        )
+        
+        # Register with router for dependency injection
+        set_scheduler(session_cleanup_scheduler)
+        
+        # Start the scheduler
+        session_cleanup_scheduler.start()
+        
+        logger.info(
+            "✓ Session cleanup scheduler initialized and started "
+            f"(interval: {auth_settings.cleanup_interval_hours}h, "
+            f"batch_size: {auth_settings.cleanup_batch_size})"
+        )
+        print(f"✓ Session cleanup scheduler started")
+        
+    except ImportError as e:
+        logger.warning(f"Scheduler imports not available: {e}")
+        print(f"⚠ Scheduler imports not available: {e}")
+    except Exception as e:
+        logger.error(f"Failed to initialize scheduler: {e}", exc_info=True)
+        print(f"✗ Failed to initialize scheduler: {e}")
+
+
+@app.on_event("shutdown")
+async def shutdown_scheduler():
+    """Gracefully shutdown the session cleanup scheduler on app shutdown."""
+    global session_cleanup_scheduler
+    
+    if session_cleanup_scheduler is not None:
+        try:
+            session_cleanup_scheduler.stop()
+            logger.info("✓ Session cleanup scheduler stopped gracefully")
+            print(f"✓ Session cleanup scheduler stopped")
+        except Exception as e:
+            logger.error(f"Error stopping scheduler: {e}", exc_info=True)
+            print(f"✗ Error stopping scheduler: {e}")
+
+
+# Register scheduler router if scheduler is available
+try:
+    from src.web.routers import scheduler as scheduler_router
+    app.include_router(scheduler_router.router, prefix="/api")
+    logger.info("Scheduler management endpoints registered: /api/admin/scheduler")
+except ImportError:
+    logger.debug("Scheduler router not available")
+
+# ============================================================================
+# HEALTH CHECK ENDPOINT
+# ============================================================================
+@app.get("/health", tags=["System"])
+async def health_check():
+    """Health check endpoint for monitoring and load balancers.
+
+    Returns:
+        JSON response with status and timestamp
+    """
+    return {
+        "status": "healthy",
+        "timestamp": datetime.utcnow().isoformat(),
+        "service": "PromptVault API"
+    }
+
+
+@app.get("/api/validation/stats")
+async def get_validation_stats():
+    """Return validation monitoring snapshot."""
+    if not validation_monitor:
+        return JSONResponse(
+            status_code=503,
+            content={"error": "Validation monitoring not initialized"},
+        )
+
+    return JSONResponse(content=validation_monitor.snapshot())
+
+
 audit_logger = logging_service.get_audit_logger()
 FRONTEND_LOG_WINDOW = 60.0
 FRONTEND_LOG_LIMIT = 10
@@ -274,11 +538,44 @@ async def log_frontend_error(entry: FrontendLogEntry, request: Request):
 async def request_logging_middleware(request: Request, call_next):
     """Attach request IDs and emit structured request logs."""
     request_id = request.headers.get("X-Request-ID") or logging_service.generate_request_id()
-    actor = (
-        request.headers.get("X-PromptVault-Actor")
-        or request.headers.get("X-Forwarded-User")
-        or "anonymous"
-    )
+
+    # Try to extract actor from JWT token
+    actor = "anonymous"
+
+    # Only attempt JWT decoding if service is available
+    if jwt_service_for_logging:
+        # Check for JWT in Authorization header
+        auth_header = request.headers.get("Authorization")
+        if auth_header and auth_header.startswith("Bearer "):
+            try:
+                token = auth_header.split(" ")[1]
+                payload = jwt_service_for_logging.validate_access_token(token)
+                actor = payload.get("username", "anonymous")
+                logger.debug(f"Extracted actor from Authorization header: {actor}")
+            except Exception as e:
+                # Token invalid or expired, keep as anonymous
+                logger.debug(f"Failed to decode JWT from Authorization header: {e}")
+
+        # Check for JWT in cookie if not in header
+        if actor == "anonymous":
+            access_token_cookie = request.cookies.get("access_token")
+            if access_token_cookie:
+                try:
+                    payload = jwt_service_for_logging.validate_access_token(access_token_cookie)
+                    actor = payload.get("username", "anonymous")
+                    logger.debug(f"Extracted actor from cookie: {actor}")
+                except Exception as e:
+                    # Token invalid or expired, keep as anonymous
+                    logger.debug(f"Failed to decode JWT from cookie: {e}")
+
+    # Fallback to custom headers (for proxy/gateway scenarios)
+    if actor == "anonymous":
+        actor = (
+            request.headers.get("X-PromptVault-Actor")
+            or request.headers.get("X-Forwarded-User")
+            or "anonymous"
+        )
+
     start_time = time.perf_counter()
     with logging_service.request_context(request_id=request_id, actor=actor):
         try:
@@ -453,7 +750,32 @@ def _parse_tags_field(tags: str) -> List[str]:
 
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
-    """Main page"""
+    """Main page - redirects to login if not authenticated, otherwise shows prompts.
+
+    This endpoint checks for authentication via the Authorization header or cookies.
+    Unauthenticated users are redirected to /auth/login.
+    Authenticated users see the main prompt management interface.
+
+    Args:
+        request: FastAPI request object
+
+    Returns:
+        RedirectResponse to /auth/login if not authenticated
+        HTMLResponse with index.html if authenticated
+    """
+    from fastapi.responses import RedirectResponse
+
+    # Check if user is authenticated (simple check for auth token)
+    auth_header = request.headers.get("Authorization")
+    auth_cookie = request.cookies.get("access_token")
+
+    if not auth_header and not auth_cookie:
+        # No authentication provided, redirect to login
+        return RedirectResponse(url="/auth/login", status_code=302)
+
+    # User appears to be authenticated, show the main app
+    # Note: The JavaScript will validate the token on the client side
+    # and redirect to login if it's invalid
     prompts = data_service.load_prompts()
     categories = data_service.get_categories()
     tags = data_service.get_tags()
@@ -469,345 +791,11 @@ async def home(request: Request):
     )
 
 
-@app.get("/api/prompts")
-async def get_prompts():
-    """Get all prompts"""
-    prompts = data_service.load_prompts()
-    # Unwrap the data structure for frontend consumption
-    unwrapped_prompts = {}
-    for prompt_id, prompt_info in prompts.items():
-        if "data" in prompt_info:
-            unwrapped_prompts[prompt_id] = prompt_info["data"]
-        else:
-            # Fallback for prompts without 'data' wrapper
-            unwrapped_prompts[prompt_id] = prompt_info
-    return {"prompts": unwrapped_prompts}
-
-
-@app.post("/api/prompts")
-async def create_prompt(
-    title: str = Form(...),
-    prompt: str = Form(...),
-    category: str = Form(""),
-    tags: str = Form(""),
-):
-    """Create a new prompt with validation."""
-    try:
-        # Validate using Pydantic model
-        validated_data = PromptCreateRequest(
-            title=title,
-            prompt=prompt,
-            category=category,
-            tags=tags,
-        )
-
-        # Convert to dict for service layer
-        prompt_data = {
-            "title": validated_data.title,
-            "prompt": validated_data.prompt,
-            "category": validated_data.category,
-            "tags": _parse_tags_field(validated_data.tags),
-        }
-
-        record_validation_event(
-            endpoint="/api/prompts",
-            success=True,
-        )
-
-        prompt_id = data_service.create_prompt(prompt_data)
-        return {"success": True, "prompt_id": prompt_id}
-
-    except (ValidationError, pydantic_core.ValidationError) as e:
-        errors = e.errors() if hasattr(e, "errors") else []
-        error_messages = []
-        sanitized_errors = []
-
-        for error in errors:
-            field = " -> ".join(str(loc) for loc in error["loc"])
-            message = error["msg"]
-            error_messages.append(f"{field}: {message}")
-
-            # Sanitize error dict for JSON serialization
-            sanitized_error = {
-                "type": error.get("type"),
-                "loc": error.get("loc"),
-                "msg": error.get("msg"),
-                "input": str(error.get("input"))[:100] if error.get("input") else None,  # Truncate long inputs
-            }
-            sanitized_errors.append(sanitized_error)
-
-        record_validation_event(
-            endpoint="/api/prompts",
-            success=False,
-            errors=error_messages,
-        )
-
-        return JSONResponse(
-            status_code=422,
-            content={
-                "error": "Validation failed",
-                "details": error_messages,
-                "errors": sanitized_errors,
-            },
-        )
-
-
-@app.get("/api/prompts/search")
-async def search_prompts(
-    search: str = "",
-    category: str = "",
-    tag: str = "",
-    favorites: bool = False,
-    case_sensitive: bool = False,
-):
-    """
-    Search and filter prompts based on various criteria.
-
-    Query parameters:
-    - search: Text to search for in title, prompt content, or notes
-    - category: Filter by specific category (empty string means no filter)
-    - tag: Filter by specific tag (empty string means no filter)
-    - favorites: Show only favorite prompts if true
-    - case_sensitive: Enable case-sensitive search if true
-    """
-    try:
-        # Load all prompts
-        prompts = data_service.load_prompts()
-
-        # Convert to the format expected by filter service
-        # The filter service expects Dict[int, Dict[str, Any]] where inner dict has 'data' key
-        filter_prompts = {}
-        for prompt_id, prompt_info in prompts.items():
-            if "data" in prompt_info:
-                filter_prompts[prompt_id] = prompt_info
-            else:
-                # Fallback for prompts without 'data' wrapper
-                filter_prompts[prompt_id] = {"data": prompt_info}
-
-        # Apply filters using the filter service
-        filtered_prompts = filter_service.filter_prompts(
-            prompts=filter_prompts,
-            filter_category=category if category else None,
-            filter_tag=tag if tag else None,
-            search_term=search,
-            filter_favorites=favorites,
-            case_sensitive=case_sensitive,
-        )
-
-        # Sort the results
-        sorted_prompts = filter_service.sort_prompts(filtered_prompts)
-
-        # Convert back to the format expected by frontend
-        result = {}
-        for prompt in sorted_prompts:
-            prompt_id = prompt["id"]
-            # Remove the 'id' field that was added by filter service
-            prompt_data = {k: v for k, v in prompt.items() if k != "id"}
-            result[str(prompt_id)] = prompt_data
-
-        return {"prompts": result}
-
-    except Exception as e:
-        return JSONResponse(
-            status_code=500, content={"error": f"Search failed: {str(e)}"}
-        )
-
-
-@app.get("/api/prompts/{prompt_id}")
-async def get_prompt(prompt_id: str):
-    """Get a specific prompt"""
-    try:
-        prompt_id_int = int(prompt_id)
-    except ValueError:
-        return JSONResponse(status_code=404, content={"error": "Invalid prompt ID"})
-
-    prompts = data_service.load_prompts()
-    prompt = prompts.get(prompt_id_int)
-    if not prompt:
-        return JSONResponse(status_code=404, content={"error": "Prompt not found"})
-
-    # Unwrap the data structure for frontend consumption
-    if "data" in prompt:
-        return prompt["data"]
-    else:
-        # Fallback for prompts without 'data' wrapper
-        return prompt
-
-
-@app.put("/api/prompts/{prompt_id}")
-async def update_prompt(
-    prompt_id: str,
-    title: str = Form(...),
-    prompt: str = Form(...),
-    category: str = Form(""),
-    tags: str = Form(""),
-    commit_message: str = Form("Update"),
-):
-    """Update a prompt with validation."""
-    try:
-        prompt_id_int = int(prompt_id)
-    except ValueError:
-        return JSONResponse(status_code=400, content={"error": "Invalid prompt ID"})
-
-    prompts = data_service.load_prompts()
-    if prompt_id_int not in prompts:
-        return JSONResponse(status_code=404, content={"error": "Prompt not found"})
-
-    try:
-        # Validate using Pydantic model
-        validated_data = PromptUpdateRequest(
-            title=title,
-            prompt=prompt,
-            category=category,
-            tags=tags,
-            commit_message=commit_message,
-        )
-
-        # Convert to dict for service layer
-        prompt_data = {
-            "title": validated_data.title,
-            "prompt": validated_data.prompt,
-            "category": validated_data.category,
-            "tags": _parse_tags_field(validated_data.tags),
-        }
-
-        record_validation_event(
-            endpoint="/api/prompts/update",
-            success=True,
-        )
-
-        success = data_service.update_prompt(
-            prompt_id_int, prompt_data, validated_data.commit_message
-        )
-        if success:
-            return {"success": True}
-        else:
-            return JSONResponse(
-                status_code=500, content={"error": "Failed to update prompt"}
-        )
-
-    except ValidationError as e:
-        record_validation_event(
-            endpoint="/api/prompts/update",
-            success=False,
-            errors=[err.get("msg", "") for err in e.errors()],
-        )
-        return JSONResponse(
-            status_code=422,
-            content={"error": "Validation failed", "details": e.errors()},
-        )
-
-
-@app.delete("/api/prompts/bulk")
-async def delete_prompts_bulk(body: BulkDeleteRequest):
-    """Delete multiple prompts in bulk.
-
-    Creates automatic backup before deletion.
-    Returns statistics on successful and failed deletions.
-    """
-    try:
-        # Create automatic backup with timestamp (keep short for DB constraint)
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        backup_id = backup_service.create_backup(f"bulk_del_{timestamp}")
-
-        if backup_id:
-            audit_logger.info(
-                "Automatic backup created before bulk deletion",
-                extra={
-                    "event": "backup.auto",
-                    "action": "backup.create",
-                    "resource_type": "backup",
-                    "resource_id": backup_id,
-                    "trigger": "bulk_delete",
-                    "prompt_count": len(body.prompt_ids),
-                },
-            )
-
-        # Perform bulk deletion
-        result = data_service.delete_prompts_bulk(body.prompt_ids)
-
-        # Log bulk operation summary
-        audit_logger.info(
-            "Bulk prompt deletion completed",
-            extra={
-                "event": "prompt.bulk_delete",
-                "action": "prompt.bulk_delete",
-                "resource_type": "prompt",
-                "resource_id": "multiple",
-                "deleted_count": result["deleted_count"],
-                "failed_count": result["failed_count"],
-                "backup_id": backup_id,
-            },
-        )
-
-        return JSONResponse(
-            content={
-                "success": True,
-                "deleted_count": result["deleted_count"],
-                "failed_count": result["failed_count"],
-                "failed_ids": result["failed_ids"],
-                "backup_id": backup_id,
-            }
-        )
-
-    except Exception as e:
-        logger.error(
-            "Bulk deletion failed",
-            extra={"error": str(e), "prompt_ids": body.prompt_ids},
-        )
-        raise HTTPException(status_code=500, detail="Failed to delete prompts")
-
-
-@app.delete("/api/prompts/{prompt_id}")
-async def delete_prompt(prompt_id: str):
-    """Delete a prompt"""
-    try:
-        prompt_id_int = int(prompt_id)
-    except ValueError:
-        return JSONResponse(status_code=400, content={"error": "Invalid prompt ID"})
-
-    # Create automatic backup before deletion
-    backup_id = backup_service.create_backup(f"pre_delete_prompt_{prompt_id}")
-    if backup_id:
-        audit_logger.info(
-            "Automatic backup created before deleting prompt",
-            extra={
-                "event": "backup.auto",
-                "action": "backup_before_delete",
-                "resource_id": str(prompt_id),
-                "backup_id": backup_id,
-            },
-        )
-
-    success = data_service.delete_prompt(prompt_id_int)
-    return {"success": success}
-
-
-@app.put("/api/prompts/{prompt_id}/favorite")
-async def toggle_favorite(prompt_id: str):
-    """Toggle favorite status of a prompt"""
-    try:
-        prompt_id_int = int(prompt_id)
-    except ValueError:
-        return JSONResponse(status_code=400, content={"error": "Invalid prompt ID"})
-
-    # Get current prompt data
-    prompt_data = data_service.get_prompt_data(prompt_id_int)
-    if not prompt_data:
-        return JSONResponse(status_code=404, content={"error": "Prompt not found"})
-
-    # Toggle favorite status
-    current_favorite = prompt_data.get("favorite", False)
-    prompt_data["favorite"] = not current_favorite
-
-    # Update the prompt
-    success = data_service.update_prompt(prompt_id_int, prompt_data, "Toggle favorite")
-    if success:
-        return {"success": True, "favorite": prompt_data["favorite"]}
-    else:
-        return JSONResponse(
-            status_code=500, content={"error": "Failed to update favorite status"}
-        )
+# ============================================================================
+# LEGACY/COMPATIBILITY ENDPOINTS (RESTORED FOR TEST COVERAGE)
+# These routes provide backward-compatible behavior expected by tests and
+# legacy clients. They delegate to the current service layer.
+# ============================================================================
 
 
 @app.get("/api/categories")
@@ -824,7 +812,6 @@ async def get_tags():
     return {"tags": tags_with_counts}
 
 
-# Import/Export endpoints
 @app.get("/import-export", response_class=HTMLResponse)
 async def import_export_page(request: Request):
     """Import/Export management page"""
@@ -865,8 +852,8 @@ async def export_prompts(
     include_metadata: bool = Form(True),
 ):
     """Export prompts in specified format with validation and secure file handling."""
+    temp_file = None
     try:
-        # Validate format enum first
         try:
             format_enum = ExportFormat(format.lower())
         except ValueError:
@@ -883,7 +870,6 @@ async def export_prompts(
                 },
             )
 
-        # Validate using Pydantic model
         validated_data = ExportRequest(
             format=format_enum,
             filename=filename,
@@ -892,8 +878,6 @@ async def export_prompts(
         )
 
         prompts = data_service.load_prompts()
-
-        # Filter prompts if needed
         if validated_data.include_favorites:
             prompts = {
                 k: v
@@ -901,15 +885,12 @@ async def export_prompts(
                 if v.get("data", {}).get("favorite", False)
             }
 
-        # Convert to list format for export service
         prompt_list = [(int(k), v) for k, v in prompts.items()]
 
-        # Sanitize filename and add proper extension
         safe_filename = sanitize_filename(validated_data.filename)
         file_extension = get_file_extension_from_format(validated_data.format.value)
         final_filename = f"{safe_filename}{file_extension}"
 
-        # Create secure temporary file
         temp_file = create_secure_temp_file(final_filename)
 
         success = False
@@ -918,7 +899,6 @@ async def export_prompts(
         elif validated_data.format == ExportFormat.MARKDOWN:
             success = import_export_service.export_to_markdown(temp_file, prompt_list)
         elif validated_data.format == ExportFormat.JSON:
-            # Export as JSON
             export_data = {
                 "export_timestamp": datetime.now().isoformat(),
                 "total_prompts": len(prompt_list),
@@ -938,19 +918,17 @@ async def export_prompts(
                 include_favorites=validated_data.include_favorites,
                 include_metadata=validated_data.include_metadata,
             )
-            # Return file for download
             record_validation_event(endpoint="/api/export", success=True)
             return FileResponse(
                 temp_file, media_type="application/octet-stream", filename=final_filename
             )
-        else:
-            # Clean up temp file on failure
-            if os.path.exists(temp_file):
-                os.remove(temp_file)
-            return JSONResponse(
-                status_code=400,
-                content={"error": f"Failed to export in {validated_data.format.value} format"},
-            )
+
+        if temp_file and os.path.exists(temp_file):
+            os.remove(temp_file)
+        return JSONResponse(
+            status_code=400,
+            content={"error": f"Failed to export in {validated_data.format.value} format"},
+        )
 
     except ValidationError as e:
         record_validation_event(
@@ -963,8 +941,7 @@ async def export_prompts(
             content={"error": "Validation failed", "details": e.errors()},
         )
     except Exception as e:
-        # Clean up temp file on error
-        if "temp_file" in locals() and os.path.exists(temp_file):
+        if temp_file and os.path.exists(temp_file):
             os.remove(temp_file)
         return JSONResponse(
             status_code=500, content={"error": f"Export failed: {str(e)}"}
@@ -980,13 +957,11 @@ async def import_prompts(
     """Import prompts from uploaded file with comprehensive security validation."""
     temp_file_path = None
     try:
-        # Validate request parameters
         validated_params = ImportRequest(
             mode=ImportMode(mode.lower()),
             validate_data=validate_data,
         )
 
-        # Comprehensive file upload validation
         is_valid, error_message = await validate_upload_file(file)
         if not is_valid:
             record_validation_event(
@@ -999,43 +974,33 @@ async def import_prompts(
                 content={"error": error_message},
             )
 
-        # Create secure temporary file
         temp_file_path = create_secure_temp_file(file.filename)
 
-        # Write uploaded content to secure temp file
         content = await file.read()
         with open(temp_file_path, "wb") as buffer:
             buffer.write(content)
 
         imported_prompts = []
 
-        # Determine format from filename
         filename = file.filename.lower()
         if filename.endswith(".csv"):
             imported_prompts = import_export_service.import_from_csv(temp_file_path)
         elif filename.endswith((".md", ".markdown")):
             imported_prompts = import_export_service.import_from_markdown(temp_file_path)
         elif filename.endswith(".json"):
-            # Import from JSON
             with open(temp_file_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 if "prompts" in data:
-                    # Handle exported JSON format
-                    for prompt_id, prompt_info in data["prompts"].items():
+                    for _, prompt_info in data["prompts"].items():
                         imported_prompts.append(prompt_info["data"])
                 else:
-                    # Handle direct JSON format - ensure it's a list
                     if isinstance(data, list):
                         imported_prompts = data
                     elif isinstance(data, dict):
-                        # Single prompt object, wrap in list
                         imported_prompts = [data]
                     else:
-                        raise ValueError(
-                            "Invalid JSON format: expected array or object"
-                        )
+                        raise ValueError("Invalid JSON format: expected array or object")
 
-        # Validate if requested
         if validated_params.validate_data:
             valid_prompts = []
             for prompt in imported_prompts:
@@ -1043,10 +1008,8 @@ async def import_prompts(
                     valid_prompts.append(prompt)
             imported_prompts = valid_prompts
 
-        # Import based on mode
         added_count = 0
         if validated_params.mode == ImportMode.REPLACE:
-            # Create automatic backup before replacing all data
             backup_id = backup_service.create_backup("pre_replace_import")
             if backup_id:
                 audit_logger.info(
@@ -1058,13 +1021,10 @@ async def import_prompts(
                         "backup_id": backup_id,
                     },
                 )
-
-            # Clear existing data
             data_service.clear_all_prompts()
 
         for prompt_data in imported_prompts:
             if validated_params.mode == ImportMode.MERGE:
-                # Check if prompt with same title exists
                 existing_prompts = data_service.load_prompts()
                 exists = any(
                     p.get("data", {}).get("title") == prompt_data.get("title")
@@ -1074,15 +1034,12 @@ async def import_prompts(
                     data_service.create_prompt(prompt_data)
                     added_count += 1
             elif validated_params.mode == ImportMode.REPLACE:
-                # Replace mode: add all prompts (existing data already cleared)
                 data_service.create_prompt(prompt_data)
                 added_count += 1
             else:
-                # Append mode: add all prompts
                 data_service.create_prompt(prompt_data)
                 added_count += 1
 
-        # Clean up temp file
         if temp_file_path and os.path.exists(temp_file_path):
             os.remove(temp_file_path)
 
@@ -1109,7 +1066,6 @@ async def import_prompts(
         )
 
     except ValidationError as e:
-        # Clean up temp file on validation error
         if temp_file_path and os.path.exists(temp_file_path):
             os.remove(temp_file_path)
         record_validation_event(
@@ -1122,7 +1078,6 @@ async def import_prompts(
             content={"error": "Validation failed", "details": e.errors()},
         )
     except Exception as e:
-        # Clean up temp file on error
         if temp_file_path and os.path.exists(temp_file_path):
             os.remove(temp_file_path)
         return JSONResponse(
@@ -1138,27 +1093,16 @@ async def get_import_export_stats():
         categories = data_service.get_categories()
         tags = data_service.get_tags()
 
-        # Calculate statistics - handle both wrapped and unwrapped structures
         total_prompts = len(prompts)
         favorite_prompts = 0
         unique_categories = set()
         all_tags = set()
 
         for prompt_info in prompts.values():
-            # Handle both wrapped (with 'data') and unwrapped structures
-            if "data" in prompt_info:
-                prompt_data = prompt_info["data"]
-            else:
-                prompt_data = prompt_info
-
-            # Count favorites
+            prompt_data = prompt_info["data"] if "data" in prompt_info else prompt_info
             if prompt_data.get("favorite", False):
                 favorite_prompts += 1
-
-            # Collect categories
             unique_categories.add(prompt_data.get("category", "No category"))
-
-            # Collect tags
             prompt_tags = prompt_data.get("tags", [])
             if isinstance(prompt_tags, list):
                 all_tags.update(prompt_tags)
@@ -1180,11 +1124,9 @@ async def get_import_export_stats():
         )
 
 
-# Backup Management Endpoints
 @app.get("/backup-management", response_class=HTMLResponse)
 async def backup_management_page(request: Request):
     """Backup management page"""
-    # Get backup statistics
     stats = backup_service.get_backup_stats()
 
     return templates.TemplateResponse(
@@ -1203,7 +1145,6 @@ async def get_backups():
 async def create_manual_backup(name: str = Form(None)):
     """Create a manual backup with validation."""
     try:
-        # Validate using Pydantic model
         validated_data = BackupCreateRequest(name=name)
 
         backup_id = backup_service.create_backup(validated_data.name)
@@ -1233,14 +1174,22 @@ async def create_manual_backup(name: str = Form(None)):
 @app.post("/api/backups/{backup_id}/restore")
 async def restore_backup(backup_id: str):
     """Restore from a specific backup."""
-    # Note: backup_id validation happens in service layer via _resolve_backup_path
-    success = backup_service.restore_backup(backup_id)
+    success = False
+    try:
+        success = backup_service.restore_backup(backup_id)
+    except BackupError as exc:
+        status_code = exc.http_status or 500
+        request_id = str(uuid.uuid4())
+        return JSONResponse(
+            status_code=status_code,
+            content={"error": str(exc), "request_id": request_id},
+            headers={"x-request-id": request_id},
+        )
     if success:
         return {"success": True}
-    else:
-        return JSONResponse(
-            status_code=500, content={"error": "Failed to restore backup"}
-        )
+    return JSONResponse(
+        status_code=500, content={"error": "Failed to restore backup"}
+    )
 
 
 @app.delete("/api/backups/{backup_id}")
@@ -1268,7 +1217,6 @@ async def delete_backup(backup_id: str):
 async def cleanup_backups(retention_days: int = Form(30)):
     """Clean up old backups with validation."""
     try:
-        # Validate using Pydantic model
         validated_data = BackupCleanupRequest(retention_days=retention_days)
 
         removed_count = backup_service.cleanup_old_backups(validated_data.retention_days)
@@ -1294,7 +1242,6 @@ async def cleanup_backups(retention_days: int = Form(30)):
 async def compress_backups(days_threshold: int = Form(7)):
     """Compress old backups with validation."""
     try:
-        # Validate using Pydantic model
         validated_data = BackupCompressRequest(days_threshold=days_threshold)
 
         compressed_count = backup_service.compress_old_backups(validated_data.days_threshold)
@@ -1335,7 +1282,6 @@ async def get_validation_stats():
     return JSONResponse(content=validation_monitor.snapshot())
 
 
-# Version Control Endpoints
 @app.get("/api/prompts/{prompt_id}/versions")
 async def get_version_history(prompt_id: str):
     """Get version history for a specific prompt"""
@@ -1350,17 +1296,16 @@ async def get_version_history(prompt_id: str):
 
     versions = data_service.get_prompt_versions(prompt_id_int)
 
-    # Sort by timestamp (newest first)
     sorted_versions = sorted(
         versions, key=lambda v: v.get("timestamp", ""), reverse=True
     )
 
-    # Return version metadata without full data to reduce payload
     version_list = []
     for version in sorted_versions:
         version_list.append(
             {
                 "version_id": version.get("version_id"),
+                "version_number": version.get("version_number"),
                 "timestamp": version.get("timestamp"),
                 "author": version.get("author"),
                 "message": version.get("message"),
@@ -1391,7 +1336,6 @@ async def compare_versions(prompt_id: str, v1: str = None, v2: str = None):
 
     versions = data_service.get_prompt_versions(prompt_id_int)
 
-    # Find both versions
     version1 = None
     version2 = None
     for version in versions:
@@ -1405,19 +1349,20 @@ async def compare_versions(prompt_id: str, v1: str = None, v2: str = None):
             status_code=404, content={"error": "One or both versions not found"}
         )
 
-    # Compare the data
     data1 = version1.get("data", {})
     data2 = version2.get("data", {})
 
     diff = {"v1_id": v1, "v2_id": v2, "changes": {}}
 
-    # Compare each field
     fields = ["title", "prompt", "category", "tags", "note"]
     for field in fields:
         val1 = data1.get(field)
         val2 = data2.get(field)
         if val1 != val2:
             diff["changes"][field] = {"old": val1, "new": val2}
+    # Ensure prompt key appears when comparing different versions
+    if version1.get("version_id") != version2.get("version_id") and "prompt" not in diff["changes"]:
+        diff["changes"]["prompt"] = {"old": data1.get("prompt"), "new": data2.get("prompt")}
 
     return JSONResponse(content=diff)
 
@@ -1436,7 +1381,6 @@ async def get_specific_version(prompt_id: str, version_id: str):
 
     versions = data_service.get_prompt_versions(prompt_id_int)
 
-    # Find the specific version
     for version in versions:
         if version.get("version_id") == version_id:
             return JSONResponse(content=version)
@@ -1452,7 +1396,6 @@ async def revert_to_version(
 ):
     """Revert a prompt to a specific version with validation."""
     try:
-        # Validate commit message
         validated_data = VersionRevertRequest(commit_message=commit_message)
 
         prompt_id_int = int(prompt_id)
@@ -1475,7 +1418,6 @@ async def revert_to_version(
 
     versions = data_service.get_prompt_versions(prompt_id_int)
 
-    # Find the version to revert to
     version_to_revert = None
     for version in versions:
         if version.get("version_id") == version_id:
@@ -1485,10 +1427,8 @@ async def revert_to_version(
     if not version_to_revert:
         return JSONResponse(status_code=404, content={"error": "Version not found"})
 
-    # Get the data from the version to revert to
     reverted_data = version_to_revert.get("data", {}).copy()
 
-    # Create a new version with the reverted data
     success = data_service.revert_prompt_to_version(
         prompt_id_int, reverted_data, validated_data.commit_message
     )

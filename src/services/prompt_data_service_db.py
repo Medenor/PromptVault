@@ -86,12 +86,14 @@ class PromptDataService:
         """Ensure default 'system' user exists."""
         try:
             with get_db_session() as session:
-                user = session.query(User).filter_by(username="system").first()
+                user = session.query(User).filter_by(email="system@promptvault.local").first()
                 if not user:
                     user = User(
                         id=str(uuid.uuid4()),
                         username="system",
                         display_name="System User",
+                        email="system@promptvault.local",
+                        password_hash="system",  # Not used for system user
                         role="system"
                     )
                     session.add(user)
@@ -333,6 +335,7 @@ class PromptDataService:
 
         return {
             "version_id": version.version_id,
+            "version_number": version.version_number,
             "timestamp": timestamp,
             "author": version.author,
             "message": version.message,
@@ -384,11 +387,12 @@ class PromptDataService:
         """Get all tags as a set."""
         return set(self.get_tags())
 
-    def add_new_prompt(self, data: Dict[str, Any]) -> int:
+    def add_new_prompt(self, data: Dict[str, Any], user_id: Optional[str] = None) -> int:
         """Add a new prompt with initial version.
 
         Args:
             data (Dict[str, Any]): The prompt data
+            user_id (Optional[str]): The ID of the user who owns the prompt
 
         Returns:
             int: The ID of the new prompt
@@ -411,8 +415,11 @@ class PromptDataService:
                 tag_names = data.pop("tags", [])
                 tags = tag_repo.get_or_create_many(tag_names)
 
-                # Get default user
-                user = session.query(User).filter_by(username="system").first()
+                # Get user (specified user_id or default system user)
+                if user_id:
+                    user = session.query(User).filter_by(id=user_id).first()
+                else:
+                    user = session.query(User).filter_by(username="system").first()
 
                 # Create prompt
                 prompt = prompt_repo.create(
@@ -819,6 +826,24 @@ class PromptDataService:
                 "Failed to get tags",
                 extra={"event": "tags.get.failure"},
                 exc_info=exc
+            )
+            return []
+
+    def get_tags_with_counts(self) -> List[Dict[str, Any]]:
+        """Return tags with usage counts for legacy endpoints/tests."""
+        try:
+            with get_db_session() as session:
+                tag_repo = TagRepository(session)
+                results = tag_repo.list_all_with_counts()
+                return [
+                    {"name": tag.name, "count": count or 0}
+                    for tag, count in results
+                ]
+        except Exception as exc:
+            logger.error(
+                "Failed to get tags with counts",
+                extra={"event": "tags.get_counts.failure"},
+                exc_info=exc,
             )
             return []
 

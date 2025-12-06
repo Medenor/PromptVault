@@ -1,6 +1,6 @@
 <h1 align="center">
   <a href="https://codeberg.org/medenor/promptvault">
-    <img src="docs/images/promptvault_logo.svg" alt="Logo" width="250" height="250">
+    <img src="docs/images/promptvault_logo.jpg" alt="Logo" width="70%">
   </a>
 </h1>
 
@@ -58,6 +58,10 @@
 - [Getting Started](#getting-started)
   - [Prerequisites](#prerequisites)
   - [Installation](#installation)
+- [Authentication](#authentication)
+  - [User Roles](#user-roles)
+  - [Security Features](#security-features)
+  - [First-Time Setup](#first-time-setup)
 - [Usage](#usage)
 - [Roadmap](#roadmap)
 - [Support](#support)
@@ -76,6 +80,8 @@
 
 PromptVault is a modern web-based prompt management application designed to help users easily organize, store, and retrieve their prompts for various AI applications, software development, content marketing, and much more. Whether you are a developer, writer, marketer, or simply a user of AI-based tools, PromptVault allows you to centralize your prompts and improve your productivity through a responsive web interface accessible from any browser.
 
+With built-in multi-user authentication and role-based access control, PromptVault is ready for team deployments and production environments. Secure your prompts, manage user permissions, and collaborate with confidence.
+
 ### Built With
 
 - [Python](https://www.python.org/) 3.11+
@@ -86,6 +92,9 @@ PromptVault is a modern web-based prompt management application designed to help
 - [PostgreSQL](https://www.postgresql.org/) / [SQLite](https://www.sqlite.org/) - Database backends
 - [Alembic](https://alembic.sqlalchemy.org/) - Database migrations
 - [Docker](https://www.docker.com/) - Containerization platform
+- [Argon2](https://github.com/p-h-c/phc-winner-argon2) - Password hashing (OWASP recommended)
+- [PyJWT](https://pyjwt.readthedocs.io/) - JWT token authentication with ES256
+- [slowapi](https://github.com/laurents/slowapi) - Rate limiting for authentication endpoints
 
 ### Architecture
 
@@ -187,25 +196,147 @@ cd PromptVault
 cp .env.example .env
 # Edit .env and set POSTGRES_PASSWORD
 
+# Generate JWT signing keys for authentication
+openssl ecparam -name prime256v1 -genkey -noout -out es256-private.pem
+openssl ec -in es256-private.pem -pubout -out es256-public.pem
+
+# Update .env with JWT key paths
+echo "JWT_PRIVATE_KEY_PATH=$(pwd)/es256-private.pem" >> .env
+echo "JWT_PUBLIC_KEY_PATH=$(pwd)/es256-public.pem" >> .env
+
 # Start services (PostgreSQL + PromptVault)
 docker-compose up -d
 
 # Run database migrations
 docker-compose exec web alembic upgrade head
 
+# Create default admin user
+docker-compose exec web python scripts/create_admin_user.py
+
 # (Optional) Migrate existing JSON data
 docker-compose exec web python scripts/migrate_json_to_db.py
 ```
 
-Then open your browser to `http://localhost:8001`
+Then open your browser to `http://localhost:8001` and login with your admin credentials.
 
 ### Additional Installation Options
 
 For detailed deployment instructions including manual installation, environment configuration, and production setup, see:
 
 - **[Deployment Guide](docs/DEPLOYMENT.md)** - Complete deployment instructions for Docker, Docker Compose, and manual deployment
+- **[Authentication Deployment Guide](docs/AUTHENTICATION_DEPLOYMENT.md)** - Authentication setup with JWT key generation
 - **[Migration Guide](docs/MIGRATION_GUIDE.md)** - Step-by-step guide for migrating from JSON to database storage
 - **[Database Specification](docs/SPECS/SPEC_DATABASE.md)** - Technical specification and architecture details
+
+## Authentication
+
+PromptVault includes a comprehensive authentication and authorization system with JWT tokens and role-based access control (RBAC), making it production-ready for multi-user deployments.
+
+### User Roles
+
+PromptVault supports three distinct user roles with different permission levels:
+
+- **Viewer**: Read-only access to own prompts. Can view and export prompts but cannot create, edit, or delete. Ideal for stakeholders who need to review prompts without making changes.
+
+- **Editor**: Full access to own prompts including create, read, update, and delete operations. Can manage categories, tags, use version control, and perform import/export. This is the standard role for content creators.
+
+- **Admin**: All editor permissions plus user management capabilities. Can view, edit, and delete any user's prompts, manage user accounts, assign roles, and access system-wide features like backups and audit logs. Required for system administration.
+
+### Security Features
+
+PromptVault implements defense-in-depth security following OWASP best practices:
+
+**Password Security:**
+
+- Argon2id password hashing (winner of Password Hashing Competition, OWASP recommended)
+- Password policy enforcement: minimum 12 characters with complexity requirements
+- Common password detection to prevent easily guessable passwords
+- Account lockout after 5 failed login attempts (15-minute duration)
+
+**Token-Based Authentication:**
+
+- ES256 (ECDSA P-256) JWT tokens for secure authentication
+- Short-lived access tokens (30 minutes) with automatic refresh
+- Refresh token rotation on every use for enhanced security
+- Token family tracking with automatic reuse detection and revocation
+- HTTP-only cookies to prevent XSS attacks
+
+**Rate Limiting & Protection:**
+
+- Rate limiting on authentication endpoints (slowapi + Redis)
+- Failed login attempt tracking per user
+- Temporary account lockout after repeated failures
+- CSRF protection via SameSite=Strict cookies
+
+**Session Management:**
+
+- Maximum 5 concurrent sessions per user
+- Session metadata tracking (device, browser, IP, last used)
+- Ability to view and revoke active sessions
+- Automatic cleanup of expired sessions
+
+**Password Reset Flow:**
+
+- Secure email-based password reset with single-use tokens
+- 1-hour token expiration for security
+- Rate limiting (3 requests per hour per IP)
+- No user enumeration (same response for existing/non-existing emails)
+
+### First-Time Setup
+
+After deploying PromptVault, you need to create an admin user to access the system:
+
+```bash
+# If using Docker Compose
+docker-compose exec web python scripts/create_admin_user.py
+
+# If running locally
+python scripts/create_admin_user.py
+```
+
+The script will:
+
+1. Prompt you for admin credentials (username, email, password)
+2. Validate password strength and requirements
+3. Create the admin user with full permissions
+4. Display success confirmation
+
+**Important**: Keep your admin credentials secure and change the password if you suspect it has been compromised.
+
+### Authentication Endpoints
+
+PromptVault provides 20 authentication endpoints organized into three categories:
+
+**Public Endpoints (no authentication required):**
+
+- `POST /api/auth/register` - Create new user account
+- `POST /api/auth/login` - Login and receive JWT tokens
+- `POST /api/auth/refresh` - Refresh access token
+- `POST /api/auth/logout` - Logout and revoke tokens
+- `POST /api/auth/password-reset/request` - Request password reset email
+- `POST /api/auth/password-reset/confirm` - Confirm password reset with token
+
+**Protected User Endpoints (authentication required):**
+
+- `GET /api/auth/me` - Get current user profile
+- `PUT /api/auth/me` - Update profile information
+- `POST /api/auth/me/change-password` - Change password
+- `GET /api/auth/me/sessions` - View active sessions
+- `DELETE /api/auth/me/sessions/{session_id}` - Revoke specific session
+
+**Admin Endpoints (admin role required):**
+
+- `GET /api/admin/users` - List all users with pagination
+- `GET /api/admin/users/{user_id}` - Get user details
+- `PUT /api/admin/users/{user_id}/role` - Update user role
+- `PUT /api/admin/users/{user_id}/status` - Activate/deactivate user
+- `DELETE /api/admin/users/{user_id}` - Delete user account
+- `GET /api/admin/sessions` - View all sessions across all users
+- `DELETE /api/admin/sessions/{session_id}` - Revoke any user's session
+
+For complete API documentation with request/response examples, see [Authentication API Guide](docs/AUTHENTICATION_API.md).
+
+For security documentation and OWASP compliance details, see [Authentication Security Guide](docs/AUTHENTICATION_SECURITY.md).
 
 ## Usage
 
@@ -249,6 +380,7 @@ PORT=8001 python3 run_web.py
 
 ### Features
 
+- **Authentication & Authorization**: Multi-user support with JWT tokens, role-based access control (viewer, editor, admin), and session management
 - **Prompt Management**: Create, edit, delete, and organize prompts through an intuitive web interface
 - **Bulk Operations**: Multi-select prompts with checkboxes and delete multiple prompts in a single operation with automatic backups
 - **Version Control**: Git-like versioning system with full history tracking, diff visualization, and safe revert functionality
@@ -256,13 +388,14 @@ PORT=8001 python3 run_web.py
 - **Search & Filter**: Find prompts quickly with advanced filtering and search capabilities
 - **Import/Export**: Support for CSV, Markdown, and JSON formats with preview functionality
 - **Data Backup System**: Comprehensive backup and restoration with automatic pre-operation backups, manual backups, cleanup, and compression
+- **Security**: Argon2id password hashing, ES256 JWT tokens, rate limiting, account lockout, password reset flow
 - **Responsive Design**: Modern, mobile-friendly interface that works on all devices
-- **Multi-language Support**: Internationalization with English, French, Spanish, and German
+- **Multi-language Support**: Internationalization with English, French, Spanish, and German (authentication UI in English)
 - **Validation & Monitoring**: End-to-end validation/sanitization across API, server, and client with `/api/validation/stats` metrics (see below)
 
 ### Internationalization
 
-PromptVault supports multiple languages (English, French, Spanish, German). The application will automatically detect your system language, but you can also change languages from the language selector in the header.
+PromptVault supports multiple languages (English, French, Spanish, German). The application will automatically detect your system language, but you can also change languages from the language selector in the header. <!-- TODO: moving language selection into profil -->
 
 **Translation Files:**
 
@@ -297,7 +430,7 @@ For detailed project structure and development guidelines, see [AGENTS.md](docs/
 
 ## Testing
 
-PromptVault includes a comprehensive pytest suite with **514 passing tests** and **86.46% code coverage**.
+PromptVault includes a comprehensive pytest suite with **481 passing tests** and **99.8% authentication coverage**.
 
 ### Quick Start
 
@@ -344,6 +477,7 @@ For a comprehensive feature improvement roadmap with detailed implementation pla
 - [x] **Unit Tests:** Comprehensive test coverage (85%+) for core functionality with performance benchmarks
 - [x] **Database Migration:** Complete transition from JSON to SQLite/PostgreSQL with backward compatibility (see [Migration Guide](docs/MIGRATION_GUIDE.md))
 - [x] **Docker & Deployment:** Production-ready Docker setup with PostgreSQL integration and health checks (see [Deployment Guide](docs/DEPLOYMENT.md))
+- [x] **Authentication & Authorization:** Multi-user JWT authentication with role-based access control (viewer, editor, admin), Argon2id password hashing, ES256 tokens, session management, password reset flow, and 481 passing tests with 99.8% coverage (see [Authentication Guide](docs/AUTHENTICATION_DEPLOYMENT.md))
 
 ### Phase 1: Foundation Strengthening (Priority: High)
 
@@ -355,7 +489,7 @@ For a comprehensive feature improvement roadmap with detailed implementation pla
 
 ### Phase 2: Security & Architecture (Priority: High)
 
-- [ ] **Authentication & Authorization:** User management with JWT tokens and role-based access control
+- [x] **Authentication & Authorization:** User management with JWT tokens and role-based access control (COMPLETED)
 - [ ] **TypeScript Migration:** Convert frontend to TypeScript for type safety and better developer experience
 - [ ] **API Documentation:** Interactive OpenAPI/Swagger documentation with client SDKs
 - [ ] **Full-Text Search:** PostgreSQL FTS for advanced search capabilities with ranking and relevance scoring

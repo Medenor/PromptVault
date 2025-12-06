@@ -17,8 +17,28 @@ from .requests import (
     BulkDeleteRequest,
 )
 from .enums import ExportFormat, ImportMode
+from .auth_requests import (
+    RegisterRequest,
+    LoginRequest,
+    RefreshTokenRequest,
+    ChangePasswordRequest,
+    PasswordResetRequestRequest,
+    PasswordResetConfirmRequest,
+    RevokeSessionRequest,
+)
+from .auth_responses import (
+    UserResponse,
+    TokenResponse,
+    SessionResponse,
+    MessageResponse,
+    PasswordResetRequestResponse,
+    PasswordStrengthResponse,
+    SessionListResponse,
+    RevokeSessionResponse,
+)
 
 __all__ = [
+    # Prompt requests
     "PromptCreateRequest",
     "PromptUpdateRequest",
     "ExportRequest",
@@ -29,6 +49,24 @@ __all__ = [
     "VersionRevertRequest",
     "FrontendLogEntry",
     "BulkDeleteRequest",
+    # Enums
     "ExportFormat",
     "ImportMode",
+    # Auth requests
+    "RegisterRequest",
+    "LoginRequest",
+    "RefreshTokenRequest",
+    "ChangePasswordRequest",
+    "PasswordResetRequestRequest",
+    "PasswordResetConfirmRequest",
+    "RevokeSessionRequest",
+    # Auth responses
+    "UserResponse",
+    "TokenResponse",
+    "SessionResponse",
+    "MessageResponse",
+    "PasswordResetRequestResponse",
+    "PasswordStrengthResponse",
+    "SessionListResponse",
+    "RevokeSessionResponse",
 ]

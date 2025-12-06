@@ -24,7 +24,7 @@ import tempfile
 import shutil
 from pathlib import Path
 from typing import Generator, Callable, Dict, Any, List
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 import pytest
 from sqlalchemy import create_engine
@@ -62,6 +62,23 @@ from src.services.prompt_versioning_service import PromptVersioningService
 from src.services.version_compression_service import VersionCompressionService
 from src.services.version_tagging_service import VersionTaggingService
 from src.services.version_export_service import VersionExportService
+
+
+# ============================================================================
+# ENVIRONMENT SETUP FOR TESTS
+# ============================================================================
+
+
+@pytest.fixture(scope="session", autouse=True)
+def setup_test_environment():
+    """Set up environment variables for all tests.
+    
+    This fixture runs once per test session and ensures that rate limiting
+    is disabled for tests to prevent 429 responses during test execution.
+    """
+    # Disable rate limiting during tests
+    os.environ["DISABLE_RATE_LIMITING"] = "true"
+    yield
 
 
 # ============================================================================
@@ -185,6 +202,7 @@ def test_user(test_db_session: Session) -> User:
         username="test_user",
         display_name="Test User",
         email="test@example.com",
+        password_hash="hashed_password_placeholder",  # Required field
         role="user"
     )
     test_db_session.add(user)
@@ -741,9 +759,17 @@ def api_client(test_db_engine, temp_data_dir: str) -> Generator[TestClient, None
     Yields:
         TestClient: FastAPI test client
     """
+    # Ensure DISABLE_RATE_LIMITING is set (redundant but safe)
+    os.environ["DISABLE_RATE_LIMITING"] = "true"
+    
     # Import here to avoid circular imports
     from src.web import app as web_app
     from src.db import session as session_module
+    from src.web.middleware import rate_limit
+    
+    # Reinitialize the limiter with rate limiting disabled
+    rate_limit.limiter = rate_limit.create_limiter()
+    web_app.app.state.limiter = rate_limit.limiter
 
     # Store original session factory
     original_session_local = session_module.SessionLocal
@@ -798,6 +824,52 @@ def api_client_context(test_db_engine, temp_data_dir: str, sample_prompt_data: C
         web_app.versioning_service,
     )
 
+    # Generate test JWT keys
+    from cryptography.hazmat.primitives.asymmetric import ec
+    from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.backends import default_backend
+    import os
+
+    # Generate test private key
+    private_key = ec.generate_private_key(ec.SECP256R1(), default_backend())
+    private_pem = private_key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.PKCS8,
+        encryption_algorithm=serialization.NoEncryption()
+    )
+
+    # Generate test public key
+    public_key = private_key.public_key()
+    public_pem = public_key.public_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo
+    )
+
+    # Write test keys to temp directory
+    private_key_path = os.path.join(temp_data_dir, "test_private_key.pem")
+    public_key_path = os.path.join(temp_data_dir, "test_public_key.pem")
+
+    with open(private_key_path, "wb") as f:
+        f.write(private_pem)
+    with open(public_key_path, "wb") as f:
+        f.write(public_pem)
+
+    # Patch auth_settings directly
+    from src.config import auth_config
+    from src.config.auth_config import AuthConfig
+
+    # Store original auth_settings
+    original_auth_settings = auth_config.auth_settings
+
+    # Create test config with test key paths
+    test_config = AuthConfig(
+        jwt_private_key_path=private_key_path,
+        jwt_public_key_path=public_key_path,
+    )
+
+    # Patch the module-level variable
+    auth_config.auth_settings = test_config
+
     # Create test session factory
     TestSessionLocal = sessionmaker(bind=test_db_engine)
 
@@ -821,13 +893,60 @@ def api_client_context(test_db_engine, temp_data_dir: str, sample_prompt_data: C
     # Patch get_db_session
     session_module.get_db_session = mock_get_db_session
 
+    # Force reload of auth config before configuring services
+    from src.config import auth_config
+    import importlib
+    importlib.reload(auth_config)
+
     # Configure services with test data directory
     web_app.configure_services(data_dir=temp_data_dir)
 
     # Get reference to data service
     data_service = web_app.data_service
 
-    # Seed data with two prompts (matching old fixture behavior)
+    # Create test user for authenticated API tests
+    from src.services.auth.password_service import PasswordService
+    from src.config.auth_config import auth_settings
+    from src.db.models.user import User
+    from src.db.models.user_session import UserSession
+
+    password_service = PasswordService(auth_settings)
+    password_hash = password_service.hash_password("ApiUserP@ssw0rd123")
+
+    # Create a session to add the user
+    test_session = TestSessionLocal()
+    try:
+        test_user = User(
+            id="api-test-user-id",
+            username="apiuser",
+            email="api@example.com",
+            password_hash=password_hash,
+            role="editor",
+            is_active=True,
+            email_verified=True,
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
+        )
+        test_session.add(test_user)
+        test_session.flush()
+
+        # Create an active session for the user
+        user_session = UserSession(
+            user_id=test_user.id,
+            family_id="api-test-family",
+            refresh_token_jti="api-test-jti",
+            ip_address="127.0.0.1",
+            device_info="Test Agent",
+            created_at=datetime.now(timezone.utc),
+            expires_at=datetime.now(timezone.utc) + timedelta(days=30),
+            is_revoked=False,
+        )
+        test_session.add(user_session)
+        test_session.commit()
+    finally:
+        test_session.close()
+
+    # Seed data with two prompts owned by the test user (matching old fixture behavior)
     data_service.add_new_prompt(
         sample_prompt_data(
             title="API Prompt 1",
@@ -835,7 +954,8 @@ def api_client_context(test_db_engine, temp_data_dir: str, sample_prompt_data: C
             category="Testing",
             tags=["api", "test"],
             favorite=True,
-        )
+        ),
+        user_id="api-test-user-id"  # Set the owner
     )
     data_service.add_new_prompt(
         sample_prompt_data(
@@ -844,7 +964,8 @@ def api_client_context(test_db_engine, temp_data_dir: str, sample_prompt_data: C
             category="Docs",
             tags=["docs"],
             favorite=False,
-        )
+        ),
+        user_id="api-test-user-id"  # Set the owner
     )
 
     # Create test client
@@ -867,6 +988,12 @@ def api_client_context(test_db_engine, temp_data_dir: str, sample_prompt_data: C
             web_app.import_export_service,
             web_app.versioning_service,
         ) = original_services
+
+        # Restore original auth_settings
+        auth_config.auth_settings = original_auth_settings
+
+        # Force reload of auth config again
+        importlib.reload(auth_config)
 
 
 @pytest.fixture

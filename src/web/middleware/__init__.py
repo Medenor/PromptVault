@@ -1,0 +1,33 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+"""Middleware package for PromptVault web application.
+
+This package contains middleware components for the FastAPI application,
+including rate limiting, authentication, and other request processing logic.
+"""
+
+from src.web.middleware.rate_limit import (
+    limiter,
+    get_rate_limit_key,
+    auth_login_limit,
+    auth_register_limit,
+    password_reset_limit,
+    api_limit,
+    admin_limit,
+    rate_limit_exceeded_handler,
+    add_rate_limit_headers,
+)
+
+__all__ = [
+    "limiter",
+    "get_rate_limit_key",
+    "auth_login_limit",
+    "auth_register_limit",
+    "password_reset_limit",
+    "api_limit",
+    "admin_limit",
+    "rate_limit_exceeded_handler",
+    "add_rate_limit_headers",
+]

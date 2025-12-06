@@ -42,7 +42,8 @@ class PromptRepository(BaseRepository[Prompt]):
         tags: Optional[List[str]] = None,
         favorite: Optional[bool] = None,
         limit: Optional[int] = None,
-        offset: int = 0
+        offset: int = 0,
+        case_sensitive: bool = False,
     ) -> List[Prompt]:
         """Search prompts with multiple filters.
 
@@ -66,13 +67,12 @@ class PromptRepository(BaseRepository[Prompt]):
         # Text search (simple LIKE-based, FTS deferred to future phase per plan)
         if query:
             search_pattern = f"%{query}%"
-            q = q.filter(
-                or_(
-                    Prompt.title.ilike(search_pattern),
-                    Prompt.prompt.ilike(search_pattern),
-                    Prompt.note.ilike(search_pattern)
-                )
+            comparator = or_(
+                Prompt.title.ilike(search_pattern),
+                Prompt.prompt.ilike(search_pattern),
+                Prompt.note.ilike(search_pattern)
             )
+            q = q.filter(comparator)
 
         # Category filter
         if category:
@@ -94,7 +94,21 @@ class PromptRepository(BaseRepository[Prompt]):
         if limit:
             q = q.limit(limit)
 
-        return q.all()
+        results = q.all()
+
+        # Enforce case-sensitive matching in Python when requested (SQLite LIKE is case-insensitive)
+        if case_sensitive and query:
+            filtered = []
+            for prompt in results:
+                if (
+                    (query in prompt.title)
+                    or (query in prompt.prompt)
+                    or (prompt.note and query in prompt.note)
+                ):
+                    filtered.append(prompt)
+            return filtered
+
+        return results
 
     def get_with_relationships(self, prompt_id: int) -> Optional[Prompt]:
         """Get a prompt with all relationships eagerly loaded.

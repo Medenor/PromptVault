@@ -204,6 +204,34 @@ Tests for backup and restore:
 
 ## Test Infrastructure
 
+### Rate Limiting in Tests
+
+**Automatic Disabling**: Rate limiting is automatically disabled during test execution to prevent 429 (Too Many Requests) responses from blocking tests.
+
+**How it Works:**
+
+- Session-scoped `setup_test_environment()` fixture sets `DISABLE_RATE_LIMITING=true`
+- All `@limiter.limit()` decorators become no-ops during tests
+- Tests can make unlimited API requests without throttling delays
+- No test modifications needed - it's automatic
+
+**File:** `tests/conftest.py` (lines 70-80)
+
+```python
+@pytest.fixture(scope="session", autouse=True)
+def setup_test_environment():
+    """Set up environment variables for all tests."""
+    os.environ["DISABLE_RATE_LIMITING"] = "true"
+    yield
+```
+
+This means you can:
+
+- ✅ Make multiple login attempts in rapid succession
+- ✅ Test password reset flows without rate limit delays
+- ✅ Perform stress testing without throttling
+- ✅ Debug authentication issues faster
+
 ### Fixtures (`tests/conftest.py`)
 
 **30 comprehensive fixtures** providing:

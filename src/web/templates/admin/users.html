@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+     License, v. 2.0. If a copy of the MPL was not distributed with this
+     file, You can obtain one at https://mozilla.org/MPL/2.0/. -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management - PromptVault Admin</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon.png">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/admin.css">
+    <script src="https://unpkg.com/i18next@23.7.6/i18next.min.js"></script>
+    <script src="https://unpkg.com/i18next-browser-languagedetector@7.2.0/i18nextBrowserLanguageDetector.min.js"></script>
+    <script src="https://unpkg.com/i18next-http-backend@2.4.2/i18nextHttpBackend.min.js"></script>
+</head>
+<body>
+    <div class="app">
+        <header class="header">
+            <div class="header-logo">
+                <img src="/static/images/promptvault_logo_frontend.webp" alt="PromptVault Logo" class="logo">
+            </div>
+            <h1>PromptVault Admin</h1>
+            <div class="header-actions">
+                <select id="language-selector" class="language-selector">
+                    <option value="en">English</option>
+                    <option value="fr">Français</option>
+                    <option value="es">Español</option>
+                    <option value="de">Deutsch</option>
+                </select>
+                <button onclick="window.location.href='/admin/sessions'" data-i18n="admin.nav.sessions">Sessions</button>
+                <button onclick="window.location.href='/auth/profile'" data-i18n="admin.nav.profile">Profile</button>
+                <button onclick="window.location.href='/'" data-i18n="nav.backToMain">Back to Main</button>
+            </div>
+        </header>
+
+        <div class="admin-container">
+            <div class="admin-header">
+                <h2 data-i18n="admin.users.title">User Management</h2>
+                <div class="admin-actions">
+                    <button id="add-user-btn" class="btn btn-primary" data-i18n="admin.users.addUser">Add User</button>
+                    <button id="refresh-users-btn" class="btn btn-secondary" data-i18n="actions.refresh">Refresh</button>
+                </div>
+            </div>
+
+            <div class="admin-filters">
+                <div class="filter-group">
+                    <input type="text" id="search-input" placeholder="Search users..." data-i18n="[placeholder]admin.users.searchPlaceholder" class="search-input">
+                </div>
+                <div class="filter-group">
+                    <label for="role-filter" data-i18n="admin.users.filterRole">Role:</label>
+                    <select id="role-filter" class="filter-select">
+                        <option value="all" data-i18n="admin.users.allRoles">All Roles</option>
+                        <option value="viewer" data-i18n="admin.users.roleViewer">Viewer</option>
+                        <option value="editor" data-i18n="admin.users.roleEditor">Editor</option>
+                        <option value="admin" data-i18n="admin.users.roleAdmin">Admin</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="status-filter" data-i18n="admin.users.filterStatus">Status:</label>
+                    <select id="status-filter" class="filter-select">
+                        <option value="all" data-i18n="admin.users.allStatuses">All Statuses</option>
+                        <option value="active" data-i18n="admin.users.statusActive">Active</option>
+                        <option value="inactive" data-i18n="admin.users.statusInactive">Inactive</option>
+                        <option value="locked" data-i18n="admin.users.statusLocked">Locked</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="admin-stats">
+                <div class="stat-card">
+                    <div class="stat-value" id="total-users">0</div>
+                    <div class="stat-label" data-i18n="admin.users.totalUsers">Total Users</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="active-users">0</div>
+                    <div class="stat-label" data-i18n="admin.users.activeUsers">Active Users</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="locked-users">0</div>
+                    <div class="stat-label" data-i18n="admin.users.lockedUsers">Locked Users</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="admin-users">0</div>
+                    <div class="stat-label" data-i18n="admin.users.adminUsers">Admins</div>
+                </div>
+            </div>
+
+            <div class="users-table-container">
+                <table class="users-table">
+                    <thead>
+                        <tr>
+                            <th data-i18n="admin.users.username">Username</th>
+                            <th data-i18n="admin.users.email">Email</th>
+                            <th data-i18n="admin.users.role">Role</th>
+                            <th data-i18n="admin.users.status">Status</th>
+                            <th data-i18n="admin.users.lastLogin">Last Login</th>
+                            <th data-i18n="admin.users.sessions">Sessions</th>
+                            <th data-i18n="admin.users.actions">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="users-table-body">
+                        <tr>
+                            <td colspan="7" class="loading-cell">
+                                <div class="loading" data-i18n="messages.loading">Loading...</div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="pagination" id="pagination">
+                <button id="prev-page" class="btn btn-secondary" disabled data-i18n="admin.users.previous">Previous</button>
+                <span id="page-info" class="page-info">Page 1 of 1</span>
+                <button id="next-page" class="btn btn-secondary" disabled data-i18n="admin.users.next">Next</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Detail Modal -->
+    <div id="user-detail-modal" class="modal is-hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 data-i18n="admin.users.userDetails">User Details</h2>
+                <span class="close" onclick="closeUserDetailModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div id="user-detail-content" class="user-detail-content">
+                    <div class="loading" data-i18n="messages.loading">Loading...</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="close-user-detail-btn" class="btn btn-secondary" data-i18n="actions.close">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit User Modal -->
+    <div id="edit-user-modal" class="modal is-hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 data-i18n="admin.users.editUser">Edit User</h2>
+                <span class="close" onclick="closeEditUserModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="edit-user-form" class="admin-form" novalidate>
+                    <input type="hidden" id="edit-user-id" name="user_id">
+
+                    <div class="form-group">
+                        <label for="edit-role" data-i18n="admin.users.role">Role:</label>
+                        <select id="edit-role" name="role" class="form-control">
+                            <option value="viewer" data-i18n="admin.users.roleViewer">Viewer</option>
+                            <option value="editor" data-i18n="admin.users.roleEditor">Editor</option>
+                            <option value="admin" data-i18n="admin.users.roleAdmin">Admin</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="edit-is-active" name="is_active">
+                            <span data-i18n="admin.users.activeAccount">Active Account</span>
+                        </label>
+                    </div>
+
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="edit-email-verified" name="email_verified">
+                            <span data-i18n="admin.users.emailVerified">Email Verified</span>
+                        </label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button id="save-user-btn" class="btn btn-primary" data-i18n="actions.save">Save</button>
+                <button id="cancel-edit-btn" class="btn btn-secondary" data-i18n="actions.cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Delete Modal -->
+    <div id="confirm-delete-modal" class="modal is-hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 data-i18n="admin.users.confirmDelete">Confirm Delete</h2>
+                <span class="close" onclick="closeConfirmDeleteModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p data-i18n="admin.users.deleteWarning">Are you sure you want to permanently delete this user? This action cannot be undone and will remove all user data from the database.</p>
+                <p class="warning-text"><strong id="delete-username"></strong></p>
+            </div>
+            <div class="modal-footer">
+                <button id="confirm-delete-btn" class="btn btn-danger" data-i18n="actions.delete">Delete</button>
+                <button id="cancel-delete-btn" class="btn btn-secondary" data-i18n="actions.cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create User Modal -->
+    <div id="create-user-modal" class="modal is-hidden">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2 data-i18n="admin.users.createUser">Create New User</h2>
+                <span class="close" onclick="closeCreateUserModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="create-user-form" class="admin-form" novalidate>
+                    <div class="form-group">
+                        <label for="create-username" data-i18n="admin.users.username">Username:</label>
+                        <input type="text" id="create-username" name="username" class="form-control"
+                               minlength="3" maxlength="32" required
+                               data-i18n="[placeholder]admin.users.usernamePlaceholder"
+                               placeholder="3-32 characters, letters, numbers, underscores">
+                        <div class="error-message" id="create-username-error"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="create-email" data-i18n="admin.users.email">Email:</label>
+                        <input type="email" id="create-email" name="email" class="form-control" required
+                               data-i18n="[placeholder]admin.users.emailPlaceholder"
+                               placeholder="user@example.com">
+                        <div class="error-message" id="create-email-error"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="create-password" data-i18n="admin.users.password">Password:</label>
+                        <div class="password-input-wrapper">
+                            <input type="password" id="create-password" name="password" class="form-control"
+                                   minlength="12" maxlength="128" required
+                                   data-i18n="[placeholder]admin.users.passwordPlaceholder"
+                                   placeholder="Min 12 chars: uppercase, lowercase, digit, special char">
+                            <button type="button" id="toggle-password-create" class="toggle-password-btn">⊙</button>
+                        </div>
+                        <div id="create-password-strength" class="password-strength" aria-live="polite">
+                            <div class="strength-bar">
+                                <div class="strength-bar-fill" id="create-strength-bar-fill"></div>
+                            </div>
+                            <div class="strength-text" id="create-strength-text"></div>
+                        </div>
+                        <div class="password-requirements">
+                            <div id="req-length" class="requirement">
+                                <span class="requirement-icon">○</span>
+                                <span data-i18n="auth.register.reqLength">At least 12 characters</span>
+                            </div>
+                            <div id="req-uppercase" class="requirement">
+                                <span class="requirement-icon">○</span>
+                                <span data-i18n="auth.register.reqUppercase">One uppercase letter (A-Z)</span>
+                            </div>
+                            <div id="req-lowercase" class="requirement">
+                                <span class="requirement-icon">○</span>
+                                <span data-i18n="auth.register.reqLowercase">One lowercase letter (a-z)</span>
+                            </div>
+                            <div id="req-digit" class="requirement">
+                                <span class="requirement-icon">○</span>
+                                <span data-i18n="auth.register.reqDigit">One digit (0-9)</span>
+                            </div>
+                            <div id="req-special" class="requirement">
+                                <span class="requirement-icon">○</span>
+                                <span data-i18n="auth.register.reqSpecial">One special character (!@#$%^&*)</span>
+                            </div>
+                        </div>
+                        <div class="error-message" id="create-password-error"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="create-confirm-password" data-i18n="admin.users.confirmPassword">Confirm Password:</label>
+                        <div class="password-input-wrapper">
+                            <input type="password" id="create-confirm-password" name="confirm_password" class="form-control"
+                                   minlength="12" maxlength="128" required
+                                   data-i18n="[placeholder]admin.users.confirmPasswordPlaceholder"
+                                   placeholder="Confirm password">
+                            <button type="button" id="toggle-confirm-password-create" class="toggle-password-btn">⊙</button>
+                        </div>
+                        <div class="error-message" id="create-confirm-password-error"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="create-role" data-i18n="admin.users.role">Role:</label>
+                        <select id="create-role" name="role" class="form-control">
+                            <option value="viewer" data-i18n="admin.users.roleViewer">Viewer</option>
+                            <option value="editor" data-i18n="admin.users.roleEditor">Editor</option>
+                            <option value="admin" data-i18n="admin.users.roleAdmin">Admin</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="create-email-verified" name="email_verified">
+                            <span data-i18n="admin.users.markEmailVerified">Mark email as verified</span>
+                        </label>
+                    </div>
+
+                    <div class="error-message" id="create-form-error"></div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button id="create-user-submit-btn" class="btn btn-primary" data-i18n="actions.create">Create User</button>
+                <button id="create-user-cancel-btn" class="btn btn-secondary" data-i18n="actions.cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/telemetry.js" defer></script>
+    <script type="module" src="/static/js/admin-users.js?v=6"></script>
+</body>
+</html>

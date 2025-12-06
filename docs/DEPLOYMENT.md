@@ -255,6 +255,41 @@ uvicorn src.web.app:app --host 0.0.0.0 --port 8003 --workers 4
 | `LOG_LEVEL` | Logging level | `INFO` |
 | `AUDIT_LOG_LEVEL` | Audit log level | `INFO` |
 | `DATA_DIR` | Data directory path | `./data` |
+| `DISABLE_RATE_LIMITING` | Disable rate limiting (dev/test only) | `false` |
+
+### Development-Only Variables
+
+#### `DISABLE_RATE_LIMITING`
+
+Disables rate limiting for development and testing. **Never enable in production.**
+
+**Usage:**
+
+```bash
+# Enable (allows unlimited login/register attempts)
+DISABLE_RATE_LIMITING=true PORT=8003 python run_web.py
+
+# With Docker Compose
+export DISABLE_RATE_LIMITING=true
+docker-compose up -d web
+
+# Disable (default - rate limiting active)
+DISABLE_RATE_LIMITING=false PORT=8003 python run_web.py
+```
+
+**What It Does:**
+
+- All rate limit decorators remain in place but don't restrict requests
+- Default limit set to 10,000,000 requests per minute (effectively unlimited)
+- Rate limit headers not added to responses
+- Warning logged: "⚠️  RATE LIMITING IS DISABLED"
+
+**When to Use:**
+
+- Rapid testing of authentication flows
+- UI testing with multiple login attempts
+- API testing without throttling delays
+- Bug investigation and debugging
 
 ### Database URL Examples
 

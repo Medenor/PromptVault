@@ -151,15 +151,66 @@ function toggleElement(element, shouldShow) {
     }
 }
 
-function initializeApp() {
-    // Event listeners
+async function initializeApp() {
+    // Event listeners (safe to setup before auth)
     setupEventListeners();
     initializeBulkActions();
 
-    // Load initial data
+    // CRITICAL: Check authentication BEFORE loading any data
+    // This prevents content flash before redirect
+    await checkAdminAccess();
+
+    // Only load data if authentication succeeded
+    // (if auth failed, checkAdminAccess redirects to login)
     loadPrompts();
     loadCategories();
     loadTags();
+}
+
+async function checkAdminAccess() {
+    try {
+        console.log('Checking authentication...');
+        const response = await fetch('/api/auth/me', {
+            credentials: 'include'
+        });
+
+        console.log('Response status:', response.status);
+        if (response.ok) {
+            const data = await response.json();
+            console.log('User data:', data);
+            console.log('User role:', data.role);
+
+            // Authentication successful - show the app
+            const loadingOverlay = document.getElementById('auth-loading-overlay');
+            const appDiv = document.querySelector('.app');
+            if (loadingOverlay) loadingOverlay.style.display = 'none';
+            if (appDiv) appDiv.style.display = 'block';
+
+            if (data.role === 'admin') {
+                console.log('User is admin, showing button');
+                const adminBtn = document.getElementById('admin-btn');
+                console.log('Admin button element:', adminBtn);
+                if (adminBtn) {
+                    adminBtn.style.display = '';
+                    console.log('Admin button should now be visible');
+                }
+            } else {
+                console.log('User is not admin, role is:', data.role);
+            }
+        } else if (response.status === 401) {
+            // Session revoked or expired, redirect to login immediately
+            console.log('Session invalid, redirecting to login');
+            window.location.href = '/auth/login';
+        } else {
+            console.log('Response not OK:', response.statusText);
+            // For other errors, also redirect to login for security
+            window.location.href = '/auth/login';
+        }
+    } catch (error) {
+        console.error('Failed to check authentication:', error);
+        // On error, redirect to login for security
+        window.location.href = '/auth/login';
+    }
 }
 
 // Global search state
@@ -183,6 +234,12 @@ function setupEventListeners() {
     document.getElementById('import-export-btn').addEventListener('click', function() {
         window.location.href = '/import-export';
     });
+
+    // Logout button
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', logout);
+    }
 
     // Form handling
     document.getElementById('prompt-form').addEventListener('submit', handlePromptSubmit);
@@ -1311,12 +1368,22 @@ async function showDiffModal() {
     }
 
     showElement(document.getElementById('diff-modal'));
-    const versionIds = Array.from(selectedVersions);
-    
+    let versionIds = Array.from(selectedVersions);
+
+    // Sort versions by their version_number to ensure older is first (for old/new comparison)
+    const versionsWithNumbers = versionIds.map(vId => {
+        const version = allVersions.find(v => v.version_id === vId);
+        return { id: vId, number: version ? version.version_number : 0 };
+    });
+
+    // Sort by version number (ascending - older first)
+    versionsWithNumbers.sort((a, b) => a.number - b.number);
+    versionIds = versionsWithNumbers.map(v => v.id);
+
     // Populate version selectors
     populateDiffSelectors(versionIds);
-    
-    // Load and display diff
+
+    // Load and display diff - older version as v1 (old), newer as v2 (new)
     await loadAndDisplayDiff(versionIds[0], versionIds[1]);
 }
 
@@ -2115,3 +2182,33 @@ async function performBulkDelete() {
 
 // Initialize lazy loading on app start
 initializeLazyLoading();
+
+// Logout function
+async function logout() {
+    try {
+        // Get refresh token from localStorage (if it exists from old implementation)
+        const refreshToken = localStorage.getItem('refresh_token');
+
+        // Call logout endpoint with cookies
+        await fetch('/api/auth/logout', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: refreshToken ? JSON.stringify({ refresh_token: refreshToken }) : '{}'
+        });
+    } catch (error) {
+        console.error('Logout error:', error);
+        reportAppIssue('logout-error', error, {}, 'warning');
+    } finally {
+        // Always clear storage and redirect
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        localStorage.removeItem('user');
+        sessionStorage.clear();
+
+        window.location.href = '/auth/login';
+    }
+}
+
