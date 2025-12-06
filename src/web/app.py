@@ -202,6 +202,75 @@ logger.info("API routers registered: /api/auth, /api/admin, /api/prompts")
 logger.info("HTML page routes registered: /auth/*, /admin/*")
 
 # ============================================================================
+# SCHEDULER INITIALIZATION
+# ============================================================================
+# Initialize session cleanup scheduler for background maintenance tasks
+session_cleanup_scheduler = None
+
+@app.on_event("startup")
+async def startup_scheduler():
+    """Initialize and start the session cleanup scheduler on app startup."""
+    global session_cleanup_scheduler
+    
+    try:
+        from src.db.database import SessionLocal
+        from src.config.auth_config import auth_settings
+        from src.scheduler.session_cleanup import SessionCleanupScheduler
+        from src.web.routers.scheduler import set_scheduler
+        
+        # Create scheduler instance
+        session_cleanup_scheduler = SessionCleanupScheduler(
+            session_factory=SessionLocal,
+            config=auth_settings,
+            cleanup_interval_hours=auth_settings.cleanup_interval_hours,
+            batch_size=auth_settings.cleanup_batch_size,
+        )
+        
+        # Register with router for dependency injection
+        set_scheduler(session_cleanup_scheduler)
+        
+        # Start the scheduler
+        session_cleanup_scheduler.start()
+        
+        logger.info(
+            "✓ Session cleanup scheduler initialized and started "
+            f"(interval: {auth_settings.cleanup_interval_hours}h, "
+            f"batch_size: {auth_settings.cleanup_batch_size})"
+        )
+        print(f"✓ Session cleanup scheduler started")
+        
+    except ImportError as e:
+        logger.warning(f"Scheduler imports not available: {e}")
+        print(f"⚠ Scheduler imports not available: {e}")
+    except Exception as e:
+        logger.error(f"Failed to initialize scheduler: {e}", exc_info=True)
+        print(f"✗ Failed to initialize scheduler: {e}")
+
+
+@app.on_event("shutdown")
+async def shutdown_scheduler():
+    """Gracefully shutdown the session cleanup scheduler on app shutdown."""
+    global session_cleanup_scheduler
+    
+    if session_cleanup_scheduler is not None:
+        try:
+            session_cleanup_scheduler.stop()
+            logger.info("✓ Session cleanup scheduler stopped gracefully")
+            print(f"✓ Session cleanup scheduler stopped")
+        except Exception as e:
+            logger.error(f"Error stopping scheduler: {e}", exc_info=True)
+            print(f"✗ Error stopping scheduler: {e}")
+
+
+# Register scheduler router if scheduler is available
+try:
+    from src.web.routers import scheduler as scheduler_router
+    app.include_router(scheduler_router.router, prefix="/api")
+    logger.info("Scheduler management endpoints registered: /api/admin/scheduler")
+except ImportError:
+    logger.debug("Scheduler router not available")
+
+# ============================================================================
 # HEALTH CHECK ENDPOINT
 # ============================================================================
 @app.get("/health", tags=["System"])

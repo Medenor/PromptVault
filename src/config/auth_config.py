@@ -272,6 +272,18 @@ class AuthConfig(BaseSettings):
         description="Application base URL for email links"
     )
 
+    # Scheduler Configuration
+    cleanup_interval_hours: int = Field(
+        default=1,
+        gt=0,
+        description="Session cleanup scheduler interval in hours"
+    )
+    cleanup_batch_size: int = Field(
+        default=100,
+        gt=0,
+        description="Number of expired sessions to cleanup per batch"
+    )
+
     model_config = ConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
