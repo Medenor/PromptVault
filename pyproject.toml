@@ -47,6 +47,7 @@ dependencies = [
   "slowapi>=0.1.9",
   "redis>=5.0.0",
   "python-jose[cryptography]>=3.3.0",
+  "user-agents>=2.2.0",
 ]
 
 [project.optional-dependencies]
