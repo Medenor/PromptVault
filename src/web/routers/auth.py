@@ -1376,12 +1376,14 @@ def request_password_reset(
 def confirm_password_reset(
     request_data: PasswordResetConfirmRequest,
     password_reset_service: PasswordResetService = Depends(get_password_reset_service),
+    session: Session = Depends(get_db),
 ) -> MessageResponse:
     """Confirm password reset with token.
 
     Args:
         request_data: Reset token and new password
         password_reset_service: Password reset service instance (injected)
+        session: Database session (injected)
 
     Returns:
         MessageResponse: Success message
@@ -1395,6 +1397,9 @@ def confirm_password_reset(
             token=request_data.token,
             new_password=request_data.new_password,
         )
+
+        # Commit the session to persist password and token changes
+        session.commit()
 
         logger.info(f"Password reset successfully completed using token")
 
