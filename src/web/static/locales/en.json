@@ -251,6 +251,7 @@
       "usernamePlaceholder": "Enter your username or email",
       "password": "Password",
       "passwordPlaceholder": "Enter your password",
+      "rememberMe": "Remember me",
       "loginButton": "Login",
       "forgotPassword": "Forgot password?",
       "noAccount": "Don't have an account? Register",

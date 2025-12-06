@@ -208,6 +208,7 @@ class LoginRequest(BaseModel):
     Field constraints:
         - username_or_email: Username or email, required
         - password: User's password, required
+        - remember_me: Keep user logged in with extended refresh token
 
     Example:
         >>> request = LoginRequest(
@@ -229,6 +230,11 @@ class LoginRequest(BaseModel):
         max_length=128,
         description="User password",
         examples=["MySecureP@ssw0rd123"],
+    )
+    remember_me: bool = Field(
+        default=False,
+        description="Extend session duration for this device",
+        examples=[True],
     )
 
     @field_validator("username_or_email")

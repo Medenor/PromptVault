@@ -252,6 +252,7 @@
       "password": "Mot de passe",
       "passwordPlaceholder": "Entrez votre mot de passe",
       "loginButton": "Se connecter",
+      "rememberMe": "Se souvenir de moi",
       "forgotPassword": "Mot de passe oublié ?",
       "noAccount": "Vous n'avez pas de compte ? S'inscrire",
       "accountLocked": "Votre compte a été verrouillé en raison de trop nombreuses tentatives de connexion échouées. Veuillez réessayer plus tard ou réinitialiser votre mot de passe.",

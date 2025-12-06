@@ -185,6 +185,8 @@ function setupLoginForm() {
 
         const usernameOrEmail = document.getElementById('username-or-email').value.trim();
         const password = document.getElementById('password').value;
+        const rememberMeInput = document.getElementById('remember-me');
+        const rememberMe = rememberMeInput ? rememberMeInput.checked : false;
 
         // Validation
         if (!usernameOrEmail) {
@@ -210,16 +212,23 @@ function setupLoginForm() {
                 },
                 body: JSON.stringify({
                     username_or_email: usernameOrEmail,
-                    password: password
+                    password: password,
+                    remember_me: rememberMe
                 })
             });
 
             const data = await response.json();
 
             if (response.ok) {
-                // Store tokens
-                localStorage.setItem('access_token', data.access_token);
-                localStorage.setItem('refresh_token', data.refresh_token);
+                // Store tokens based on preference
+                const preferredStorage = rememberMe ? localStorage : sessionStorage;
+                const secondaryStorage = rememberMe ? sessionStorage : localStorage;
+
+                preferredStorage.setItem('access_token', data.access_token);
+                preferredStorage.setItem('refresh_token', data.refresh_token);
+
+                secondaryStorage.removeItem('access_token');
+                secondaryStorage.removeItem('refresh_token');
 
                 showNotification(i18next.t('auth.login.success') || 'Login successful!', 'success');
 

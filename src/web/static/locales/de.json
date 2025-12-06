@@ -252,6 +252,7 @@
       "password": "Passwort",
       "passwordPlaceholder": "Geben Sie Ihr Passwort ein",
       "loginButton": "Anmelden",
+      "rememberMe": "Angemeldet bleiben",
       "forgotPassword": "Passwort vergessen?",
       "noAccount": "Noch kein Konto? Registrieren",
       "accountLocked": "Ihr Konto wurde aufgrund zu vieler fehlgeschlagener Anmeldeversuche gesperrt. Bitte versuchen Sie es später erneut oder setzen Sie Ihr Passwort zurück.",

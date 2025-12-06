@@ -459,6 +459,7 @@ def login(
             password=request_data.password,
             ip_address=ip_address,
             user_agent=user_agent,
+            remember_me=request_data.remember_me,
         )
 
         # Convert User model to UserResponse
@@ -482,6 +483,11 @@ def login(
         # Set HTTP-only cookies for web clients
         from fastapi.responses import JSONResponse
         json_response = JSONResponse(content=response.model_dump(mode='json'))
+        refresh_max_age = (
+            auth_service.config.jwt_refresh_token_remember_me_expire_seconds
+            if request_data.remember_me
+            else auth_service.config.jwt_refresh_token_expire_seconds
+        )
 
         # Set access token cookie (30 minutes)
         json_response.set_cookie(
@@ -501,7 +507,7 @@ def login(
             httponly=True,
             secure=False,  # Set to True in production with HTTPS
             samesite="lax",
-            max_age=7 * 24 * 60 * 60,  # 7 days
+            max_age=refresh_max_age,
             path="/api/auth"
         )
 

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### ✨ New Features
+
+- Implemented login "Remember me" option with persisted token storage preference and i18n labels across EN/FR/ES/DE
+
 ## [1.3.0] - 2025-12-06
 
 ### ✨ New Features

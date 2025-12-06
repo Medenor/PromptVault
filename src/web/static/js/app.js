@@ -2187,7 +2187,7 @@ initializeLazyLoading();
 async function logout() {
     try {
         // Get refresh token from localStorage (if it exists from old implementation)
-        const refreshToken = localStorage.getItem('refresh_token');
+        const refreshToken = localStorage.getItem('refresh_token') || sessionStorage.getItem('refresh_token');
 
         // Call logout endpoint with cookies
         await fetch('/api/auth/logout', {
@@ -2211,4 +2211,3 @@ async function logout() {
         window.location.href = '/auth/login';
     }
 }
-

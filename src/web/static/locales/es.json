@@ -252,6 +252,7 @@
       "password": "Contraseña",
       "passwordPlaceholder": "Ingrese su contraseña",
       "loginButton": "Iniciar sesión",
+      "rememberMe": "Recuérdame",
       "forgotPassword": "¿Olvidó su contraseña?",
       "noAccount": "¿No tiene una cuenta? Registrarse",
       "accountLocked": "Su cuenta ha sido bloqueada debido a demasiados intentos de inicio de sesión fallidos. Por favor, intente nuevamente más tarde o restablezca su contraseña.",

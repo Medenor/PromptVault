@@ -293,6 +293,7 @@ class JWTService:
         user_id: str,
         family_id: str,
         jti: str,
+        expires_in_seconds: Optional[int] = None,
     ) -> str:
         """Generate JWT refresh token with minimal claims.
 
@@ -303,6 +304,7 @@ class JWTService:
             user_id: Unique user identifier
             family_id: Token family ID for rotation tracking
             jti: JWT ID (should be stored for revocation checking)
+            expires_in_seconds: Optional custom expiration in seconds
 
         Returns:
             Signed JWT refresh token string
@@ -330,12 +332,16 @@ class JWTService:
             >>> token = jwt_service.generate_refresh_token(
             ...     user_id="123",
             ...     family_id=family_id,
-            ...     jti=jti
+            ...     jti=jti,
+            ...     expires_in_seconds=1209600  # 14 days
             ... )
             >>> # Store jti in database for revocation checking
         """
         now = datetime.now(timezone.utc)
-        expiry = now + timedelta(seconds=self.config.jwt_refresh_token_expire_seconds)
+        expiry_seconds = (
+            expires_in_seconds or self.config.jwt_refresh_token_expire_seconds
+        )
+        expiry = now + timedelta(seconds=expiry_seconds)
 
         claims = {
             # Standard claims

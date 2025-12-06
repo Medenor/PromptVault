@@ -256,6 +256,7 @@ class AuthService:
         password: str,
         ip_address: str,
         user_agent: str,
+        remember_me: bool = False,
     ) -> Dict[str, any]:
         """Authenticate user and return tokens.
 
@@ -268,6 +269,7 @@ class AuthService:
             password: Plain text password to verify
             ip_address: Client IP address for session tracking
             user_agent: Client user agent string for session tracking
+            remember_me: Whether to use extended refresh token lifetime
 
         Returns:
             Dictionary containing:
@@ -386,7 +388,12 @@ class AuthService:
         self.db.refresh(user)
 
         # Generate tokens and create session
-        return self._generate_tokens_and_session(user, ip_address, user_agent)
+        return self._generate_tokens_and_session(
+            user,
+            ip_address,
+            user_agent,
+            remember_me=remember_me,
+        )
 
     def refresh_tokens(
         self,
@@ -502,6 +509,20 @@ class AuthService:
                 context={"user_id": user.id},
             )
 
+        session_expires_at = session.expires_at
+        if session_expires_at.tzinfo is None:
+            session_expires_at = session_expires_at.replace(tzinfo=timezone.utc)
+
+        now = datetime.now(timezone.utc)
+        remaining_seconds = int((session_expires_at - now).total_seconds())
+        if remaining_seconds <= 0:
+            self.session_repo.revoke_session(session.family_id)
+            self.db.commit()
+            raise SessionNotFoundError(
+                f"Session expired for family {family_id}",
+                context={"family_id": family_id, "expired": True},
+            )
+
         # Generate new tokens with SAME family_id but NEW jti
         new_jti = str(uuid.uuid4())
         new_access_token = self.jwt_service.generate_access_token(
@@ -515,6 +536,7 @@ class AuthService:
             user_id=user.id,
             family_id=family_id,  # Same family
             jti=new_jti,  # New JTI
+            expires_in_seconds=remaining_seconds,
         )
 
         # Update session with new JTI
@@ -912,6 +934,7 @@ class AuthService:
         user: User,
         ip_address: str,
         user_agent: str,
+        remember_me: bool = False,
     ) -> Dict[str, any]:
         """Generate token pair and create session (internal helper).
 
@@ -926,6 +949,11 @@ class AuthService:
         # Generate new token family ID
         family_id = str(uuid.uuid4())
         refresh_jti = str(uuid.uuid4())
+        refresh_expiry_seconds = (
+            self.config.jwt_refresh_token_remember_me_expire_seconds
+            if remember_me
+            else self.config.jwt_refresh_token_expire_seconds
+        )
 
         # Generate tokens
         access_token = self.jwt_service.generate_access_token(
@@ -939,11 +967,12 @@ class AuthService:
             user_id=user.id,
             family_id=family_id,
             jti=refresh_jti,
+            expires_in_seconds=refresh_expiry_seconds,
         )
 
         # Create session
         expires_at = datetime.now(timezone.utc) + timedelta(
-            seconds=self.config.jwt_refresh_token_expire_seconds
+            seconds=refresh_expiry_seconds
         )
         self.session_repo.create_session(
             user_id=user.id,

@@ -406,7 +406,7 @@ function setupLogout() {
     if (logoutBtn) {
         logoutBtn.addEventListener('click', async () => {
             try {
-                const refreshToken = localStorage.getItem('refresh_token');
+                const refreshToken = localStorage.getItem('refresh_token') || sessionStorage.getItem('refresh_token');
                 if (refreshToken) {
                     await fetch(`${API_BASE}/logout`, {
                         credentials: 'include',
@@ -422,6 +422,8 @@ function setupLogout() {
             } finally {
                 localStorage.removeItem('access_token');
                 localStorage.removeItem('refresh_token');
+                sessionStorage.removeItem('access_token');
+                sessionStorage.removeItem('refresh_token');
                 window.location.href = '/auth/login';
             }
         });

@@ -140,6 +140,11 @@ class AuthConfig(BaseSettings):
         gt=0,
         description="Refresh token lifetime in seconds"
     )
+    jwt_refresh_token_remember_me_expire_seconds: int = Field(
+        default=2592000,  # 30 days
+        gt=0,
+        description="Refresh token lifetime when 'remember me' is enabled"
+    )
     jwt_issuer: str = Field(
         default="promptvault",
         description="JWT token issuer identifier"

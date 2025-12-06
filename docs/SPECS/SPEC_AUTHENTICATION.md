@@ -1411,7 +1411,7 @@ python scripts/migrate_to_authentication.py
 **Features**:
 
 - Username/email + password fields
-- "Remember me" checkbox (longer refresh token) <!-- TODO: to be implemented for AUTH-LOGIN-008	-->
+- "Remember me" checkbox (longer refresh token)
 - "Forgot password?" link
 - "Register" link
 - CSRF protection
