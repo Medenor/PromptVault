@@ -47,6 +47,7 @@ from src.web.validators import (
 )
 from src.web.monitoring import ValidationMonitor
 from src.web.routers import auth_router, admin_router, prompts_router, pages_router
+from src.web.routers.scheduler import router as scheduler_router
 from src.web.middleware.rate_limit import limiter, rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
@@ -188,9 +189,11 @@ except Exception as e:
 # Register all API routers with appropriate prefixes:
 # - /api/auth - Authentication endpoints (public + protected)
 # - /api/admin - Admin endpoints (admin role required)
+# - /api/admin/scheduler - Scheduler management endpoints (admin role required)
 # - /api/prompts - Prompt CRUD with authentication
 app.include_router(auth_router, prefix="/api")
 app.include_router(admin_router, prefix="/api")
+app.include_router(scheduler_router, prefix="/api")
 app.include_router(prompts_router, prefix="/api")
 
 # Register HTML page routes (no /api prefix)
