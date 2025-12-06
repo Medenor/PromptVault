@@ -49,6 +49,7 @@ from src.web.monitoring import ValidationMonitor
 from src.web.routers import auth_router, admin_router, prompts_router, pages_router
 from src.web.routers.scheduler import router as scheduler_router
 from src.web.middleware.rate_limit import limiter, rate_limit_exceeded_handler
+from src.web.middleware.security_headers import SecurityHeadersMiddleware
 from slowapi.errors import RateLimitExceeded
 
 # ============================================================================
@@ -150,6 +151,16 @@ app = FastAPI(
 )
 
 validation_monitor: Optional[ValidationMonitor] = None
+
+# ============================================================================
+# SECURITY HEADERS MIDDLEWARE
+# ============================================================================
+# Add middleware to inject security headers into all HTTP responses
+# Headers include: HSTS, CSP, X-Frame-Options, X-XSS-Protection, etc.
+app.add_middleware(SecurityHeadersMiddleware)
+logger_init = logging_service.get_logger(__name__)
+logger_init.info("Security headers middleware initialized")
+print("✓ Security headers middleware added (HSTS, CSP, X-Frame-Options, etc.)")
 
 # ============================================================================
 # RATE LIMITING SETUP

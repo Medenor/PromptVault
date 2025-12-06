@@ -65,6 +65,23 @@ from src.services.version_export_service import VersionExportService
 
 
 # ============================================================================
+# ENVIRONMENT SETUP FOR TESTS
+# ============================================================================
+
+
+@pytest.fixture(scope="session", autouse=True)
+def setup_test_environment():
+    """Set up environment variables for all tests.
+    
+    This fixture runs once per test session and ensures that rate limiting
+    is disabled for tests to prevent 429 responses during test execution.
+    """
+    # Disable rate limiting during tests
+    os.environ["DISABLE_RATE_LIMITING"] = "true"
+    yield
+
+
+# ============================================================================
 # DATABASE RESET FIXTURE (for backward compatibility)
 # ============================================================================
 
@@ -742,9 +759,17 @@ def api_client(test_db_engine, temp_data_dir: str) -> Generator[TestClient, None
     Yields:
         TestClient: FastAPI test client
     """
+    # Ensure DISABLE_RATE_LIMITING is set (redundant but safe)
+    os.environ["DISABLE_RATE_LIMITING"] = "true"
+    
     # Import here to avoid circular imports
     from src.web import app as web_app
     from src.db import session as session_module
+    from src.web.middleware import rate_limit
+    
+    # Reinitialize the limiter with rate limiting disabled
+    rate_limit.limiter = rate_limit.create_limiter()
+    web_app.app.state.limiter = rate_limit.limiter
 
     # Store original session factory
     original_session_local = session_module.SessionLocal

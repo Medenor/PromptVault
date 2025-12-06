@@ -16,6 +16,7 @@ Features:
     - X-RateLimit-* headers in responses
     - 429 Too Many Requests with Retry-After header
     - Pre-configured limiters for different endpoint types
+    - Dynamic disable via DISABLE_RATE_LIMITING environment variable
 
 Integration with FastAPI:
     >>> from fastapi import FastAPI, Request
@@ -41,11 +42,14 @@ Environment Variables:
     RATE_LIMIT_REGISTER_WINDOW_SECONDS: Registration window in seconds (default: 3600)
     RATE_LIMIT_PASSWORD_RESET_ATTEMPTS: Password reset attempts per window (default: 3)
     RATE_LIMIT_PASSWORD_RESET_WINDOW_SECONDS: Password reset window in seconds (default: 3600)
+    DISABLE_RATE_LIMITING: Set to "true" to disable rate limiting (development only)
 """
 
 import logging
+import os
 import time
 from typing import Optional, Callable
+from functools import wraps
 
 from fastapi import Request, Response
 from slowapi import Limiter
@@ -145,6 +149,8 @@ def create_limiter() -> Limiter:
     Initializes limiter with Redis storage if available, otherwise falls back
     to in-memory storage (which won't persist across requests in production).
 
+    Can be disabled for development by setting DISABLE_RATE_LIMITING=true.
+
     Returns:
         Configured Limiter instance
 
@@ -154,6 +160,27 @@ def create_limiter() -> Limiter:
         >>> async def my_endpoint(request: Request):
         >>>     return {"status": "ok"}
     """
+    # Check if rate limiting is disabled (development mode)
+    disable_rate_limiting = os.getenv("DISABLE_RATE_LIMITING", "").lower() in ("true", "1", "yes")
+    
+    if disable_rate_limiting:
+        logger.warning(
+            "⚠️  RATE LIMITING IS DISABLED (DISABLE_RATE_LIMITING=true). "
+            "This is only safe for development environments. "
+            "Do NOT use in production!"
+        )
+        # Create a dummy limiter with unlimited storage
+        # Use in-memory storage but with very high limits
+        limiter = Limiter(
+            key_func=get_rate_limit_key,
+            storage_uri="memory://",
+            default_limits=["10000000/minute"],  # Very high limit effectively disables limiting
+            headers_enabled=False,
+            strategy="fixed-window",
+            swallow_errors=True,
+        )
+        return limiter
+    
     redis_client = create_redis_client()
 
     if redis_client:
@@ -179,8 +206,47 @@ def create_limiter() -> Limiter:
     return limiter
 
 
-# Global limiter instance
-limiter = create_limiter()
+class DynamicLimiter:
+    """Wrapper around Limiter that dynamically enables/disables rate limiting.
+    
+    This class allows rate limiting to be disabled at runtime (e.g., for tests)
+    while still supporting the decorator syntax @limiter.limit("X/minute").
+    When DISABLE_RATE_LIMITING is true, decorators become no-ops.
+    """
+    
+    def __init__(self):
+        """Initialize the dynamic limiter."""
+        self._actual_limiter = create_limiter()
+    
+    def _is_disabled(self) -> bool:
+        """Check if rate limiting is disabled."""
+        return os.getenv("DISABLE_RATE_LIMITING", "").lower() in ("true", "1", "yes")
+    
+    def limit(self, limit_string: str):
+        """Decorator for rate limiting that respects DISABLE_RATE_LIMITING.
+        
+        Args:
+            limit_string: Rate limit string (e.g., "5/minute")
+            
+        Returns:
+            Decorator function
+        """
+        def decorator(func):
+            if self._is_disabled():
+                # If rate limiting is disabled, return the function unchanged
+                return func
+            else:
+                # Apply the actual rate limit decorator
+                return self._actual_limiter.limit(limit_string)(func)
+        return decorator
+    
+    def __getattr__(self, name):
+        """Proxy other attributes to the actual limiter."""
+        return getattr(self._actual_limiter, name)
+
+
+# Global limiter instance (uses DynamicLimiter)
+limiter = DynamicLimiter()
 
 
 def get_auth_login_limit() -> str:

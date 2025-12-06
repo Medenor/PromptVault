@@ -3091,7 +3091,7 @@ _________________________________
 ### AUTH-SEC-001: Password Hashing (Argon2id)
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ✅
 
 **Preconditions:**
 
@@ -3118,7 +3118,7 @@ _________________________________
 ### AUTH-SEC-002: JWT Signature Validation (ES256)
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ✅
 
 **Preconditions:**
 
@@ -3144,7 +3144,7 @@ _________________________________
 ### AUTH-SEC-003: Token Expiration Enforcement
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ✅
 
 **Preconditions:**
 
@@ -3171,7 +3171,7 @@ _________________________________
 ### AUTH-SEC-004: Invalid Token Rejection
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ✅
 
 **Preconditions:**
 
@@ -3196,7 +3196,7 @@ _________________________________
 ### AUTH-SEC-005: Rate Limiting on Login Endpoint
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ✅
 
 **Preconditions:**
 
@@ -3213,7 +3213,14 @@ _________________________________
 - Error message: "Too many login attempts. Try again later."
 - Rate limit: 5 attempts per 15 minutes per IP
 
+**Implementation Details:**
+- Decorator `@limiter.limit(auth_login_limit)` applied to `/login` endpoint
+- Rate limit function references config: `rate_limit_login_attempts=5`, `rate_limit_login_window_seconds=900`
+- Uses slowapi library with Redis backend
+- Timing: 5 attempts per 15 minutes per IP address
+
 **Notes:**
+Rate limiting decorator activated on login endpoint. Limit: 5/15min per IP
 _________________________________
 
 ---
@@ -3221,7 +3228,7 @@ _________________________________
 ### AUTH-SEC-006: Rate Limiting on Password Reset
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ✅
 
 **Preconditions:**
 
@@ -3238,15 +3245,21 @@ _________________________________
 - Error message: "Too many password reset requests. Try again later."
 - Rate limit: 3 requests per hour per IP
 
+**Implementation Details:**
+- Decorator `@limiter.limit(password_reset_limit)` applied to `/password-reset/request` endpoint
+- Rate limit function references config: `rate_limit_password_reset_attempts=3`, `rate_limit_password_reset_window_seconds=3600`
+- Uses slowapi library with Redis backend
+- Timing: 3 attempts per hour per IP address
+
 **Notes:**
-_________________________________
+Rate limiting decorator activated on password reset endpoint. Limit: 3/hour per IP
 
 ---
 
 ### AUTH-SEC-007: Account Lockout Mechanism
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ✅
 
 **Preconditions:**
 
@@ -3263,15 +3276,23 @@ _________________________________
 - Further login attempts blocked with 403 Forbidden
 - Lockout automatically expires after 15 minutes
 
+**Implementation Details:**
+- Account lockout logic in `AuthService.login()` method
+- Configuration: `max_login_attempts=5`, `account_lockout_duration_seconds=900` (15 minutes)
+- Tracks `failed_login_attempts` counter per user
+- Sets `locked_until` timestamp on account when threshold reached
+- Counter resets on successful login
+- Status: Fully implemented and functional
+
 **Notes:**
-_________________________________
+Account lockout already fully implemented in AuthService. Behavior confirmed: 5 failed attempts trigger 900-second lockout.
 
 ---
 
 ### AUTH-SEC-008: HTTP-Only Cookie Security
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ✅
 
 **Preconditions:**
 
@@ -3297,7 +3318,7 @@ _________________________________
 ### AUTH-SEC-009: CSRF Protection (SameSite=Strict)
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ✅
 
 **Preconditions:**
 
@@ -3319,10 +3340,47 @@ _________________________________
 
 ---
 
-### AUTH-SEC-010: XSS Prevention in User Input
+### AUTH-SEC-010: Security Headers (HSTS, CSP, X-Frame-Options)
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ✅
+
+**Preconditions:**
+
+- Server running on https (or http for local testing)
+
+**Test Steps:**
+
+1. Make HTTP request to any endpoint: `curl -I http://127.0.0.1:8003/`
+2. Inspect response headers
+3. Verify all security headers present
+
+**Expected Results:**
+
+- `Strict-Transport-Security: max-age=31536000` (1 year)
+- `Content-Security-Policy: default-src 'self'` (strict CSP)
+- `X-Frame-Options: DENY` (no embedding)
+- `X-Content-Type-Options: nosniff` (prevent MIME sniffing)
+- `X-XSS-Protection: 1; mode=block` (XSS protection)
+- `Referrer-Policy: strict-origin-when-cross-origin`
+- `Permissions-Policy: geolocation=(), microphone=(), camera=()`
+
+**Implementation Details:**
+- SecurityHeadersMiddleware in `src/web/middleware/security_headers.py`
+- Applied to all HTTP responses via middleware stack
+- Headers configured with strong security settings
+- Supports both HTTP and HTTPS environments
+- No content modification, only header injection
+
+**Notes:**
+Security headers middleware created and integrated into FastAPI app. All required headers now present on every response.
+
+---
+
+### AUTH-SEC-011: XSS Prevention in User Input
+
+- **Priority**: 🔴 High
+- **Status**: ⏭️
 
 **Preconditions:**
 
@@ -3345,10 +3403,10 @@ _________________________________
 
 ---
 
-### AUTH-SEC-011: SQL Injection Prevention
+### AUTH-SEC-012: SQL Injection Prevention
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ✅
 
 **Preconditions:**
 
@@ -3376,7 +3434,7 @@ _________________________________
 ### AUTH-SEC-012: No Sensitive Data in Responses
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ✅
 
 **Preconditions:**
 
@@ -3402,7 +3460,7 @@ _________________________________
 ### AUTH-SEC-013: Audit Logging for Security Events
 
 - **Priority**: 🟡 Medium
-- **Status**: ⬜
+- **Status**: ✅
 
 **Preconditions:**
 
@@ -3436,7 +3494,7 @@ _________________________________
 ### AUTH-SEC-014: Session Cleanup Job
 
 - **Priority**: 🟡 Medium
-- **Status**: ⬜
+- **Status**: ⏭️
 
 **Preconditions:**
 
@@ -3462,7 +3520,7 @@ _________________________________
 ### AUTH-SEC-015: Token Revocation Check
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ⏭️
 
 **Preconditions:**
 

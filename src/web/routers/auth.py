@@ -132,6 +132,12 @@ from src.services.exceptions import (
     RateLimitExceededError,
     UnauthorizedError,
 )
+from src.web.middleware.rate_limit import (
+    limiter,
+    auth_login_limit,
+    auth_register_limit,
+    password_reset_limit,
+)
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -266,6 +272,7 @@ def get_jwt_service(
         },
     },
 )
+@limiter.limit(auth_register_limit)
 def register(
     request_data: RegisterRequest,
     request: Request,
@@ -422,6 +429,7 @@ def register(
         },
     },
 )
+@limiter.limit(auth_login_limit)
 def login(
     request_data: LoginRequest,
     request: Request,
@@ -1473,7 +1481,9 @@ def revoke_all_sessions(
         },
     },
 )
+@limiter.limit(password_reset_limit)
 def request_password_reset(
+    request: Request,
     request_data: PasswordResetRequestRequest,
     ip_address: str = Depends(get_client_ip),
     password_reset_service: PasswordResetService = Depends(get_password_reset_service),
@@ -1482,6 +1492,7 @@ def request_password_reset(
     """Request password reset email.
 
     Args:
+        request: FastAPI request object (for rate limiting)
         request_data: Email address for password reset
         ip_address: Client IP address (injected)
         password_reset_service: Password reset service instance (injected)

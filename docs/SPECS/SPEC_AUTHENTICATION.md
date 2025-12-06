@@ -1101,6 +1101,68 @@ async def login(request: Request, ...):
     ...
 ```
 
+#### 5.3.1 Development Mode: Disable Rate Limiting
+
+For development and testing environments, rate limiting can be disabled using the `DISABLE_RATE_LIMITING` environment variable:
+
+**Enable Development Mode:**
+
+```bash
+# Run with rate limiting disabled
+DISABLE_RATE_LIMITING=true PORT=8003 python run_web.py
+
+# Or with Docker Compose
+export DISABLE_RATE_LIMITING=true
+docker-compose up -d web
+```
+
+**Behavior When Disabled:**
+
+- All decorators `@limiter.limit(...)` are still applied but don't restrict requests
+- Very high limits (10,000,000 per minute) effectively disable limiting
+- HTTP-only rate limit headers are not added to responses
+- Warning message logged: "⚠️  RATE LIMITING IS DISABLED (DISABLE_RATE_LIMITING=true)"
+- **Never use in production** - only for development and testing
+
+**Reasons to Disable:**
+
+1. **Development**: Rapid testing without waiting for rate limit windows
+2. **UI Testing**: Multiple login attempts during UI testing
+3. **API Testing**: Quick validation of endpoints without throttling
+4. **Bug Investigation**: Eliminate rate limiting as a variable during debugging
+
+**Configuration:**
+
+File: `src/web/middleware/rate_limit.py`
+
+```python
+def create_limiter() -> Limiter:
+    """Create and configure slowapi Limiter with Redis backend."""
+    
+    # Check if rate limiting is disabled (development mode)
+    disable_rate_limiting = os.getenv("DISABLE_RATE_LIMITING", "").lower() in ("true", "1", "yes")
+    
+    if disable_rate_limiting:
+        logger.warning(
+            "⚠️  RATE LIMITING IS DISABLED (DISABLE_RATE_LIMITING=true). "
+            "This is only safe for development environments. "
+            "Do NOT use in production!"
+        )
+        # Create a limiter with very high limits (effectively no limiting)
+        limiter = Limiter(
+            key_func=get_rate_limit_key,
+            storage_uri="memory://",
+            default_limits=["10000000/minute"],  # Very high limit
+            headers_enabled=False,  # Don't add rate limit headers
+            strategy="fixed-window",
+            swallow_errors=True,
+        )
+        return limiter
+    
+    # Production mode: use Redis or in-memory with actual limits
+    ...
+```
+
 ### 5.4 Account Lockout
 
 **Failed Login Protection**:
