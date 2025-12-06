@@ -249,17 +249,47 @@ access_token = self.jwt_service.generate_access_token(
 
 ---
 
-### Issue 3: HTTP Response Body Parsing ⚠️ MINOR FIX
+### Issue 3: HTTP Response Body Parsing ✅ RESOLVED
 
-**Problem**: Bash script has parsing issue with `head -n -1` when response is short
-**Impact**: Low (tests still pass, just parsing error message)
-**Action Items**:
+**Problem**: Bash scripts had parsing issues with edge cases:
 
-- [ ] Fix bash script response parsing logic
-- [ ] Handle empty response bodies gracefully
-- [ ] Use more robust JSON parsing
+- `head -n-1` command doesn't work on macOS
+- `grep`/`cut` parsing fragile with special characters
+- Fails silently with empty responses
 
-**Status**: ⏳ PENDING
+**Impact**: Low (tests still pass, but parsing errors appear)
+
+**Solution Applied**:
+
+1. Created `manual_tests_session_robust.sh` using `jq` for JSON parsing
+2. Replaced all `grep`/`cut` patterns with `jq` equivalents:
+
+```bash
+# Old way (fragile)
+AUTH_TOKEN=$(echo "$LOGIN_RESPONSE" | grep -o '"access_token":"[^"]*' | cut -d'"' -f4)
+
+# New way (robust)
+AUTH_TOKEN=$(echo "$LOGIN_RESPONSE" | jq -r '.access_token // empty')
+```
+
+3. Fixed macOS compatibility issues:
+
+- Replaced `head -n-1` with `sed '$d'`
+- Better error handling for edge cases
+
+**Benefits**:
+
+- ✅ Robust JSON parsing independent of response format
+- ✅ Clear intent - we're parsing JSON, not text
+- ✅ Works on macOS and Linux
+- ✅ Proper error handling with jq exit codes
+- ✅ Maintainable for API changes
+
+**Test Results**:- All 4 core tests pass without parsing errors
+- No platform-specific issues
+- Clean output, no spurious errors
+
+**Status**: ✅ FIXED & VERIFIED
 
 ---
 
