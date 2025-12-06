@@ -5,6 +5,7 @@ data/
 *.sqlite3
 prompts_data.json
 data/backups/
+backups/
 
 # Security - JWT keys and secrets must NEVER be committed
 secrets/

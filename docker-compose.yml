@@ -53,11 +53,19 @@ services:
     volumes:
       - ./data:/app/data:rw
       - ./assets:/app/assets:ro
+      - ./secrets/jwt:/app/secrets/jwt:ro
     environment:
       - PYTHONPATH=/app
       - DATABASE_URL=postgresql://promptvault:${POSTGRES_PASSWORD:-changeme}@db:5432/promptvault
       - REDIS_URL=redis://redis:6379/0
       - DATA_DIR=/app/data
+      - JWT_PRIVATE_KEY_PATH=/app/secrets/jwt/private_key.pem
+      - JWT_PUBLIC_KEY_PATH=/app/secrets/jwt/public_key.pem
+      - JWT_ACCESS_TOKEN_EXPIRE_SECONDS=${JWT_ACCESS_TOKEN_EXPIRE_SECONDS:-900}
+      - JWT_REFRESH_TOKEN_EXPIRE_SECONDS=${JWT_REFRESH_TOKEN_EXPIRE_SECONDS:-604800}
+      - ENVIRONMENT=${ENVIRONMENT:-production}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - DISABLE_RATE_LIMITING=${DISABLE_RATE_LIMITING:-false}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
