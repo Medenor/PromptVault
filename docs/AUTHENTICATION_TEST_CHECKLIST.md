@@ -3899,15 +3899,173 @@ _________________________________
 
 ---
 
+---
+
+## 13. Performance & Load Testing (5 test cases)
+
+### AUTH-PERF-001: Login Endpoint Performance
+
+- **Priority**: 🔴 High
+- **Status**: ✅
+
+**Objective**: Measure login endpoint response time and throughput
+
+**Test Parameters**:
+- Concurrent Requests: 100
+- Test Duration: Full suite
+- Success Target: ≥ 99.5%
+- Response Time Target (p95): < 150ms
+
+**Implementation**:
+- Script: `scripts/benchmark_auth_performance.py`
+- Method: `AuthPerformanceBenchmark.benchmark_login(num_requests=100)`
+- Metrics Tracked: Avg, min, max, p95, p99 response times
+
+**Expected Results**:
+- Average Response Time: < 100ms
+- p95 Response Time: < 150ms
+- p99 Response Time: < 200ms
+- Success Rate: ≥ 99.5%
+
+**Notes**:
+- Tests realistic authentication with password hashing
+- Measures full login workflow including token generation
+- Can be run individually: `python3 scripts/benchmark_auth_performance.py`
+
+---
+
+### AUTH-PERF-002: Registration Endpoint Performance
+
+- **Priority**: 🔴 High
+- **Status**: ✅
+
+**Objective**: Measure registration endpoint performance under concurrent load
+
+**Test Parameters**:
+- Concurrent Registrations: 50
+- Unique Users: 50
+- Success Target: ≥ 99.5%
+- Response Time Target (p95): < 200ms
+
+**Implementation**:
+- Script: `scripts/benchmark_auth_performance.py`
+- Method: `AuthPerformanceBenchmark.benchmark_registration(num_requests=50)`
+- Metrics Tracked: Registration time, password hashing performance
+
+**Expected Results**:
+- Average Response Time: < 150ms
+- p95 Response Time: < 200ms
+- p99 Response Time: < 300ms
+- Success Rate: ≥ 99.5%
+
+**Notes**:
+- Tests full validation pipeline
+- Measures Argon2id password hashing performance
+- Database transaction overhead included
+
+---
+
+### AUTH-PERF-003: Token Refresh Performance
+
+- **Priority**: 🟡 Medium
+- **Status**: ✅
+
+**Objective**: Measure JWT token refresh speed and validation overhead
+
+**Test Parameters**:
+- Refresh Operations: 50
+- Success Target: ≥ 99.5%
+- Response Time Target (p95): < 50ms
+
+**Implementation**:
+- Script: `scripts/benchmark_auth_performance.py`
+- Method: `AuthPerformanceBenchmark.benchmark_token_refresh(num_requests=50)`
+- Metrics Tracked: Token generation, validation time
+
+**Expected Results**:
+- Average Response Time: < 30ms
+- p95 Response Time: < 50ms
+- p99 Response Time: < 100ms
+- Success Rate: ≥ 99.5%
+
+**Notes**:
+- Tests JWT parsing and validation performance
+- Measures session lookup overhead
+- Includes token rotation if applicable
+
+---
+
+### AUTH-PERF-004: Session Management Scalability
+
+- **Priority**: 🟡 Medium
+- **Status**: ⏭️
+
+**Objective**: Test system's ability to handle multiple concurrent sessions
+
+**Test Parameters**:
+- Concurrent Users: 20-50
+- Sessions per User: 3-5
+- Duration: 60+ seconds
+- Success Target: ≥ 99%
+
+**Implementation**:
+- Script: `scripts/locustfile_auth_performance.py`
+- Class: `SessionManagementTest`
+- Operations: Create, list, revoke sessions
+
+**Expected Results**:
+- Session Creation: < 50ms
+- Session Listing: < 100ms
+- Session Revocation: < 30ms
+- Throughput: ≥ 100 session ops/sec
+- Success Rate: ≥ 99%
+
+**Notes**:
+- Requires Locust framework
+- Run with: `locust -f scripts/locustfile_auth_performance.py --host=http://127.0.0.1:8003`
+
+---
+
+### AUTH-PERF-005: Concurrent User Authentication
+
+- **Priority**: 🟡 Medium
+- **Status**: ⏭️
+
+**Objective**: Simulate realistic load with multiple concurrent users
+
+**Test Parameters**:
+- Concurrent Users: 50-100
+- Duration: 60-300 seconds
+- Spawn Rate: 10 users/second
+- Success Target: ≥ 99%
+
+**Implementation**:
+- Script: `scripts/locustfile_auth_performance.py`
+- Class: `AuthPerformanceUser`
+- Behavior: Login → Activities → Logout
+
+**Expected Results**:
+- Throughput: ≥ 500 requests/second
+- Average Response Time: < 150ms
+- p95 Response Time: < 250ms
+- Success Rate: ≥ 99%
+
+**Notes**:
+- Full-stack load test with realistic user behavior
+- Requires Locust framework
+- Monitor CPU and memory during test
+
+---
+
 ## Test Summary
 
-**Total Test Cases**: 134
+**Total Test Cases**: 139
 
 **By Priority:**
 
-- 🔴 High: 81 tests
-- 🟡 Medium: 38 tests
-- 🟢 Low: 15 tests
+- 🔴 High: 83 tests
+- 🟡 Medium: 43 tests
+- 🟢 Low: 13 tests
 
 **By Category:**
 
@@ -3923,7 +4081,8 @@ _________________________________
 9. Admin Session Management: 8 tests
 10. Security Features: 15 tests
 11. Frontend UI/UX: 10 tests
-12. API Endpoints: 20 tests (reference to above tests)
+12. Performance & Load Testing: 5 tests (NEW)
+13. API Endpoints: 20 tests (reference to above tests)
 
 **Completion Tracking:**
 
