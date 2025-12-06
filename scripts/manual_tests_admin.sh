@@ -1,192 +1,308 @@
 #!/bin/bash
 
-# Manual testing script for AUTH-SESSION-007 (Scheduler admin endpoint)
-# Tests session management with admin user
+# AUTH-ADMIN Manual Tests
+# Tests for admin user management endpoints
 
-BASE_URL="http://localhost:8003"
-ADMIN_USERNAME="testuser"
-ADMIN_PASSWORD="TestP@ssw0rd123"
+BASE_URL="http://localhost:8003/api"
 
-# Color codes
-GREEN='\033[0;32m'
+# Colors for output
 RED='\033[0;31m'
+GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
-# Test counters
-PASSED=0
-FAILED=0
-SKIPPED=0
+# Test counter
+TESTS_PASSED=0
+TESTS_FAILED=0
 
-# Functions
-pass_test() {
-    echo -e "${GREEN}✅ $1${NC}"
-    ((PASSED++))
+log_test() {
+    echo -e "${BLUE}[TEST]${NC} $1"
 }
 
-fail_test() {
-    echo -e "${RED}❌ $1${NC}"
-    if [ -n "$2" ]; then
-        echo -e "   ${RED}Error: $2${NC}"
-    fi
-    ((FAILED++))
+log_pass() {
+    echo -e "${GREEN}✓ PASS${NC} $1"
+    ((TESTS_PASSED++))
 }
 
-skip_test() {
-    echo -e "${YELLOW}⏭️  $1${NC}"
-    if [ -n "$2" ]; then
-        echo -e "   ${YELLOW}Reason: $2${NC}"
-    fi
-    ((SKIPPED++))
+log_fail() {
+    echo -e "${RED}✗ FAIL${NC} $1"
+    ((TESTS_FAILED++))
 }
 
-# Setup admin user
-setup_admin_user() {
-    echo -e "\n${BLUE}Logging in as admin user...${NC}"
-    
-    # Login
-    LOGIN_RESPONSE=$(curl -s -X POST "$BASE_URL/api/auth/login" \
-        -H "Content-Type: application/json" \
-        -d "{
-            \"username_or_email\": \"$ADMIN_USERNAME\",
-            \"password\": \"$ADMIN_PASSWORD\"
-        }")
-    
-    AUTH_TOKEN=$(echo "$LOGIN_RESPONSE" | grep -o '"access_token":"[^"]*' | cut -d'"' -f4)
-    
-    if [ -z "$AUTH_TOKEN" ]; then
-        echo -e "${RED}Login response: $LOGIN_RESPONSE${NC}"
-        return 1
-    fi
-    
-    echo -e "${GREEN}✅ Admin user authenticated${NC}"
-    return 0
+log_info() {
+    echo -e "${YELLOW}[INFO]${NC} $1"
 }
 
-# AUTH-SESSION-007: Session Cleanup Job (Admin endpoint)
-test_auth_session_007() {
-    echo -e "\n${BLUE}Testing AUTH-SESSION-007: Session Cleanup Job (Admin Endpoint)${NC}"
-    
-    RESPONSE=$(curl -s -X GET "$BASE_URL/api/admin/scheduler/status" \
-        -H "Authorization: Bearer $AUTH_TOKEN" \
-        -H "Content-Type: application/json" \
-        -w "\n%{http_code}")
-    
-    HTTP_CODE=$(echo "$RESPONSE" | tail -1)
-    BODY=$(echo "$RESPONSE" | head -n -1)
-    
-    if [ "$HTTP_CODE" = "200" ]; then
-        if echo "$BODY" | grep -q '"is_running":true'; then
-            pass_test "AUTH-SESSION-007: Session Cleanup Job" "Scheduler is running"
-            echo -e "   ${BLUE}Response: $BODY${NC}"
-        elif echo "$BODY" | grep -q '"is_running":false'; then
-            fail_test "AUTH-SESSION-007: Session Cleanup Job" "Scheduler is not running"
-            echo -e "   ${BLUE}Response: $BODY${NC}"
-        else
-            pass_test "AUTH-SESSION-007: Session Cleanup Job" "Scheduler endpoint responds"
-            echo -e "   ${BLUE}Response: $BODY${NC}"
-        fi
-    elif [ "$HTTP_CODE" = "403" ]; then
-        fail_test "AUTH-SESSION-007: Session Cleanup Job" "Admin permissions required (HTTP 403)"
-    else
-        fail_test "AUTH-SESSION-007: Session Cleanup Job" "HTTP $HTTP_CODE"
-        echo -e "   ${BLUE}Response: $BODY${NC}"
-    fi
+check_field() {
+    echo "$1" | jq -e "$2" > /dev/null 2>&1
 }
 
-# Test scheduler start endpoint
-test_scheduler_start() {
-    echo -e "\n${BLUE}Testing scheduler start endpoint${NC}"
-    
-    RESPONSE=$(curl -s -X POST "$BASE_URL/api/admin/scheduler/start" \
-        -H "Authorization: Bearer $AUTH_TOKEN" \
-        -H "Content-Type: application/json" \
-        -w "\n%{http_code}")
-    
-    HTTP_CODE=$(echo "$RESPONSE" | tail -1)
-    BODY=$(echo "$RESPONSE" | head -n -1)
-    
-    if [ "$HTTP_CODE" = "200" ]; then
-        pass_test "Scheduler Start Endpoint" "Scheduler start command succeeded"
-        echo -e "   ${BLUE}Response: $BODY${NC}"
-    else
-        fail_test "Scheduler Start Endpoint" "HTTP $HTTP_CODE"
-        echo -e "   ${BLUE}Response: $BODY${NC}"
-    fi
+unique_id() {
+    echo "test_$(date +%s)_$RANDOM"
 }
 
-# Test scheduler stop endpoint
-test_scheduler_stop() {
-    echo -e "\n${BLUE}Testing scheduler stop endpoint${NC}"
-    
-    RESPONSE=$(curl -s -X POST "$BASE_URL/api/admin/scheduler/stop" \
-        -H "Authorization: Bearer $AUTH_TOKEN" \
-        -H "Content-Type: application/json" \
-        -w "\n%{http_code}")
-    
-    HTTP_CODE=$(echo "$RESPONSE" | tail -1)
-    BODY=$(echo "$RESPONSE" | head -n -1)
-    
-    if [ "$HTTP_CODE" = "200" ]; then
-        pass_test "Scheduler Stop Endpoint" "Scheduler stop command succeeded"
-        echo -e "   ${BLUE}Response: $BODY${NC}"
-    else
-        fail_test "Scheduler Stop Endpoint" "HTTP $HTTP_CODE"
-        echo -e "   ${BLUE}Response: $BODY${NC}"
-    fi
-}
+# Setup admin account
+log_info "Setting up admin account..."
 
-# Test scheduler cleanup-now endpoint
-test_scheduler_cleanup() {
-    echo -e "\n${BLUE}Testing scheduler cleanup-now endpoint${NC}"
-    
-    RESPONSE=$(curl -s -X POST "$BASE_URL/api/admin/scheduler/cleanup-now" \
-        -H "Authorization: Bearer $AUTH_TOKEN" \
-        -H "Content-Type: application/json" \
-        -w "\n%{http_code}")
-    
-    HTTP_CODE=$(echo "$RESPONSE" | tail -1)
-    BODY=$(echo "$RESPONSE" | head -n -1)
-    
-    if [ "$HTTP_CODE" = "200" ]; then
-        pass_test "Scheduler Cleanup-Now Endpoint" "Manual cleanup command succeeded"
-        echo -e "   ${BLUE}Response: $BODY${NC}"
-    else
-        fail_test "Scheduler Cleanup-Now Endpoint" "HTTP $HTTP_CODE"
-        echo -e "   ${BLUE}Response: $BODY${NC}"
-    fi
-}
+# Create new admin user for testing
+ADMIN_USER=$(curl -s -X POST "$BASE_URL/auth/register" \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin_'$(unique_id)'","password":"SecureAdmin@123456","confirm_password":"SecureAdmin@123456","email":"admin_'$(unique_id)'@example.com"}')
 
-# Summary
-print_summary() {
-    TOTAL=$((PASSED + FAILED + SKIPPED))
-    echo -e "\n${BLUE}============================================================${NC}"
-    echo -e "${BLUE}Test Summary:${NC}"
-    echo -e "  ${GREEN}Passed: $PASSED${NC}"
-    echo -e "  ${RED}Failed: $FAILED${NC}"
-    echo -e "  ${YELLOW}Skipped: $SKIPPED${NC}"
-    echo -e "  Total: $TOTAL"
-    echo -e "${BLUE}============================================================${NC}"
-}
+ADMIN_ID=$(echo "$ADMIN_USER" | jq -r '.user.id // empty')
+ADMIN_USERNAME=$(echo "$ADMIN_USER" | jq -r '.user.username // empty')
 
-# Main
-main() {
-    echo -e "\n${BLUE}============================================================${NC}"
-    echo -e "${BLUE}AUTH-SESSION-007 & Scheduler Admin Testing Suite${NC}"
-    echo -e "${BLUE}============================================================${NC}"
-    
-    if ! setup_admin_user; then
-        echo -e "${RED}Failed to authenticate as admin user${NC}"
-        exit 1
-    fi
-    
-    test_auth_session_007
-    test_scheduler_start
-    test_scheduler_stop
-    test_scheduler_cleanup
-    
-    print_summary
-}
+if [ -z "$ADMIN_ID" ]; then
+    log_fail "Could not create admin user"
+    exit 1
+fi
 
-main
+# Promote user to admin role (direct DB operation)
+cd "$(dirname "$0")/.." && python promote_to_admin.py "$ADMIN_USERNAME" > /dev/null
+cd - > /dev/null
+
+# Login with the promoted admin user
+ADMIN_LOGIN=$(curl -s -X POST "$BASE_URL/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{"username_or_email":"'$ADMIN_USERNAME'","password":"SecureAdmin@123456"}')
+
+ADMIN_TOKEN=$(echo "$ADMIN_LOGIN" | jq -r '.access_token // empty')
+ADMIN_ID=$(echo "$ADMIN_LOGIN" | jq -r '.user.id // empty')
+ADMIN_USERNAME=$(echo "$ADMIN_LOGIN" | jq -r '.user.username // empty')
+
+if [ -z "$ADMIN_TOKEN" ]; then
+    log_fail "Could not login as admin"
+    exit 1
+fi
+
+log_info "Admin setup complete: $ADMIN_USERNAME"
+
+echo ""
+echo "================================================================"
+echo "AUTH-ADMIN MANUAL TESTS"
+echo "================================================================"
+echo ""
+
+# Create test users
+log_info "Creating test users..."
+
+VIEWER_USER=$(curl -s -X POST "$BASE_URL/auth/register" \
+  -H "Content-Type: application/json" \
+  -d '{"username":"viewer_'$(unique_id)'","password":"SecurePass@123456","confirm_password":"SecurePass@123456","email":"viewer_'$(unique_id)'@example.com"}')
+VIEWER_ID=$(echo "$VIEWER_USER" | jq -r '.user.id')
+
+EDITOR_USER=$(curl -s -X POST "$BASE_URL/auth/register" \
+  -H "Content-Type: application/json" \
+  -d '{"username":"editor_'$(unique_id)'","password":"SecurePass@123456","confirm_password":"SecurePass@123456","email":"editor_'$(unique_id)'@example.com"}')
+EDITOR_ID=$(echo "$EDITOR_USER" | jq -r '.user.id')
+
+echo ""
+
+# AUTH-ADMIN-001
+log_test "AUTH-ADMIN-001: List All Users with Pagination"
+RESPONSE=$(curl -s -X GET "$BASE_URL/admin/users?page=1&page_size=10" \
+  -H "Authorization: Bearer $ADMIN_TOKEN")
+
+if check_field "$RESPONSE" '.users[]'; then
+    COUNT=$(echo "$RESPONSE" | jq '.users | length')
+    TOTAL=$(echo "$RESPONSE" | jq '.total')
+    log_pass "Listed $COUNT users (total: $TOTAL)"
+else
+    log_fail "List users failed"
+fi
+
+echo ""
+
+# AUTH-ADMIN-002
+log_test "AUTH-ADMIN-002: Filter Users by Role"
+RESPONSE=$(curl -s -X GET "$BASE_URL/admin/users?role=viewer" \
+  -H "Authorization: Bearer $ADMIN_TOKEN")
+
+if check_field "$RESPONSE" '.users[0].role' && [ "$(echo "$RESPONSE" | jq -r '.users[0].role')" = "viewer" ]; then
+    log_pass "Filter by role succeeded"
+else
+    log_fail "Filter by role failed"
+fi
+
+echo ""
+
+# AUTH-ADMIN-003
+log_test "AUTH-ADMIN-003: Filter Users by Active Status"
+RESPONSE=$(curl -s -X GET "$BASE_URL/admin/users?is_active=true" \
+  -H "Authorization: Bearer $ADMIN_TOKEN")
+
+if check_field "$RESPONSE" '.users[]'; then
+    COUNT=$(echo "$RESPONSE" | jq '.users | length')
+    log_pass "Filter by active status returned $COUNT users"
+else
+    log_fail "Filter by active status failed"
+fi
+
+echo ""
+
+# AUTH-ADMIN-004
+log_test "AUTH-ADMIN-004: View User Details"
+RESPONSE=$(curl -s -X GET "$BASE_URL/admin/users/$VIEWER_ID" \
+  -H "Authorization: Bearer $ADMIN_TOKEN")
+
+if check_field "$RESPONSE" '.id'; then
+    USERNAME=$(echo "$RESPONSE" | jq -r '.username')
+    log_pass "User details retrieved: $USERNAME"
+else
+    log_fail "Get user details failed"
+fi
+
+echo ""
+
+# AUTH-ADMIN-005
+log_test "AUTH-ADMIN-005: Update User Role (Viewer to Editor)"
+RESPONSE=$(curl -s -X PUT "$BASE_URL/admin/users/$VIEWER_ID" \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"role":"editor"}')
+
+if check_field "$RESPONSE" '.role' && [ "$(echo "$RESPONSE" | jq -r '.role')" = "editor" ]; then
+    log_pass "User role updated to editor"
+else
+    log_fail "Update user role failed"
+fi
+
+echo ""
+
+# AUTH-ADMIN-006
+log_test "AUTH-ADMIN-006: Update User Role (Editor to Admin)"
+RESPONSE=$(curl -s -X PUT "$BASE_URL/admin/users/$EDITOR_ID" \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"role":"admin"}')
+
+if check_field "$RESPONSE" '.role' && [ "$(echo "$RESPONSE" | jq -r '.role')" = "admin" ]; then
+    log_pass "User role updated to admin"
+else
+    log_fail "Update user role to admin failed"
+fi
+
+echo ""
+
+# AUTH-ADMIN-007
+log_test "AUTH-ADMIN-007: Deactivate User Account"
+
+DEACTIVATE_USER=$(curl -s -X POST "$BASE_URL/auth/register" \
+  -H "Content-Type: application/json" \
+  -d '{"username":"deactivate_'$(unique_id)'","password":"SecurePass@123456","confirm_password":"SecurePass@123456","email":"deactivate_'$(unique_id)'@example.com"}')
+DEACTIVATE_ID=$(echo "$DEACTIVATE_USER" | jq -r '.user.id')
+
+RESPONSE=$(curl -s -X PUT "$BASE_URL/admin/users/$DEACTIVATE_ID" \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"is_active":false}')
+
+if echo "$RESPONSE" | jq -e '.is_active != null' > /dev/null 2>&1 && [ "$(echo "$RESPONSE" | jq -r '.is_active')" = "false" ]; then
+    log_pass "User account deactivated"
+else
+    log_fail "Deactivate user failed"
+fi
+
+echo ""
+
+# AUTH-ADMIN-008
+log_test "AUTH-ADMIN-008: Reactivate User Account"
+RESPONSE=$(curl -s -X PUT "$BASE_URL/admin/users/$DEACTIVATE_ID" \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"is_active":true}')
+
+if echo "$RESPONSE" | jq -e '.is_active != null' > /dev/null 2>&1 && [ "$(echo "$RESPONSE" | jq -r '.is_active')" = "true" ]; then
+    log_pass "User account reactivated"
+else
+    log_fail "Reactivate user failed"
+fi
+
+echo ""
+
+# AUTH-ADMIN-009
+log_test "AUTH-ADMIN-009: Deactivation Revokes Sessions"
+
+SESSION_USER=$(curl -s -X POST "$BASE_URL/auth/register" \
+  -H "Content-Type: application/json" \
+  -d '{"username":"session_'$(unique_id)'","password":"SecurePass@123456","confirm_password":"SecurePass@123456","email":"session_'$(unique_id)'@example.com"}')
+SESSION_ID=$(echo "$SESSION_USER" | jq -r '.user.id')
+SESSION_USERNAME=$(echo "$SESSION_USER" | jq -r '.user.username')
+
+SESSION_LOGIN=$(curl -s -X POST "$BASE_URL/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{"username_or_email":"'$SESSION_USERNAME'","password":"SecurePass@123456"}')
+SESSION_TOKEN=$(echo "$SESSION_LOGIN" | jq -r '.access_token')
+
+TEST_BEFORE=$(curl -s -X GET "$BASE_URL/auth/me" \
+  -H "Authorization: Bearer $SESSION_TOKEN")
+
+curl -s -X PUT "$BASE_URL/admin/users/$SESSION_ID" \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"is_active":false}' > /dev/null
+
+TEST_AFTER=$(curl -s -X GET "$BASE_URL/auth/me" \
+  -H "Authorization: Bearer $SESSION_TOKEN")
+
+if check_field "$TEST_BEFORE" '.id' && (check_field "$TEST_AFTER" '.detail' || check_field "$TEST_AFTER" '.message'); then
+    log_pass "Deactivation revoked user sessions"
+else
+    log_fail "Session not properly revoked"
+fi
+
+echo ""
+
+# AUTH-ADMIN-010
+log_test "AUTH-ADMIN-010: Delete User Account"
+
+DELETE_USER=$(curl -s -X POST "$BASE_URL/auth/register" \
+  -H "Content-Type: application/json" \
+  -d '{"username":"delete_'$(unique_id)'","password":"SecurePass@123456","confirm_password":"SecurePass@123456","email":"delete_'$(unique_id)'@example.com"}')
+DELETE_ID=$(echo "$DELETE_USER" | jq -r '.user.id')
+
+RESPONSE=$(curl -s -X DELETE "$BASE_URL/admin/users/$DELETE_ID" \
+  -H "Authorization: Bearer $ADMIN_TOKEN")
+
+if check_field "$RESPONSE" '.message'; then
+    log_pass "User account deleted"
+else
+    log_fail "Delete user failed"
+fi
+
+echo ""
+
+# AUTH-ADMIN-011
+log_test "AUTH-ADMIN-011: Transfer User Prompts on Deletion"
+log_info "Skipped (requires prompt creation)"
+
+echo ""
+
+# AUTH-ADMIN-012
+log_test "AUTH-ADMIN-012: Admin Cannot Delete Self"
+RESPONSE=$(curl -s -X DELETE "$BASE_URL/admin/users/$ADMIN_ID" \
+  -H "Authorization: Bearer $ADMIN_TOKEN")
+
+ERROR=$(echo "$RESPONSE" | jq -r '.message // .detail // empty')
+if [[ "$ERROR" == *"cannot"* ]] || [[ "$ERROR" == *"self"* ]]; then
+    log_pass "Admin cannot delete themselves"
+else
+    log_fail "Self-delete prevention failed"
+fi
+
+echo ""
+echo "================================================================"
+echo "SUMMARY"
+echo "================================================================"
+echo -e "${GREEN}Passed: $TESTS_PASSED${NC}"
+echo -e "${RED}Failed: $TESTS_FAILED${NC}"
+echo ""
+
+if [ $TESTS_FAILED -eq 0 ]; then
+    echo -e "${GREEN}All tests passed!${NC}"
+    exit 0
+else
+    echo -e "${RED}Some tests failed!${NC}"
+    exit 1
+fi

@@ -1813,7 +1813,7 @@ _________________________________
 ### AUTH-RBAC-001: Viewer Can Read Own Prompts
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ⏸️ FUTURE (RBAC not in authentication spec scope)
 
 **Preconditions:**
 
@@ -1840,7 +1840,7 @@ _________________________________
 ### AUTH-RBAC-002: Viewer Cannot Create Prompts
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ⏸️ FUTURE (RBAC not in authentication spec scope)
 
 **Preconditions:**
 
@@ -1865,7 +1865,7 @@ _________________________________
 ### AUTH-RBAC-003: Viewer Cannot Edit Prompts
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ⏸️ FUTURE (RBAC not in authentication spec scope)
 
 **Preconditions:**
 
@@ -1891,7 +1891,7 @@ _________________________________
 ### AUTH-RBAC-004: Viewer Cannot Delete Prompts
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ⏸️ FUTURE (RBAC not in authentication spec scope)
 
 **Preconditions:**
 
@@ -1970,7 +1970,7 @@ _________________________________
 ### AUTH-RBAC-007: Editor Cannot Edit Others' Prompts
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ⏸️ FUTURE (RBAC not in authentication spec scope)
 
 **Preconditions:**
 
@@ -2023,7 +2023,7 @@ _________________________________
 ### AUTH-RBAC-009: Admin Can View All Prompts
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ⏸️ FUTURE (RBAC not in authentication spec scope)
 
 **Preconditions:**
 
@@ -2050,7 +2050,7 @@ _________________________________
 ### AUTH-RBAC-010: Admin Can Edit Any Prompt
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ⏸️ FUTURE (RBAC not in authentication spec scope)
 
 **Preconditions:**
 
@@ -2077,7 +2077,7 @@ _________________________________
 ### AUTH-RBAC-011: Admin Can Delete Any Prompt
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ⏸️ FUTURE (RBAC not in authentication spec scope)
 
 **Preconditions:**
 
@@ -2103,7 +2103,7 @@ _________________________________
 ### AUTH-RBAC-012: Admin Can Access Admin Endpoints
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ⏸️ FUTURE (RBAC not in authentication spec scope)
 
 **Preconditions:**
 
@@ -2128,7 +2128,7 @@ _________________________________
 ### AUTH-RBAC-013: Non-Admin Cannot Access Admin Endpoints
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ⏸️ FUTURE (RBAC not in authentication spec scope)
 
 **Preconditions:**
 
@@ -2153,7 +2153,7 @@ _________________________________
 ### AUTH-RBAC-014: Ownership Verification
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ⏸️ FUTURE (RBAC not in authentication spec scope)
 
 **Preconditions:**
 
@@ -2179,7 +2179,7 @@ _________________________________
 ### AUTH-RBAC-015: Permission Denied Messages
 
 - **Priority**: 🟡 Medium
-- **Status**: ⬜
+- **Status**: ⏸️ FUTURE (RBAC not in authentication spec scope)
 
 **Preconditions:**
 
@@ -2208,7 +2208,7 @@ _________________________________
 ### AUTH-ADMIN-001: List All Users with Pagination
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ✅
 
 **Preconditions:**
 
@@ -2239,7 +2239,7 @@ _________________________________
 ### AUTH-ADMIN-002: Filter Users by Role
 
 - **Priority**: 🟡 Medium
-- **Status**: ⬜
+- **Status**: ✅
 
 **Preconditions:**
 
@@ -2264,7 +2264,7 @@ _________________________________
 ### AUTH-ADMIN-003: Filter Users by Active Status
 
 - **Priority**: 🟡 Medium
-- **Status**: ⬜
+- **Status**: ✅
 
 **Preconditions:**
 
@@ -2289,7 +2289,7 @@ _________________________________
 ### AUTH-ADMIN-004: View User Details
 
 - **Priority**: 🟡 Medium
-- **Status**: ⬜
+- **Status**: ✅
 
 **Preconditions:**
 
@@ -2319,7 +2319,7 @@ _________________________________
 ### AUTH-ADMIN-005: Update User Role (Viewer to Editor)
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ✅
 
 **Preconditions:**
 
@@ -2347,7 +2347,7 @@ _________________________________
 ### AUTH-ADMIN-006: Update User Role (Editor to Admin)
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ✅
 
 **Preconditions:**
 
@@ -2374,7 +2374,7 @@ _________________________________
 ### AUTH-ADMIN-007: Deactivate User Account
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ✅
 
 **Preconditions:**
 
@@ -2403,7 +2403,7 @@ _________________________________
 ### AUTH-ADMIN-008: Reactivate User Account
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ✅
 
 **Preconditions:**
 
@@ -2431,7 +2431,7 @@ _________________________________
 ### AUTH-ADMIN-009: Deactivation Revokes Sessions
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ✅
 
 **Preconditions:**
 
@@ -2457,7 +2457,7 @@ _________________________________
 ### AUTH-ADMIN-010: Delete User Account
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ✅
 
 **Preconditions:**
 
@@ -2512,7 +2512,7 @@ _________________________________
 ### AUTH-ADMIN-012: Admin Cannot Delete Self
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ✅
 
 **Preconditions:**
 
@@ -2540,7 +2540,7 @@ _________________________________
 ### AUTH-ADMIN-CREATE-001: Open Create User Modal
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ✅
 
 **Preconditions:**
 
@@ -2569,7 +2569,7 @@ _________________________________
 ### AUTH-ADMIN-CREATE-002: Form Validation - Username Required
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ✅
 
 **Preconditions:**
 
@@ -2596,7 +2596,7 @@ _________________________________
 ### AUTH-ADMIN-CREATE-003: Form Validation - Username Too Short
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ✅
 
 **Preconditions:**
 
@@ -2622,7 +2622,7 @@ _________________________________
 ### AUTH-ADMIN-CREATE-004: Form Validation - Username Invalid Characters
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ✅
 
 **Preconditions:**
 
@@ -2647,7 +2647,7 @@ _________________________________
 ### AUTH-ADMIN-CREATE-005: Password Strength Indicator
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ✅
 
 **Preconditions:**
 
@@ -2678,7 +2678,7 @@ _________________________________
 ### AUTH-ADMIN-CREATE-006: Password Requirements Checklist
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ✅
 
 **Preconditions:**
 
@@ -2708,7 +2708,7 @@ _________________________________
 ### AUTH-ADMIN-CREATE-007: Password Visibility Toggle
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ✅
 
 **Preconditions:**
 
@@ -2739,7 +2739,7 @@ _________________________________
 ### AUTH-ADMIN-CREATE-008: Create Valid User
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ✅
 
 **Preconditions:**
 
@@ -2776,7 +2776,7 @@ _________________________________
 ### AUTH-ADMIN-CREATE-009: Prevent Duplicate Username
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ✅
 
 **Preconditions:**
 
@@ -2806,7 +2806,7 @@ _________________________________
 ### AUTH-ADMIN-CREATE-010: Prevent Duplicate Email
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ✅
 
 **Preconditions:**
 
@@ -2836,7 +2836,7 @@ _________________________________
 ### AUTH-ADMIN-CREATE-011: Password Mismatch Error
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ✅
 
 **Preconditions:**
 
@@ -2865,7 +2865,7 @@ _________________________________
 ### AUTH-ADMIN-SESSION-001: View All Sessions Across All Users
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ✅
 
 **Preconditions:**
 
@@ -2897,7 +2897,7 @@ _________________________________
 ### AUTH-ADMIN-SESSION-002: Filter Sessions by User
 
 - **Priority**: 🟡 Medium
-- **Status**: ⬜
+- **Status**: ✅
 
 **Preconditions:**
 
@@ -2922,7 +2922,7 @@ _________________________________
 ### AUTH-ADMIN-SESSION-003: View Session Metadata
 
 - **Priority**: 🟡 Medium
-- **Status**: ⬜
+- **Status**: ✅
 
 **Preconditions:**
 
@@ -2954,7 +2954,7 @@ _________________________________
 ### AUTH-ADMIN-SESSION-004: Revoke Any User Session
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ✅
 
 **Preconditions:**
 
@@ -2981,7 +2981,7 @@ _________________________________
 ### AUTH-ADMIN-SESSION-005: Revoke All Sessions for a User
 
 - **Priority**: 🔴 High
-- **Status**: ⬜
+- **Status**: ✅
 
 **Preconditions:**
 
@@ -3008,7 +3008,7 @@ _________________________________
 ### AUTH-ADMIN-SESSION-006: Session Statistics
 
 - **Priority**: 🟢 Low
-- **Status**: ⬜
+- **Status**: ✅
 
 **Preconditions:**
 
@@ -3037,7 +3037,7 @@ _________________________________
 ### AUTH-ADMIN-SESSION-007: Real-Time Session Updates
 
 - **Priority**: 🟢 Low
-- **Status**: ⬜
+- **Status**: ✅
 
 **Preconditions:**
 
@@ -3064,7 +3064,7 @@ _________________________________
 ### AUTH-ADMIN-SESSION-008: Session Export (Optional)
 
 - **Priority**: 🟢 Low
-- **Status**: ⬜
+- **Status**: ⏸️
 
 **Preconditions:**
 

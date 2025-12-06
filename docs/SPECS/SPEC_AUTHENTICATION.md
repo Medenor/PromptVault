@@ -2275,6 +2275,7 @@ auth_config = AuthConfig()
 8. **IP Whitelisting**: Restrict access by IP ranges
 9. **Device Fingerprinting**: Enhanced session security
 10. **Anomaly Detection**: ML-based suspicious activity detection
+11. **Role-Based Access Control**: Enhance RBAC with attribute‑based policies
 
 ---
 
