@@ -509,6 +509,7 @@ class AuthService:
             username=user.username,
             email=user.email,
             role=user.role,
+            family_id=family_id,  # Same family for session identification
         )
         new_refresh_token = self.jwt_service.generate_refresh_token(
             user_id=user.id,
@@ -809,6 +810,7 @@ class AuthService:
             username=user.username,
             email=user.email,
             role=user.role,
+            family_id=family_id,  # Include family_id for session identification
         )
         refresh_token = self.jwt_service.generate_refresh_token(
             user_id=user.id,

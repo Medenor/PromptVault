@@ -8,10 +8,10 @@
 ## Executive Summary
 
 - **Total Tests**: 8
-- **Passed**: 4 ✅ (Updated: AUTH-SESSION-002 is now passing)
-- **Failed**: 2 ❌ (Real issues requiring fixes)
+- **Passed**: 5 ✅ (AUTH-SESSION-008 fixed)
+- **Failed**: 1 ❌ (Real issue requiring investigation)
 - **Skipped**: 2 ⏭️ (Features not yet implemented)
-- **Success Rate**: 50% (including 2 non-functional features: 66%)
+- **Success Rate**: 62.5% (including 2 non-functional features: 71%)
 
 ## Detailed Results
 
@@ -141,18 +141,44 @@
 
 ---
 
-### AUTH-SESSION-008: Current Session Indicator ❌ PARTIAL FAIL
+### AUTH-SESSION-008: Current Session Indicator ✅ PASS
 
-**Status**: Response Incomplete
-**Issue**: After revoke_all, user is logged out so cannot check is_current field
-**Expected**: Exactly 1 session marked as current
-**Actual**: Unable to complete test (re-authentication breaks the flow)
+**Status**: Fixed and Fully Functional
+**Result**: Exactly 1 session marked as current (matching token's family_id)
+**Issue**: Had to add family_id to JWT access tokens for session identification
+**Fix Applied**: Modified JWT service to include family_id in access token claims
 
-**Notes**:
+**Root Cause Analysis**:
+Access tokens weren't including `family_id` claim, so when router tried to extract it for comparison, `current_family_id` was always `None`. This caused `is_current` field to always be `false`.
 
-- API endpoints work correctly
-- Need better test flow to avoid logout between tests
-- Should verify is_current field separately with fresh session
+**Solution Implemented**:
+
+1. Added `family_id` parameter to `jwt_service.generate_access_token()` method
+2. Updated all calls to `generate_access_token()` to pass `family_id`:
+   - Line 507: Token refresh now passes family_id
+   - Line 813: Initial token generation now passes family_id
+3. Added `decode_token()` method to properly validate tokens with signature verification
+
+**Test Results**:
+
+- Session 1 check: ✅ Exactly 1 marked as current
+- Session 2 check: ✅ Exactly 1 marked as current  
+- Session 3 check: ✅ Exactly 1 marked as current
+- **All 3 tests PASS**
+
+**Verification**:
+
+```json
+Session 1 token contains: "family_id": "37c973ce-39d0-4de6-bceb-2cee20163135"
+Session list shows: Only session with matching family_id has "is_current": true
+```
+
+**Impact**:
+
+- ✅ is_current field now works correctly
+- ✅ Each user can identify which session they're using
+- ✅ API response provides accurate session status
+- ✅ Frontend can highlight current session in UI
 
 ---
 
@@ -182,15 +208,44 @@
 
 ---
 
-### Issue 2: Test Flow Issues ❌ NEEDS FIX
+### Issue 2: Missing family_id in Access Tokens ✅ RESOLVED
 
-**Problem**: AUTH-SESSION-008 test fails because revoke_all logs out user
-**Impact**: Low (endpoints work, test flow issue)
-**Action Items**:
+**Problem**: AUTH-SESSION-008 failed - is_current field always false
+**Root Cause**: Access tokens didn't include family_id claim, so session identification failed
+**Impact**: Critical (affects session identification feature)
 
-- [ ] Refactor test to create separate test user for each session test
-- [ ] Or test is_current field separately without revoking
-- [ ] Improve test isolation
+**Solution Applied**:
+
+1. Modified `jwt_service.generate_access_token()` to accept and include `family_id` parameter
+2. Updated token generation calls to pass `family_id`:
+   - Registration/login: Line 813
+   - Token refresh: Line 507
+3. Added `decode_token()` method for proper token validation with signature verification
+
+**Changes Made**:
+
+```python
+# Before (family_id missing)
+access_token = self.jwt_service.generate_access_token(
+    user_id=user.id,
+    username=user.username,
+    email=user.email,
+    role=user.role,
+)
+
+# After (family_id included)
+access_token = self.jwt_service.generate_access_token(
+    user_id=user.id,
+    username=user.username,
+    email=user.email,
+    role=user.role,
+    family_id=family_id,
+)
+```
+
+**Test Results**: ✅ All 3 subtests PASS
+
+**Status**: ✅ FIXED & VERIFIED
 
 ---
 
@@ -204,6 +259,8 @@
 - [ ] Handle empty response bodies gracefully
 - [ ] Use more robust JSON parsing
 
+**Status**: ⏳ PENDING
+
 ---
 
 ## Test Environment Details
@@ -215,6 +272,8 @@
 - Health Check: ✅ Passing
 
 **Database**:
+
+```
 
 - Type: SQLite (./data/promptvault.db)
 - Status: ✅ Healthy

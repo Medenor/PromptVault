@@ -221,6 +221,7 @@ class JWTService:
         username: str,
         email: str,
         role: str,
+        family_id: str = None,
     ) -> str:
         """Generate JWT access token with user claims.
 
@@ -232,6 +233,7 @@ class JWTService:
             username: User's username
             email: User's email address
             role: User's role (e.g., "user", "admin", "moderator")
+            family_id: Token family ID for rotation tracking (optional)
 
         Returns:
             Signed JWT token string
@@ -245,6 +247,7 @@ class JWTService:
             - Short-lived (15 minutes by default)
             - Contains full user context for authorization
             - Includes JTI for tracking and potential revocation
+            - Includes family_id for session identification
             - Signed with ES256 algorithm
 
         Example:
@@ -252,7 +255,8 @@ class JWTService:
             ...     user_id="123",
             ...     username="alice",
             ...     email="alice@example.com",
-            ...     role="user"
+            ...     role="user",
+            ...     family_id="family-uuid"
             ... )
         """
         now = datetime.now(timezone.utc)
@@ -271,6 +275,10 @@ class JWTService:
             "email": email,
             "role": role,
         }
+        
+        # Add family_id if provided (for identifying current session)
+        if family_id:
+            claims["family_id"] = family_id
 
         private_key = self._load_private_key()
 
@@ -555,6 +563,43 @@ class JWTService:
             )
         except (DecodeError, InvalidTokenError) as e:
             raise InvalidTokenError(f"Cannot decode token: {str(e)}")
+
+    def decode_token(self, token: str) -> Dict[str, Any]:
+        """Decode and validate JWT token (access or refresh).
+
+        Validates token signature, expiration, and claims.
+        Automatically determines if token is access or refresh type.
+
+        Args:
+            token: JWT token string to validate
+
+        Returns:
+            Dictionary of validated token claims
+
+        Raises:
+            InvalidTokenError: If token is invalid or malformed
+            ExpiredSignatureError: If token is expired
+
+        Example:
+            >>> try:
+            ...     claims = jwt_service.decode_token(token)
+            ...     family_id = claims.get("family_id")  # For access tokens
+            ... except InvalidTokenError as e:
+            ...     # Handle invalid token
+            ...     pass
+        """
+        try:
+            # First try as access token
+            claims = self.validate_access_token(token)
+            return claims
+        except (InvalidTokenError, MissingRequiredClaimError):
+            try:
+                # If access token validation fails, try refresh token
+                claims = self.validate_refresh_token(token)
+                return claims
+            except Exception:
+                # If both fail, raise original access token error
+                raise InvalidTokenError("Invalid token format")
 
     def get_token_expiry(self, token: str) -> datetime:
         """Get token expiration datetime.
