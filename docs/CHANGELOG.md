@@ -11,6 +11,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Implemented login "Remember me" option with persisted token storage preference and i18n labels across EN/FR/ES/DE
 
+### Changed
+
+- All containers now run as non-root users (`appuser`, `postgres`, `redis`) to enforce a least-privilege security model.
+- Docker Compose configuration updated with `no-new-privileges:true` and `cap_drop: ALL` for all services.
+- Improved security defaults for PostgreSQL and Redis deployments.
+
+### Fixed
+
+- Resolved permission issues caused by legacy volumes created when containers ran as root.
+- Ensured correct UID/GID ownership inside data volumes:
+  - PostgreSQL now uses UID 70
+  - Redis now uses UID 999
+- ⚠️ **Action required if upgrading from a version where containers ran as root.** See [DEPLOYMENT.md](DEPLOYMENT.md). Fresh installations do not require any action.
+
 ## [1.3.0] - 2025-12-06
 
 ### ✨ New Features
