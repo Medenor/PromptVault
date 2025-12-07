@@ -86,6 +86,93 @@ docker-compose exec -T db psql -U promptvault -d promptvault -c "SELECT COUNT(*)
 
 ---
 
+## ⚠️ Permissions & Non-Root Containers (PostgreSQL, Redis, Web)
+
+Recent versions of PromptVault run all services as **non-root users** inside their containers:
+
+- `web` → runs as `appuser` (UID 1000)
+- `db` → runs as `postgres` (UID 70)
+- `redis` → runs as `redis` (UID 999)
+
+This improves security, but if you are **upgrading from an older deployment** where containers previously ran as `root`, your existing Docker volumes may contain files owned by root.  
+This can lead to errors such as:
+
+```text
+permission denied
+attempt to write a readonly database
+could not open file ...: Permission denied
+```
+
+### 1. Check your volume names
+
+List existing volumes:
+
+```bash
+docker volume ls
+```
+
+Typical PromptVault-related volume names:
+
+- `postgres_data` or `promptvault_postgres_data`
+- `redis_data` or `promptvault_redis_data`
+
+### 2. Fix PostgreSQL volume permissions (UID 70)
+
+```bash
+docker run --rm -it \
+  -v postgres_data:/var/lib/postgresql/data \
+  --user 0 alpine sh -c 'chown -R 70:70 /var/lib/postgresql/data'
+```
+
+If your volume is prefixed (e.g., `promptvault_postgres_data`):
+
+```bash
+docker run --rm -it \
+  -v promptvault_postgres_data:/var/lib/postgresql/data \
+  --user 0 alpine sh -c 'chown -R 70:70 /var/lib/postgresql/data'
+```
+
+### 3. Fix Redis volume permissions (UID 999)
+
+```bash
+docker run --rm -it \
+  -v redis_data:/data \
+  --user 0 alpine sh -c 'chown -R 999:999 /data'
+```
+
+Or with a prefixed volume:
+
+```bash
+docker run --rm -it \
+  -v promptvault_redis_data:/data \
+  --user 0 alpine sh -c 'chown -R 999:999 /data'
+```
+
+### 4. Fix bind-mounted ./data directory for the web container
+
+If you mount a local directory into `/app/data`, it must be writable by the non-root user in the container:
+
+```bash
+# Match your local user (Linux or macOS)
+chown -R $(id -u):$(id -g) ./data
+
+# Or a more permissive alternative (dev only)
+chmod -R 770 ./data
+```
+
+### 5. Restart services
+
+After fixing permissions, restart the stack:
+
+```bash
+docker-compose down
+docker-compose up -d
+```
+
+Fresh installations with new volumes do not require this step — everything will be created with correct ownership automatically.
+
+---
+
 ## Quick Start with Docker Compose
 
 The fastest way to get PromptVault running with PostgreSQL:
@@ -139,9 +226,9 @@ docker-compose exec web python scripts/migrate_json_to_db.py
 
 ### 4. Access Application
 
-- **Web UI**: http://localhost:8001
-- **API**: http://localhost:8001/api
-- **Health Check**: http://localhost:8001/api/health
+- **Web UI**: <http://localhost:8001>
+- **API**: <http://localhost:8001/api>
+- **Health Check**: <http://localhost:8001/api/health>
 
 ### 5. Stop Services
 
@@ -160,6 +247,7 @@ docker-compose down -v
 ### Security Warning ⚠️
 
 **NEVER commit JWT keys to Git!** Keys must be:
+
 - ✅ Generated locally on each deployment
 - ✅ Stored in `secrets/jwt/` (ignored by .gitignore)
 - ✅ Backed up in a secure location
@@ -332,6 +420,7 @@ nano .env
 ```
 
 **For PostgreSQL:**
+
 ```env
 DATABASE_URL=postgresql://username:password@localhost:5432/promptvault
 DB_POOL_SIZE=20
@@ -341,6 +430,7 @@ LOG_LEVEL=INFO
 ```
 
 **For SQLite:**
+
 ```env
 DATABASE_URL=sqlite:///./data/promptvault.db
 ENVIRONMENT=development
@@ -350,6 +440,7 @@ LOG_LEVEL=DEBUG
 ### 3. Setup Database
 
 **PostgreSQL:**
+
 ```bash
 # Create database
 createdb -U postgres promptvault
@@ -360,6 +451,7 @@ psql -U postgres -c "GRANT ALL PRIVILEGES ON DATABASE promptvault TO promptvault
 ```
 
 **SQLite:**
+
 ```bash
 # Create data directory
 mkdir -p data
@@ -461,12 +553,14 @@ DISABLE_RATE_LIMITING=false PORT=8003 python run_web.py
 ### Database URL Examples
 
 **SQLite:**
+
 ```env
 DATABASE_URL=sqlite:///./data/promptvault.db
 DATABASE_URL=sqlite:////absolute/path/to/database.db
 ```
 
 **PostgreSQL:**
+
 ```env
 # Local
 DATABASE_URL=postgresql://user:password@localhost:5432/dbname
@@ -487,12 +581,14 @@ DATABASE_URL=postgresql://user:password@remote-host:5432/dbname
 #### 1. Install PostgreSQL
 
 **Ubuntu/Debian:**
+
 ```bash
 sudo apt-get update
 sudo apt-get install postgresql postgresql-contrib
 ```
 
 **macOS:**
+
 ```bash
 brew install postgresql@15
 brew services start postgresql@15
@@ -537,6 +633,7 @@ host    all             all             ::1/128                 md5
 ```
 
 Restart PostgreSQL:
+
 ```bash
 sudo systemctl restart postgresql
 ```
@@ -647,6 +744,7 @@ docker-compose ps
 ### Database Health Checks
 
 **PostgreSQL:**
+
 ```bash
 # Docker
 docker exec promptvault-db pg_isready -U promptvault
@@ -656,6 +754,7 @@ psql -U promptvault -d promptvault -c "SELECT 1;"
 ```
 
 **SQLite:**
+
 ```bash
 # Check database file exists and is readable
 sqlite3 data/promptvault.db "SELECT COUNT(*) FROM prompts;"
@@ -672,6 +771,7 @@ sqlite3 data/promptvault.db "SELECT COUNT(*) FROM prompts;"
 **Problem:** `could not connect to server: Connection refused`
 
 **Solutions:**
+
 - Verify PostgreSQL is running: `systemctl status postgresql`
 - Check DATABASE_URL is correct
 - Verify network connectivity: `pg_isready -h localhost -p 5432`
@@ -682,6 +782,7 @@ sqlite3 data/promptvault.db "SELECT COUNT(*) FROM prompts;"
 **Problem:** `alembic.util.exc.CommandError: Can't locate revision identified by 'xxxx'`
 
 **Solutions:**
+
 ```bash
 # Check current version
 alembic current
@@ -698,6 +799,7 @@ alembic upgrade head
 **Problem:** `permission denied for table prompts`
 
 **Solutions:**
+
 ```sql
 -- Grant permissions
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO promptvault;
@@ -709,6 +811,7 @@ GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO promptvault;
 **Problem:** `Error starting userland proxy: listen tcp4 0.0.0.0:8001: bind: address already in use`
 
 **Solutions:**
+
 ```bash
 # Find process using port
 lsof -i :8001
@@ -727,6 +830,7 @@ ports:
 **Problem:** `permission denied` errors in Docker container
 
 **Solutions:**
+
 ```bash
 # Fix data directory permissions
 sudo chown -R 1000:1000 ./data
@@ -738,6 +842,7 @@ docker run --user $(id -u):$(id -g) ...
 ### Logs and Debugging
 
 **Docker Compose:**
+
 ```bash
 # View all logs
 docker-compose logs
@@ -750,6 +855,7 @@ docker-compose logs --tail=100
 ```
 
 **Docker:**
+
 ```bash
 # View container logs
 docker logs promptvault
@@ -762,6 +868,7 @@ docker logs -t promptvault
 ```
 
 **Application Logs:**
+
 ```bash
 # Enable debug logging
 export LOG_LEVEL=DEBUG
@@ -776,12 +883,14 @@ uvicorn src.web.app:app --reload
 #### Database Performance
 
 **Enable query logging:**
+
 ```env
 DB_ECHO=true
 LOG_LEVEL=DEBUG
 ```
 
 **Analyze slow queries:**
+
 ```sql
 -- PostgreSQL
 EXPLAIN ANALYZE SELECT * FROM prompts WHERE title LIKE '%search%';
@@ -791,6 +900,7 @@ ALTER DATABASE promptvault SET log_min_duration_statement = 1000;
 ```
 
 **Optimize connection pool:**
+
 ```env
 DB_POOL_SIZE=50
 DB_POOL_TIMEOUT=60
@@ -800,6 +910,7 @@ DB_POOL_RECYCLE=1800
 #### Application Performance
 
 **Use production server:**
+
 ```bash
 # Multiple workers
 uvicorn src.web.app:app --workers 4 --host 0.0.0.0 --port 8003
