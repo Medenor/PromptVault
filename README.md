@@ -155,24 +155,61 @@ PromptVault includes a comprehensive, production-ready backup system to prevent 
 - **Statistics Dashboard**: Real-time backup statistics and storage information
 
 <details>
-<summary>Screenshots</summary>
+<summary>Screenshots & Gallery</summary>
 <br>
 
 <div align="center">
 
-### Main Interface
+### Key Features Gallery
 
-<img src="docs/images/promptvault_main_interface.jpg" alt="PromptVault Main Interface" width="80%">
+#### 1. Login Page
+<img src="docs/images/gallery/promptvault_loginpage.jpg" alt="PromptVault Login Page" width="90%"><br/>
+Secure authentication interface with JWT-based login and password reset functionality.
 
-### Import/Export Management
+<br><br>
 
-<img src="docs/images/promptvault_import_export.jpg" alt="Import/Export Management Interface" width="80%">
+#### 2. Main Interface
+<img src="docs/images/gallery/promptvault_main_page.jpg" alt="PromptVault Main Interface" width="90%"><br/>
+Clean and intuitive dashboard for managing all your prompts with categories and tags.
 
-### Prompt Editor
+<br><br>
 
-<img src="docs/images/promptvault_prompt_editor.jpg" alt="Prompt Editor Interface" width="80%">
+#### 3. Prompt Editor
+<img src="docs/images/gallery/promptvault_prompt_editor.jpg" alt="Prompt Editor Interface" width="90%"><br/>
+Rich text editor with real-time validation and support for categories, tags, and metadata.
+
+<br><br>
+
+#### 4. Version History & Diff Visualization
+<img src="docs/images/gallery/promptvault_version_history.jpg" alt="Version History" width="90%"><br/>
+Git-like version control system with full history tracking, diff visualization, and revert capabilities.
+
+<br><br>
+
+#### 5. Import/Export Management
+<img src="docs/images/gallery/promptvault_import_export.jpg" alt="Import/Export Management Interface" width="90%"><br/>
+Support for multiple formats (CSV, Markdown, JSON) with preview functionality before import.
+
+<br><br>
+
+#### 6. Data Backup System
+<img src="docs/images/gallery/promptvault_backup.jpg" alt="Backup Management Interface" width="90%"><br/>
+Comprehensive backup and restoration system with automatic pre-operation backups and compression.
+
+<br><br>
+
+#### 7. User Profile Management
+<img src="docs/images/gallery/promptvault_user_profile.jpg" alt="User Profile Interface" width="90%"><br/>
+Manage your profile, change password, and view active sessions with device information.
+
+<br><br>
+
+#### 8. Admin User Management
+<img src="docs/images/gallery/promptvault_admin_user_mgmt.jpg" alt="Admin User Management" width="90%"><br/>
+Administrative interface for managing users, roles, and permissions with full audit capabilities.
 
 </div>
+
 </details>
 
 ## Getting Started
