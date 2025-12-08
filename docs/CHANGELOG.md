@@ -19,11 +19,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Resolved permission issues caused by legacy volumes created when containers ran as root.
-- Ensured correct UID/GID ownership inside data volumes:
-  - PostgreSQL now uses UID 70
-  - Redis now uses UID 999
-- ⚠️ **Action required if upgrading from a version where containers ran as root.** See [DEPLOYMENT.md](DEPLOYMENT.md). Fresh installations do not require any action.
+#### Version Control & History
+
+- **Duplicate Version Entries**: Fixed critical bug where each prompt update created 2 versions instead of 1
+  - Removed legacy data_service compatibility code creating duplicate versions in update_prompt router endpoint
+  - Root cause: Update endpoint was calling both legacy service method and new version repository create method
+
+- **Incorrect Author Tracking in Versions**: Fixed version history showing "anonymous" or "system" instead of actual authenticated user
+  - Changed create_prompt and update_prompt endpoints to use `get_current_active_user` instead of `get_optional_user`
+  - Updated prompt_data_service_db to accept optional author parameter for flexible service usage
+
+- **Missing Initial Versions**: Fixed new prompts having empty version history
+  - Added automatic creation of initial version (v1) with "Initial commit" message when prompt is created
+  - Ensures all prompts have at least one version entry in their history
+
+#### Authentication & API
+
+- **Create Prompt Authentication Error**: Fixed AttributeError crash on POST /api/prompts
+  - Endpoint was using get_optional_user (returning None) then accessing user.id without validation
+  - Now enforces authentication via get_current_active_user dependency
+
+#### Docker & Deployment
+
+- **Volume Permission Issues**: Resolved permission issues caused by legacy volumes created when containers ran as root
+  - Ensured correct UID/GID ownership inside data volumes (PostgreSQL UID 70, Redis UID 999)
+  - ⚠️ **Action required if upgrading from a version where containers ran as root.** See [DEPLOYMENT.md](DEPLOYMENT.md). Fresh installations do not require any action.
 
 ## [1.3.0] - 2025-12-06
 
