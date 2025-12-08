@@ -479,7 +479,8 @@ class PromptDataService:
             ) from exc
 
     def update_prompt(
-        self, prompt_id: int, data: Dict[str, Any], commit_message: str = "Update"
+        self, prompt_id: int, data: Dict[str, Any], commit_message: str = "Update",
+        author: Optional[str] = None
     ) -> bool:
         """Update an existing prompt with a new version.
 
@@ -487,6 +488,7 @@ class PromptDataService:
             prompt_id (int): The ID of the prompt to update
             data (Dict[str, Any]): The updated prompt data
             commit_message (str): The commit message
+            author (Optional[str]): The author username. If not provided, uses "system"
 
         Returns:
             bool: True if successful, False otherwise
@@ -533,14 +535,13 @@ class PromptDataService:
                 session.flush()
 
                 # Create new version
-                user = session.query(User).filter_by(username="system").first()
+                author_name = author if author else "system"
                 version = version_repo.create_version(
                     prompt=prompt,
-                    author=user.username if user else "system",
+                    author=author_name,
                     message=commit_message,
                     parent_version_id=parent_version_id
                 )
-
                 # Update main branch
                 if main_branch:
                     main_branch.current_version_id = version.version_id

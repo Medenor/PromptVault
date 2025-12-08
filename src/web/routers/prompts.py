@@ -478,7 +478,7 @@ async def create_prompt(
     prompt: str = Form(...),
     category: str = Form(""),
     tags: str = Form(""),
-    user: Optional[User] = Depends(get_optional_user),
+    user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ):
     """Create a new prompt (authenticated).
@@ -505,6 +505,7 @@ async def create_prompt(
     prompt_repo = PromptRepository(db)
     category_repo = CategoryRepository(db)
     tag_repo = TagRepository(db)
+    version_repo = VersionRepository(db)
 
     # Get or create category
     category_obj = None
@@ -539,6 +540,24 @@ async def create_prompt(
     # Save to database
     db.add(new_prompt)
     db.flush()
+    db.commit()
+
+    # Create initial version
+    version = version_repo.create_version(
+        prompt=new_prompt,
+        author=user.username,
+        message="Initial commit",
+        parent_version_id=None
+    )
+
+    # Create main branch pointing to initial version
+    from src.db.models import PromptBranch
+    main_branch = PromptBranch(
+        prompt_id=new_prompt.id,
+        branch_name="main",
+        current_version_id=version.version_id
+    )
+    db.add(main_branch)
     db.commit()
 
     # Log action
@@ -599,7 +618,7 @@ async def update_prompt(
     category: str = Form(""),
     tags: str = Form(""),
     commit_message: str = Form("Update"),
-    user: Optional[User] = Depends(get_optional_user),
+    user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ):
     """Update an existing prompt (owner or admin).
@@ -642,27 +661,6 @@ async def update_prompt(
             detail=f"Prompt with ID {prompt_id} not found",
         )
 
-    # Compatibility: honor legacy data_service monkeypatch for failure testing
-    try:
-        from src.web import app as web_app
-        legacy_ds = getattr(web_app, "data_service", None)
-        if legacy_ds and hasattr(legacy_ds, "update_prompt"):
-            legacy_result = legacy_ds.update_prompt(
-                prompt_id,
-                {
-                    "title": validated_data.title,
-                    "prompt": validated_data.prompt,
-                    "category": validated_data.category,
-                    "tags": _parse_tags_field(validated_data.tags),
-                    "favorite": existing_prompt.favorite,
-                },
-                validated_data.commit_message,
-            )
-            if legacy_result is False:
-                return JSONResponse(status_code=500, content={"error": "Failed to update prompt"})
-    except Exception:
-        pass
-
     # Check ownership
     # In test compatibility mode, allow unauthenticated updates
     if user:
@@ -690,7 +688,7 @@ async def update_prompt(
     parent_version_id = main_branch.current_version_id if main_branch else None
 
     # Create new version with the updated prompt data
-    author_name = user.username if user else "anonymous"
+    author_name = user.username
     version = version_repo.create_version(
         prompt=existing_prompt,
         author=author_name,
@@ -713,13 +711,12 @@ async def update_prompt(
     db.commit()
 
     # Log action
-    if user:
-        _log_prompt_action(
-            "UPDATE_PROMPT",
-            prompt_id,
-            user.id,
-            user.username,
-            f"title='{validated_data.title}', message='{validated_data.commit_message}'",
+    _log_prompt_action(
+        "UPDATE_PROMPT",
+        prompt_id,
+        user.id,
+        user.username,
+        f"title='{validated_data.title}', message='{validated_data.commit_message}'",
     )
 
     return {"success": True}
