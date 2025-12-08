@@ -87,7 +87,7 @@ Prompt data schema (JSON example — API payloads remain JSON while storage is d
     {
       "version_id": "uuid-v1",
       "timestamp": "2025-11-27T12:34:56Z",
-      "author": "raphael",
+      "author": "medenor",
       "message": "Updated prompt content",
       "data": {},
       "parents": ["uuid-v0"]

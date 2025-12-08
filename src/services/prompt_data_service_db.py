@@ -799,7 +799,8 @@ class PromptDataService:
             with get_db_session() as session:
                 category_repo = CategoryRepository(session)
                 categories = category_repo.get_all()
-                return sorted([cat.name for cat in categories])
+                # Filter out empty category names
+                return sorted([cat.name for cat in categories if cat.name.strip()])
 
         except Exception as exc:
             logger.error(

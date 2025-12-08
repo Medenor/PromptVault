@@ -6,7 +6,9 @@
 
 set -e
 
-WORKSPACE="/Users/raphael/Programmation/PromptVault"
+# Get the directory where this script is located
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+WORKSPACE="$(dirname "$(dirname "$SCRIPT_DIR")")"
 cd "$WORKSPACE"
 
 echo "🚀 Starting PromptVault API server..."
