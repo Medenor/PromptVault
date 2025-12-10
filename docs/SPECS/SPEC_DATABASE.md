@@ -1,1178 +1,605 @@
 ---
-title: Database Migration for PromptVault
-version: 1.0
+id: spec-database-migration
+title: PromptVault Relational Database Migration
+version: 1.0.1
 date_created: 2025-11-29
-last_updated: 2025-11-27
+last_updated: 2025-12-10
 owner: medenor
+tags: [database, functional, migration, storage, api]
 status: published
-dependencies: [SPEC_APP.md]
-tags: [database, SQLite, PostgreSQL]
-priority: HIGH (Phase 2)
+dependencies: [spec-app]
 ---
 
-## 1. Executive Summary
+## 1. Introduction
 
-### 1.1 Purpose
-
-This specification defines the database migration of PromptVault from JSON file-based storage to a relational database backend (SQLite/PostgreSQL), providing improved performance, data integrity, and scalability while maintaining 100% backward compatibility with the existing API.
-
-### 1.2 Goals
-
-- **Performance:** Improve query performance for search and filtering operations
-- **Scalability:** Support datasets with 10,000+ prompts efficiently
-- **Integrity:** Ensure data consistency through ACID transactions
-- **Compatibility:** Maintain existing API contracts and interfaces
-- **Flexibility:** Support both SQLite (development) and PostgreSQL (production)
-- **Migration:** Provide seamless migration path from JSON to database
-
-### 1.3 Non-Goals
-
-- Changing the API endpoint structure or response formats
-- Modifying the web UI or frontend components
-- Implementing full-text search (deferred to future phase)
-- Adding new features beyond database migration
-- Supporting databases other than SQLite and PostgreSQL
+This specification defines the functional behavior and constraints of the PromptVault data layer migration from file-based JSON storage to a relational database backend. It describes WHAT the system MUST do to store, retrieve, migrate, and manage prompt data (including versions, categories, tags, and backups) while maintaining full backward compatibility with existing external interfaces.
 
 ---
 
-## 2. Requirements
+## 2. Purpose, Scope, and Out-of-Scope
 
-### 2.1 Functional Requirements
+### 2.1 Purpose
 
-#### FR-1: Data Storage
+- Define a normative, technology-agnostic data model and behavior for relational storage of prompts.
+- Specify how existing JSON-based data MUST be migrated to the relational data store.
+- Preserve existing externally visible behavior (API contracts, IDs, and semantics).
+- Provide a basis for implementation, testing, and future extensions.
 
-- **FR-1.1:** System SHALL store all prompt data in a relational database
-- **FR-1.2:** System SHALL support both SQLite and PostgreSQL backends
-- **FR-1.3:** System SHALL maintain referential integrity between related entities
-- **FR-1.4:** System SHALL preserve all existing prompt attributes and metadata
-- **FR-1.5:** System SHALL store version history as immutable snapshots
+### 2.2 In Scope
 
-#### FR-2: Data Migration
+- Migration of prompt data from JSON storage to a relational database.
+- Functional behavior for:
+  - Prompt creation, retrieval, update, and deletion.
+  - Version history and versioning behavior.
+  - Categories and tags management.
+  - Search and filtering behavior.
+  - Backup and restore at the database level.
+  - Backward compatibility with existing external API contracts.
+- Performance, reliability, and data consistency requirements for the data layer.
+- Error-handling behavior for migration and normal operations.
+- Conceptual service/API interfaces and data contracts.
 
-- **FR-2.1:** System SHALL provide automated migration from JSON to database
-- **FR-2.2:** Migration SHALL preserve all prompts, versions, categories, and tags
-- **FR-2.3:** Migration SHALL maintain prompt IDs from JSON source
-- **FR-2.4:** Migration SHALL be idempotent and safely re-runnable
-- **FR-2.5:** Migration SHALL provide dry-run mode for validation
+### 2.3 Out of Scope
 
-#### FR-3: CRUD Operations
+- Any change to existing external API paths, parameter names, or response shapes.
+- User interface (UI) and frontend behavior.
+- Authentication and authorization mechanism details.
+- Full-text search and advanced ranking (beyond basic text search).
+- Support for non-relational databases or additional database engines.
+- Analytics, recommendations, and real-time synchronization features.
 
-- **FR-3.1:** System SHALL support creating new prompts with auto-generated IDs
-- **FR-3.2:** System SHALL support reading prompts by ID or multiple criteria
-- **FR-3.3:** System SHALL support updating prompts with automatic versioning
-- **FR-3.4:** System SHALL support deleting prompts (soft or hard delete)
-- **FR-3.5:** System SHALL support bulk operations for efficiency
+### 2.4 Assumptions
 
-#### FR-4: Search and Filtering
-
-- **FR-4.1:** System SHALL support text search in title and content
-- **FR-4.2:** System SHALL filter prompts by category
-- **FR-4.3:** System SHALL filter prompts by tags (AND/OR logic)
-- **FR-4.4:** System SHALL filter by favorite status
-- **FR-4.5:** System SHALL support pagination for large result sets
-
-#### FR-5: Version Control
-
-- **FR-5.1:** System SHALL automatically create versions on prompt updates
-- **FR-5.2:** System SHALL store complete prompt snapshots in each version
-- **FR-5.3:** System SHALL track version metadata (author, timestamp, message)
-- **FR-5.4:** System SHALL support retrieving version history
-- **FR-5.5:** System SHALL maintain parent-child version relationships
-
-#### FR-6: Categories and Tags
-
-- **FR-6.1:** System SHALL implement get-or-create pattern for categories
-- **FR-6.2:** System SHALL implement get-or-create pattern for tags
-- **FR-6.3:** System SHALL support renaming categories and tags
-- **FR-6.4:** System SHALL support merging duplicate tags
-- **FR-6.5:** System SHALL track usage counts for categories and tags
-
-#### FR-7: Backup and Restore
-
-- **FR-7.1:** System SHALL support database backups for SQLite and PostgreSQL
-- **FR-7.2:** System SHALL store backup metadata in database
-- **FR-7.3:** System SHALL support automated backup before restore operations
-- **FR-7.4:** System SHALL implement backup retention policies
-- **FR-7.5:** System SHALL provide backup listing and statistics
-
-#### FR-8: Backward Compatibility
-
-- **FR-8.1:** System SHALL maintain identical API response formats
-- **FR-8.2:** System SHALL support dict-based interface for legacy code
-- **FR-8.3:** System SHALL provide deprecation warnings for obsolete methods
-- **FR-8.4:** System SHALL allow gradual migration of calling code
-- **FR-8.5:** System SHALL maintain existing prompt ID sequence
-
-### 2.2 Non-Functional Requirements
-
-#### NFR-1: Performance
-
-- **NFR-1.1:** Load all prompts operation SHALL complete in < 1 second for 10,000 prompts
-- **NFR-1.2:** Search operations SHALL complete in < 500ms for 10,000 prompts
-- **NFR-1.3:** Single prompt CRUD operations SHALL complete in < 100ms
-- **NFR-1.4:** Database connection pool SHALL support 20+ concurrent connections
-
-#### NFR-2: Reliability
-
-- **NFR-2.1:** System SHALL use ACID transactions for all data modifications
-- **NFR-2.2:** System SHALL handle database connection failures gracefully
-- **NFR-2.3:** System SHALL implement automatic retry for transient errors
-- **NFR-2.4:** System SHALL validate data integrity on all operations
-
-#### NFR-3: Scalability
-
-- **NFR-3.1:** System SHALL support databases with 100,000+ prompts
-- **NFR-3.2:** System SHALL use indexed queries for search operations
-- **NFR-3.3:** System SHALL implement efficient pagination
-- **NFR-3.4:** System SHALL use connection pooling for PostgreSQL
-
-#### NFR-4: Maintainability
-
-- **NFR-4.1:** Database schema SHALL be version-controlled via Alembic migrations
-- **NFR-4.2:** System SHALL use repository pattern for data access abstraction
-- **NFR-4.3:** System SHALL provide comprehensive error logging
-- **NFR-4.4:** Code SHALL maintain 85%+ test coverage
-- **NFR-4.5:** Documentation SHALL be complete and up-to-date
-
-#### NFR-5: Security
-
-- **NFR-5.1:** System SHALL use parameterized queries to prevent SQL injection
-- **NFR-5.2:** System SHALL support secure database connections (SSL/TLS)
-- **NFR-5.3:** Database credentials SHALL be stored in environment variables
-- **NFR-5.4:** System SHALL implement proper access control on database
-- **NFR-5.5:** Backup files SHALL have restricted file permissions
-
-#### NFR-6: Portability
-
-- **NFR-6.1:** System SHALL run on Linux, macOS, and Windows
-- **NFR-6.2:** System SHALL work with SQLite 3.x and PostgreSQL 12+
-- **NFR-6.3:** System SHALL use standard SQL with minimal database-specific features
-- **NFR-6.4:** System SHALL provide Docker support for deployment
+- The system operates in an environment where a relational database management system (RDBMS) is available and reliable.
+- The existing JSON data source is well-formed and accessible at migration time.
+- An external authentication and authorization solution exists and is applied consistently to any externally exposed endpoints.
+- Time is represented in a consistent, timezone-aware format (e.g., Coordinated Universal Time) for all timestamps.
+- The system runs in a trusted environment where database connectivity and storage capacity are sufficient for the specified dataset sizes.
+- Existing clients depend on stable prompt identifiers and response formats.
 
 ---
 
-## 3. Technical Design
+## 3. Definitions & Terminology
 
-### 3.1 Architecture
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                     Web API Layer                           │
-│                  (FastAPI Endpoints)                         │
-└────────────────────┬────────────────────────────────────────┘
-                     │
-┌────────────────────▼────────────────────────────────────────┐
-│                  Service Layer                               │
-│  ┌─────────────────────────┐  ┌──────────────────────────┐ │
-│  │ PromptDataService (DB)  │  │  BackupService (DB)      │ │
-│  └─────────────────────────┘  └──────────────────────────┘ │
-└────────────────────┬────────────────────────────────────────┘
-                     │
-┌────────────────────▼────────────────────────────────────────┐
-│                Repository Layer                              │
-│  ┌──────────────┐ ┌──────────────┐ ┌────────────────────┐  │
-│  │PromptRepo    │ │VersionRepo   │ │CategoryRepo/TagRepo│  │
-│  └──────────────┘ └──────────────┘ └────────────────────┘  │
-└────────────────────┬────────────────────────────────────────┘
-                     │
-┌────────────────────▼────────────────────────────────────────┐
-│                   ORM Layer                                  │
-│               (SQLAlchemy Models)                            │
-│  ┌──────┐ ┌─────────┐ ┌──────────┐ ┌────┐ ┌──────┐        │
-│  │Prompt│ │Version  │ │Category  │ │Tag │ │Backup│        │
-│  └──────┘ └─────────┘ └──────────┘ └────┘ └──────┘        │
-└────────────────────┬────────────────────────────────────────┘
-                     │
-┌────────────────────▼────────────────────────────────────────┐
-│                Database Layer                                │
-│         SQLite (Development) / PostgreSQL (Production)       │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### 3.2 Database Schema
-
-#### 3.2.1 Tables
-
-**prompts**
-
-```sql
-CREATE TABLE prompts (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    title VARCHAR(500) NOT NULL,
-    prompt TEXT NOT NULL,
-    category_id INTEGER,
-    favorite BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP,
-    user_id INTEGER,
-    FOREIGN KEY (category_id) REFERENCES categories(id),
-    FOREIGN KEY (user_id) REFERENCES users(id)
-);
-```
-
-**prompt_versions**
-
-```sql
-CREATE TABLE prompt_versions (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    version_id VARCHAR(36) UNIQUE NOT NULL,
-    prompt_id INTEGER NOT NULL,
-    version_number INTEGER NOT NULL,
-    author VARCHAR(255),
-    message TEXT,
-    created_at TIMESTAMP NOT NULL,
-    parent_version_id VARCHAR(36),
-    -- Denormalized snapshot
-    title VARCHAR(500),
-    prompt TEXT,
-    category_id INTEGER,
-    favorite BOOLEAN,
-    FOREIGN KEY (prompt_id) REFERENCES prompts(id) ON DELETE CASCADE,
-    FOREIGN KEY (parent_version_id) REFERENCES prompt_versions(version_id),
-    UNIQUE(prompt_id, version_number)
-);
-```
-
-**categories**
-
-```sql
-CREATE TABLE categories (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name VARCHAR(255) UNIQUE NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
-
-**tags**
-
-```sql
-CREATE TABLE tags (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name VARCHAR(255) UNIQUE NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
-
-**prompt_tags** (Many-to-Many)
-
-```sql
-CREATE TABLE prompt_tags (
-    prompt_id INTEGER NOT NULL,
-    tag_id INTEGER NOT NULL,
-    PRIMARY KEY (prompt_id, tag_id),
-    FOREIGN KEY (prompt_id) REFERENCES prompts(id) ON DELETE CASCADE,
-    FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
-);
-```
-
-**users**
-
-```sql
-CREATE TABLE users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username VARCHAR(255) UNIQUE NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
-
-**backups**
-
-```sql
-CREATE TABLE backups (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    backup_id VARCHAR(36) UNIQUE NOT NULL,
-    backup_type VARCHAR(50) NOT NULL,
-    filename VARCHAR(500) NOT NULL,
-    size_bytes INTEGER,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    metadata JSON
-);
-```
-
-#### 3.2.2 Indexes
-
-```sql
-CREATE INDEX idx_prompts_title ON prompts(title);
-CREATE INDEX idx_prompts_category ON prompts(category_id);
-CREATE INDEX idx_prompts_favorite ON prompts(favorite);
-CREATE INDEX idx_prompts_created_at ON prompts(created_at);
-CREATE INDEX idx_prompts_updated_at ON prompts(updated_at);
-
-CREATE INDEX idx_versions_prompt ON prompt_versions(prompt_id);
-CREATE INDEX idx_versions_version_id ON prompt_versions(version_id);
-CREATE INDEX idx_versions_created_at ON prompt_versions(created_at);
-
-CREATE INDEX idx_categories_name ON categories(name);
-CREATE INDEX idx_tags_name ON tags(name);
-
-CREATE INDEX idx_prompt_tags_tag ON prompt_tags(tag_id);
-```
-
-### 3.3 Data Models
-
-#### 3.3.1 SQLAlchemy Models
-
-**Prompt Model:**
-
-```python
-class Prompt(Base):
-    __tablename__ = "prompts"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    title = Column(String(500), nullable=False)
-    prompt = Column(Text, nullable=False)
-    category_id = Column(Integer, ForeignKey("categories.id"))
-    favorite = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, onupdate=datetime.utcnow)
-    user_id = Column(Integer, ForeignKey("users.id"))
-
-    # Relationships
-    category = relationship("Category", back_populates="prompts")
-    tags = relationship("Tag", secondary="prompt_tags", back_populates="prompts")
-    versions = relationship("PromptVersion", back_populates="prompt", cascade="all, delete-orphan")
-    user = relationship("User", back_populates="prompts")
-```
-
-**PromptVersion Model:**
-
-```python
-class PromptVersion(Base):
-    __tablename__ = "prompt_versions"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    version_id = Column(String(36), unique=True, nullable=False, default=lambda: str(uuid.uuid4()))
-    prompt_id = Column(Integer, ForeignKey("prompts.id", ondelete="CASCADE"), nullable=False)
-    version_number = Column(Integer, nullable=False)
-    author = Column(String(255))
-    message = Column(Text)
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    parent_version_id = Column(String(36), ForeignKey("prompt_versions.version_id"))
-
-    # Denormalized snapshot
-    title = Column(String(500))
-    prompt = Column(Text)
-    category_id = Column(Integer)
-    favorite = Column(Boolean)
-
-    # Relationships
-    prompt = relationship("Prompt", back_populates="versions")
-    parent = relationship("PromptVersion", remote_side=[version_id], backref="children")
-```
-
-### 3.4 Repository Pattern
-
-**Base Repository:**
-
-```python
-class BaseRepository(Generic[T]):
-    def __init__(self, session: Session, model: Type[T]):
-        self.session = session
-        self.model = model
-
-    def get_by_id(self, id: int) -> Optional[T]:
-        return self.session.query(self.model).filter(self.model.id == id).first()
-
-    def get_all(self) -> List[T]:
-        return self.session.query(self.model).all()
-
-    def create(self, **kwargs) -> T:
-        instance = self.model(**kwargs)
-        self.session.add(instance)
-        self.session.commit()
-        self.session.refresh(instance)
-        return instance
-
-    def update(self, id: int, **kwargs) -> Optional[T]:
-        instance = self.get_by_id(id)
-        if instance:
-            for key, value in kwargs.items():
-                setattr(instance, key, value)
-            self.session.commit()
-            self.session.refresh(instance)
-        return instance
-
-    def delete(self, id: int) -> bool:
-        instance = self.get_by_id(id)
-        if instance:
-            self.session.delete(instance)
-            self.session.commit()
-            return True
-        return False
-```
-
-### 3.5 Session Management
-
-**Database Session Context Manager:**
-
-```python
-@contextmanager
-def get_db_session() -> Generator[Session, None, None]:
-    """
-    Provides a transactional scope for database operations.
-
-    Automatically commits on success, rolls back on error.
-    """
-    session = SessionLocal()
-    try:
-        yield session
-        session.commit()
-    except Exception as e:
-        session.rollback()
-        logger.error(f"Database error: {e}")
-        raise
-    finally:
-        session.close()
-```
-
-**Usage:**
-
-```python
-def create_prompt(title: str, content: str) -> int:
-    with get_db_session() as session:
-        repo = PromptRepository(session)
-        prompt = repo.create(title=title, prompt=content)
-        return prompt.id
-```
+- **Prompt**: A record representing a user-facing text snippet (and associated metadata) used as input for other systems.
+- **Prompt ID**: A stable, unique numeric identifier for a Prompt.
+- **Category**: A named grouping for prompts (e.g., "General", "Coding").
+- **Tag**: A label attached to prompts for classification and filtering.
+- **Version**: An immutable snapshot of a prompt’s state at a given time.
+- **Version ID**: A unique identifier for a version snapshot.
+- **JSON** (JavaScript Object Notation): A text-based data format used for representing structured data.
+- **RDBMS** (Relational Database Management System): A database that stores data in relational tables with support for transactions and constraints.
+- **ACID**: Atomicity, Consistency, Isolation, Durability; properties that database transactions MUST satisfy.
+- **Backup**: A complete copy of the database (or relevant subset) used for recovery.
+- **Restore**: The process of reconstructing the database state from a backup.
+- **Soft Delete**: Marking a record as deleted without physically removing it.
+- **Hard Delete**: Permanently removing a record from storage.
+- **Client**: Any external system or component that interacts with the PromptVault data via defined interfaces.
+- **API** (Application Programming Interface): The conceptual set of operations exposed to clients (e.g., HTTP endpoints or equivalent service methods).
+- **Search Query**: A text input used to match prompts based on title and content.
+- **Favorite**: A boolean attribute indicating whether a prompt is marked as preferred.
 
 ---
 
-## 4. Interfaces
+## 4. Functional Requirements
 
-### 4.1 Service Layer Interface
+Normative keywords (MUST, MUST NOT, SHOULD, SHOULD NOT, MAY) follow RFC 2119.
 
-**PromptDataService (Database-backed):**
+### 4.1 Data Storage
 
-```python
-class PromptDataService:
-    """Database-backed prompt data service with backward compatibility."""
+- **REQ-DS-001**: The system **MUST** store all prompt-related data (prompts, versions, categories, tags, backups) in a relational schema with explicit primary keys and foreign keys.
+- **REQ-DS-002**: The system **MUST** support at least two distinct deployment profiles (e.g., development and production) that both use a relational database backend.
+- **REQ-DS-003**: The system **MUST** maintain referential integrity between prompts, versions, categories, tags, and backups.
+- **REQ-DS-004**: The system **MUST** preserve all existing prompt attributes and metadata present in the JSON source, including title, content, category, tags, favorite status, and timestamps.
+- **REQ-DS-005**: The system **MUST** represent each prompt version as an immutable snapshot containing all necessary data to reconstruct that version.
+- **REQ-DS-006**: The system **MUST** ensure that each prompt ID is unique, stable over time, and preserved during and after migration.
 
-    # Core CRUD Operations
-    def add_new_prompt(self, prompt_data: Dict) -> int:
-        """Create a new prompt, returns ID."""
+### 4.2 Data Migration
 
-    def get_prompt_data(self, prompt_id: int) -> Optional[Dict]:
-        """Get prompt by ID, returns dict format."""
+- **REQ-MIG-001**: The system **MUST** provide an automated migration process that reads prompts from the JSON source and writes them into the relational database.
+- **REQ-MIG-002**: The migration process **MUST** preserve all prompts, their version histories, categories, tags, favorite status, and relevant timestamps.
+- **REQ-MIG-003**: The migration process **MUST** preserve existing prompt IDs from the JSON source.
+- **REQ-MIG-004**: The migration process **MUST** be idempotent: re-running the migration with the same input data **MUST NOT** create duplicate logical prompts or versions.
+- **REQ-MIG-005**: The migration process **MUST** provide a dry-run mode that validates the input data and reports what would change without modifying the database.
+- **REQ-MIG-006**: The migration process **MUST** produce a summary report of processed records, successes, and failures.
+- **REQ-MIG-007**: The migration process **MUST NOT** commit partial data when a fatal error occurs in a batch that is intended to be atomic.
 
-    def update_prompt(self, prompt_id: int, prompt_data: Dict, message: str = "") -> bool:
-        """Update prompt, creates new version."""
+### 4.3 CRUD Operations
 
-    def delete_prompt(self, prompt_id: int) -> bool:
-        """Delete prompt by ID."""
+- **REQ-CRUD-001**: The system **MUST** support creating new prompts with automatically assigned unique IDs (except for prompts created during migration, which **MUST** preserve existing IDs).
+- **REQ-CRUD-002**: The system **MUST** support retrieving a prompt by Prompt ID.
+- **REQ-CRUD-003**: The system **MUST** support listing prompts with pagination parameters.
+- **REQ-CRUD-004**: The system **MUST** support updating prompts, automatically creating a new version snapshot for each update.
+- **REQ-CRUD-005**: The system **MUST** support deleting prompts by Prompt ID.
+- **REQ-CRUD-006**: The system **MUST** support bulk delete of multiple prompts in a single request and **MUST** return per-prompt success/failure statistics.
+- **REQ-CRUD-007**: The system **MAY** support soft deletes, but soft delete semantics **MUST** be consistent across the system if enabled.
+- **REQ-CRUD-008**: The system **MUST** ensure that updates and deletes apply only to existing prompts; operations on non-existing IDs **MUST** result in a defined error.
 
-    def delete_prompts_bulk(self, prompt_ids: List[int]) -> Dict:
-        """Bulk delete, returns statistics."""
+### 4.4 Search and Filtering
 
-    # Loading and Listing
-    def load_prompts(self) -> Dict[int, Dict]:
-        """Load all prompts in dict format."""
+- **REQ-SRCH-001**: The system **MUST** support text search across prompt title and prompt content.
+- **REQ-SRCH-002**: The system **MUST** support filtering prompts by category.
+- **REQ-SRCH-003**: The system **MUST** support filtering prompts by tags, with the ability to express logical AND (prompts having all specified tags) and logical OR (prompts having any specified tag).
+- **REQ-SRCH-004**: The system **MUST** support filtering by favorite status.
+- **REQ-SRCH-005**: The system **MUST** support combined search and filter criteria (e.g., text search + category + tags + favorite).
+- **REQ-SRCH-006**: The system **MUST** support pagination (offset/limit or equivalent) for search results.
+- **REQ-SRCH-007**: The system **SHOULD** perform searches in a case-insensitive manner for text-based criteria.
 
-    # Search and Filtering
-    def search_prompts(self, query: str = "", category: str = "",
-                       tags: List[str] = None, favorite: bool = None) -> List[Dict]:
-        """Search prompts with filters."""
+### 4.5 Version Control
 
-    # Categories and Tags
-    def get_categories(self) -> List[str]:
-        """Get all category names."""
+- **REQ-VERS-001**: The system **MUST** automatically create an initial version when a new prompt is created.
+- **REQ-VERS-002**: The system **MUST** automatically create a new version snapshot whenever a prompt is updated.
+- **REQ-VERS-003**: Each version **MUST** store sufficient data (title, content, category reference, tags, favorite status, and relevant metadata) to reconstruct the prompt state at that version.
+- **REQ-VERS-004**: The system **MUST** store version metadata, including at least: creation timestamp and an optional author identifier and message.
+- **REQ-VERS-005**: The system **MUST** support retrieval of version history for a given prompt, ordered from newest to oldest.
+- **REQ-VERS-006**: The system **MUST** represent parent-child relationships between versions (e.g., version chains).
+- **REQ-VERS-007**: The system **MUST NOT** allow modification of an existing version snapshot (versions are immutable).
+- **REQ-VERS-008**: The system **MAY** support reverting a prompt to a previous version by creating a new version that copies the reverted state.
 
-    def get_tags(self) -> List[str]:
-        """Get all tag names."""
+### 4.6 Categories and Tags
 
-    def get_tags_with_counts(self) -> List[Dict]:
-        """Get tags with usage counts."""
+- **REQ-CT-001**: The system **MUST** implement a get-or-create behavior for categories when assigning a category by name to a prompt.
+- **REQ-CT-002**: The system **MUST** implement a get-or-create behavior for tags when assigning tag names to a prompt.
+- **REQ-CT-003**: The system **MUST** support renaming categories and tags.
+- **REQ-CT-004**: The system **MUST** support merging duplicate tags, consolidating associations onto a single canonical tag.
+- **REQ-CT-005**: The system **MUST** track usage counts for categories and tags.
+- **REQ-CT-006**: The system **MUST** provide a way to list all category names.
+- **REQ-CT-007**: The system **MUST** provide a way to list all tag names, and **MAY** provide counts alongside the names.
 
-    # Version History
-    def get_prompt_versions(self, prompt_id: int) -> List[Dict]:
-        """Get version history for prompt."""
+### 4.7 Backup and Restore
 
-    # Backward Compatibility
-    @property
-    def prompts(self) -> Dict:
-        """Dict-style interface for backward compatibility."""
+- **REQ-BKP-001**: The system **MUST** support full database backups at the logical level (e.g., schema and data).
+- **REQ-BKP-002**: The system **MUST** record backup metadata, including at least: backup identifier, type, creation timestamp, size (if known), and optional descriptive metadata.
+- **REQ-BKP-003**: The system **MUST** support a restore operation that can restore the database from a selected backup.
+- **REQ-BKP-004**: Before performing any destructive restore, the system **SHOULD** create a pre-restore backup of the current state.
+- **REQ-BKP-005**: The system **MUST** support listing available backups and their metadata.
+- **REQ-BKP-006**: The system **MUST** support a retention policy for backups (e.g., maximum count or age) and **MUST** enforce this policy deterministically.
+- **REQ-BKP-007**: The system **MAY** support compression for backups, but if enabled, backup and restore operations **MUST** remain logically lossless.
 
-    @property
-    def next_id(self) -> int:
-        """Next available prompt ID."""
+### 4.8 Backward Compatibility
 
-    def save_prompts(self) -> bool:
-        """No-op with deprecation warning."""
-```
+- **REQ-BC-001**: The system **MUST** maintain existing external API response formats (field names, types, and overall structure) for all existing endpoints.
+- **REQ-BC-002**: The system **MUST NOT** change existing API paths or HTTP methods (or equivalent external invocation semantics).
+- **REQ-BC-003**: The system **MUST** provide a dictionary-like interface or equivalent abstraction to allow legacy code to access prompts as key/value data.
+- **REQ-BC-004**: The system **MUST** preserve the existing prompt ID sequence for prompts that pre-exist the migration.
+- **REQ-BC-005**: Deprecated methods that are effectively no-ops **MUST** continue to behave as before (e.g., return a success indicator) but **SHOULD** emit a deprecation signal (e.g., log message) for observability.
 
-### 4.2 Repository Interfaces
+### 4.9 Security Requirements
 
-**PromptRepository:**
+- **SEC-001**: The system **MUST** ensure that only authorized clients can access prompt data, consistent with the broader platform’s authentication and authorization policies.
+- **SEC-002**: The system **MUST NOT** expose internal database identifiers or structural details beyond what is required by the public data contract.
+- **SEC-003**: The system **MUST NOT** log full prompt content or sensitive fields in plaintext in error logs, except in explicitly configured debugging modes.
+- **SEC-004**: Backup files **MUST** be protected by the same or stronger access controls as the primary database.
 
-```python
-class PromptRepository(BaseRepository[Prompt]):
-    def search(self, query: str = "", category: str = None,
-               tags: List[str] = None, favorite: bool = None,
-               offset: int = 0, limit: int = None) -> List[Prompt]:
-        """Search prompts with multiple criteria."""
+### 4.10 Non-Functional Requirements
 
-    def get_favorites(self) -> List[Prompt]:
-        """Get all favorite prompts."""
+- **NFR-001**: Loading all prompts (up to 10,000 prompts) via the standard listing interface **MUST** complete in less than 1 second under nominal conditions.
+- **NFR-002**: Search operations across up to 10,000 prompts **MUST** complete in less than 500 milliseconds under nominal conditions.
+- **NFR-003**: Single prompt create, read, update, and delete operations **MUST** complete in less than 100 milliseconds under nominal conditions.
+- **NFR-004**: The system **MUST** use ACID transactions for all operations that modify the database.
+- **NFR-005**: The system **MUST** support at least 20 concurrent logical client operations without degradation below the above latencies under nominal conditions.
+- **NFR-006**: The system **SHOULD** be able to handle datasets of at least 10,000 prompts, each with multiple versions and tags, without violating the above performance constraints.
+- **NFR-007**: The system **MUST** provide observability signals (e.g., logs, metrics) sufficient to diagnose failures in migration, backup, and critical CRUD operations.
 
-    def get_statistics(self) -> Dict:
-        """Get prompt statistics."""
-```
+### 4.11 Error-Handling Requirements
 
-**VersionRepository:**
+- **ERR-001**: If the migration encounters malformed JSON or invalid data for a given prompt, the system **MUST** log the error, skip the invalid record, and continue processing other records, unless configured to fail-fast.
+- **ERR-002**: If a duplicate Prompt ID is encountered during migration, the system **MUST** treat it as a conflict and **MUST NOT** create a second prompt with the same ID.
+- **ERR-003**: In case of a database error during a transactional operation, the system **MUST** roll back all changes in that transaction and return a failure status.
+- **ERR-004**: Operations on non-existent Prompt IDs **MUST** return a standardized “not found” error.
+- **ERR-005**: Requests with invalid input payloads (e.g., missing required fields, invalid types) **MUST** result in a standardized “validation error” response.
+- **ERR-006**: If a restore operation fails, the system **MUST** report the failure and **MUST** leave the database in a consistent state (either fully restored to the selected backup or left unchanged).
 
-```python
-class VersionRepository:
-    def create_version(self, prompt: Prompt, author: str, message: str,
-                       parent_version_id: str = None) -> PromptVersion:
-        """Create new version snapshot."""
+### 4.12 Guidelines
 
-    def get_versions_for_prompt(self, prompt_id: int) -> List[PromptVersion]:
-        """Get all versions for a prompt, ordered newest first."""
-
-    def get_latest_version(self, prompt_id: int) -> Optional[PromptVersion]:
-        """Get most recent version."""
-
-    def get_version_count(self, prompt_id: int) -> int:
-        """Count versions for a prompt."""
-```
-
----
-
-## 5. Data Flow
-
-### 5.1 Create Prompt Flow
-
-```
-1. API Endpoint receives POST request with prompt data
-2. PromptDataService.add_new_prompt() called
-3. Service opens database session
-4. CategoryRepository.get_or_create() for category
-5. TagRepository.get_or_create_many() for tags
-6. PromptRepository.create() creates prompt
-7. VersionRepository.create_version() creates initial version
-8. Session commits transaction
-9. Return prompt ID to client
-```
-
-### 5.2 Update Prompt Flow
-
-```
-1. API Endpoint receives PUT request with updated data
-2. PromptDataService.update_prompt() called
-3. Service opens database session
-4. PromptRepository.get_by_id() retrieves existing prompt
-5. Get latest version for parent_version_id
-6. PromptRepository.update() modifies prompt
-7. VersionRepository.create_version() creates new version snapshot
-8. Session commits transaction
-9. Return success to client
-```
-
-### 5.3 Search Flow
-
-```
-1. API Endpoint receives GET request with query parameters
-2. PromptDataService.search_prompts() called
-3. Service opens database session
-4. PromptRepository.search() builds query:
-   - Text search: WHERE title LIKE '%query%' OR prompt LIKE '%query%'
-   - Category filter: JOIN categories WHERE category.name = ?
-   - Tag filter: JOIN prompt_tags JOIN tags WHERE tag.name IN (...)
-   - Favorite filter: WHERE favorite = TRUE
-5. Apply pagination (OFFSET/LIMIT)
-6. Execute query with indexes
-7. Convert ORM objects to dict format
-8. Return results to client
-```
+- **GUD-001**: The system **SHOULD** minimize the number of database round-trips required for common operations (e.g., use set-based operations where possible).
+- **GUD-002**: The system **SHOULD** structure queries to leverage indexes on frequently filtered fields (title, category, tags, favorite, timestamps).
+- **GUD-003**: The system **SHOULD** avoid long-running transactions for bulk operations by batching where appropriate.
+- **GUD-004**: The system **MAY** expose additional read-only statistics (e.g., total prompt count, per-category counts) as separate operations if needed for observability or UI.
 
 ---
 
-## 6. Migration Strategy
+## 5. Invariants
 
-### 6.1 Migration Script
-
-**Purpose:** Migrate existing JSON data to database
-
-**Input:** `data/prompts.json`
-
-**Output:** Populated database tables
-
-**Process:**
-
-```
-1. Load JSON file
-2. Create database session
-3. For each prompt:
-   a. Get or create category
-   b. Get or create tags
-   c. Create prompt with original ID
-   d. Create versions from version history
-4. Commit transaction
-5. Report statistics
-```
-
-**Error Handling:**
-
-- Validation errors: Log and skip invalid entries
-- Duplicate IDs: Skip with warning
-- Database errors: Rollback transaction, exit with error
-
-### 6.2 Rollback Strategy
-
-**Option 1:** Keep JSON file as backup for 30 days
-
-**Option 2:** Export database to JSON format
-
-**Option 3:** Database migrations can be rolled back via Alembic
-
-```bash
-# Rollback last migration
-alembic downgrade -1
-
-# Rollback to specific version
-alembic downgrade <revision>
-
-# Rollback all
-alembic downgrade base
-```
+- **INV-001**: A Prompt ID **MUST** uniquely identify a single prompt at any point in time.
+- **INV-002**: A prompt that has been deleted (hard or soft) **MUST NOT** appear in any standard listing or search results that are intended to show active prompts.
+- **INV-003**: Once created, a version record **MUST NOT** be modified or deleted, except as part of a full prompt deletion that explicitly removes all versions.
+- **INV-004**: Every version **MUST** be associated with exactly one prompt.
+- **INV-005**: Each prompt’s current state **MUST** correspond to the most recent version in its version history.
+- **INV-006**: Tag and category names **MUST** be unique within their respective namespaces.
+- **INV-007**: The combination of prompt ID and version number **MUST** be unique.
+- **INV-008**: For any category or tag with a usage count greater than zero, at least one prompt **MUST** reference it.
+- **INV-009**: Backup metadata **MUST** accurately describe the associated backup artifact (identifier, creation time, and type).
+- **INV-010**: Migration **MUST NOT** alter the externally observable semantics of existing endpoints (input parameters, output fields, and error semantics).
 
 ---
 
-## 7. Testing Strategy
+## 6. Interfaces & Data Contracts
 
-### 7.1 Test Suite Overview
+All schemas are expressed in JSON-like pseudo-notation and are conceptual. They do not mandate any specific transport (e.g., HTTP) or framework.
 
-**Status:** ✅ Implemented and Operational
-**Coverage:** 86.90% (exceeds 85% requirement)
-**Test Count:** 509 passing tests (99% pass rate)
-**Execution Time:** ~8 seconds for full suite
+### 6.1 Core Prompt Data Schema
 
-The database-backed test suite has been completely rewritten from scratch to ensure comprehensive coverage of all database operations, repository patterns, and service layer functionality.
+#### 6.1.1 Prompt Resource
 
-### 7.2 Test Infrastructure
-
-**Test Framework:** pytest with SQLAlchemy fixtures
-**Database:** In-memory SQLite for fast, isolated tests
-**Configuration Files:**
-- `tests/conftest.py` - 30 comprehensive fixtures (850 lines)
-- `.coveragerc` - Coverage configuration excluding legacy code
-- `pytest.ini` - Test runner configuration with 85% threshold
-
-**Key Features:**
-- Thread-safe database handling for FastAPI TestClient
-- Automatic transaction rollback for test isolation
-- Proper session management with context managers
-- Repository, service, and API client fixtures
-
-### 7.3 Test Files
-
-#### **tests/test_db_repositories.py** (1,273 lines)
-**Coverage:** 89-100% for all repositories
-**Tests:** 78 comprehensive tests
-
-- **PromptRepository** (28 tests)
-  - CRUD operations (create, read, update, delete)
-  - Search by text (title, content, notes)
-  - Filter by category, tags, and favorites
-  - Combined filters with multiple criteria
-  - Pagination and limits
-  - Tag management (add, remove, duplicate handling)
-  - Statistics and counting
-  - Cascade delete of versions
-  - Case-insensitive search
-
-- **VersionRepository** (17 tests)
-  - Version creation with snapshots
-  - Parent-child version linkage
-  - Version history retrieval and ordering
-  - Latest version retrieval
-  - Version lookup by UUID
-  - Version counting and chain traversal
-  - Immutability of snapshots
-  - Version comparison and revert operations
-
-- **CategoryRepository** (11 tests)
-  - CRUD operations
-  - Get-or-create pattern
-  - Category listing with usage counts
-  - Rename operations
-  - Delete-if-unused logic
-  - Unique constraint enforcement
-
-- **TagRepository** (22 tests)
-  - CRUD operations
-  - Get-or-create pattern (single and bulk)
-  - Tag listing with usage counts
-  - Rename and merge operations
-  - Popular tags retrieval
-  - Bulk lookup by names
-
-#### **tests/test_db_services.py** (1,086 lines)
-**Coverage:** 75-82% for service layer
-**Tests:** 88 tests (94% passing)
-
-- **PromptDataService** (46 tests - 100% passing)
-  - CRUD operations with automatic versioning
-  - Data loading and caching
-  - Search and filtering functionality
-  - Category and tag auto-creation
-  - Data sanitization and validation
-  - Backward compatibility interface
-  - Bulk operations with statistics
-
-- **BackupService** (42 tests - 88% passing)
-  - Backup creation with metadata
-  - Backup listing and sorting
-  - Restore with pre-restore backup
-  - Cleanup and retention policies
-  - Compression functionality
-  - Database import/export
-
-#### **tests/test_version_system.py** (1,100+ lines)
-**Coverage:** 95-100% for version control
-**Tests:** 48 comprehensive tests (100% passing)
-
-- **Version Creation** (8 tests)
-  - Automatic version on create/update
-  - Complete metadata capture
-  - Unique UUID generation
-  - Parent-child linking
-  - Custom commit messages
-
-- **Version History** (10 tests)
-  - History retrieval and ordering
-  - Pagination and limiting
-  - Latest version lookup
-  - Version chain traversal
-  - Isolation between prompts
-
-- **Version Comparison** (8 tests)
-  - Diff generation between versions
-  - Changed field detection
-  - Tag additions/removals
-  - Category changes
-  - Content differences
-
-- **Version Revert** (10 tests)
-  - Revert to previous versions
-  - New version creation on revert
-  - Complete field restoration
-  - Multiple sequential reverts
-
-- **Integration Tests** (12 tests)
-  - Complete version workflows
-  - Immutability verification
-  - Timestamp preservation
-  - Author tracking
-  - Export functionality
-
-### 7.4 Coverage Metrics
-
-| Component | Coverage | Status |
-|-----------|----------|---------|
-| **Database Models** | 100% | ✅ |
-| **PromptRepository** | 100% | ✅ |
-| **VersionRepository** | 100% | ✅ |
-| **CategoryRepository** | 89% | ✅ |
-| **TagRepository** | 93% | ✅ |
-| **PromptDataServiceDB** | 82% | ✅ |
-| **BackupServiceDB** | 75% | ✅ |
-| **Version Control Services** | 95-100% | ✅ |
-| **Overall** | 86.90% | ✅ |
-
-### 7.5 Test Execution
-
-**Run Full Test Suite:**
-```bash
-pytest tests/
-```
-
-**Run Specific Test Categories:**
-```bash
-# Repository tests only
-pytest tests/test_db_repositories.py
-
-# Service tests only
-pytest tests/test_db_services.py
-
-# Version control tests only
-pytest tests/test_version_system.py
-```
-
-**Generate Coverage Report:**
-```bash
-pytest --cov=src --cov-report=html:htmlcov
-# View report: open htmlcov/index.html
-```
-
-### 7.6 Continuous Integration
-
-The test suite is designed for CI/CD integration:
-- Fast execution (~8 seconds)
-- No external dependencies (in-memory SQLite)
-- Deterministic results (no flaky tests)
-- High pass rate (99%)
-- Comprehensive coverage (86.90%)
-
-**Recommended CI Configuration:**
-```yaml
-test:
-  script:
-    - pip install -e .[test]
-    - pytest tests/ --cov=src --cov-report=term --cov-fail-under=85
-```
-
----
-
-## 8. Deployment
-
-### 8.1 Prerequisites
-
-**System Requirements:**
-
-- Python 3.11+
-- PostgreSQL 15+ (production) or SQLite 3.x (development)
-- 1GB RAM minimum
-- 1GB disk space
-
-**Python Dependencies:**
-
-- SQLAlchemy >= 2.0
-- Alembic >= 1.12
-- psycopg2-binary >= 2.9 (for PostgreSQL)
-- pydantic-settings >= 2.0
-
-### 8.2 Deployment Steps
-
-**Step 1: Install Dependencies**
-
-```bash
-pip install -e .
-```
-
-**Step 2: Configure Environment**
-
-```bash
-cp .env.example .env
-# Edit .env with DATABASE_URL
-```
-
-**Step 3: Run Migrations**
-
-```bash
-alembic upgrade head
-```
-
-**Step 4: Migrate Data** (if needed)
-
-```bash
-python scripts/migrate_json_to_db.py
-```
-
-**Step 5: Verify**
-
-```bash
-python scripts/test_db_operations.py
-```
-
-### 8.3 Docker Deployment
-
-**Docker Compose:**
-
-```bash
-docker-compose up -d
-docker-compose exec web alembic upgrade head
-```
-
----
-
-## 9. Monitoring and Maintenance
-
-### 9.1 Monitoring
-
-**Key Metrics:**
-
-- Database connection pool utilization
-- Query execution times
-- Error rates
-- Backup success/failure rates
-
-**Logging:**
-
-- All database errors logged at ERROR level
-- Query logging available via DB_ECHO=true
-- Audit logging for version control operations
-
-### 9.2 Maintenance
-
-**Daily:**
-
-- Monitor error logs
-- Check backup completion
-
-**Weekly:**
-
-- Review slow query logs
-- Check database size growth
-- Verify backup integrity
-
-**Monthly:**
-
-- Vacuum/analyze database (PostgreSQL)
-- Review and optimize indexes
-- Test restore procedures
-
----
-
-## 10. Security Considerations
-
-### 10.1 SQL Injection Prevention
-
-- **Requirement:** ALL database queries MUST use parameterized statements
-- **Implementation:** SQLAlchemy ORM provides automatic parameterization
-- **Validation:** Never construct SQL with string concatenation
-
-### 10.2 Database Access Control
-
-- **Requirement:** Database credentials stored in environment variables
-- **Implementation:** Use .env files, never commit credentials
-- **Production:** Use secrets management (e.g., AWS Secrets Manager)
-
-### 10.3 Backup Security
-
-- **Requirement:** Backup files have restricted permissions (600)
-- **Implementation:** Set permissions immediately after creation
-- **Encryption:** Consider encrypting backups for sensitive data
-
-### 10.4 Connection Security
-
-- **Requirement:** Use SSL/TLS for database connections in production
-- **Implementation:** Configure DATABASE_URL with sslmode parameter
-- **Example:** `postgresql://user:pass@host:5432/db?sslmode=require`
-
----
-
-## 11. Performance Optimization
-
-### 11.1 Database Indexes
-
-All frequently queried columns have indexes:
-
-- prompts.title, category_id, favorite, created_at, updated_at
-- prompt_versions.prompt_id, version_id, created_at
-- categories.name, tags.name
-
-### 11.2 Query Optimization
-
-- Use eager loading (joinedload) to prevent N+1 queries
-- Implement pagination for large result sets
-- Use database-level sorting instead of Python sorting
-
-### 11.3 Connection Pooling
-
-- PostgreSQL uses connection pool (default 20 connections)
-- Pool timeout: 30 seconds
-- Connection recycling: 3600 seconds
-
----
-
-## 12. Constraints and Limitations
-
-### 12.1 Technical Constraints
-
-- **Database Support:** Only SQLite and PostgreSQL are supported
-- **Python Version:** Requires Python 3.11+ for modern type hints
-- **ID Preservation:** Migrated prompts retain original IDs, but this limits maximum ID value
-- **Full-Text Search:** Not implemented in Phase 1-9, uses LIKE-based search
-
-### 12.2 Operational Constraints
-
-- **Migration Downtime:** Application should be stopped during migration
-- **Database Size:** SQLite has 140TB theoretical limit, practical limit ~1TB
-- **Concurrent Writes:** SQLite supports one writer at a time
-- **Backup Size:** Database backups can be large for datasets with many versions
-
----
-
-## 13. Dependencies
-
-### 13.1 Internal Dependencies
-
-- **src/db/models/**: SQLAlchemy ORM models
-- **src/db/repositories/**: Repository implementations
-- **src/db/session.py**: Database session management
-- **src/db/config.py**: Database configuration
-- **src/services/**: Service layer implementations
-
-### 13.2 External Dependencies
-
-**Required:**
-
-- SQLAlchemy 2.0+
-- Alembic 1.12+
-- pydantic 2.0+
-- pydantic-settings 2.0+
-
-**Optional:**
-
-- psycopg2-binary 2.9+ (PostgreSQL support)
-- pytest 7.0+ (testing)
-- pytest-cov (coverage)
-
----
-
-## 14. API Compatibility
-
-### 14.1 Maintained Endpoints
-
-All existing API endpoints maintain identical:
-
-- Request parameters
-- Response formats
-- Status codes
-- Error messages
-
-**Example:**
-
-```python
-# GET /api/prompts/{id}
-# Before (JSON):
+```json
 {
-  "id": 1,
-  "title": "Example",
-  "prompt": "Content",
+  "id": 123,
+  "title": "Example prompt",
+  "content": "Prompt text",
   "category": "General",
   "tags": ["tag1", "tag2"],
   "favorite": false,
-  "created_at": "2024-01-01T00:00:00",
-  "updated_at": "2024-01-02T00:00:00"
+  "created_at": "2025-01-01T12:00:00Z",
+  "updated_at": "2025-01-02T13:00:00Z"
 }
-
-# After (Database):
-{
-  "id": 1,
-  "title": "Example",
-  "prompt": "Content",
-  "category": "General",
-  "tags": ["tag1", "tag2"],
-  "favorite": false,
-  "created_at": "2024-01-01T00:00:00",
-  "updated_at": "2024-01-02T00:00:00"
-}
-# Identical!
 ```
 
-### 14.2 Deprecated Methods
+#### 6.1.2 Version Resource
 
-**PromptDataService.save_prompts():**
+```json
+{
+  "version_id": "string-unique-id",
+  "prompt_id": 123,
+  "version_number": 1,
+  "author": "user-identifier",
+  "message": "Initial version",
+  "created_at": "2025-01-01T12:00:00Z",
+  "snapshot": {
+    "title": "Example prompt",
+    "content": "Prompt text",
+    "category": "General",
+    "tags": ["tag1", "tag2"],
+    "favorite": false
+  },
+  "parent_version_id": null
+}
+```
 
-- Status: Deprecated
-- Behavior: No-op, returns True
-- Warning: DeprecationWarning emitted
-- Removal: Planned for next major version
+#### 6.1.3 Backup Resource
+
+```json
+{
+  "backup_id": "string-unique-id",
+  "backup_type": "full",
+  "description": "optional description",
+  "filename": "logical or physical name",
+  "size_bytes": 123456,
+  "created_at": "2025-01-03T10:00:00Z",
+  "metadata": {
+    "schema_version": "1.0.0"
+  }
+}
+```
+
+### 6.2 Logical API Operations
+
+The following tables define conceptual operations. They may map to HTTP endpoints or equivalent service methods.
+
+#### Operation: Create Prompt
+
+| Field          | Description                                              |
+|----------------|----------------------------------------------------------|
+| Name           | `CreatePrompt`                                           |
+| Auth Required  | YES (authenticated client)                               |
+| Inputs         | `title`, `content`, optional `category`, `tags`, `favorite` |
+| Output         | Created Prompt resource                                  |
+| Errors         | Validation error, unauthorized, internal error           |
+
+**Input Fields**
+
+| Name     | Type     | Required | Description                                            |
+|----------|----------|----------|--------------------------------------------------------|
+| title    | string   | yes      | Prompt title, max length defined by system constraint |
+| content  | string   | yes      | Prompt body                                           |
+| category | string   | no       | Category name; get-or-create                          |
+| tags     | string[] | no       | Tag names; get-or-create                              |
+| favorite | boolean  | no       | Default `false` if omitted                            |
+
+**Output Schema**
+
+- Prompt resource (see 6.1.1).
+
+**Error Conditions**
+
+| Code | Condition                 | Description                                          |
+|------|---------------------------|------------------------------------------------------|
+| 400  | Invalid or missing fields | Violates **ERR-005**                                 |
+| 401  | Unauthenticated           | Violates **SEC-001**                                 |
+| 500  | Storage failure           | Violates **ERR-003** if transaction cannot commit   |
+
+#### Operation: Get Prompt
+
+| Field          | Description                                 |
+|----------------|---------------------------------------------|
+| Name           | `GetPrompt`                                 |
+| Auth Required  | YES                                         |
+| Inputs         | `id` (Prompt ID)                            |
+| Output         | Prompt resource                             |
+| Errors         | Not found, unauthorized, internal error     |
+
+**Error Conditions**
+
+| Code | Condition        | Description     |
+|------|------------------|-----------------|
+| 404  | Prompt not found | **ERR-004**     |
+| 401  | Unauthenticated  | **SEC-001**     |
+| 500  | Storage failure  | **ERR-003**     |
+
+#### Operation: List/Search Prompts
+
+| Field          | Description                                                   |
+|----------------|---------------------------------------------------------------|
+| Name           | `SearchPrompts`                                               |
+| Auth Required  | YES                                                           |
+| Inputs         | `query`, `category`, `tags[]`, `favorite`, `offset`, `limit`  |
+| Output         | List of Prompt resources + paging metadata                    |
+| Errors         | Validation error, unauthorized, internal error                |
+
+**Input Fields**
+
+| Name     | Type     | Required | Description                                  |
+|----------|----------|----------|----------------------------------------------|
+| query    | string   | no       | Text search string                           |
+| category | string   | no       | Category filter                              |
+| tags     | string[] | no       | Tag filters (MAY support AND/OR semantics)   |
+| favorite | boolean  | no       | Favorite-only filter                         |
+| offset   | integer  | no       | Pagination offset (default 0)                |
+| limit    | integer  | no       | Page size (system-defined maximum)           |
+
+**Output Schema**
+
+```json
+{
+  "items": [],
+  "total": 0,
+  "offset": 0,
+  "limit": 50
+}
+```
+
+#### Operation: Update Prompt
+
+| Field          | Description                                  |
+|----------------|----------------------------------------------|
+| Name           | `UpdatePrompt`                               |
+| Auth Required  | YES                                          |
+| Inputs         | `id`, fields identical to CreatePrompt       |
+| Output         | Updated Prompt resource                      |
+| Errors         | Not found, validation error, internal error  |
+
+On success, a new version **MUST** be created (REQ-VERS-002).
+
+#### Operation: Delete Prompt
+
+| Field          | Description                                   |
+|----------------|-----------------------------------------------|
+| Name           | `DeletePrompt`                                |
+| Auth Required  | YES                                           |
+| Inputs         | `id`                                          |
+| Output         | Operation result + statistics (if bulk)       |
+| Errors         | Not found, internal error                     |
+
+#### Operation: Get Prompt Versions
+
+| Field          | Description                                   |
+|----------------|-----------------------------------------------|
+| Name           | `GetPromptVersions`                           |
+| Auth Required  | YES                                           |
+| Inputs         | `prompt_id`                                   |
+| Output         | List of Version resources                     |
+| Errors         | Not found, internal error                     |
+
+#### Operation: List Categories
+
+| Field          | Description                                   |
+|----------------|-----------------------------------------------|
+| Name           | `ListCategories`                              |
+| Auth Required  | YES                                           |
+| Inputs         | none                                          |
+| Output         | List of category names/counts                 |
+
+#### Operation: List Tags
+
+| Field          | Description                                   |
+|----------------|-----------------------------------------------|
+| Name           | `ListTags`                                    |
+| Auth Required  | YES                                           |
+| Inputs         | none                                          |
+| Output         | List of tag names/counts                      |
+
+#### Operation: Create Backup
+
+| Field          | Description                                   |
+|----------------|-----------------------------------------------|
+| Name           | `CreateBackup`                                |
+| Auth Required  | YES (privileged role)                         |
+| Inputs         | `backup_type`, optional description           |
+| Output         | Backup resource                               |
+
+#### Operation: List Backups
+
+| Field          | Description                                   |
+|----------------|-----------------------------------------------|
+| Name           | `ListBackups`                                 |
+| Auth Required  | YES (privileged role)                         |
+| Inputs         | none                                          |
+| Output         | List of Backup resources                      |
+
+#### Operation: Restore From Backup
+
+| Field          | Description                                   |
+|----------------|-----------------------------------------------|
+| Name           | `RestoreFromBackup`                           |
+| Auth Required  | YES (privileged role)                         |
+| Inputs         | `backup_id`                                   |
+| Output         | Operation result                               |
+| Errors         | Not found, validation error, internal error   |
 
 ---
 
-## 15. Acceptance Criteria
+## 7. Acceptance Criteria
 
-### 15.1 Functional Acceptance
+Each acceptance criterion references one or more requirements.
 
-- [ ] All prompts can be migrated from JSON to database without data loss
-- [ ] CRUD operations work correctly for prompts
-- [ ] Search and filtering return correct results
-- [ ] Version history is preserved and queryable
-- [ ] Categories and tags are managed correctly
-- [ ] Backup and restore operations succeed
-- [ ] All existing API endpoints return correct responses
+- **AC-001 (Migration Completeness)**:  
+  Given a valid JSON source with N prompts and associated metadata,  
+  When the migration (REQ-MIG-001–REQ-MIG-006) is executed in normal mode,  
+  Then exactly N prompts with corresponding versions, categories, tags, and preserved IDs (REQ-DS-006, REQ-MIG-002, REQ-MIG-003) MUST exist in the database and all invariants in section 5 MUST hold.
 
-### 15.2 Performance Acceptance
+- **AC-002 (Migration Idempotence)**:  
+  Given the same JSON source and an already migrated database,  
+  When the migration is re-run in idempotent mode,  
+  Then no duplicate prompts, versions, categories, or tags MUST be created (REQ-MIG-004).
 
-- [ ] Load 10,000 prompts in < 1 second
-- [ ] Search across 10,000 prompts in < 500ms
-- [ ] Single CRUD operation completes in < 100ms
-- [ ] Test suite runs in < 30 seconds
+- **AC-003 (Migration Dry-Run)**:  
+  Given a valid JSON source,  
+  When the migration is executed in dry-run mode,  
+  Then no database changes MUST occur, and a report of intended changes MUST be generated (REQ-MIG-005).
 
-### 15.3 Reliability Acceptance
+- **AC-004 (Create Prompt)**:  
+  Given a valid create request,  
+  When `CreatePrompt` is invoked,  
+  Then a new prompt with a unique ID MUST be created and returned, an initial version MUST exist (REQ-CRUD-001, REQ-VERS-001), and the response MUST conform to the Prompt schema in 6.1.1 (REQ-BC-001).
 
-- [ ] All tests pass (42+ tests)
-- [ ] Test coverage >= 85%
-- [ ] No data corruption under normal operations
-- [ ] Transaction rollback works on errors
-- [ ] Backup/restore maintains data integrity
+- **AC-005 (Get Prompt Not Found)**:  
+  Given a non-existent Prompt ID,  
+  When `GetPrompt` is invoked,  
+  Then a standardized “not found” error MUST be returned (ERR-004).
 
-### 15.4 Deployment Acceptance
+- **AC-006 (Search Behavior)**:  
+  Given prompts with distinct titles, categories, tags, and favorite flags,  
+  When `SearchPrompts` is invoked with combinations of query, category, tags, and favorite filters,  
+  Then only prompts satisfying all specified filters MUST be returned (REQ-SRCH-001–REQ-SRCH-006).
 
-- [ ] Docker Compose deployment works without errors
-- [ ] Health checks pass
-- [ ] Alembic migrations apply successfully
-- [ ] Documentation is complete and accurate
+- **AC-007 (Version Creation on Update)**:  
+  Given an existing prompt,  
+  When `UpdatePrompt` modifies any persisted field,  
+  Then a new version MUST be created and associated with that prompt (REQ-VERS-002, REQ-VERS-003).
+
+- **AC-008 (Version Immutability)**:  
+  Given an existing version,  
+  When an attempt is made to modify that version directly,  
+  Then the system MUST reject the modification and leave the version unchanged (REQ-VERS-007, INV-003).
+
+- **AC-009 (Category and Tag Get-or-Create)**:  
+  Given a create or update operation with a new category or tags,  
+  When the operation completes successfully,  
+  Then the new category/tag MUST exist and be associated with the prompt, and usage counts MUST be updated (REQ-CT-001–REQ-CT-005).
+
+- **AC-010 (Backup Creation and Listing)**:  
+  Given an operational database,  
+  When `CreateBackup` is invoked,  
+  Then a backup MUST be created, metadata MUST be recorded (REQ-BKP-001–REQ-BKP-003), and the backup MUST appear in `ListBackups` with correct metadata (INV-009).
+
+- **AC-011 (Restore With Pre-Backup)**:  
+  Given at least one backup and a configured pre-restore policy,  
+  When `RestoreFromBackup` is invoked,  
+  Then a new backup MUST be created before the restore (REQ-BKP-004), and after a successful restore, all invariants MUST still hold.
+
+- **AC-012 (Backward Compatibility)**:  
+  Given an existing external client request used prior to migration,  
+  When the same request is made after migration,  
+  Then the response body, status code, and error behavior MUST remain identical in structure and semantics (REQ-BC-001, REQ-BC-002, INV-010).
+
+- **AC-013 (Performance)**:  
+  Given a dataset of at least 10,000 prompts under nominal system load,  
+  When listing all prompts, performing search operations, or single CRUD operations,  
+  Then observed latencies MUST satisfy NFR-001–NFR-003.
+
+- **AC-014 (Error Handling and Transactions)**:  
+  Given an operation that causes a database error (e.g., constraint violation),  
+  When the operation is executed,  
+  Then all changes in that transaction MUST be rolled back, and a standardized error MUST be returned (ERR-003, NFR-004).
+
+- **AC-015 (Security)**:  
+  Given an unauthenticated or unauthorized request,  
+  When any protected operation is invoked,  
+  Then the system MUST deny access and MUST NOT leak any prompt data (SEC-001, SEC-002).
 
 ---
 
-## 16. Future Enhancements
+## 8. Test Requirements (NOT test implementation)
 
-### 16.1 Phase 12: Full-Text Search
-
-- Implement PostgreSQL FTS for better search
-- Add search ranking and relevance scoring
-- Support advanced query syntax
-
-### 16.2 Phase 13: Multi-User Support
-
-- Implement user authentication
-- Add user-specific prompt collections
-- Implement sharing and permissions
-
-### 16.3 Phase 14: Real-Time Sync
-
-- WebSocket support for live updates
-- Multi-client synchronization
-- Conflict resolution
-
-### 16.4 Phase 15: Analytics
-
-- Track prompt usage statistics
-- Generate usage reports
-- Implement recommendation system
+- **TEST-REQ-001**: All migration scenarios, including success, dry-run, idempotence, invalid data, and duplicate IDs, **MUST** be validated (REQ-MIG-001–REQ-MIG-007, ERR-001–ERR-003).
+- **TEST-REQ-002**: All CRUD operations **MUST** be tested for normal behavior, invalid input, and boundary conditions (REQ-CRUD-001–REQ-CRUD-008, ERR-004–ERR-005).
+- **TEST-REQ-003**: Search and filtering behavior **MUST** be validated for:
+  - Single and combined filters.
+  - Case sensitivity behavior.
+  - Pagination correctness (REQ-SRCH-001–REQ-SRCH-007).
+- **TEST-REQ-004**: Versioning behavior **MUST** be tested, including automatic version creation, immutability, ordering, and optional revert (REQ-VERS-001–REQ-VERS-008, INV-003–INV-005).
+- **TEST-REQ-005**: Category and tag operations (get-or-create, rename, merge, usage counts) **MUST** be tested (REQ-CT-001–REQ-CT-007, INV-006–INV-008).
+- **TEST-REQ-006**: Backup and restore operations, including pre-restore backup and retention policies, **MUST** be tested (REQ-BKP-001–REQ-BKP-007, INV-009).
+- **TEST-REQ-007**: Backward compatibility **MUST** be validated by comparing pre- and post-migration responses for all existing endpoints (REQ-BC-001–REQ-BC-005, INV-010).
+- **TEST-REQ-008**: Non-functional performance requirements (NFR-001–NFR-007) **MUST** be verified using appropriate load scenarios.
+- **TEST-REQ-009**: All invariants in section 5 **MUST** have explicit tests that attempt to violate them.
 
 ---
 
-## 17. References
+## 9. Dependencies (Conceptual Only)
 
-### 17.1 Internal Documentation
+- **EXT-001**: The system requires a relational database engine that supports ACID transactions and foreign key constraints.
+- **EXT-002**: The system requires an authentication and authorization provider to enforce access control for all protected operations.
+- **EXT-003**: The system requires a logging and metrics facility to record migration, backup/restore, and critical operational events.
+- **SVC-001**: The system depends on an external API or service layer that exposes the logical operations defined in section 6 to clients.
+- **SVC-002**: The system MAY depend on a configuration mechanism to define database connection parameters, performance thresholds, and retention policies.
 
-- [Phase 7: Service Layer Refactoring](../phase7_service_layer_migration.md)
-- [Phase 8: Backup System Integration](../phase8_backup_system_integration.md)
-- [Phase 9: Test Infrastructure](../phase9_test_infrastructure.md)
-- [Deployment Guide](../DEPLOYMENT.md)
-- [Migration Guide](../MIGRATION_GUIDE.md)
+---
 
-### 17.2 External References
+## 10. Examples & Edge Cases
 
+- **Example 1 (Duplicate Tags)**:  
+  Given multiple prompts referencing tag names `"AI"` and `"ai"`,  
+  When tags are normalized according to a chosen naming rule,  
+  Then tag merging MUST preserve all prompt associations and usage counts (REQ-CT-004, INV-006, INV-008).
+
+- **Example 2 (Invalid JSON Record)**:  
+  Given a JSON file where one prompt record is missing required fields,  
+  When migration is executed,  
+  Then that record MUST be skipped with a logged validation error (ERR-001), and other valid records MUST still be migrated (REQ-MIG-001, REQ-MIG-006).
+
+- **Example 3 (Large Dataset)**:  
+  Given 10,000 prompts, each with multiple versions and tags,  
+  When performing full listing and search operations,  
+  Then the system MUST satisfy performance NFR-001–NFR-003 while maintaining all invariants.
+
+- **Example 4 (Restore Failure)**:  
+  Given a corrupted backup artifact,  
+  When `RestoreFromBackup` is invoked with that backup,  
+  Then the system MUST detect the failure, MUST NOT partially apply the restore, and MUST leave the database in a consistent pre-restore state (ERR-006).
+
+- **Example 5 (Soft vs Hard Delete)**:  
+  If soft delete is enabled,  
+  Then soft-deleted prompts MUST be excluded from normal listings and searches but MAY be retrievable by administrative operations, and the choice between soft/hard delete MUST be consistent across the system (REQ-CRUD-007, INV-002).
+
+---
+
+## 11. Versioning & Change Policy
+
+- **VPOL-001**: This specification follows semantic versioning:
+  - Major: incompatible changes to data contracts, invariants, or external behavior.
+  - Minor: backward-compatible additions to functionality or interfaces.
+  - Patch: backward-compatible bug fixes or clarifications.
+
+- **VPOL-002**: A change is considered breaking if it:
+  - Alters any existing field name, type, or semantics in the defined schemas.
+  - Changes the behavior of existing operations in a way that violates any REQ, INV, or AC marked in this document.
+  - Removes an existing operation or data field without providing a backward-compatible alternative.
+
+- **VPOL-003**: When a breaking change is required:
+  - The major version of this spec **MUST** be incremented.
+  - Dependent specifications (e.g., application or API specs) **MUST** be updated to reference the new version and document the impact.
+
+- **VPOL-004**: Backward-compatible changes (minor or patch) **SHOULD** be documented with clear notes, and any new optional fields or operations **MUST NOT** change behavior for clients that do not use them.
+
+---
+
+## 12. Related Specifications / References
+
+- [SPEC_AUTHENTICATION](SPEC_AUTHENTICATION.md) — Authentication & authorization spec (login, sessions, RBAC).
+- [SPEC_DATABASE](SPEC_DATABASE.md) — Database schema and persistence behavior specification.
 - [SQLAlchemy Documentation](https://docs.sqlalchemy.org/)
 - [Alembic Documentation](https://alembic.sqlalchemy.org/)
 - [PostgreSQL Documentation](https://www.postgresql.org/docs/)
 - [SQLite Documentation](https://www.sqlite.org/docs.html)
 - [Pydantic Settings](https://docs.pydantic.dev/latest/concepts/pydantic_settings/)
-
----
-
-## 18. Glossary
-
-- **ACID:** Atomicity, Consistency, Isolation, Durability - database transaction properties
-- **FTS:** Full-Text Search - advanced text search capabilities
-- **ORM:** Object-Relational Mapping - technique for converting between database rows and Python objects
-- **Repository Pattern:** Design pattern that mediates between domain and data access layers
-- **Migration:** Process of moving data from one storage system to another
-- **Denormalization:** Storing redundant data to improve read performance
-- **Connection Pool:** Cache of database connections for reuse
-- **Eager Loading:** Loading related objects in a single query to avoid N+1 problem
-- **N+1 Problem:** Performance issue where N queries follow 1 initial query
-
----
-
-**Document Control:**
-
-- Version 1.0 - Initial specification
-- Last updated: 2025-01-28
-- Status: Implemented (Phases 1-9 complete)
-- Next review: After Phase 12 implementation
