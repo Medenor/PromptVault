@@ -137,7 +137,7 @@ function renderBackupList(backups: BackupItem[]): void {
   if (!container) return;
 
   if (backups.length === 0) {
-    container.innerHTML = '<div class="no-backups">No backups found</div>';
+    container.innerHTML = '<div class="text-gray-500 text-sm">No backups found</div>';
     return;
   }
 
@@ -153,23 +153,21 @@ function createBackupItem(backup: BackupItem): string {
   const createdBy = backup.created_by || 'unknown';
 
   return `
-        <div class="backup-item" data-id="${backup.backup_id}">
-            <div class="backup-info">
-                <div class="backup-header">
-                    <h4>${backup.backup_id}${isCompressed}</h4>
-                    <div class="backup-actions">
-                        <button class="btn btn-small btn-primary" onclick="showRestoreModal('${backup.backup_id}')">Restore</button>
-                        <button class="btn btn-small btn-danger" onclick="showDeleteModal('${backup.backup_id}')">Delete</button>
-                    </div>
+        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200 hover:border-blue-300 transition" data-id="${backup.backup_id}">
+            <div class="flex items-start justify-between mb-3">
+                <h4 class="font-semibold text-gray-900">${backup.backup_id}${isCompressed}</h4>
+                <div class="flex space-x-2">
+                    <button class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-medium transition" onclick="showRestoreModal('${backup.backup_id}')">Restore</button>
+                    <button class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-medium transition" onclick="showDeleteModal('${backup.backup_id}')">Delete</button>
                 </div>
-                <div class="backup-details">
-                    <div class="backup-meta">
-                        <span class="backup-timestamp">${timestamp}</span>
-                        <span class="backup-size">${compressionIcon} ${size}</span>
-                        <span class="backup-prompts">${backup.prompt_count} prompts</span>
-                    </div>
-                    <div class="backup-user">Created by: ${createdBy}</div>
+            </div>
+            <div class="space-y-1">
+                <div class="flex items-center justify-between text-sm text-gray-600">
+                    <span>${timestamp}</span>
+                    <span>${compressionIcon} ${size}</span>
                 </div>
+                <div class="text-sm text-gray-600">${backup.prompt_count} prompts</div>
+                <div class="text-xs text-gray-500">Created by: ${createdBy}</div>
             </div>
         </div>
     `;
@@ -417,7 +415,7 @@ function showProgress(containerId: string, message: string): void {
   }
   if (status) {
     status.textContent = message;
-    status.className = 'status-message status-info';
+    status.className = 'text-sm text-blue-600 mt-2';
   }
 }
 
@@ -431,16 +429,17 @@ function showStatus(elementId: string, message: string, type: 'info' | 'success'
   if (!element) return;
 
   element.textContent = message;
-  element.className = `status-message status-${type}`;
+  const colorClass = type === 'success' ? 'text-green-600' : type === 'error' ? 'text-red-600' : 'text-blue-600';
+  element.className = `text-sm ${colorClass} mt-2`;
 
-  const container = element.closest('.progress-container');
-  if (container) {
+  const container = element.parentElement;
+  if (container && container.id.includes('progress')) {
     container.classList.remove('is-hidden');
   }
 
   if (type === 'success') {
     setTimeout(() => {
-      if (container) {
+      if (container && container.id.includes('progress')) {
         container.classList.add('is-hidden');
       }
     }, 5000);

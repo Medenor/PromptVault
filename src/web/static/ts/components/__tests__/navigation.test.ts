@@ -5,18 +5,31 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { createNavbar, createSidebar } from '../navigation';
+import { createNav, createTabs, createBreadcrumbs } from '../navigation';
 
 describe('Navigation Components', () => {
-  it('should create a navbar', () => {
-    const navbar = createNavbar({ brand: 'Test Brand' });
-    expect(navbar).toBeInstanceOf(HTMLElement);
+  it('should create a nav', () => {
+    const nav = createNav([
+      { label: 'Home', href: '/' },
+      { label: 'About', href: '/about' },
+    ]);
+    expect(nav).toBeInstanceOf(HTMLElement);
   });
 
-  it('should create a sidebar', () => {
-    const sidebar = createSidebar();
-    expect(sidebar).toBeInstanceOf(HTMLElement);
+  it('should create tabs', () => {
+    const tabs = createTabs([
+      { label: 'Tab 1', id: 'tab1', active: true, onClick: () => {} },
+      { label: 'Tab 2', id: 'tab2', onClick: () => {} },
+    ]);
+    expect(tabs).toBeInstanceOf(HTMLDivElement);
   });
 
-  // More tests to be added in Phase 2
+  it('should create breadcrumbs', () => {
+    const breadcrumbs = createBreadcrumbs([
+      { label: 'Home', href: '/' },
+      { label: 'Products', href: '/products' },
+      { label: 'Details', href: '/products/123' },
+    ]);
+    expect(breadcrumbs).toBeInstanceOf(HTMLElement);
+  });
 });

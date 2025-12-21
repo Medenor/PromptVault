@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { createFormGroup, createSelect } from '../form';
+import { createFormGroup, createSelectInput, createCheckbox, createRadioGroup } from '../form';
 
 describe('Form Components', () => {
   it('should create a form group', () => {
@@ -15,14 +15,23 @@ describe('Form Components', () => {
   });
 
   it('should create a select element', () => {
-    const select = createSelect({
-      options: [
-        { value: '1', label: 'Option 1' },
-        { value: '2', label: 'Option 2' },
-      ],
-    });
+    const select = createSelectInput([
+      { value: '1', label: 'Option 1' },
+      { value: '2', label: 'Option 2' },
+    ]);
     expect(select).toBeInstanceOf(HTMLSelectElement);
   });
 
-  // More tests to be added in Phase 2
+  it('should create a checkbox', () => {
+    const checkbox = createCheckbox('Test Checkbox');
+    expect(checkbox).toBeInstanceOf(HTMLDivElement);
+  });
+
+  it('should create a radio group', () => {
+    const radioGroup = createRadioGroup('Test Group', [
+      { value: '1', label: 'Option 1' },
+      { value: '2', label: 'Option 2' },
+    ]);
+    expect(radioGroup).toBeInstanceOf(HTMLFieldSetElement);
+  });
 });

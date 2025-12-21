@@ -97,7 +97,7 @@ export function createButton(label: string, props: ButtonProps = {}): HTMLButton
  * @returns Primary variant button
  */
 export function createPrimaryButton(label: string, onClick?: (event: MouseEvent) => void): HTMLButtonElement {
-  return createButton(label, { variant: 'primary', onClick });
+  return createButton(label, { variant: 'primary', ...(onClick && { onClick }) });
 }
 
 /**
@@ -107,7 +107,7 @@ export function createPrimaryButton(label: string, onClick?: (event: MouseEvent)
  * @returns Secondary variant button
  */
 export function createSecondaryButton(label: string, onClick?: (event: MouseEvent) => void): HTMLButtonElement {
-  return createButton(label, { variant: 'secondary', onClick });
+  return createButton(label, { variant: 'secondary', ...(onClick && { onClick }) });
 }
 
 /**
@@ -117,7 +117,7 @@ export function createSecondaryButton(label: string, onClick?: (event: MouseEven
  * @returns Accent variant button
  */
 export function createAccentButton(label: string, onClick?: (event: MouseEvent) => void): HTMLButtonElement {
-  return createButton(label, { variant: 'accent', onClick });
+  return createButton(label, { variant: 'accent', ...(onClick && { onClick }) });
 }
 
 /**
@@ -127,7 +127,7 @@ export function createAccentButton(label: string, onClick?: (event: MouseEvent) 
  * @returns Ghost variant button
  */
 export function createGhostButton(label: string, onClick?: (event: MouseEvent) => void): HTMLButtonElement {
-  return createButton(label, { variant: 'ghost', onClick });
+  return createButton(label, { variant: 'ghost', ...(onClick && { onClick }) });
 }
 
 /**
@@ -137,5 +137,5 @@ export function createGhostButton(label: string, onClick?: (event: MouseEvent) =
  * @returns Danger variant button
  */
 export function createDangerButton(label: string, onClick?: (event: MouseEvent) => void): HTMLButtonElement {
-  return createButton(label, { variant: 'danger', onClick });
+  return createButton(label, { variant: 'danger', ...(onClick && { onClick }) });
 }

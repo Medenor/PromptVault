@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { createContainer, createFlex, createGrid } from '../layout';
+import { createContainer, createFlex, createGrid, createSection, createHeader, createFooter } from '../layout';
 
 describe('Layout Components', () => {
   it('should create a container', () => {
@@ -14,14 +14,27 @@ describe('Layout Components', () => {
   });
 
   it('should create a flex container', () => {
-    const flex = createFlex([document.createElement('div')]);
+    const flex = createFlex('row', 'md');
     expect(flex).toBeInstanceOf(HTMLDivElement);
   });
 
   it('should create a grid container', () => {
-    const grid = createGrid([document.createElement('div')]);
+    const grid = createGrid(3);
     expect(grid).toBeInstanceOf(HTMLDivElement);
   });
 
-  // More tests to be added in Phase 2
+  it('should create a section', () => {
+    const section = createSection('bg-gray-100');
+    expect(section).toBeInstanceOf(HTMLElement);
+  });
+
+  it('should create a header', () => {
+    const header = createHeader();
+    expect(header).toBeInstanceOf(HTMLElement);
+  });
+
+  it('should create a footer', () => {
+    const footer = createFooter();
+    expect(footer).toBeInstanceOf(HTMLElement);
+  });
 });

@@ -4,13 +4,14 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import type { ContainerProps, FlexProps, GridProps } from './types';
+import type { ContainerProps, FlexProps, GridProps, SectionProps } from './types';
 
 /**
- * Layout Component Factories
- * Full implementation in Phase 2
+ * Creates a container with max-width and horizontal padding
+ * @param content - Content to place in container
+ * @param props - Container properties
+ * @returns HTMLDivElement with container styling
  */
-
 export function createContainer(content: HTMLElement | string, props?: ContainerProps): HTMLDivElement {
   const container = document.createElement('div');
 
@@ -26,45 +27,113 @@ export function createContainer(content: HTMLElement | string, props?: Container
   }
 
   if (props?.id) container.id = props.id;
+  if (props?.ariaLabel) container.setAttribute('aria-label', props.ariaLabel);
 
   return container;
 }
 
-export function createFlex(children: HTMLElement[], props?: FlexProps): HTMLDivElement {
+/**
+ * Creates a section element with background and padding
+ * @param backgroundColor - Optional background color (Tailwind class)
+ * @param props - Section properties
+ * @returns HTMLElement section
+ */
+export function createSection(backgroundColor?: string, props?: SectionProps): HTMLElement {
+  const section = document.createElement('section');
+
+  const bgClass = backgroundColor || props?.backgroundColor || '';
+  const paddingClass = getPaddingClasses(props?.padding || 'md');
+
+  section.className = `w-full ${bgClass} ${paddingClass} ${props?.className || ''}`.trim();
+
+  if (props?.id) section.id = props.id;
+  if (props?.ariaLabel) section.setAttribute('aria-label', props.ariaLabel);
+
+  return section;
+}
+
+/**
+ * Creates a flexbox container
+ * @param direction - Flex direction (row or col)
+ * @param gap - Gap between items
+ * @param props - Additional flex properties
+ * @returns HTMLDivElement with flex styling
+ */
+export function createFlex(direction?: 'row' | 'col', gap?: string, props?: FlexProps): HTMLDivElement {
   const flex = document.createElement('div');
 
   const baseClasses = 'flex';
-  const directionClasses = props?.direction === 'col' ? 'flex-col' : 'flex-row';
+  const directionClasses = (direction || props?.direction) === 'col' ? 'flex-col' : 'flex-row';
   const justifyClasses = getJustifyClasses(props?.justify);
   const alignClasses = getAlignClasses(props?.align);
-  const gapClasses = props?.gap ? `gap-${props.gap}` : '';
+  const gapClasses = getGapClasses(gap || props?.gap);
   const wrapClasses = props?.wrap ? 'flex-wrap' : '';
 
   flex.className = `${baseClasses} ${directionClasses} ${justifyClasses} ${alignClasses} ${gapClasses} ${wrapClasses} ${props?.className || ''}`.trim();
 
-  children.forEach((child) => flex.appendChild(child));
-
   if (props?.id) flex.id = props.id;
+  if (props?.ariaLabel) flex.setAttribute('aria-label', props.ariaLabel);
 
   return flex;
 }
 
-export function createGrid(children: HTMLElement[], props?: GridProps): HTMLDivElement {
+/**
+ * Creates a grid container
+ * @param cols - Number of columns
+ * @param props - Grid properties
+ * @returns HTMLDivElement with grid styling
+ */
+export function createGrid(cols?: number, props?: GridProps): HTMLDivElement {
   const grid = document.createElement('div');
 
   const baseClasses = 'grid';
-  const colsClasses = props?.cols ? `grid-cols-${props.cols}` : 'grid-cols-1';
-  const gapClasses = props?.gap ? `gap-${props.gap}` : '';
+  const colsClasses = getColsClasses(cols || props?.cols || 1);
+  const gapClasses = getGapClasses(props?.gap);
   const rowsClasses = props?.rows ? `grid-rows-${props.rows}` : '';
 
   grid.className = `${baseClasses} ${colsClasses} ${gapClasses} ${rowsClasses} ${props?.className || ''}`.trim();
 
-  children.forEach((child) => grid.appendChild(child));
-
   if (props?.id) grid.id = props.id;
+  if (props?.ariaLabel) grid.setAttribute('aria-label', props.ariaLabel);
 
   return grid;
 }
+
+/**
+ * Creates a semantic header element
+ * @param props - Header properties
+ * @returns HTMLElement header
+ */
+export function createHeader(props?: ContainerProps): HTMLElement {
+  const header = document.createElement('header');
+
+  const baseClasses = 'w-full';
+  header.className = `${baseClasses} ${props?.className || ''}`.trim();
+
+  if (props?.id) header.id = props.id;
+  if (props?.ariaLabel) header.setAttribute('aria-label', props.ariaLabel);
+
+  return header;
+}
+
+/**
+ * Creates a semantic footer element
+ * @param props - Footer properties
+ * @returns HTMLElement footer
+ */
+export function createFooter(props?: ContainerProps): HTMLElement {
+  const footer = document.createElement('footer');
+
+  const baseClasses = 'w-full';
+  footer.className = `${baseClasses} ${props?.className || ''}`.trim();
+
+  if (props?.id) footer.id = props.id;
+  if (props?.ariaLabel) footer.setAttribute('aria-label', props.ariaLabel);
+
+  return footer;
+}
+
+// Helper functions
 
 function getMaxWidthClasses(maxWidth: string): string {
   const maxWidths: Record<string, string> = {
@@ -75,7 +144,7 @@ function getMaxWidthClasses(maxWidth: string): string {
     '2xl': 'max-w-screen-2xl',
     full: 'max-w-full',
   };
-  return maxWidths[maxWidth] ?? maxWidths['xl'] ?? '';
+  return maxWidths[maxWidth] || maxWidths['xl'] || '';
 }
 
 function getJustifyClasses(justify?: string): string {
@@ -101,4 +170,33 @@ function getAlignClasses(align?: string): string {
     stretch: 'items-stretch',
   };
   return aligns[align] || '';
+}
+
+function getGapClasses(gap?: string): string {
+  if (!gap) return '';
+  const gaps: Record<string, string> = {
+    xs: 'gap-1',
+    sm: 'gap-2',
+    md: 'gap-4',
+    lg: 'gap-6',
+    xl: 'gap-8',
+  };
+  return gaps[gap] || `gap-${gap}`;
+}
+
+function getColsClasses(cols: number): string {
+  // Handle responsive grid (1 col on mobile, N cols on desktop)
+  if (cols === 1) return 'grid-cols-1';
+  return `grid-cols-1 md:grid-cols-${cols}`;
+}
+
+function getPaddingClasses(padding: string): string {
+  const paddings: Record<string, string> = {
+    none: '',
+    sm: 'py-6 px-4',
+    md: 'py-12 px-4',
+    lg: 'py-16 px-4',
+    xl: 'py-24 px-4',
+  };
+  return paddings[padding] || paddings['md'] || '';
 }

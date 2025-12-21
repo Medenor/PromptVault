@@ -106,7 +106,17 @@ function updatePolicyRequirements(checks: PasswordChecks): void {
   (Object.entries(checks) as Array<[keyof PasswordChecks, boolean]>).forEach(([check, met]) => {
     const element = document.getElementById(policyMap[check]);
     if (element) {
-      element.classList.toggle('met', met);
+      const icon = element.querySelector('.policy-icon');
+      if (icon) {
+        icon.textContent = met ? '✓' : '○';
+      }
+      if (met) {
+        element.classList.add('text-green-600');
+        element.classList.remove('text-gray-600');
+      } else {
+        element.classList.add('text-gray-600');
+        element.classList.remove('text-green-600');
+      }
     }
   });
 }
@@ -118,21 +128,25 @@ function updatePasswordStrength(password: string): void {
 
   if (!strengthBar || !strengthText) return;
 
-  strengthBar.className = 'strength-bar-fill';
+  // Reset classes and set base Tailwind classes
+  strengthBar.className = 'h-full transition-all duration-200';
+
   if (strength >= 5) {
-    strengthBar.classList.add('strength-strong');
+    strengthBar.classList.add('bg-green-500', 'w-full');
     strengthText.textContent = t('auth.register.strengthStrong') || 'Strong password';
-    strengthText.className = 'strength-text strength-strong';
+    strengthText.className = 'text-xs text-green-600 mt-1';
   } else if (strength >= 3) {
-    strengthBar.classList.add('strength-medium');
+    strengthBar.classList.add('bg-yellow-500', 'w-3/5');
     strengthText.textContent = t('auth.register.strengthMedium') || 'Medium password';
-    strengthText.className = 'strength-text strength-medium';
+    strengthText.className = 'text-xs text-yellow-600 mt-1';
   } else if (password.length > 0) {
-    strengthBar.classList.add('strength-weak');
+    strengthBar.classList.add('bg-red-500', 'w-2/5');
     strengthText.textContent = t('auth.register.strengthWeak') || 'Weak password';
-    strengthText.className = 'strength-text strength-weak';
+    strengthText.className = 'text-xs text-red-600 mt-1';
   } else {
+    strengthBar.classList.add('bg-gray-300', 'w-0');
     strengthText.textContent = '';
+    strengthText.className = 'text-xs text-gray-600 mt-1';
   }
 
   updatePolicyRequirements(checks);
@@ -153,7 +167,8 @@ async function loadSessions(): Promise<void> {
   const sessionsList = document.getElementById('sessions-list');
   if (!sessionsList) return;
 
-  sessionsList.innerHTML = '<div class="loading" data-i18n="messages.loading">Loading...</div>';
+  sessionsList.innerHTML =
+    '<div class="text-gray-600 text-sm" data-i18n="messages.loading">Loading...</div>';
 
   try {
     const response = await fetch(`${API_BASE}/sessions`, {
@@ -171,7 +186,7 @@ async function loadSessions(): Promise<void> {
       }
 
       if (sessions.length === 0) {
-        sessionsList.innerHTML = '<p>No active sessions</p>';
+        sessionsList.innerHTML = '<p class="text-gray-600 text-sm">No active sessions</p>';
         return;
       }
 
@@ -183,26 +198,39 @@ async function loadSessions(): Promise<void> {
           const osDisplay = session.os ? `${session.os}` : 'Unknown OS';
           const sessionId = session.id || session.session_id || '';
 
+          // Determine badge color based on expiration status
+          let badgeClass = 'bg-gray-100 text-gray-700';
+          if (expirationStatus.status === 'expired') {
+            badgeClass = 'bg-red-100 text-red-700';
+          } else if (expirationStatus.status === 'expiring-soon') {
+            badgeClass = 'bg-amber-100 text-amber-700';
+          }
+
           return `
-            <div class="session-item ${session.is_current ? 'current-session' : ''} ${expirationStatus.className}" data-session-id="${sessionId}">
-              <div class="session-info">
-                <div class="session-header">
-                  <div class="session-device">${deviceDisplay}</div>
-                  ${session.is_current ? '<span class="badge current-badge">Current Session</span>' : ''}
-                </div>
-                <div class="session-metadata">
-                  <div class="device-details">${browserDisplay} on ${osDisplay}</div>
-                  <div class="session-details">
+            <div class="border border-gray-200 rounded-lg p-4 ${session.is_current ? 'bg-blue-50 border-blue-300' : 'bg-white'}" data-session-id="${sessionId}">
+              <div class="flex justify-between items-start">
+                <div class="flex-1">
+                  <div class="flex items-center gap-2 mb-2">
+                    <div class="font-medium text-gray-900">${deviceDisplay}</div>
+                    ${session.is_current ? '<span class="px-2 py-1 text-xs bg-blue-500 text-white rounded">Current Session</span>' : ''}
+                  </div>
+                  <div class="text-sm text-gray-600 mb-1">${browserDisplay} on ${osDisplay}</div>
+                  <div class="text-xs text-gray-500">
                     IP: ${session.ip_address || 'Unknown'} |
                     Last used: ${formatDate(session.last_used_at)} |
-                    Expires: ${formatDate(session.expires_at)} <span class="expiration-badge">${expirationStatus.message}</span>
+                    Expires: ${formatDate(session.expires_at)}
+                    ${expirationStatus.message ? `<span class="${badgeClass} px-2 py-0.5 rounded text-xs ml-1">${expirationStatus.message}</span>` : ''}
                   </div>
                 </div>
-              </div>
-              <div class="session-actions">
-                <button onclick="window.revokeSession('${sessionId}')" ${session.is_current ? 'disabled' : ''}>
-                  ${t('auth.profile.revokeSession') || 'Revoke'}
-                </button>
+                <div class="ml-4">
+                  <button
+                    onclick="window.revokeSession('${sessionId}')"
+                    ${session.is_current ? 'disabled' : ''}
+                    class="px-3 py-1 text-sm ${session.is_current ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-red-500 hover:bg-red-600 text-white'} rounded-md font-medium"
+                  >
+                    ${t('auth.profile.revokeSession') || 'Revoke'}
+                  </button>
+                </div>
               </div>
             </div>
           `;
@@ -211,7 +239,7 @@ async function loadSessions(): Promise<void> {
     }
   } catch (error) {
     reportError('profile', 'loadSessions', error);
-    sessionsList.innerHTML = '<p class="error">Failed to load sessions</p>';
+    sessionsList.innerHTML = '<p class="text-red-500 text-sm">Failed to load sessions</p>';
   }
 }
 
@@ -225,27 +253,16 @@ async function loadUserInfo(): Promise<void> {
     if (response.ok) {
       const user = (await response.json()) as UserInfo;
 
-      const usernameEl = document.getElementById('user-username');
-      const emailEl = document.getElementById('user-email');
-      const roleEl = document.getElementById('user-role');
-      const avatarEl = document.getElementById('user-avatar');
+      const usernameEl = document.getElementById('user-username') as HTMLInputElement | null;
+      const emailEl = document.getElementById('user-email') as HTMLInputElement | null;
 
-      if (usernameEl) usernameEl.textContent = user.username;
-      if (emailEl) emailEl.textContent = user.email;
-      if (roleEl) roleEl.textContent = user.role.toUpperCase();
-      if (avatarEl) avatarEl.textContent = user.username.charAt(0).toUpperCase();
+      if (usernameEl) usernameEl.value = user.username;
+      if (emailEl) emailEl.value = user.email;
 
       const createdEl = document.getElementById('user-created');
       const lastLoginEl = document.getElementById('user-last-login');
       if (createdEl) createdEl.textContent = formatDate(user.created_at);
       if (lastLoginEl) lastLoginEl.textContent = formatDate(user.last_login);
-
-      if (user.role === 'admin') {
-        const adminBtn = document.getElementById('admin-btn');
-        if (adminBtn) {
-          (adminBtn as HTMLElement).style.display = '';
-        }
-      }
 
       await loadSessions();
     } else if (response.status === 401) {
@@ -426,32 +443,6 @@ function setupLogout(): void {
   });
 }
 
-async function checkAdminAccess(): Promise<void> {
-  try {
-    const response = await fetch('/api/auth/me', {
-      credentials: 'include',
-    });
-
-    if (response.ok) {
-      const data = (await response.json()) as UserInfo;
-
-      if (data.role === 'admin') {
-        const adminBtn = document.getElementById('admin-btn');
-        if (adminBtn) {
-          (adminBtn as HTMLElement).style.display = '';
-        }
-      }
-    } else if (response.status === 401) {
-      window.location.href = '/auth/login';
-    } else {
-      window.location.href = '/auth/login';
-    }
-  } catch (error) {
-    reportError('profile', 'checkAdminAccess', error);
-    window.location.href = '/auth/login';
-  }
-}
-
 function initializeProfilePage(): void {
   updateStaticTranslations();
 
@@ -465,7 +456,6 @@ function initializeProfilePage(): void {
     });
   }
 
-  checkAdminAccess();
   void loadUserInfo();
   setupChangePasswordForm();
   setupLogout();

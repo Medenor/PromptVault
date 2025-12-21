@@ -418,11 +418,15 @@ async function performImport(): Promise<void> {
 function showProgress(operation: 'export' | 'import', messageKey: string): void {
   const progressContainer = document.getElementById(`${operation}-progress`);
   const statusElement = document.getElementById(`${operation}-status`);
+  const progressFill = document.getElementById(`${operation}-progress-fill`);
 
   showElement(progressContainer);
+  if (progressFill) {
+    progressFill.style.width = '50%';
+  }
   if (statusElement) {
   statusElement.textContent = tUnsafe(`importExport.${messageKey}`);
-    statusElement.className = 'status-message status-info';
+    statusElement.className = 'text-sm text-blue-600 mt-2';
   }
 }
 
@@ -437,15 +441,20 @@ function showStatus(
   type: 'info' | 'success' | 'error'
 ): void {
   const statusElement = document.getElementById(`${operation}-status`);
+  const progressContainer = document.getElementById(`${operation}-progress`);
   if (!statusElement) return;
 
   statusElement.textContent = message;
-  statusElement.className = `status-message status-${type}`;
+  const colorClass = type === 'success' ? 'text-green-600' : type === 'error' ? 'text-red-600' : 'text-blue-600';
+  statusElement.className = `text-sm ${colorClass} mt-2`;
+
+  showElement(progressContainer);
 
   if (type === 'success') {
     setTimeout(() => {
       statusElement.textContent = '';
-      statusElement.className = 'status-message status-info';
+      statusElement.className = 'text-sm text-blue-600 mt-2';
+      hideElement(progressContainer);
     }, 3000);
   }
 }

@@ -67,7 +67,7 @@ let promptCache: Record<string, PromptResponse> = {};
 let lastSelectedPromptId: number | null = null; // Track the last selected prompt for keyboard shortcuts
 const selectedPromptIds: Set<number> = new Set(); // Track selected prompts for bulk operations
 
-const HIDDEN_CLASS = 'is-hidden';
+const HIDDEN_CLASS = 'hidden';
 const ERROR_VISIBLE_CLASS = 'validation-error-visible';
 const APP_COMPONENT = 'app';
 
@@ -367,7 +367,7 @@ function renderPrompts(prompts: Record<string, PromptResponse>): void {
 
   // Handle case when there are no prompts at all
   if (Object.keys(prompts).length === 0) {
-    container.innerHTML = `<div class="no-results-message">${t('search.emptyState')}</div>`;
+    container.innerHTML = `<div class="col-span-full text-center text-gray-500 py-12">${t('search.emptyState')}</div>`;
     if (searchResultsInfo) {
       hideElement(searchResultsInfo);
     }
@@ -382,7 +382,7 @@ function renderPrompts(prompts: Record<string, PromptResponse>): void {
 
 function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement {
   const div = document.createElement('div');
-  div.className = 'prompt-item';
+  div.className = 'prompt-item bg-white rounded-lg border border-gray-200 p-4 transition-all hover:scale-[1.02] cursor-pointer';
   div.dataset.id = id;
 
   // Add selected class if prompt is in selection
@@ -393,7 +393,7 @@ function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement
   // Create checkbox for bulk selection
   const checkbox = document.createElement('input');
   checkbox.type = 'checkbox';
-  checkbox.className = 'prompt-checkbox';
+  checkbox.className = 'prompt-checkbox rounded text-blue-500 focus:ring-blue-500';
   checkbox.dataset.promptId = id;
   checkbox.checked = selectedPromptIds.has(parseInt(id));
   checkbox.addEventListener('change', (event) => {
@@ -402,33 +402,37 @@ function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement
     event.stopPropagation(); // Prevent triggering the div click event
   });
 
+  // Build tags HTML
+  const tagsHTML = prompt.tags && prompt.tags.length > 0
+    ? prompt.tags.map(tag => `<span class="px-2 py-1 text-xs font-medium rounded-md bg-emerald-100 text-emerald-800">${tag}</span>`).join('')
+    : '';
+
   div.innerHTML = `
-        <div class="prompt-header">
-            <h4>${prompt.title}</h4>
-            <div class="prompt-actions">
-                <button class="favorite-btn" data-id="${id}">
+        <div class="flex items-start justify-between mb-3">
+            <h4 class="text-lg font-semibold text-gray-900 flex-1">${prompt.title}</h4>
+            <div class="flex items-center gap-1 ml-2" id="prompt-actions-${id}">
+                <button class="favorite-btn text-xl hover:scale-110 transition-transform" data-id="${id}">
                     ${prompt.favorite ? '★' : '☆'}
                 </button>
-                <button class="history-btn" data-id="${id}" data-i18n="version.history">History</button>
-                <button class="copy-btn" data-id="${id}" data-i18n="actions.copy">Copy</button>
-                <button class="edit-btn" data-id="${id}" data-i18n="actions.edit">Edit</button>
-                <button class="delete-btn" data-id="${id}" data-i18n="actions.delete">Delete</button>
             </div>
         </div>
-        <div class="prompt-meta">
-            <span class="category">${prompt.category || t('categories.noCategory')}</span>
-            ${prompt.tags ? `<span class="tags">${prompt.tags.join(', ')}</span>` : ''}
+        <div class="flex flex-wrap gap-2 mb-3">
+            <span class="px-2 py-1 text-xs font-medium rounded-md bg-blue-100 text-blue-800">${prompt.category || t('categories.noCategory')}</span>
+            ${tagsHTML}
         </div>
-        <div class="prompt-content">${truncateText(prompt.prompt, 100)}</div>
+        <p class="text-sm text-gray-600 mb-4 line-clamp-3">${truncateText(prompt.prompt, 100)}</p>
+        <div class="flex flex-wrap gap-2">
+            <button class="history-btn px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all hover:scale-105 active:scale-95" data-id="${id}" data-i18n="version.history">History</button>
+            <button class="copy-btn px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 transition-all hover:scale-105 active:scale-95" data-id="${id}" data-i18n="actions.copy">Copy</button>
+            <button class="edit-btn px-3 py-1.5 text-xs font-medium rounded-lg bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition-all hover:scale-105 active:scale-95" data-id="${id}" data-i18n="actions.edit">Edit</button>
+            <button class="delete-btn px-3 py-1.5 text-xs font-medium rounded-lg bg-red-100 text-red-700 hover:bg-red-200 transition-all hover:scale-105 active:scale-95" data-id="${id}" data-i18n="actions.delete">Delete</button>
+        </div>
     `;
 
-  // Insert checkbox before the favorite button in prompt-actions
-  const promptActions = div.querySelector('.prompt-actions') as HTMLElement | null;
-  const favBtn = promptActions?.querySelector('.favorite-btn') as HTMLElement | null;
-  if (promptActions && favBtn) {
-    promptActions.insertBefore(checkbox, favBtn);
-  } else if (promptActions) {
-    promptActions.appendChild(checkbox);
+  // Insert checkbox at the beginning of prompt-actions
+  const promptActions = div.querySelector(`#prompt-actions-${id}`) as HTMLElement | null;
+  if (promptActions) {
+    promptActions.insertBefore(checkbox, promptActions.firstChild);
   }
 
   // Update translations for dynamically created elements
@@ -1062,14 +1066,14 @@ function updateSearchResultsInfo(prompts: Record<string, PromptResponse>): void 
   if (resultCount === 0) {
     // Show "No results found" message
     if (searchResultsInfo) {
-      searchResultsInfo.className = 'search-results-info no-results';
+      searchResultsInfo.className = 'mb-4 px-4 py-3 bg-amber-50 border border-amber-200 text-amber-800 rounded-lg text-sm';
       searchResultsInfo.textContent = t('search.noResultsInfo');
       showElement(searchResultsInfo);
     }
 
     // Show empty state in prompts list
     if (promptsList) {
-      promptsList.innerHTML = `<div class="no-results-message">${t('search.noResultsMessage')}</div>`;
+      promptsList.innerHTML = `<div class="col-span-full text-center text-gray-500 py-12">${t('search.noResultsMessage')}</div>`;
     }
 
     // Hide clear filters button
@@ -1083,7 +1087,7 @@ function updateSearchResultsInfo(prompts: Record<string, PromptResponse>): void 
 
   // Show results count info
   if (searchResultsInfo) {
-    searchResultsInfo.className = 'search-results-info';
+    searchResultsInfo.className = 'mb-4 px-4 py-3 bg-blue-50 text-blue-800 rounded-lg text-sm';
 
     const hasAllResults = resultCount === totalCount;
     let infoText = '';
@@ -1250,7 +1254,7 @@ async function loadVersionHistory(promptId: number): Promise<void> {
   try {
     const versionList = document.getElementById('version-list');
     if (versionList) {
-      versionList.innerHTML = '<div class="loading">' + t('messages.loading') + '</div>';
+      versionList.innerHTML = '<div class="text-center text-gray-500 py-8">' + t('messages.loading') + '</div>';
     }
 
     // Check cache first
@@ -1284,7 +1288,7 @@ async function loadVersionHistory(promptId: number): Promise<void> {
     reportAppIssue('loadVersionHistory', error, { promptId });
     const versionList = document.getElementById('version-list');
     if (versionList) {
-      versionList.innerHTML = '<div class="loading">Error loading versions</div>';
+      versionList.innerHTML = '<div class="text-center text-red-600 py-8">Error loading versions</div>';
     }
   }
 }
@@ -1296,7 +1300,7 @@ function renderVersionHistory(versions: VersionSummary[]): void {
   }
 
   if (versions.length === 0) {
-    versionList.innerHTML = '<div class="loading">' + t('version.noVersions') + '</div>';
+    versionList.innerHTML = '<div class="text-center text-gray-500 py-8">' + t('version.noVersions') + '</div>';
     return;
   }
 
@@ -1313,7 +1317,7 @@ function createVersionItem(
   totalVersions: number
 ): HTMLDivElement {
   const div = document.createElement('div');
-  div.className = 'version-item';
+  div.className = 'version-item bg-white border border-gray-200 rounded-lg p-4 cursor-pointer hover:bg-gray-50 transition-colors';
   div.dataset.versionId = version.version_id;
 
   // Format timestamp with fallback for invalid dates
@@ -1334,15 +1338,15 @@ function createVersionItem(
 
   div.innerHTML =
     `
-        <div class="version-item-header">
-            <span class="version-item-id">#${totalVersions - index} ${version.version_id.substring(0, 8)}...</span>
-            <span class="version-item-timestamp">${timestamp}</span>
+        <div class="flex items-center justify-between mb-2">
+            <span class="text-sm font-semibold text-gray-900">#${totalVersions - index} ${version.version_id.substring(0, 8)}...</span>
+            <span class="text-xs text-gray-500">${timestamp}</span>
         </div>
-        <div class="version-item-author">${t('version.author')}: ${version.author}</div>
-        <div class="version-item-message">${version.message}</div>
-        <div class="version-item-actions">
-            ${!isLatest ? `<button class="btn btn-danger" onclick="showRevertConfirmation('${version.version_id}')" data-i18n="version.revert">` + t('version.revert') + `</button>` : ''}
-            <button class="btn btn-secondary" onclick="selectVersionForComparison('${version.version_id}')" data-i18n="version.select">` +
+        <div class="text-xs text-gray-600 mb-1">${t('version.author')}: ${version.author}</div>
+        <div class="text-sm text-gray-700 mb-3">${version.message}</div>
+        <div class="flex gap-2">
+            ${!isLatest ? `<button class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-red-500 text-white hover:bg-red-600 transition-all hover:scale-105 active:scale-95" onclick="showRevertConfirmation('${version.version_id}')" data-i18n="version.revert">` + t('version.revert') + `</button>` : ''}
+            <button class="px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 transition-all hover:scale-105 active:scale-95" onclick="selectVersionForComparison('${version.version_id}')" data-i18n="version.select">` +
     t('version.select') +
     `</button>
         </div>
@@ -1364,10 +1368,10 @@ function toggleVersionSelection(versionId: string, element: HTMLElement | null):
   }
   if (selectedVersions.has(versionId)) {
     selectedVersions.delete(versionId);
-    element.classList.remove('selected');
+    element.classList.remove('selected', 'ring-2', 'ring-blue-500', 'bg-blue-50');
   } else {
     selectedVersions.add(versionId);
-    element.classList.add('selected');
+    element.classList.add('selected', 'ring-2', 'ring-blue-500', 'bg-blue-50');
   }
   updateCompareButton();
 }
@@ -1518,7 +1522,7 @@ async function updateDiff(): Promise<void> {
   if (v1 === v2) {
     const diffView = document.getElementById('diff-view');
     if (diffView) {
-      diffView.innerHTML = '<div class="loading">Select different versions to compare</div>';
+      diffView.innerHTML = '<div class="text-center text-gray-500 py-8">Select different versions to compare</div>';
     }
     return;
   }
@@ -1533,7 +1537,7 @@ async function loadAndDisplayDiff(v1Id: string, v2Id: string): Promise<void> {
     }
     const diffView = document.getElementById('diff-view');
     if (diffView) {
-      diffView.innerHTML = '<div class="loading">' + t('messages.loading') + '</div>';
+      diffView.innerHTML = '<div class="text-center text-gray-500 py-8">' + t('messages.loading') + '</div>';
     }
 
     // Check cache first
@@ -1567,7 +1571,7 @@ async function loadAndDisplayDiff(v1Id: string, v2Id: string): Promise<void> {
     });
     const diffView = document.getElementById('diff-view');
     if (diffView) {
-      diffView.innerHTML = '<div class="loading">Error loading diff</div>';
+      diffView.innerHTML = '<div class="text-center text-red-600 py-8">Error loading diff</div>';
     }
   }
 }
@@ -1580,35 +1584,35 @@ function displayDiff(diff: VersionDiffResponse): void {
   diffView.innerHTML = '';
 
   if (!diff.changes || Object.keys(diff.changes).length === 0) {
-    diffView.innerHTML = '<div class="loading">No changes between these versions</div>';
+    diffView.innerHTML = '<div class="text-center text-gray-500 py-8">No changes between these versions</div>';
     return;
   }
 
   const section = document.createElement('div');
-  section.className = 'diff-section';
+  section.className = 'space-y-4';
 
   Object.entries(diff.changes).forEach(([field, change]) => {
     const fieldDiv = document.createElement('div');
-    fieldDiv.className = 'diff-field';
+    fieldDiv.className = 'bg-white border border-gray-200 rounded-lg p-4';
 
     const fieldName = document.createElement('div');
-    fieldName.className = 'diff-field-name';
+    fieldName.className = 'text-sm font-semibold text-gray-900 mb-3';
     fieldName.textContent = field.charAt(0).toUpperCase() + field.slice(1);
     fieldDiv.appendChild(fieldName);
 
     // Old value
     if (change.old !== null && change.old !== undefined) {
       const oldDiv = document.createElement('div');
-      oldDiv.className = 'diff-old';
-      oldDiv.innerHTML = `<strong>Old:</strong> ${escapeHtml(formatValue(change.old))}`;
+      oldDiv.className = 'mb-2 p-3 bg-red-50 border border-red-200 rounded-lg';
+      oldDiv.innerHTML = `<strong class="text-red-700">Old:</strong> <span class="text-gray-700">${escapeHtml(formatValue(change.old))}</span>`;
       fieldDiv.appendChild(oldDiv);
     }
 
     // New value
     if (change.new !== null && change.new !== undefined) {
       const newDiv = document.createElement('div');
-      newDiv.className = 'diff-new';
-      newDiv.innerHTML = `<strong>New:</strong> ${escapeHtml(formatValue(change.new))}`;
+      newDiv.className = 'p-3 bg-emerald-50 border border-emerald-200 rounded-lg';
+      newDiv.innerHTML = `<strong class="text-emerald-700">New:</strong> <span class="text-gray-700">${escapeHtml(formatValue(change.new))}</span>`;
       fieldDiv.appendChild(newDiv);
     }
 
@@ -1922,7 +1926,7 @@ function showTagAutocomplete(filteredTags: TagInfo[]) {
   if (filteredTags.length === 0) {
     // Show "No matching tags" message
     const noResults = document.createElement('div');
-    noResults.className = 'tag-autocomplete-no-results';
+    noResults.className = 'px-4 py-3 text-sm text-gray-500 text-center';
     noResults.textContent = 'No matching tags';
     autocompleteDiv.appendChild(noResults);
   } else {
@@ -1932,18 +1936,18 @@ function showTagAutocomplete(filteredTags: TagInfo[]) {
       const tagCount = tag.count;
 
       const item = document.createElement('div');
-      item.className = 'tag-autocomplete-item';
+      item.className = 'tag-autocomplete-item px-4 py-2 cursor-pointer hover:bg-gray-50 transition-colors flex items-center justify-between';
       item.dataset.index = String(index);
       item.dataset.tagName = tagName;
 
       const nameSpan = document.createElement('span');
-      nameSpan.className = 'tag-autocomplete-item-name';
+      nameSpan.className = 'text-sm text-gray-900';
       nameSpan.textContent = tagName;
       item.appendChild(nameSpan);
 
       if (tagCount !== null) {
         const countSpan = document.createElement('span');
-        countSpan.className = 'tag-autocomplete-item-count';
+        countSpan.className = 'text-xs text-gray-500';
         countSpan.textContent = `(${tagCount})`;
         item.appendChild(countSpan);
       }
@@ -2045,13 +2049,13 @@ function highlightTagItem(index: number) {
 
   // Remove previous highlight
   autocompleteDiv.querySelectorAll('.tag-autocomplete-item').forEach((item) => {
-    item.classList.remove('highlighted');
+    item.classList.remove('highlighted', 'bg-blue-50');
   });
 
   // Add new highlight
   const items = autocompleteDiv.querySelectorAll('.tag-autocomplete-item');
   if (items[index]) {
-    items[index].classList.add('highlighted');
+    items[index].classList.add('highlighted', 'bg-blue-50');
     // Scroll into view if needed
     items[index].scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }

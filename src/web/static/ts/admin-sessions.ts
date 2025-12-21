@@ -131,7 +131,7 @@ function displaySessions(): void {
 
   if (filteredSessions.length === 0) {
     tableBody.innerHTML =
-      '<tr><td colspan="7" class="loading-cell">No active sessions found</td></tr>';
+      '<tr><td colspan="7" class="px-6 py-4 text-center text-gray-500">No active sessions found</td></tr>';
     return;
   }
 
@@ -144,17 +144,15 @@ function displaySessions(): void {
       const sessionId = session.id;
 
       return `
-        <tr>
-          <td>${username}</td>
-          <td>${ipAddress}</td>
-          <td title="${userAgent}">${truncateText(userAgent, 50)}</td>
-          <td>${formatDate(session.created_at)}</td>
-          <td>${formatDate(session.last_used_at)}</td>
-          <td>${formatDate(session.expires_at)}</td>
-          <td>
-            <div class="action-buttons">
-              <button class="action-btn revoke" onclick="window.showRevokeConfirmation('${userId}', '${sessionId}', '${username}')" data-i18n="actions.revoke">Revoke</button>
-            </div>
+        <tr class="hover:bg-gray-50">
+          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${username}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${ipAddress}</td>
+          <td class="px-6 py-4 text-sm text-gray-700 max-w-xs truncate" title="${userAgent}">${truncateText(userAgent, 50)}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${formatDate(session.created_at)}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${formatDate(session.last_used_at)}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${formatDate(session.expires_at)}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm">
+            <button class="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 text-xs font-medium" onclick="window.showRevokeConfirmation('${userId}', '${sessionId}', '${username}')" data-i18n="actions.revoke">Revoke</button>
           </td>
         </tr>
       `;
@@ -168,7 +166,7 @@ async function loadAllSessions(): Promise<void> {
   const tableBody = document.getElementById('sessions-table-body');
   if (tableBody) {
     tableBody.innerHTML =
-      '<tr><td colspan="7" class="loading-cell"><div class="loading">Loading...</div></td></tr>';
+      '<tr><td colspan="7" class="px-6 py-4 text-center text-gray-500"><div>Loading...</div></td></tr>';
   }
 
   try {
@@ -220,7 +218,7 @@ async function loadAllSessions(): Promise<void> {
     reportError('admin-sessions', 'loadAllSessions', error);
     if (tableBody) {
       tableBody.innerHTML =
-        '<tr><td colspan="7" class="loading-cell">Error loading sessions</td></tr>';
+        '<tr><td colspan="7" class="px-6 py-4 text-center text-red-600">Error loading sessions</td></tr>';
     }
   }
 }

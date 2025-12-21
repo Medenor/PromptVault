@@ -10,25 +10,60 @@
  */
 
 // Export all types
-export * from './types';
+export * from './types.js';
 
 // Export button components
-export { createButton } from './button';
+export {
+  createButton,
+  createPrimaryButton,
+  createSecondaryButton,
+  createAccentButton,
+  createGhostButton,
+  createDangerButton,
+} from './button.js';
 
 // Export card components
-export { createCard } from './card';
+export {
+  createCard,
+  createWhiteCard,
+  createColoredCard,
+  createElevatedCard,
+  createBorderedCard,
+} from './card.js';
 
 // Export input components
-export { createInput, createTextarea } from './input';
+export {
+  createInput,
+  createTextarea,
+  createEmailInput,
+  createPasswordInput,
+  createSearchInput,
+  createNumberInput,
+  createDateInput,
+  createFileInput,
+} from './input.js';
 
 // Export form components
-export { createFormGroup, createSelect } from './form';
+export {
+  createFormGroup,
+  createLabeledInput,
+  createSelectInput,
+  createCheckbox,
+  createRadioGroup,
+} from './form.js';
 
 // Export modal components
-export { createModal, openModal, closeModal } from './modal';
+export { createModal, createConfirmModal, createAlertModal } from './modal.js';
 
 // Export layout components
-export { createContainer, createFlex, createGrid } from './layout';
+export {
+  createContainer,
+  createSection,
+  createFlex,
+  createGrid,
+  createHeader,
+  createFooter,
+} from './layout.js';
 
 // Export navigation components
-export { createNavbar, createSidebar } from './navigation';
+export { createNav, createTabs, createBreadcrumbs } from './navigation.js';

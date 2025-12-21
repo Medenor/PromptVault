@@ -8,41 +8,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Register - PromptVault</title>
     <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon.png" />
-    <link rel="stylesheet" href="/static/css/style.css" />
-    <link rel="stylesheet" href="/static/css/auth.css" />
     <script src="https://unpkg.com/i18next@23.7.6/i18next.min.js"></script>
     <script src="https://unpkg.com/i18next-browser-languagedetector@7.2.0/i18nextBrowserLanguageDetector.min.js"></script>
     <script src="https://unpkg.com/i18next-http-backend@2.4.2/i18nextHttpBackend.min.js"></script>
   </head>
-  <body>
+  <body class="bg-white min-h-screen">
     {% import "macros/scripts.html" as scripts %}
-    <div class="auth-container">
-      <div class="auth-header">
-        <div class="header-logo">
-          <img
-            src="/static/images/promptvault_logo_frontend.webp"
-            alt="PromptVault Logo"
-            class="logo"
-          />
-        </div>
-        <h1>PromptVault</h1>
-        <div class="language-selector-wrapper">
-          <select id="language-selector" class="language-selector">
-            <option value="en">English</option>
-            <option value="fr">Français</option>
-            <option value="es">Español</option>
-            <option value="de">Deutsch</option>
-          </select>
-        </div>
+    <div class="min-h-screen flex flex-col items-center justify-center px-4 py-8">
+
+      <!-- Logo/Header Section -->
+      <div class="text-center mb-8">
+        <img src="/static/images/promptvault_logo_frontend.webp" alt="PromptVault" class="h-16 w-16 mx-auto mb-4" />
+        <h1 class="text-4xl font-bold text-gray-900 mb-2">PromptVault</h1>
+        <p class="text-gray-600" data-i18n="auth.register.subtitle">Register for a new account</p>
       </div>
 
-      <div class="auth-box">
-        <h2 data-i18n="auth.register.title">Create Account</h2>
-        <p class="auth-subtitle" data-i18n="auth.register.subtitle">Register for a new account</p>
+      <!-- Register Card -->
+      <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-8 max-w-md w-full">
+        <h2 class="text-2xl font-bold text-gray-900 mb-6" data-i18n="auth.register.title">Create Account</h2>
 
-        <form id="register-form" class="auth-form" novalidate>
-          <div class="form-group">
-            <label for="username" data-i18n="auth.register.username">Username:</label>
+        <form id="register-form" class="space-y-5" novalidate>
+
+          <!-- Username Input -->
+          <div>
+            <label for="username" class="block text-sm font-medium text-gray-900 mb-2" data-i18n="auth.register.username">
+              Username
+            </label>
             <input
               type="text"
               id="username"
@@ -55,20 +46,24 @@
               autocomplete="username"
               aria-required="true"
               aria-describedby="username-error username-help"
+              class="w-full px-4 py-2 border-2 border-gray-200 rounded-md bg-gray-100 focus:border-blue-500 focus:bg-white focus:outline-none transition-colors duration-200"
             />
-            <small class="form-help" id="username-help" data-i18n="auth.register.usernameHelp"
-              >3-50 characters, letters, numbers, underscore, and hyphen only</small
-            >
+            <small class="block text-xs text-gray-500 mt-1" id="username-help" data-i18n="auth.register.usernameHelp">
+              3-50 characters, letters, numbers, underscore, and hyphen only
+            </small>
             <div
-              class="validation-error"
               id="username-error"
+              class="text-red-500 text-sm mt-1 hidden"
               role="alert"
               aria-live="assertive"
             ></div>
           </div>
 
-          <div class="form-group">
-            <label for="email" data-i18n="auth.register.email">Email:</label>
+          <!-- Email Input -->
+          <div>
+            <label for="email" class="block text-sm font-medium text-gray-900 mb-2" data-i18n="auth.register.email">
+              Email
+            </label>
             <input
               type="email"
               id="email"
@@ -78,13 +73,22 @@
               autocomplete="email"
               aria-required="true"
               aria-describedby="email-error"
+              class="w-full px-4 py-2 border-2 border-gray-200 rounded-md bg-gray-100 focus:border-blue-500 focus:bg-white focus:outline-none transition-colors duration-200"
             />
-            <div class="validation-error" id="email-error" role="alert" aria-live="assertive"></div>
+            <div
+              id="email-error"
+              class="text-red-500 text-sm mt-1 hidden"
+              role="alert"
+              aria-live="assertive"
+            ></div>
           </div>
 
-          <div class="form-group">
-            <label for="password" data-i18n="auth.register.password">Password:</label>
-            <div class="password-input-wrapper">
+          <!-- Password Input -->
+          <div>
+            <label for="password" class="block text-sm font-medium text-gray-900 mb-2" data-i18n="auth.register.password">
+              Password
+            </label>
+            <div class="relative">
               <input
                 type="password"
                 id="password"
@@ -94,36 +98,39 @@
                 autocomplete="new-password"
                 aria-required="true"
                 aria-describedby="password-error password-strength password-policy"
+                class="w-full px-4 py-2 border-2 border-gray-200 rounded-md bg-gray-100 focus:border-blue-500 focus:bg-white focus:outline-none transition-colors duration-200"
               />
               <button
                 type="button"
-                class="password-toggle"
                 id="toggle-password"
+                class="absolute right-3 top-2.5 text-gray-600 hover:text-gray-900 transition-colors"
                 aria-label="Toggle password visibility"
                 onclick="return false;"
               >
-                <span class="password-toggle-icon">⊙</span>
+                ⊙
               </button>
             </div>
-            <div id="password-strength" class="password-strength" aria-live="polite">
-              <div class="strength-bar">
-                <div class="strength-bar-fill" id="strength-bar-fill"></div>
+            <!-- Password Strength Indicator -->
+            <div id="password-strength" class="mt-2" aria-live="polite">
+              <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div id="strength-bar-fill" class="h-full transition-all duration-300 w-0"></div>
               </div>
-              <div class="strength-text" id="strength-text"></div>
+              <div id="strength-text" class="text-xs mt-1"></div>
             </div>
             <div
-              class="validation-error"
               id="password-error"
+              class="text-red-500 text-sm mt-1 hidden"
               role="alert"
               aria-live="assertive"
             ></div>
           </div>
 
-          <div class="form-group">
-            <label for="confirm-password" data-i18n="auth.register.confirmPassword"
-              >Confirm Password:</label
-            >
-            <div class="password-input-wrapper">
+          <!-- Confirm Password Input -->
+          <div>
+            <label for="confirm-password" class="block text-sm font-medium text-gray-900 mb-2" data-i18n="auth.register.confirmPassword">
+              Confirm Password
+            </label>
+            <div class="relative">
               <input
                 type="password"
                 id="confirm-password"
@@ -133,63 +140,89 @@
                 autocomplete="new-password"
                 aria-required="true"
                 aria-describedby="confirm-password-error"
+                class="w-full px-4 py-2 border-2 border-gray-200 rounded-md bg-gray-100 focus:border-blue-500 focus:bg-white focus:outline-none transition-colors duration-200"
               />
               <button
                 type="button"
-                class="password-toggle"
                 id="toggle-confirm-password"
+                class="absolute right-3 top-2.5 text-gray-600 hover:text-gray-900 transition-colors"
                 aria-label="Toggle password visibility"
                 onclick="return false;"
               >
-                <span class="password-toggle-icon">⊙</span>
+                ⊙
               </button>
             </div>
             <div
-              class="validation-error"
               id="confirm-password-error"
+              class="text-red-500 text-sm mt-1 hidden"
               role="alert"
               aria-live="assertive"
             ></div>
           </div>
 
-          <div class="password-policy" id="password-policy">
-            <h3 data-i18n="auth.register.passwordPolicy">Password Requirements:</h3>
-            <ul>
-              <li id="policy-length" class="policy-requirement">
-                <span class="policy-icon">○</span>
+          <!-- Password Policy Requirements -->
+          <div id="password-policy" class="bg-gray-50 border border-gray-200 rounded-md p-4">
+            <h3 class="text-sm font-medium text-gray-900 mb-2" data-i18n="auth.register.passwordPolicy">
+              Password Requirements:
+            </h3>
+            <ul class="space-y-1 text-sm">
+              <li id="policy-length" class="flex items-center text-gray-600">
+                <span class="policy-icon mr-2">○</span>
                 <span data-i18n="auth.register.policyLength">At least 12 characters</span>
               </li>
-              <li id="policy-uppercase" class="policy-requirement">
-                <span class="policy-icon">○</span>
+              <li id="policy-uppercase" class="flex items-center text-gray-600">
+                <span class="policy-icon mr-2">○</span>
                 <span data-i18n="auth.register.policyUppercase">At least one uppercase letter</span>
               </li>
-              <li id="policy-lowercase" class="policy-requirement">
-                <span class="policy-icon">○</span>
+              <li id="policy-lowercase" class="flex items-center text-gray-600">
+                <span class="policy-icon mr-2">○</span>
                 <span data-i18n="auth.register.policyLowercase">At least one lowercase letter</span>
               </li>
-              <li id="policy-digit" class="policy-requirement">
-                <span class="policy-icon">○</span>
+              <li id="policy-digit" class="flex items-center text-gray-600">
+                <span class="policy-icon mr-2">○</span>
                 <span data-i18n="auth.register.policyDigit">At least one number</span>
               </li>
-              <li id="policy-special" class="policy-requirement">
-                <span class="policy-icon">○</span>
+              <li id="policy-special" class="flex items-center text-gray-600">
+                <span class="policy-icon mr-2">○</span>
                 <span data-i18n="auth.register.policySpecial">At least one special character</span>
               </li>
             </ul>
           </div>
 
-          <div class="form-actions">
-            <button type="submit" class="btn btn-primary" data-i18n="auth.register.registerButton">
-              Register
-            </button>
-          </div>
+          <!-- Register Button -->
+          <button
+            type="submit"
+            class="w-full px-4 py-3 bg-blue-500 text-white font-medium rounded-md hover:bg-blue-600 hover:scale-105 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            data-i18n="auth.register.registerButton"
+          >
+            Register
+          </button>
 
-          <div class="auth-links">
-            <a href="/auth/login" data-i18n="auth.register.haveAccount"
-              >Already have an account? Login</a
+          <!-- Links -->
+          <p class="text-center text-gray-600">
+            <span data-i18n="auth.register.haveAccount">Already have an account?</span>
+            <a
+              href="/auth/login"
+              class="text-blue-500 hover:text-blue-600 font-medium ml-1 transition-colors"
+              data-i18n="auth.register.loginLink"
             >
-          </div>
+              Login
+            </a>
+          </p>
         </form>
+      </div>
+
+      <!-- Language Selector (bottom) -->
+      <div class="mt-8">
+        <select
+          id="language-selector"
+          class="px-3 py-2 border border-gray-300 rounded-md bg-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="en">English</option>
+          <option value="fr">Français</option>
+          <option value="es">Español</option>
+          <option value="de">Deutsch</option>
+        </select>
       </div>
     </div>
 
