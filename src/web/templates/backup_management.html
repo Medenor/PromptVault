@@ -170,6 +170,7 @@
             <div class="modal-body">
                 <p data-i18n="backup.restoreWarning">Are you sure you want to restore from this backup? This will replace your current data.</p>
                 <div class="backup-info" id="restore-backup-info"></div>
+                <div class="status-message status-info is-hidden" id="restore-status" data-i18n="backup.restoreInProgress">Restoring backup...</div>
             </div>
             <div class="modal-footer">
                 <button id="confirm-restore-btn" class="btn btn-danger" data-i18n="backup.restoreBtn">Restore</button>
@@ -199,6 +200,6 @@
     <script type="module" src="/static/js/validation_constants.js"></script>
     <script type="module" src="/static/js/validators.js"></script>
     <script type="module" src="/static/js/form_validation.js"></script>
-    {{ scripts.load_scripts('backup-management', true, 'backup_management', false) }}
+    {{ scripts.load_scripts('backup-management', true, 'backup_management', true) }}
 </body>
 </html>

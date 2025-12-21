@@ -42,12 +42,15 @@ class BackupService:
         # Ensure backups directory exists
         os.makedirs(self.backups_dir, exist_ok=True)
 
-    def create_backup(self, custom_name: str = None) -> Optional[str]:
+    def create_backup(
+        self, custom_name: str = None, created_by: Optional[str] = None
+    ) -> Optional[str]:
         """
         Create a timestamped backup of the current data.
 
         Args:
             custom_name (str): Optional custom name for the backup
+            created_by (str): Optional username for audit metadata
 
         Returns:
             Optional[str]: Backup ID if successful, None otherwise
@@ -103,7 +106,7 @@ class BackupService:
                 "timestamp": datetime.now().isoformat(),
                 "size_bytes": backup_size,
                 "prompt_count": prompt_count,
-                "created_by": self._get_current_user(),
+                "created_by": created_by or self._get_current_user(),
                 "data_file_modified": datetime.fromtimestamp(
                     os.path.getmtime(self.data_file)
                 ).isoformat(),
@@ -188,7 +191,7 @@ class BackupService:
 
         return backups
 
-    def restore_backup(self, backup_id: str) -> bool:
+    def restore_backup(self, backup_id: str, created_by: Optional[str] = None) -> bool:
         """
         Restore data from a specific backup.
 
@@ -229,7 +232,10 @@ class BackupService:
                 )
 
             # Create a pre-restore backup automatically
-            pre_restore_backup = self.create_backup("pre_restore")
+            pre_restore_backup = self.create_backup(
+                "pre_restore",
+                created_by=created_by,
+            )
             if not pre_restore_backup:
                 logger.warning(
                     "Could not create pre-restore backup",

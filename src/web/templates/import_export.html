@@ -74,7 +74,7 @@
                             value="promptvault_export"
                             placeholder="Enter filename"
                             maxlength="255"
-                            pattern="[A-Za-z0-9_-]+"
+                            pattern="[A-Za-z0-9_\\-]+"
                             aria-describedby="export-filename-error">
                         <div class="validation-error" id="export-filename-error" role="alert" aria-live="assertive"></div>
                     </div>
@@ -102,7 +102,7 @@
                         <input
                             type="file"
                             id="import-file"
-                            accept=".csv,.md,.markdown,.json,text/csv,application/json,text/markdown,text/plain"
+                            accept=".csv,.json,.md,.markdown"
                             aria-describedby="import-file-error">
                         <div class="validation-error" id="import-file-error" role="alert" aria-live="assertive"></div>
                     </div>
@@ -127,6 +127,7 @@
                             <option value="replace" data-i18n="importExport.modeReplace">Replace existing</option>
                             <option value="merge" data-i18n="importExport.modeMerge">Smart merge</option>
                         </select>
+                        <small class="form-help" data-i18n="importExport.modeHelp">Append adds new prompts and keeps current ones (creating duplicates if titles match). Replace clears existing prompts before import. Smart merge skips prompts whose title already exists.</small>
                     </div>
 
                     <div class="button-group">
@@ -194,6 +195,6 @@
     <script type="module" src="/static/js/validation_constants.js"></script>
     <script type="module" src="/static/js/validators.js"></script>
     <script type="module" src="/static/js/form_validation.js"></script>
-    {{ scripts.load_scripts('import-export', true, 'import_export', false) }}
+    {{ scripts.load_scripts('import-export', true, 'import_export', true) }}
 </body>
 </html>
