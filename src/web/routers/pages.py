@@ -44,12 +44,14 @@ Example Usage:
 from fastapi import APIRouter, Request, Depends
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
+import os
 
 from src.db.models.user import User
 from src.web.dependencies.auth import (
     get_current_active_user,
     get_admin_user,
 )
+from src.web.utils.manifest import load_manifest, get_asset_path, is_production
 
 # ============================================================================
 # Router Configuration
@@ -59,6 +61,13 @@ router = APIRouter(tags=["Pages"])
 
 # Initialize Jinja2 templates
 templates = Jinja2Templates(directory="src/web/templates")
+templates.env.globals["load_manifest"] = load_manifest
+templates.env.globals["get_asset_path"] = get_asset_path
+templates.env.globals["is_production"] = is_production
+templates.env.globals["is_dev"] = lambda: os.getenv("ENV", "production") == "development"
+templates.env.globals["use_vite_assets"] = (
+    lambda: os.getenv("USE_VITE_ASSETS", "false").lower() == "true"
+)
 
 # ============================================================================
 # Authentication Pages (Public)

@@ -26,6 +26,7 @@ from fastapi import Request
 from fastapi.responses import Response
 from starlette.middleware.base import BaseHTTPMiddleware
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -87,6 +88,18 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "base-uri 'self'; "
             "form-action 'self'"
         )
+        if (
+            os.getenv("ENV", "production") == "development"
+            and os.getenv("USE_VITE_ASSETS", "false").lower() == "true"
+        ):
+            csp_header = csp_header.replace(
+                "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com;",
+                "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com http://localhost:5173;",
+            )
+            csp_header = csp_header.replace(
+                "connect-src 'self' https://fonts.gstatic.com;",
+                "connect-src 'self' https://fonts.gstatic.com http://localhost:5173 ws://localhost:5173;",
+            )
         response.headers["Content-Security-Policy"] = csp_header
         
         # Referrer-Policy
