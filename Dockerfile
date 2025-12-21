@@ -44,6 +44,7 @@ COPY pyproject.toml .
 RUN pip install --no-cache-dir -e .
 
 # Copy the application code
+COPY run_web.py .
 COPY src/ ./src/
 COPY scripts/ ./scripts/
 COPY alembic/ ./alembic/
