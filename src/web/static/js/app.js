@@ -2211,3 +2211,10 @@ async function logout() {
         window.location.href = '/auth/login';
     }
 }
+
+window.selectVersionForComparison = selectVersionForComparison;
+window.showRevertConfirmation = showRevertConfirmation;
+window.hideVersionHistoryModal = hideVersionHistoryModal;
+window.hideDiffModal = hideDiffModal;
+window.hideRevertConfirmationModal = hideRevertConfirmationModal;
+window.hideBulkDeleteModal = hideBulkDeleteModal;

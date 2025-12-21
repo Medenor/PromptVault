@@ -9,7 +9,7 @@
  */
 
 import { reportError } from '@/telemetry';
-import { changeLanguage, initI18n, t, updateStaticTranslations } from '@/utils/i18n';
+import { changeLanguage, initI18n, updateStaticTranslations } from '@/utils/i18n';
 import { showNotification } from '@/utils/notifications';
 
 const API_BASE = '/api/admin';
@@ -279,7 +279,10 @@ async function revokeAllSessions(): Promise<void> {
     return;
   }
 
-  const selectedUserText = userFilter.options[userFilter.selectedIndex].text;
+  const selectedOption =
+    userFilter.selectedOptions[0] ||
+    (userFilter.selectedIndex >= 0 ? userFilter.options[userFilter.selectedIndex] : null);
+  const selectedUserText = selectedOption?.text ?? '';
   if (!window.confirm(
     `Are you sure you want to revoke ALL sessions for user "${selectedUserText}"? They will be logged out of all devices.`
   )) {

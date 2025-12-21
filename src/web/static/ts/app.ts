@@ -1,91 +1,80 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
+/**
+ * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
 
-// @ts-nocheck
- 
- // PromptVault Web App JavaScript
+/**
+ * PromptVault main app logic (TypeScript).
+ */
 
-// Initialize i18next
-i18next
-    .use(i18nextHttpBackend)
-    .use(i18nextBrowserLanguageDetector)
-    .init({
-        fallbackLng: 'en',
-        debug: false,
-        backend: {
-            loadPath: '/static/locales/{{lng}}.json'
-        }
-    }, function(err, t) {
-        // Initialize the app after i18next is ready
-        if (document.readyState === 'loading') {
-            // DOM is still loading
-            document.addEventListener('DOMContentLoaded', function() {
-                updateStaticTranslations();
-                initializeApp();
-            });
-        } else {
-            // DOM is already loaded
-            updateStaticTranslations();
-            initializeApp();
-        }
-    });
+import '@/form-validation';
+import type { PromptResponse, PromptListResponse } from '@/types';
+import { initI18n, t, updateStaticTranslations, changeLanguage } from '@/utils/i18n';
 
-function updateStaticTranslations() {
-    // Update elements with data-i18n attributes
-    document.querySelectorAll('[data-i18n]').forEach(element => {
-        const key = element.getAttribute('data-i18n');
-        if (key) {
-            // Handle special syntax like [placeholder]key or [value]key
-            if (key.includes('[') && key.includes(']')) {
-                const match = key.match(/\[(\w+)\](.+)/);
-                if (match) {
-                    const attribute = match[1]; // e.g., 'placeholder'
-                    const translationKey = match[2]; // e.g., 'nav.searchPlaceholder'
-                    const translation = i18next.t(translationKey);
-                    if (translation) {
-                        element.setAttribute(attribute, translation);
-                    }
-                }
-            } else {
-                // Regular text content translation
-                element.textContent = i18next.t(key);
-            }
-        }
-    });
-
-    // Update placeholders using legacy data-i18n-placeholder attribute
-    document.querySelectorAll('[data-i18n-placeholder]').forEach(element => {
-        const key = element.getAttribute('data-i18n-placeholder');
-        if (key) {
-            element.placeholder = i18next.t(key);
-        }
-    });
-
-    // Update language selector
-    const languageSelector = document.getElementById('language-selector');
-    if (languageSelector) {
-        languageSelector.value = i18next.language;
-    }
+interface TagInfo {
+    name: string;
+    count: number;
 }
 
-const appWindow = window;
-appWindow.selectVersionForComparison = selectVersionForComparison;
-appWindow.showRevertConfirmation = showRevertConfirmation;
-appWindow.hideVersionHistoryModal = hideVersionHistoryModal;
-appWindow.hideDiffModal = hideDiffModal;
-appWindow.hideRevertConfirmationModal = hideRevertConfirmationModal;
-appWindow.hideBulkDeleteModal = hideBulkDeleteModal;
+interface VersionSummary {
+    version_id: string;
+    version_number: number;
+    timestamp: string;
+    author: string;
+    message: string;
+    parents: string[];
+}
 
-let promptCache = {};
-let lastSelectedPromptId = null; // Track the last selected prompt for keyboard shortcuts
-let selectedPromptIds = new Set(); // Track selected prompts for bulk operations
+interface VersionHistoryResponse {
+    versions: VersionSummary[];
+}
+
+interface VersionDiffResponse {
+    v1_id: string;
+    v2_id: string;
+    changes: Record<string, { old: unknown; new: unknown }>;
+}
+
+interface VersionCacheEntry {
+    timestamp: number;
+    data: VersionHistoryResponse;
+}
+
+interface DiffCacheEntry {
+    timestamp: number;
+    data: VersionDiffResponse;
+}
+
+interface VersionSortItem {
+    id: string;
+    number: number;
+}
+
+interface BulkDeleteResponse {
+    success: boolean;
+    deleted_count: number;
+    failed_count: number;
+    failed_ids: number[];
+    detail?: string;
+}
+
+type PromptId = string;
+
+let promptCache: Record<string, PromptResponse> = {};
+let lastSelectedPromptId: number | null = null; // Track the last selected prompt for keyboard shortcuts
+const selectedPromptIds: Set<number> = new Set(); // Track selected prompts for bulk operations
 
 const HIDDEN_CLASS = 'is-hidden';
 const ERROR_VISIBLE_CLASS = 'validation-error-visible';
 const APP_COMPONENT = 'app';
 
-function reportAppIssue(action, error, metadata = {}, severity = 'error') {
+function reportAppIssue(
+    action: string,
+    error: unknown,
+    metadata: Record<string, unknown> = {},
+    severity: 'error' | 'warning' = 'error'
+): void {
     const logger = window.FrontendLogger;
     if (logger && typeof logger.reportError === 'function') {
         logger.reportError(APP_COMPONENT, action, error, metadata, severity);
@@ -98,19 +87,19 @@ function reportAppIssue(action, error, metadata = {}, severity = 'error') {
     }
 }
 
-function showElement(element) {
+function showElement(element: HTMLElement | null): void {
     if (element) {
         element.classList.remove(HIDDEN_CLASS);
     }
 }
 
-function hideElement(element) {
+function hideElement(element: HTMLElement | null): void {
     if (element) {
         element.classList.add(HIDDEN_CLASS);
     }
 }
 
-function clearPromptFormErrors() {
+function clearPromptFormErrors(): void {
     const errorFields = [
         'prompt-title-error',
         'prompt-content-error',
@@ -139,10 +128,10 @@ function clearPromptFormErrors() {
     }
 }
 
-function showPromptFieldError(fieldId, errorId, messageKey) {
+function showPromptFieldError(fieldId: string, errorId: string, messageKey: string): void {
     const errorEl = document.getElementById(errorId);
     const field = document.getElementById(fieldId);
-    const message = i18next.t(messageKey);
+    const message = t(messageKey);
     if (errorEl) {
         errorEl.textContent = message;
         errorEl.dataset.errorKey = messageKey;
@@ -155,13 +144,13 @@ function showPromptFieldError(fieldId, errorId, messageKey) {
     }
 }
 
-function toggleElement(element, shouldShow) {
+function toggleElement(element: HTMLElement | null, shouldShow: boolean): void {
     if (element) {
         element.classList.toggle(HIDDEN_CLASS, !shouldShow);
     }
 }
 
-async function initializeApp() {
+async function initializeApp(): Promise<void> {
     // Event listeners (safe to setup before auth)
     setupEventListeners();
     initializeBulkActions();
@@ -172,12 +161,12 @@ async function initializeApp() {
 
     // Only load data if authentication succeeded
     // (if auth failed, checkAdminAccess redirects to login)
-    loadPrompts();
-    loadCategories();
-    loadTags();
+    void loadPrompts();
+    void loadCategories();
+    void loadTags();
 }
 
-async function checkAdminAccess() {
+async function checkAdminAccess(): Promise<void> {
     try {
         console.log('Checking authentication...');
         const response = await fetch('/api/auth/me', {
@@ -186,7 +175,7 @@ async function checkAdminAccess() {
 
         console.log('Response status:', response.status);
         if (response.ok) {
-            const data = await response.json();
+            const data = (await response.json()) as { role?: string };
             console.log('User data:', data);
             console.log('User role:', data.role);
 
@@ -224,7 +213,14 @@ async function checkAdminAccess() {
 }
 
 // Global search state
-let searchState = {
+let searchState: {
+    searchTerm: string;
+    category: string;
+    tag: string;
+    favorites: boolean;
+    caseSensitive: boolean;
+    isLoading: boolean;
+} = {
     searchTerm: '',
     category: 'all',
     tag: 'all',
@@ -233,35 +229,48 @@ let searchState = {
     isLoading: false
 };
 
-function setupEventListeners() {
+function setupEventListeners(): void {
     // Language selector
-    document.getElementById('language-selector').addEventListener('change', handleLanguageChange);
+    const languageSelector = document.getElementById('language-selector') as HTMLSelectElement | null;
+    languageSelector?.addEventListener('change', handleLanguageChange);
 
     // New prompt button
-    document.getElementById('new-prompt-btn').addEventListener('click', showNewPromptForm);
+    const newPromptBtn = document.getElementById('new-prompt-btn');
+    newPromptBtn?.addEventListener('click', showNewPromptForm);
 
     // Import/Export button (navigates to import/export page)
-    document.getElementById('import-export-btn').addEventListener('click', function() {
+    const importExportBtn = document.getElementById('import-export-btn');
+    importExportBtn?.addEventListener('click', function() {
         window.location.href = '/import-export';
     });
 
     // Logout button
     const logoutBtn = document.getElementById('logout-btn');
     if (logoutBtn) {
-        logoutBtn.addEventListener('click', logout);
+        logoutBtn.addEventListener('click', () => {
+            void logout();
+        });
     }
 
     // Form handling
-    document.getElementById('prompt-form').addEventListener('submit', handlePromptSubmit);
-    document.getElementById('cancel-btn').addEventListener('click', hidePromptEditor);
+    const promptForm = document.getElementById('prompt-form');
+    promptForm?.addEventListener('submit', (event) => {
+        void handlePromptSubmit(event as SubmitEvent);
+    });
+    const cancelBtn = document.getElementById('cancel-btn');
+    cancelBtn?.addEventListener('click', hidePromptEditor);
 
     // Category and tag filtering
-    document.getElementById('categories-list').addEventListener('click', handleCategoryFilter);
-    document.getElementById('tags-list').addEventListener('click', handleTagFilter);
-    document.getElementById('favorites-filter').addEventListener('change', handleFavoritesFilter);
+    const categoriesList = document.getElementById('categories-list');
+    categoriesList?.addEventListener('click', handleCategoryFilter);
+    const tagsList = document.getElementById('tags-list');
+    tagsList?.addEventListener('click', handleTagFilter);
+    const favoritesFilter = document.getElementById('favorites-filter');
+    favoritesFilter?.addEventListener('change', handleFavoritesFilter);
 
     // Modal close
-    document.querySelector('.close').addEventListener('click', hideModal);
+    const closeBtn = document.querySelector('.close');
+    closeBtn?.addEventListener('click', hideModal);
     window.addEventListener('click', function(event) {
         const modal = document.getElementById('prompt-modal');
         if (event.target === modal) {
@@ -290,7 +299,9 @@ function setupEventListeners() {
     // Compare versions button
     const compareVersionsBtn = document.getElementById('compare-versions-btn');
     if (compareVersionsBtn) {
-        compareVersionsBtn.addEventListener('click', showDiffModal);
+        compareVersionsBtn.addEventListener('click', () => {
+            void showDiffModal();
+        });
     }
 
     // Keyboard shortcuts
@@ -306,10 +317,10 @@ function setupEventListeners() {
     setupTagAutocomplete();
 }
 
-async function loadPrompts() {
+async function loadPrompts(): Promise<void> {
     try {
         const response = await fetch('/api/prompts');
-        const data = await response.json();
+        const data = (await response.json()) as PromptListResponse;
 
         // Hide search results info when loading all prompts initially
         const searchResultsInfo = document.getElementById('search-results-info');
@@ -317,41 +328,44 @@ async function loadPrompts() {
             hideElement(searchResultsInfo);
         }
 
-        renderPrompts(data.prompts);
+        renderPrompts(data.prompts || {});
     } catch (error) {
         reportAppIssue('loadPrompts', error);
     }
 }
 
-async function loadCategories() {
+async function loadCategories(): Promise<void> {
     try {
         const response = await fetch('/api/categories');
-        const data = await response.json();
-        renderCategories(data.categories);
+        const data = (await response.json()) as { categories: string[] };
+        renderCategories(data.categories || []);
     } catch (error) {
         reportAppIssue('loadCategories', error);
     }
 }
 
-async function loadTags() {
+async function loadTags(): Promise<void> {
     try {
         const response = await fetch('/api/tags');
-        const data = await response.json();
-        renderTags(data.tags);
+        const data = (await response.json()) as { tags: TagInfo[] };
+        renderTags(data.tags || []);
     } catch (error) {
         reportAppIssue('loadTags', error);
     }
 }
 
-function renderPrompts(prompts) {
+function renderPrompts(prompts: Record<string, PromptResponse>): void {
     promptCache = { ...prompts };
-    const container = document.getElementById('prompts-list');
+    const container = document.getElementById('prompts-list') as HTMLElement | null;
     const searchResultsInfo = document.getElementById('search-results-info');
+    if (!container) {
+        return;
+    }
     container.innerHTML = '';
 
     // Handle case when there are no prompts at all
     if (Object.keys(prompts).length === 0) {
-        container.innerHTML = `<div class="no-results-message">${i18next.t('search.emptyState')}</div>`;
+        container.innerHTML = `<div class="no-results-message">${t('search.emptyState')}</div>`;
         if (searchResultsInfo) {
             hideElement(searchResultsInfo);
         }
@@ -364,7 +378,7 @@ function renderPrompts(prompts) {
     }
 }
 
-function createPromptElement(id, prompt) {
+function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement {
     const div = document.createElement('div');
     div.className = 'prompt-item';
     div.dataset.id = id;
@@ -380,9 +394,10 @@ function createPromptElement(id, prompt) {
     checkbox.className = 'prompt-checkbox';
     checkbox.dataset.promptId = id;
     checkbox.checked = selectedPromptIds.has(parseInt(id));
-    checkbox.addEventListener('change', (e) => {
-        handleCheckboxChange(parseInt(id), e.target.checked);
-        e.stopPropagation(); // Prevent triggering the div click event
+    checkbox.addEventListener('change', (event) => {
+        const target = event.target as HTMLInputElement | null;
+        handleCheckboxChange(parseInt(id, 10), target?.checked ?? false);
+        event.stopPropagation(); // Prevent triggering the div click event
     });
 
     div.innerHTML = `
@@ -399,75 +414,92 @@ function createPromptElement(id, prompt) {
             </div>
         </div>
         <div class="prompt-meta">
-            <span class="category">${prompt.category || i18next.t('categories.noCategory')}</span>
+            <span class="category">${prompt.category || t('categories.noCategory')}</span>
             ${prompt.tags ? `<span class="tags">${prompt.tags.join(', ')}</span>` : ''}
         </div>
         <div class="prompt-content">${truncateText(prompt.prompt, 100)}</div>
     `;
 
     // Insert checkbox before the favorite button in prompt-actions
-    const promptActions = div.querySelector('.prompt-actions');
-    const favBtn = promptActions.querySelector('.favorite-btn');
-    promptActions.insertBefore(checkbox, favBtn);
+    const promptActions = div.querySelector('.prompt-actions') as HTMLElement | null;
+    const favBtn = promptActions?.querySelector('.favorite-btn') as HTMLElement | null;
+    if (promptActions && favBtn) {
+        promptActions.insertBefore(checkbox, favBtn);
+    } else if (promptActions) {
+        promptActions.appendChild(checkbox);
+    }
 
     // Update translations for dynamically created elements
     div.querySelectorAll('[data-i18n]').forEach(element => {
         const key = element.getAttribute('data-i18n');
         if (key) {
-            element.textContent = i18next.t(key);
+            element.textContent = t(key);
         }
     });
 
     // Add event listeners and tooltips
-    const copyBtn = div.querySelector('.copy-btn');
-    copyBtn.addEventListener('click', () => {
-        lastSelectedPromptId = id;
-        copyPrompt(id);
+    const copyBtn = div.querySelector('.copy-btn') as HTMLButtonElement | null;
+    copyBtn?.addEventListener('click', () => {
+        lastSelectedPromptId = parseInt(id, 10);
+        void copyPrompt(id);
     });
-    copyBtn.title = i18next.t('actions.copy');
+    if (copyBtn) {
+        copyBtn.title = t('actions.copy');
+    }
     
-    const editBtn = div.querySelector('.edit-btn');
-    editBtn.addEventListener('click', () => {
-        lastSelectedPromptId = id;
-        editPrompt(id);
+    const editBtn = div.querySelector('.edit-btn') as HTMLButtonElement | null;
+    editBtn?.addEventListener('click', () => {
+        lastSelectedPromptId = parseInt(id, 10);
+        void editPrompt(id);
     });
-    editBtn.title = i18next.t('actions.edit');
+    if (editBtn) {
+        editBtn.title = t('actions.edit');
+    }
     
-    const deleteBtn = div.querySelector('.delete-btn');
-    deleteBtn.addEventListener('click', () => {
-        lastSelectedPromptId = id;
-        deletePrompt(id);
+    const deleteBtn = div.querySelector('.delete-btn') as HTMLButtonElement | null;
+    deleteBtn?.addEventListener('click', () => {
+        lastSelectedPromptId = parseInt(id, 10);
+        void deletePrompt(id);
     });
-    deleteBtn.title = i18next.t('actions.delete');
+    if (deleteBtn) {
+        deleteBtn.title = t('actions.delete');
+    }
     
-    const favoriteBtn = div.querySelector('.favorite-btn');
-    favoriteBtn.addEventListener('click', () => {
-        lastSelectedPromptId = id;
-        toggleFavorite(id);
+    const favoriteBtn = div.querySelector('.favorite-btn') as HTMLButtonElement | null;
+    favoriteBtn?.addEventListener('click', () => {
+        lastSelectedPromptId = parseInt(id, 10);
+        void toggleFavorite(id);
     });
-    favoriteBtn.title = i18next.t('actions.favorite');
+    if (favoriteBtn) {
+        favoriteBtn.title = t('actions.favorite');
+    }
     
-    const historyBtn = div.querySelector('.history-btn');
-    historyBtn.addEventListener('click', () => {
-        lastSelectedPromptId = id;
-        showVersionHistoryModal(id);
+    const historyBtn = div.querySelector('.history-btn') as HTMLButtonElement | null;
+    historyBtn?.addEventListener('click', () => {
+        lastSelectedPromptId = parseInt(id, 10);
+        showVersionHistoryModal(parseInt(id, 10));
     });
-    historyBtn.title = i18next.t('version.history');
+    if (historyBtn) {
+        historyBtn.title = t('version.history');
+    }
     
     // Track prompt selection on click
     div.addEventListener('click', () => {
-        lastSelectedPromptId = id;
+        lastSelectedPromptId = parseInt(id, 10);
     });
 
     return div;
 }
 
-function renderCategories(categories) {
+function renderCategories(categories: string[]): void {
     const list = document.getElementById('categories-list');
+    if (!list) return;
     // Clear existing categories except "All Prompts"
     const allPromptsItem = list.querySelector('[data-category="all"]');
     list.innerHTML = '';
-    list.appendChild(allPromptsItem);
+    if (allPromptsItem) {
+        list.appendChild(allPromptsItem);
+    }
 
     categories.forEach(category => {
         const li = document.createElement('li');
@@ -477,23 +509,20 @@ function renderCategories(categories) {
     });
 }
 
-function renderTags(tags) {
+function renderTags(tags: TagInfo[]): void {
     const list = document.getElementById('tags-list');
+    if (!list) return;
     // Clear existing tags except "All Tags"
     const allTagsItem = list.querySelector('[data-tag="all"]');
     list.innerHTML = '';
-    list.appendChild(allTagsItem);
+    if (allTagsItem) {
+        list.appendChild(allTagsItem);
+    }
 
     tags.forEach(tag => {
         const li = document.createElement('li');
-        // Handle both old format (string) and new format (object with name and count)
-        if (typeof tag === 'string') {
-            li.dataset.tag = tag;
-            li.textContent = tag;
-        } else {
-            li.dataset.tag = tag.name;
-            li.textContent = `${tag.name} (${tag.count})`;
-        }
+        li.dataset.tag = tag.name;
+        li.textContent = `${tag.name} (${tag.count})`;
         list.appendChild(li);
     });
 }
@@ -503,7 +532,8 @@ function showNewPromptForm() {
     const promptsList = document.getElementById('prompts-list');
 
     showElement(promptEditor);
-    document.getElementById('prompt-form').reset();
+    const promptForm = document.getElementById('prompt-form') as HTMLFormElement | null;
+    promptForm?.reset();
     hideElement(promptsList);
 }
 
@@ -515,10 +545,13 @@ function hidePromptEditor() {
     showElement(promptsList);
 }
 
-async function handlePromptSubmit(event) {
+async function handlePromptSubmit(event: SubmitEvent): Promise<void> {
     event.preventDefault();
 
-    const form = event.target;
+    const form = event.currentTarget as HTMLFormElement | null;
+    if (!form) {
+        return;
+    }
     const formData = new FormData(form);
     const isEditMode = form.dataset.mode === 'edit';
     const promptId = form.dataset.id;
@@ -526,8 +559,10 @@ async function handlePromptSubmit(event) {
     clearPromptFormErrors();
 
     // Client-side required checks to avoid native browser messages
-    const title = formData.get('title') ? formData.get('title').trim() : '';
-    const promptContent = formData.get('prompt') ? formData.get('prompt').trim() : '';
+    const titleValue = formData.get('title');
+    const title = typeof titleValue === 'string' ? titleValue.trim() : '';
+    const promptValue = formData.get('prompt');
+    const promptContent = typeof promptValue === 'string' ? promptValue.trim() : '';
     let hasError = false;
 
     if (!title) {
@@ -558,31 +593,31 @@ async function handlePromptSubmit(event) {
             body: formData
         });
 
-        const responseData = await response.json();
+        const responseData = (await response.json()) as { error?: string };
 
         if (response.ok) {
             hidePromptEditor();
             // Clear version cache for this prompt since a new version was created
             clearVersionCache(promptId);
-            loadPrompts(); // Refresh the list
-            loadAvailableTags(); // Refresh tag counts for autocomplete
-            loadTags(); // Refresh sidebar tag list
+            void loadPrompts(); // Refresh the list
+            void loadAvailableTags(); // Refresh tag counts for autocomplete
+            void loadTags(); // Refresh sidebar tag list
             // Reset form mode
             delete form.dataset.mode;
             delete form.dataset.id;
         } else {
-            alert(`${i18next.t('messages.error')}: ${responseData.error || i18next.t('messages.unknownError')}`);
+            alert(`${t('messages.error')}: ${responseData.error || t('messages.unknownError')}`);
         }
     } catch (error) {
         reportAppIssue('savePrompt', error, {
             mode: isEditMode ? 'edit' : 'create',
             promptId: promptId || null
         });
-        alert(i18next.t('messages.error'));
+        alert(t('messages.error'));
     }
 }
 
-function copyPrompt(id) {
+async function copyPrompt(id: PromptId): Promise<void> {
     const cachedPrompt = promptCache[id];
 
     if (cachedPrompt && typeof cachedPrompt.prompt === 'string') {
@@ -590,24 +625,21 @@ function copyPrompt(id) {
         return;
     }
 
-    fetch(`/api/prompts/${id}`)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`Failed to load prompt ${id}: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(prompt => {
-            promptCache[id] = prompt;
-            copyTextToClipboard(prompt.prompt, id);
-        })
-        .catch(error => {
-            reportAppIssue('copyPrompt', error, { promptId: id });
-            showCopyFeedback(id, 'messages.copyFailed');
-        });
+    try {
+        const response = await fetch(`/api/prompts/${id}`);
+        if (!response.ok) {
+            throw new Error(`Failed to load prompt ${id}: ${response.status}`);
+        }
+        const prompt = (await response.json()) as PromptResponse;
+        promptCache[id] = prompt;
+        copyTextToClipboard(prompt.prompt, id);
+    } catch (error) {
+        reportAppIssue('copyPrompt', error, { promptId: id });
+        showCopyFeedback(id, 'messages.copyFailed');
+    }
 }
 
-function copyTextToClipboard(textToCopy, id) {
+function copyTextToClipboard(textToCopy: string, id: PromptId): void {
     if (typeof textToCopy !== 'string') {
         showCopyFeedback(id, 'messages.copyFailed');
         return;
@@ -630,7 +662,7 @@ function copyTextToClipboard(textToCopy, id) {
     fallbackCopyTextToClipboard(textToCopy, id);
 }
 
-function fallbackCopyTextToClipboard(text, id) {
+function fallbackCopyTextToClipboard(text: string, id: PromptId): void {
     // Create a temporary textarea element
     const textArea = document.createElement('textarea');
     textArea.value = text;
@@ -657,21 +689,24 @@ function fallbackCopyTextToClipboard(text, id) {
     }
 }
 
-function showCopyFeedback(id, message) {
-    const btn = document.querySelector(`.copy-btn[data-id="${id}"]`);
+function showCopyFeedback(id: PromptId, message: string): void {
+    const btn = document.querySelector<HTMLButtonElement>(`.copy-btn[data-id="${id}"]`);
     if (btn) {
-        const originalText = btn.textContent;
+        const originalText = btn.textContent ?? '';
         // Use translated message if it's a key, otherwise use as-is
-        const translatedMessage = i18next.t(message) !== message ? i18next.t(message) : message;
+        const translatedMessage = t(message) !== message ? t(message) : message;
         btn.textContent = translatedMessage;
         setTimeout(() => btn.textContent = originalText, 2000);
     }
 }
 
-async function editPrompt(id) {
+async function editPrompt(id: PromptId): Promise<void> {
     try {
         const response = await fetch(`/api/prompts/${id}`);
-        const prompt = await response.json();
+        if (!response.ok) {
+            throw new Error(`Failed to load prompt ${id}: ${response.status}`);
+        }
+        const prompt = (await response.json()) as PromptResponse;
 
         promptCache[id] = prompt;
 
@@ -680,24 +715,31 @@ async function editPrompt(id) {
         hideElement(document.getElementById('prompts-list'));
 
         // Populate form
-        document.getElementById('prompt-title').value = prompt.title || '';
-        document.getElementById('prompt-content').value = prompt.prompt || '';
-        document.getElementById('prompt-category').value = prompt.category || '';
-        document.getElementById('prompt-tags').value = prompt.tags ? prompt.tags.join(', ') : '';
-        document.getElementById('commit-message').value = ''; // Clear commit message for new edit
+        const promptTitle = document.getElementById('prompt-title') as HTMLInputElement | null;
+        const promptContent = document.getElementById('prompt-content') as HTMLTextAreaElement | null;
+        const promptCategory = document.getElementById('prompt-category') as HTMLInputElement | null;
+        const promptTags = document.getElementById('prompt-tags') as HTMLInputElement | null;
+        const commitMessage = document.getElementById('commit-message') as HTMLInputElement | null;
+        if (promptTitle) promptTitle.value = prompt.title || '';
+        if (promptContent) promptContent.value = prompt.prompt || '';
+        if (promptCategory) promptCategory.value = prompt.category || '';
+        if (promptTags) promptTags.value = prompt.tags ? prompt.tags.join(', ') : '';
+        if (commitMessage) commitMessage.value = ''; // Clear commit message for new edit
 
         // Change form to update mode
-        const form = document.getElementById('prompt-form');
-        form.dataset.mode = 'edit';
-        form.dataset.id = id;
+        const form = document.getElementById('prompt-form') as HTMLFormElement | null;
+        if (form) {
+            form.dataset.mode = 'edit';
+            form.dataset.id = id;
+        }
 
     } catch (error) {
         reportAppIssue('loadPromptForEdit', error, { promptId: id });
     }
 }
 
-async function deletePrompt(id) {
-    if (!confirm(i18next.t('messages.confirmDelete'))) {
+async function deletePrompt(id: PromptId): Promise<void> {
+    if (!confirm(t('messages.confirmDelete'))) {
         return;
     }
 
@@ -707,24 +749,24 @@ async function deletePrompt(id) {
         });
 
         if (response.ok) {
-            loadPrompts(); // Refresh the list
-            loadAvailableTags(); // Refresh tag counts for autocomplete
-            loadTags(); // Refresh sidebar tag list
+            void loadPrompts(); // Refresh the list
+            void loadAvailableTags(); // Refresh tag counts for autocomplete
+            void loadTags(); // Refresh sidebar tag list
         } else {
-            alert(i18next.t('messages.error'));
+            alert(t('messages.error'));
         }
     } catch (error) {
         reportAppIssue('deletePrompt', error, { promptId: id });
-        alert(i18next.t('messages.error'));
+        alert(t('messages.error'));
     }
 }
 
-async function toggleFavorite(id) {
+async function toggleFavorite(id: PromptId): Promise<void> {
     try {
         // Optimistic update - immediately toggle the UI
-        const favoriteBtn = document.querySelector(`.favorite-btn[data-id="${id}"]`);
+        const favoriteBtn = document.querySelector<HTMLButtonElement>(`.favorite-btn[data-id="${id}"]`);
         if (favoriteBtn) {
-            const currentIcon = favoriteBtn.textContent;
+            const currentIcon = favoriteBtn.textContent ?? '';
             const newIcon = currentIcon === '★' ? '☆' : '★';
             favoriteBtn.textContent = newIcon;
 
@@ -741,9 +783,9 @@ async function toggleFavorite(id) {
 
         if (!response.ok) {
             // Revert optimistic update on error
-            const favoriteBtn = document.querySelector(`.favorite-btn[data-id="${id}"]`);
+            const favoriteBtn = document.querySelector<HTMLButtonElement>(`.favorite-btn[data-id="${id}"]`);
             if (favoriteBtn) {
-                const currentIcon = favoriteBtn.textContent;
+                const currentIcon = favoriteBtn.textContent ?? '';
                 const revertedIcon = currentIcon === '★' ? '☆' : '★';
                 favoriteBtn.textContent = revertedIcon;
 
@@ -753,16 +795,16 @@ async function toggleFavorite(id) {
                 }
             }
 
-            const errorData = await response.json();
-            alert(`${i18next.t('messages.error')}: ${errorData.error || i18next.t('messages.unknownError')}`);
+            const errorData = (await response.json()) as { error?: string };
+            alert(`${t('messages.error')}: ${errorData.error || t('messages.unknownError')}`);
         } else {
             await response.json();
         }
     } catch (error) {
         // Revert optimistic update on network error
-        const favoriteBtn = document.querySelector(`.favorite-btn[data-id="${id}"]`);
+        const favoriteBtn = document.querySelector<HTMLButtonElement>(`.favorite-btn[data-id="${id}"]`);
         if (favoriteBtn) {
-            const currentIcon = favoriteBtn.textContent;
+            const currentIcon = favoriteBtn.textContent ?? '';
             const revertedIcon = currentIcon === '★' ? '☆' : '★';
             favoriteBtn.textContent = revertedIcon;
 
@@ -773,109 +815,93 @@ async function toggleFavorite(id) {
         }
 
         reportAppIssue('toggleFavorite', error, { promptId: id });
-        alert(i18next.t('messages.error'));
+        alert(t('messages.error'));
     }
 }
 
-function handleCategoryFilter(event) {
-    if (event.target.tagName === 'LI') {
+function handleCategoryFilter(event: Event): void {
+    const target = event.target as HTMLElement | null;
+    if (target?.tagName === 'LI') {
         // Update active state
         document.querySelectorAll('#categories-list li').forEach(li => li.classList.remove('active'));
-        event.target.classList.add('active');
+        target.classList.add('active');
 
         // Update search state and trigger search
-        searchState.category = event.target.dataset.category;
-        performSearch();
+        searchState.category = target.dataset.category || 'all';
+        void performSearch();
     }
 }
 
-function handleTagFilter(event) {
-    if (event.target.tagName === 'LI') {
+function handleTagFilter(event: Event): void {
+    const target = event.target as HTMLElement | null;
+    if (target?.tagName === 'LI') {
         // Update active state
         document.querySelectorAll('#tags-list li').forEach(li => li.classList.remove('active'));
-        event.target.classList.add('active');
+        target.classList.add('active');
 
         // Update search state and trigger search
-        searchState.tag = event.target.dataset.tag;
-        performSearch();
+        searchState.tag = target.dataset.tag || 'all';
+        void performSearch();
     }
 }
 
-function handleFavoritesFilter(event) {
+function handleFavoritesFilter(event: Event): void {
+    const target = event.target as HTMLInputElement | null;
+    if (!target) return;
     // Update search state and trigger search
-    searchState.favorites = event.target.checked;
-    performSearch();
+    searchState.favorites = target.checked;
+    void performSearch();
 }
 
-function handleLanguageChange(event) {
-    const selectedLanguage = event.target.value;
-    i18next.changeLanguage(selectedLanguage, (err, t) => {
-        if (err) {
+function handleLanguageChange(event: Event): void {
+    const target = event.target as HTMLSelectElement | null;
+    const selectedLanguage = target?.value;
+    if (!selectedLanguage) return;
+
+    changeLanguage(selectedLanguage)
+        .then(() => {
+            updateStaticTranslations();
+            updateVersionHistoryTranslations();
+            void loadPrompts();
+        })
+        .catch((err) => {
             reportAppIssue('changeLanguage', err, { language: selectedLanguage });
-            return;
-        }
-        // Update all translations on the page
-        updateStaticTranslations();
-        // Update version history UI if modal is open
-        updateVersionHistoryTranslations();
-        // Re-render prompts to update dynamic content
-        loadPrompts();
-    });
+        });
 }
 
-function updateVersionHistoryTranslations() {
+function updateVersionHistoryTranslations(): void {
     // Update search placeholder
-    const searchInput = document.getElementById('version-search');
+    const searchInput = document.getElementById('version-search') as HTMLInputElement | null;
     if (searchInput) {
-        searchInput.placeholder = i18next.t('version.searchPlaceholder');
+        searchInput.placeholder = t('version.searchPlaceholder');
     }
     
     // Update version item buttons
     document.querySelectorAll('[data-i18n="version.select"]').forEach(element => {
-        element.textContent = i18next.t('version.select');
+        element.textContent = t('version.select');
     });
     
     document.querySelectorAll('[data-i18n="version.revert"]').forEach(element => {
-        element.textContent = i18next.t('version.revert');
+        element.textContent = t('version.revert');
     });
-}
-
-function handleImport() {
-    // Create file input
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json,.csv,.md';
-    input.onchange = async (event) => {
-        const file = event.target.files[0];
-        if (file) {
-            // Handle file upload
-            alert('Import functionality not yet implemented');
-        }
-    };
-    input.click();
-}
-
-function handleExport() {
-    // Simple export - in real app, would call backend
-    alert('Export functionality not yet implemented');
 }
 
 function hideModal() {
     hideElement(document.getElementById('prompt-modal'));
 }
 
-function truncateText(text, maxLength) {
+function truncateText(text: string, maxLength: number): string {
     if (!text) return '';
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + '...';
 }
 
 // Search and Filter Functions
-let searchTimeout = null;
+let searchTimeout: ReturnType<typeof setTimeout> | null = null;
 
 function setupSearchEventListeners() {
     // Search input with debouncing
-    const searchInput = document.getElementById('search-input');
+    const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
     if (searchInput) {
         searchInput.addEventListener('input', handleSearchInput);
         searchInput.addEventListener('keydown', function(event) {
@@ -890,22 +916,23 @@ function setupSearchEventListeners() {
     const clearSearchBtn = document.getElementById('clear-search-btn');
     if (clearSearchBtn) {
         clearSearchBtn.addEventListener('click', function() {
-            const searchInput = document.getElementById('search-input');
+            const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
             if (searchInput) {
                 searchInput.value = '';
                 searchState.searchTerm = '';
                 toggleElement(clearSearchBtn, false);
-                performSearch();
+                void performSearch();
             }
         });
     }
 
     // Case sensitive toggle
-    const caseSensitiveToggle = document.getElementById('case-sensitive-toggle');
+    const caseSensitiveToggle = document.getElementById('case-sensitive-toggle') as HTMLInputElement | null;
     if (caseSensitiveToggle) {
-        caseSensitiveToggle.addEventListener('change', function() {
-            searchState.caseSensitive = this.checked;
-            performSearch();
+        caseSensitiveToggle.addEventListener('change', (event) => {
+            const target = event.target as HTMLInputElement | null;
+            searchState.caseSensitive = target?.checked ?? false;
+            void performSearch();
         });
     }
 
@@ -916,8 +943,12 @@ function setupSearchEventListeners() {
     }
 }
 
-function handleSearchInput(event) {
-    const searchTerm = event.target.value;
+function handleSearchInput(event: Event): void {
+    const target = event.target as HTMLInputElement | null;
+    if (!target) {
+        return;
+    }
+    const searchTerm = target.value;
     searchState.searchTerm = searchTerm;
 
     // Show/hide clear search button
@@ -933,11 +964,11 @@ function handleSearchInput(event) {
 
     // Debounce search
     searchTimeout = setTimeout(() => {
-        performSearch();
+        void performSearch();
     }, 300);
 }
 
-async function performSearch() {
+async function performSearch(): Promise<void> {
     if (searchState.isLoading) {
         return; // Don't start new search if one is already running
     }
@@ -982,13 +1013,13 @@ async function performSearch() {
             throw new Error(`Search failed: ${response.status}`);
         }
 
-        const data = await response.json();
+        const data = (await response.json()) as PromptListResponse;
 
         // Update prompts list
-        renderPrompts(data.prompts);
+        renderPrompts(data.prompts || {});
 
         // Update result count and handle empty results
-        updateSearchResultsInfo(data.prompts);
+        updateSearchResultsInfo(data.prompts || {});
 
     } catch (error) {
         reportAppIssue('searchPrompts', error, {
@@ -1000,10 +1031,10 @@ async function performSearch() {
                 caseSensitive: searchState.caseSensitive
             }
         });
-        showNotification(i18next.t('search.error'), 'error');
+        showNotification(t('search.error'), 'error');
 
         // Fallback to showing all prompts
-        loadPrompts();
+        void loadPrompts();
     } finally {
         searchState.isLoading = false;
 
@@ -1016,7 +1047,7 @@ async function performSearch() {
     }
 }
 
-function updateSearchResultsInfo(prompts) {
+function updateSearchResultsInfo(prompts: Record<string, PromptResponse>): void {
     const resultCount = Object.keys(prompts || {}).length;
     const totalCount = Object.keys(promptCache).length;
     const searchResultsInfo = document.getElementById('search-results-info');
@@ -1027,13 +1058,13 @@ function updateSearchResultsInfo(prompts) {
         // Show "No results found" message
         if (searchResultsInfo) {
             searchResultsInfo.className = 'search-results-info no-results';
-            searchResultsInfo.textContent = i18next.t('search.noResultsInfo');
+            searchResultsInfo.textContent = t('search.noResultsInfo');
             showElement(searchResultsInfo);
         }
 
         // Show empty state in prompts list
         if (promptsList) {
-            promptsList.innerHTML = `<div class="no-results-message">${i18next.t('search.noResultsMessage')}</div>`;
+            promptsList.innerHTML = `<div class="no-results-message">${t('search.noResultsMessage')}</div>`;
         }
 
         // Hide clear filters button
@@ -1050,19 +1081,19 @@ function updateSearchResultsInfo(prompts) {
         searchResultsInfo.className = 'search-results-info';
 
         const hasAllResults = resultCount === totalCount;
-        let infoText;
+        let infoText = '';
 
         if (hasAllResults) {
-            infoText = i18next.t('search.resultsCount', { count: resultCount });
+            infoText = t('search.resultsCount', { count: resultCount });
         } else {
-            infoText = i18next.t('search.resultsCountWithTotal', { count: resultCount, total: totalCount });
+            infoText = t('search.resultsCountWithTotal', { count: resultCount, total: totalCount });
         }
 
         // Add active filter indicators
-        const activeFilters = [];
+        const activeFilters: string[] = [];
         if (searchState.searchTerm) {
             activeFilters.push(
-                i18next.t('search.filter.search', {
+                t('search.filter.search', {
                     term: searchState.searchTerm,
                     interpolation: { escapeValue: false }
                 })
@@ -1070,7 +1101,7 @@ function updateSearchResultsInfo(prompts) {
         }
         if (searchState.category && searchState.category !== 'all') {
             activeFilters.push(
-                i18next.t('search.filter.category', {
+                t('search.filter.category', {
                     category: searchState.category,
                     interpolation: { escapeValue: false }
                 })
@@ -1078,21 +1109,21 @@ function updateSearchResultsInfo(prompts) {
         }
         if (searchState.tag && searchState.tag !== 'all') {
             activeFilters.push(
-                i18next.t('search.filter.tag', {
+                t('search.filter.tag', {
                     tag: searchState.tag,
                     interpolation: { escapeValue: false }
                 })
             );
         }
         if (searchState.favorites) {
-            activeFilters.push(i18next.t('search.filter.favorites'));
+            activeFilters.push(t('search.filter.favorites'));
         }
         if (searchState.caseSensitive) {
-            activeFilters.push(i18next.t('search.filter.caseSensitive'));
+            activeFilters.push(t('search.filter.caseSensitive'));
         }
 
         if (activeFilters.length > 0) {
-            infoText += ` ${i18next.t('search.filteredBy', {
+            infoText += ` ${t('search.filteredBy', {
                 filters: activeFilters.join(', '),
                 interpolation: { escapeValue: false }
             })}`;
@@ -1107,7 +1138,7 @@ function updateSearchResultsInfo(prompts) {
     if (clearAllFiltersBtn) {
         if (resultCount !== totalCount || searchState.searchTerm || searchState.category !== 'all' ||
             searchState.tag !== 'all' || searchState.favorites || searchState.caseSensitive) {
-            clearAllFiltersBtn.textContent = i18next.t('search.clearFiltersWithCount', { count: resultCount });
+            clearAllFiltersBtn.textContent = t('search.clearFiltersWithCount', { count: resultCount });
             showElement(clearAllFiltersBtn);
         } else {
             hideElement(clearAllFiltersBtn);
@@ -1115,7 +1146,7 @@ function updateSearchResultsInfo(prompts) {
     }
 }
 
-function clearAllFilters() {
+function clearAllFilters(): void {
     // Reset search state
     searchState = {
         searchTerm: '',
@@ -1127,7 +1158,7 @@ function clearAllFilters() {
     };
 
     // Reset UI elements
-    const searchInput = document.getElementById('search-input');
+    const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
     if (searchInput) {
         searchInput.value = '';
     }
@@ -1137,22 +1168,22 @@ function clearAllFilters() {
         hideElement(clearSearchBtn);
     }
 
-    const caseSensitiveToggle = document.getElementById('case-sensitive-toggle');
+    const caseSensitiveToggle = document.getElementById('case-sensitive-toggle') as HTMLInputElement | null;
     if (caseSensitiveToggle) {
         caseSensitiveToggle.checked = false;
     }
 
-    const favoritesFilter = document.getElementById('favorites-filter');
+    const favoritesFilter = document.getElementById('favorites-filter') as HTMLInputElement | null;
     if (favoritesFilter) {
         favoritesFilter.checked = false;
     }
 
     // Reset active states in sidebar
     document.querySelectorAll('#categories-list li').forEach(li => li.classList.remove('active'));
-    document.querySelector('[data-category="all"]').classList.add('active');
+    document.querySelector('[data-category="all"]')?.classList.add('active');
 
     document.querySelectorAll('#tags-list li').forEach(li => li.classList.remove('active'));
-    document.querySelector('[data-tag="all"]').classList.add('active');
+    document.querySelector('[data-tag="all"]')?.classList.add('active');
 
     // Hide clear filters button and search results info
     const clearAllFiltersBtn = document.getElementById('clear-all-filters-btn');
@@ -1166,46 +1197,48 @@ function clearAllFilters() {
     }
 
     // Load all prompts
-    loadPrompts();
+    void loadPrompts();
 }
 
 // Version Control Functions
-let currentVersionPromptId = null;
-let selectedVersions = new Set();
-let versionCache = {}; // Cache for version history
-let diffCache = {}; // Cache for diff results
+let currentVersionPromptId: number | null = null;
+let selectedVersions: Set<string> = new Set();
+let versionCache: Record<string, VersionCacheEntry> = {}; // Cache for version history
+let diffCache: Record<string, DiffCacheEntry> = {}; // Cache for diff results
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
 
-function showVersionHistoryModal(promptId) {
+function showVersionHistoryModal(promptId: number): void {
     currentVersionPromptId = promptId;
     selectedVersions.clear();
     showElement(document.getElementById('version-history-modal'));
     // Update search placeholder with current language
-    const searchInput = document.getElementById('version-search');
+    const searchInput = document.getElementById('version-search') as HTMLInputElement | null;
     if (searchInput) {
-        searchInput.placeholder = i18next.t('version.searchPlaceholder');
+        searchInput.placeholder = t('version.searchPlaceholder');
     }
-    loadVersionHistory(promptId);
+    void loadVersionHistory(promptId);
 }
 
-function hideVersionHistoryModal() {
+function hideVersionHistoryModal(): void {
     hideElement(document.getElementById('version-history-modal'));
     currentVersionPromptId = null;
     selectedVersions.clear();
 }
 
-function hideDiffModal() {
+function hideDiffModal(): void {
     hideElement(document.getElementById('diff-modal'));
 }
 
-function hideRevertConfirmationModal() {
+function hideRevertConfirmationModal(): void {
     hideElement(document.getElementById('revert-confirmation-modal'));
 }
 
-async function loadVersionHistory(promptId) {
+async function loadVersionHistory(promptId: number): Promise<void> {
     try {
         const versionList = document.getElementById('version-list');
-        versionList.innerHTML = '<div class="loading">' + i18next.t('messages.loading') + '</div>';
+        if (versionList) {
+            versionList.innerHTML = '<div class="loading">' + t('messages.loading') + '</div>';
+        }
 
         // Check cache first
         const cacheKey = `versions_${promptId}`;
@@ -1221,7 +1254,7 @@ async function loadVersionHistory(promptId) {
             throw new Error('Failed to load version history');
         }
 
-        const data = await response.json();
+        const data = (await response.json()) as VersionHistoryResponse;
         
         // Cache the result
         versionCache[cacheKey] = {
@@ -1236,15 +1269,21 @@ async function loadVersionHistory(promptId) {
         updateCompareButton();
     } catch (error) {
         reportAppIssue('loadVersionHistory', error, { promptId });
-        document.getElementById('version-list').innerHTML = '<div class="loading">Error loading versions</div>';
+        const versionList = document.getElementById('version-list');
+        if (versionList) {
+            versionList.innerHTML = '<div class="loading">Error loading versions</div>';
+        }
     }
 }
 
-function renderVersionHistory(versions) {
+function renderVersionHistory(versions: VersionSummary[]): void {
     const versionList = document.getElementById('version-list');
+    if (!versionList) {
+        return;
+    }
     
     if (versions.length === 0) {
-        versionList.innerHTML = '<div class="loading">' + i18next.t('version.noVersions') + '</div>';
+        versionList.innerHTML = '<div class="loading">' + t('version.noVersions') + '</div>';
         return;
     }
 
@@ -1255,13 +1294,13 @@ function renderVersionHistory(versions) {
     });
 }
 
-function createVersionItem(version, index, totalVersions) {
+function createVersionItem(version: VersionSummary, index: number, totalVersions: number): HTMLDivElement {
     const div = document.createElement('div');
     div.className = 'version-item';
     div.dataset.versionId = version.version_id;
 
     // Format timestamp with fallback for invalid dates
-    let timestamp;
+    let timestamp = 'Invalid Date';
     try {
         // Handle timestamps with microseconds by truncating to milliseconds
         const cleanTimestamp = version.timestamp.replace(/(\.\d{3})\d*/, '$1');
@@ -1281,16 +1320,17 @@ function createVersionItem(version, index, totalVersions) {
             <span class="version-item-id">#${totalVersions - index} ${version.version_id.substring(0, 8)}...</span>
             <span class="version-item-timestamp">${timestamp}</span>
         </div>
-        <div class="version-item-author">${i18next.t('version.author')}: ${version.author}</div>
+        <div class="version-item-author">${t('version.author')}: ${version.author}</div>
         <div class="version-item-message">${version.message}</div>
         <div class="version-item-actions">
-            ${!isLatest ? `<button class="btn btn-danger" onclick="showRevertConfirmation('${version.version_id}')" data-i18n="version.revert">` + i18next.t('version.revert') + `</button>` : ''}
-            <button class="btn btn-secondary" onclick="selectVersionForComparison('${version.version_id}')" data-i18n="version.select">` + i18next.t('version.select') + `</button>
+            ${!isLatest ? `<button class="btn btn-danger" onclick="showRevertConfirmation('${version.version_id}')" data-i18n="version.revert">` + t('version.revert') + `</button>` : ''}
+            <button class="btn btn-secondary" onclick="selectVersionForComparison('${version.version_id}')" data-i18n="version.select">` + t('version.select') + `</button>
         </div>
     `;
 
-    div.addEventListener('click', function(e) {
-        if (!e.target.closest('button')) {
+    div.addEventListener('click', function(event: MouseEvent) {
+        const target = event.target as Element | null;
+        if (!target || !target.closest('button')) {
             toggleVersionSelection(version.version_id, div);
         }
     });
@@ -1298,7 +1338,10 @@ function createVersionItem(version, index, totalVersions) {
     return div;
 }
 
-function toggleVersionSelection(versionId, element) {
+function toggleVersionSelection(versionId: string, element: HTMLElement | null): void {
+    if (!element) {
+        return;
+    }
     if (selectedVersions.has(versionId)) {
         selectedVersions.delete(versionId);
         element.classList.remove('selected');
@@ -1309,8 +1352,9 @@ function toggleVersionSelection(versionId, element) {
     updateCompareButton();
 }
 
-function selectVersionForComparison(versionId) {
-    toggleVersionSelection(versionId, document.querySelector(`[data-version-id="${versionId}"]`));
+function selectVersionForComparison(versionId: string): void {
+    const target = document.querySelector<HTMLElement>(`[data-version-id="${versionId}"]`);
+    toggleVersionSelection(versionId, target);
 }
 
 function updateCompareButton() {
@@ -1320,16 +1364,23 @@ function updateCompareButton() {
     }
 }
 
-function showRevertConfirmation(versionId) {
+function showRevertConfirmation(versionId: string): void {
     showElement(document.getElementById('revert-confirmation-modal'));
-    document.getElementById('confirm-revert-btn').onclick = function() {
-        performRevert(versionId);
-    };
+    const confirmRevertBtn = document.getElementById('confirm-revert-btn') as HTMLButtonElement | null;
+    if (confirmRevertBtn) {
+        confirmRevertBtn.onclick = function() {
+            performRevert(versionId);
+        };
+    }
 }
 
-async function performRevert(versionId) {
+async function performRevert(versionId: string): Promise<void> {
     try {
-        const commitMessage = document.getElementById('revert-commit-message').value || 'Revert to previous version';
+        if (currentVersionPromptId === null) {
+            return;
+        }
+        const revertMessageInput = document.getElementById('revert-commit-message') as HTMLInputElement | null;
+        const commitMessage = revertMessageInput?.value || 'Revert to previous version';
         
         const formData = new FormData();
         formData.append('commit_message', commitMessage);
@@ -1344,23 +1395,23 @@ async function performRevert(versionId) {
         }
 
         hideRevertConfirmationModal();
-        showNotification(i18next.t('version.revertSuccess'), 'success');
+        showNotification(t('version.revertSuccess'), 'success');
         // Clear version cache since a new version was created
         clearVersionCache(currentVersionPromptId);
-        loadVersionHistory(currentVersionPromptId);
-        loadPrompts(); // Refresh main list
-        loadAvailableTags(); // Refresh tag counts for autocomplete
-        loadTags(); // Refresh sidebar tag list
+        void loadVersionHistory(currentVersionPromptId);
+        void loadPrompts(); // Refresh main list
+        void loadAvailableTags(); // Refresh tag counts for autocomplete
+        void loadTags(); // Refresh sidebar tag list
     } catch (error){
         reportAppIssue('revertVersion', error, {
             promptId: currentVersionPromptId,
             versionId
         });
-        showNotification(i18next.t('version.revertError'), 'error');
+        showNotification(t('version.revertError'), 'error');
     }
 }
 
-function showNotification(message, type = 'info') {
+function showNotification(message: string, type: 'info' | 'success' | 'error' = 'info'): void {
     const notification = document.createElement('div');
     notification.className = `notification notification-${type}`;
     notification.textContent = message;
@@ -1369,9 +1420,9 @@ function showNotification(message, type = 'info') {
 }
 
 // Diff Visualization Functions
-let allVersions = [];
+let allVersions: VersionSummary[] = [];
 
-async function showDiffModal() {
+async function showDiffModal(): Promise<void> {
     if (selectedVersions.size !== 2) {
         showNotification('Please select exactly 2 versions to compare', 'error');
         return;
@@ -1381,7 +1432,7 @@ async function showDiffModal() {
     let versionIds = Array.from(selectedVersions);
 
     // Sort versions by their version_number to ensure older is first (for old/new comparison)
-    const versionsWithNumbers = versionIds.map(vId => {
+    const versionsWithNumbers: VersionSortItem[] = versionIds.map((vId) => {
         const version = allVersions.find(v => v.version_id === vId);
         return { id: vId, number: version ? version.version_number : 0 };
     });
@@ -1397,10 +1448,14 @@ async function showDiffModal() {
     await loadAndDisplayDiff(versionIds[0], versionIds[1]);
 }
 
-function populateDiffSelectors(selectedIds) {
-    const v1Selector = document.getElementById('diff-v1-selector');
-    const v2Selector = document.getElementById('diff-v2-selector');
-    
+function populateDiffSelectors(selectedIds: string[]): void {
+    const v1Selector = document.getElementById('diff-v1-selector') as HTMLSelectElement | null;
+    const v2Selector = document.getElementById('diff-v2-selector') as HTMLSelectElement | null;
+
+    if (!v1Selector || !v2Selector) {
+        return;
+    }
+
     v1Selector.innerHTML = '';
     v2Selector.innerHTML = '';
     
@@ -1423,21 +1478,32 @@ function populateDiffSelectors(selectedIds) {
     v2Selector.addEventListener('change', () => updateDiff());
 }
 
-async function updateDiff() {
-    const v1 = document.getElementById('diff-v1-selector').value;
-    const v2 = document.getElementById('diff-v2-selector').value;
+async function updateDiff(): Promise<void> {
+    const v1Selector = document.getElementById('diff-v1-selector') as HTMLSelectElement | null;
+    const v2Selector = document.getElementById('diff-v2-selector') as HTMLSelectElement | null;
+    const v1 = v1Selector?.value || '';
+    const v2 = v2Selector?.value || '';
     
     if (v1 === v2) {
-        document.getElementById('diff-view').innerHTML = '<div class="loading">Select different versions to compare</div>';
+        const diffView = document.getElementById('diff-view');
+        if (diffView) {
+            diffView.innerHTML = '<div class="loading">Select different versions to compare</div>';
+        }
         return;
     }
     
     await loadAndDisplayDiff(v1, v2);
 }
 
-async function loadAndDisplayDiff(v1Id, v2Id) {
+async function loadAndDisplayDiff(v1Id: string, v2Id: string): Promise<void> {
     try {
-        document.getElementById('diff-view').innerHTML = '<div class="loading">' + i18next.t('messages.loading') + '</div>';
+        if (currentVersionPromptId === null) {
+            return;
+        }
+        const diffView = document.getElementById('diff-view');
+        if (diffView) {
+            diffView.innerHTML = '<div class="loading">' + t('messages.loading') + '</div>';
+        }
         
         // Check cache first
         const cacheKey = `diff_${currentVersionPromptId}_${v1Id}_${v2Id}`;
@@ -1451,7 +1517,7 @@ async function loadAndDisplayDiff(v1Id, v2Id) {
             throw new Error('Failed to load diff');
         }
         
-        const diff = await response.json();
+        const diff = (await response.json()) as VersionDiffResponse;
         
         // Cache the result
         diffCache[cacheKey] = {
@@ -1466,12 +1532,18 @@ async function loadAndDisplayDiff(v1Id, v2Id) {
             fromVersion: v1Id,
             toVersion: v2Id
         });
-        document.getElementById('diff-view').innerHTML = '<div class="loading">Error loading diff</div>';
+        const diffView = document.getElementById('diff-view');
+        if (diffView) {
+            diffView.innerHTML = '<div class="loading">Error loading diff</div>';
+        }
     }
 }
 
-function displayDiff(diff) {
+function displayDiff(diff: VersionDiffResponse): void {
     const diffView = document.getElementById('diff-view');
+    if (!diffView) {
+        return;
+    }
     diffView.innerHTML = '';
     
     if (!diff.changes || Object.keys(diff.changes).length === 0) {
@@ -1513,7 +1585,7 @@ function displayDiff(diff) {
     diffView.appendChild(section);
 }
 
-function formatValue(value) {
+function formatValue(value: unknown): string {
     if (Array.isArray(value)) {
         return value.join(', ');
     }
@@ -1523,7 +1595,7 @@ function formatValue(value) {
     return String(value);
 }
 
-function escapeHtml(text) {
+function escapeHtml(text: string): string {
     const map = {
         '&': '&amp;',
         '<': '&lt;',
@@ -1531,38 +1603,20 @@ function escapeHtml(text) {
         '"': '&quot;',
         "'": '&#039;'
     };
-    return text.replace(/[&<>"']/g, m => map[m]);
+    return text.replace(/[&<>"']/g, m => map[m] ?? m);
 }
 
 // Cache management functions
-function clearVersionCache(promptId) {
+function clearVersionCache(promptId: number | string | null | undefined): void {
+    if (promptId === null || promptId === undefined) {
+        return;
+    }
     const cacheKey = `versions_${promptId}`;
     delete versionCache[cacheKey];
 }
 
-function clearDiffCache() {
-    diffCache = {};
-}
-
-function clearAllCache() {
-    versionCache = {};
-    diffCache = {};
-}
-
-// Optimize diff calculation
-function optimizeDiffCalculation(changes) {
-    // Remove unchanged fields to reduce payload
-    const optimized = {};
-    Object.entries(changes).forEach(([field, change]) => {
-        if (change.old !== change.new) {
-            optimized[field] = change;
-        }
-    });
-    return optimized;
-}
-
 // Keyboard Shortcuts (Phase 6)
-function handleKeyboardShortcuts(event) {
+function handleKeyboardShortcuts(event: KeyboardEvent): void {
     // Ctrl/Cmd + H: Open version history for last selected prompt
     if ((event.ctrlKey || event.metaKey) && event.key === 'h') {
         event.preventDefault();
@@ -1588,51 +1642,27 @@ function handleKeyboardShortcuts(event) {
     }
 }
 
-// Loading States (Phase 6)
-function setLoadingState(element, isLoading) {
-    if (isLoading) {
-        element.classList.add('loading-state');
-        element.disabled = true;
-    } else {
-        element.classList.remove('loading-state');
-        element.disabled = false;
-    }
-}
-
-function showLoadingSpinner(container) {
-    const spinner = document.createElement('div');
-    spinner.className = 'loading-spinner';
-    spinner.innerHTML = '<div class="spinner"></div>';
-    container.appendChild(spinner);
-    return spinner;
-}
-
-function removeLoadingSpinner(spinner) {
-    if (spinner && spinner.parentNode) {
-        spinner.parentNode.removeChild(spinner);
-    }
-}
-
 // Tooltips (Phase 6 & 8)
 function addTooltips() {
     const tooltips = {
-        '.history-btn': i18next.t('version.history') + ' - ' + i18next.t('version.searchPlaceholder'),
-        '.copy-btn': i18next.t('actions.copy'),
-        '.edit-btn': i18next.t('actions.edit'),
-        '.delete-btn': i18next.t('actions.delete'),
+        '.history-btn': t('version.history') + ' - ' + t('version.searchPlaceholder'),
+        '.copy-btn': t('actions.copy'),
+        '.edit-btn': t('actions.edit'),
+        '.delete-btn': t('actions.delete'),
         '.favorite-btn': 'Toggle favorite'
     };
 
     Object.entries(tooltips).forEach(([selector, title]) => {
         document.querySelectorAll(selector).forEach(element => {
-            element.title = title;
-            element.setAttribute('data-tooltip', title);
+            const htmlElement = element as HTMLElement;
+            htmlElement.title = title;
+            htmlElement.setAttribute('data-tooltip', title);
         });
     });
 }
 
 // Lazy Loading for Version List (Phase 9)
-let versionListObserver = null;
+let versionListObserver: IntersectionObserver | null = null;
 const VERSIONS_PER_PAGE = 10;
 let currentVersionPage = 0;
 
@@ -1668,7 +1698,7 @@ function loadMoreVersions() {
         }
 
         // Observe the last item for lazy loading
-        const lastItem = versionList.lastChild;
+        const lastItem = versionList.lastElementChild;
         if (versionListObserver && lastItem) {
             versionListObserver.observe(lastItem);
         }
@@ -1676,9 +1706,10 @@ function loadMoreVersions() {
 }
 
 // API Response Time Profiling (Phase 9)
-const apiMetrics = {};
+const apiMetrics: Record<string, { calls: number; totalTime: number; avgTime: number; minTime: number; maxTime: number }> =
+    {};
 
-function recordApiCall(endpoint, duration) {
+function recordApiCall(endpoint: string, duration: number): void {
     if (!apiMetrics[endpoint]) {
         apiMetrics[endpoint] = {
             calls: 0,
@@ -1697,35 +1728,31 @@ function recordApiCall(endpoint, duration) {
     metric.maxTime = Math.max(metric.maxTime, duration);
 }
 
-function getApiMetrics() {
-    return apiMetrics;
-}
-
 // Wrap fetch to track API performance
 const originalFetch = window.fetch;
-window.fetch = function(...args) {
+window.fetch = function(...args: Parameters<typeof fetch>) {
     const startTime = performance.now();
     return originalFetch.apply(this, args).then(response => {
         const duration = performance.now() - startTime;
-        const endpoint = args[0];
+        const endpoint = typeof args[0] === 'string' ? args[0] : String(args[0]);
         recordApiCall(endpoint, duration);
         return response;
     });
 };
 
 // Tag Autocomplete Implementation
-let availableTags = [];
+let availableTags: TagInfo[] = [];
 let tagAutocompleteState = {
     isOpen: false,
     highlightedIndex: -1,
-    filteredTags: [],
+    filteredTags: [] as TagInfo[],
     currentPartialTag: ''
 };
 
-async function loadAvailableTags() {
+async function loadAvailableTags(): Promise<void> {
     try {
         const response = await fetch('/api/tags');
-        const data = await response.json();
+        const data = (await response.json()) as { tags: TagInfo[] };
         // Store tags with counts
         availableTags = data.tags || [];
     } catch (error) {
@@ -1735,49 +1762,55 @@ async function loadAvailableTags() {
 }
 
 function setupTagAutocomplete() {
-    const tagInput = document.getElementById('prompt-tags');
-    const autocompleteDiv = document.getElementById('tag-autocomplete');
+    const tagInput = document.getElementById('prompt-tags') as HTMLInputElement | null;
+    const autocompleteDiv = document.getElementById('tag-autocomplete') as HTMLElement | null;
 
     if (!tagInput || !autocompleteDiv) {
         return;
     }
 
     // Load available tags when setting up
-    loadAvailableTags();
+    void loadAvailableTags();
 
     // Input event - show suggestions as user types
-    tagInput.addEventListener('input', function(event) {
-        handleTagInput(event.target);
+    tagInput.addEventListener('input', (event) => {
+        const target = event.target as HTMLInputElement | null;
+        if (target) {
+            handleTagInput(target);
+        }
     });
 
     // Keydown event - handle keyboard navigation
-    tagInput.addEventListener('keydown', function(event) {
+    tagInput.addEventListener('keydown', (event) => {
         handleTagInputKeydown(event);
     });
 
     // Focus event - show suggestions if there's partial input
-    tagInput.addEventListener('focus', function(event) {
-        handleTagInput(event.target);
+    tagInput.addEventListener('focus', (event) => {
+        const target = event.target as HTMLInputElement | null;
+        if (target) {
+            handleTagInput(target);
+        }
     });
 
     // Blur event - close dropdown with delay to allow clicks
-    tagInput.addEventListener('blur', function(event) {
+    tagInput.addEventListener('blur', () => {
         setTimeout(() => {
             closeTagAutocomplete();
         }, 200);
     });
 
     // Click outside to close
-    document.addEventListener('click', function(event) {
-        if (!tagInput.contains(event.target) && !autocompleteDiv.contains(event.target)) {
+    document.addEventListener('click', (event) => {
+        if (!tagInput.contains(event.target as Node) && !autocompleteDiv.contains(event.target as Node)) {
             closeTagAutocomplete();
         }
     });
 }
 
-function handleTagInput(input) {
+function handleTagInput(input: HTMLInputElement) {
     const value = input.value;
-    const cursorPosition = input.selectionStart;
+    const cursorPosition = input.selectionStart ?? input.value.length;
 
     // Find the current tag being typed (based on cursor position)
     const beforeCursor = value.substring(0, cursorPosition);
@@ -1802,13 +1835,13 @@ function handleTagInput(input) {
     }
 }
 
-function getEnteredTags(input) {
+function getEnteredTags(input: HTMLInputElement) {
     const value = input.value;
     const tags = value.split(',').map(tag => tag.trim().toLowerCase()).filter(tag => tag.length > 0);
     return new Set(tags);
 }
 
-function filterTags(partialTag, enteredTags) {
+function filterTags(partialTag: string, enteredTags: Set<string>) {
     if (!availableTags || availableTags.length === 0) {
         return [];
     }
@@ -1818,7 +1851,7 @@ function filterTags(partialTag, enteredTags) {
 
     return availableTags
         .filter(tag => {
-            const tagName = typeof tag === 'string' ? tag : tag.name;
+            const tagName = tag.name;
             const tagLower = tagName.toLowerCase();
             // Don't suggest tags already entered
             if (enteredTags.has(tagLower)) {
@@ -1827,16 +1860,11 @@ function filterTags(partialTag, enteredTags) {
             // Match tags that contain the search term
             return tagLower.includes(searchTerm);
         })
-        .sort((a, b) => {
-            // Sort by count (descending)
-            const countA = typeof a === 'string' ? 0 : (a.count || 0);
-            const countB = typeof b === 'string' ? 0 : (b.count || 0);
-            return countB - countA;
-        })
+        .sort((a, b) => b.count - a.count)
         .slice(0, 10); // Limit to 10 suggestions
 }
 
-function showTagAutocomplete(filteredTags) {
+function showTagAutocomplete(filteredTags: TagInfo[]) {
     const autocompleteDiv = document.getElementById('tag-autocomplete');
     if (!autocompleteDiv) {
         return;
@@ -1853,12 +1881,12 @@ function showTagAutocomplete(filteredTags) {
     } else {
         // Show tag suggestions
         filteredTags.forEach((tag, index) => {
-            const tagName = typeof tag === 'string' ? tag : tag.name;
-            const tagCount = typeof tag === 'string' ? null : tag.count;
+            const tagName = tag.name;
+            const tagCount = tag.count;
 
             const item = document.createElement('div');
             item.className = 'tag-autocomplete-item';
-            item.dataset.index = index;
+            item.dataset.index = String(index);
             item.dataset.tagName = tagName;
 
             const nameSpan = document.createElement('span');
@@ -1900,7 +1928,7 @@ function closeTagAutocomplete() {
     tagAutocompleteState.highlightedIndex = -1;
 }
 
-function handleTagInputKeydown(event) {
+function handleTagInputKeydown(event: KeyboardEvent) {
     if (!tagAutocompleteState.isOpen) {
         return;
     }
@@ -1933,8 +1961,7 @@ function handleTagInputKeydown(event) {
                 tagAutocompleteState.highlightedIndex < filteredTags.length) {
                 event.preventDefault();
                 const selectedTag = filteredTags[tagAutocompleteState.highlightedIndex];
-                const tagName = typeof selectedTag === 'string' ? selectedTag : selectedTag.name;
-                selectTag(tagName);
+                selectTag(selectedTag.name);
             }
             break;
 
@@ -1949,14 +1976,13 @@ function handleTagInputKeydown(event) {
                 tagAutocompleteState.highlightedIndex < filteredTags.length) {
                 event.preventDefault();
                 const selectedTag = filteredTags[tagAutocompleteState.highlightedIndex];
-                const tagName = typeof selectedTag === 'string' ? selectedTag : selectedTag.name;
-                selectTag(tagName);
+                selectTag(selectedTag.name);
             }
             break;
     }
 }
 
-function highlightTagItem(index) {
+function highlightTagItem(index: number) {
     const autocompleteDiv = document.getElementById('tag-autocomplete');
     if (!autocompleteDiv) {
         return;
@@ -1978,22 +2004,22 @@ function highlightTagItem(index) {
     tagAutocompleteState.highlightedIndex = index;
 }
 
-function selectTag(tagName) {
-    const tagInput = document.getElementById('prompt-tags');
+function selectTag(tagName: string): void {
+    const tagInput = document.getElementById('prompt-tags') as HTMLInputElement | null;
     if (!tagInput) {
         return;
     }
 
     const value = tagInput.value;
-    const cursorPosition = tagInput.selectionStart;
+    const cursorPosition = tagInput.selectionStart ?? tagInput.value.length;
 
     // Find the position of the last comma before cursor
     const beforeCursor = value.substring(0, cursorPosition);
     const lastCommaIndex = beforeCursor.lastIndexOf(',');
 
     // Build the new value
-    let newValue;
-    let newCursorPosition;
+    let newValue = '';
+    let newCursorPosition = 0;
 
     if (lastCommaIndex === -1) {
         // No comma yet - replace entire input
@@ -2046,7 +2072,9 @@ function initializeBulkActions() {
     }
 
     if (confirmBulkDeleteBtn) {
-        confirmBulkDeleteBtn.addEventListener('click', performBulkDelete);
+        confirmBulkDeleteBtn.addEventListener('click', () => {
+            void performBulkDelete();
+        });
     }
 
     if (cancelBulkDeleteBtn) {
@@ -2054,7 +2082,7 @@ function initializeBulkActions() {
     }
 }
 
-function handleCheckboxChange(promptId, isChecked) {
+function handleCheckboxChange(promptId: number, isChecked: boolean) {
     if (isChecked) {
         selectedPromptIds.add(promptId);
     } else {
@@ -2063,13 +2091,14 @@ function handleCheckboxChange(promptId, isChecked) {
     updateBulkActionsUI();
 }
 
-function handleSelectAll(event) {
-    const isChecked = event.target.checked;
-    const checkboxes = document.querySelectorAll('.prompt-checkbox');
+function handleSelectAll(event: Event) {
+    const target = event.target as HTMLInputElement | null;
+    const isChecked = target?.checked ?? false;
+    const checkboxes = document.querySelectorAll<HTMLInputElement>('.prompt-checkbox');
 
     checkboxes.forEach(checkbox => {
         checkbox.checked = isChecked;
-        const promptId = parseInt(checkbox.dataset.promptId);
+        const promptId = parseInt(checkbox.dataset.promptId || '', 10);
         if (isChecked) {
             selectedPromptIds.add(promptId);
         } else {
@@ -2081,19 +2110,25 @@ function handleSelectAll(event) {
 }
 
 function updateBulkActionsUI() {
-    const toolbar = document.getElementById('bulk-actions-toolbar');
-    const countElement = document.getElementById('selected-count');
-    const selectAllCheckbox = document.getElementById('select-all-checkbox');
+    const toolbar = document.getElementById('bulk-actions-toolbar') as HTMLElement | null;
+    const countElement = document.getElementById('selected-count') as HTMLElement | null;
+    const selectAllCheckbox = document.getElementById('select-all-checkbox') as HTMLInputElement | null;
 
     if (selectedPromptIds.size > 0) {
-        toolbar.style.display = 'block';
-        countElement.textContent = i18next.t('bulkDelete.selectedCount', { count: selectedPromptIds.size });
+        if (toolbar) {
+            toolbar.style.display = 'block';
+        }
+        if (countElement) {
+            countElement.textContent = t('bulkDelete.selectedCount', { count: selectedPromptIds.size });
+        }
     } else {
-        toolbar.style.display = 'none';
+        if (toolbar) {
+            toolbar.style.display = 'none';
+        }
     }
 
     // Update select all checkbox state
-    const allCheckboxes = document.querySelectorAll('.prompt-checkbox');
+    const allCheckboxes = document.querySelectorAll<HTMLInputElement>('.prompt-checkbox');
     const allChecked = allCheckboxes.length > 0 &&
                        selectedPromptIds.size === allCheckboxes.length;
     if (selectAllCheckbox) {
@@ -2102,7 +2137,7 @@ function updateBulkActionsUI() {
 
     // Update selected styling on prompt items
     allCheckboxes.forEach(checkbox => {
-        const promptId = parseInt(checkbox.dataset.promptId);
+        const promptId = parseInt(checkbox.dataset.promptId || '', 10);
         const promptItem = checkbox.closest('.prompt-item');
         if (promptItem) {
             if (selectedPromptIds.has(promptId)) {
@@ -2116,7 +2151,7 @@ function updateBulkActionsUI() {
 
 function clearSelection() {
     selectedPromptIds.clear();
-    const checkboxes = document.querySelectorAll('.prompt-checkbox');
+    const checkboxes = document.querySelectorAll<HTMLInputElement>('.prompt-checkbox');
     checkboxes.forEach(checkbox => checkbox.checked = false);
     updateBulkActionsUI();
 }
@@ -2126,16 +2161,22 @@ function showBulkDeleteConfirmation() {
 
     const modal = document.getElementById('bulk-delete-modal');
     const countElement = document.getElementById('bulk-delete-count');
-    countElement.textContent = selectedPromptIds.size;
-    modal.classList.remove(HIDDEN_CLASS);
+    if (countElement) {
+        countElement.textContent = String(selectedPromptIds.size);
+    }
+    if (modal) {
+        modal.classList.remove(HIDDEN_CLASS);
+    }
 }
 
 function hideBulkDeleteModal() {
     const modal = document.getElementById('bulk-delete-modal');
-    modal.classList.add(HIDDEN_CLASS);
+    if (modal) {
+        modal.classList.add(HIDDEN_CLASS);
+    }
 }
 
-async function performBulkDelete() {
+async function performBulkDelete(): Promise<void> {
     if (selectedPromptIds.size === 0) return;
 
     const promptIdsArray = Array.from(selectedPromptIds);
@@ -2151,14 +2192,14 @@ async function performBulkDelete() {
             })
         });
 
-        const result = await response.json();
+        const result = (await response.json()) as BulkDeleteResponse;
 
         if (response.ok && result.success) {
             hideBulkDeleteModal();
             clearSelection();
 
             // Show success message
-            const message = i18next.t('bulkDelete.successMessage', {
+            const message = t('bulkDelete.successMessage', {
                 deleted: result.deleted_count,
                 failed: result.failed_count
             });
@@ -2183,12 +2224,21 @@ async function performBulkDelete() {
         }
     } catch (error) {
         console.error('Bulk delete error:', error);
-        alert(i18next.t('bulkDelete.errorMessage'));
+        alert(t('bulkDelete.errorMessage'));
         reportAppIssue('bulk-delete-failed', error, {
             prompt_ids: promptIdsArray
         });
     }
 }
+
+initI18n(() => {
+    try {
+        updateStaticTranslations();
+        void initializeApp();
+    } catch (error) {
+        reportAppIssue('initialize', error);
+    }
+});
 
 // Initialize lazy loading on app start
 initializeLazyLoading();
@@ -2221,3 +2271,19 @@ async function logout() {
         window.location.href = '/auth/login';
     }
 }
+
+const appWindow = window as Window & {
+    selectVersionForComparison: (versionId: string) => void;
+    showRevertConfirmation: (versionId: string) => void;
+    hideVersionHistoryModal: () => void;
+    hideDiffModal: () => void;
+    hideRevertConfirmationModal: () => void;
+    hideBulkDeleteModal: () => void;
+};
+
+appWindow.selectVersionForComparison = selectVersionForComparison;
+appWindow.showRevertConfirmation = showRevertConfirmation;
+appWindow.hideVersionHistoryModal = hideVersionHistoryModal;
+appWindow.hideDiffModal = hideDiffModal;
+appWindow.hideRevertConfirmationModal = hideRevertConfirmationModal;
+appWindow.hideBulkDeleteModal = hideBulkDeleteModal;

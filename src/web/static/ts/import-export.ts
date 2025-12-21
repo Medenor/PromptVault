@@ -9,6 +9,7 @@
  */
 
 import { reportError } from '@/telemetry';
+import '@/form-validation';
 import { changeLanguage, initI18n, t, updateStaticTranslations } from '@/utils/i18n';
 import { hideElement, showElement } from '@/utils/dom';
 
