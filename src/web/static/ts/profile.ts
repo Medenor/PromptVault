@@ -10,7 +10,7 @@
 
 import { reportError } from '@/telemetry';
 import { changeLanguage, initI18n, t, updateStaticTranslations } from '@/utils/i18n';
-import { clearAllErrors, hideElement, showElement, showError } from '@/utils/dom';
+import { clearAllErrors, showError } from '@/utils/dom';
 import { showNotification } from '@/utils/notifications';
 
 const API_BASE = '/api/auth';
@@ -45,7 +45,7 @@ interface UserInfo {
 
 function getAuthHeaders(): HeadersInit {
   return {
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/json',
   };
 }
 
@@ -73,7 +73,7 @@ function getExpirationStatus(expiresAtString?: string | null): {
     return {
       status: 'expiring-soon',
       className: 'expires-soon',
-      message: `(Expires in ${Math.round(hoursUntilExpiry)}h)`
+      message: `(Expires in ${Math.round(hoursUntilExpiry)}h)`,
     };
   }
 
@@ -86,7 +86,7 @@ function checkPasswordStrength(password: string): { strength: number; checks: Pa
     uppercase: /[A-Z]/.test(password),
     lowercase: /[a-z]/.test(password),
     digit: /[0-9]/.test(password),
-    special: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)
+    special: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password),
   };
 
   const strength = Object.values(checks).filter(Boolean).length;
@@ -99,7 +99,7 @@ function updatePolicyRequirements(checks: PasswordChecks): void {
     uppercase: 'policy-uppercase',
     lowercase: 'policy-lowercase',
     digit: 'policy-digit',
-    special: 'policy-special'
+    special: 'policy-special',
   };
 
   (Object.entries(checks) as Array<[keyof PasswordChecks, boolean]>).forEach(([check, met]) => {
@@ -157,7 +157,7 @@ async function loadSessions(): Promise<void> {
   try {
     const response = await fetch(`${API_BASE}/sessions`, {
       credentials: 'include',
-      headers: getAuthHeaders()
+      headers: getAuthHeaders(),
     });
 
     if (response.ok) {
@@ -218,7 +218,7 @@ async function loadUserInfo(): Promise<void> {
   try {
     const response = await fetch(`${API_BASE}/me`, {
       credentials: 'include',
-      headers: getAuthHeaders()
+      headers: getAuthHeaders(),
     });
 
     if (response.ok) {
@@ -260,7 +260,11 @@ async function loadUserInfo(): Promise<void> {
 
 async function revokeSession(sessionId: string): Promise<void> {
   if (!sessionId) return;
-  if (!window.confirm(t('auth.profile.confirmRevokeSession') || 'Are you sure you want to revoke this session?')) {
+  if (
+    !window.confirm(
+      t('auth.profile.confirmRevokeSession') || 'Are you sure you want to revoke this session?'
+    )
+  ) {
     return;
   }
 
@@ -268,11 +272,14 @@ async function revokeSession(sessionId: string): Promise<void> {
     const response = await fetch(`${API_BASE}/sessions/${sessionId}`, {
       credentials: 'include',
       method: 'DELETE',
-      headers: getAuthHeaders()
+      headers: getAuthHeaders(),
     });
 
     if (response.ok) {
-      showNotification(t('auth.profile.sessionRevoked') || 'Session revoked successfully', 'success');
+      showNotification(
+        t('auth.profile.sessionRevoked') || 'Session revoked successfully',
+        'success'
+      );
       await loadSessions();
     } else {
       showNotification(t('messages.error') || 'Failed to revoke session', 'error');
@@ -302,8 +309,10 @@ function setupChangePasswordForm(): void {
     event.preventDefault();
     clearAllErrors();
 
-    const currentPassword = (document.getElementById('current-password') as HTMLInputElement | null)?.value ?? '';
-    const newPassword = (document.getElementById('new-password') as HTMLInputElement | null)?.value ?? '';
+    const currentPassword =
+      (document.getElementById('current-password') as HTMLInputElement | null)?.value ?? '';
+    const newPassword =
+      (document.getElementById('new-password') as HTMLInputElement | null)?.value ?? '';
     const confirmNewPassword =
       (document.getElementById('confirm-new-password') as HTMLInputElement | null)?.value ?? '';
 
@@ -350,14 +359,17 @@ function setupChangePasswordForm(): void {
         body: JSON.stringify({
           old_password: currentPassword,
           new_password: newPassword,
-          confirm_new_password: confirmNewPassword
-        })
+          confirm_new_password: confirmNewPassword,
+        }),
       });
 
       const data = (await response.json()) as Record<string, string>;
 
       if (response.ok) {
-        showNotification(t('auth.profile.passwordChanged') || 'Password changed successfully', 'success');
+        showNotification(
+          t('auth.profile.passwordChanged') || 'Password changed successfully',
+          'success'
+        );
         form.reset();
         clearAllErrors();
       } else if (response.status === 401) {
@@ -366,7 +378,10 @@ function setupChangePasswordForm(): void {
           data.detail || t('auth.profile.incorrectPassword') || 'Incorrect current password'
         );
       } else {
-        showNotification(data.detail || t('messages.error') || 'Failed to change password', 'error');
+        showNotification(
+          data.detail || t('messages.error') || 'Failed to change password',
+          'error'
+        );
       }
     } catch (error) {
       reportError('profile', 'changePassword', error);
@@ -386,15 +401,16 @@ function setupLogout(): void {
 
   logoutBtn.addEventListener('click', async () => {
     try {
-      const refreshToken = localStorage.getItem('refresh_token') || sessionStorage.getItem('refresh_token');
+      const refreshToken =
+        localStorage.getItem('refresh_token') || sessionStorage.getItem('refresh_token');
       if (refreshToken) {
         await fetch(`${API_BASE}/logout`, {
           credentials: 'include',
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ refresh_token: refreshToken })
+          body: JSON.stringify({ refresh_token: refreshToken }),
         });
       }
     } catch (error) {
@@ -412,7 +428,7 @@ function setupLogout(): void {
 async function checkAdminAccess(): Promise<void> {
   try {
     const response = await fetch('/api/auth/me', {
-      credentials: 'include'
+      credentials: 'include',
     });
 
     if (response.ok) {
@@ -454,7 +470,8 @@ function initializeProfilePage(): void {
   setupLogout();
 }
 
-(window as Window & { revokeSession?: (sessionId: string) => Promise<void> }).revokeSession = revokeSession;
+(window as Window & { revokeSession?: (sessionId: string) => Promise<void> }).revokeSession =
+  revokeSession;
 
 initI18n(() => {
   try {

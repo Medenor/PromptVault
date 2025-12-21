@@ -33,7 +33,7 @@ function checkPasswordStrength(password: string): { strength: number; checks: Pa
     uppercase: /[A-Z]/.test(password),
     lowercase: /[a-z]/.test(password),
     digit: /[0-9]/.test(password),
-    special: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)
+    special: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password),
   };
 
   const strength = Object.values(checks).filter(Boolean).length;
@@ -46,7 +46,7 @@ function updatePolicyRequirements(checks: PasswordChecks): void {
     uppercase: 'policy-uppercase',
     lowercase: 'policy-lowercase',
     digit: 'policy-digit',
-    special: 'policy-special'
+    special: 'policy-special',
   };
 
   (Object.entries(checks) as Array<[keyof PasswordChecks, boolean]>).forEach(([check, met]) => {
@@ -120,9 +120,9 @@ async function handleForgotPasswordSubmit(event: Event): Promise<void> {
     const response = await fetch(`${API_BASE}/password-reset/request`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ email })
+      body: JSON.stringify({ email }),
     });
 
     const data = (await response.json()) as Record<string, string>;
@@ -140,10 +140,7 @@ async function handleForgotPasswordSubmit(event: Event): Promise<void> {
     }
   } catch (error) {
     reportError('password-reset', 'forgot', error);
-    showError(
-      document.getElementById('email-error'),
-      t('messages.error') || 'An error occurred'
-    );
+    showError(document.getElementById('email-error'), t('messages.error') || 'An error occurred');
   } finally {
     if (submitButton) {
       submitButton.disabled = false;
@@ -191,13 +188,13 @@ async function handleResetPasswordSubmit(event: Event, token: string): Promise<v
     const response = await fetch(`${API_BASE}/password-reset/confirm`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         token,
         new_password: password,
-        confirm_new_password: confirmPassword
-      })
+        confirm_new_password: confirmPassword,
+      }),
     });
 
     const data = (await response.json()) as Record<string, string>;

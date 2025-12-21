@@ -40,7 +40,7 @@ function checkPasswordStrength(password: string): { strength: number; checks: Pa
     uppercase: /[A-Z]/.test(password),
     lowercase: /[a-z]/.test(password),
     digit: /[0-9]/.test(password),
-    special: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)
+    special: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password),
   };
 
   Object.values(checks).forEach((met) => {
@@ -56,7 +56,7 @@ function updatePolicyRequirements(checks: PasswordChecks): void {
     uppercase: 'policy-uppercase',
     lowercase: 'policy-lowercase',
     digit: 'policy-digit',
-    special: 'policy-special'
+    special: 'policy-special',
   };
 
   (Object.entries(checks) as Array<[keyof PasswordChecks, boolean]>).forEach(([check, met]) => {
@@ -140,21 +140,29 @@ async function handleLoginSubmit(event: Event): Promise<void> {
     const response = await fetch(`${API_BASE}/login`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         username_or_email: usernameOrEmail,
         password,
-        remember_me: rememberMe
-      })
+        remember_me: rememberMe,
+      }),
     });
 
-    const data = (await response.json()) as Record<string, string>;
+    const data = (await response.json()) as {
+      access_token?: string;
+      refresh_token?: string;
+      detail?: string;
+    };
 
     if (response.ok) {
       const preferredStorage = rememberMe ? localStorage : sessionStorage;
       const secondaryStorage = rememberMe ? sessionStorage : localStorage;
 
+      if (!data.access_token || !data.refresh_token) {
+        showNotification(t('messages.error') || 'An error occurred', 'error');
+        return;
+      }
       preferredStorage.setItem('access_token', data.access_token);
       preferredStorage.setItem('refresh_token', data.refresh_token);
 
@@ -266,19 +274,27 @@ async function handleRegisterSubmit(event: Event): Promise<void> {
     const response = await fetch(`${API_BASE}/register`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         username,
         email,
         password,
-        confirm_password: confirmPassword
-      })
+        confirm_password: confirmPassword,
+      }),
     });
 
-    const data = (await response.json()) as Record<string, string>;
+    const data = (await response.json()) as {
+      access_token?: string;
+      refresh_token?: string;
+      detail?: string;
+    };
 
     if (response.ok) {
+      if (!data.access_token || !data.refresh_token) {
+        showNotification(t('messages.error') || 'An error occurred', 'error');
+        return;
+      }
       localStorage.setItem('access_token', data.access_token);
       localStorage.setItem('refresh_token', data.refresh_token);
 

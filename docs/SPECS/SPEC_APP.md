@@ -102,10 +102,10 @@ All requirements use normative language:
 
 - **REQ-002 (Prompt Creation)**  
   The system MUST allow creation of new prompts with:
-  - title  
-  - prompt content  
+  - title
+  - prompt content
   - optional category, tags, note  
-  When a prompt is created, the system MUST also create an initial Version associated with that prompt.
+    When a prompt is created, the system MUST also create an initial Version associated with that prompt.
 
 - **REQ-003 (Prompt Update & Versioning)**  
   Every update to a prompt that modifies persisted data:
@@ -133,7 +133,7 @@ All requirements use normative language:
   - CSV
   - JSON
   - Markdown  
-  Import MUST:
+    Import MUST:
   - validate format and content,
   - provide a preview or dry-run mode (where applicable),
   - reject invalid or unsupported files without modifying existing data.
@@ -143,7 +143,7 @@ All requirements use normative language:
   - CSV
   - JSON
   - Markdown  
-  The export operation MUST:
+    The export operation MUST:
   - respect the requested format,
   - return data in a consistent, machine-readable structure.
 
@@ -214,7 +214,7 @@ The following invariants MUST always hold:
   Bulk operations MUST treat each prompt independently and MUST return:
   - successful operations,
   - failed operations,  
-  in a way that makes it clear which prompt IDs were processed and with what outcome.
+    in a way that makes it clear which prompt IDs were processed and with what outcome.
 
 ---
 
@@ -241,14 +241,14 @@ This section defines the **observable contracts** of the main HTTP API. It does 
 
 **Query Parameters (conceptual):**
 
-| Name       | Type     | Description                           |
-|------------|----------|---------------------------------------|
-| tags       | string[] | Filter prompts by tags                |
-| category   | string   | Filter prompts by category            |
-| search     | string   | Full-text search in title/prompt      |
-| favorite   | bool     | Filter by favorite flag               |
-| page       | int      | Optional pagination page              |
-| page_size  | int      | Optional page size                    |
+| Name      | Type     | Description                      |
+| --------- | -------- | -------------------------------- |
+| tags      | string[] | Filter prompts by tags           |
+| category  | string   | Filter prompts by category       |
+| search    | string   | Full-text search in title/prompt |
+| favorite  | bool     | Filter by favorite flag          |
+| page      | int      | Optional pagination page         |
+| page_size | int      | Optional page size               |
 
 **Success Response (200):**
 
@@ -305,10 +305,10 @@ This section defines the **observable contracts** of the main HTTP API. It does 
 
 **Error Responses:**
 
-| Status | Condition                                  |
-|--------|--------------------------------------------|
-| 400    | Malformed JSON or invalid payload format   |
-| 422    | Field-level validation failure             |
+| Status | Condition                                |
+| ------ | ---------------------------------------- |
+| 400    | Malformed JSON or invalid payload format |
+| 422    | Field-level validation failure           |
 
 ---
 
@@ -343,10 +343,10 @@ This section defines the **observable contracts** of the main HTTP API. It does 
 
 **Error Responses:**
 
-| Status | Condition                            |
-|--------|--------------------------------------|
-| 404    | Prompt not found                     |
-| 422    | Validation or constraint violation   |
+| Status | Condition                          |
+| ------ | ---------------------------------- |
+| 404    | Prompt not found                   |
+| 422    | Validation or constraint violation |
 
 ---
 
@@ -651,7 +651,7 @@ Expected:
 - **Invalid Tags Example**  
   Request with 51 tags MUST produce a 422 validation error.
 
-- **Malformed Import File**  
+- **Malformed Import File**
   - CSV missing required columns MUST result in 400/422 and no data changes.
   - Markdown with unsupported structure MUST be rejected.
 

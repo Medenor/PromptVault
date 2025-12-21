@@ -30,7 +30,7 @@ import {
   MIN_RETENTION_DAYS,
   MIN_COMPRESSION_THRESHOLD_DAYS,
   SAFE_BACKUP_NAME_PATTERN,
-  SAFE_FILENAME_PATTERN
+  SAFE_FILENAME_PATTERN,
 } from './constants';
 
 import type { FileValidationResult, ValidationResult } from '@/types/validation';
@@ -141,7 +141,7 @@ export function validateTitle(title: string, required = true): ValidationResult<
     return {
       valid: false,
       error: 'validation.titleRequired',
-      sanitized: ''
+      sanitized: '',
     };
   }
 
@@ -149,14 +149,14 @@ export function validateTitle(title: string, required = true): ValidationResult<
     return {
       valid: false,
       error: 'validation.titleTooLong',
-      sanitized
+      sanitized,
     };
   }
 
   return {
     valid: true,
     error: null,
-    sanitized
+    sanitized,
   };
 }
 
@@ -170,7 +170,7 @@ export function validatePrompt(prompt: string, required = true): ValidationResul
     return {
       valid: false,
       error: 'validation.contentRequired',
-      sanitized: ''
+      sanitized: '',
     };
   }
 
@@ -178,14 +178,14 @@ export function validatePrompt(prompt: string, required = true): ValidationResul
     return {
       valid: false,
       error: 'validation.contentTooLong',
-      sanitized
+      sanitized,
     };
   }
 
   return {
     valid: true,
     error: null,
-    sanitized
+    sanitized,
   };
 }
 
@@ -199,7 +199,7 @@ export function validateCategory(category: string, required = false): Validation
     return {
       valid: false,
       error: 'validation.categoryRequired',
-      sanitized: ''
+      sanitized: '',
     };
   }
 
@@ -207,14 +207,14 @@ export function validateCategory(category: string, required = false): Validation
     return {
       valid: false,
       error: 'validation.categoryTooLong',
-      sanitized
+      sanitized,
     };
   }
 
   return {
     valid: true,
     error: null,
-    sanitized
+    sanitized,
   };
 }
 
@@ -243,7 +243,7 @@ export function validateTags(
     return {
       valid: false,
       error: 'validation.tagsRequired',
-      sanitized: []
+      sanitized: [],
     };
   }
 
@@ -251,7 +251,7 @@ export function validateTags(
     return {
       valid: false,
       error: 'validation.tooManyTags',
-      sanitized: sanitized.slice(0, MAX_TAG_COUNT)
+      sanitized: sanitized.slice(0, MAX_TAG_COUNT),
     };
   }
 
@@ -260,14 +260,14 @@ export function validateTags(
     return {
       valid: false,
       error: 'validation.tagTooLong',
-      sanitized
+      sanitized,
     };
   }
 
   return {
     valid: true,
     error: null,
-    sanitized
+    sanitized,
   };
 }
 
@@ -281,7 +281,7 @@ export function validateNote(note: string, required = false): ValidationResult<s
     return {
       valid: false,
       error: 'validation.noteRequired',
-      sanitized: ''
+      sanitized: '',
     };
   }
 
@@ -289,14 +289,14 @@ export function validateNote(note: string, required = false): ValidationResult<s
     return {
       valid: false,
       error: 'validation.noteTooLong',
-      sanitized
+      sanitized,
     };
   }
 
   return {
     valid: true,
     error: null,
-    sanitized
+    sanitized,
   };
 }
 
@@ -313,7 +313,7 @@ export function validateCommitMessage(
     return {
       valid: false,
       error: 'validation.commitRequired',
-      sanitized: ''
+      sanitized: '',
     };
   }
 
@@ -321,14 +321,14 @@ export function validateCommitMessage(
     return {
       valid: false,
       error: 'validation.commitTooLong',
-      sanitized
+      sanitized,
     };
   }
 
   return {
     valid: true,
     error: null,
-    sanitized
+    sanitized,
   };
 }
 
@@ -342,7 +342,7 @@ export function validateFilename(filename: string, required = true): ValidationR
     return {
       valid: false,
       error: 'validation.filenameRequired',
-      sanitized: ''
+      sanitized: '',
     };
   }
 
@@ -350,7 +350,7 @@ export function validateFilename(filename: string, required = true): ValidationR
     return {
       valid: false,
       error: 'validation.filenameInvalid',
-      sanitized
+      sanitized,
     };
   }
 
@@ -358,14 +358,14 @@ export function validateFilename(filename: string, required = true): ValidationR
     return {
       valid: false,
       error: 'validation.filenameTooLong',
-      sanitized
+      sanitized,
     };
   }
 
   return {
     valid: true,
     error: null,
-    sanitized
+    sanitized,
   };
 }
 
@@ -379,7 +379,7 @@ export function validateBackupName(backupName: string, required = false): Valida
     return {
       valid: false,
       error: 'validation.backupNameRequired',
-      sanitized: ''
+      sanitized: '',
     };
   }
 
@@ -387,7 +387,7 @@ export function validateBackupName(backupName: string, required = false): Valida
     return {
       valid: false,
       error: 'validation.backupNameInvalid',
-      sanitized
+      sanitized,
     };
   }
 
@@ -395,14 +395,14 @@ export function validateBackupName(backupName: string, required = false): Valida
     return {
       valid: false,
       error: 'validation.backupNameTooLong',
-      sanitized
+      sanitized,
     };
   }
 
   return {
     valid: true,
     error: null,
-    sanitized
+    sanitized,
   };
 }
 
@@ -413,14 +413,14 @@ export function validateFileUpload(file: File | null | undefined): FileValidatio
   if (!file) {
     return {
       valid: false,
-      error: 'validation.fileRequired'
+      error: 'validation.fileRequired',
     };
   }
 
   if (file.size > MAX_FILE_SIZE_BYTES) {
     return {
       valid: false,
-      error: 'validation.fileTooLarge'
+      error: 'validation.fileTooLarge',
     };
   }
 
@@ -432,20 +432,20 @@ export function validateFileUpload(file: File | null | undefined): FileValidatio
   if (!hasValidExtension) {
     return {
       valid: false,
-      error: 'validation.fileInvalidExtension'
+      error: 'validation.fileInvalidExtension',
     };
   }
 
   if (file.type && !ALLOWED_MIME_TYPES.has(file.type)) {
     return {
       valid: false,
-      error: 'validation.fileInvalidMimeType'
+      error: 'validation.fileInvalidMimeType',
     };
   }
 
   return {
     valid: true,
-    error: null
+    error: null,
   };
 }
 
@@ -459,7 +459,7 @@ export function validateRetentionDays(days: number | string): ValidationResult<n
     return {
       valid: false,
       error: 'validation.retentionDaysInvalid',
-      sanitized: MIN_RETENTION_DAYS
+      sanitized: MIN_RETENTION_DAYS,
     };
   }
 
@@ -467,7 +467,7 @@ export function validateRetentionDays(days: number | string): ValidationResult<n
     return {
       valid: false,
       error: 'validation.retentionDaysTooLow',
-      sanitized: MIN_RETENTION_DAYS
+      sanitized: MIN_RETENTION_DAYS,
     };
   }
 
@@ -475,14 +475,14 @@ export function validateRetentionDays(days: number | string): ValidationResult<n
     return {
       valid: false,
       error: 'validation.retentionDaysTooHigh',
-      sanitized: MAX_RETENTION_DAYS
+      sanitized: MAX_RETENTION_DAYS,
     };
   }
 
   return {
     valid: true,
     error: null,
-    sanitized: numDays
+    sanitized: numDays,
   };
 }
 
@@ -496,7 +496,7 @@ export function validateCompressionDays(days: number | string): ValidationResult
     return {
       valid: false,
       error: 'validation.compressionDaysInvalid',
-      sanitized: MIN_COMPRESSION_THRESHOLD_DAYS
+      sanitized: MIN_COMPRESSION_THRESHOLD_DAYS,
     };
   }
 
@@ -504,7 +504,7 @@ export function validateCompressionDays(days: number | string): ValidationResult
     return {
       valid: false,
       error: 'validation.compressionDaysTooLow',
-      sanitized: MIN_COMPRESSION_THRESHOLD_DAYS
+      sanitized: MIN_COMPRESSION_THRESHOLD_DAYS,
     };
   }
 
@@ -512,14 +512,14 @@ export function validateCompressionDays(days: number | string): ValidationResult
     return {
       valid: false,
       error: 'validation.compressionDaysTooHigh',
-      sanitized: MAX_COMPRESSION_THRESHOLD_DAYS
+      sanitized: MAX_COMPRESSION_THRESHOLD_DAYS,
     };
   }
 
   return {
     valid: true,
     error: null,
-    sanitized: numDays
+    sanitized: numDays,
   };
 }
 
@@ -616,6 +616,6 @@ export function validatePromptForm(
   return {
     valid: Object.keys(errors).length === 0,
     errors,
-    sanitized
+    sanitized,
   };
 }

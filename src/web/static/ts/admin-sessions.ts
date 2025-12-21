@@ -35,13 +35,13 @@ interface SessionItem {
 let allSessions: SessionItem[] = [];
 let currentFilters = {
   search: '',
-  user: 'all'
+  user: 'all',
 };
 let currentSession: { userId: string; sessionId: string; username: string } | null = null;
 
 function getAuthHeaders(): HeadersInit {
   return {
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/json',
   };
 }
 
@@ -92,7 +92,8 @@ function populateUserFilter(users: AdminUser[]): void {
   if (!userFilter) return;
 
   const currentValue = userFilter.value;
-  userFilter.innerHTML = '<option value="all" data-i18n="admin.sessions.allUsers">All Users</option>';
+  userFilter.innerHTML =
+    '<option value="all" data-i18n="admin.sessions.allUsers">All Users</option>';
 
   users.forEach((user) => {
     const option = document.createElement('option');
@@ -115,10 +116,11 @@ function displaySessions(): void {
 
   if (currentFilters.search) {
     const searchLower = currentFilters.search.toLowerCase();
-    filteredSessions = filteredSessions.filter((session) =>
-      (session.username && session.username.toLowerCase().includes(searchLower)) ||
-      (session.ip_address && session.ip_address.includes(searchLower)) ||
-      (session.user_agent && session.user_agent.toLowerCase().includes(searchLower))
+    filteredSessions = filteredSessions.filter(
+      (session) =>
+        (session.username && session.username.toLowerCase().includes(searchLower)) ||
+        (session.ip_address && session.ip_address.includes(searchLower)) ||
+        (session.user_agent && session.user_agent.toLowerCase().includes(searchLower))
     );
   }
 
@@ -127,7 +129,8 @@ function displaySessions(): void {
   }
 
   if (filteredSessions.length === 0) {
-    tableBody.innerHTML = '<tr><td colspan="7" class="loading-cell">No active sessions found</td></tr>';
+    tableBody.innerHTML =
+      '<tr><td colspan="7" class="loading-cell">No active sessions found</td></tr>';
     return;
   }
 
@@ -170,7 +173,7 @@ async function loadAllSessions(): Promise<void> {
   try {
     const usersResponse = await fetch(`${API_BASE}/users?limit=1000`, {
       credentials: 'include',
-      headers: getAuthHeaders()
+      headers: getAuthHeaders(),
     });
 
     if (!usersResponse.ok) {
@@ -193,7 +196,7 @@ async function loadAllSessions(): Promise<void> {
       try {
         const sessionsResponse = await fetch(`${API_BASE}/users/${user.id}/sessions`, {
           credentials: 'include',
-          headers: getAuthHeaders()
+          headers: getAuthHeaders(),
         });
 
         if (sessionsResponse.ok) {
@@ -215,7 +218,8 @@ async function loadAllSessions(): Promise<void> {
   } catch (error) {
     reportError('admin-sessions', 'loadAllSessions', error);
     if (tableBody) {
-      tableBody.innerHTML = '<tr><td colspan="7" class="loading-cell">Error loading sessions</td></tr>';
+      tableBody.innerHTML =
+        '<tr><td colspan="7" class="loading-cell">Error loading sessions</td></tr>';
     }
   }
 }
@@ -225,7 +229,7 @@ async function revokeSession(userId: string, sessionId: string, username: string
     const response = await fetch(`${API_BASE}/users/${userId}/sessions/${sessionId}`, {
       credentials: 'include',
       method: 'DELETE',
-      headers: getAuthHeaders()
+      headers: getAuthHeaders(),
     });
 
     if (response.ok) {
@@ -283,9 +287,11 @@ async function revokeAllSessions(): Promise<void> {
     userFilter.selectedOptions[0] ||
     (userFilter.selectedIndex >= 0 ? userFilter.options[userFilter.selectedIndex] : null);
   const selectedUserText = selectedOption?.text ?? '';
-  if (!window.confirm(
-    `Are you sure you want to revoke ALL sessions for user "${selectedUserText}"? They will be logged out of all devices.`
-  )) {
+  if (
+    !window.confirm(
+      `Are you sure you want to revoke ALL sessions for user "${selectedUserText}"? They will be logged out of all devices.`
+    )
+  ) {
     return;
   }
 
@@ -293,12 +299,15 @@ async function revokeAllSessions(): Promise<void> {
     const response = await fetch(`${API_BASE}/users/${selectedUserId}/sessions`, {
       method: 'DELETE',
       credentials: 'include',
-      headers: getAuthHeaders()
+      headers: getAuthHeaders(),
     });
 
     if (response.ok) {
       const data = (await response.json()) as { revoked_count?: number };
-      showNotification(`${data.revoked_count || 0} session(s) revoked for ${selectedUserText}`, 'success');
+      showNotification(
+        `${data.revoked_count || 0} session(s) revoked for ${selectedUserText}`,
+        'success'
+      );
       await loadAllSessions();
     } else {
       const data = (await response.json()) as Record<string, string>;
@@ -360,26 +369,32 @@ function initializeAdminSessionsPage(): void {
   void loadAllSessions();
 }
 
-(window as Window & {
-  showRevokeConfirmation?: (userId: string, sessionId: string, username: string) => void;
-  closeSessionDetailModal?: () => void;
-  closeConfirmRevokeModal?: () => void;
-}).showRevokeConfirmation = (userId: string, sessionId: string, username: string) => {
+(
+  window as Window & {
+    showRevokeConfirmation?: (userId: string, sessionId: string, username: string) => void;
+    closeSessionDetailModal?: () => void;
+    closeConfirmRevokeModal?: () => void;
+  }
+).showRevokeConfirmation = (userId: string, sessionId: string, username: string) => {
   currentSession = { userId, sessionId, username };
   showModal('confirm-revoke-modal');
 };
 
-(window as Window & {
-  showRevokeConfirmation?: (userId: string, sessionId: string, username: string) => void;
-  closeSessionDetailModal?: () => void;
-  closeConfirmRevokeModal?: () => void;
-}).closeSessionDetailModal = () => hideModal('session-detail-modal');
+(
+  window as Window & {
+    showRevokeConfirmation?: (userId: string, sessionId: string, username: string) => void;
+    closeSessionDetailModal?: () => void;
+    closeConfirmRevokeModal?: () => void;
+  }
+).closeSessionDetailModal = () => hideModal('session-detail-modal');
 
-(window as Window & {
-  showRevokeConfirmation?: (userId: string, sessionId: string, username: string) => void;
-  closeSessionDetailModal?: () => void;
-  closeConfirmRevokeModal?: () => void;
-}).closeConfirmRevokeModal = () => hideModal('confirm-revoke-modal');
+(
+  window as Window & {
+    showRevokeConfirmation?: (userId: string, sessionId: string, username: string) => void;
+    closeSessionDetailModal?: () => void;
+    closeConfirmRevokeModal?: () => void;
+  }
+).closeConfirmRevokeModal = () => hideModal('confirm-revoke-modal');
 
 initI18n(() => {
   try {

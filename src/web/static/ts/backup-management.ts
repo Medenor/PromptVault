@@ -185,7 +185,7 @@ async function createBackup(): Promise<void> {
 
     const response = await fetch('/api/backups', {
       method: 'POST',
-      body: formData
+      body: formData,
     });
 
     const result = await response.json();
@@ -239,7 +239,7 @@ async function confirmRestore(): Promise<void> {
 
   try {
     const response = await fetch(`/api/backups/${backupIdToRestore}/restore`, {
-      method: 'POST'
+      method: 'POST',
     });
 
     const result = await response.json();
@@ -294,7 +294,7 @@ async function confirmDelete(): Promise<void> {
 
   try {
     const response = await fetch(`/api/backups/${backupIdToDelete}`, {
-      method: 'DELETE'
+      method: 'DELETE',
     });
 
     const result = await response.json();
@@ -326,13 +326,17 @@ async function cleanupBackups(): Promise<void> {
 
     const response = await fetch('/api/backups/cleanup', {
       method: 'POST',
-      body: formData
+      body: formData,
     });
 
     const result = await response.json();
 
     if (result.success) {
-      showStatus('maintenance-status', `Cleanup completed: ${result.removed_count} backups removed`, 'success');
+      showStatus(
+        'maintenance-status',
+        `Cleanup completed: ${result.removed_count} backups removed`,
+        'success'
+      );
       void loadBackups();
       void loadBackupStats();
     } else {
@@ -358,7 +362,7 @@ async function compressBackups(): Promise<void> {
 
     const response = await fetch('/api/backups/compress', {
       method: 'POST',
-      body: formData
+      body: formData,
     });
 
     const result = await response.json();
@@ -476,7 +480,7 @@ function setRestoreInProgress(isRestoring: boolean, messageKey?: string): void {
 async function checkAdminAccess(): Promise<void> {
   try {
     const response = await fetch('/api/auth/me', {
-      credentials: 'include'
+      credentials: 'include',
     });
 
     if (response.ok) {

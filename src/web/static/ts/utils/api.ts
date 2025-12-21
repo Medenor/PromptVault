@@ -30,7 +30,7 @@ export class APIRequestError extends Error {
     const message =
       typeof error.detail === 'string'
         ? error.detail
-        : error.detail?.[0]?.msg ?? 'Request failed';
+        : (error.detail?.[0]?.msg ?? 'Request failed');
     super(message);
     this.name = 'APIRequestError';
     this.status = status;
@@ -82,8 +82,8 @@ export async function apiFetch<T>(url: string, options: FetchOptions = {}): Prom
       signal: controller.signal,
       headers: {
         'Content-Type': 'application/json',
-        ...fetchOptions.headers
-      }
+        ...fetchOptions.headers,
+      },
     });
 
     clearTimeout(timeoutId);
@@ -133,7 +133,7 @@ export function apiPost<T>(url: string, body?: unknown, options?: FetchOptions):
   return apiFetch<T>(url, {
     ...options,
     method: 'POST',
-    body: body ? JSON.stringify(body) : undefined
+    body: body ? JSON.stringify(body) : null,
   });
 }
 
@@ -144,7 +144,7 @@ export function apiPut<T>(url: string, body?: unknown, options?: FetchOptions): 
   return apiFetch<T>(url, {
     ...options,
     method: 'PUT',
-    body: body ? JSON.stringify(body) : undefined
+    body: body ? JSON.stringify(body) : null,
   });
 }
 
@@ -155,7 +155,7 @@ export function apiDelete<T>(url: string, body?: unknown, options?: FetchOptions
   return apiFetch<T>(url, {
     ...options,
     method: 'DELETE',
-    body: body ? JSON.stringify(body) : undefined
+    body: body ? JSON.stringify(body) : null,
   });
 }
 
@@ -166,7 +166,7 @@ export async function apiPostForm<T>(url: string, formData: FormData): Promise<T
   const response = await fetch(url, {
     method: 'POST',
     credentials: 'include',
-    body: formData
+    body: formData,
   });
 
   if (!response.ok) {

@@ -26,6 +26,9 @@ export function updateStaticTranslations(): void {
       const match = key.match(/\[(\w+)\](.+)/);
       if (match) {
         const [, attribute, translationKey] = match;
+        if (!translationKey) {
+          return;
+        }
         const translation = i18next.t(translationKey);
         if (translation && attribute) {
           element.setAttribute(attribute, translation);
@@ -69,12 +72,12 @@ export function initI18n(callback: InitCallback): void {
         supportedLngs: ['en', 'fr', 'es', 'de'],
         debug: false,
         backend: {
-          loadPath: '/static/locales/{{lng}}.json'
+          loadPath: '/static/locales/{{lng}}.json',
         },
         detection: {
           order: ['localStorage', 'navigator', 'htmlTag'],
-          caches: ['localStorage']
-        }
+          caches: ['localStorage'],
+        },
       },
       (err: Error | null) => {
         if (err) {
@@ -117,5 +120,8 @@ export function getCurrentLanguage(): string {
  * Translate a key with optional interpolation
  */
 export function t(key: string, options?: Record<string, unknown>): string {
-  return i18next.t(key, options);
+  if (options) {
+    return i18next.t(key, options);
+  }
+  return i18next.t(key);
 }

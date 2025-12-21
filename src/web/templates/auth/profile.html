@@ -1,177 +1,241 @@
-<!DOCTYPE html>
+<!doctype html>
 <!-- This Source Code Form is subject to the terms of the Mozilla Public
      License, v. 2.0. If a copy of the MPL was not distributed with this
      file, You can obtain one at https://mozilla.org/MPL/2.0/. -->
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Profile - PromptVault</title>
-    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon.png">
-    <link rel="stylesheet" href="/static/css/style.css">
-    <link rel="stylesheet" href="/static/css/auth.css">
-    <link rel="stylesheet" href="/static/css/sessions.css">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon.png" />
+    <link rel="stylesheet" href="/static/css/style.css" />
+    <link rel="stylesheet" href="/static/css/auth.css" />
+    <link rel="stylesheet" href="/static/css/sessions.css" />
     <script src="https://unpkg.com/i18next@23.7.6/i18next.min.js"></script>
     <script src="https://unpkg.com/i18next-browser-languagedetector@7.2.0/i18nextBrowserLanguageDetector.min.js"></script>
     <script src="https://unpkg.com/i18next-http-backend@2.4.2/i18nextHttpBackend.min.js"></script>
-</head>
-<body>
+  </head>
+  <body>
     {% import "macros/scripts.html" as scripts %}
     <div class="app">
-        <header class="header">
-            <div class="header-logo">
-                <img src="/static/images/promptvault_logo_frontend.webp" alt="PromptVault Logo" class="logo">
-            </div>
-            <h1>PromptVault</h1>
-            <div class="header-actions">
-                <select id="language-selector" class="language-selector">
-                    <option value="en">English</option>
-                    <option value="fr">Français</option>
-                    <option value="es">Español</option>
-                    <option value="de">Deutsch</option>
-                </select>
-                <button id="admin-btn" onclick="window.location.href='/admin/users'" data-i18n="nav.admin" style="display: none;">Admin</button>
-                <button onclick="window.location.href='/'" data-i18n="nav.backToMain">Back to Main</button>
-                <button id="logout-btn" data-i18n="auth.profile.logout">Logout</button>
-            </div>
-        </header>
-
-        <div class="profile-container">
-            <div class="profile-sidebar">
-                <div class="profile-info">
-                    <div class="profile-avatar">
-                        <span id="user-avatar" class="avatar-circle"></span>
-                    </div>
-                    <h2 id="user-username" class="profile-username"></h2>
-                    <p id="user-email" class="profile-email"></p>
-                    <p id="user-role" class="profile-role"></p>
-                </div>
-
-                <div class="profile-stats">
-                    <div class="stat-item">
-                        <span class="stat-label" data-i18n="auth.profile.memberSince">Member Since:</span>
-                        <span id="user-created" class="stat-value"></span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label" data-i18n="auth.profile.lastLogin">Last Login:</span>
-                        <span id="user-last-login" class="stat-value"></span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label" data-i18n="auth.profile.activeSessions">Active Sessions:</span>
-                        <span id="session-count" class="stat-value"></span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="profile-main">
-                <div class="profile-section">
-                    <h3 data-i18n="auth.profile.changePassword">Change Password</h3>
-                    <form id="change-password-form" class="profile-form" novalidate>
-                        <div class="form-group">
-                            <label for="current-password" data-i18n="auth.profile.currentPassword">Current Password:</label>
-                            <div class="password-input-wrapper">
-                                <input
-                                    type="password"
-                                    id="current-password"
-                                    name="current_password"
-                                    data-i18n="[placeholder]auth.profile.currentPasswordPlaceholder"
-                                    required
-                                    autocomplete="current-password"
-                                    aria-required="true"
-                                    aria-describedby="current-password-error">
-                                <button type="button" class="password-toggle" id="toggle-current-password" aria-label="Toggle password visibility">
-                                    <span class="password-toggle-icon">👁️</span>
-                                </button>
-                            </div>
-                            <div class="validation-error" id="current-password-error" role="alert" aria-live="assertive"></div>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="new-password" data-i18n="auth.profile.newPassword">New Password:</label>
-                            <div class="password-input-wrapper">
-                                <input
-                                    type="password"
-                                    id="new-password"
-                                    name="new_password"
-                                    data-i18n="[placeholder]auth.profile.newPasswordPlaceholder"
-                                    required
-                                    autocomplete="new-password"
-                                    aria-required="true"
-                                    aria-describedby="new-password-error password-strength">
-                                <button type="button" class="password-toggle" id="toggle-new-password" aria-label="Toggle password visibility">
-                                    <span class="password-toggle-icon">👁️</span>
-                                </button>
-                            </div>
-                            <div id="password-strength" class="password-strength" aria-live="polite">
-                                <div class="strength-bar">
-                                    <div class="strength-bar-fill" id="strength-bar-fill"></div>
-                                </div>
-                                <div class="strength-text" id="strength-text"></div>
-                            </div>
-                            <div class="validation-error" id="new-password-error" role="alert" aria-live="assertive"></div>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="confirm-new-password" data-i18n="auth.profile.confirmNewPassword">Confirm New Password:</label>
-                            <div class="password-input-wrapper">
-                                <input
-                                    type="password"
-                                    id="confirm-new-password"
-                                    name="confirm_password"
-                                    data-i18n="[placeholder]auth.profile.confirmNewPasswordPlaceholder"
-                                    required
-                                    autocomplete="new-password"
-                                    aria-required="true"
-                                    aria-describedby="confirm-new-password-error">
-                                <button type="button" class="password-toggle" id="toggle-confirm-new-password" aria-label="Toggle password visibility">
-                                    <span class="password-toggle-icon">👁️</span>
-                                </button>
-                            </div>
-                            <div class="validation-error" id="confirm-new-password-error" role="alert" aria-live="assertive"></div>
-                        </div>
-
-                        <div class="password-policy" id="password-policy">
-                            <h4 data-i18n="auth.register.passwordPolicy">Password Requirements:</h4>
-                            <ul>
-                                <li id="policy-length" class="policy-requirement">
-                                    <span class="policy-icon">○</span>
-                                    <span data-i18n="auth.register.policyLength">At least 12 characters</span>
-                                </li>
-                                <li id="policy-uppercase" class="policy-requirement">
-                                    <span class="policy-icon">○</span>
-                                    <span data-i18n="auth.register.policyUppercase">At least one uppercase letter</span>
-                                </li>
-                                <li id="policy-lowercase" class="policy-requirement">
-                                    <span class="policy-icon">○</span>
-                                    <span data-i18n="auth.register.policyLowercase">At least one lowercase letter</span>
-                                </li>
-                                <li id="policy-digit" class="policy-requirement">
-                                    <span class="policy-icon">○</span>
-                                    <span data-i18n="auth.register.policyDigit">At least one number</span>
-                                </li>
-                                <li id="policy-special" class="policy-requirement">
-                                    <span class="policy-icon">○</span>
-                                    <span data-i18n="auth.register.policySpecial">At least one special character</span>
-                                </li>
-                            </ul>
-                        </div>
-
-                        <div class="form-actions">
-                            <button type="submit" class="btn btn-primary" data-i18n="auth.profile.updatePassword">Update Password</button>
-                        </div>
-                    </form>
-                </div>
-
-                <div class="profile-section">
-                    <h3 data-i18n="auth.profile.sessions">Active Sessions</h3>
-                    <div id="sessions-list" class="sessions-list">
-                        <div class="loading" data-i18n="messages.loading">Loading...</div>
-                    </div>
-                </div>
-            </div>
+      <header class="header">
+        <div class="header-logo">
+          <img
+            src="/static/images/promptvault_logo_frontend.webp"
+            alt="PromptVault Logo"
+            class="logo"
+          />
         </div>
+        <h1>PromptVault</h1>
+        <div class="header-actions">
+          <select id="language-selector" class="language-selector">
+            <option value="en">English</option>
+            <option value="fr">Français</option>
+            <option value="es">Español</option>
+            <option value="de">Deutsch</option>
+          </select>
+          <button
+            id="admin-btn"
+            onclick="window.location.href = '/admin/users'"
+            data-i18n="nav.admin"
+            style="display: none"
+          >
+            Admin
+          </button>
+          <button onclick="window.location.href = '/'" data-i18n="nav.backToMain">
+            Back to Main
+          </button>
+          <button id="logout-btn" data-i18n="auth.profile.logout">Logout</button>
+        </div>
+      </header>
+
+      <div class="profile-container">
+        <div class="profile-sidebar">
+          <div class="profile-info">
+            <div class="profile-avatar">
+              <span id="user-avatar" class="avatar-circle"></span>
+            </div>
+            <h2 id="user-username" class="profile-username"></h2>
+            <p id="user-email" class="profile-email"></p>
+            <p id="user-role" class="profile-role"></p>
+          </div>
+
+          <div class="profile-stats">
+            <div class="stat-item">
+              <span class="stat-label" data-i18n="auth.profile.memberSince">Member Since:</span>
+              <span id="user-created" class="stat-value"></span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label" data-i18n="auth.profile.lastLogin">Last Login:</span>
+              <span id="user-last-login" class="stat-value"></span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label" data-i18n="auth.profile.activeSessions"
+                >Active Sessions:</span
+              >
+              <span id="session-count" class="stat-value"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="profile-main">
+          <div class="profile-section">
+            <h3 data-i18n="auth.profile.changePassword">Change Password</h3>
+            <form id="change-password-form" class="profile-form" novalidate>
+              <div class="form-group">
+                <label for="current-password" data-i18n="auth.profile.currentPassword"
+                  >Current Password:</label
+                >
+                <div class="password-input-wrapper">
+                  <input
+                    type="password"
+                    id="current-password"
+                    name="current_password"
+                    data-i18n="[placeholder]auth.profile.currentPasswordPlaceholder"
+                    required
+                    autocomplete="current-password"
+                    aria-required="true"
+                    aria-describedby="current-password-error"
+                  />
+                  <button
+                    type="button"
+                    class="password-toggle"
+                    id="toggle-current-password"
+                    aria-label="Toggle password visibility"
+                  >
+                    <span class="password-toggle-icon">👁️</span>
+                  </button>
+                </div>
+                <div
+                  class="validation-error"
+                  id="current-password-error"
+                  role="alert"
+                  aria-live="assertive"
+                ></div>
+              </div>
+
+              <div class="form-group">
+                <label for="new-password" data-i18n="auth.profile.newPassword">New Password:</label>
+                <div class="password-input-wrapper">
+                  <input
+                    type="password"
+                    id="new-password"
+                    name="new_password"
+                    data-i18n="[placeholder]auth.profile.newPasswordPlaceholder"
+                    required
+                    autocomplete="new-password"
+                    aria-required="true"
+                    aria-describedby="new-password-error password-strength"
+                  />
+                  <button
+                    type="button"
+                    class="password-toggle"
+                    id="toggle-new-password"
+                    aria-label="Toggle password visibility"
+                  >
+                    <span class="password-toggle-icon">👁️</span>
+                  </button>
+                </div>
+                <div id="password-strength" class="password-strength" aria-live="polite">
+                  <div class="strength-bar">
+                    <div class="strength-bar-fill" id="strength-bar-fill"></div>
+                  </div>
+                  <div class="strength-text" id="strength-text"></div>
+                </div>
+                <div
+                  class="validation-error"
+                  id="new-password-error"
+                  role="alert"
+                  aria-live="assertive"
+                ></div>
+              </div>
+
+              <div class="form-group">
+                <label for="confirm-new-password" data-i18n="auth.profile.confirmNewPassword"
+                  >Confirm New Password:</label
+                >
+                <div class="password-input-wrapper">
+                  <input
+                    type="password"
+                    id="confirm-new-password"
+                    name="confirm_password"
+                    data-i18n="[placeholder]auth.profile.confirmNewPasswordPlaceholder"
+                    required
+                    autocomplete="new-password"
+                    aria-required="true"
+                    aria-describedby="confirm-new-password-error"
+                  />
+                  <button
+                    type="button"
+                    class="password-toggle"
+                    id="toggle-confirm-new-password"
+                    aria-label="Toggle password visibility"
+                  >
+                    <span class="password-toggle-icon">👁️</span>
+                  </button>
+                </div>
+                <div
+                  class="validation-error"
+                  id="confirm-new-password-error"
+                  role="alert"
+                  aria-live="assertive"
+                ></div>
+              </div>
+
+              <div class="password-policy" id="password-policy">
+                <h4 data-i18n="auth.register.passwordPolicy">Password Requirements:</h4>
+                <ul>
+                  <li id="policy-length" class="policy-requirement">
+                    <span class="policy-icon">○</span>
+                    <span data-i18n="auth.register.policyLength">At least 12 characters</span>
+                  </li>
+                  <li id="policy-uppercase" class="policy-requirement">
+                    <span class="policy-icon">○</span>
+                    <span data-i18n="auth.register.policyUppercase"
+                      >At least one uppercase letter</span
+                    >
+                  </li>
+                  <li id="policy-lowercase" class="policy-requirement">
+                    <span class="policy-icon">○</span>
+                    <span data-i18n="auth.register.policyLowercase"
+                      >At least one lowercase letter</span
+                    >
+                  </li>
+                  <li id="policy-digit" class="policy-requirement">
+                    <span class="policy-icon">○</span>
+                    <span data-i18n="auth.register.policyDigit">At least one number</span>
+                  </li>
+                  <li id="policy-special" class="policy-requirement">
+                    <span class="policy-icon">○</span>
+                    <span data-i18n="auth.register.policySpecial"
+                      >At least one special character</span
+                    >
+                  </li>
+                </ul>
+              </div>
+
+              <div class="form-actions">
+                <button
+                  type="submit"
+                  class="btn btn-primary"
+                  data-i18n="auth.profile.updatePassword"
+                >
+                  Update Password
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <div class="profile-section">
+            <h3 data-i18n="auth.profile.sessions">Active Sessions</h3>
+            <div id="sessions-list" class="sessions-list">
+              <div class="loading" data-i18n="messages.loading">Loading...</div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     {{ scripts.load_scripts('profile', true, 'profile', true) }}
-</body>
+  </body>
 </html>

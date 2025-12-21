@@ -36,7 +36,7 @@ export const ALLOWED_MIME_TYPES = new Set([
   'text/csv',
   'application/json',
   'text/markdown',
-  'text/plain' // Some systems report .md as text/plain
+  'text/plain', // Some systems report .md as text/plain
 ]);
 
 // Backup retention constraints
@@ -64,7 +64,7 @@ export const ValidationState = {
   VALID: 'valid',
   WARNING: 'warning',
   ERROR: 'error',
-  PRISTINE: 'pristine'
+  PRISTINE: 'pristine',
 } as const;
 
 export type ValidationStateKey = (typeof ValidationState)[keyof typeof ValidationState];

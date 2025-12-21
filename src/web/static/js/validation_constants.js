@@ -1,8 +1,8 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
- 
- /**
+
+/**
  * Validation constants for PromptVault client-side validation.
  *
  * These constants mirror the server-side validation constraints defined in
@@ -34,18 +34,18 @@ export const ALLOWED_IMPORT_EXTENSIONS = new Set(['.csv', '.json', '.md', '.mark
 
 // Allowed MIME types for import
 export const ALLOWED_MIME_TYPES = new Set([
-    'text/csv',
-    'application/json',
-    'text/markdown',
-    'text/plain',  // Some systems report .md as text/plain
+  'text/csv',
+  'application/json',
+  'text/markdown',
+  'text/plain', // Some systems report .md as text/plain
 ]);
 
 // Backup retention constraints
 export const MIN_RETENTION_DAYS = 1;
-export const MAX_RETENTION_DAYS = 3650;  // 10 years
+export const MAX_RETENTION_DAYS = 3650; // 10 years
 
 export const MIN_COMPRESSION_THRESHOLD_DAYS = 1;
-export const MAX_COMPRESSION_THRESHOLD_DAYS = 365;  // 1 year
+export const MAX_COMPRESSION_THRESHOLD_DAYS = 365; // 1 year
 
 // Regular expressions for validation
 export const SAFE_FILENAME_PATTERN = /^[A-Za-z0-9_-]+$/;
@@ -64,7 +64,7 @@ export const WARNING_THRESHOLD_PERCENTAGE = 0.9; // Show warning at 90% of max l
  * @returns {number} - Length at which to show warning
  */
 export function getWarningThreshold(maxLength) {
-    return Math.floor(maxLength * WARNING_THRESHOLD_PERCENTAGE);
+  return Math.floor(maxLength * WARNING_THRESHOLD_PERCENTAGE);
 }
 
 /**
@@ -74,7 +74,7 @@ export function getWarningThreshold(maxLength) {
  * @returns {boolean} - True if approaching limit
  */
 export function isApproachingLimit(currentLength, maxLength) {
-    return currentLength >= getWarningThreshold(maxLength);
+  return currentLength >= getWarningThreshold(maxLength);
 }
 
 /**
@@ -84,7 +84,7 @@ export function isApproachingLimit(currentLength, maxLength) {
  * @returns {boolean} - True if exceeds limit
  */
 export function exceedsLimit(currentLength, maxLength) {
-    return currentLength > maxLength;
+  return currentLength > maxLength;
 }
 
 /**
@@ -94,7 +94,7 @@ export function exceedsLimit(currentLength, maxLength) {
  * @returns {number} - Remaining characters (0 if exceeded)
  */
 export function getRemainingChars(currentLength, maxLength) {
-    return Math.max(0, maxLength - currentLength);
+  return Math.max(0, maxLength - currentLength);
 }
 
 /**
@@ -103,23 +103,23 @@ export function getRemainingChars(currentLength, maxLength) {
  * @returns {string} - Formatted string (e.g., "5.2 MB")
  */
 export function formatBytes(bytes) {
-    if (bytes === 0) return '0 Bytes';
+  if (bytes === 0) return '0 Bytes';
 
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
 
-    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
 }
 
 /**
  * Validation state constants
  */
 export const ValidationState = {
-    VALID: 'valid',
-    WARNING: 'warning',
-    ERROR: 'error',
-    PRISTINE: 'pristine'
+  VALID: 'valid',
+  WARNING: 'warning',
+  ERROR: 'error',
+  PRISTINE: 'pristine',
 };
 
 /**
@@ -131,21 +131,21 @@ export const ValidationState = {
  * @returns {string} - Validation state (valid, warning, error, pristine)
  */
 export function getValidationState(currentLength, maxLength, required = false, touched = false) {
-    if (!touched) {
-        return ValidationState.PRISTINE;
-    }
+  if (!touched) {
+    return ValidationState.PRISTINE;
+  }
 
-    if (required && currentLength === 0) {
-        return ValidationState.ERROR;
-    }
+  if (required && currentLength === 0) {
+    return ValidationState.ERROR;
+  }
 
-    if (exceedsLimit(currentLength, maxLength)) {
-        return ValidationState.ERROR;
-    }
+  if (exceedsLimit(currentLength, maxLength)) {
+    return ValidationState.ERROR;
+  }
 
-    if (isApproachingLimit(currentLength, maxLength)) {
-        return ValidationState.WARNING;
-    }
+  if (isApproachingLimit(currentLength, maxLength)) {
+    return ValidationState.WARNING;
+  }
 
-    return ValidationState.VALID;
+  return ValidationState.VALID;
 }

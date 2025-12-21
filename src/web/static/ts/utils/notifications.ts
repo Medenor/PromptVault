@@ -77,7 +77,7 @@ export function showLoading(elementId: string, message?: string): void {
  * Confirm dialog wrapper with translation support
  */
 export function confirmAction(messageKey: string, options?: Record<string, unknown>): boolean {
-  const message = i18next.t(messageKey, options);
+  const message = options ? i18next.t(messageKey, options) : i18next.t(messageKey);
   return window.confirm(message);
 }
 

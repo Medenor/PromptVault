@@ -43,13 +43,6 @@
       "@types/*": ["src/web/static/ts/types/*"]
     }
   },
-  "include": [
-    "src/web/static/ts/**/*",
-    "vite.config.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "src/web/static/js"
-  ]
+  "include": ["src/web/static/ts/**/*", "vite.config.ts"],
+  "exclude": ["node_modules", "dist", "src/web/static/js"]
 }

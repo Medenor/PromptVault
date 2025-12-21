@@ -8,7 +8,6 @@
  * Import/export page logic
  */
 
-import { reportError } from '@/telemetry';
 import '@/form-validation';
 import { changeLanguage, initI18n, t, updateStaticTranslations } from '@/utils/i18n';
 import { hideElement, showElement } from '@/utils/dom';
@@ -147,7 +146,8 @@ async function previewExport(): Promise<void> {
   currentOperation = 'export';
   const formatSelect = document.getElementById('export-format') as HTMLSelectElement | null;
   const format = formatSelect?.value || 'csv';
-  const includeFavorites = (document.getElementById('include-favorites') as HTMLInputElement | null)?.checked ?? false;
+  const includeFavorites =
+    (document.getElementById('include-favorites') as HTMLInputElement | null)?.checked ?? false;
 
   try {
     showProgress('export', 'preparingExport');
@@ -186,8 +186,7 @@ async function previewImport(): Promise<void> {
   try {
     showProgress('import', 'preparingImport');
 
-    const fileContent = await readFileContent(file);
-    const previewContent = await generateImportPreview(fileContent, file.name);
+    const previewContent = await generateImportPreview(file.name);
 
     showPreview('previewImportTitle', previewContent);
     hideProgress('import');
@@ -236,8 +235,8 @@ function generateExportPreview(prompts: Record<string, unknown>, format: string)
               prompt: 'This is a sample prompt content',
               category: 'Work',
               tags: ['tag1', 'tag2'],
-              favorite: true
-            }
+              favorite: true,
+            },
           },
           '2': {
             data: {
@@ -245,10 +244,10 @@ function generateExportPreview(prompts: Record<string, unknown>, format: string)
               prompt: 'Another sample prompt',
               category: 'Personal',
               tags: ['tag3'],
-              favorite: false
-            }
-          }
-        }
+              favorite: false,
+            },
+          },
+        },
       };
       content = JSON.stringify(sampleData, null, 2);
       content += `\n\n... and ${promptCount - 2} more prompts`;
@@ -260,7 +259,7 @@ function generateExportPreview(prompts: Record<string, unknown>, format: string)
   return content;
 }
 
-async function generateImportPreview(fileContent: string, filename: string): Promise<string> {
+async function generateImportPreview(filename: string): Promise<string> {
   const extension = filename.split('.').pop()?.toLowerCase();
 
   if (extension === 'csv') {
@@ -270,15 +269,6 @@ async function generateImportPreview(fileContent: string, filename: string): Pro
     return `JSON Preview:\n\n{\n  "title": "Sample Import",\n  "prompt": "This is an imported prompt",\n  "category": "Imported",\n  "tags": ["imported", "sample"],\n  "favorite": false\n}\n\nTotal items detected: ${Math.floor(Math.random() * 5) + 3}`;
   }
   return `Markdown Preview:\n\n# Sample Import\n\n**Category:** Imported\n**Tags:** imported, sample\n**Favorite:** No\n\n## Prompt\nThis is an imported prompt from markdown file.\n\n---\n\nTotal sections detected: ${Math.floor(Math.random() * 5) + 3}`;
-}
-
-function readFileContent(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = (event) => resolve((event.target?.result as string) || '');
-    reader.onerror = (event) => reject(event);
-    reader.readAsText(file);
-  });
 }
 
 function showPreview(_titleKey: string, content: string): void {
@@ -319,10 +309,13 @@ async function confirmOperation(): Promise<void> {
 async function performExport(): Promise<void> {
   const formatSelect = document.getElementById('export-format') as HTMLSelectElement | null;
   const format = formatSelect?.value || 'csv';
-  const rawFilename = (document.getElementById('export-filename') as HTMLInputElement | null)?.value || '';
+  const rawFilename =
+    (document.getElementById('export-filename') as HTMLInputElement | null)?.value || '';
   const filename = normalizeExportFilename(rawFilename, format);
-  const includeFavorites = (document.getElementById('include-favorites') as HTMLInputElement | null)?.checked ?? false;
-  const includeMetadata = (document.getElementById('include-metadata') as HTMLInputElement | null)?.checked ?? false;
+  const includeFavorites =
+    (document.getElementById('include-favorites') as HTMLInputElement | null)?.checked ?? false;
+  const includeMetadata =
+    (document.getElementById('include-metadata') as HTMLInputElement | null)?.checked ?? false;
 
   try {
     showProgress('export', 'exportProgress');
@@ -335,7 +328,7 @@ async function performExport(): Promise<void> {
 
     const response = await fetch('/api/export', {
       method: 'POST',
-      body: formData
+      body: formData,
     });
 
     if (response.ok) {
@@ -361,7 +354,7 @@ async function performExport(): Promise<void> {
       format,
       filename,
       includeFavorites,
-      includeMetadata
+      includeMetadata,
     });
     showStatus('export', 'exportFailed', 'error');
   } finally {
@@ -378,8 +371,10 @@ async function performImport(): Promise<void> {
     return;
   }
 
-  const mode = (document.getElementById('import-mode') as HTMLSelectElement | null)?.value || 'append';
-  const validate = (document.getElementById('import-validate') as HTMLInputElement | null)?.checked ?? false;
+  const mode =
+    (document.getElementById('import-mode') as HTMLSelectElement | null)?.value || 'append';
+  const validate =
+    (document.getElementById('import-validate') as HTMLInputElement | null)?.checked ?? false;
 
   try {
     showProgress('import', 'importProgress');
@@ -391,13 +386,16 @@ async function performImport(): Promise<void> {
 
     const response = await fetch('/api/import', {
       method: 'POST',
-      body: formData
+      body: formData,
     });
 
     const result = await response.json();
 
     if (response.ok) {
-      const message = (t('importExport.importSuccess') || '').replace('{count}', result.added_count);
+      const message = (t('importExport.importSuccess') || '').replace(
+        '{count}',
+        result.added_count
+      );
       showStatus('import', message, 'success');
       void loadStatistics();
       fileInput.value = '';
@@ -408,7 +406,7 @@ async function performImport(): Promise<void> {
     reportImportExportIssue('performImport', error as Error, {
       mode,
       validate,
-      filename: file.name
+      filename: file.name,
     });
     showStatus('import', 'importFailed', 'error');
   } finally {
@@ -432,7 +430,11 @@ function hideProgress(operation: 'export' | 'import'): void {
   hideElement(progressContainer);
 }
 
-function showStatus(operation: 'export' | 'import', message: string, type: 'info' | 'success' | 'error'): void {
+function showStatus(
+  operation: 'export' | 'import',
+  message: string,
+  type: 'info' | 'success' | 'error'
+): void {
   const statusElement = document.getElementById(`${operation}-status`);
   if (!statusElement) return;
 
@@ -479,7 +481,7 @@ function clearExportSettings(): void {
 async function checkAdminAccess(): Promise<void> {
   try {
     const response = await fetch('/api/auth/me', {
-      credentials: 'include'
+      credentials: 'include',
     });
 
     if (response.ok) {

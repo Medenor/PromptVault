@@ -278,18 +278,18 @@ The following tables define conceptual operations. They may map to HTTP endpoint
 
 #### Operation: Create Prompt
 
-| Field          | Description                                              |
-|----------------|----------------------------------------------------------|
-| Name           | `CreatePrompt`                                           |
-| Auth Required  | YES (authenticated client)                               |
-| Inputs         | `title`, `content`, optional `category`, `tags`, `favorite` |
-| Output         | Created Prompt resource                                  |
-| Errors         | Validation error, unauthorized, internal error           |
+| Field         | Description                                                 |
+| ------------- | ----------------------------------------------------------- |
+| Name          | `CreatePrompt`                                              |
+| Auth Required | YES (authenticated client)                                  |
+| Inputs        | `title`, `content`, optional `category`, `tags`, `favorite` |
+| Output        | Created Prompt resource                                     |
+| Errors        | Validation error, unauthorized, internal error              |
 
 **Input Fields**
 
-| Name     | Type     | Required | Description                                            |
-|----------|----------|----------|--------------------------------------------------------|
+| Name     | Type     | Required | Description                                           |
+| -------- | -------- | -------- | ----------------------------------------------------- |
 | title    | string   | yes      | Prompt title, max length defined by system constraint |
 | content  | string   | yes      | Prompt body                                           |
 | category | string   | no       | Category name; get-or-create                          |
@@ -302,50 +302,50 @@ The following tables define conceptual operations. They may map to HTTP endpoint
 
 **Error Conditions**
 
-| Code | Condition                 | Description                                          |
-|------|---------------------------|------------------------------------------------------|
-| 400  | Invalid or missing fields | Violates **ERR-005**                                 |
-| 401  | Unauthenticated           | Violates **SEC-001**                                 |
-| 500  | Storage failure           | Violates **ERR-003** if transaction cannot commit   |
+| Code | Condition                 | Description                                       |
+| ---- | ------------------------- | ------------------------------------------------- |
+| 400  | Invalid or missing fields | Violates **ERR-005**                              |
+| 401  | Unauthenticated           | Violates **SEC-001**                              |
+| 500  | Storage failure           | Violates **ERR-003** if transaction cannot commit |
 
 #### Operation: Get Prompt
 
-| Field          | Description                                 |
-|----------------|---------------------------------------------|
-| Name           | `GetPrompt`                                 |
-| Auth Required  | YES                                         |
-| Inputs         | `id` (Prompt ID)                            |
-| Output         | Prompt resource                             |
-| Errors         | Not found, unauthorized, internal error     |
+| Field         | Description                             |
+| ------------- | --------------------------------------- |
+| Name          | `GetPrompt`                             |
+| Auth Required | YES                                     |
+| Inputs        | `id` (Prompt ID)                        |
+| Output        | Prompt resource                         |
+| Errors        | Not found, unauthorized, internal error |
 
 **Error Conditions**
 
-| Code | Condition        | Description     |
-|------|------------------|-----------------|
-| 404  | Prompt not found | **ERR-004**     |
-| 401  | Unauthenticated  | **SEC-001**     |
-| 500  | Storage failure  | **ERR-003**     |
+| Code | Condition        | Description |
+| ---- | ---------------- | ----------- |
+| 404  | Prompt not found | **ERR-004** |
+| 401  | Unauthenticated  | **SEC-001** |
+| 500  | Storage failure  | **ERR-003** |
 
 #### Operation: List/Search Prompts
 
-| Field          | Description                                                   |
-|----------------|---------------------------------------------------------------|
-| Name           | `SearchPrompts`                                               |
-| Auth Required  | YES                                                           |
-| Inputs         | `query`, `category`, `tags[]`, `favorite`, `offset`, `limit`  |
-| Output         | List of Prompt resources + paging metadata                    |
-| Errors         | Validation error, unauthorized, internal error                |
+| Field         | Description                                                  |
+| ------------- | ------------------------------------------------------------ |
+| Name          | `SearchPrompts`                                              |
+| Auth Required | YES                                                          |
+| Inputs        | `query`, `category`, `tags[]`, `favorite`, `offset`, `limit` |
+| Output        | List of Prompt resources + paging metadata                   |
+| Errors        | Validation error, unauthorized, internal error               |
 
 **Input Fields**
 
-| Name     | Type     | Required | Description                                  |
-|----------|----------|----------|----------------------------------------------|
-| query    | string   | no       | Text search string                           |
-| category | string   | no       | Category filter                              |
-| tags     | string[] | no       | Tag filters (MAY support AND/OR semantics)   |
-| favorite | boolean  | no       | Favorite-only filter                         |
-| offset   | integer  | no       | Pagination offset (default 0)                |
-| limit    | integer  | no       | Page size (system-defined maximum)           |
+| Name     | Type     | Required | Description                                |
+| -------- | -------- | -------- | ------------------------------------------ |
+| query    | string   | no       | Text search string                         |
+| category | string   | no       | Category filter                            |
+| tags     | string[] | no       | Tag filters (MAY support AND/OR semantics) |
+| favorite | boolean  | no       | Favorite-only filter                       |
+| offset   | integer  | no       | Pagination offset (default 0)              |
+| limit    | integer  | no       | Page size (system-defined maximum)         |
 
 **Output Schema**
 
@@ -360,81 +360,81 @@ The following tables define conceptual operations. They may map to HTTP endpoint
 
 #### Operation: Update Prompt
 
-| Field          | Description                                  |
-|----------------|----------------------------------------------|
-| Name           | `UpdatePrompt`                               |
-| Auth Required  | YES                                          |
-| Inputs         | `id`, fields identical to CreatePrompt       |
-| Output         | Updated Prompt resource                      |
-| Errors         | Not found, validation error, internal error  |
+| Field         | Description                                 |
+| ------------- | ------------------------------------------- |
+| Name          | `UpdatePrompt`                              |
+| Auth Required | YES                                         |
+| Inputs        | `id`, fields identical to CreatePrompt      |
+| Output        | Updated Prompt resource                     |
+| Errors        | Not found, validation error, internal error |
 
 On success, a new version **MUST** be created (REQ-VERS-002).
 
 #### Operation: Delete Prompt
 
-| Field          | Description                                   |
-|----------------|-----------------------------------------------|
-| Name           | `DeletePrompt`                                |
-| Auth Required  | YES                                           |
-| Inputs         | `id`                                          |
-| Output         | Operation result + statistics (if bulk)       |
-| Errors         | Not found, internal error                     |
+| Field         | Description                             |
+| ------------- | --------------------------------------- |
+| Name          | `DeletePrompt`                          |
+| Auth Required | YES                                     |
+| Inputs        | `id`                                    |
+| Output        | Operation result + statistics (if bulk) |
+| Errors        | Not found, internal error               |
 
 #### Operation: Get Prompt Versions
 
-| Field          | Description                                   |
-|----------------|-----------------------------------------------|
-| Name           | `GetPromptVersions`                           |
-| Auth Required  | YES                                           |
-| Inputs         | `prompt_id`                                   |
-| Output         | List of Version resources                     |
-| Errors         | Not found, internal error                     |
+| Field         | Description               |
+| ------------- | ------------------------- |
+| Name          | `GetPromptVersions`       |
+| Auth Required | YES                       |
+| Inputs        | `prompt_id`               |
+| Output        | List of Version resources |
+| Errors        | Not found, internal error |
 
 #### Operation: List Categories
 
-| Field          | Description                                   |
-|----------------|-----------------------------------------------|
-| Name           | `ListCategories`                              |
-| Auth Required  | YES                                           |
-| Inputs         | none                                          |
-| Output         | List of category names/counts                 |
+| Field         | Description                   |
+| ------------- | ----------------------------- |
+| Name          | `ListCategories`              |
+| Auth Required | YES                           |
+| Inputs        | none                          |
+| Output        | List of category names/counts |
 
 #### Operation: List Tags
 
-| Field          | Description                                   |
-|----------------|-----------------------------------------------|
-| Name           | `ListTags`                                    |
-| Auth Required  | YES                                           |
-| Inputs         | none                                          |
-| Output         | List of tag names/counts                      |
+| Field         | Description              |
+| ------------- | ------------------------ |
+| Name          | `ListTags`               |
+| Auth Required | YES                      |
+| Inputs        | none                     |
+| Output        | List of tag names/counts |
 
 #### Operation: Create Backup
 
-| Field          | Description                                   |
-|----------------|-----------------------------------------------|
-| Name           | `CreateBackup`                                |
-| Auth Required  | YES (privileged role)                         |
-| Inputs         | `backup_type`, optional description           |
-| Output         | Backup resource                               |
+| Field         | Description                         |
+| ------------- | ----------------------------------- |
+| Name          | `CreateBackup`                      |
+| Auth Required | YES (privileged role)               |
+| Inputs        | `backup_type`, optional description |
+| Output        | Backup resource                     |
 
 #### Operation: List Backups
 
-| Field          | Description                                   |
-|----------------|-----------------------------------------------|
-| Name           | `ListBackups`                                 |
-| Auth Required  | YES (privileged role)                         |
-| Inputs         | none                                          |
-| Output         | List of Backup resources                      |
+| Field         | Description              |
+| ------------- | ------------------------ |
+| Name          | `ListBackups`            |
+| Auth Required | YES (privileged role)    |
+| Inputs        | none                     |
+| Output        | List of Backup resources |
 
 #### Operation: Restore From Backup
 
-| Field          | Description                                   |
-|----------------|-----------------------------------------------|
-| Name           | `RestoreFromBackup`                           |
-| Auth Required  | YES (privileged role)                         |
-| Inputs         | `backup_id`                                   |
-| Output         | Operation result                               |
-| Errors         | Not found, validation error, internal error   |
+| Field         | Description                                 |
+| ------------- | ------------------------------------------- |
+| Name          | `RestoreFromBackup`                         |
+| Auth Required | YES (privileged role)                       |
+| Inputs        | `backup_id`                                 |
+| Output        | Operation result                            |
+| Errors        | Not found, validation error, internal error |
 
 ---
 

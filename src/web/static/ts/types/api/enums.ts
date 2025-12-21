@@ -10,7 +10,7 @@
 export enum ExportFormat {
   CSV = 'csv',
   JSON = 'json',
-  MARKDOWN = 'markdown'
+  MARKDOWN = 'markdown',
 }
 
 /**
@@ -18,7 +18,7 @@ export enum ExportFormat {
  */
 export enum ImportMode {
   APPEND = 'append',
-  REPLACE = 'replace'
+  REPLACE = 'replace',
 }
 
 /**
@@ -27,7 +27,7 @@ export enum ImportMode {
 export enum UserRole {
   VIEWER = 'viewer',
   EDITOR = 'editor',
-  ADMIN = 'admin'
+  ADMIN = 'admin',
 }
 
 /**
@@ -37,5 +37,5 @@ export enum ValidationState {
   VALID = 'valid',
   WARNING = 'warning',
   ERROR = 'error',
-  PRISTINE = 'pristine'
+  PRISTINE = 'pristine',
 }

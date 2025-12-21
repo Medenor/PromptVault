@@ -35,17 +35,25 @@ interface UsersResponse {
   total?: number;
 }
 
+interface PasswordChecks {
+  length: boolean;
+  uppercase: boolean;
+  lowercase: boolean;
+  digit: boolean;
+  special: boolean;
+}
+
 let currentPage = 1;
 let totalPages = 1;
 let currentFilters = {
   search: '',
   role: 'all',
-  status: 'all'
+  status: 'all',
 };
 
 function getAuthHeaders(): HeadersInit {
   return {
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/json',
   };
 }
 
@@ -53,7 +61,7 @@ function getFetchOptions(method = 'GET', body?: Record<string, unknown>): Reques
   const options: RequestInit = {
     method,
     credentials: 'include',
-    headers: getAuthHeaders()
+    headers: getAuthHeaders(),
   };
   if (body) {
     options.body = JSON.stringify(body);
@@ -72,10 +80,26 @@ function getTranslatedRole(role: string): string {
     viewer: 'roleViewer',
     editor: 'roleEditor',
     admin: 'roleAdmin',
-    user: 'roleUser'
+    user: 'roleUser',
   };
   const translationKey = roleTranslations[role] || role;
   return t(`admin.users.${translationKey}`) || role;
+}
+
+function normalizeErrorDetail(
+  detail:
+    | string
+    | Array<{ loc?: Array<string | number>; msg?: string; detail?: string }>
+    | undefined
+): string | undefined {
+  if (typeof detail === 'string') {
+    return detail;
+  }
+  if (Array.isArray(detail)) {
+    const first = detail[0];
+    return first?.msg || first?.detail;
+  }
+  return undefined;
 }
 
 function showModal(modalId: string): void {
@@ -150,7 +174,7 @@ async function loadUsers(): Promise<void> {
     const params = new URLSearchParams({
       page: String(currentPage),
       limit: '20',
-      search: currentFilters.search
+      search: currentFilters.search,
     });
 
     if (currentFilters.role !== 'all') {
@@ -169,7 +193,7 @@ async function loadUsers(): Promise<void> {
 
     const response = await fetch(`${API_BASE}/users?${params.toString()}`, {
       credentials: 'include',
-      headers: getAuthHeaders()
+      headers: getAuthHeaders(),
     });
 
     if (response.ok) {
@@ -228,7 +252,7 @@ async function viewUser(userId: string): Promise<void> {
   try {
     const response = await fetch(`${API_BASE}/users/${userId}`, {
       credentials: 'include',
-      headers: getAuthHeaders()
+      headers: getAuthHeaders(),
     });
 
     if (response.ok) {
@@ -286,15 +310,17 @@ async function editUser(userId: string): Promise<void> {
   try {
     const response = await fetch(`${API_BASE}/users/${userId}`, {
       credentials: 'include',
-      headers: getAuthHeaders()
+      headers: getAuthHeaders(),
     });
 
     if (response.ok) {
       const user = (await response.json()) as AdminUser;
       (document.getElementById('edit-user-id') as HTMLInputElement | null)!.value = user.id;
       (document.getElementById('edit-role') as HTMLSelectElement | null)!.value = user.role;
-      (document.getElementById('edit-is-active') as HTMLInputElement | null)!.checked = user.is_active;
-      (document.getElementById('edit-email-verified') as HTMLInputElement | null)!.checked = !!user.email_verified;
+      (document.getElementById('edit-is-active') as HTMLInputElement | null)!.checked =
+        user.is_active;
+      (document.getElementById('edit-email-verified') as HTMLInputElement | null)!.checked =
+        !!user.email_verified;
 
       showModal('edit-user-modal');
     }
@@ -307,7 +333,8 @@ async function editUser(userId: string): Promise<void> {
 async function saveUser(): Promise<void> {
   const userId = (document.getElementById('edit-user-id') as HTMLInputElement | null)?.value || '';
   const role = (document.getElementById('edit-role') as HTMLSelectElement | null)?.value || '';
-  const isActive = (document.getElementById('edit-is-active') as HTMLInputElement | null)?.checked || false;
+  const isActive =
+    (document.getElementById('edit-is-active') as HTMLInputElement | null)?.checked || false;
   const emailVerified =
     (document.getElementById('edit-email-verified') as HTMLInputElement | null)?.checked || false;
 
@@ -319,8 +346,8 @@ async function saveUser(): Promise<void> {
       body: JSON.stringify({
         role,
         is_active: isActive,
-        email_verified: emailVerified
-      })
+        email_verified: emailVerified,
+      }),
     });
 
     if (response.ok) {
@@ -351,7 +378,7 @@ async function deleteUser(userId: string, username: string): Promise<void> {
         const response = await fetch(`${API_BASE}/users/${userId}?hard_delete=true`, {
           method: 'DELETE',
           credentials: 'include',
-          headers: getAuthHeaders()
+          headers: getAuthHeaders(),
         });
 
         if (response.ok) {
@@ -495,7 +522,7 @@ function clearAllCreateUserErrors(): void {
     'create-email-error',
     'create-password-error',
     'create-confirm-password-error',
-    'create-form-error'
+    'create-form-error',
   ];
   errorIds.forEach((id) => {
     const element = document.getElementById(id);
@@ -517,7 +544,7 @@ function checkPasswordStrength(password: string): { strength: number; checks: Pa
     uppercase: /[A-Z]/.test(password),
     lowercase: /[a-z]/.test(password),
     digit: /[0-9]/.test(password),
-    special: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)
+    special: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password),
   };
 
   Object.values(checks).forEach((check) => {
@@ -561,7 +588,8 @@ function resetPasswordRequirements(): void {
 }
 
 function updatePasswordRequirements(): void {
-  const password = (document.getElementById('create-password') as HTMLInputElement | null)?.value ?? '';
+  const password =
+    (document.getElementById('create-password') as HTMLInputElement | null)?.value ?? '';
   const { strength, checks } = checkPasswordStrength(password);
 
   const requirements: Record<string, boolean> = {
@@ -569,7 +597,7 @@ function updatePasswordRequirements(): void {
     'req-uppercase': checks.uppercase,
     'req-lowercase': checks.lowercase,
     'req-digit': checks.digit,
-    'req-special': checks.special
+    'req-special': checks.special,
   };
 
   Object.entries(requirements).forEach(([id, met]) => {
@@ -585,9 +613,12 @@ function updatePasswordRequirements(): void {
 async function submitCreateUserForm(): Promise<void> {
   clearAllCreateUserErrors();
 
-  const username = (document.getElementById('create-username') as HTMLInputElement | null)?.value.trim() ?? '';
-  const email = (document.getElementById('create-email') as HTMLInputElement | null)?.value.trim() ?? '';
-  const password = (document.getElementById('create-password') as HTMLInputElement | null)?.value ?? '';
+  const username =
+    (document.getElementById('create-username') as HTMLInputElement | null)?.value.trim() ?? '';
+  const email =
+    (document.getElementById('create-email') as HTMLInputElement | null)?.value.trim() ?? '';
+  const password =
+    (document.getElementById('create-password') as HTMLInputElement | null)?.value ?? '';
   const confirmPassword =
     (document.getElementById('create-confirm-password') as HTMLInputElement | null)?.value ?? '';
   const role = (document.getElementById('create-role') as HTMLSelectElement | null)?.value ?? '';
@@ -612,7 +643,10 @@ async function submitCreateUserForm(): Promise<void> {
   }
 
   if (!confirmPassword) {
-    showFieldError('create-confirm-password-error', t('validation.required') || 'Confirm password is required');
+    showFieldError(
+      'create-confirm-password-error',
+      t('validation.required') || 'Confirm password is required'
+    );
     hasErrors = true;
   }
 
@@ -640,8 +674,8 @@ async function submitCreateUserForm(): Promise<void> {
         password,
         confirm_password: confirmPassword,
         role,
-        email_verified: emailVerified
-      })
+        email_verified: emailVerified,
+      }),
     });
 
     const data = (await response.json()) as {
@@ -663,9 +697,17 @@ async function submitCreateUserForm(): Promise<void> {
           }
         });
       } else if (response.status === 409) {
-        showFieldError('create-form-error', data.detail || t('admin.users.userExists') || 'User already exists');
+        const detailMessage = normalizeErrorDetail(data.detail);
+        showFieldError(
+          'create-form-error',
+          detailMessage || t('admin.users.userExists') || 'User already exists'
+        );
       } else {
-        showFieldError('create-form-error', data.detail || t('messages.error') || 'Failed to create user');
+        const detailMessage = normalizeErrorDetail(data.detail);
+        showFieldError(
+          'create-form-error',
+          detailMessage || t('messages.error') || 'Failed to create user'
+        );
       }
     }
   } catch (error) {
@@ -727,75 +769,89 @@ function initializeAdminUsersPage(): void {
   void loadUsers();
 }
 
-(window as Window & {
-  viewUser?: (userId: string) => Promise<void>;
-  editUser?: (userId: string) => Promise<void>;
-  deleteUser?: (userId: string, username: string) => Promise<void>;
-  closeUserDetailModal?: () => void;
-  closeEditUserModal?: () => void;
-  closeConfirmDeleteModal?: () => void;
-  closeCreateUserModal?: () => void;
-}).viewUser = viewUser;
+(
+  window as Window & {
+    viewUser?: (userId: string) => Promise<void>;
+    editUser?: (userId: string) => Promise<void>;
+    deleteUser?: (userId: string, username: string) => Promise<void>;
+    closeUserDetailModal?: () => void;
+    closeEditUserModal?: () => void;
+    closeConfirmDeleteModal?: () => void;
+    closeCreateUserModal?: () => void;
+  }
+).viewUser = viewUser;
 
-(window as Window & {
-  viewUser?: (userId: string) => Promise<void>;
-  editUser?: (userId: string) => Promise<void>;
-  deleteUser?: (userId: string, username: string) => Promise<void>;
-  closeUserDetailModal?: () => void;
-  closeEditUserModal?: () => void;
-  closeConfirmDeleteModal?: () => void;
-  closeCreateUserModal?: () => void;
-}).editUser = editUser;
+(
+  window as Window & {
+    viewUser?: (userId: string) => Promise<void>;
+    editUser?: (userId: string) => Promise<void>;
+    deleteUser?: (userId: string, username: string) => Promise<void>;
+    closeUserDetailModal?: () => void;
+    closeEditUserModal?: () => void;
+    closeConfirmDeleteModal?: () => void;
+    closeCreateUserModal?: () => void;
+  }
+).editUser = editUser;
 
-(window as Window & {
-  viewUser?: (userId: string) => Promise<void>;
-  editUser?: (userId: string) => Promise<void>;
-  deleteUser?: (userId: string, username: string) => Promise<void>;
-  closeUserDetailModal?: () => void;
-  closeEditUserModal?: () => void;
-  closeConfirmDeleteModal?: () => void;
-  closeCreateUserModal?: () => void;
-}).deleteUser = deleteUser;
+(
+  window as Window & {
+    viewUser?: (userId: string) => Promise<void>;
+    editUser?: (userId: string) => Promise<void>;
+    deleteUser?: (userId: string, username: string) => Promise<void>;
+    closeUserDetailModal?: () => void;
+    closeEditUserModal?: () => void;
+    closeConfirmDeleteModal?: () => void;
+    closeCreateUserModal?: () => void;
+  }
+).deleteUser = deleteUser;
 
-(window as Window & {
-  viewUser?: (userId: string) => Promise<void>;
-  editUser?: (userId: string) => Promise<void>;
-  deleteUser?: (userId: string, username: string) => Promise<void>;
-  closeUserDetailModal?: () => void;
-  closeEditUserModal?: () => void;
-  closeConfirmDeleteModal?: () => void;
-  closeCreateUserModal?: () => void;
-}).closeUserDetailModal = () => hideModal('user-detail-modal');
+(
+  window as Window & {
+    viewUser?: (userId: string) => Promise<void>;
+    editUser?: (userId: string) => Promise<void>;
+    deleteUser?: (userId: string, username: string) => Promise<void>;
+    closeUserDetailModal?: () => void;
+    closeEditUserModal?: () => void;
+    closeConfirmDeleteModal?: () => void;
+    closeCreateUserModal?: () => void;
+  }
+).closeUserDetailModal = () => hideModal('user-detail-modal');
 
-(window as Window & {
-  viewUser?: (userId: string) => Promise<void>;
-  editUser?: (userId: string) => Promise<void>;
-  deleteUser?: (userId: string, username: string) => Promise<void>;
-  closeUserDetailModal?: () => void;
-  closeEditUserModal?: () => void;
-  closeConfirmDeleteModal?: () => void;
-  closeCreateUserModal?: () => void;
-}).closeEditUserModal = () => hideModal('edit-user-modal');
+(
+  window as Window & {
+    viewUser?: (userId: string) => Promise<void>;
+    editUser?: (userId: string) => Promise<void>;
+    deleteUser?: (userId: string, username: string) => Promise<void>;
+    closeUserDetailModal?: () => void;
+    closeEditUserModal?: () => void;
+    closeConfirmDeleteModal?: () => void;
+    closeCreateUserModal?: () => void;
+  }
+).closeEditUserModal = () => hideModal('edit-user-modal');
 
-(window as Window & {
-  viewUser?: (userId: string) => Promise<void>;
-  editUser?: (userId: string) => Promise<void>;
-  deleteUser?: (userId: string, username: string) => Promise<void>;
-  closeUserDetailModal?: () => void;
-  closeEditUserModal?: () => void;
-  closeConfirmDeleteModal?: () => void;
-  closeCreateUserModal?: () => void;
-}).closeConfirmDeleteModal = () => hideModal('confirm-delete-modal');
+(
+  window as Window & {
+    viewUser?: (userId: string) => Promise<void>;
+    editUser?: (userId: string) => Promise<void>;
+    deleteUser?: (userId: string, username: string) => Promise<void>;
+    closeUserDetailModal?: () => void;
+    closeEditUserModal?: () => void;
+    closeConfirmDeleteModal?: () => void;
+    closeCreateUserModal?: () => void;
+  }
+).closeConfirmDeleteModal = () => hideModal('confirm-delete-modal');
 
-(window as Window & {
-  viewUser?: (userId: string) => Promise<void>;
-  editUser?: (userId: string) => Promise<void>;
-  deleteUser?: (userId: string, username: string) => Promise<void>;
-  closeUserDetailModal?: () => void;
-  closeEditUserModal?: () => void;
-  closeConfirmDeleteModal?: () => void;
-  closeCreateUserModal?: () => void;
-}).closeCreateUserModal = () => {
+(
+  window as Window & {
+    viewUser?: (userId: string) => Promise<void>;
+    editUser?: (userId: string) => Promise<void>;
+    deleteUser?: (userId: string, username: string) => Promise<void>;
+    closeUserDetailModal?: () => void;
+    closeEditUserModal?: () => void;
+    closeConfirmDeleteModal?: () => void;
+    closeCreateUserModal?: () => void;
+  }
+).closeCreateUserModal = () => {
   hideModal('create-user-modal');
   clearCreateUserForm();
 };

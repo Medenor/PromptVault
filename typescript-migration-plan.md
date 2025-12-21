@@ -114,15 +114,8 @@ npm install
       "@types/*": ["src/web/static/ts/types/*"]
     }
   },
-  "include": [
-    "src/web/static/ts/**/*",
-    "vite.config.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "src/web/static/js"
-  ]
+  "include": ["src/web/static/ts/**/*", "vite.config.ts"],
+  "exclude": ["node_modules", "dist", "src/web/static/js"]
 }
 ```
 
@@ -1192,14 +1185,20 @@ export function getRequiredElement<T extends HTMLElement>(id: string): T {
 /**
  * Query selector with type assertion
  */
-export function querySelector<T extends Element>(selector: string, parent: ParentNode = document): T | null {
+export function querySelector<T extends Element>(
+  selector: string,
+  parent: ParentNode = document
+): T | null {
   return parent.querySelector(selector) as T | null;
 }
 
 /**
  * Query selector all with type assertion
  */
-export function querySelectorAll<T extends Element>(selector: string, parent: ParentNode = document): NodeListOf<T> {
+export function querySelectorAll<T extends Element>(
+  selector: string,
+  parent: ParentNode = document
+): NodeListOf<T> {
   return parent.querySelectorAll(selector) as NodeListOf<T>;
 }
 
@@ -1343,9 +1342,10 @@ export class APIRequestError extends Error {
   public readonly error: APIError;
 
   constructor(status: number, error: APIError) {
-    const message = typeof error.detail === 'string'
-      ? error.detail
-      : error.detail?.[0]?.msg ?? 'Request failed';
+    const message =
+      typeof error.detail === 'string'
+        ? error.detail
+        : (error.detail?.[0]?.msg ?? 'Request failed');
     super(message);
     this.name = 'APIRequestError';
     this.status = status;
@@ -1384,10 +1384,7 @@ export class APIRequestError extends Error {
 /**
  * Type-safe fetch wrapper for JSON API calls
  */
-export async function apiFetch<T>(
-  url: string,
-  options: FetchOptions = {}
-): Promise<T> {
+export async function apiFetch<T>(url: string, options: FetchOptions = {}): Promise<T> {
   const { timeout = 30000, ...fetchOptions } = options;
 
   const controller = new AbortController();
@@ -1409,7 +1406,7 @@ export async function apiFetch<T>(
     if (!response.ok) {
       let error: APIError;
       try {
-        error = await response.json() as APIError;
+        error = (await response.json()) as APIError;
       } catch {
         error = { detail: `HTTP ${response.status}: ${response.statusText}` };
       }
@@ -1422,7 +1419,7 @@ export async function apiFetch<T>(
       return {} as T;
     }
 
-    return await response.json() as T;
+    return (await response.json()) as T;
   } catch (error) {
     clearTimeout(timeoutId);
 
@@ -1492,20 +1489,23 @@ export async function apiPostForm<T>(url: string, formData: FormData): Promise<T
   if (!response.ok) {
     let error: APIError;
     try {
-      error = await response.json() as APIError;
+      error = (await response.json()) as APIError;
     } catch {
       error = { detail: `HTTP ${response.status}: ${response.statusText}` };
     }
     throw new APIRequestError(response.status, error);
   }
 
-  return await response.json() as T;
+  return (await response.json()) as T;
 }
 
 /**
  * Build URL with query parameters
  */
-export function buildUrl(base: string, params: Record<string, string | number | boolean | undefined>): string {
+export function buildUrl(
+  base: string,
+  params: Record<string, string | number | boolean | undefined>
+): string {
   const url = new URL(base, window.location.origin);
 
   for (const [key, value] of Object.entries(params)) {
@@ -1868,7 +1868,7 @@ export const MAX_BULK_DELETE_IDS = 1000 as const;
 // FILE UPLOAD CONSTRAINTS
 // ============================================
 
-export const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024 as const; // 10 MB
+export const MAX_FILE_SIZE_BYTES = (10 * 1024 * 1024) as const; // 10 MB
 export const MAX_FILE_SIZE_MB = 10 as const;
 
 export const ALLOWED_IMPORT_MIME_TYPES = [
@@ -1878,12 +1878,7 @@ export const ALLOWED_IMPORT_MIME_TYPES = [
   'text/plain',
 ] as const;
 
-export const ALLOWED_IMPORT_EXTENSIONS = [
-  '.csv',
-  '.json',
-  '.md',
-  '.txt',
-] as const;
+export const ALLOWED_IMPORT_EXTENSIONS = ['.csv', '.json', '.md', '.txt'] as const;
 
 // ============================================
 // PATTERNS
@@ -1938,7 +1933,11 @@ This is a large file. Key changes:
  * License, v. 2.0.
  */
 
-import type { ValidationResult, FileValidationResult, PasswordStrengthResult } from '@/types/validation';
+import type {
+  ValidationResult,
+  FileValidationResult,
+  PasswordStrengthResult,
+} from '@/types/validation';
 import {
   MAX_TITLE_LENGTH,
   MAX_PROMPT_LENGTH,
@@ -2030,8 +2029,8 @@ export function validateTags(tags: string): ValidationResult<string[]> {
 
   const tagArray = tags
     .split(',')
-    .map(t => t.trim())
-    .filter(t => t.length > 0);
+    .map((t) => t.trim())
+    .filter((t) => t.length > 0);
 
   // Remove duplicates
   const uniqueTags = [...new Set(tagArray)];
@@ -2175,7 +2174,10 @@ export function validatePassword(password: string): ValidationResult<string> {
 /**
  * Validate password confirmation matches
  */
-export function validatePasswordMatch(password: string, confirmPassword: string): ValidationResult<string> {
+export function validatePasswordMatch(
+  password: string,
+  confirmPassword: string
+): ValidationResult<string> {
   if (!confirmPassword) {
     return { valid: false, error: 'validation.confirmPasswordRequired', sanitized: '' };
   }
@@ -2196,7 +2198,9 @@ export function calculatePasswordStrength(password: string): PasswordStrengthRes
     uppercase: /[A-Z]/.test(password),
     lowercase: /[a-z]/.test(password),
     digit: /[0-9]/.test(password),
-    special: new RegExp(`[${PASSWORD_SPECIAL_CHARS.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}]`).test(password),
+    special: new RegExp(`[${PASSWORD_SPECIAL_CHARS.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}]`).test(
+      password
+    ),
   };
 
   const strength = Object.values(checks).filter(Boolean).length;
@@ -2258,11 +2262,13 @@ export function validateFileUpload(file: File | null | undefined): FileValidatio
 
   // Check MIME type
   const mimeType = file.type.toLowerCase();
-  const mimeValid = ALLOWED_IMPORT_MIME_TYPES.some(allowed => mimeType === allowed || mimeType.startsWith(allowed));
+  const mimeValid = ALLOWED_IMPORT_MIME_TYPES.some(
+    (allowed) => mimeType === allowed || mimeType.startsWith(allowed)
+  );
 
   // Check extension
   const fileName = file.name.toLowerCase();
-  const extValid = ALLOWED_IMPORT_EXTENSIONS.some(ext => fileName.endsWith(ext));
+  const extValid = ALLOWED_IMPORT_EXTENSIONS.some((ext) => fileName.endsWith(ext));
 
   if (!mimeValid && !extValid) {
     return { valid: false, error: 'validation.invalidFileType' };
@@ -2398,10 +2404,7 @@ async function sendReport(entry: FrontendLogEntry): Promise<void> {
   try {
     // Use sendBeacon for reliability during page unload
     if (navigator.sendBeacon) {
-      navigator.sendBeacon(
-        TELEMETRY_ENDPOINT,
-        JSON.stringify(entry)
-      );
+      navigator.sendBeacon(TELEMETRY_ENDPOINT, JSON.stringify(entry));
     } else {
       await fetch(TELEMETRY_ENDPOINT, {
         method: 'POST',
@@ -2713,28 +2716,24 @@ templates.env.globals["is_dev"] = lambda: os.getenv("ENV", "production") == "dev
 **File:** `/src/web/templates/macros/scripts.html`
 
 ```html
-{% macro load_scripts(entry_name, include_telemetry=true) %}
-{% if is_dev() %}
-    {# Development mode - load from Vite dev server #}
-    <script type="module" src="http://localhost:5173/@vite/client"></script>
-    {% if include_telemetry %}
-    <script type="module" src="http://localhost:5173/ts/telemetry.ts"></script>
-    {% endif %}
-    <script type="module" src="http://localhost:5173/ts/{{ entry_name }}.ts"></script>
-{% else %}
-    {# Production mode - load built files #}
-    {% set manifest = load_manifest() %}
-    {% if include_telemetry and 'ts/telemetry.ts' in manifest %}
-    <script type="module" src="/static/dist/{{ manifest['ts/telemetry.ts']['file'] }}"></script>
-    {% endif %}
-    {% if 'ts/' + entry_name + '.ts' in manifest %}
-    <script type="module" src="/static/dist/{{ manifest['ts/' + entry_name + '.ts']['file'] }}"></script>
-    {% else %}
-    {# Fallback to original JS during migration #}
-    <script src="/static/js/{{ entry_name }}.js" defer></script>
-    {% endif %}
+{% macro load_scripts(entry_name, include_telemetry=true) %} {% if is_dev() %} {# Development mode -
+load from Vite dev server #}
+<script type="module" src="http://localhost:5173/@vite/client"></script>
+{% if include_telemetry %}
+<script type="module" src="http://localhost:5173/ts/telemetry.ts"></script>
 {% endif %}
-{% endmacro %}
+<script type="module" src="http://localhost:5173/ts/{{ entry_name }}.ts"></script>
+{% else %} {# Production mode - load built files #} {% set manifest = load_manifest() %} {% if
+include_telemetry and 'ts/telemetry.ts' in manifest %}
+<script type="module" src="/static/dist/{{ manifest['ts/telemetry.ts']['file'] }}"></script>
+{% endif %} {% if 'ts/' + entry_name + '.ts' in manifest %}
+<script
+  type="module"
+  src="/static/dist/{{ manifest['ts/' + entry_name + '.ts']['file'] }}"
+></script>
+{% else %} {# Fallback to original JS during migration #}
+<script src="/static/js/{{ entry_name }}.js" defer></script>
+{% endif %} {% endif %} {% endmacro %}
 ```
 
 ---
@@ -2800,7 +2799,7 @@ After each phase, verify:
 ### Modified Files
 
 - `package.json` - Add dependencies and scripts
-- `.gitignore` - Add dist/, *.tsbuildinfo
+- `.gitignore` - Add dist/, \*.tsbuildinfo
 - `Dockerfile` - Add Node.js build stage
 - `src/web/app.py` - Add manifest loader to templates
 - All HTML templates - Update script loading (Phase 5)

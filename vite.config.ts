@@ -32,21 +32,21 @@ export default defineConfig({
         importExport: resolve(__dirname, 'src/web/static/ts/import-export.ts'),
         backupManagement: resolve(__dirname, 'src/web/static/ts/backup-management.ts'),
         // Shared telemetry (loaded on all pages)
-        telemetry: resolve(__dirname, 'src/web/static/ts/telemetry.ts')
+        telemetry: resolve(__dirname, 'src/web/static/ts/telemetry.ts'),
       },
       output: {
         entryFileNames: 'js/[name].[hash].js',
         chunkFileNames: 'js/chunks/[name].[hash].js',
-        assetFileNames: 'assets/[name].[hash][extname]'
-      }
-    }
+        assetFileNames: 'assets/[name].[hash][extname]',
+      },
+    },
   },
 
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src/web/static/ts'),
-      '@types': resolve(__dirname, 'src/web/static/ts/types')
-    }
+      '@types': resolve(__dirname, 'src/web/static/ts/types'),
+    },
   },
 
   server: {
@@ -54,16 +54,16 @@ export default defineConfig({
     proxy: {
       '/api': {
         target: 'http://localhost:8003',
-        changeOrigin: true
+        changeOrigin: true,
       },
       '/auth': {
         target: 'http://localhost:8003',
-        changeOrigin: true
+        changeOrigin: true,
       },
       '/static/locales': {
         target: 'http://localhost:8003',
-        changeOrigin: true
-      }
-    }
-  }
+        changeOrigin: true,
+      },
+    },
+  },
 });

@@ -42,7 +42,7 @@ function serializeError(error: unknown): { message: string; stack?: string | nul
   if (error instanceof Error) {
     return {
       message: error.message || 'Error',
-      stack: error.stack || null
+      stack: error.stack || null,
     };
   }
   if (typeof error === 'string') {
@@ -74,7 +74,7 @@ function sendPayload(entry: FrontendLogEntry): void {
     headers: { 'Content-Type': 'application/json' },
     body,
     credentials: 'same-origin',
-    keepalive: true
+    keepalive: true,
   }).catch(() => {
     // Ignore network failures
   });
@@ -99,10 +99,10 @@ function reportError(
     component: component || 'unknown',
     action: action || 'runtime.error',
     message: details.message,
-    stack: details.stack ?? undefined,
     severity: severity || 'error',
     url: window.location.href,
-    context: metadata
+    context: metadata,
+    ...(details.stack ? { stack: details.stack } : {}),
   };
 
   pending.push(payload);
@@ -117,7 +117,7 @@ window.FrontendLogger = {
   disable: () => {
     setTelemetryEnabled(false);
   },
-  isEnabled: isTelemetryEnabled
+  isEnabled: isTelemetryEnabled,
 };
 
 window.addEventListener('error', (event) => {
@@ -127,7 +127,7 @@ window.addEventListener('error', (event) => {
   const metadata = {
     filename: event.filename,
     lineno: event.lineno,
-    colno: event.colno
+    colno: event.colno,
   };
   reportError('window', 'error', event.error || event.message, metadata);
 });

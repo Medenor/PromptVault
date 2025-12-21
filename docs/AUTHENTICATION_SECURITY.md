@@ -49,10 +49,12 @@ PromptVault's authentication system is designed with security as the top priorit
 **Algorithm**: Argon2id (Hybrid mode)
 
 Argon2id combines:
+
 - **Argon2d**: Data-dependent memory access (GPU-resistant)
 - **Argon2i**: Data-independent memory access (side-channel resistant)
 
 **Parameters** (OWASP-recommended):
+
 ```python
 time_cost = 2        # Number of iterations
 memory_cost = 102400 # Memory usage in KiB (100 MB)
@@ -62,6 +64,7 @@ salt_len = 16        # Salt length in bytes
 ```
 
 **Why Argon2id?**
+
 - Winner of Password Hashing Competition (2015)
 - Resistant to GPU cracking attacks
 - Resistant to side-channel attacks
@@ -69,6 +72,7 @@ salt_len = 16        # Salt length in bytes
 - OWASP recommended since 2020
 
 **Security Properties**:
+
 - Unique random salt per password
 - Constant-time verification (prevents timing attacks)
 - Configurable cost factors for future-proofing
@@ -77,14 +81,16 @@ salt_len = 16        # Salt length in bytes
 ### Password Policy
 
 **Default Requirements**:
+
 - Minimum length: **12 characters** (configurable)
 - At least one **uppercase letter** (A-Z)
 - At least one **lowercase letter** (a-z)
 - At least one **digit** (0-9)
-- At least one **special character** (!@#$%^&*()_+-=[]{}|;:,.<>?)
+- At least one **special character** (!@#$%^&\*()\_+-=[]{}|;:,.<>?)
 - Not in **common password list** (top 100 most common passwords)
 
 **Why These Requirements?**:
+
 - 12+ characters: ~72 bits of entropy with mixed character sets
 - Complexity rules: Increase search space for attackers
 - Common password check: Prevents weak but policy-compliant passwords
@@ -93,14 +99,15 @@ salt_len = 16        # Salt length in bytes
 
 The system calculates password entropy and provides feedback:
 
-| Entropy (bits) | Strength | Crack Time (offline) |
-|----------------|----------|----------------------|
-| < 40 | Weak | Seconds to minutes |
-| 40-59 | Medium | Hours to days |
-| 60-79 | Strong | Years to decades |
-| 80+ | Very Strong | Centuries to millennia |
+| Entropy (bits) | Strength    | Crack Time (offline)   |
+| -------------- | ----------- | ---------------------- |
+| < 40           | Weak        | Seconds to minutes     |
+| 40-59          | Medium      | Hours to days          |
+| 60-79          | Strong      | Years to decades       |
+| 80+            | Very Strong | Centuries to millennia |
 
 **Example Strength Ratings**:
+
 - `password123`: Weak (rejected by common password check)
 - `P@ssw0rd`: Weak (too short, common pattern)
 - `MyP@ssw0rd123`: Medium (acceptable but not ideal)
@@ -110,21 +117,25 @@ The system calculates password entropy and provides feedback:
 ### Password Storage
 
 **What is stored**:
+
 - Argon2id hash (97 characters)
 - Salt (embedded in hash string)
 - Algorithm identifier and parameters
 
 **What is NOT stored**:
+
 - Plain text password
 - Reversible encryption of password
 - Password hints or recovery questions
 
 **Database column**:
+
 ```python
 password_hash = Column(String(255), nullable=False)
 ```
 
 **Example hash format**:
+
 ```
 $argon2id$v=19$m=102400,t=2,p=8$
 <base64-encoded-salt>$<base64-encoded-hash>
@@ -140,23 +151,25 @@ $argon2id$v=19$m=102400,t=2,p=8$
 
 **Why ES256 over HS256?**
 
-| Feature | ES256 (Used) | HS256 (Avoided) |
-|---------|--------------|-----------------|
-| Encryption Type | Asymmetric | Symmetric |
-| Key Confusion Attack | Immune | Vulnerable |
-| Key Distribution | Public key can be shared | Secret must be protected |
-| Key Size | 256-bit (smaller) | 512-bit minimum (larger) |
-| Performance | Slower signing, fast verification | Fast signing and verification |
-| Security | Higher | Lower |
+| Feature              | ES256 (Used)                      | HS256 (Avoided)               |
+| -------------------- | --------------------------------- | ----------------------------- |
+| Encryption Type      | Asymmetric                        | Symmetric                     |
+| Key Confusion Attack | Immune                            | Vulnerable                    |
+| Key Distribution     | Public key can be shared          | Secret must be protected      |
+| Key Size             | 256-bit (smaller)                 | 512-bit minimum (larger)      |
+| Performance          | Slower signing, fast verification | Fast signing and verification |
+| Security             | Higher                            | Lower                         |
 
 **Key Confusion Attack** (why we avoid HS256):
 
 HS256 is vulnerable to algorithm substitution attacks where an attacker can:
+
 1. Obtain the public key (often exposed in JWKS endpoints)
 2. Create a token signed with HS256 using the public key as the secret
 3. The server verifies the token successfully (security breach!)
 
 ES256 prevents this because:
+
 - Public key cannot be used to sign tokens
 - Private key is never exposed
 - Algorithm validation is enforced
@@ -164,6 +177,7 @@ ES256 prevents this because:
 ### Token Structure
 
 **Access Token** (Short-lived: 15 minutes):
+
 ```json
 {
   "header": {
@@ -186,6 +200,7 @@ ES256 prevents this because:
 ```
 
 **Refresh Token** (Long-lived: 7 days):
+
 ```json
 {
   "header": {
@@ -222,6 +237,7 @@ ES256 prevents this because:
 10. **Account Status**: User account is active
 
 **Security Properties**:
+
 - Stateless validation (no database lookup required for access tokens)
 - Cryptographically secure (cannot be forged without private key)
 - Tamper-evident (any modification breaks signature)
@@ -234,11 +250,13 @@ ES256 prevents this because:
 **How it works**:
 
 1. **Family Creation**: Each login creates a new token family
+
    ```
    Login → Family ID: abc-123
    ```
 
 2. **Token Rotation**: Each refresh generates new tokens in same family
+
    ```
    Refresh 1 → JTI: token-1 (Family: abc-123)
    Refresh 2 → JTI: token-2 (Family: abc-123)
@@ -256,6 +274,7 @@ ES256 prevents this because:
 **Why This Matters**:
 
 Scenario: Token theft
+
 1. Attacker steals refresh token-2
 2. Legitimate user refreshes token → gets token-3
 3. Attacker tries to use token-2
@@ -265,6 +284,7 @@ Scenario: Token theft
 7. Security team is alerted
 
 **Database Tracking**:
+
 ```python
 class UserSession:
     family_id: str        # Token family identifier
@@ -279,6 +299,7 @@ class UserSession:
 ### Session Tracking
 
 Each session tracks:
+
 - **User ID**: Owner of the session
 - **Family ID**: Token family for rotation tracking
 - **Refresh Token JTI**: Current refresh token ID
@@ -294,12 +315,14 @@ Each session tracks:
 **Default**: 5 concurrent sessions per user (configurable)
 
 **Why Limit Sessions?**:
+
 - Prevents credential sharing
 - Limits blast radius of token theft
 - Detects unusual activity (many simultaneous logins)
 - Forces device cleanup
 
 **Enforcement**:
+
 - When limit reached, oldest session is revoked
 - User can manually revoke sessions via `/auth/sessions/{session_id}`
 - Admin can revoke individual sessions via `/admin/users/{user_id}/sessions/{session_id}`
@@ -317,6 +340,7 @@ Each session tracks:
 4. **Privacy Protection**: Loading overlay prevents content flash before redirect
 
 **Implementation**:
+
 ```python
 # In get_current_user() dependency (src/web/dependencies/auth.py)
 active_session_count = session_repo.count_user_sessions(user_id, active_only=True)
@@ -329,12 +353,14 @@ if active_session_count == 0:
 ```
 
 **Access Token Behavior**:
+
 - **Access tokens** (15 min lifetime) remain cryptographically valid after session revocation
 - However, every API request checks session status in the database
 - If no active sessions exist, the access token is rejected despite being valid JWT
 - This provides **immediate revocation** without complex token blacklisting
 
 **Frontend Security Flow**:
+
 1. Page loads with full-screen "Verifying session..." overlay
 2. Authentication check runs: `GET /api/auth/me`
 3. If 401 (revoked): Immediate redirect to login (content never shown)
@@ -342,12 +368,14 @@ if active_session_count == 0:
 5. No content flash - prevents privacy leaks
 
 **Why This Matters**:
+
 - Prevents unauthorized access even with valid JWT tokens
 - Admin session revocation takes effect immediately (not after token expiry)
 - User cannot access app after session revocation
 - Protects against token theft scenarios
 
 **Performance Impact**:
+
 - Minimal: Single database query per request to count active sessions
 - Query is fast (indexed on user_id and is_revoked)
 - Acceptable overhead for security benefit
@@ -357,11 +385,13 @@ if active_session_count == 0:
 **Inactivity Timeout**: 30 days (configurable)
 
 **Why Timeout?**:
+
 - Automatic cleanup of abandoned sessions
 - Reduces attack surface
 - Encourages periodic re-authentication
 
 **Implementation**:
+
 - Based on `last_used_at` timestamp
 - Updated on each token refresh
 - Expired sessions cannot be used
@@ -375,6 +405,7 @@ if active_session_count == 0:
 **Purpose**: Prevent brute force password guessing attacks
 
 **Configuration**:
+
 - **Max Attempts**: 5 failed login attempts
 - **Lockout Duration**: 15 minutes
 - **Tracking**: Per user account (not per IP)
@@ -388,6 +419,7 @@ if active_session_count == 0:
 5. **Manual Unlock**: Admin can reset counter
 
 **Lockout Response**:
+
 ```json
 {
   "detail": "Account is locked due to too many failed login attempts. Try again after 2025-12-04T12:45:00Z"
@@ -395,6 +427,7 @@ if active_session_count == 0:
 ```
 
 **Counter Reset**:
+
 - Successful login resets counter to 0
 - Lockout expiration resets counter to 0
 - Admin can manually reset counter
@@ -402,17 +435,20 @@ if active_session_count == 0:
 ### Failed Login Tracking
 
 **What is tracked**:
+
 - Number of failed attempts
 - Timestamp of last failed attempt
 - Lockout expiration time
 
 **Database fields**:
+
 ```python
 failed_login_attempts: int
 locked_until: datetime | None
 ```
 
 **Security Notes**:
+
 - Tracking per account prevents distributed attacks
 - Time-based lockout prevents persistent lockout
 - Admin override allows legitimate user recovery
@@ -426,6 +462,7 @@ locked_until: datetime | None
 **Technology**: Redis-based rate limiting
 
 **Why Redis?**:
+
 - In-memory storage (fast)
 - TTL support (automatic expiration)
 - Atomic operations (thread-safe)
@@ -433,10 +470,10 @@ locked_until: datetime | None
 
 ### Rate Limit Rules
 
-| Endpoint | Limit | Window | Scope |
-|----------|-------|--------|-------|
-| `/auth/login` | 5 attempts | 15 min | Per IP |
-| `/auth/register` | 3 attempts | 1 hour | Per IP |
+| Endpoint                       | Limit      | Window | Scope     |
+| ------------------------------ | ---------- | ------ | --------- |
+| `/auth/login`                  | 5 attempts | 15 min | Per IP    |
+| `/auth/register`               | 3 attempts | 1 hour | Per IP    |
 | `/auth/password-reset/request` | 3 attempts | 1 hour | Per email |
 
 ### Rate Limit Algorithm
@@ -450,6 +487,7 @@ locked_until: datetime | None
 5. Return 429 if limit exceeded
 
 **Example**:
+
 ```python
 key = "rate_limit:login:192.168.1.1"
 count = redis.incr(key)
@@ -462,6 +500,7 @@ if count > limit:
 ### Rate Limit Response
 
 **Headers**:
+
 ```http
 HTTP/1.1 429 Too Many Requests
 X-RateLimit-Limit: 5
@@ -471,6 +510,7 @@ Retry-After: 900
 ```
 
 **Body**:
+
 ```json
 {
   "detail": "Rate limit exceeded for login. Try again in 15 minutes."
@@ -485,21 +525,22 @@ PromptVault's authentication system follows OWASP (Open Web Application Security
 
 ### OWASP Top 10 2021 Coverage
 
-| OWASP Risk | Mitigation | Implementation |
-|------------|------------|----------------|
-| **A01: Broken Access Control** | Role-based access control (RBAC) | User roles (viewer/editor/admin), permission checks |
-| **A02: Cryptographic Failures** | Strong encryption | Argon2id passwords, ES256 JWT, TLS/HTTPS |
-| **A03: Injection** | Input validation | Pydantic validation, SQLAlchemy parameterized queries |
-| **A04: Insecure Design** | Security by design | Token families, account lockout, rate limiting |
-| **A05: Security Misconfiguration** | Secure defaults | Password policy enforced, JWT keys required |
-| **A07: Identification and Authentication Failures** | Robust authentication | Multi-factor protection mechanisms |
-| **A08: Software and Data Integrity Failures** | JWT signature verification | ES256 signatures, algorithm validation |
-| **A09: Security Logging and Monitoring Failures** | Comprehensive logging | Audit logs, failed login tracking |
-| **A10: Server-Side Request Forgery (SSRF)** | Input validation | URL validation in email configuration |
+| OWASP Risk                                          | Mitigation                       | Implementation                                        |
+| --------------------------------------------------- | -------------------------------- | ----------------------------------------------------- |
+| **A01: Broken Access Control**                      | Role-based access control (RBAC) | User roles (viewer/editor/admin), permission checks   |
+| **A02: Cryptographic Failures**                     | Strong encryption                | Argon2id passwords, ES256 JWT, TLS/HTTPS              |
+| **A03: Injection**                                  | Input validation                 | Pydantic validation, SQLAlchemy parameterized queries |
+| **A04: Insecure Design**                            | Security by design               | Token families, account lockout, rate limiting        |
+| **A05: Security Misconfiguration**                  | Secure defaults                  | Password policy enforced, JWT keys required           |
+| **A07: Identification and Authentication Failures** | Robust authentication            | Multi-factor protection mechanisms                    |
+| **A08: Software and Data Integrity Failures**       | JWT signature verification       | ES256 signatures, algorithm validation                |
+| **A09: Security Logging and Monitoring Failures**   | Comprehensive logging            | Audit logs, failed login tracking                     |
+| **A10: Server-Side Request Forgery (SSRF)**         | Input validation                 | URL validation in email configuration                 |
 
 ### OWASP Password Storage Cheat Sheet
 
 ✅ **Compliant**:
+
 - [x] Use Argon2id as first choice
 - [x] Minimum iteration count (time_cost=2)
 - [x] Minimum memory cost (102400 KiB)
@@ -510,6 +551,7 @@ PromptVault's authentication system follows OWASP (Open Web Application Security
 ### OWASP Authentication Cheat Sheet
 
 ✅ **Compliant**:
+
 - [x] Password complexity requirements
 - [x] Account lockout mechanism
 - [x] Secure password reset flow
@@ -521,13 +563,14 @@ PromptVault's authentication system follows OWASP (Open Web Application Security
 ### OWASP Forgot Password Cheat Sheet
 
 ✅ **Compliant**:
+
 - [x] Time-limited reset tokens (1 hour)
 - [x] Single-use tokens
 - [x] Secure token generation (cryptographically random)
 - [x] Token hashing before storage
 - [x] Rate limiting (3 requests/hour)
 - [x] No user enumeration (same response for all emails)
-- [x] Email masking (u***@example.com)
+- [x] Email masking (u\*\*\*@example.com)
 
 ---
 
@@ -538,6 +581,7 @@ PromptVault's authentication system follows OWASP (Open Web Application Security
 **Vulnerability**: Attacker tries many passwords to guess credentials
 
 **Mitigations**:
+
 - ✅ Account lockout after 5 failed attempts
 - ✅ Rate limiting on login endpoint (5 attempts/15 minutes)
 - ✅ Strong password policy (increases search space)
@@ -548,6 +592,7 @@ PromptVault's authentication system follows OWASP (Open Web Application Security
 **Vulnerability**: Attacker uses leaked credentials from other breaches
 
 **Mitigations**:
+
 - ✅ Account lockout triggers on failed attempts
 - ✅ Rate limiting prevents automated attacks
 - ✅ Password policy prevents common passwords
@@ -558,6 +603,7 @@ PromptVault's authentication system follows OWASP (Open Web Application Security
 **Vulnerability**: Attacker steals and reuses authentication tokens
 
 **Mitigations**:
+
 - ✅ Token family tracking detects reuse
 - ✅ Entire family revoked on reuse detection
 - ✅ Short access token lifetime (15 minutes)
@@ -569,6 +615,7 @@ PromptVault's authentication system follows OWASP (Open Web Application Security
 **Vulnerability**: Attacker substitutes HS256 for RS256/ES256
 
 **Mitigations**:
+
 - ✅ ES256 exclusively (asymmetric encryption)
 - ✅ Algorithm validation enforced
 - ✅ Public key cannot sign tokens
@@ -579,6 +626,7 @@ PromptVault's authentication system follows OWASP (Open Web Application Security
 **Vulnerability**: Attacker measures response time to guess passwords
 
 **Mitigations**:
+
 - ✅ Constant-time password verification
 - ✅ Argon2id built-in timing resistance
 - ✅ Same response time for valid/invalid users
@@ -588,6 +636,7 @@ PromptVault's authentication system follows OWASP (Open Web Application Security
 **Vulnerability**: Attacker determines which usernames/emails exist
 
 **Mitigations**:
+
 - ✅ Same error message for invalid user/password
 - ✅ Email masking in password reset responses
 - ✅ Timing-safe user lookups
@@ -598,6 +647,7 @@ PromptVault's authentication system follows OWASP (Open Web Application Security
 **Vulnerability**: Attacker forces user to use known session ID
 
 **Mitigations**:
+
 - ✅ New session on each login
 - ✅ JWT tokens (stateless, unfixable)
 - ✅ Token family rotation
@@ -608,6 +658,7 @@ PromptVault's authentication system follows OWASP (Open Web Application Security
 **Vulnerability**: Attacker tricks user into making unintended requests
 
 **Mitigations**:
+
 - ✅ JWT tokens in Authorization header (not cookies)
 - ✅ CORS configuration
 - ✅ SameSite cookie attribute (if using cookies)
@@ -617,6 +668,7 @@ PromptVault's authentication system follows OWASP (Open Web Application Security
 **Vulnerability**: Attacker injects SQL code into queries
 
 **Mitigations**:
+
 - ✅ SQLAlchemy ORM (parameterized queries)
 - ✅ Input validation with Pydantic
 - ✅ No raw SQL with user input
@@ -626,6 +678,7 @@ PromptVault's authentication system follows OWASP (Open Web Application Security
 **Vulnerability**: Attacker sets unauthorized fields via API
 
 **Mitigations**:
+
 - ✅ Pydantic models with explicit field definitions
 - ✅ Admin-only fields protected
 - ✅ Role-based access control
@@ -640,12 +693,14 @@ PromptVault's authentication system follows OWASP (Open Web Application Security
 #### 1. Never Log Sensitive Data
 
 **DON'T**:
+
 ```python
 logger.info(f"User login: {username} with password: {password}")  # ❌
 logger.debug(f"JWT token: {access_token}")  # ❌
 ```
 
 **DO**:
+
 ```python
 logger.info(f"User login: {username}")  # ✅
 logger.debug(f"JWT token generated for user: {user_id}")  # ✅
@@ -654,11 +709,13 @@ logger.debug(f"JWT token generated for user: {user_id}")  # ✅
 #### 2. Use Prepared Statements
 
 **DON'T**:
+
 ```python
 query = f"SELECT * FROM users WHERE username = '{username}'"  # ❌ SQL Injection
 ```
 
 **DO**:
+
 ```python
 user = db.query(User).filter(User.username == username).first()  # ✅ Parameterized
 ```
@@ -666,11 +723,13 @@ user = db.query(User).filter(User.username == username).first()  # ✅ Parameter
 #### 3. Validate All Input
 
 **DON'T**:
+
 ```python
 user.role = request_data.role  # ❌ Unchecked assignment
 ```
 
 **DO**:
+
 ```python
 if request_data.role not in ['viewer', 'editor', 'admin']:  # ✅ Validated
     raise ValueError("Invalid role")
@@ -680,12 +739,14 @@ user.role = request_data.role
 #### 4. Handle Errors Securely
 
 **DON'T**:
+
 ```python
 except Exception as e:
     return {"error": str(e)}  # ❌ Exposes internal details
 ```
 
 **DO**:
+
 ```python
 except Exception as e:
     logger.error(f"Error: {e}")  # ✅ Log internally
@@ -766,6 +827,7 @@ grep "failed login" logs/audit.log | tail -100
 #### 2. Enable Two-Factor Authentication
 
 (When implemented)
+
 - ✅ Use authenticator app (not SMS)
 - ✅ Save backup codes securely
 - ✅ Don't share 2FA codes

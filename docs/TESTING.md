@@ -30,14 +30,14 @@ open htmlcov/index.html  # macOS
 
 ## Test Suite Metrics
 
-| Metric | Value | Status |
-|--------|-------|--------|
-| **Total Tests** | 514 | - |
-| **Passing Tests** | 514 | ✅ |
-| **Failing Tests** | 0 | ✅ |
-| **Code Coverage** | 86.46% | ✅ Exceeds 85% target |
-| **Execution Time** | ~10 seconds | ✅ Very fast |
-| **Pass Rate** | 100% | ✅ Excellent |
+| Metric             | Value       | Status                |
+| ------------------ | ----------- | --------------------- |
+| **Total Tests**    | 514         | -                     |
+| **Passing Tests**  | 514         | ✅                    |
+| **Failing Tests**  | 0           | ✅                    |
+| **Code Coverage**  | 86.46%      | ✅ Exceeds 85% target |
+| **Execution Time** | ~10 seconds | ✅ Very fast          |
+| **Pass Rate**      | 100%        | ✅ Excellent          |
 
 ---
 
@@ -51,7 +51,9 @@ open htmlcov/index.html  # macOS
 **Status:** ✅ All passing
 
 #### PromptRepository (28 tests)
+
 Tests for the main prompt repository covering:
+
 - ✅ CRUD operations (create, read, update, delete)
 - ✅ Text search (title, content, notes)
 - ✅ Filtering (category, tags, favorites)
@@ -64,6 +66,7 @@ Tests for the main prompt repository covering:
 - ✅ Relationship eager loading
 
 **Key Tests:**
+
 - `test_create_prompt` - Basic prompt creation
 - `test_search_by_text` - Full-text search
 - `test_search_combined_filters` - Multiple filter criteria
@@ -71,7 +74,9 @@ Tests for the main prompt repository covering:
 - `test_cascade_delete_versions` - Referential integrity
 
 #### VersionRepository (17 tests)
+
 Tests for version control repository:
+
 - ✅ Version creation with complete snapshots
 - ✅ Parent-child version relationships
 - ✅ Version history retrieval and ordering
@@ -82,13 +87,16 @@ Tests for version control repository:
 - ✅ Revert operations
 
 **Key Tests:**
+
 - `test_create_version` - Version snapshot creation
 - `test_get_versions_for_prompt` - History retrieval
 - `test_version_chain` - Parent-child linking
 - `test_immutability` - Snapshots don't change
 
 #### CategoryRepository (11 tests)
+
 Tests for category management:
+
 - ✅ CRUD operations
 - ✅ Get-or-create pattern
 - ✅ Usage count tracking
@@ -97,7 +105,9 @@ Tests for category management:
 - ✅ Unique constraint enforcement
 
 #### TagRepository (22 tests)
+
 Tests for tag management:
+
 - ✅ CRUD operations
 - ✅ Get-or-create (single and bulk)
 - ✅ Usage count tracking
@@ -115,7 +125,9 @@ Tests for tag management:
 **Status:** ✅ 94% passing (83/88)
 
 #### PromptDataService (46 tests - 100% passing)
+
 Tests for the main data service:
+
 - ✅ CRUD operations with automatic versioning
 - ✅ Data loading and caching
 - ✅ Search and filtering
@@ -125,6 +137,7 @@ Tests for the main data service:
 - ✅ Bulk operations
 
 **Key Tests:**
+
 - `test_add_new_prompt` - Prompt creation
 - `test_add_prompt_creates_initial_version` - Auto-versioning
 - `test_update_creates_version` - Version on update
@@ -132,7 +145,9 @@ Tests for the main data service:
 - `test_normalize_tags` - Data sanitization
 
 #### BackupService (42 tests - 88% passing)
+
 Tests for backup and restore:
+
 - ✅ Backup creation with metadata
 - ✅ Backup listing and sorting
 - ✅ Restore with pre-restore backup
@@ -141,6 +156,7 @@ Tests for backup and restore:
 - ✅ Database import/export
 
 **Key Tests:**
+
 - `test_create_backup` - Basic backup
 - `test_restore_backup` - Restore operation
 - `test_cleanup_old_backups` - Retention policy
@@ -156,6 +172,7 @@ Tests for backup and restore:
 **Status:** ✅ All passing
 
 #### Version Creation (8 tests)
+
 - ✅ Automatic version on create/update
 - ✅ Complete metadata capture
 - ✅ Unique UUID generation
@@ -163,6 +180,7 @@ Tests for backup and restore:
 - ✅ Custom commit messages
 
 #### Version History (10 tests)
+
 - ✅ History retrieval and ordering (newest first)
 - ✅ Pagination and limiting
 - ✅ Latest version lookup
@@ -172,6 +190,7 @@ Tests for backup and restore:
 - ✅ Cascade delete on prompt deletion
 
 #### Version Comparison (8 tests)
+
 - ✅ Diff generation between versions
 - ✅ Changed field detection
 - ✅ Tag additions/removals
@@ -180,6 +199,7 @@ Tests for backup and restore:
 - ✅ Error handling for missing versions
 
 #### Version Revert (10 tests)
+
 - ✅ Revert to previous versions
 - ✅ New version creation on revert (preserves history)
 - ✅ Complete field restoration
@@ -187,6 +207,7 @@ Tests for backup and restore:
 - ✅ Custom revert messages
 
 #### Integration Tests (12 tests)
+
 - ✅ Complete version workflows
 - ✅ Immutability verification
 - ✅ Timestamp preservation
@@ -195,6 +216,7 @@ Tests for backup and restore:
 - ✅ Version statistics
 
 **Key Tests:**
+
 - `test_complete_version_workflow` - End-to-end flow
 - `test_version_immutability` - Old versions never change
 - `test_revert_creates_new_version` - History preservation
@@ -237,11 +259,13 @@ This means you can:
 **30 comprehensive fixtures** providing:
 
 #### Database Fixtures
+
 - `test_db_engine` - In-memory SQLite with thread-safe configuration
 - `test_db_session` - Session with automatic rollback
 - `reset_database` - Smart database reset (autouse)
 
 #### Model Fixtures
+
 - `test_user` - Pre-configured User
 - `test_category` - Pre-configured Category
 - `test_tags` - List of Tags
@@ -249,12 +273,14 @@ This means you can:
 - `test_prompt_with_versions` - Prompt with version history
 
 #### Repository Fixtures
+
 - `prompt_repo` - PromptRepository instance
 - `version_repo` - VersionRepository instance
 - `category_repo` - CategoryRepository instance
 - `tag_repo` - TagRepository instance
 
 #### Service Fixtures
+
 - `db_data_service` - PromptDataService with in-memory DB
 - `db_backup_service` - BackupService with temp directory
 - `filter_service` - PromptFilterService
@@ -263,12 +289,14 @@ This means you can:
 - And more...
 
 #### Data Factory Fixtures
+
 - `sample_prompt_data()` - Factory for prompt dicts
 - `sample_version_data()` - Factory for version dicts
 - `sample_csv_content` - CSV test data
 - `sample_markdown_content` - Markdown test data
 
 #### API Testing Fixtures
+
 - `temp_data_dir` - Temporary directory with auto-cleanup
 - `api_client` - FastAPI TestClient with database backend
 - `api_client_with_data` - Pre-populated API client
@@ -276,7 +304,9 @@ This means you can:
 ### Configuration Files
 
 #### `.coveragerc`
+
 Configures coverage reporting and exclusions:
+
 ```ini
 [run]
 source = src
@@ -289,7 +319,9 @@ omit =
 ```
 
 #### `pytest.ini`
+
 Pytest configuration with coverage requirements:
+
 ```ini
 [pytest]
 addopts =
@@ -385,25 +417,26 @@ python3 -m pytest --tb=long
 
 ### Current Coverage by Component
 
-| Component | Statements | Missed | Coverage | Status |
-|-----------|-----------|--------|----------|---------|
-| **Database Models** | 124 | 0 | 100% | ✅ |
-| **Repositories** | 216 | 13 | 94% | ✅ |
-| **PromptRepository** | 54 | 0 | 100% | ✅ |
-| **VersionRepository** | 62 | 0 | 100% | ✅ |
-| **CategoryRepository** | 36 | 4 | 89% | ✅ |
-| **TagRepository** | 60 | 4 | 93% | ✅ |
-| **Services (DB)** | 849 | 200 | 76% | ✅ |
-| **PromptDataServiceDB** | 298 | 54 | 82% | ✅ |
-| **BackupServiceDB** | 371 | 102 | 73% | ✅ |
-| **Version Services** | 312 | 9 | 97% | ✅ |
-| **Web API** | 624 | 112 | 82% | ✅ |
-| **Validators** | 187 | 31 | 83% | ✅ |
-| **TOTAL** | 2,741 | 371 | **86.46%** | ✅ |
+| Component               | Statements | Missed | Coverage   | Status |
+| ----------------------- | ---------- | ------ | ---------- | ------ |
+| **Database Models**     | 124        | 0      | 100%       | ✅     |
+| **Repositories**        | 216        | 13     | 94%        | ✅     |
+| **PromptRepository**    | 54         | 0      | 100%       | ✅     |
+| **VersionRepository**   | 62         | 0      | 100%       | ✅     |
+| **CategoryRepository**  | 36         | 4      | 89%        | ✅     |
+| **TagRepository**       | 60         | 4      | 93%        | ✅     |
+| **Services (DB)**       | 849        | 200    | 76%        | ✅     |
+| **PromptDataServiceDB** | 298        | 54     | 82%        | ✅     |
+| **BackupServiceDB**     | 371        | 102    | 73%        | ✅     |
+| **Version Services**    | 312        | 9      | 97%        | ✅     |
+| **Web API**             | 624        | 112    | 82%        | ✅     |
+| **Validators**          | 187        | 31     | 83%        | ✅     |
+| **TOTAL**               | 2,741      | 371    | **86.46%** | ✅     |
 
 ### Coverage Gaps
 
 The remaining uncovered code consists primarily of:
+
 1. **Error handling paths** - Edge cases that are difficult to trigger
 2. **Legacy compatibility code** - Deprecated methods
 3. **Database health checks** - Excluded from coverage by design
@@ -416,6 +449,7 @@ The remaining uncovered code consists primarily of:
 ### Writing New Tests
 
 1. **Use Fixtures**
+
    ```python
    def test_create_prompt(prompt_repo, test_user, test_category):
        prompt = prompt_repo.create(
@@ -432,12 +466,14 @@ The remaining uncovered code consists primarily of:
    - No shared state between tests
 
 3. **Clear Test Names**
+
    ```python
    def test_search_by_category_returns_filtered_results():
        # Test name describes exactly what is tested
    ```
 
 4. **Arrange-Act-Assert Pattern**
+
    ```python
    def test_update_prompt_creates_version(db_data_service):
        # Arrange
@@ -460,6 +496,7 @@ The remaining uncovered code consists primarily of:
 ### Common Patterns
 
 #### Testing CRUD Operations
+
 ```python
 def test_crud_flow(prompt_repo, test_user):
     # Create
@@ -480,6 +517,7 @@ def test_crud_flow(prompt_repo, test_user):
 ```
 
 #### Testing Relationships
+
 ```python
 def test_prompt_with_tags(prompt_repo, test_tags):
     prompt = prompt_repo.create(title="Test", tags=test_tags[:2])
@@ -488,6 +526,7 @@ def test_prompt_with_tags(prompt_repo, test_tags):
 ```
 
 #### Testing Error Handling
+
 ```python
 def test_get_nonexistent_prompt(prompt_repo):
     result = prompt_repo.get_by_id(99999)
@@ -510,25 +549,25 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
 
-    - name: Install dependencies
-      run: |
-        pip install -e .[test]
+      - name: Install dependencies
+        run: |
+          pip install -e .[test]
 
-    - name: Run tests with coverage
-      run: |
-        python3 -m pytest --cov=src --cov-report=term --cov-report=xml
+      - name: Run tests with coverage
+        run: |
+          python3 -m pytest --cov=src --cov-report=term --cov-report=xml
 
-    - name: Upload coverage reports
-      uses: codecov/codecov-action@v3
-      with:
-        file: ./coverage.xml
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
 ```
 
 ---
@@ -537,10 +576,12 @@ jobs:
 
 ### Common Issues
 
-#### Error: "Client.__init__() got an unexpected keyword argument 'app'"
+#### Error: "Client.**init**() got an unexpected keyword argument 'app'"
+
 **Problem:** Version incompatibility between FastAPI, Starlette, and httpx packages.
 
 **Solution:** Reinstall dependencies from pyproject.toml:
+
 ```bash
 pip install -e .[test] --force-reinstall --no-cache-dir
 ```
@@ -548,9 +589,11 @@ pip install -e .[test] --force-reinstall --no-cache-dir
 Then always use `python3 -m pytest` instead of the `pytest` command.
 
 #### Error: "ModuleNotFoundError: No module named 'pygments'"
+
 **Problem:** System pytest is using a different Python environment.
 
 **Solution:** Always use `python3 -m pytest` to run tests:
+
 ```bash
 python3 -m pytest
 ```
@@ -558,7 +601,9 @@ python3 -m pytest
 This ensures pytest runs in the correct Python environment with all dependencies.
 
 #### Tests Fail with "Database is locked"
+
 **Solution:** The in-memory SQLite database should prevent this, but if it occurs:
+
 ```python
 # Ensure proper session cleanup in conftest.py
 yield session
@@ -567,27 +612,35 @@ session.close()
 ```
 
 #### Import Errors
+
 **Solution:** Install in editable mode:
+
 ```bash
 pip install -e .
 ```
 
 #### Coverage Below 85%
+
 **Solution:** Check which files are included:
+
 ```bash
 python3 -m pytest --cov=src --cov-report=term-missing
 ```
 
 #### Slow Tests
+
 **Solution:** Tests should be fast (~10s). If slow:
+
 - Check for external API calls
 - Ensure using in-memory SQLite
 - Verify no unnecessary file I/O
 
 #### Version Conflicts with Global Packages
+
 **Problem:** Your system has globally installed packages (mcp, google-genai, chromadb, etc.) that conflict with PromptVault's pinned versions.
 
 **Solution:** These conflicts can be ignored if you're only running PromptVault tests. The warnings don't affect the test suite. Alternatively, use a virtual environment:
+
 ```bash
 python3 -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
@@ -602,6 +655,7 @@ python3 -m pytest
 The test suite was completely rewritten. Key changes:
 
 ### What Changed
+
 - ❌ **Removed:** All JSON-file based tests
 - ❌ **Removed:** Duplicate repository tests
 - ❌ **Removed:** Old backup system tests
@@ -611,6 +665,7 @@ The test suite was completely rewritten. Key changes:
 - ✅ **Added:** Thread-safe database handling
 
 ### What Stayed the Same
+
 - ✅ API endpoint tests (updated for database)
 - ✅ Import/export tests
 - ✅ Validation tests
@@ -621,6 +676,7 @@ The test suite was completely rewritten. Key changes:
 ## Future Improvements
 
 ### Planned Enhancements
+
 1. Add performance benchmarks for large datasets (10k+ prompts)
 2. Add concurrent operation stress tests
 3. Add PostgreSQL-specific integration tests
@@ -628,6 +684,7 @@ The test suite was completely rewritten. Key changes:
 5. Add property-based testing with Hypothesis
 
 ### Current Limitations
+
 1. No tests for PostgreSQL-specific features
 2. Limited concurrent operation testing
 3. No chaos/fault injection testing
@@ -647,6 +704,7 @@ The test suite was completely rewritten. Key changes:
 ## Summary
 
 The PromptVault test suite provides:
+
 - ✅ **86.46% code coverage** (exceeds 85% requirement)
 - ✅ **514 passing tests** (100% pass rate)
 - ✅ **Fast execution** (~10 seconds)

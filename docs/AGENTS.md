@@ -40,7 +40,6 @@ PromptVault is a modern web-based prompt management application built with FastA
 ### Core Systems
 
 1. **Database Layer** ([`src/db/`](src/db/))
-
    - **Database Models** ([`models.py`](src/db/models.py)): SQLAlchemy ORM models
      - `Prompt`: Main prompt entity with relationships
      - `PromptVersion`: Git-like version snapshots
@@ -62,7 +61,6 @@ PromptVault is a modern web-based prompt management application built with FastA
      - Connection pooling and session management
 
 2. **Service Layer** ([`src/services/`](src/services/))
-
    - **PromptDataServiceDB** ([`prompt_data_service_db.py`](src/services/prompt_data_service_db.py)): Core data operations
      - Handles all CRUD operations for prompts
      - Database-backed persistence with transactions
@@ -107,7 +105,6 @@ PromptVault is a modern web-based prompt management application built with FastA
      - **VersionExportService** ([`version_export_service.py`](src/services/version_export_service.py)): Export version history and diffs (deprecated)
 
 3. **Web Application Layer** ([`src/web/`](src/web/))
-
    - **FastAPI Application** ([`app.py`](src/web/app.py)): Main web server
      - RESTful API endpoints
      - Jinja2 template rendering
@@ -129,7 +126,6 @@ PromptVault is a modern web-based prompt management application built with FastA
      - **i18n** ([`locales/`](src/web/static/locales/)): Translation files (en, fr, es, de)
 
 4. **Data Storage**
-
    - **Primary Data Store**: Database (SQLite or PostgreSQL)
      - **SQLite**: `data/prompts.db` (development and default)
      - **PostgreSQL**: Configured via `DATABASE_URL` environment variable (production)
@@ -550,28 +546,28 @@ cat docs/TESTING.md
 
 ### Key Files
 
-| File | Purpose |
-|------|---------|
-| [`run_web.py`](run_web.py) | Web server startup script |
-| [`src/web/app.py`](src/web/app.py) | FastAPI application and routes |
-| [`src/db/models.py`](src/db/models.py) | SQLAlchemy database models |
-| [`src/db/config.py`](src/db/config.py) | Database configuration and session management |
-| [`src/db/repositories/`](src/db/repositories/) | Repository layer (data access) |
-| [`src/services/prompt_data_service_db.py`](src/services/prompt_data_service_db.py) | Database-backed data service |
-| [`src/services/backup_service_db.py`](src/services/backup_service_db.py) | Database-backed backup service |
-| [`data/prompts.db`](data/prompts.db) | SQLite database (development) |
-| [`tests/conftest.py`](tests/conftest.py) | Test fixtures (30 database-aware fixtures) |
-| [`tests/test_db_repositories.py`](tests/test_db_repositories.py) | Repository layer tests |
-| [`tests/test_db_services.py`](tests/test_db_services.py) | Service layer tests |
-| [`tests/test_version_system.py`](tests/test_version_system.py) | Version control tests |
-| [`docs/TESTING.md`](docs/TESTING.md) | Comprehensive testing guide |
-| [`docs/SPECS/SPEC_DATABASE.md`](docs/SPECS/SPEC_DATABASE.md) | Database architecture specification |
-| [`pyproject.toml`](pyproject.toml) | Project configuration |
-| [`pytest.ini`](pytest.ini) | Test configuration |
-| [`.coveragerc`](.coveragerc) | Coverage configuration (excludes legacy code) |
-| [`Dockerfile`](Dockerfile) | Container configuration |
-| [`docker-compose.yml`](docker-compose.yml) | Docker Compose setup |
-| [`CHANGELOG.md`](CHANGELOG.md) | Release history |
+| File                                                                               | Purpose                                       |
+| ---------------------------------------------------------------------------------- | --------------------------------------------- |
+| [`run_web.py`](run_web.py)                                                         | Web server startup script                     |
+| [`src/web/app.py`](src/web/app.py)                                                 | FastAPI application and routes                |
+| [`src/db/models.py`](src/db/models.py)                                             | SQLAlchemy database models                    |
+| [`src/db/config.py`](src/db/config.py)                                             | Database configuration and session management |
+| [`src/db/repositories/`](src/db/repositories/)                                     | Repository layer (data access)                |
+| [`src/services/prompt_data_service_db.py`](src/services/prompt_data_service_db.py) | Database-backed data service                  |
+| [`src/services/backup_service_db.py`](src/services/backup_service_db.py)           | Database-backed backup service                |
+| [`data/prompts.db`](data/prompts.db)                                               | SQLite database (development)                 |
+| [`tests/conftest.py`](tests/conftest.py)                                           | Test fixtures (30 database-aware fixtures)    |
+| [`tests/test_db_repositories.py`](tests/test_db_repositories.py)                   | Repository layer tests                        |
+| [`tests/test_db_services.py`](tests/test_db_services.py)                           | Service layer tests                           |
+| [`tests/test_version_system.py`](tests/test_version_system.py)                     | Version control tests                         |
+| [`docs/TESTING.md`](docs/TESTING.md)                                               | Comprehensive testing guide                   |
+| [`docs/SPECS/SPEC_DATABASE.md`](docs/SPECS/SPEC_DATABASE.md)                       | Database architecture specification           |
+| [`pyproject.toml`](pyproject.toml)                                                 | Project configuration                         |
+| [`pytest.ini`](pytest.ini)                                                         | Test configuration                            |
+| [`.coveragerc`](.coveragerc)                                                       | Coverage configuration (excludes legacy code) |
+| [`Dockerfile`](Dockerfile)                                                         | Container configuration                       |
+| [`docker-compose.yml`](docker-compose.yml)                                         | Docker Compose setup                          |
+| [`CHANGELOG.md`](CHANGELOG.md)                                                     | Release history                               |
 
 ## Summary
 

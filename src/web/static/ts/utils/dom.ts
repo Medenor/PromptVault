@@ -56,7 +56,10 @@ export function getRequiredElement<T extends HTMLElement>(id: string): T {
 /**
  * Query selector with type assertion
  */
-export function querySelector<T extends Element>(selector: string, parent: ParentNode = document): T | null {
+export function querySelector<T extends Element>(
+  selector: string,
+  parent: ParentNode = document
+): T | null {
   return parent.querySelector(selector) as T | null;
 }
 
