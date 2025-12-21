@@ -10,6 +10,10 @@ This plan migrates PromptVault's vanilla JavaScript frontend to TypeScript with 
 - **Strategy:** Incremental file-by-file migration
 - **TypeScript:** Strict mode enabled
 - **State Management:** No library (type existing patterns)
+- **Dev Server:** Vite on 5173 with proxy to FastAPI dev server on 8003
+- **Production App Port:** 8001 (FastAPI serves built assets)
+- **Docker Entrypoint:** Use `run_web.py` (preferred project entrypoint)
+- **Types Strategy:** Pure frontend types initially; consider OpenAPI codegen later
 
 **Current State:**
 
@@ -27,7 +31,7 @@ This plan migrates PromptVault's vanilla JavaScript frontend to TypeScript with 
 
 **File:** `/package.json`
 
-**Current content has only Playwright deps. Add:**
+**Merge into existing scripts/deps (do not overwrite). Ensure these scripts and dependencies exist:**
 
 ```json
 {
@@ -178,15 +182,15 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'http://localhost:8000',
+        target: 'http://localhost:8003',
         changeOrigin: true,
       },
       '/auth': {
-        target: 'http://localhost:8000',
+        target: 'http://localhost:8003',
         changeOrigin: true,
       },
       '/static/locales': {
-        target: 'http://localhost:8000',
+        target: 'http://localhost:8003',
         changeOrigin: true,
       },
     },
@@ -2632,7 +2636,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:8000/api/health || exit 1
 
 # Run the application
-CMD ["uvicorn", "src.web.app:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["python", "run_web.py"]
 ```
 
 ---
