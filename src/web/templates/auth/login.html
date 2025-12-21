@@ -15,6 +15,7 @@
     <script src="https://unpkg.com/i18next-http-backend@2.4.2/i18nextHttpBackend.min.js"></script>
 </head>
 <body>
+    {% import "macros/scripts.html" as scripts %}
     <div class="auth-container">
         <div class="auth-header">
             <div class="header-logo">
@@ -96,7 +97,6 @@
         </div>
     </div>
 
-    <script src="/static/js/telemetry.js?v=2" defer></script>
-    <script type="module" src="/static/js/auth.js?v=2"></script>
+    {{ scripts.load_scripts('auth') }}
 </body>
 </html>

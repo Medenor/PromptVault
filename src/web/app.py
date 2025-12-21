@@ -51,6 +51,7 @@ from src.web.routers.scheduler import router as scheduler_router
 from src.web.middleware.rate_limit import limiter, rate_limit_exceeded_handler
 from src.web.middleware.security_headers import SecurityHeadersMiddleware
 from slowapi.errors import RateLimitExceeded
+from src.web.utils.manifest import load_manifest, get_asset_path, is_production
 
 # ============================================================================
 # APPLICATION INITIALIZATION
@@ -323,6 +324,13 @@ app.mount("/static", StaticFiles(directory="src/web/static"), name="static")
 
 # Templates
 templates = Jinja2Templates(directory="src/web/templates")
+templates.env.globals["load_manifest"] = load_manifest
+templates.env.globals["get_asset_path"] = get_asset_path
+templates.env.globals["is_production"] = is_production
+templates.env.globals["is_dev"] = lambda: os.getenv("ENV", "production") == "development"
+templates.env.globals["use_vite_assets"] = (
+    lambda: os.getenv("USE_VITE_ASSETS", "false").lower() == "true"
+)
 
 def _resolve_data_locations(
     override_file: Optional[str] = None, override_dir: Optional[str] = None

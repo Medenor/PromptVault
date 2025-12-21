@@ -15,6 +15,7 @@
     <script src="https://unpkg.com/i18next-http-backend@2.4.2/i18nextHttpBackend.min.js"></script>
 </head>
 <body>
+    {% import "macros/scripts.html" as scripts %}
     <div class="app">
         <header class="header">
             <div class="header-logo">
@@ -299,7 +300,6 @@
         </div>
     </div>
 
-    <script src="/static/js/telemetry.js" defer></script>
-    <script type="module" src="/static/js/admin-users.js?v=6"></script>
+    {{ scripts.load_scripts('admin-users') }}
 </body>
 </html>
