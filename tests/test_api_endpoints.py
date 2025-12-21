@@ -54,6 +54,68 @@ def api_auth_headers(api_client_context) -> Dict[str, str]:
 
 
 @pytest.fixture
+def api_admin_auth_headers(api_client_context) -> Dict[str, str]:
+    """Create authentication headers with admin role access token."""
+    from src.services.auth.jwt_service import JWTService
+    from src.services.auth.password_service import PasswordService
+    from src.config.auth_config import auth_settings
+    from src.db.models.user import User
+    from src.db.models.user_session import UserSession
+    from src.db.session import SessionLocal
+    from datetime import datetime, timezone, timedelta
+
+    # Create admin user in database
+    password_service = PasswordService(auth_settings)
+    password_hash = password_service.hash_password("AdminP@ssw0rd123")
+
+    test_session = SessionLocal()
+    try:
+        # Check if admin user already exists
+        admin_user = test_session.query(User).filter_by(id="api-admin-test-user-id").first()
+        if not admin_user:
+            admin_user = User(
+                id="api-admin-test-user-id",
+                username="apiadmin",
+                email="admin@example.com",
+                password_hash=password_hash,
+                role="admin",
+                is_active=True,
+                email_verified=True,
+                created_at=datetime.now(timezone.utc),
+                updated_at=datetime.now(timezone.utc),
+            )
+            test_session.add(admin_user)
+            test_session.flush()
+
+            # Create an active session for the admin user
+            admin_session = UserSession(
+                user_id=admin_user.id,
+                family_id="api-admin-test-family",
+                refresh_token_jti="api-admin-test-jti",
+                ip_address="127.0.0.1",
+                device_info="Test Agent",
+                created_at=datetime.now(timezone.utc),
+                expires_at=datetime.now(timezone.utc) + timedelta(days=30),
+                is_revoked=False,
+            )
+            test_session.add(admin_session)
+            test_session.commit()
+    finally:
+        test_session.close()
+
+    # Generate access token for admin user
+    jwt_service = JWTService(auth_settings)
+    access_token = jwt_service.generate_access_token(
+        user_id="api-admin-test-user-id",
+        username="apiadmin",
+        email="admin@example.com",
+        role="admin",
+    )
+
+    return {"Authorization": f"Bearer {access_token}"}
+
+
+@pytest.fixture
 def seeded_prompt_id(api_client):
     """Get the ID of the seeded 'API Prompt 1' prompt."""
     response = api_client.get("/api/prompts")
@@ -676,41 +738,41 @@ class TestImportMarkdownAndJson:
 class TestBackupManagementEndpoints:
     """Exercise backup and restore API coverage."""
 
-    def test_backup_endpoints_flow(self, api_client):
+    def test_backup_endpoints_flow(self, api_client, api_auth_headers):
         page = api_client.get("/backup-management")
         assert page.status_code == 200
 
-        create = api_client.post("/api/backups", data={"name": "coverage-backup"})
+        create = api_client.post("/api/backups", data={"name": "coverage-backup"}, headers=api_auth_headers)
         assert create.status_code == 200
         backup_id = create.json()["backup_id"]
 
-        listing = api_client.get("/api/backups")
+        listing = api_client.get("/api/backups", headers=api_auth_headers)
         assert listing.status_code == 200
         assert any(item["backup_id"] == backup_id for item in listing.json()["backups"])
 
-        stats = api_client.get("/api/backups/stats")
+        stats = api_client.get("/api/backups/stats", headers=api_auth_headers)
         assert stats.status_code == 200
         assert "total_backups" in stats.json()
 
-        restore = api_client.post(f"/api/backups/{backup_id}/restore")
+        restore = api_client.post(f"/api/backups/{backup_id}/restore", headers=api_auth_headers)
         assert restore.status_code == 200
         assert restore.json()["success"] is True
 
-        delete = api_client.delete(f"/api/backups/{backup_id}")
+        delete = api_client.delete(f"/api/backups/{backup_id}", headers=api_auth_headers)
         assert delete.status_code == 200
         assert delete.json()["success"] is True
 
         # Use minimum valid values (validation requires >= 1)
-        cleanup = api_client.post("/api/backups/cleanup", data={"retention_days": 1})
+        cleanup = api_client.post("/api/backups/cleanup", data={"retention_days": 1}, headers=api_auth_headers)
         assert cleanup.status_code == 200
         assert cleanup.json()["success"] is True
 
-        compress = api_client.post("/api/backups/compress", data={"days_threshold": 1})
+        compress = api_client.post("/api/backups/compress", data={"days_threshold": 1}, headers=api_auth_headers)
         assert compress.status_code == 200
         assert compress.json()["success"] is True
 
-    def test_restore_invalid_backup_returns_structured_error(self, api_client):
-        response = api_client.post("/api/backups/unknown-id/restore")
+    def test_restore_invalid_backup_returns_structured_error(self, api_client, api_auth_headers):
+        response = api_client.post("/api/backups/unknown-id/restore", headers=api_auth_headers)
         assert response.status_code == 404
         payload = response.json()
         assert "error" in payload
@@ -806,7 +868,7 @@ class TestFrontendLogging:
 
 # Bulk Deletion API Tests
 
-def test_bulk_delete_success(api_client_context):
+def test_bulk_delete_success(api_client_context, api_admin_auth_headers):
     """Test successful bulk deletion."""
     client = api_client_context["client"]
     data_service = api_client_context["data_service"]
@@ -826,7 +888,8 @@ def test_bulk_delete_success(api_client_context):
     response = client.request(
         "DELETE",
         "/api/prompts/bulk",
-        json={"prompt_ids": ids[:3]}
+        json={"prompt_ids": ids[:3]},
+        headers=api_admin_auth_headers
     )
 
     assert response.status_code == 200
@@ -841,7 +904,7 @@ def test_bulk_delete_success(api_client_context):
         assert prompt_id not in data_service.prompts
 
 
-def test_bulk_delete_partial_failure(api_client_context):
+def test_bulk_delete_partial_failure(api_client_context, api_admin_auth_headers):
     """Test bulk deletion with some non-existent IDs."""
     client = api_client_context["client"]
     data_service = api_client_context["data_service"]
@@ -858,7 +921,8 @@ def test_bulk_delete_partial_failure(api_client_context):
     response = client.request(
         "DELETE",
         "/api/prompts/bulk",
-        json={"prompt_ids": [prompt_id, 999, 1000]}
+        json={"prompt_ids": [prompt_id, 999, 1000]},
+        headers=api_admin_auth_headers
     )
 
     assert response.status_code == 200
@@ -869,7 +933,7 @@ def test_bulk_delete_partial_failure(api_client_context):
     assert 1000 in result["failed_ids"]
 
 
-def test_bulk_delete_validation_empty_list(api_client_context):
+def test_bulk_delete_validation_empty_list(api_client_context, api_admin_auth_headers):
     """Test bulk deletion validation with empty list."""
     client = api_client_context["client"]
 
@@ -877,12 +941,13 @@ def test_bulk_delete_validation_empty_list(api_client_context):
     response = client.request(
         "DELETE",
         "/api/prompts/bulk",
-        json={"prompt_ids": []}
+        json={"prompt_ids": []},
+        headers=api_admin_auth_headers
     )
     assert response.status_code == 422
 
 
-def test_bulk_delete_validation_duplicate_ids(api_client_context):
+def test_bulk_delete_validation_duplicate_ids(api_client_context, api_admin_auth_headers):
     """Test bulk deletion validation with duplicate IDs."""
     client = api_client_context["client"]
 
@@ -890,12 +955,13 @@ def test_bulk_delete_validation_duplicate_ids(api_client_context):
     response = client.request(
         "DELETE",
         "/api/prompts/bulk",
-        json={"prompt_ids": [1, 2, 1]}
+        json={"prompt_ids": [1, 2, 1]},
+        headers=api_admin_auth_headers
     )
     assert response.status_code == 422
 
 
-def test_bulk_delete_validation_too_many_ids(api_client_context):
+def test_bulk_delete_validation_too_many_ids(api_client_context, api_admin_auth_headers):
     """Test bulk deletion validation with too many IDs."""
     client = api_client_context["client"]
 
@@ -903,12 +969,13 @@ def test_bulk_delete_validation_too_many_ids(api_client_context):
     response = client.request(
         "DELETE",
         "/api/prompts/bulk",
-        json={"prompt_ids": list(range(1, 1002))}
+        json={"prompt_ids": list(range(1, 1002))},
+        headers=api_admin_auth_headers
     )
     assert response.status_code == 422
 
 
-def test_bulk_delete_creates_backup(api_client_context):
+def test_bulk_delete_creates_backup(api_client_context, api_admin_auth_headers):
     """Test that bulk deletion creates an automatic backup."""
     client = api_client_context["client"]
     data_service = api_client_context["data_service"]
@@ -928,7 +995,8 @@ def test_bulk_delete_creates_backup(api_client_context):
     response = client.request(
         "DELETE",
         "/api/prompts/bulk",
-        json={"prompt_ids": ids}
+        json={"prompt_ids": ids},
+        headers=api_admin_auth_headers
     )
 
     assert response.status_code == 200

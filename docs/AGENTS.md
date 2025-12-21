@@ -14,12 +14,15 @@ PromptVault is a modern web-based prompt management application built with FastA
 - **Run with Custom Port**: `PORT=8001 python run_web.py`
 - **Run with Docker**: `docker-compose up --build` (production, port 8001)
 - **NEVER manually start uvicorn** - Always use the provided startup scripts
+- **Frontend Dev Server**: `npm run dev` (Vite, default port 5173)
 
 ### Code Quality
 
 - **Format Code**: Use black code formatter (configured in project)
 - **Python Version**: Python 3.11+ minimum (required for database features)
 - **Before Commits**: Run full test suite and ensure coverage meets 85% threshold
+- **Frontend Lint**: `npm run lint` (ESLint) and `npm run format` (Prettier)
+- **Frontend Typecheck**: `npm run typecheck`
 
 ### Testing
 
@@ -34,6 +37,8 @@ PromptVault is a modern web-based prompt management application built with FastA
 - **Coverage Threshold**: 85% minimum (enforced in pytest.ini)
 - **Current Coverage**: 86.46% (514 passing tests, 100% pass rate)
 - **Test Documentation**: See `docs/TESTING.md` for comprehensive guide
+- **Frontend Unit Tests**: `npm run test:unit` (Vitest)
+- **Frontend Coverage**: `npm run test:unit:coverage` (Vitest + v8)
 
 ## High-Level Architecture
 
@@ -118,10 +123,11 @@ PromptVault is a modern web-based prompt management application built with FastA
      - [`backup_management.html`](src/web/templates/backup_management.html): Backup management interface
 
    - **Static Assets** ([`static/`](src/web/static/)):
-     - **JavaScript** ([`js/`](src/web/static/js/)): Client-side application logic
-       - [`app.js`](src/web/static/js/app.js): Main UI logic and API interactions
-       - [`import_export.js`](src/web/static/js/import_export.js): Import/export functionality
-       - [`backup_management.js`](src/web/static/js/backup_management.js): Backup management UI
+     - **TypeScript** ([`ts/`](src/web/static/ts/)): Client-side application logic (active source)
+       - [`app.ts`](src/web/static/ts/app.ts): Main UI logic and API interactions
+       - [`import-export.ts`](src/web/static/ts/import-export.ts): Import/export functionality
+       - [`backup-management.ts`](src/web/static/ts/backup-management.ts): Backup management UI
+     - **JavaScript** ([`js/`](src/web/static/js/)): Legacy sources (do not modify for new work)
      - **CSS** ([`css/style.css`](src/web/static/css/style.css)): Application styling
      - **i18n** ([`locales/`](src/web/static/locales/)): Translation files (en, fr, es, de)
 

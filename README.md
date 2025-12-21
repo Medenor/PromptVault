@@ -26,14 +26,29 @@
 <a href="https://www.python.org/">
   <img src="https://img.shields.io/badge/Python-3.11%2B-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.11+">
 </a>
+<a href="https://www.typescriptlang.org/">
+  <img src="https://img.shields.io/badge/TypeScript-5.x-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript">
+</a>
 <a href="https://fastapi.tiangolo.com/">
   <img src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI">
+</a>
+<a href="https://vitejs.dev/">
+  <img src="https://img.shields.io/badge/Vite-5.x-646CFF?style=for-the-badge&logo=vite&logoColor=white" alt="Vite">
 </a>
 <a href="https://www.docker.com/">
   <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker">
 </a>
 <a href="https://docs.pytest.org/">
   <img src="https://img.shields.io/badge/Pytest-0A9EDC?style=for-the-badge&logo=pytest&logoColor=white" alt="Pytest">
+</a>
+<a href="https://vitest.dev/">
+  <img src="https://img.shields.io/badge/Vitest-6E9F18?style=for-the-badge&logo=vitest&logoColor=white" alt="Vitest">
+</a>
+<a href="https://eslint.org/">
+  <img src="https://img.shields.io/badge/ESLint-4B32C3?style=for-the-badge&logo=eslint&logoColor=white" alt="ESLint">
+</a>
+<a href="https://prettier.io/">
+  <img src="https://img.shields.io/badge/Prettier-F7B93E?style=for-the-badge&logo=prettier&logoColor=white" alt="Prettier">
 </a>
 <a href="https://github.com/psf/black">
   <img src="https://img.shields.io/badge/Code%20Style-Black-000000?style=for-the-badge&logo=python&logoColor=white" alt="Code style: Black">
@@ -87,6 +102,8 @@ With built-in multi-user authentication and role-based access control, PromptVau
 - [Python](https://www.python.org/) 3.11+
 - [FastAPI](https://fastapi.tiangolo.com/) - Modern web framework
 - [Uvicorn](https://www.uvicorn.org/) - High-performance ASGI server
+- [TypeScript](https://www.typescriptlang.org/) - Frontend logic (migration complete)
+- [Vite](https://vitejs.dev/) - Frontend build and dev server
 - [Jinja2](https://jinja.palletsprojects.com/) - Template engine
 - [SQLAlchemy](https://www.sqlalchemy.org/) - Database ORM
 - [PostgreSQL](https://www.postgresql.org/) / [SQLite](https://www.sqlite.org/) - Database backends
@@ -95,6 +112,8 @@ With built-in multi-user authentication and role-based access control, PromptVau
 - [Argon2](https://github.com/p-h-c/phc-winner-argon2) - Password hashing (OWASP recommended)
 - [PyJWT](https://pyjwt.readthedocs.io/) - JWT token authentication with ES256
 - [slowapi](https://github.com/laurents/slowapi) - Rate limiting for authentication endpoints
+- [Vitest](https://vitest.dev/) - Frontend unit tests and coverage
+- [ESLint](https://eslint.org/) / [Prettier](https://prettier.io/) - Frontend linting and formatting
 
 ### Architecture
 
@@ -124,6 +143,10 @@ PromptVault follows a clean, layered architecture with clear separation of conce
 This modular design improves code maintainability, testability, and extensibility while providing flexibility in deployment options.
 
 For detailed technical specifications and database schema, see [Database Specification](docs/SPECS/SPEC_DATABASE.md). For development guidelines and codebase structure, see [AGENTS.md](docs/AGENTS.md).
+
+### TypeScript Migration
+
+PromptVault's frontend has been migrated from legacy JavaScript to TypeScript. All page scripts now live under `src/web/static/ts`, are built via Vite, and type-checked with `tsc`. Legacy JS under `src/web/static/js` remains only for historical reference and should not be edited for new work.
 
 ### Version Control
 
