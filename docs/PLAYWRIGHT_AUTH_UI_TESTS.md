@@ -5,6 +5,7 @@ Comprehensive browser automation tests for PromptVault authentication UI using P
 ## Overview
 
 These tests verify the user interface and user experience of the authentication system, including:
+
 - Login and registration pages
 - Form validation and error handling
 - Password visibility toggle
@@ -45,6 +46,7 @@ python3 scripts/init_test_admin.py
 ```
 
 This creates:
+
 - **Admin User**: `test_admin_ui` / `TestAdmin@Pass123456`
 - **Regular User**: `test_user_ui` / `TestUser@Pass123456`
 
@@ -116,6 +118,7 @@ npx playwright test scripts/playwright_auth_ui_tests.ts --project "Mobile Safari
 ## Test Cases
 
 ### AUTH-UI-001: Login Page Renders Correctly
+
 - ✅ Page title matches
 - ✅ Username field visible
 - ✅ Password field visible
@@ -124,6 +127,7 @@ npx playwright test scripts/playwright_auth_ui_tests.ts --project "Mobile Safari
 - ✅ Forgot password link visible
 
 ### AUTH-UI-002: Registration Page Renders Correctly
+
 - ✅ Page title matches
 - ✅ Username field visible
 - ✅ Email field visible
@@ -134,41 +138,49 @@ npx playwright test scripts/playwright_auth_ui_tests.ts --project "Mobile Safari
 - ✅ Password strength indicator present
 
 ### AUTH-UI-003: Password Visibility Toggle
+
 - ✅ Toggle button visible
 - ✅ Click toggle shows password (type changes to text)
 - ✅ Click again hides password (type changes to password)
 
 ### AUTH-UI-004: Form Validation - Empty Fields
+
 - ✅ Clicking login without fields shows error
 - ✅ Error message displayed
 - ✅ User stays on login page
 
 ### AUTH-UI-005: Successful Login Flow
+
 - ✅ User can login with valid credentials
 - ✅ Redirects to home/dashboard
 - ✅ Logout button or user menu visible
 
 ### AUTH-UI-006: Logout Flow
+
 - ✅ Logout button/link found
 - ✅ Click logout redirects to login
 - ✅ Logout button no longer visible
 
 ### AUTH-UI-007: Profile Page Access
+
 - ✅ Profile link visible when logged in
 - ✅ Profile page loads
 - ✅ Profile information displayed
 
 ### AUTH-UI-008: Admin Panel Access (Admin Only)
+
 - ✅ Admin user sees admin link
 - ✅ Admin panel page loads
 - ✅ Admin interface visible
 
 ### AUTH-UI-009: Language Switcher
+
 - ✅ Language switcher found
 - ✅ Clicking changes language
 - ✅ UI content changes
 
 ### AUTH-UI-010: Responsive Design - Mobile View
+
 - ✅ Mobile viewport (375x667) tested
 - ✅ Form fits within viewport
 - ✅ Form elements are tappable (30px+ height)
@@ -243,8 +255,9 @@ npx playwright install
 ### Tests timeout
 
 1. Increase timeout in `playwright.config.ts`:
+
    ```typescript
-   timeout: 60 * 1000  // 60 seconds
+   timeout: 60 * 1000; // 60 seconds
    ```
 
 2. Run with more time:
@@ -293,19 +306,19 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: '3.11'
-      
+
       - name: Install dependencies
         run: npm install && npx playwright install
-      
+
       - name: Start server
         run: PORT=8003 python3 run_web.py &
-      
+
       - name: Initialize test accounts
         run: python3 scripts/init_test_admin.py
-      
+
       - name: Run Playwright tests
         run: npx playwright test scripts/playwright_auth_ui_tests.ts
-      
+
       - name: Upload report
         if: always()
         uses: actions/upload-artifact@v3

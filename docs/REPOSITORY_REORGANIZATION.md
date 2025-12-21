@@ -61,10 +61,10 @@ This document provides a comprehensive, granular migration strategy for restruct
   import ast
   import os
   from pathlib import Path
-  
+
   src_files = list(Path('src').rglob('*.py'))
   import_map = {}
-  
+
   for file in src_files:
       with open(file) as f:
           try:
@@ -175,7 +175,7 @@ This document provides a comprehensive, granular migration strategy for restruct
   # Original: [tool.setuptools.packages.find]
   # where = ["."]
   # include = ["src*"]
-  
+
   # Updated:
   [tool.setuptools.packages.find]
   where = ["."]
@@ -471,7 +471,9 @@ This document provides a comprehensive, granular migration strategy for restruct
 
   ```markdown
   # Update pip install instructions if needed
+
   # Update Docker volume mounts
+
   # Update development setup instructions
   ```
 
@@ -661,3 +663,4 @@ This document provides a comprehensive, granular migration strategy for restruct
   flake8 app/
   black --check app/
   mypy
+  ```

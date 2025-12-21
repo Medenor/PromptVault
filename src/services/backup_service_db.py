@@ -28,6 +28,7 @@ import getpass
 
 from src.db.config import db_settings
 from src.db.session import get_db_session
+from src.db.models.prompt import Prompt
 from src.db.models import Backup
 from src.services.exceptions import BackupError
 from src.services.logging_service import logging_service
@@ -62,11 +63,14 @@ class BackupService:
         # Ensure backups directory exists
         os.makedirs(self.backups_dir, exist_ok=True)
 
-    def create_backup(self, custom_name: Optional[str] = None) -> Optional[str]:
+    def create_backup(
+        self, custom_name: Optional[str] = None, created_by: Optional[str] = None
+    ) -> Optional[str]:
         """Create a backup of the database.
 
         Args:
             custom_name (str): Optional custom name for the backup
+            created_by (str): Optional username for audit metadata
 
         Returns:
             Optional[str]: Backup ID if successful, None otherwise
@@ -82,9 +86,9 @@ class BackupService:
 
             # Create backup based on database type
             if db_settings.is_sqlite:
-                return self._create_sqlite_backup(backup_id)
+                return self._create_sqlite_backup(backup_id, created_by)
             elif db_settings.is_postgresql:
-                return self._create_pg_backup(backup_id)
+                return self._create_pg_backup(backup_id, created_by)
             else:
                 raise BackupError(
                     "Unsupported database type",
@@ -104,7 +108,7 @@ class BackupService:
                 context={}
             ) from exc
 
-    def _create_sqlite_backup(self, backup_id: str) -> str:
+    def _create_sqlite_backup(self, backup_id: str, created_by: Optional[str] = None) -> str:
         """Create SQLite backup using file copy.
 
         Args:
@@ -149,6 +153,9 @@ class BackupService:
             # Get backup metadata
             backup_size = os.path.getsize(backup_path)
 
+            prompt_count = self._get_prompt_count()
+            created_by_name = created_by or self._get_current_user()
+
             # Save metadata to database
             timestamp = datetime.now(timezone.utc).isoformat()
             metadata = {
@@ -157,8 +164,9 @@ class BackupService:
                 "filename": backup_filename,
                 "storage_path": backup_path,
                 "size_bytes": backup_size,
+                "prompt_count": prompt_count,
                 "database_type": "sqlite",
-                "created_by": self._get_current_user(),
+                "created_by": created_by_name,
                 "compressed": False,
                 "timestamp": timestamp,
             }
@@ -196,7 +204,7 @@ class BackupService:
                 context={"backup_id": backup_id}
             ) from exc
 
-    def _create_pg_backup(self, backup_id: str) -> str:
+    def _create_pg_backup(self, backup_id: str, created_by: Optional[str] = None) -> str:
         """Create PostgreSQL backup using pg_dump.
 
         Args:
@@ -234,6 +242,9 @@ class BackupService:
             # Get backup metadata
             backup_size = os.path.getsize(backup_path)
 
+            prompt_count = self._get_prompt_count()
+            created_by_name = created_by or self._get_current_user()
+
             # Save metadata to database
             timestamp = datetime.now(timezone.utc).isoformat()
             metadata = {
@@ -242,8 +253,9 @@ class BackupService:
                 "filename": backup_filename,
                 "storage_path": backup_path,
                 "size_bytes": backup_size,
+                "prompt_count": prompt_count,
                 "database_type": "postgresql",
-                "created_by": self._get_current_user(),
+                "created_by": created_by_name,
                 "compressed": False,
                 "timestamp": timestamp,
             }
@@ -296,7 +308,7 @@ class BackupService:
                 context={"backup_id": backup_id}
             ) from exc
 
-    def restore_backup(self, backup_id: str) -> bool:
+    def restore_backup(self, backup_id: str, created_by: Optional[str] = None) -> bool:
         """Restore database from a backup.
 
         Creates a pre-restore backup automatically before restoring.
@@ -338,7 +350,10 @@ class BackupService:
                 "Creating pre-restore backup",
                 extra={"event": "backup.restore.pre_backup"}
             )
-            pre_restore_backup = self.create_backup(f"pre_restore_{timestamp}")
+            pre_restore_backup = self.create_backup(
+                f"pre_restore_{timestamp}",
+                created_by=created_by,
+            )
             if not pre_restore_backup:
                 logger.warning(
                     "Could not create pre-restore backup",
@@ -540,6 +555,7 @@ class BackupService:
                         "storage_path": backup.storage_path,
                         "timestamp": timestamp,
                         "size_bytes": metadata.get("size_bytes", backup.size_bytes or 0),
+                        "prompt_count": metadata.get("prompt_count", 0),
                         "database_type": metadata.get("database_type", "unknown"),
                         "created_by": metadata.get("created_by", "unknown"),
                         "compressed": metadata.get("compressed", False),
@@ -592,6 +608,7 @@ class BackupService:
                         "storage_path": backup.storage_path,
                         "timestamp": timestamp,
                         "size_bytes": metadata.get("size_bytes", backup.size_bytes or 0),
+                        "prompt_count": metadata.get("prompt_count", 0),
                         "database_type": metadata.get("database_type", "unknown"),
                         "created_by": metadata.get("created_by", "unknown"),
                         "compressed": metadata.get("compressed", False),
@@ -895,6 +912,19 @@ class BackupService:
                 extra={"event": "backup.metadata.update_failure", "backup_id": backup_id},
                 exc_info=exc,
             )
+
+    def _get_prompt_count(self) -> int:
+        """Return the current count of prompts for backup metadata."""
+        try:
+            with get_db_session() as session:
+                return session.query(Prompt).count()
+        except Exception as exc:
+            logger.warning(
+                "Failed to count prompts for backup metadata",
+                extra={"event": "backup.prompt_count.warning"},
+                exc_info=exc,
+            )
+            return 0
 
     def _metadata_file_path(self, backup_id: str) -> str:
         """Return on-disk path for backup metadata file."""

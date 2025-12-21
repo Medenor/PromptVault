@@ -7,7 +7,7 @@ services:
   db:
     image: postgres:15-alpine
     container_name: promptvault-db
-    user: "postgres"
+    user: 'postgres'
     environment:
       POSTGRES_DB: promptvault
       POSTGRES_USER: promptvault
@@ -24,7 +24,7 @@ services:
     cap_drop:
       - ALL
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U promptvault"]
+      test: ['CMD-SHELL', 'pg_isready -U promptvault']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -33,7 +33,7 @@ services:
   redis:
     image: redis:7-alpine
     container_name: promptvault-redis
-    user: "redis"
+    user: 'redis'
     command: redis-server --appendonly yes
     volumes:
       - redis_data:/data
@@ -43,7 +43,7 @@ services:
     cap_drop:
       - ALL
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ['CMD', 'redis-cli', 'ping']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -58,13 +58,14 @@ services:
       redis:
         condition: service_healthy
     ports:
-      - "8001:8000"
+      - '8001:8001'
     volumes:
       - ./data:/app/data:rw
       - ./assets:/app/assets:ro
       - ./secrets/jwt:/app/secrets/jwt:ro
     environment:
       - PYTHONPATH=/app
+      - PORT=8001
       - DATABASE_URL=postgresql://promptvault:${POSTGRES_PASSWORD:-changeme}@db:5432/promptvault
       - REDIS_URL=redis://redis:6379/0
       - DATA_DIR=/app/data
@@ -81,7 +82,7 @@ services:
     cap_drop:
       - ALL
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:8001/api/health']
       interval: 30s
       timeout: 10s
       retries: 3

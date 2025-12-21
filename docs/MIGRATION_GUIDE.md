@@ -19,16 +19,19 @@ This guide provides step-by-step instructions for migrating PromptVault from JSO
 ### What Changes
 
 **Storage:**
+
 - **Before:** JSON file (`data/prompts.json`)
 - **After:** Relational database (SQLite or PostgreSQL)
 
 **Data Structure:**
+
 - Prompts stored in normalized tables
 - Version history in separate table
 - Categories and tags with referential integrity
 - Automatic timestamps and metadata
 
 **Benefits:**
+
 - ✅ Faster queries and searches
 - ✅ ACID transactions
 - ✅ Better data integrity
@@ -50,6 +53,7 @@ This guide provides step-by-step instructions for migrating PromptVault from JSO
 ### Prerequisites
 
 1. **Backup Your Data**
+
    ```bash
    # Create backup directory
    mkdir -p backups
@@ -62,6 +66,7 @@ This guide provides step-by-step instructions for migrating PromptVault from JSO
    ```
 
 2. **Verify Dependencies**
+
    ```bash
    # Check Python version (3.11+ required)
    python --version
@@ -80,11 +85,13 @@ This guide provides step-by-step instructions for migrating PromptVault from JSO
 ### System Requirements
 
 **Minimum:**
+
 - Python 3.11+
 - 100MB disk space (SQLite)
 - 512MB RAM
 
 **Recommended:**
+
 - Python 3.11+
 - 1GB disk space (PostgreSQL)
 - 2GB RAM
@@ -97,18 +104,21 @@ This guide provides step-by-step instructions for migrating PromptVault from JSO
 ### Path 1: SQLite (Recommended for Small to Medium Datasets)
 
 **Best for:**
+
 - Development and testing
 - Single-user deployments
 - < 10,000 prompts
 - Simple setup
 
 **Pros:**
+
 - No additional software required
 - Easy to backup (single file)
 - Fast for moderate datasets
 - Zero configuration
 
 **Cons:**
+
 - Limited concurrent writes
 - No network access
 - Single file can corrupt
@@ -116,18 +126,21 @@ This guide provides step-by-step instructions for migrating PromptVault from JSO
 ### Path 2: PostgreSQL (Recommended for Production)
 
 **Best for:**
+
 - Production deployments
 - Multi-user access
 - > 10,000 prompts
 - High availability requirements
 
 **Pros:**
+
 - Excellent performance at scale
 - Concurrent access
 - Advanced features (FTS, JSON queries)
 - Robust backup/restore
 
 **Cons:**
+
 - Requires PostgreSQL server
 - More complex setup
 - Additional maintenance
@@ -156,6 +169,7 @@ nano .env
 ```
 
 Set the following:
+
 ```env
 DATABASE_URL=sqlite:///./data/promptvault.db
 ENVIRONMENT=development
@@ -173,6 +187,7 @@ sqlite3 data/promptvault.db ".tables"
 ```
 
 Expected output:
+
 ```
 alembic_version  categories       prompt_tags      prompts          tags
 backups          prompt_versions  users
@@ -189,6 +204,7 @@ python scripts/migrate_json_to_db.py --source data/prompts_data.json
 ```
 
 Expected output:
+
 ```
 Starting migration from JSON to database...
 Loading JSON data from data/prompts.json...
@@ -264,6 +280,7 @@ curl http://localhost:8003/api/tags
 #### Step 1: Install PostgreSQL
 
 **Ubuntu/Debian:**
+
 ```bash
 sudo apt-get update
 sudo apt-get install postgresql postgresql-contrib
@@ -272,12 +289,14 @@ sudo systemctl enable postgresql
 ```
 
 **macOS:**
+
 ```bash
 brew install postgresql@15
 brew services start postgresql@15
 ```
 
 **Docker:**
+
 ```bash
 docker run -d \
   --name promptvault-db \
@@ -320,6 +339,7 @@ nano .env
 ```
 
 Set the following:
+
 ```env
 DATABASE_URL=postgresql://promptvault:secure_password@localhost:5432/promptvault
 DB_POOL_SIZE=20
@@ -436,6 +456,7 @@ print(f'Search performance: {duration:.3f}s')
 ### 3. Setup Automated Backups
 
 **SQLite:**
+
 ```bash
 # Add to crontab
 crontab -e
@@ -445,6 +466,7 @@ crontab -e
 ```
 
 **PostgreSQL:**
+
 ```bash
 # Create backup script
 cat > backup_postgres.sh << 'EOF'
@@ -465,12 +487,14 @@ chmod +x backup_postgres.sh
 ### 4. Monitor Performance
 
 **Enable query logging:**
+
 ```env
 DB_ECHO=true
 LOG_LEVEL=DEBUG
 ```
 
 **PostgreSQL slow query log:**
+
 ```sql
 ALTER DATABASE promptvault SET log_min_duration_statement = 1000;
 ```
@@ -556,6 +580,7 @@ dropdb -U promptvault promptvault  # PostgreSQL
 **Error:** `FileNotFoundError: data/prompts.json`
 
 **Solution:**
+
 ```bash
 # Verify JSON file exists
 ls -la data/prompts.json
@@ -569,6 +594,7 @@ cp backups/prompts_*.json data/prompts.json
 **Error:** `IntegrityError: UNIQUE constraint failed`
 
 **Solution:**
+
 ```bash
 # Clear database and retry
 rm data/promptvault.db
@@ -581,6 +607,7 @@ python scripts/migrate_json_to_db.py
 **Error:** `KeyError: 'prompts'`
 
 **Solution:** JSON file format is invalid. Check structure:
+
 ```bash
 # Verify JSON structure
 python -c "
@@ -597,6 +624,7 @@ with open('data/prompts.json') as f:
 **Problem:** Some prompts missing after migration
 
 **Solution:**
+
 ```bash
 # Compare counts
 echo "JSON count:"
@@ -615,6 +643,7 @@ grep -i error migration.log
 **Problem:** Database queries slower than JSON
 
 **SQLite Solutions:**
+
 ```bash
 # Analyze and optimize
 sqlite3 data/promptvault.db << EOF
@@ -625,6 +654,7 @@ EOF
 ```
 
 **PostgreSQL Solutions:**
+
 ```sql
 -- Add indexes
 CREATE INDEX idx_prompts_search ON prompts USING GIN(to_tsvector('english', title || ' ' || prompt));
@@ -641,6 +671,7 @@ EXPLAIN ANALYZE SELECT * FROM prompts WHERE title LIKE '%search%';
 **Error:** `could not connect to server: Connection refused`
 
 **Solutions:**
+
 ```bash
 # Check PostgreSQL is running
 systemctl status postgresql
@@ -659,6 +690,7 @@ psql $DATABASE_URL -c "SELECT 1;"
 **Error:** `password authentication failed`
 
 **Solution:**
+
 ```bash
 # Reset password
 sudo -u postgres psql -c "ALTER USER promptvault WITH PASSWORD 'new_password';"
@@ -673,6 +705,7 @@ nano .env
 **Problem:** Version history missing or incorrect
 
 **Solution:**
+
 ```bash
 # Check version count
 sqlite3 data/promptvault.db "SELECT prompt_id, COUNT(*) FROM prompt_versions GROUP BY prompt_id;"
@@ -704,6 +737,7 @@ for pid in list(json_data['prompts'].keys())[:10]:
 Use this checklist to ensure smooth migration:
 
 ### Pre-Migration
+
 - [ ] Backup JSON file to multiple locations
 - [ ] Backup entire data directory
 - [ ] Test migration on copy of data first
@@ -713,6 +747,7 @@ Use this checklist to ensure smooth migration:
 - [ ] Note any custom modifications
 
 ### During Migration
+
 - [ ] Configure DATABASE_URL correctly
 - [ ] Run `alembic upgrade head`
 - [ ] Verify all tables created
@@ -722,6 +757,7 @@ Use this checklist to ensure smooth migration:
 - [ ] Verify migration statistics
 
 ### Post-Migration
+
 - [ ] Compare prompt counts (JSON vs DB)
 - [ ] Test all API endpoints
 - [ ] Verify search functionality

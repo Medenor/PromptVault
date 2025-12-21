@@ -26,6 +26,7 @@
     "save": "Save",
     "cancel": "Cancel",
     "copy": "Copy",
+    "favorite": "Favorite",
     "export": "Export",
     "import": "Import",
     "close": "Close",
@@ -69,6 +70,7 @@
     "unknownError": "Unknown error"
   },
   "validation": {
+    "required": "This field is required.",
     "titleRequired": "The 'Prompt Title' field cannot be empty.",
     "titleTooLong": "Title cannot exceed 200 characters.",
     "contentRequired": "The 'Prompt' field cannot be empty.",
@@ -111,7 +113,8 @@
   },
   "categories": {
     "manage": "Manage Categories",
-    "manageDesc": "Manage prompt categories"
+    "manageDesc": "Manage prompt categories",
+    "noCategory": "No category"
   },
   "tags": {
     "manage": "Manage Tags",
@@ -137,6 +140,7 @@
     "modeAppend": "Append to existing",
     "modeReplace": "Replace existing",
     "modeMerge": "Smart merge",
+    "modeHelp": "Append adds new prompts and keeps current ones (creating duplicates if titles match). Replace clears existing prompts before import. Smart merge skips prompts whose title already exists.",
     "importBtn": "Import Data",
     "previewTitle": "Preview",
     "statisticsTitle": "Statistics & History",
@@ -238,6 +242,8 @@
     "oldestBackup": "Oldest Backup:",
     "confirmRestore": "Confirm Restore",
     "restoreWarning": "Are you sure you want to restore from this backup? This will replace your current data.",
+    "restoreInProgress": "Restoring backup... please wait.",
+    "restoreRedirect": "Restore completed. Redirecting to the main app...",
     "restoreBtn": "Restore",
     "confirmDelete": "Confirm Delete",
     "deleteWarning": "Are you sure you want to delete this backup? This action cannot be undone.",

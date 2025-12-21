@@ -2,6 +2,29 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+# ============================================
+# Stage 1: Build frontend assets
+# ============================================
+FROM node:20-slim AS frontend-builder
+
+WORKDIR /app
+
+# Copy package files for dependency installation
+COPY package.json package-lock.json ./
+RUN npm ci --ignore-scripts
+
+# Copy TypeScript and Vite configuration
+COPY tsconfig.json vite.config.ts ./
+
+# Copy source files
+COPY src/web/static/ ./src/web/static/
+
+# Build frontend (TypeScript -> JavaScript, bundled with Vite)
+RUN npm run build
+
+# ============================================
+# Stage 2: Python application
+# ============================================
 FROM python:3.11-slim
 
 # Set working directory
@@ -26,8 +49,14 @@ COPY scripts/ ./scripts/
 COPY alembic/ ./alembic/
 COPY alembic.ini .
 
+# Copy built frontend assets from builder stage
+COPY --from=frontend-builder /app/dist/static/ ./src/web/static/dist/
+
+# Copy Vite manifest for template rendering
+COPY --from=frontend-builder /app/dist/static/.vite/manifest.json ./src/web/static/manifest.json
+
 # Create data directory and set permissions
-RUN mkdir -p data && \
+RUN mkdir -p data/logs data/backups && \
     adduser --disabled-password --gecos '' appuser && \
     chown -R appuser:appuser /app
 
@@ -35,11 +64,11 @@ RUN mkdir -p data && \
 USER appuser
 
 # Expose port
-EXPOSE 8000
+EXPOSE 8001
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:8000/api/health || exit 1
+    CMD curl -f http://localhost:8001/api/health || exit 1
 
 # Run the application
-CMD ["uvicorn", "src.web.app:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["python", "run_web.py"]

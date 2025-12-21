@@ -1,199 +1,269 @@
-<!DOCTYPE html>
+<!doctype html>
 <!-- This Source Code Form is subject to the terms of the Mozilla Public
      License, v. 2.0. If a copy of the MPL was not distributed with this
      file, You can obtain one at https://mozilla.org/MPL/2.0/. -->
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PromptVault - Import/Export</title>
-    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon.png">
-    <link rel="stylesheet" href="/static/css/style.css">
-    <link rel="stylesheet" href="/static/css/validation.css">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon.png" />
+    <link rel="stylesheet" href="/static/css/style.css" />
+    <link rel="stylesheet" href="/static/css/validation.css" />
     <script src="https://unpkg.com/i18next@23.7.6/i18next.min.js"></script>
     <script src="https://unpkg.com/i18next-browser-languagedetector@7.2.0/i18nextBrowserLanguageDetector.min.js"></script>
     <script src="https://unpkg.com/i18next-http-backend@2.4.2/i18nextHttpBackend.min.js"></script>
-</head>
-<body>
+  </head>
+  <body>
+    {% import "macros/scripts.html" as scripts %}
     <div class="app">
-        <header class="header">
-            <div class="header-logo">
-                <img src="/static/images/promptvault_logo_frontend.webp" alt="PromptVault Logo" class="logo">
-            </div>
-            <h1>PromptVault</h1>
-            <div class="header-actions">
-                <select id="language-selector" class="language-selector">
-                    <option value="en">English</option>
-                    <option value="fr">Français</option>
-                    <option value="es">Español</option>
-                    <option value="de">Deutsch</option>
-                </select>
-                <button onclick="window.location.href='/'" data-i18n="nav.backToMain">Back to Main</button>
-            </div>
-        </header>
-
-        <div class="import-export-container">
-            <div class="import-export-header">
-                <h2 data-i18n="importExport.title">Import & Export Management</h2>
-                <p data-i18n="importExport.description">Manage your prompt data with comprehensive import and export capabilities</p>
-            </div>
-
-            <div class="import-export-content">
-                <!-- Export Section -->
-                <div class="section-card">
-                    <h3 class="section-title" data-i18n="importExport.exportTitle">Export Prompts</h3>
-
-                    <div class="form-group">
-                        <label for="export-format" data-i18n="importExport.exportFormat">Export Format:</label>
-                        <select id="export-format" class="form-select">
-                            <option value="csv">CSV - Comma-separated values</option>
-                            <option value="markdown">Markdown - Human-readable format</option>
-                            <option value="json">JSON - Complete data structure</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <div class="checkbox-group">
-                            <label class="checkbox-label">
-                                <input type="checkbox" id="include-favorites" checked>
-                                <span data-i18n="importExport.includeFavorites">Include only favorite prompts</span>
-                            </label>
-                            <label class="checkbox-label">
-                                <input type="checkbox" id="include-metadata" checked>
-                                <span data-i18n="importExport.includeMetadata">Include metadata (tags, categories)</span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="export-filename" data-i18n="importExport.filename">Filename:</label>
-                        <input
-                            type="text"
-                            id="export-filename"
-                            value="promptvault_export"
-                            placeholder="Enter filename"
-                            maxlength="255"
-                            pattern="[A-Za-z0-9_-]+"
-                            aria-describedby="export-filename-error">
-                        <div class="validation-error" id="export-filename-error" role="alert" aria-live="assertive"></div>
-                    </div>
-
-                    <div class="button-group">
-                        <button class="btn btn-primary" onclick="performExport()" data-i18n="importExport.exportBtn">Export Data</button>
-                        <button class="btn btn-secondary" onclick="previewExport()" data-i18n="importExport.previewBtn">Preview</button>
-                        <button class="btn btn-secondary" onclick="clearExportSettings()" data-i18n="importExport.clearBtn">Clear</button>
-                    </div>
-
-                    <div class="progress-container is-hidden" id="export-progress">
-                        <div class="progress-bar">
-                            <div class="progress-fill" id="export-progress-fill"></div>
-                        </div>
-                        <div id="export-status" class="status-message status-info"></div>
-                    </div>
-                </div>
-
-                <!-- Import Section -->
-                <div class="section-card">
-                    <h3 class="section-title" data-i18n="importExport.importTitle">Import Prompts</h3>
-
-                    <div class="form-group">
-                        <label data-i18n="importExport.selectFile">Select File:</label>
-                        <input
-                            type="file"
-                            id="import-file"
-                            accept=".csv,.md,.markdown,.json,text/csv,application/json,text/markdown,text/plain"
-                            aria-describedby="import-file-error">
-                        <div class="validation-error" id="import-file-error" role="alert" aria-live="assertive"></div>
-                    </div>
-
-                    <div class="form-group">
-                        <div class="checkbox-group">
-                            <label class="checkbox-label">
-                                <input type="checkbox" id="import-merge" checked>
-                                <span data-i18n="importExport.mergeData">Merge with existing data</span>
-                            </label>
-                            <label class="checkbox-label">
-                                <input type="checkbox" id="import-validate" checked>
-                                <span data-i18n="importExport.validateData">Validate data before import</span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label data-i18n="importExport.importMode">Import Mode:</label>
-                        <select id="import-mode">
-                            <option value="append" data-i18n="importExport.modeAppend">Append to existing</option>
-                            <option value="replace" data-i18n="importExport.modeReplace">Replace existing</option>
-                            <option value="merge" data-i18n="importExport.modeMerge">Smart merge</option>
-                        </select>
-                    </div>
-
-                    <div class="button-group">
-                        <button class="btn btn-primary" onclick="performImport()" data-i18n="importExport.importBtn">Import Data</button>
-                        <button class="btn btn-secondary" onclick="previewImport()" data-i18n="importExport.previewBtn">Preview</button>
-                    </div>
-
-                    <div class="progress-container is-hidden" id="import-progress">
-                        <div class="progress-bar">
-                            <div class="progress-fill" id="import-progress-fill"></div>
-                        </div>
-                        <div id="import-status" class="status-message status-info"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Preview Panel -->
-            <div class="preview-panel is-hidden" id="preview-panel">
-                <h3 class="section-title" data-i18n="importExport.previewTitle">Preview</h3>
-                <div class="preview-content" id="preview-content"></div>
-                <div class="button-group">
-                    <button class="btn btn-primary" onclick="confirmOperation()" id="confirm-btn">Confirm</button>
-                    <button class="btn btn-secondary" onclick="cancelPreview()" id="cancel-btn">Cancel</button>
-                </div>
-            </div>
-
-            <!-- Statistics Panel -->
-            <div class="statistics-panel">
-                <h3 class="section-title" data-i18n="importExport.statisticsTitle">Statistics & History</h3>
-                <div class="import-export-content">
-                    <div>
-                        <h4 data-i18n="importExport.currentStats">Current Data</h4>
-                        <div class="stat-item">
-                            <span class="stat-label" data-i18n="importExport.totalPrompts">Total Prompts:</span>
-                            <span class="stat-value" id="total-prompts">-</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label" data-i18n="importExport.totalCategories">Categories:</span>
-                            <span class="stat-value" id="total-categories">-</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label" data-i18n="importExport.totalTags">Tags:</span>
-                            <span class="stat-value" id="total-tags">-</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label" data-i18n="importExport.favoritePrompts">Favorite Prompts:</span>
-                            <span class="stat-value" id="favorite-prompts">-</span>
-                        </div>
-                    </div>
-                    <div>
-                        <h4 data-i18n="importExport.recentActivity">Recent Activity</h4>
-                        <div class="history-list" id="activity-history">
-                            <div class="history-item">
-                                <div class="history-info">
-                                    <div>No recent activity</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+      <header class="header">
+        <div class="header-logo">
+          <img
+            src="/static/images/promptvault_logo_frontend.webp"
+            alt="PromptVault Logo"
+            class="logo"
+          />
         </div>
+        <h1>PromptVault</h1>
+        <div class="header-actions">
+          <select id="language-selector" class="language-selector">
+            <option value="en">English</option>
+            <option value="fr">Français</option>
+            <option value="es">Español</option>
+            <option value="de">Deutsch</option>
+          </select>
+          <button onclick="window.location.href = '/'" data-i18n="nav.backToMain">
+            Back to Main
+          </button>
+        </div>
+      </header>
+
+      <div class="import-export-container">
+        <div class="import-export-header">
+          <h2 data-i18n="importExport.title">Import & Export Management</h2>
+          <p data-i18n="importExport.description">
+            Manage your prompt data with comprehensive import and export capabilities
+          </p>
+        </div>
+
+        <div class="import-export-content">
+          <!-- Export Section -->
+          <div class="section-card">
+            <h3 class="section-title" data-i18n="importExport.exportTitle">Export Prompts</h3>
+
+            <div class="form-group">
+              <label for="export-format" data-i18n="importExport.exportFormat"
+                >Export Format:</label
+              >
+              <select id="export-format" class="form-select">
+                <option value="csv">CSV - Comma-separated values</option>
+                <option value="markdown">Markdown - Human-readable format</option>
+                <option value="json">JSON - Complete data structure</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <div class="checkbox-group">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="include-favorites" checked />
+                  <span data-i18n="importExport.includeFavorites"
+                    >Include only favorite prompts</span
+                  >
+                </label>
+                <label class="checkbox-label">
+                  <input type="checkbox" id="include-metadata" checked />
+                  <span data-i18n="importExport.includeMetadata"
+                    >Include metadata (tags, categories)</span
+                  >
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="export-filename" data-i18n="importExport.filename">Filename:</label>
+              <input
+                type="text"
+                id="export-filename"
+                value="promptvault_export"
+                placeholder="Enter filename"
+                maxlength="255"
+                pattern="[A-Za-z0-9_\\-]+"
+                aria-describedby="export-filename-error"
+              />
+              <div
+                class="validation-error"
+                id="export-filename-error"
+                role="alert"
+                aria-live="assertive"
+              ></div>
+            </div>
+
+            <div class="button-group">
+              <button
+                class="btn btn-primary"
+                onclick="performExport()"
+                data-i18n="importExport.exportBtn"
+              >
+                Export Data
+              </button>
+              <button
+                class="btn btn-secondary"
+                onclick="previewExport()"
+                data-i18n="importExport.previewBtn"
+              >
+                Preview
+              </button>
+              <button
+                class="btn btn-secondary"
+                onclick="clearExportSettings()"
+                data-i18n="importExport.clearBtn"
+              >
+                Clear
+              </button>
+            </div>
+
+            <div class="progress-container is-hidden" id="export-progress">
+              <div class="progress-bar">
+                <div class="progress-fill" id="export-progress-fill"></div>
+              </div>
+              <div id="export-status" class="status-message status-info"></div>
+            </div>
+          </div>
+
+          <!-- Import Section -->
+          <div class="section-card">
+            <h3 class="section-title" data-i18n="importExport.importTitle">Import Prompts</h3>
+
+            <div class="form-group">
+              <label data-i18n="importExport.selectFile">Select File:</label>
+              <input
+                type="file"
+                id="import-file"
+                accept=".csv,.json,.md,.markdown"
+                aria-describedby="import-file-error"
+              />
+              <div
+                class="validation-error"
+                id="import-file-error"
+                role="alert"
+                aria-live="assertive"
+              ></div>
+            </div>
+
+            <div class="form-group">
+              <div class="checkbox-group">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="import-merge" checked />
+                  <span data-i18n="importExport.mergeData">Merge with existing data</span>
+                </label>
+                <label class="checkbox-label">
+                  <input type="checkbox" id="import-validate" checked />
+                  <span data-i18n="importExport.validateData">Validate data before import</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label data-i18n="importExport.importMode">Import Mode:</label>
+              <select id="import-mode">
+                <option value="append" data-i18n="importExport.modeAppend">
+                  Append to existing
+                </option>
+                <option value="replace" data-i18n="importExport.modeReplace">
+                  Replace existing
+                </option>
+                <option value="merge" data-i18n="importExport.modeMerge">Smart merge</option>
+              </select>
+              <small class="form-help" data-i18n="importExport.modeHelp"
+                >Append adds new prompts and keeps current ones (creating duplicates if titles
+                match). Replace clears existing prompts before import. Smart merge skips prompts
+                whose title already exists.</small
+              >
+            </div>
+
+            <div class="button-group">
+              <button
+                class="btn btn-primary"
+                onclick="performImport()"
+                data-i18n="importExport.importBtn"
+              >
+                Import Data
+              </button>
+              <button
+                class="btn btn-secondary"
+                onclick="previewImport()"
+                data-i18n="importExport.previewBtn"
+              >
+                Preview
+              </button>
+            </div>
+
+            <div class="progress-container is-hidden" id="import-progress">
+              <div class="progress-bar">
+                <div class="progress-fill" id="import-progress-fill"></div>
+              </div>
+              <div id="import-status" class="status-message status-info"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Preview Panel -->
+        <div class="preview-panel is-hidden" id="preview-panel">
+          <h3 class="section-title" data-i18n="importExport.previewTitle">Preview</h3>
+          <div class="preview-content" id="preview-content"></div>
+          <div class="button-group">
+            <button class="btn btn-primary" onclick="confirmOperation()" id="confirm-btn">
+              Confirm
+            </button>
+            <button class="btn btn-secondary" onclick="cancelPreview()" id="cancel-btn">
+              Cancel
+            </button>
+          </div>
+        </div>
+
+        <!-- Statistics Panel -->
+        <div class="statistics-panel">
+          <h3 class="section-title" data-i18n="importExport.statisticsTitle">
+            Statistics & History
+          </h3>
+          <div class="import-export-content">
+            <div>
+              <h4 data-i18n="importExport.currentStats">Current Data</h4>
+              <div class="stat-item">
+                <span class="stat-label" data-i18n="importExport.totalPrompts">Total Prompts:</span>
+                <span class="stat-value" id="total-prompts">-</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label" data-i18n="importExport.totalCategories">Categories:</span>
+                <span class="stat-value" id="total-categories">-</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label" data-i18n="importExport.totalTags">Tags:</span>
+                <span class="stat-value" id="total-tags">-</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label" data-i18n="importExport.favoritePrompts"
+                  >Favorite Prompts:</span
+                >
+                <span class="stat-value" id="favorite-prompts">-</span>
+              </div>
+            </div>
+            <div>
+              <h4 data-i18n="importExport.recentActivity">Recent Activity</h4>
+              <div class="history-list" id="activity-history">
+                <div class="history-item">
+                  <div class="history-info">
+                    <div>No recent activity</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <script type="module" src="/static/js/validation_constants.js"></script>
-    <script type="module" src="/static/js/validators.js"></script>
-    <script type="module" src="/static/js/form_validation.js"></script>
-    <script src="/static/js/telemetry.js" defer></script>
-    <script src="/static/js/import_export.js" defer></script>
-</body>
+    {{ scripts.load_scripts('import-export', true, 'import_export', true) }}
+  </body>
 </html>

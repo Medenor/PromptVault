@@ -26,6 +26,7 @@
     "save": "Guardar",
     "cancel": "Cancelar",
     "copy": "Copiar",
+    "favorite": "Favorito",
     "export": "Exportar",
     "import": "Importar",
     "close": "Cerrar",
@@ -69,6 +70,7 @@
     "unknownError": "Error desconocido"
   },
   "validation": {
+    "required": "Este campo es obligatorio.",
     "titleRequired": "El campo 'Título del Prompt' no puede estar vacío.",
     "titleTooLong": "El título no puede exceder 200 caracteres.",
     "contentRequired": "El campo 'Prompt' no puede estar vacío.",
@@ -111,7 +113,8 @@
   },
   "categories": {
     "manage": "Gestionar categorías",
-    "manageDesc": "Gestionar categorías de prompts"
+    "manageDesc": "Gestionar categorías de prompts",
+    "noCategory": "Sin categoría"
   },
   "tags": {
     "manage": "Gestionar etiquetas",
@@ -137,6 +140,7 @@
     "modeAppend": "Añadir a datos existentes",
     "modeReplace": "Reemplazar datos existentes",
     "modeMerge": "Fusión inteligente",
+    "modeHelp": "Añadir agrega nuevos prompts y mantiene los existentes (crea duplicados si los títulos coinciden). Reemplazar elimina los prompts existentes antes de importar. La fusión inteligente omite los prompts cuyo título ya existe.",
     "importBtn": "Importar datos",
     "previewTitle": "Vista previa",
     "statisticsTitle": "Estadísticas e historial",
@@ -238,6 +242,8 @@
     "oldestBackup": "Copia de seguridad más antigua:",
     "confirmRestore": "Confirmar restauración",
     "restoreWarning": "¿Está seguro de que desea restaurar desde esta copia de seguridad? Esto reemplazará sus datos actuales.",
+    "restoreInProgress": "Restaurando la copia de seguridad... por favor espere.",
+    "restoreRedirect": "Restauración completada. Redirigiendo a la aplicación principal...",
     "restoreBtn": "Restaurar",
     "confirmDelete": "Confirmar eliminación",
     "deleteWarning": "¿Está seguro de que desea eliminar esta copia de seguridad? Esta acción no se puede deshacer.",

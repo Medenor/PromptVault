@@ -26,6 +26,7 @@
     "save": "Enregistrer",
     "cancel": "Annuler",
     "copy": "Copier",
+    "favorite": "Favori",
     "export": "Exporter",
     "import": "Importer",
     "close": "Fermer",
@@ -69,6 +70,7 @@
     "unknownError": "Erreur inconnue"
   },
   "validation": {
+    "required": "Ce champ est obligatoire.",
     "titleRequired": "Le champ 'Titre du Prompt' ne peut pas être vide.",
     "titleTooLong": "Le titre ne peut pas dépasser 200 caractères.",
     "contentRequired": "Le champ 'Prompt' ne peut pas être vide.",
@@ -111,7 +113,8 @@
   },
   "categories": {
     "manage": "Gérer les catégories",
-    "manageDesc": "Gérer les catégories de prompts"
+    "manageDesc": "Gérer les catégories de prompts",
+    "noCategory": "Aucune catégorie"
   },
   "tags": {
     "manage": "Gérer les étiquettes",
@@ -137,6 +140,7 @@
     "modeAppend": "Ajouter aux données existantes",
     "modeReplace": "Remplacer les données existantes",
     "modeMerge": "Fusion intelligente",
+    "modeHelp": "Ajouter ajoute de nouveaux prompts et conserve les existants (créant des doublons si les titres correspondent). Remplacer efface les prompts existants avant l'importation. Fusion intelligente ignore les prompts dont le titre existe déjà.",
     "importBtn": "Importer les données",
     "previewTitle": "Aperçu",
     "statisticsTitle": "Statistiques et historique",
@@ -238,6 +242,8 @@
     "oldestBackup": "Sauvegarde la plus ancienne:",
     "confirmRestore": "Confirmer la restauration",
     "restoreWarning": "Êtes-vous sûr de vouloir restaurer depuis cette sauvegarde? Cela remplacera vos données actuelles.",
+    "restoreInProgress": "Restauration de la sauvegarde... veuillez patienter.",
+    "restoreRedirect": "Restauration terminée. Redirection vers l'application principale...",
     "restoreBtn": "Restaurer",
     "confirmDelete": "Confirmer la suppression",
     "deleteWarning": "Êtes-vous sûr de vouloir supprimer cette sauvegarde? Cette action ne peut pas être annulée.",

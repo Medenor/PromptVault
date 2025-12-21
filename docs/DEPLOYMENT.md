@@ -279,7 +279,7 @@ If using Docker Compose, mount the keys as a volume:
 services:
   web:
     volumes:
-      - ./secrets/jwt:/app/secrets/jwt:ro  # Read-only mount
+      - ./secrets/jwt:/app/secrets/jwt:ro # Read-only mount
 ```
 
 ### Manual Setup
@@ -498,23 +498,23 @@ uvicorn src.web.app:app --host 0.0.0.0 --port 8003 --workers 4
 
 ### Required Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
+| Variable       | Description                | Default                           |
+| -------------- | -------------------------- | --------------------------------- |
 | `DATABASE_URL` | Database connection string | `sqlite:///./data/promptvault.db` |
 
 ### Optional Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `DB_POOL_SIZE` | Connection pool size (PostgreSQL only) | `20` |
-| `DB_POOL_TIMEOUT` | Pool timeout in seconds | `30` |
-| `DB_POOL_RECYCLE` | Connection recycle time in seconds | `3600` |
-| `DB_ECHO` | Enable SQL query logging | `false` |
-| `ENVIRONMENT` | Environment (development/testing/production) | `development` |
-| `LOG_LEVEL` | Logging level | `INFO` |
-| `AUDIT_LOG_LEVEL` | Audit log level | `INFO` |
-| `DATA_DIR` | Data directory path | `./data` |
-| `DISABLE_RATE_LIMITING` | Disable rate limiting (dev/test only) | `false` |
+| Variable                | Description                                  | Default       |
+| ----------------------- | -------------------------------------------- | ------------- |
+| `DB_POOL_SIZE`          | Connection pool size (PostgreSQL only)       | `20`          |
+| `DB_POOL_TIMEOUT`       | Pool timeout in seconds                      | `30`          |
+| `DB_POOL_RECYCLE`       | Connection recycle time in seconds           | `3600`        |
+| `DB_ECHO`               | Enable SQL query logging                     | `false`       |
+| `ENVIRONMENT`           | Environment (development/testing/production) | `development` |
+| `LOG_LEVEL`             | Logging level                                | `INFO`        |
+| `AUDIT_LOG_LEVEL`       | Audit log level                              | `INFO`        |
+| `DATA_DIR`              | Data directory path                          | `./data`      |
+| `DISABLE_RATE_LIMITING` | Disable rate limiting (dev/test only)        | `false`       |
 
 ### Development-Only Variables
 
@@ -541,7 +541,7 @@ DISABLE_RATE_LIMITING=false PORT=8003 python run_web.py
 - All rate limit decorators remain in place but don't restrict requests
 - Default limit set to 10,000,000 requests per minute (effectively unlimited)
 - Rate limit headers not added to responses
-- Warning logged: "⚠️  RATE LIMITING IS DISABLED"
+- Warning logged: "⚠️ RATE LIMITING IS DISABLED"
 
 **When to Use:**
 

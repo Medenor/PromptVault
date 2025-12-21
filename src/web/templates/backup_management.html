@@ -1,204 +1,276 @@
-<!DOCTYPE html>
+<!doctype html>
 <!-- This Source Code Form is subject to the terms of the Mozilla Public
      License, v. 2.0. If a copy of the MPL was not distributed with this
      file, You can obtain one at https://mozilla.org/MPL/2.0/. -->
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PromptVault - Backup Management</title>
-    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon.png">
-    <link rel="stylesheet" href="/static/css/style.css">
-    <link rel="stylesheet" href="/static/css/validation.css">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon.png" />
+    <link rel="stylesheet" href="/static/css/style.css" />
+    <link rel="stylesheet" href="/static/css/validation.css" />
     <script src="https://unpkg.com/i18next@23.7.6/i18next.min.js"></script>
     <script src="https://unpkg.com/i18next-browser-languagedetector@7.2.0/i18nextBrowserLanguageDetector.min.js"></script>
     <script src="https://unpkg.com/i18next-http-backend@2.4.2/i18nextHttpBackend.min.js"></script>
-</head>
-<body>
+  </head>
+  <body>
+    {% import "macros/scripts.html" as scripts %}
     <div class="app">
-        <header class="header">
-            <div class="header-logo">
-                <img src="/static/images/promptvault_logo_frontend.webp" alt="PromptVault Logo" class="logo">
-            </div>
-            <h1>PromptVault</h1>
-            <div class="header-actions">
-                <select id="language-selector" class="language-selector">
-                    <option value="en">English</option>
-                    <option value="fr">Français</option>
-                    <option value="es">Español</option>
-                    <option value="de">Deutsch</option>
-                </select>
-                <button onclick="window.location.href='/'" data-i18n="nav.backToMain">Back to Main</button>
-            </div>
-        </header>
-
-        <div class="import-export-container">
-            <div class="import-export-header">
-                <h2 data-i18n="backup.title">Backup Management</h2>
-                <p data-i18n="backup.description">Manage your data backups with comprehensive backup and restoration capabilities</p>
-            </div>
-
-            <div class="import-export-content">
-                <!-- Create Backup Section -->
-                <div class="section-card">
-                    <h3 class="section-title" data-i18n="backup.createTitle">Create Backup</h3>
-
-                    <div class="form-group">
-                        <label for="backup-name" data-i18n="backup.backupName">Backup Name (optional):</label>
-                        <input
-                            type="text"
-                            id="backup-name"
-                            data-i18n="[placeholder]backup.backupNamePlaceholder"
-                            maxlength="64"
-                            pattern="[A-Za-z0-9_-]*"
-                            aria-describedby="backup-name-error">
-                        <div class="validation-error" id="backup-name-error" role="alert" aria-live="assertive"></div>
-                    </div>
-
-                    <div class="button-group">
-                        <button class="btn btn-primary" onclick="createBackup()" data-i18n="backup.createBtn">Create Backup</button>
-                        <button class="btn btn-secondary" onclick="clearBackupForm()" data-i18n="backup.clearBtn">Clear</button>
-                    </div>
-
-                    <div class="progress-container is-hidden" id="backup-progress">
-                        <div class="progress-bar">
-                            <div class="progress-fill" id="backup-progress-fill"></div>
-                        </div>
-                        <div id="backup-status" class="status-message status-info"></div>
-                    </div>
-                </div>
-
-                <!-- Backup List Section -->
-                <div class="section-card">
-                    <h3 class="section-title" data-i18n="backup.listTitle">Available Backups</h3>
-
-                    <div class="backup-list" id="backup-list">
-                        <div class="loading" data-i18n="messages.loading">Loading backups...</div>
-                    </div>
-
-                    <div class="button-group">
-                        <button class="btn btn-secondary" onclick="refreshBackups()" data-i18n="actions.refresh">Refresh</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Maintenance Section -->
-            <div class="section-card">
-                <h3 class="section-title" data-i18n="backup.maintenanceTitle">Maintenance</h3>
-
-                <div class="maintenance-grid">
-                    <div class="maintenance-item">
-                        <h4 data-i18n="backup.cleanupTitle">Cleanup Old Backups</h4>
-                        <div class="form-group">
-                            <label for="retention-days" data-i18n="backup.retentionDays">Keep backups for (days):</label>
-                            <input
-                                type="number"
-                                id="retention-days"
-                                value="30"
-                                min="1"
-                                max="3650"
-                                aria-describedby="retention-days-error">
-                            <div class="validation-error" id="retention-days-error" role="alert" aria-live="assertive"></div>
-                        </div>
-                        <button class="btn btn-warning" onclick="cleanupBackups()" data-i18n="backup.cleanupBtn">Cleanup</button>
-                    </div>
-
-                    <div class="maintenance-item">
-                        <h4 data-i18n="backup.compressTitle">Compress Old Backups</h4>
-                        <div class="form-group">
-                            <label for="compress-days" data-i18n="backup.compressDays">Compress backups older than (days):</label>
-                            <input
-                                type="number"
-                                id="compress-days"
-                                value="7"
-                                min="1"
-                                max="365"
-                                aria-describedby="compress-days-error">
-                            <div class="validation-error" id="compress-days-error" role="alert" aria-live="assertive"></div>
-                        </div>
-                        <button class="btn btn-info" onclick="compressBackups()" data-i18n="backup.compressBtn">Compress</button>
-                    </div>
-                </div>
-
-                <div class="progress-container is-hidden" id="maintenance-progress">
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="maintenance-progress-fill"></div>
-                    </div>
-                    <div id="maintenance-status" class="status-message status-info"></div>
-                </div>
-            </div>
-
-            <!-- Statistics Panel -->
-            <div class="statistics-panel">
-                <h3 class="section-title" data-i18n="backup.statisticsTitle">Backup Statistics</h3>
-                <div class="import-export-content">
-                    <div class="stats-grid">
-                        <div class="stat-item">
-                            <span class="stat-label" data-i18n="backup.totalBackups">Total Backups:</span>
-                            <span class="stat-value" id="total-backups">-</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label" data-i18n="backup.totalSize">Total Size:</span>
-                            <span class="stat-value" id="total-size">-</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label" data-i18n="backup.compressedCount">Compressed:</span>
-                            <span class="stat-value" id="compressed-count">-</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label" data-i18n="backup.newestBackup">Newest Backup:</span>
-                            <span class="stat-value" id="newest-backup">-</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label" data-i18n="backup.oldestBackup">Oldest Backup:</span>
-                            <span class="stat-value" id="oldest-backup">-</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
+      <header class="header">
+        <div class="header-logo">
+          <img
+            src="/static/images/promptvault_logo_frontend.webp"
+            alt="PromptVault Logo"
+            class="logo"
+          />
         </div>
+        <h1>PromptVault</h1>
+        <div class="header-actions">
+          <select id="language-selector" class="language-selector">
+            <option value="en">English</option>
+            <option value="fr">Français</option>
+            <option value="es">Español</option>
+            <option value="de">Deutsch</option>
+          </select>
+          <button onclick="window.location.href = '/'" data-i18n="nav.backToMain">
+            Back to Main
+          </button>
+        </div>
+      </header>
+
+      <div class="import-export-container">
+        <div class="import-export-header">
+          <h2 data-i18n="backup.title">Backup Management</h2>
+          <p data-i18n="backup.description">
+            Manage your data backups with comprehensive backup and restoration capabilities
+          </p>
+        </div>
+
+        <div class="import-export-content">
+          <!-- Create Backup Section -->
+          <div class="section-card">
+            <h3 class="section-title" data-i18n="backup.createTitle">Create Backup</h3>
+
+            <div class="form-group">
+              <label for="backup-name" data-i18n="backup.backupName">Backup Name (optional):</label>
+              <input
+                type="text"
+                id="backup-name"
+                data-i18n="[placeholder]backup.backupNamePlaceholder"
+                maxlength="64"
+                pattern="[A-Za-z0-9_-]*"
+                aria-describedby="backup-name-error"
+              />
+              <div
+                class="validation-error"
+                id="backup-name-error"
+                role="alert"
+                aria-live="assertive"
+              ></div>
+            </div>
+
+            <div class="button-group">
+              <button class="btn btn-primary" onclick="createBackup()" data-i18n="backup.createBtn">
+                Create Backup
+              </button>
+              <button
+                class="btn btn-secondary"
+                onclick="clearBackupForm()"
+                data-i18n="backup.clearBtn"
+              >
+                Clear
+              </button>
+            </div>
+
+            <div class="progress-container is-hidden" id="backup-progress">
+              <div class="progress-bar">
+                <div class="progress-fill" id="backup-progress-fill"></div>
+              </div>
+              <div id="backup-status" class="status-message status-info"></div>
+            </div>
+          </div>
+
+          <!-- Backup List Section -->
+          <div class="section-card">
+            <h3 class="section-title" data-i18n="backup.listTitle">Available Backups</h3>
+
+            <div class="backup-list" id="backup-list">
+              <div class="loading" data-i18n="messages.loading">Loading backups...</div>
+            </div>
+
+            <div class="button-group">
+              <button
+                class="btn btn-secondary"
+                onclick="refreshBackups()"
+                data-i18n="actions.refresh"
+              >
+                Refresh
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Maintenance Section -->
+        <div class="section-card">
+          <h3 class="section-title" data-i18n="backup.maintenanceTitle">Maintenance</h3>
+
+          <div class="maintenance-grid">
+            <div class="maintenance-item">
+              <h4 data-i18n="backup.cleanupTitle">Cleanup Old Backups</h4>
+              <div class="form-group">
+                <label for="retention-days" data-i18n="backup.retentionDays"
+                  >Keep backups for (days):</label
+                >
+                <input
+                  type="number"
+                  id="retention-days"
+                  value="30"
+                  min="1"
+                  max="3650"
+                  aria-describedby="retention-days-error"
+                />
+                <div
+                  class="validation-error"
+                  id="retention-days-error"
+                  role="alert"
+                  aria-live="assertive"
+                ></div>
+              </div>
+              <button
+                class="btn btn-warning"
+                onclick="cleanupBackups()"
+                data-i18n="backup.cleanupBtn"
+              >
+                Cleanup
+              </button>
+            </div>
+
+            <div class="maintenance-item">
+              <h4 data-i18n="backup.compressTitle">Compress Old Backups</h4>
+              <div class="form-group">
+                <label for="compress-days" data-i18n="backup.compressDays"
+                  >Compress backups older than (days):</label
+                >
+                <input
+                  type="number"
+                  id="compress-days"
+                  value="7"
+                  min="1"
+                  max="365"
+                  aria-describedby="compress-days-error"
+                />
+                <div
+                  class="validation-error"
+                  id="compress-days-error"
+                  role="alert"
+                  aria-live="assertive"
+                ></div>
+              </div>
+              <button
+                class="btn btn-info"
+                onclick="compressBackups()"
+                data-i18n="backup.compressBtn"
+              >
+                Compress
+              </button>
+            </div>
+          </div>
+
+          <div class="progress-container is-hidden" id="maintenance-progress">
+            <div class="progress-bar">
+              <div class="progress-fill" id="maintenance-progress-fill"></div>
+            </div>
+            <div id="maintenance-status" class="status-message status-info"></div>
+          </div>
+        </div>
+
+        <!-- Statistics Panel -->
+        <div class="statistics-panel">
+          <h3 class="section-title" data-i18n="backup.statisticsTitle">Backup Statistics</h3>
+          <div class="import-export-content">
+            <div class="stats-grid">
+              <div class="stat-item">
+                <span class="stat-label" data-i18n="backup.totalBackups">Total Backups:</span>
+                <span class="stat-value" id="total-backups">-</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label" data-i18n="backup.totalSize">Total Size:</span>
+                <span class="stat-value" id="total-size">-</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label" data-i18n="backup.compressedCount">Compressed:</span>
+                <span class="stat-value" id="compressed-count">-</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label" data-i18n="backup.newestBackup">Newest Backup:</span>
+                <span class="stat-value" id="newest-backup">-</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label" data-i18n="backup.oldestBackup">Oldest Backup:</span>
+                <span class="stat-value" id="oldest-backup">-</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Restore Confirmation Modal -->
     <div id="restore-modal" class="modal is-hidden">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 data-i18n="backup.confirmRestore">Confirm Restore</h2>
-                <span class="close" onclick="hideRestoreModal()">&times;</span>
-            </div>
-            <div class="modal-body">
-                <p data-i18n="backup.restoreWarning">Are you sure you want to restore from this backup? This will replace your current data.</p>
-                <div class="backup-info" id="restore-backup-info"></div>
-            </div>
-            <div class="modal-footer">
-                <button id="confirm-restore-btn" class="btn btn-danger" data-i18n="backup.restoreBtn">Restore</button>
-                <button class="btn btn-secondary" onclick="hideRestoreModal()" data-i18n="actions.cancel">Cancel</button>
-            </div>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 data-i18n="backup.confirmRestore">Confirm Restore</h2>
+          <span class="close" onclick="hideRestoreModal()">&times;</span>
         </div>
+        <div class="modal-body">
+          <p data-i18n="backup.restoreWarning">
+            Are you sure you want to restore from this backup? This will replace your current data.
+          </p>
+          <div class="backup-info" id="restore-backup-info"></div>
+          <div
+            class="status-message status-info is-hidden"
+            id="restore-status"
+            data-i18n="backup.restoreInProgress"
+          >
+            Restoring backup...
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="confirm-restore-btn" class="btn btn-danger" data-i18n="backup.restoreBtn">
+            Restore
+          </button>
+          <button class="btn btn-secondary" onclick="hideRestoreModal()" data-i18n="actions.cancel">
+            Cancel
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- Delete Confirmation Modal -->
     <div id="delete-modal" class="modal is-hidden">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 data-i18n="backup.confirmDelete">Confirm Delete</h2>
-                <span class="close" onclick="hideDeleteModal()">&times;</span>
-            </div>
-            <div class="modal-body">
-                <p data-i18n="backup.deleteWarning">Are you sure you want to delete this backup? This action cannot be undone.</p>
-                <div class="backup-info" id="delete-backup-info"></div>
-            </div>
-            <div class="modal-footer">
-                <button id="confirm-delete-btn" class="btn btn-danger" data-i18n="backup.deleteBtn">Delete</button>
-                <button class="btn btn-secondary" onclick="hideDeleteModal()" data-i18n="actions.cancel">Cancel</button>
-            </div>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 data-i18n="backup.confirmDelete">Confirm Delete</h2>
+          <span class="close" onclick="hideDeleteModal()">&times;</span>
         </div>
+        <div class="modal-body">
+          <p data-i18n="backup.deleteWarning">
+            Are you sure you want to delete this backup? This action cannot be undone.
+          </p>
+          <div class="backup-info" id="delete-backup-info"></div>
+        </div>
+        <div class="modal-footer">
+          <button id="confirm-delete-btn" class="btn btn-danger" data-i18n="backup.deleteBtn">
+            Delete
+          </button>
+          <button class="btn btn-secondary" onclick="hideDeleteModal()" data-i18n="actions.cancel">
+            Cancel
+          </button>
+        </div>
+      </div>
     </div>
 
-    <script type="module" src="/static/js/validation_constants.js"></script>
-    <script type="module" src="/static/js/validators.js"></script>
-    <script type="module" src="/static/js/form_validation.js"></script>
-    <script src="/static/js/telemetry.js" defer></script>
-    <script src="/static/js/backup_management.js" defer></script>
-</body>
+    {{ scripts.load_scripts('backup-management', true, 'backup_management', true) }}
+  </body>
 </html>

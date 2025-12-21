@@ -167,6 +167,7 @@ The middleware automatically connects to Redis using the configuration from `aut
 ### Graceful Degradation
 
 If Redis is unavailable:
+
 - Rate limiting still works using in-memory storage
 - Warning is logged
 - Application continues to function normally
@@ -280,11 +281,13 @@ async def register(request: Request, user_data: RegisterRequest):
 ### Redis Connection Failed
 
 Check the logs for:
+
 ```
 WARNING - Failed to connect to Redis for rate limiting: [error details]
 ```
 
 Verify:
+
 - Redis is running: `redis-cli ping` (should return PONG)
 - Redis URL is correct in `.env` or `auth_config.py`
 - Network connectivity to Redis server
@@ -293,6 +296,7 @@ Verify:
 ### Rate Limits Too Strict/Lenient
 
 Adjust the configuration in `.env`:
+
 ```bash
 # Make login rate limit more lenient
 RATE_LIMIT_LOGIN_ATTEMPTS=10

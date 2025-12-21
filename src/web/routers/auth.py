@@ -1506,8 +1506,16 @@ def request_password_reset(
     Returns:
         PasswordResetRequestResponse: Success message with masked email
     """
+    from fastapi.responses import JSONResponse
+
+    def build_response(masked_email: str) -> JSONResponse:
+        payload = PasswordResetRequestResponse(
+            message="If an account exists with this email, a password reset link has been sent.",
+            email=masked_email,
+        )
+        return JSONResponse(content=payload.model_dump(mode="json"))
+
     try:
-        # Request password reset
         masked_email = password_reset_service.request_password_reset(
             email=request_data.email,
             ip_address=ip_address,
@@ -1519,39 +1527,29 @@ def request_password_reset(
             masked_email = "***@***"
 
         logger.info(f"Password reset requested for email: {masked_email} from {ip_address}")
-        
+
         # Commit the session to persist the password reset token
         session.commit()
 
-        return PasswordResetRequestResponse(
-            message="If an account exists with this email, a password reset link has been sent.",
-            email=masked_email,
-        )
+        return build_response(masked_email)
 
-    except RateLimitExceededError as e:
-        # Return success message to prevent information leakage
-        # User will see same message whether rate limited or not
-        logger.warning(f"Password reset rate limit exceeded for: {request_data.email} from {ip_address}")
-
-        # Mask email for response
+    except UserNotFoundError:
+        logger.info(f"Password reset requested for non-existent email: {request_data.email}")
         email_parts = request_data.email.split("@")
         masked_email = f"{email_parts[0][0]}***@{email_parts[1]}" if len(email_parts) == 2 else "***@***"
+        return build_response(masked_email)
 
-        return PasswordResetRequestResponse(
-            message="If an account exists with this email, a password reset link has been sent.",
-            email=masked_email,
-        )
+    except RateLimitExceededError:
+        logger.warning(f"Password reset rate limit exceeded for: {request_data.email} from {ip_address}")
+        email_parts = request_data.email.split("@")
+        masked_email = f"{email_parts[0][0]}***@{email_parts[1]}" if len(email_parts) == 2 else "***@***"
+        return build_response(masked_email)
 
     except Exception as e:
         logger.error(f"Unexpected error during password reset request: {str(e)}", exc_info=True)
-        # Still return success message for security
         email_parts = request_data.email.split("@")
         masked_email = f"{email_parts[0][0]}***@{email_parts[1]}" if len(email_parts) == 2 else "***@***"
-
-        return PasswordResetRequestResponse(
-            message="If an account exists with this email, a password reset link has been sent.",
-            email=masked_email,
-        )
+        return build_response(masked_email)
 
 
 @router.post(

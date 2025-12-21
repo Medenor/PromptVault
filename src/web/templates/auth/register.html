@@ -1,155 +1,198 @@
-<!DOCTYPE html>
+<!doctype html>
 <!-- This Source Code Form is subject to the terms of the Mozilla Public
      License, v. 2.0. If a copy of the MPL was not distributed with this
      file, You can obtain one at https://mozilla.org/MPL/2.0/. -->
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Register - PromptVault</title>
-    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon.png">
-    <link rel="stylesheet" href="/static/css/style.css">
-    <link rel="stylesheet" href="/static/css/auth.css">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon.png" />
+    <link rel="stylesheet" href="/static/css/style.css" />
+    <link rel="stylesheet" href="/static/css/auth.css" />
     <script src="https://unpkg.com/i18next@23.7.6/i18next.min.js"></script>
     <script src="https://unpkg.com/i18next-browser-languagedetector@7.2.0/i18nextBrowserLanguageDetector.min.js"></script>
     <script src="https://unpkg.com/i18next-http-backend@2.4.2/i18nextHttpBackend.min.js"></script>
-</head>
-<body>
+  </head>
+  <body>
+    {% import "macros/scripts.html" as scripts %}
     <div class="auth-container">
-        <div class="auth-header">
-            <div class="header-logo">
-                <img src="/static/images/promptvault_logo_frontend.webp" alt="PromptVault Logo" class="logo">
-            </div>
-            <h1>PromptVault</h1>
-            <div class="language-selector-wrapper">
-                <select id="language-selector" class="language-selector">
-                    <option value="en">English</option>
-                    <option value="fr">Français</option>
-                    <option value="es">Español</option>
-                    <option value="de">Deutsch</option>
-                </select>
-            </div>
+      <div class="auth-header">
+        <div class="header-logo">
+          <img
+            src="/static/images/promptvault_logo_frontend.webp"
+            alt="PromptVault Logo"
+            class="logo"
+          />
         </div>
-
-        <div class="auth-box">
-            <h2 data-i18n="auth.register.title">Create Account</h2>
-            <p class="auth-subtitle" data-i18n="auth.register.subtitle">Register for a new account</p>
-
-            <form id="register-form" class="auth-form" novalidate>
-                <div class="form-group">
-                    <label for="username" data-i18n="auth.register.username">Username:</label>
-                    <input
-                        type="text"
-                        id="username"
-                        name="username"
-                        data-i18n="[placeholder]auth.register.usernamePlaceholder"
-                        required
-                        minlength="3"
-                        maxlength="50"
-                        pattern="^[a-zA-Z0-9_-]+$"
-                        autocomplete="username"
-                        aria-required="true"
-                        aria-describedby="username-error username-help">
-                    <small class="form-help" id="username-help" data-i18n="auth.register.usernameHelp">3-50 characters, letters, numbers, underscore, and hyphen only</small>
-                    <div class="validation-error" id="username-error" role="alert" aria-live="assertive"></div>
-                </div>
-
-                <div class="form-group">
-                    <label for="email" data-i18n="auth.register.email">Email:</label>
-                    <input
-                        type="email"
-                        id="email"
-                        name="email"
-                        data-i18n="[placeholder]auth.register.emailPlaceholder"
-                        required
-                        autocomplete="email"
-                        aria-required="true"
-                        aria-describedby="email-error">
-                    <div class="validation-error" id="email-error" role="alert" aria-live="assertive"></div>
-                </div>
-
-                <div class="form-group">
-                    <label for="password" data-i18n="auth.register.password">Password:</label>
-                    <div class="password-input-wrapper">
-                        <input
-                            type="password"
-                            id="password"
-                            name="password"
-                            data-i18n="[placeholder]auth.register.passwordPlaceholder"
-                            required
-                            autocomplete="new-password"
-                            aria-required="true"
-                            aria-describedby="password-error password-strength password-policy">
-                        <button type="button" class="password-toggle" id="toggle-password" aria-label="Toggle password visibility" onclick="return false;">
-                            <span class="password-toggle-icon">⊙</span>
-                        </button>
-                    </div>
-                    <div id="password-strength" class="password-strength" aria-live="polite">
-                        <div class="strength-bar">
-                            <div class="strength-bar-fill" id="strength-bar-fill"></div>
-                        </div>
-                        <div class="strength-text" id="strength-text"></div>
-                    </div>
-                    <div class="validation-error" id="password-error" role="alert" aria-live="assertive"></div>
-                </div>
-
-                <div class="form-group">
-                    <label for="confirm-password" data-i18n="auth.register.confirmPassword">Confirm Password:</label>
-                    <div class="password-input-wrapper">
-                        <input
-                            type="password"
-                            id="confirm-password"
-                            name="confirm_password"
-                            data-i18n="[placeholder]auth.register.confirmPasswordPlaceholder"
-                            required
-                            autocomplete="new-password"
-                            aria-required="true"
-                            aria-describedby="confirm-password-error">
-                        <button type="button" class="password-toggle" id="toggle-confirm-password" aria-label="Toggle password visibility" onclick="return false;">
-                            <span class="password-toggle-icon">⊙</span>
-                        </button>
-                    </div>
-                    <div class="validation-error" id="confirm-password-error" role="alert" aria-live="assertive"></div>
-                </div>
-
-                <div class="password-policy" id="password-policy">
-                    <h3 data-i18n="auth.register.passwordPolicy">Password Requirements:</h3>
-                    <ul>
-                        <li id="policy-length" class="policy-requirement">
-                            <span class="policy-icon">○</span>
-                            <span data-i18n="auth.register.policyLength">At least 12 characters</span>
-                        </li>
-                        <li id="policy-uppercase" class="policy-requirement">
-                            <span class="policy-icon">○</span>
-                            <span data-i18n="auth.register.policyUppercase">At least one uppercase letter</span>
-                        </li>
-                        <li id="policy-lowercase" class="policy-requirement">
-                            <span class="policy-icon">○</span>
-                            <span data-i18n="auth.register.policyLowercase">At least one lowercase letter</span>
-                        </li>
-                        <li id="policy-digit" class="policy-requirement">
-                            <span class="policy-icon">○</span>
-                            <span data-i18n="auth.register.policyDigit">At least one number</span>
-                        </li>
-                        <li id="policy-special" class="policy-requirement">
-                            <span class="policy-icon">○</span>
-                            <span data-i18n="auth.register.policySpecial">At least one special character</span>
-                        </li>
-                    </ul>
-                </div>
-
-                <div class="form-actions">
-                    <button type="submit" class="btn btn-primary" data-i18n="auth.register.registerButton">Register</button>
-                </div>
-
-                <div class="auth-links">
-                    <a href="/auth/login" data-i18n="auth.register.haveAccount">Already have an account? Login</a>
-                </div>
-            </form>
+        <h1>PromptVault</h1>
+        <div class="language-selector-wrapper">
+          <select id="language-selector" class="language-selector">
+            <option value="en">English</option>
+            <option value="fr">Français</option>
+            <option value="es">Español</option>
+            <option value="de">Deutsch</option>
+          </select>
         </div>
+      </div>
+
+      <div class="auth-box">
+        <h2 data-i18n="auth.register.title">Create Account</h2>
+        <p class="auth-subtitle" data-i18n="auth.register.subtitle">Register for a new account</p>
+
+        <form id="register-form" class="auth-form" novalidate>
+          <div class="form-group">
+            <label for="username" data-i18n="auth.register.username">Username:</label>
+            <input
+              type="text"
+              id="username"
+              name="username"
+              data-i18n="[placeholder]auth.register.usernamePlaceholder"
+              required
+              minlength="3"
+              maxlength="50"
+              pattern="^[a-zA-Z0-9_-]+$"
+              autocomplete="username"
+              aria-required="true"
+              aria-describedby="username-error username-help"
+            />
+            <small class="form-help" id="username-help" data-i18n="auth.register.usernameHelp"
+              >3-50 characters, letters, numbers, underscore, and hyphen only</small
+            >
+            <div
+              class="validation-error"
+              id="username-error"
+              role="alert"
+              aria-live="assertive"
+            ></div>
+          </div>
+
+          <div class="form-group">
+            <label for="email" data-i18n="auth.register.email">Email:</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              data-i18n="[placeholder]auth.register.emailPlaceholder"
+              required
+              autocomplete="email"
+              aria-required="true"
+              aria-describedby="email-error"
+            />
+            <div class="validation-error" id="email-error" role="alert" aria-live="assertive"></div>
+          </div>
+
+          <div class="form-group">
+            <label for="password" data-i18n="auth.register.password">Password:</label>
+            <div class="password-input-wrapper">
+              <input
+                type="password"
+                id="password"
+                name="password"
+                data-i18n="[placeholder]auth.register.passwordPlaceholder"
+                required
+                autocomplete="new-password"
+                aria-required="true"
+                aria-describedby="password-error password-strength password-policy"
+              />
+              <button
+                type="button"
+                class="password-toggle"
+                id="toggle-password"
+                aria-label="Toggle password visibility"
+                onclick="return false;"
+              >
+                <span class="password-toggle-icon">⊙</span>
+              </button>
+            </div>
+            <div id="password-strength" class="password-strength" aria-live="polite">
+              <div class="strength-bar">
+                <div class="strength-bar-fill" id="strength-bar-fill"></div>
+              </div>
+              <div class="strength-text" id="strength-text"></div>
+            </div>
+            <div
+              class="validation-error"
+              id="password-error"
+              role="alert"
+              aria-live="assertive"
+            ></div>
+          </div>
+
+          <div class="form-group">
+            <label for="confirm-password" data-i18n="auth.register.confirmPassword"
+              >Confirm Password:</label
+            >
+            <div class="password-input-wrapper">
+              <input
+                type="password"
+                id="confirm-password"
+                name="confirm_password"
+                data-i18n="[placeholder]auth.register.confirmPasswordPlaceholder"
+                required
+                autocomplete="new-password"
+                aria-required="true"
+                aria-describedby="confirm-password-error"
+              />
+              <button
+                type="button"
+                class="password-toggle"
+                id="toggle-confirm-password"
+                aria-label="Toggle password visibility"
+                onclick="return false;"
+              >
+                <span class="password-toggle-icon">⊙</span>
+              </button>
+            </div>
+            <div
+              class="validation-error"
+              id="confirm-password-error"
+              role="alert"
+              aria-live="assertive"
+            ></div>
+          </div>
+
+          <div class="password-policy" id="password-policy">
+            <h3 data-i18n="auth.register.passwordPolicy">Password Requirements:</h3>
+            <ul>
+              <li id="policy-length" class="policy-requirement">
+                <span class="policy-icon">○</span>
+                <span data-i18n="auth.register.policyLength">At least 12 characters</span>
+              </li>
+              <li id="policy-uppercase" class="policy-requirement">
+                <span class="policy-icon">○</span>
+                <span data-i18n="auth.register.policyUppercase">At least one uppercase letter</span>
+              </li>
+              <li id="policy-lowercase" class="policy-requirement">
+                <span class="policy-icon">○</span>
+                <span data-i18n="auth.register.policyLowercase">At least one lowercase letter</span>
+              </li>
+              <li id="policy-digit" class="policy-requirement">
+                <span class="policy-icon">○</span>
+                <span data-i18n="auth.register.policyDigit">At least one number</span>
+              </li>
+              <li id="policy-special" class="policy-requirement">
+                <span class="policy-icon">○</span>
+                <span data-i18n="auth.register.policySpecial">At least one special character</span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary" data-i18n="auth.register.registerButton">
+              Register
+            </button>
+          </div>
+
+          <div class="auth-links">
+            <a href="/auth/login" data-i18n="auth.register.haveAccount"
+              >Already have an account? Login</a
+            >
+          </div>
+        </form>
+      </div>
     </div>
 
-    <script src="/static/js/telemetry.js" defer></script>
-    <script type="module" src="/static/js/auth.js"></script>
-</body>
+    {{ scripts.load_scripts('auth', true, 'auth', true) }}
+  </body>
 </html>

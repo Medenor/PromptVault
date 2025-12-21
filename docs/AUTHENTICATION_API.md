@@ -59,6 +59,7 @@ Authorization: Bearer <access_token>
 ### Obtaining Tokens
 
 Tokens are obtained via:
+
 - `/auth/register` - New user registration
 - `/auth/login` - User login
 - `/auth/refresh` - Refresh token rotation
@@ -93,12 +94,12 @@ Content-Type: application/json
 
 ##### Request Schema
 
-| Field | Type | Required | Constraints | Description |
-|-------|------|----------|-------------|-------------|
-| `username` | string | Yes | 3-32 chars, alphanumeric + underscore | Unique username |
-| `email` | string | Yes | Valid email format, max 255 chars | Unique email address |
-| `password` | string | Yes | 8-128 chars, must meet policy | User password |
-| `confirm_password` | string | Yes | Must match password | Password confirmation |
+| Field              | Type   | Required | Constraints                           | Description           |
+| ------------------ | ------ | -------- | ------------------------------------- | --------------------- |
+| `username`         | string | Yes      | 3-32 chars, alphanumeric + underscore | Unique username       |
+| `email`            | string | Yes      | Valid email format, max 255 chars     | Unique email address  |
+| `password`         | string | Yes      | 8-128 chars, must meet policy         | User password         |
+| `confirm_password` | string | Yes      | Must match password                   | Password confirmation |
 
 ##### Password Policy
 
@@ -106,7 +107,7 @@ Content-Type: application/json
 - At least one uppercase letter (A-Z)
 - At least one lowercase letter (a-z)
 - At least one digit (0-9)
-- At least one special character (!@#$%^&*()_+-=[]{}|;:,.<>?)
+- At least one special character (!@#$%^&\*()\_+-=[]{}|;:,.<>?)
 - Not in common password list
 
 #### Response
@@ -134,11 +135,11 @@ Content-Type: application/json
 
 **Error Responses**:
 
-| Status | Error | Description |
-|--------|-------|-------------|
-| 400 | ValidationError | Password doesn't meet policy requirements |
-| 409 | Conflict | Username or email already exists |
-| 429 | TooManyRequests | Rate limit exceeded (3 attempts/hour) |
+| Status | Error           | Description                               |
+| ------ | --------------- | ----------------------------------------- |
+| 400    | ValidationError | Password doesn't meet policy requirements |
+| 409    | Conflict        | Username or email already exists          |
+| 429    | TooManyRequests | Rate limit exceeded (3 attempts/hour)     |
 
 ---
 
@@ -162,10 +163,10 @@ Content-Type: application/json
 
 ##### Request Schema
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `username_or_email` | string | Yes | Username or email address |
-| `password` | string | Yes | User password |
+| Field               | Type   | Required | Description               |
+| ------------------- | ------ | -------- | ------------------------- |
+| `username_or_email` | string | Yes      | Username or email address |
+| `password`          | string | Yes      | User password             |
 
 #### Response
 
@@ -192,12 +193,12 @@ Content-Type: application/json
 
 **Error Responses**:
 
-| Status | Error | Description |
-|--------|-------|-------------|
-| 401 | InvalidCredentials | Invalid username/email or password |
-| 403 | AccountLocked | Account locked due to failed login attempts |
-| 403 | AccountInactive | Account is deactivated |
-| 429 | TooManyRequests | Rate limit exceeded (5 attempts/15 minutes) |
+| Status | Error              | Description                                 |
+| ------ | ------------------ | ------------------------------------------- |
+| 401    | InvalidCredentials | Invalid username/email or password          |
+| 403    | AccountLocked      | Account locked due to failed login attempts |
+| 403    | AccountInactive    | Account is deactivated                      |
+| 429    | TooManyRequests    | Rate limit exceeded (5 attempts/15 minutes) |
 
 ---
 
@@ -220,9 +221,9 @@ Content-Type: application/json
 
 ##### Request Schema
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `refresh_token` | string | Yes | Valid JWT refresh token |
+| Field           | Type   | Required | Description             |
+| --------------- | ------ | -------- | ----------------------- |
+| `refresh_token` | string | Yes      | Valid JWT refresh token |
 
 #### Response
 
@@ -248,18 +249,19 @@ Content-Type: application/json
 ```
 
 **Notes**:
+
 - Token rotation: New refresh token is issued, old one is invalidated
 - Token family tracking: Detects and prevents token reuse attacks
 - If token reuse is detected, entire token family is revoked
 
 **Error Responses**:
 
-| Status | Error | Description |
-|--------|-------|-------------|
-| 401 | InvalidToken | Invalid or malformed token |
-| 401 | TokenExpired | Refresh token has expired |
-| 401 | TokenReuseDetected | Token reuse detected, session revoked |
-| 403 | AccountInactive | Account is deactivated |
+| Status | Error              | Description                           |
+| ------ | ------------------ | ------------------------------------- |
+| 401    | InvalidToken       | Invalid or malformed token            |
+| 401    | TokenExpired       | Refresh token has expired             |
+| 401    | TokenReuseDetected | Token reuse detected, session revoked |
+| 403    | AccountInactive    | Account is deactivated                |
 
 ---
 
@@ -282,9 +284,9 @@ Content-Type: application/json
 
 ##### Request Schema
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `refresh_token` | string | Yes | Refresh token to revoke |
+| Field           | Type   | Required | Description             |
+| --------------- | ------ | -------- | ----------------------- |
+| `refresh_token` | string | Yes      | Refresh token to revoke |
 
 #### Response
 
@@ -298,9 +300,9 @@ Content-Type: application/json
 
 **Error Responses**:
 
-| Status | Error | Description |
-|--------|-------|-------------|
-| 401 | InvalidToken | Invalid or already revoked token |
+| Status | Error        | Description                      |
+| ------ | ------------ | -------------------------------- |
+| 401    | InvalidToken | Invalid or already revoked token |
 
 ---
 
@@ -323,9 +325,9 @@ Content-Type: application/json
 
 ##### Request Schema
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `email` | string | Yes | Email address for password reset |
+| Field   | Type   | Required | Description                      |
+| ------- | ------ | -------- | -------------------------------- |
+| `email` | string | Yes      | Email address for password reset |
 
 #### Response
 
@@ -339,6 +341,7 @@ Content-Type: application/json
 ```
 
 **Notes**:
+
 - Email is partially masked to prevent user enumeration
 - Same response is returned whether email exists or not (security)
 - Reset token expires in 1 hour (configurable)
@@ -346,9 +349,9 @@ Content-Type: application/json
 
 **Error Responses**:
 
-| Status | Error | Description |
-|--------|-------|-------------|
-| 429 | TooManyRequests | Rate limit exceeded (3 attempts/hour) |
+| Status | Error           | Description                           |
+| ------ | --------------- | ------------------------------------- |
+| 429    | TooManyRequests | Rate limit exceeded (3 attempts/hour) |
 
 ---
 
@@ -373,11 +376,11 @@ Content-Type: application/json
 
 ##### Request Schema
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `token` | string | Yes | Password reset token from email |
-| `new_password` | string | Yes | New password (must meet policy) |
-| `confirm_new_password` | string | Yes | Must match new_password |
+| Field                  | Type   | Required | Description                     |
+| ---------------------- | ------ | -------- | ------------------------------- |
+| `token`                | string | Yes      | Password reset token from email |
+| `new_password`         | string | Yes      | New password (must meet policy) |
+| `confirm_new_password` | string | Yes      | Must match new_password         |
 
 #### Response
 
@@ -391,11 +394,11 @@ Content-Type: application/json
 
 **Error Responses**:
 
-| Status | Error | Description |
-|--------|-------|-------------|
-| 400 | ValidationError | Password doesn't meet policy requirements |
-| 401 | TokenInvalid | Invalid or expired reset token |
-| 401 | TokenAlreadyUsed | Reset token has already been used |
+| Status | Error            | Description                               |
+| ------ | ---------------- | ----------------------------------------- |
+| 400    | ValidationError  | Password doesn't meet policy requirements |
+| 401    | TokenInvalid     | Invalid or expired reset token            |
+| 401    | TokenAlreadyUsed | Reset token has already been used         |
 
 ---
 
@@ -435,9 +438,9 @@ Authorization: Bearer <access_token>
 
 **Error Responses**:
 
-| Status | Error | Description |
-|--------|-------|-------------|
-| 401 | Unauthorized | Missing or invalid access token |
+| Status | Error        | Description                     |
+| ------ | ------------ | ------------------------------- |
+| 401    | Unauthorized | Missing or invalid access token |
 
 ---
 
@@ -463,11 +466,11 @@ Content-Type: application/json
 
 ##### Request Schema
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `old_password` | string | Yes | Current password for verification |
-| `new_password` | string | Yes | New password (must meet policy) |
-| `confirm_new_password` | string | Yes | Must match new_password |
+| Field                  | Type   | Required | Description                       |
+| ---------------------- | ------ | -------- | --------------------------------- |
+| `old_password`         | string | Yes      | Current password for verification |
+| `new_password`         | string | Yes      | New password (must meet policy)   |
+| `confirm_new_password` | string | Yes      | Must match new_password           |
 
 #### Response
 
@@ -482,11 +485,11 @@ Content-Type: application/json
 
 **Error Responses**:
 
-| Status | Error | Description |
-|--------|-------|-------------|
-| 400 | ValidationError | Password doesn't meet policy requirements |
-| 401 | InvalidCredentials | Incorrect current password |
-| 401 | Unauthorized | Missing or invalid access token |
+| Status | Error              | Description                               |
+| ------ | ------------------ | ----------------------------------------- |
+| 400    | ValidationError    | Password doesn't meet policy requirements |
+| 401    | InvalidCredentials | Incorrect current password                |
+| 401    | Unauthorized       | Missing or invalid access token           |
 
 ---
 
@@ -535,9 +538,9 @@ Authorization: Bearer <access_token>
 
 **Error Responses**:
 
-| Status | Error | Description |
-|--------|-------|-------------|
-| 401 | Unauthorized | Missing or invalid access token |
+| Status | Error        | Description                     |
+| ------ | ------------ | ------------------------------- |
+| 401    | Unauthorized | Missing or invalid access token |
 
 ---
 
@@ -565,10 +568,10 @@ Authorization: Bearer <access_token>
 
 **Error Responses**:
 
-| Status | Error | Description |
-|--------|-------|-------------|
-| 401 | Unauthorized | Missing or invalid access token |
-| 404 | NotFound | Session not found or doesn't belong to user |
+| Status | Error        | Description                                 |
+| ------ | ------------ | ------------------------------------------- |
+| 401    | Unauthorized | Missing or invalid access token             |
+| 404    | NotFound     | Session not found or doesn't belong to user |
 
 ---
 
@@ -596,9 +599,9 @@ Authorization: Bearer <access_token>
 
 **Error Responses**:
 
-| Status | Error | Description |
-|--------|-------|-------------|
-| 401 | Unauthorized | Missing or invalid access token |
+| Status | Error        | Description                     |
+| ------ | ------------ | ------------------------------- |
+| 401    | Unauthorized | Missing or invalid access token |
 
 ---
 
@@ -621,13 +624,13 @@ Authorization: Bearer <admin_access_token>
 
 ##### Query Parameters
 
-| Parameter | Type | Required | Default | Description |
-|-----------|------|----------|---------|-------------|
-| `page` | integer | No | 1 | Page number (1-indexed) |
-| `per_page` | integer | No | 20 | Items per page (1-100) |
-| `role` | string | No | - | Filter by role (viewer/editor/admin) |
-| `is_active` | boolean | No | - | Filter by active status |
-| `search` | string | No | - | Search in username and email |
+| Parameter   | Type    | Required | Default | Description                          |
+| ----------- | ------- | -------- | ------- | ------------------------------------ |
+| `page`      | integer | No       | 1       | Page number (1-indexed)              |
+| `per_page`  | integer | No       | 20      | Items per page (1-100)               |
+| `role`      | string  | No       | -       | Filter by role (viewer/editor/admin) |
+| `is_active` | boolean | No       | -       | Filter by active status              |
+| `search`    | string  | No       | -       | Search in username and email         |
 
 #### Response
 
@@ -661,10 +664,10 @@ Authorization: Bearer <admin_access_token>
 
 **Error Responses**:
 
-| Status | Error | Description |
-|--------|-------|-------------|
-| 401 | Unauthorized | Missing or invalid access token |
-| 403 | Forbidden | User does not have admin role |
+| Status | Error        | Description                     |
+| ------ | ------------ | ------------------------------- |
+| 401    | Unauthorized | Missing or invalid access token |
+| 403    | Forbidden    | User does not have admin role   |
 
 ---
 
@@ -703,11 +706,11 @@ Authorization: Bearer <admin_access_token>
 
 **Error Responses**:
 
-| Status | Error | Description |
-|--------|-------|-------------|
-| 401 | Unauthorized | Missing or invalid access token |
-| 403 | Forbidden | User does not have admin role |
-| 404 | NotFound | User not found |
+| Status | Error        | Description                     |
+| ------ | ------------ | ------------------------------- |
+| 401    | Unauthorized | Missing or invalid access token |
+| 403    | Forbidden    | User does not have admin role   |
+| 404    | NotFound     | User not found                  |
 
 ---
 
@@ -733,11 +736,11 @@ Content-Type: application/json
 
 ##### Request Schema
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `role` | string | No | User role (viewer/editor/admin) |
-| `is_active` | boolean | No | Account active status |
-| `email_verified` | boolean | No | Email verification status |
+| Field            | Type    | Required | Description                     |
+| ---------------- | ------- | -------- | ------------------------------- |
+| `role`           | string  | No       | User role (viewer/editor/admin) |
+| `is_active`      | boolean | No       | Account active status           |
+| `email_verified` | boolean | No       | Email verification status       |
 
 #### Response
 
@@ -763,12 +766,12 @@ Content-Type: application/json
 
 **Error Responses**:
 
-| Status | Error | Description |
-|--------|-------|-------------|
-| 400 | ValidationError | Invalid role or field value |
-| 401 | Unauthorized | Missing or invalid access token |
-| 403 | Forbidden | User does not have admin role |
-| 404 | NotFound | User not found |
+| Status | Error           | Description                     |
+| ------ | --------------- | ------------------------------- |
+| 400    | ValidationError | Invalid role or field value     |
+| 401    | Unauthorized    | Missing or invalid access token |
+| 403    | Forbidden       | User does not have admin role   |
+| 404    | NotFound        | User not found                  |
 
 ---
 
@@ -794,17 +797,18 @@ Authorization: Bearer <admin_access_token>
 ```
 
 **Notes**:
+
 - Admins cannot delete themselves (self-harm prevention)
 - User is deactivated, not permanently deleted
 - All user sessions are revoked
 
 **Error Responses**:
 
-| Status | Error | Description |
-|--------|-------|-------------|
-| 401 | Unauthorized | Missing or invalid access token |
-| 403 | Forbidden | User does not have admin role or attempting self-delete |
-| 404 | NotFound | User not found |
+| Status | Error        | Description                                             |
+| ------ | ------------ | ------------------------------------------------------- |
+| 401    | Unauthorized | Missing or invalid access token                         |
+| 403    | Forbidden    | User does not have admin role or attempting self-delete |
+| 404    | NotFound     | User not found                                          |
 
 ---
 
@@ -843,11 +847,11 @@ Authorization: Bearer <admin_access_token>
 
 **Error Responses**:
 
-| Status | Error | Description |
-|--------|-------|-------------|
-| 401 | Unauthorized | Missing or invalid access token |
-| 403 | Forbidden | User does not have admin role |
-| 404 | NotFound | User not found |
+| Status | Error        | Description                     |
+| ------ | ------------ | ------------------------------- |
+| 401    | Unauthorized | Missing or invalid access token |
+| 403    | Forbidden    | User does not have admin role   |
+| 404    | NotFound     | User not found                  |
 
 ---
 
@@ -875,11 +879,11 @@ Authorization: Bearer <admin_access_token>
 
 **Error Responses**:
 
-| Status | Error | Description |
-|--------|-------|-------------|
-| 401 | Unauthorized | Missing or invalid access token |
-| 403 | Forbidden | User does not have admin role |
-| 404 | NotFound | User not found |
+| Status | Error        | Description                     |
+| ------ | ------------ | ------------------------------- |
+| 401    | Unauthorized | Missing or invalid access token |
+| 403    | Forbidden    | User does not have admin role   |
+| 404    | NotFound     | User not found                  |
 
 ---
 
@@ -917,10 +921,10 @@ Authorization: Bearer <admin_access_token>
 
 **Error Responses**:
 
-| Status | Error | Description |
-|--------|-------|-------------|
-| 401 | Unauthorized | Missing or invalid access token |
-| 403 | Forbidden | User does not have admin role |
+| Status | Error        | Description                     |
+| ------ | ------------ | ------------------------------- |
+| 401    | Unauthorized | Missing or invalid access token |
+| 403    | Forbidden    | User does not have admin role   |
 
 ---
 
@@ -936,30 +940,30 @@ All error responses follow a consistent format:
 
 ### Common HTTP Status Codes
 
-| Status Code | Meaning | Common Causes |
-|-------------|---------|---------------|
-| 400 | Bad Request | Invalid input, validation errors |
-| 401 | Unauthorized | Missing, invalid, or expired token |
-| 403 | Forbidden | Insufficient permissions, account locked/inactive |
-| 404 | Not Found | Resource doesn't exist |
-| 409 | Conflict | Duplicate username/email |
-| 422 | Unprocessable Entity | Request validation failed |
-| 429 | Too Many Requests | Rate limit exceeded |
-| 500 | Internal Server Error | Server-side error |
+| Status Code | Meaning               | Common Causes                                     |
+| ----------- | --------------------- | ------------------------------------------------- |
+| 400         | Bad Request           | Invalid input, validation errors                  |
+| 401         | Unauthorized          | Missing, invalid, or expired token                |
+| 403         | Forbidden             | Insufficient permissions, account locked/inactive |
+| 404         | Not Found             | Resource doesn't exist                            |
+| 409         | Conflict              | Duplicate username/email                          |
+| 422         | Unprocessable Entity  | Request validation failed                         |
+| 429         | Too Many Requests     | Rate limit exceeded                               |
+| 500         | Internal Server Error | Server-side error                                 |
 
 ### Authentication-Specific Errors
 
-| Error | Status | Description | Solution |
-|-------|--------|-------------|----------|
-| `Invalid credentials` | 401 | Wrong username/password | Check credentials |
-| `Account locked` | 403 | Too many failed login attempts | Wait for lockout period to expire |
-| `Account inactive` | 403 | Account deactivated | Contact administrator |
-| `Token expired` | 401 | Access/refresh token expired | Use refresh token to get new access token |
-| `Token reuse detected` | 401 | Refresh token reused | Login again (security measure) |
-| `Invalid token` | 401 | Malformed or invalid JWT | Login again |
-| `Rate limit exceeded` | 429 | Too many requests | Wait and retry |
-| `Username already exists` | 409 | Username taken | Choose different username |
-| `Email already exists` | 409 | Email already registered | Use different email or reset password |
+| Error                     | Status | Description                    | Solution                                  |
+| ------------------------- | ------ | ------------------------------ | ----------------------------------------- |
+| `Invalid credentials`     | 401    | Wrong username/password        | Check credentials                         |
+| `Account locked`          | 403    | Too many failed login attempts | Wait for lockout period to expire         |
+| `Account inactive`        | 403    | Account deactivated            | Contact administrator                     |
+| `Token expired`           | 401    | Access/refresh token expired   | Use refresh token to get new access token |
+| `Token reuse detected`    | 401    | Refresh token reused           | Login again (security measure)            |
+| `Invalid token`           | 401    | Malformed or invalid JWT       | Login again                               |
+| `Rate limit exceeded`     | 429    | Too many requests              | Wait and retry                            |
+| `Username already exists` | 409    | Username taken                 | Choose different username                 |
+| `Email already exists`    | 409    | Email already registered       | Use different email or reset password     |
 
 ---
 
@@ -967,12 +971,12 @@ All error responses follow a consistent format:
 
 Rate limits are enforced per IP address or user:
 
-| Endpoint | Limit | Window | Notes |
-|----------|-------|--------|-------|
-| `/auth/login` | 5 attempts | 15 minutes | Per IP address |
-| `/auth/register` | 3 attempts | 1 hour | Per IP address |
-| `/auth/password-reset/request` | 3 attempts | 1 hour | Per email address |
-| All other endpoints | No limit | - | Monitored for abuse |
+| Endpoint                       | Limit      | Window     | Notes               |
+| ------------------------------ | ---------- | ---------- | ------------------- |
+| `/auth/login`                  | 5 attempts | 15 minutes | Per IP address      |
+| `/auth/register`               | 3 attempts | 1 hour     | Per IP address      |
+| `/auth/password-reset/request` | 3 attempts | 1 hour     | Per email address   |
+| All other endpoints            | No limit   | -          | Monitored for abuse |
 
 ### Rate Limit Headers
 
@@ -1074,6 +1078,7 @@ Interactive API documentation is available at:
 - **OpenAPI JSON**: `http://localhost:8000/openapi.json`
 
 These interfaces provide:
+
 - Interactive endpoint testing
 - Complete request/response schemas
 - Example payloads

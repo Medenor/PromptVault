@@ -199,7 +199,7 @@
   - Create "Search Tips" modal explaining search syntax and advanced features
   - Implement boolean operators (AND, OR, NOT) for complex queries
   - Add search within specific fields (title:, content:, tag:, category: prefixes)
-  - Implement wildcard search support (* for any characters, ? for single character)
+  - Implement wildcard search support (\* for any characters, ? for single character)
   - Add "Similar Prompts" feature using content similarity algorithms (TF-IDF, cosine similarity)
   - Create search performance monitoring (track search latency, slow queries)
   - Add search result export (export filtered results to CSV/Markdown)
@@ -553,23 +553,23 @@
 
 ## Implementation Priority Matrix
 
-| Feature | User Value | Technical Complexity | Time Estimate | Dependencies |
-|---------|-----------|---------------------|---------------|--------------|
-| 1. Input Validation | High | Low | 2 weeks | None |
-| 2. Logging & Error Handling | High | Low | 2 weeks | None |
-| 3. Authentication | Critical | High | 4 weeks | #1, #2 |
-| 4. TypeScript Migration | Medium | Medium | 4 weeks | None |
-| 5. Database Migration | High | High | 6 weeks | #3 |
-| 6. Pagination | High | Medium | 2 weeks | #5 |
-| 7. Advanced Search | High | Medium | 3 weeks | #5, #6 |
-| 8. Tag Management | Medium | Low | 2 weeks | #5 |
-| 9. Collaborative Editing | Medium | Very High | 6 weeks | #3, #5 |
-| 10. Enhanced Backup | Medium | Medium | 3 weeks | #5 |
-| 11. API Documentation | Medium | Low | 2 weeks | #3 |
-| 12. Mobile UX | High | Medium | 4 weeks | #4 |
-| 13. Accessibility | High | Medium | 3 weeks | #4 |
-| 14. Performance Monitoring | Medium | Medium | 2 weeks | None |
-| 15. Export Enhancements | Medium | Medium | 3 weeks | #3 |
+| Feature                     | User Value | Technical Complexity | Time Estimate | Dependencies |
+| --------------------------- | ---------- | -------------------- | ------------- | ------------ |
+| 1. Input Validation         | High       | Low                  | 2 weeks       | None         |
+| 2. Logging & Error Handling | High       | Low                  | 2 weeks       | None         |
+| 3. Authentication           | Critical   | High                 | 4 weeks       | #1, #2       |
+| 4. TypeScript Migration     | Medium     | Medium               | 4 weeks       | None         |
+| 5. Database Migration       | High       | High                 | 6 weeks       | #3           |
+| 6. Pagination               | High       | Medium               | 2 weeks       | #5           |
+| 7. Advanced Search          | High       | Medium               | 3 weeks       | #5, #6       |
+| 8. Tag Management           | Medium     | Low                  | 2 weeks       | #5           |
+| 9. Collaborative Editing    | Medium     | Very High            | 6 weeks       | #3, #5       |
+| 10. Enhanced Backup         | Medium     | Medium               | 3 weeks       | #5           |
+| 11. API Documentation       | Medium     | Low                  | 2 weeks       | #3           |
+| 12. Mobile UX               | High       | Medium               | 4 weeks       | #4           |
+| 13. Accessibility           | High       | Medium               | 3 weeks       | #4           |
+| 14. Performance Monitoring  | Medium     | Medium               | 2 weeks       | None         |
+| 15. Export Enhancements     | Medium     | Medium               | 3 weeks       | #3           |
 
 ---
 

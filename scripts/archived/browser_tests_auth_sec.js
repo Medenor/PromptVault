@@ -54,32 +54,36 @@ async function test008_httpOnlyCookies(page) {
       return {
         cookies: document.cookie,
         hasAccessToken: document.cookie.includes('access_token'),
-        hasRefreshToken: document.cookie.includes('refresh_token')
+        hasRefreshToken: document.cookie.includes('refresh_token'),
       };
     });
-    
+
     if (!jsAccessible.hasAccessToken && !jsAccessible.hasRefreshToken) {
       logPass('Auth tokens NOT accessible via JavaScript (HttpOnly protected)');
     } else {
       logFail('Auth tokens accessible via JavaScript (HttpOnly not set)');
     }
-    
+
     // Verify from network request headers that HttpOnly flag is set
-    const response = await page.goto(`${BASE_URL}/api/auth/login`, {
-      method: 'POST',
-      data: JSON.stringify({ username_or_email: 'medenor', password: 'xxx' }),
-      headers: { 'Content-Type': 'application/json' }
-    }).catch(() => null);
-    
+    const response = await page
+      .goto(`${BASE_URL}/api/auth/login`, {
+        method: 'POST',
+        data: JSON.stringify({ username_or_email: 'medenor', password: 'xxx' }),
+        headers: { 'Content-Type': 'application/json' },
+      })
+      .catch(() => null);
+
     if (response) {
       const headers = response.headers();
       const setCookieHeader = headers['set-cookie'];
-      
-      if (setCookieHeader && (Array.isArray(setCookieHeader) ? setCookieHeader[0] : setCookieHeader).includes('HttpOnly')) {
+
+      if (
+        setCookieHeader &&
+        (Array.isArray(setCookieHeader) ? setCookieHeader[0] : setCookieHeader).includes('HttpOnly')
+      ) {
         logPass('HttpOnly flag confirmed in Set-Cookie header');
       }
     }
-    
   } catch (error) {
     logFail(`Error during HTTP-Only test: ${error.message}`);
   }
@@ -93,24 +97,24 @@ async function test009_csrfProtection(page) {
     const csrfResponse = await page.context().request.post(`${BASE_URL}/api/auth/login`, {
       data: {
         username_or_email: 'medenor',
-        password: 'xxx'
-      }
+        password: 'xxx',
+      },
     });
-    
+
     const headers = csrfResponse.headers();
     const setCookieHeaders = headers['set-cookie'];
-    
+
     if (setCookieHeaders) {
       const cookies = Array.isArray(setCookieHeaders) ? setCookieHeaders : [setCookieHeaders];
       let sameSiteValues = [];
-      
+
       for (const cookieHeader of cookies) {
         const match = cookieHeader.match(/SameSite=(\w+)/i);
         if (match) {
           sameSiteValues.push(match[1].toLowerCase());
         }
       }
-      
+
       if (sameSiteValues.length > 0) {
         const uniqueValues = [...new Set(sameSiteValues)];
         if (uniqueValues.includes('strict')) {
@@ -126,7 +130,6 @@ async function test009_csrfProtection(page) {
     } else {
       logFail('No Set-Cookie headers found in response');
     }
-    
   } catch (error) {
     logFail(`Error during CSRF test: ${error.message}`);
   }
@@ -138,10 +141,10 @@ async function test010_securityHeaders(page) {
   try {
     // Make a request and capture response headers
     const response = await page.context().request.get(`${BASE_URL}/`);
-    
+
     const headers = response.headers();
     logInfo(`Checking ${Object.keys(headers).length} response headers`);
-    
+
     const securityHeaders = {
       'strict-transport-security': false,
       'content-security-policy': false,
@@ -149,24 +152,25 @@ async function test010_securityHeaders(page) {
       'x-content-type-options': false,
       'x-xss-protection': false,
     };
-    
+
     const foundHeaders = [];
-    
+
     for (const [key, value] of Object.entries(headers)) {
       const lowerKey = key.toLowerCase();
       if (lowerKey in securityHeaders && value) {
         securityHeaders[lowerKey] = true;
-        foundHeaders.push(`${key}: ${typeof value === 'string' ? value.substring(0, 60) : value}${typeof value === 'string' && value.length > 60 ? '...' : ''}`);
+        foundHeaders.push(
+          `${key}: ${typeof value === 'string' ? value.substring(0, 60) : value}${typeof value === 'string' && value.length > 60 ? '...' : ''}`
+        );
       }
     }
-    
+
     if (foundHeaders.length > 0) {
       logPass(`${foundHeaders.length} security headers found`);
-      foundHeaders.forEach(h => logInfo(`  - ${h}`));
+      foundHeaders.forEach((h) => logInfo(`  - ${h}`));
     } else {
       logFail('No advanced security headers found (HSTS, CSP, X-Frame-Options)');
     }
-    
   } catch (error) {
     logFail(`Error during security headers test: ${error.message}`);
   }
@@ -178,22 +182,24 @@ async function test003_tokenExpiration(page) {
   try {
     // Navigate to login
     await page.goto(`${BASE_URL}/auth/login`);
-    
+
     // Enter credentials
     await page.fill('input[placeholder*="utilisateur"]', 'medenor');
     await page.fill('input[placeholder*="Mot de passe"]', 'xxx');
-    
+
     // Submit login
     await page.click('button:has-text("Se connecter")');
-    
+
     // Wait for redirect
     await page.waitForURL(`${BASE_URL}/`);
-    
+
     // Get the access token from network responses
-    const loginResponse = await page.waitForResponse(response => 
-      response.url().includes('/api/auth/login') && response.status() === 200
-    ).catch(() => null);
-    
+    const loginResponse = await page
+      .waitForResponse(
+        (response) => response.url().includes('/api/auth/login') && response.status() === 200
+      )
+      .catch(() => null);
+
     if (loginResponse) {
       const body = await loginResponse.json().catch(() => null);
       if (body && body.access_token) {
@@ -204,14 +210,13 @@ async function test003_tokenExpiration(page) {
           const expTime = new Date(payload.exp * 1000);
           const now = new Date();
           const minutesLeft = (expTime - now) / (1000 * 60);
-          
+
           logPass(`Token obtained and expires in ${Math.round(minutesLeft)} minutes`);
         }
       }
     } else {
       logSkip('Could not intercept login response');
     }
-    
   } catch (error) {
     logFail(`Error during token expiration test: ${error.message}`);
   }
@@ -255,7 +260,7 @@ async function runTests() {
   }
 }
 
-runTests().catch(error => {
+runTests().catch((error) => {
   console.error('Test execution error:', error);
   process.exit(1);
 });

@@ -5,10 +5,10 @@ and provides guidance for maintaining a linear history.
 
 ## Current Revision Chain
 
-| Order | Revision ID | File | Description | Notes |
-|-------|-------------|------|-------------|-------|
-| 1 | `134639ee25d5` | `versions/134639ee25d5_initial_schema_with_users_prompts_.py` | Initial schema with users, prompts, versions, categories, tags, branches, and backups | Base schema |
-| 2 | `7182f1f03364` | `versions/7182f1f03364_fix_prompts_id_autoincrement.py` | Fix prompts id autoincrement, needed to add new prompts |
+| Order | Revision ID    | File                                                          | Description                                                                           | Notes       |
+| ----- | -------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------- | ----------- |
+| 1     | `134639ee25d5` | `versions/134639ee25d5_initial_schema_with_users_prompts_.py` | Initial schema with users, prompts, versions, categories, tags, branches, and backups | Base schema |
+| 2     | `7182f1f03364` | `versions/7182f1f03364_fix_prompts_id_autoincrement.py`       | Fix prompts id autoincrement, needed to add new prompts                               |
 
 ## Maintenance Notes
 

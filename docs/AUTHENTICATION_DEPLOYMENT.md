@@ -113,6 +113,7 @@ python scripts/generate_jwt_keys.py
 ```
 
 This will:
+
 - Generate a private/public key pair using ECDSA P-256
 - Save keys to `secrets/jwt/private_key.pem` and `secrets/jwt/public_key.pem`
 - Set appropriate file permissions (600 for private, 644 for public)
@@ -131,6 +132,7 @@ ls -la secrets/jwt/
 ### Security Warning
 
 **IMPORTANT**:
+
 - **NEVER** commit `private_key.pem` to version control
 - The `.gitignore` file already excludes `secrets/` directory
 - Keep backups of your private key in a secure location
@@ -249,6 +251,7 @@ APP_BASE_URL=https://your-domain.com
 #### SMTP Provider Examples
 
 **Gmail** (App Password required):
+
 ```bash
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
@@ -258,6 +261,7 @@ SMTP_PASSWORD=your-app-password
 ```
 
 **SendGrid**:
+
 ```bash
 SMTP_HOST=smtp.sendgrid.net
 SMTP_PORT=587
@@ -267,6 +271,7 @@ SMTP_PASSWORD=your-sendgrid-api-key
 ```
 
 **Amazon SES**:
+
 ```bash
 SMTP_HOST=email-smtp.us-east-1.amazonaws.com
 SMTP_PORT=587
@@ -294,6 +299,7 @@ alembic upgrade head
 ```
 
 This will create the following tables:
+
 - `users` - User accounts with authentication fields
 - `user_sessions` - JWT refresh token tracking with family IDs
 - `password_reset_tokens` - Password reset tokens
@@ -318,6 +324,7 @@ sqlite3 data/promptvault.db ".tables"
 ### Expected Tables
 
 After migration, you should see:
+
 - `users` - User accounts
 - `user_sessions` - Active sessions
 - `password_reset_tokens` - Password reset tokens
@@ -546,6 +553,7 @@ Before deploying to production, verify the following:
 ### Performance
 
 1. **Database Connection Pooling**
+
    ```bash
    DB_POOL_SIZE=20
    DB_POOL_TIMEOUT=30
@@ -557,6 +565,7 @@ Before deploying to production, verify the following:
    - Set up Redis backups
 
 3. **Application Scaling**
+
    ```bash
    # Run multiple workers
    uvicorn src.web.app:app --workers 4 --host 0.0.0.0 --port 8000
@@ -570,6 +579,7 @@ Before deploying to production, verify the following:
 ### Monitoring
 
 1. **Application Logs**
+
    ```bash
    # Configure log level
    LOG_LEVEL=WARNING
@@ -589,6 +599,7 @@ Before deploying to production, verify the following:
 ### Backup Strategy
 
 1. **Database Backups**
+
    ```bash
    # PostgreSQL backup
    pg_dump promptvault > backup_$(date +%Y%m%d).sql
@@ -628,6 +639,7 @@ Before deploying to production, verify the following:
 **Error**: `JWT private key not found at: secrets/jwt/private_key.pem`
 
 **Solution**:
+
 ```bash
 python scripts/generate_jwt_keys.py
 ```
@@ -637,6 +649,7 @@ python scripts/generate_jwt_keys.py
 **Error**: `FATAL: password authentication failed for user`
 
 **Solution**:
+
 - Verify `DATABASE_URL` in `.env`
 - Check PostgreSQL user credentials
 - Ensure PostgreSQL is running: `pg_isready`
@@ -646,6 +659,7 @@ python scripts/generate_jwt_keys.py
 **Error**: `Error connecting to Redis`
 
 **Solution**:
+
 - Verify `REDIS_URL` in `.env`
 - Check Redis is running: `redis-cli ping`
 - Start Redis: `redis-server` or `brew services start redis`
@@ -655,6 +669,7 @@ python scripts/generate_jwt_keys.py
 **Error**: `Target database is not up to date`
 
 **Solution**:
+
 ```bash
 # Check current version
 alembic current
@@ -672,6 +687,7 @@ alembic upgrade head
 **Error**: `Account is locked. Try again after...`
 
 **Solution**:
+
 ```bash
 # Manually unlock in database (PostgreSQL)
 psql -d promptvault -c "UPDATE users SET failed_login_attempts=0, locked_until=NULL WHERE username='username';"
@@ -684,6 +700,7 @@ psql -d promptvault -c "UPDATE users SET failed_login_attempts=0, locked_until=N
 **Error**: `SMTP authentication error`
 
 **Solution**:
+
 - For Gmail: Use App Password, not main password
 - Verify SMTP credentials in `.env`
 - Check SMTP host and port
@@ -694,6 +711,7 @@ psql -d promptvault -c "UPDATE users SET failed_login_attempts=0, locked_until=N
 **Error**: `Rate limit exceeded. Try again later.`
 
 **Solution**:
+
 - Wait for rate limit window to expire
 - Adjust rate limits in `.env` if needed
 - Clear Redis keys (for testing only):
@@ -712,6 +730,7 @@ DB_ECHO=true
 ```
 
 View logs:
+
 ```bash
 # If using systemd
 journalctl -u promptvault -f

@@ -750,7 +750,7 @@ async def update_prompt(
 )
 async def bulk_delete_prompts(
     body: BulkDeleteRequest,
-    admin: Optional[User] = Depends(get_optional_user),
+    admin: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ):
     """Bulk delete prompts (admin only).
@@ -763,7 +763,25 @@ async def bulk_delete_prompts(
     Returns:
         dict: Statistics on deletion results
     """
+    if admin.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin role required",
+        )
+
     prompt_repo = PromptRepository(db)
+
+    backup_id = None
+    try:
+        from src.web import app as web_app
+        backup_service = getattr(web_app, "backup_service", None)
+        if backup_service:
+            backup_id = backup_service.create_backup(
+                "bulk_delete",
+                created_by=admin.username,
+            )
+    except Exception:
+        backup_id = None
 
     deleted_count = 0
     failed_count = 0
@@ -786,24 +804,14 @@ async def bulk_delete_prompts(
 
     db.commit()
 
-    backup_id = None
-    try:
-        from src.web import app as web_app
-        backup_service = getattr(web_app, "backup_service", None)
-        if backup_service:
-            backup_id = backup_service.create_backup("bulk_delete")
-    except Exception:
-        backup_id = None
-
     # Log action
-    if admin:
-        _log_prompt_action(
-            "BULK_DELETE_PROMPTS",
-            0,  # No specific prompt ID
-            admin.id,
-            admin.username,
-            f"deleted={deleted_count}, failed={failed_count}",
-        )
+    _log_prompt_action(
+        "BULK_DELETE_PROMPTS",
+        0,  # No specific prompt ID
+        admin.id,
+        admin.username,
+        f"deleted={deleted_count}, failed={failed_count}",
+    )
 
     return {
         "success": True,

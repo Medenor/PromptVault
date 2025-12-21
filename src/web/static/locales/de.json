@@ -26,6 +26,7 @@
     "save": "Speichern",
     "cancel": "Abbrechen",
     "copy": "Kopieren",
+    "favorite": "Favorit",
     "export": "Exportieren",
     "import": "Importieren",
     "close": "Schließen",
@@ -69,6 +70,7 @@
     "unknownError": "Unbekannter Fehler"
   },
   "validation": {
+    "required": "Dieses Feld ist erforderlich.",
     "titleRequired": "Das Feld 'Prompt-Titel' darf nicht leer sein.",
     "titleTooLong": "Der Titel darf 200 Zeichen nicht überschreiten.",
     "contentRequired": "Das Feld 'Prompt' darf nicht leer sein.",
@@ -111,7 +113,8 @@
   },
   "categories": {
     "manage": "Kategorien verwalten",
-    "manageDesc": "Prompt-Kategorien verwalten"
+    "manageDesc": "Prompt-Kategorien verwalten",
+    "noCategory": "Keine Kategorie"
   },
   "tags": {
     "manage": "Tags verwalten",
@@ -137,6 +140,7 @@
     "modeAppend": "Zu vorhandenen Daten hinzufügen",
     "modeReplace": "Vorhandene Daten ersetzen",
     "modeMerge": "Intelligentes Zusammenführen",
+    "modeHelp": "Anhängen fügt neue Prompts hinzu und behält die vorhandenen (es entstehen Duplikate, wenn die Titel übereinstimmen). Ersetzen löscht vorhandene Prompts vor dem Import. Intelligentes Zusammenführen überspringt Prompts, deren Titel bereits existiert.",
     "importBtn": "Daten importieren",
     "previewTitle": "Vorschau",
     "statisticsTitle": "Statistiken und Verlauf",
@@ -238,6 +242,8 @@
     "oldestBackup": "Älteste Sicherung:",
     "confirmRestore": "Wiederherstellung bestätigen",
     "restoreWarning": "Sind Sie sicher, dass Sie aus dieser Sicherung wiederherstellen möchten? Dies ersetzt Ihre aktuellen Daten.",
+    "restoreInProgress": "Sicherung wird wiederhergestellt... bitte warten.",
+    "restoreRedirect": "Wiederherstellung abgeschlossen. Weiterleitung zur Hauptanwendung...",
     "restoreBtn": "Wiederherstellen",
     "confirmDelete": "Löschen bestätigen",
     "deleteWarning": "Sind Sie sicher, dass Sie diese Sicherung löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.",

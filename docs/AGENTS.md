@@ -14,12 +14,17 @@ PromptVault is a modern web-based prompt management application built with FastA
 - **Run with Custom Port**: `PORT=8001 python run_web.py`
 - **Run with Docker**: `docker-compose up --build` (production, port 8001)
 - **NEVER manually start uvicorn** - Always use the provided startup scripts
+- **Frontend Dev Server**: `npm run dev` (Vite, default port 5173)
 
 ### Code Quality
 
 - **Format Code**: Use black code formatter (configured in project)
 - **Python Version**: Python 3.11+ minimum (required for database features)
 - **Before Commits**: Run full test suite and ensure coverage meets 85% threshold
+- **Frontend Lint**: `npm run lint` (ESLint) and `npm run format` (Prettier)
+- **Frontend Typecheck**: `npm run typecheck`
+- **Type-safe i18n**: Use `t('key.path')` with `TranslationKey` for compile-time safety. Use `tUnsafe()` only for dynamic keys (e.g. `data-i18n` attributes).
+- **Locale Sources**: Translation keys live in `src/web/static/locales/*.json` (TypeScript keys inferred from `en.json`).
 
 ### Testing
 
@@ -34,13 +39,14 @@ PromptVault is a modern web-based prompt management application built with FastA
 - **Coverage Threshold**: 85% minimum (enforced in pytest.ini)
 - **Current Coverage**: 86.46% (514 passing tests, 100% pass rate)
 - **Test Documentation**: See `docs/TESTING.md` for comprehensive guide
+- **Frontend Unit Tests**: `npm run test:unit` (Vitest)
+- **Frontend Coverage**: `npm run test:unit:coverage` (Vitest + v8)
 
 ## High-Level Architecture
 
 ### Core Systems
 
 1. **Database Layer** ([`src/db/`](src/db/))
-
    - **Database Models** ([`models.py`](src/db/models.py)): SQLAlchemy ORM models
      - `Prompt`: Main prompt entity with relationships
      - `PromptVersion`: Git-like version snapshots
@@ -62,7 +68,6 @@ PromptVault is a modern web-based prompt management application built with FastA
      - Connection pooling and session management
 
 2. **Service Layer** ([`src/services/`](src/services/))
-
    - **PromptDataServiceDB** ([`prompt_data_service_db.py`](src/services/prompt_data_service_db.py)): Core data operations
      - Handles all CRUD operations for prompts
      - Database-backed persistence with transactions
@@ -107,7 +112,6 @@ PromptVault is a modern web-based prompt management application built with FastA
      - **VersionExportService** ([`version_export_service.py`](src/services/version_export_service.py)): Export version history and diffs (deprecated)
 
 3. **Web Application Layer** ([`src/web/`](src/web/))
-
    - **FastAPI Application** ([`app.py`](src/web/app.py)): Main web server
      - RESTful API endpoints
      - Jinja2 template rendering
@@ -121,15 +125,15 @@ PromptVault is a modern web-based prompt management application built with FastA
      - [`backup_management.html`](src/web/templates/backup_management.html): Backup management interface
 
    - **Static Assets** ([`static/`](src/web/static/)):
-     - **JavaScript** ([`js/`](src/web/static/js/)): Client-side application logic
-       - [`app.js`](src/web/static/js/app.js): Main UI logic and API interactions
-       - [`import_export.js`](src/web/static/js/import_export.js): Import/export functionality
-       - [`backup_management.js`](src/web/static/js/backup_management.js): Backup management UI
+     - **TypeScript** ([`ts/`](src/web/static/ts/)): Client-side application logic (active source)
+       - [`app.ts`](src/web/static/ts/app.ts): Main UI logic and API interactions
+       - [`import-export.ts`](src/web/static/ts/import-export.ts): Import/export functionality
+       - [`backup-management.ts`](src/web/static/ts/backup-management.ts): Backup management UI
+     - **JavaScript** ([`js/`](src/web/static/js/)): Legacy sources (do not modify for new work)
      - **CSS** ([`css/style.css`](src/web/static/css/style.css)): Application styling
      - **i18n** ([`locales/`](src/web/static/locales/)): Translation files (en, fr, es, de)
 
 4. **Data Storage**
-
    - **Primary Data Store**: Database (SQLite or PostgreSQL)
      - **SQLite**: `data/prompts.db` (development and default)
      - **PostgreSQL**: Configured via `DATABASE_URL` environment variable (production)
@@ -550,28 +554,28 @@ cat docs/TESTING.md
 
 ### Key Files
 
-| File | Purpose |
-|------|---------|
-| [`run_web.py`](run_web.py) | Web server startup script |
-| [`src/web/app.py`](src/web/app.py) | FastAPI application and routes |
-| [`src/db/models.py`](src/db/models.py) | SQLAlchemy database models |
-| [`src/db/config.py`](src/db/config.py) | Database configuration and session management |
-| [`src/db/repositories/`](src/db/repositories/) | Repository layer (data access) |
-| [`src/services/prompt_data_service_db.py`](src/services/prompt_data_service_db.py) | Database-backed data service |
-| [`src/services/backup_service_db.py`](src/services/backup_service_db.py) | Database-backed backup service |
-| [`data/prompts.db`](data/prompts.db) | SQLite database (development) |
-| [`tests/conftest.py`](tests/conftest.py) | Test fixtures (30 database-aware fixtures) |
-| [`tests/test_db_repositories.py`](tests/test_db_repositories.py) | Repository layer tests |
-| [`tests/test_db_services.py`](tests/test_db_services.py) | Service layer tests |
-| [`tests/test_version_system.py`](tests/test_version_system.py) | Version control tests |
-| [`docs/TESTING.md`](docs/TESTING.md) | Comprehensive testing guide |
-| [`docs/SPECS/SPEC_DATABASE.md`](docs/SPECS/SPEC_DATABASE.md) | Database architecture specification |
-| [`pyproject.toml`](pyproject.toml) | Project configuration |
-| [`pytest.ini`](pytest.ini) | Test configuration |
-| [`.coveragerc`](.coveragerc) | Coverage configuration (excludes legacy code) |
-| [`Dockerfile`](Dockerfile) | Container configuration |
-| [`docker-compose.yml`](docker-compose.yml) | Docker Compose setup |
-| [`CHANGELOG.md`](CHANGELOG.md) | Release history |
+| File                                                                               | Purpose                                       |
+| ---------------------------------------------------------------------------------- | --------------------------------------------- |
+| [`run_web.py`](run_web.py)                                                         | Web server startup script                     |
+| [`src/web/app.py`](src/web/app.py)                                                 | FastAPI application and routes                |
+| [`src/db/models.py`](src/db/models.py)                                             | SQLAlchemy database models                    |
+| [`src/db/config.py`](src/db/config.py)                                             | Database configuration and session management |
+| [`src/db/repositories/`](src/db/repositories/)                                     | Repository layer (data access)                |
+| [`src/services/prompt_data_service_db.py`](src/services/prompt_data_service_db.py) | Database-backed data service                  |
+| [`src/services/backup_service_db.py`](src/services/backup_service_db.py)           | Database-backed backup service                |
+| [`data/prompts.db`](data/prompts.db)                                               | SQLite database (development)                 |
+| [`tests/conftest.py`](tests/conftest.py)                                           | Test fixtures (30 database-aware fixtures)    |
+| [`tests/test_db_repositories.py`](tests/test_db_repositories.py)                   | Repository layer tests                        |
+| [`tests/test_db_services.py`](tests/test_db_services.py)                           | Service layer tests                           |
+| [`tests/test_version_system.py`](tests/test_version_system.py)                     | Version control tests                         |
+| [`docs/TESTING.md`](docs/TESTING.md)                                               | Comprehensive testing guide                   |
+| [`docs/SPECS/SPEC_DATABASE.md`](docs/SPECS/SPEC_DATABASE.md)                       | Database architecture specification           |
+| [`pyproject.toml`](pyproject.toml)                                                 | Project configuration                         |
+| [`pytest.ini`](pytest.ini)                                                         | Test configuration                            |
+| [`.coveragerc`](.coveragerc)                                                       | Coverage configuration (excludes legacy code) |
+| [`Dockerfile`](Dockerfile)                                                         | Container configuration                       |
+| [`docker-compose.yml`](docker-compose.yml)                                         | Docker Compose setup                          |
+| [`CHANGELOG.md`](CHANGELOG.md)                                                     | Release history                               |
 
 ## Summary
 
