@@ -10,20 +10,28 @@
 
 The PromptVault test suite has been completely rewritten from scratch to provide comprehensive coverage of the database-backed architecture. The suite achieves **86.46% code coverage** (exceeding the 85% requirement) with **514 passing tests** and a **100% pass rate**.
 
+Frontend unit tests run with Vitest against TypeScript sources in `src/web/static/ts`, with coverage enforced via v8. Coverage reports are printed to the console and saved to `coverage/` when enabled.
+
 ## Quick Start
 
 ```bash
-# Install test dependencies
+# Install backend test dependencies
 pip install -e .[test]
 
-# Run full test suite (use python3 -m pytest to ensure correct version)
+# Run backend test suite (use python3 -m pytest to ensure correct version)
 python3 -m pytest
 
-# Run with coverage report
+# Run backend coverage report
 python3 -m pytest --cov=src --cov-report=html:htmlcov
 
-# View coverage report
+# View backend coverage report
 open htmlcov/index.html  # macOS
+
+# Frontend unit tests (TypeScript)
+npm run test:unit
+
+# Frontend coverage (Vitest + v8)
+npm run test:unit:coverage
 ```
 
 > **Important:** Always use `python3 -m pytest` instead of `pytest` directly to ensure the correct pytest version and dependencies are used. This avoids version conflicts with globally installed packages.

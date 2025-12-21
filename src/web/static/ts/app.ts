@@ -10,7 +10,8 @@
 
 import '@/form-validation';
 import type { PromptResponse, PromptListResponse } from '@/types';
-import { initI18n, t, updateStaticTranslations, changeLanguage } from '@/utils/i18n';
+import type { TranslationKey } from '@/types/i18n';
+import { initI18n, t, tUnsafe, updateStaticTranslations, changeLanguage } from '@/utils/i18n';
 
 interface TagInfo {
   name: string;
@@ -128,7 +129,7 @@ function clearPromptFormErrors(): void {
   }
 }
 
-function showPromptFieldError(fieldId: string, errorId: string, messageKey: string): void {
+function showPromptFieldError(fieldId: string, errorId: string, messageKey: TranslationKey): void {
   const errorEl = document.getElementById(errorId);
   const field = document.getElementById(fieldId);
   const message = t(messageKey);
@@ -433,7 +434,7 @@ function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement
   div.querySelectorAll('[data-i18n]').forEach((element) => {
     const key = element.getAttribute('data-i18n');
     if (key) {
-      element.textContent = t(key);
+      element.textContent = tUnsafe(key);
     }
   });
 
@@ -695,7 +696,7 @@ function showCopyFeedback(id: PromptId, message: string): void {
   if (btn) {
     const originalText = btn.textContent ?? '';
     // Use translated message if it's a key, otherwise use as-is
-    const translatedMessage = t(message) !== message ? t(message) : message;
+  const translatedMessage = tUnsafe(message) !== message ? tUnsafe(message) : message;
     btn.textContent = translatedMessage;
     setTimeout(() => (btn.textContent = originalText), 2000);
   }

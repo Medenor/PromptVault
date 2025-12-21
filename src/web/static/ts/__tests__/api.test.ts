@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 
 vi.mock('i18next', () => ({
   default: {
@@ -19,6 +19,28 @@ import {
 describe('api utils', () => {
   beforeEach(() => {
     vi.stubGlobal('fetch', vi.fn());
+    // Mock window.location
+    delete (window as any).location;
+    window.location = { href: '', pathname: '/app' } as any;
+
+    const createStorage = () => {
+      const store = new Map<string, string>();
+      return {
+        getItem: (key: string) => store.get(key) ?? null,
+        setItem: (key: string, value: string) => {
+          store.set(key, value);
+        },
+        removeItem: (key: string) => {
+          store.delete(key);
+        },
+        clear: () => {
+          store.clear();
+        },
+      };
+    };
+
+    vi.stubGlobal('localStorage', createStorage());
+    vi.stubGlobal('sessionStorage', createStorage());
   });
 
   afterEach(() => {
@@ -33,7 +55,7 @@ describe('api utils', () => {
       json: vi.fn().mockResolvedValue({ value: 42 }),
     };
 
-    (globalThis.fetch as unknown as vi.Mock).mockResolvedValue(response);
+    (globalThis.fetch as unknown as Mock).mockResolvedValue(response);
 
     const result = await apiFetch<{ value: number }>('/api/test');
     expect(result.value).toBe(42);
@@ -46,7 +68,7 @@ describe('api utils', () => {
       json: vi.fn().mockResolvedValue({ status: 'ok' }),
     };
 
-    const fetchMock = globalThis.fetch as unknown as vi.Mock;
+    const fetchMock = globalThis.fetch as unknown as Mock;
     fetchMock.mockResolvedValue(response);
 
     const getResult = await apiGet<{ status: string }>('/api/test');
@@ -85,7 +107,7 @@ describe('api utils', () => {
       json: vi.fn(),
     };
 
-    (globalThis.fetch as unknown as vi.Mock).mockResolvedValue(response);
+    (globalThis.fetch as unknown as Mock).mockResolvedValue(response);
 
     const result = await apiFetch<Record<string, never>>('/api/test');
     expect(result).toEqual({});
@@ -101,7 +123,7 @@ describe('api utils', () => {
       json: vi.fn().mockResolvedValue({ detail: [{ msg: 'Validation failed' }] }),
     };
 
-    (globalThis.fetch as unknown as vi.Mock).mockResolvedValue(response);
+    (globalThis.fetch as unknown as Mock).mockResolvedValue(response);
 
     await expect(apiFetch('/api/test')).rejects.toBeInstanceOf(APIRequestError);
     await expect(apiFetch('/api/test')).rejects.toMatchObject({ status: 422 });
@@ -124,7 +146,7 @@ describe('api utils', () => {
       json: vi.fn().mockRejectedValue(new Error('bad json')),
     };
 
-    (globalThis.fetch as unknown as vi.Mock).mockResolvedValue(response);
+    (globalThis.fetch as unknown as Mock).mockResolvedValue(response);
 
     await expect(apiFetch('/api/test')).rejects.toThrow('HTTP 500: Server Error');
   });
@@ -132,7 +154,7 @@ describe('api utils', () => {
   it('times out when fetch aborts', async () => {
     vi.useFakeTimers();
 
-    (globalThis.fetch as unknown as vi.Mock).mockImplementation(
+    (globalThis.fetch as unknown as Mock).mockImplementation(
       (_url: string, init?: RequestInit) =>
         new Promise((_resolve, reject) => {
           init?.signal?.addEventListener('abort', () => {
@@ -159,7 +181,7 @@ describe('api utils', () => {
       json: vi.fn().mockResolvedValue({ uploaded: true }),
     };
 
-    (globalThis.fetch as unknown as vi.Mock).mockResolvedValue(response);
+    (globalThis.fetch as unknown as Mock).mockResolvedValue(response);
 
     const formData = new FormData();
     formData.append('file', new Blob(['data']), 'file.txt');
@@ -177,9 +199,265 @@ describe('api utils', () => {
       json: vi.fn().mockResolvedValue({ detail: 'Invalid form' }),
     };
 
-    (globalThis.fetch as unknown as vi.Mock).mockResolvedValue(response);
+    (globalThis.fetch as unknown as Mock).mockResolvedValue(response);
 
     const formData = new FormData();
     await expect(apiPostForm('/api/upload', formData)).rejects.toBeInstanceOf(APIRequestError);
+  });
+
+  describe('automatic token refresh', () => {
+    it('automatically refreshes token on 401 and retries request', async () => {
+      localStorage.setItem('refresh_token', 'old_refresh_token');
+
+      const fetchMock = globalThis.fetch as unknown as Mock;
+
+      // First call returns 401
+      const unauthorizedResponse = {
+        ok: false,
+        status: 401,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: vi.fn().mockResolvedValue({ detail: 'Unauthorized' }),
+      };
+
+      // Second call is refresh token request - returns new tokens
+      const refreshResponse = {
+        ok: true,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: vi.fn().mockResolvedValue({
+          access_token: 'new_access_token',
+          refresh_token: 'new_refresh_token',
+          token_type: 'Bearer',
+          expires_in: 900,
+        }),
+      };
+
+      // Third call is retry of original request - returns success
+      const successResponse = {
+        ok: true,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: vi.fn().mockResolvedValue({ data: 'success' }),
+      };
+
+      fetchMock
+        .mockResolvedValueOnce(unauthorizedResponse)
+        .mockResolvedValueOnce(refreshResponse)
+        .mockResolvedValueOnce(successResponse);
+
+      const result = await apiFetch<{ data: string }>('/api/test');
+
+      expect(result.data).toBe('success');
+      expect(fetchMock).toHaveBeenCalledTimes(3);
+      expect(fetchMock).toHaveBeenNthCalledWith(
+        2,
+        '/api/auth/refresh',
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({ refresh_token: 'old_refresh_token' }),
+        })
+      );
+      expect(localStorage.getItem('access_token')).toBe('new_access_token');
+      expect(localStorage.getItem('refresh_token')).toBe('new_refresh_token');
+    });
+
+    it('redirects to login when refresh token is invalid', async () => {
+      localStorage.setItem('refresh_token', 'invalid_refresh_token');
+
+      const fetchMock = globalThis.fetch as unknown as Mock;
+
+      // First call returns 401
+      const unauthorizedResponse = {
+        ok: false,
+        status: 401,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: vi.fn().mockResolvedValue({ detail: 'Unauthorized' }),
+      };
+
+      // Refresh token request fails
+      const refreshFailedResponse = {
+        ok: false,
+        status: 401,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: vi.fn().mockResolvedValue({ detail: 'Invalid refresh token' }),
+      };
+
+      fetchMock.mockResolvedValueOnce(unauthorizedResponse).mockResolvedValueOnce(refreshFailedResponse);
+
+      await expect(apiFetch('/api/test')).rejects.toBeInstanceOf(APIRequestError);
+
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(localStorage.getItem('access_token')).toBeNull();
+      expect(localStorage.getItem('refresh_token')).toBeNull();
+      expect(window.location.href).toBe('/auth/login');
+    });
+
+    it('does not refresh when already on auth page', async () => {
+      window.location.pathname = '/auth/login';
+      localStorage.setItem('refresh_token', 'refresh_token');
+
+      const fetchMock = globalThis.fetch as unknown as Mock;
+
+      const unauthorizedResponse = {
+        ok: false,
+        status: 401,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: vi.fn().mockResolvedValue({ detail: 'Unauthorized' }),
+      };
+
+      const refreshFailedResponse = {
+        ok: false,
+        status: 401,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: vi.fn().mockResolvedValue({ detail: 'Invalid refresh token' }),
+      };
+
+      fetchMock.mockResolvedValueOnce(unauthorizedResponse).mockResolvedValueOnce(refreshFailedResponse);
+
+      await expect(apiFetch('/api/test')).rejects.toBeInstanceOf(APIRequestError);
+
+      // Should clear tokens but not redirect
+      expect(localStorage.getItem('refresh_token')).toBeNull();
+      expect(window.location.href).toBe(''); // unchanged
+    });
+
+    it('does not attempt refresh for /api/auth/refresh endpoint', async () => {
+      localStorage.setItem('refresh_token', 'refresh_token');
+
+      const fetchMock = globalThis.fetch as unknown as Mock;
+
+      const unauthorizedResponse = {
+        ok: false,
+        status: 401,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: vi.fn().mockResolvedValue({ detail: 'Invalid refresh token' }),
+      };
+
+      fetchMock.mockResolvedValueOnce(unauthorizedResponse);
+
+      await expect(apiFetch('/api/auth/refresh')).rejects.toBeInstanceOf(APIRequestError);
+
+      // Should only call fetch once, no retry
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not retry more than once', async () => {
+      localStorage.setItem('refresh_token', 'refresh_token');
+
+      const fetchMock = globalThis.fetch as unknown as Mock;
+
+      const unauthorizedResponse = {
+        ok: false,
+        status: 401,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: vi.fn().mockResolvedValue({ detail: 'Unauthorized' }),
+      };
+
+      const refreshResponse = {
+        ok: true,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: vi.fn().mockResolvedValue({
+          access_token: 'new_access_token',
+          refresh_token: 'new_refresh_token',
+          token_type: 'Bearer',
+          expires_in: 900,
+        }),
+      };
+
+      // Mock: original request fails, refresh succeeds, retry fails
+      fetchMock
+        .mockResolvedValueOnce(unauthorizedResponse)
+        .mockResolvedValueOnce(refreshResponse)
+        .mockResolvedValueOnce(unauthorizedResponse);
+
+      await expect(apiFetch('/api/test')).rejects.toBeInstanceOf(APIRequestError);
+
+      // Should only try 3 times: original + refresh + retry
+      expect(fetchMock).toHaveBeenCalledTimes(3);
+    });
+
+    it('handles token refresh in sessionStorage', async () => {
+      sessionStorage.setItem('refresh_token', 'session_refresh_token');
+
+      const fetchMock = globalThis.fetch as unknown as Mock;
+
+      const unauthorizedResponse = {
+        ok: false,
+        status: 401,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: vi.fn().mockResolvedValue({ detail: 'Unauthorized' }),
+      };
+
+      const refreshResponse = {
+        ok: true,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: vi.fn().mockResolvedValue({
+          access_token: 'new_access_token',
+          refresh_token: 'new_refresh_token',
+          token_type: 'Bearer',
+          expires_in: 900,
+        }),
+      };
+
+      const successResponse = {
+        ok: true,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: vi.fn().mockResolvedValue({ data: 'success' }),
+      };
+
+      fetchMock
+        .mockResolvedValueOnce(unauthorizedResponse)
+        .mockResolvedValueOnce(refreshResponse)
+        .mockResolvedValueOnce(successResponse);
+
+      const result = await apiFetch<{ data: string }>('/api/test');
+
+      expect(result.data).toBe('success');
+      expect(sessionStorage.getItem('access_token')).toBe('new_access_token');
+      expect(sessionStorage.getItem('refresh_token')).toBe('new_refresh_token');
+      expect(localStorage.getItem('access_token')).toBeNull();
+      expect(localStorage.getItem('refresh_token')).toBeNull();
+    });
+
+    it('refreshes tokens for apiPostForm on 401', async () => {
+      localStorage.setItem('refresh_token', 'refresh_token');
+
+      const fetchMock = globalThis.fetch as unknown as Mock;
+
+      const unauthorizedResponse = {
+        ok: false,
+        status: 401,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: vi.fn().mockResolvedValue({ detail: 'Unauthorized' }),
+      };
+
+      const refreshResponse = {
+        ok: true,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: vi.fn().mockResolvedValue({
+          access_token: 'new_access_token',
+          refresh_token: 'new_refresh_token',
+          token_type: 'Bearer',
+          expires_in: 900,
+        }),
+      };
+
+      const successResponse = {
+        ok: true,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: vi.fn().mockResolvedValue({ uploaded: true }),
+      };
+
+      fetchMock
+        .mockResolvedValueOnce(unauthorizedResponse)
+        .mockResolvedValueOnce(refreshResponse)
+        .mockResolvedValueOnce(successResponse);
+
+      const formData = new FormData();
+      formData.append('file', new Blob(['data']), 'file.txt');
+
+      const result = await apiPostForm<{ uploaded: boolean }>('/api/upload', formData);
+
+      expect(result.uploaded).toBe(true);
+      expect(fetchMock).toHaveBeenCalledTimes(3);
+    });
   });
 });

@@ -26,6 +26,7 @@
     "save": "Save",
     "cancel": "Cancel",
     "copy": "Copy",
+    "favorite": "Favorite",
     "export": "Export",
     "import": "Import",
     "close": "Close",
@@ -69,6 +70,7 @@
     "unknownError": "Unknown error"
   },
   "validation": {
+    "required": "This field is required.",
     "titleRequired": "The 'Prompt Title' field cannot be empty.",
     "titleTooLong": "Title cannot exceed 200 characters.",
     "contentRequired": "The 'Prompt' field cannot be empty.",
@@ -111,7 +113,8 @@
   },
   "categories": {
     "manage": "Manage Categories",
-    "manageDesc": "Manage prompt categories"
+    "manageDesc": "Manage prompt categories",
+    "noCategory": "No category"
   },
   "tags": {
     "manage": "Manage Tags",

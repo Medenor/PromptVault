@@ -11,6 +11,7 @@
 import { reportError } from '@/telemetry';
 import '@/form-validation';
 import { changeLanguage, initI18n, t, updateStaticTranslations } from '@/utils/i18n';
+import type { TranslationKey } from '@/types/i18n';
 import { hideElement, showElement } from '@/utils/dom';
 
 interface BackupItem {
@@ -445,7 +446,7 @@ function showStatus(elementId: string, message: string, type: 'info' | 'success'
   }
 }
 
-function setRestoreInProgress(isRestoring: boolean, messageKey?: string): void {
+function setRestoreInProgress(isRestoring: boolean, messageKey?: TranslationKey): void {
   const modal = document.getElementById('restore-modal');
   const status = document.getElementById('restore-status');
   const closeButton = modal?.querySelector('.close') as HTMLElement | null;

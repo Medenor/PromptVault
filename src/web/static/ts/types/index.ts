@@ -7,6 +7,7 @@
 export * from './api/enums';
 export * from './api/requests';
 export * from './api/responses';
+export * from './i18n';
 export * from './state/app-state';
 export * from './validation';
 

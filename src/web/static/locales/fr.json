@@ -26,6 +26,7 @@
     "save": "Enregistrer",
     "cancel": "Annuler",
     "copy": "Copier",
+    "favorite": "Favori",
     "export": "Exporter",
     "import": "Importer",
     "close": "Fermer",
@@ -69,6 +70,7 @@
     "unknownError": "Erreur inconnue"
   },
   "validation": {
+    "required": "Ce champ est obligatoire.",
     "titleRequired": "Le champ 'Titre du Prompt' ne peut pas être vide.",
     "titleTooLong": "Le titre ne peut pas dépasser 200 caractères.",
     "contentRequired": "Le champ 'Prompt' ne peut pas être vide.",
@@ -111,7 +113,8 @@
   },
   "categories": {
     "manage": "Gérer les catégories",
-    "manageDesc": "Gérer les catégories de prompts"
+    "manageDesc": "Gérer les catégories de prompts",
+    "noCategory": "Aucune catégorie"
   },
   "tags": {
     "manage": "Gérer les étiquettes",

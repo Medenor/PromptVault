@@ -8,7 +8,8 @@
  * Notification and status message utilities
  */
 
-import i18next from 'i18next';
+import type { TranslationKey } from '@/types/i18n';
+import { t } from '@/utils/i18n';
 
 export type NotificationType = 'info' | 'success' | 'warning' | 'error';
 
@@ -68,7 +69,7 @@ export function hideStatus(elementId: string): void {
 export function showLoading(elementId: string, message?: string): void {
   const element = document.getElementById(elementId);
   if (element) {
-    element.textContent = message || i18next.t('common.loading');
+    element.textContent = message || t('messages.loading');
     element.classList.remove('is-hidden');
   }
 }
@@ -76,8 +77,8 @@ export function showLoading(elementId: string, message?: string): void {
 /**
  * Confirm dialog wrapper with translation support
  */
-export function confirmAction(messageKey: string, options?: Record<string, unknown>): boolean {
-  const message = options ? i18next.t(messageKey, options) : i18next.t(messageKey);
+export function confirmAction(messageKey: TranslationKey, options?: Record<string, unknown>): boolean {
+  const message = options ? t(messageKey, options) : t(messageKey);
   return window.confirm(message);
 }
 

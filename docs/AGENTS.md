@@ -23,6 +23,8 @@ PromptVault is a modern web-based prompt management application built with FastA
 - **Before Commits**: Run full test suite and ensure coverage meets 85% threshold
 - **Frontend Lint**: `npm run lint` (ESLint) and `npm run format` (Prettier)
 - **Frontend Typecheck**: `npm run typecheck`
+- **Type-safe i18n**: Use `t('key.path')` with `TranslationKey` for compile-time safety. Use `tUnsafe()` only for dynamic keys (e.g. `data-i18n` attributes).
+- **Locale Sources**: Translation keys live in `src/web/static/locales/*.json` (TypeScript keys inferred from `en.json`).
 
 ### Testing
 

@@ -33,16 +33,16 @@ import { changeLanguage, initI18n, t, updateStaticTranslations } from '@/utils/i
 
 describe('i18n utils', () => {
   it('translates keys with and without options', () => {
-    expect(t('hello')).toBe('tr:hello');
-    expect(t('hello', { name: 'world' })).toBe('tr:hello');
+    expect(t('nav.newPrompt')).toBe('tr:nav.newPrompt');
+    expect(t('nav.newPrompt', { name: 'world' })).toBe('tr:nav.newPrompt');
   });
 
   it('updates static translations in the DOM', () => {
     document.body.innerHTML = `
-      <div data-i18n="common.ok"></div>
-      <input data-i18n-placeholder="common.search" />
-      <span data-i18n-title="common.title"></span>
-      <button data-i18n="[title]common.tooltip"></button>
+      <div data-i18n="nav.prompts"></div>
+      <input data-i18n-placeholder="nav.searchPlaceholder" />
+      <span data-i18n-title="actions.delete"></span>
+      <button data-i18n="[title]actions.refresh"></button>
       <select id="language-selector">
         <option value="en">English</option>
       </select>
@@ -50,20 +50,24 @@ describe('i18n utils', () => {
 
     updateStaticTranslations();
 
-    const textNode = document.querySelector('[data-i18n="common.ok"]');
+    const textNode = document.querySelector('[data-i18n="nav.prompts"]');
     const input = document.querySelector('[data-i18n-placeholder]') as HTMLInputElement | null;
     const titled = document.querySelector('[data-i18n-title]') as HTMLElement | null;
     const tooltip = document.querySelector('button[data-i18n]') as HTMLElement | null;
     const selector = document.getElementById('language-selector') as HTMLSelectElement | null;
 
-    expect(textNode?.textContent).toBe('tr:common.ok');
-    expect(input?.placeholder).toBe('tr:common.search');
-    expect(titled?.title).toBe('tr:common.title');
-    expect(tooltip?.getAttribute('title')).toBe('tr:common.tooltip');
+    expect(textNode?.textContent).toBe('tr:nav.prompts');
+    expect(input?.placeholder).toBe('tr:nav.searchPlaceholder');
+    expect(titled?.title).toBe('tr:actions.delete');
+    expect(tooltip?.getAttribute('title')).toBe('tr:actions.refresh');
     expect(selector?.value).toBe('en');
   });
 
   it('initializes and resolves language changes', async () => {
+    Object.defineProperty(document, 'readyState', {
+      value: 'complete',
+      configurable: true
+    });
     const callback = vi.fn();
     initI18n(callback);
     expect(callback).toHaveBeenCalled();

@@ -20,9 +20,9 @@ describe('notifications utils', () => {
   it('uses translated message in confirmAction', () => {
     const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
 
-    const result = confirmAction('common.confirm');
+    const result = confirmAction('messages.confirmDelete');
 
-    expect(confirmSpy).toHaveBeenCalledWith('tr:common.confirm');
+    expect(confirmSpy).toHaveBeenCalledWith('tr:messages.confirmDelete');
     expect(result).toBe(true);
 
     confirmSpy.mockRestore();
@@ -34,7 +34,7 @@ describe('notifications utils', () => {
     showLoading('loading');
 
     const element = document.getElementById('loading');
-    expect(element?.textContent).toBe('tr:common.loading');
+    expect(element?.textContent).toBe('tr:messages.loading');
     expect(element?.classList.contains('is-hidden')).toBe(false);
   });
 

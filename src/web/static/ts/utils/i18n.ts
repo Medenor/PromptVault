@@ -11,6 +11,7 @@
 import i18next from 'i18next';
 import Backend from 'i18next-http-backend';
 import LanguageDetector from 'i18next-browser-languagedetector';
+import type { TranslationKey } from '@/types/i18n';
 
 type InitCallback = () => void;
 
@@ -29,27 +30,27 @@ export function updateStaticTranslations(): void {
         if (!translationKey) {
           return;
         }
-        const translation = i18next.t(translationKey);
+        const translation = tUnsafe(translationKey);
         if (translation && attribute) {
           element.setAttribute(attribute, translation);
         }
       }
     } else {
-      element.textContent = i18next.t(key);
+      element.textContent = tUnsafe(key);
     }
   });
 
   document.querySelectorAll('[data-i18n-placeholder]').forEach((element) => {
     const key = element.getAttribute('data-i18n-placeholder');
     if (key && element instanceof HTMLInputElement) {
-      element.placeholder = i18next.t(key);
+      element.placeholder = tUnsafe(key);
     }
   });
 
   document.querySelectorAll('[data-i18n-title]').forEach((element) => {
     const key = element.getAttribute('data-i18n-title');
     if (key && element instanceof HTMLElement) {
-      element.title = i18next.t(key);
+      element.title = tUnsafe(key);
     }
   });
 
@@ -119,7 +120,14 @@ export function getCurrentLanguage(): string {
 /**
  * Translate a key with optional interpolation
  */
-export function t(key: string, options?: Record<string, unknown>): string {
+export function t(key: TranslationKey, options?: Record<string, unknown>): string {
+  if (options) {
+    return i18next.t(key, options);
+  }
+  return i18next.t(key);
+}
+
+export function tUnsafe(key: string, options?: Record<string, unknown>): string {
   if (options) {
     return i18next.t(key, options);
   }

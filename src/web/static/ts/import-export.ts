@@ -9,7 +9,7 @@
  */
 
 import '@/form-validation';
-import { changeLanguage, initI18n, t, updateStaticTranslations } from '@/utils/i18n';
+import { changeLanguage, initI18n, t, tUnsafe, updateStaticTranslations } from '@/utils/i18n';
 import { hideElement, showElement } from '@/utils/dom';
 
 type OperationType = 'export' | 'import' | null;
@@ -392,7 +392,7 @@ async function performImport(): Promise<void> {
     const result = await response.json();
 
     if (response.ok) {
-      const message = (t('importExport.importSuccess') || '').replace(
+  const message = (t('importExport.importSuccess') || '').replace(
         '{count}',
         result.added_count
       );
@@ -420,7 +420,7 @@ function showProgress(operation: 'export' | 'import', messageKey: string): void 
 
   showElement(progressContainer);
   if (statusElement) {
-    statusElement.textContent = t(`importExport.${messageKey}`);
+  statusElement.textContent = tUnsafe(`importExport.${messageKey}`);
     statusElement.className = 'status-message status-info';
   }
 }

@@ -9,7 +9,7 @@
  */
 
 import { reportError } from '@/telemetry';
-import { changeLanguage, initI18n, t, updateStaticTranslations } from '@/utils/i18n';
+import { changeLanguage, initI18n, t, tUnsafe, updateStaticTranslations } from '@/utils/i18n';
 import { showNotification } from '@/utils/notifications';
 
 const API_BASE = '/api/admin';
@@ -83,7 +83,7 @@ function getTranslatedRole(role: string): string {
     user: 'roleUser',
   };
   const translationKey = roleTranslations[role] || role;
-  return t(`admin.users.${translationKey}`) || role;
+  return tUnsafe(`admin.users.${translationKey}`) || role;
 }
 
 function normalizeErrorDetail(

@@ -26,6 +26,7 @@
     "save": "Speichern",
     "cancel": "Abbrechen",
     "copy": "Kopieren",
+    "favorite": "Favorit",
     "export": "Exportieren",
     "import": "Importieren",
     "close": "Schließen",
@@ -69,6 +70,7 @@
     "unknownError": "Unbekannter Fehler"
   },
   "validation": {
+    "required": "Dieses Feld ist erforderlich.",
     "titleRequired": "Das Feld 'Prompt-Titel' darf nicht leer sein.",
     "titleTooLong": "Der Titel darf 200 Zeichen nicht überschreiten.",
     "contentRequired": "Das Feld 'Prompt' darf nicht leer sein.",
@@ -111,7 +113,8 @@
   },
   "categories": {
     "manage": "Kategorien verwalten",
-    "manageDesc": "Prompt-Kategorien verwalten"
+    "manageDesc": "Prompt-Kategorien verwalten",
+    "noCategory": "Keine Kategorie"
   },
   "tags": {
     "manage": "Tags verwalten",
