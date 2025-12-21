@@ -8,6 +8,7 @@
  * Authentication page logic (login/register)
  */
 
+import '../css/tailwind-globals.css';
 import { reportError } from '@/telemetry';
 import { changeLanguage, initI18n, t, updateStaticTranslations } from '@/utils/i18n';
 import { clearAllErrors, hideElement, showElement, showError } from '@/utils/dom';

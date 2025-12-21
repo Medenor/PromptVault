@@ -8,6 +8,7 @@
  * Admin user management logic
  */
 
+import '../css/tailwind-globals.css';
 import { reportError } from '@/telemetry';
 import { changeLanguage, initI18n, t, tUnsafe, updateStaticTranslations } from '@/utils/i18n';
 import { showNotification } from '@/utils/notifications';

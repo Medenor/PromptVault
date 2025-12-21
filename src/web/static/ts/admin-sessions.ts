@@ -8,6 +8,7 @@
  * Admin session management logic
  */
 
+import '../css/tailwind-globals.css';
 import { reportError } from '@/telemetry';
 import { changeLanguage, initI18n, updateStaticTranslations } from '@/utils/i18n';
 import { showNotification } from '@/utils/notifications';

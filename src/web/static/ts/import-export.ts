@@ -8,6 +8,7 @@
  * Import/export page logic
  */
 
+import '../css/tailwind-globals.css';
 import '@/form-validation';
 import { changeLanguage, initI18n, t, tUnsafe, updateStaticTranslations } from '@/utils/i18n';
 import { hideElement, showElement } from '@/utils/dom';

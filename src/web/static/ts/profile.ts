@@ -8,6 +8,7 @@
  * Profile management logic
  */
 
+import '../css/tailwind-globals.css';
 import { reportError } from '@/telemetry';
 import { changeLanguage, initI18n, t, updateStaticTranslations } from '@/utils/i18n';
 import { clearAllErrors, showError } from '@/utils/dom';

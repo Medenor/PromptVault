@@ -8,6 +8,7 @@
  * Backup management - TypeScript migration in progress
  */
 
+import '../css/tailwind-globals.css';
 import { reportError } from '@/telemetry';
 import '@/form-validation';
 import { changeLanguage, initI18n, t, updateStaticTranslations } from '@/utils/i18n';

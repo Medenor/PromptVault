@@ -40,7 +40,8 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/web/static/ts/*"],
-      "@types/*": ["src/web/static/ts/types/*"]
+      "@types/*": ["src/web/static/ts/types/*"],
+      "@components": ["src/web/static/ts/components/index.ts"]
     }
   },
   "include": ["src/web/static/ts/**/*", "vite.config.ts"],

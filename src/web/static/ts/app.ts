@@ -8,6 +8,7 @@
  * PromptVault main app logic (TypeScript).
  */
 
+import '../css/tailwind-globals.css';
 import '@/form-validation';
 import type { PromptResponse, PromptListResponse } from '@/types';
 import type { TranslationKey } from '@/types/i18n';

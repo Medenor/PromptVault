@@ -8,6 +8,7 @@
  * Frontend telemetry and error reporting
  */
 
+import '../css/tailwind-globals.css';
 import type { FrontendLogEntry } from '@/types';
 
 const TELEMETRY_ENDPOINT = '/api/logs/frontend';
