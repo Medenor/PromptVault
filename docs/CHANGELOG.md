@@ -7,15 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.0] - 2025-12-21
+
 ### ✨ New Features
 
-- Implemented login "Remember me" option with persisted token storage preference and i18n labels across EN/FR/ES/DE
+- **Frontend TypeScript Migration**: All frontend scripts migrated to TypeScript with strict type checking and Vite build pipeline.
+- **Frontend Unit Tests**: Added Vitest test suite with coverage reporting (v8).
+- **Type-safe i18n**: Translation keys are now type-checked against `src/web/static/locales/en.json`.
+- **Remember me**: Implemented login "Remember me" option with persisted token storage preference and i18n labels across EN/FR/ES/DE
 
 ### Changed
 
-- All containers now run as non-root users (`appuser`, `postgres`, `redis`) to enforce a least-privilege security model.
-- Docker Compose configuration updated with `no-new-privileges:true` and `cap_drop: ALL` for all services.
-- Improved security defaults for PostgreSQL and Redis deployments.
+- **Frontend Tooling**: Added ESLint + Prettier and associated scripts for linting/formatting.
+- **Docs**: Updated README and testing docs to reflect the TypeScript migration and frontend workflow.
+- **Container security strenghtening**:
+  - All containers now run as non-root users (`appuser`, `postgres`, `redis`) to enforce a least-privilege security model.
+  - Docker Compose configuration updated with `no-new-privileges:true` and `cap_drop: ALL` for all services.
+  - Improved security defaults for PostgreSQL and Redis deployments.
 
 ### Fixed
 
