@@ -65,9 +65,11 @@ Thumbs.db
 
 # Build outputs
 dist/
+src/web/static/dist/
 *.min.js
 *.min.css
 node_modules/
+*.tsbuildinfo
 
 # Test reports
 playwright-report/
