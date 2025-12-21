@@ -2319,9 +2319,9 @@ export * from './validators';
 
 ---
 
-## Phase 4: Page Entry Points (Stubs)
+## Phase 4: Page Entry Points (Completed)
 
-Create stub files for each page entry point. These will be filled in during file-by-file migration.
+All page entry points have been fully migrated to TypeScript and are now live.
 
 ### Task 4.1: Create Telemetry Entry Point
 
@@ -2513,11 +2513,9 @@ export { reportError, enable, disable, isEnabled };
 
 ---
 
-### Task 4.2-4.9: Create Page Stubs
+### Task 4.2-4.9: Migrate Pages
 
-Create minimal stub files for remaining pages. Each will be fully implemented during migration.
-
-**Files to create:**
+Completed migrations:
 
 - `src/web/static/ts/password-reset.ts`
 - `src/web/static/ts/admin-sessions.ts`
@@ -2527,28 +2525,6 @@ Create minimal stub files for remaining pages. Each will be fully implemented du
 - `src/web/static/ts/import-export.ts`
 - `src/web/static/ts/admin-users.ts`
 - `src/web/static/ts/app.ts`
-
-Each stub should have:
-
-```typescript
-/**
- * [Page name] - TypeScript migration in progress
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0.
- */
-
-import { initI18n, updateStaticTranslations } from '@/utils/i18n';
-import { reportError } from '@/telemetry';
-
-// TODO: Migrate from src/web/static/js/[filename].js
-
-function initializeApp(): void {
-  console.log('[Page] initialized');
-  updateStaticTranslations();
-}
-
-initI18n(initializeApp);
-```
 
 ---
 
