@@ -374,6 +374,17 @@ function setupConfirmRevokeModal(): void {
 function initializeAdminSessionsPage(): void {
   updateStaticTranslations();
 
+  // Mobile menu toggle
+  const adminMenuToggle = document.getElementById('admin-menu-toggle');
+  if (adminMenuToggle) {
+    adminMenuToggle.addEventListener('click', () => {
+      const dropdown = document.getElementById('admin-menu-dropdown');
+      if (dropdown) {
+        dropdown.classList.toggle('hidden');
+      }
+    });
+  }
+
   const languageSelector = document.getElementById('language-selector') as HTMLSelectElement | null;
   if (languageSelector) {
     languageSelector.addEventListener('change', (event) => {
