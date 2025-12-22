@@ -8,11 +8,13 @@
  * PromptVault main app logic (TypeScript).
  */
 
+/* global document, window, fetch, localStorage, sessionStorage, setTimeout, clearTimeout, performance, console, alert, navigator, confirm */
+
 import '../css/tailwind-globals.css';
 import '@/form-validation';
 import type { PromptResponse, PromptListResponse } from '@/types';
 import type { TranslationKey } from '@/types/i18n';
-import { initI18n, t, tUnsafe, updateStaticTranslations, changeLanguage } from '@/utils/i18n';
+import { initI18n, t, tUnsafe, updateStaticTranslations } from '@/utils/i18n';
 
 interface TagInfo {
   name: string;
@@ -185,8 +187,12 @@ async function checkAdminAccess(): Promise<void> {
 
       if (data.role === 'admin') {
         const adminBtn = document.getElementById('admin-btn');
+        const adminBtnMobile = document.getElementById('admin-btn-mobile');
         if (adminBtn) {
           adminBtn.style.display = '';
+        }
+        if (adminBtnMobile) {
+          adminBtnMobile.style.display = '';
         }
       }
     } else if (response.status === 401) {
@@ -221,13 +227,46 @@ let searchState: {
 };
 
 function setupEventListeners(): void {
-  // Language selector
-  const languageSelector = document.getElementById('language-selector') as HTMLSelectElement | null;
-  languageSelector?.addEventListener('change', handleLanguageChange);
+  // Mobile sidebar toggle
+  const sidebarToggle = document.getElementById('sidebar-toggle');
+  sidebarToggle?.addEventListener('click', toggleMobileSidebar);
+
+  // Mobile sidebar close button
+  const sidebarClose = document.getElementById('sidebar-close');
+  sidebarClose?.addEventListener('click', closeMobileSidebar);
+
+  // Mobile sidebar backdrop
+  const sidebarBackdrop = document.getElementById('sidebar-backdrop');
+  sidebarBackdrop?.addEventListener('click', closeMobileSidebar);
+
+  // Mobile menu dropdown toggle
+  const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
+  mobileMenuToggle?.addEventListener('click', toggleMobileMenu);
+
+  // Close mobile menu when clicking outside
+  document.addEventListener('click', (event) => {
+    const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
+    const mobileMenuDropdown = document.getElementById('mobile-menu-dropdown');
+    if (
+      mobileMenuToggle &&
+      mobileMenuDropdown &&
+      !mobileMenuToggle.contains(event.target as Node) &&
+      !mobileMenuDropdown.contains(event.target as Node)
+    ) {
+      closeMobileMenu();
+    }
+  });
 
   // New prompt button
   const newPromptBtn = document.getElementById('new-prompt-btn');
   newPromptBtn?.addEventListener('click', showNewPromptForm);
+
+  // New prompt button (mobile)
+  const newPromptBtnMobile = document.getElementById('new-prompt-btn-mobile');
+  newPromptBtnMobile?.addEventListener('click', () => {
+    showNewPromptForm();
+    closeMobileMenu();
+  });
 
   // Import/Export button (navigates to import/export page)
   const importExportBtn = document.getElementById('import-export-btn');
@@ -243,6 +282,14 @@ function setupEventListeners(): void {
     });
   }
 
+  // Logout button (mobile)
+  const logoutBtnMobile = document.getElementById('logout-btn-mobile');
+  if (logoutBtnMobile) {
+    logoutBtnMobile.addEventListener('click', () => {
+      void logout();
+    });
+  }
+
   // Form handling
   const promptForm = document.getElementById('prompt-form');
   promptForm?.addEventListener('submit', (event) => {
@@ -251,13 +298,27 @@ function setupEventListeners(): void {
   const cancelBtn = document.getElementById('cancel-btn');
   cancelBtn?.addEventListener('click', hidePromptEditor);
 
-  // Category and tag filtering
+  // Category and tag filtering (desktop and mobile)
   const categoriesList = document.getElementById('categories-list');
   categoriesList?.addEventListener('click', handleCategoryFilter);
+  const categoriesListMobile = document.getElementById('categories-list-mobile');
+  categoriesListMobile?.addEventListener('click', (event) => {
+    handleCategoryFilter(event);
+    closeMobileSidebar();
+  });
+
   const tagsList = document.getElementById('tags-list');
   tagsList?.addEventListener('click', handleTagFilter);
+  const tagsListMobile = document.getElementById('tags-list-mobile');
+  tagsListMobile?.addEventListener('click', (event) => {
+    handleTagFilter(event);
+    closeMobileSidebar();
+  });
+
   const favoritesFilter = document.getElementById('favorites-filter');
   favoritesFilter?.addEventListener('change', handleFavoritesFilter);
+  const favoritesFilterMobile = document.getElementById('favorites-filter-mobile');
+  favoritesFilterMobile?.addEventListener('change', handleFavoritesFilter);
 
   // Modal close
   const closeBtn = document.querySelector('.close');
@@ -821,12 +882,23 @@ async function toggleFavorite(id: PromptId): Promise<void> {
 function handleCategoryFilter(event: Event): void {
   const target = event.target as HTMLElement | null;
   if (target?.tagName === 'LI') {
-    // Update active state
+    // Update active state in both desktop and mobile lists
     document.querySelectorAll('#categories-list li').forEach((li) => li.classList.remove('active'));
+    document.querySelectorAll('#categories-list-mobile li').forEach((li) => li.classList.remove('active'));
+
+    // Add active to the clicked item
     target.classList.add('active');
 
+    // Sync the corresponding item in the other list
+    const category = target.dataset.category || 'all';
+    const desktopItem = document.querySelector(`#categories-list li[data-category="${category}"]`);
+    const mobileItem = document.querySelector(`#categories-list-mobile li[data-category="${category}"]`);
+
+    if (desktopItem) desktopItem.classList.add('active');
+    if (mobileItem) mobileItem.classList.add('active');
+
     // Update search state and trigger search
-    searchState.category = target.dataset.category || 'all';
+    searchState.category = category;
     void performSearch();
   }
 }
@@ -834,12 +906,23 @@ function handleCategoryFilter(event: Event): void {
 function handleTagFilter(event: Event): void {
   const target = event.target as HTMLElement | null;
   if (target?.tagName === 'LI') {
-    // Update active state
+    // Update active state in both desktop and mobile lists
     document.querySelectorAll('#tags-list li').forEach((li) => li.classList.remove('active'));
+    document.querySelectorAll('#tags-list-mobile li').forEach((li) => li.classList.remove('active'));
+
+    // Add active to the clicked item
     target.classList.add('active');
 
+    // Sync the corresponding item in the other list
+    const tag = target.dataset.tag || 'all';
+    const desktopItem = document.querySelector(`#tags-list li[data-tag="${tag}"]`);
+    const mobileItem = document.querySelector(`#tags-list-mobile li[data-tag="${tag}"]`);
+
+    if (desktopItem) desktopItem.classList.add('active');
+    if (mobileItem) mobileItem.classList.add('active');
+
     // Update search state and trigger search
-    searchState.tag = target.dataset.tag || 'all';
+    searchState.tag = tag;
     void performSearch();
   }
 }
@@ -849,40 +932,19 @@ function handleFavoritesFilter(event: Event): void {
   if (!target) return;
   // Update search state and trigger search
   searchState.favorites = target.checked;
-  void performSearch();
-}
 
-function handleLanguageChange(event: Event): void {
-  const target = event.target as HTMLSelectElement | null;
-  const selectedLanguage = target?.value;
-  if (!selectedLanguage) return;
+  // Sync both checkboxes (desktop and mobile)
+  const favoritesFilter = document.getElementById('favorites-filter') as HTMLInputElement | null;
+  const favoritesFilterMobile = document.getElementById('favorites-filter-mobile') as HTMLInputElement | null;
 
-  changeLanguage(selectedLanguage)
-    .then(() => {
-      updateStaticTranslations();
-      updateVersionHistoryTranslations();
-      void loadPrompts();
-    })
-    .catch((err) => {
-      reportAppIssue('changeLanguage', err, { language: selectedLanguage });
-    });
-}
-
-function updateVersionHistoryTranslations(): void {
-  // Update search placeholder
-  const searchInput = document.getElementById('version-search') as HTMLInputElement | null;
-  if (searchInput) {
-    searchInput.placeholder = t('version.searchPlaceholder');
+  if (favoritesFilter && target.id !== 'favorites-filter') {
+    favoritesFilter.checked = searchState.favorites;
+  }
+  if (favoritesFilterMobile && target.id !== 'favorites-filter-mobile') {
+    favoritesFilterMobile.checked = searchState.favorites;
   }
 
-  // Update version item buttons
-  document.querySelectorAll('[data-i18n="version.select"]').forEach((element) => {
-    element.textContent = t('version.select');
-  });
-
-  document.querySelectorAll('[data-i18n="version.revert"]').forEach((element) => {
-    element.textContent = t('version.revert');
-  });
+  void performSearch();
 }
 
 function hideModal() {
@@ -899,7 +961,7 @@ function truncateText(text: string, maxLength: number): string {
 let searchTimeout: ReturnType<typeof setTimeout> | null = null;
 
 function setupSearchEventListeners() {
-  // Search input with debouncing
+  // Search input with debouncing (desktop)
   const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
   if (searchInput) {
     searchInput.addEventListener('input', handleSearchInput);
@@ -911,21 +973,51 @@ function setupSearchEventListeners() {
     });
   }
 
-  // Clear search button
-  const clearSearchBtn = document.getElementById('clear-search-btn');
-  if (clearSearchBtn) {
-    clearSearchBtn.addEventListener('click', function () {
-      const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
-      if (searchInput) {
-        searchInput.value = '';
-        searchState.searchTerm = '';
-        toggleElement(clearSearchBtn, false);
-        void performSearch();
+  // Search input (mobile)
+  const searchInputMobile = document.getElementById('search-input-mobile') as HTMLInputElement | null;
+  if (searchInputMobile) {
+    searchInputMobile.addEventListener('input', handleSearchInput);
+    searchInputMobile.addEventListener('keydown', function (event) {
+      // Clear search on Escape
+      if (event.key === 'Escape') {
+        clearAllFilters();
       }
     });
   }
 
-  // Case sensitive toggle
+  // Clear search button (desktop)
+  const clearSearchBtn = document.getElementById('clear-search-btn');
+  if (clearSearchBtn) {
+    clearSearchBtn.addEventListener('click', function () {
+      const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
+      const searchInputMobile = document.getElementById('search-input-mobile') as HTMLInputElement | null;
+      if (searchInput) searchInput.value = '';
+      if (searchInputMobile) searchInputMobile.value = '';
+      searchState.searchTerm = '';
+      toggleElement(clearSearchBtn, false);
+      const clearSearchBtnMobile = document.getElementById('clear-search-btn-mobile');
+      toggleElement(clearSearchBtnMobile, false);
+      void performSearch();
+    });
+  }
+
+  // Clear search button (mobile)
+  const clearSearchBtnMobile = document.getElementById('clear-search-btn-mobile');
+  if (clearSearchBtnMobile) {
+    clearSearchBtnMobile.addEventListener('click', function () {
+      const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
+      const searchInputMobile = document.getElementById('search-input-mobile') as HTMLInputElement | null;
+      if (searchInput) searchInput.value = '';
+      if (searchInputMobile) searchInputMobile.value = '';
+      searchState.searchTerm = '';
+      toggleElement(clearSearchBtnMobile, false);
+      const clearSearchBtn = document.getElementById('clear-search-btn');
+      toggleElement(clearSearchBtn, false);
+      void performSearch();
+    });
+  }
+
+  // Case sensitive toggle (desktop)
   const caseSensitiveToggle = document.getElementById(
     'case-sensitive-toggle'
   ) as HTMLInputElement | null;
@@ -933,14 +1025,38 @@ function setupSearchEventListeners() {
     caseSensitiveToggle.addEventListener('change', (event) => {
       const target = event.target as HTMLInputElement | null;
       searchState.caseSensitive = target?.checked ?? false;
+      // Sync mobile checkbox
+      const caseSensitiveToggleMobile = document.getElementById('case-sensitive-toggle-mobile') as HTMLInputElement | null;
+      if (caseSensitiveToggleMobile) caseSensitiveToggleMobile.checked = searchState.caseSensitive;
       void performSearch();
     });
   }
 
-  // Clear all filters button
+  // Case sensitive toggle (mobile)
+  const caseSensitiveToggleMobile = document.getElementById(
+    'case-sensitive-toggle-mobile'
+  ) as HTMLInputElement | null;
+  if (caseSensitiveToggleMobile) {
+    caseSensitiveToggleMobile.addEventListener('change', (event) => {
+      const target = event.target as HTMLInputElement | null;
+      searchState.caseSensitive = target?.checked ?? false;
+      // Sync desktop checkbox
+      const caseSensitiveToggle = document.getElementById('case-sensitive-toggle') as HTMLInputElement | null;
+      if (caseSensitiveToggle) caseSensitiveToggle.checked = searchState.caseSensitive;
+      void performSearch();
+    });
+  }
+
+  // Clear all filters button (desktop)
   const clearAllFiltersBtn = document.getElementById('clear-all-filters-btn');
   if (clearAllFiltersBtn) {
     clearAllFiltersBtn.addEventListener('click', clearAllFilters);
+  }
+
+  // Clear all filters button (mobile)
+  const clearAllFiltersBtnMobile = document.getElementById('clear-all-filters-btn-mobile');
+  if (clearAllFiltersBtnMobile) {
+    clearAllFiltersBtnMobile.addEventListener('click', clearAllFilters);
   }
 }
 
@@ -952,10 +1068,20 @@ function handleSearchInput(event: Event): void {
   const searchTerm = target.value;
   searchState.searchTerm = searchTerm;
 
+  // Sync both search inputs (desktop and mobile)
+  const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
+  const searchInputMobile = document.getElementById('search-input-mobile') as HTMLInputElement | null;
+  if (searchInput && target.id !== 'search-input') searchInput.value = searchTerm;
+  if (searchInputMobile && target.id !== 'search-input-mobile') searchInputMobile.value = searchTerm;
+
   // Show/hide clear search button
   const clearSearchBtn = document.getElementById('clear-search-btn');
+  const clearSearchBtnMobile = document.getElementById('clear-search-btn-mobile');
   if (clearSearchBtn) {
     toggleElement(clearSearchBtn, searchTerm.length > 0);
+  }
+  if (clearSearchBtnMobile) {
+    toggleElement(clearSearchBtnMobile, searchTerm.length > 0);
   }
 
   // Clear previous timeout
@@ -1163,7 +1289,7 @@ function clearAllFilters(): void {
     isLoading: false,
   };
 
-  // Reset UI elements
+  // Reset UI elements (desktop)
   const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
   if (searchInput) {
     searchInput.value = '';
@@ -1186,17 +1312,52 @@ function clearAllFilters(): void {
     favoritesFilter.checked = false;
   }
 
-  // Reset active states in sidebar
+  // Reset UI elements (mobile)
+  const searchInputMobile = document.getElementById('search-input-mobile') as HTMLInputElement | null;
+  if (searchInputMobile) {
+    searchInputMobile.value = '';
+  }
+
+  const clearSearchBtnMobile = document.getElementById('clear-search-btn-mobile');
+  if (clearSearchBtnMobile) {
+    hideElement(clearSearchBtnMobile);
+  }
+
+  const caseSensitiveToggleMobile = document.getElementById(
+    'case-sensitive-toggle-mobile'
+  ) as HTMLInputElement | null;
+  if (caseSensitiveToggleMobile) {
+    caseSensitiveToggleMobile.checked = false;
+  }
+
+  const favoritesFilterMobile = document.getElementById('favorites-filter-mobile') as HTMLInputElement | null;
+  if (favoritesFilterMobile) {
+    favoritesFilterMobile.checked = false;
+  }
+
+  // Reset active states in sidebar (desktop)
   document.querySelectorAll('#categories-list li').forEach((li) => li.classList.remove('active'));
   document.querySelector('[data-category="all"]')?.classList.add('active');
 
   document.querySelectorAll('#tags-list li').forEach((li) => li.classList.remove('active'));
   document.querySelector('[data-tag="all"]')?.classList.add('active');
 
+  // Reset active states in sidebar (mobile)
+  document.querySelectorAll('#categories-list-mobile li').forEach((li) => li.classList.remove('active'));
+  document.querySelectorAll('#categories-list-mobile [data-category="all"]').forEach((li) => li.classList.add('active'));
+
+  document.querySelectorAll('#tags-list-mobile li').forEach((li) => li.classList.remove('active'));
+  document.querySelectorAll('#tags-list-mobile [data-tag="all"]').forEach((li) => li.classList.add('active'));
+
   // Hide clear filters button and search results info
   const clearAllFiltersBtn = document.getElementById('clear-all-filters-btn');
   if (clearAllFiltersBtn) {
     hideElement(clearAllFiltersBtn);
+  }
+
+  const clearAllFiltersBtnMobile = document.getElementById('clear-all-filters-btn-mobile');
+  if (clearAllFiltersBtnMobile) {
+    hideElement(clearAllFiltersBtnMobile);
   }
 
   const searchResultsInfo = document.getElementById('search-results-info');
@@ -2278,6 +2439,55 @@ async function performBulkDelete(): Promise<void> {
     reportAppIssue('bulk-delete-failed', error, {
       prompt_ids: promptIdsArray,
     });
+  }
+}
+
+// ============================================
+// Mobile Sidebar & Menu Functions
+// ============================================
+
+function toggleMobileSidebar(): void {
+  const mobileSidebar = document.getElementById('mobile-sidebar');
+  const backdrop = document.getElementById('sidebar-backdrop');
+
+  if (mobileSidebar && backdrop) {
+    const isOpen = !mobileSidebar.classList.contains('-translate-x-full');
+
+    if (isOpen) {
+      closeMobileSidebar();
+    } else {
+      // Open sidebar
+      mobileSidebar.classList.remove('-translate-x-full');
+      backdrop.classList.remove('hidden');
+      // Prevent body scroll when sidebar is open
+      document.body.style.overflow = 'hidden';
+    }
+  }
+}
+
+function closeMobileSidebar(): void {
+  const mobileSidebar = document.getElementById('mobile-sidebar');
+  const backdrop = document.getElementById('sidebar-backdrop');
+
+  if (mobileSidebar && backdrop) {
+    mobileSidebar.classList.add('-translate-x-full');
+    backdrop.classList.add('hidden');
+    // Restore body scroll
+    document.body.style.overflow = '';
+  }
+}
+
+function toggleMobileMenu(): void {
+  const dropdown = document.getElementById('mobile-menu-dropdown');
+  if (dropdown) {
+    dropdown.classList.toggle('hidden');
+  }
+}
+
+function closeMobileMenu(): void {
+  const dropdown = document.getElementById('mobile-menu-dropdown');
+  if (dropdown) {
+    dropdown.classList.add('hidden');
   }
 }
 

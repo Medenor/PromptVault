@@ -499,4 +499,59 @@
       box-shadow: none !important;
     }
   }
+
+  /* Mobile sidebar drawer styles */
+  #mobile-sidebar {
+    will-change: transform;
+  }
+
+  #sidebar-backdrop {
+    will-change: opacity;
+  }
+
+  /* Mobile menu dropdown animations */
+  #mobile-menu-dropdown {
+    animation: slideDown 0.2s ease-out;
+  }
+
+  /* Prevent body scroll when mobile sidebar is open */
+  body.sidebar-open {
+    overflow: hidden;
+  }
+
+  /* Mobile responsive adjustments */
+  @media (max-width: 768px) {
+    /* Reduce header padding on mobile */
+    header .max-w-7xl {
+      padding-left: 0.75rem;
+      padding-right: 0.75rem;
+    }
+
+    /* Adjust logo size on mobile */
+    header img {
+      height: 2.5rem;
+      width: 2.5rem;
+    }
+
+    /* Adjust title size on mobile */
+    header h1 {
+      font-size: 1.25rem;
+    }
+
+    /* Reduce button text on mobile */
+    #new-prompt-btn {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.8rem;
+    }
+
+    #logout-btn {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.8rem;
+    }
+
+    /* Adjust main content padding on mobile */
+    main {
+      padding: 1rem;
+    }
+  }
 }

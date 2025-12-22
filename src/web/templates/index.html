@@ -105,26 +105,20 @@
 
             <!-- Actions -->
             <div class="flex items-center gap-2">
-              <select
-                id="language-selector"
-                class="px-3 py-2 text-sm font-medium rounded-lg bg-blue-600 text-white border-0 focus:outline-none focus:ring-2 focus:ring-white/50 cursor-pointer"
-              >
-                <option value="en">English</option>
-                <option value="fr">Français</option>
-                <option value="es">Español</option>
-                <option value="de">Deutsch</option>
-              </select>
+              <!-- Desktop-only: New Prompt -->
               <button
                 id="new-prompt-btn"
-                class="px-4 py-2 text-sm font-semibold rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition-all hover:scale-105 active:scale-95"
+                class="hidden md:block px-4 py-2 text-sm font-semibold rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition-all hover:scale-105 active:scale-95"
                 data-i18n="nav.newPrompt"
               >
                 New Prompt
               </button>
+
+              <!-- Desktop-only buttons -->
               <button
                 id="import-export-btn"
                 onclick="window.location.href = '/import-export'"
-                class="px-3 py-2 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-all hover:scale-105 active:scale-95"
+                class="hidden md:block px-3 py-2 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-all hover:scale-105 active:scale-95"
                 data-i18n="nav.importExport"
               >
                 Import/Export
@@ -132,7 +126,7 @@
               <button
                 id="backup-btn"
                 onclick="window.location.href = '/backup-management'"
-                class="px-3 py-2 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-all hover:scale-105 active:scale-95"
+                class="hidden md:block px-3 py-2 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-all hover:scale-105 active:scale-95"
                 data-i18n="nav.backupManagement"
               >
                 Backup
@@ -140,7 +134,7 @@
               <button
                 id="profile-btn"
                 onclick="window.location.href = '/auth/profile'"
-                class="px-3 py-2 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-all hover:scale-105 active:scale-95"
+                class="hidden md:block px-3 py-2 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-all hover:scale-105 active:scale-95"
                 data-i18n="nav.profile"
               >
                 Profile
@@ -148,15 +142,81 @@
               <button
                 id="admin-btn"
                 onclick="window.location.href = '/admin/users'"
-                class="px-3 py-2 text-sm font-medium rounded-lg bg-amber-500 text-white hover:bg-amber-600 transition-all hover:scale-105 active:scale-95"
+                class="hidden md:block px-3 py-2 text-sm font-medium rounded-lg bg-amber-500 text-white hover:bg-amber-600 transition-all hover:scale-105 active:scale-95"
                 data-i18n="nav.admin"
                 style="display: none"
               >
                 Admin
               </button>
+
+              <!-- Mobile Menu Dropdown -->
+              <div class="relative md:hidden">
+                <button
+                  id="mobile-menu-toggle"
+                  class="px-3 py-2 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-all"
+                  aria-label="Open menu"
+                >
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path>
+                  </svg>
+                </button>
+                <div
+                  id="mobile-menu-dropdown"
+                  class="hidden absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50"
+                >
+                  <button
+                    id="new-prompt-btn-mobile"
+                    class="w-full text-left px-4 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-50 transition-colors"
+                    data-i18n="nav.newPrompt"
+                  >
+                    New Prompt
+                  </button>
+                  <div class="border-t border-gray-200 my-2"></div>
+                  <button
+                    onclick="window.location.href = '/import-export'"
+                    class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                    data-i18n="nav.importExport"
+                  >
+                    Import/Export
+                  </button>
+                  <button
+                    onclick="window.location.href = '/backup-management'"
+                    class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                    data-i18n="nav.backupManagement"
+                  >
+                    Backup
+                  </button>
+                  <button
+                    onclick="window.location.href = '/auth/profile'"
+                    class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                    data-i18n="nav.profile"
+                  >
+                    Profile
+                  </button>
+                  <button
+                    id="admin-btn-mobile"
+                    onclick="window.location.href = '/admin/users'"
+                    class="w-full text-left px-4 py-2 text-sm text-amber-700 hover:bg-amber-50 transition-colors"
+                    data-i18n="nav.admin"
+                    style="display: none"
+                  >
+                    Admin
+                  </button>
+                  <div class="border-t border-gray-200 my-2"></div>
+                  <button
+                    id="logout-btn-mobile"
+                    class="w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50 transition-colors font-semibold"
+                    data-i18n="nav.logout"
+                  >
+                    Logout
+                  </button>
+                </div>
+              </div>
+
+              <!-- Desktop-only: Logout -->
               <button
                 id="logout-btn"
-                class="px-3 py-2 text-sm font-medium rounded-lg bg-red-500 text-white hover:bg-red-600 transition-all hover:scale-105 active:scale-95"
+                class="hidden md:block px-3 py-2 text-sm font-medium rounded-lg bg-red-500 text-white hover:bg-red-600 transition-all hover:scale-105 active:scale-95"
                 data-i18n="nav.logout"
               >
                 Logout
@@ -167,8 +227,14 @@
       </header>
 
       <div class="flex">
-        <!-- Sidebar -->
-        <aside class="w-64 bg-white border-r border-gray-200 min-h-[calc(100vh-4rem)] sticky top-0">
+        <!-- Sidebar Backdrop (Mobile Only) -->
+        <div
+          id="sidebar-backdrop"
+          class="fixed inset-0 bg-black/50 z-40 hidden md:hidden transition-opacity duration-300"
+        ></div>
+
+        <!-- Desktop Sidebar -->
+        <aside class="w-64 bg-white border-r border-gray-200 min-h-[calc(100vh-4rem)] sticky top-0 hidden md:block">
           <div class="p-4">
             <h2 class="text-lg font-bold text-gray-900 mb-4" data-i18n="nav.prompts">Prompts</h2>
 
@@ -258,9 +324,130 @@
           </div>
         </aside>
 
+        <!-- Mobile Sidebar Drawer -->
+        <aside
+          id="mobile-sidebar"
+          class="fixed top-0 left-0 w-64 h-full bg-white border-r border-gray-200 z-50 md:hidden transform -translate-x-full transition-transform duration-300 ease-in-out overflow-y-auto"
+        >
+          <div class="p-4">
+            <!-- Close Button -->
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-lg font-bold text-gray-900" data-i18n="nav.prompts">Prompts</h2>
+              <button
+                id="sidebar-close"
+                class="text-gray-500 hover:text-gray-700 p-2"
+                aria-label="Close sidebar"
+              >
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </button>
+            </div>
+
+            <!-- Filters Section -->
+            <div class="mb-6">
+              <h3 class="text-sm font-semibold text-gray-700 mb-3" data-i18n="nav.filters">
+                Filters
+              </h3>
+
+              <!-- Search Input -->
+              <div class="relative mb-3">
+                <input
+                  type="text"
+                  id="search-input-mobile"
+                  placeholder="Search prompts..."
+                  data-i18n="[placeholder]nav.searchPlaceholder"
+                  class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <button
+                  id="clear-search-btn-mobile"
+                  class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 hidden"
+                  title="Clear search"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <!-- Case Sensitive Toggle -->
+              <label class="flex items-center gap-2 mb-2 cursor-pointer text-sm text-gray-700">
+                <input type="checkbox" id="case-sensitive-toggle-mobile" class="rounded text-blue-500 focus:ring-blue-500" />
+                <span data-i18n="nav.caseSensitive">Case Sensitive</span>
+              </label>
+
+              <!-- Favorites Filter -->
+              <label class="flex items-center gap-2 mb-3 cursor-pointer text-sm text-gray-700">
+                <input type="checkbox" id="favorites-filter-mobile" class="rounded text-blue-500 focus:ring-blue-500" />
+                <span data-i18n="nav.showFavorites">Show Favorites</span>
+              </label>
+
+              <!-- Select All Checkbox -->
+              <label class="flex items-center gap-2 mb-3 cursor-pointer text-sm text-gray-700">
+                <input type="checkbox" id="select-all-checkbox-mobile" class="rounded text-blue-500 focus:ring-blue-500" />
+                <span data-i18n="actions.selectAll">Select All</span>
+              </label>
+
+              <!-- Clear All Filters Button -->
+              <button
+                id="clear-all-filters-btn-mobile"
+                class="w-full px-3 py-2 text-sm font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all hidden"
+                data-i18n="nav.clearFilters"
+              >
+                Clear All Filters
+              </button>
+            </div>
+
+            <!-- Categories Section -->
+            <div class="mb-6">
+              <h3 class="text-sm font-semibold text-gray-700 mb-3" data-i18n="nav.categories">
+                Categories
+              </h3>
+              <ul id="categories-list-mobile" class="space-y-2">
+                <li data-category="all" class="active" data-i18n="nav.allCategories">
+                  All Categories
+                </li>
+                {% for category in categories %}
+                <li data-category="{{ category }}">
+                  {{ category }}
+                </li>
+                {% endfor %}
+              </ul>
+            </div>
+
+            <!-- Tags Section -->
+            <div>
+              <h3 class="text-sm font-semibold text-gray-700 mb-3" data-i18n="nav.tags">Tags</h3>
+              <ul id="tags-list-mobile" class="space-y-2">
+                <li data-tag="all" class="active" data-i18n="nav.allTags">
+                  All Tags
+                </li>
+                {% for tag in tags %}
+                <li data-tag="{{ tag }}">
+                  {{ tag }}
+                </li>
+                {% endfor %}
+              </ul>
+            </div>
+          </div>
+        </aside>
+
         <!-- Main Content -->
-        <main class="flex-1 p-6 max-w-7xl mx-auto w-full">
-          <!-- Search Results Info -->
+        <main class="flex-1 w-full">
+          <!-- Mobile Sidebar Toggle Bar -->
+          <div class="md:hidden flex items-center gap-3 px-4 py-3 border-b border-gray-200 bg-white">
+            <button
+              id="sidebar-toggle"
+              class="text-gray-700 hover:text-gray-900 transition-colors"
+              aria-label="Toggle sidebar"
+            >
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+              </svg>
+            </button>
+            <h2 class="text-lg font-bold text-gray-900" data-i18n="nav.prompts">Prompts</h2>
+          </div>
+
+          <div class="p-6 max-w-7xl mx-auto">
+            <!-- Search Results Info -->
           <div
             id="search-results-info"
             class="mb-4 px-4 py-3 bg-blue-50 text-blue-800 rounded-lg text-sm hidden"
