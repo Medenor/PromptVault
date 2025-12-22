@@ -347,6 +347,8 @@
       "requestNewButton": "Demander une nouvelle réinitialisation"
     },
     "profile": {
+      "title": "Votre profil",
+      "backToPrompts": "← Retour aux Prompts",
       "profileInfo": "Informations du profil",
       "username": "Nom d'utilisateur",
       "email": "Email",

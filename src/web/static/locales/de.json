@@ -347,6 +347,8 @@
       "requestNewButton": "Neue Zurücksetzung anfordern"
     },
     "profile": {
+      "title": "Dein Profil",
+      "backToPrompts": "← Zurück zu Prompts",
       "profileInfo": "Profilinformationen",
       "username": "Benutzername",
       "email": "E-Mail",

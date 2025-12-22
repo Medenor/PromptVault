@@ -347,6 +347,8 @@
       "requestNewButton": "Solicitar nuevo restablecimiento"
     },
     "profile": {
+      "title": "Tu Perfil",
+      "backToPrompts": "← Volver a los Prompts",
       "profileInfo": "Información del perfil",
       "username": "Nombre de usuario",
       "email": "Correo electrónico",

@@ -347,6 +347,8 @@
       "requestNewButton": "Request New Reset"
     },
     "profile": {
+      "title": "Your Profile",
+      "backToPrompts": "← Back to Prompts",
       "profileInfo": "Profile Information",
       "username": "Username",
       "email": "Email",

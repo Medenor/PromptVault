@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed
+### 🔄 Changed
 
 - **UI Design & Styling:** PromptVault's frontend has been modernized with Tailwind CSS v4 for consistent, responsive UI:
   - **Tailwind CSS v4**: Utility-first CSS framework with @theme directives for custom design system
