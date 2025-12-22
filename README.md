@@ -70,6 +70,7 @@
 - [About](#about)
   - [Built With](#built-with)
   - [Version Control](#version-control)
+  - [Screenshots](#screenshots-and-gallery)
 - [Getting Started](#getting-started)
   - [Prerequisites](#prerequisites)
   - [Installation](#installation)
@@ -198,8 +199,9 @@ PromptVault includes a comprehensive, production-ready backup system to prevent 
 - **Maintenance Tools**: Built-in cleanup and compression utilities with progress indicators
 - **Statistics Dashboard**: Real-time backup statistics and storage information
 
+## Screenshots and gallery
 <details>
-<summary>Screenshots & Gallery</summary>
+<summary>Click to expand</summary>
 <br>
 
 <div align="center">
