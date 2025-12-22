@@ -322,6 +322,10 @@ FRONTEND_LOG_LIMIT = 10
 frontend_log_rate: Dict[str, Deque[float]] = defaultdict(deque)
 
 # Mount static files
+# Mount built assets first (higher priority for production builds)
+import os
+if os.path.exists("dist/static"):
+    app.mount("/static/dist", StaticFiles(directory="dist/static"), name="dist")
 app.mount("/static", StaticFiles(directory="src/web/static"), name="static")
 
 # Templates

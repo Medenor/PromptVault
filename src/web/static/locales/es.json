@@ -260,7 +260,8 @@
       "loginButton": "Iniciar sesión",
       "rememberMe": "Recuérdame",
       "forgotPassword": "¿Olvidó su contraseña?",
-      "noAccount": "¿No tiene una cuenta? Registrarse",
+      "noAccount": "¿No tiene una cuenta?",
+      "registerLink": "Registrarse",
       "accountLocked": "Su cuenta ha sido bloqueada debido a demasiados intentos de inicio de sesión fallidos. Por favor, intente nuevamente más tarde o restablezca su contraseña.",
       "invalidCredentials": "Nombre de usuario o contraseña inválidos",
       "accountInactive": "Su cuenta está inactiva. Por favor, contacte al soporte.",
@@ -328,6 +329,12 @@
       "requestNewButton": "Solicitar nuevo restablecimiento"
     },
     "profile": {
+      "profileInfo": "Información del perfil",
+      "username": "Nombre de usuario",
+      "email": "Correo electrónico",
+      "preferences": "Preferencias",
+      "language": "Idioma",
+      "security": "Seguridad",
       "logout": "Cerrar sesión",
       "memberSince": "Miembro desde",
       "lastLogin": "Último inicio de sesión",

@@ -260,7 +260,8 @@
       "loginButton": "Anmelden",
       "rememberMe": "Angemeldet bleiben",
       "forgotPassword": "Passwort vergessen?",
-      "noAccount": "Noch kein Konto? Registrieren",
+      "noAccount": "Noch kein Konto?",
+      "registerLink": "Registrieren",
       "accountLocked": "Ihr Konto wurde aufgrund zu vieler fehlgeschlagener Anmeldeversuche gesperrt. Bitte versuchen Sie es später erneut oder setzen Sie Ihr Passwort zurück.",
       "invalidCredentials": "Ungültiger Benutzername oder Passwort",
       "accountInactive": "Ihr Konto ist inaktiv. Bitte kontaktieren Sie den Support.",
@@ -328,6 +329,12 @@
       "requestNewButton": "Neue Zurücksetzung anfordern"
     },
     "profile": {
+      "profileInfo": "Profilinformationen",
+      "username": "Benutzername",
+      "email": "E-Mail",
+      "preferences": "Einstellungen",
+      "language": "Sprache",
+      "security": "Sicherheit",
       "logout": "Abmelden",
       "memberSince": "Mitglied seit",
       "lastLogin": "Letzte Anmeldung",

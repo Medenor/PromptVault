@@ -260,7 +260,8 @@
       "loginButton": "Se connecter",
       "rememberMe": "Se souvenir de moi",
       "forgotPassword": "Mot de passe oublié ?",
-      "noAccount": "Vous n'avez pas de compte ? S'inscrire",
+      "noAccount": "Vous n'avez pas de compte ?",
+      "registerLink": "S'inscrire",
       "accountLocked": "Votre compte a été verrouillé en raison de trop nombreuses tentatives de connexion échouées. Veuillez réessayer plus tard ou réinitialiser votre mot de passe.",
       "invalidCredentials": "Nom d'utilisateur ou mot de passe invalide",
       "accountInactive": "Votre compte est inactif. Veuillez contacter le support.",
@@ -328,6 +329,12 @@
       "requestNewButton": "Demander une nouvelle réinitialisation"
     },
     "profile": {
+      "profileInfo": "Informations du profil",
+      "username": "Nom d'utilisateur",
+      "email": "Email",
+      "preferences": "Préférences",
+      "language": "Langue",
+      "security": "Sécurité",
       "logout": "Déconnexion",
       "memberSince": "Membre depuis",
       "lastLogin": "Dernière connexion",

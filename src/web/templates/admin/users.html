@@ -4,16 +4,17 @@
      file, You can obtain one at https://mozilla.org/MPL/2.0/. -->
 <html lang="en">
   <head>
+    {% import "macros/scripts.html" as scripts %}
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>User Management - PromptVault Admin</title>
     <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon.png" />
+    {{ scripts.load_css('admin-users', true) }}
     <script src="https://unpkg.com/i18next@23.7.6/i18next.min.js"></script>
     <script src="https://unpkg.com/i18next-browser-languagedetector@7.2.0/i18nextBrowserLanguageDetector.min.js"></script>
     <script src="https://unpkg.com/i18next-http-backend@2.4.2/i18nextHttpBackend.min.js"></script>
   </head>
   <body class="bg-gray-50 min-h-screen">
-    {% import "macros/scripts.html" as scripts %}
     <div class="min-h-screen flex flex-col">
       <!-- Header -->
       <header class="bg-blue-600 text-white shadow-lg">

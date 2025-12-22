@@ -260,7 +260,8 @@
       "rememberMe": "Remember me",
       "loginButton": "Login",
       "forgotPassword": "Forgot password?",
-      "noAccount": "Don't have an account? Register",
+      "noAccount": "Don't have an account?",
+      "registerLink": "Register",
       "accountLocked": "Your account has been locked due to too many failed login attempts. Please try again later or reset your password.",
       "invalidCredentials": "Invalid username or password",
       "accountInactive": "Your account is inactive. Please contact support.",
@@ -328,6 +329,12 @@
       "requestNewButton": "Request New Reset"
     },
     "profile": {
+      "profileInfo": "Profile Information",
+      "username": "Username",
+      "email": "Email",
+      "preferences": "Preferences",
+      "language": "Language",
+      "security": "Security",
       "logout": "Logout",
       "memberSince": "Member Since",
       "lastLogin": "Last Login",

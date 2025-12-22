@@ -9,8 +9,8 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-MANIFEST_PATH = Path(__file__).parent.parent / "static" / "manifest.json"
-DIST_PATH = Path(__file__).parent.parent / "static" / "dist"
+MANIFEST_PATH = Path(__file__).parent.parent.parent.parent / "dist" / "static" / ".vite" / "manifest.json"
+DIST_PATH = Path(__file__).parent.parent.parent.parent / "dist" / "static"
 
 
 @lru_cache(maxsize=1)
