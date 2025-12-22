@@ -95,7 +95,6 @@ export function reportError(
   if (logger && typeof logger.reportError === 'function') {
     logger.reportError(component, action, error, metadata, 'error');
   }
-  console.error(`[${component}] ${action}:`, error);
 }
 
 /**
@@ -111,5 +110,4 @@ export function reportWarning(
   if (logger && typeof logger.reportError === 'function') {
     logger.reportError(component, action, new Error(message), metadata, 'warning');
   }
-  console.warn(`[${component}] ${action}:`, message);
 }

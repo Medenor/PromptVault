@@ -37,27 +37,6 @@ const BACKUP_COMPONENT = 'backupManagement';
 let currentBackups: BackupItem[] = [];
 let selectedBackupId: string | null = null;
 
-function reportBackupIssue(
-  action: string,
-  error: unknown,
-  metadata: Record<string, unknown> = {},
-  severity: 'error' | 'warning' = 'error'
-): void {
-  const logger = window.FrontendLogger;
-  if (logger && typeof logger.reportError === 'function') {
-    logger.reportError(BACKUP_COMPONENT, action, error, metadata, severity);
-  } else {
-    reportError(BACKUP_COMPONENT, action, error, metadata, severity);
-  }
-
-  const prefix = `[PromptVault][backup] ${action}`;
-  if (severity === 'warning') {
-    console.warn(prefix, error, metadata);
-  } else {
-    console.error(prefix, error, metadata);
-  }
-}
-
 function initializeBackupManagement(): void {
   setupEventListeners();
   void checkAdminAccess();
@@ -82,7 +61,7 @@ function handleLanguageChange(event: Event): void {
   if (!selectedLanguage) return;
 
   changeLanguage(selectedLanguage).catch((err) => {
-    reportBackupIssue('changeLanguage', err, { language: selectedLanguage });
+    reportError(BACKUP_COMPONENT, 'changeLanguage', err, { language: selectedLanguage });
   });
 }
 
@@ -94,8 +73,8 @@ async function loadBackups(): Promise<void> {
     currentBackups = data.backups || [];
     renderBackupList(currentBackups);
   } catch (error) {
-    reportBackupIssue('loadBackups', error as Error);
-    showStatus('backup-status', 'Error loading backups', 'error');
+    reportError(BACKUP_COMPONENT, 'loadBackups', error);
+    showStatus('backup-status', t('backup.errorLoading'), 'error');
   }
 }
 
@@ -105,7 +84,7 @@ async function loadBackupStats(): Promise<void> {
     const stats = (await response.json()) as BackupStats;
     updateStatsDisplay(stats);
   } catch (error) {
-    reportBackupIssue('loadBackupStats', error as Error);
+    reportError(BACKUP_COMPONENT, 'loadBackupStats', error);
   }
 }
 
@@ -196,11 +175,11 @@ async function createBackup(): Promise<void> {
       void loadBackups();
       void loadBackupStats();
     } else {
-      showStatus('backup-status', 'Failed to create backup', 'error');
+      showStatus('backup-status', t('backup.createFailed'), 'error');
     }
   } catch (error) {
-    reportBackupIssue('createBackup', error as Error, { backupName });
-    showStatus('backup-status', 'Error creating backup', 'error');
+    reportError(BACKUP_COMPONENT, 'createBackup', error, { backupName });
+    showStatus('backup-status', t('backup.createError'), 'error');
   } finally {
     hideProgress('backup-progress');
   }
@@ -245,18 +224,18 @@ async function confirmRestore(): Promise<void> {
     const result = await response.json();
 
     if (result.success) {
-      showStatus('backup-status', 'Backup restored successfully', 'success');
+      showStatus('backup-status', t('backup.restoreSuccess'), 'success');
       setRestoreInProgress(true, 'backup.restoreRedirect');
       setTimeout(() => {
         window.location.href = '/';
       }, 2000);
     } else {
-      showStatus('backup-status', 'Failed to restore backup', 'error');
+      showStatus('backup-status', t('backup.restoreFailed'), 'error');
       setRestoreInProgress(false);
     }
   } catch (error) {
-    reportBackupIssue('restoreBackup', error as Error, { backupId: backupIdToRestore });
-    showStatus('backup-status', 'Error restoring backup', 'error');
+    reportError(BACKUP_COMPONENT, 'restoreBackup', error, { backupId: backupIdToRestore });
+    showStatus('backup-status', t('backup.restoreError'), 'error');
     setRestoreInProgress(false);
   } finally {
     hideProgress('backup-progress');
@@ -300,15 +279,15 @@ async function confirmDelete(): Promise<void> {
     const result = await response.json();
 
     if (result.success) {
-      showStatus('backup-status', 'Backup deleted successfully', 'success');
+      showStatus('backup-status', t('backup.deleteSuccess'), 'success');
       void loadBackups();
       void loadBackupStats();
     } else {
-      showStatus('backup-status', 'Failed to delete backup', 'error');
+      showStatus('backup-status', t('backup.deleteFailed'), 'error');
     }
   } catch (error) {
-    reportBackupIssue('deleteBackup', error as Error, { backupId: backupIdToDelete });
-    showStatus('backup-status', 'Error deleting backup', 'error');
+    reportError(BACKUP_COMPONENT, 'deleteBackup', error, { backupId: backupIdToDelete });
+    showStatus('backup-status', t('backup.deleteError'), 'error');
   } finally {
     hideProgress('backup-progress');
   }
@@ -340,11 +319,11 @@ async function cleanupBackups(): Promise<void> {
       void loadBackups();
       void loadBackupStats();
     } else {
-      showStatus('maintenance-status', 'Cleanup failed', 'error');
+      showStatus('maintenance-status', t('backup.cleanupFailed'), 'error');
     }
   } catch (error) {
-    reportBackupIssue('cleanupBackups', error as Error, { retentionDays });
-    showStatus('maintenance-status', 'Error cleaning up backups', 'error');
+    reportError(BACKUP_COMPONENT, 'cleanupBackups', error, { retentionDays });
+    showStatus('maintenance-status', t('backup.cleanupError'), 'error');
   } finally {
     hideProgress('maintenance-progress');
   }
@@ -376,11 +355,11 @@ async function compressBackups(): Promise<void> {
       void loadBackups();
       void loadBackupStats();
     } else {
-      showStatus('maintenance-status', 'Compression failed', 'error');
+      showStatus('maintenance-status', t('backup.compressionFailed'), 'error');
     }
   } catch (error) {
-    reportBackupIssue('compressBackups', error as Error, { daysThreshold: compressDays });
-    showStatus('maintenance-status', 'Error compressing backups', 'error');
+    reportError(BACKUP_COMPONENT, 'compressBackups', error, { daysThreshold: compressDays });
+    showStatus('maintenance-status', t('backup.compressionError'), 'error');
   } finally {
     hideProgress('maintenance-progress');
   }
@@ -503,7 +482,7 @@ async function checkAdminAccess(): Promise<void> {
       window.location.href = '/auth/login';
     }
   } catch (error) {
-    reportBackupIssue('checkAdminAccess', error as Error);
+    reportError(BACKUP_COMPONENT, 'checkAdminAccess', error);
     window.location.href = '/auth/login';
   }
 }
@@ -542,6 +521,6 @@ initI18n(() => {
     exposeGlobalHandlers();
     initializeBackupManagement();
   } catch (error) {
-    reportBackupIssue('initialize', error as Error);
+    reportError(BACKUP_COMPONENT, 'initialize', error);
   }
 });

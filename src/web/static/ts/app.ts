@@ -170,16 +170,12 @@ async function initializeApp(): Promise<void> {
 
 async function checkAdminAccess(): Promise<void> {
   try {
-    console.log('Checking authentication...');
     const response = await fetch('/api/auth/me', {
       credentials: 'include',
     });
 
-    console.log('Response status:', response.status);
     if (response.ok) {
       const data = (await response.json()) as { role?: string };
-      console.log('User data:', data);
-      console.log('User role:', data.role);
 
       // Authentication successful - show the app
       const loadingOverlay = document.getElementById('auth-loading-overlay');
@@ -188,27 +184,20 @@ async function checkAdminAccess(): Promise<void> {
       if (appDiv) appDiv.style.display = 'block';
 
       if (data.role === 'admin') {
-        console.log('User is admin, showing button');
         const adminBtn = document.getElementById('admin-btn');
-        console.log('Admin button element:', adminBtn);
         if (adminBtn) {
           adminBtn.style.display = '';
-          console.log('Admin button should now be visible');
         }
-      } else {
-        console.log('User is not admin, role is:', data.role);
       }
     } else if (response.status === 401) {
       // Session revoked or expired, redirect to login immediately
-      console.log('Session invalid, redirecting to login');
       window.location.href = '/auth/login';
     } else {
-      console.log('Response not OK:', response.statusText);
       // For other errors, also redirect to login for security
       window.location.href = '/auth/login';
     }
   } catch (error) {
-    console.error('Failed to check authentication:', error);
+    reportAppIssue('checkAdminAccess', error);
     // On error, redirect to login for security
     window.location.href = '/auth/login';
   }
@@ -682,6 +671,8 @@ function fallbackCopyTextToClipboard(text: string, id: PromptId): void {
     textArea.select();
     textArea.setSelectionRange(0, textArea.value.length);
 
+    // Modern Clipboard API is tried first, this fallback is for older browsers/non-HTTPS
+    // Note: document.execCommand is deprecated but necessary for browser compatibility
     const successful = document.execCommand('copy');
     if (successful) {
       showCopyFeedback(id, 'messages.copied');
@@ -1455,7 +1446,7 @@ let allVersions: VersionSummary[] = [];
 
 async function showDiffModal(): Promise<void> {
   if (selectedVersions.size !== 2) {
-    showNotification('Please select exactly 2 versions to compare', 'error');
+    showNotification(t('messages.selectTwoVersions'), 'error');
     return;
   }
 
@@ -1660,7 +1651,7 @@ function handleKeyboardShortcuts(event: KeyboardEvent): void {
     if (lastSelectedPromptId) {
       showVersionHistoryModal(lastSelectedPromptId);
     } else {
-      showNotification('Please select a prompt first', 'info');
+      showNotification(t('messages.selectPromptFirst'), 'info');
     }
   }
 
@@ -1775,14 +1766,13 @@ function recordApiCall(endpoint: string, duration: number): void {
 
 // Wrap fetch to track API performance
 const originalFetch = window.fetch;
-window.fetch = function (...args: Parameters<typeof fetch>) {
+window.fetch = async function (...args: Parameters<typeof fetch>) {
   const startTime = performance.now();
-  return originalFetch.apply(this, args).then((response) => {
-    const duration = performance.now() - startTime;
-    const endpoint = typeof args[0] === 'string' ? args[0] : String(args[0]);
-    recordApiCall(endpoint, duration);
-    return response;
-  });
+  const response = await originalFetch.apply(this, args);
+  const duration = performance.now() - startTime;
+  const endpoint = typeof args[0] === 'string' ? args[0] : String(args[0]);
+  recordApiCall(endpoint, duration);
+  return response;
 };
 
 // Tag Autocomplete Implementation

@@ -69,7 +69,9 @@
     "missingTitle": "Titre manquant",
     "missingContent": "Contenu manquant",
     "missingCommitMessage": "Champ obligatoire manquant",
-    "unknownError": "Erreur inconnue"
+    "unknownError": "Erreur inconnue",
+    "selectTwoVersions": "Veuillez sélectionner exactement 2 versions à comparer",
+    "selectPromptFirst": "Veuillez d'abord sélectionner une invite"
   },
   "validation": {
     "required": "Ce champ est obligatoire.",
@@ -171,7 +173,8 @@
     "validationErrors": "Erreurs de validation:",
     "validationPassed": "Toutes les données ont été validées avec succès",
     "operationCancelled": "Opération annulée",
-    "clearBtn": "Effacer"
+    "clearBtn": "Effacer",
+    "settingsCleared": "Paramètres d'exportation effacés"
   },
   "search": {
     "emptyState": "Aucun prompt trouvé. Créez votre premier prompt pour commencer !",
@@ -249,7 +252,20 @@
     "restoreBtn": "Restaurer",
     "confirmDelete": "Confirmer la suppression",
     "deleteWarning": "Êtes-vous sûr de vouloir supprimer cette sauvegarde? Cette action ne peut pas être annulée.",
-    "deleteBtn": "Supprimer"
+    "deleteBtn": "Supprimer",
+    "errorLoading": "Erreur lors du chargement des sauvegardes",
+    "createFailed": "Impossible de créer la sauvegarde",
+    "createError": "Erreur lors de la création de la sauvegarde",
+    "restoreSuccess": "Sauvegarde restaurée avec succès",
+    "restoreFailed": "Impossible de restaurer la sauvegarde",
+    "restoreError": "Erreur lors de la restauration de la sauvegarde",
+    "deleteSuccess": "Sauvegarde supprimée avec succès",
+    "deleteFailed": "Impossible de supprimer la sauvegarde",
+    "deleteError": "Erreur lors de la suppression de la sauvegarde",
+    "cleanupFailed": "Le nettoyage a échoué",
+    "cleanupError": "Erreur lors du nettoyage des sauvegardes",
+    "compressionFailed": "La compression a échoué",
+    "compressionError": "Erreur lors de la compression des sauvegardes"
   },
   "auth": {
     "login": {

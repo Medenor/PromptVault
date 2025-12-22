@@ -69,7 +69,9 @@
     "missingTitle": "Titel fehlt",
     "missingContent": "Inhalt fehlt",
     "missingCommitMessage": "Erforderliches Feld fehlt",
-    "unknownError": "Unbekannter Fehler"
+    "unknownError": "Unbekannter Fehler",
+    "selectTwoVersions": "Bitte wählen Sie genau 2 Versionen zum Vergleichen aus",
+    "selectPromptFirst": "Bitte wählen Sie zunächst eine Eingabeaufforderung aus"
   },
   "validation": {
     "required": "Dieses Feld ist erforderlich.",
@@ -171,7 +173,8 @@
     "validationErrors": "Validierungsfehler:",
     "validationPassed": "Alle Daten wurden erfolgreich validiert",
     "operationCancelled": "Vorgang abgebrochen",
-    "clearBtn": "Löschen"
+    "clearBtn": "Löschen",
+    "settingsCleared": "Exporteinstellungen gelöscht"
   },
   "search": {
     "emptyState": "Keine Prompts gefunden. Erstellen Sie Ihren ersten Prompt, um zu starten!",
@@ -249,7 +252,20 @@
     "restoreBtn": "Wiederherstellen",
     "confirmDelete": "Löschen bestätigen",
     "deleteWarning": "Sind Sie sicher, dass Sie diese Sicherung löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.",
-    "deleteBtn": "Löschen"
+    "deleteBtn": "Löschen",
+    "errorLoading": "Fehler beim Laden von Backups",
+    "createFailed": "Fehler beim Erstellen des Backups",
+    "createError": "Fehler beim Erstellen des Backups",
+    "restoreSuccess": "Backup erfolgreich wiederhergestellt",
+    "restoreFailed": "Fehler beim Wiederherstellen des Backups",
+    "restoreError": "Fehler beim Wiederherstellen des Backups",
+    "deleteSuccess": "Backup erfolgreich gelöscht",
+    "deleteFailed": "Fehler beim Löschen des Backups",
+    "deleteError": "Fehler beim Löschen des Backups",
+    "cleanupFailed": "Bereinigung fehlgeschlagen",
+    "cleanupError": "Fehler beim Bereinigen von Backups",
+    "compressionFailed": "Kompression fehlgeschlagen",
+    "compressionError": "Fehler beim Komprimieren von Backups"
   },
   "auth": {
     "login": {
