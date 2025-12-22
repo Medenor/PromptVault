@@ -209,56 +209,56 @@ PromptVault includes a comprehensive, production-ready backup system to prevent 
 #### 1. Login Page
 
 <img src="docs/images/gallery/promptvault_loginpage.jpg" alt="PromptVault Login Page" width="90%"><br/>
-Secure authentication interface with JWT-based login and password reset functionality.
+Tailwind v4 flat-design login screen with JWT authentication and password reset access.
 
 <br><br>
 
 #### 2. Main Interface
 
 <img src="docs/images/gallery/promptvault_main_page.jpg" alt="PromptVault Main Interface" width="90%"><br/>
-Clean and intuitive dashboard for managing all your prompts with categories and tags.
+Modern prompt dashboard with filter sidebar, tag chips, and responsive card grid.
 
 <br><br>
 
 #### 3. Prompt Editor
 
 <img src="docs/images/gallery/promptvault_prompt_editor.jpg" alt="Prompt Editor Interface" width="90%"><br/>
-Rich text editor with real-time validation and support for categories, tags, and metadata.
+Redesigned prompt editor with structured fields, categories, tags, and commit messaging.
 
 <br><br>
 
 #### 4. Version History & Diff Visualization
 
 <img src="docs/images/gallery/promptvault_version_history.jpg" alt="Version History" width="90%"><br/>
-Git-like version control system with full history tracking, diff visualization, and revert capabilities.
+Version history modal with searchable entries, revert actions, and quick selection.
 
 <br><br>
 
 #### 5. Import/Export Management
 
 <img src="docs/images/gallery/promptvault_import_export.jpg" alt="Import/Export Management Interface" width="90%"><br/>
-Support for multiple formats (CSV, Markdown, JSON) with preview functionality before import.
+Import/export hub with side-by-side panels, format options, and live statistics.
 
 <br><br>
 
 #### 6. Data Backup System
 
 <img src="docs/images/gallery/promptvault_backup.jpg" alt="Backup Management Interface" width="90%"><br/>
-Comprehensive backup and restoration system with automatic pre-operation backups and compression.
+Backup management view with create/restore actions, maintenance tools, and stats.
 
 <br><br>
 
 #### 7. User Profile Management
 
 <img src="docs/images/gallery/promptvault_user_profile.jpg" alt="User Profile Interface" width="90%"><br/>
-Manage your profile, change password, and view active sessions with device information.
+Profile page with preferences, security controls, and active session management.
 
 <br><br>
 
 #### 8. Admin User Management
 
 <img src="docs/images/gallery/promptvault_admin_user_mgmt.jpg" alt="Admin User Management" width="90%"><br/>
-Administrative interface for managing users, roles, and permissions with full audit capabilities.
+Admin dashboard for user management with filters, role badges, and quick actions.
 
 </div>
 
