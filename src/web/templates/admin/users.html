@@ -4,163 +4,191 @@
      file, You can obtain one at https://mozilla.org/MPL/2.0/. -->
 <html lang="en">
   <head>
+    {% import "macros/scripts.html" as scripts %}
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>User Management - PromptVault Admin</title>
     <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon.png" />
-    <link rel="stylesheet" href="/static/css/style.css" />
-    <link rel="stylesheet" href="/static/css/admin.css" />
+    {{ scripts.load_css('admin-users', true) }}
     <script src="https://unpkg.com/i18next@23.7.6/i18next.min.js"></script>
     <script src="https://unpkg.com/i18next-browser-languagedetector@7.2.0/i18nextBrowserLanguageDetector.min.js"></script>
     <script src="https://unpkg.com/i18next-http-backend@2.4.2/i18nextHttpBackend.min.js"></script>
   </head>
-  <body>
-    {% import "macros/scripts.html" as scripts %}
-    <div class="app">
-      <header class="header">
-        <div class="header-logo">
-          <img
-            src="/static/images/promptvault_logo_frontend.webp"
-            alt="PromptVault Logo"
-            class="logo"
-          />
-        </div>
-        <h1>PromptVault Admin</h1>
-        <div class="header-actions">
-          <select id="language-selector" class="language-selector">
-            <option value="en">English</option>
-            <option value="fr">Français</option>
-            <option value="es">Español</option>
-            <option value="de">Deutsch</option>
-          </select>
-          <button onclick="window.location.href = '/admin/sessions'" data-i18n="admin.nav.sessions">
-            Sessions
-          </button>
-          <button onclick="window.location.href = '/auth/profile'" data-i18n="admin.nav.profile">
-            Profile
-          </button>
-          <button onclick="window.location.href = '/'" data-i18n="nav.backToMain">
-            Back to Main
-          </button>
+  <body class="bg-gray-50 min-h-screen">
+    <div class="min-h-screen flex flex-col">
+      <!-- Header -->
+      <header class="bg-blue-600 text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center space-x-4 min-w-0">
+              <img
+                src="/static/images/promptvault_logo_frontend.webp"
+                alt="PromptVault Logo"
+                class="h-14 w-14 border-2 border-gray-400 rounded-lg shadow-lg flex-shrink-0"
+              />
+              <h1 class="text-2xl font-bold truncate">PromptVault Admin</h1>
+            </div>
+            <div class="hidden md:flex items-center space-x-3 flex-shrink-0">
+              <button onclick="window.location.href = '/admin/sessions'" class="px-4 py-2 bg-blue-700 hover:bg-blue-800 rounded text-sm font-medium transition whitespace-nowrap" data-i18n="admin.nav.sessions">
+                Sessions
+              </button>
+              <button onclick="window.location.href = '/auth/profile'" class="px-4 py-2 bg-blue-700 hover:bg-blue-800 rounded text-sm font-medium transition whitespace-nowrap" data-i18n="admin.nav.profile">
+                Profile
+              </button>
+              <button onclick="window.location.href = '/'" class="px-4 py-2 bg-blue-700 hover:bg-blue-800 rounded text-sm font-medium transition whitespace-nowrap" data-i18n="nav.backToMain">
+                Back to Main
+              </button>
+            </div>
+            <!-- Mobile menu button -->
+            <button id="admin-menu-toggle" class="md:hidden p-2 text-blue-100 hover:text-white flex-shrink-0" aria-label="Toggle menu">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+              </svg>
+            </button>
+          </div>
+          <!-- Mobile menu dropdown -->
+          <div id="admin-menu-dropdown" class="hidden md:hidden mt-4 flex flex-col gap-2">
+            <button onclick="window.location.href = '/admin/sessions'" class="w-full px-4 py-2 bg-blue-700 hover:bg-blue-800 rounded text-sm font-medium transition text-left" data-i18n="admin.nav.sessions">
+              Sessions
+            </button>
+            <button onclick="window.location.href = '/auth/profile'" class="w-full px-4 py-2 bg-blue-700 hover:bg-blue-800 rounded text-sm font-medium transition text-left" data-i18n="admin.nav.profile">
+              Profile
+            </button>
+            <button onclick="window.location.href = '/'" class="w-full px-4 py-2 bg-blue-700 hover:bg-blue-800 rounded text-sm font-medium transition text-left" data-i18n="nav.backToMain">
+              Back to Main
+            </button>
+          </div>
         </div>
       </header>
 
-      <div class="admin-container">
-        <div class="admin-header">
-          <h2 data-i18n="admin.users.title">User Management</h2>
-          <div class="admin-actions">
-            <button id="add-user-btn" class="btn btn-primary" data-i18n="admin.users.addUser">
-              Add User
+      <!-- Main Content -->
+      <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+        <!-- Page Header -->
+        <div class="mb-6">
+          <h2 class="text-3xl font-bold text-gray-900 mb-4 md:mb-0" data-i18n="admin.users.title">User Management</h2>
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-0">
+            <div class="flex flex-col sm:flex-row gap-3 md:space-x-3">
+              <button id="add-user-btn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition" data-i18n="admin.users.addUser">
+                Add User
+              </button>
+              <button id="refresh-users-btn" class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition" data-i18n="actions.refresh">
+                Refresh
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <input
+                type="text"
+                id="search-input"
+                placeholder="Search users..."
+                data-i18n="[placeholder]admin.users.searchPlaceholder"
+                class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label for="role-filter" class="block text-sm font-medium text-gray-700 mb-1" data-i18n="admin.users.filterRole">Role:</label>
+              <select id="role-filter" class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="all" data-i18n="admin.users.allRoles">All Roles</option>
+                <option value="viewer" data-i18n="admin.users.roleViewer">Viewer</option>
+                <option value="editor" data-i18n="admin.users.roleEditor">Editor</option>
+                <option value="admin" data-i18n="admin.users.roleAdmin">Admin</option>
+              </select>
+            </div>
+            <div>
+              <label for="status-filter" class="block text-sm font-medium text-gray-700 mb-1" data-i18n="admin.users.filterStatus">Status:</label>
+              <select id="status-filter" class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="all" data-i18n="admin.users.allStatuses">All Statuses</option>
+                <option value="active" data-i18n="admin.users.statusActive">Active</option>
+                <option value="inactive" data-i18n="admin.users.statusInactive">Inactive</option>
+                <option value="locked" data-i18n="admin.users.statusLocked">Locked</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+          <div class="bg-white rounded-lg shadow p-6">
+            <div class="text-3xl font-bold text-gray-900" id="total-users">0</div>
+            <div class="text-sm text-gray-600 mt-1" data-i18n="admin.users.totalUsers">Total Users</div>
+          </div>
+          <div class="bg-white rounded-lg shadow p-6">
+            <div class="text-3xl font-bold text-green-600" id="active-users">0</div>
+            <div class="text-sm text-gray-600 mt-1" data-i18n="admin.users.activeUsers">Active Users</div>
+          </div>
+          <div class="bg-white rounded-lg shadow p-6">
+            <div class="text-3xl font-bold text-red-600" id="locked-users">0</div>
+            <div class="text-sm text-gray-600 mt-1" data-i18n="admin.users.lockedUsers">Locked Users</div>
+          </div>
+          <div class="bg-white rounded-lg shadow p-6">
+            <div class="text-3xl font-bold text-blue-600" id="admin-users">0</div>
+            <div class="text-sm text-gray-600 mt-1" data-i18n="admin.users.adminUsers">Admins</div>
+          </div>
+        </div>
+
+        <!-- Users Table -->
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" data-i18n="admin.users.username">Username</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" data-i18n="admin.users.email">Email</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" data-i18n="admin.users.role">Role</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" data-i18n="admin.users.status">Status</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" data-i18n="admin.users.lastLogin">Last Login</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" data-i18n="admin.users.sessions">Sessions</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" data-i18n="admin.users.actions">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="users-table-body" class="bg-white divide-y divide-gray-200">
+                <tr>
+                  <td colspan="7" class="px-6 py-4 text-center text-gray-500">
+                    <div data-i18n="messages.loading">Loading...</div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination -->
+          <div class="bg-gray-50 px-6 py-4 flex items-center justify-between border-t border-gray-200">
+            <button
+              id="prev-page"
+              class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled
+              data-i18n="admin.users.previous"
+            >
+              Previous
             </button>
-            <button id="refresh-users-btn" class="btn btn-secondary" data-i18n="actions.refresh">
-              Refresh
+            <span id="page-info" class="text-sm text-gray-700">Page 1 of 1</span>
+            <button id="next-page" class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed" disabled data-i18n="admin.users.next">
+              Next
             </button>
           </div>
         </div>
-
-        <div class="admin-filters">
-          <div class="filter-group">
-            <input
-              type="text"
-              id="search-input"
-              placeholder="Search users..."
-              data-i18n="[placeholder]admin.users.searchPlaceholder"
-              class="search-input"
-            />
-          </div>
-          <div class="filter-group">
-            <label for="role-filter" data-i18n="admin.users.filterRole">Role:</label>
-            <select id="role-filter" class="filter-select">
-              <option value="all" data-i18n="admin.users.allRoles">All Roles</option>
-              <option value="viewer" data-i18n="admin.users.roleViewer">Viewer</option>
-              <option value="editor" data-i18n="admin.users.roleEditor">Editor</option>
-              <option value="admin" data-i18n="admin.users.roleAdmin">Admin</option>
-            </select>
-          </div>
-          <div class="filter-group">
-            <label for="status-filter" data-i18n="admin.users.filterStatus">Status:</label>
-            <select id="status-filter" class="filter-select">
-              <option value="all" data-i18n="admin.users.allStatuses">All Statuses</option>
-              <option value="active" data-i18n="admin.users.statusActive">Active</option>
-              <option value="inactive" data-i18n="admin.users.statusInactive">Inactive</option>
-              <option value="locked" data-i18n="admin.users.statusLocked">Locked</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="admin-stats">
-          <div class="stat-card">
-            <div class="stat-value" id="total-users">0</div>
-            <div class="stat-label" data-i18n="admin.users.totalUsers">Total Users</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-value" id="active-users">0</div>
-            <div class="stat-label" data-i18n="admin.users.activeUsers">Active Users</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-value" id="locked-users">0</div>
-            <div class="stat-label" data-i18n="admin.users.lockedUsers">Locked Users</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-value" id="admin-users">0</div>
-            <div class="stat-label" data-i18n="admin.users.adminUsers">Admins</div>
-          </div>
-        </div>
-
-        <div class="users-table-container">
-          <table class="users-table">
-            <thead>
-              <tr>
-                <th data-i18n="admin.users.username">Username</th>
-                <th data-i18n="admin.users.email">Email</th>
-                <th data-i18n="admin.users.role">Role</th>
-                <th data-i18n="admin.users.status">Status</th>
-                <th data-i18n="admin.users.lastLogin">Last Login</th>
-                <th data-i18n="admin.users.sessions">Sessions</th>
-                <th data-i18n="admin.users.actions">Actions</th>
-              </tr>
-            </thead>
-            <tbody id="users-table-body">
-              <tr>
-                <td colspan="7" class="loading-cell">
-                  <div class="loading" data-i18n="messages.loading">Loading...</div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="pagination" id="pagination">
-          <button
-            id="prev-page"
-            class="btn btn-secondary"
-            disabled
-            data-i18n="admin.users.previous"
-          >
-            Previous
-          </button>
-          <span id="page-info" class="page-info">Page 1 of 1</span>
-          <button id="next-page" class="btn btn-secondary" disabled data-i18n="admin.users.next">
-            Next
-          </button>
-        </div>
-      </div>
+      </main>
     </div>
 
     <!-- User Detail Modal -->
-    <div id="user-detail-modal" class="modal is-hidden">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h2 data-i18n="admin.users.userDetails">User Details</h2>
-          <span class="close" onclick="closeUserDetailModal()">&times;</span>
+    <div id="user-detail-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between p-6 border-b border-gray-200">
+          <h2 class="text-xl font-bold text-gray-900" data-i18n="admin.users.userDetails">User Details</h2>
+          <span class="text-gray-400 hover:text-gray-600 text-2xl cursor-pointer" onclick="closeUserDetailModal()">&times;</span>
         </div>
-        <div class="modal-body">
-          <div id="user-detail-content" class="user-detail-content">
-            <div class="loading" data-i18n="messages.loading">Loading...</div>
+        <div class="p-6">
+          <div id="user-detail-content">
+            <div class="text-gray-500" data-i18n="messages.loading">Loading...</div>
           </div>
         </div>
-        <div class="modal-footer">
-          <button id="close-user-detail-btn" class="btn btn-secondary" data-i18n="actions.close">
+        <div class="flex justify-end space-x-3 p-6 border-t border-gray-200">
+          <button id="close-user-detail-btn" class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition" data-i18n="actions.close">
             Close
           </button>
         </div>
@@ -168,43 +196,43 @@
     </div>
 
     <!-- Edit User Modal -->
-    <div id="edit-user-modal" class="modal is-hidden">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h2 data-i18n="admin.users.editUser">Edit User</h2>
-          <span class="close" onclick="closeEditUserModal()">&times;</span>
+    <div id="edit-user-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between p-6 border-b border-gray-200">
+          <h2 class="text-xl font-bold text-gray-900" data-i18n="admin.users.editUser">Edit User</h2>
+          <span class="text-gray-400 hover:text-gray-600 text-2xl cursor-pointer" onclick="closeEditUserModal()">&times;</span>
         </div>
-        <div class="modal-body">
-          <form id="edit-user-form" class="admin-form" novalidate>
+        <div class="p-6">
+          <form id="edit-user-form" novalidate>
             <input type="hidden" id="edit-user-id" name="user_id" />
 
-            <div class="form-group">
-              <label for="edit-role" data-i18n="admin.users.role">Role:</label>
-              <select id="edit-role" name="role" class="form-control">
+            <div class="mb-4">
+              <label for="edit-role" class="block text-sm font-medium text-gray-700 mb-2" data-i18n="admin.users.role">Role:</label>
+              <select id="edit-role" name="role" class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
                 <option value="viewer" data-i18n="admin.users.roleViewer">Viewer</option>
                 <option value="editor" data-i18n="admin.users.roleEditor">Editor</option>
                 <option value="admin" data-i18n="admin.users.roleAdmin">Admin</option>
               </select>
             </div>
 
-            <div class="form-group">
-              <label>
-                <input type="checkbox" id="edit-is-active" name="is_active" />
-                <span data-i18n="admin.users.activeAccount">Active Account</span>
+            <div class="mb-4">
+              <label class="flex items-center">
+                <input type="checkbox" id="edit-is-active" name="is_active" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+                <span class="ml-2 text-sm text-gray-700" data-i18n="admin.users.activeAccount">Active Account</span>
               </label>
             </div>
 
-            <div class="form-group">
-              <label>
-                <input type="checkbox" id="edit-email-verified" name="email_verified" />
-                <span data-i18n="admin.users.emailVerified">Email Verified</span>
+            <div class="mb-4">
+              <label class="flex items-center">
+                <input type="checkbox" id="edit-email-verified" name="email_verified" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+                <span class="ml-2 text-sm text-gray-700" data-i18n="admin.users.emailVerified">Email Verified</span>
               </label>
             </div>
           </form>
         </div>
-        <div class="modal-footer">
-          <button id="save-user-btn" class="btn btn-primary" data-i18n="actions.save">Save</button>
-          <button id="cancel-edit-btn" class="btn btn-secondary" data-i18n="actions.cancel">
+        <div class="flex justify-end space-x-3 p-6 border-t border-gray-200">
+          <button id="save-user-btn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition" data-i18n="actions.save">Save</button>
+          <button id="cancel-edit-btn" class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition" data-i18n="actions.cancel">
             Cancel
           </button>
         </div>
@@ -212,24 +240,24 @@
     </div>
 
     <!-- Confirm Delete Modal -->
-    <div id="confirm-delete-modal" class="modal is-hidden">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h2 data-i18n="admin.users.confirmDelete">Confirm Delete</h2>
-          <span class="close" onclick="closeConfirmDeleteModal()">&times;</span>
+    <div id="confirm-delete-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+        <div class="flex items-center justify-between p-6 border-b border-gray-200">
+          <h2 class="text-xl font-bold text-gray-900" data-i18n="admin.users.confirmDelete">Confirm Delete</h2>
+          <span class="text-gray-400 hover:text-gray-600 text-2xl cursor-pointer" onclick="closeConfirmDeleteModal()">&times;</span>
         </div>
-        <div class="modal-body">
-          <p data-i18n="admin.users.deleteWarning">
+        <div class="p-6">
+          <p class="text-gray-700 mb-4" data-i18n="admin.users.deleteWarning">
             Are you sure you want to permanently delete this user? This action cannot be undone and
             will remove all user data from the database.
           </p>
-          <p class="warning-text"><strong id="delete-username"></strong></p>
+          <p class="font-bold text-red-600"><strong id="delete-username"></strong></p>
         </div>
-        <div class="modal-footer">
-          <button id="confirm-delete-btn" class="btn btn-danger" data-i18n="actions.delete">
+        <div class="flex justify-end space-x-3 p-6 border-t border-gray-200">
+          <button id="confirm-delete-btn" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded font-medium transition" data-i18n="actions.delete">
             Delete
           </button>
-          <button id="cancel-delete-btn" class="btn btn-secondary" data-i18n="actions.cancel">
+          <button id="cancel-delete-btn" class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition" data-i18n="actions.cancel">
             Cancel
           </button>
         </div>
@@ -237,144 +265,138 @@
     </div>
 
     <!-- Create User Modal -->
-    <div id="create-user-modal" class="modal is-hidden">
-      <div class="modal-content modal-large">
-        <div class="modal-header">
-          <h2 data-i18n="admin.users.createUser">Create New User</h2>
-          <span class="close" onclick="closeCreateUserModal()">&times;</span>
+    <div id="create-user-modal" class="hidden fixed inset-0 bg-black/25 flex items-center justify-center z-50">
+      <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between p-6 border-b border-gray-200">
+          <h2 class="text-xl font-bold text-gray-900" data-i18n="admin.users.createUser">Create New User</h2>
+          <span class="text-gray-400 hover:text-gray-600 text-2xl cursor-pointer" onclick="closeCreateUserModal()">&times;</span>
         </div>
-        <div class="modal-body">
-          <form id="create-user-form" class="admin-form" novalidate>
-            <div class="form-group">
-              <label for="create-username" data-i18n="admin.users.username">Username:</label>
+        <div class="p-6">
+          <form id="create-user-form" novalidate>
+            <div class="mb-4">
+              <label for="create-username" class="block text-sm font-medium text-gray-700 mb-2" data-i18n="admin.users.username">Username:</label>
               <input
                 type="text"
                 id="create-username"
                 name="username"
-                class="form-control"
+                class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                 minlength="3"
                 maxlength="32"
                 required
                 data-i18n="[placeholder]admin.users.usernamePlaceholder"
                 placeholder="3-32 characters, letters, numbers, underscores"
               />
-              <div class="error-message" id="create-username-error"></div>
+              <div class="text-red-600 text-sm mt-1" id="create-username-error"></div>
             </div>
 
-            <div class="form-group">
-              <label for="create-email" data-i18n="admin.users.email">Email:</label>
+            <div class="mb-4">
+              <label for="create-email" class="block text-sm font-medium text-gray-700 mb-2" data-i18n="admin.users.email">Email:</label>
               <input
                 type="email"
                 id="create-email"
                 name="email"
-                class="form-control"
+                class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
                 data-i18n="[placeholder]admin.users.emailPlaceholder"
                 placeholder="user@example.com"
               />
-              <div class="error-message" id="create-email-error"></div>
+              <div class="text-red-600 text-sm mt-1" id="create-email-error"></div>
             </div>
 
-            <div class="form-group">
-              <label for="create-password" data-i18n="admin.users.password">Password:</label>
-              <div class="password-input-wrapper">
+            <div class="mb-4">
+              <label for="create-password" class="block text-sm font-medium text-gray-700 mb-2" data-i18n="admin.users.password">Password:</label>
+              <div class="relative">
                 <input
                   type="password"
                   id="create-password"
                   name="password"
-                  class="form-control"
+                  class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                   minlength="12"
                   maxlength="128"
                   required
                   data-i18n="[placeholder]admin.users.passwordPlaceholder"
                   placeholder="Min 12 chars: uppercase, lowercase, digit, special char"
                 />
-                <button type="button" id="toggle-password-create" class="toggle-password-btn">
+                <button type="button" id="toggle-password-create" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700">
                   ⊙
                 </button>
               </div>
-              <div id="create-password-strength" class="password-strength" aria-live="polite">
-                <div class="strength-bar">
-                  <div class="strength-bar-fill" id="create-strength-bar-fill"></div>
+              <div id="create-password-strength" class="mt-2" aria-live="polite">
+                <div class="h-2 bg-gray-200 rounded overflow-hidden">
+                  <div class="h-full transition-all duration-300" id="create-strength-bar-fill"></div>
                 </div>
-                <div class="strength-text" id="create-strength-text"></div>
+                <div class="text-sm mt-1" id="create-strength-text"></div>
               </div>
-              <div class="password-requirements">
-                <div id="req-length" class="requirement">
-                  <span class="requirement-icon">○</span>
+              <div class="mt-2 space-y-1">
+                <div id="req-length" class="text-sm text-gray-600 flex items-center">
+                  <span class="mr-2">○</span>
                   <span data-i18n="auth.register.reqLength">At least 12 characters</span>
                 </div>
-                <div id="req-uppercase" class="requirement">
-                  <span class="requirement-icon">○</span>
+                <div id="req-uppercase" class="text-sm text-gray-600 flex items-center">
+                  <span class="mr-2">○</span>
                   <span data-i18n="auth.register.reqUppercase">One uppercase letter (A-Z)</span>
                 </div>
-                <div id="req-lowercase" class="requirement">
-                  <span class="requirement-icon">○</span>
+                <div id="req-lowercase" class="text-sm text-gray-600 flex items-center">
+                  <span class="mr-2">○</span>
                   <span data-i18n="auth.register.reqLowercase">One lowercase letter (a-z)</span>
                 </div>
-                <div id="req-digit" class="requirement">
-                  <span class="requirement-icon">○</span>
+                <div id="req-digit" class="text-sm text-gray-600 flex items-center">
+                  <span class="mr-2">○</span>
                   <span data-i18n="auth.register.reqDigit">One digit (0-9)</span>
                 </div>
-                <div id="req-special" class="requirement">
-                  <span class="requirement-icon">○</span>
+                <div id="req-special" class="text-sm text-gray-600 flex items-center">
+                  <span class="mr-2">○</span>
                   <span data-i18n="auth.register.reqSpecial">One special character (!@#$%^&*)</span>
                 </div>
               </div>
-              <div class="error-message" id="create-password-error"></div>
+              <div class="text-red-600 text-sm mt-1" id="create-password-error"></div>
             </div>
 
-            <div class="form-group">
-              <label for="create-confirm-password" data-i18n="admin.users.confirmPassword"
-                >Confirm Password:</label
-              >
-              <div class="password-input-wrapper">
+            <div class="mb-4">
+              <label for="create-confirm-password" class="block text-sm font-medium text-gray-700 mb-2" data-i18n="admin.users.confirmPassword">Confirm Password:</label>
+              <div class="relative">
                 <input
                   type="password"
                   id="create-confirm-password"
                   name="confirm_password"
-                  class="form-control"
+                  class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                   minlength="12"
                   maxlength="128"
                   required
                   data-i18n="[placeholder]admin.users.confirmPasswordPlaceholder"
                   placeholder="Confirm password"
                 />
-                <button
-                  type="button"
-                  id="toggle-confirm-password-create"
-                  class="toggle-password-btn"
-                >
+                <button type="button" id="toggle-confirm-password-create" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700">
                   ⊙
                 </button>
               </div>
-              <div class="error-message" id="create-confirm-password-error"></div>
+              <div class="text-red-600 text-sm mt-1" id="create-confirm-password-error"></div>
             </div>
 
-            <div class="form-group">
-              <label for="create-role" data-i18n="admin.users.role">Role:</label>
-              <select id="create-role" name="role" class="form-control">
+            <div class="mb-4">
+              <label for="create-role" class="block text-sm font-medium text-gray-700 mb-2" data-i18n="admin.users.role">Role:</label>
+              <select id="create-role" name="role" class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
                 <option value="viewer" data-i18n="admin.users.roleViewer">Viewer</option>
                 <option value="editor" data-i18n="admin.users.roleEditor">Editor</option>
                 <option value="admin" data-i18n="admin.users.roleAdmin">Admin</option>
               </select>
             </div>
 
-            <div class="form-group">
-              <label>
-                <input type="checkbox" id="create-email-verified" name="email_verified" />
-                <span data-i18n="admin.users.markEmailVerified">Mark email as verified</span>
+            <div class="mb-4">
+              <label class="flex items-center">
+                <input type="checkbox" id="create-email-verified" name="email_verified" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+                <span class="ml-2 text-sm text-gray-700" data-i18n="admin.users.markEmailVerified">Mark email as verified</span>
               </label>
             </div>
 
-            <div class="error-message" id="create-form-error"></div>
+            <div class="text-red-600 text-sm" id="create-form-error"></div>
           </form>
         </div>
-        <div class="modal-footer">
-          <button id="create-user-submit-btn" class="btn btn-primary" data-i18n="actions.create">
+        <div class="flex justify-end space-x-3 p-6 border-t border-gray-200">
+          <button id="create-user-submit-btn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition" data-i18n="actions.create">
             Create User
           </button>
-          <button id="create-user-cancel-btn" class="btn btn-secondary" data-i18n="actions.cancel">
+          <button id="create-user-cancel-btn" class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition" data-i18n="actions.cancel">
             Cancel
           </button>
         </div>

@@ -304,6 +304,16 @@ async def health_check():
     }
 
 
+@app.get("/api/health")
+async def api_health():
+    """Health check endpoint for container monitoring."""
+    return {
+        "status": "healthy",
+        "timestamp": datetime.utcnow().isoformat(),
+        "service": "PromptVault API",
+    }
+
+
 @app.get("/api/validation/stats")
 async def get_validation_stats():
     """Return validation monitoring snapshot."""
@@ -322,6 +332,10 @@ FRONTEND_LOG_LIMIT = 10
 frontend_log_rate: Dict[str, Deque[float]] = defaultdict(deque)
 
 # Mount static files
+# Mount built assets first (higher priority for production builds)
+import os
+if os.path.exists("dist/static"):
+    app.mount("/static/dist", StaticFiles(directory="dist/static"), name="dist")
 app.mount("/static", StaticFiles(directory="src/web/static"), name="static")
 
 # Templates

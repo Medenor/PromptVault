@@ -4,264 +4,243 @@
      file, You can obtain one at https://mozilla.org/MPL/2.0/. -->
 <html lang="en">
   <head>
+    {% import "macros/scripts.html" as scripts %}
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PromptVault - Import/Export</title>
     <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon.png" />
-    <link rel="stylesheet" href="/static/css/style.css" />
-    <link rel="stylesheet" href="/static/css/validation.css" />
+    {{ scripts.load_css('import-export', true) }}
     <script src="https://unpkg.com/i18next@23.7.6/i18next.min.js"></script>
     <script src="https://unpkg.com/i18next-browser-languagedetector@7.2.0/i18nextBrowserLanguageDetector.min.js"></script>
     <script src="https://unpkg.com/i18next-http-backend@2.4.2/i18nextHttpBackend.min.js"></script>
   </head>
-  <body>
-    {% import "macros/scripts.html" as scripts %}
-    <div class="app">
-      <header class="header">
-        <div class="header-logo">
-          <img
-            src="/static/images/promptvault_logo_frontend.webp"
-            alt="PromptVault Logo"
-            class="logo"
-          />
-        </div>
-        <h1>PromptVault</h1>
-        <div class="header-actions">
-          <select id="language-selector" class="language-selector">
-            <option value="en">English</option>
-            <option value="fr">Français</option>
-            <option value="es">Español</option>
-            <option value="de">Deutsch</option>
-          </select>
-          <button onclick="window.location.href = '/'" data-i18n="nav.backToMain">
-            Back to Main
-          </button>
+  <body class="bg-gray-50 min-h-screen">
+    <div class="min-h-screen flex flex-col">
+      <!-- Header -->
+      <header class="bg-blue-600 text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+              <img
+                src="/static/images/promptvault_logo_frontend.webp"
+                alt="PromptVault Logo"
+                class="h-14 w-14 border-2 border-gray-400 rounded-lg shadow-lg"
+              />
+              <h1 class="text-2xl font-bold">PromptVault</h1>
+            </div>
+            <div class="flex items-center space-x-3">
+              <button onclick="window.location.href = '/'" class="px-4 py-2 bg-blue-700 hover:bg-blue-800 rounded text-sm font-medium transition" data-i18n="nav.backToMain">
+                Back to Main
+              </button>
+            </div>
+          </div>
         </div>
       </header>
 
-      <div class="import-export-container">
-        <div class="import-export-header">
-          <h2 data-i18n="importExport.title">Import & Export Management</h2>
-          <p data-i18n="importExport.description">
+      <!-- Main Content -->
+      <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+        <!-- Page Header -->
+        <div class="mb-8">
+          <h2 class="text-3xl font-bold text-gray-900 mb-2" data-i18n="importExport.title">Import & Export Management</h2>
+          <p class="text-gray-600" data-i18n="importExport.description">
             Manage your prompt data with comprehensive import and export capabilities
           </p>
         </div>
 
-        <div class="import-export-content">
+        <!-- Export & Import Cards -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           <!-- Export Section -->
-          <div class="section-card">
-            <h3 class="section-title" data-i18n="importExport.exportTitle">Export Prompts</h3>
+          <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-xl font-bold text-gray-900 mb-6" data-i18n="importExport.exportTitle">Export Prompts</h3>
 
-            <div class="form-group">
-              <label for="export-format" data-i18n="importExport.exportFormat"
-                >Export Format:</label
-              >
-              <select id="export-format" class="form-select">
-                <option value="csv">CSV - Comma-separated values</option>
-                <option value="markdown">Markdown - Human-readable format</option>
-                <option value="json">JSON - Complete data structure</option>
-              </select>
-            </div>
+            <div class="space-y-4">
+              <div>
+                <label for="export-format" class="block text-sm font-medium text-gray-700 mb-2" data-i18n="importExport.exportFormat">Export Format:</label>
+                <select id="export-format" class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <option value="csv">CSV - Comma-separated values</option>
+                  <option value="markdown">Markdown - Human-readable format</option>
+                  <option value="json">JSON - Complete data structure</option>
+                </select>
+              </div>
 
-            <div class="form-group">
-              <div class="checkbox-group">
-                <label class="checkbox-label">
-                  <input type="checkbox" id="include-favorites" checked />
-                  <span data-i18n="importExport.includeFavorites"
-                    >Include only favorite prompts</span
-                  >
+              <div class="space-y-2">
+                <label class="flex items-center">
+                  <input type="checkbox" id="include-favorites" checked class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+                  <span class="ml-2 text-sm text-gray-700" data-i18n="importExport.includeFavorites">Include only favorite prompts</span>
                 </label>
-                <label class="checkbox-label">
-                  <input type="checkbox" id="include-metadata" checked />
-                  <span data-i18n="importExport.includeMetadata"
-                    >Include metadata (tags, categories)</span
-                  >
+                <label class="flex items-center">
+                  <input type="checkbox" id="include-metadata" checked class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+                  <span class="ml-2 text-sm text-gray-700" data-i18n="importExport.includeMetadata">Include metadata (tags, categories)</span>
                 </label>
               </div>
-            </div>
 
-            <div class="form-group">
-              <label for="export-filename" data-i18n="importExport.filename">Filename:</label>
-              <input
-                type="text"
-                id="export-filename"
-                value="promptvault_export"
-                placeholder="Enter filename"
-                maxlength="255"
-                pattern="[A-Za-z0-9_\\-]+"
-                aria-describedby="export-filename-error"
-              />
-              <div
-                class="validation-error"
-                id="export-filename-error"
-                role="alert"
-                aria-live="assertive"
-              ></div>
-            </div>
-
-            <div class="button-group">
-              <button
-                class="btn btn-primary"
-                onclick="performExport()"
-                data-i18n="importExport.exportBtn"
-              >
-                Export Data
-              </button>
-              <button
-                class="btn btn-secondary"
-                onclick="previewExport()"
-                data-i18n="importExport.previewBtn"
-              >
-                Preview
-              </button>
-              <button
-                class="btn btn-secondary"
-                onclick="clearExportSettings()"
-                data-i18n="importExport.clearBtn"
-              >
-                Clear
-              </button>
-            </div>
-
-            <div class="progress-container is-hidden" id="export-progress">
-              <div class="progress-bar">
-                <div class="progress-fill" id="export-progress-fill"></div>
+              <div>
+                <label for="export-filename" class="block text-sm font-medium text-gray-700 mb-2" data-i18n="importExport.filename">Filename:</label>
+                <input
+                  type="text"
+                  id="export-filename"
+                  value="promptvault_export"
+                  placeholder="Enter filename"
+                  maxlength="255"
+                  pattern="[A-Za-z0-9_\\-]+"
+                  aria-describedby="export-filename-error"
+                  class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <div class="text-red-600 text-sm mt-1" id="export-filename-error" role="alert" aria-live="assertive"></div>
               </div>
-              <div id="export-status" class="status-message status-info"></div>
+
+              <div class="flex space-x-3 pt-4">
+                <button
+                  class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition"
+                  onclick="performExport()"
+                  data-i18n="importExport.exportBtn"
+                >
+                  Export Data
+                </button>
+                <button
+                  class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition"
+                  onclick="previewExport()"
+                  data-i18n="importExport.previewBtn"
+                >
+                  Preview
+                </button>
+                <button
+                  class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition"
+                  onclick="clearExportSettings()"
+                  data-i18n="importExport.clearBtn"
+                >
+                  Clear
+                </button>
+              </div>
+
+              <div class="hidden" id="export-progress">
+                <div class="h-2 bg-gray-200 rounded overflow-hidden mt-4">
+                  <div class="h-full bg-blue-600 transition-all duration-300" id="export-progress-fill" style="width: 0%"></div>
+                </div>
+                <div id="export-status" class="text-sm text-blue-600 mt-2"></div>
+              </div>
             </div>
           </div>
 
           <!-- Import Section -->
-          <div class="section-card">
-            <h3 class="section-title" data-i18n="importExport.importTitle">Import Prompts</h3>
+          <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-xl font-bold text-gray-900 mb-6" data-i18n="importExport.importTitle">Import Prompts</h3>
 
-            <div class="form-group">
-              <label data-i18n="importExport.selectFile">Select File:</label>
-              <input
-                type="file"
-                id="import-file"
-                accept=".csv,.json,.md,.markdown"
-                aria-describedby="import-file-error"
-              />
-              <div
-                class="validation-error"
-                id="import-file-error"
-                role="alert"
-                aria-live="assertive"
-              ></div>
-            </div>
+            <div class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2" data-i18n="importExport.selectFile">Select File:</label>
+                <input
+                  type="file"
+                  id="import-file"
+                  accept=".csv,.json,.md,.markdown"
+                  aria-describedby="import-file-error"
+                  class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                />
+                <div class="text-red-600 text-sm mt-1" id="import-file-error" role="alert" aria-live="assertive"></div>
+              </div>
 
-            <div class="form-group">
-              <div class="checkbox-group">
-                <label class="checkbox-label">
-                  <input type="checkbox" id="import-merge" checked />
-                  <span data-i18n="importExport.mergeData">Merge with existing data</span>
+              <div class="space-y-2">
+                <label class="flex items-center">
+                  <input type="checkbox" id="import-merge" checked class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+                  <span class="ml-2 text-sm text-gray-700" data-i18n="importExport.mergeData">Merge with existing data</span>
                 </label>
-                <label class="checkbox-label">
-                  <input type="checkbox" id="import-validate" checked />
-                  <span data-i18n="importExport.validateData">Validate data before import</span>
+                <label class="flex items-center">
+                  <input type="checkbox" id="import-validate" checked class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+                  <span class="ml-2 text-sm text-gray-700" data-i18n="importExport.validateData">Validate data before import</span>
                 </label>
               </div>
-            </div>
 
-            <div class="form-group">
-              <label data-i18n="importExport.importMode">Import Mode:</label>
-              <select id="import-mode">
-                <option value="append" data-i18n="importExport.modeAppend">
-                  Append to existing
-                </option>
-                <option value="replace" data-i18n="importExport.modeReplace">
-                  Replace existing
-                </option>
-                <option value="merge" data-i18n="importExport.modeMerge">Smart merge</option>
-              </select>
-              <small class="form-help" data-i18n="importExport.modeHelp"
-                >Append adds new prompts and keeps current ones (creating duplicates if titles
-                match). Replace clears existing prompts before import. Smart merge skips prompts
-                whose title already exists.</small
-              >
-            </div>
-
-            <div class="button-group">
-              <button
-                class="btn btn-primary"
-                onclick="performImport()"
-                data-i18n="importExport.importBtn"
-              >
-                Import Data
-              </button>
-              <button
-                class="btn btn-secondary"
-                onclick="previewImport()"
-                data-i18n="importExport.previewBtn"
-              >
-                Preview
-              </button>
-            </div>
-
-            <div class="progress-container is-hidden" id="import-progress">
-              <div class="progress-bar">
-                <div class="progress-fill" id="import-progress-fill"></div>
+              <div>
+                <label for="import-mode" class="block text-sm font-medium text-gray-700 mb-2" data-i18n="importExport.importMode">Import Mode:</label>
+                <select id="import-mode" class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <option value="append" data-i18n="importExport.modeAppend">Append to existing</option>
+                  <option value="replace" data-i18n="importExport.modeReplace">Replace existing</option>
+                  <option value="merge" data-i18n="importExport.modeMerge">Smart merge</option>
+                </select>
+                <small class="text-xs text-gray-500 mt-1 block" data-i18n="importExport.modeHelp">
+                  Append adds new prompts and keeps current ones (creating duplicates if titles match). Replace clears existing prompts before import. Smart merge skips prompts whose title already exists.
+                </small>
               </div>
-              <div id="import-status" class="status-message status-info"></div>
+
+              <div class="flex space-x-3 pt-4">
+                <button
+                  class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition"
+                  onclick="performImport()"
+                  data-i18n="importExport.importBtn"
+                >
+                  Import Data
+                </button>
+                <button
+                  class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition"
+                  onclick="previewImport()"
+                  data-i18n="importExport.previewBtn"
+                >
+                  Preview
+                </button>
+              </div>
+
+              <div class="hidden" id="import-progress">
+                <div class="h-2 bg-gray-200 rounded overflow-hidden mt-4">
+                  <div class="h-full bg-blue-600 transition-all duration-300" id="import-progress-fill" style="width: 0%"></div>
+                </div>
+                <div id="import-status" class="text-sm text-blue-600 mt-2"></div>
+              </div>
             </div>
           </div>
         </div>
 
         <!-- Preview Panel -->
-        <div class="preview-panel is-hidden" id="preview-panel">
-          <h3 class="section-title" data-i18n="importExport.previewTitle">Preview</h3>
-          <div class="preview-content" id="preview-content"></div>
-          <div class="button-group">
-            <button class="btn btn-primary" onclick="confirmOperation()" id="confirm-btn">
+        <div class="hidden bg-white rounded-lg shadow p-6 mb-8" id="preview-panel">
+          <h3 class="text-xl font-bold text-gray-900 mb-4" data-i18n="importExport.previewTitle">Preview</h3>
+          <div class="bg-gray-50 rounded p-4 mb-4 font-mono text-sm overflow-auto max-h-96" id="preview-content"></div>
+          <div class="flex space-x-3">
+            <button class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition" onclick="confirmOperation()" id="confirm-btn">
               Confirm
             </button>
-            <button class="btn btn-secondary" onclick="cancelPreview()" id="cancel-btn">
+            <button class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition" onclick="cancelPreview()" id="cancel-btn">
               Cancel
             </button>
           </div>
         </div>
 
         <!-- Statistics Panel -->
-        <div class="statistics-panel">
-          <h3 class="section-title" data-i18n="importExport.statisticsTitle">
+        <div class="bg-white rounded-lg shadow p-6">
+          <h3 class="text-xl font-bold text-gray-900 mb-6" data-i18n="importExport.statisticsTitle">
             Statistics & History
           </h3>
-          <div class="import-export-content">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
-              <h4 data-i18n="importExport.currentStats">Current Data</h4>
-              <div class="stat-item">
-                <span class="stat-label" data-i18n="importExport.totalPrompts">Total Prompts:</span>
-                <span class="stat-value" id="total-prompts">-</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-label" data-i18n="importExport.totalCategories">Categories:</span>
-                <span class="stat-value" id="total-categories">-</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-label" data-i18n="importExport.totalTags">Tags:</span>
-                <span class="stat-value" id="total-tags">-</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-label" data-i18n="importExport.favoritePrompts"
-                  >Favorite Prompts:</span
-                >
-                <span class="stat-value" id="favorite-prompts">-</span>
+              <h4 class="font-semibold text-gray-900 mb-4" data-i18n="importExport.currentStats">Current Data</h4>
+              <div class="space-y-3">
+                <div class="flex justify-between py-2 border-b border-gray-200">
+                  <span class="text-sm text-gray-600" data-i18n="importExport.totalPrompts">Total Prompts:</span>
+                  <span class="text-sm font-medium text-gray-900" id="total-prompts">-</span>
+                </div>
+                <div class="flex justify-between py-2 border-b border-gray-200">
+                  <span class="text-sm text-gray-600" data-i18n="importExport.totalCategories">Categories:</span>
+                  <span class="text-sm font-medium text-gray-900" id="total-categories">-</span>
+                </div>
+                <div class="flex justify-between py-2 border-b border-gray-200">
+                  <span class="text-sm text-gray-600" data-i18n="importExport.totalTags">Tags:</span>
+                  <span class="text-sm font-medium text-gray-900" id="total-tags">-</span>
+                </div>
+                <div class="flex justify-between py-2">
+                  <span class="text-sm text-gray-600" data-i18n="importExport.favoritePrompts">Favorite Prompts:</span>
+                  <span class="text-sm font-medium text-gray-900" id="favorite-prompts">-</span>
+                </div>
               </div>
             </div>
             <div>
-              <h4 data-i18n="importExport.recentActivity">Recent Activity</h4>
-              <div class="history-list" id="activity-history">
-                <div class="history-item">
-                  <div class="history-info">
-                    <div>No recent activity</div>
-                  </div>
+              <h4 class="font-semibold text-gray-900 mb-4" data-i18n="importExport.recentActivity">Recent Activity</h4>
+              <div id="activity-history" class="space-y-2">
+                <div class="p-3 bg-gray-50 rounded">
+                  <div class="text-sm text-gray-700">No recent activity</div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </main>
     </div>
 
     {{ scripts.load_scripts('import-export', true, 'import_export', true) }}

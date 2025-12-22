@@ -4,158 +4,170 @@
      file, You can obtain one at https://mozilla.org/MPL/2.0/. -->
 <html lang="en">
   <head>
+    {% import "macros/scripts.html" as scripts %}
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Session Management - PromptVault Admin</title>
     <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon.png" />
-    <link rel="stylesheet" href="/static/css/style.css" />
-    <link rel="stylesheet" href="/static/css/admin.css" />
+    {{ scripts.load_css('admin-sessions', true) }}
     <script src="https://unpkg.com/i18next@23.7.6/i18next.min.js"></script>
     <script src="https://unpkg.com/i18next-browser-languagedetector@7.2.0/i18nextBrowserLanguageDetector.min.js"></script>
     <script src="https://unpkg.com/i18next-http-backend@2.4.2/i18nextHttpBackend.min.js"></script>
   </head>
-  <body>
-    {% import "macros/scripts.html" as scripts %}
-    <div class="app">
-      <header class="header">
-        <div class="header-logo">
-          <img
-            src="/static/images/promptvault_logo_frontend.webp"
-            alt="PromptVault Logo"
-            class="logo"
-          />
-        </div>
-        <h1>PromptVault Admin</h1>
-        <div class="header-actions">
-          <select id="language-selector" class="language-selector">
-            <option value="en">English</option>
-            <option value="fr">Français</option>
-            <option value="es">Español</option>
-            <option value="de">Deutsch</option>
-          </select>
-          <button onclick="window.location.href = '/admin/users'" data-i18n="admin.nav.users">
-            Users
-          </button>
-          <button onclick="window.location.href = '/auth/profile'" data-i18n="admin.nav.profile">
-            Profile
-          </button>
-          <button onclick="window.location.href = '/'" data-i18n="nav.backToMain">
-            Back to Main
-          </button>
+  <body class="bg-gray-50 min-h-screen">
+    <div class="min-h-screen flex flex-col">
+      <!-- Header -->
+      <header class="bg-blue-600 text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center space-x-4 min-w-0">
+              <img
+                src="/static/images/promptvault_logo_frontend.webp"
+                alt="PromptVault Logo"
+                class="h-14 w-14 border-2 border-gray-400 rounded-lg shadow-lg flex-shrink-0"
+              />
+              <h1 class="text-2xl font-bold truncate">PromptVault Admin</h1>
+            </div>
+            <div class="hidden md:flex items-center space-x-3 flex-shrink-0">
+              <button onclick="window.location.href = '/admin/users'" class="px-4 py-2 bg-blue-700 hover:bg-blue-800 rounded text-sm font-medium transition whitespace-nowrap" data-i18n="admin.nav.users">
+                Users
+              </button>
+              <button onclick="window.location.href = '/auth/profile'" class="px-4 py-2 bg-blue-700 hover:bg-blue-800 rounded text-sm font-medium transition whitespace-nowrap" data-i18n="admin.nav.profile">
+                Profile
+              </button>
+              <button onclick="window.location.href = '/'" class="px-4 py-2 bg-blue-700 hover:bg-blue-800 rounded text-sm font-medium transition whitespace-nowrap" data-i18n="nav.backToMain">
+                Back to Main
+              </button>
+            </div>
+            <!-- Mobile menu button -->
+            <button id="admin-menu-toggle" class="md:hidden p-2 text-blue-100 hover:text-white flex-shrink-0" aria-label="Toggle menu">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+              </svg>
+            </button>
+          </div>
+          <!-- Mobile menu dropdown -->
+          <div id="admin-menu-dropdown" class="hidden md:hidden mt-4 flex flex-col gap-2">
+            <button onclick="window.location.href = '/admin/users'" class="w-full px-4 py-2 bg-blue-700 hover:bg-blue-800 rounded text-sm font-medium transition text-left" data-i18n="admin.nav.users">
+              Users
+            </button>
+            <button onclick="window.location.href = '/auth/profile'" class="w-full px-4 py-2 bg-blue-700 hover:bg-blue-800 rounded text-sm font-medium transition text-left" data-i18n="admin.nav.profile">
+              Profile
+            </button>
+            <button onclick="window.location.href = '/'" class="w-full px-4 py-2 bg-blue-700 hover:bg-blue-800 rounded text-sm font-medium transition text-left" data-i18n="nav.backToMain">
+              Back to Main
+            </button>
+          </div>
         </div>
       </header>
 
-      <div class="admin-container">
-        <div class="admin-header">
-          <h2 data-i18n="admin.sessions.title">Session Management</h2>
-          <div class="admin-actions">
-            <button
-              id="revoke-all-sessions-btn"
-              class="btn btn-danger"
-              data-i18n="admin.sessions.revokeAll"
-            >
-              Revoke All Sessions
-            </button>
-            <button id="refresh-sessions-btn" class="btn btn-secondary" data-i18n="actions.refresh">
-              Refresh
-            </button>
+      <!-- Main Content -->
+      <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+        <!-- Page Header -->
+        <div class="mb-6">
+          <h2 class="text-3xl font-bold text-gray-900 mb-4 md:mb-0" data-i18n="admin.sessions.title">Session Management</h2>
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-0">
+            <div class="flex flex-col sm:flex-row gap-3 md:space-x-3">
+              <button
+                id="revoke-all-sessions-btn"
+                class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded font-medium transition"
+                data-i18n="admin.sessions.revokeAll"
+              >
+                Revoke All Sessions
+              </button>
+              <button id="refresh-sessions-btn" class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition" data-i18n="actions.refresh">
+                Refresh
+              </button>
+            </div>
           </div>
         </div>
 
-        <div class="admin-filters">
-          <div class="filter-group">
-            <input
-              type="text"
-              id="search-input"
-              placeholder="Search by username..."
-              data-i18n="[placeholder]admin.sessions.searchPlaceholder"
-              class="search-input"
-            />
-          </div>
-          <div class="filter-group">
-            <label for="user-filter" data-i18n="admin.sessions.filterUser">User:</label>
-            <select id="user-filter" class="filter-select">
-              <option value="all" data-i18n="admin.sessions.allUsers">All Users</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="admin-stats">
-          <div class="stat-card">
-            <div class="stat-value" id="total-sessions">0</div>
-            <div class="stat-label" data-i18n="admin.sessions.totalSessions">Total Sessions</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-value" id="active-sessions">0</div>
-            <div class="stat-label" data-i18n="admin.sessions.activeSessions">Active Now</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-value" id="unique-users">0</div>
-            <div class="stat-label" data-i18n="admin.sessions.uniqueUsers">Unique Users</div>
+        <!-- Filters -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <input
+                type="text"
+                id="search-input"
+                placeholder="Search by username..."
+                data-i18n="[placeholder]admin.sessions.searchPlaceholder"
+                class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label for="user-filter" class="block text-sm font-medium text-gray-700 mb-1" data-i18n="admin.sessions.filterUser">User:</label>
+              <select id="user-filter" class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="all" data-i18n="admin.sessions.allUsers">All Users</option>
+              </select>
+            </div>
           </div>
         </div>
 
-        <div class="sessions-table-container">
-          <table class="sessions-table">
-            <thead>
-              <tr>
-                <th data-i18n="admin.sessions.username">Username</th>
-                <th data-i18n="admin.sessions.ipAddress">IP Address</th>
-                <th data-i18n="admin.sessions.userAgent">User Agent</th>
-                <th data-i18n="admin.sessions.createdAt">Created</th>
-                <th data-i18n="admin.sessions.lastUsed">Last Used</th>
-                <th data-i18n="admin.sessions.expiresAt">Expires</th>
-                <th data-i18n="admin.sessions.actions">Actions</th>
-              </tr>
-            </thead>
-            <tbody id="sessions-table-body">
-              <tr>
-                <td colspan="7" class="loading-cell">
-                  <div class="loading" data-i18n="messages.loading">Loading...</div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-6">
+          <div class="bg-white rounded-lg shadow p-6">
+            <div class="text-3xl font-bold text-gray-900" id="total-sessions">0</div>
+            <div class="text-sm text-gray-600 mt-1" data-i18n="admin.sessions.totalSessions">Total Sessions</div>
+          </div>
+          <div class="bg-white rounded-lg shadow p-6">
+            <div class="text-3xl font-bold text-green-600" id="active-sessions">0</div>
+            <div class="text-sm text-gray-600 mt-1" data-i18n="admin.sessions.activeSessions">Active Now</div>
+          </div>
+          <div class="bg-white rounded-lg shadow p-6">
+            <div class="text-3xl font-bold text-blue-600" id="unique-users">0</div>
+            <div class="text-sm text-gray-600 mt-1" data-i18n="admin.sessions.uniqueUsers">Unique Users</div>
+          </div>
         </div>
 
-        <div class="pagination" id="pagination">
-          <button
-            id="prev-page"
-            class="btn btn-secondary"
-            disabled
-            data-i18n="admin.sessions.previous"
-          >
-            Previous
-          </button>
-          <span id="page-info" class="page-info">Page 1 of 1</span>
-          <button id="next-page" class="btn btn-secondary" disabled data-i18n="admin.sessions.next">
-            Next
-          </button>
+        <!-- Sessions Table -->
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" data-i18n="admin.sessions.username">Username</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" data-i18n="admin.sessions.ipAddress">IP Address</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" data-i18n="admin.sessions.userAgent">User Agent</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" data-i18n="admin.sessions.createdAt">Created</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" data-i18n="admin.sessions.lastUsed">Last Used</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" data-i18n="admin.sessions.expiresAt">Expires</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" data-i18n="admin.sessions.actions">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="sessions-table-body" class="bg-white divide-y divide-gray-200">
+                <tr>
+                  <td colspan="7" class="px-6 py-4 text-center text-gray-500">
+                    <div data-i18n="messages.loading">Loading...</div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      </main>
     </div>
 
     <!-- Session Detail Modal -->
-    <div id="session-detail-modal" class="modal is-hidden">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h2 data-i18n="admin.sessions.sessionDetails">Session Details</h2>
-          <span class="close" onclick="closeSessionDetailModal()">&times;</span>
+    <div id="session-detail-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between p-6 border-b border-gray-200">
+          <h2 class="text-xl font-bold text-gray-900" data-i18n="admin.sessions.sessionDetails">Session Details</h2>
+          <span class="text-gray-400 hover:text-gray-600 text-2xl cursor-pointer" onclick="closeSessionDetailModal()">&times;</span>
         </div>
-        <div class="modal-body">
-          <div id="session-detail-content" class="session-detail-content">
-            <div class="loading" data-i18n="messages.loading">Loading...</div>
+        <div class="p-6">
+          <div id="session-detail-content">
+            <div class="text-gray-500" data-i18n="messages.loading">Loading...</div>
           </div>
         </div>
-        <div class="modal-footer">
+        <div class="flex justify-end space-x-3 p-6 border-t border-gray-200">
           <button
             id="revoke-session-btn"
-            class="btn btn-danger"
+            class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded font-medium transition"
             data-i18n="admin.sessions.revokeSession"
           >
             Revoke Session
           </button>
-          <button id="close-session-detail-btn" class="btn btn-secondary" data-i18n="actions.close">
+          <button id="close-session-detail-btn" class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition" data-i18n="actions.close">
             Close
           </button>
         </div>
@@ -163,26 +175,26 @@
     </div>
 
     <!-- Confirm Revoke Modal -->
-    <div id="confirm-revoke-modal" class="modal is-hidden">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h2 data-i18n="admin.sessions.confirmRevoke">Confirm Revoke</h2>
-          <span class="close" onclick="closeConfirmRevokeModal()">&times;</span>
+    <div id="confirm-revoke-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+        <div class="flex items-center justify-between p-6 border-b border-gray-200">
+          <h2 class="text-xl font-bold text-gray-900" data-i18n="admin.sessions.confirmRevoke">Confirm Revoke</h2>
+          <span class="text-gray-400 hover:text-gray-600 text-2xl cursor-pointer" onclick="closeConfirmRevokeModal()">&times;</span>
         </div>
-        <div class="modal-body">
-          <p data-i18n="admin.sessions.revokeWarning">
+        <div class="p-6">
+          <p class="text-gray-700" data-i18n="admin.sessions.revokeWarning">
             Are you sure you want to revoke this session? The user will be logged out immediately.
           </p>
         </div>
-        <div class="modal-footer">
+        <div class="flex justify-end space-x-3 p-6 border-t border-gray-200">
           <button
             id="confirm-revoke-btn"
-            class="btn btn-danger"
+            class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded font-medium transition"
             data-i18n="admin.sessions.confirmRevokeButton"
           >
             Revoke
           </button>
-          <button id="cancel-revoke-btn" class="btn btn-secondary" data-i18n="actions.cancel">
+          <button id="cancel-revoke-btn" class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition" data-i18n="actions.cancel">
             Cancel
           </button>
         </div>

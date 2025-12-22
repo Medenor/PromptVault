@@ -4,12 +4,12 @@
      file, You can obtain one at https://mozilla.org/MPL/2.0/. -->
 <html lang="en">
   <head>
+    {% import "macros/scripts.html" as scripts %}
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PromptVault</title>
     <link rel="icon" type="image/png" sizes="32x32" href="static/favicon.png" />
-    <link rel="stylesheet" href="/static/css/style.css" />
-    <link rel="stylesheet" href="/static/css/validation.css" />
+    {{ scripts.load_css('app', true) }}
     <style>
       @keyframes spin {
         0% {
@@ -19,382 +19,751 @@
           transform: rotate(360deg);
         }
       }
+
+      /* Category and Tag list styling */
+      #categories-list li,
+      #tags-list li {
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+        color: #374151;
+        border-radius: 0.5rem;
+        cursor: pointer;
+        border: 1px solid transparent;
+        transition: all 200ms;
+      }
+
+      #categories-list li:hover,
+      #tags-list li:hover {
+        background-color: #f3f4f6;
+        border-color: #d1d5db;
+      }
+
+      #categories-list li.active,
+      #tags-list li.active {
+        background-color: #eff6ff;
+        color: #1e40af;
+        border-color: #93c5fd;
+        font-weight: 500;
+      }
+
+      #categories-list li.active:hover,
+      #tags-list li.active:hover {
+        background-color: #dbeafe;
+      }
+
+      /* Clear All Filters button - use visibility instead of display for smooth layout */
+      #clear-all-filters-btn.hidden {
+        display: block !important;
+        visibility: hidden !important;
+        height: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        pointer-events: none !important;
+      }
+
+      #clear-all-filters-btn:not(.hidden) {
+        display: block !important;
+        visibility: visible !important;
+        height: auto !important;
+        padding: 0.75rem !important;
+        margin-top: 0.25rem !important;
+        pointer-events: auto !important;
+      }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/i18next@23.7.6/i18next.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/i18next-browser-languagedetector@7.2.0/i18nextBrowserLanguageDetector.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/i18next-http-backend@2.4.2/i18nextHttpBackend.min.js"></script>
   </head>
-  <body>
-    {% import "macros/scripts.html" as scripts %}
+  <body class="bg-gray-50">
+
     <!-- Authentication loading overlay -->
     <div
       id="auth-loading-overlay"
-      style="
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: #1a1a1a;
-        z-index: 9999;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-direction: column;
-      "
+      class="fixed inset-0 bg-gray-900 z-[9999] flex items-center justify-center flex-col"
     >
-      <div style="color: #fff; font-size: 18px; margin-bottom: 20px">Verifying session...</div>
+      <div class="text-white text-lg mb-5">Verifying session...</div>
       <div
-        class="loading"
-        style="
-          border: 3px solid #333;
-          border-top: 3px solid #4a9eff;
-          border-radius: 50%;
-          width: 40px;
-          height: 40px;
-          animation: spin 1s linear infinite;
-        "
+        class="border-4 border-gray-700 border-t-blue-500 rounded-full w-10 h-10"
+        style="animation: spin 1s linear infinite"
       ></div>
     </div>
 
-    <div class="app" style="display: none">
-      <header class="header">
-        <div class="header-logo">
-          <img
-            src="/static/images/promptvault_logo_frontend.webp"
-            alt="PromptVault Logo"
-            class="logo"
-          />
-        </div>
-        <h1>PromptVault</h1>
-        <div class="header-actions">
-          <select id="language-selector" class="language-selector">
-            <option value="en">English</option>
-            <option value="fr">Français</option>
-            <option value="es">Español</option>
-            <option value="de">Deutsch</option>
-          </select>
-          <button id="new-prompt-btn" data-i18n="nav.newPrompt">New Prompt</button>
-          <button
-            id="import-export-btn"
-            onclick="window.location.href = '/import-export'"
-            data-i18n="nav.importExport"
-          >
-            Import/Export
-          </button>
-          <button
-            id="backup-btn"
-            onclick="window.location.href = '/backup-management'"
-            data-i18n="nav.backupManagement"
-          >
-            Backup
-          </button>
-          <button
-            id="profile-btn"
-            onclick="window.location.href = '/auth/profile'"
-            data-i18n="nav.profile"
-          >
-            Profile
-          </button>
-          <button
-            id="admin-btn"
-            onclick="window.location.href = '/admin/users'"
-            data-i18n="nav.admin"
-            style="display: none"
-          >
-            Admin
-          </button>
-          <button id="logout-btn" data-i18n="nav.logout">Logout</button>
+    <div class="app min-h-screen bg-gray-50" style="display: none">
+      <!-- Header -->
+      <header class="bg-blue-500 text-white shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="flex items-center justify-between h-16">
+            <!-- Logo and Title -->
+            <div class="flex items-center gap-4">
+              <img
+                src="/static/images/promptvault_logo_frontend.webp"
+                alt="PromptVault Logo"
+                class="h-14 w-14 border-2 border-gray-400 rounded-lg shadow-lg"
+              />
+              <h1 class="text-2xl font-bold">PromptVault</h1>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex items-center gap-2">
+              <!-- Desktop-only: New Prompt -->
+              <button
+                id="new-prompt-btn"
+                class="hidden md:block px-4 py-2 text-sm font-semibold rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition-all hover:scale-105 active:scale-95"
+                data-i18n="nav.newPrompt"
+              >
+                New Prompt
+              </button>
+
+              <!-- Desktop-only buttons -->
+              <button
+                id="import-export-btn"
+                onclick="window.location.href = '/import-export'"
+                class="hidden md:block px-3 py-2 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-all hover:scale-105 active:scale-95"
+                data-i18n="nav.importExport"
+              >
+                Import/Export
+              </button>
+              <button
+                id="backup-btn"
+                onclick="window.location.href = '/backup-management'"
+                class="hidden md:block px-3 py-2 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-all hover:scale-105 active:scale-95"
+                data-i18n="nav.backupManagement"
+              >
+                Backup
+              </button>
+              <button
+                id="profile-btn"
+                onclick="window.location.href = '/auth/profile'"
+                class="hidden md:block px-3 py-2 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-all hover:scale-105 active:scale-95"
+                data-i18n="nav.profile"
+              >
+                Profile
+              </button>
+              <button
+                id="admin-btn"
+                onclick="window.location.href = '/admin/users'"
+                class="hidden md:block px-3 py-2 text-sm font-medium rounded-lg bg-amber-500 text-white hover:bg-amber-600 transition-all hover:scale-105 active:scale-95"
+                data-i18n="nav.admin"
+                style="display: none"
+              >
+                Admin
+              </button>
+
+              <!-- Mobile Menu Dropdown -->
+              <div class="relative md:hidden">
+                <button
+                  id="mobile-menu-toggle"
+                  class="px-3 py-2 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-all"
+                  aria-label="Open menu"
+                >
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path>
+                  </svg>
+                </button>
+                <div
+                  id="mobile-menu-dropdown"
+                  class="hidden absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50"
+                >
+                  <button
+                    id="new-prompt-btn-mobile"
+                    class="w-full text-left px-4 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-50 transition-colors"
+                    data-i18n="nav.newPrompt"
+                  >
+                    New Prompt
+                  </button>
+                  <div class="border-t border-gray-200 my-2"></div>
+                  <button
+                    onclick="window.location.href = '/import-export'"
+                    class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                    data-i18n="nav.importExport"
+                  >
+                    Import/Export
+                  </button>
+                  <button
+                    onclick="window.location.href = '/backup-management'"
+                    class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                    data-i18n="nav.backupManagement"
+                  >
+                    Backup
+                  </button>
+                  <button
+                    onclick="window.location.href = '/auth/profile'"
+                    class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                    data-i18n="nav.profile"
+                  >
+                    Profile
+                  </button>
+                  <button
+                    id="admin-btn-mobile"
+                    onclick="window.location.href = '/admin/users'"
+                    class="w-full text-left px-4 py-2 text-sm text-amber-700 hover:bg-amber-50 transition-colors"
+                    data-i18n="nav.admin"
+                    style="display: none"
+                  >
+                    Admin
+                  </button>
+                  <div class="border-t border-gray-200 my-2"></div>
+                  <button
+                    id="logout-btn-mobile"
+                    class="w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50 transition-colors font-semibold"
+                    data-i18n="nav.logout"
+                  >
+                    Logout
+                  </button>
+                </div>
+              </div>
+
+              <!-- Desktop-only: Logout -->
+              <button
+                id="logout-btn"
+                class="hidden md:block px-3 py-2 text-sm font-medium rounded-lg bg-red-500 text-white hover:bg-red-600 transition-all hover:scale-105 active:scale-95"
+                data-i18n="nav.logout"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
         </div>
       </header>
 
-      <div class="main-content">
-        <div class="sidebar">
-          <div class="sidebar-header">
-            <h2 data-i18n="nav.prompts">Prompts</h2>
-          </div>
+      <div class="flex">
+        <!-- Sidebar Backdrop (Mobile Only) -->
+        <div
+          id="sidebar-backdrop"
+          class="fixed inset-0 bg-black/50 z-40 hidden md:hidden transition-opacity duration-300"
+        ></div>
 
-          <div class="sidebar-section">
-            <h3 data-i18n="nav.filters">Filters</h3>
+        <!-- Desktop Sidebar -->
+        <aside class="w-64 bg-white border-r border-gray-200 min-h-[calc(100vh-4rem)] sticky top-0 hidden md:block">
+          <div class="p-4">
+            <h2 class="text-lg font-bold text-gray-900 mb-4" data-i18n="nav.prompts">Prompts</h2>
 
-            <!-- Search Input -->
-            <div class="search-container">
-              <input
-                type="text"
-                id="search-input"
-                placeholder="Search prompts..."
-                data-i18n="[placeholder]nav.searchPlaceholder"
-              />
-              <button id="clear-search-btn" class="clear-search-btn" title="Clear search">✕</button>
+            <!-- Filters Section -->
+            <div class="mb-6">
+              <h3 class="text-sm font-semibold text-gray-700 mb-3" data-i18n="nav.filters">
+                Filters
+              </h3>
+
+              <!-- Search Input -->
+              <div class="relative mb-3">
+                <input
+                  type="text"
+                  id="search-input"
+                  placeholder="Search prompts..."
+                  data-i18n="[placeholder]nav.searchPlaceholder"
+                  class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <button
+                  id="clear-search-btn"
+                  class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 hidden"
+                  title="Clear search"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <!-- Case Sensitive Toggle -->
+              <label class="flex items-center gap-2 mb-2 cursor-pointer text-sm text-gray-700">
+                <input type="checkbox" id="case-sensitive-toggle" class="rounded text-blue-500 focus:ring-blue-500" />
+                <span data-i18n="nav.caseSensitive">Case Sensitive</span>
+              </label>
+
+              <!-- Favorites Filter -->
+              <label class="flex items-center gap-2 mb-3 cursor-pointer text-sm text-gray-700">
+                <input type="checkbox" id="favorites-filter" class="rounded text-blue-500 focus:ring-blue-500" />
+                <span data-i18n="nav.showFavorites">Show Favorites</span>
+              </label>
+
+              <!-- Select All Checkbox -->
+              <label class="flex items-center gap-2 mb-3 cursor-pointer text-sm text-gray-700">
+                <input type="checkbox" id="select-all-checkbox" class="rounded text-blue-500 focus:ring-blue-500" />
+                <span data-i18n="actions.selectAll">Select All</span>
+              </label>
+
+              <!-- Clear All Filters Button -->
+              <button
+                id="clear-all-filters-btn"
+                class="w-full px-3 py-2 text-sm font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all hidden"
+                data-i18n="nav.clearFilters"
+              >
+                Clear All Filters
+              </button>
             </div>
 
-            <!-- Case Sensitive Toggle -->
-            <label class="case-sensitive-label">
-              <input type="checkbox" id="case-sensitive-toggle" />
-              <span data-i18n="nav.caseSensitive">Case Sensitive</span>
-            </label>
+            <!-- Categories Section -->
+            <div class="mb-6">
+              <h3 class="text-sm font-semibold text-gray-700 mb-3" data-i18n="nav.categories">
+                Categories
+              </h3>
+              <ul id="categories-list" class="space-y-2">
+                <li data-category="all" class="active" data-i18n="nav.allCategories">
+                  All Categories
+                </li>
+                {% for category in categories %}
+                <li data-category="{{ category }}">
+                  {{ category }}
+                </li>
+                {% endfor %}
+              </ul>
+            </div>
 
-            <!-- Favorites Filter -->
-            <label>
-              <input type="checkbox" id="favorites-filter" />
-              <span data-i18n="nav.showFavorites">⭐ Show Favorites</span>
-            </label>
+            <!-- Tags Section -->
+            <div>
+              <h3 class="text-sm font-semibold text-gray-700 mb-3" data-i18n="nav.tags">Tags</h3>
+              <ul id="tags-list" class="space-y-2">
+                <li data-tag="all" class="active" data-i18n="nav.allTags">
+                  All Tags
+                </li>
+                {% for tag in tags %}
+                <li data-tag="{{ tag }}">
+                  {{ tag }}
+                </li>
+                {% endfor %}
+              </ul>
+            </div>
+          </div>
+        </aside>
 
-            <!-- Clear All Filters Button -->
+        <!-- Mobile Sidebar Drawer -->
+        <aside
+          id="mobile-sidebar"
+          class="fixed top-0 left-0 w-64 h-full bg-white border-r border-gray-200 z-50 md:hidden transform -translate-x-full transition-transform duration-300 ease-in-out overflow-y-auto"
+        >
+          <div class="p-4">
+            <!-- Close Button -->
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-lg font-bold text-gray-900" data-i18n="nav.categoriesAndTags">Categories & Tags</h2>
+              <button
+                id="sidebar-close"
+                class="text-gray-500 hover:text-gray-700 p-2"
+                aria-label="Close sidebar"
+              >
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </button>
+            </div>
+
+            <!-- Filters Section -->
+            <div class="mb-6">
+              <h3 class="text-sm font-semibold text-gray-700 mb-3" data-i18n="nav.filters">
+                Filters
+              </h3>
+
+              <!-- Search Input -->
+              <div class="relative mb-3">
+                <input
+                  type="text"
+                  id="search-input-mobile"
+                  placeholder="Search prompts..."
+                  data-i18n="[placeholder]nav.searchPlaceholder"
+                  class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <button
+                  id="clear-search-btn-mobile"
+                  class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 hidden"
+                  title="Clear search"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <!-- Case Sensitive Toggle -->
+              <label class="flex items-center gap-2 mb-2 cursor-pointer text-sm text-gray-700">
+                <input type="checkbox" id="case-sensitive-toggle-mobile" class="rounded text-blue-500 focus:ring-blue-500" />
+                <span data-i18n="nav.caseSensitive">Case Sensitive</span>
+              </label>
+
+              <!-- Favorites Filter -->
+              <label class="flex items-center gap-2 mb-3 cursor-pointer text-sm text-gray-700">
+                <input type="checkbox" id="favorites-filter-mobile" class="rounded text-blue-500 focus:ring-blue-500" />
+                <span data-i18n="nav.showFavorites">Show Favorites</span>
+              </label>
+
+              <!-- Select All Checkbox -->
+              <label class="flex items-center gap-2 mb-3 cursor-pointer text-sm text-gray-700">
+                <input type="checkbox" id="select-all-checkbox-mobile" class="rounded text-blue-500 focus:ring-blue-500" />
+                <span data-i18n="actions.selectAll">Select All</span>
+              </label>
+
+              <!-- Clear All Filters Button -->
+              <button
+                id="clear-all-filters-btn-mobile"
+                class="w-full px-3 py-2 text-sm font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all hidden"
+                data-i18n="nav.clearFilters"
+              >
+                Clear All Filters
+              </button>
+            </div>
+
+            <!-- Categories Section -->
+            <div class="mb-6">
+              <h3 class="text-sm font-semibold text-gray-700 mb-3" data-i18n="nav.categories">
+                Categories
+              </h3>
+              <ul id="categories-list-mobile" class="space-y-2">
+                <li data-category="all" class="active" data-i18n="nav.allCategories">
+                  All Categories
+                </li>
+                {% for category in categories %}
+                <li data-category="{{ category }}">
+                  {{ category }}
+                </li>
+                {% endfor %}
+              </ul>
+            </div>
+
+            <!-- Tags Section -->
+            <div>
+              <h3 class="text-sm font-semibold text-gray-700 mb-3" data-i18n="nav.tags">Tags</h3>
+              <ul id="tags-list-mobile" class="space-y-2">
+                <li data-tag="all" class="active" data-i18n="nav.allTags">
+                  All Tags
+                </li>
+                {% for tag in tags %}
+                <li data-tag="{{ tag }}">
+                  {{ tag }}
+                </li>
+                {% endfor %}
+              </ul>
+            </div>
+          </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 w-full">
+          <!-- Mobile Sidebar Toggle Bar -->
+          <div class="md:hidden flex items-center gap-3 px-4 py-3 border-b border-gray-200 bg-white">
             <button
-              id="clear-all-filters-btn"
-              class="clear-filters-btn"
-              data-i18n="nav.clearFilters"
+              id="sidebar-toggle"
+              class="text-gray-700 hover:text-gray-900 transition-colors"
+              aria-label="Toggle sidebar"
             >
-              Clear All Filters
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+              </svg>
             </button>
+            <h2 class="text-lg font-bold text-gray-900" data-i18n="nav.categoriesAndTags">Categories & Tags</h2>
           </div>
 
-          <div class="sidebar-section">
-            <h3 data-i18n="nav.categories">Categories</h3>
-            <ul id="categories-list">
-              <li data-category="all" class="active">All Prompts</li>
-              {% for category in categories %}
-              <li data-category="{{ category }}">{{ category }}</li>
-              {% endfor %}
-            </ul>
-          </div>
+          <div class="p-6 max-w-7xl mx-auto">
+            <!-- Search Results Info -->
+          <div
+            id="search-results-info"
+            class="mb-4 px-4 py-3 bg-blue-50 text-blue-800 rounded-lg text-sm hidden"
+          ></div>
 
-          <div class="sidebar-section">
-            <h3 data-i18n="nav.tags">Tags</h3>
-            <ul id="tags-list">
-              <li data-tag="all" class="active">All Tags</li>
-              {% for tag in tags %}
-              <li data-tag="{{ tag }}">{{ tag }}</li>
-              {% endfor %}
-            </ul>
-          </div>
-        </div>
-
-        <div class="content">
-          <!-- Search Results Info -->
-          <div class="search-results-info" id="search-results-info"></div>
-
-          <!-- Bulk Actions Toolbar (hidden by default) -->
-          <div id="bulk-actions-toolbar" class="bulk-actions-toolbar" style="display: none">
-            <div class="bulk-actions-content">
-              <span id="selected-count" class="selected-count">0 selected</span>
-              <button id="bulk-delete-btn" class="btn btn-danger">
+          <!-- Bulk Actions Toolbar -->
+          <div
+            id="bulk-actions-toolbar"
+            class="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-center justify-between"
+            style="display: none"
+          >
+            <span id="selected-count" class="text-sm font-semibold text-amber-900">0 selected</span>
+            <div class="flex gap-2">
+              <button
+                id="bulk-delete-btn"
+                class="px-4 py-2 text-sm font-semibold rounded-lg bg-red-500 text-white hover:bg-red-600 transition-all hover:scale-105 active:scale-95"
+              >
                 <span data-i18n="actions.bulkDelete">Delete Selected</span>
               </button>
-              <button id="clear-selection-btn" class="btn btn-secondary">
+              <button
+                id="clear-selection-btn"
+                class="px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition-all hover:scale-105 active:scale-95"
+              >
                 <span data-i18n="actions.clearSelection">Clear Selection</span>
               </button>
             </div>
           </div>
 
-          <!-- Prompts List Header with Select All -->
-          <div class="prompts-header">
-            <h2><span data-i18n="nav.prompts">Prompts</span></h2>
-            <div class="select-all-container">
-              <label>
-                <input type="checkbox" id="select-all-checkbox" />
-                <span data-i18n="actions.selectAll">Select All</span>
-              </label>
-            </div>
+          <!-- Prompts List Header -->
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-2xl font-bold text-gray-900">
+              <span data-i18n="nav.prompts">Prompts</span>
+            </h2>
           </div>
 
-          <div class="prompts-list" id="prompts-list">
+          <!-- Prompts Grid (populated by JS) -->
+          <div
+            id="prompts-list"
+            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          >
+            <!-- Initial server-side prompts (will be replaced by JS) -->
             {% for prompt_id, prompt_info in prompts.items() %}
-            <div class="prompt-item" data-id="{{ prompt_id }}">
-              <div class="prompt-header">
-                <h4>{{ prompt_info.data.title }}</h4>
-                <div class="prompt-actions">
-                  <button class="favorite-btn" data-id="{{ prompt_id }}">
+            <div
+              class="prompt-item bg-white rounded-lg border border-gray-200 p-4 transition-all hover:scale-[1.02] cursor-pointer"
+              data-id="{{ prompt_id }}"
+            >
+              <div class="flex items-start justify-between mb-3">
+                <h4 class="text-lg font-semibold text-gray-900 flex-1">{{ prompt_info.data.title }}</h4>
+                <div class="flex items-center gap-1 ml-2">
+                  <input
+                    type="checkbox"
+                    class="prompt-checkbox rounded text-blue-500 focus:ring-blue-500"
+                    data-prompt-id="{{ prompt_id }}"
+                  />
+                  <button
+                    class="favorite-btn text-xl hover:scale-110 transition-transform"
+                    data-id="{{ prompt_id }}"
+                  >
                     {% if prompt_info.data.favorite %}★{% else %}☆{% endif %}
                   </button>
-                  <button class="history-btn" data-id="{{ prompt_id }}" data-i18n="version.history">
-                    History
-                  </button>
-                  <button class="copy-btn" data-id="{{ prompt_id }}">Copy</button>
-                  <button class="edit-btn" data-id="{{ prompt_id }}">Edit</button>
-                  <button class="delete-btn" data-id="{{ prompt_id }}">Delete</button>
                 </div>
               </div>
-              <div class="prompt-meta">
-                <span class="category">{{ prompt_info.data.category }}</span>
-                {% if prompt_info.data.tags %}
-                <span class="tags">{{ prompt_info.data.tags|join(', ') }}</span>
-                {% endif %}
+              <div class="flex flex-wrap gap-2 mb-3">
+                <span class="px-2 py-1 text-xs font-medium rounded-md bg-blue-100 text-blue-800">
+                  {{ prompt_info.data.category }}
+                </span>
+                {% if prompt_info.data.tags %} {% for tag in prompt_info.data.tags %}
+                <span class="px-2 py-1 text-xs font-medium rounded-md" style="background-color: #CFF9FC; color: #0E7490;">
+                  {{ tag }}
+                </span>
+                {% endfor %} {% endif %}
               </div>
-              <div class="prompt-content">
+              <p class="text-sm text-gray-600 mb-4 line-clamp-3">
                 {{ prompt_info.data.prompt[:100] }}{% if prompt_info.data.prompt|length > 100
                 %}...{% endif %}
+              </p>
+              <div class="flex flex-wrap gap-2">
+                <button
+                  class="history-btn px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all hover:scale-105 active:scale-95"
+                  data-id="{{ prompt_id }}"
+                  data-i18n="version.history"
+                >
+                  History
+                </button>
+                <button
+                  class="copy-btn px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 transition-all hover:scale-105 active:scale-95"
+                  data-id="{{ prompt_id }}"
+                >
+                  Copy
+                </button>
+                <button
+                  class="edit-btn px-3 py-1.5 text-xs font-medium rounded-lg bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition-all hover:scale-105 active:scale-95"
+                  data-id="{{ prompt_id }}"
+                >
+                  Edit
+                </button>
+                <button
+                  class="delete-btn px-3 py-1.5 text-xs font-medium rounded-lg bg-red-100 text-red-700 hover:bg-red-200 transition-all hover:scale-105 active:scale-95"
+                  data-id="{{ prompt_id }}"
+                >
+                  Delete
+                </button>
               </div>
             </div>
             {% endfor %}
           </div>
 
-          <div class="prompt-editor is-hidden" id="prompt-editor">
-            <form id="prompt-form" novalidate>
-              <div class="form-group">
-                <label for="prompt-title" data-i18n="form.title">Title:</label>
-                <input
-                  type="text"
-                  id="prompt-title"
-                  name="title"
-                  data-i18n="[placeholder]form.titlePlaceholder"
-                  required
-                  maxlength="200"
-                  aria-required="true"
-                  aria-describedby="prompt-title-counter prompt-title-error"
-                />
-                <div class="char-counter" id="prompt-title-counter" aria-live="polite"></div>
-                <div
-                  class="validation-error"
-                  id="prompt-title-error"
-                  role="alert"
-                  aria-live="assertive"
-                ></div>
-              </div>
-
-              <div class="form-group">
-                <label for="prompt-content" data-i18n="form.content">Content:</label>
-                <textarea
-                  id="prompt-content"
-                  name="prompt"
-                  data-i18n=""
-                  rows="10"
-                  required
-                  maxlength="50000"
-                  aria-required="true"
-                  aria-describedby="prompt-content-counter prompt-content-error"
-                ></textarea>
-                <div class="char-counter" id="prompt-content-counter" aria-live="polite"></div>
-                <div
-                  class="validation-error"
-                  id="prompt-content-error"
-                  role="alert"
-                  aria-live="assertive"
-                ></div>
-              </div>
-
-              <div class="form-group">
-                <label for="prompt-category" data-i18n="form.category">Category:</label>
-                <select
-                  id="prompt-category"
-                  name="category"
-                  aria-describedby="prompt-category-error"
-                >
-                  <option value="">No category</option>
-                  {% for category in categories %}
-                  <option value="{{ category }}">{{ category }}</option>
-                  {% endfor %}
-                </select>
-                <div
-                  class="validation-error"
-                  id="prompt-category-error"
-                  role="alert"
-                  aria-live="assertive"
-                ></div>
-              </div>
-
-              <div class="form-group">
-                <label for="prompt-tags" data-i18n="form.tags">Tags (comma-separated):</label>
-                <div class="tag-input-wrapper">
+          <!-- Prompt Editor (hidden by default) -->
+          <div id="prompt-editor" class="hidden">
+            <div class="bg-white rounded-lg border border-gray-200 p-6 max-w-4xl mx-auto">
+              <h2 class="text-2xl font-bold text-gray-900 mb-6">Create/Edit Prompt</h2>
+              <form id="prompt-form" novalidate>
+                <!-- Title -->
+                <div class="mb-4">
+                  <label for="prompt-title" class="block text-sm font-semibold text-gray-700 mb-2" data-i18n="form.title">
+                    Title:
+                  </label>
                   <input
                     type="text"
-                    id="prompt-tags"
-                    name="tags"
-                    data-i18n="[placeholder]form.tagPlaceholder"
-                    autocomplete="off"
-                    aria-describedby="prompt-tags-counter prompt-tags-error prompt-tags-duplicates"
+                    id="prompt-title"
+                    name="title"
+                    data-i18n="[placeholder]form.titlePlaceholder"
+                    required
+                    maxlength="200"
+                    aria-required="true"
+                    aria-describedby="prompt-title-counter prompt-title-error"
+                    class="w-full px-4 py-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
-                  <div id="tag-autocomplete" class="tag-autocomplete is-hidden"></div>
+                  <div class="flex justify-between items-center mt-1">
+                    <div
+                      id="prompt-title-error"
+                      class="validation-error text-xs text-red-600"
+                      role="alert"
+                      aria-live="assertive"
+                    ></div>
+                    <div id="prompt-title-counter" class="text-xs text-gray-500" aria-live="polite"></div>
+                  </div>
                 </div>
-                <div class="char-counter" id="prompt-tags-counter" aria-live="polite"></div>
-                <div
-                  class="validation-warning"
-                  id="prompt-tags-duplicates"
-                  role="status"
-                  aria-live="polite"
-                ></div>
-                <div
-                  class="validation-error"
-                  id="prompt-tags-error"
-                  role="alert"
-                  aria-live="assertive"
-                ></div>
-              </div>
 
-              <div class="form-group">
-                <label for="commit-message" data-i18n="version.commitMessage"
-                  >Commit Message:</label
-                >
-                <input
-                  type="text"
-                  id="commit-message"
-                  name="commit_message"
-                  data-i18n="[placeholder]version.commitMessagePlaceholder"
-                  placeholder="Describe your changes..."
-                  maxlength="500"
-                  aria-describedby="commit-message-counter commit-message-error"
-                />
-                <div class="char-counter" id="commit-message-counter" aria-live="polite"></div>
-                <div
-                  class="validation-error"
-                  id="commit-message-error"
-                  role="alert"
-                  aria-live="assertive"
-                ></div>
-              </div>
+                <!-- Content -->
+                <div class="mb-4">
+                  <label for="prompt-content" class="block text-sm font-semibold text-gray-700 mb-2" data-i18n="form.content">
+                    Content:
+                  </label>
+                  <textarea
+                    id="prompt-content"
+                    name="prompt"
+                    rows="10"
+                    required
+                    maxlength="50000"
+                    aria-required="true"
+                    aria-describedby="prompt-content-counter prompt-content-error"
+                    class="w-full px-4 py-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono"
+                  ></textarea>
+                  <div class="flex justify-between items-center mt-1">
+                    <div
+                      id="prompt-content-error"
+                      class="validation-error text-xs text-red-600"
+                      role="alert"
+                      aria-live="assertive"
+                    ></div>
+                    <div id="prompt-content-counter" class="text-xs text-gray-500" aria-live="polite"></div>
+                  </div>
+                </div>
 
-              <div class="form-actions">
-                <button type="submit" data-i18n="actions.save">Save</button>
-                <button type="button" id="cancel-btn" data-i18n="actions.cancel">Cancel</button>
-              </div>
-            </form>
+                <!-- Category -->
+                <div class="mb-4">
+                  <label for="prompt-category" class="block text-sm font-semibold text-gray-700 mb-2" data-i18n="form.category">
+                    Category:
+                  </label>
+                  <select
+                    id="prompt-category"
+                    name="category"
+                    aria-describedby="prompt-category-error"
+                    class="w-full px-4 py-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="">No category</option>
+                    {% for category in categories %}
+                    <option value="{{ category }}">{{ category }}</option>
+                    {% endfor %}
+                  </select>
+                  <div
+                    id="prompt-category-error"
+                    class="validation-error text-xs text-red-600 mt-1"
+                    role="alert"
+                    aria-live="assertive"
+                  ></div>
+                </div>
+
+                <!-- Tags -->
+                <div class="mb-4">
+                  <label for="prompt-tags" class="block text-sm font-semibold text-gray-700 mb-2" data-i18n="form.tags">
+                    Tags (comma-separated):
+                  </label>
+                  <div class="relative">
+                    <input
+                      type="text"
+                      id="prompt-tags"
+                      name="tags"
+                      data-i18n="[placeholder]form.tagPlaceholder"
+                      autocomplete="off"
+                      aria-describedby="prompt-tags-counter prompt-tags-error prompt-tags-duplicates"
+                      class="w-full px-4 py-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                    <div
+                      id="tag-autocomplete"
+                      class="hidden absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-auto"
+                    ></div>
+                  </div>
+                  <div class="flex justify-between items-center mt-1">
+                    <div>
+                      <div
+                        id="prompt-tags-duplicates"
+                        class="validation-warning text-xs text-amber-600"
+                        role="status"
+                        aria-live="polite"
+                      ></div>
+                      <div
+                        id="prompt-tags-error"
+                        class="validation-error text-xs text-red-600"
+                        role="alert"
+                        aria-live="assertive"
+                      ></div>
+                    </div>
+                    <div id="prompt-tags-counter" class="text-xs text-gray-500" aria-live="polite"></div>
+                  </div>
+                </div>
+
+                <!-- Commit Message -->
+                <div class="mb-6">
+                  <label for="commit-message" class="block text-sm font-semibold text-gray-700 mb-2" data-i18n="version.commitMessage">
+                    Commit Message:
+                  </label>
+                  <input
+                    type="text"
+                    id="commit-message"
+                    name="commit_message"
+                    data-i18n="[placeholder]version.commitMessagePlaceholder"
+                    placeholder="Describe your changes..."
+                    maxlength="500"
+                    aria-describedby="commit-message-counter commit-message-error"
+                    class="w-full px-4 py-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                  <div class="flex justify-between items-center mt-1">
+                    <div
+                      id="commit-message-error"
+                      class="validation-error text-xs text-red-600"
+                      role="alert"
+                      aria-live="assertive"
+                    ></div>
+                    <div id="commit-message-counter" class="text-xs text-gray-500" aria-live="polite"></div>
+                  </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="flex gap-3">
+                  <button
+                    type="submit"
+                    class="px-6 py-3 text-sm font-semibold rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition-all hover:scale-105 active:scale-95"
+                    data-i18n="actions.save"
+                  >
+                    Save
+                  </button>
+                  <button
+                    type="button"
+                    id="cancel-btn"
+                    class="px-6 py-3 text-sm font-medium rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition-all hover:scale-105 active:scale-95"
+                    data-i18n="actions.cancel"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Modals -->
-    <div id="prompt-modal" class="modal is-hidden">
-      <div class="modal-content">
-        <span class="close">&times;</span>
-        <h2 id="modal-title">Edit Prompt</h2>
-        <!-- Form will be inserted here -->
+        </main>
       </div>
     </div>
 
     <!-- Version History Modal -->
-    <div id="version-history-modal" class="modal is-hidden">
-      <div class="modal-content version-history-modal">
-        <div class="modal-header">
-          <h2 data-i18n="version.history">Version History</h2>
-          <span class="close" onclick="hideVersionHistoryModal()">&times;</span>
+    <div id="version-history-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col">
+        <div class="flex items-center justify-between p-6 border-b border-gray-200">
+          <h2 class="text-2xl font-bold text-gray-900" data-i18n="version.history">Version History</h2>
+          <button
+            onclick="hideVersionHistoryModal()"
+            class="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+          >
+            &times;
+          </button>
         </div>
-        <div class="modal-body">
-          <div class="version-controls">
+        <div class="p-6 overflow-auto flex-1">
+          <div class="mb-4">
             <input
               type="text"
               id="version-search"
-              class="version-search"
               placeholder="Search versions..."
               data-i18n="[placeholder]version.searchPlaceholder"
+              class="w-full px-4 py-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
-          <div id="version-list" class="version-list">
-            <div class="loading" data-i18n="messages.loading">Loading...</div>
+          <div id="version-list" class="space-y-3">
+            <div class="text-center text-gray-500 py-8" data-i18n="messages.loading">Loading...</div>
           </div>
         </div>
-        <div class="modal-footer">
+        <div class="flex items-center justify-end gap-3 p-6 border-t border-gray-200">
           <button
             id="compare-versions-btn"
-            class="btn btn-primary is-hidden"
+            class="hidden px-6 py-3 text-sm font-semibold rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-all hover:scale-105 active:scale-95"
             data-i18n="version.compare"
           >
             Compare Selected
           </button>
           <button
             id="close-version-history-btn"
-            class="btn btn-secondary"
+            class="px-6 py-3 text-sm font-medium rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition-all hover:scale-105 active:scale-95"
             data-i18n="actions.close"
           >
             Close
@@ -404,75 +773,104 @@
     </div>
 
     <!-- Diff Viewer Modal -->
-    <div id="diff-modal" class="modal is-hidden">
-      <div class="modal-content diff-modal">
-        <div class="modal-header">
-          <h2 data-i18n="version.compareVersions">Compare Versions</h2>
-          <span class="close" onclick="hideDiffModal()">&times;</span>
+    <div id="diff-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] flex flex-col">
+        <div class="flex items-center justify-between p-6 border-b border-gray-200">
+          <h2 class="text-2xl font-bold text-gray-900" data-i18n="version.compareVersions">Compare Versions</h2>
+          <button
+            onclick="hideDiffModal()"
+            class="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+          >
+            &times;
+          </button>
         </div>
-        <div class="modal-body">
-          <div class="diff-controls">
-            <div class="version-selector">
-              <label data-i18n="version.version1">Version 1:</label>
-              <select id="diff-v1-selector" class="version-selector-dropdown"></select>
+        <div class="p-6 overflow-auto flex-1">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2" data-i18n="version.version1">Version 1:</label>
+              <select
+                id="diff-v1-selector"
+                class="w-full px-4 py-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              ></select>
             </div>
-            <div class="version-selector">
-              <label data-i18n="version.version2">Version 2:</label>
-              <select id="diff-v2-selector" class="version-selector-dropdown"></select>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2" data-i18n="version.version2">Version 2:</label>
+              <select
+                id="diff-v2-selector"
+                class="w-full px-4 py-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              ></select>
             </div>
-            <button id="refresh-diff-btn" class="btn-primary" data-i18n="actions.refresh">
-              Refresh
-            </button>
           </div>
-          <div id="diff-view" class="diff-view">
-            <div class="loading" data-i18n="messages.loading">Loading...</div>
+          <div id="diff-view" class="bg-gray-50 rounded-lg p-4 min-h-[200px]">
+            <div class="text-center text-gray-500 py-8" data-i18n="messages.loading">Loading...</div>
           </div>
         </div>
-        <div class="modal-footer">
-          <button id="close-diff-btn" class="btn-secondary" data-i18n="actions.close">Close</button>
+        <div class="flex items-center justify-end gap-3 p-6 border-t border-gray-200">
+          <button
+            id="close-diff-btn"
+            class="px-6 py-3 text-sm font-medium rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition-all hover:scale-105 active:scale-95"
+            data-i18n="actions.close"
+          >
+            Close
+          </button>
         </div>
       </div>
     </div>
 
     <!-- Revert Confirmation Modal -->
-    <div id="revert-confirmation-modal" class="modal is-hidden">
-      <div class="modal-content revert-modal">
-        <div class="modal-header">
-          <h2 data-i18n="version.confirmRevert">Confirm Revert</h2>
-          <span class="close" onclick="hideRevertConfirmationModal()">&times;</span>
+    <div id="revert-confirmation-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
+        <div class="flex items-center justify-between p-6 border-b border-gray-200">
+          <h2 class="text-xl font-bold text-gray-900" data-i18n="version.confirmRevert">Confirm Revert</h2>
+          <button
+            onclick="hideRevertConfirmationModal()"
+            class="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+          >
+            &times;
+          </button>
         </div>
-        <div class="modal-body">
-          <p data-i18n="version.revertWarning">
+        <div class="p-6">
+          <p class="text-sm text-gray-700 mb-4" data-i18n="version.revertWarning">
             Are you sure you want to revert to this version? This will create a new version with the
             reverted content.
           </p>
-          <div class="form-group">
-            <label for="revert-commit-message" data-i18n="version.commitMessage"
-              >Commit Message:</label
-            >
+          <div>
+            <label for="revert-commit-message" class="block text-sm font-semibold text-gray-700 mb-2" data-i18n="version.commitMessage">
+              Commit Message:
+            </label>
             <input
               type="text"
               id="revert-commit-message"
-              class="form-control"
               placeholder="Describe why you're reverting..."
               data-i18n="[placeholder]version.revertMessagePlaceholder"
               maxlength="500"
               aria-describedby="revert-commit-counter revert-commit-error"
+              class="w-full px-4 py-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
-            <div class="char-counter" id="revert-commit-counter" aria-live="polite"></div>
-            <div
-              class="validation-error"
-              id="revert-commit-error"
-              role="alert"
-              aria-live="assertive"
-            ></div>
+            <div class="flex justify-between items-center mt-1">
+              <div
+                id="revert-commit-error"
+                class="validation-error text-xs text-red-600"
+                role="alert"
+                aria-live="assertive"
+              ></div>
+              <div id="revert-commit-counter" class="text-xs text-gray-500" aria-live="polite"></div>
+            </div>
           </div>
         </div>
-        <div class="modal-footer">
-          <button id="confirm-revert-btn" class="btn-danger" data-i18n="version.revert">
+        <div class="flex items-center justify-end gap-3 p-6 border-t border-gray-200">
+          <button
+            id="confirm-revert-btn"
+            class="px-6 py-3 text-sm font-semibold rounded-lg bg-red-500 text-white hover:bg-red-600 transition-all hover:scale-105 active:scale-95"
+            data-i18n="version.revert"
+          >
             Revert
           </button>
-          <button id="cancel-revert-btn" class="btn-secondary" data-i18n="actions.cancel">
+          <button
+            id="cancel-revert-btn"
+            class="px-6 py-3 text-sm font-medium rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition-all hover:scale-105 active:scale-95"
+            data-i18n="actions.cancel"
+          >
             Cancel
           </button>
         </div>
@@ -480,28 +878,41 @@
     </div>
 
     <!-- Bulk Delete Confirmation Modal -->
-    <div id="bulk-delete-modal" class="modal is-hidden">
-      <div class="modal-content bulk-delete-modal">
-        <div class="modal-header">
-          <h2 data-i18n="bulkDelete.confirmTitle">Confirm Bulk Deletion</h2>
-          <span class="close" onclick="hideBulkDeleteModal()">&times;</span>
+    <div id="bulk-delete-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
+        <div class="flex items-center justify-between p-6 border-b border-gray-200">
+          <h2 class="text-xl font-bold text-gray-900" data-i18n="bulkDelete.confirmTitle">Confirm Bulk Deletion</h2>
+          <button
+            onclick="hideBulkDeleteModal()"
+            class="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+          >
+            &times;
+          </button>
         </div>
-        <div class="modal-body">
-          <p>
+        <div class="p-6">
+          <p class="text-sm text-gray-700 mb-3">
             <span data-i18n="bulkDelete.confirmMessage">You are about to delete</span>
-            <strong id="bulk-delete-count">0</strong>
+            <strong id="bulk-delete-count" class="text-red-600">0</strong>
             <span data-i18n="bulkDelete.prompts">prompt(s)</span>.
           </p>
-          <p class="warning-text" data-i18n="bulkDelete.warningMessage">
+          <p class="text-sm text-amber-700 bg-amber-50 p-3 rounded-lg" data-i18n="bulkDelete.warningMessage">
             This action will create an automatic backup, but deletion cannot be undone without
             restoring from backup.
           </p>
         </div>
-        <div class="modal-footer">
-          <button id="confirm-bulk-delete-btn" class="btn-danger" data-i18n="actions.confirmDelete">
+        <div class="flex items-center justify-end gap-3 p-6 border-t border-gray-200">
+          <button
+            id="confirm-bulk-delete-btn"
+            class="px-6 py-3 text-sm font-semibold rounded-lg bg-red-500 text-white hover:bg-red-600 transition-all hover:scale-105 active:scale-95"
+            data-i18n="actions.confirmDelete"
+          >
             Confirm Delete
           </button>
-          <button id="cancel-bulk-delete-btn" class="btn-secondary" data-i18n="actions.cancel">
+          <button
+            id="cancel-bulk-delete-btn"
+            class="px-6 py-3 text-sm font-medium rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition-all hover:scale-105 active:scale-95"
+            data-i18n="actions.cancel"
+          >
             Cancel
           </button>
         </div>

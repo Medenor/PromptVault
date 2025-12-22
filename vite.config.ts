@@ -46,7 +46,12 @@ export default defineConfig({
     alias: {
       '@': resolve(__dirname, 'src/web/static/ts'),
       '@types': resolve(__dirname, 'src/web/static/ts/types'),
+      '@components': resolve(__dirname, 'src/web/static/ts/components/index.ts'),
     },
+  },
+
+  css: {
+    postcss: './postcss.config.js',
   },
 
   server: {

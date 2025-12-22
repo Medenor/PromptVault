@@ -3,10 +3,13 @@
     "newPrompt": "Nouveau Prompt",
     "prompts": "Prompts",
     "categories": "Catégories",
+    "allCategories": "Toutes les catégories",
     "tags": "Étiquettes",
+    "allTags": "Toutes les étiquettes",
+    "categoriesAndTags": "Catégories & Étiquettes",
     "filters": "Filtres",
-    "showFavorites": "⭐ Afficher les favoris",
-    "showAll": "🔄 Afficher tout",
+    "showFavorites": "Afficher les favoris",
+    "showAll": "Afficher tout",
     "search": "Rechercher dans le titre, le prompt, la note...",
     "searchPlaceholder": "Rechercher des prompts...",
     "caseSensitive": "Sensible à la casse",
@@ -67,7 +70,9 @@
     "missingTitle": "Titre manquant",
     "missingContent": "Contenu manquant",
     "missingCommitMessage": "Champ obligatoire manquant",
-    "unknownError": "Erreur inconnue"
+    "unknownError": "Erreur inconnue",
+    "selectTwoVersions": "Veuillez sélectionner exactement 2 versions à comparer",
+    "selectPromptFirst": "Veuillez d'abord sélectionner une invite"
   },
   "validation": {
     "required": "Ce champ est obligatoire.",
@@ -169,7 +174,8 @@
     "validationErrors": "Erreurs de validation:",
     "validationPassed": "Toutes les données ont été validées avec succès",
     "operationCancelled": "Opération annulée",
-    "clearBtn": "Effacer"
+    "clearBtn": "Effacer",
+    "settingsCleared": "Paramètres d'exportation effacés"
   },
   "search": {
     "emptyState": "Aucun prompt trouvé. Créez votre premier prompt pour commencer !",
@@ -247,7 +253,20 @@
     "restoreBtn": "Restaurer",
     "confirmDelete": "Confirmer la suppression",
     "deleteWarning": "Êtes-vous sûr de vouloir supprimer cette sauvegarde? Cette action ne peut pas être annulée.",
-    "deleteBtn": "Supprimer"
+    "deleteBtn": "Supprimer",
+    "errorLoading": "Erreur lors du chargement des sauvegardes",
+    "createFailed": "Impossible de créer la sauvegarde",
+    "createError": "Erreur lors de la création de la sauvegarde",
+    "restoreSuccess": "Sauvegarde restaurée avec succès",
+    "restoreFailed": "Impossible de restaurer la sauvegarde",
+    "restoreError": "Erreur lors de la restauration de la sauvegarde",
+    "deleteSuccess": "Sauvegarde supprimée avec succès",
+    "deleteFailed": "Impossible de supprimer la sauvegarde",
+    "deleteError": "Erreur lors de la suppression de la sauvegarde",
+    "cleanupFailed": "Le nettoyage a échoué",
+    "cleanupError": "Erreur lors du nettoyage des sauvegardes",
+    "compressionFailed": "La compression a échoué",
+    "compressionError": "Erreur lors de la compression des sauvegardes"
   },
   "auth": {
     "login": {
@@ -260,7 +279,8 @@
       "loginButton": "Se connecter",
       "rememberMe": "Se souvenir de moi",
       "forgotPassword": "Mot de passe oublié ?",
-      "noAccount": "Vous n'avez pas de compte ? S'inscrire",
+      "noAccount": "Vous n'avez pas de compte ?",
+      "registerLink": "S'inscrire",
       "accountLocked": "Votre compte a été verrouillé en raison de trop nombreuses tentatives de connexion échouées. Veuillez réessayer plus tard ou réinitialiser votre mot de passe.",
       "invalidCredentials": "Nom d'utilisateur ou mot de passe invalide",
       "accountInactive": "Votre compte est inactif. Veuillez contacter le support.",
@@ -328,6 +348,14 @@
       "requestNewButton": "Demander une nouvelle réinitialisation"
     },
     "profile": {
+      "title": "Votre profil",
+      "backToPrompts": "← Retour aux Prompts",
+      "profileInfo": "Informations du profil",
+      "username": "Nom d'utilisateur",
+      "email": "Email",
+      "preferences": "Préférences",
+      "language": "Langue",
+      "security": "Sécurité",
       "logout": "Déconnexion",
       "memberSince": "Membre depuis",
       "lastLogin": "Dernière connexion",
@@ -421,7 +449,10 @@
       "revokeSession": "Révoquer la session",
       "confirmRevoke": "Confirmer la révocation",
       "revokeWarning": "Êtes-vous sûr de vouloir révoquer cette session ? L'utilisateur sera déconnecté immédiatement.",
-      "confirmRevokeButton": "Révoquer"
+      "confirmRevokeButton": "Révoquer",
+      "currentBadge": "Actuelle",
+      "confirmRevokeAllForUser": "Êtes-vous sûr de vouloir révoquer TOUTES les sessions de l'utilisateur \"{{username}}\" ? L'utilisateur sera déconnecté de tous les appareils.",
+      "confirmRevokeAllForAllUsers": "Êtes-vous sûr de vouloir révoquer TOUTES les sessions de TOUS les utilisateurs ? Tous les utilisateurs seront déconnectés de tous les appareils."
     }
   }
 }

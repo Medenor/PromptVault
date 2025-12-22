@@ -3,10 +3,13 @@
     "newPrompt": "Neuer Prompt",
     "prompts": "Prompts",
     "categories": "Kategorien",
+    "allCategories": "Alle Kategorien",
     "tags": "Tags",
+    "allTags": "Alle Tags",
+    "categoriesAndTags": "Kategorien & Tags",
     "filters": "Filter",
-    "showFavorites": "⭐ Favoriten anzeigen",
-    "showAll": "🔄 Alles anzeigen",
+    "showFavorites": "Favoriten anzeigen",
+    "showAll": "Alles anzeigen",
     "search": "In Titel, Prompt, Notiz suchen...",
     "searchPlaceholder": "Prompts durchsuchen...",
     "caseSensitive": "Groß-/Kleinschreibung beachten",
@@ -67,7 +70,9 @@
     "missingTitle": "Titel fehlt",
     "missingContent": "Inhalt fehlt",
     "missingCommitMessage": "Erforderliches Feld fehlt",
-    "unknownError": "Unbekannter Fehler"
+    "unknownError": "Unbekannter Fehler",
+    "selectTwoVersions": "Bitte wählen Sie genau 2 Versionen zum Vergleichen aus",
+    "selectPromptFirst": "Bitte wählen Sie zunächst eine Eingabeaufforderung aus"
   },
   "validation": {
     "required": "Dieses Feld ist erforderlich.",
@@ -169,7 +174,8 @@
     "validationErrors": "Validierungsfehler:",
     "validationPassed": "Alle Daten wurden erfolgreich validiert",
     "operationCancelled": "Vorgang abgebrochen",
-    "clearBtn": "Löschen"
+    "clearBtn": "Löschen",
+    "settingsCleared": "Exporteinstellungen gelöscht"
   },
   "search": {
     "emptyState": "Keine Prompts gefunden. Erstellen Sie Ihren ersten Prompt, um zu starten!",
@@ -247,7 +253,20 @@
     "restoreBtn": "Wiederherstellen",
     "confirmDelete": "Löschen bestätigen",
     "deleteWarning": "Sind Sie sicher, dass Sie diese Sicherung löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.",
-    "deleteBtn": "Löschen"
+    "deleteBtn": "Löschen",
+    "errorLoading": "Fehler beim Laden von Backups",
+    "createFailed": "Fehler beim Erstellen des Backups",
+    "createError": "Fehler beim Erstellen des Backups",
+    "restoreSuccess": "Backup erfolgreich wiederhergestellt",
+    "restoreFailed": "Fehler beim Wiederherstellen des Backups",
+    "restoreError": "Fehler beim Wiederherstellen des Backups",
+    "deleteSuccess": "Backup erfolgreich gelöscht",
+    "deleteFailed": "Fehler beim Löschen des Backups",
+    "deleteError": "Fehler beim Löschen des Backups",
+    "cleanupFailed": "Bereinigung fehlgeschlagen",
+    "cleanupError": "Fehler beim Bereinigen von Backups",
+    "compressionFailed": "Kompression fehlgeschlagen",
+    "compressionError": "Fehler beim Komprimieren von Backups"
   },
   "auth": {
     "login": {
@@ -260,7 +279,8 @@
       "loginButton": "Anmelden",
       "rememberMe": "Angemeldet bleiben",
       "forgotPassword": "Passwort vergessen?",
-      "noAccount": "Noch kein Konto? Registrieren",
+      "noAccount": "Noch kein Konto?",
+      "registerLink": "Registrieren",
       "accountLocked": "Ihr Konto wurde aufgrund zu vieler fehlgeschlagener Anmeldeversuche gesperrt. Bitte versuchen Sie es später erneut oder setzen Sie Ihr Passwort zurück.",
       "invalidCredentials": "Ungültiger Benutzername oder Passwort",
       "accountInactive": "Ihr Konto ist inaktiv. Bitte kontaktieren Sie den Support.",
@@ -328,6 +348,14 @@
       "requestNewButton": "Neue Zurücksetzung anfordern"
     },
     "profile": {
+      "title": "Dein Profil",
+      "backToPrompts": "← Zurück zu Prompts",
+      "profileInfo": "Profilinformationen",
+      "username": "Benutzername",
+      "email": "E-Mail",
+      "preferences": "Einstellungen",
+      "language": "Sprache",
+      "security": "Sicherheit",
       "logout": "Abmelden",
       "memberSince": "Mitglied seit",
       "lastLogin": "Letzte Anmeldung",
@@ -419,7 +447,10 @@
       "revokeSession": "Sitzung widerrufen",
       "confirmRevoke": "Widerruf bestätigen",
       "revokeWarning": "Sind Sie sicher, dass Sie diese Sitzung widerrufen möchten? Der Benutzer wird sofort abgemeldet.",
-      "confirmRevokeButton": "Widerrufen"
+      "confirmRevokeButton": "Widerrufen",
+      "currentBadge": "Aktuell",
+      "confirmRevokeAllForUser": "Sind Sie sicher, dass Sie ALLE Sitzungen für Benutzer \"{{username}}\" widerrufen möchten? Der Benutzer wird von allen Geräten abgemeldet.",
+      "confirmRevokeAllForAllUsers": "Sind Sie sicher, dass Sie ALLE Sitzungen für ALLE Benutzer widerrufen möchten? Alle Benutzer werden von allen Geräten abgemeldet."
     }
   }
 }

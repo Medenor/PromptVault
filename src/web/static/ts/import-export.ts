@@ -8,33 +8,17 @@
  * Import/export page logic
  */
 
+import '../css/tailwind-globals.css';
 import '@/form-validation';
 import { changeLanguage, initI18n, t, tUnsafe, updateStaticTranslations } from '@/utils/i18n';
 import { hideElement, showElement } from '@/utils/dom';
+import { reportError } from '@/telemetry';
 
 type OperationType = 'export' | 'import' | null;
 
 let currentOperation: OperationType = null;
 const IMPORT_EXPORT_COMPONENT = 'importExport';
-const HIDDEN_CLASS = 'is-hidden';
-
-function reportImportExportIssue(
-  action: string,
-  error: unknown,
-  metadata: Record<string, unknown> = {},
-  severity: 'error' | 'warning' = 'error'
-): void {
-  const logger = window.FrontendLogger;
-  if (logger && typeof logger.reportError === 'function') {
-    logger.reportError(IMPORT_EXPORT_COMPONENT, action, error, metadata, severity);
-  }
-  const prefix = `[PromptVault][import-export] ${action}`;
-  if (severity === 'warning') {
-    console.warn(prefix, error, metadata);
-  } else {
-    console.error(prefix, error, metadata);
-  }
-}
+const HIDDEN_CLASS = 'hidden';
 
 function initializeImportExport(): void {
   setupEventListeners();
@@ -125,7 +109,7 @@ async function loadStatistics(): Promise<void> {
 
     updateActivityHistory();
   } catch (error) {
-    reportImportExportIssue('loadStatistics', error as Error);
+    reportError(IMPORT_EXPORT_COMPONENT, 'loadStatistics', error);
   }
 }
 
@@ -167,7 +151,7 @@ async function previewExport(): Promise<void> {
     showPreview('previewExportTitle', previewContent);
     hideProgress('export');
   } catch (error) {
-    reportImportExportIssue('previewExport', error as Error, { format, includeFavorites });
+    reportError(IMPORT_EXPORT_COMPONENT, 'previewExport', error, { format, includeFavorites });
     showStatus('export', 'exportFailed', 'error');
   }
 }
@@ -191,7 +175,7 @@ async function previewImport(): Promise<void> {
     showPreview('previewImportTitle', previewContent);
     hideProgress('import');
   } catch (error) {
-    reportImportExportIssue('previewImport', error as Error, { filename: file.name });
+    reportError(IMPORT_EXPORT_COMPONENT, 'previewImport', error, { filename: file.name });
     showStatus('import', 'importFailed', 'error');
   }
 }
@@ -350,7 +334,7 @@ async function performExport(): Promise<void> {
       showStatus('export', error.error || 'exportFailed', 'error');
     }
   } catch (error) {
-    reportImportExportIssue('performExport', error as Error, {
+    reportError(IMPORT_EXPORT_COMPONENT, 'performExport', error, {
       format,
       filename,
       includeFavorites,
@@ -403,7 +387,7 @@ async function performImport(): Promise<void> {
       showStatus('import', result.error || 'importFailed', 'error');
     }
   } catch (error) {
-    reportImportExportIssue('performImport', error as Error, {
+    reportError(IMPORT_EXPORT_COMPONENT, 'performImport', error, {
       mode,
       validate,
       filename: file.name,
@@ -417,11 +401,15 @@ async function performImport(): Promise<void> {
 function showProgress(operation: 'export' | 'import', messageKey: string): void {
   const progressContainer = document.getElementById(`${operation}-progress`);
   const statusElement = document.getElementById(`${operation}-status`);
+  const progressFill = document.getElementById(`${operation}-progress-fill`);
 
   showElement(progressContainer);
+  if (progressFill) {
+    progressFill.style.width = '50%';
+  }
   if (statusElement) {
   statusElement.textContent = tUnsafe(`importExport.${messageKey}`);
-    statusElement.className = 'status-message status-info';
+    statusElement.className = 'text-sm text-blue-600 mt-2';
   }
 }
 
@@ -436,15 +424,20 @@ function showStatus(
   type: 'info' | 'success' | 'error'
 ): void {
   const statusElement = document.getElementById(`${operation}-status`);
+  const progressContainer = document.getElementById(`${operation}-progress`);
   if (!statusElement) return;
 
   statusElement.textContent = message;
-  statusElement.className = `status-message status-${type}`;
+  const colorClass = type === 'success' ? 'text-green-600' : type === 'error' ? 'text-red-600' : 'text-blue-600';
+  statusElement.className = `text-sm ${colorClass} mt-2`;
+
+  showElement(progressContainer);
 
   if (type === 'success') {
     setTimeout(() => {
       statusElement.textContent = '';
-      statusElement.className = 'status-message status-info';
+      statusElement.className = 'text-sm text-blue-600 mt-2';
+      hideElement(progressContainer);
     }, 3000);
   }
 }
@@ -454,7 +447,7 @@ function handleLanguageChange(event: Event): void {
   changeLanguage(selectedLanguage)
     .then(() => updateStaticTranslations())
     .catch((error) => {
-      reportImportExportIssue('changeLanguage', error as Error, { language: selectedLanguage });
+      reportError(IMPORT_EXPORT_COMPONENT, 'changeLanguage', error, { language: selectedLanguage });
     });
 }
 
@@ -472,7 +465,7 @@ function clearExportSettings(): void {
   hideProgress('export');
   showStatus('export', '', 'info');
 
-  showStatus('export', 'Export settings cleared', 'success');
+  showStatus('export', t('importExport.settingsCleared'), 'success');
   setTimeout(() => {
     showStatus('export', '', 'info');
   }, 2000);
@@ -498,7 +491,7 @@ async function checkAdminAccess(): Promise<void> {
       window.location.href = '/auth/login';
     }
   } catch (error) {
-    reportImportExportIssue('checkAdminAccess', error as Error);
+    reportError(IMPORT_EXPORT_COMPONENT, 'checkAdminAccess', error);
     window.location.href = '/auth/login';
   }
 }
@@ -529,6 +522,6 @@ initI18n(() => {
     exposeGlobalHandlers();
     initializeImportExport();
   } catch (error) {
-    reportImportExportIssue('initialize', error as Error);
+    reportError(IMPORT_EXPORT_COMPONENT, 'initialize', error);
   }
 });

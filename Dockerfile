@@ -13,11 +13,12 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --ignore-scripts
 
-# Copy TypeScript and Vite configuration
-COPY tsconfig.json vite.config.ts ./
+# Copy TypeScript, Tailwind, and Vite configuration
+COPY tsconfig.json vite.config.ts postcss.config.js tailwind.config.ts ./
 
 # Copy source files
 COPY src/web/static/ ./src/web/static/
+COPY src/web/templates/ ./src/web/templates/
 
 # Build frontend (TypeScript -> JavaScript, bundled with Vite)
 RUN npm run build
@@ -51,10 +52,7 @@ COPY alembic/ ./alembic/
 COPY alembic.ini .
 
 # Copy built frontend assets from builder stage
-COPY --from=frontend-builder /app/dist/static/ ./src/web/static/dist/
-
-# Copy Vite manifest for template rendering
-COPY --from=frontend-builder /app/dist/static/.vite/manifest.json ./src/web/static/manifest.json
+COPY --from=frontend-builder /app/dist/static/ ./dist/static/
 
 # Create data directory and set permissions
 RUN mkdir -p data/logs data/backups && \

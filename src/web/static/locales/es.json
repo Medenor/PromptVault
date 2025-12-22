@@ -3,10 +3,13 @@
     "newPrompt": "Nuevo Prompt",
     "prompts": "Prompts",
     "categories": "Categorías",
+    "allCategories": "Todas las categorías",
     "tags": "Etiquetas",
+    "allTags": "Todas las etiquetas",
+    "categoriesAndTags": "Categorías & Etiquetas",
     "filters": "Filtros",
-    "showFavorites": "⭐ Mostrar favoritos",
-    "showAll": "🔄 Mostrar todo",
+    "showFavorites": "Mostrar favoritos",
+    "showAll": "Mostrar todo",
     "search": "Buscar en título, prompt, nota...",
     "searchPlaceholder": "Buscar prompts...",
     "caseSensitive": "Sensible a mayúsculas",
@@ -67,7 +70,9 @@
     "missingTitle": "Título faltante",
     "missingContent": "Contenido faltante",
     "missingCommitMessage": "Campo requerido faltante",
-    "unknownError": "Error desconocido"
+    "unknownError": "Error desconocido",
+    "selectTwoVersions": "Por favor, seleccione exactamente 2 versiones para comparar",
+    "selectPromptFirst": "Por favor, seleccione primero una sugerencia"
   },
   "validation": {
     "required": "Este campo es obligatorio.",
@@ -169,7 +174,8 @@
     "validationErrors": "Errores de validación:",
     "validationPassed": "Todos los datos fueron validados exitosamente",
     "operationCancelled": "Operación cancelada",
-    "clearBtn": "Limpiar"
+    "clearBtn": "Limpiar",
+    "settingsCleared": "Configuración de exportación borrada"
   },
   "search": {
     "emptyState": "No se encontraron prompts. ¡Crea tu primer prompt para comenzar!",
@@ -247,7 +253,20 @@
     "restoreBtn": "Restaurar",
     "confirmDelete": "Confirmar eliminación",
     "deleteWarning": "¿Está seguro de que desea eliminar esta copia de seguridad? Esta acción no se puede deshacer.",
-    "deleteBtn": "Eliminar"
+    "deleteBtn": "Eliminar",
+    "errorLoading": "Error al cargar las copias de seguridad",
+    "createFailed": "Error al crear la copia de seguridad",
+    "createError": "Error al crear la copia de seguridad",
+    "restoreSuccess": "Copia de seguridad restaurada exitosamente",
+    "restoreFailed": "Error al restaurar la copia de seguridad",
+    "restoreError": "Error al restaurar la copia de seguridad",
+    "deleteSuccess": "Copia de seguridad eliminada exitosamente",
+    "deleteFailed": "Error al eliminar la copia de seguridad",
+    "deleteError": "Error al eliminar la copia de seguridad",
+    "cleanupFailed": "La limpieza falló",
+    "cleanupError": "Error al limpiar las copias de seguridad",
+    "compressionFailed": "La compresión falló",
+    "compressionError": "Error al comprimir las copias de seguridad"
   },
   "auth": {
     "login": {
@@ -260,7 +279,8 @@
       "loginButton": "Iniciar sesión",
       "rememberMe": "Recuérdame",
       "forgotPassword": "¿Olvidó su contraseña?",
-      "noAccount": "¿No tiene una cuenta? Registrarse",
+      "noAccount": "¿No tiene una cuenta?",
+      "registerLink": "Registrarse",
       "accountLocked": "Su cuenta ha sido bloqueada debido a demasiados intentos de inicio de sesión fallidos. Por favor, intente nuevamente más tarde o restablezca su contraseña.",
       "invalidCredentials": "Nombre de usuario o contraseña inválidos",
       "accountInactive": "Su cuenta está inactiva. Por favor, contacte al soporte.",
@@ -328,6 +348,14 @@
       "requestNewButton": "Solicitar nuevo restablecimiento"
     },
     "profile": {
+      "title": "Tu Perfil",
+      "backToPrompts": "← Volver a los Prompts",
+      "profileInfo": "Información del perfil",
+      "username": "Nombre de usuario",
+      "email": "Correo electrónico",
+      "preferences": "Preferencias",
+      "language": "Idioma",
+      "security": "Seguridad",
       "logout": "Cerrar sesión",
       "memberSince": "Miembro desde",
       "lastLogin": "Último inicio de sesión",
@@ -419,7 +447,10 @@
       "revokeSession": "Revocar sesión",
       "confirmRevoke": "Confirmar revocación",
       "revokeWarning": "¿Está seguro de que desea revocar esta sesión? El usuario será desconectado inmediatamente.",
-      "confirmRevokeButton": "Revocar"
+      "confirmRevokeButton": "Revocar",
+      "currentBadge": "Actual",
+      "confirmRevokeAllForUser": "¿Está seguro de que desea revocar TODAS las sesiones del usuario \"{{username}}\"? El usuario será desconectado de todos los dispositivos.",
+      "confirmRevokeAllForAllUsers": "¿Está seguro de que desea revocar TODAS las sesiones de TODOS los usuarios? Todos los usuarios serán desconectados de todos los dispositivos."
     }
   }
 }

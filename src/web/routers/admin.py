@@ -727,24 +727,25 @@ async def get_user_sessions(
     # Get all sessions (including revoked)
     sessions = session_repo.get_user_sessions(user_id, active_only=False)
 
-    # Convert ORM objects to dictionaries with correct field names
-    session_dicts = [
-        {
-            "id": s.id,
-            "family_id": s.family_id,
-            "user_agent": s.device_info,  # device_info -> user_agent
-            "ip_address": s.ip_address,
-            "created_at": s.created_at.isoformat(),
-            "last_used_at": s.last_used_at.isoformat() if s.last_used_at else None,
-            "expires_at": s.expires_at.isoformat(),
-            "is_revoked": s.is_revoked,
-            "is_current": False,  # Admin viewing other user's sessions, so never current
-        }
-        for s in sessions
-    ]
+    # Get admin's current session family_id from the token (if available)
+    admin_family_id = getattr(admin, 'family_id', None)
 
-    # Convert to response models
-    session_responses = [SessionResponse.model_validate(d) for d in session_dicts]
+    # Convert ORM objects to response models
+    session_responses = []
+    for s in sessions:
+        # Use model_construct to bypass Pydantic validation
+        response = SessionResponse.model_construct(
+            id=s.id,
+            family_id=s.family_id,
+            user_agent=s.device_info,  # device_info -> user_agent
+            ip_address=s.ip_address,
+            created_at=s.created_at,
+            last_used_at=s.last_used_at,
+            expires_at=s.expires_at,
+            is_revoked=s.is_revoked,
+            is_current=admin_family_id is not None and s.family_id == admin_family_id,
+        )
+        session_responses.append(response)
 
     # Log admin action
     _log_admin_action(
@@ -924,6 +925,66 @@ async def revoke_user_sessions(
 
     return RevokeSessionResponse(
         message=f"All sessions revoked for user {user.username}",
+        revoked_count=revoked_count,
+    )
+
+
+@router.delete(
+    "/sessions",
+    response_model=RevokeSessionResponse,
+    summary="Revoke all sessions globally",
+    description="""
+    Revoke all sessions for all users in the system.
+
+    **Effect:**
+    - All active sessions across all users are revoked
+    - All users will be logged out of all devices
+    - Refresh tokens become invalid
+
+    **Use Cases:**
+    - Security incident response (system-wide)
+    - System maintenance requiring all users to re-authenticate
+    - Emergency lockdown
+
+    **Security:**
+    - Requires admin role
+    - Audit logged
+    """,
+    responses={
+        200: {"description": "All sessions revoked successfully"},
+        403: {"description": "Admin role required"},
+    },
+)
+async def revoke_all_sessions(
+    admin: User = Depends(require_role(["admin"])),
+    db: Session = Depends(get_db),
+) -> RevokeSessionResponse:
+    """Revoke all sessions for all users.
+
+    Args:
+        admin: Authenticated admin user
+        db: Database session
+
+    Returns:
+        RevokeSessionResponse with count of revoked sessions
+    """
+    session_repo = SessionRepository(db)
+
+    # Revoke all sessions
+    revoked_count = session_repo.revoke_all_sessions()
+    db.commit()
+
+    # Log admin action
+    _log_admin_action(
+        admin.id,
+        admin.username,
+        "REVOKE_ALL_SESSIONS",
+        "SYSTEM",
+        f"sessions_revoked={revoked_count}",
+    )
+
+    return RevokeSessionResponse(
+        message=f"All sessions revoked system-wide",
         revoked_count=revoked_count,
     )
 

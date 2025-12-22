@@ -8,6 +8,7 @@
  * Backup management - TypeScript migration in progress
  */
 
+import '../css/tailwind-globals.css';
 import { reportError } from '@/telemetry';
 import '@/form-validation';
 import { changeLanguage, initI18n, t, updateStaticTranslations } from '@/utils/i18n';
@@ -36,27 +37,6 @@ const BACKUP_COMPONENT = 'backupManagement';
 let currentBackups: BackupItem[] = [];
 let selectedBackupId: string | null = null;
 
-function reportBackupIssue(
-  action: string,
-  error: unknown,
-  metadata: Record<string, unknown> = {},
-  severity: 'error' | 'warning' = 'error'
-): void {
-  const logger = window.FrontendLogger;
-  if (logger && typeof logger.reportError === 'function') {
-    logger.reportError(BACKUP_COMPONENT, action, error, metadata, severity);
-  } else {
-    reportError(BACKUP_COMPONENT, action, error, metadata, severity);
-  }
-
-  const prefix = `[PromptVault][backup] ${action}`;
-  if (severity === 'warning') {
-    console.warn(prefix, error, metadata);
-  } else {
-    console.error(prefix, error, metadata);
-  }
-}
-
 function initializeBackupManagement(): void {
   setupEventListeners();
   void checkAdminAccess();
@@ -81,7 +61,7 @@ function handleLanguageChange(event: Event): void {
   if (!selectedLanguage) return;
 
   changeLanguage(selectedLanguage).catch((err) => {
-    reportBackupIssue('changeLanguage', err, { language: selectedLanguage });
+    reportError(BACKUP_COMPONENT, 'changeLanguage', err, { language: selectedLanguage });
   });
 }
 
@@ -93,8 +73,8 @@ async function loadBackups(): Promise<void> {
     currentBackups = data.backups || [];
     renderBackupList(currentBackups);
   } catch (error) {
-    reportBackupIssue('loadBackups', error as Error);
-    showStatus('backup-status', 'Error loading backups', 'error');
+    reportError(BACKUP_COMPONENT, 'loadBackups', error);
+    showStatus('backup-status', t('backup.errorLoading'), 'error');
   }
 }
 
@@ -104,7 +84,7 @@ async function loadBackupStats(): Promise<void> {
     const stats = (await response.json()) as BackupStats;
     updateStatsDisplay(stats);
   } catch (error) {
-    reportBackupIssue('loadBackupStats', error as Error);
+    reportError(BACKUP_COMPONENT, 'loadBackupStats', error);
   }
 }
 
@@ -136,7 +116,7 @@ function renderBackupList(backups: BackupItem[]): void {
   if (!container) return;
 
   if (backups.length === 0) {
-    container.innerHTML = '<div class="no-backups">No backups found</div>';
+    container.innerHTML = '<div class="text-gray-500 text-sm">No backups found</div>';
     return;
   }
 
@@ -152,23 +132,21 @@ function createBackupItem(backup: BackupItem): string {
   const createdBy = backup.created_by || 'unknown';
 
   return `
-        <div class="backup-item" data-id="${backup.backup_id}">
-            <div class="backup-info">
-                <div class="backup-header">
-                    <h4>${backup.backup_id}${isCompressed}</h4>
-                    <div class="backup-actions">
-                        <button class="btn btn-small btn-primary" onclick="showRestoreModal('${backup.backup_id}')">Restore</button>
-                        <button class="btn btn-small btn-danger" onclick="showDeleteModal('${backup.backup_id}')">Delete</button>
-                    </div>
+        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200 hover:border-blue-300 transition" data-id="${backup.backup_id}">
+            <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-3 md:gap-0 mb-3">
+                <h4 class="font-semibold text-gray-900 md:min-w-0">${backup.backup_id}${isCompressed}</h4>
+                <div class="flex gap-2 flex-shrink-0">
+                    <button class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-medium transition whitespace-nowrap" onclick="showRestoreModal('${backup.backup_id}')">Restore</button>
+                    <button class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-medium transition whitespace-nowrap" onclick="showDeleteModal('${backup.backup_id}')">Delete</button>
                 </div>
-                <div class="backup-details">
-                    <div class="backup-meta">
-                        <span class="backup-timestamp">${timestamp}</span>
-                        <span class="backup-size">${compressionIcon} ${size}</span>
-                        <span class="backup-prompts">${backup.prompt_count} prompts</span>
-                    </div>
-                    <div class="backup-user">Created by: ${createdBy}</div>
+            </div>
+            <div class="space-y-1">
+                <div class="flex items-center justify-between text-sm text-gray-600">
+                    <span>${timestamp}</span>
+                    <span>${compressionIcon} ${size}</span>
                 </div>
+                <div class="text-sm text-gray-600">${backup.prompt_count} prompts</div>
+                <div class="text-xs text-gray-500">Created by: ${createdBy}</div>
             </div>
         </div>
     `;
@@ -197,11 +175,11 @@ async function createBackup(): Promise<void> {
       void loadBackups();
       void loadBackupStats();
     } else {
-      showStatus('backup-status', 'Failed to create backup', 'error');
+      showStatus('backup-status', t('backup.createFailed'), 'error');
     }
   } catch (error) {
-    reportBackupIssue('createBackup', error as Error, { backupName });
-    showStatus('backup-status', 'Error creating backup', 'error');
+    reportError(BACKUP_COMPONENT, 'createBackup', error, { backupName });
+    showStatus('backup-status', t('backup.createError'), 'error');
   } finally {
     hideProgress('backup-progress');
   }
@@ -246,18 +224,18 @@ async function confirmRestore(): Promise<void> {
     const result = await response.json();
 
     if (result.success) {
-      showStatus('backup-status', 'Backup restored successfully', 'success');
+      showStatus('backup-status', t('backup.restoreSuccess'), 'success');
       setRestoreInProgress(true, 'backup.restoreRedirect');
       setTimeout(() => {
         window.location.href = '/';
       }, 2000);
     } else {
-      showStatus('backup-status', 'Failed to restore backup', 'error');
+      showStatus('backup-status', t('backup.restoreFailed'), 'error');
       setRestoreInProgress(false);
     }
   } catch (error) {
-    reportBackupIssue('restoreBackup', error as Error, { backupId: backupIdToRestore });
-    showStatus('backup-status', 'Error restoring backup', 'error');
+    reportError(BACKUP_COMPONENT, 'restoreBackup', error, { backupId: backupIdToRestore });
+    showStatus('backup-status', t('backup.restoreError'), 'error');
     setRestoreInProgress(false);
   } finally {
     hideProgress('backup-progress');
@@ -301,15 +279,15 @@ async function confirmDelete(): Promise<void> {
     const result = await response.json();
 
     if (result.success) {
-      showStatus('backup-status', 'Backup deleted successfully', 'success');
+      showStatus('backup-status', t('backup.deleteSuccess'), 'success');
       void loadBackups();
       void loadBackupStats();
     } else {
-      showStatus('backup-status', 'Failed to delete backup', 'error');
+      showStatus('backup-status', t('backup.deleteFailed'), 'error');
     }
   } catch (error) {
-    reportBackupIssue('deleteBackup', error as Error, { backupId: backupIdToDelete });
-    showStatus('backup-status', 'Error deleting backup', 'error');
+    reportError(BACKUP_COMPONENT, 'deleteBackup', error, { backupId: backupIdToDelete });
+    showStatus('backup-status', t('backup.deleteError'), 'error');
   } finally {
     hideProgress('backup-progress');
   }
@@ -341,11 +319,11 @@ async function cleanupBackups(): Promise<void> {
       void loadBackups();
       void loadBackupStats();
     } else {
-      showStatus('maintenance-status', 'Cleanup failed', 'error');
+      showStatus('maintenance-status', t('backup.cleanupFailed'), 'error');
     }
   } catch (error) {
-    reportBackupIssue('cleanupBackups', error as Error, { retentionDays });
-    showStatus('maintenance-status', 'Error cleaning up backups', 'error');
+    reportError(BACKUP_COMPONENT, 'cleanupBackups', error, { retentionDays });
+    showStatus('maintenance-status', t('backup.cleanupError'), 'error');
   } finally {
     hideProgress('maintenance-progress');
   }
@@ -377,11 +355,11 @@ async function compressBackups(): Promise<void> {
       void loadBackups();
       void loadBackupStats();
     } else {
-      showStatus('maintenance-status', 'Compression failed', 'error');
+      showStatus('maintenance-status', t('backup.compressionFailed'), 'error');
     }
   } catch (error) {
-    reportBackupIssue('compressBackups', error as Error, { daysThreshold: compressDays });
-    showStatus('maintenance-status', 'Error compressing backups', 'error');
+    reportError(BACKUP_COMPONENT, 'compressBackups', error, { daysThreshold: compressDays });
+    showStatus('maintenance-status', t('backup.compressionError'), 'error');
   } finally {
     hideProgress('maintenance-progress');
   }
@@ -410,19 +388,19 @@ function showProgress(containerId: string, message: string): void {
   const fill = document.getElementById(`${containerId}-fill`);
   const status = document.getElementById(containerId.replace('-progress', '-status'));
 
-  container?.classList.remove('is-hidden');
+  container?.classList.remove('hidden');
   if (fill instanceof HTMLElement) {
     fill.style.width = '50%';
   }
   if (status) {
     status.textContent = message;
-    status.className = 'status-message status-info';
+    status.className = 'text-sm text-blue-600 mt-2';
   }
 }
 
 function hideProgress(containerId: string): void {
   const container = document.getElementById(containerId);
-  container?.classList.add('is-hidden');
+  container?.classList.add('hidden');
 }
 
 function showStatus(elementId: string, message: string, type: 'info' | 'success' | 'error'): void {
@@ -430,17 +408,18 @@ function showStatus(elementId: string, message: string, type: 'info' | 'success'
   if (!element) return;
 
   element.textContent = message;
-  element.className = `status-message status-${type}`;
+  const colorClass = type === 'success' ? 'text-green-600' : type === 'error' ? 'text-red-600' : 'text-blue-600';
+  element.className = `text-sm ${colorClass} mt-2`;
 
-  const container = element.closest('.progress-container');
-  if (container) {
-    container.classList.remove('is-hidden');
+  const container = element.parentElement;
+  if (container && container.id.includes('progress')) {
+    container.classList.remove('hidden');
   }
 
   if (type === 'success') {
     setTimeout(() => {
-      if (container) {
-        container.classList.add('is-hidden');
+      if (container && container.id.includes('progress')) {
+        container.classList.add('hidden');
       }
     }, 5000);
   }
@@ -456,7 +435,7 @@ function setRestoreInProgress(isRestoring: boolean, messageKey?: TranslationKey)
     if (isRestoring) {
       showElement(status);
       status.textContent = messageKey ? t(messageKey) : t('backup.restoreInProgress');
-      status.className = 'status-message status-info';
+      status.className = 'text-sm text-blue-600 mt-4';
     } else {
       hideElement(status);
       status.textContent = '';
@@ -466,6 +445,11 @@ function setRestoreInProgress(isRestoring: boolean, messageKey?: TranslationKey)
   buttons?.forEach((button) => {
     if (button instanceof HTMLButtonElement) {
       button.disabled = isRestoring;
+      if (isRestoring) {
+        button.classList.add('opacity-50', 'cursor-not-allowed');
+      } else {
+        button.classList.remove('opacity-50', 'cursor-not-allowed');
+      }
     }
   });
 
@@ -498,7 +482,7 @@ async function checkAdminAccess(): Promise<void> {
       window.location.href = '/auth/login';
     }
   } catch (error) {
-    reportBackupIssue('checkAdminAccess', error as Error);
+    reportError(BACKUP_COMPONENT, 'checkAdminAccess', error);
     window.location.href = '/auth/login';
   }
 }
@@ -537,6 +521,6 @@ initI18n(() => {
     exposeGlobalHandlers();
     initializeBackupManagement();
   } catch (error) {
-    reportBackupIssue('initialize', error as Error);
+    reportError(BACKUP_COMPONENT, 'initialize', error);
   }
 });

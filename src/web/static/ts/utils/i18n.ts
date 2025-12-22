@@ -82,7 +82,7 @@ export function initI18n(callback: InitCallback): void {
       },
       (err: Error | null) => {
         if (err) {
-          console.error('i18next initialization failed:', err);
+          // Error is already logged by i18next, just proceed with callback
         }
 
         if (document.readyState === 'loading') {

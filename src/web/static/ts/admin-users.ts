@@ -8,12 +8,13 @@
  * Admin user management logic
  */
 
+import '../css/tailwind-globals.css';
 import { reportError } from '@/telemetry';
 import { changeLanguage, initI18n, t, tUnsafe, updateStaticTranslations } from '@/utils/i18n';
 import { showNotification } from '@/utils/notifications';
 
 const API_BASE = '/api/admin';
-const HIDDEN_CLASS = 'is-hidden';
+const HIDDEN_CLASS = 'hidden';
 
 interface AdminUser {
   id: string;
@@ -168,7 +169,7 @@ async function loadUsers(): Promise<void> {
   if (!tableBody) return;
 
   tableBody.innerHTML =
-    '<tr><td colspan="7" class="loading-cell"><div class="loading">Loading...</div></td></tr>';
+    '<tr><td colspan="7" class="px-6 py-4 text-center text-gray-500"><div>Loading...</div></td></tr>';
 
   try {
     const params = new URLSearchParams({
@@ -204,23 +205,26 @@ async function loadUsers(): Promise<void> {
       updateStats(data);
 
       if (users.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="7" class="loading-cell">No users found</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="7" class="px-6 py-4 text-center text-gray-500">No users found</td></tr>';
       } else {
         tableBody.innerHTML = users
           .map((user) => {
+            const roleBadgeClass = user.role === 'admin' ? 'bg-red-100 text-red-800' : user.role === 'editor' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800';
+            const statusClass = getStatusClass(user);
+            const statusBadgeClass = statusClass === 'active' ? 'bg-green-100 text-green-800' : statusClass === 'locked' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800';
             return `
-              <tr>
-                <td>${user.username}</td>
-                <td>${user.email}</td>
-                <td><span class="role-badge ${user.role}">${getTranslatedRole(user.role)}</span></td>
-                <td><span class="status-badge ${getStatusClass(user)}">${getStatusText(user)}</span></td>
-                <td>${formatDate(user.last_login)}</td>
-                <td>${user.session_count || 0}</td>
-                <td>
-                  <div class="action-buttons">
-                    <button class="action-btn view" onclick="window.viewUser('${user.id}')" data-i18n="actions.view">View</button>
-                    <button class="action-btn edit" onclick="window.editUser('${user.id}')" data-i18n="actions.edit">Edit</button>
-                    <button class="action-btn delete" onclick="window.deleteUser('${user.id}', '${user.username}')" data-i18n="actions.delete">Delete</button>
+              <tr class="hover:bg-gray-50">
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${user.username}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${user.email}</td>
+                <td class="px-6 py-4 whitespace-nowrap"><span class="inline-block px-3 py-1 rounded-full text-xs font-medium ${roleBadgeClass}">${getTranslatedRole(user.role)}</span></td>
+                <td class="px-6 py-4 whitespace-nowrap"><span class="inline-block px-3 py-1 rounded-full text-xs font-medium ${statusBadgeClass}">${getStatusText(user)}</span></td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${formatDate(user.last_login)}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${user.session_count || 0}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                  <div class="flex space-x-2">
+                    <button class="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 text-xs font-medium" onclick="window.viewUser('${user.id}')" data-i18n="actions.view">View</button>
+                    <button class="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 text-xs font-medium" onclick="window.editUser('${user.id}')" data-i18n="actions.edit">Edit</button>
+                    <button class="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 text-xs font-medium" onclick="window.deleteUser('${user.id}', '${user.username}')" data-i18n="actions.delete">Delete</button>
                   </div>
                 </td>
               </tr>
@@ -238,14 +242,14 @@ async function loadUsers(): Promise<void> {
     }
   } catch (error) {
     reportError('admin-users', 'loadUsers', error);
-    tableBody.innerHTML = '<tr><td colspan="7" class="loading-cell">Error loading users</td></tr>';
+    tableBody.innerHTML = '<tr><td colspan="7" class="px-6 py-4 text-center text-red-600">Error loading users</td></tr>';
   }
 }
 
 async function viewUser(userId: string): Promise<void> {
   const content = document.getElementById('user-detail-content');
   if (content) {
-    content.innerHTML = '<div class="loading">Loading...</div>';
+    content.innerHTML = '<div class="text-gray-500">Loading...</div>';
   }
   showModal('user-detail-modal');
 
@@ -258,42 +262,47 @@ async function viewUser(userId: string): Promise<void> {
     if (response.ok) {
       const user = (await response.json()) as AdminUser;
       if (content) {
+        const roleBadgeClass = user.role === 'admin' ? 'bg-red-100 text-red-800' : user.role === 'editor' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800';
+        const statusClass = getStatusClass(user);
+        const statusBadgeClass = statusClass === 'active' ? 'bg-green-100 text-green-800' : statusClass === 'locked' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800';
         content.innerHTML = `
-          <div class="detail-row">
-            <div class="detail-label">Username:</div>
-            <div class="detail-value">${user.username}</div>
-          </div>
-          <div class="detail-row">
-            <div class="detail-label">Email:</div>
-            <div class="detail-value">${user.email}</div>
-          </div>
-          <div class="detail-row">
-            <div class="detail-label">Role:</div>
-            <div class="detail-value"><span class="role-badge ${user.role}">${getTranslatedRole(user.role)}</span></div>
-          </div>
-          <div class="detail-row">
-            <div class="detail-label">Status:</div>
-            <div class="detail-value"><span class="status-badge ${getStatusClass(user)}">${getStatusText(user)}</span></div>
-          </div>
-          <div class="detail-row">
-            <div class="detail-label">Email Verified:</div>
-            <div class="detail-value">${user.email_verified ? 'Yes' : 'No'}</div>
-          </div>
-          <div class="detail-row">
-            <div class="detail-label">Created:</div>
-            <div class="detail-value">${formatDate(user.created_at)}</div>
-          </div>
-          <div class="detail-row">
-            <div class="detail-label">Last Login:</div>
-            <div class="detail-value">${formatDate(user.last_login)}</div>
-          </div>
-          <div class="detail-row">
-            <div class="detail-label">Failed Login Attempts:</div>
-            <div class="detail-value">${user.failed_login_attempts || 0}</div>
-          </div>
-          <div class="detail-row">
-            <div class="detail-label">Active Sessions:</div>
-            <div class="detail-value">${user.session_count || 0}</div>
+          <div class="space-y-4">
+            <div class="flex justify-between py-3 border-b border-gray-200">
+              <div class="text-sm font-medium text-gray-500">Username:</div>
+              <div class="text-sm text-gray-900">${user.username}</div>
+            </div>
+            <div class="flex justify-between py-3 border-b border-gray-200">
+              <div class="text-sm font-medium text-gray-500">Email:</div>
+              <div class="text-sm text-gray-900">${user.email}</div>
+            </div>
+            <div class="flex justify-between py-3 border-b border-gray-200">
+              <div class="text-sm font-medium text-gray-500">Role:</div>
+              <div class="text-sm"><span class="inline-block px-3 py-1 rounded-full text-xs font-medium ${roleBadgeClass}">${getTranslatedRole(user.role)}</span></div>
+            </div>
+            <div class="flex justify-between py-3 border-b border-gray-200">
+              <div class="text-sm font-medium text-gray-500">Status:</div>
+              <div class="text-sm"><span class="inline-block px-3 py-1 rounded-full text-xs font-medium ${statusBadgeClass}">${getStatusText(user)}</span></div>
+            </div>
+            <div class="flex justify-between py-3 border-b border-gray-200">
+              <div class="text-sm font-medium text-gray-500">Email Verified:</div>
+              <div class="text-sm text-gray-900">${user.email_verified ? 'Yes' : 'No'}</div>
+            </div>
+            <div class="flex justify-between py-3 border-b border-gray-200">
+              <div class="text-sm font-medium text-gray-500">Created:</div>
+              <div class="text-sm text-gray-900">${formatDate(user.created_at)}</div>
+            </div>
+            <div class="flex justify-between py-3 border-b border-gray-200">
+              <div class="text-sm font-medium text-gray-500">Last Login:</div>
+              <div class="text-sm text-gray-900">${formatDate(user.last_login)}</div>
+            </div>
+            <div class="flex justify-between py-3 border-b border-gray-200">
+              <div class="text-sm font-medium text-gray-500">Failed Login Attempts:</div>
+              <div class="text-sm text-gray-900">${user.failed_login_attempts || 0}</div>
+            </div>
+            <div class="flex justify-between py-3">
+              <div class="text-sm font-medium text-gray-500">Active Sessions:</div>
+              <div class="text-sm text-gray-900">${user.session_count || 0}</div>
+            </div>
           </div>
         `;
       }
@@ -301,7 +310,7 @@ async function viewUser(userId: string): Promise<void> {
   } catch (error) {
     reportError('admin-users', 'viewUser', error);
     if (content) {
-      content.innerHTML = '<p class="error">Failed to load user details</p>';
+      content.innerHTML = '<p class="text-red-600">Failed to load user details</p>';
     }
   }
 }
@@ -560,20 +569,24 @@ function updatePasswordStrengthDisplay(strength: number): void {
 
   if (!strengthBar || !strengthText) return;
 
-  strengthBar.className = 'strength-bar-fill';
+  strengthBar.className = 'h-full transition-all duration-300';
   if (strength >= 5) {
-    strengthBar.classList.add('strength-strong');
+    strengthBar.classList.add('bg-green-500');
+    strengthBar.style.width = '100%';
     strengthText.textContent = t('auth.register.strengthStrong') || 'Strong password';
-    strengthText.className = 'strength-text strength-strong';
+    strengthText.className = 'text-sm mt-1 text-green-600 font-medium';
   } else if (strength >= 3) {
-    strengthBar.classList.add('strength-medium');
+    strengthBar.classList.add('bg-yellow-500');
+    strengthBar.style.width = '66%';
     strengthText.textContent = t('auth.register.strengthMedium') || 'Medium password';
-    strengthText.className = 'strength-text strength-medium';
+    strengthText.className = 'text-sm mt-1 text-yellow-600 font-medium';
   } else if (strength > 0) {
-    strengthBar.classList.add('strength-weak');
+    strengthBar.classList.add('bg-red-500');
+    strengthBar.style.width = '33%';
     strengthText.textContent = t('auth.register.strengthWeak') || 'Weak password';
-    strengthText.className = 'strength-text strength-weak';
+    strengthText.className = 'text-sm mt-1 text-red-600 font-medium';
   } else {
+    strengthBar.style.width = '0%';
     strengthText.textContent = '';
   }
 }
@@ -582,7 +595,10 @@ function resetPasswordRequirements(): void {
   ['req-length', 'req-uppercase', 'req-lowercase', 'req-digit', 'req-special'].forEach((id) => {
     const element = document.getElementById(id);
     if (element) {
-      element.classList.remove('met');
+      element.classList.remove('text-green-600');
+      element.classList.add('text-gray-600');
+      const icon = element.querySelector('span:first-child');
+      if (icon) icon.textContent = '○';
     }
   });
 }
@@ -603,7 +619,17 @@ function updatePasswordRequirements(): void {
   Object.entries(requirements).forEach(([id, met]) => {
     const element = document.getElementById(id);
     if (element) {
-      element.classList.toggle('met', met);
+      if (met) {
+        element.classList.remove('text-gray-600');
+        element.classList.add('text-green-600');
+        const icon = element.querySelector('span:first-child');
+        if (icon) icon.textContent = '●';
+      } else {
+        element.classList.remove('text-green-600');
+        element.classList.add('text-gray-600');
+        const icon = element.querySelector('span:first-child');
+        if (icon) icon.textContent = '○';
+      }
     }
   });
 
@@ -724,6 +750,17 @@ async function submitCreateUserForm(): Promise<void> {
 function initializeAdminUsersPage(): void {
   updateStaticTranslations();
 
+  // Mobile menu toggle
+  const adminMenuToggle = document.getElementById('admin-menu-toggle');
+  if (adminMenuToggle) {
+    adminMenuToggle.addEventListener('click', () => {
+      const dropdown = document.getElementById('admin-menu-dropdown');
+      if (dropdown) {
+        dropdown.classList.toggle('hidden');
+      }
+    });
+  }
+
   const languageSelector = document.getElementById('language-selector') as HTMLSelectElement | null;
   if (languageSelector) {
     languageSelector.addEventListener('change', (event) => {
@@ -769,11 +806,14 @@ function initializeAdminUsersPage(): void {
   void loadUsers();
 }
 
+// Export all window functions
 (
   window as Window & {
     viewUser?: (userId: string) => Promise<void>;
     editUser?: (userId: string) => Promise<void>;
     deleteUser?: (userId: string, username: string) => Promise<void>;
+    openCreateUserModal?: () => void;
+    submitCreateUserForm?: () => Promise<void>;
     closeUserDetailModal?: () => void;
     closeEditUserModal?: () => void;
     closeConfirmDeleteModal?: () => void;
@@ -786,6 +826,8 @@ function initializeAdminUsersPage(): void {
     viewUser?: (userId: string) => Promise<void>;
     editUser?: (userId: string) => Promise<void>;
     deleteUser?: (userId: string, username: string) => Promise<void>;
+    openCreateUserModal?: () => void;
+    submitCreateUserForm?: () => Promise<void>;
     closeUserDetailModal?: () => void;
     closeEditUserModal?: () => void;
     closeConfirmDeleteModal?: () => void;
@@ -798,6 +840,8 @@ function initializeAdminUsersPage(): void {
     viewUser?: (userId: string) => Promise<void>;
     editUser?: (userId: string) => Promise<void>;
     deleteUser?: (userId: string, username: string) => Promise<void>;
+    openCreateUserModal?: () => void;
+    submitCreateUserForm?: () => Promise<void>;
     closeUserDetailModal?: () => void;
     closeEditUserModal?: () => void;
     closeConfirmDeleteModal?: () => void;
@@ -822,6 +866,8 @@ function initializeAdminUsersPage(): void {
     viewUser?: (userId: string) => Promise<void>;
     editUser?: (userId: string) => Promise<void>;
     deleteUser?: (userId: string, username: string) => Promise<void>;
+    openCreateUserModal?: () => void;
+    submitCreateUserForm?: () => Promise<void>;
     closeUserDetailModal?: () => void;
     closeEditUserModal?: () => void;
     closeConfirmDeleteModal?: () => void;
@@ -834,6 +880,8 @@ function initializeAdminUsersPage(): void {
     viewUser?: (userId: string) => Promise<void>;
     editUser?: (userId: string) => Promise<void>;
     deleteUser?: (userId: string, username: string) => Promise<void>;
+    openCreateUserModal?: () => void;
+    submitCreateUserForm?: () => Promise<void>;
     closeUserDetailModal?: () => void;
     closeEditUserModal?: () => void;
     closeConfirmDeleteModal?: () => void;
@@ -846,6 +894,8 @@ function initializeAdminUsersPage(): void {
     viewUser?: (userId: string) => Promise<void>;
     editUser?: (userId: string) => Promise<void>;
     deleteUser?: (userId: string, username: string) => Promise<void>;
+    openCreateUserModal?: () => void;
+    submitCreateUserForm?: () => Promise<void>;
     closeUserDetailModal?: () => void;
     closeEditUserModal?: () => void;
     closeConfirmDeleteModal?: () => void;

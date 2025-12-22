@@ -219,6 +219,21 @@ class SessionRepository(BaseRepository[UserSession]):
         self.session.flush()
         return count
 
+    def revoke_all_sessions(self) -> int:
+        """Revoke all sessions for all users in the system.
+
+        Returns:
+            Number of sessions revoked
+        """
+        count = self.session.query(UserSession).filter(
+            UserSession.is_revoked == False
+        ).update(
+            {UserSession.is_revoked: True},
+            synchronize_session=False
+        )
+        self.session.flush()
+        return count
+
     def revoke_token_family(self, family_id: str) -> int:
         """Revoke entire token family (for reuse detection).
 

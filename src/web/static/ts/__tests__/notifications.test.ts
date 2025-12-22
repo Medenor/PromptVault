@@ -35,20 +35,20 @@ describe('notifications utils', () => {
 
     const element = document.getElementById('loading');
     expect(element?.textContent).toBe('tr:messages.loading');
-    expect(element?.classList.contains('is-hidden')).toBe(false);
+    expect(element?.classList.contains('hidden')).toBe(false);
   });
 
   it('shows and hides status messages', () => {
-    document.body.innerHTML = '<div id="status" class="is-hidden"></div>';
+    document.body.innerHTML = '<div id="status" class="hidden"></div>';
 
     showStatus('status', 'Ok', 'success');
     const element = document.getElementById('status');
     expect(element?.textContent).toBe('Ok');
-    expect(element?.classList.contains('is-hidden')).toBe(false);
+    expect(element?.classList.contains('hidden')).toBe(false);
     expect(element?.className).toContain('status-success');
 
     hideStatus('status');
-    expect(element?.classList.contains('is-hidden')).toBe(true);
+    expect(element?.classList.contains('hidden')).toBe(true);
   });
 
   it('shows toast notifications', () => {

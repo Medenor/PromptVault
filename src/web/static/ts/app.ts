@@ -8,10 +8,13 @@
  * PromptVault main app logic (TypeScript).
  */
 
+/* global document, window, fetch, localStorage, sessionStorage, setTimeout, clearTimeout, performance, console, alert, navigator, confirm */
+
+import '../css/tailwind-globals.css';
 import '@/form-validation';
 import type { PromptResponse, PromptListResponse } from '@/types';
 import type { TranslationKey } from '@/types/i18n';
-import { initI18n, t, tUnsafe, updateStaticTranslations, changeLanguage } from '@/utils/i18n';
+import { initI18n, t, tUnsafe, updateStaticTranslations } from '@/utils/i18n';
 
 interface TagInfo {
   name: string;
@@ -66,7 +69,7 @@ let promptCache: Record<string, PromptResponse> = {};
 let lastSelectedPromptId: number | null = null; // Track the last selected prompt for keyboard shortcuts
 const selectedPromptIds: Set<number> = new Set(); // Track selected prompts for bulk operations
 
-const HIDDEN_CLASS = 'is-hidden';
+const HIDDEN_CLASS = 'hidden';
 const ERROR_VISIBLE_CLASS = 'validation-error-visible';
 const APP_COMPONENT = 'app';
 
@@ -169,16 +172,12 @@ async function initializeApp(): Promise<void> {
 
 async function checkAdminAccess(): Promise<void> {
   try {
-    console.log('Checking authentication...');
     const response = await fetch('/api/auth/me', {
       credentials: 'include',
     });
 
-    console.log('Response status:', response.status);
     if (response.ok) {
       const data = (await response.json()) as { role?: string };
-      console.log('User data:', data);
-      console.log('User role:', data.role);
 
       // Authentication successful - show the app
       const loadingOverlay = document.getElementById('auth-loading-overlay');
@@ -187,27 +186,24 @@ async function checkAdminAccess(): Promise<void> {
       if (appDiv) appDiv.style.display = 'block';
 
       if (data.role === 'admin') {
-        console.log('User is admin, showing button');
         const adminBtn = document.getElementById('admin-btn');
-        console.log('Admin button element:', adminBtn);
+        const adminBtnMobile = document.getElementById('admin-btn-mobile');
         if (adminBtn) {
           adminBtn.style.display = '';
-          console.log('Admin button should now be visible');
         }
-      } else {
-        console.log('User is not admin, role is:', data.role);
+        if (adminBtnMobile) {
+          adminBtnMobile.style.display = '';
+        }
       }
     } else if (response.status === 401) {
       // Session revoked or expired, redirect to login immediately
-      console.log('Session invalid, redirecting to login');
       window.location.href = '/auth/login';
     } else {
-      console.log('Response not OK:', response.statusText);
       // For other errors, also redirect to login for security
       window.location.href = '/auth/login';
     }
   } catch (error) {
-    console.error('Failed to check authentication:', error);
+    reportAppIssue('checkAdminAccess', error);
     // On error, redirect to login for security
     window.location.href = '/auth/login';
   }
@@ -231,13 +227,46 @@ let searchState: {
 };
 
 function setupEventListeners(): void {
-  // Language selector
-  const languageSelector = document.getElementById('language-selector') as HTMLSelectElement | null;
-  languageSelector?.addEventListener('change', handleLanguageChange);
+  // Mobile sidebar toggle
+  const sidebarToggle = document.getElementById('sidebar-toggle');
+  sidebarToggle?.addEventListener('click', toggleMobileSidebar);
+
+  // Mobile sidebar close button
+  const sidebarClose = document.getElementById('sidebar-close');
+  sidebarClose?.addEventListener('click', closeMobileSidebar);
+
+  // Mobile sidebar backdrop
+  const sidebarBackdrop = document.getElementById('sidebar-backdrop');
+  sidebarBackdrop?.addEventListener('click', closeMobileSidebar);
+
+  // Mobile menu dropdown toggle
+  const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
+  mobileMenuToggle?.addEventListener('click', toggleMobileMenu);
+
+  // Close mobile menu when clicking outside
+  document.addEventListener('click', (event) => {
+    const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
+    const mobileMenuDropdown = document.getElementById('mobile-menu-dropdown');
+    if (
+      mobileMenuToggle &&
+      mobileMenuDropdown &&
+      !mobileMenuToggle.contains(event.target as Node) &&
+      !mobileMenuDropdown.contains(event.target as Node)
+    ) {
+      closeMobileMenu();
+    }
+  });
 
   // New prompt button
   const newPromptBtn = document.getElementById('new-prompt-btn');
   newPromptBtn?.addEventListener('click', showNewPromptForm);
+
+  // New prompt button (mobile)
+  const newPromptBtnMobile = document.getElementById('new-prompt-btn-mobile');
+  newPromptBtnMobile?.addEventListener('click', () => {
+    showNewPromptForm();
+    closeMobileMenu();
+  });
 
   // Import/Export button (navigates to import/export page)
   const importExportBtn = document.getElementById('import-export-btn');
@@ -253,6 +282,14 @@ function setupEventListeners(): void {
     });
   }
 
+  // Logout button (mobile)
+  const logoutBtnMobile = document.getElementById('logout-btn-mobile');
+  if (logoutBtnMobile) {
+    logoutBtnMobile.addEventListener('click', () => {
+      void logout();
+    });
+  }
+
   // Form handling
   const promptForm = document.getElementById('prompt-form');
   promptForm?.addEventListener('submit', (event) => {
@@ -261,13 +298,27 @@ function setupEventListeners(): void {
   const cancelBtn = document.getElementById('cancel-btn');
   cancelBtn?.addEventListener('click', hidePromptEditor);
 
-  // Category and tag filtering
+  // Category and tag filtering (desktop and mobile)
   const categoriesList = document.getElementById('categories-list');
   categoriesList?.addEventListener('click', handleCategoryFilter);
+  const categoriesListMobile = document.getElementById('categories-list-mobile');
+  categoriesListMobile?.addEventListener('click', (event) => {
+    handleCategoryFilter(event);
+    closeMobileSidebar();
+  });
+
   const tagsList = document.getElementById('tags-list');
   tagsList?.addEventListener('click', handleTagFilter);
+  const tagsListMobile = document.getElementById('tags-list-mobile');
+  tagsListMobile?.addEventListener('click', (event) => {
+    handleTagFilter(event);
+    closeMobileSidebar();
+  });
+
   const favoritesFilter = document.getElementById('favorites-filter');
   favoritesFilter?.addEventListener('change', handleFavoritesFilter);
+  const favoritesFilterMobile = document.getElementById('favorites-filter-mobile');
+  favoritesFilterMobile?.addEventListener('change', handleFavoritesFilter);
 
   // Modal close
   const closeBtn = document.querySelector('.close');
@@ -366,7 +417,7 @@ function renderPrompts(prompts: Record<string, PromptResponse>): void {
 
   // Handle case when there are no prompts at all
   if (Object.keys(prompts).length === 0) {
-    container.innerHTML = `<div class="no-results-message">${t('search.emptyState')}</div>`;
+    container.innerHTML = `<div class="col-span-full text-center text-gray-500 py-12">${t('search.emptyState')}</div>`;
     if (searchResultsInfo) {
       hideElement(searchResultsInfo);
     }
@@ -381,7 +432,7 @@ function renderPrompts(prompts: Record<string, PromptResponse>): void {
 
 function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement {
   const div = document.createElement('div');
-  div.className = 'prompt-item';
+  div.className = 'prompt-item bg-white rounded-lg border border-gray-200 p-4 transition-all hover:scale-[1.02] cursor-pointer';
   div.dataset.id = id;
 
   // Add selected class if prompt is in selection
@@ -392,7 +443,7 @@ function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement
   // Create checkbox for bulk selection
   const checkbox = document.createElement('input');
   checkbox.type = 'checkbox';
-  checkbox.className = 'prompt-checkbox';
+  checkbox.className = 'prompt-checkbox rounded text-blue-500 focus:ring-blue-500';
   checkbox.dataset.promptId = id;
   checkbox.checked = selectedPromptIds.has(parseInt(id));
   checkbox.addEventListener('change', (event) => {
@@ -401,33 +452,37 @@ function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement
     event.stopPropagation(); // Prevent triggering the div click event
   });
 
+  // Build tags HTML
+  const tagsHTML = prompt.tags && prompt.tags.length > 0
+    ? prompt.tags.map(tag => `<span class="px-2 py-1 text-xs font-medium rounded-md" style="background-color: #F3F4F6; color: #6B7280;">${tag}</span>`).join('')
+    : '';
+
   div.innerHTML = `
-        <div class="prompt-header">
-            <h4>${prompt.title}</h4>
-            <div class="prompt-actions">
-                <button class="favorite-btn" data-id="${id}">
+        <div class="flex items-start justify-between mb-3">
+            <h4 class="text-lg font-semibold text-gray-900 flex-1">${prompt.title}</h4>
+            <div class="flex items-center gap-1 ml-2" id="prompt-actions-${id}">
+                <button class="favorite-btn text-xl hover:scale-110 transition-transform" data-id="${id}">
                     ${prompt.favorite ? '★' : '☆'}
                 </button>
-                <button class="history-btn" data-id="${id}" data-i18n="version.history">History</button>
-                <button class="copy-btn" data-id="${id}" data-i18n="actions.copy">Copy</button>
-                <button class="edit-btn" data-id="${id}" data-i18n="actions.edit">Edit</button>
-                <button class="delete-btn" data-id="${id}" data-i18n="actions.delete">Delete</button>
             </div>
         </div>
-        <div class="prompt-meta">
-            <span class="category">${prompt.category || t('categories.noCategory')}</span>
-            ${prompt.tags ? `<span class="tags">${prompt.tags.join(', ')}</span>` : ''}
+        <div class="flex flex-wrap gap-2 mb-3">
+            <span class="px-2 py-1 text-xs font-medium rounded-md bg-blue-100 text-blue-800">${prompt.category || t('categories.noCategory')}</span>
+            ${tagsHTML}
         </div>
-        <div class="prompt-content">${truncateText(prompt.prompt, 100)}</div>
+        <p class="text-sm text-gray-600 mb-4 line-clamp-3">${truncateText(prompt.prompt, 100)}</p>
+        <div class="flex flex-wrap gap-2">
+            <button class="history-btn px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all hover:scale-105 active:scale-95" data-id="${id}" data-i18n="version.history">History</button>
+            <button class="copy-btn px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 transition-all hover:scale-105 active:scale-95" data-id="${id}" data-i18n="actions.copy">Copy</button>
+            <button class="edit-btn px-3 py-1.5 text-xs font-medium rounded-lg bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition-all hover:scale-105 active:scale-95" data-id="${id}" data-i18n="actions.edit">Edit</button>
+            <button class="delete-btn px-3 py-1.5 text-xs font-medium rounded-lg bg-red-100 text-red-700 hover:bg-red-200 transition-all hover:scale-105 active:scale-95" data-id="${id}" data-i18n="actions.delete">Delete</button>
+        </div>
     `;
 
-  // Insert checkbox before the favorite button in prompt-actions
-  const promptActions = div.querySelector('.prompt-actions') as HTMLElement | null;
-  const favBtn = promptActions?.querySelector('.favorite-btn') as HTMLElement | null;
-  if (promptActions && favBtn) {
-    promptActions.insertBefore(checkbox, favBtn);
-  } else if (promptActions) {
-    promptActions.appendChild(checkbox);
+  // Insert checkbox at the beginning of prompt-actions
+  const promptActions = div.querySelector(`#prompt-actions-${id}`) as HTMLElement | null;
+  if (promptActions) {
+    promptActions.insertBefore(checkbox, promptActions.firstChild);
   }
 
   // Update translations for dynamically created elements
@@ -677,6 +732,8 @@ function fallbackCopyTextToClipboard(text: string, id: PromptId): void {
     textArea.select();
     textArea.setSelectionRange(0, textArea.value.length);
 
+    // Modern Clipboard API is tried first, this fallback is for older browsers/non-HTTPS
+    // Note: document.execCommand is deprecated but necessary for browser compatibility
     const successful = document.execCommand('copy');
     if (successful) {
       showCopyFeedback(id, 'messages.copied');
@@ -825,12 +882,23 @@ async function toggleFavorite(id: PromptId): Promise<void> {
 function handleCategoryFilter(event: Event): void {
   const target = event.target as HTMLElement | null;
   if (target?.tagName === 'LI') {
-    // Update active state
+    // Update active state in both desktop and mobile lists
     document.querySelectorAll('#categories-list li').forEach((li) => li.classList.remove('active'));
+    document.querySelectorAll('#categories-list-mobile li').forEach((li) => li.classList.remove('active'));
+
+    // Add active to the clicked item
     target.classList.add('active');
 
+    // Sync the corresponding item in the other list
+    const category = target.dataset.category || 'all';
+    const desktopItem = document.querySelector(`#categories-list li[data-category="${category}"]`);
+    const mobileItem = document.querySelector(`#categories-list-mobile li[data-category="${category}"]`);
+
+    if (desktopItem) desktopItem.classList.add('active');
+    if (mobileItem) mobileItem.classList.add('active');
+
     // Update search state and trigger search
-    searchState.category = target.dataset.category || 'all';
+    searchState.category = category;
     void performSearch();
   }
 }
@@ -838,12 +906,23 @@ function handleCategoryFilter(event: Event): void {
 function handleTagFilter(event: Event): void {
   const target = event.target as HTMLElement | null;
   if (target?.tagName === 'LI') {
-    // Update active state
+    // Update active state in both desktop and mobile lists
     document.querySelectorAll('#tags-list li').forEach((li) => li.classList.remove('active'));
+    document.querySelectorAll('#tags-list-mobile li').forEach((li) => li.classList.remove('active'));
+
+    // Add active to the clicked item
     target.classList.add('active');
 
+    // Sync the corresponding item in the other list
+    const tag = target.dataset.tag || 'all';
+    const desktopItem = document.querySelector(`#tags-list li[data-tag="${tag}"]`);
+    const mobileItem = document.querySelector(`#tags-list-mobile li[data-tag="${tag}"]`);
+
+    if (desktopItem) desktopItem.classList.add('active');
+    if (mobileItem) mobileItem.classList.add('active');
+
     // Update search state and trigger search
-    searchState.tag = target.dataset.tag || 'all';
+    searchState.tag = tag;
     void performSearch();
   }
 }
@@ -853,40 +932,19 @@ function handleFavoritesFilter(event: Event): void {
   if (!target) return;
   // Update search state and trigger search
   searchState.favorites = target.checked;
-  void performSearch();
-}
 
-function handleLanguageChange(event: Event): void {
-  const target = event.target as HTMLSelectElement | null;
-  const selectedLanguage = target?.value;
-  if (!selectedLanguage) return;
+  // Sync both checkboxes (desktop and mobile)
+  const favoritesFilter = document.getElementById('favorites-filter') as HTMLInputElement | null;
+  const favoritesFilterMobile = document.getElementById('favorites-filter-mobile') as HTMLInputElement | null;
 
-  changeLanguage(selectedLanguage)
-    .then(() => {
-      updateStaticTranslations();
-      updateVersionHistoryTranslations();
-      void loadPrompts();
-    })
-    .catch((err) => {
-      reportAppIssue('changeLanguage', err, { language: selectedLanguage });
-    });
-}
-
-function updateVersionHistoryTranslations(): void {
-  // Update search placeholder
-  const searchInput = document.getElementById('version-search') as HTMLInputElement | null;
-  if (searchInput) {
-    searchInput.placeholder = t('version.searchPlaceholder');
+  if (favoritesFilter && target.id !== 'favorites-filter') {
+    favoritesFilter.checked = searchState.favorites;
+  }
+  if (favoritesFilterMobile && target.id !== 'favorites-filter-mobile') {
+    favoritesFilterMobile.checked = searchState.favorites;
   }
 
-  // Update version item buttons
-  document.querySelectorAll('[data-i18n="version.select"]').forEach((element) => {
-    element.textContent = t('version.select');
-  });
-
-  document.querySelectorAll('[data-i18n="version.revert"]').forEach((element) => {
-    element.textContent = t('version.revert');
-  });
+  void performSearch();
 }
 
 function hideModal() {
@@ -903,7 +961,7 @@ function truncateText(text: string, maxLength: number): string {
 let searchTimeout: ReturnType<typeof setTimeout> | null = null;
 
 function setupSearchEventListeners() {
-  // Search input with debouncing
+  // Search input with debouncing (desktop)
   const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
   if (searchInput) {
     searchInput.addEventListener('input', handleSearchInput);
@@ -915,21 +973,51 @@ function setupSearchEventListeners() {
     });
   }
 
-  // Clear search button
-  const clearSearchBtn = document.getElementById('clear-search-btn');
-  if (clearSearchBtn) {
-    clearSearchBtn.addEventListener('click', function () {
-      const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
-      if (searchInput) {
-        searchInput.value = '';
-        searchState.searchTerm = '';
-        toggleElement(clearSearchBtn, false);
-        void performSearch();
+  // Search input (mobile)
+  const searchInputMobile = document.getElementById('search-input-mobile') as HTMLInputElement | null;
+  if (searchInputMobile) {
+    searchInputMobile.addEventListener('input', handleSearchInput);
+    searchInputMobile.addEventListener('keydown', function (event) {
+      // Clear search on Escape
+      if (event.key === 'Escape') {
+        clearAllFilters();
       }
     });
   }
 
-  // Case sensitive toggle
+  // Clear search button (desktop)
+  const clearSearchBtn = document.getElementById('clear-search-btn');
+  if (clearSearchBtn) {
+    clearSearchBtn.addEventListener('click', function () {
+      const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
+      const searchInputMobile = document.getElementById('search-input-mobile') as HTMLInputElement | null;
+      if (searchInput) searchInput.value = '';
+      if (searchInputMobile) searchInputMobile.value = '';
+      searchState.searchTerm = '';
+      toggleElement(clearSearchBtn, false);
+      const clearSearchBtnMobile = document.getElementById('clear-search-btn-mobile');
+      toggleElement(clearSearchBtnMobile, false);
+      void performSearch();
+    });
+  }
+
+  // Clear search button (mobile)
+  const clearSearchBtnMobile = document.getElementById('clear-search-btn-mobile');
+  if (clearSearchBtnMobile) {
+    clearSearchBtnMobile.addEventListener('click', function () {
+      const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
+      const searchInputMobile = document.getElementById('search-input-mobile') as HTMLInputElement | null;
+      if (searchInput) searchInput.value = '';
+      if (searchInputMobile) searchInputMobile.value = '';
+      searchState.searchTerm = '';
+      toggleElement(clearSearchBtnMobile, false);
+      const clearSearchBtn = document.getElementById('clear-search-btn');
+      toggleElement(clearSearchBtn, false);
+      void performSearch();
+    });
+  }
+
+  // Case sensitive toggle (desktop)
   const caseSensitiveToggle = document.getElementById(
     'case-sensitive-toggle'
   ) as HTMLInputElement | null;
@@ -937,14 +1025,38 @@ function setupSearchEventListeners() {
     caseSensitiveToggle.addEventListener('change', (event) => {
       const target = event.target as HTMLInputElement | null;
       searchState.caseSensitive = target?.checked ?? false;
+      // Sync mobile checkbox
+      const caseSensitiveToggleMobile = document.getElementById('case-sensitive-toggle-mobile') as HTMLInputElement | null;
+      if (caseSensitiveToggleMobile) caseSensitiveToggleMobile.checked = searchState.caseSensitive;
       void performSearch();
     });
   }
 
-  // Clear all filters button
+  // Case sensitive toggle (mobile)
+  const caseSensitiveToggleMobile = document.getElementById(
+    'case-sensitive-toggle-mobile'
+  ) as HTMLInputElement | null;
+  if (caseSensitiveToggleMobile) {
+    caseSensitiveToggleMobile.addEventListener('change', (event) => {
+      const target = event.target as HTMLInputElement | null;
+      searchState.caseSensitive = target?.checked ?? false;
+      // Sync desktop checkbox
+      const caseSensitiveToggle = document.getElementById('case-sensitive-toggle') as HTMLInputElement | null;
+      if (caseSensitiveToggle) caseSensitiveToggle.checked = searchState.caseSensitive;
+      void performSearch();
+    });
+  }
+
+  // Clear all filters button (desktop)
   const clearAllFiltersBtn = document.getElementById('clear-all-filters-btn');
   if (clearAllFiltersBtn) {
     clearAllFiltersBtn.addEventListener('click', clearAllFilters);
+  }
+
+  // Clear all filters button (mobile)
+  const clearAllFiltersBtnMobile = document.getElementById('clear-all-filters-btn-mobile');
+  if (clearAllFiltersBtnMobile) {
+    clearAllFiltersBtnMobile.addEventListener('click', clearAllFilters);
   }
 }
 
@@ -956,10 +1068,20 @@ function handleSearchInput(event: Event): void {
   const searchTerm = target.value;
   searchState.searchTerm = searchTerm;
 
+  // Sync both search inputs (desktop and mobile)
+  const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
+  const searchInputMobile = document.getElementById('search-input-mobile') as HTMLInputElement | null;
+  if (searchInput && target.id !== 'search-input') searchInput.value = searchTerm;
+  if (searchInputMobile && target.id !== 'search-input-mobile') searchInputMobile.value = searchTerm;
+
   // Show/hide clear search button
   const clearSearchBtn = document.getElementById('clear-search-btn');
+  const clearSearchBtnMobile = document.getElementById('clear-search-btn-mobile');
   if (clearSearchBtn) {
     toggleElement(clearSearchBtn, searchTerm.length > 0);
+  }
+  if (clearSearchBtnMobile) {
+    toggleElement(clearSearchBtnMobile, searchTerm.length > 0);
   }
 
   // Clear previous timeout
@@ -1061,14 +1183,14 @@ function updateSearchResultsInfo(prompts: Record<string, PromptResponse>): void 
   if (resultCount === 0) {
     // Show "No results found" message
     if (searchResultsInfo) {
-      searchResultsInfo.className = 'search-results-info no-results';
+      searchResultsInfo.className = 'mb-4 px-4 py-3 bg-amber-50 border border-amber-200 text-amber-800 rounded-lg text-sm';
       searchResultsInfo.textContent = t('search.noResultsInfo');
       showElement(searchResultsInfo);
     }
 
     // Show empty state in prompts list
     if (promptsList) {
-      promptsList.innerHTML = `<div class="no-results-message">${t('search.noResultsMessage')}</div>`;
+      promptsList.innerHTML = `<div class="col-span-full text-center text-gray-500 py-12">${t('search.noResultsMessage')}</div>`;
     }
 
     // Hide clear filters button
@@ -1082,7 +1204,7 @@ function updateSearchResultsInfo(prompts: Record<string, PromptResponse>): void 
 
   // Show results count info
   if (searchResultsInfo) {
-    searchResultsInfo.className = 'search-results-info';
+    searchResultsInfo.className = 'mb-4 px-4 py-3 bg-blue-50 text-blue-800 rounded-lg text-sm';
 
     const hasAllResults = resultCount === totalCount;
     let infoText = '';
@@ -1167,7 +1289,7 @@ function clearAllFilters(): void {
     isLoading: false,
   };
 
-  // Reset UI elements
+  // Reset UI elements (desktop)
   const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
   if (searchInput) {
     searchInput.value = '';
@@ -1190,17 +1312,52 @@ function clearAllFilters(): void {
     favoritesFilter.checked = false;
   }
 
-  // Reset active states in sidebar
+  // Reset UI elements (mobile)
+  const searchInputMobile = document.getElementById('search-input-mobile') as HTMLInputElement | null;
+  if (searchInputMobile) {
+    searchInputMobile.value = '';
+  }
+
+  const clearSearchBtnMobile = document.getElementById('clear-search-btn-mobile');
+  if (clearSearchBtnMobile) {
+    hideElement(clearSearchBtnMobile);
+  }
+
+  const caseSensitiveToggleMobile = document.getElementById(
+    'case-sensitive-toggle-mobile'
+  ) as HTMLInputElement | null;
+  if (caseSensitiveToggleMobile) {
+    caseSensitiveToggleMobile.checked = false;
+  }
+
+  const favoritesFilterMobile = document.getElementById('favorites-filter-mobile') as HTMLInputElement | null;
+  if (favoritesFilterMobile) {
+    favoritesFilterMobile.checked = false;
+  }
+
+  // Reset active states in sidebar (desktop)
   document.querySelectorAll('#categories-list li').forEach((li) => li.classList.remove('active'));
   document.querySelector('[data-category="all"]')?.classList.add('active');
 
   document.querySelectorAll('#tags-list li').forEach((li) => li.classList.remove('active'));
   document.querySelector('[data-tag="all"]')?.classList.add('active');
 
+  // Reset active states in sidebar (mobile)
+  document.querySelectorAll('#categories-list-mobile li').forEach((li) => li.classList.remove('active'));
+  document.querySelectorAll('#categories-list-mobile [data-category="all"]').forEach((li) => li.classList.add('active'));
+
+  document.querySelectorAll('#tags-list-mobile li').forEach((li) => li.classList.remove('active'));
+  document.querySelectorAll('#tags-list-mobile [data-tag="all"]').forEach((li) => li.classList.add('active'));
+
   // Hide clear filters button and search results info
   const clearAllFiltersBtn = document.getElementById('clear-all-filters-btn');
   if (clearAllFiltersBtn) {
     hideElement(clearAllFiltersBtn);
+  }
+
+  const clearAllFiltersBtnMobile = document.getElementById('clear-all-filters-btn-mobile');
+  if (clearAllFiltersBtnMobile) {
+    hideElement(clearAllFiltersBtnMobile);
   }
 
   const searchResultsInfo = document.getElementById('search-results-info');
@@ -1249,7 +1406,7 @@ async function loadVersionHistory(promptId: number): Promise<void> {
   try {
     const versionList = document.getElementById('version-list');
     if (versionList) {
-      versionList.innerHTML = '<div class="loading">' + t('messages.loading') + '</div>';
+      versionList.innerHTML = '<div class="text-center text-gray-500 py-8">' + t('messages.loading') + '</div>';
     }
 
     // Check cache first
@@ -1283,7 +1440,7 @@ async function loadVersionHistory(promptId: number): Promise<void> {
     reportAppIssue('loadVersionHistory', error, { promptId });
     const versionList = document.getElementById('version-list');
     if (versionList) {
-      versionList.innerHTML = '<div class="loading">Error loading versions</div>';
+      versionList.innerHTML = '<div class="text-center text-red-600 py-8">Error loading versions</div>';
     }
   }
 }
@@ -1295,7 +1452,7 @@ function renderVersionHistory(versions: VersionSummary[]): void {
   }
 
   if (versions.length === 0) {
-    versionList.innerHTML = '<div class="loading">' + t('version.noVersions') + '</div>';
+    versionList.innerHTML = '<div class="text-center text-gray-500 py-8">' + t('version.noVersions') + '</div>';
     return;
   }
 
@@ -1312,7 +1469,7 @@ function createVersionItem(
   totalVersions: number
 ): HTMLDivElement {
   const div = document.createElement('div');
-  div.className = 'version-item';
+  div.className = 'version-item bg-white border border-gray-200 rounded-lg p-4 cursor-pointer hover:bg-gray-50 transition-colors';
   div.dataset.versionId = version.version_id;
 
   // Format timestamp with fallback for invalid dates
@@ -1333,15 +1490,15 @@ function createVersionItem(
 
   div.innerHTML =
     `
-        <div class="version-item-header">
-            <span class="version-item-id">#${totalVersions - index} ${version.version_id.substring(0, 8)}...</span>
-            <span class="version-item-timestamp">${timestamp}</span>
+        <div class="flex items-center justify-between mb-2">
+            <span class="text-sm font-semibold text-gray-900">#${totalVersions - index} ${version.version_id.substring(0, 8)}...</span>
+            <span class="text-xs text-gray-500">${timestamp}</span>
         </div>
-        <div class="version-item-author">${t('version.author')}: ${version.author}</div>
-        <div class="version-item-message">${version.message}</div>
-        <div class="version-item-actions">
-            ${!isLatest ? `<button class="btn btn-danger" onclick="showRevertConfirmation('${version.version_id}')" data-i18n="version.revert">` + t('version.revert') + `</button>` : ''}
-            <button class="btn btn-secondary" onclick="selectVersionForComparison('${version.version_id}')" data-i18n="version.select">` +
+        <div class="text-xs text-gray-600 mb-1">${t('version.author')}: ${version.author}</div>
+        <div class="text-sm text-gray-700 mb-3">${version.message}</div>
+        <div class="flex gap-2">
+            ${!isLatest ? `<button class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-red-500 text-white hover:bg-red-600 transition-all hover:scale-105 active:scale-95" onclick="showRevertConfirmation('${version.version_id}')" data-i18n="version.revert">` + t('version.revert') + `</button>` : ''}
+            <button class="px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 transition-all hover:scale-105 active:scale-95" onclick="selectVersionForComparison('${version.version_id}')" data-i18n="version.select">` +
     t('version.select') +
     `</button>
         </div>
@@ -1363,10 +1520,10 @@ function toggleVersionSelection(versionId: string, element: HTMLElement | null):
   }
   if (selectedVersions.has(versionId)) {
     selectedVersions.delete(versionId);
-    element.classList.remove('selected');
+    element.classList.remove('selected', 'ring-2', 'ring-blue-500', 'bg-blue-50');
   } else {
     selectedVersions.add(versionId);
-    element.classList.add('selected');
+    element.classList.add('selected', 'ring-2', 'ring-blue-500', 'bg-blue-50');
   }
   updateCompareButton();
 }
@@ -1450,7 +1607,7 @@ let allVersions: VersionSummary[] = [];
 
 async function showDiffModal(): Promise<void> {
   if (selectedVersions.size !== 2) {
-    showNotification('Please select exactly 2 versions to compare', 'error');
+    showNotification(t('messages.selectTwoVersions'), 'error');
     return;
   }
 
@@ -1517,7 +1674,7 @@ async function updateDiff(): Promise<void> {
   if (v1 === v2) {
     const diffView = document.getElementById('diff-view');
     if (diffView) {
-      diffView.innerHTML = '<div class="loading">Select different versions to compare</div>';
+      diffView.innerHTML = '<div class="text-center text-gray-500 py-8">Select different versions to compare</div>';
     }
     return;
   }
@@ -1532,7 +1689,7 @@ async function loadAndDisplayDiff(v1Id: string, v2Id: string): Promise<void> {
     }
     const diffView = document.getElementById('diff-view');
     if (diffView) {
-      diffView.innerHTML = '<div class="loading">' + t('messages.loading') + '</div>';
+      diffView.innerHTML = '<div class="text-center text-gray-500 py-8">' + t('messages.loading') + '</div>';
     }
 
     // Check cache first
@@ -1566,7 +1723,7 @@ async function loadAndDisplayDiff(v1Id: string, v2Id: string): Promise<void> {
     });
     const diffView = document.getElementById('diff-view');
     if (diffView) {
-      diffView.innerHTML = '<div class="loading">Error loading diff</div>';
+      diffView.innerHTML = '<div class="text-center text-red-600 py-8">Error loading diff</div>';
     }
   }
 }
@@ -1579,35 +1736,35 @@ function displayDiff(diff: VersionDiffResponse): void {
   diffView.innerHTML = '';
 
   if (!diff.changes || Object.keys(diff.changes).length === 0) {
-    diffView.innerHTML = '<div class="loading">No changes between these versions</div>';
+    diffView.innerHTML = '<div class="text-center text-gray-500 py-8">No changes between these versions</div>';
     return;
   }
 
   const section = document.createElement('div');
-  section.className = 'diff-section';
+  section.className = 'space-y-4';
 
   Object.entries(diff.changes).forEach(([field, change]) => {
     const fieldDiv = document.createElement('div');
-    fieldDiv.className = 'diff-field';
+    fieldDiv.className = 'bg-white border border-gray-200 rounded-lg p-4';
 
     const fieldName = document.createElement('div');
-    fieldName.className = 'diff-field-name';
+    fieldName.className = 'text-sm font-semibold text-gray-900 mb-3';
     fieldName.textContent = field.charAt(0).toUpperCase() + field.slice(1);
     fieldDiv.appendChild(fieldName);
 
     // Old value
     if (change.old !== null && change.old !== undefined) {
       const oldDiv = document.createElement('div');
-      oldDiv.className = 'diff-old';
-      oldDiv.innerHTML = `<strong>Old:</strong> ${escapeHtml(formatValue(change.old))}`;
+      oldDiv.className = 'mb-2 p-3 bg-red-50 border border-red-200 rounded-lg';
+      oldDiv.innerHTML = `<strong class="text-red-700">Old:</strong> <span class="text-gray-700">${escapeHtml(formatValue(change.old))}</span>`;
       fieldDiv.appendChild(oldDiv);
     }
 
     // New value
     if (change.new !== null && change.new !== undefined) {
       const newDiv = document.createElement('div');
-      newDiv.className = 'diff-new';
-      newDiv.innerHTML = `<strong>New:</strong> ${escapeHtml(formatValue(change.new))}`;
+      newDiv.className = 'p-3 bg-emerald-50 border border-emerald-200 rounded-lg';
+      newDiv.innerHTML = `<strong class="text-emerald-700">New:</strong> <span class="text-gray-700">${escapeHtml(formatValue(change.new))}</span>`;
       fieldDiv.appendChild(newDiv);
     }
 
@@ -1655,7 +1812,7 @@ function handleKeyboardShortcuts(event: KeyboardEvent): void {
     if (lastSelectedPromptId) {
       showVersionHistoryModal(lastSelectedPromptId);
     } else {
-      showNotification('Please select a prompt first', 'info');
+      showNotification(t('messages.selectPromptFirst'), 'info');
     }
   }
 
@@ -1770,14 +1927,13 @@ function recordApiCall(endpoint: string, duration: number): void {
 
 // Wrap fetch to track API performance
 const originalFetch = window.fetch;
-window.fetch = function (...args: Parameters<typeof fetch>) {
+window.fetch = async function (...args: Parameters<typeof fetch>) {
   const startTime = performance.now();
-  return originalFetch.apply(this, args).then((response) => {
-    const duration = performance.now() - startTime;
-    const endpoint = typeof args[0] === 'string' ? args[0] : String(args[0]);
-    recordApiCall(endpoint, duration);
-    return response;
-  });
+  const response = await originalFetch.apply(this, args);
+  const duration = performance.now() - startTime;
+  const endpoint = typeof args[0] === 'string' ? args[0] : String(args[0]);
+  recordApiCall(endpoint, duration);
+  return response;
 };
 
 // Tag Autocomplete Implementation
@@ -1921,7 +2077,7 @@ function showTagAutocomplete(filteredTags: TagInfo[]) {
   if (filteredTags.length === 0) {
     // Show "No matching tags" message
     const noResults = document.createElement('div');
-    noResults.className = 'tag-autocomplete-no-results';
+    noResults.className = 'px-4 py-3 text-sm text-gray-500 text-center';
     noResults.textContent = 'No matching tags';
     autocompleteDiv.appendChild(noResults);
   } else {
@@ -1931,18 +2087,18 @@ function showTagAutocomplete(filteredTags: TagInfo[]) {
       const tagCount = tag.count;
 
       const item = document.createElement('div');
-      item.className = 'tag-autocomplete-item';
+      item.className = 'tag-autocomplete-item px-4 py-2 cursor-pointer hover:bg-gray-50 transition-colors flex items-center justify-between';
       item.dataset.index = String(index);
       item.dataset.tagName = tagName;
 
       const nameSpan = document.createElement('span');
-      nameSpan.className = 'tag-autocomplete-item-name';
+      nameSpan.className = 'text-sm text-gray-900';
       nameSpan.textContent = tagName;
       item.appendChild(nameSpan);
 
       if (tagCount !== null) {
         const countSpan = document.createElement('span');
-        countSpan.className = 'tag-autocomplete-item-count';
+        countSpan.className = 'text-xs text-gray-500';
         countSpan.textContent = `(${tagCount})`;
         item.appendChild(countSpan);
       }
@@ -2044,13 +2200,13 @@ function highlightTagItem(index: number) {
 
   // Remove previous highlight
   autocompleteDiv.querySelectorAll('.tag-autocomplete-item').forEach((item) => {
-    item.classList.remove('highlighted');
+    item.classList.remove('highlighted', 'bg-blue-50');
   });
 
   // Add new highlight
   const items = autocompleteDiv.querySelectorAll('.tag-autocomplete-item');
   if (items[index]) {
-    items[index].classList.add('highlighted');
+    items[index].classList.add('highlighted', 'bg-blue-50');
     // Scroll into view if needed
     items[index].scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }
@@ -2283,6 +2439,55 @@ async function performBulkDelete(): Promise<void> {
     reportAppIssue('bulk-delete-failed', error, {
       prompt_ids: promptIdsArray,
     });
+  }
+}
+
+// ============================================
+// Mobile Sidebar & Menu Functions
+// ============================================
+
+function toggleMobileSidebar(): void {
+  const mobileSidebar = document.getElementById('mobile-sidebar');
+  const backdrop = document.getElementById('sidebar-backdrop');
+
+  if (mobileSidebar && backdrop) {
+    const isOpen = !mobileSidebar.classList.contains('-translate-x-full');
+
+    if (isOpen) {
+      closeMobileSidebar();
+    } else {
+      // Open sidebar
+      mobileSidebar.classList.remove('-translate-x-full');
+      backdrop.classList.remove('hidden');
+      // Prevent body scroll when sidebar is open
+      document.body.style.overflow = 'hidden';
+    }
+  }
+}
+
+function closeMobileSidebar(): void {
+  const mobileSidebar = document.getElementById('mobile-sidebar');
+  const backdrop = document.getElementById('sidebar-backdrop');
+
+  if (mobileSidebar && backdrop) {
+    mobileSidebar.classList.add('-translate-x-full');
+    backdrop.classList.add('hidden');
+    // Restore body scroll
+    document.body.style.overflow = '';
+  }
+}
+
+function toggleMobileMenu(): void {
+  const dropdown = document.getElementById('mobile-menu-dropdown');
+  if (dropdown) {
+    dropdown.classList.toggle('hidden');
+  }
+}
+
+function closeMobileMenu(): void {
+  const dropdown = document.getElementById('mobile-menu-dropdown');
+  if (dropdown) {
+    dropdown.classList.add('hidden');
   }
 }
 

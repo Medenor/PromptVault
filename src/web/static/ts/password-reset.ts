@@ -8,6 +8,7 @@
  * Password reset logic (forgot/reset)
  */
 
+import '../css/tailwind-globals.css';
 import { reportError } from '@/telemetry';
 import { changeLanguage, initI18n, t, updateStaticTranslations } from '@/utils/i18n';
 import { clearAllErrors, hideElement, showElement, showError } from '@/utils/dom';
@@ -52,7 +53,20 @@ function updatePolicyRequirements(checks: PasswordChecks): void {
   (Object.entries(checks) as Array<[keyof PasswordChecks, boolean]>).forEach(([check, met]) => {
     const element = document.getElementById(policyMap[check]);
     if (element) {
-      element.classList.toggle('met', met);
+      const icon = element.querySelector('.policy-icon');
+      if (met) {
+        element.classList.remove('text-gray-600');
+        element.classList.add('text-green-600');
+        if (icon) {
+          icon.textContent = '✓';
+        }
+      } else {
+        element.classList.remove('text-green-600');
+        element.classList.add('text-gray-600');
+        if (icon) {
+          icon.textContent = '○';
+        }
+      }
     }
   });
 }
@@ -64,20 +78,26 @@ function updatePasswordStrength(password: string): void {
 
   if (!strengthBar || !strengthText) return;
 
-  strengthBar.className = 'strength-bar-fill';
+  // Reset classes
+  strengthBar.className = 'h-full transition-all duration-300';
+
   if (strength >= 5) {
-    strengthBar.classList.add('strength-strong');
+    strengthBar.classList.add('bg-green-500');
+    strengthBar.style.width = '100%';
     strengthText.textContent = t('auth.register.strengthStrong') || 'Strong password';
-    strengthText.className = 'strength-text strength-strong';
+    strengthText.className = 'text-xs mt-1 text-green-600 font-medium';
   } else if (strength >= 3) {
-    strengthBar.classList.add('strength-medium');
+    strengthBar.classList.add('bg-yellow-500');
+    strengthBar.style.width = '66%';
     strengthText.textContent = t('auth.register.strengthMedium') || 'Medium password';
-    strengthText.className = 'strength-text strength-medium';
+    strengthText.className = 'text-xs mt-1 text-yellow-600 font-medium';
   } else if (password.length > 0) {
-    strengthBar.classList.add('strength-weak');
+    strengthBar.classList.add('bg-red-500');
+    strengthBar.style.width = '33%';
     strengthText.textContent = t('auth.register.strengthWeak') || 'Weak password';
-    strengthText.className = 'strength-text strength-weak';
+    strengthText.className = 'text-xs mt-1 text-red-600 font-medium';
   } else {
+    strengthBar.style.width = '0%';
     strengthText.textContent = '';
   }
 

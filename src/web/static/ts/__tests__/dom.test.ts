@@ -19,19 +19,19 @@ import {
 describe('dom utils', () => {
   it('toggles hidden class', () => {
     const element = document.createElement('div');
-    element.classList.add('is-hidden');
+    element.classList.add('hidden');
 
     showElement(element);
-    expect(element.classList.contains('is-hidden')).toBe(false);
+    expect(element.classList.contains('hidden')).toBe(false);
 
     hideElement(element);
-    expect(element.classList.contains('is-hidden')).toBe(true);
+    expect(element.classList.contains('hidden')).toBe(true);
 
     toggleElement(element, true);
-    expect(element.classList.contains('is-hidden')).toBe(false);
+    expect(element.classList.contains('hidden')).toBe(false);
 
     toggleElement(element, false);
-    expect(element.classList.contains('is-hidden')).toBe(true);
+    expect(element.classList.contains('hidden')).toBe(true);
   });
 
   it('escapes HTML safely', () => {
