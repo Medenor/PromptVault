@@ -456,7 +456,7 @@ function setRestoreInProgress(isRestoring: boolean, messageKey?: TranslationKey)
     if (isRestoring) {
       showElement(status);
       status.textContent = messageKey ? t(messageKey) : t('backup.restoreInProgress');
-      status.className = 'status-message status-info';
+      status.className = 'text-sm text-blue-600 mt-4';
     } else {
       hideElement(status);
       status.textContent = '';
@@ -466,6 +466,11 @@ function setRestoreInProgress(isRestoring: boolean, messageKey?: TranslationKey)
   buttons?.forEach((button) => {
     if (button instanceof HTMLButtonElement) {
       button.disabled = isRestoring;
+      if (isRestoring) {
+        button.classList.add('opacity-50', 'cursor-not-allowed');
+      } else {
+        button.classList.remove('opacity-50', 'cursor-not-allowed');
+      }
     }
   });
 
