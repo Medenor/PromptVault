@@ -730,24 +730,22 @@ async def get_user_sessions(
     # Get admin's current session family_id from the token (if available)
     admin_family_id = getattr(admin, 'family_id', None)
 
-    # Convert ORM objects to dictionaries with correct field names
-    session_dicts = [
-        {
-            "id": s.id,
-            "family_id": s.family_id,
-            "user_agent": s.device_info,  # device_info -> user_agent
-            "ip_address": s.ip_address,
-            "created_at": s.created_at.isoformat(),
-            "last_used_at": s.last_used_at.isoformat() if s.last_used_at else None,
-            "expires_at": s.expires_at.isoformat(),
-            "is_revoked": s.is_revoked,
-            "is_current": admin_family_id and s.family_id == admin_family_id,
-        }
-        for s in sessions
-    ]
-
-    # Convert to response models
-    session_responses = [SessionResponse.model_validate(d) for d in session_dicts]
+    # Convert ORM objects to response models
+    session_responses = []
+    for s in sessions:
+        # Use model_construct to bypass Pydantic validation
+        response = SessionResponse.model_construct(
+            id=s.id,
+            family_id=s.family_id,
+            user_agent=s.device_info,  # device_info -> user_agent
+            ip_address=s.ip_address,
+            created_at=s.created_at,
+            last_used_at=s.last_used_at,
+            expires_at=s.expires_at,
+            is_revoked=s.is_revoked,
+            is_current=admin_family_id is not None and s.family_id == admin_family_id,
+        )
+        session_responses.append(response)
 
     # Log admin action
     _log_admin_action(

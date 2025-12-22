@@ -91,6 +91,7 @@ export function reportError(
   error: unknown,
   metadata?: Record<string, unknown>
 ): void {
+  console.error(`[${component}] ${action}:`, error, metadata);
   const logger = window.FrontendLogger;
   if (logger && typeof logger.reportError === 'function') {
     logger.reportError(component, action, error, metadata, 'error');
@@ -106,6 +107,7 @@ export function reportWarning(
   message: string,
   metadata?: Record<string, unknown>
 ): void {
+  console.warn(`[${component}] ${action}:`, message, metadata);
   const logger = window.FrontendLogger;
   if (logger && typeof logger.reportError === 'function') {
     logger.reportError(component, action, new Error(message), metadata, 'warning');
