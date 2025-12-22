@@ -430,7 +430,10 @@
       "revokeSession": "Revoke Session",
       "confirmRevoke": "Confirm Revoke",
       "revokeWarning": "Are you sure you want to revoke this session? The user will be logged out immediately.",
-      "confirmRevokeButton": "Revoke"
+      "confirmRevokeButton": "Revoke",
+      "currentBadge": "Current",
+      "confirmRevokeAllForUser": "Are you sure you want to revoke ALL sessions for user \"{{username}}\"? They will be logged out of all devices.",
+      "confirmRevokeAllForAllUsers": "Are you sure you want to revoke ALL sessions for ALL users? All users will be logged out of all devices."
     }
   }
 }

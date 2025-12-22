@@ -10,7 +10,7 @@
 
 import '../css/tailwind-globals.css';
 import { reportError } from '@/telemetry';
-import { changeLanguage, initI18n, updateStaticTranslations } from '@/utils/i18n';
+import { changeLanguage, initI18n, updateStaticTranslations, t } from '@/utils/i18n';
 import { showNotification } from '@/utils/notifications';
 
 const API_BASE = '/api/admin';
@@ -145,7 +145,7 @@ function displaySessions(): void {
       const sessionId = session.id;
       const rowClass = session.is_current ? 'bg-blue-50 hover:bg-blue-100' : 'hover:bg-gray-50';
       const textClass = session.is_current ? 'font-semibold' : '';
-      const currentBadge = session.is_current ? '<span class="ml-2 px-2 py-1 bg-blue-500 text-white text-xs rounded font-medium">Current</span>' : '';
+      const currentBadge = session.is_current ? `<span class="ml-2 px-2 py-1 bg-blue-500 text-white text-xs rounded font-medium">${t('admin.sessions.currentBadge')}</span>` : '';
 
       return `
         <tr class="${rowClass}">
@@ -290,7 +290,7 @@ async function revokeAllSessions(): Promise<void> {
     const selectedUserText = selectedOption?.text ?? '';
     if (
       !window.confirm(
-        `Are you sure you want to revoke ALL sessions for user "${selectedUserText}"? They will be logged out of all devices.`
+        t('admin.sessions.confirmRevokeAllForUser', { username: selectedUserText })
       )
     ) {
       return;
@@ -322,7 +322,7 @@ async function revokeAllSessions(): Promise<void> {
     // If no specific user is selected, revoke all sessions for all users
     if (
       !window.confirm(
-        'Are you sure you want to revoke ALL sessions for ALL users? All users will be logged out of all devices.'
+        t('admin.sessions.confirmRevokeAllForAllUsers')
       )
     ) {
       return;

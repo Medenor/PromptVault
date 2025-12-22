@@ -428,7 +428,10 @@
       "revokeSession": "Sitzung widerrufen",
       "confirmRevoke": "Widerruf bestätigen",
       "revokeWarning": "Sind Sie sicher, dass Sie diese Sitzung widerrufen möchten? Der Benutzer wird sofort abgemeldet.",
-      "confirmRevokeButton": "Widerrufen"
+      "confirmRevokeButton": "Widerrufen",
+      "currentBadge": "Aktuell",
+      "confirmRevokeAllForUser": "Sind Sie sicher, dass Sie ALLE Sitzungen für Benutzer \"{{username}}\" widerrufen möchten? Der Benutzer wird von allen Geräten abgemeldet.",
+      "confirmRevokeAllForAllUsers": "Sind Sie sicher, dass Sie ALLE Sitzungen für ALLE Benutzer widerrufen möchten? Alle Benutzer werden von allen Geräten abgemeldet."
     }
   }
 }

@@ -428,7 +428,10 @@
       "revokeSession": "Revocar sesión",
       "confirmRevoke": "Confirmar revocación",
       "revokeWarning": "¿Está seguro de que desea revocar esta sesión? El usuario será desconectado inmediatamente.",
-      "confirmRevokeButton": "Revocar"
+      "confirmRevokeButton": "Revocar",
+      "currentBadge": "Actual",
+      "confirmRevokeAllForUser": "¿Está seguro de que desea revocar TODAS las sesiones del usuario \"{{username}}\"? El usuario será desconectado de todos los dispositivos.",
+      "confirmRevokeAllForAllUsers": "¿Está seguro de que desea revocar TODAS las sesiones de TODOS los usuarios? Todos los usuarios serán desconectados de todos los dispositivos."
     }
   }
 }

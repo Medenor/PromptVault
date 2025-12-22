@@ -144,16 +144,16 @@ Navigate to: <http://localhost:8003/import-export>
 
 **Visual Checks:**
 
-- [ ] Two-section layout visible (Export left, Import right)
-- [ ] Export section: format selector, options, Export button
-- [ ] Import section: upload area, format selector, Import button
-- [ ] Both sections clearly separated
-- [ ] Buttons properly styled (blue for primary)
+- [X] ~~*Two-section layout visible (Export left, Import right)*~~ [2025-12-22]
+- [X] ~~*Export section: format selector, options, Export button*~~ [2025-12-22]
+- [X] ~~*Import section: upload area, format selector, Import button*~~ [2025-12-22]
+- [X] ~~*Both sections clearly separated*~~ [2025-12-22]
+- [X] ~~*Buttons properly styled (blue for primary)*~~ [2025-12-22]
 
 **Functional Checks:**
 
-- [ ] Page loads without errors
-- [ ] No broken layout
+- [X] ~~*Page loads without errors*~~ [2025-12-22]
+- [X] ~~*No broken layout*~~ [2025-12-22]
 
 ---
 
@@ -163,17 +163,17 @@ Navigate to: <http://localhost:8003/backup>
 
 **Visual Checks:**
 
-- [ ] Blue header
-- [ ] "Create Backup" button visible (blue)
-- [ ] Backup list/cards visible
-- [ ] Each backup shows: filename, size, date, actions
-- [ ] Download/Delete buttons visible for each backup
-- [ ] Cleanup and other action buttons visible
+- [X] ~~*Blue header*~~ [2025-12-22]
+- [X] ~~*"Create Backup" button visible (blue)*~~ [2025-12-22]
+- [X] ~~*Backup list/cards visible*~~ [2025-12-22]
+- [X] ~~*Each backup shows: filename, size, date, actions*~~ [2025-12-22]
+- [X] ~~*Download/Delete buttons visible for each backup*~~ [2025-12-22]
+- [X] ~~*Cleanup and other action buttons visible*~~ [2025-12-22]
 
 **Functional Checks:**
 
-- [ ] Page loads without errors
-- [ ] Backups display properly
+- [X] ~~*Page loads without errors*~~ [2025-12-22]
+- [X] ~~*Backups display properly*~~ [2025-12-22]
 
 ---
 
@@ -181,34 +181,34 @@ Navigate to: <http://localhost:8003/backup>
 
 ### Console Errors (F12 > Console)
 
-- [ ] NO red error messages
-- [ ] NO warnings about missing CSS or fonts
-- [ ] NO 404 errors
+- [X] ~~*NO red error messages*~~ [2025-12-22]
+- [X] ~~*NO warnings about missing CSS or fonts*~~ [2025-12-22]
+- [X] ~~*NO 404 errors*~~ [2025-12-22]
 
 ### Network Tab (F12 > Network)
 
-- [ ] Outfit font loads successfully
-- [ ] CSS bundle loads (look for `tailwind-globals.*.css`)
-- [ ] All JS bundles load
-- [ ] No failed requests (all 200 status)
+- [X] ~~*Outfit font loads successfully*~~ [2025-12-22]
+- [X] ~~*CSS bundle loads (look for `tailwind-globals.*.css`)*~~ [2025-12-22]
+- [X] ~~*All JS bundles load*~~ [2025-12-22]
+- [X] ~~*No failed requests (all 200 status)*~~ [2025-12-22]
 
 ### Design Consistency
 
-- [ ] All headers are blue (#3B82F6 or similar)
-- [ ] All cards have borders (gray #E5E7EB)
-- [ ] All inputs have gray border (#E5E7EB) normally, blue on focus
-- [ ] No shadows anywhere (flat design ✓)
-- [ ] All text uses Outfit font (check in DevTools)
-- [ ] Spacing looks consistent
-- [ ] Colors match spec (Blue, Red, Green, Amber, Gray)
+- [X] ~~*All headers are blue (#3B82F6 or similar)*~~ [2025-12-22]
+- [X] ~~*All cards have borders (gray #E5E7EB)*~~ [2025-12-22]
+- [X] ~~*All inputs have gray border (#E5E7EB) normally, blue on focus*~~ [2025-12-22]
+- [X] ~~*No shadows anywhere (flat design ✓)*~~ [2025-12-22]
+- [X] ~~*All text uses Outfit font (check in DevTools)*~~ [2025-12-22]
+- [X] ~~*Spacing looks consistent*~~ [2025-12-22]
+- [X] ~~*Colors match spec (Blue, Red, Green, Amber, Gray)*~~ [2025-12-22]
 
 ### Accessibility Check
 
-- [ ] Press Tab → focus moves through elements
-- [ ] Focus ring is visible (blue outline)
-- [ ] Can Tab into form inputs
-- [ ] Can submit forms with Enter key
-- [ ] Open modal, press ESC → modal closes
+- [X] ~~*Press Tab → focus moves through elements*~~ [2025-12-22]
+- [X] ~~*Focus ring is visible (blue outline)*~~ [2025-12-22]
+- [X] ~~*Can Tab into form inputs*~~ [2025-12-22]
+- [X] ~~*Can submit forms with Enter key*~~ [2025-12-22]
+- [X] ~~*Open modal, press ESC → modal closes*~~ [2025-12-22]
 
 ---
 
