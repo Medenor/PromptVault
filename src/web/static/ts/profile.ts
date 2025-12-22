@@ -413,35 +413,6 @@ function setupChangePasswordForm(): void {
   });
 }
 
-function setupLogout(): void {
-  const logoutBtn = document.getElementById('logout-btn');
-  if (!logoutBtn) return;
-
-  logoutBtn.addEventListener('click', async () => {
-    try {
-      const refreshToken =
-        localStorage.getItem('refresh_token') || sessionStorage.getItem('refresh_token');
-      if (refreshToken) {
-        await fetch(`${API_BASE}/logout`, {
-          credentials: 'include',
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ refresh_token: refreshToken }),
-        });
-      }
-    } catch (error) {
-      reportError('profile', 'logout', error);
-    } finally {
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
-      sessionStorage.removeItem('access_token');
-      sessionStorage.removeItem('refresh_token');
-      window.location.href = '/auth/login';
-    }
-  });
-}
 
 function initializeProfilePage(): void {
   updateStaticTranslations();
@@ -458,7 +429,6 @@ function initializeProfilePage(): void {
 
   void loadUserInfo();
   setupChangePasswordForm();
-  setupLogout();
 }
 
 (window as Window & { revokeSession?: (sessionId: string) => Promise<void> }).revokeSession =
