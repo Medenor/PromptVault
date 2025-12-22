@@ -409,7 +409,7 @@ function showProgress(containerId: string, message: string): void {
   const fill = document.getElementById(`${containerId}-fill`);
   const status = document.getElementById(containerId.replace('-progress', '-status'));
 
-  container?.classList.remove('is-hidden');
+  container?.classList.remove('hidden');
   if (fill instanceof HTMLElement) {
     fill.style.width = '50%';
   }
@@ -421,7 +421,7 @@ function showProgress(containerId: string, message: string): void {
 
 function hideProgress(containerId: string): void {
   const container = document.getElementById(containerId);
-  container?.classList.add('is-hidden');
+  container?.classList.add('hidden');
 }
 
 function showStatus(elementId: string, message: string, type: 'info' | 'success' | 'error'): void {
@@ -434,13 +434,13 @@ function showStatus(elementId: string, message: string, type: 'info' | 'success'
 
   const container = element.parentElement;
   if (container && container.id.includes('progress')) {
-    container.classList.remove('is-hidden');
+    container.classList.remove('hidden');
   }
 
   if (type === 'success') {
     setTimeout(() => {
       if (container && container.id.includes('progress')) {
-        container.classList.add('is-hidden');
+        container.classList.add('hidden');
       }
     }, 5000);
   }

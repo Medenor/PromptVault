@@ -17,7 +17,7 @@ type OperationType = 'export' | 'import' | null;
 
 let currentOperation: OperationType = null;
 const IMPORT_EXPORT_COMPONENT = 'importExport';
-const HIDDEN_CLASS = 'is-hidden';
+const HIDDEN_CLASS = 'hidden';
 
 function reportImportExportIssue(
   action: string,

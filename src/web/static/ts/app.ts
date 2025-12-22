@@ -404,7 +404,7 @@ function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement
 
   // Build tags HTML
   const tagsHTML = prompt.tags && prompt.tags.length > 0
-    ? prompt.tags.map(tag => `<span class="px-2 py-1 text-xs font-medium rounded-md bg-emerald-100 text-emerald-800">${tag}</span>`).join('')
+    ? prompt.tags.map(tag => `<span class="px-2 py-1 text-xs font-medium rounded-md" style="background-color: #F3F4F6; color: #6B7280;">${tag}</span>`).join('')
     : '';
 
   div.innerHTML = `

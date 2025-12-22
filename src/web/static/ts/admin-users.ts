@@ -14,7 +14,7 @@ import { changeLanguage, initI18n, t, tUnsafe, updateStaticTranslations } from '
 import { showNotification } from '@/utils/notifications';
 
 const API_BASE = '/api/admin';
-const HIDDEN_CLASS = 'is-hidden';
+const HIDDEN_CLASS = 'hidden';
 
 interface AdminUser {
   id: string;
@@ -209,7 +209,7 @@ async function loadUsers(): Promise<void> {
       } else {
         tableBody.innerHTML = users
           .map((user) => {
-            const roleBadgeClass = user.role === 'admin' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800';
+            const roleBadgeClass = user.role === 'admin' ? 'bg-red-100 text-red-800' : user.role === 'editor' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800';
             const statusClass = getStatusClass(user);
             const statusBadgeClass = statusClass === 'active' ? 'bg-green-100 text-green-800' : statusClass === 'locked' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800';
             return `
@@ -262,7 +262,7 @@ async function viewUser(userId: string): Promise<void> {
     if (response.ok) {
       const user = (await response.json()) as AdminUser;
       if (content) {
-        const roleBadgeClass = user.role === 'admin' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800';
+        const roleBadgeClass = user.role === 'admin' ? 'bg-red-100 text-red-800' : user.role === 'editor' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800';
         const statusClass = getStatusClass(user);
         const statusBadgeClass = statusClass === 'active' ? 'bg-green-100 text-green-800' : statusClass === 'locked' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800';
         content.innerHTML = `
@@ -795,11 +795,14 @@ function initializeAdminUsersPage(): void {
   void loadUsers();
 }
 
+// Export all window functions
 (
   window as Window & {
     viewUser?: (userId: string) => Promise<void>;
     editUser?: (userId: string) => Promise<void>;
     deleteUser?: (userId: string, username: string) => Promise<void>;
+    openCreateUserModal?: () => void;
+    submitCreateUserForm?: () => Promise<void>;
     closeUserDetailModal?: () => void;
     closeEditUserModal?: () => void;
     closeConfirmDeleteModal?: () => void;
@@ -812,6 +815,8 @@ function initializeAdminUsersPage(): void {
     viewUser?: (userId: string) => Promise<void>;
     editUser?: (userId: string) => Promise<void>;
     deleteUser?: (userId: string, username: string) => Promise<void>;
+    openCreateUserModal?: () => void;
+    submitCreateUserForm?: () => Promise<void>;
     closeUserDetailModal?: () => void;
     closeEditUserModal?: () => void;
     closeConfirmDeleteModal?: () => void;
@@ -824,6 +829,8 @@ function initializeAdminUsersPage(): void {
     viewUser?: (userId: string) => Promise<void>;
     editUser?: (userId: string) => Promise<void>;
     deleteUser?: (userId: string, username: string) => Promise<void>;
+    openCreateUserModal?: () => void;
+    submitCreateUserForm?: () => Promise<void>;
     closeUserDetailModal?: () => void;
     closeEditUserModal?: () => void;
     closeConfirmDeleteModal?: () => void;
@@ -848,6 +855,8 @@ function initializeAdminUsersPage(): void {
     viewUser?: (userId: string) => Promise<void>;
     editUser?: (userId: string) => Promise<void>;
     deleteUser?: (userId: string, username: string) => Promise<void>;
+    openCreateUserModal?: () => void;
+    submitCreateUserForm?: () => Promise<void>;
     closeUserDetailModal?: () => void;
     closeEditUserModal?: () => void;
     closeConfirmDeleteModal?: () => void;
@@ -860,6 +869,8 @@ function initializeAdminUsersPage(): void {
     viewUser?: (userId: string) => Promise<void>;
     editUser?: (userId: string) => Promise<void>;
     deleteUser?: (userId: string, username: string) => Promise<void>;
+    openCreateUserModal?: () => void;
+    submitCreateUserForm?: () => Promise<void>;
     closeUserDetailModal?: () => void;
     closeEditUserModal?: () => void;
     closeConfirmDeleteModal?: () => void;
@@ -872,6 +883,8 @@ function initializeAdminUsersPage(): void {
     viewUser?: (userId: string) => Promise<void>;
     editUser?: (userId: string) => Promise<void>;
     deleteUser?: (userId: string, username: string) => Promise<void>;
+    openCreateUserModal?: () => void;
+    submitCreateUserForm?: () => Promise<void>;
     closeUserDetailModal?: () => void;
     closeEditUserModal?: () => void;
     closeConfirmDeleteModal?: () => void;

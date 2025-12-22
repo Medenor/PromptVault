@@ -8,7 +8,7 @@
  * DOM manipulation utilities with type safety
  */
 
-const HIDDEN_CLASS = 'is-hidden';
+const HIDDEN_CLASS = 'hidden';
 const ERROR_VISIBLE_CLASS = 'validation-error-visible';
 const FIELD_ERROR_CLASS = 'field-error';
 const FIELD_WARNING_CLASS = 'field-warning';

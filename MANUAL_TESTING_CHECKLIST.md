@@ -100,22 +100,22 @@ Click on admin menu or navigate to: <http://localhost:8003/admin/users>
 
 **Visual Checks:**
 
-- [ ] Blue header with navigation
-- [ ] Search filter visible
-- [ ] Role filter dropdown visible
-- [ ] Status filter dropdown visible
-- [ ] User list/table visible
-- [ ] Each user shows: username, email, role (badge), status (badge)
-- [ ] Role badges color-coded (admin=red, user=blue)
-- [ ] Status badges color-coded (active=green, inactive=gray)
-- [ ] Edit/Delete buttons visible for each user
+- [X] ~~*Blue header with navigation*~~ [2025-12-22]
+- [X] ~~*Search filter visible*~~ [2025-12-22]
+- [X] ~~*Role filter dropdown visible*~~ [2025-12-22]
+- [X] ~~*Status filter dropdown visible*~~ [2025-12-22]
+- [X] ~~*User list/table visible*~~ [2025-12-22]
+- [X] ~~*Each user shows: username, email, role (badge), status (badge)*~~ [2025-12-22]
+- [X] ~~*Role badges color-coded (admin=red, user=blue)*~~ [2025-12-22]
+- [X] ~~*Status badges color-coded (active=green, inactive=gray)*~~ [2025-12-22]
+- [X] ~~*Edit/Delete buttons visible for each user*~~ [2025-12-22]
 
 **Functional Checks:**
 
-- [ ] Type in search → filters users
-- [ ] Select role from dropdown → filters results
-- [ ] Click Edit on a user → modal opens
-- [ ] Modal closes properly
+- [X] ~~*Type in search → filters users*~~ [2025-12-22]
+- [X] ~~*Select role from dropdown → filters results*~~ [2025-12-22]
+- [X] ~~*Click Edit on a user → modal opens*~~ [2025-12-22]
+- [X] ~~*Modal closes properly*~~ [2025-12-22]
 
 ---
 
@@ -125,16 +125,16 @@ Navigate to: <http://localhost:8003/admin/sessions>
 
 **Visual Checks:**
 
-- [ ] Blue header
-- [ ] Sessions table visible
-- [ ] Each session shows: user, IP, browser, login time
-- [ ] "Terminate" button visible for each session (red)
-- [ ] Current session highlighted differently
+- [X] ~~*Blue header*~~ [2025-12-22]
+- [X] ~~*Sessions table visible*~~ [2025-12-22]
+- [X] ~~*Each session shows: user, IP, browser, login time*~~ [2025-12-22]
+- [X] ~~*"Terminate" button visible for each session (red)*~~ [2025-12-22]
+- [X] ~~*Current session highlighted differently*~~ [2025-12-22]
 
 **Functional Checks:**
 
-- [ ] Page loads without errors
-- [ ] Table displays properly
+- [X] ~~*Page loads without errors*~~ [2025-12-22]
+- [X] ~~*Table displays properly*~~ [2025-12-22]
 
 ---
 

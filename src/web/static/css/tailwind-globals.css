@@ -67,6 +67,17 @@
   --color-gray-800: #1F2937;
   --color-gray-900: #111827;
 
+  --color-cyan-50: #ECFDFD;
+  --color-cyan-100: #CFF9FC;
+  --color-cyan-200: #A5F3FC;
+  --color-cyan-300: #67E8F9;
+  --color-cyan-400: #22D3EE;
+  --color-cyan-500: #06B6D4;
+  --color-cyan-600: #0891B2;
+  --color-cyan-700: #0E7490;
+  --color-cyan-800: #155E75;
+  --color-cyan-900: #164E63;
+
   /* Typography */
   --font-family-sans: 'Outfit', sans-serif;
 
@@ -144,7 +155,5 @@
 
 /* Utility classes */
 @layer utilities {
-  .is-hidden {
-    display: none !important;
-  }
+  /* Custom utilities can be added here */
 }

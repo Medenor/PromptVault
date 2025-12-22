@@ -349,6 +349,9 @@ def get_current_user(
             headers={"WWW-Authenticate": 'Bearer error="invalid_token", error_description="Session revoked"'},
         )
 
+    # Attach family_id from token for session identification
+    user.family_id = token_data.get("family_id")
+
     return user
 
 

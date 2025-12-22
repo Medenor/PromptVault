@@ -24,7 +24,7 @@
               <img
                 src="/static/images/promptvault_logo_frontend.webp"
                 alt="PromptVault Logo"
-                class="h-10 w-auto"
+                class="h-14 w-14 border-2 border-white rounded-lg shadow-lg"
               />
               <h1 class="text-2xl font-bold">PromptVault</h1>
             </div>
@@ -87,7 +87,7 @@
                 </button>
               </div>
 
-              <div class="is-hidden" id="backup-progress">
+              <div class="hidden" id="backup-progress">
                 <div class="h-2 bg-gray-200 rounded overflow-hidden mt-4">
                   <div class="h-full bg-blue-600 transition-all duration-300" id="backup-progress-fill" style="width: 0%"></div>
                 </div>
@@ -174,7 +174,7 @@
             </div>
           </div>
 
-          <div class="is-hidden mt-6" id="maintenance-progress">
+          <div class="hidden mt-6" id="maintenance-progress">
             <div class="h-2 bg-gray-200 rounded overflow-hidden">
               <div class="h-full bg-blue-600 transition-all duration-300" id="maintenance-progress-fill" style="width: 0%"></div>
             </div>
@@ -212,7 +212,7 @@
     </div>
 
     <!-- Restore Confirmation Modal -->
-    <div id="restore-modal" class="is-hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div id="restore-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
         <div class="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 class="text-xl font-bold text-gray-900" data-i18n="backup.confirmRestore">Confirm Restore</h2>
@@ -223,7 +223,7 @@
             Are you sure you want to restore from this backup? This will replace your current data.
           </p>
           <div class="bg-gray-50 rounded p-3 text-sm" id="restore-backup-info"></div>
-          <div class="is-hidden text-sm text-blue-600 mt-4" id="restore-status" data-i18n="backup.restoreInProgress">
+          <div class="hidden text-sm text-blue-600 mt-4" id="restore-status" data-i18n="backup.restoreInProgress">
             Restoring backup...
           </div>
         </div>
@@ -239,7 +239,7 @@
     </div>
 
     <!-- Delete Confirmation Modal -->
-    <div id="delete-modal" class="is-hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div id="delete-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
         <div class="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 class="text-xl font-bold text-gray-900" data-i18n="backup.confirmDelete">Confirm Delete</h2>

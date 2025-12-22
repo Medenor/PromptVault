@@ -49,7 +49,7 @@ export function showStatus(
     const classType = type === 'warning' ? 'info' : type;
     element.textContent = message;
     element.className = `status-message status-${classType}`;
-    element.classList.remove('is-hidden');
+    element.classList.remove('hidden');
   }
 }
 
@@ -59,7 +59,7 @@ export function showStatus(
 export function hideStatus(elementId: string): void {
   const element = document.getElementById(elementId);
   if (element) {
-    element.classList.add('is-hidden');
+    element.classList.add('hidden');
   }
 }
 
@@ -70,7 +70,7 @@ export function showLoading(elementId: string, message?: string): void {
   const element = document.getElementById(elementId);
   if (element) {
     element.textContent = message || t('messages.loading');
-    element.classList.remove('is-hidden');
+    element.classList.remove('hidden');
   }
 }
 

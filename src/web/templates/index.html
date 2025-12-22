@@ -20,6 +20,56 @@
           transform: rotate(360deg);
         }
       }
+
+      /* Category and Tag list styling */
+      #categories-list li,
+      #tags-list li {
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+        color: #374151;
+        border-radius: 0.5rem;
+        cursor: pointer;
+        border: 1px solid transparent;
+        transition: all 200ms;
+      }
+
+      #categories-list li:hover,
+      #tags-list li:hover {
+        background-color: #f3f4f6;
+        border-color: #d1d5db;
+      }
+
+      #categories-list li.active,
+      #tags-list li.active {
+        background-color: #eff6ff;
+        color: #1e40af;
+        border-color: #93c5fd;
+        font-weight: 500;
+      }
+
+      #categories-list li.active:hover,
+      #tags-list li.active:hover {
+        background-color: #dbeafe;
+      }
+
+      /* Clear All Filters button - use visibility instead of display for smooth layout */
+      #clear-all-filters-btn.hidden {
+        display: block !important;
+        visibility: hidden !important;
+        height: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        pointer-events: none !important;
+      }
+
+      #clear-all-filters-btn:not(.hidden) {
+        display: block !important;
+        visibility: visible !important;
+        height: auto !important;
+        padding: 0.75rem !important;
+        margin-top: 0.25rem !important;
+        pointer-events: auto !important;
+      }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/i18next@23.7.6/i18next.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/i18next-browser-languagedetector@7.2.0/i18nextBrowserLanguageDetector.min.js"></script>
@@ -49,7 +99,7 @@
               <img
                 src="/static/images/promptvault_logo_frontend.webp"
                 alt="PromptVault Logo"
-                class="h-10 w-10"
+                class="h-14 w-14 border-2 border-white rounded-lg shadow-lg"
               />
               <h1 class="text-2xl font-bold">PromptVault</h1>
             </div>
@@ -156,7 +206,13 @@
               <!-- Favorites Filter -->
               <label class="flex items-center gap-2 mb-3 cursor-pointer text-sm text-gray-700">
                 <input type="checkbox" id="favorites-filter" class="rounded text-blue-500 focus:ring-blue-500" />
-                <span data-i18n="nav.showFavorites">⭐ Show Favorites</span>
+                <span data-i18n="nav.showFavorites">Show Favorites</span>
+              </label>
+
+              <!-- Select All Checkbox -->
+              <label class="flex items-center gap-2 mb-3 cursor-pointer text-sm text-gray-700">
+                <input type="checkbox" id="select-all-checkbox" class="rounded text-blue-500 focus:ring-blue-500" />
+                <span data-i18n="actions.selectAll">Select All</span>
               </label>
 
               <!-- Clear All Filters Button -->
@@ -171,21 +227,15 @@
 
             <!-- Categories Section -->
             <div class="mb-6">
-              <h3 class="text-sm font-semibold text-gray-700 mb-2" data-i18n="nav.categories">
+              <h3 class="text-sm font-semibold text-gray-700 mb-3" data-i18n="nav.categories">
                 Categories
               </h3>
-              <ul id="categories-list" class="space-y-1">
-                <li
-                  data-category="all"
-                  class="active px-3 py-2 text-sm rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
-                >
-                  All Prompts
+              <ul id="categories-list" class="space-y-2">
+                <li data-category="all" class="active" data-i18n="nav.allCategories">
+                  All Categories
                 </li>
                 {% for category in categories %}
-                <li
-                  data-category="{{ category }}"
-                  class="px-3 py-2 text-sm rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
-                >
+                <li data-category="{{ category }}">
                   {{ category }}
                 </li>
                 {% endfor %}
@@ -194,19 +244,13 @@
 
             <!-- Tags Section -->
             <div>
-              <h3 class="text-sm font-semibold text-gray-700 mb-2" data-i18n="nav.tags">Tags</h3>
-              <ul id="tags-list" class="space-y-1">
-                <li
-                  data-tag="all"
-                  class="active px-3 py-2 text-sm rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
-                >
+              <h3 class="text-sm font-semibold text-gray-700 mb-3" data-i18n="nav.tags">Tags</h3>
+              <ul id="tags-list" class="space-y-2">
+                <li data-tag="all" class="active" data-i18n="nav.allTags">
                   All Tags
                 </li>
                 {% for tag in tags %}
-                <li
-                  data-tag="{{ tag }}"
-                  class="px-3 py-2 text-sm rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
-                >
+                <li data-tag="{{ tag }}">
                   {{ tag }}
                 </li>
                 {% endfor %}
@@ -251,10 +295,6 @@
             <h2 class="text-2xl font-bold text-gray-900">
               <span data-i18n="nav.prompts">Prompts</span>
             </h2>
-            <label class="flex items-center gap-2 cursor-pointer text-sm text-gray-700">
-              <input type="checkbox" id="select-all-checkbox" class="rounded text-blue-500 focus:ring-blue-500" />
-              <span data-i18n="actions.selectAll">Select All</span>
-            </label>
           </div>
 
           <!-- Prompts Grid (populated by JS) -->
@@ -289,7 +329,7 @@
                   {{ prompt_info.data.category }}
                 </span>
                 {% if prompt_info.data.tags %} {% for tag in prompt_info.data.tags %}
-                <span class="px-2 py-1 text-xs font-medium rounded-md bg-emerald-100 text-emerald-800">
+                <span class="px-2 py-1 text-xs font-medium rounded-md" style="background-color: #CFF9FC; color: #0E7490;">
                   {{ tag }}
                 </span>
                 {% endfor %} {% endif %}

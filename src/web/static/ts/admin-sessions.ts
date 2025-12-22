@@ -14,7 +14,7 @@ import { changeLanguage, initI18n, updateStaticTranslations } from '@/utils/i18n
 import { showNotification } from '@/utils/notifications';
 
 const API_BASE = '/api/admin';
-const HIDDEN_CLASS = 'is-hidden';
+const HIDDEN_CLASS = 'hidden';
 
 interface AdminUser {
   id: string;
@@ -31,6 +31,7 @@ interface SessionItem {
   last_used_at?: string | null;
   expires_at?: string | null;
   is_revoked?: boolean;
+  is_current?: boolean;
 }
 
 let allSessions: SessionItem[] = [];
@@ -142,15 +143,18 @@ function displaySessions(): void {
       const ipAddress = session.ip_address || 'Unknown';
       const userId = session.userId || '';
       const sessionId = session.id;
+      const rowClass = session.is_current ? 'bg-blue-50 hover:bg-blue-100' : 'hover:bg-gray-50';
+      const textClass = session.is_current ? 'font-semibold' : '';
+      const currentBadge = session.is_current ? '<span class="ml-2 px-2 py-1 bg-blue-500 text-white text-xs rounded font-medium">Current</span>' : '';
 
       return `
-        <tr class="hover:bg-gray-50">
-          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${username}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${ipAddress}</td>
-          <td class="px-6 py-4 text-sm text-gray-700 max-w-xs truncate" title="${userAgent}">${truncateText(userAgent, 50)}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${formatDate(session.created_at)}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${formatDate(session.last_used_at)}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${formatDate(session.expires_at)}</td>
+        <tr class="${rowClass}">
+          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 ${textClass}">${username} ${currentBadge}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 ${textClass}">${ipAddress}</td>
+          <td class="px-6 py-4 text-sm text-gray-700 max-w-xs truncate ${textClass}" title="${userAgent}">${truncateText(userAgent, 50)}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 ${textClass}">${formatDate(session.created_at)}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 ${textClass}">${formatDate(session.last_used_at)}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 ${textClass}">${formatDate(session.expires_at)}</td>
           <td class="px-6 py-4 whitespace-nowrap text-sm">
             <button class="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 text-xs font-medium" onclick="window.showRevokeConfirmation('${userId}', '${sessionId}', '${username}')" data-i18n="actions.revoke">Revoke</button>
           </td>
@@ -277,44 +281,75 @@ async function revokeAllSessions(): Promise<void> {
   if (!userFilter) return;
 
   const selectedUserId = userFilter.value;
-  if (selectedUserId === 'all') {
-    showNotification('Please select a specific user to revoke all their sessions', 'error');
-    return;
-  }
 
-  const selectedOption =
-    userFilter.selectedOptions[0] ||
-    (userFilter.selectedIndex >= 0 ? userFilter.options[userFilter.selectedIndex] : null);
-  const selectedUserText = selectedOption?.text ?? '';
-  if (
-    !window.confirm(
-      `Are you sure you want to revoke ALL sessions for user "${selectedUserText}"? They will be logged out of all devices.`
-    )
-  ) {
-    return;
-  }
-
-  try {
-    const response = await fetch(`${API_BASE}/users/${selectedUserId}/sessions`, {
-      method: 'DELETE',
-      credentials: 'include',
-      headers: getAuthHeaders(),
-    });
-
-    if (response.ok) {
-      const data = (await response.json()) as { revoked_count?: number };
-      showNotification(
-        `${data.revoked_count || 0} session(s) revoked for ${selectedUserText}`,
-        'success'
-      );
-      await loadAllSessions();
-    } else {
-      const data = (await response.json()) as Record<string, string>;
-      showNotification(data.detail || 'Failed to revoke sessions', 'error');
+  // If a specific user is selected, revoke all their sessions
+  if (selectedUserId && selectedUserId !== 'all') {
+    const selectedOption =
+      userFilter.selectedOptions[0] ||
+      (userFilter.selectedIndex >= 0 ? userFilter.options[userFilter.selectedIndex] : null);
+    const selectedUserText = selectedOption?.text ?? '';
+    if (
+      !window.confirm(
+        `Are you sure you want to revoke ALL sessions for user "${selectedUserText}"? They will be logged out of all devices.`
+      )
+    ) {
+      return;
     }
-  } catch (error) {
-    reportError('admin-sessions', 'revokeAll', error, { userId: selectedUserId });
-    showNotification('Failed to revoke sessions', 'error');
+
+    try {
+      const response = await fetch(`${API_BASE}/users/${selectedUserId}/sessions`, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: getAuthHeaders(),
+      });
+
+      if (response.ok) {
+        const data = (await response.json()) as { revoked_count?: number };
+        showNotification(
+          `${data.revoked_count || 0} session(s) revoked for ${selectedUserText}`,
+          'success'
+        );
+        await loadAllSessions();
+      } else {
+        const data = (await response.json()) as Record<string, string>;
+        showNotification(data.detail || 'Failed to revoke sessions', 'error');
+      }
+    } catch (error) {
+      reportError('admin-sessions', 'revokeAll', error, { userId: selectedUserId });
+      showNotification('Failed to revoke sessions', 'error');
+    }
+  } else {
+    // If no specific user is selected, revoke all sessions for all users
+    if (
+      !window.confirm(
+        'Are you sure you want to revoke ALL sessions for ALL users? All users will be logged out of all devices.'
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE}/sessions`, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: getAuthHeaders(),
+      });
+
+      if (response.ok) {
+        const data = (await response.json()) as { revoked_count?: number };
+        showNotification(
+          `${data.revoked_count || 0} session(s) revoked for all users`,
+          'success'
+        );
+        await loadAllSessions();
+      } else {
+        const data = (await response.json()) as Record<string, string>;
+        showNotification(data.detail || 'Failed to revoke sessions', 'error');
+      }
+    } catch (error) {
+      reportError('admin-sessions', 'revokeAll', error);
+      showNotification('Failed to revoke sessions', 'error');
+    }
   }
 }
 

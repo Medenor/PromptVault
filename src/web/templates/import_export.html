@@ -24,7 +24,7 @@
               <img
                 src="/static/images/promptvault_logo_frontend.webp"
                 alt="PromptVault Logo"
-                class="h-10 w-auto"
+                class="h-14 w-14 border-2 border-white rounded-lg shadow-lg"
               />
               <h1 class="text-2xl font-bold">PromptVault</h1>
             </div>
@@ -119,7 +119,7 @@
                 </button>
               </div>
 
-              <div class="is-hidden" id="export-progress">
+              <div class="hidden" id="export-progress">
                 <div class="h-2 bg-gray-200 rounded overflow-hidden mt-4">
                   <div class="h-full bg-blue-600 transition-all duration-300" id="export-progress-fill" style="width: 0%"></div>
                 </div>
@@ -185,7 +185,7 @@
                 </button>
               </div>
 
-              <div class="is-hidden" id="import-progress">
+              <div class="hidden" id="import-progress">
                 <div class="h-2 bg-gray-200 rounded overflow-hidden mt-4">
                   <div class="h-full bg-blue-600 transition-all duration-300" id="import-progress-fill" style="width: 0%"></div>
                 </div>
@@ -196,7 +196,7 @@
         </div>
 
         <!-- Preview Panel -->
-        <div class="is-hidden bg-white rounded-lg shadow p-6 mb-8" id="preview-panel">
+        <div class="hidden bg-white rounded-lg shadow p-6 mb-8" id="preview-panel">
           <h3 class="text-xl font-bold text-gray-900 mb-4" data-i18n="importExport.previewTitle">Preview</h3>
           <div class="bg-gray-50 rounded p-4 mb-4 font-mono text-sm overflow-auto max-h-96" id="preview-content"></div>
           <div class="flex space-x-3">
