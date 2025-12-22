@@ -19,20 +19,18 @@
       <!-- Header -->
       <header class="bg-blue-600 text-white shadow-lg">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center space-x-4">
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center space-x-4 min-w-0">
               <img
                 src="/static/images/promptvault_logo_frontend.webp"
                 alt="PromptVault Logo"
-                class="h-14 w-14 border-2 border-gray-400 rounded-lg shadow-lg"
+                class="h-14 w-14 border-2 border-gray-400 rounded-lg shadow-lg flex-shrink-0"
               />
-              <h1 class="text-2xl font-bold">PromptVault</h1>
+              <h1 class="text-2xl font-bold truncate">PromptVault</h1>
             </div>
-            <div class="flex items-center space-x-3">
-              <button onclick="window.location.href = '/'" class="px-4 py-2 bg-blue-700 hover:bg-blue-800 rounded text-sm font-medium transition" data-i18n="nav.backToMain">
-                Back to Main
-              </button>
-            </div>
+            <button onclick="window.location.href = '/'" class="px-4 py-2 bg-blue-700 hover:bg-blue-800 rounded text-sm font-medium transition whitespace-nowrap flex-shrink-0" data-i18n="nav.backToMain">
+              Back to Main
+            </button>
           </div>
         </div>
       </header>
@@ -221,12 +219,12 @@
             Restoring backup...
           </div>
         </div>
-        <div class="flex justify-end space-x-3 p-6 border-t border-gray-200">
-          <button id="confirm-restore-btn" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded font-medium transition" data-i18n="backup.restoreBtn">
-            Restore
-          </button>
-          <button class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition" onclick="hideRestoreModal()" data-i18n="actions.cancel">
+        <div class="flex flex-col md:flex-row md:justify-end gap-3 md:gap-0 md:space-x-3 p-6 border-t border-gray-200">
+          <button class="order-2 md:order-1 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition" onclick="hideRestoreModal()" data-i18n="actions.cancel">
             Cancel
+          </button>
+          <button id="confirm-restore-btn" class="order-1 md:order-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded font-medium transition" data-i18n="backup.restoreBtn">
+            Restore
           </button>
         </div>
       </div>
@@ -245,12 +243,12 @@
           </p>
           <div class="bg-gray-50 rounded p-3 text-sm" id="delete-backup-info"></div>
         </div>
-        <div class="flex justify-end space-x-3 p-6 border-t border-gray-200">
-          <button id="confirm-delete-btn" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded font-medium transition" data-i18n="backup.deleteBtn">
-            Delete
-          </button>
-          <button class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition" onclick="hideDeleteModal()" data-i18n="actions.cancel">
+        <div class="flex flex-col md:flex-row md:justify-end gap-3 md:gap-0 md:space-x-3 p-6 border-t border-gray-200">
+          <button class="order-2 md:order-1 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition" onclick="hideDeleteModal()" data-i18n="actions.cancel">
             Cancel
+          </button>
+          <button id="confirm-delete-btn" class="order-1 md:order-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded font-medium transition" data-i18n="backup.deleteBtn">
+            Delete
           </button>
         </div>
       </div>

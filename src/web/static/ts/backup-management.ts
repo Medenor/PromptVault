@@ -133,11 +133,11 @@ function createBackupItem(backup: BackupItem): string {
 
   return `
         <div class="bg-gray-50 rounded-lg p-4 border border-gray-200 hover:border-blue-300 transition" data-id="${backup.backup_id}">
-            <div class="flex items-start justify-between mb-3">
-                <h4 class="font-semibold text-gray-900">${backup.backup_id}${isCompressed}</h4>
-                <div class="flex space-x-2">
-                    <button class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-medium transition" onclick="showRestoreModal('${backup.backup_id}')">Restore</button>
-                    <button class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-medium transition" onclick="showDeleteModal('${backup.backup_id}')">Delete</button>
+            <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-3 md:gap-0 mb-3">
+                <h4 class="font-semibold text-gray-900 md:min-w-0">${backup.backup_id}${isCompressed}</h4>
+                <div class="flex gap-2 flex-shrink-0">
+                    <button class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-medium transition whitespace-nowrap" onclick="showRestoreModal('${backup.backup_id}')">Restore</button>
+                    <button class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-medium transition whitespace-nowrap" onclick="showDeleteModal('${backup.backup_id}')">Delete</button>
                 </div>
             </div>
             <div class="space-y-1">
