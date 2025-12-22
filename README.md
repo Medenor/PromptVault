@@ -1,6 +1,6 @@
 <h1 align="center">
   <a href="https://codeberg.org/medenor/promptvault">
-    <img src="docs/images/promptvault_logo.jpg" alt="Logo" width="70%">
+    <img src="docs/images/promptvault_logo.jpg" alt="Logo" width="50%">
   </a>
 </h1>
 
