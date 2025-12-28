@@ -86,6 +86,7 @@
 - [Authors & contributors](#authors--contributors)
 - [Security](#security)
 - [License](#license)
+- [Disclaimer](#disclaimer-vibe-coding-ai-assistance)
 - [Acknowledgements](#acknowledgements)
 
 </details>
