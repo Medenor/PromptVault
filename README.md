@@ -615,6 +615,15 @@ This project is licensed under the **MPL 2.0 license**.
 
 See [LICENSE](LICENSE) for more information.
 
+## Disclaimer – Vibe coding & AI assistance
+
+This repository was developed using a *vibe coding* approach, with assistance from AI tools.
+
+The code was written iteratively, with human review, testing, and decision-making at each step.  
+AI assistance was used to accelerate ideation, refactoring, and documentation, but responsibility for the design choices, validation, and final output remains entirely human.
+
+Transparency matters: this project reflects a human–AI collaborative workflow.
+
 ## Acknowledgements
 
 - Repository files templates provided by [dec0dOS/amazing-github-template](https://github.com/dec0dOS/amazing-github-template)
