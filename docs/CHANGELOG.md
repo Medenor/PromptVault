@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 🔧 Fixed
+
+- **Remember Me Token Persistence**: Fixed critical bug where users were logged out after 15 minutes despite checking "Remember Me"
+  - **Root cause**: Access token cookie `max_age` was set to 15 minutes (matching JWT expiry), causing browser to delete cookie before refresh could occur
+  - **Frontend fix**: Migrated all API calls in `app.ts`, `profile.ts`, `admin-sessions.ts`, `admin-users.ts`, `backup-management.ts`, and `import-export.ts` to use `apiFetch` utility with automatic token refresh
+  - **Backend fix**: Extended access token cookie lifetime to match refresh token (7 days normal, 30 days with "Remember Me")
+  - **Refresh endpoint**: Now properly updates HTTP-only cookies with new tokens after refresh
+  - Users now stay logged in for full session duration (7 days or 30 days with "Remember Me")
+
 ## [1.5.0] - 2025-12-22
 
 ### 🔄 Changed
