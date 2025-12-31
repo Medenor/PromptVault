@@ -567,6 +567,7 @@ class AuthService:
             "refresh_token": new_refresh_token,
             "token_type": "Bearer",
             "expires_in": self.config.jwt_access_token_expire_seconds,
+            "remaining_seconds": remaining_seconds,  # For cookie max_age
             "user": {
                 "id": user.id,
                 "username": user.username,

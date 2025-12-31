@@ -329,14 +329,19 @@ def register(
         from fastapi.responses import JSONResponse
         json_response = JSONResponse(content=response.model_dump(mode='json'))
 
-        # Set access token cookie (30 minutes)
+        # Use default refresh token lifetime for registration (7 days)
+        register_cookie_max_age = auth_service.config.jwt_refresh_token_expire_seconds
+
+        # Set access token cookie with same lifetime as refresh token
+        # The JWT inside expires in 15 min, but the cookie persists so
+        # the frontend can refresh it automatically when it expires
         json_response.set_cookie(
             key="access_token",
             value=result["access_token"],
             httponly=True,
             secure=False,  # Set to True in production with HTTPS
             samesite="lax",
-            max_age=result["expires_in"],
+            max_age=register_cookie_max_age,  # Match refresh token lifetime
             path="/"
         )
 
@@ -347,7 +352,7 @@ def register(
             httponly=True,
             secure=False,  # Set to True in production with HTTPS
             samesite="lax",
-            max_age=7 * 24 * 60 * 60,
+            max_age=register_cookie_max_age,
             path="/api/auth"
         )
 
@@ -489,18 +494,20 @@ def login(
             else auth_service.config.jwt_refresh_token_expire_seconds
         )
 
-        # Set access token cookie (30 minutes)
+        # Set access token cookie with same lifetime as refresh token
+        # The JWT inside expires in 15 min, but the cookie persists so
+        # the frontend can refresh it automatically when it expires
         json_response.set_cookie(
             key="access_token",
             value=result["access_token"],
             httponly=True,
             secure=False,  # Set to True in production with HTTPS
             samesite="lax",
-            max_age=result["expires_in"],
+            max_age=refresh_max_age,  # Match refresh token lifetime for auto-refresh
             path="/"
         )
 
-        # Set refresh token cookie (7 days)
+        # Set refresh token cookie (7 days or 30 days with remember_me)
         json_response.set_cookie(
             key="refresh_token",
             value=result["refresh_token"],
@@ -643,13 +650,46 @@ def refresh(
             f"(ID: {user_id}) from {ip_address}"
         )
 
-        return TokenResponse(
+        # Create response with tokens
+        response = TokenResponse(
             access_token=result["access_token"],
             refresh_token=result["refresh_token"],
             token_type="Bearer",
             expires_in=result["expires_in"],
             user=user_response,
         )
+
+        # Set HTTP-only cookies with new tokens
+        # Use the remaining session lifetime for cookie max_age
+        from fastapi.responses import JSONResponse
+        json_response = JSONResponse(content=response.model_dump(mode='json'))
+
+        # Get remaining session lifetime (from the refresh token's remaining time)
+        remaining_seconds = result.get("remaining_seconds", auth_service.config.jwt_refresh_token_expire_seconds)
+
+        # Set access token cookie with remaining session lifetime
+        json_response.set_cookie(
+            key="access_token",
+            value=result["access_token"],
+            httponly=True,
+            secure=False,  # Set to True in production with HTTPS
+            samesite="lax",
+            max_age=remaining_seconds,
+            path="/"
+        )
+
+        # Set refresh token cookie with remaining session lifetime
+        json_response.set_cookie(
+            key="refresh_token",
+            value=result["refresh_token"],
+            httponly=True,
+            secure=False,  # Set to True in production with HTTPS
+            samesite="lax",
+            max_age=remaining_seconds,
+            path="/api/auth"
+        )
+
+        return json_response
 
     except InvalidTokenError as e:
         logger.warning(f"Token refresh failed - invalid token from {ip_address}")
