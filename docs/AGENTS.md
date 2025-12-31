@@ -269,7 +269,7 @@ The entire frontend has been migrated to TypeScript for type safety and better d
 
   ```typescript
   function getUserSessions(userId: number): Promise<SessionResponse[]> {
-    return fetch(`/api/sessions/${userId}`).then(r => r.json());
+    return fetch(`/api/sessions/${userId}`).then((r) => r.json());
   }
   ```
 
@@ -453,6 +453,7 @@ The project uses **Tailwind CSS v4** for all styling. Do not write custom CSS un
 As part of the Tailwind CSS v4 migration, legacy CSS files should be consolidated:
 
 **Files to Consolidate** (can be removed or merged into `tailwind-globals.css`):
+
 - `/src/web/static/css/style.css` - Legacy component styles (replace with Tailwind utilities + component system)
 - `/src/web/static/css/auth.css` - Authentication page styles (migrate to Tailwind utilities)
 - `/src/web/static/css/admin.css` - Admin page styles (migrate to Tailwind utilities)
@@ -460,6 +461,7 @@ As part of the Tailwind CSS v4 migration, legacy CSS files should be consolidate
 - `/src/web/static/css/validation.css` - Validation styles (replace with Tailwind utilities)
 
 **Migration Strategy**:
+
 1. Identify any critical styling rules that aren't representable in Tailwind
 2. Move those rules to `tailwind-globals.css` with `@layer` directives (only if necessary)
 3. Update HTML templates to use Tailwind utility classes
@@ -467,6 +469,7 @@ As part of the Tailwind CSS v4 migration, legacy CSS files should be consolidate
 5. Remove legacy CSS files after verification
 
 **Example**: Converting `auth.css` login form styles
+
 ```css
 /* Old: auth.css */
 .login-form {
@@ -552,7 +555,9 @@ export function MyComponent(props: MyComponentProps): HTMLElement {
     bg-white p-4 rounded-lg shadow-md
     ${props.disabled ? 'opacity-50 cursor-not-allowed' : ''}
     ${props.className || ''}
-  `.trim().replace(/\s+/g, ' ');
+  `
+    .trim()
+    .replace(/\s+/g, ' ');
 
   const title = document.createElement('h3');
   title.className = 'text-lg font-semibold text-gray-900';
@@ -570,6 +575,7 @@ export function MyComponent(props: MyComponentProps): HTMLElement {
 ### Component Best Practices
 
 1. **Exports**: Always export the Props interface and component function
+
    ```typescript
    export interface ButtonProps { ... }
    export function Button(props: ButtonProps): HTMLElement { ... }
@@ -586,6 +592,7 @@ export function MyComponent(props: MyComponentProps): HTMLElement {
    - Clean up listeners when components are removed
 
 4. **Accessibility**: Include ARIA attributes where appropriate
+
    ```typescript
    button.setAttribute('aria-label', props.ariaLabel || 'Action');
    button.setAttribute('role', 'button');
@@ -608,7 +615,7 @@ const button = Button({
   title: 'Submit',
   onClick: (e) => console.log('Clicked'),
   variant: 'primary',
-  className: 'mt-4'
+  className: 'mt-4',
 });
 
 document.body.appendChild(button);

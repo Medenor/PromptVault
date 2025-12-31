@@ -29,32 +29,65 @@
               <h1 class="text-2xl font-bold truncate">PromptVault Admin</h1>
             </div>
             <div class="hidden md:flex items-center space-x-3 flex-shrink-0">
-              <button onclick="window.location.href = '/admin/users'" class="px-4 py-2 bg-blue-700 hover:bg-blue-800 rounded text-sm font-medium transition whitespace-nowrap" data-i18n="admin.nav.users">
+              <button
+                onclick="window.location.href = '/admin/users'"
+                class="px-4 py-2 bg-blue-700 hover:bg-blue-800 rounded text-sm font-medium transition whitespace-nowrap"
+                data-i18n="admin.nav.users"
+              >
                 Users
               </button>
-              <button onclick="window.location.href = '/auth/profile'" class="px-4 py-2 bg-blue-700 hover:bg-blue-800 rounded text-sm font-medium transition whitespace-nowrap" data-i18n="admin.nav.profile">
+              <button
+                onclick="window.location.href = '/auth/profile'"
+                class="px-4 py-2 bg-blue-700 hover:bg-blue-800 rounded text-sm font-medium transition whitespace-nowrap"
+                data-i18n="admin.nav.profile"
+              >
                 Profile
               </button>
-              <button onclick="window.location.href = '/'" class="px-4 py-2 bg-blue-700 hover:bg-blue-800 rounded text-sm font-medium transition whitespace-nowrap" data-i18n="nav.backToMain">
+              <button
+                onclick="window.location.href = '/'"
+                class="px-4 py-2 bg-blue-700 hover:bg-blue-800 rounded text-sm font-medium transition whitespace-nowrap"
+                data-i18n="nav.backToMain"
+              >
                 Back to Main
               </button>
             </div>
             <!-- Mobile menu button -->
-            <button id="admin-menu-toggle" class="md:hidden p-2 text-blue-100 hover:text-white flex-shrink-0" aria-label="Toggle menu">
+            <button
+              id="admin-menu-toggle"
+              class="md:hidden p-2 text-blue-100 hover:text-white flex-shrink-0"
+              aria-label="Toggle menu"
+            >
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 6h16M4 12h16M4 18h16"
+                ></path>
               </svg>
             </button>
           </div>
           <!-- Mobile menu dropdown -->
           <div id="admin-menu-dropdown" class="hidden md:hidden mt-4 flex flex-col gap-2">
-            <button onclick="window.location.href = '/admin/users'" class="w-full px-4 py-2 bg-blue-700 hover:bg-blue-800 rounded text-sm font-medium transition text-left" data-i18n="admin.nav.users">
+            <button
+              onclick="window.location.href = '/admin/users'"
+              class="w-full px-4 py-2 bg-blue-700 hover:bg-blue-800 rounded text-sm font-medium transition text-left"
+              data-i18n="admin.nav.users"
+            >
               Users
             </button>
-            <button onclick="window.location.href = '/auth/profile'" class="w-full px-4 py-2 bg-blue-700 hover:bg-blue-800 rounded text-sm font-medium transition text-left" data-i18n="admin.nav.profile">
+            <button
+              onclick="window.location.href = '/auth/profile'"
+              class="w-full px-4 py-2 bg-blue-700 hover:bg-blue-800 rounded text-sm font-medium transition text-left"
+              data-i18n="admin.nav.profile"
+            >
               Profile
             </button>
-            <button onclick="window.location.href = '/'" class="w-full px-4 py-2 bg-blue-700 hover:bg-blue-800 rounded text-sm font-medium transition text-left" data-i18n="nav.backToMain">
+            <button
+              onclick="window.location.href = '/'"
+              class="w-full px-4 py-2 bg-blue-700 hover:bg-blue-800 rounded text-sm font-medium transition text-left"
+              data-i18n="nav.backToMain"
+            >
               Back to Main
             </button>
           </div>
@@ -65,7 +98,12 @@
       <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
         <!-- Page Header -->
         <div class="mb-6">
-          <h2 class="text-3xl font-bold text-gray-900 mb-4 md:mb-0" data-i18n="admin.sessions.title">Session Management</h2>
+          <h2
+            class="text-3xl font-bold text-gray-900 mb-4 md:mb-0"
+            data-i18n="admin.sessions.title"
+          >
+            Session Management
+          </h2>
           <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-0">
             <div class="flex flex-col sm:flex-row gap-3 md:space-x-3">
               <button
@@ -75,7 +113,11 @@
               >
                 Revoke All Sessions
               </button>
-              <button id="refresh-sessions-btn" class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition" data-i18n="actions.refresh">
+              <button
+                id="refresh-sessions-btn"
+                class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition"
+                data-i18n="actions.refresh"
+              >
                 Refresh
               </button>
             </div>
@@ -95,8 +137,16 @@
               />
             </div>
             <div>
-              <label for="user-filter" class="block text-sm font-medium text-gray-700 mb-1" data-i18n="admin.sessions.filterUser">User:</label>
-              <select id="user-filter" class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <label
+                for="user-filter"
+                class="block text-sm font-medium text-gray-700 mb-1"
+                data-i18n="admin.sessions.filterUser"
+                >User:</label
+              >
+              <select
+                id="user-filter"
+                class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
                 <option value="all" data-i18n="admin.sessions.allUsers">All Users</option>
               </select>
             </div>
@@ -107,15 +157,21 @@
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-6">
           <div class="bg-white rounded-lg shadow p-6">
             <div class="text-3xl font-bold text-gray-900" id="total-sessions">0</div>
-            <div class="text-sm text-gray-600 mt-1" data-i18n="admin.sessions.totalSessions">Total Sessions</div>
+            <div class="text-sm text-gray-600 mt-1" data-i18n="admin.sessions.totalSessions">
+              Total Sessions
+            </div>
           </div>
           <div class="bg-white rounded-lg shadow p-6">
             <div class="text-3xl font-bold text-green-600" id="active-sessions">0</div>
-            <div class="text-sm text-gray-600 mt-1" data-i18n="admin.sessions.activeSessions">Active Now</div>
+            <div class="text-sm text-gray-600 mt-1" data-i18n="admin.sessions.activeSessions">
+              Active Now
+            </div>
           </div>
           <div class="bg-white rounded-lg shadow p-6">
             <div class="text-3xl font-bold text-blue-600" id="unique-users">0</div>
-            <div class="text-sm text-gray-600 mt-1" data-i18n="admin.sessions.uniqueUsers">Unique Users</div>
+            <div class="text-sm text-gray-600 mt-1" data-i18n="admin.sessions.uniqueUsers">
+              Unique Users
+            </div>
           </div>
         </div>
 
@@ -125,13 +181,48 @@
             <table class="min-w-full divide-y divide-gray-200">
               <thead class="bg-gray-50">
                 <tr>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" data-i18n="admin.sessions.username">Username</th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" data-i18n="admin.sessions.ipAddress">IP Address</th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" data-i18n="admin.sessions.userAgent">User Agent</th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" data-i18n="admin.sessions.createdAt">Created</th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" data-i18n="admin.sessions.lastUsed">Last Used</th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" data-i18n="admin.sessions.expiresAt">Expires</th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" data-i18n="admin.sessions.actions">Actions</th>
+                  <th
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    data-i18n="admin.sessions.username"
+                  >
+                    Username
+                  </th>
+                  <th
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    data-i18n="admin.sessions.ipAddress"
+                  >
+                    IP Address
+                  </th>
+                  <th
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    data-i18n="admin.sessions.userAgent"
+                  >
+                    User Agent
+                  </th>
+                  <th
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    data-i18n="admin.sessions.createdAt"
+                  >
+                    Created
+                  </th>
+                  <th
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    data-i18n="admin.sessions.lastUsed"
+                  >
+                    Last Used
+                  </th>
+                  <th
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    data-i18n="admin.sessions.expiresAt"
+                  >
+                    Expires
+                  </th>
+                  <th
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    data-i18n="admin.sessions.actions"
+                  >
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody id="sessions-table-body" class="bg-white divide-y divide-gray-200">
@@ -148,11 +239,20 @@
     </div>
 
     <!-- Session Detail Modal -->
-    <div id="session-detail-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div
+      id="session-detail-modal"
+      class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+    >
       <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div class="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 class="text-xl font-bold text-gray-900" data-i18n="admin.sessions.sessionDetails">Session Details</h2>
-          <span class="text-gray-400 hover:text-gray-600 text-2xl cursor-pointer" onclick="closeSessionDetailModal()">&times;</span>
+          <h2 class="text-xl font-bold text-gray-900" data-i18n="admin.sessions.sessionDetails">
+            Session Details
+          </h2>
+          <span
+            class="text-gray-400 hover:text-gray-600 text-2xl cursor-pointer"
+            onclick="closeSessionDetailModal()"
+            >&times;</span
+          >
         </div>
         <div class="p-6">
           <div id="session-detail-content">
@@ -167,7 +267,11 @@
           >
             Revoke Session
           </button>
-          <button id="close-session-detail-btn" class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition" data-i18n="actions.close">
+          <button
+            id="close-session-detail-btn"
+            class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition"
+            data-i18n="actions.close"
+          >
             Close
           </button>
         </div>
@@ -175,11 +279,20 @@
     </div>
 
     <!-- Confirm Revoke Modal -->
-    <div id="confirm-revoke-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div
+      id="confirm-revoke-modal"
+      class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+    >
       <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
         <div class="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 class="text-xl font-bold text-gray-900" data-i18n="admin.sessions.confirmRevoke">Confirm Revoke</h2>
-          <span class="text-gray-400 hover:text-gray-600 text-2xl cursor-pointer" onclick="closeConfirmRevokeModal()">&times;</span>
+          <h2 class="text-xl font-bold text-gray-900" data-i18n="admin.sessions.confirmRevoke">
+            Confirm Revoke
+          </h2>
+          <span
+            class="text-gray-400 hover:text-gray-600 text-2xl cursor-pointer"
+            onclick="closeConfirmRevokeModal()"
+            >&times;</span
+          >
         </div>
         <div class="p-6">
           <p class="text-gray-700" data-i18n="admin.sessions.revokeWarning">
@@ -194,7 +307,11 @@
           >
             Revoke
           </button>
-          <button id="cancel-revoke-btn" class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition" data-i18n="actions.cancel">
+          <button
+            id="cancel-revoke-btn"
+            class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition"
+            data-i18n="actions.cancel"
+          >
             Cancel
           </button>
         </div>

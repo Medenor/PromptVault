@@ -66,7 +66,7 @@ describe('i18n utils', () => {
   it('initializes and resolves language changes', async () => {
     Object.defineProperty(document, 'readyState', {
       value: 'complete',
-      configurable: true
+      configurable: true,
     });
     const callback = vi.fn();
     initI18n(callback);

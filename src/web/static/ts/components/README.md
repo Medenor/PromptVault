@@ -35,33 +35,40 @@ const input = createInput({
 ## Components
 
 ### Button (`button.ts`)
+
 - Factory: `createButton(label, props?)`
 - Variants: primary, secondary, accent, ghost, danger
 - Sizes: sm, md, lg
 
 ### Card (`card.ts`)
+
 - Factory: `createCard(content, props?)`
 - Variants: default, bordered, elevated
 - Supports title, description, and footer
 
 ### Input (`input.ts`)
+
 - Factory: `createInput(props?)`, `createTextarea(props?)`
 - Supports all standard HTML input types
 
 ### Form (`form.ts`)
+
 - Factory: `createFormGroup(child, props)`, `createSelect(props)`
 - Form groups with labels, validation, and help text
 
 ### Modal (`modal.ts`)
+
 - Factory: `createModal(content, props?)`
 - Utilities: `openModal(modal)`, `closeModal(modal)`
 - Sizes: sm, md, lg, xl, full
 
 ### Layout (`layout.ts`)
+
 - Factory: `createContainer(content, props?)`, `createFlex(children, props?)`, `createGrid(children, props?)`
 - Responsive containers, flexbox, and grid layouts
 
 ### Navigation (`navigation.ts`)
+
 - Factory: `createNavbar(props?)`, `createSidebar(props?)`
 - Navigation bars and sidebars with item lists
 
@@ -90,6 +97,7 @@ npm run test:unit
 ## Design System
 
 Components follow the PromptVault design system:
+
 - **Colors**: Primary (Blue), Secondary (Emerald), Accent (Amber)
 - **Typography**: Outfit font family
 - **Spacing**: Standard Tailwind scale

@@ -16,10 +16,13 @@
   </head>
   <body class="bg-white min-h-screen">
     <div class="min-h-screen flex flex-col items-center justify-center px-4">
-
       <!-- Logo/Header Section -->
       <div class="text-center mb-8">
-        <img src="/static/images/promptvault_logo_frontend.webp" alt="PromptVault" class="h-14 w-14 mx-auto mb-4 border-2 border-gray-400 rounded-lg shadow-lg" />
+        <img
+          src="/static/images/promptvault_logo_frontend.webp"
+          alt="PromptVault"
+          class="h-14 w-14 mx-auto mb-4 border-2 border-gray-400 rounded-lg shadow-lg"
+        />
         <h1 class="text-4xl font-bold text-gray-900 mb-2">PromptVault</h1>
         <p class="text-gray-600" data-i18n="auth.login.subtitle">Sign in to your account</p>
       </div>
@@ -29,10 +32,13 @@
         <h2 class="text-2xl font-bold text-gray-900 mb-6" data-i18n="auth.login.title">Login</h2>
 
         <form id="login-form" class="space-y-6" novalidate>
-
           <!-- Username/Email Input -->
           <div>
-            <label for="username-or-email" class="block text-sm font-medium text-gray-900 mb-2" data-i18n="auth.login.usernameOrEmail">
+            <label
+              for="username-or-email"
+              class="block text-sm font-medium text-gray-900 mb-2"
+              data-i18n="auth.login.usernameOrEmail"
+            >
               Username or Email
             </label>
             <input
@@ -56,7 +62,11 @@
 
           <!-- Password Input -->
           <div>
-            <label for="password" class="block text-sm font-medium text-gray-900 mb-2" data-i18n="auth.login.password">
+            <label
+              for="password"
+              class="block text-sm font-medium text-gray-900 mb-2"
+              data-i18n="auth.login.password"
+            >
               Password
             </label>
             <div class="relative">
@@ -97,7 +107,11 @@
               aria-label="Remember me"
               class="w-4 h-4 rounded border-gray-300 text-blue-500 focus:ring-2 focus:ring-blue-500"
             />
-            <label for="remember-me" class="ml-2 text-sm text-gray-600" data-i18n="auth.login.rememberMe">
+            <label
+              for="remember-me"
+              class="ml-2 text-sm text-gray-600"
+              data-i18n="auth.login.rememberMe"
+            >
               Remember me
             </label>
           </div>
@@ -134,13 +148,16 @@
         </form>
 
         <!-- Account Locked Warning (hidden by default) -->
-        <div id="account-locked-message" class="hidden mt-4 p-4 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm">
+        <div
+          id="account-locked-message"
+          class="hidden mt-4 p-4 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm"
+        >
           <p data-i18n="auth.login.accountLocked">
-            Your account has been locked due to too many failed login attempts. Please try again later or reset your password.
+            Your account has been locked due to too many failed login attempts. Please try again
+            later or reset your password.
           </p>
         </div>
       </div>
-
     </div>
 
     {{ scripts.load_scripts('auth', true, 'auth', true) }}

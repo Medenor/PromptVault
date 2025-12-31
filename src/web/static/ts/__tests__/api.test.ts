@@ -280,7 +280,9 @@ describe('api utils', () => {
         json: vi.fn().mockResolvedValue({ detail: 'Invalid refresh token' }),
       };
 
-      fetchMock.mockResolvedValueOnce(unauthorizedResponse).mockResolvedValueOnce(refreshFailedResponse);
+      fetchMock
+        .mockResolvedValueOnce(unauthorizedResponse)
+        .mockResolvedValueOnce(refreshFailedResponse);
 
       await expect(apiFetch('/api/test')).rejects.toBeInstanceOf(APIRequestError);
 
@@ -310,7 +312,9 @@ describe('api utils', () => {
         json: vi.fn().mockResolvedValue({ detail: 'Invalid refresh token' }),
       };
 
-      fetchMock.mockResolvedValueOnce(unauthorizedResponse).mockResolvedValueOnce(refreshFailedResponse);
+      fetchMock
+        .mockResolvedValueOnce(unauthorizedResponse)
+        .mockResolvedValueOnce(refreshFailedResponse);
 
       await expect(apiFetch('/api/test')).rejects.toBeInstanceOf(APIRequestError);
 

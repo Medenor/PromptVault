@@ -29,32 +29,65 @@
               <h1 class="text-2xl font-bold truncate">PromptVault Admin</h1>
             </div>
             <div class="hidden md:flex items-center space-x-3 flex-shrink-0">
-              <button onclick="window.location.href = '/admin/sessions'" class="px-4 py-2 bg-blue-700 hover:bg-blue-800 rounded text-sm font-medium transition whitespace-nowrap" data-i18n="admin.nav.sessions">
+              <button
+                onclick="window.location.href = '/admin/sessions'"
+                class="px-4 py-2 bg-blue-700 hover:bg-blue-800 rounded text-sm font-medium transition whitespace-nowrap"
+                data-i18n="admin.nav.sessions"
+              >
                 Sessions
               </button>
-              <button onclick="window.location.href = '/auth/profile'" class="px-4 py-2 bg-blue-700 hover:bg-blue-800 rounded text-sm font-medium transition whitespace-nowrap" data-i18n="admin.nav.profile">
+              <button
+                onclick="window.location.href = '/auth/profile'"
+                class="px-4 py-2 bg-blue-700 hover:bg-blue-800 rounded text-sm font-medium transition whitespace-nowrap"
+                data-i18n="admin.nav.profile"
+              >
                 Profile
               </button>
-              <button onclick="window.location.href = '/'" class="px-4 py-2 bg-blue-700 hover:bg-blue-800 rounded text-sm font-medium transition whitespace-nowrap" data-i18n="nav.backToMain">
+              <button
+                onclick="window.location.href = '/'"
+                class="px-4 py-2 bg-blue-700 hover:bg-blue-800 rounded text-sm font-medium transition whitespace-nowrap"
+                data-i18n="nav.backToMain"
+              >
                 Back to Main
               </button>
             </div>
             <!-- Mobile menu button -->
-            <button id="admin-menu-toggle" class="md:hidden p-2 text-blue-100 hover:text-white flex-shrink-0" aria-label="Toggle menu">
+            <button
+              id="admin-menu-toggle"
+              class="md:hidden p-2 text-blue-100 hover:text-white flex-shrink-0"
+              aria-label="Toggle menu"
+            >
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 6h16M4 12h16M4 18h16"
+                ></path>
               </svg>
             </button>
           </div>
           <!-- Mobile menu dropdown -->
           <div id="admin-menu-dropdown" class="hidden md:hidden mt-4 flex flex-col gap-2">
-            <button onclick="window.location.href = '/admin/sessions'" class="w-full px-4 py-2 bg-blue-700 hover:bg-blue-800 rounded text-sm font-medium transition text-left" data-i18n="admin.nav.sessions">
+            <button
+              onclick="window.location.href = '/admin/sessions'"
+              class="w-full px-4 py-2 bg-blue-700 hover:bg-blue-800 rounded text-sm font-medium transition text-left"
+              data-i18n="admin.nav.sessions"
+            >
               Sessions
             </button>
-            <button onclick="window.location.href = '/auth/profile'" class="w-full px-4 py-2 bg-blue-700 hover:bg-blue-800 rounded text-sm font-medium transition text-left" data-i18n="admin.nav.profile">
+            <button
+              onclick="window.location.href = '/auth/profile'"
+              class="w-full px-4 py-2 bg-blue-700 hover:bg-blue-800 rounded text-sm font-medium transition text-left"
+              data-i18n="admin.nav.profile"
+            >
               Profile
             </button>
-            <button onclick="window.location.href = '/'" class="w-full px-4 py-2 bg-blue-700 hover:bg-blue-800 rounded text-sm font-medium transition text-left" data-i18n="nav.backToMain">
+            <button
+              onclick="window.location.href = '/'"
+              class="w-full px-4 py-2 bg-blue-700 hover:bg-blue-800 rounded text-sm font-medium transition text-left"
+              data-i18n="nav.backToMain"
+            >
               Back to Main
             </button>
           </div>
@@ -65,13 +98,23 @@
       <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
         <!-- Page Header -->
         <div class="mb-6">
-          <h2 class="text-3xl font-bold text-gray-900 mb-4 md:mb-0" data-i18n="admin.users.title">User Management</h2>
+          <h2 class="text-3xl font-bold text-gray-900 mb-4 md:mb-0" data-i18n="admin.users.title">
+            User Management
+          </h2>
           <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-0">
             <div class="flex flex-col sm:flex-row gap-3 md:space-x-3">
-              <button id="add-user-btn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition" data-i18n="admin.users.addUser">
+              <button
+                id="add-user-btn"
+                class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition"
+                data-i18n="admin.users.addUser"
+              >
                 Add User
               </button>
-              <button id="refresh-users-btn" class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition" data-i18n="actions.refresh">
+              <button
+                id="refresh-users-btn"
+                class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition"
+                data-i18n="actions.refresh"
+              >
                 Refresh
               </button>
             </div>
@@ -91,8 +134,16 @@
               />
             </div>
             <div>
-              <label for="role-filter" class="block text-sm font-medium text-gray-700 mb-1" data-i18n="admin.users.filterRole">Role:</label>
-              <select id="role-filter" class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <label
+                for="role-filter"
+                class="block text-sm font-medium text-gray-700 mb-1"
+                data-i18n="admin.users.filterRole"
+                >Role:</label
+              >
+              <select
+                id="role-filter"
+                class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
                 <option value="all" data-i18n="admin.users.allRoles">All Roles</option>
                 <option value="viewer" data-i18n="admin.users.roleViewer">Viewer</option>
                 <option value="editor" data-i18n="admin.users.roleEditor">Editor</option>
@@ -100,8 +151,16 @@
               </select>
             </div>
             <div>
-              <label for="status-filter" class="block text-sm font-medium text-gray-700 mb-1" data-i18n="admin.users.filterStatus">Status:</label>
-              <select id="status-filter" class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <label
+                for="status-filter"
+                class="block text-sm font-medium text-gray-700 mb-1"
+                data-i18n="admin.users.filterStatus"
+                >Status:</label
+              >
+              <select
+                id="status-filter"
+                class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
                 <option value="all" data-i18n="admin.users.allStatuses">All Statuses</option>
                 <option value="active" data-i18n="admin.users.statusActive">Active</option>
                 <option value="inactive" data-i18n="admin.users.statusInactive">Inactive</option>
@@ -115,15 +174,21 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
           <div class="bg-white rounded-lg shadow p-6">
             <div class="text-3xl font-bold text-gray-900" id="total-users">0</div>
-            <div class="text-sm text-gray-600 mt-1" data-i18n="admin.users.totalUsers">Total Users</div>
+            <div class="text-sm text-gray-600 mt-1" data-i18n="admin.users.totalUsers">
+              Total Users
+            </div>
           </div>
           <div class="bg-white rounded-lg shadow p-6">
             <div class="text-3xl font-bold text-green-600" id="active-users">0</div>
-            <div class="text-sm text-gray-600 mt-1" data-i18n="admin.users.activeUsers">Active Users</div>
+            <div class="text-sm text-gray-600 mt-1" data-i18n="admin.users.activeUsers">
+              Active Users
+            </div>
           </div>
           <div class="bg-white rounded-lg shadow p-6">
             <div class="text-3xl font-bold text-red-600" id="locked-users">0</div>
-            <div class="text-sm text-gray-600 mt-1" data-i18n="admin.users.lockedUsers">Locked Users</div>
+            <div class="text-sm text-gray-600 mt-1" data-i18n="admin.users.lockedUsers">
+              Locked Users
+            </div>
           </div>
           <div class="bg-white rounded-lg shadow p-6">
             <div class="text-3xl font-bold text-blue-600" id="admin-users">0</div>
@@ -137,13 +202,48 @@
             <table class="min-w-full divide-y divide-gray-200">
               <thead class="bg-gray-50">
                 <tr>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" data-i18n="admin.users.username">Username</th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" data-i18n="admin.users.email">Email</th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" data-i18n="admin.users.role">Role</th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" data-i18n="admin.users.status">Status</th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" data-i18n="admin.users.lastLogin">Last Login</th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" data-i18n="admin.users.sessions">Sessions</th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" data-i18n="admin.users.actions">Actions</th>
+                  <th
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    data-i18n="admin.users.username"
+                  >
+                    Username
+                  </th>
+                  <th
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    data-i18n="admin.users.email"
+                  >
+                    Email
+                  </th>
+                  <th
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    data-i18n="admin.users.role"
+                  >
+                    Role
+                  </th>
+                  <th
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    data-i18n="admin.users.status"
+                  >
+                    Status
+                  </th>
+                  <th
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    data-i18n="admin.users.lastLogin"
+                  >
+                    Last Login
+                  </th>
+                  <th
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    data-i18n="admin.users.sessions"
+                  >
+                    Sessions
+                  </th>
+                  <th
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    data-i18n="admin.users.actions"
+                  >
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody id="users-table-body" class="bg-white divide-y divide-gray-200">
@@ -157,7 +257,9 @@
           </div>
 
           <!-- Pagination -->
-          <div class="bg-gray-50 px-6 py-4 flex items-center justify-between border-t border-gray-200">
+          <div
+            class="bg-gray-50 px-6 py-4 flex items-center justify-between border-t border-gray-200"
+          >
             <button
               id="prev-page"
               class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -167,7 +269,12 @@
               Previous
             </button>
             <span id="page-info" class="text-sm text-gray-700">Page 1 of 1</span>
-            <button id="next-page" class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed" disabled data-i18n="admin.users.next">
+            <button
+              id="next-page"
+              class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled
+              data-i18n="admin.users.next"
+            >
               Next
             </button>
           </div>
@@ -176,11 +283,20 @@
     </div>
 
     <!-- User Detail Modal -->
-    <div id="user-detail-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div
+      id="user-detail-modal"
+      class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+    >
       <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div class="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 class="text-xl font-bold text-gray-900" data-i18n="admin.users.userDetails">User Details</h2>
-          <span class="text-gray-400 hover:text-gray-600 text-2xl cursor-pointer" onclick="closeUserDetailModal()">&times;</span>
+          <h2 class="text-xl font-bold text-gray-900" data-i18n="admin.users.userDetails">
+            User Details
+          </h2>
+          <span
+            class="text-gray-400 hover:text-gray-600 text-2xl cursor-pointer"
+            onclick="closeUserDetailModal()"
+            >&times;</span
+          >
         </div>
         <div class="p-6">
           <div id="user-detail-content">
@@ -188,7 +304,11 @@
           </div>
         </div>
         <div class="flex justify-end space-x-3 p-6 border-t border-gray-200">
-          <button id="close-user-detail-btn" class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition" data-i18n="actions.close">
+          <button
+            id="close-user-detail-btn"
+            class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition"
+            data-i18n="actions.close"
+          >
             Close
           </button>
         </div>
@@ -196,19 +316,37 @@
     </div>
 
     <!-- Edit User Modal -->
-    <div id="edit-user-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div
+      id="edit-user-modal"
+      class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+    >
       <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div class="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 class="text-xl font-bold text-gray-900" data-i18n="admin.users.editUser">Edit User</h2>
-          <span class="text-gray-400 hover:text-gray-600 text-2xl cursor-pointer" onclick="closeEditUserModal()">&times;</span>
+          <h2 class="text-xl font-bold text-gray-900" data-i18n="admin.users.editUser">
+            Edit User
+          </h2>
+          <span
+            class="text-gray-400 hover:text-gray-600 text-2xl cursor-pointer"
+            onclick="closeEditUserModal()"
+            >&times;</span
+          >
         </div>
         <div class="p-6">
           <form id="edit-user-form" novalidate>
             <input type="hidden" id="edit-user-id" name="user_id" />
 
             <div class="mb-4">
-              <label for="edit-role" class="block text-sm font-medium text-gray-700 mb-2" data-i18n="admin.users.role">Role:</label>
-              <select id="edit-role" name="role" class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <label
+                for="edit-role"
+                class="block text-sm font-medium text-gray-700 mb-2"
+                data-i18n="admin.users.role"
+                >Role:</label
+              >
+              <select
+                id="edit-role"
+                name="role"
+                class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
                 <option value="viewer" data-i18n="admin.users.roleViewer">Viewer</option>
                 <option value="editor" data-i18n="admin.users.roleEditor">Editor</option>
                 <option value="admin" data-i18n="admin.users.roleAdmin">Admin</option>
@@ -217,22 +355,46 @@
 
             <div class="mb-4">
               <label class="flex items-center">
-                <input type="checkbox" id="edit-is-active" name="is_active" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
-                <span class="ml-2 text-sm text-gray-700" data-i18n="admin.users.activeAccount">Active Account</span>
+                <input
+                  type="checkbox"
+                  id="edit-is-active"
+                  name="is_active"
+                  class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <span class="ml-2 text-sm text-gray-700" data-i18n="admin.users.activeAccount"
+                  >Active Account</span
+                >
               </label>
             </div>
 
             <div class="mb-4">
               <label class="flex items-center">
-                <input type="checkbox" id="edit-email-verified" name="email_verified" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
-                <span class="ml-2 text-sm text-gray-700" data-i18n="admin.users.emailVerified">Email Verified</span>
+                <input
+                  type="checkbox"
+                  id="edit-email-verified"
+                  name="email_verified"
+                  class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <span class="ml-2 text-sm text-gray-700" data-i18n="admin.users.emailVerified"
+                  >Email Verified</span
+                >
               </label>
             </div>
           </form>
         </div>
         <div class="flex justify-end space-x-3 p-6 border-t border-gray-200">
-          <button id="save-user-btn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition" data-i18n="actions.save">Save</button>
-          <button id="cancel-edit-btn" class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition" data-i18n="actions.cancel">
+          <button
+            id="save-user-btn"
+            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition"
+            data-i18n="actions.save"
+          >
+            Save
+          </button>
+          <button
+            id="cancel-edit-btn"
+            class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition"
+            data-i18n="actions.cancel"
+          >
             Cancel
           </button>
         </div>
@@ -240,11 +402,20 @@
     </div>
 
     <!-- Confirm Delete Modal -->
-    <div id="confirm-delete-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div
+      id="confirm-delete-modal"
+      class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+    >
       <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
         <div class="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 class="text-xl font-bold text-gray-900" data-i18n="admin.users.confirmDelete">Confirm Delete</h2>
-          <span class="text-gray-400 hover:text-gray-600 text-2xl cursor-pointer" onclick="closeConfirmDeleteModal()">&times;</span>
+          <h2 class="text-xl font-bold text-gray-900" data-i18n="admin.users.confirmDelete">
+            Confirm Delete
+          </h2>
+          <span
+            class="text-gray-400 hover:text-gray-600 text-2xl cursor-pointer"
+            onclick="closeConfirmDeleteModal()"
+            >&times;</span
+          >
         </div>
         <div class="p-6">
           <p class="text-gray-700 mb-4" data-i18n="admin.users.deleteWarning">
@@ -254,10 +425,18 @@
           <p class="font-bold text-red-600"><strong id="delete-username"></strong></p>
         </div>
         <div class="flex justify-end space-x-3 p-6 border-t border-gray-200">
-          <button id="confirm-delete-btn" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded font-medium transition" data-i18n="actions.delete">
+          <button
+            id="confirm-delete-btn"
+            class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded font-medium transition"
+            data-i18n="actions.delete"
+          >
             Delete
           </button>
-          <button id="cancel-delete-btn" class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition" data-i18n="actions.cancel">
+          <button
+            id="cancel-delete-btn"
+            class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition"
+            data-i18n="actions.cancel"
+          >
             Cancel
           </button>
         </div>
@@ -265,16 +444,30 @@
     </div>
 
     <!-- Create User Modal -->
-    <div id="create-user-modal" class="hidden fixed inset-0 bg-black/25 flex items-center justify-center z-50">
+    <div
+      id="create-user-modal"
+      class="hidden fixed inset-0 bg-black/25 flex items-center justify-center z-50"
+    >
       <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div class="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 class="text-xl font-bold text-gray-900" data-i18n="admin.users.createUser">Create New User</h2>
-          <span class="text-gray-400 hover:text-gray-600 text-2xl cursor-pointer" onclick="closeCreateUserModal()">&times;</span>
+          <h2 class="text-xl font-bold text-gray-900" data-i18n="admin.users.createUser">
+            Create New User
+          </h2>
+          <span
+            class="text-gray-400 hover:text-gray-600 text-2xl cursor-pointer"
+            onclick="closeCreateUserModal()"
+            >&times;</span
+          >
         </div>
         <div class="p-6">
           <form id="create-user-form" novalidate>
             <div class="mb-4">
-              <label for="create-username" class="block text-sm font-medium text-gray-700 mb-2" data-i18n="admin.users.username">Username:</label>
+              <label
+                for="create-username"
+                class="block text-sm font-medium text-gray-700 mb-2"
+                data-i18n="admin.users.username"
+                >Username:</label
+              >
               <input
                 type="text"
                 id="create-username"
@@ -290,7 +483,12 @@
             </div>
 
             <div class="mb-4">
-              <label for="create-email" class="block text-sm font-medium text-gray-700 mb-2" data-i18n="admin.users.email">Email:</label>
+              <label
+                for="create-email"
+                class="block text-sm font-medium text-gray-700 mb-2"
+                data-i18n="admin.users.email"
+                >Email:</label
+              >
               <input
                 type="email"
                 id="create-email"
@@ -304,7 +502,12 @@
             </div>
 
             <div class="mb-4">
-              <label for="create-password" class="block text-sm font-medium text-gray-700 mb-2" data-i18n="admin.users.password">Password:</label>
+              <label
+                for="create-password"
+                class="block text-sm font-medium text-gray-700 mb-2"
+                data-i18n="admin.users.password"
+                >Password:</label
+              >
               <div class="relative">
                 <input
                   type="password"
@@ -317,13 +520,20 @@
                   data-i18n="[placeholder]admin.users.passwordPlaceholder"
                   placeholder="Min 12 chars: uppercase, lowercase, digit, special char"
                 />
-                <button type="button" id="toggle-password-create" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700">
+                <button
+                  type="button"
+                  id="toggle-password-create"
+                  class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                >
                   ⊙
                 </button>
               </div>
               <div id="create-password-strength" class="mt-2" aria-live="polite">
                 <div class="h-2 bg-gray-200 rounded overflow-hidden">
-                  <div class="h-full transition-all duration-300" id="create-strength-bar-fill"></div>
+                  <div
+                    class="h-full transition-all duration-300"
+                    id="create-strength-bar-fill"
+                  ></div>
                 </div>
                 <div class="text-sm mt-1" id="create-strength-text"></div>
               </div>
@@ -353,7 +563,12 @@
             </div>
 
             <div class="mb-4">
-              <label for="create-confirm-password" class="block text-sm font-medium text-gray-700 mb-2" data-i18n="admin.users.confirmPassword">Confirm Password:</label>
+              <label
+                for="create-confirm-password"
+                class="block text-sm font-medium text-gray-700 mb-2"
+                data-i18n="admin.users.confirmPassword"
+                >Confirm Password:</label
+              >
               <div class="relative">
                 <input
                   type="password"
@@ -366,7 +581,11 @@
                   data-i18n="[placeholder]admin.users.confirmPasswordPlaceholder"
                   placeholder="Confirm password"
                 />
-                <button type="button" id="toggle-confirm-password-create" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700">
+                <button
+                  type="button"
+                  id="toggle-confirm-password-create"
+                  class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                >
                   ⊙
                 </button>
               </div>
@@ -374,8 +593,17 @@
             </div>
 
             <div class="mb-4">
-              <label for="create-role" class="block text-sm font-medium text-gray-700 mb-2" data-i18n="admin.users.role">Role:</label>
-              <select id="create-role" name="role" class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <label
+                for="create-role"
+                class="block text-sm font-medium text-gray-700 mb-2"
+                data-i18n="admin.users.role"
+                >Role:</label
+              >
+              <select
+                id="create-role"
+                name="role"
+                class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
                 <option value="viewer" data-i18n="admin.users.roleViewer">Viewer</option>
                 <option value="editor" data-i18n="admin.users.roleEditor">Editor</option>
                 <option value="admin" data-i18n="admin.users.roleAdmin">Admin</option>
@@ -384,8 +612,15 @@
 
             <div class="mb-4">
               <label class="flex items-center">
-                <input type="checkbox" id="create-email-verified" name="email_verified" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
-                <span class="ml-2 text-sm text-gray-700" data-i18n="admin.users.markEmailVerified">Mark email as verified</span>
+                <input
+                  type="checkbox"
+                  id="create-email-verified"
+                  name="email_verified"
+                  class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <span class="ml-2 text-sm text-gray-700" data-i18n="admin.users.markEmailVerified"
+                  >Mark email as verified</span
+                >
               </label>
             </div>
 
@@ -393,10 +628,18 @@
           </form>
         </div>
         <div class="flex justify-end space-x-3 p-6 border-t border-gray-200">
-          <button id="create-user-submit-btn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition" data-i18n="actions.create">
+          <button
+            id="create-user-submit-btn"
+            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition"
+            data-i18n="actions.create"
+          >
             Create User
           </button>
-          <button id="create-user-cancel-btn" class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition" data-i18n="actions.cancel">
+          <button
+            id="create-user-cancel-btn"
+            class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition"
+            data-i18n="actions.cancel"
+          >
             Cancel
           </button>
         </div>

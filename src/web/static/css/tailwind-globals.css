@@ -8,7 +8,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap');
 
 /* Tailwind CSS v4 */
-@import "tailwindcss";
+@import 'tailwindcss';
 
 /* Source paths for Tailwind to scan */
 @source "../../templates";
@@ -17,66 +17,66 @@
 /* Theme configuration */
 @theme {
   /* Colors */
-  --color-background: #FFFFFF;
+  --color-background: #ffffff;
   --color-foreground: #111827;
 
-  --color-primary-50: #EFF6FF;
-  --color-primary-100: #DBEAFE;
-  --color-primary-200: #BFDBFE;
-  --color-primary-300: #93C5FD;
-  --color-primary-400: #60A5FA;
-  --color-primary-500: #3B82F6;
-  --color-primary-600: #2563EB;
-  --color-primary-700: #1D4ED8;
-  --color-primary-800: #1E40AF;
-  --color-primary-900: #1E3A8A;
+  --color-primary-50: #eff6ff;
+  --color-primary-100: #dbeafe;
+  --color-primary-200: #bfdbfe;
+  --color-primary-300: #93c5fd;
+  --color-primary-400: #60a5fa;
+  --color-primary-500: #3b82f6;
+  --color-primary-600: #2563eb;
+  --color-primary-700: #1d4ed8;
+  --color-primary-800: #1e40af;
+  --color-primary-900: #1e3a8a;
 
-  --color-secondary-50: #ECFDF5;
-  --color-secondary-100: #D1FAE5;
-  --color-secondary-200: #A7F3D0;
-  --color-secondary-300: #6EE7B7;
-  --color-secondary-400: #34D399;
-  --color-secondary-500: #10B981;
+  --color-secondary-50: #ecfdf5;
+  --color-secondary-100: #d1fae5;
+  --color-secondary-200: #a7f3d0;
+  --color-secondary-300: #6ee7b7;
+  --color-secondary-400: #34d399;
+  --color-secondary-500: #10b981;
   --color-secondary-600: #059669;
   --color-secondary-700: #047857;
-  --color-secondary-800: #065F46;
-  --color-secondary-900: #064E3B;
+  --color-secondary-800: #065f46;
+  --color-secondary-900: #064e3b;
 
-  --color-accent-50: #FFFBEB;
-  --color-accent-100: #FEF3C7;
-  --color-accent-200: #FDE68A;
-  --color-accent-300: #FCD34D;
-  --color-accent-400: #FBBF24;
-  --color-accent-500: #F59E0B;
-  --color-accent-600: #D97706;
-  --color-accent-700: #B45309;
-  --color-accent-800: #92400E;
-  --color-accent-900: #78350F;
+  --color-accent-50: #fffbeb;
+  --color-accent-100: #fef3c7;
+  --color-accent-200: #fde68a;
+  --color-accent-300: #fcd34d;
+  --color-accent-400: #fbbf24;
+  --color-accent-500: #f59e0b;
+  --color-accent-600: #d97706;
+  --color-accent-700: #b45309;
+  --color-accent-800: #92400e;
+  --color-accent-900: #78350f;
 
-  --color-muted: #F3F4F6;
-  --color-border: #E5E7EB;
+  --color-muted: #f3f4f6;
+  --color-border: #e5e7eb;
 
-  --color-gray-50: #F9FAFB;
-  --color-gray-100: #F3F4F6;
-  --color-gray-200: #E5E7EB;
-  --color-gray-300: #D1D5DB;
-  --color-gray-400: #9CA3AF;
-  --color-gray-500: #6B7280;
-  --color-gray-600: #4B5563;
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
   --color-gray-700: #374151;
-  --color-gray-800: #1F2937;
+  --color-gray-800: #1f2937;
   --color-gray-900: #111827;
 
-  --color-cyan-50: #ECFDFD;
-  --color-cyan-100: #CFF9FC;
-  --color-cyan-200: #A5F3FC;
-  --color-cyan-300: #67E8F9;
-  --color-cyan-400: #22D3EE;
-  --color-cyan-500: #06B6D4;
-  --color-cyan-600: #0891B2;
-  --color-cyan-700: #0E7490;
-  --color-cyan-800: #155E75;
-  --color-cyan-900: #164E63;
+  --color-cyan-50: #ecfdfd;
+  --color-cyan-100: #cff9fc;
+  --color-cyan-200: #a5f3fc;
+  --color-cyan-300: #67e8f9;
+  --color-cyan-400: #22d3ee;
+  --color-cyan-500: #06b6d4;
+  --color-cyan-600: #0891b2;
+  --color-cyan-700: #0e7490;
+  --color-cyan-800: #155e75;
+  --color-cyan-900: #164e63;
 
   /* Typography */
   --font-family-sans: 'Outfit', sans-serif;
@@ -117,20 +117,20 @@
   body {
     margin: 0;
     padding: 0;
-    background-color: #FFFFFF;
+    background-color: #ffffff;
     color: #111827;
     font-family: 'Outfit', sans-serif;
   }
 
   /* Link styling defaults */
   a {
-    color: #3B82F6;
+    color: #3b82f6;
     text-decoration: none;
     transition: color 200ms;
   }
 
   a:hover {
-    color: #2563EB;
+    color: #2563eb;
   }
 
   /* Form input base styles */
@@ -333,7 +333,9 @@
     border: 2px solid #d1d5db;
     border-radius: 0.375rem;
     font-size: 1rem;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    transition:
+      border-color 0.2s ease,
+      box-shadow 0.2s ease;
   }
 
   .form-group input[type='text']:hover,
@@ -389,7 +391,10 @@
   input,
   textarea,
   select {
-    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+    transition:
+      border-color 0.2s ease,
+      box-shadow 0.2s ease,
+      background-color 0.2s ease;
   }
 
   /* Animations */

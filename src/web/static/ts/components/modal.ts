@@ -30,7 +30,8 @@ export function createModal(props: ModalProps): {
   const sizeClasses = getSizeClasses(props.size || 'md');
   const paddingClasses = 'p-6';
 
-  modalContent.className = `${baseClasses} ${sizeClasses} ${paddingClasses} ${props.className || ''}`.trim();
+  modalContent.className =
+    `${baseClasses} ${sizeClasses} ${paddingClasses} ${props.className || ''}`.trim();
 
   // Header with title and close button
   if (props.title) {
@@ -46,7 +47,8 @@ export function createModal(props: ModalProps): {
     if (props.showClose !== false && (props.closable === undefined || props.closable)) {
       const closeBtn = document.createElement('button');
       closeBtn.innerHTML = '&times;';
-      closeBtn.className = 'text-gray-400 hover:text-gray-600 text-3xl leading-none transition-colors duration-200';
+      closeBtn.className =
+        'text-gray-400 hover:text-gray-600 text-3xl leading-none transition-colors duration-200';
       closeBtn.setAttribute('aria-label', 'Close modal');
       closeBtn.addEventListener('click', () => {
         close();
@@ -106,7 +108,8 @@ export function createModal(props: ModalProps): {
   };
 
   // Focus trap elements
-  const focusableElements = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+  const focusableElements =
+    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
   let firstFocusable: HTMLElement | null = null;
   let lastFocusable: HTMLElement | null = null;
 

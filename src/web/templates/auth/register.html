@@ -16,23 +16,31 @@
   </head>
   <body class="bg-white min-h-screen">
     <div class="min-h-screen flex flex-col items-center justify-center px-4 py-8">
-
       <!-- Logo/Header Section -->
       <div class="text-center mb-8">
-        <img src="/static/images/promptvault_logo_frontend.webp" alt="PromptVault" class="h-14 w-14 mx-auto mb-4 border-2 border-gray-400 rounded-lg shadow-lg" />
+        <img
+          src="/static/images/promptvault_logo_frontend.webp"
+          alt="PromptVault"
+          class="h-14 w-14 mx-auto mb-4 border-2 border-gray-400 rounded-lg shadow-lg"
+        />
         <h1 class="text-4xl font-bold text-gray-900 mb-2">PromptVault</h1>
         <p class="text-gray-600" data-i18n="auth.register.subtitle">Register for a new account</p>
       </div>
 
       <!-- Register Card -->
       <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-8 max-w-md w-full">
-        <h2 class="text-2xl font-bold text-gray-900 mb-6" data-i18n="auth.register.title">Create Account</h2>
+        <h2 class="text-2xl font-bold text-gray-900 mb-6" data-i18n="auth.register.title">
+          Create Account
+        </h2>
 
         <form id="register-form" class="space-y-5" novalidate>
-
           <!-- Username Input -->
           <div>
-            <label for="username" class="block text-sm font-medium text-gray-900 mb-2" data-i18n="auth.register.username">
+            <label
+              for="username"
+              class="block text-sm font-medium text-gray-900 mb-2"
+              data-i18n="auth.register.username"
+            >
               Username
             </label>
             <input
@@ -49,7 +57,11 @@
               aria-describedby="username-error username-help"
               class="w-full px-4 py-2 border-2 border-gray-200 rounded-md bg-gray-100 focus:border-blue-500 focus:bg-white focus:outline-none transition-colors duration-200"
             />
-            <small class="block text-xs text-gray-500 mt-1" id="username-help" data-i18n="auth.register.usernameHelp">
+            <small
+              class="block text-xs text-gray-500 mt-1"
+              id="username-help"
+              data-i18n="auth.register.usernameHelp"
+            >
               3-50 characters, letters, numbers, underscore, and hyphen only
             </small>
             <div
@@ -62,7 +74,11 @@
 
           <!-- Email Input -->
           <div>
-            <label for="email" class="block text-sm font-medium text-gray-900 mb-2" data-i18n="auth.register.email">
+            <label
+              for="email"
+              class="block text-sm font-medium text-gray-900 mb-2"
+              data-i18n="auth.register.email"
+            >
               Email
             </label>
             <input
@@ -86,7 +102,11 @@
 
           <!-- Password Input -->
           <div>
-            <label for="password" class="block text-sm font-medium text-gray-900 mb-2" data-i18n="auth.register.password">
+            <label
+              for="password"
+              class="block text-sm font-medium text-gray-900 mb-2"
+              data-i18n="auth.register.password"
+            >
               Password
             </label>
             <div class="relative">
@@ -128,7 +148,11 @@
 
           <!-- Confirm Password Input -->
           <div>
-            <label for="confirm-password" class="block text-sm font-medium text-gray-900 mb-2" data-i18n="auth.register.confirmPassword">
+            <label
+              for="confirm-password"
+              class="block text-sm font-medium text-gray-900 mb-2"
+              data-i18n="auth.register.confirmPassword"
+            >
               Confirm Password
             </label>
             <div class="relative">
@@ -163,7 +187,10 @@
 
           <!-- Password Policy Requirements -->
           <div id="password-policy" class="bg-gray-50 border border-gray-200 rounded-md p-4">
-            <h3 class="text-sm font-medium text-gray-900 mb-2" data-i18n="auth.register.passwordPolicy">
+            <h3
+              class="text-sm font-medium text-gray-900 mb-2"
+              data-i18n="auth.register.passwordPolicy"
+            >
               Password Requirements:
             </h3>
             <ul class="space-y-1 text-sm">
@@ -212,7 +239,6 @@
           </p>
         </form>
       </div>
-
     </div>
 
     {{ scripts.load_scripts('auth', true, 'auth', true) }}
