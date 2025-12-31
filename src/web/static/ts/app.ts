@@ -15,6 +15,7 @@ import '@/form-validation';
 import type { PromptResponse, PromptListResponse } from '@/types';
 import type { TranslationKey } from '@/types/i18n';
 import { initI18n, t, tUnsafe, updateStaticTranslations } from '@/utils/i18n';
+import { apiFetch, apiGet, apiPostForm, APIRequestError } from '@/utils/api';
 
 interface TagInfo {
   name: string;
@@ -172,39 +173,31 @@ async function initializeApp(): Promise<void> {
 
 async function checkAdminAccess(): Promise<void> {
   try {
-    const response = await fetch('/api/auth/me', {
-      credentials: 'include',
-    });
+    const data = await apiGet<{ role?: string }>('/api/auth/me');
 
-    if (response.ok) {
-      const data = (await response.json()) as { role?: string };
+    // Authentication successful - show the app
+    const loadingOverlay = document.getElementById('auth-loading-overlay');
+    const appDiv = document.querySelector('.app') as HTMLElement | null;
+    if (loadingOverlay) loadingOverlay.style.display = 'none';
+    if (appDiv) appDiv.style.display = 'block';
 
-      // Authentication successful - show the app
-      const loadingOverlay = document.getElementById('auth-loading-overlay');
-      const appDiv = document.querySelector('.app') as HTMLElement | null;
-      if (loadingOverlay) loadingOverlay.style.display = 'none';
-      if (appDiv) appDiv.style.display = 'block';
-
-      if (data.role === 'admin') {
-        const adminBtn = document.getElementById('admin-btn');
-        const adminBtnMobile = document.getElementById('admin-btn-mobile');
-        if (adminBtn) {
-          adminBtn.style.display = '';
-        }
-        if (adminBtnMobile) {
-          adminBtnMobile.style.display = '';
-        }
+    if (data.role === 'admin') {
+      const adminBtn = document.getElementById('admin-btn');
+      const adminBtnMobile = document.getElementById('admin-btn-mobile');
+      if (adminBtn) {
+        adminBtn.style.display = '';
       }
-    } else if (response.status === 401) {
-      // Session revoked or expired, redirect to login immediately
-      window.location.href = '/auth/login';
-    } else {
-      // For other errors, also redirect to login for security
-      window.location.href = '/auth/login';
+      if (adminBtnMobile) {
+        adminBtnMobile.style.display = '';
+      }
     }
   } catch (error) {
-    reportAppIssue('checkAdminAccess', error);
-    // On error, redirect to login for security
+    if (error instanceof APIRequestError) {
+      reportAppIssue('checkAdminAccess', error);
+    } else {
+      reportAppIssue('checkAdminAccess', error);
+    }
+    // On error, redirect to login for security (apiFetch already handles 401 with redirect)
     window.location.href = '/auth/login';
   }
 }
@@ -371,8 +364,7 @@ function setupEventListeners(): void {
 
 async function loadPrompts(): Promise<void> {
   try {
-    const response = await fetch('/api/prompts');
-    const data = (await response.json()) as PromptListResponse;
+    const data = await apiGet<PromptListResponse>('/api/prompts');
 
     // Hide search results info when loading all prompts initially
     const searchResultsInfo = document.getElementById('search-results-info');
@@ -388,8 +380,7 @@ async function loadPrompts(): Promise<void> {
 
 async function loadCategories(): Promise<void> {
   try {
-    const response = await fetch('/api/categories');
-    const data = (await response.json()) as { categories: string[] };
+    const data = await apiGet<{ categories: string[] }>('/api/categories');
     renderCategories(data.categories || []);
   } catch (error) {
     reportAppIssue('loadCategories', error);
@@ -398,8 +389,7 @@ async function loadCategories(): Promise<void> {
 
 async function loadTags(): Promise<void> {
   try {
-    const response = await fetch('/api/tags');
-    const data = (await response.json()) as { tags: TagInfo[] };
+    const data = await apiGet<{ tags: TagInfo[] }>('/api/tags');
     renderTags(data.tags || []);
   } catch (error) {
     reportAppIssue('loadTags', error);
@@ -432,7 +422,8 @@ function renderPrompts(prompts: Record<string, PromptResponse>): void {
 
 function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement {
   const div = document.createElement('div');
-  div.className = 'prompt-item bg-white rounded-lg border border-gray-200 p-4 transition-all hover:scale-[1.02] cursor-pointer';
+  div.className =
+    'prompt-item bg-white rounded-lg border border-gray-200 p-4 transition-all hover:scale-[1.02] cursor-pointer';
   div.dataset.id = id;
 
   // Add selected class if prompt is in selection
@@ -453,9 +444,15 @@ function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement
   });
 
   // Build tags HTML
-  const tagsHTML = prompt.tags && prompt.tags.length > 0
-    ? prompt.tags.map(tag => `<span class="px-2 py-1 text-xs font-medium rounded-md" style="background-color: #F3F4F6; color: #6B7280;">${tag}</span>`).join('')
-    : '';
+  const tagsHTML =
+    prompt.tags && prompt.tags.length > 0
+      ? prompt.tags
+          .map(
+            (tag) =>
+              `<span class="px-2 py-1 text-xs font-medium rounded-md" style="background-color: #F3F4F6; color: #6B7280;">${tag}</span>`
+          )
+          .join('')
+      : '';
 
   div.innerHTML = `
         <div class="flex items-start justify-between mb-3">
@@ -682,11 +679,7 @@ async function copyPrompt(id: PromptId): Promise<void> {
   }
 
   try {
-    const response = await fetch(`/api/prompts/${id}`);
-    if (!response.ok) {
-      throw new Error(`Failed to load prompt ${id}: ${response.status}`);
-    }
-    const prompt = (await response.json()) as PromptResponse;
+    const prompt = await apiGet<PromptResponse>(`/api/prompts/${id}`);
     promptCache[id] = prompt;
     copyTextToClipboard(prompt.prompt, id);
   } catch (error) {
@@ -753,7 +746,7 @@ function showCopyFeedback(id: PromptId, message: string): void {
   if (btn) {
     const originalText = btn.textContent ?? '';
     // Use translated message if it's a key, otherwise use as-is
-  const translatedMessage = tUnsafe(message) !== message ? tUnsafe(message) : message;
+    const translatedMessage = tUnsafe(message) !== message ? tUnsafe(message) : message;
     btn.textContent = translatedMessage;
     setTimeout(() => (btn.textContent = originalText), 2000);
   }
@@ -761,11 +754,7 @@ function showCopyFeedback(id: PromptId, message: string): void {
 
 async function editPrompt(id: PromptId): Promise<void> {
   try {
-    const response = await fetch(`/api/prompts/${id}`);
-    if (!response.ok) {
-      throw new Error(`Failed to load prompt ${id}: ${response.status}`);
-    }
-    const prompt = (await response.json()) as PromptResponse;
+    const prompt = await apiGet<PromptResponse>(`/api/prompts/${id}`);
 
     promptCache[id] = prompt;
 
@@ -802,17 +791,11 @@ async function deletePrompt(id: PromptId): Promise<void> {
   }
 
   try {
-    const response = await fetch(`/api/prompts/${id}`, {
-      method: 'DELETE',
-    });
-
-    if (response.ok) {
-      void loadPrompts(); // Refresh the list
-      void loadAvailableTags(); // Refresh tag counts for autocomplete
-      void loadTags(); // Refresh sidebar tag list
-    } else {
-      alert(t('messages.error'));
-    }
+    await apiFetch<void>(`/api/prompts/${id}`, { method: 'DELETE' });
+    // If we get here, delete succeeded (apiFetch throws on error)
+    void loadPrompts(); // Refresh the list
+    void loadAvailableTags(); // Refresh tag counts for autocomplete
+    void loadTags(); // Refresh sidebar tag list
   } catch (error) {
     reportAppIssue('deletePrompt', error, { promptId: id });
     alert(t('messages.error'));
@@ -835,33 +818,11 @@ async function toggleFavorite(id: PromptId): Promise<void> {
     }
 
     // Make API call to persist the change
-    const response = await fetch(`/api/prompts/${id}/favorite`, {
+    await apiFetch<void>(`/api/prompts/${id}/favorite`, {
       method: 'PUT',
     });
-
-    if (!response.ok) {
-      // Revert optimistic update on error
-      const favoriteBtn = document.querySelector<HTMLButtonElement>(
-        `.favorite-btn[data-id="${id}"]`
-      );
-      if (favoriteBtn) {
-        const currentIcon = favoriteBtn.textContent ?? '';
-        const revertedIcon = currentIcon === '★' ? '☆' : '★';
-        favoriteBtn.textContent = revertedIcon;
-
-        // Also revert the cached prompt data
-        if (promptCache[id]) {
-          promptCache[id].favorite = !promptCache[id].favorite;
-        }
-      }
-
-      const errorData = (await response.json()) as { error?: string };
-      alert(`${t('messages.error')}: ${errorData.error || t('messages.unknownError')}`);
-    } else {
-      await response.json();
-    }
   } catch (error) {
-    // Revert optimistic update on network error
+    // Revert optimistic update on error
     const favoriteBtn = document.querySelector<HTMLButtonElement>(`.favorite-btn[data-id="${id}"]`);
     if (favoriteBtn) {
       const currentIcon = favoriteBtn.textContent ?? '';
@@ -884,7 +845,9 @@ function handleCategoryFilter(event: Event): void {
   if (target?.tagName === 'LI') {
     // Update active state in both desktop and mobile lists
     document.querySelectorAll('#categories-list li').forEach((li) => li.classList.remove('active'));
-    document.querySelectorAll('#categories-list-mobile li').forEach((li) => li.classList.remove('active'));
+    document
+      .querySelectorAll('#categories-list-mobile li')
+      .forEach((li) => li.classList.remove('active'));
 
     // Add active to the clicked item
     target.classList.add('active');
@@ -892,7 +855,9 @@ function handleCategoryFilter(event: Event): void {
     // Sync the corresponding item in the other list
     const category = target.dataset.category || 'all';
     const desktopItem = document.querySelector(`#categories-list li[data-category="${category}"]`);
-    const mobileItem = document.querySelector(`#categories-list-mobile li[data-category="${category}"]`);
+    const mobileItem = document.querySelector(
+      `#categories-list-mobile li[data-category="${category}"]`
+    );
 
     if (desktopItem) desktopItem.classList.add('active');
     if (mobileItem) mobileItem.classList.add('active');
@@ -908,7 +873,9 @@ function handleTagFilter(event: Event): void {
   if (target?.tagName === 'LI') {
     // Update active state in both desktop and mobile lists
     document.querySelectorAll('#tags-list li').forEach((li) => li.classList.remove('active'));
-    document.querySelectorAll('#tags-list-mobile li').forEach((li) => li.classList.remove('active'));
+    document
+      .querySelectorAll('#tags-list-mobile li')
+      .forEach((li) => li.classList.remove('active'));
 
     // Add active to the clicked item
     target.classList.add('active');
@@ -935,7 +902,9 @@ function handleFavoritesFilter(event: Event): void {
 
   // Sync both checkboxes (desktop and mobile)
   const favoritesFilter = document.getElementById('favorites-filter') as HTMLInputElement | null;
-  const favoritesFilterMobile = document.getElementById('favorites-filter-mobile') as HTMLInputElement | null;
+  const favoritesFilterMobile = document.getElementById(
+    'favorites-filter-mobile'
+  ) as HTMLInputElement | null;
 
   if (favoritesFilter && target.id !== 'favorites-filter') {
     favoritesFilter.checked = searchState.favorites;
@@ -974,7 +943,9 @@ function setupSearchEventListeners() {
   }
 
   // Search input (mobile)
-  const searchInputMobile = document.getElementById('search-input-mobile') as HTMLInputElement | null;
+  const searchInputMobile = document.getElementById(
+    'search-input-mobile'
+  ) as HTMLInputElement | null;
   if (searchInputMobile) {
     searchInputMobile.addEventListener('input', handleSearchInput);
     searchInputMobile.addEventListener('keydown', function (event) {
@@ -990,7 +961,9 @@ function setupSearchEventListeners() {
   if (clearSearchBtn) {
     clearSearchBtn.addEventListener('click', function () {
       const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
-      const searchInputMobile = document.getElementById('search-input-mobile') as HTMLInputElement | null;
+      const searchInputMobile = document.getElementById(
+        'search-input-mobile'
+      ) as HTMLInputElement | null;
       if (searchInput) searchInput.value = '';
       if (searchInputMobile) searchInputMobile.value = '';
       searchState.searchTerm = '';
@@ -1006,7 +979,9 @@ function setupSearchEventListeners() {
   if (clearSearchBtnMobile) {
     clearSearchBtnMobile.addEventListener('click', function () {
       const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
-      const searchInputMobile = document.getElementById('search-input-mobile') as HTMLInputElement | null;
+      const searchInputMobile = document.getElementById(
+        'search-input-mobile'
+      ) as HTMLInputElement | null;
       if (searchInput) searchInput.value = '';
       if (searchInputMobile) searchInputMobile.value = '';
       searchState.searchTerm = '';
@@ -1026,7 +1001,9 @@ function setupSearchEventListeners() {
       const target = event.target as HTMLInputElement | null;
       searchState.caseSensitive = target?.checked ?? false;
       // Sync mobile checkbox
-      const caseSensitiveToggleMobile = document.getElementById('case-sensitive-toggle-mobile') as HTMLInputElement | null;
+      const caseSensitiveToggleMobile = document.getElementById(
+        'case-sensitive-toggle-mobile'
+      ) as HTMLInputElement | null;
       if (caseSensitiveToggleMobile) caseSensitiveToggleMobile.checked = searchState.caseSensitive;
       void performSearch();
     });
@@ -1041,7 +1018,9 @@ function setupSearchEventListeners() {
       const target = event.target as HTMLInputElement | null;
       searchState.caseSensitive = target?.checked ?? false;
       // Sync desktop checkbox
-      const caseSensitiveToggle = document.getElementById('case-sensitive-toggle') as HTMLInputElement | null;
+      const caseSensitiveToggle = document.getElementById(
+        'case-sensitive-toggle'
+      ) as HTMLInputElement | null;
       if (caseSensitiveToggle) caseSensitiveToggle.checked = searchState.caseSensitive;
       void performSearch();
     });
@@ -1070,9 +1049,12 @@ function handleSearchInput(event: Event): void {
 
   // Sync both search inputs (desktop and mobile)
   const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
-  const searchInputMobile = document.getElementById('search-input-mobile') as HTMLInputElement | null;
+  const searchInputMobile = document.getElementById(
+    'search-input-mobile'
+  ) as HTMLInputElement | null;
   if (searchInput && target.id !== 'search-input') searchInput.value = searchTerm;
-  if (searchInputMobile && target.id !== 'search-input-mobile') searchInputMobile.value = searchTerm;
+  if (searchInputMobile && target.id !== 'search-input-mobile')
+    searchInputMobile.value = searchTerm;
 
   // Show/hide clear search button
   const clearSearchBtn = document.getElementById('clear-search-btn');
@@ -1133,14 +1115,8 @@ async function performSearch(): Promise<void> {
       params.append('case_sensitive', 'true');
     }
 
-    // Make API call
-    const response = await fetch(`/api/prompts/search?${params.toString()}`);
-
-    if (!response.ok) {
-      throw new Error(`Search failed: ${response.status}`);
-    }
-
-    const data = (await response.json()) as PromptListResponse;
+    // Make API call with automatic token refresh
+    const data = await apiGet<PromptListResponse>(`/api/prompts/search?${params.toString()}`);
 
     // Update prompts list
     renderPrompts(data.prompts || {});
@@ -1183,7 +1159,8 @@ function updateSearchResultsInfo(prompts: Record<string, PromptResponse>): void 
   if (resultCount === 0) {
     // Show "No results found" message
     if (searchResultsInfo) {
-      searchResultsInfo.className = 'mb-4 px-4 py-3 bg-amber-50 border border-amber-200 text-amber-800 rounded-lg text-sm';
+      searchResultsInfo.className =
+        'mb-4 px-4 py-3 bg-amber-50 border border-amber-200 text-amber-800 rounded-lg text-sm';
       searchResultsInfo.textContent = t('search.noResultsInfo');
       showElement(searchResultsInfo);
     }
@@ -1313,7 +1290,9 @@ function clearAllFilters(): void {
   }
 
   // Reset UI elements (mobile)
-  const searchInputMobile = document.getElementById('search-input-mobile') as HTMLInputElement | null;
+  const searchInputMobile = document.getElementById(
+    'search-input-mobile'
+  ) as HTMLInputElement | null;
   if (searchInputMobile) {
     searchInputMobile.value = '';
   }
@@ -1330,7 +1309,9 @@ function clearAllFilters(): void {
     caseSensitiveToggleMobile.checked = false;
   }
 
-  const favoritesFilterMobile = document.getElementById('favorites-filter-mobile') as HTMLInputElement | null;
+  const favoritesFilterMobile = document.getElementById(
+    'favorites-filter-mobile'
+  ) as HTMLInputElement | null;
   if (favoritesFilterMobile) {
     favoritesFilterMobile.checked = false;
   }
@@ -1343,11 +1324,17 @@ function clearAllFilters(): void {
   document.querySelector('[data-tag="all"]')?.classList.add('active');
 
   // Reset active states in sidebar (mobile)
-  document.querySelectorAll('#categories-list-mobile li').forEach((li) => li.classList.remove('active'));
-  document.querySelectorAll('#categories-list-mobile [data-category="all"]').forEach((li) => li.classList.add('active'));
+  document
+    .querySelectorAll('#categories-list-mobile li')
+    .forEach((li) => li.classList.remove('active'));
+  document
+    .querySelectorAll('#categories-list-mobile [data-category="all"]')
+    .forEach((li) => li.classList.add('active'));
 
   document.querySelectorAll('#tags-list-mobile li').forEach((li) => li.classList.remove('active'));
-  document.querySelectorAll('#tags-list-mobile [data-tag="all"]').forEach((li) => li.classList.add('active'));
+  document
+    .querySelectorAll('#tags-list-mobile [data-tag="all"]')
+    .forEach((li) => li.classList.add('active'));
 
   // Hide clear filters button and search results info
   const clearAllFiltersBtn = document.getElementById('clear-all-filters-btn');
@@ -1406,7 +1393,8 @@ async function loadVersionHistory(promptId: number): Promise<void> {
   try {
     const versionList = document.getElementById('version-list');
     if (versionList) {
-      versionList.innerHTML = '<div class="text-center text-gray-500 py-8">' + t('messages.loading') + '</div>';
+      versionList.innerHTML =
+        '<div class="text-center text-gray-500 py-8">' + t('messages.loading') + '</div>';
     }
 
     // Check cache first
@@ -1418,12 +1406,7 @@ async function loadVersionHistory(promptId: number): Promise<void> {
       return;
     }
 
-    const response = await fetch(`/api/prompts/${promptId}/versions`);
-    if (!response.ok) {
-      throw new Error('Failed to load version history');
-    }
-
-    const data = (await response.json()) as VersionHistoryResponse;
+    const data = await apiGet<VersionHistoryResponse>(`/api/prompts/${promptId}/versions`);
 
     // Cache the result
     versionCache[cacheKey] = {
@@ -1440,7 +1423,8 @@ async function loadVersionHistory(promptId: number): Promise<void> {
     reportAppIssue('loadVersionHistory', error, { promptId });
     const versionList = document.getElementById('version-list');
     if (versionList) {
-      versionList.innerHTML = '<div class="text-center text-red-600 py-8">Error loading versions</div>';
+      versionList.innerHTML =
+        '<div class="text-center text-red-600 py-8">Error loading versions</div>';
     }
   }
 }
@@ -1452,7 +1436,8 @@ function renderVersionHistory(versions: VersionSummary[]): void {
   }
 
   if (versions.length === 0) {
-    versionList.innerHTML = '<div class="text-center text-gray-500 py-8">' + t('version.noVersions') + '</div>';
+    versionList.innerHTML =
+      '<div class="text-center text-gray-500 py-8">' + t('version.noVersions') + '</div>';
     return;
   }
 
@@ -1469,7 +1454,8 @@ function createVersionItem(
   totalVersions: number
 ): HTMLDivElement {
   const div = document.createElement('div');
-  div.className = 'version-item bg-white border border-gray-200 rounded-lg p-4 cursor-pointer hover:bg-gray-50 transition-colors';
+  div.className =
+    'version-item bg-white border border-gray-200 rounded-lg p-4 cursor-pointer hover:bg-gray-50 transition-colors';
   div.dataset.versionId = version.version_id;
 
   // Format timestamp with fallback for invalid dates
@@ -1565,17 +1551,10 @@ async function performRevert(versionId: string): Promise<void> {
     const formData = new FormData();
     formData.append('commit_message', commitMessage);
 
-    const response = await fetch(
+    await apiPostForm<void>(
       `/api/prompts/${currentVersionPromptId}/versions/${versionId}/revert`,
-      {
-        method: 'POST',
-        body: formData,
-      }
+      formData
     );
-
-    if (!response.ok) {
-      throw new Error('Failed to revert version');
-    }
 
     hideRevertConfirmationModal();
     showNotification(t('version.revertSuccess'), 'success');
@@ -1674,7 +1653,8 @@ async function updateDiff(): Promise<void> {
   if (v1 === v2) {
     const diffView = document.getElementById('diff-view');
     if (diffView) {
-      diffView.innerHTML = '<div class="text-center text-gray-500 py-8">Select different versions to compare</div>';
+      diffView.innerHTML =
+        '<div class="text-center text-gray-500 py-8">Select different versions to compare</div>';
     }
     return;
   }
@@ -1689,7 +1669,8 @@ async function loadAndDisplayDiff(v1Id: string, v2Id: string): Promise<void> {
     }
     const diffView = document.getElementById('diff-view');
     if (diffView) {
-      diffView.innerHTML = '<div class="text-center text-gray-500 py-8">' + t('messages.loading') + '</div>';
+      diffView.innerHTML =
+        '<div class="text-center text-gray-500 py-8">' + t('messages.loading') + '</div>';
     }
 
     // Check cache first
@@ -1699,14 +1680,9 @@ async function loadAndDisplayDiff(v1Id: string, v2Id: string): Promise<void> {
       return;
     }
 
-    const response = await fetch(
+    const diff = await apiGet<VersionDiffResponse>(
       `/api/prompts/${currentVersionPromptId}/versions/compare?v1=${v1Id}&v2=${v2Id}`
     );
-    if (!response.ok) {
-      throw new Error('Failed to load diff');
-    }
-
-    const diff = (await response.json()) as VersionDiffResponse;
 
     // Cache the result
     diffCache[cacheKey] = {
@@ -1736,7 +1712,8 @@ function displayDiff(diff: VersionDiffResponse): void {
   diffView.innerHTML = '';
 
   if (!diff.changes || Object.keys(diff.changes).length === 0) {
-    diffView.innerHTML = '<div class="text-center text-gray-500 py-8">No changes between these versions</div>';
+    diffView.innerHTML =
+      '<div class="text-center text-gray-500 py-8">No changes between these versions</div>';
     return;
   }
 
@@ -1947,8 +1924,7 @@ let tagAutocompleteState = {
 
 async function loadAvailableTags(): Promise<void> {
   try {
-    const response = await fetch('/api/tags');
-    const data = (await response.json()) as { tags: TagInfo[] };
+    const data = await apiGet<{ tags: TagInfo[] }>('/api/tags');
     // Store tags with counts
     availableTags = data.tags || [];
   } catch (error) {
@@ -2087,7 +2063,8 @@ function showTagAutocomplete(filteredTags: TagInfo[]) {
       const tagCount = tag.count;
 
       const item = document.createElement('div');
-      item.className = 'tag-autocomplete-item px-4 py-2 cursor-pointer hover:bg-gray-50 transition-colors flex items-center justify-between';
+      item.className =
+        'tag-autocomplete-item px-4 py-2 cursor-pointer hover:bg-gray-50 transition-colors flex items-center justify-between';
       item.dataset.index = String(index);
       item.dataset.tagName = tagName;
 
@@ -2393,19 +2370,14 @@ async function performBulkDelete(): Promise<void> {
   const promptIdsArray = Array.from(selectedPromptIds);
 
   try {
-    const response = await fetch('/api/prompts/bulk', {
+    const result = await apiFetch<BulkDeleteResponse>('/api/prompts/bulk', {
       method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify({
         prompt_ids: promptIdsArray,
       }),
     });
 
-    const result = (await response.json()) as BulkDeleteResponse;
-
-    if (response.ok && result.success) {
+    if (result.success) {
       hideBulkDeleteModal();
       clearSelection();
 

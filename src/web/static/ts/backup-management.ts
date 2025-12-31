@@ -14,6 +14,7 @@ import '@/form-validation';
 import { changeLanguage, initI18n, t, updateStaticTranslations } from '@/utils/i18n';
 import type { TranslationKey } from '@/types/i18n';
 import { hideElement, showElement } from '@/utils/dom';
+import { apiFetch, apiGet, apiPost, APIRequestError } from '@/utils/api';
 
 interface BackupItem {
   backup_id: string;
@@ -30,6 +31,33 @@ interface BackupStats {
   compressed_count?: number;
   newest_backup?: string | null;
   oldest_backup?: string | null;
+}
+
+interface BackupResponse {
+  success: boolean;
+  backup_id?: string;
+}
+
+interface RestoreResponse {
+  success: boolean;
+}
+
+interface DeleteResponse {
+  success: boolean;
+}
+
+interface CleanupResponse {
+  success: boolean;
+  removed_count?: number;
+}
+
+interface CompressResponse {
+  success: boolean;
+  compressed_count?: number;
+}
+
+interface AuthResponse {
+  role?: string;
 }
 
 const BACKUP_COMPONENT = 'backupManagement';
@@ -67,8 +95,7 @@ function handleLanguageChange(event: Event): void {
 
 async function loadBackups(): Promise<void> {
   try {
-    const response = await fetch('/api/backups');
-    const data = await response.json();
+    const data = await apiGet<{ backups: BackupItem[] }>('/api/backups');
 
     currentBackups = data.backups || [];
     renderBackupList(currentBackups);
@@ -80,8 +107,7 @@ async function loadBackups(): Promise<void> {
 
 async function loadBackupStats(): Promise<void> {
   try {
-    const response = await fetch('/api/backups/stats');
-    const stats = (await response.json()) as BackupStats;
+    const stats = (await apiGet('/api/backups/stats')) as BackupStats;
     updateStatsDisplay(stats);
   } catch (error) {
     reportError(BACKUP_COMPONENT, 'loadBackupStats', error);
@@ -162,12 +188,10 @@ async function createBackup(): Promise<void> {
     const formData = new FormData();
     formData.append('name', backupName);
 
-    const response = await fetch('/api/backups', {
+    const result = await apiFetch<BackupResponse>('/api/backups', {
       method: 'POST',
       body: formData,
     });
-
-    const result = await response.json();
 
     if (result.success) {
       showStatus('backup-status', `Backup created successfully: ${result.backup_id}`, 'success');
@@ -217,11 +241,7 @@ async function confirmRestore(): Promise<void> {
   showProgress('backup-progress', 'Restoring backup...');
 
   try {
-    const response = await fetch(`/api/backups/${backupIdToRestore}/restore`, {
-      method: 'POST',
-    });
-
-    const result = await response.json();
+    const result = await apiPost<RestoreResponse>(`/api/backups/${backupIdToRestore}/restore`);
 
     if (result.success) {
       showStatus('backup-status', t('backup.restoreSuccess'), 'success');
@@ -272,11 +292,9 @@ async function confirmDelete(): Promise<void> {
   showProgress('backup-progress', 'Deleting backup...');
 
   try {
-    const response = await fetch(`/api/backups/${backupIdToDelete}`, {
+    const result = await apiFetch<DeleteResponse>(`/api/backups/${backupIdToDelete}`, {
       method: 'DELETE',
     });
-
-    const result = await response.json();
 
     if (result.success) {
       showStatus('backup-status', t('backup.deleteSuccess'), 'success');
@@ -303,17 +321,15 @@ async function cleanupBackups(): Promise<void> {
     const formData = new FormData();
     formData.append('retention_days', retentionDays);
 
-    const response = await fetch('/api/backups/cleanup', {
+    const result = await apiFetch<CleanupResponse>('/api/backups/cleanup', {
       method: 'POST',
       body: formData,
     });
 
-    const result = await response.json();
-
     if (result.success) {
       showStatus(
         'maintenance-status',
-        `Cleanup completed: ${result.removed_count} backups removed`,
+        `Cleanup completed: ${result.removed_count || 0} backups removed`,
         'success'
       );
       void loadBackups();
@@ -339,17 +355,15 @@ async function compressBackups(): Promise<void> {
     const formData = new FormData();
     formData.append('days_threshold', compressDays);
 
-    const response = await fetch('/api/backups/compress', {
+    const result = await apiFetch<CompressResponse>('/api/backups/compress', {
       method: 'POST',
       body: formData,
     });
 
-    const result = await response.json();
-
     if (result.success) {
       showStatus(
         'maintenance-status',
-        `Compression completed: ${result.compressed_count} backups compressed`,
+        `Compression completed: ${result.compressed_count || 0} backups compressed`,
         'success'
       );
       void loadBackups();
@@ -408,7 +422,8 @@ function showStatus(elementId: string, message: string, type: 'info' | 'success'
   if (!element) return;
 
   element.textContent = message;
-  const colorClass = type === 'success' ? 'text-green-600' : type === 'error' ? 'text-red-600' : 'text-blue-600';
+  const colorClass =
+    type === 'success' ? 'text-green-600' : type === 'error' ? 'text-red-600' : 'text-blue-600';
   element.className = `text-sm ${colorClass} mt-2`;
 
   const container = element.parentElement;
@@ -464,26 +479,20 @@ function setRestoreInProgress(isRestoring: boolean, messageKey?: TranslationKey)
 
 async function checkAdminAccess(): Promise<void> {
   try {
-    const response = await fetch('/api/auth/me', {
-      credentials: 'include',
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      if (data.role === 'admin') {
-        const adminBtn = document.getElementById('admin-btn');
-        if (adminBtn) {
-          (adminBtn as HTMLElement).style.display = '';
-        }
+    const data = await apiGet<AuthResponse>('/api/auth/me');
+    if (data.role === 'admin') {
+      const adminBtn = document.getElementById('admin-btn');
+      if (adminBtn) {
+        (adminBtn as HTMLElement).style.display = '';
       }
-    } else if (response.status === 401) {
+    }
+  } catch (error) {
+    reportError(BACKUP_COMPONENT, 'checkAdminAccess', error);
+    if (error instanceof APIRequestError && error.status === 401) {
       window.location.href = '/auth/login';
     } else {
       window.location.href = '/auth/login';
     }
-  } catch (error) {
-    reportError(BACKUP_COMPONENT, 'checkAdminAccess', error);
-    window.location.href = '/auth/login';
   }
 }
 

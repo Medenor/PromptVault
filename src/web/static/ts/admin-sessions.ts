@@ -8,10 +8,13 @@
  * Admin session management logic
  */
 
+/* global document, window */
+
 import '../css/tailwind-globals.css';
 import { reportError } from '@/telemetry';
 import { changeLanguage, initI18n, updateStaticTranslations, t } from '@/utils/i18n';
 import { showNotification } from '@/utils/notifications';
+import { apiGet, apiDelete, APIRequestError } from '@/utils/api';
 
 const API_BASE = '/api/admin';
 const HIDDEN_CLASS = 'hidden';
@@ -40,12 +43,6 @@ let currentFilters = {
   user: 'all',
 };
 let currentSession: { userId: string; sessionId: string; username: string } | null = null;
-
-function getAuthHeaders(): HeadersInit {
-  return {
-    'Content-Type': 'application/json',
-  };
-}
 
 function formatDate(dateString?: string | null): string {
   if (!dateString) return 'Never';
@@ -145,7 +142,9 @@ function displaySessions(): void {
       const sessionId = session.id;
       const rowClass = session.is_current ? 'bg-blue-50 hover:bg-blue-100' : 'hover:bg-gray-50';
       const textClass = session.is_current ? 'font-semibold' : '';
-      const currentBadge = session.is_current ? `<span class="ml-2 px-2 py-1 bg-blue-500 text-white text-xs rounded font-medium">${t('admin.sessions.currentBadge')}</span>` : '';
+      const currentBadge = session.is_current
+        ? `<span class="ml-2 px-2 py-1 bg-blue-500 text-white text-xs rounded font-medium">${t('admin.sessions.currentBadge')}</span>`
+        : '';
 
       return `
         <tr class="${rowClass}">
@@ -174,22 +173,7 @@ async function loadAllSessions(): Promise<void> {
   }
 
   try {
-    const usersResponse = await fetch(`${API_BASE}/users?limit=1000`, {
-      credentials: 'include',
-      headers: getAuthHeaders(),
-    });
-
-    if (!usersResponse.ok) {
-      if (usersResponse.status === 401) {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        window.location.href = '/auth/login';
-        return;
-      }
-      throw new Error('Failed to load users');
-    }
-
-    const usersData = (await usersResponse.json()) as { users?: AdminUser[] };
+    const usersData = await apiGet<{ users?: AdminUser[] }>(`${API_BASE}/users?limit=1000`);
     const users = usersData.users || [];
 
     populateUserFilter(users);
@@ -197,20 +181,15 @@ async function loadAllSessions(): Promise<void> {
     allSessions = [];
     for (const user of users) {
       try {
-        const sessionsResponse = await fetch(`${API_BASE}/users/${user.id}/sessions`, {
-          credentials: 'include',
-          headers: getAuthHeaders(),
+        const sessionsData = await apiGet<{ sessions?: SessionItem[] }>(
+          `${API_BASE}/users/${user.id}/sessions`
+        );
+        const sessions = sessionsData.sessions || [];
+        sessions.forEach((session) => {
+          session.username = user.username;
+          session.userId = user.id;
+          allSessions.push(session);
         });
-
-        if (sessionsResponse.ok) {
-          const sessionsData = (await sessionsResponse.json()) as { sessions?: SessionItem[] };
-          const sessions = sessionsData.sessions || [];
-          sessions.forEach((session) => {
-            session.username = user.username;
-            session.userId = user.id;
-            allSessions.push(session);
-          });
-        }
       } catch (error) {
         reportError('admin-sessions', 'loadUserSessions', error, { userId: user.id });
       }
@@ -229,23 +208,17 @@ async function loadAllSessions(): Promise<void> {
 
 async function revokeSession(userId: string, sessionId: string, username: string): Promise<void> {
   try {
-    const response = await fetch(`${API_BASE}/users/${userId}/sessions/${sessionId}`, {
-      credentials: 'include',
-      method: 'DELETE',
-      headers: getAuthHeaders(),
-    });
-
-    if (response.ok) {
-      showNotification(`Session for ${username} revoked successfully`, 'success');
-      hideModal('confirm-revoke-modal');
-      await loadAllSessions();
-    } else {
-      const data = (await response.json()) as Record<string, string>;
-      showNotification(data.detail || 'Failed to revoke session', 'error');
-    }
+    await apiDelete(`${API_BASE}/users/${userId}/sessions/${sessionId}`);
+    showNotification(`Session for ${username} revoked successfully`, 'success');
+    hideModal('confirm-revoke-modal');
+    await loadAllSessions();
   } catch (error) {
-    reportError('admin-sessions', 'revokeSession', error, { userId, sessionId });
-    showNotification('Failed to revoke session', 'error');
+    if (error instanceof APIRequestError) {
+      showNotification(error.message || 'Failed to revoke session', 'error');
+    } else {
+      reportError('admin-sessions', 'revokeSession', error, { userId, sessionId });
+      showNotification('Failed to revoke session', 'error');
+    }
   }
 }
 
@@ -289,66 +262,45 @@ async function revokeAllSessions(): Promise<void> {
       (userFilter.selectedIndex >= 0 ? userFilter.options[userFilter.selectedIndex] : null);
     const selectedUserText = selectedOption?.text ?? '';
     if (
-      !window.confirm(
-        t('admin.sessions.confirmRevokeAllForUser', { username: selectedUserText })
-      )
+      !window.confirm(t('admin.sessions.confirmRevokeAllForUser', { username: selectedUserText }))
     ) {
       return;
     }
 
     try {
-      const response = await fetch(`${API_BASE}/users/${selectedUserId}/sessions`, {
-        method: 'DELETE',
-        credentials: 'include',
-        headers: getAuthHeaders(),
-      });
-
-      if (response.ok) {
-        const data = (await response.json()) as { revoked_count?: number };
-        showNotification(
-          `${data.revoked_count || 0} session(s) revoked for ${selectedUserText}`,
-          'success'
-        );
-        await loadAllSessions();
-      } else {
-        const data = (await response.json()) as Record<string, string>;
-        showNotification(data.detail || 'Failed to revoke sessions', 'error');
-      }
+      const data = await apiDelete<{ revoked_count?: number }>(
+        `${API_BASE}/users/${selectedUserId}/sessions`
+      );
+      showNotification(
+        `${data.revoked_count || 0} session(s) revoked for ${selectedUserText}`,
+        'success'
+      );
+      await loadAllSessions();
     } catch (error) {
-      reportError('admin-sessions', 'revokeAll', error, { userId: selectedUserId });
-      showNotification('Failed to revoke sessions', 'error');
+      if (error instanceof APIRequestError) {
+        showNotification(error.message || 'Failed to revoke sessions', 'error');
+      } else {
+        reportError('admin-sessions', 'revokeAll', error, { userId: selectedUserId });
+        showNotification('Failed to revoke sessions', 'error');
+      }
     }
   } else {
     // If no specific user is selected, revoke all sessions for all users
-    if (
-      !window.confirm(
-        t('admin.sessions.confirmRevokeAllForAllUsers')
-      )
-    ) {
+    if (!window.confirm(t('admin.sessions.confirmRevokeAllForAllUsers'))) {
       return;
     }
 
     try {
-      const response = await fetch(`${API_BASE}/sessions`, {
-        method: 'DELETE',
-        credentials: 'include',
-        headers: getAuthHeaders(),
-      });
-
-      if (response.ok) {
-        const data = (await response.json()) as { revoked_count?: number };
-        showNotification(
-          `${data.revoked_count || 0} session(s) revoked for all users`,
-          'success'
-        );
-        await loadAllSessions();
-      } else {
-        const data = (await response.json()) as Record<string, string>;
-        showNotification(data.detail || 'Failed to revoke sessions', 'error');
-      }
+      const data = await apiDelete<{ revoked_count?: number }>(`${API_BASE}/sessions`);
+      showNotification(`${data.revoked_count || 0} session(s) revoked for all users`, 'success');
+      await loadAllSessions();
     } catch (error) {
-      reportError('admin-sessions', 'revokeAll', error);
-      showNotification('Failed to revoke sessions', 'error');
+      if (error instanceof APIRequestError) {
+        showNotification(error.message || 'Failed to revoke sessions', 'error');
+      } else {
+        reportError('admin-sessions', 'revokeAll', error);
+        showNotification('Failed to revoke sessions', 'error');
+      }
     }
   }
 }
