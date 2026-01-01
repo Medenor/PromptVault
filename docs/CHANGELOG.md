@@ -7,7 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 🔄 Changed
+
+- **Version Comparison Enhancement**: Version diff modal now displays character-level changes with inline highlighting
+  - **Character-level precision**: Insertions shown with green background and bold text, deletions with red background and strikethrough
+  - **Improved granularity**: Easily identify punctuation fixes, typo corrections, and single character changes
+  - **Backend**: Implemented `diff-match-patch` algorithm for computing character-level diffs in `src/utils/diff_utils.py`
+  - **Frontend**: New `renderCharacterDiff` utility with Tailwind CSS styling for visual diff rendering
+  - **Backward compatible**: Falls back to old/new box display if character diff is unavailable
+  - **Test coverage**: 22 backend tests (95% coverage) + 13 frontend tests (100% coverage)
+  - **Documentation**: Updated `docs/VERSION_CONTROL.md` with character-level diff feature guide
+
 ### 🔧 Fixed
+
+- **Tags Not Persisting When Editing Prompts**: Fixed bug where modified tags were not saved during prompt updates
+  - **Root cause**: `update_prompt` function in `src/web/routers/prompts.py` was missing tag update logic
+  - **Fix**: Added tag parsing using `_parse_tags_field()`, created/retrieved tag objects with deduplication, and updated prompt tags
+  - **Testing**: Tag modifications now persist correctly, filtering by new tags works properly, and tags persist through page refreshes
+
+- **"undefined • undefined" Text Display in Tag Counter**: Fixed i18n initialization timing issue where translations were unavailable
+  - **Root cause**: Tag counter in `src/web/static/js/form_validation.js` was calling `i18next.t()` before i18next was fully initialized
+  - **Fix**: Added `safeTranslate()` helper function that checks i18next initialization status before translating, counter now only displays when valid translations are available
+  - **Affected functions**: Updated `refreshValidationText()` and `initTagFieldValidation()` to use safe translation
 
 - **Remember Me Token Persistence**: Fixed critical bug where users were logged out after 15 minutes despite checking "Remember Me"
   - **Root cause**: Access token cookie `max_age` was set to 15 minutes (matching JWT expiry), causing browser to delete cookie before refresh could occur

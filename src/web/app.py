@@ -48,6 +48,7 @@ from src.web.validators import (
 )
 from src.web.monitoring import ValidationMonitor
 from src.web.routers import auth_router, admin_router, prompts_router, pages_router
+from src.utils.diff_utils import compute_character_diff
 from src.web.routers.scheduler import router as scheduler_router
 from src.web.middleware.rate_limit import limiter, rate_limit_exceeded_handler
 from src.web.middleware.security_headers import SecurityHeadersMiddleware
@@ -1390,15 +1391,38 @@ async def compare_versions(prompt_id: str, v1: str = None, v2: str = None):
 
     diff = {"v1_id": v1, "v2_id": v2, "changes": {}}
 
-    fields = ["title", "prompt", "category", "tags", "note"]
-    for field in fields:
+    # String fields that get character-level diffs
+    string_fields = ["title", "prompt", "note"]
+    # Array/categorical fields that don't get diffs yet
+    other_fields = ["category", "tags"]
+
+    # Process string fields with character-level diffs
+    for field in string_fields:
+        val1 = data1.get(field)
+        val2 = data2.get(field)
+        if val1 != val2:
+            diff["changes"][field] = {
+                "old": val1,
+                "new": val2,
+                "diff": compute_character_diff(val1, val2)
+            }
+
+    # Process other fields without diffs (backward compatibility)
+    for field in other_fields:
         val1 = data1.get(field)
         val2 = data2.get(field)
         if val1 != val2:
             diff["changes"][field] = {"old": val1, "new": val2}
+
     # Ensure prompt key appears when comparing different versions
     if version1.get("version_id") != version2.get("version_id") and "prompt" not in diff["changes"]:
-        diff["changes"]["prompt"] = {"old": data1.get("prompt"), "new": data2.get("prompt")}
+        val1 = data1.get("prompt")
+        val2 = data2.get("prompt")
+        diff["changes"]["prompt"] = {
+            "old": val1,
+            "new": val2,
+            "diff": compute_character_diff(val1, val2)
+        }
 
     return JSONResponse(content=diff)
 

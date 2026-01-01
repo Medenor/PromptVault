@@ -671,10 +671,22 @@ async def update_prompt(
     if validated_data.category:
         category_obj = category_repo.get_or_create(validated_data.category)
 
+    # Parse and get or create tags
+    tag_list = _parse_tags_field(validated_data.tags)
+    tag_objects = []
+    seen = set()
+    for tag_name in tag_list:
+        if tag_name in seen:
+            continue
+        seen.add(tag_name)
+        tag_obj = tag_repo.get_or_create(tag_name)
+        tag_objects.append(tag_obj)
+
     # Update prompt
     existing_prompt.title = validated_data.title
     existing_prompt.prompt = validated_data.prompt
     existing_prompt.category_id = category_obj.id if category_obj else None
+    existing_prompt.tags = tag_objects
     existing_prompt.updated_at = datetime.now(timezone.utc)
 
     # Flush to ensure prompt is updated
