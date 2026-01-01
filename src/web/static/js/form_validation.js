@@ -45,6 +45,25 @@ import {
   getDuplicateTags,
 } from './validators.js';
 
+/**
+ * Safely translate a key with i18next, returning null if not available.
+ *
+ * @param {string} key - Translation key
+ * @param {object} options - Translation options (e.g., { count: 5 })
+ * @returns {string|null} - Translated text or null if i18next is not ready
+ */
+function safeTranslate(key, options = {}) {
+  if (window.i18next && i18next.isInitialized) {
+    const translated = i18next.t(key, options);
+    // i18next.t() returns the key itself if translation fails
+    // Only return the translation if it's not the key (indicating success)
+    if (translated && translated !== key) {
+      return translated;
+    }
+  }
+  return null;
+}
+
 function translateCharCounter(counterId, length, maxLength, required = false) {
   const counter = document.getElementById(counterId);
   if (!counter) return;
@@ -224,11 +243,17 @@ export function refreshValidationText() {
     const warningKey = remaining === 1 ? 'validation.tagRemaining' : 'validation.tagsRemaining';
 
     if (counter) {
-      let counterText = i18next.t(translationKey, { count: tagCount });
-      if (tagCount > 0) {
-        counterText += ' • ' + i18next.t(warningKey, { count: remaining });
+      const countText = safeTranslate(translationKey, { count: tagCount });
+      const remainingText = safeTranslate(warningKey, { count: remaining });
+
+      // Only update if translations are available
+      if (countText) {
+        let counterText = countText;
+        if (tagCount > 0 && remainingText) {
+          counterText += ' • ' + remainingText;
+        }
+        counter.textContent = counterText;
       }
-      counter.textContent = counterText;
     }
 
     if (duplicatesEl) {
@@ -290,12 +315,17 @@ export function initTagFieldValidation(fieldId, counterId, errorId, duplicatesId
       const remaining = MAX_TAG_COUNT - tagCount;
       const warningKey = remaining === 1 ? 'validation.tagRemaining' : 'validation.tagsRemaining';
 
-      let counterText = i18next.t(translationKey, { count: tagCount });
-      if (tagCount > 0) {
-        counterText += ' • ' + i18next.t(warningKey, { count: remaining });
-      }
+      const countText = safeTranslate(translationKey, { count: tagCount });
+      const remainingText = safeTranslate(warningKey, { count: remaining });
 
-      counter.textContent = counterText;
+      // Only update if translations are available
+      if (countText) {
+        let counterText = countText;
+        if (tagCount > 0 && remainingText) {
+          counterText += ' • ' + remainingText;
+        }
+        counter.textContent = counterText;
+      }
 
       if (tagCount > MAX_TAG_COUNT) {
         counter.className = 'char-counter char-counter-error';
