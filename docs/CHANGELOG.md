@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 🔄 Changed
+
+- **Version Comparison Enhancement**: Version diff modal now displays character-level changes with inline highlighting
+  - **Character-level precision**: Insertions shown with green background and bold text, deletions with red background and strikethrough
+  - **Improved granularity**: Easily identify punctuation fixes, typo corrections, and single character changes
+  - **Backend**: Implemented `diff-match-patch` algorithm for computing character-level diffs in `src/utils/diff_utils.py`
+  - **Frontend**: New `renderCharacterDiff` utility with Tailwind CSS styling for visual diff rendering
+  - **Backward compatible**: Falls back to old/new box display if character diff is unavailable
+  - **Test coverage**: 22 backend tests (95% coverage) + 13 frontend tests (100% coverage)
+  - **Documentation**: Updated `docs/VERSION_CONTROL.md` with character-level diff feature guide
+
 ### 🔧 Fixed
 
 - **Remember Me Token Persistence**: Fixed critical bug where users were logged out after 15 minutes despite checking "Remember Me"

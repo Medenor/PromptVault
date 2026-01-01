@@ -216,18 +216,29 @@ export interface VersionHistoryResponse {
 }
 
 /**
+ * Diff operation for character-level changes
+ */
+export interface DiffOperation {
+  op: 'equal' | 'delete' | 'insert';
+  text: string;
+}
+
+/**
+ * Field change with optional character-level diff
+ */
+export interface FieldChange {
+  old: string | string[] | null;
+  new: string | string[] | null;
+  diff?: DiffOperation[];
+}
+
+/**
  * Version comparison diff
  */
 export interface VersionDiffResponse {
-  v1: number;
-  v2: number;
-  diff: {
-    title: { old: string; new: string };
-    prompt: { old: string; new: string };
-    category: { old: string; new: string };
-    tags: { old: string[]; new: string[] };
-    note: { old: string; new: string };
-  };
+  v1_id: string;
+  v2_id: string;
+  changes: Record<string, FieldChange>;
 }
 
 // ============================================

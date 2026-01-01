@@ -49,6 +49,7 @@ dependencies = [
   "python-jose[cryptography]>=3.3.0",
   "user-agents>=2.2.0",
   "apscheduler>=3.10.0",
+  "diff-match-patch>=20230430",
 ]
 
 [project.optional-dependencies]

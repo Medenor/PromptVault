@@ -35,10 +35,21 @@ interface VersionHistoryResponse {
   versions: VersionSummary[];
 }
 
+interface DiffOperation {
+  op: 'equal' | 'delete' | 'insert';
+  text: string;
+}
+
+interface FieldChange {
+  old: string | string[] | null;
+  new: string | string[] | null;
+  diff?: DiffOperation[];
+}
+
 interface VersionDiffResponse {
   v1_id: string;
   v2_id: string;
-  changes: Record<string, { old: unknown; new: unknown }>;
+  changes: Record<string, FieldChange>;
 }
 
 interface VersionCacheEntry {
@@ -1704,6 +1715,43 @@ async function loadAndDisplayDiff(v1Id: string, v2Id: string): Promise<void> {
   }
 }
 
+function renderCharacterDiff(operations: DiffOperation[]): HTMLElement {
+  const container = document.createElement('div');
+  container.className = 'whitespace-pre-wrap break-words';
+
+  if (!operations || operations.length === 0) {
+    container.textContent = '';
+    return container;
+  }
+
+  operations.forEach((op) => {
+    if (!op || !op.text) {
+      return;
+    }
+
+    const span = document.createElement('span');
+    span.textContent = op.text;
+
+    switch (op.op) {
+      case 'equal':
+        span.className = 'text-gray-700';
+        break;
+      case 'delete':
+        span.className = 'bg-red-100 line-through text-red-800';
+        break;
+      case 'insert':
+        span.className = 'bg-green-100 font-semibold text-green-800';
+        break;
+      default:
+        span.className = 'text-gray-700';
+    }
+
+    container.appendChild(span);
+  });
+
+  return container;
+}
+
 function displayDiff(diff: VersionDiffResponse): void {
   const diffView = document.getElementById('diff-view');
   if (!diffView) {
@@ -1729,20 +1777,28 @@ function displayDiff(diff: VersionDiffResponse): void {
     fieldName.textContent = field.charAt(0).toUpperCase() + field.slice(1);
     fieldDiv.appendChild(fieldName);
 
-    // Old value
-    if (change.old !== null && change.old !== undefined) {
-      const oldDiv = document.createElement('div');
-      oldDiv.className = 'mb-2 p-3 bg-red-50 border border-red-200 rounded-lg';
-      oldDiv.innerHTML = `<strong class="text-red-700">Old:</strong> <span class="text-gray-700">${escapeHtml(formatValue(change.old))}</span>`;
-      fieldDiv.appendChild(oldDiv);
-    }
+    // If character-level diff is available, render it
+    if (change.diff && change.diff.length > 0) {
+      const diffContainer = renderCharacterDiff(change.diff);
+      diffContainer.className = 'p-3 bg-gray-50 border border-gray-200 rounded-lg ' + diffContainer.className;
+      fieldDiv.appendChild(diffContainer);
+    } else {
+      // Fallback to old/new display for backward compatibility
+      // Old value
+      if (change.old !== null && change.old !== undefined) {
+        const oldDiv = document.createElement('div');
+        oldDiv.className = 'mb-2 p-3 bg-red-50 border border-red-200 rounded-lg';
+        oldDiv.innerHTML = `<strong class="text-red-700">Old:</strong> <span class="text-gray-700">${escapeHtml(formatValue(change.old))}</span>`;
+        fieldDiv.appendChild(oldDiv);
+      }
 
-    // New value
-    if (change.new !== null && change.new !== undefined) {
-      const newDiv = document.createElement('div');
-      newDiv.className = 'p-3 bg-emerald-50 border border-emerald-200 rounded-lg';
-      newDiv.innerHTML = `<strong class="text-emerald-700">New:</strong> <span class="text-gray-700">${escapeHtml(formatValue(change.new))}</span>`;
-      fieldDiv.appendChild(newDiv);
+      // New value
+      if (change.new !== null && change.new !== undefined) {
+        const newDiv = document.createElement('div');
+        newDiv.className = 'p-3 bg-emerald-50 border border-emerald-200 rounded-lg';
+        newDiv.innerHTML = `<strong class="text-emerald-700">New:</strong> <span class="text-gray-700">${escapeHtml(formatValue(change.new))}</span>`;
+        fieldDiv.appendChild(newDiv);
+      }
     }
 
     section.appendChild(fieldDiv);
