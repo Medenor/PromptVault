@@ -12,6 +12,7 @@ import '../css/tailwind-globals.css';
 import { reportError } from '@/telemetry';
 import { changeLanguage, initI18n, t, tUnsafe, updateStaticTranslations } from '@/utils/i18n';
 import { showNotification } from '@/utils/notifications';
+import { apiGet, apiPost, apiPut, apiDelete, APIRequestError } from '@/utils/api';
 
 const API_BASE = '/api/admin';
 const HIDDEN_CLASS = 'hidden';
@@ -52,24 +53,6 @@ let currentFilters = {
   status: 'all',
 };
 
-function getAuthHeaders(): HeadersInit {
-  return {
-    'Content-Type': 'application/json',
-  };
-}
-
-function getFetchOptions(method = 'GET', body?: Record<string, unknown>): RequestInit {
-  const options: RequestInit = {
-    method,
-    credentials: 'include',
-    headers: getAuthHeaders(),
-  };
-  if (body) {
-    options.body = JSON.stringify(body);
-  }
-  return options;
-}
-
 function formatDate(dateString?: string | null): string {
   if (!dateString) return 'Never';
   const date = new Date(dateString);
@@ -88,17 +71,14 @@ function getTranslatedRole(role: string): string {
 }
 
 function normalizeErrorDetail(
-  detail:
-    | string
-    | Array<{ loc?: Array<string | number>; msg?: string; detail?: string }>
-    | undefined
+  detail: string | Array<{ loc?: Array<string | number>; msg?: string }> | undefined
 ): string | undefined {
   if (typeof detail === 'string') {
     return detail;
   }
   if (Array.isArray(detail)) {
     const first = detail[0];
-    return first?.msg || first?.detail;
+    return first?.msg;
   }
   return undefined;
 }
@@ -192,27 +172,32 @@ async function loadUsers(): Promise<void> {
       }
     }
 
-    const response = await fetch(`${API_BASE}/users?${params.toString()}`, {
-      credentials: 'include',
-      headers: getAuthHeaders(),
-    });
+    const data = await apiGet<UsersResponse>(`${API_BASE}/users?${params.toString()}`);
+    const users = data.users || [];
+    totalPages = data.pages || 1;
 
-    if (response.ok) {
-      const data = (await response.json()) as UsersResponse;
-      const users = data.users || [];
-      totalPages = data.pages || 1;
+    updateStats(data);
 
-      updateStats(data);
-
-      if (users.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="7" class="px-6 py-4 text-center text-gray-500">No users found</td></tr>';
-      } else {
-        tableBody.innerHTML = users
-          .map((user) => {
-            const roleBadgeClass = user.role === 'admin' ? 'bg-red-100 text-red-800' : user.role === 'editor' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800';
-            const statusClass = getStatusClass(user);
-            const statusBadgeClass = statusClass === 'active' ? 'bg-green-100 text-green-800' : statusClass === 'locked' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800';
-            return `
+    if (users.length === 0) {
+      tableBody.innerHTML =
+        '<tr><td colspan="7" class="px-6 py-4 text-center text-gray-500">No users found</td></tr>';
+    } else {
+      tableBody.innerHTML = users
+        .map((user) => {
+          const roleBadgeClass =
+            user.role === 'admin'
+              ? 'bg-red-100 text-red-800'
+              : user.role === 'editor'
+                ? 'bg-amber-100 text-amber-800'
+                : 'bg-blue-100 text-blue-800';
+          const statusClass = getStatusClass(user);
+          const statusBadgeClass =
+            statusClass === 'active'
+              ? 'bg-green-100 text-green-800'
+              : statusClass === 'locked'
+                ? 'bg-red-100 text-red-800'
+                : 'bg-gray-100 text-gray-800';
+          return `
               <tr class="hover:bg-gray-50">
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${user.username}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${user.email}</td>
@@ -229,20 +214,16 @@ async function loadUsers(): Promise<void> {
                 </td>
               </tr>
             `;
-          })
-          .join('');
-      }
-
-      updatePagination();
-      updateStaticTranslations();
-    } else if (response.status === 401) {
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
-      window.location.href = '/auth/login';
+        })
+        .join('');
     }
+
+    updatePagination();
+    updateStaticTranslations();
   } catch (error) {
     reportError('admin-users', 'loadUsers', error);
-    tableBody.innerHTML = '<tr><td colspan="7" class="px-6 py-4 text-center text-red-600">Error loading users</td></tr>';
+    tableBody.innerHTML =
+      '<tr><td colspan="7" class="px-6 py-4 text-center text-red-600">Error loading users</td></tr>';
   }
 }
 
@@ -254,18 +235,22 @@ async function viewUser(userId: string): Promise<void> {
   showModal('user-detail-modal');
 
   try {
-    const response = await fetch(`${API_BASE}/users/${userId}`, {
-      credentials: 'include',
-      headers: getAuthHeaders(),
-    });
-
-    if (response.ok) {
-      const user = (await response.json()) as AdminUser;
-      if (content) {
-        const roleBadgeClass = user.role === 'admin' ? 'bg-red-100 text-red-800' : user.role === 'editor' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800';
-        const statusClass = getStatusClass(user);
-        const statusBadgeClass = statusClass === 'active' ? 'bg-green-100 text-green-800' : statusClass === 'locked' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800';
-        content.innerHTML = `
+    const user = await apiGet<AdminUser>(`${API_BASE}/users/${userId}`);
+    if (content) {
+      const roleBadgeClass =
+        user.role === 'admin'
+          ? 'bg-red-100 text-red-800'
+          : user.role === 'editor'
+            ? 'bg-amber-100 text-amber-800'
+            : 'bg-blue-100 text-blue-800';
+      const statusClass = getStatusClass(user);
+      const statusBadgeClass =
+        statusClass === 'active'
+          ? 'bg-green-100 text-green-800'
+          : statusClass === 'locked'
+            ? 'bg-red-100 text-red-800'
+            : 'bg-gray-100 text-gray-800';
+      content.innerHTML = `
           <div class="space-y-4">
             <div class="flex justify-between py-3 border-b border-gray-200">
               <div class="text-sm font-medium text-gray-500">Username:</div>
@@ -305,7 +290,6 @@ async function viewUser(userId: string): Promise<void> {
             </div>
           </div>
         `;
-      }
     }
   } catch (error) {
     reportError('admin-users', 'viewUser', error);
@@ -317,22 +301,15 @@ async function viewUser(userId: string): Promise<void> {
 
 async function editUser(userId: string): Promise<void> {
   try {
-    const response = await fetch(`${API_BASE}/users/${userId}`, {
-      credentials: 'include',
-      headers: getAuthHeaders(),
-    });
+    const user = await apiGet<AdminUser>(`${API_BASE}/users/${userId}`);
+    (document.getElementById('edit-user-id') as HTMLInputElement | null)!.value = user.id;
+    (document.getElementById('edit-role') as HTMLSelectElement | null)!.value = user.role;
+    (document.getElementById('edit-is-active') as HTMLInputElement | null)!.checked =
+      user.is_active;
+    (document.getElementById('edit-email-verified') as HTMLInputElement | null)!.checked =
+      !!user.email_verified;
 
-    if (response.ok) {
-      const user = (await response.json()) as AdminUser;
-      (document.getElementById('edit-user-id') as HTMLInputElement | null)!.value = user.id;
-      (document.getElementById('edit-role') as HTMLSelectElement | null)!.value = user.role;
-      (document.getElementById('edit-is-active') as HTMLInputElement | null)!.checked =
-        user.is_active;
-      (document.getElementById('edit-email-verified') as HTMLInputElement | null)!.checked =
-        !!user.email_verified;
-
-      showModal('edit-user-modal');
-    }
+    showModal('edit-user-modal');
   } catch (error) {
     reportError('admin-users', 'editUser', error);
     showNotification('Failed to load user', 'error');
@@ -348,28 +325,22 @@ async function saveUser(): Promise<void> {
     (document.getElementById('edit-email-verified') as HTMLInputElement | null)?.checked || false;
 
   try {
-    const response = await fetch(`${API_BASE}/users/${userId}`, {
-      method: 'PUT',
-      credentials: 'include',
-      headers: getAuthHeaders(),
-      body: JSON.stringify({
-        role,
-        is_active: isActive,
-        email_verified: emailVerified,
-      }),
+    await apiPut(`${API_BASE}/users/${userId}`, {
+      role,
+      is_active: isActive,
+      email_verified: emailVerified,
     });
 
-    if (response.ok) {
-      showNotification('User updated successfully', 'success');
-      hideModal('edit-user-modal');
-      await loadUsers();
-    } else {
-      const data = (await response.json()) as Record<string, string>;
-      showNotification(data.detail || 'Failed to update user', 'error');
-    }
+    showNotification('User updated successfully', 'success');
+    hideModal('edit-user-modal');
+    await loadUsers();
   } catch (error) {
-    reportError('admin-users', 'saveUser', error);
-    showNotification('Failed to update user', 'error');
+    if (error instanceof APIRequestError) {
+      showNotification(error.message || 'Failed to update user', 'error');
+    } else {
+      reportError('admin-users', 'saveUser', error);
+      showNotification('Failed to update user', 'error');
+    }
   }
 }
 
@@ -384,23 +355,17 @@ async function deleteUser(userId: string, username: string): Promise<void> {
   if (confirmBtn) {
     confirmBtn.onclick = async () => {
       try {
-        const response = await fetch(`${API_BASE}/users/${userId}?hard_delete=true`, {
-          method: 'DELETE',
-          credentials: 'include',
-          headers: getAuthHeaders(),
-        });
-
-        if (response.ok) {
-          showNotification('User permanently deleted from database', 'success');
-          hideModal('confirm-delete-modal');
-          await loadUsers();
-        } else {
-          const data = (await response.json()) as Record<string, string>;
-          showNotification(data.detail || 'Failed to delete user', 'error');
-        }
+        await apiDelete(`${API_BASE}/users/${userId}?hard_delete=true`);
+        showNotification('User permanently deleted from database', 'success');
+        hideModal('confirm-delete-modal');
+        await loadUsers();
       } catch (error) {
-        reportError('admin-users', 'deleteUser', error);
-        showNotification('Failed to delete user', 'error');
+        if (error instanceof APIRequestError) {
+          showNotification(error.message || 'Failed to delete user', 'error');
+        } else {
+          reportError('admin-users', 'deleteUser', error);
+          showNotification('Failed to delete user', 'error');
+        }
       }
     };
   }
@@ -693,52 +658,46 @@ async function submitCreateUserForm(): Promise<void> {
   }
 
   try {
-    const response = await fetch(`${API_BASE}/users`, {
-      ...getFetchOptions('POST', {
-        username,
-        email,
-        password,
-        confirm_password: confirmPassword,
-        role,
-        email_verified: emailVerified,
-      }),
+    await apiPost(`${API_BASE}/users`, {
+      username,
+      email,
+      password,
+      confirm_password: confirmPassword,
+      role,
+      email_verified: emailVerified,
     });
 
-    const data = (await response.json()) as {
-      detail?: string | Array<{ loc?: Array<string | number>; msg?: string; detail?: string }>;
-    };
-
-    if (response.ok) {
-      showNotification(t('admin.users.userCreated') || 'User created successfully', 'success');
-      closeCreateUserModal();
-      currentPage = 1;
-      await loadUsers();
-    } else {
-      if (response.status === 422 && Array.isArray(data.detail)) {
-        data.detail.forEach((error) => {
-          if (error.loc && error.loc.length > 1) {
-            const field = error.loc[1];
-            const errorMsg = error.msg || error.detail || 'Validation error';
+    showNotification(t('admin.users.userCreated') || 'User created successfully', 'success');
+    closeCreateUserModal();
+    currentPage = 1;
+    await loadUsers();
+  } catch (error) {
+    if (error instanceof APIRequestError) {
+      if (error.status === 422 && Array.isArray(error.error.detail)) {
+        error.error.detail.forEach((err) => {
+          if (err.loc && err.loc.length > 1) {
+            const field = err.loc[1];
+            const errorMsg = err.msg || 'Validation error';
             showFieldError(`create-${String(field)}-error`, errorMsg);
           }
         });
-      } else if (response.status === 409) {
-        const detailMessage = normalizeErrorDetail(data.detail);
+      } else if (error.status === 409) {
+        const detailMessage = normalizeErrorDetail(error.error.detail);
         showFieldError(
           'create-form-error',
           detailMessage || t('admin.users.userExists') || 'User already exists'
         );
       } else {
-        const detailMessage = normalizeErrorDetail(data.detail);
+        const detailMessage = normalizeErrorDetail(error.error.detail);
         showFieldError(
           'create-form-error',
           detailMessage || t('messages.error') || 'Failed to create user'
         );
       }
+    } else {
+      reportError('admin-users', 'createUser', error);
+      showFieldError('create-form-error', t('messages.error') || 'Failed to create user');
     }
-  } catch (error) {
-    reportError('admin-users', 'createUser', error);
-    showFieldError('create-form-error', t('messages.error') || 'Failed to create user');
   } finally {
     if (submitBtn) {
       submitBtn.disabled = false;

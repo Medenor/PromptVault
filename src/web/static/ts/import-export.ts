@@ -13,12 +13,84 @@ import '@/form-validation';
 import { changeLanguage, initI18n, t, tUnsafe, updateStaticTranslations } from '@/utils/i18n';
 import { hideElement, showElement } from '@/utils/dom';
 import { reportError } from '@/telemetry';
+import { apiGet, apiPostForm, APIRequestError } from '@/utils/api';
 
 type OperationType = 'export' | 'import' | null;
 
 let currentOperation: OperationType = null;
 const IMPORT_EXPORT_COMPONENT = 'importExport';
 const HIDDEN_CLASS = 'hidden';
+
+/**
+ * Helper function to handle blob downloads with automatic token refresh
+ */
+async function downloadBlob(url: string, formData: FormData, filename: string): Promise<void> {
+  const performDownload = async (isRetry = false): Promise<Response> => {
+    const response = await fetch(url, {
+      method: 'POST',
+      credentials: 'include',
+      body: formData,
+    });
+
+    // Handle 401 with automatic token refresh
+    if (response.status === 401 && !isRetry) {
+      // Try to refresh the token
+      const refreshToken =
+        localStorage.getItem('refresh_token') || sessionStorage.getItem('refresh_token');
+
+      if (refreshToken) {
+        const refreshResponse = await fetch('/api/auth/refresh', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refresh_token: refreshToken }),
+        });
+
+        if (refreshResponse.ok) {
+          const data = await refreshResponse.json();
+          // Update stored tokens
+          if (localStorage.getItem('refresh_token')) {
+            localStorage.setItem('access_token', data.access_token);
+            localStorage.setItem('refresh_token', data.refresh_token);
+          } else {
+            sessionStorage.setItem('access_token', data.access_token);
+            sessionStorage.setItem('refresh_token', data.refresh_token);
+          }
+          // Retry the download with refreshed token
+          return performDownload(true);
+        }
+      }
+
+      // Refresh failed - clear tokens and redirect
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      sessionStorage.removeItem('access_token');
+      sessionStorage.removeItem('refresh_token');
+      window.location.href = '/auth/login';
+      throw new Error('Authentication failed');
+    }
+
+    return response;
+  };
+
+  const response = await performDownload();
+
+  if (response.ok) {
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.classList.add(HIDDEN_CLASS);
+    anchor.href = url;
+    anchor.download = filename;
+    document.body.appendChild(anchor);
+    anchor.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(anchor);
+  } else {
+    const error = await response.json();
+    throw new Error(error.error || 'Download failed');
+  }
+}
 
 function initializeImportExport(): void {
   setupEventListeners();
@@ -94,18 +166,22 @@ function handleFileSelection(event: Event): void {
 
 async function loadStatistics(): Promise<void> {
   try {
-    const response = await fetch('/api/import-export/stats');
-    const stats = await response.json();
+    const stats = await apiGet<{
+      total_prompts: number;
+      total_categories: number;
+      total_tags: number;
+      favorite_prompts: number;
+    }>('/api/import-export/stats');
 
     const totalPrompts = document.getElementById('total-prompts');
     const totalCategories = document.getElementById('total-categories');
     const totalTags = document.getElementById('total-tags');
     const favoritePrompts = document.getElementById('favorite-prompts');
 
-    if (totalPrompts) totalPrompts.textContent = stats.total_prompts;
-    if (totalCategories) totalCategories.textContent = stats.total_categories;
-    if (totalTags) totalTags.textContent = stats.total_tags;
-    if (favoritePrompts) favoritePrompts.textContent = stats.favorite_prompts;
+    if (totalPrompts) totalPrompts.textContent = String(stats.total_prompts);
+    if (totalCategories) totalCategories.textContent = String(stats.total_categories);
+    if (totalTags) totalTags.textContent = String(stats.total_tags);
+    if (favoritePrompts) favoritePrompts.textContent = String(stats.favorite_prompts);
 
     updateActivityHistory();
   } catch (error) {
@@ -136,14 +212,11 @@ async function previewExport(): Promise<void> {
   try {
     showProgress('export', 'preparingExport');
 
-    const response = await fetch('/api/prompts');
-    const data = await response.json();
+    const data = await apiGet<{ prompts: Record<string, { favorite?: boolean }> }>('/api/prompts');
     let prompts = data.prompts;
 
     if (includeFavorites) {
-      prompts = Object.fromEntries(
-        Object.entries(prompts).filter(([, prompt]) => (prompt as { favorite?: boolean }).favorite)
-      );
+      prompts = Object.fromEntries(Object.entries(prompts).filter(([, prompt]) => prompt.favorite));
     }
 
     const previewContent = generateExportPreview(prompts, format);
@@ -310,29 +383,10 @@ async function performExport(): Promise<void> {
     formData.append('include_favorites', String(includeFavorites));
     formData.append('include_metadata', String(includeMetadata));
 
-    const response = await fetch('/api/export', {
-      method: 'POST',
-      body: formData,
-    });
+    await downloadBlob('/api/export', formData, filename);
 
-    if (response.ok) {
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const anchor = document.createElement('a');
-      anchor.classList.add(HIDDEN_CLASS);
-      anchor.href = url;
-      anchor.download = filename;
-      document.body.appendChild(anchor);
-      anchor.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(anchor);
-
-      showStatus('export', 'exportSuccess', 'success');
-      void loadStatistics();
-    } else {
-      const error = await response.json();
-      showStatus('export', error.error || 'exportFailed', 'error');
-    }
+    showStatus('export', 'exportSuccess', 'success');
+    void loadStatistics();
   } catch (error) {
     reportError(IMPORT_EXPORT_COMPONENT, 'performExport', error, {
       format,
@@ -368,31 +422,31 @@ async function performImport(): Promise<void> {
     formData.append('mode', mode);
     formData.append('validate', String(validate));
 
-    const response = await fetch('/api/import', {
-      method: 'POST',
-      body: formData,
-    });
+    const result = await apiPostForm<{ added_count: number; error?: string }>(
+      '/api/import',
+      formData
+    );
 
-    const result = await response.json();
-
-    if (response.ok) {
-  const message = (t('importExport.importSuccess') || '').replace(
-        '{count}',
-        result.added_count
-      );
-      showStatus('import', message, 'success');
-      void loadStatistics();
-      fileInput.value = '';
-    } else {
-      showStatus('import', result.error || 'importFailed', 'error');
-    }
+    const message = (t('importExport.importSuccess') || '').replace(
+      '{count}',
+      String(result.added_count)
+    );
+    showStatus('import', message, 'success');
+    void loadStatistics();
+    fileInput.value = '';
   } catch (error) {
     reportError(IMPORT_EXPORT_COMPONENT, 'performImport', error, {
       mode,
       validate,
       filename: file.name,
     });
-    showStatus('import', 'importFailed', 'error');
+
+    // Handle API errors with better messages
+    let errorMessage = 'importFailed';
+    if (error instanceof APIRequestError) {
+      errorMessage = error.message;
+    }
+    showStatus('import', errorMessage, 'error');
   } finally {
     hideProgress('import');
   }
@@ -408,7 +462,7 @@ function showProgress(operation: 'export' | 'import', messageKey: string): void 
     progressFill.style.width = '50%';
   }
   if (statusElement) {
-  statusElement.textContent = tUnsafe(`importExport.${messageKey}`);
+    statusElement.textContent = tUnsafe(`importExport.${messageKey}`);
     statusElement.className = 'text-sm text-blue-600 mt-2';
   }
 }
@@ -428,7 +482,8 @@ function showStatus(
   if (!statusElement) return;
 
   statusElement.textContent = message;
-  const colorClass = type === 'success' ? 'text-green-600' : type === 'error' ? 'text-red-600' : 'text-blue-600';
+  const colorClass =
+    type === 'success' ? 'text-green-600' : type === 'error' ? 'text-red-600' : 'text-blue-600';
   statusElement.className = `text-sm ${colorClass} mt-2`;
 
   showElement(progressContainer);
@@ -473,26 +528,19 @@ function clearExportSettings(): void {
 
 async function checkAdminAccess(): Promise<void> {
   try {
-    const response = await fetch('/api/auth/me', {
-      credentials: 'include',
-    });
+    const data = await apiGet<{ role: string }>('/api/auth/me');
 
-    if (response.ok) {
-      const data = await response.json();
-      if (data.role === 'admin') {
-        const adminBtn = document.getElementById('admin-btn');
-        if (adminBtn) {
-          (adminBtn as HTMLElement).style.display = '';
-        }
+    if (data.role === 'admin') {
+      const adminBtn = document.getElementById('admin-btn');
+      if (adminBtn) {
+        (adminBtn as HTMLElement).style.display = '';
       }
-    } else if (response.status === 401) {
-      window.location.href = '/auth/login';
-    } else {
-      window.location.href = '/auth/login';
     }
   } catch (error) {
     reportError(IMPORT_EXPORT_COMPONENT, 'checkAdminAccess', error);
-    window.location.href = '/auth/login';
+    // apiGet handles 401 errors automatically with token refresh
+    // If we get here, it means auth failed after refresh attempt
+    // The apiGet utility will have already redirected to login if needed
   }
 }
 

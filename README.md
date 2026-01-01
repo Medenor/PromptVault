@@ -201,6 +201,7 @@ PromptVault includes a comprehensive, production-ready backup system to prevent 
 - **Statistics Dashboard**: Real-time backup statistics and storage information
 
 ## Screenshots and gallery
+
 <details>
 <summary>Click to expand</summary>
 <br>
@@ -618,7 +619,7 @@ See [LICENSE](LICENSE) for more information.
 
 ## Disclaimer – Vibe coding & AI assistance
 
-This repository was developed using a *vibe coding* approach, with assistance from AI tools.
+This repository was developed using a _vibe coding_ approach, with assistance from AI tools.
 
 The code was written iteratively, with human review, testing, and decision-making at each step.  
 AI assistance was used to accelerate ideation, refactoring, and documentation, but responsibility for the design choices, validation, and final output remains entirely human.

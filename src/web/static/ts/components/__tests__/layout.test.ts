@@ -5,7 +5,14 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { createContainer, createFlex, createGrid, createSection, createHeader, createFooter } from '../layout';
+import {
+  createContainer,
+  createFlex,
+  createGrid,
+  createSection,
+  createHeader,
+  createFooter,
+} from '../layout';
 
 describe('Layout Components', () => {
   it('should create a container', () => {

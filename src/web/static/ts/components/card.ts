@@ -121,7 +121,10 @@ export function createCard(content: HTMLElement | string, props: CardProps = {})
  * @param props - Additional card properties
  * @returns White card component
  */
-export function createWhiteCard(content: HTMLElement | string, props: CardProps = {}): HTMLDivElement {
+export function createWhiteCard(
+  content: HTMLElement | string,
+  props: CardProps = {}
+): HTMLDivElement {
   return createCard(content, { ...props, variant: 'default' });
 }
 
@@ -146,7 +149,10 @@ export function createColoredCard(
  * @param props - Additional card properties
  * @returns Elevated card with shadow
  */
-export function createElevatedCard(content: HTMLElement | string, props: CardProps = {}): HTMLDivElement {
+export function createElevatedCard(
+  content: HTMLElement | string,
+  props: CardProps = {}
+): HTMLDivElement {
   return createCard(content, { ...props, variant: 'elevated' });
 }
 
@@ -156,6 +162,9 @@ export function createElevatedCard(content: HTMLElement | string, props: CardPro
  * @param props - Additional card properties
  * @returns Bordered card component
  */
-export function createBorderedCard(content: HTMLElement | string, props: CardProps = {}): HTMLDivElement {
+export function createBorderedCard(
+  content: HTMLElement | string,
+  props: CardProps = {}
+): HTMLDivElement {
   return createCard(content, { ...props, variant: 'bordered' });
 }

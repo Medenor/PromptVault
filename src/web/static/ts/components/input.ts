@@ -16,10 +16,12 @@ export function createInput(props: InputProps = {}): HTMLInputElement {
   input.type = props.type || 'text';
 
   // Base classes following design system
-  const baseClasses = 'w-full px-3 py-2 rounded-md transition-all duration-200 focus:outline-none focus:ring-2';
+  const baseClasses =
+    'w-full px-3 py-2 rounded-md transition-all duration-200 focus:outline-none focus:ring-2';
 
   // Default state: gray background, border on focus
-  let stateClasses = 'bg-gray-100 border-2 border-gray-100 focus:border-blue-500 focus:bg-white focus:ring-blue-500';
+  let stateClasses =
+    'bg-gray-100 border-2 border-gray-100 focus:border-blue-500 focus:bg-white focus:ring-blue-500';
 
   // Error state: red border and background
   if (props.error) {
@@ -28,7 +30,8 @@ export function createInput(props: InputProps = {}): HTMLInputElement {
 
   // Success state: green border and background
   if (props.success) {
-    stateClasses = 'bg-green-50 border-2 border-green-500 focus:border-green-600 focus:ring-green-500';
+    stateClasses =
+      'bg-green-50 border-2 border-green-500 focus:border-green-600 focus:ring-green-500';
   }
 
   // Disabled state
@@ -86,10 +89,12 @@ export function createTextarea(props: TextareaProps = {}): HTMLTextAreaElement {
   const textarea = document.createElement('textarea');
 
   // Base classes following design system
-  const baseClasses = 'w-full px-3 py-2 rounded-md transition-all duration-200 focus:outline-none focus:ring-2 resize-vertical';
+  const baseClasses =
+    'w-full px-3 py-2 rounded-md transition-all duration-200 focus:outline-none focus:ring-2 resize-vertical';
 
   // Default state
-  let stateClasses = 'bg-gray-100 border-2 border-gray-100 focus:border-blue-500 focus:bg-white focus:ring-blue-500';
+  let stateClasses =
+    'bg-gray-100 border-2 border-gray-100 focus:border-blue-500 focus:bg-white focus:ring-blue-500';
 
   // Error state
   if (props.error) {
@@ -98,7 +103,8 @@ export function createTextarea(props: TextareaProps = {}): HTMLTextAreaElement {
 
   // Success state
   if (props.success) {
-    stateClasses = 'bg-green-50 border-2 border-green-500 focus:border-green-600 focus:ring-green-500';
+    stateClasses =
+      'bg-green-50 border-2 border-green-500 focus:border-green-600 focus:ring-green-500';
   }
 
   // Disabled state

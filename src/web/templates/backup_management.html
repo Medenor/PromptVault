@@ -28,7 +28,11 @@
               />
               <h1 class="text-2xl font-bold truncate">PromptVault</h1>
             </div>
-            <button onclick="window.location.href = '/'" class="px-4 py-2 bg-blue-700 hover:bg-blue-800 rounded text-sm font-medium transition whitespace-nowrap flex-shrink-0" data-i18n="nav.backToMain">
+            <button
+              onclick="window.location.href = '/'"
+              class="px-4 py-2 bg-blue-700 hover:bg-blue-800 rounded text-sm font-medium transition whitespace-nowrap flex-shrink-0"
+              data-i18n="nav.backToMain"
+            >
               Back to Main
             </button>
           </div>
@@ -39,7 +43,9 @@
       <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
         <!-- Page Header -->
         <div class="mb-8">
-          <h2 class="text-3xl font-bold text-gray-900 mb-2" data-i18n="backup.title">Backup Management</h2>
+          <h2 class="text-3xl font-bold text-gray-900 mb-2" data-i18n="backup.title">
+            Backup Management
+          </h2>
           <p class="text-gray-600" data-i18n="backup.description">
             Manage your data backups with comprehensive backup and restoration capabilities
           </p>
@@ -49,11 +55,18 @@
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           <!-- Create Backup Section -->
           <div class="bg-white rounded-lg shadow p-6">
-            <h3 class="text-xl font-bold text-gray-900 mb-6" data-i18n="backup.createTitle">Create Backup</h3>
+            <h3 class="text-xl font-bold text-gray-900 mb-6" data-i18n="backup.createTitle">
+              Create Backup
+            </h3>
 
             <div class="space-y-4">
               <div>
-                <label for="backup-name" class="block text-sm font-medium text-gray-700 mb-2" data-i18n="backup.backupName">Backup Name (optional):</label>
+                <label
+                  for="backup-name"
+                  class="block text-sm font-medium text-gray-700 mb-2"
+                  data-i18n="backup.backupName"
+                  >Backup Name (optional):</label
+                >
                 <input
                   type="text"
                   id="backup-name"
@@ -63,11 +76,20 @@
                   aria-describedby="backup-name-error"
                   class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-                <div class="text-red-600 text-sm mt-1" id="backup-name-error" role="alert" aria-live="assertive"></div>
+                <div
+                  class="text-red-600 text-sm mt-1"
+                  id="backup-name-error"
+                  role="alert"
+                  aria-live="assertive"
+                ></div>
               </div>
 
               <div class="flex space-x-3">
-                <button class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition" onclick="createBackup()" data-i18n="backup.createBtn">
+                <button
+                  class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition"
+                  onclick="createBackup()"
+                  data-i18n="backup.createBtn"
+                >
                   Create Backup
                 </button>
                 <button
@@ -81,7 +103,11 @@
 
               <div class="hidden" id="backup-progress">
                 <div class="h-2 bg-gray-200 rounded overflow-hidden mt-4">
-                  <div class="h-full bg-blue-600 transition-all duration-300" id="backup-progress-fill" style="width: 0%"></div>
+                  <div
+                    class="h-full bg-blue-600 transition-all duration-300"
+                    id="backup-progress-fill"
+                    style="width: 0%"
+                  ></div>
                 </div>
                 <div id="backup-status" class="text-sm text-blue-600 mt-2"></div>
               </div>
@@ -90,10 +116,14 @@
 
           <!-- Backup List Section -->
           <div class="bg-white rounded-lg shadow p-6">
-            <h3 class="text-xl font-bold text-gray-900 mb-6" data-i18n="backup.listTitle">Available Backups</h3>
+            <h3 class="text-xl font-bold text-gray-900 mb-6" data-i18n="backup.listTitle">
+              Available Backups
+            </h3>
 
             <div class="space-y-3 max-h-96 overflow-y-auto" id="backup-list">
-              <div class="text-gray-500 text-sm" data-i18n="messages.loading">Loading backups...</div>
+              <div class="text-gray-500 text-sm" data-i18n="messages.loading">
+                Loading backups...
+              </div>
             </div>
 
             <div class="mt-6">
@@ -110,14 +140,23 @@
 
         <!-- Maintenance Section -->
         <div class="bg-white rounded-lg shadow p-6 mb-8">
-          <h3 class="text-xl font-bold text-gray-900 mb-6" data-i18n="backup.maintenanceTitle">Maintenance</h3>
+          <h3 class="text-xl font-bold text-gray-900 mb-6" data-i18n="backup.maintenanceTitle">
+            Maintenance
+          </h3>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <h4 class="font-semibold text-gray-900 mb-4" data-i18n="backup.cleanupTitle">Cleanup Old Backups</h4>
+              <h4 class="font-semibold text-gray-900 mb-4" data-i18n="backup.cleanupTitle">
+                Cleanup Old Backups
+              </h4>
               <div class="space-y-4">
                 <div>
-                  <label for="retention-days" class="block text-sm font-medium text-gray-700 mb-2" data-i18n="backup.retentionDays">Keep backups for (days):</label>
+                  <label
+                    for="retention-days"
+                    class="block text-sm font-medium text-gray-700 mb-2"
+                    data-i18n="backup.retentionDays"
+                    >Keep backups for (days):</label
+                  >
                   <input
                     type="number"
                     id="retention-days"
@@ -127,7 +166,12 @@
                     aria-describedby="retention-days-error"
                     class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
-                  <div class="text-red-600 text-sm mt-1" id="retention-days-error" role="alert" aria-live="assertive"></div>
+                  <div
+                    class="text-red-600 text-sm mt-1"
+                    id="retention-days-error"
+                    role="alert"
+                    aria-live="assertive"
+                  ></div>
                 </div>
                 <button
                   class="w-full px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded font-medium transition"
@@ -140,10 +184,17 @@
             </div>
 
             <div>
-              <h4 class="font-semibold text-gray-900 mb-4" data-i18n="backup.compressTitle">Compress Old Backups</h4>
+              <h4 class="font-semibold text-gray-900 mb-4" data-i18n="backup.compressTitle">
+                Compress Old Backups
+              </h4>
               <div class="space-y-4">
                 <div>
-                  <label for="compress-days" class="block text-sm font-medium text-gray-700 mb-2" data-i18n="backup.compressDays">Compress backups older than (days):</label>
+                  <label
+                    for="compress-days"
+                    class="block text-sm font-medium text-gray-700 mb-2"
+                    data-i18n="backup.compressDays"
+                    >Compress backups older than (days):</label
+                  >
                   <input
                     type="number"
                     id="compress-days"
@@ -153,7 +204,12 @@
                     aria-describedby="compress-days-error"
                     class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
-                  <div class="text-red-600 text-sm mt-1" id="compress-days-error" role="alert" aria-live="assertive"></div>
+                  <div
+                    class="text-red-600 text-sm mt-1"
+                    id="compress-days-error"
+                    role="alert"
+                    aria-live="assertive"
+                  ></div>
                 </div>
                 <button
                   class="w-full px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded font-medium transition"
@@ -168,7 +224,11 @@
 
           <div class="hidden mt-6" id="maintenance-progress">
             <div class="h-2 bg-gray-200 rounded overflow-hidden">
-              <div class="h-full bg-blue-600 transition-all duration-300" id="maintenance-progress-fill" style="width: 0%"></div>
+              <div
+                class="h-full bg-blue-600 transition-all duration-300"
+                id="maintenance-progress-fill"
+                style="width: 0%"
+              ></div>
             </div>
             <div id="maintenance-status" class="text-sm text-blue-600 mt-2"></div>
           </div>
@@ -176,11 +236,15 @@
 
         <!-- Statistics Panel -->
         <div class="bg-white rounded-lg shadow p-6">
-          <h3 class="text-xl font-bold text-gray-900 mb-6" data-i18n="backup.statisticsTitle">Backup Statistics</h3>
+          <h3 class="text-xl font-bold text-gray-900 mb-6" data-i18n="backup.statisticsTitle">
+            Backup Statistics
+          </h3>
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
             <div class="text-center">
               <div class="text-3xl font-bold text-gray-900" id="total-backups">-</div>
-              <div class="text-sm text-gray-600 mt-1" data-i18n="backup.totalBackups">Total Backups</div>
+              <div class="text-sm text-gray-600 mt-1" data-i18n="backup.totalBackups">
+                Total Backups
+              </div>
             </div>
             <div class="text-center">
               <div class="text-3xl font-bold text-blue-600" id="total-size">-</div>
@@ -188,15 +252,21 @@
             </div>
             <div class="text-center">
               <div class="text-3xl font-bold text-green-600" id="compressed-count">-</div>
-              <div class="text-sm text-gray-600 mt-1" data-i18n="backup.compressedCount">Compressed</div>
+              <div class="text-sm text-gray-600 mt-1" data-i18n="backup.compressedCount">
+                Compressed
+              </div>
             </div>
             <div class="text-center">
               <div class="text-sm font-medium text-gray-900" id="newest-backup">-</div>
-              <div class="text-xs text-gray-600 mt-1" data-i18n="backup.newestBackup">Newest Backup</div>
+              <div class="text-xs text-gray-600 mt-1" data-i18n="backup.newestBackup">
+                Newest Backup
+              </div>
             </div>
             <div class="text-center">
               <div class="text-sm font-medium text-gray-900" id="oldest-backup">-</div>
-              <div class="text-xs text-gray-600 mt-1" data-i18n="backup.oldestBackup">Oldest Backup</div>
+              <div class="text-xs text-gray-600 mt-1" data-i18n="backup.oldestBackup">
+                Oldest Backup
+              </div>
             </div>
           </div>
         </div>
@@ -204,26 +274,49 @@
     </div>
 
     <!-- Restore Confirmation Modal -->
-    <div id="restore-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div
+      id="restore-modal"
+      class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+    >
       <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
         <div class="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 class="text-xl font-bold text-gray-900" data-i18n="backup.confirmRestore">Confirm Restore</h2>
-          <span class="text-gray-400 hover:text-gray-600 text-2xl cursor-pointer" onclick="hideRestoreModal()">&times;</span>
+          <h2 class="text-xl font-bold text-gray-900" data-i18n="backup.confirmRestore">
+            Confirm Restore
+          </h2>
+          <span
+            class="text-gray-400 hover:text-gray-600 text-2xl cursor-pointer"
+            onclick="hideRestoreModal()"
+            >&times;</span
+          >
         </div>
         <div class="p-6">
           <p class="text-gray-700 mb-4" data-i18n="backup.restoreWarning">
             Are you sure you want to restore from this backup? This will replace your current data.
           </p>
           <div class="bg-gray-50 rounded p-3 text-sm" id="restore-backup-info"></div>
-          <div class="hidden text-sm text-blue-600 mt-4" id="restore-status" data-i18n="backup.restoreInProgress">
+          <div
+            class="hidden text-sm text-blue-600 mt-4"
+            id="restore-status"
+            data-i18n="backup.restoreInProgress"
+          >
             Restoring backup...
           </div>
         </div>
-        <div class="flex flex-col md:flex-row md:justify-end gap-3 md:gap-0 md:space-x-3 p-6 border-t border-gray-200">
-          <button class="order-2 md:order-1 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition" onclick="hideRestoreModal()" data-i18n="actions.cancel">
+        <div
+          class="flex flex-col md:flex-row md:justify-end gap-3 md:gap-0 md:space-x-3 p-6 border-t border-gray-200"
+        >
+          <button
+            class="order-2 md:order-1 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition"
+            onclick="hideRestoreModal()"
+            data-i18n="actions.cancel"
+          >
             Cancel
           </button>
-          <button id="confirm-restore-btn" class="order-1 md:order-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded font-medium transition" data-i18n="backup.restoreBtn">
+          <button
+            id="confirm-restore-btn"
+            class="order-1 md:order-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded font-medium transition"
+            data-i18n="backup.restoreBtn"
+          >
             Restore
           </button>
         </div>
@@ -231,11 +324,20 @@
     </div>
 
     <!-- Delete Confirmation Modal -->
-    <div id="delete-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div
+      id="delete-modal"
+      class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+    >
       <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
         <div class="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 class="text-xl font-bold text-gray-900" data-i18n="backup.confirmDelete">Confirm Delete</h2>
-          <span class="text-gray-400 hover:text-gray-600 text-2xl cursor-pointer" onclick="hideDeleteModal()">&times;</span>
+          <h2 class="text-xl font-bold text-gray-900" data-i18n="backup.confirmDelete">
+            Confirm Delete
+          </h2>
+          <span
+            class="text-gray-400 hover:text-gray-600 text-2xl cursor-pointer"
+            onclick="hideDeleteModal()"
+            >&times;</span
+          >
         </div>
         <div class="p-6">
           <p class="text-gray-700 mb-4" data-i18n="backup.deleteWarning">
@@ -243,11 +345,21 @@
           </p>
           <div class="bg-gray-50 rounded p-3 text-sm" id="delete-backup-info"></div>
         </div>
-        <div class="flex flex-col md:flex-row md:justify-end gap-3 md:gap-0 md:space-x-3 p-6 border-t border-gray-200">
-          <button class="order-2 md:order-1 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition" onclick="hideDeleteModal()" data-i18n="actions.cancel">
+        <div
+          class="flex flex-col md:flex-row md:justify-end gap-3 md:gap-0 md:space-x-3 p-6 border-t border-gray-200"
+        >
+          <button
+            class="order-2 md:order-1 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition"
+            onclick="hideDeleteModal()"
+            data-i18n="actions.cancel"
+          >
             Cancel
           </button>
-          <button id="confirm-delete-btn" class="order-1 md:order-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded font-medium transition" data-i18n="backup.deleteBtn">
+          <button
+            id="confirm-delete-btn"
+            class="order-1 md:order-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded font-medium transition"
+            data-i18n="backup.deleteBtn"
+          >
             Delete
           </button>
         </div>

@@ -12,13 +12,17 @@ import type { ContainerProps, FlexProps, GridProps, SectionProps } from './types
  * @param props - Container properties
  * @returns HTMLDivElement with container styling
  */
-export function createContainer(content: HTMLElement | string, props?: ContainerProps): HTMLDivElement {
+export function createContainer(
+  content: HTMLElement | string,
+  props?: ContainerProps
+): HTMLDivElement {
   const container = document.createElement('div');
 
   const maxWidthClasses = getMaxWidthClasses(props?.maxWidth || 'xl');
   const paddingClasses = props?.padding !== false ? 'px-4 sm:px-6 lg:px-8' : '';
 
-  container.className = `mx-auto ${maxWidthClasses} ${paddingClasses} ${props?.className || ''}`.trim();
+  container.className =
+    `mx-auto ${maxWidthClasses} ${paddingClasses} ${props?.className || ''}`.trim();
 
   if (typeof content === 'string') {
     container.innerHTML = content;
@@ -59,7 +63,11 @@ export function createSection(backgroundColor?: string, props?: SectionProps): H
  * @param props - Additional flex properties
  * @returns HTMLDivElement with flex styling
  */
-export function createFlex(direction?: 'row' | 'col', gap?: string, props?: FlexProps): HTMLDivElement {
+export function createFlex(
+  direction?: 'row' | 'col',
+  gap?: string,
+  props?: FlexProps
+): HTMLDivElement {
   const flex = document.createElement('div');
 
   const baseClasses = 'flex';
@@ -69,7 +77,8 @@ export function createFlex(direction?: 'row' | 'col', gap?: string, props?: Flex
   const gapClasses = getGapClasses(gap || props?.gap);
   const wrapClasses = props?.wrap ? 'flex-wrap' : '';
 
-  flex.className = `${baseClasses} ${directionClasses} ${justifyClasses} ${alignClasses} ${gapClasses} ${wrapClasses} ${props?.className || ''}`.trim();
+  flex.className =
+    `${baseClasses} ${directionClasses} ${justifyClasses} ${alignClasses} ${gapClasses} ${wrapClasses} ${props?.className || ''}`.trim();
 
   if (props?.id) flex.id = props.id;
   if (props?.ariaLabel) flex.setAttribute('aria-label', props.ariaLabel);
@@ -91,7 +100,8 @@ export function createGrid(cols?: number, props?: GridProps): HTMLDivElement {
   const gapClasses = getGapClasses(props?.gap);
   const rowsClasses = props?.rows ? `grid-rows-${props.rows}` : '';
 
-  grid.className = `${baseClasses} ${colsClasses} ${gapClasses} ${rowsClasses} ${props?.className || ''}`.trim();
+  grid.className =
+    `${baseClasses} ${colsClasses} ${gapClasses} ${rowsClasses} ${props?.className || ''}`.trim();
 
   if (props?.id) grid.id = props.id;
   if (props?.ariaLabel) grid.setAttribute('aria-label', props.ariaLabel);

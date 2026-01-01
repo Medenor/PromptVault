@@ -1,38 +1,29 @@
 {# This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0. If a copy of
 the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/. #}
-{% macro load_css(entry_name, use_vite=true) %}
-{# CSS loading macro for HEAD section #}
-{% if is_dev() and use_vite_assets() and use_vite %}
-{# Development mode - Vite handles CSS injection via dev server #}
-{% else %}
-{# Production mode - load CSS from manifest #}
-{% set manifest = load_manifest() %}
-{% if (use_vite_assets() or is_production()) and use_vite and 'ts/' + entry_name + '.ts' in manifest %}
-  {% set entry_data = manifest['ts/' + entry_name + '.ts'] %}
-  {% if 'css' in entry_data %}
-    {% for css_file in entry_data['css'] %}
+{% macro load_css(entry_name, use_vite=true) %} {# CSS loading macro for HEAD section #} {% if
+is_dev() and use_vite_assets() and use_vite %} {# Development mode - Vite handles CSS injection via
+dev server #} {% else %} {# Production mode - load CSS from manifest #} {% set manifest =
+load_manifest() %} {% if (use_vite_assets() or is_production()) and use_vite and 'ts/' + entry_name
++ '.ts' in manifest %} {% set entry_data = manifest['ts/' + entry_name + '.ts'] %} {% if 'css' in
+entry_data %} {% for css_file in entry_data['css'] %}
 <link rel="stylesheet" href="/static/dist/{{ css_file }}" />
-    {% endfor %}
-  {% endif %}
-{% endif %}
-{% endif %}
-{% endmacro %}
-
-{% macro load_scripts(entry_name, include_telemetry=true, legacy_name=None, use_vite=true) %} {% set
-legacy_entry = legacy_name or entry_name %} {% if is_dev() and use_vite_assets() and use_vite %} {#
-Development mode - load from Vite dev server #}
+{% endfor %} {% endif %} {% endif %} {% endif %} {% endmacro %} {% macro load_scripts(entry_name,
+include_telemetry=true, legacy_name=None, use_vite=true) %} {% set legacy_entry = legacy_name or
+entry_name %} {% if is_dev() and use_vite_assets() and use_vite %} {# Development mode - load from
+Vite dev server #}
 <script type="module" src="http://localhost:5173/static/@vite/client"></script>
 {% if include_telemetry %}
 <script type="module" src="http://localhost:5173/static/ts/telemetry.ts"></script>
 {% endif %}
 <script type="module" src="http://localhost:5173/static/ts/{{ entry_name }}.ts"></script>
-{% else %} {# Production mode - load built files #} {% set manifest = load_manifest() %}
-{% if
-(use_vite_assets() or is_production()) and use_vite and include_telemetry and 'ts/telemetry.ts' in manifest %}
+{% else %} {# Production mode - load built files #} {% set manifest = load_manifest() %} {% if
+(use_vite_assets() or is_production()) and use_vite and include_telemetry and 'ts/telemetry.ts' in
+manifest %}
 <script type="module" src="/static/dist/{{ manifest['ts/telemetry.ts']['file'] }}"></script>
 {% elif include_telemetry %}
 <script src="/static/js/telemetry.js" defer></script>
-{% endif %} {% if (use_vite_assets() or is_production()) and use_vite and 'ts/' + entry_name + '.ts' in manifest %}
+{% endif %} {% if (use_vite_assets() or is_production()) and use_vite and 'ts/' + entry_name + '.ts'
+in manifest %}
 <script
   type="module"
   src="/static/dist/{{ manifest['ts/' + entry_name + '.ts']['file'] }}"

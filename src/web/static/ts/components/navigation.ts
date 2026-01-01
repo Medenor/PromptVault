@@ -73,12 +73,22 @@ export function createTabs(
       tabs.forEach((t, i) => {
         const btn = tabList.children[i] as HTMLButtonElement;
         if (t.id === tab.id) {
-          btn.classList.remove('border-transparent', 'text-gray-600', 'hover:text-gray-900', 'hover:border-gray-300');
+          btn.classList.remove(
+            'border-transparent',
+            'text-gray-600',
+            'hover:text-gray-900',
+            'hover:border-gray-300'
+          );
           btn.classList.add('border-blue-500', 'text-blue-600');
           btn.setAttribute('aria-selected', 'true');
         } else {
           btn.classList.remove('border-blue-500', 'text-blue-600');
-          btn.classList.add('border-transparent', 'text-gray-600', 'hover:text-gray-900', 'hover:border-gray-300');
+          btn.classList.add(
+            'border-transparent',
+            'text-gray-600',
+            'hover:text-gray-900',
+            'hover:border-gray-300'
+          );
           btn.setAttribute('aria-selected', 'false');
         }
       });
@@ -139,7 +149,8 @@ export function createBreadcrumbs(
       const link = document.createElement('a');
       link.href = item.href;
       link.textContent = item.label;
-      link.className = 'text-blue-600 hover:text-blue-800 hover:underline transition-colors duration-200';
+      link.className =
+        'text-blue-600 hover:text-blue-800 hover:underline transition-colors duration-200';
       li.appendChild(link);
     }
 
@@ -165,9 +176,7 @@ function createNavItem(item: NavItemProps): HTMLElement {
   const baseClasses = 'px-3 py-2 text-sm font-medium rounded-md transition-colors duration-200';
 
   // Active/inactive states
-  const stateClasses = item.active
-    ? 'bg-blue-500 text-white'
-    : 'text-gray-900 hover:bg-gray-100';
+  const stateClasses = item.active ? 'bg-blue-500 text-white' : 'text-gray-900 hover:bg-gray-100';
 
   // Disabled state
   const disabledClasses = item.disabled ? 'opacity-50 cursor-not-allowed pointer-events-none' : '';

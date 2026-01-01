@@ -13,6 +13,7 @@ import { reportError } from '@/telemetry';
 import { changeLanguage, initI18n, t, updateStaticTranslations } from '@/utils/i18n';
 import { clearAllErrors, showError } from '@/utils/dom';
 import { showNotification } from '@/utils/notifications';
+import { apiGet, apiPost, apiDelete, APIRequestError } from '@/utils/api';
 
 const API_BASE = '/api/auth';
 
@@ -42,12 +43,6 @@ interface UserInfo {
   role: string;
   created_at?: string | null;
   last_login?: string | null;
-}
-
-function getAuthHeaders(): HeadersInit {
-  return {
-    'Content-Type': 'application/json',
-  };
 }
 
 function formatDate(dateString?: string | null): string {
@@ -171,42 +166,36 @@ async function loadSessions(): Promise<void> {
     '<div class="text-gray-600 text-sm" data-i18n="messages.loading">Loading...</div>';
 
   try {
-    const response = await fetch(`${API_BASE}/sessions`, {
-      credentials: 'include',
-      headers: getAuthHeaders(),
-    });
+    const data = await apiGet<{ sessions?: SessionItem[] }>(`${API_BASE}/sessions`);
+    const sessions = data.sessions ?? [];
 
-    if (response.ok) {
-      const data = (await response.json()) as { sessions?: SessionItem[] };
-      const sessions = data.sessions ?? [];
+    const sessionCount = document.getElementById('session-count');
+    if (sessionCount) {
+      sessionCount.textContent = String(sessions.length);
+    }
 
-      const sessionCount = document.getElementById('session-count');
-      if (sessionCount) {
-        sessionCount.textContent = String(sessions.length);
-      }
+    if (sessions.length === 0) {
+      sessionsList.innerHTML = '<p class="text-gray-600 text-sm">No active sessions</p>';
+      return;
+    }
 
-      if (sessions.length === 0) {
-        sessionsList.innerHTML = '<p class="text-gray-600 text-sm">No active sessions</p>';
-        return;
-      }
+    sessionsList.innerHTML = sessions
+      .map((session) => {
+        const expirationStatus = getExpirationStatus(session.expires_at ?? null);
+        const deviceDisplay = session.device || 'Unknown Device';
+        const browserDisplay = session.browser ? `${session.browser}` : 'Unknown Browser';
+        const osDisplay = session.os ? `${session.os}` : 'Unknown OS';
+        const sessionId = session.id || session.session_id || '';
 
-      sessionsList.innerHTML = sessions
-        .map((session) => {
-          const expirationStatus = getExpirationStatus(session.expires_at ?? null);
-          const deviceDisplay = session.device || 'Unknown Device';
-          const browserDisplay = session.browser ? `${session.browser}` : 'Unknown Browser';
-          const osDisplay = session.os ? `${session.os}` : 'Unknown OS';
-          const sessionId = session.id || session.session_id || '';
+        // Determine badge color based on expiration status
+        let badgeClass = 'bg-gray-100 text-gray-700';
+        if (expirationStatus.status === 'expired') {
+          badgeClass = 'bg-red-100 text-red-700';
+        } else if (expirationStatus.status === 'expiring-soon') {
+          badgeClass = 'bg-amber-100 text-amber-700';
+        }
 
-          // Determine badge color based on expiration status
-          let badgeClass = 'bg-gray-100 text-gray-700';
-          if (expirationStatus.status === 'expired') {
-            badgeClass = 'bg-red-100 text-red-700';
-          } else if (expirationStatus.status === 'expiring-soon') {
-            badgeClass = 'bg-amber-100 text-amber-700';
-          }
-
-          return `
+        return `
             <div class="border border-gray-200 rounded-lg p-4 ${session.is_current ? 'bg-blue-50 border-blue-300' : 'bg-white'}" data-session-id="${sessionId}">
               <div class="flex justify-between items-start">
                 <div class="flex-1">
@@ -234,9 +223,8 @@ async function loadSessions(): Promise<void> {
               </div>
             </div>
           `;
-        })
-        .join('');
-    }
+      })
+      .join('');
   } catch (error) {
     reportError('profile', 'loadSessions', error);
     sessionsList.innerHTML = '<p class="text-red-500 text-sm">Failed to load sessions</p>';
@@ -245,31 +233,20 @@ async function loadSessions(): Promise<void> {
 
 async function loadUserInfo(): Promise<void> {
   try {
-    const response = await fetch(`${API_BASE}/me`, {
-      credentials: 'include',
-      headers: getAuthHeaders(),
-    });
+    const user = await apiGet<UserInfo>(`${API_BASE}/me`);
 
-    if (response.ok) {
-      const user = (await response.json()) as UserInfo;
+    const usernameEl = document.getElementById('user-username') as HTMLInputElement | null;
+    const emailEl = document.getElementById('user-email') as HTMLInputElement | null;
 
-      const usernameEl = document.getElementById('user-username') as HTMLInputElement | null;
-      const emailEl = document.getElementById('user-email') as HTMLInputElement | null;
+    if (usernameEl) usernameEl.value = user.username;
+    if (emailEl) emailEl.value = user.email;
 
-      if (usernameEl) usernameEl.value = user.username;
-      if (emailEl) emailEl.value = user.email;
+    const createdEl = document.getElementById('user-created');
+    const lastLoginEl = document.getElementById('user-last-login');
+    if (createdEl) createdEl.textContent = formatDate(user.created_at);
+    if (lastLoginEl) lastLoginEl.textContent = formatDate(user.last_login);
 
-      const createdEl = document.getElementById('user-created');
-      const lastLoginEl = document.getElementById('user-last-login');
-      if (createdEl) createdEl.textContent = formatDate(user.created_at);
-      if (lastLoginEl) lastLoginEl.textContent = formatDate(user.last_login);
-
-      await loadSessions();
-    } else if (response.status === 401) {
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
-      window.location.href = '/auth/login';
-    }
+    await loadSessions();
   } catch (error) {
     reportError('profile', 'loadUserInfo', error);
     showNotification(t('messages.error') || 'Failed to load user info', 'error');
@@ -287,21 +264,9 @@ async function revokeSession(sessionId: string): Promise<void> {
   }
 
   try {
-    const response = await fetch(`${API_BASE}/sessions/${sessionId}`, {
-      credentials: 'include',
-      method: 'DELETE',
-      headers: getAuthHeaders(),
-    });
-
-    if (response.ok) {
-      showNotification(
-        t('auth.profile.sessionRevoked') || 'Session revoked successfully',
-        'success'
-      );
-      await loadSessions();
-    } else {
-      showNotification(t('messages.error') || 'Failed to revoke session', 'error');
-    }
+    await apiDelete(`${API_BASE}/sessions/${sessionId}`);
+    showNotification(t('auth.profile.sessionRevoked') || 'Session revoked successfully', 'success');
+    await loadSessions();
   } catch (error) {
     reportError('profile', 'revokeSession', error);
     showNotification(t('messages.error') || 'Failed to revoke session', 'error');
@@ -370,40 +335,35 @@ function setupChangePasswordForm(): void {
     }
 
     try {
-      const response = await fetch(`${API_BASE}/change-password`, {
-        credentials: 'include',
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: JSON.stringify({
-          old_password: currentPassword,
-          new_password: newPassword,
-          confirm_new_password: confirmNewPassword,
-        }),
+      await apiPost(`${API_BASE}/change-password`, {
+        old_password: currentPassword,
+        new_password: newPassword,
+        confirm_new_password: confirmNewPassword,
       });
 
-      const data = (await response.json()) as Record<string, string>;
-
-      if (response.ok) {
-        showNotification(
-          t('auth.profile.passwordChanged') || 'Password changed successfully',
-          'success'
-        );
-        form.reset();
-        clearAllErrors();
-      } else if (response.status === 401) {
-        showError(
-          document.getElementById('current-password-error'),
-          data.detail || t('auth.profile.incorrectPassword') || 'Incorrect current password'
-        );
-      } else {
-        showNotification(
-          data.detail || t('messages.error') || 'Failed to change password',
-          'error'
-        );
-      }
+      showNotification(
+        t('auth.profile.passwordChanged') || 'Password changed successfully',
+        'success'
+      );
+      form.reset();
+      clearAllErrors();
     } catch (error) {
-      reportError('profile', 'changePassword', error);
-      showNotification(t('messages.error') || 'Failed to change password', 'error');
+      if (error instanceof APIRequestError) {
+        if (error.status === 401) {
+          showError(
+            document.getElementById('current-password-error'),
+            error.message || t('auth.profile.incorrectPassword') || 'Incorrect current password'
+          );
+        } else {
+          showNotification(
+            error.message || t('messages.error') || 'Failed to change password',
+            'error'
+          );
+        }
+      } else {
+        reportError('profile', 'changePassword', error);
+        showNotification(t('messages.error') || 'Failed to change password', 'error');
+      }
     } finally {
       if (submitButton) {
         submitButton.disabled = false;
@@ -412,7 +372,6 @@ function setupChangePasswordForm(): void {
     }
   });
 }
-
 
 function initializeProfilePage(): void {
   updateStaticTranslations();

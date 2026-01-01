@@ -4,7 +4,13 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import type { FormGroupProps, SelectProps, CheckboxProps, RadioGroupProps, InputProps } from './types';
+import type {
+  FormGroupProps,
+  SelectProps,
+  CheckboxProps,
+  RadioGroupProps,
+  InputProps,
+} from './types';
 import { createInput } from './input';
 
 /**
@@ -95,13 +101,15 @@ export function createSelectInput(
   const select = document.createElement('select');
 
   // Tailwind styling matching input design
-  const baseClasses = 'w-full px-3 py-2 rounded-md transition-all duration-200 focus:outline-none focus:ring-2';
+  const baseClasses =
+    'w-full px-3 py-2 rounded-md transition-all duration-200 focus:outline-none focus:ring-2';
   const stateClasses = props?.error
     ? 'bg-red-50 border-2 border-red-500 focus:border-red-600 focus:ring-red-500'
     : 'bg-gray-100 border-2 border-gray-100 focus:border-blue-500 focus:bg-white focus:ring-blue-500';
   const disabledClasses = props?.disabled ? 'opacity-50 cursor-not-allowed' : '';
 
-  select.className = `${baseClasses} ${stateClasses} ${disabledClasses} ${props?.className || ''}`.trim();
+  select.className =
+    `${baseClasses} ${stateClasses} ${disabledClasses} ${props?.className || ''}`.trim();
 
   if (props?.name) select.name = props.name;
   if (props?.disabled) select.disabled = true;
@@ -143,7 +151,8 @@ export function createCheckbox(label: string, props?: CheckboxProps): HTMLDivEle
   const checkbox = document.createElement('input');
   checkbox.type = 'checkbox';
   checkbox.id = props?.id || `checkbox-${Math.random().toString(36).substr(2, 9)}`;
-  checkbox.className = 'w-4 h-4 text-blue-500 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 transition-all duration-200';
+  checkbox.className =
+    'w-4 h-4 text-blue-500 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 transition-all duration-200';
 
   if (props?.checked) checkbox.checked = true;
   if (props?.disabled) {
@@ -214,7 +223,8 @@ export function createRadioGroup(
     radio.name = props?.name || 'radio-group';
     radio.value = opt.value;
     radio.id = `${props?.name || 'radio'}-${index}`;
-    radio.className = 'w-4 h-4 text-blue-500 bg-gray-100 border-gray-300 focus:ring-blue-500 focus:ring-2 transition-all duration-200';
+    radio.className =
+      'w-4 h-4 text-blue-500 bg-gray-100 border-gray-300 focus:ring-blue-500 focus:ring-2 transition-all duration-200';
 
     if (props?.value === opt.value) radio.checked = true;
     if (opt.disabled || props?.disabled) {

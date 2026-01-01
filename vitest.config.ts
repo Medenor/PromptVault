@@ -13,13 +13,13 @@ export default defineConfig({
         lines: 70,
         branches: 60,
         functions: 70,
-        statements: 70
-      }
-    }
+        statements: 70,
+      },
+    },
   },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, 'src/web/static/ts')
-    }
-  }
+      '@': path.resolve(__dirname, 'src/web/static/ts'),
+    },
+  },
 });
