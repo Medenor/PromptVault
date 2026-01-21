@@ -103,8 +103,8 @@ With built-in multi-user authentication and role-based access control, PromptVau
 
 PromptVault is **fully tested and production-ready**:
 
-- **Backend Testing**: 1,087 Python unit tests passing (83.54% coverage) with full integration tests
-- **Frontend Testing**: 49 TypeScript unit tests passing (89.83% coverage) with component and utility tests
+- **Backend Testing**: Pytest unit tests targeting min. 85% coverage with full integration tests
+- **Frontend Testing**: TypeScript unit tests targeting min. 85% coverage with component and utility tests
 - **UI Redesign**: Complete Tailwind CSS v4 migration with responsive design and improved accessibility
 - **Security**: Comprehensive security configuration with JWT ES256 authentication, password hashing, rate limiting, and session management
 - **Internationalization**: Full i18n support for English, French, Spanish, and German
