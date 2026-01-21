@@ -99,7 +99,7 @@ PromptVault is a modern web-based prompt management application designed to help
 
 With built-in multi-user authentication and role-based access control, PromptVault is ready for team deployments and production environments. Secure your prompts, manage user permissions, and collaborate with confidence.
 
-#### Current Status & Test Coverage
+### Current Status & Test Coverage
 
 PromptVault is **fully tested and production-ready**:
 
