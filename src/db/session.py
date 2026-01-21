@@ -139,8 +139,14 @@ def get_db() -> Generator[Session, None, None]:
     try:
         yield db
     finally:
-        db.close()
-        logger.debug("FastAPI database dependency session closed")
+        try:
+            db.close()
+            logger.debug("FastAPI database dependency session closed")
+        except Exception as exc:
+            logger.warning(
+                "FastAPI database dependency session close failed",
+                exc_info=exc
+            )
 
 
 def create_all_tables():
