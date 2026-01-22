@@ -1,0 +1,306 @@
+<!doctype html>
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+     License, v. 2.0. If a copy of the MPL was not distributed with this
+     file, You can obtain one at https://mozilla.org/MPL/2.0/. -->
+<html lang="en">
+  <head>
+    {% import "macros/scripts.html" as scripts %}
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PromptVault - Manage Categories</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon.png" />
+    {{ scripts.load_css('app', true) }}
+    <script src="https://unpkg.com/i18next@23.7.6/i18next.min.js"></script>
+    <script src="https://unpkg.com/i18next-browser-languagedetector@7.2.0/i18nextBrowserLanguageDetector.min.js"></script>
+    <script src="https://unpkg.com/i18next-http-backend@2.4.2/i18nextHttpBackend.min.js"></script>
+  </head>
+  <body class="bg-gray-50 min-h-screen">
+    <div class="min-h-screen flex flex-col">
+      <header class="bg-blue-600 text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+              <img
+                src="/static/images/promptvault_logo_frontend.webp"
+                alt="PromptVault Logo"
+                class="h-14 w-14 border-2 border-gray-400 rounded-lg shadow-lg"
+              />
+              <h1 class="text-2xl font-bold">PromptVault</h1>
+            </div>
+            <div class="flex items-center space-x-3">
+              <button
+                onclick="window.location.href = '/'"
+                class="px-4 py-2 bg-blue-700 hover:bg-blue-800 rounded text-sm font-medium transition"
+                data-i18n="nav.backToMain"
+              >
+                Back to Main
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+        <div class="mb-6">
+          <h2 class="text-3xl font-bold text-gray-900 mb-2" data-i18n="categories.manage">Manage Categories</h2>
+          <p class="text-gray-600" data-i18n="categories.manageDesc">Create, edit, and remove categories across all prompts.</p>
+        </div>
+
+        <section class="bg-white rounded-lg shadow p-6 mb-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4" data-i18n="categories.createTitle">Create Category</h3>
+          <form id="category-create-form" class="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <input
+              id="category-create-name"
+              type="text"
+              placeholder="Name"
+              class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+              required
+            />
+            <input
+              id="category-create-description"
+              type="text"
+              placeholder="Description"
+              class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+            />
+            <input
+              id="category-create-color"
+              type="text"
+              placeholder="Color token or hex"
+              class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+            />
+            <input
+              id="category-create-color-picker"
+              type="color"
+              value="#2563eb"
+              class="h-11 w-full md:w-20 border border-gray-300 rounded"
+              aria-label="Pick a color"
+            />
+            <button
+              type="submit"
+              class="px-4 py-2 bg-emerald-500 text-white rounded font-medium hover:bg-emerald-600 transition"
+              data-i18n="actions.create"
+            >
+              Create
+            </button>
+          </form>
+        </section>
+
+        <section class="bg-white rounded-lg shadow p-6 mb-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4" data-i18n="management.bulkActions">Bulk Actions</h3>
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="border border-gray-200 rounded-lg p-4">
+              <h4 class="font-semibold text-gray-800 mb-3" data-i18n="actions.merge">Merge</h4>
+              <div class="space-y-3">
+                <input
+                  id="category-merge-target"
+                  type="number"
+                  placeholder="Target ID"
+                  class="w-full px-3 py-2 border border-gray-300 rounded"
+                />
+                <input
+                  id="category-merge-sources"
+                  type="text"
+                  placeholder="Source IDs (comma-separated)"
+                  class="w-full px-3 py-2 border border-gray-300 rounded"
+                />
+                <button
+                  id="category-merge-btn"
+                  class="w-full px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+                  data-i18n="actions.merge"
+                >
+                  Merge
+                </button>
+              </div>
+            </div>
+
+            <div class="border border-gray-200 rounded-lg p-4">
+              <h4 class="font-semibold text-gray-800 mb-3" data-i18n="actions.findReplace">Find & Replace</h4>
+              <div class="space-y-3">
+                <input
+                  id="category-find"
+                  type="text"
+                  placeholder="Find name"
+                  class="w-full px-3 py-2 border border-gray-300 rounded"
+                />
+                <input
+                  id="category-replace"
+                  type="text"
+                  placeholder="Replace name"
+                  class="w-full px-3 py-2 border border-gray-300 rounded"
+                />
+                <button
+                  id="category-find-replace-btn"
+                  class="w-full px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+                  data-i18n="actions.replace"
+                >
+                  Replace
+                </button>
+              </div>
+            </div>
+
+            <div class="border border-gray-200 rounded-lg p-4">
+              <h4 class="font-semibold text-gray-800 mb-3" data-i18n="actions.bulkDelete">Bulk Delete</h4>
+              <div class="space-y-3">
+                <input
+                  id="category-bulk-delete-ids"
+                  type="text"
+                  placeholder="IDs (comma-separated)"
+                  class="w-full px-3 py-2 border border-gray-300 rounded"
+                />
+                <label class="flex items-center gap-2 text-sm text-gray-700">
+                  <input id="category-bulk-delete-force" type="checkbox" class="rounded text-blue-500" />
+                  Force delete (remove from prompts)
+                </label>
+                <button
+                  id="category-bulk-delete-btn"
+                  class="w-full px-3 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition"
+                  data-i18n="actions.delete"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="mt-4 flex justify-end">
+            <button
+              id="category-undo-btn"
+              class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition"
+              data-i18n="actions.undo"
+            >
+              Undo
+            </button>
+          </div>
+        </section>
+
+        <section class="bg-white rounded-lg shadow p-6 mb-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4" data-i18n="management.importExport">Import & Export</h3>
+          <div class="flex flex-col md:flex-row gap-4 items-start md:items-center">
+            <button
+              id="category-export-btn"
+              class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+              data-i18n="actions.export"
+            >
+              Export JSON
+            </button>
+            <div class="flex items-center gap-3">
+              <input id="category-import-file" type="file" accept="application/json" />
+              <button
+                id="category-import-btn"
+                class="px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 transition"
+                data-i18n="actions.import"
+              >
+                Import
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section class="bg-white rounded-lg shadow p-6 mb-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4" data-i18n="management.analytics">Analytics</h3>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div class="p-4 rounded-lg bg-blue-50">
+              <div class="text-sm text-blue-800" data-i18n="management.total">Total Categories</div>
+              <div id="category-analytics-total" class="text-2xl font-semibold text-blue-900">0</div>
+            </div>
+            <div class="p-4 rounded-lg bg-emerald-50">
+              <div class="text-sm text-emerald-800" data-i18n="management.used">Used</div>
+              <div id="category-analytics-used" class="text-2xl font-semibold text-emerald-900">0</div>
+            </div>
+            <div class="p-4 rounded-lg bg-amber-50">
+              <div class="text-sm text-amber-800" data-i18n="management.unused">Unused</div>
+              <div id="category-analytics-unused" class="text-2xl font-semibold text-amber-900">0</div>
+            </div>
+          </div>
+          <div>
+            <h4 class="text-sm font-semibold text-gray-700 mb-2" data-i18n="management.top">Top Categories</h4>
+            <ul id="category-analytics-top" class="text-sm text-gray-700 space-y-1"></ul>
+          </div>
+        </section>
+
+        <section class="bg-white rounded-lg shadow p-6 mb-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4" data-i18n="management.orphans">Orphans</h3>
+          <p class="text-sm text-gray-600 mb-3">
+            <span data-i18n="categories.orphans">Prompts without a category:</span>
+            <strong id="category-orphans-count">0</strong>
+          </p>
+          <div class="flex flex-col md:flex-row gap-3 mb-3">
+            <input
+              id="category-orphans-reassign"
+              type="text"
+              placeholder="Category name to assign"
+              class="w-full md:w-64 px-3 py-2 border border-gray-300 rounded"
+            />
+            <button
+              id="category-orphans-assign-btn"
+              class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+              data-i18n="categories.assignOrphans"
+            >
+              Assign Category
+            </button>
+          </div>
+          <textarea
+            id="category-orphans-list"
+            class="w-full h-24 px-3 py-2 border border-gray-300 rounded text-xs"
+            readonly
+          ></textarea>
+        </section>
+
+        <section class="bg-white rounded-lg shadow p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-gray-900" data-i18n="categories.listTitle">Categories</h3>
+            <input
+              id="category-search"
+              type="text"
+              placeholder="Search categories..."
+              class="w-full md:w-64 px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="min-w-full text-sm">
+              <thead>
+                <tr class="text-left text-gray-600 border-b">
+                  <th class="py-2 pr-4" data-i18n="management.select">Select</th>
+                  <th class="py-2 pr-4" data-i18n="management.name">Name</th>
+                  <th class="py-2 pr-4" data-i18n="management.description">Description</th>
+                  <th class="py-2 pr-4" data-i18n="management.color">Color</th>
+                  <th class="py-2 pr-4" data-i18n="management.order">Order</th>
+                  <th class="py-2 pr-4" data-i18n="management.usage">Usage</th>
+                  <th class="py-2 pr-4" data-i18n="management.actions">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="categories-table-body" class="cursor-move"></tbody>
+            </table>
+          </div>
+          <div class="mt-4 flex justify-end">
+            <button
+              id="category-reorder-btn"
+              class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+              data-i18n="actions.saveOrder"
+            >
+              Save Order
+            </button>
+          </div>
+          <div class="mt-4 flex flex-col md:flex-row gap-3">
+            <button
+              id="category-selection-merge-btn"
+              class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+              data-i18n="actions.mergeSelected"
+            >
+              Merge Selected
+            </button>
+            <button
+              id="category-selection-find-replace-btn"
+              class="px-4 py-2 bg-blue-50 text-blue-700 rounded hover:bg-blue-100 transition"
+              data-i18n="actions.findReplaceSelected"
+            >
+              Find/Replace Selected
+            </button>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    {{ scripts.load_scripts('manage-categories', true) }}
+  </body>
+</html>

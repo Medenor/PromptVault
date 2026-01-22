@@ -48,6 +48,12 @@ class TagRepository(BaseRepository[Tag]):
             Tag.name == name
         ).first()
 
+    def get_by_name_case_insensitive(self, name: str) -> Optional[Tag]:
+        """Get tag by name (case-insensitive)."""
+        return self.session.query(Tag).filter(
+            func.lower(Tag.name) == name.lower()
+        ).first()
+
     def get_or_create(self, name: str) -> Tag:
         """Get existing tag or create new one.
 
@@ -151,14 +157,20 @@ class TagRepository(BaseRepository[Tag]):
             return False
 
         # Check if any prompts use this tag
-        usage_count = self.session.query(prompt_tags).filter(
-            prompt_tags.c.tag_id == tag_id
-        ).count()
+        usage_count = self.count_usage(tag_id)
 
         if usage_count > 0:
             return False
 
         return self.delete(tag_id)
+
+    def count_usage(self, tag_id: int) -> int:
+        """Return number of prompts using the tag."""
+        from src.db.models.associations import prompt_tags
+
+        return self.session.query(prompt_tags).filter(
+            prompt_tags.c.tag_id == tag_id
+        ).count()
 
     def rename(self, tag_id: int, new_name: str) -> Optional[Tag]:
         """Rename a tag.
@@ -210,3 +222,29 @@ class TagRepository(BaseRepository[Tag]):
         self.delete(source_tag_id)
 
         return True
+
+    def merge_tags_bulk(self, source_tag_ids: List[int], target_tag_id: int) -> int:
+        """Merge multiple source tags into the target tag.
+
+        Args:
+            source_tag_ids: Tag IDs to merge into target
+            target_tag_id: Tag ID to keep
+
+        Returns:
+            Number of source tags deleted
+        """
+        if not source_tag_ids:
+            return 0
+
+        target_tag = self.get_by_id(target_tag_id)
+        if not target_tag:
+            return 0
+
+        merged = 0
+        for source_tag_id in source_tag_ids:
+            if source_tag_id == target_tag_id:
+                continue
+            if self.merge_tags(source_tag_id, target_tag_id):
+                merged += 1
+
+        return merged

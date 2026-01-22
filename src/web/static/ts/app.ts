@@ -301,6 +301,10 @@ function setupEventListeners(): void {
   });
   const cancelBtn = document.getElementById('cancel-btn');
   cancelBtn?.addEventListener('click', hidePromptEditor);
+  const suggestTagsBtn = document.getElementById('suggest-tags-btn');
+  suggestTagsBtn?.addEventListener('click', () => {
+    void handleSuggestTags();
+  });
 
   // Category and tag filtering (desktop and mobile)
   const categoriesList = document.getElementById('categories-list');
@@ -1978,6 +1982,69 @@ let tagAutocompleteState = {
   currentPartialTag: '',
 };
 
+function parseTagInput(value: string): string[] {
+  return value
+    .split(',')
+    .map((tag) => tag.trim())
+    .filter((tag) => tag.length > 0);
+}
+
+function setTagInput(tags: string[]): void {
+  const tagInput = document.getElementById('prompt-tags') as HTMLInputElement | null;
+  if (!tagInput) {
+    return;
+  }
+  tagInput.value = tags.join(', ') + (tags.length > 0 ? ', ' : '');
+  tagInput.focus();
+}
+
+function mergeTagSuggestions(existing: string[], suggestions: string[]): string[] {
+  const existingSet = new Set(existing.map((tag) => tag.toLowerCase()));
+  const merged = [...existing];
+  for (const suggestion of suggestions) {
+    if (!existingSet.has(suggestion.toLowerCase())) {
+      merged.push(suggestion);
+      existingSet.add(suggestion.toLowerCase());
+    }
+  }
+  return merged;
+}
+
+async function handleSuggestTags(): Promise<void> {
+  const promptInput = document.getElementById('prompt-content') as HTMLTextAreaElement | null;
+  const tagInput = document.getElementById('prompt-tags') as HTMLInputElement | null;
+  if (!promptInput || !tagInput) {
+    return;
+  }
+
+  const content = promptInput.value.trim();
+  if (!content) {
+    alert('Add prompt content before requesting suggestions.');
+    return;
+  }
+
+  try {
+    const response = await apiFetch<{ suggestions: Array<{ name: string; score: number }> }>(
+      '/api/tags/suggest',
+      {
+        method: 'POST',
+        body: JSON.stringify({ content, limit: 10 }),
+      },
+    );
+    const suggestedNames = response.suggestions.map((item) => item.name);
+    if (suggestedNames.length === 0) {
+      alert('No suggestions found.');
+      return;
+    }
+    const existingTags = parseTagInput(tagInput.value);
+    const merged = mergeTagSuggestions(existingTags, suggestedNames);
+    setTagInput(merged);
+  } catch (error) {
+    reportAppIssue('suggestTags', error);
+    alert('Failed to get tag suggestions.');
+  }
+}
+
 async function loadAvailableTags(): Promise<void> {
   try {
     const data = await apiGet<{ tags: TagInfo[] }>('/api/tags');
@@ -2298,9 +2365,12 @@ function selectTag(tagName: string): void {
 function initializeBulkActions() {
   const selectAllCheckbox = document.getElementById('select-all-checkbox');
   const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
+  const bulkTagBtn = document.getElementById('bulk-tag-btn');
   const clearSelectionBtn = document.getElementById('clear-selection-btn');
   const confirmBulkDeleteBtn = document.getElementById('confirm-bulk-delete-btn');
   const cancelBulkDeleteBtn = document.getElementById('cancel-bulk-delete-btn');
+  const confirmBulkTagBtn = document.getElementById('confirm-bulk-tag-btn');
+  const cancelBulkTagBtn = document.getElementById('cancel-bulk-tag-btn');
 
   if (selectAllCheckbox) {
     selectAllCheckbox.addEventListener('change', handleSelectAll);
@@ -2308,6 +2378,9 @@ function initializeBulkActions() {
 
   if (bulkDeleteBtn) {
     bulkDeleteBtn.addEventListener('click', showBulkDeleteConfirmation);
+  }
+  if (bulkTagBtn) {
+    bulkTagBtn.addEventListener('click', showBulkTagModal);
   }
 
   if (clearSelectionBtn) {
@@ -2322,6 +2395,16 @@ function initializeBulkActions() {
 
   if (cancelBulkDeleteBtn) {
     cancelBulkDeleteBtn.addEventListener('click', hideBulkDeleteModal);
+  }
+
+  if (confirmBulkTagBtn) {
+    confirmBulkTagBtn.addEventListener('click', () => {
+      void performBulkTagUpdate();
+    });
+  }
+
+  if (cancelBulkTagBtn) {
+    cancelBulkTagBtn.addEventListener('click', hideBulkTagModal);
   }
 }
 
@@ -2420,6 +2503,31 @@ function hideBulkDeleteModal() {
   }
 }
 
+function showBulkTagModal() {
+  if (selectedPromptIds.size === 0) return;
+
+  const modal = document.getElementById('bulk-tag-modal');
+  const countElement = document.getElementById('bulk-tag-count');
+  if (countElement) {
+    countElement.textContent = String(selectedPromptIds.size);
+  }
+  if (modal) {
+    modal.classList.remove(HIDDEN_CLASS);
+  }
+}
+
+function hideBulkTagModal() {
+  const modal = document.getElementById('bulk-tag-modal');
+  if (modal) {
+    modal.classList.add(HIDDEN_CLASS);
+  }
+}
+
+// Expose modal close handlers for inline template hooks
+(window as typeof window & { hideBulkDeleteModal?: () => void; hideBulkTagModal?: () => void }).hideBulkDeleteModal =
+  hideBulkDeleteModal;
+(window as typeof window & { hideBulkTagModal?: () => void }).hideBulkTagModal = hideBulkTagModal;
+
 async function performBulkDelete(): Promise<void> {
   if (selectedPromptIds.size === 0) return;
 
@@ -2467,6 +2575,49 @@ async function performBulkDelete(): Promise<void> {
     reportAppIssue('bulk-delete-failed', error, {
       prompt_ids: promptIdsArray,
     });
+  }
+}
+
+async function performBulkTagUpdate(): Promise<void> {
+  if (selectedPromptIds.size === 0) return;
+
+  const addInput = document.getElementById('bulk-tag-add') as HTMLInputElement | null;
+  const removeInput = document.getElementById('bulk-tag-remove') as HTMLInputElement | null;
+
+  const addTags = parseTagInput(addInput?.value ?? '');
+  const removeTags = parseTagInput(removeInput?.value ?? '');
+
+  if (addTags.length === 0 && removeTags.length === 0) {
+    alert('Provide at least one tag to add or remove.');
+    return;
+  }
+
+  try {
+    await apiFetch('/api/tags/bulk-update', {
+      method: 'POST',
+      body: JSON.stringify({
+        prompt_ids: Array.from(selectedPromptIds),
+        add: addTags,
+        remove: removeTags,
+        confirm: true,
+      }),
+    });
+
+    hideBulkTagModal();
+    clearSelection();
+    if (addInput) addInput.value = '';
+    if (removeInput) removeInput.value = '';
+
+    await loadPrompts();
+    await loadAvailableTags();
+    await loadTags();
+
+    alert('Tags updated for selected prompts.');
+  } catch (error) {
+    reportAppIssue('bulk-tag-update', error, {
+      promptCount: selectedPromptIds.size,
+    });
+    alert('Failed to update tags.');
   }
 }
 

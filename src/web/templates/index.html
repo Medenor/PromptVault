@@ -321,6 +321,25 @@
                 {% endfor %}
               </ul>
             </div>
+
+            <!-- Management Links -->
+            <div class="mt-6 border-t border-gray-200 pt-4">
+              <h3 class="text-sm font-semibold text-gray-700 mb-3">Manage</h3>
+              <div class="space-y-2">
+                <button
+                  onclick="window.location.href = '/manage-categories'"
+                  class="w-full px-3 py-2 text-sm font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition"
+                >
+                  Manage Categories
+                </button>
+                <button
+                  onclick="window.location.href = '/manage-tags'"
+                  class="w-full px-3 py-2 text-sm font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition"
+                >
+                  Manage Tags
+                </button>
+              </div>
+            </div>
           </div>
         </aside>
 
@@ -427,6 +446,25 @@
                 {% endfor %}
               </ul>
             </div>
+
+            <!-- Management Links -->
+            <div class="mt-6 border-t border-gray-200 pt-4">
+              <h3 class="text-sm font-semibold text-gray-700 mb-3">Manage</h3>
+              <div class="space-y-2">
+                <button
+                  onclick="window.location.href = '/manage-categories'"
+                  class="w-full px-3 py-2 text-sm font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition"
+                >
+                  Manage Categories
+                </button>
+                <button
+                  onclick="window.location.href = '/manage-tags'"
+                  class="w-full px-3 py-2 text-sm font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition"
+                >
+                  Manage Tags
+                </button>
+              </div>
+            </div>
           </div>
         </aside>
 
@@ -466,6 +504,13 @@
                 class="px-4 py-2 text-sm font-semibold rounded-lg bg-red-500 text-white hover:bg-red-600 transition-all hover:scale-105 active:scale-95"
               >
                 <span data-i18n="actions.bulkDelete">Delete Selected</span>
+              </button>
+              <button
+                id="bulk-tag-btn"
+                class="px-4 py-2 text-sm font-semibold rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-all hover:scale-105 active:scale-95"
+                data-i18n="actions.bulkTag"
+              >
+                Tag Selected
               </button>
               <button
                 id="clear-selection-btn"
@@ -656,6 +701,16 @@
                       id="tag-autocomplete"
                       class="hidden absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-auto"
                     ></div>
+                  </div>
+                  <div class="mt-3">
+                    <button
+                      type="button"
+                      id="suggest-tags-btn"
+                      class="px-3 py-2 text-sm font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition"
+                      data-i18n="actions.suggestTags"
+                    >
+                      Suggest Tags
+                    </button>
                   </div>
                   <div class="flex justify-between items-center mt-1">
                     <div>
@@ -912,6 +967,66 @@
             id="cancel-bulk-delete-btn"
             class="px-6 py-3 text-sm font-medium rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition-all hover:scale-105 active:scale-95"
             data-i18n="actions.cancel"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bulk Tag Update Modal -->
+    <div id="bulk-tag-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
+        <div class="flex items-center justify-between p-6 border-b border-gray-200">
+          <h2 class="text-xl font-bold text-gray-900" data-i18n="bulkTag.title">Bulk Tag Update</h2>
+          <button
+            onclick="hideBulkTagModal()"
+            class="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+          >
+            &times;
+          </button>
+        </div>
+        <div class="p-6 space-y-4">
+          <p class="text-sm text-gray-700">
+            <span data-i18n="bulkTag.description">Update tags for</span>
+            <strong id="bulk-tag-count">0</strong>
+            <span data-i18n="bulkTag.prompts">prompt(s).</span>
+          </p>
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2" data-i18n="bulkTag.addLabel">Add Tags</label>
+            <input
+              id="bulk-tag-add"
+              type="text"
+              placeholder="Comma-separated tags"
+              data-i18n="[placeholder]bulkTag.placeholder"
+              class="w-full px-3 py-2 border border-gray-300 rounded"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2" data-i18n="bulkTag.removeLabel">Remove Tags</label>
+            <input
+              id="bulk-tag-remove"
+              type="text"
+              placeholder="Comma-separated tags"
+              data-i18n="[placeholder]bulkTag.placeholder"
+              class="w-full px-3 py-2 border border-gray-300 rounded"
+            />
+          </div>
+          <p class="text-xs text-gray-500" data-i18n="bulkTag.note">
+            Tags added or removed will apply to all selected prompts.
+          </p>
+        </div>
+        <div class="flex items-center justify-end gap-3 p-6 border-t border-gray-200">
+          <button
+            id="confirm-bulk-tag-btn"
+            class="px-6 py-3 text-sm font-semibold rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-all hover:scale-105 active:scale-95"
+            data-i18n="actions.applyTags"
+          >
+            Apply Tags
+          </button>
+          <button
+            id="cancel-bulk-tag-btn"
+            class="px-6 py-3 text-sm font-medium rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition-all hover:scale-105 active:scale-95"
           >
             Cancel
           </button>

@@ -39,7 +39,17 @@
     "bulkDelete": "Ausgewählte löschen",
     "selectAll": "Alle auswählen",
     "clearSelection": "Auswahl aufheben",
-    "confirmDelete": "Löschen bestätigen"
+    "confirmDelete": "Löschen bestätigen",
+    "bulkTag": "Tag Selected",
+    "suggestTags": "Suggest Tags",
+    "applyTags": "Apply Tags",
+    "merge": "Merge",
+    "mergeSelected": "Merge Selected",
+    "findReplace": "Find & Replace",
+    "findReplaceSelected": "Find/Replace Selected",
+    "replace": "Replace",
+    "saveOrder": "Save Order",
+    "undo": "Undo"
   },
   "form": {
     "title": "Prompt-Titel:",
@@ -119,11 +129,18 @@
   "categories": {
     "manage": "Kategorien verwalten",
     "manageDesc": "Prompt-Kategorien verwalten",
-    "noCategory": "Keine Kategorie"
+    "noCategory": "Keine Kategorie",
+    "createTitle": "Create Category",
+    "listTitle": "Categories",
+    "orphans": "Prompts without a category:",
+    "assignOrphans": "Assign Category"
   },
   "tags": {
     "manage": "Tags verwalten",
-    "manageDesc": "Tags global verwalten"
+    "manageDesc": "Tags global verwalten",
+    "createTitle": "Create Tag",
+    "listTitle": "Tags",
+    "orphans": "Unused tags:"
   },
   "importExport": {
     "title": "Import- und Exportverwaltung",
@@ -452,5 +469,34 @@
       "confirmRevokeAllForUser": "Sind Sie sicher, dass Sie ALLE Sitzungen für Benutzer \"{{username}}\" widerrufen möchten? Der Benutzer wird von allen Geräten abgemeldet.",
       "confirmRevokeAllForAllUsers": "Sind Sie sicher, dass Sie ALLE Sitzungen für ALLE Benutzer widerrufen möchten? Alle Benutzer werden von allen Geräten abgemeldet."
     }
+  },
+  "management": {
+    "bulkActions": "Bulk Actions",
+    "importExport": "Import & Export",
+    "analytics": "Analytics",
+    "orphans": "Orphans",
+    "total": "Total",
+    "used": "Used",
+    "unused": "Unused",
+    "top": "Top",
+    "cooccurrence": "Co-occurrence",
+    "select": "Select",
+    "name": "Name",
+    "description": "Description",
+    "color": "Color",
+    "order": "Order",
+    "usage": "Usage",
+    "actions": "Actions",
+    "parent": "Parent",
+    "hierarchy": "Hierarchy"
+  },
+  "bulkTag": {
+    "title": "Bulk Tag Update",
+    "description": "Update tags for",
+    "prompts": "prompt(s).",
+    "addLabel": "Add Tags",
+    "removeLabel": "Remove Tags",
+    "placeholder": "Comma-separated tags",
+    "note": "Tags added or removed will apply to all selected prompts."
   }
 }

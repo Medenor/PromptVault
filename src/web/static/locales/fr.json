@@ -39,7 +39,17 @@
     "bulkDelete": "Supprimer la sélection",
     "selectAll": "Tout sélectionner",
     "clearSelection": "Effacer la sélection",
-    "confirmDelete": "Confirmer la suppression"
+    "confirmDelete": "Confirmer la suppression",
+    "bulkTag": "Tag Selected",
+    "suggestTags": "Suggest Tags",
+    "applyTags": "Apply Tags",
+    "merge": "Merge",
+    "mergeSelected": "Merge Selected",
+    "findReplace": "Find & Replace",
+    "findReplaceSelected": "Find/Replace Selected",
+    "replace": "Replace",
+    "saveOrder": "Save Order",
+    "undo": "Undo"
   },
   "form": {
     "title": "Titre du Prompt:",
@@ -119,11 +129,18 @@
   "categories": {
     "manage": "Gérer les catégories",
     "manageDesc": "Gérer les catégories de prompts",
-    "noCategory": "Aucune catégorie"
+    "noCategory": "Aucune catégorie",
+    "createTitle": "Create Category",
+    "listTitle": "Categories",
+    "orphans": "Prompts without a category:",
+    "assignOrphans": "Assign Category"
   },
   "tags": {
     "manage": "Gérer les étiquettes",
-    "manageDesc": "Gérer les étiquettes globalement"
+    "manageDesc": "Gérer les étiquettes globalement",
+    "createTitle": "Create Tag",
+    "listTitle": "Tags",
+    "orphans": "Unused tags:"
   },
   "importExport": {
     "title": "Gestion de l'importation et de l'exportation",
@@ -454,5 +471,34 @@
       "confirmRevokeAllForUser": "Êtes-vous sûr de vouloir révoquer TOUTES les sessions de l'utilisateur \"{{username}}\" ? L'utilisateur sera déconnecté de tous les appareils.",
       "confirmRevokeAllForAllUsers": "Êtes-vous sûr de vouloir révoquer TOUTES les sessions de TOUS les utilisateurs ? Tous les utilisateurs seront déconnectés de tous les appareils."
     }
+  },
+  "management": {
+    "bulkActions": "Bulk Actions",
+    "importExport": "Import & Export",
+    "analytics": "Analytics",
+    "orphans": "Orphans",
+    "total": "Total",
+    "used": "Used",
+    "unused": "Unused",
+    "top": "Top",
+    "cooccurrence": "Co-occurrence",
+    "select": "Select",
+    "name": "Name",
+    "description": "Description",
+    "color": "Color",
+    "order": "Order",
+    "usage": "Usage",
+    "actions": "Actions",
+    "parent": "Parent",
+    "hierarchy": "Hierarchy"
+  },
+  "bulkTag": {
+    "title": "Bulk Tag Update",
+    "description": "Update tags for",
+    "prompts": "prompt(s).",
+    "addLabel": "Add Tags",
+    "removeLabel": "Remove Tags",
+    "placeholder": "Comma-separated tags",
+    "note": "Tags added or removed will apply to all selected prompts."
   }
 }

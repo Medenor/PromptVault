@@ -204,6 +204,35 @@ async def profile_page(
 
 
 # ============================================================================
+# Tag/Category Management Pages (Protected)
+# ============================================================================
+
+
+@router.get("/manage-categories", response_class=HTMLResponse)
+async def manage_categories_page(
+    request: Request,
+    user: User = Depends(get_current_active_user)
+):
+    """Serve the category management page (authenticated)."""
+    return templates.TemplateResponse(
+        "manage_categories.html",
+        {"request": request}
+    )
+
+
+@router.get("/manage-tags", response_class=HTMLResponse)
+async def manage_tags_page(
+    request: Request,
+    user: User = Depends(get_current_active_user)
+):
+    """Serve the tag management page (authenticated)."""
+    return templates.TemplateResponse(
+        "manage_tags.html",
+        {"request": request}
+    )
+
+
+# ============================================================================
 # Admin Pages (Protected)
 # ============================================================================
 

@@ -47,7 +47,7 @@ from src.web.validators import (
     get_file_extension_from_format,
 )
 from src.web.monitoring import ValidationMonitor
-from src.web.routers import auth_router, admin_router, prompts_router, pages_router
+from src.web.routers import auth_router, admin_router, prompts_router, tag_category_router, pages_router
 from src.utils.diff_utils import compute_character_diff
 from src.web.routers.scheduler import router as scheduler_router
 from src.web.middleware.rate_limit import limiter, rate_limit_exceeded_handler
@@ -210,13 +210,14 @@ app.include_router(auth_router, prefix="/api")
 app.include_router(admin_router, prefix="/api")
 app.include_router(scheduler_router, prefix="/api")
 app.include_router(prompts_router, prefix="/api")
+app.include_router(tag_category_router, prefix="/api")
 
 # Register HTML page routes (no /api prefix)
 # - /auth/* - Authentication pages (login, register, profile, etc.)
 # - /admin/* - Admin pages (users, sessions)
 app.include_router(pages_router)
 
-logger.info("API routers registered: /api/auth, /api/admin, /api/prompts")
+logger.info("API routers registered: /api/auth, /api/admin, /api/prompts, /api/categories, /api/tags")
 logger.info("HTML page routes registered: /auth/*, /admin/*")
 
 # ============================================================================

@@ -11,6 +11,7 @@ lookup and management operations.
 from typing import List, Optional
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy import func
 
 from src.db.models import Category
 from src.db.repositories.base import BaseRepository
@@ -44,6 +45,12 @@ class CategoryRepository(BaseRepository[Category]):
         """
         return self.session.query(Category).filter(
             Category.name == name
+        ).first()
+
+    def get_by_name_case_insensitive(self, name: str) -> Optional[Category]:
+        """Get category by name (case-insensitive)."""
+        return self.session.query(Category).filter(
+            func.lower(Category.name) == name.lower()
         ).first()
 
     def get_or_create(self, name: str) -> Category:
@@ -93,6 +100,13 @@ class CategoryRepository(BaseRepository[Category]):
 
         return results
 
+    def count_usage(self, category_id: int) -> int:
+        """Return number of prompts assigned to the category."""
+        from src.db.models import Prompt
+        return self.session.query(Prompt).filter(
+            Prompt.category_id == category_id
+        ).count()
+
     def delete_if_unused(self, category_id: int) -> bool:
         """Delete category only if it has no prompts.
 
@@ -109,9 +123,7 @@ class CategoryRepository(BaseRepository[Category]):
             return False
 
         # Check if any prompts use this category
-        prompt_count = self.session.query(Prompt).filter(
-            Prompt.category_id == category_id
-        ).count()
+        prompt_count = self.count_usage(category_id)
 
         if prompt_count > 0:
             return False
@@ -132,3 +144,31 @@ class CategoryRepository(BaseRepository[Category]):
             IntegrityError: If new_name already exists
         """
         return self.update(category_id, name=new_name)
+
+    def merge_categories(self, source_category_ids: List[int], target_category_id: int) -> int:
+        """Merge source categories into target category.
+
+        Args:
+            source_category_ids: Category IDs to merge into target
+            target_category_id: Target category ID
+
+        Returns:
+            Number of categories merged (deleted)
+        """
+        from src.db.models import Prompt
+
+        if not source_category_ids:
+            return 0
+
+        self.session.query(Prompt).filter(
+            Prompt.category_id.in_(source_category_ids)
+        ).update(
+            {Prompt.category_id: target_category_id},
+            synchronize_session=False,
+        )
+
+        deleted = self.session.query(Category).filter(
+            Category.id.in_(source_category_ids)
+        ).delete(synchronize_session=False)
+        self.session.flush()
+        return deleted

@@ -31,6 +31,8 @@ export default defineConfig({
         // Feature pages
         importExport: resolve(__dirname, 'src/web/static/ts/import-export.ts'),
         backupManagement: resolve(__dirname, 'src/web/static/ts/backup-management.ts'),
+        'manage-categories': resolve(__dirname, 'src/web/static/ts/manage-categories.ts'),
+        'manage-tags': resolve(__dirname, 'src/web/static/ts/manage-tags.ts'),
         // Shared telemetry (loaded on all pages)
         telemetry: resolve(__dirname, 'src/web/static/ts/telemetry.ts'),
       },

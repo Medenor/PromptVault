@@ -40,6 +40,18 @@
     "selectAll": "Select All",
     "clearSelection": "Clear Selection",
     "confirmDelete": "Confirm Delete"
+    ,
+    "bulkTag": "Tag Selected",
+    "suggestTags": "Suggest Tags",
+    "applyTags": "Apply Tags",
+    "merge": "Merge",
+    "mergeSelected": "Merge Selected",
+    "findReplace": "Find & Replace",
+    "findReplaceSelected": "Find/Replace Selected",
+    "replace": "Replace",
+    "saveOrder": "Save Order"
+    ,
+    "undo": "Undo"
   },
   "form": {
     "title": "Prompt Title:",
@@ -118,12 +130,48 @@
   },
   "categories": {
     "manage": "Manage Categories",
-    "manageDesc": "Manage prompt categories",
-    "noCategory": "No category"
+    "manageDesc": "Create, edit, and remove categories across all prompts.",
+    "noCategory": "No category",
+    "createTitle": "Create Category",
+    "listTitle": "Categories",
+    "orphans": "Prompts without a category:",
+    "assignOrphans": "Assign Category"
   },
   "tags": {
     "manage": "Manage Tags",
-    "manageDesc": "Manage tags globally"
+    "manageDesc": "Create, edit, and remove tags across all prompts.",
+    "createTitle": "Create Tag",
+    "listTitle": "Tags",
+    "orphans": "Unused tags:"
+  },
+  "management": {
+    "bulkActions": "Bulk Actions",
+    "importExport": "Import & Export",
+    "analytics": "Analytics",
+    "hierarchy": "Hierarchy",
+    "orphans": "Orphans",
+    "total": "Total",
+    "used": "Used",
+    "unused": "Unused",
+    "top": "Top",
+    "cooccurrence": "Co-occurrence",
+    "select": "Select",
+    "name": "Name",
+    "description": "Description",
+    "color": "Color",
+    "order": "Order",
+    "parent": "Parent",
+    "usage": "Usage",
+    "actions": "Actions"
+  },
+  "bulkTag": {
+    "title": "Bulk Tag Update",
+    "description": "Update tags for",
+    "prompts": "prompt(s).",
+    "addLabel": "Add Tags",
+    "removeLabel": "Remove Tags",
+    "placeholder": "Comma-separated tags",
+    "note": "Tags added or removed will apply to all selected prompts."
   },
   "importExport": {
     "title": "Import & Export Management",
