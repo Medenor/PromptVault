@@ -94,6 +94,7 @@
     "categoryTooLong": "Category cannot exceed 100 characters.",
     "tagsRequired": "At least one tag is required.",
     "tooManyTags": "You cannot add more than 50 tags.",
+    "tagsMax": "Maximum 15 tags allowed.",
     "tagTooLong": "Individual tags cannot exceed 50 characters.",
     "duplicateTags": "Duplicate tags detected: {{tags}}",
     "noteRequired": "The 'Note' field cannot be empty.",

@@ -94,6 +94,7 @@
     "categoryTooLong": "La catégorie ne peut pas dépasser 100 caractères.",
     "tagsRequired": "Au moins une étiquette est requise.",
     "tooManyTags": "Vous ne pouvez pas ajouter plus de 50 étiquettes.",
+    "tagsMax": "Maximum 15 étiquettes autorisées.",
     "tagTooLong": "Les étiquettes individuelles ne peuvent pas dépasser 50 caractères.",
     "duplicateTags": "Étiquettes en double détectées : {{tags}}",
     "noteRequired": "Le champ 'Note' ne peut pas être vide.",

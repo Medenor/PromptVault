@@ -94,6 +94,7 @@
     "categoryTooLong": "La categoría no puede exceder 100 caracteres.",
     "tagsRequired": "Se requiere al menos una etiqueta.",
     "tooManyTags": "No puede agregar más de 50 etiquetas.",
+    "tagsMax": "Máximo 15 etiquetas permitidas.",
     "tagTooLong": "Las etiquetas individuales no pueden exceder 50 caracteres.",
     "duplicateTags": "Etiquetas duplicadas detectadas: {{tags}}",
     "noteRequired": "El campo 'Nota' no puede estar vacío.",

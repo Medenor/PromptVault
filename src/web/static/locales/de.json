@@ -94,6 +94,7 @@
     "categoryTooLong": "Die Kategorie darf 100 Zeichen nicht überschreiten.",
     "tagsRequired": "Mindestens ein Tag ist erforderlich.",
     "tooManyTags": "Sie können nicht mehr als 50 Tags hinzufügen.",
+    "tagsMax": "Maximal 15 Tags erlaubt.",
     "tagTooLong": "Einzelne Tags dürfen 50 Zeichen nicht überschreiten.",
     "duplicateTags": "Doppelte Tags erkannt: {{tags}}",
     "noteRequired": "Das Feld 'Notiz' darf nicht leer sein.",

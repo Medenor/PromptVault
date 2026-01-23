@@ -96,10 +96,12 @@ const selectedPromptIds: Set<number> = new Set(); // Track selected prompts for 
 let tagColorMap: Record<string, string> = {};
 let categoryColorMap: Record<string, string> = {};
 const colorTextCache = new Map<string, string>();
+let selectedTags: string[] = [];
 
 const HIDDEN_CLASS = 'hidden';
 const ERROR_VISIBLE_CLASS = 'validation-error-visible';
 const APP_COMPONENT = 'app';
+const MAX_TAGS = 15;
 
 function reportAppIssue(
   action: string,
@@ -267,6 +269,11 @@ function clearPromptFormErrors(): void {
       field.removeAttribute('aria-invalid');
     }
   });
+  const tagChipInput = document.getElementById('tag-chip-input');
+  if (tagChipInput) {
+    tagChipInput.classList.remove('field-error');
+    tagChipInput.removeAttribute('aria-invalid');
+  }
   const banner = document.getElementById('validation-error-banner');
   if (banner) {
     banner.style.display = 'none';
@@ -286,6 +293,34 @@ function showPromptFieldError(fieldId: string, errorId: string, messageKey: Tran
     field.classList.add('field-error');
     field.setAttribute('aria-invalid', 'true');
     field.focus();
+  }
+  if (fieldId === 'prompt-tags') {
+    const tagChipInput = document.getElementById('tag-chip-input');
+    if (tagChipInput) {
+      tagChipInput.classList.add('field-error');
+      tagChipInput.setAttribute('aria-invalid', 'true');
+    }
+  }
+}
+
+function clearPromptFieldError(fieldId: string, errorId: string): void {
+  const errorEl = document.getElementById(errorId);
+  if (errorEl) {
+    errorEl.textContent = '';
+    delete errorEl.dataset.errorKey;
+    errorEl.classList.remove(ERROR_VISIBLE_CLASS);
+  }
+  const field = document.getElementById(fieldId);
+  if (field) {
+    field.classList.remove('field-error');
+    field.removeAttribute('aria-invalid');
+  }
+  if (fieldId === 'prompt-tags') {
+    const tagChipInput = document.getElementById('tag-chip-input');
+    if (tagChipInput) {
+      tagChipInput.classList.remove('field-error');
+      tagChipInput.removeAttribute('aria-invalid');
+    }
   }
 }
 
@@ -811,6 +846,11 @@ function showNewPromptForm() {
   showElement(promptEditor);
   const promptForm = document.getElementById('prompt-form') as HTMLFormElement | null;
   promptForm?.reset();
+  setSelectedTags([]);
+  const tagInput = getTagInputElement();
+  if (tagInput) {
+    tagInput.value = '';
+  }
   hideElement(promptsList);
 }
 
@@ -828,6 +868,10 @@ async function handlePromptSubmit(event: SubmitEvent): Promise<void> {
   const form = event.currentTarget as HTMLFormElement | null;
   if (!form) {
     return;
+  }
+  const tagInput = getTagInputElement();
+  if (tagInput) {
+    commitTagInput(tagInput);
   }
   const formData = new FormData(form);
   const isEditMode = form.dataset.mode === 'edit';
@@ -990,12 +1034,11 @@ async function editPrompt(id: PromptId): Promise<void> {
     const promptTitle = document.getElementById('prompt-title') as HTMLInputElement | null;
     const promptContent = document.getElementById('prompt-content') as HTMLTextAreaElement | null;
     const promptCategory = document.getElementById('prompt-category') as HTMLInputElement | null;
-    const promptTags = document.getElementById('prompt-tags') as HTMLInputElement | null;
     const commitMessage = document.getElementById('commit-message') as HTMLInputElement | null;
     if (promptTitle) promptTitle.value = prompt.title || '';
     if (promptContent) promptContent.value = prompt.prompt || '';
     if (promptCategory) promptCategory.value = prompt.category || '';
-    if (promptTags) promptTags.value = prompt.tags ? prompt.tags.join(', ') : '';
+    setSelectedTags(prompt.tags ? prompt.tags : []);
     if (commitMessage) commitMessage.value = ''; // Clear commit message for new edit
 
     // Change form to update mode
@@ -2191,6 +2234,14 @@ let tagAutocompleteState = {
   currentPartialTag: '',
 };
 
+function getTagInputElement(): HTMLInputElement | null {
+  return document.getElementById('prompt-tags-input') as HTMLInputElement | null;
+}
+
+function getTagHiddenInput(): HTMLInputElement | null {
+  return document.getElementById('prompt-tags') as HTMLInputElement | null;
+}
+
 function parseTagInput(value: string): string[] {
   return value
     .split(',')
@@ -2198,13 +2249,98 @@ function parseTagInput(value: string): string[] {
     .filter((tag) => tag.length > 0);
 }
 
-function setTagInput(tags: string[]): void {
-  const tagInput = document.getElementById('prompt-tags') as HTMLInputElement | null;
-  if (!tagInput) {
+function dedupeTags(tags: string[]): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const tag of tags) {
+    const normalized = tag.toLowerCase();
+    if (!normalized || seen.has(normalized)) {
+      continue;
+    }
+    seen.add(normalized);
+    result.push(tag);
+  }
+  return result;
+}
+
+function syncHiddenTags(): void {
+  const hidden = getTagHiddenInput();
+  if (!hidden) {
     return;
   }
-  tagInput.value = tags.join(', ') + (tags.length > 0 ? ', ' : '');
-  tagInput.focus();
+  hidden.value = selectedTags.join(', ');
+}
+
+function renderTagChips(): void {
+  const chipContainer = document.getElementById('tag-chips');
+  const input = getTagInputElement();
+  if (!chipContainer) {
+    return;
+  }
+  chipContainer.innerHTML = '';
+
+  selectedTags.forEach((tag) => {
+    const color = tagColorMap[tag];
+    const chip = document.createElement('span');
+    chip.className =
+      'inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full border border-gray-300';
+    const borderColor = resolveCssColor(color);
+    if (borderColor) {
+      chip.style.borderColor = borderColor;
+      chip.style.color = borderColor;
+    }
+    chip.dataset.tagName = tag;
+    chip.innerHTML = `
+      <span>${tag}</span>
+      <button type="button" class="text-xs leading-none px-1" aria-label="Remove tag">×</button>
+    `;
+    chipContainer.appendChild(chip);
+  });
+
+  if (input) {
+    input.placeholder = selectedTags.length === 0 ? t('form.tagPlaceholder') : '';
+  }
+}
+
+function setSelectedTags(tags: string[]): void {
+  selectedTags = dedupeTags(tags);
+  if (selectedTags.length > MAX_TAGS) {
+    selectedTags = selectedTags.slice(0, MAX_TAGS);
+    showPromptFieldError('prompt-tags', 'prompt-tags-error', 'validation.tagsMax');
+  } else {
+    clearPromptFieldError('prompt-tags', 'prompt-tags-error');
+  }
+  renderTagChips();
+  syncHiddenTags();
+}
+
+function addTags(tags: string[]): void {
+  const existing = selectedTags.map((tag) => tag.toLowerCase());
+  let added = 0;
+  const incoming = dedupeTags(tags);
+  for (const tag of incoming) {
+    if (selectedTags.length >= MAX_TAGS) {
+      showPromptFieldError('prompt-tags', 'prompt-tags-error', 'validation.tagsMax');
+      break;
+    }
+    if (!existing.includes(tag.toLowerCase())) {
+      selectedTags.push(tag);
+      existing.push(tag.toLowerCase());
+      added++;
+    }
+  }
+  if (added > 0) {
+    clearPromptFieldError('prompt-tags', 'prompt-tags-error');
+  }
+  renderTagChips();
+  syncHiddenTags();
+}
+
+function removeTag(tagName: string): void {
+  const normalized = tagName.toLowerCase();
+  selectedTags = selectedTags.filter((tag) => tag.toLowerCase() !== normalized);
+  renderTagChips();
+  syncHiddenTags();
 }
 
 function mergeTagSuggestions(existing: string[], suggestions: string[]): string[] {
@@ -2221,7 +2357,7 @@ function mergeTagSuggestions(existing: string[], suggestions: string[]): string[
 
 async function handleSuggestTags(): Promise<void> {
   const promptInput = document.getElementById('prompt-content') as HTMLTextAreaElement | null;
-  const tagInput = document.getElementById('prompt-tags') as HTMLInputElement | null;
+  const tagInput = getTagInputElement();
   if (!promptInput || !tagInput) {
     return;
   }
@@ -2245,9 +2381,9 @@ async function handleSuggestTags(): Promise<void> {
       alert('No suggestions found.');
       return;
     }
-    const existingTags = parseTagInput(tagInput.value);
-    const merged = mergeTagSuggestions(existingTags, suggestedNames);
-    setTagInput(merged);
+    const merged = mergeTagSuggestions(selectedTags, suggestedNames);
+    setSelectedTags(merged);
+    tagInput.value = '';
   } catch (error) {
     reportAppIssue('suggestTags', error);
     alert('Failed to get tag suggestions.');
@@ -2278,10 +2414,12 @@ async function loadAvailableTags(): Promise<void> {
 }
 
 function setupTagAutocomplete() {
-  const tagInput = document.getElementById('prompt-tags') as HTMLInputElement | null;
+  const tagInput = getTagInputElement();
   const autocompleteDiv = document.getElementById('tag-autocomplete') as HTMLElement | null;
+  const chipContainer = document.getElementById('tag-chips');
+  const chipInputWrapper = document.getElementById('tag-chip-input');
 
-  if (!tagInput || !autocompleteDiv) {
+  if (!tagInput || !autocompleteDiv || !chipContainer || !chipInputWrapper) {
     return;
   }
 
@@ -2298,6 +2436,28 @@ function setupTagAutocomplete() {
 
   // Keydown event - handle keyboard navigation
   tagInput.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      if (tagAutocompleteState.isOpen && tagAutocompleteState.highlightedIndex >= 0) {
+        handleTagInputKeydown(event);
+        return;
+      }
+      event.preventDefault();
+      commitTagInput(tagInput);
+      return;
+    }
+    if (event.key === ',') {
+      event.preventDefault();
+      commitTagInput(tagInput);
+      return;
+    }
+    if (event.key === 'Backspace' && tagInput.value.trim() === '' && selectedTags.length > 0) {
+      event.preventDefault();
+      const lastTag = selectedTags[selectedTags.length - 1];
+      if (lastTag) {
+        removeTag(lastTag);
+      }
+      return;
+    }
     handleTagInputKeydown(event);
   });
 
@@ -2323,8 +2483,32 @@ function setupTagAutocomplete() {
     }
   });
 
+  chipInputWrapper.addEventListener('click', () => {
+    tagInput.focus();
+    if (!tagAutocompleteState.isOpen) {
+      handleTagInput(tagInput);
+    }
+  });
+
+  chipContainer.addEventListener('click', (event) => {
+    const target = event.target as HTMLElement | null;
+    if (!target) {
+      return;
+    }
+    if (target.tagName.toLowerCase() === 'button') {
+      const chip = target.closest('[data-tag-name]') as HTMLElement | null;
+      const tagName = chip?.dataset.tagName;
+      if (tagName) {
+        removeTag(tagName);
+      }
+      return;
+    }
+    tagInput.focus();
+  });
+
   // Blur event - close dropdown with delay to allow clicks
   tagInput.addEventListener('blur', () => {
+    commitTagInput(tagInput);
     setTimeout(() => {
       closeTagAutocomplete();
     }, 200);
@@ -2339,6 +2523,13 @@ function setupTagAutocomplete() {
       closeTagAutocomplete();
     }
   });
+
+  const hidden = getTagHiddenInput();
+  if (hidden && hidden.value) {
+    setSelectedTags(parseTagInput(hidden.value));
+  } else {
+    setSelectedTags([]);
+  }
 }
 
 function handleTagInput(input: HTMLInputElement) {
@@ -2352,11 +2543,8 @@ function handleTagInput(input: HTMLInputElement) {
 
   tagAutocompleteState.currentPartialTag = partialTag;
 
-  // Get already entered tags to filter them out
-  const enteredTags = getEnteredTags(input);
-
   // Filter available tags
-  const filtered = filterTags(partialTag, enteredTags);
+  const filtered = filterTags(partialTag, selectedTags);
   tagAutocompleteState.filteredTags = filtered;
   tagAutocompleteState.highlightedIndex = -1;
 
@@ -2368,29 +2556,31 @@ function handleTagInput(input: HTMLInputElement) {
   }
 }
 
-function getEnteredTags(input: HTMLInputElement) {
-  const value = input.value;
-  const tags = value
-    .split(',')
-    .map((tag) => tag.trim().toLowerCase())
-    .filter((tag) => tag.length > 0);
-  return new Set(tags);
+function commitTagInput(input: HTMLInputElement): void {
+  const tags = parseTagInput(input.value);
+  if (tags.length === 0) {
+    return;
+  }
+  addTags(tags);
+  input.value = '';
+  handleTagInput(input);
 }
 
-function filterTags(partialTag: string, enteredTags: Set<string>) {
+function filterTags(partialTag: string, selected: string[]) {
   if (!availableTags || availableTags.length === 0) {
     return [];
   }
 
   // Case-insensitive filtering
   const searchTerm = partialTag.toLowerCase();
+  const selectedSet = new Set(selected.map((tag) => tag.toLowerCase()));
 
   const filtered = availableTags
     .filter((tag) => {
       const tagName = tag.name;
       const tagLower = tagName.toLowerCase();
       // Don't suggest tags already entered
-      if (enteredTags.has(tagLower)) {
+      if (selectedSet.has(tagLower)) {
         return false;
       }
       // Match tags that contain the search term
@@ -2558,23 +2748,12 @@ function highlightTagItem(index: number) {
 }
 
 function selectTag(tagName: string): void {
-  const tagInput = document.getElementById('prompt-tags') as HTMLInputElement | null;
+  const tagInput = getTagInputElement();
   if (!tagInput) {
     return;
   }
-
-  const existingTags = parseTagInput(tagInput.value);
-  const normalized = existingTags.map((tag) => tag.toLowerCase());
-  if (!normalized.includes(tagName.toLowerCase())) {
-    existingTags.push(tagName);
-  }
-
-  const newValue = existingTags.join(', ') + (existingTags.length > 0 ? ', ' : '');
-  const newCursorPosition = newValue.length;
-
-  // Update input
-  tagInput.value = newValue;
-  tagInput.setSelectionRange(newCursorPosition, newCursorPosition);
+  addTags([tagName]);
+  tagInput.value = '';
   tagInput.focus();
 
   // Close autocomplete

@@ -6,6 +6,7 @@
 
 from collections import Counter
 import re
+import unicodedata
 from typing import Iterable, List, Tuple
 
 _TOKEN_PATTERN = re.compile(r"[A-Za-z0-9]+")
@@ -19,6 +20,43 @@ _STOPWORDS = {
     "those", "only", "each", "more", "most", "some", "any", "all", "one",
     "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten",
 }
+
+_SYNONYMS = {
+    "database": {"basedonnees", "basededonnees", "donnees", "data"},
+    "review": {"revue"},
+    "security": {"securite"},
+    "testing": {"test", "tests"},
+    "verified": {"verifie", "verifiee", "validation"},
+    "bug": {"bug"},
+    "fixed": {"corrige", "corrigee", "corrigees"},
+    "final": {"finale"},
+}
+
+_REVERSE_SYNONYMS = {}
+for key, values in _SYNONYMS.items():
+    for value in values:
+        _REVERSE_SYNONYMS.setdefault(value, set()).add(key)
+
+
+def _normalize(text: str) -> str:
+    if not text:
+        return ""
+    normalized = unicodedata.normalize("NFKD", text)
+    return "".join(ch for ch in normalized if not unicodedata.combining(ch)).lower()
+
+
+def _tokenize(text: str) -> List[str]:
+    normalized = _normalize(text)
+    return [token for token in _TOKEN_PATTERN.findall(normalized)]
+
+
+def _equivalent_tokens(token: str) -> List[str]:
+    equivalents = {token}
+    if token in _SYNONYMS:
+        equivalents.update(_SYNONYMS[token])
+    if token in _REVERSE_SYNONYMS:
+        equivalents.update(_REVERSE_SYNONYMS[token])
+    return list(equivalents)
 
 
 def suggest_tags(
@@ -39,7 +77,7 @@ def suggest_tags(
     if not content:
         return []
 
-    tokens = [token.lower() for token in _TOKEN_PATTERN.findall(content)]
+    tokens = _tokenize(content)
     tokens = [token for token in tokens if len(token) >= 3 and token not in _STOPWORDS]
     if not tokens:
         return []
@@ -50,9 +88,24 @@ def suggest_tags(
     for tag in existing_tags:
         if not tag:
             continue
-        tag_lower = tag.lower()
-        if tag_lower in token_counts:
-            suggestions.append((tag, float(token_counts[tag_lower])))
+        tag_tokens = _tokenize(tag)
+        if not tag_tokens:
+            continue
+        matched = 0
+        score = 0.0
+        for tag_token in tag_tokens:
+            best_count = 0
+            for candidate in _equivalent_tokens(tag_token):
+                best_count = max(best_count, token_counts.get(candidate, 0))
+            if best_count > 0:
+                matched += 1
+                score += float(best_count)
+        if matched == 0:
+            continue
+        required = max(1, (len(tag_tokens) + 1) // 2)
+        if matched >= required:
+            score *= matched / len(tag_tokens)
+            suggestions.append((tag, score))
 
     suggestions.sort(key=lambda item: (-item[1], item[0].lower()))
     return suggestions[:limit]
