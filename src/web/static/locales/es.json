@@ -220,6 +220,9 @@
       "caseSensitive": "sensible a mayúsculas"
     }
   },
+  "prompt": {
+    "editorTitle": "Crear/Editar prompt"
+  },
   "version": {
     "history": "Historial",
     "compareVersions": "Comparar versiones",

@@ -633,6 +633,12 @@ async def request_logging_middleware(request: Request, call_next):
                 "client": request.client.host if request.client else None,
             },
         )
+        if os.getenv("ENV", "production") == "development":
+            content_type = response.headers.get("content-type", "")
+            if content_type.startswith("text/html"):
+                response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+                response.headers["Pragma"] = "no-cache"
+                response.headers["Expires"] = "0"
         response.headers["X-Request-ID"] = request_id
         return response
 

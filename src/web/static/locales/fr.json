@@ -220,6 +220,9 @@
       "caseSensitive": "sensible à la casse"
     }
   },
+  "prompt": {
+    "editorTitle": "Créer/Modifier le prompt"
+  },
   "version": {
     "history": "Historique",
     "compareVersions": "Comparer les versions",

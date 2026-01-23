@@ -267,6 +267,9 @@
       "caseSensitive": "case sensitive"
     }
   },
+  "prompt": {
+    "editorTitle": "Create/Edit Prompt"
+  },
   "version": {
     "history": "History",
     "compareVersions": "Compare Versions",

@@ -759,9 +759,14 @@ function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement
     historyBtn.title = t('version.history');
   }
 
-  // Track prompt selection on click
-  div.addEventListener('click', () => {
+  // Track prompt selection on click and open editor
+  div.addEventListener('click', (event) => {
+    const target = event.target as Element | null;
+    if (target && (target.closest('button') || target.closest('input') || target.closest('a'))) {
+      return;
+    }
     lastSelectedPromptId = parseInt(id, 10);
+    void editPrompt(id);
   });
 
   return div;

@@ -220,6 +220,9 @@
       "caseSensitive": "Groß-/Kleinschreibung beachten"
     }
   },
+  "prompt": {
+    "editorTitle": "Prompt erstellen/bearbeiten"
+  },
   "version": {
     "history": "Verlauf",
     "compareVersions": "Versionen vergleichen",
