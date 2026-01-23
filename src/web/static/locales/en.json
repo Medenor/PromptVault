@@ -39,8 +39,7 @@
     "bulkDelete": "Delete Selected",
     "selectAll": "Select All",
     "clearSelection": "Clear Selection",
-    "confirmDelete": "Confirm Delete"
-    ,
+    "confirmDelete": "Confirm Delete",
     "bulkTag": "Tag Selected",
     "suggestTags": "Suggest Tags",
     "applyTags": "Apply Tags",
@@ -49,8 +48,7 @@
     "findReplace": "Find & Replace",
     "findReplaceSelected": "Find/Replace Selected",
     "replace": "Replace",
-    "saveOrder": "Save Order"
-    ,
+    "saveOrder": "Save Order",
     "undo": "Undo"
   },
   "form": {
@@ -135,16 +133,23 @@
     "createTitle": "Create Category",
     "listTitle": "Categories",
     "orphans": "Prompts without a category:",
-    "assignOrphans": "Assign Category"
+    "assignOrphans": "Assign Category",
+    "orphanPromptsTitle": "Prompts without a category",
+    "unusedTitle": "Unused categories",
+    "unusedLabel": "Unused categories:"
   },
   "tags": {
     "manage": "Manage Tags",
     "manageDesc": "Create, edit, and remove tags across all prompts.",
     "createTitle": "Create Tag",
     "listTitle": "Tags",
-    "orphans": "Unused tags:"
+    "orphans": "Unused tags:",
+    "unusedTitle": "Unused tags",
+    "orphanPromptsTitle": "Prompts without tags",
+    "orphanPromptsLabel": "Prompts without tags:"
   },
   "management": {
+    "manage": "Manage",
     "bulkActions": "Bulk Actions",
     "importExport": "Import & Export",
     "analytics": "Analytics",
@@ -155,6 +160,19 @@
     "unused": "Unused",
     "top": "Top",
     "cooccurrence": "Co-occurrence",
+    "namePlaceholder": "Name",
+    "descriptionPlaceholder": "Description",
+    "colorPlaceholder": "Color token or hex",
+    "parentNone": "No parent",
+    "targetIdPlaceholder": "Target ID",
+    "sourceIdsPlaceholder": "Source IDs (comma-separated)",
+    "findPlaceholder": "Find name",
+    "replacePlaceholder": "Replace name",
+    "idsPlaceholder": "IDs (comma-separated)",
+    "forceDelete": "Force delete (remove from prompts)",
+    "assignPlaceholder": "Category name to assign",
+    "searchCategoriesPlaceholder": "Search categories...",
+    "searchTagsPlaceholder": "Search tags...",
     "select": "Select",
     "name": "Name",
     "description": "Description",
@@ -162,7 +180,11 @@
     "order": "Order",
     "parent": "Parent",
     "usage": "Usage",
-    "actions": "Actions"
+    "actions": "Actions",
+    "promptDetails": "Prompt details",
+    "untitledPrompt": "Untitled prompt",
+    "promptNotFound": "Prompt not found",
+    "tagsPlaceholder": "Tags (comma-separated)"
   },
   "bulkTag": {
     "title": "Bulk Tag Update",

@@ -99,7 +99,9 @@ export interface PromptResponse {
   title: string;
   prompt: string;
   category: string;
+  category_color?: string | null;
   tags: string[];
+  tag_colors?: Record<string, string | null>;
   note: string;
   favorite: boolean;
   user_id: string;
@@ -171,6 +173,7 @@ export interface CategoriesResponse {
 export interface TagInfo {
   name: string;
   count: number;
+  color?: string | null;
 }
 
 /**

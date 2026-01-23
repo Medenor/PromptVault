@@ -6,6 +6,7 @@
 
 import '../css/tailwind-globals.css';
 import { apiFetch, APIRequestError } from '@/utils/api';
+import { initI18n, tUnsafe, updateStaticTranslations } from '@/utils/i18n';
 
 type TagItem = {
   id: number;
@@ -52,9 +53,15 @@ const elements = {
   hierarchyTree: document.getElementById('tag-hierarchy-tree') as HTMLElement | null,
   orphansCount: document.getElementById('tag-orphans-count') as HTMLElement | null,
   orphansList: document.getElementById('tag-orphans-list') as HTMLElement | null,
+  orphansPromptCount: document.getElementById('tag-orphans-prompts-count') as HTMLElement | null,
+  orphansPromptDetails: document.getElementById('tag-orphans-prompts-details') as HTMLElement | null,
 };
 
 let cachedItems: TagItem[] = [];
+type OrphanPromptDetailsResponse = {
+  items: Array<{ id: number; title: string }>;
+  count: number;
+};
 
 function normalizeSearch(value: string): string {
   return value.trim().toLowerCase();
@@ -522,6 +529,100 @@ async function loadOrphans(): Promise<void> {
   } catch (error) {
     handleError(error, 'Failed to load orphan tags');
   }
+
+  try {
+    const data = await apiFetch<{ prompt_ids: number[]; count: number }>('/api/tags/orphan-prompts');
+    if (elements.orphansPromptCount) {
+      elements.orphansPromptCount.textContent = String(data.count ?? 0);
+    }
+    if (elements.orphansPromptDetails) {
+      await renderPromptDetails(data.prompt_ids ?? [], elements.orphansPromptDetails);
+    }
+  } catch (error) {
+    handleError(error, 'Failed to load prompts without tags');
+  }
+}
+
+async function renderPromptDetails(promptIds: number[], container: HTMLElement): Promise<void> {
+  container.innerHTML = '';
+  if (promptIds.length === 0) {
+    return;
+  }
+
+  let details: OrphanPromptDetailsResponse | null = null;
+  try {
+    details = await apiFetch<OrphanPromptDetailsResponse>('/api/tags/orphan-prompts/details');
+  } catch (error) {
+    handleError(error, 'Failed to load prompt details');
+  }
+
+  const detailsMap = new Map<number, string>();
+  (details?.items ?? []).forEach((item) => {
+    detailsMap.set(item.id, item.title);
+  });
+
+  promptIds.forEach((id) => {
+    const title = detailsMap.get(id)?.trim() || tUnsafe('management.promptNotFound');
+    const li = document.createElement('li');
+    li.className = 'flex flex-col gap-2 md:flex-row md:items-center md:justify-between';
+    li.innerHTML = `
+      <span class="text-gray-800">#${id} — ${title || tUnsafe('management.untitledPrompt')}</span>
+      <div class="flex flex-col gap-2 md:flex-row md:items-center md:gap-3">
+        <input
+          type="text"
+          data-prompt-tags="${id}"
+          placeholder="${tUnsafe('management.tagsPlaceholder')}"
+          class="w-full md:w-56 px-2 py-1 border border-gray-300 rounded"
+        />
+        <button
+          type="button"
+          data-assign-tags="${id}"
+          class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+        >
+          ${tUnsafe('actions.applyTags')}
+        </button>
+      </div>
+    `;
+    container.appendChild(li);
+  });
+
+  container.querySelectorAll<HTMLButtonElement>('[data-assign-tags]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const promptId = Number(button.dataset.assignTags || '');
+      const input = container.querySelector<HTMLInputElement>(
+        `input[data-prompt-tags="${promptId}"]`
+      );
+      if (!promptId || !input) {
+        return;
+      }
+      const rawTags = input.value.trim();
+      if (!rawTags) {
+        alert(tUnsafe('management.tagsPlaceholder'));
+        return;
+      }
+      const tags = rawTags
+        .split(',')
+        .map((tag) => tag.trim())
+        .filter((tag) => tag.length > 0);
+      if (tags.length === 0) {
+        alert(tUnsafe('management.tagsPlaceholder'));
+        return;
+      }
+      void assignTagsToPrompt(promptId, tags);
+    });
+  });
+}
+
+async function assignTagsToPrompt(promptId: number, tags: string[]): Promise<void> {
+  try {
+    await apiFetch('/api/tags/bulk-update', {
+      method: 'POST',
+      body: JSON.stringify({ prompt_ids: [promptId], add: tags, remove: [], confirm: true }),
+    });
+    await loadTags();
+  } catch (error) {
+    handleError(error, 'Failed to apply tags');
+  }
 }
 
 function handleError(error: unknown, fallback: string): void {
@@ -574,4 +675,11 @@ function init(): void {
   void loadTags();
 }
 
-init();
+initI18n(() => {
+  try {
+    updateStaticTranslations();
+    init();
+  } catch (error) {
+    console.error('Failed to initialize tag management', error);
+  }
+});

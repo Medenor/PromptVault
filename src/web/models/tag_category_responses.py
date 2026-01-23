@@ -66,6 +66,20 @@ class OrphanPromptsResponse(BaseModel):
     count: int
 
 
+class OrphanPromptItem(BaseModel):
+    """Prompt metadata for orphan lists."""
+
+    id: int
+    title: str
+
+
+class OrphanPromptDetailsResponse(BaseModel):
+    """Response for orphan prompt details."""
+
+    items: List[OrphanPromptItem]
+    count: int
+
+
 class TagSuggestionItem(BaseModel):
     """Single tag suggestion item."""
 

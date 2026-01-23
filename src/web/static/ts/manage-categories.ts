@@ -6,6 +6,7 @@
 
 import '../css/tailwind-globals.css';
 import { apiFetch, APIRequestError } from '@/utils/api';
+import { initI18n, tUnsafe, updateStaticTranslations } from '@/utils/i18n';
 
 type CategoryItem = {
   id: number;
@@ -49,12 +50,16 @@ const elements = {
   analyticsUnused: document.getElementById('category-analytics-unused') as HTMLElement | null,
   analyticsTop: document.getElementById('category-analytics-top') as HTMLElement | null,
   orphansCount: document.getElementById('category-orphans-count') as HTMLElement | null,
-  orphansList: document.getElementById('category-orphans-list') as HTMLTextAreaElement | null,
-  orphansAssignInput: document.getElementById('category-orphans-reassign') as HTMLInputElement | null,
-  orphansAssignButton: document.getElementById('category-orphans-assign-btn') as HTMLButtonElement | null,
+  orphansDetails: document.getElementById('category-orphans-details') as HTMLElement | null,
+  unusedCount: document.getElementById('category-unused-count') as HTMLElement | null,
+  unusedList: document.getElementById('category-unused-list') as HTMLElement | null,
 };
 
 let cachedItems: CategoryItem[] = [];
+type OrphanPromptDetailsResponse = {
+  items: Array<{ id: number; title: string }>;
+  count: number;
+};
 
 function normalizeSearch(value: string): string {
   return value.trim().toLowerCase();
@@ -491,44 +496,101 @@ async function loadOrphans(): Promise<void> {
     if (elements.orphansCount) {
       elements.orphansCount.textContent = String(data.count ?? 0);
     }
-    if (elements.orphansList) {
-      elements.orphansList.value = (data.prompt_ids ?? []).join(', ');
+    if (elements.orphansDetails) {
+      await renderPromptDetails(data.prompt_ids ?? [], elements.orphansDetails);
     }
   } catch (error) {
     handleError(error, 'Failed to load orphans');
   }
+
+  try {
+    const data = await apiFetch<CategoryListResponse>('/api/categories/unused');
+    if (elements.unusedCount) {
+      elements.unusedCount.textContent = String(data.items?.length ?? 0);
+    }
+    if (elements.unusedList) {
+      elements.unusedList.innerHTML = '';
+      (data.items ?? []).forEach((item) => {
+        const li = document.createElement('li');
+        li.textContent = `${item.name} (#${item.id})`;
+        elements.unusedList?.appendChild(li);
+      });
+    }
+  } catch (error) {
+    handleError(error, 'Failed to load unused categories');
+  }
 }
 
-async function assignOrphans(): Promise<void> {
-  const categoryName = elements.orphansAssignInput?.value.trim() || '';
-  if (!categoryName) {
-    alert('Provide a category name to assign.');
-    return;
-  }
-  const promptIds = (elements.orphansList?.value || '')
-    .split(',')
-    .map((value) => Number(value.trim()))
-    .filter((value) => Number.isFinite(value) && value > 0);
-
+async function renderPromptDetails(promptIds: number[], container: HTMLElement): Promise<void> {
+  container.innerHTML = '';
   if (promptIds.length === 0) {
-    alert('No orphan prompts to assign.');
     return;
   }
-
-  const confirmed = window.confirm(`Assign ${promptIds.length} prompt(s) to ${categoryName}?`);
-  if (!confirmed) {
-    return;
+  let details: OrphanPromptDetailsResponse | null = null;
+  try {
+    details = await apiFetch<OrphanPromptDetailsResponse>('/api/categories/orphans/details');
+  } catch (error) {
+    handleError(error, 'Failed to load prompt details');
   }
 
+  const detailsMap = new Map<number, string>();
+  (details?.items ?? []).forEach((item) => {
+    detailsMap.set(item.id, item.title);
+  });
+
+  promptIds.forEach((id) => {
+    const title = detailsMap.get(id)?.trim() || tUnsafe('management.promptNotFound');
+    const li = document.createElement('li');
+    li.className = 'flex flex-col gap-2 md:flex-row md:items-center md:justify-between';
+    li.innerHTML = `
+      <span class="text-gray-800">#${id} — ${title || tUnsafe('management.untitledPrompt')}</span>
+      <div class="flex flex-col gap-2 md:flex-row md:items-center md:gap-3">
+        <input
+          type="text"
+          data-prompt-category="${id}"
+          placeholder="${tUnsafe('management.assignPlaceholder')}"
+          class="w-full md:w-56 px-2 py-1 border border-gray-300 rounded"
+        />
+        <button
+          type="button"
+          data-assign-category="${id}"
+          class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+        >
+          ${tUnsafe('categories.assignOrphans')}
+        </button>
+      </div>
+    `;
+    container.appendChild(li);
+  });
+
+  container.querySelectorAll<HTMLButtonElement>('[data-assign-category]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const promptId = Number(button.dataset.assignCategory || '');
+      const input = container.querySelector<HTMLInputElement>(
+        `input[data-prompt-category="${promptId}"]`
+      );
+      if (!promptId || !input) {
+        return;
+      }
+      const category = input.value.trim();
+      if (!category) {
+        alert(tUnsafe('management.assignPlaceholder'));
+        return;
+      }
+      void assignCategoryToPrompt(promptId, category);
+    });
+  });
+}
+
+async function assignCategoryToPrompt(promptId: number, category: string): Promise<void> {
   try {
     await apiFetch('/api/categories/assign-orphans', {
       method: 'POST',
-      body: JSON.stringify({ prompt_ids: promptIds, category: categoryName, confirm: true }),
+      body: JSON.stringify({ prompt_ids: [promptId], category, confirm: true }),
     });
-    elements.orphansAssignInput?.classList.remove('border-red-400');
     await loadCategories();
   } catch (error) {
-    handleError(error, 'Failed to assign categories');
+    handleError(error, 'Failed to assign category');
   }
 }
 
@@ -582,10 +644,14 @@ function init(): void {
   elements.undoButton?.addEventListener('click', () => {
     void undoLastOperation();
   });
-  elements.orphansAssignButton?.addEventListener('click', () => {
-    void assignOrphans();
-  });
   void loadCategories();
 }
 
-init();
+initI18n(() => {
+  try {
+    updateStaticTranslations();
+    init();
+  } catch (error) {
+    console.error('Failed to initialize category management', error);
+  }
+});

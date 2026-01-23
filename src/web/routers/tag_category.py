@@ -38,6 +38,8 @@ from src.web.models.tag_category_responses import (
     TagListResponse,
     BulkActionResponse,
     OrphanPromptsResponse,
+    OrphanPromptDetailsResponse,
+    OrphanPromptItem,
     TagSuggestionResponse,
     TagSuggestionItem,
 )
@@ -233,13 +235,19 @@ async def delete_category(
             detail="Category is in use. Use force=true to remove from prompts and delete.",
         )
 
-    if usage_count > 0 and force:
-        from src.db.models import Prompt
+    from src.db.models import Prompt, PromptVersion
 
+    if usage_count > 0 and force:
         db.query(Prompt).filter(Prompt.category_id == category_id).update(
             {Prompt.category_id: None},
             synchronize_session=False,
         )
+
+    # Clear historical references to avoid FK violations on delete.
+    db.query(PromptVersion).filter(PromptVersion.category_id == category_id).update(
+        {PromptVersion.category_id: None},
+        synchronize_session=False,
+    )
 
     category_repo.delete(category_id)
     db.commit()
@@ -452,6 +460,41 @@ async def category_orphans(
     results = db.query(Prompt.id).filter(Prompt.category_id.is_(None)).all()
     prompt_ids = [row[0] for row in results]
     return OrphanPromptsResponse(prompt_ids=prompt_ids, count=len(prompt_ids))
+
+
+@router.get(
+    "/categories/orphans/details",
+    response_model=OrphanPromptDetailsResponse,
+    summary="List prompts without categories (detailed)",
+)
+async def category_orphans_details(
+    user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
+):
+    from src.db.models import Prompt
+
+    prompts = db.query(Prompt.id, Prompt.title).filter(Prompt.category_id.is_(None)).all()
+    items = [OrphanPromptItem(id=row[0], title=row[1] or "") for row in prompts]
+    return OrphanPromptDetailsResponse(items=items, count=len(items))
+
+
+@router.get(
+    "/categories/unused",
+    response_model=CategoryListResponse,
+    summary="List unused categories",
+)
+async def category_unused(
+    user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
+):
+    category_repo = CategoryRepository(db)
+    results = category_repo.list_all_with_counts()
+    items = [
+        _category_response(category, count)
+        for category, count in results
+        if (count or 0) == 0
+    ]
+    return CategoryListResponse(items=items)
 
 
 @router.post(
@@ -853,6 +896,48 @@ async def tag_orphans(
         if (count or 0) == 0
     ]
     return TagListResponse(items=items)
+
+
+@router.get(
+    "/tags/orphan-prompts",
+    response_model=OrphanPromptsResponse,
+    summary="List prompts without tags",
+)
+async def tag_orphan_prompts(
+    user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
+):
+    from src.db.models import Prompt, prompt_tags
+
+    results = (
+        db.query(Prompt.id)
+        .outerjoin(prompt_tags, Prompt.id == prompt_tags.c.prompt_id)
+        .filter(prompt_tags.c.tag_id.is_(None))
+        .all()
+    )
+    prompt_ids = [row[0] for row in results]
+    return OrphanPromptsResponse(prompt_ids=prompt_ids, count=len(prompt_ids))
+
+
+@router.get(
+    "/tags/orphan-prompts/details",
+    response_model=OrphanPromptDetailsResponse,
+    summary="List prompts without tags (detailed)",
+)
+async def tag_orphan_prompts_details(
+    user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
+):
+    from src.db.models import Prompt, prompt_tags
+
+    prompts = (
+        db.query(Prompt.id, Prompt.title)
+        .outerjoin(prompt_tags, Prompt.id == prompt_tags.c.prompt_id)
+        .filter(prompt_tags.c.tag_id.is_(None))
+        .all()
+    )
+    items = [OrphanPromptItem(id=row[0], title=row[1] or "") for row in prompts]
+    return OrphanPromptDetailsResponse(items=items, count=len(items))
 
 
 @router.get(

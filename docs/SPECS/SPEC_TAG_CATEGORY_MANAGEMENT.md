@@ -1,9 +1,9 @@
 ---
 id: spec-tag-category-management
 title: Tag and Category Management
-version: 1.0.0
+version: 1.1.0
 date_created: 2026-01-21
-last_updated: 2026-01-21
+last_updated: 2026-01-23
 owner: medenor
 tags: [taxonomy, functional, process, api]
 status: draft
@@ -58,7 +58,9 @@ bulk operations, analytics, orphan detection, and suggestions derived from promp
 | Tag | A label that can be attached to a prompt; multiple Tags MAY be attached to a prompt. |
 | Category | A single classification value assigned to a prompt; at most one Category is assigned per prompt. |
 | Prompt | A content item that can be labeled with Tags and a Category. |
-| Orphan | A Tag with zero associated prompts, or a prompt with no Category assigned. |
+| Orphan | A Tag with zero associated prompts, a prompt with no Category assigned, or a prompt with no Tags assigned. |
+| Unused Category | A Category with zero associated prompts. |
+| Unused Tag | A Tag with zero associated prompts. |
 | Merge | The act of consolidating multiple Tags/Categories into a single target. |
 | Compatibility Endpoint | An interface whose response shape MUST remain unchanged for existing clients. |
 | CRUD | Create, Read, Update, Delete. |
@@ -119,7 +121,7 @@ Not applicable. Any transition not listed MUST be considered invalid.
   The system **MUST** support bulk deletion of Tags and Categories with explicit confirmation.
 
 - **REQ-007 — Orphan Detection**  
-  The system **MUST** identify orphan Tags and prompts without Categories.
+  The system **MUST** identify unused Tags, unused Categories, prompts without Categories, and prompts without Tags.
 
 - **REQ-008 — Usage Analytics**  
   The system **MUST** provide usage counts for Tags and Categories and expose most/least used
@@ -228,7 +230,7 @@ Not applicable. Any transition not listed MUST be considered invalid.
 | Field | Description |
 |-------|-------------|
 | Identifier | GET /api/categories |
-| Auth Required | yes |
+| Auth Required | no |
 | Description | Returns list of Category names for legacy clients. |
 
 #### Operation: List Tags (Compatibility)
@@ -236,7 +238,7 @@ Not applicable. Any transition not listed MUST be considered invalid.
 | Field | Description |
 |-------|-------------|
 | Identifier | GET /api/tags |
-| Auth Required | yes |
+| Auth Required | no |
 | Description | Returns list of Tag names with usage counts for legacy clients. |
 
 #### Operation: List Categories (Management)
@@ -310,6 +312,22 @@ Not applicable. Any transition not listed MUST be considered invalid.
 | Identifier | GET /api/categories/orphans |
 | Auth Required | yes |
 | Description | Returns prompts without Categories. |
+
+#### Operation: Category Orphan Details
+
+| Field | Description |
+|-------|-------------|
+| Identifier | GET /api/categories/orphans/details |
+| Auth Required | yes |
+| Description | Returns prompt IDs and titles for prompts without Categories. |
+
+#### Operation: Category Unused
+
+| Field | Description |
+|-------|-------------|
+| Identifier | GET /api/categories/unused |
+| Auth Required | yes |
+| Description | Returns Categories with zero associated prompts. |
 
 #### Operation: Category Analytics
 
@@ -399,6 +417,22 @@ Not applicable. Any transition not listed MUST be considered invalid.
 | Auth Required | yes |
 | Description | Returns unused Tags. |
 
+#### Operation: Tag Orphan Prompts
+
+| Field | Description |
+|-------|-------------|
+| Identifier | GET /api/tags/orphan-prompts |
+| Auth Required | yes |
+| Description | Returns prompts without Tags. |
+
+#### Operation: Tag Orphan Prompt Details
+
+| Field | Description |
+|-------|-------------|
+| Identifier | GET /api/tags/orphan-prompts/details |
+| Auth Required | yes |
+| Description | Returns prompt IDs and titles for prompts without Tags. |
+
 #### Operation: Tag Analytics
 
 | Field | Description |
@@ -476,23 +510,23 @@ Constraints identical to CategoryCreateRequest.
 
 ```json
 {
-  "target_id": "string",
-  "source_ids": ["string"],
+  "target_id": 0,
+  "source_ids": [0],
   "confirm": true
 }
 ```
 
 | Field | Type | Required | Constraints | Description |
 |-------|------|----------|-------------|-------------|
-| target_id | string | yes | must exist | Target Category identifier |
-| source_ids | array[string] | yes | all must exist; cannot include target_id | Categories to merge |
+| target_id | integer | yes | must exist | Target Category identifier |
+| source_ids | array[integer] | yes | all must exist; cannot include target_id | Categories to merge |
 | confirm | boolean | yes | must be true | Confirmation flag |
 
 #### CategoryBulkDeleteRequest
 
 ```json
 {
-  "ids": ["string"],
+  "ids": [0],
   "confirm": true
 }
 ```
@@ -521,7 +555,8 @@ Constraints identical to CategoryCreateRequest.
 {
   "name": "string",
   "description": "string",
-  "color": "string"
+  "color": "string",
+  "parent_tag_id": 0
 }
 ```
 
@@ -533,7 +568,8 @@ Constraints mirror CategoryCreateRequest except `sort_order`.
 {
   "name": "string",
   "description": "string",
-  "color": "string"
+  "color": "string",
+  "parent_tag_id": 0
 }
 ```
 
@@ -541,8 +577,8 @@ Constraints mirror CategoryCreateRequest except `sort_order`.
 
 ```json
 {
-  "target_id": "string",
-  "source_ids": ["string"],
+  "target_id": 0,
+  "source_ids": [0],
   "confirm": true
 }
 ```
@@ -551,7 +587,7 @@ Constraints mirror CategoryCreateRequest except `sort_order`.
 
 ```json
 {
-  "ids": ["string"],
+  "ids": [0],
   "confirm": true
 }
 ```
@@ -570,7 +606,7 @@ Constraints mirror CategoryCreateRequest except `sort_order`.
 
 ```json
 {
-  "prompt_id": "string",
+  "prompt_id": 0,
   "content": "string",
   "limit": 10
 }
@@ -578,7 +614,7 @@ Constraints mirror CategoryCreateRequest except `sort_order`.
 
 | Field | Type | Required | Constraints | Description |
 |-------|------|----------|-------------|-------------|
-| prompt_id | string | no | must exist if provided | Prompt identifier |
+| prompt_id | integer | no | must exist if provided | Prompt identifier |
 | content | string | no | non-empty if prompt_id missing | Prompt content |
 | limit | integer | no | positive, max 50 | Max suggestions |
 
@@ -586,7 +622,7 @@ Constraints mirror CategoryCreateRequest except `sort_order`.
 
 ```json
 {
-  "prompt_ids": ["string"],
+  "prompt_ids": [0],
   "add": ["string"],
   "remove": ["string"],
   "confirm": true
@@ -622,7 +658,7 @@ Constraints mirror CategoryCreateRequest except `sort_order`.
 {
   "items": [
     {
-      "id": "string",
+      "id": 0,
       "name": "string",
       "description": "string",
       "color": "string",
@@ -641,10 +677,11 @@ Constraints mirror CategoryCreateRequest except `sort_order`.
 {
   "items": [
     {
-      "id": "string",
+      "id": 0,
       "name": "string",
       "description": "string",
       "color": "string",
+      "parent_tag_id": 0,
       "usage_count": 0,
       "created_at": "string",
       "updated_at": "string"
@@ -752,7 +789,7 @@ NOTE: Examples are illustrative only.
 | REQ-004 | AC-TCM-003 | TEST-REQ-003 | PUT /api/categories/{id}, PUT /api/tags/{id} |
 | REQ-005 | AC-TCM-003 | TEST-REQ-003 | POST /api/categories/merge, POST /api/tags/merge |
 | REQ-006 | AC-TCM-004 | TEST-REQ-002 | POST /api/*/bulk-delete |
-| REQ-007 | AC-TCM-005 | TEST-REQ-001 | GET /api/categories/orphans, GET /api/tags/orphans |
+| REQ-007 | AC-TCM-005 | TEST-REQ-001 | GET /api/categories/orphans, GET /api/categories/unused, GET /api/tags/orphans, GET /api/tags/orphan-prompts |
 | REQ-008 | AC-TCM-006 | TEST-REQ-001 | GET /api/*/analytics |
 | REQ-009 | AC-TCM-006 | TEST-REQ-001 | GET /api/tags/analytics |
 | REQ-010 | AC-TCM-007 | TEST-REQ-001 | POST /api/*/find-replace |

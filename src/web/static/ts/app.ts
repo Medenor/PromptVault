@@ -20,6 +20,19 @@ import { apiFetch, apiGet, apiPostForm, APIRequestError } from '@/utils/api';
 interface TagInfo {
   name: string;
   count: number;
+  color?: string | null;
+}
+
+interface CategoryItem {
+  name: string;
+  color?: string | null;
+}
+
+interface TagItem {
+  name: string;
+  color?: string | null;
+  usage_count?: number | null;
+  count?: number | null;
 }
 
 interface VersionSummary {
@@ -80,6 +93,9 @@ type PromptId = string;
 let promptCache: Record<string, PromptResponse> = {};
 let lastSelectedPromptId: number | null = null; // Track the last selected prompt for keyboard shortcuts
 const selectedPromptIds: Set<number> = new Set(); // Track selected prompts for bulk operations
+let tagColorMap: Record<string, string> = {};
+let categoryColorMap: Record<string, string> = {};
+const colorTextCache = new Map<string, string>();
 
 const HIDDEN_CLASS = 'hidden';
 const ERROR_VISIBLE_CLASS = 'validation-error-visible';
@@ -113,6 +129,119 @@ function hideElement(element: HTMLElement | null): void {
   if (element) {
     element.classList.add(HIDDEN_CLASS);
   }
+}
+
+function resolveCssColor(color?: string | null): string | null {
+  if (!color) {
+    return null;
+  }
+  const trimmed = color.trim();
+  if (!trimmed) {
+    return null;
+  }
+  if (trimmed.startsWith('#')) {
+    return trimmed;
+  }
+  return `var(--color-${trimmed}, ${trimmed})`;
+}
+
+function getReadableTextColor(background: string): string {
+  const cached = colorTextCache.get(background);
+  if (cached) {
+    return cached;
+  }
+  const swatch = document.createElement('span');
+  swatch.style.backgroundColor = background;
+  swatch.style.display = 'none';
+  document.body.appendChild(swatch);
+  const computed = getComputedStyle(swatch).backgroundColor;
+  swatch.remove();
+
+  const match = computed.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+  if (!match) {
+    colorTextCache.set(background, '#374151');
+    return '#374151';
+  }
+  const r = Number(match[1]) / 255;
+  const g = Number(match[2]) / 255;
+  const b = Number(match[3]) / 255;
+  const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  const textColor = luminance > 0.6 ? '#1f2937' : '#f9fafb';
+  colorTextCache.set(background, textColor);
+  return textColor;
+}
+
+function buildPillStyleFilled(color?: string | null): string {
+  const background = resolveCssColor(color);
+  if (!background) {
+    return '';
+  }
+  const textColor = getReadableTextColor(background);
+  return ` style="background-color: ${background}; color: ${textColor};"`;
+}
+
+function buildPillStyleOutline(color?: string | null): string {
+  const borderColor = resolveCssColor(color);
+  if (!borderColor) {
+    return '';
+  }
+  return ` style="border-color: ${borderColor}; color: ${borderColor};"`;
+}
+
+function applyPromptColorStyles(): void {
+  document.querySelectorAll<HTMLElement>('[data-category-pill]').forEach((pill) => {
+    const category = pill.dataset.categoryName || '';
+    const color = categoryColorMap[category];
+    if (!color) {
+      return;
+    }
+    const background = resolveCssColor(color);
+    if (!background) {
+      return;
+    }
+    pill.style.backgroundColor = background;
+    pill.style.color = getReadableTextColor(background);
+  });
+
+  document.querySelectorAll<HTMLElement>('[data-tag-pill]').forEach((pill) => {
+    const tagName = pill.dataset.tagName || '';
+    const color = tagColorMap[tagName];
+    if (!color) {
+      return;
+    }
+    const borderColor = resolveCssColor(color);
+    if (!borderColor) {
+      return;
+    }
+    pill.style.borderColor = borderColor;
+    pill.style.color = borderColor;
+  });
+}
+
+function normalizeTagItems(items: TagItem[]): TagInfo[] {
+  return items.map((item) => ({
+    name: item.name,
+    count: item.count ?? item.usage_count ?? 0,
+    color: item.color ?? null,
+  }));
+}
+
+function setTagColorMap(tags: TagInfo[]): void {
+  tagColorMap = {};
+  tags.forEach((tag) => {
+    if (tag.color) {
+      tagColorMap[tag.name] = tag.color;
+    }
+  });
+}
+
+function setCategoryColorMap(items: CategoryItem[]): void {
+  categoryColorMap = {};
+  items.forEach((item) => {
+    if (item.color) {
+      categoryColorMap[item.name] = item.color;
+    }
+  });
 }
 
 function clearPromptFormErrors(): void {
@@ -395,8 +524,21 @@ async function loadPrompts(): Promise<void> {
 
 async function loadCategories(): Promise<void> {
   try {
+    try {
+      const data = await apiGet<{ items: CategoryItem[] }>('/api/categories/manage');
+      const categories = (data.items || []).map((item) => item.name);
+      setCategoryColorMap(data.items || []);
+      renderCategories(categories);
+      applyPromptColorStyles();
+      return;
+    } catch (error) {
+      reportAppIssue('loadCategoriesMetadata', error, {}, 'warning');
+    }
+
     const data = await apiGet<{ categories: string[] }>('/api/categories');
+    categoryColorMap = {};
     renderCategories(data.categories || []);
+    applyPromptColorStyles();
   } catch (error) {
     reportAppIssue('loadCategories', error);
   }
@@ -404,8 +546,21 @@ async function loadCategories(): Promise<void> {
 
 async function loadTags(): Promise<void> {
   try {
+    try {
+      const data = await apiGet<{ items: TagItem[] }>('/api/tags/manage');
+      const normalized = normalizeTagItems(data.items || []);
+      setTagColorMap(normalized);
+      renderTags(normalized);
+      applyPromptColorStyles();
+      return;
+    } catch (error) {
+      reportAppIssue('loadTagsMetadata', error, {}, 'warning');
+    }
+
     const data = await apiGet<{ tags: TagInfo[] }>('/api/tags');
+    setTagColorMap(data.tags || []);
     renderTags(data.tags || []);
+    applyPromptColorStyles();
   } catch (error) {
     reportAppIssue('loadTags', error);
   }
@@ -433,6 +588,8 @@ function renderPrompts(prompts: Record<string, PromptResponse>): void {
     const promptElement = createPromptElement(id, prompt);
     container.appendChild(promptElement);
   }
+
+  applyPromptColorStyles();
 }
 
 function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement {
@@ -459,15 +616,26 @@ function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement
   });
 
   // Build tags HTML
+  const tagColorLookup = prompt.tag_colors ?? {};
   const tagsHTML =
     prompt.tags && prompt.tags.length > 0
       ? prompt.tags
-          .map(
-            (tag) =>
-              `<span class="px-2 py-1 text-xs font-medium rounded-md" style="background-color: #F3F4F6; color: #6B7280;">${tag}</span>`
-          )
+          .map((tag) => {
+            const color = tagColorLookup[tag] ?? tagColorMap[tag];
+            const style = buildPillStyleOutline(color);
+            return `<span class="px-2 py-1 text-xs font-medium rounded-full border border-gray-300 flex items-center gap-1" data-tag-pill="true" data-tag-name="${tag}"${style}>
+                <svg class="h-3 w-3" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                  <path d="M3.5 7.5L7.5 3.5H12.5V8.5L8.5 12.5L3.5 7.5Z"></path>
+                  <circle cx="10.5" cy="5.5" r="1"></circle>
+                </svg>
+                <span>${tag}</span>
+              </span>`;
+          })
           .join('')
       : '';
+
+  const categoryColor = prompt.category_color ?? categoryColorMap[prompt.category];
+  const categoryStyle = buildPillStyleFilled(categoryColor);
 
   div.innerHTML = `
         <div class="flex items-start justify-between mb-3">
@@ -479,7 +647,12 @@ function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement
             </div>
         </div>
         <div class="flex flex-wrap gap-2 mb-3">
-            <span class="px-2 py-1 text-xs font-medium rounded-md bg-blue-100 text-blue-800">${prompt.category || t('categories.noCategory')}</span>
+            <span class="px-2 py-1 text-xs font-semibold rounded-md bg-blue-100 text-blue-800 flex items-center gap-1" data-category-pill="true" data-category-name="${prompt.category}"${categoryStyle}>
+              <svg class="h-3 w-3" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                <path d="M2.5 4.5c0-1.1.9-2 2-2h2.1c.4 0 .8.2 1.1.4l.8.8c.2.2.5.3.7.3h3.8c1.1 0 2 .9 2 2v5.5c0 1.1-.9 2-2 2h-8.5c-1.1 0-2-.9-2-2v-7z"></path>
+              </svg>
+              <span>${prompt.category || t('categories.noCategory')}</span>
+            </span>
             ${tagsHTML}
         </div>
         <p class="text-sm text-gray-600 mb-4 line-clamp-3">${truncateText(prompt.prompt, 100)}</p>
@@ -572,7 +745,21 @@ function renderCategories(categories: string[]): void {
   categories.forEach((category) => {
     const li = document.createElement('li');
     li.dataset.category = category;
-    li.textContent = category;
+    li.classList.add('flex', 'items-center', 'gap-2');
+
+    const color = categoryColorMap[category];
+    const background = resolveCssColor(color);
+    if (background) {
+      const swatch = document.createElement('span');
+      swatch.className = 'inline-block h-2.5 w-2.5 rounded-full';
+      swatch.style.backgroundColor = background;
+      li.appendChild(swatch);
+    }
+
+    const label = document.createElement('span');
+    label.textContent = category;
+    li.appendChild(label);
+
     list.appendChild(li);
   });
 }
@@ -590,7 +777,29 @@ function renderTags(tags: TagInfo[]): void {
   tags.forEach((tag) => {
     const li = document.createElement('li');
     li.dataset.tag = tag.name;
-    li.textContent = `${tag.name} (${tag.count})`;
+    li.classList.add('flex', 'items-center', 'justify-between', 'gap-2');
+
+    const left = document.createElement('div');
+    left.className = 'flex items-center gap-2';
+
+    const background = resolveCssColor(tag.color ?? tagColorMap[tag.name]);
+    if (background) {
+      const swatch = document.createElement('span');
+      swatch.className = 'inline-block h-2.5 w-2.5 rounded-full';
+      swatch.style.backgroundColor = background;
+      left.appendChild(swatch);
+    }
+
+    const nameSpan = document.createElement('span');
+    nameSpan.textContent = tag.name;
+    left.appendChild(nameSpan);
+    li.appendChild(left);
+
+    const countSpan = document.createElement('span');
+    countSpan.className = 'text-xs text-gray-500';
+    countSpan.textContent = `(${tag.count})`;
+    li.appendChild(countSpan);
+
     list.appendChild(li);
   });
 }
@@ -2047,9 +2256,21 @@ async function handleSuggestTags(): Promise<void> {
 
 async function loadAvailableTags(): Promise<void> {
   try {
+    try {
+      const data = await apiGet<{ items: TagItem[] }>('/api/tags/manage');
+      availableTags = normalizeTagItems(data.items || []);
+      setTagColorMap(availableTags);
+      applyPromptColorStyles();
+      return;
+    } catch (error) {
+      reportAppIssue('loadTagsAutocompleteMetadata', error, {}, 'warning');
+    }
+
     const data = await apiGet<{ tags: TagInfo[] }>('/api/tags');
     // Store tags with counts
     availableTags = data.tags || [];
+    setTagColorMap(availableTags);
+    applyPromptColorStyles();
   } catch (error) {
     reportAppIssue('loadTagsAutocomplete', error);
     availableTags = [];

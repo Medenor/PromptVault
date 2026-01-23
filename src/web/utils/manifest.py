@@ -5,24 +5,35 @@
 """Vite manifest loader for production builds."""
 
 import json
-from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
 MANIFEST_PATH = Path(__file__).parent.parent.parent.parent / "dist" / "static" / ".vite" / "manifest.json"
 DIST_PATH = Path(__file__).parent.parent.parent.parent / "dist" / "static"
 
+_manifest_cache: dict[str, Any] = {}
+_manifest_mtime: float | None = None
 
-@lru_cache(maxsize=1)
 def load_manifest() -> dict[str, Any]:
     """Load Vite manifest file for production builds."""
+    global _manifest_cache, _manifest_mtime
     if not MANIFEST_PATH.exists():
+        _manifest_cache = {}
+        _manifest_mtime = None
         return {}
+
+    current_mtime = MANIFEST_PATH.stat().st_mtime
+    if _manifest_mtime is not None and _manifest_mtime == current_mtime:
+        return _manifest_cache
 
     try:
         with open(MANIFEST_PATH, encoding="utf-8") as file:
-            return json.load(file)
+            _manifest_cache = json.load(file)
+            _manifest_mtime = current_mtime
+            return _manifest_cache
     except (json.JSONDecodeError, OSError):
+        _manifest_cache = {}
+        _manifest_mtime = None
         return {}
 
 
@@ -41,4 +52,6 @@ def is_production() -> bool:
 
 def clear_manifest_cache() -> None:
     """Clear the cached manifest (useful for hot reload)."""
-    load_manifest.cache_clear()
+    global _manifest_cache, _manifest_mtime
+    _manifest_cache = {}
+    _manifest_mtime = None

@@ -53,6 +53,7 @@
               id="category-create-name"
               type="text"
               placeholder="Name"
+              data-i18n-placeholder="management.namePlaceholder"
               class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
               required
             />
@@ -60,12 +61,14 @@
               id="category-create-description"
               type="text"
               placeholder="Description"
+              data-i18n-placeholder="management.descriptionPlaceholder"
               class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
             />
             <input
               id="category-create-color"
               type="text"
               placeholder="Color token or hex"
+              data-i18n-placeholder="management.colorPlaceholder"
               class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
             />
             <input
@@ -92,17 +95,19 @@
               <h4 class="font-semibold text-gray-800 mb-3" data-i18n="actions.merge">Merge</h4>
               <div class="space-y-3">
                 <input
-                  id="category-merge-target"
-                  type="number"
-                  placeholder="Target ID"
-                  class="w-full px-3 py-2 border border-gray-300 rounded"
-                />
+              id="category-merge-target"
+              type="number"
+              placeholder="Target ID"
+              data-i18n-placeholder="management.targetIdPlaceholder"
+              class="w-full px-3 py-2 border border-gray-300 rounded"
+            />
                 <input
-                  id="category-merge-sources"
-                  type="text"
-                  placeholder="Source IDs (comma-separated)"
-                  class="w-full px-3 py-2 border border-gray-300 rounded"
-                />
+              id="category-merge-sources"
+              type="text"
+              placeholder="Source IDs (comma-separated)"
+              data-i18n-placeholder="management.sourceIdsPlaceholder"
+              class="w-full px-3 py-2 border border-gray-300 rounded"
+            />
                 <button
                   id="category-merge-btn"
                   class="w-full px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
@@ -117,17 +122,19 @@
               <h4 class="font-semibold text-gray-800 mb-3" data-i18n="actions.findReplace">Find & Replace</h4>
               <div class="space-y-3">
                 <input
-                  id="category-find"
-                  type="text"
-                  placeholder="Find name"
-                  class="w-full px-3 py-2 border border-gray-300 rounded"
-                />
+              id="category-find"
+              type="text"
+              placeholder="Find name"
+              data-i18n-placeholder="management.findPlaceholder"
+              class="w-full px-3 py-2 border border-gray-300 rounded"
+            />
                 <input
-                  id="category-replace"
-                  type="text"
-                  placeholder="Replace name"
-                  class="w-full px-3 py-2 border border-gray-300 rounded"
-                />
+              id="category-replace"
+              type="text"
+              placeholder="Replace name"
+              data-i18n-placeholder="management.replacePlaceholder"
+              class="w-full px-3 py-2 border border-gray-300 rounded"
+            />
                 <button
                   id="category-find-replace-btn"
                   class="w-full px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
@@ -142,15 +149,16 @@
               <h4 class="font-semibold text-gray-800 mb-3" data-i18n="actions.bulkDelete">Bulk Delete</h4>
               <div class="space-y-3">
                 <input
-                  id="category-bulk-delete-ids"
-                  type="text"
-                  placeholder="IDs (comma-separated)"
-                  class="w-full px-3 py-2 border border-gray-300 rounded"
-                />
-                <label class="flex items-center gap-2 text-sm text-gray-700">
-                  <input id="category-bulk-delete-force" type="checkbox" class="rounded text-blue-500" />
-                  Force delete (remove from prompts)
-                </label>
+              id="category-bulk-delete-ids"
+              type="text"
+              placeholder="IDs (comma-separated)"
+              data-i18n-placeholder="management.idsPlaceholder"
+              class="w-full px-3 py-2 border border-gray-300 rounded"
+            />
+            <label class="flex items-center gap-2 text-sm text-gray-700">
+              <input id="category-bulk-delete-force" type="checkbox" class="rounded text-blue-500" />
+              <span data-i18n="management.forceDelete">Force delete (remove from prompts)</span>
+            </label>
                 <button
                   id="category-bulk-delete-btn"
                   class="w-full px-3 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition"
@@ -219,30 +227,33 @@
 
         <section class="bg-white rounded-lg shadow p-6 mb-6">
           <h3 class="text-lg font-semibold text-gray-900 mb-4" data-i18n="management.orphans">Orphans</h3>
-          <p class="text-sm text-gray-600 mb-3">
-            <span data-i18n="categories.orphans">Prompts without a category:</span>
-            <strong id="category-orphans-count">0</strong>
-          </p>
-          <div class="flex flex-col md:flex-row gap-3 mb-3">
-            <input
-              id="category-orphans-reassign"
-              type="text"
-              placeholder="Category name to assign"
-              class="w-full md:w-64 px-3 py-2 border border-gray-300 rounded"
-            />
-            <button
-              id="category-orphans-assign-btn"
-              class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
-              data-i18n="categories.assignOrphans"
-            >
-              Assign Category
-            </button>
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="border border-gray-200 rounded-lg p-4">
+              <h4 class="font-semibold text-gray-800 mb-3" data-i18n="categories.unusedTitle">
+                Unused categories
+              </h4>
+              <p class="text-sm text-gray-600 mb-3">
+                <span data-i18n="categories.unusedLabel">Unused categories:</span>
+                <strong id="category-unused-count">0</strong>
+              </p>
+              <ul id="category-unused-list" class="text-sm text-gray-700 space-y-1"></ul>
+            </div>
+            <div class="border border-gray-200 rounded-lg p-4">
+              <h4 class="font-semibold text-gray-800 mb-3" data-i18n="categories.orphanPromptsTitle">
+                Prompts without a category
+              </h4>
+              <p class="text-sm text-gray-600 mb-3">
+                <span data-i18n="categories.orphans">Prompts without a category:</span>
+                <strong id="category-orphans-count">0</strong>
+              </p>
+              <div class="mt-3">
+                <h5 class="text-sm font-semibold text-gray-700 mb-2" data-i18n="management.promptDetails">
+                  Prompt details
+                </h5>
+                <ul id="category-orphans-details" class="text-sm text-gray-700 space-y-1"></ul>
+              </div>
+            </div>
           </div>
-          <textarea
-            id="category-orphans-list"
-            class="w-full h-24 px-3 py-2 border border-gray-300 rounded text-xs"
-            readonly
-          ></textarea>
         </section>
 
         <section class="bg-white rounded-lg shadow p-6">
@@ -252,6 +263,7 @@
               id="category-search"
               type="text"
               placeholder="Search categories..."
+              data-i18n-placeholder="management.searchCategoriesPlaceholder"
               class="w-full md:w-64 px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
             />
           </div>
