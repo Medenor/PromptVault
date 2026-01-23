@@ -2304,9 +2304,12 @@ function setupTagAutocomplete() {
   // Focus event - show suggestions if there's partial input
   tagInput.addEventListener('focus', (event) => {
     const target = event.target as HTMLInputElement | null;
-    if (target) {
-      handleTagInput(target);
+    if (!target) {
+      return;
     }
+    void loadAvailableTags().then(() => {
+      handleTagInput(target);
+    });
   });
 
   // Blur event - close dropdown with delay to allow clicks

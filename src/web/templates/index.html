@@ -95,11 +95,13 @@
           <div class="flex items-center justify-between h-16">
             <!-- Logo and Title -->
             <div class="flex items-center gap-4">
-              <img
-                src="/static/images/promptvault_logo_frontend.webp"
-                alt="PromptVault Logo"
-                class="h-14 w-14 border-2 border-gray-400 rounded-lg shadow-lg"
-              />
+              <a href="/" class="inline-flex">
+                <img
+                  src="/static/images/promptvault_logo_frontend.webp"
+                  alt="PromptVault Logo"
+                  class="h-14 w-14 border-2 border-gray-400 rounded-lg shadow-lg"
+                />
+              </a>
               <h1 class="text-2xl font-bold">PromptVault</h1>
             </div>
 
@@ -142,7 +144,7 @@
               <button
                 id="admin-btn"
                 onclick="window.location.href = '/admin/users'"
-                class="hidden md:block px-3 py-2 text-sm font-medium rounded-lg bg-amber-500 text-white hover:bg-amber-600 transition-all hover:scale-105 active:scale-95"
+                class="hidden md:block px-3 py-2 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-all hover:scale-105 active:scale-95"
                 data-i18n="nav.admin"
                 style="display: none"
               >
@@ -196,7 +198,7 @@
                   <button
                     id="admin-btn-mobile"
                     onclick="window.location.href = '/admin/users'"
-                    class="w-full text-left px-4 py-2 text-sm text-amber-700 hover:bg-amber-50 transition-colors"
+                    class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
                     data-i18n="nav.admin"
                     style="display: none"
                   >
@@ -292,8 +294,11 @@
 
             <!-- Categories Section -->
             <div class="mb-6">
-              <h3 class="text-sm font-semibold text-gray-700 mb-3" data-i18n="nav.categories">
-                Categories
+              <h3 class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                <svg class="h-4 w-4 text-gray-500" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                  <path d="M2.5 4.5c0-1.1.9-2 2-2h2.1c.4 0 .8.2 1.1.4l.8.8c.2.2.5.3.7.3h3.8c1.1 0 2 .9 2 2v5.5c0 1.1-.9 2-2 2h-8.5c-1.1 0-2-.9-2-2v-7z"></path>
+                </svg>
+                <span data-i18n="nav.categories">Categories</span>
               </h3>
               <ul id="categories-list" class="space-y-2">
                 <li data-category="all" class="active" data-i18n="nav.allCategories">
@@ -309,7 +314,13 @@
 
             <!-- Tags Section -->
             <div>
-              <h3 class="text-sm font-semibold text-gray-700 mb-3" data-i18n="nav.tags">Tags</h3>
+              <h3 class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                <svg class="h-4 w-4 text-gray-500" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                  <path d="M3.5 7.5L7.5 3.5H12.5V8.5L8.5 12.5L3.5 7.5Z"></path>
+                  <circle cx="10.5" cy="5.5" r="1"></circle>
+                </svg>
+                <span data-i18n="nav.tags">Tags</span>
+              </h3>
               <ul id="tags-list" class="space-y-2">
                 <li data-tag="all" class="active" data-i18n="nav.allTags">
                   All Tags
@@ -421,8 +432,11 @@
 
             <!-- Categories Section -->
             <div class="mb-6">
-              <h3 class="text-sm font-semibold text-gray-700 mb-3" data-i18n="nav.categories">
-                Categories
+              <h3 class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                <svg class="h-4 w-4 text-gray-500" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                  <path d="M2.5 4.5c0-1.1.9-2 2-2h2.1c.4 0 .8.2 1.1.4l.8.8c.2.2.5.3.7.3h3.8c1.1 0 2 .9 2 2v5.5c0 1.1-.9 2-2 2h-8.5c-1.1 0-2-.9-2-2v-7z"></path>
+                </svg>
+                <span data-i18n="nav.categories">Categories</span>
               </h3>
               <ul id="categories-list-mobile" class="space-y-2">
                 <li data-category="all" class="active" data-i18n="nav.allCategories">
@@ -438,7 +452,13 @@
 
             <!-- Tags Section -->
             <div>
-              <h3 class="text-sm font-semibold text-gray-700 mb-3" data-i18n="nav.tags">Tags</h3>
+              <h3 class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                <svg class="h-4 w-4 text-gray-500" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                  <path d="M3.5 7.5L7.5 3.5H12.5V8.5L8.5 12.5L3.5 7.5Z"></path>
+                  <circle cx="10.5" cy="5.5" r="1"></circle>
+                </svg>
+                <span data-i18n="nav.tags">Tags</span>
+              </h3>
               <ul id="tags-list-mobile" class="space-y-2">
                 <li data-tag="all" class="active" data-i18n="nav.allTags">
                   All Tags
