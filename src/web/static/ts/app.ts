@@ -2312,6 +2312,17 @@ function setupTagAutocomplete() {
     });
   });
 
+  // Click event - reopen suggestions even if already focused
+  tagInput.addEventListener('click', (event) => {
+    const target = event.target as HTMLInputElement | null;
+    if (!target) {
+      return;
+    }
+    if (!tagAutocompleteState.isOpen) {
+      handleTagInput(target);
+    }
+  });
+
   // Blur event - close dropdown with delay to allow clicks
   tagInput.addEventListener('blur', () => {
     setTimeout(() => {
@@ -2552,29 +2563,14 @@ function selectTag(tagName: string): void {
     return;
   }
 
-  const value = tagInput.value;
-  const cursorPosition = tagInput.selectionStart ?? tagInput.value.length;
-
-  // Find the position of the last comma before cursor
-  const beforeCursor = value.substring(0, cursorPosition);
-  const lastCommaIndex = beforeCursor.lastIndexOf(',');
-
-  // Build the new value
-  let newValue = '';
-  let newCursorPosition = 0;
-
-  if (lastCommaIndex === -1) {
-    // No comma yet - replace entire input
-    newValue = tagName + ', ';
-    newCursorPosition = newValue.length;
-  } else {
-    // Replace text after last comma
-    const beforeTag = value.substring(0, lastCommaIndex + 1);
-    const afterCursor = value.substring(cursorPosition);
-    // Remove any existing partial tag and add the selected tag
-    newValue = beforeTag + ' ' + tagName + ', ' + afterCursor;
-    newCursorPosition = (beforeTag + ' ' + tagName + ', ').length;
+  const existingTags = parseTagInput(tagInput.value);
+  const normalized = existingTags.map((tag) => tag.toLowerCase());
+  if (!normalized.includes(tagName.toLowerCase())) {
+    existingTags.push(tagName);
   }
+
+  const newValue = existingTags.join(', ') + (existingTags.length > 0 ? ', ' : '');
+  const newCursorPosition = newValue.length;
 
   // Update input
   tagInput.value = newValue;
