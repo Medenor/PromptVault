@@ -834,8 +834,21 @@ async def get_categories():
 @app.get("/api/tags")
 async def get_tags():
     """Get all tags with usage counts"""
-    tags_with_counts = data_service.get_tags_with_counts()
-    return {"tags": tags_with_counts}
+    try:
+        from src.db.session import get_db_session
+        from src.db.repositories.tag_repository import TagRepository
+
+        with get_db_session() as session:
+            tag_repo = TagRepository(session)
+            results = tag_repo.list_all_with_counts()
+            tags_with_counts = [
+                {"name": tag.name, "count": count or 0}
+                for tag, count in results
+            ]
+            return {"tags": tags_with_counts}
+    except Exception:
+        tags_with_counts = data_service.get_tags_with_counts()
+        return {"tags": tags_with_counts}
 
 
 @app.get("/import-export", response_class=HTMLResponse)

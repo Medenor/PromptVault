@@ -2374,7 +2374,7 @@ function filterTags(partialTag: string, enteredTags: Set<string>) {
   // Case-insensitive filtering
   const searchTerm = partialTag.toLowerCase();
 
-  return availableTags
+  const filtered = availableTags
     .filter((tag) => {
       const tagName = tag.name;
       const tagLower = tagName.toLowerCase();
@@ -2383,8 +2383,16 @@ function filterTags(partialTag: string, enteredTags: Set<string>) {
         return false;
       }
       // Match tags that contain the search term
-      return tagLower.includes(searchTerm);
-    })
+      return searchTerm === '' || tagLower.includes(searchTerm);
+    });
+
+  if (searchTerm === '') {
+    return filtered
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .slice(0, 50);
+  }
+
+  return filtered
     .sort((a, b) => b.count - a.count)
     .slice(0, 10); // Limit to 10 suggestions
 }
