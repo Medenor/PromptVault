@@ -156,7 +156,7 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
     ? {
         r: parseInt(result[1]!, 16),
         g: parseInt(result[2]!, 16),
-        b: parseInt(result[3]!, 16)
+        b: parseInt(result[3]!, 16),
       }
     : null;
 }
@@ -221,7 +221,7 @@ function hslToRgb(h: number, s: number, l: number): { r: number; g: number; b: n
   return {
     r: Math.round(r * 255),
     g: Math.round(g * 255),
-    b: Math.round(b * 255)
+    b: Math.round(b * 255),
   };
 }
 
@@ -254,7 +254,7 @@ function getSoftMutedColorScheme(
     return {
       background: '#f3f4f6',
       text: '#374151',
-      border: '#d1d5db'
+      border: '#d1d5db',
     };
   }
 
@@ -265,7 +265,7 @@ function getSoftMutedColorScheme(
     return {
       background: '#f3f4f6',
       text: '#374151',
-      border: '#d1d5db'
+      border: '#d1d5db',
     };
   }
 
@@ -278,7 +278,7 @@ function getSoftMutedColorScheme(
   const softHsl = {
     h: hsl.h,
     s: 0.6, // 60% saturation (more visible, less aggressive)
-    l: 0.78 // 78% lightness (soft but not too pale)
+    l: 0.78, // 78% lightness (soft but not too pale)
   };
 
   // Create border color version:
@@ -288,7 +288,7 @@ function getSoftMutedColorScheme(
   const borderHsl = {
     h: hsl.h,
     s: 0.7, // 70% saturation (more vibrant)
-    l: 0.52 // 52% lightness (medium tone, more visible)
+    l: 0.52, // 52% lightness (medium tone, more visible)
   };
 
   // Convert back to RGB and then to hex
@@ -305,7 +305,7 @@ function getSoftMutedColorScheme(
   return {
     background,
     text: textColor,
-    border: borderColorHex
+    border: borderColorHex,
   };
 }
 
@@ -318,7 +318,7 @@ function getReadableTextColor(background: string): string {
   swatch.style.backgroundColor = background;
   swatch.style.display = 'none';
   document.body.appendChild(swatch);
-  const computed = getComputedStyle(swatch).backgroundColor;
+  const computed = window.getComputedStyle(swatch).backgroundColor;
   swatch.remove();
 
   const match = computed.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
@@ -701,6 +701,13 @@ function setupEventListeners(): void {
 
   // Tag autocomplete
   setupTagAutocomplete();
+
+  // Empty state buttons
+  const emptyStateNewPromptBtn = document.getElementById('empty-state-new-prompt-btn');
+  emptyStateNewPromptBtn?.addEventListener('click', showNewPromptForm);
+
+  const emptyStateClearFiltersBtn = document.getElementById('empty-state-clear-filters-btn');
+  emptyStateClearFiltersBtn?.addEventListener('click', clearAllFilters);
 }
 
 async function loadPrompts(): Promise<void> {
@@ -767,6 +774,9 @@ function renderPrompts(prompts: Record<string, PromptResponse>): void {
   promptCache = { ...prompts };
   const container = document.getElementById('prompts-list') as HTMLElement | null;
   const searchResultsInfo = document.getElementById('search-results-info');
+  const promptsEmptyState = document.getElementById('prompts-empty-state');
+  const searchEmptyState = document.getElementById('search-empty-state');
+
   if (!container) {
     return;
   }
@@ -774,12 +784,31 @@ function renderPrompts(prompts: Record<string, PromptResponse>): void {
 
   // Handle case when there are no prompts at all
   if (Object.keys(prompts).length === 0) {
-    container.innerHTML = `<div class="col-span-full text-center text-gray-500 py-12">${t('search.emptyState')}</div>`;
+    // Determine if this is a search/filter result or truly no prompts
+    const hasActiveFilters = isAnyFilterActive();
+
+    if (hasActiveFilters) {
+      // Show search empty state
+      showElement(searchEmptyState);
+      hideElement(promptsEmptyState);
+      hideElement(container);
+    } else {
+      // Show prompts empty state
+      showElement(promptsEmptyState);
+      hideElement(searchEmptyState);
+      hideElement(container);
+    }
+
     if (searchResultsInfo) {
       hideElement(searchResultsInfo);
     }
     return;
   }
+
+  // Hide empty states and show prompts container
+  hideElement(promptsEmptyState);
+  hideElement(searchEmptyState);
+  showElement(container);
 
   for (const [id, prompt] of Object.entries(prompts)) {
     const promptElement = createPromptElement(id, prompt);
@@ -787,6 +816,20 @@ function renderPrompts(prompts: Record<string, PromptResponse>): void {
   }
 
   applyPromptColorStyles();
+}
+
+function isAnyFilterActive(): boolean {
+  const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
+  const favoritesFilter = document.getElementById('favorites-filter') as HTMLInputElement | null;
+  const selectedCategory = document.querySelector('#categories-list li.active')?.getAttribute('data-category');
+  const selectedTag = document.querySelector('#tags-list li.active')?.getAttribute('data-tag');
+
+  return !!(
+    (searchInput && searchInput.value.trim()) ||
+    (favoritesFilter && favoritesFilter.checked) ||
+    (selectedCategory && selectedCategory !== 'all') ||
+    (selectedTag && selectedTag !== 'all')
+  );
 }
 
 function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement {
@@ -929,12 +972,36 @@ function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement
 
 function renderCategories(categories: string[]): void {
   const list = document.getElementById('categories-list');
+  const listMobile = document.getElementById('categories-list-mobile');
+  const emptyState = document.getElementById('categories-sidebar-empty');
+  const emptyStateMobile = document.getElementById('categories-sidebar-empty-mobile');
+
   if (!list) return;
-  // Clear existing categories except "All Prompts"
+
+  // Clear existing categories except "All Categories"
   const allPromptsItem = list.querySelector('[data-category="all"]');
   list.innerHTML = '';
   if (allPromptsItem) {
     list.appendChild(allPromptsItem);
+  }
+
+  // Handle mobile list
+  if (listMobile) {
+    const allPromptsItemMobile = listMobile.querySelector('[data-category="all"]');
+    listMobile.innerHTML = '';
+    if (allPromptsItemMobile) {
+      listMobile.appendChild(allPromptsItemMobile);
+    }
+  }
+
+  // Show/hide empty states
+  if (categories.length === 0) {
+    showElement(emptyState);
+    showElement(emptyStateMobile);
+    return;
+  } else {
+    hideElement(emptyState);
+    hideElement(emptyStateMobile);
   }
 
   categories.forEach((category) => {
@@ -956,17 +1023,47 @@ function renderCategories(categories: string[]): void {
     li.appendChild(label);
 
     list.appendChild(li);
+
+    // Add to mobile list too
+    if (listMobile) {
+      const liMobile = li.cloneNode(true) as HTMLElement;
+      listMobile.appendChild(liMobile);
+    }
   });
 }
 
 function renderTags(tags: TagInfo[]): void {
   const list = document.getElementById('tags-list');
+  const listMobile = document.getElementById('tags-list-mobile');
+  const emptyState = document.getElementById('tags-sidebar-empty');
+  const emptyStateMobile = document.getElementById('tags-sidebar-empty-mobile');
+
   if (!list) return;
+
   // Clear existing tags except "All Tags"
   const allTagsItem = list.querySelector('[data-tag="all"]');
   list.innerHTML = '';
   if (allTagsItem) {
     list.appendChild(allTagsItem);
+  }
+
+  // Handle mobile list
+  if (listMobile) {
+    const allTagsItemMobile = listMobile.querySelector('[data-tag="all"]');
+    listMobile.innerHTML = '';
+    if (allTagsItemMobile) {
+      listMobile.appendChild(allTagsItemMobile);
+    }
+  }
+
+  // Show/hide empty states
+  if (tags.length === 0) {
+    showElement(emptyState);
+    showElement(emptyStateMobile);
+    return;
+  } else {
+    hideElement(emptyState);
+    hideElement(emptyStateMobile);
   }
 
   tags.forEach((tag) => {
@@ -996,6 +1093,12 @@ function renderTags(tags: TagInfo[]): void {
     li.appendChild(countSpan);
 
     list.appendChild(li);
+
+    // Add to mobile list too
+    if (listMobile) {
+      const liMobile = li.cloneNode(true) as HTMLElement;
+      listMobile.appendChild(liMobile);
+    }
   });
 }
 
@@ -1383,41 +1486,6 @@ function setupSearchEventListeners() {
     });
   }
 
-  // Clear search button (desktop)
-  const clearSearchBtn = document.getElementById('clear-search-btn');
-  if (clearSearchBtn) {
-    clearSearchBtn.addEventListener('click', function () {
-      const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
-      const searchInputMobile = document.getElementById(
-        'search-input-mobile'
-      ) as HTMLInputElement | null;
-      if (searchInput) searchInput.value = '';
-      if (searchInputMobile) searchInputMobile.value = '';
-      searchState.searchTerm = '';
-      toggleElement(clearSearchBtn, false);
-      const clearSearchBtnMobile = document.getElementById('clear-search-btn-mobile');
-      toggleElement(clearSearchBtnMobile, false);
-      void performSearch();
-    });
-  }
-
-  // Clear search button (mobile)
-  const clearSearchBtnMobile = document.getElementById('clear-search-btn-mobile');
-  if (clearSearchBtnMobile) {
-    clearSearchBtnMobile.addEventListener('click', function () {
-      const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
-      const searchInputMobile = document.getElementById(
-        'search-input-mobile'
-      ) as HTMLInputElement | null;
-      if (searchInput) searchInput.value = '';
-      if (searchInputMobile) searchInputMobile.value = '';
-      searchState.searchTerm = '';
-      toggleElement(clearSearchBtnMobile, false);
-      const clearSearchBtn = document.getElementById('clear-search-btn');
-      toggleElement(clearSearchBtn, false);
-      void performSearch();
-    });
-  }
 
   // Case sensitive toggle (desktop)
   const caseSensitiveToggle = document.getElementById(
@@ -1482,16 +1550,6 @@ function handleSearchInput(event: Event): void {
   if (searchInput && target.id !== 'search-input') searchInput.value = searchTerm;
   if (searchInputMobile && target.id !== 'search-input-mobile')
     searchInputMobile.value = searchTerm;
-
-  // Show/hide clear search button
-  const clearSearchBtn = document.getElementById('clear-search-btn');
-  const clearSearchBtnMobile = document.getElementById('clear-search-btn-mobile');
-  if (clearSearchBtn) {
-    toggleElement(clearSearchBtn, searchTerm.length > 0);
-  }
-  if (clearSearchBtnMobile) {
-    toggleElement(clearSearchBtnMobile, searchTerm.length > 0);
-  }
 
   // Clear previous timeout
   if (searchTimeout) {
@@ -1699,11 +1757,6 @@ function clearAllFilters(): void {
     searchInput.value = '';
   }
 
-  const clearSearchBtn = document.getElementById('clear-search-btn');
-  if (clearSearchBtn) {
-    hideElement(clearSearchBtn);
-  }
-
   const caseSensitiveToggle = document.getElementById(
     'case-sensitive-toggle'
   ) as HTMLInputElement | null;
@@ -1722,11 +1775,6 @@ function clearAllFilters(): void {
   ) as HTMLInputElement | null;
   if (searchInputMobile) {
     searchInputMobile.value = '';
-  }
-
-  const clearSearchBtnMobile = document.getElementById('clear-search-btn-mobile');
-  if (clearSearchBtnMobile) {
-    hideElement(clearSearchBtnMobile);
   }
 
   const caseSensitiveToggleMobile = document.getElementById(
@@ -1896,7 +1944,7 @@ function createVersionItem(
     } else {
       timestamp = date.toLocaleString();
     }
-  } catch (error) {
+  } catch {
     timestamp = 'Invalid Date';
   }
   const isLatest = index === 0;
@@ -2196,7 +2244,8 @@ function displayDiff(diff: VersionDiffResponse): void {
     // If character-level diff is available, render it
     if (change.diff && change.diff.length > 0) {
       const diffContainer = renderCharacterDiff(change.diff);
-      diffContainer.className = 'p-3 bg-gray-50 border border-gray-200 rounded-lg ' + diffContainer.className;
+      diffContainer.className =
+        'p-3 bg-gray-50 border border-gray-200 rounded-lg ' + diffContainer.className;
       fieldDiv.appendChild(diffContainer);
     } else {
       // Fallback to old/new display for backward compatibility
@@ -2439,6 +2488,14 @@ function renderTagChips(): void {
   }
   chipContainer.innerHTML = '';
 
+  // Show empty state if no tags
+  if (selectedTags.length === 0) {
+    const emptyState = document.createElement('span');
+    emptyState.className = 'text-xs text-gray-500 italic';
+    emptyState.textContent = t('emptyStates.noTagsInEditor.description');
+    chipContainer.appendChild(emptyState);
+  }
+
   selectedTags.forEach((tag) => {
     const color = tagColorMap[tag];
     const chip = document.createElement('span');
@@ -2536,7 +2593,7 @@ async function handleSuggestTags(): Promise<void> {
       {
         method: 'POST',
         body: JSON.stringify({ content, limit: 10 }),
-      },
+      }
     );
     const suggestedNames = response.suggestions.map((item) => item.name);
     if (suggestedNames.length === 0) {
@@ -2737,27 +2794,22 @@ function filterTags(partialTag: string, selected: string[]) {
   const searchTerm = partialTag.toLowerCase();
   const selectedSet = new Set(selected.map((tag) => tag.toLowerCase()));
 
-  const filtered = availableTags
-    .filter((tag) => {
-      const tagName = tag.name;
-      const tagLower = tagName.toLowerCase();
-      // Don't suggest tags already entered
-      if (selectedSet.has(tagLower)) {
-        return false;
-      }
-      // Match tags that contain the search term
-      return searchTerm === '' || tagLower.includes(searchTerm);
-    });
+  const filtered = availableTags.filter((tag) => {
+    const tagName = tag.name;
+    const tagLower = tagName.toLowerCase();
+    // Don't suggest tags already entered
+    if (selectedSet.has(tagLower)) {
+      return false;
+    }
+    // Match tags that contain the search term
+    return searchTerm === '' || tagLower.includes(searchTerm);
+  });
 
   if (searchTerm === '') {
-    return filtered
-      .sort((a, b) => a.name.localeCompare(b.name))
-      .slice(0, 50);
+    return filtered.sort((a, b) => a.name.localeCompare(b.name)).slice(0, 50);
   }
 
-  return filtered
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 10); // Limit to 10 suggestions
+  return filtered.sort((a, b) => b.count - a.count).slice(0, 10); // Limit to 10 suggestions
 }
 
 function showTagAutocomplete(filteredTags: TagInfo[]) {
@@ -3093,8 +3145,9 @@ function hideBulkTagModal() {
 }
 
 // Expose modal close handlers for inline template hooks
-(window as typeof window & { hideBulkDeleteModal?: () => void; hideBulkTagModal?: () => void }).hideBulkDeleteModal =
-  hideBulkDeleteModal;
+(
+  window as typeof window & { hideBulkDeleteModal?: () => void; hideBulkTagModal?: () => void }
+).hideBulkDeleteModal = hideBulkDeleteModal;
 (window as typeof window & { hideBulkTagModal?: () => void }).hideBulkTagModal = hideBulkTagModal;
 
 async function performBulkDelete(): Promise<void> {

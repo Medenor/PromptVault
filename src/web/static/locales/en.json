@@ -267,6 +267,40 @@
       "caseSensitive": "case sensitive"
     }
   },
+  "emptyStates": {
+    "noPrompts": {
+      "title": "No prompts yet",
+      "description": "Create your first prompt to get started",
+      "action": "Create Prompt"
+    },
+    "noSearchResults": {
+      "title": "No results found",
+      "description": "Try adjusting your search or filters",
+      "action": "Clear Filters"
+    },
+    "noCategories": {
+      "title": "No categories yet",
+      "description": "Create your first category to organize your prompts",
+      "action": "Create Category"
+    },
+    "noCategoriesInSidebar": {
+      "title": "No categories available",
+      "description": "Visit Manage Categories to create one"
+    },
+    "noTags": {
+      "title": "No tags yet",
+      "description": "Create your first tag to organize your prompts",
+      "action": "Create Tag"
+    },
+    "noTagsInSidebar": {
+      "title": "No tags available",
+      "description": "Visit Manage Tags to create one"
+    },
+    "noTagsInEditor": {
+      "title": "No tags added",
+      "description": "Start typing or select from suggestions"
+    }
+  },
   "prompt": {
     "editorTitle": "Create/Edit Prompt"
   },

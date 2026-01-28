@@ -7,6 +7,7 @@
 import '../css/tailwind-globals.css';
 import { apiFetch, APIRequestError } from '@/utils/api';
 import { initI18n, tUnsafe, updateStaticTranslations } from '@/utils/i18n';
+import { initializeColorPicker, ColorPicker } from '@/utils/color-picker';
 
 type CategoryItem = {
   id: number;
@@ -56,6 +57,8 @@ const elements = {
 };
 
 let cachedItems: CategoryItem[] = [];
+// @ts-expect-error - Used for cleanup, but not referenced directly
+let colorPickerInstance: ColorPicker | null = null;
 type OrphanPromptDetailsResponse = {
   items: Array<{ id: number; title: string }>;
   count: number;
@@ -77,6 +80,27 @@ function renderRows(items: CategoryItem[]): void {
     return;
   }
   elements.tableBody.innerHTML = '';
+
+  const emptyState = document.getElementById('categories-empty-state');
+  const tableContainer = document.getElementById('categories-table-container');
+
+  // Show/hide empty state
+  if (items.length === 0) {
+    if (emptyState) {
+      emptyState.classList.remove('hidden');
+    }
+    if (tableContainer) {
+      tableContainer.classList.add('hidden');
+    }
+    return;
+  } else {
+    if (emptyState) {
+      emptyState.classList.add('hidden');
+    }
+    if (tableContainer) {
+      tableContainer.classList.remove('hidden');
+    }
+  }
 
   for (const item of items) {
     const row = document.createElement('tr');
@@ -604,6 +628,18 @@ function handleError(error: unknown, fallback: string): void {
 }
 
 function init(): void {
+  // Initialize enhanced color picker
+  try {
+    colorPickerInstance = initializeColorPicker({
+      containerId: 'category-create-color-picker-container',
+      colorInputId: 'category-create-color',
+      colorPickerId: 'category-create-color-picker',
+      initialColor: '#3B82F6',
+    });
+  } catch (error) {
+    console.error('Failed to initialize color picker:', error);
+  }
+
   if (elements.searchInput) {
     elements.searchInput.addEventListener('input', applySearchFilter);
   }
@@ -612,11 +648,6 @@ function init(): void {
       void createCategory(event);
     });
   }
-  elements.createColorPicker?.addEventListener('input', () => {
-    if (elements.createColor && elements.createColorPicker) {
-      elements.createColor.value = elements.createColorPicker.value;
-    }
-  });
   elements.mergeButton?.addEventListener('click', () => {
     void mergeCategories();
   });

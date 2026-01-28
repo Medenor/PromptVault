@@ -253,15 +253,15 @@
                   id="search-input"
                   placeholder="Search prompts..."
                   data-i18n="[placeholder]nav.searchPlaceholder"
-                  class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  class="w-full pl-3 pr-10 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
                 />
-                <button
-                  id="clear-search-btn"
-                  class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 hidden"
-                  title="Clear search"
-                >
-                  ✕
-                </button>
+                <svg class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none w-5 h-5 transition-colors"
+                     fill="none"
+                     stroke="currentColor"
+                     viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
               </div>
 
               <!-- Case Sensitive Toggle -->
@@ -310,6 +310,12 @@
                 </li>
                 {% endfor %}
               </ul>
+              <!-- Empty State for Categories -->
+              <div id="categories-sidebar-empty" class="hidden text-center p-4 bg-gray-50 rounded-lg border border-gray-200 mt-2">
+                <div class="text-2xl text-gray-400 mb-2">📁</div>
+                <p class="text-xs font-semibold text-gray-700 mb-1" data-i18n="emptyStates.noCategoriesInSidebar.title">No categories available</p>
+                <p class="text-xs text-gray-600" data-i18n="emptyStates.noCategoriesInSidebar.description">Visit Manage Categories to create one</p>
+              </div>
             </div>
 
             <!-- Tags Section -->
@@ -331,6 +337,12 @@
                 </li>
                 {% endfor %}
               </ul>
+              <!-- Empty State for Tags -->
+              <div id="tags-sidebar-empty" class="hidden text-center p-4 bg-gray-50 rounded-lg border border-gray-200 mt-2">
+                <div class="text-2xl text-gray-400 mb-2">🏷️</div>
+                <p class="text-xs font-semibold text-gray-700 mb-1" data-i18n="emptyStates.noTagsInSidebar.title">No tags available</p>
+                <p class="text-xs text-gray-600" data-i18n="emptyStates.noTagsInSidebar.description">Visit Manage Tags to create one</p>
+              </div>
             </div>
 
             <!-- Management Links -->
@@ -391,15 +403,15 @@
                   id="search-input-mobile"
                   placeholder="Search prompts..."
                   data-i18n="[placeholder]nav.searchPlaceholder"
-                  class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  class="w-full pl-3 pr-10 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
                 />
-                <button
-                  id="clear-search-btn-mobile"
-                  class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 hidden"
-                  title="Clear search"
-                >
-                  ✕
-                </button>
+                <svg class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none w-5 h-5 transition-colors"
+                     fill="none"
+                     stroke="currentColor"
+                     viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
               </div>
 
               <!-- Case Sensitive Toggle -->
@@ -448,6 +460,12 @@
                 </li>
                 {% endfor %}
               </ul>
+              <!-- Empty State for Categories (Mobile) -->
+              <div id="categories-sidebar-empty-mobile" class="hidden text-center p-4 bg-gray-50 rounded-lg border border-gray-200 mt-2">
+                <div class="text-2xl text-gray-400 mb-2">📁</div>
+                <p class="text-xs font-semibold text-gray-700 mb-1" data-i18n="emptyStates.noCategoriesInSidebar.title">No categories available</p>
+                <p class="text-xs text-gray-600" data-i18n="emptyStates.noCategoriesInSidebar.description">Visit Manage Categories to create one</p>
+              </div>
             </div>
 
             <!-- Tags Section -->
@@ -469,6 +487,12 @@
                 </li>
                 {% endfor %}
               </ul>
+              <!-- Empty State for Tags (Mobile) -->
+              <div id="tags-sidebar-empty-mobile" class="hidden text-center p-4 bg-gray-50 rounded-lg border border-gray-200 mt-2">
+                <div class="text-2xl text-gray-400 mb-2">🏷️</div>
+                <p class="text-xs font-semibold text-gray-700 mb-1" data-i18n="emptyStates.noTagsInSidebar.title">No tags available</p>
+                <p class="text-xs text-gray-600" data-i18n="emptyStates.noTagsInSidebar.description">Visit Manage Tags to create one</p>
+              </div>
             </div>
 
             <!-- Management Links -->
@@ -556,6 +580,34 @@
             </h2>
           </div>
 
+          <!-- Empty State for Prompts -->
+          <div id="prompts-empty-state" class="hidden text-center p-12 bg-gray-50 rounded-lg border border-gray-200">
+            <div class="text-5xl text-gray-400 mb-4">📝</div>
+            <h3 class="text-xl font-semibold text-gray-700 mb-2" data-i18n="emptyStates.noPrompts.title">No prompts yet</h3>
+            <p class="text-sm text-gray-600 mb-6" data-i18n="emptyStates.noPrompts.description">Create your first prompt to get started</p>
+            <button
+              id="empty-state-new-prompt-btn"
+              class="px-6 py-3 text-sm font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-all hover:scale-105 active:scale-95"
+              data-i18n="emptyStates.noPrompts.action"
+            >
+              Create Prompt
+            </button>
+          </div>
+
+          <!-- Empty State for Search Results -->
+          <div id="search-empty-state" class="hidden text-center p-12 bg-gray-50 rounded-lg border border-gray-200">
+            <div class="text-5xl text-gray-400 mb-4">🔍</div>
+            <h3 class="text-xl font-semibold text-gray-700 mb-2" data-i18n="emptyStates.noSearchResults.title">No results found</h3>
+            <p class="text-sm text-gray-600 mb-6" data-i18n="emptyStates.noSearchResults.description">Try adjusting your search or filters</p>
+            <button
+              id="empty-state-clear-filters-btn"
+              class="px-6 py-3 text-sm font-semibold rounded-lg bg-gray-600 text-white hover:bg-gray-700 transition-all hover:scale-105 active:scale-95"
+              data-i18n="emptyStates.noSearchResults.action"
+            >
+              Clear Filters
+            </button>
+          </div>
+
           <!-- Prompts Grid (populated by JS) -->
           <div
             id="prompts-list"
@@ -632,10 +684,10 @@
           <div id="prompt-editor" class="hidden">
             <div class="bg-white rounded-lg border border-gray-200 p-6 max-w-4xl mx-auto">
               <h2 class="text-2xl font-bold text-gray-900 mb-6" data-i18n="prompt.editorTitle">Create/Edit Prompt</h2>
-              <form id="prompt-form" novalidate>
+              <form id="prompt-form" class="space-y-4" novalidate>
                 <!-- Title -->
-                <div class="mb-4">
-                  <label for="prompt-title" class="block text-sm font-semibold text-gray-700 mb-2" data-i18n="form.title">
+                <div>
+                  <label for="prompt-title" class="block text-sm font-medium text-gray-700 mb-2" data-i18n="form.title">
                     Title:
                   </label>
                   <input
@@ -647,7 +699,7 @@
                     maxlength="200"
                     aria-required="true"
                     aria-describedby="prompt-title-counter prompt-title-error"
-                    class="w-full px-4 py-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
                   />
                   <div class="flex justify-between items-center mt-1">
                     <div
@@ -661,8 +713,8 @@
                 </div>
 
                 <!-- Content -->
-                <div class="mb-4">
-                  <label for="prompt-content" class="block text-sm font-semibold text-gray-700 mb-2" data-i18n="form.content">
+                <div>
+                  <label for="prompt-content" class="block text-sm font-medium text-gray-700 mb-2" data-i18n="form.content">
                     Content:
                   </label>
                   <textarea
@@ -673,7 +725,7 @@
                     maxlength="50000"
                     aria-required="true"
                     aria-describedby="prompt-content-counter prompt-content-error"
-                    class="w-full px-4 py-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono"
+                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed font-mono"
                   ></textarea>
                   <div class="flex justify-between items-center mt-1">
                     <div
@@ -687,15 +739,15 @@
                 </div>
 
                 <!-- Category -->
-                <div class="mb-4">
-                  <label for="prompt-category" class="block text-sm font-semibold text-gray-700 mb-2" data-i18n="form.category">
+                <div>
+                  <label for="prompt-category" class="block text-sm font-medium text-gray-700 mb-2" data-i18n="form.category">
                     Category:
                   </label>
                   <select
                     id="prompt-category"
                     name="category"
                     aria-describedby="prompt-category-error"
-                    class="w-full px-4 py-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
                   >
                     <option value="">No category</option>
                     {% for category in categories %}
@@ -711,14 +763,14 @@
                 </div>
 
                 <!-- Tags -->
-                  <div class="mb-4">
-                    <label for="prompt-tags" class="block text-sm font-semibold text-gray-700 mb-2" data-i18n="form.tags">
+                  <div>
+                    <label for="prompt-tags" class="block text-sm font-medium text-gray-700 mb-2" data-i18n="form.tags">
                       Tags (comma-separated):
                     </label>
                     <div class="relative">
                     <div
                       id="tag-chip-input"
-                      class="flex flex-wrap items-center gap-2 w-full px-4 py-2 text-sm border border-gray-300 rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent min-h-[48px]"
+                      class="flex flex-wrap items-center gap-2 w-full px-3 py-2 text-sm border border-gray-300 rounded-md bg-white focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent min-h-[42px]"
                     >
                       <div id="tag-chips" class="flex flex-wrap gap-2"></div>
                       <input
@@ -727,7 +779,7 @@
                         data-i18n="[placeholder]form.tagPlaceholder"
                         autocomplete="off"
                         aria-describedby="prompt-tags-counter prompt-tags-error prompt-tags-duplicates"
-                        class="flex-1 min-w-[120px] py-1 outline-none bg-transparent"
+                        class="flex-1 min-w-[120px] py-1 outline-none bg-transparent placeholder-gray-400"
                       />
                     </div>
                     <input type="hidden" id="prompt-tags" name="tags" />
@@ -736,7 +788,7 @@
                       class="hidden absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-auto"
                     ></div>
                   </div>
-                  <div class="mt-3">
+                  <div class="mt-2">
                     <button
                       type="button"
                       id="suggest-tags-btn"
@@ -766,8 +818,8 @@
                 </div>
 
                 <!-- Commit Message -->
-                <div class="mb-6">
-                  <label for="commit-message" class="block text-sm font-semibold text-gray-700 mb-2" data-i18n="version.commitMessage">
+                <div class="border-t pt-4 mt-4">
+                  <label for="commit-message" class="block text-sm font-medium text-gray-700 mb-2" data-i18n="version.commitMessage">
                     Commit Message:
                   </label>
                   <input
@@ -778,7 +830,7 @@
                     placeholder="Describe your changes..."
                     maxlength="500"
                     aria-describedby="commit-message-counter commit-message-error"
-                    class="w-full px-4 py-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
                   />
                   <div class="flex justify-between items-center mt-1">
                     <div
@@ -792,7 +844,7 @@
                 </div>
 
                 <!-- Actions -->
-                <div class="flex gap-3">
+                <div class="flex gap-3 pt-2">
                   <button
                     type="submit"
                     class="px-6 py-3 text-sm font-semibold rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition-all hover:scale-105 active:scale-95"
@@ -829,14 +881,21 @@
           </button>
         </div>
         <div class="p-6 overflow-auto flex-1">
-          <div class="mb-4">
+          <div class="mb-4 relative">
             <input
               type="text"
               id="version-search"
               placeholder="Search versions..."
               data-i18n="[placeholder]version.searchPlaceholder"
-              class="w-full px-4 py-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              class="w-full pl-3 pr-10 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
             />
+            <svg class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none w-5 h-5 transition-colors"
+                 fill="none"
+                 stroke="currentColor"
+                 viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
           </div>
           <div id="version-list" class="space-y-3">
             <div class="text-center text-gray-500 py-8" data-i18n="messages.loading">Loading...</div>
@@ -879,14 +938,14 @@
               <label class="block text-sm font-semibold text-gray-700 mb-2" data-i18n="version.version1">Version 1:</label>
               <select
                 id="diff-v1-selector"
-                class="w-full px-4 py-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
               ></select>
             </div>
             <div>
               <label class="block text-sm font-semibold text-gray-700 mb-2" data-i18n="version.version2">Version 2:</label>
               <select
                 id="diff-v2-selector"
-                class="w-full px-4 py-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
               ></select>
             </div>
           </div>
@@ -934,7 +993,7 @@
               data-i18n="[placeholder]version.revertMessagePlaceholder"
               maxlength="500"
               aria-describedby="revert-commit-counter revert-commit-error"
-              class="w-full px-4 py-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
             />
             <div class="flex justify-between items-center mt-1">
               <div
@@ -1033,7 +1092,7 @@
               type="text"
               placeholder="Comma-separated tags"
               data-i18n="[placeholder]bulkTag.placeholder"
-              class="w-full px-3 py-2 border border-gray-300 rounded"
+              class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
             />
           </div>
           <div>
@@ -1043,7 +1102,7 @@
               type="text"
               placeholder="Comma-separated tags"
               data-i18n="[placeholder]bulkTag.placeholder"
-              class="w-full px-3 py-2 border border-gray-300 rounded"
+              class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
             />
           </div>
           <p class="text-xs text-gray-500" data-i18n="bulkTag.note">

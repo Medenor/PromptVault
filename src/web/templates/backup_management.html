@@ -61,13 +61,13 @@
               Create Backup
             </h3>
 
-            <div class="space-y-4">
+            <form class="space-y-4">
               <div>
                 <label
                   for="backup-name"
                   class="block text-sm font-medium text-gray-700 mb-2"
                   data-i18n="backup.backupName"
-                  >Backup Name (optional):</label
+                  >Backup Name (optional)</label
                 >
                 <input
                   type="text"
@@ -76,44 +76,48 @@
                   maxlength="64"
                   pattern="[A-Za-z0-9_-]*"
                   aria-describedby="backup-name-error"
-                  class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
                 />
-                <div
-                  class="text-red-600 text-sm mt-1"
+                <p
+                  class="text-red-600 text-xs mt-1"
                   id="backup-name-error"
                   role="alert"
                   aria-live="assertive"
-                ></div>
+                ></p>
               </div>
 
-              <div class="flex space-x-3">
-                <button
-                  class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition"
-                  onclick="createBackup()"
-                  data-i18n="backup.createBtn"
-                >
-                  Create Backup
-                </button>
-                <button
-                  class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition"
-                  onclick="clearBackupForm()"
-                  data-i18n="backup.clearBtn"
-                >
-                  Clear
-                </button>
+              <div class="border-t pt-4 mt-4">
+                <div class="flex flex-col sm:flex-row gap-3">
+                  <button
+                    type="button"
+                    class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition"
+                    onclick="createBackup()"
+                    data-i18n="backup.createBtn"
+                  >
+                    Create Backup
+                  </button>
+                  <button
+                    type="button"
+                    class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition"
+                    onclick="clearBackupForm()"
+                    data-i18n="backup.clearBtn"
+                  >
+                    Clear
+                  </button>
+                </div>
               </div>
 
               <div class="hidden" id="backup-progress">
-                <div class="h-2 bg-gray-200 rounded overflow-hidden mt-4">
+                <div class="h-2 bg-gray-200 rounded overflow-hidden mt-2">
                   <div
                     class="h-full bg-blue-600 transition-all duration-300"
                     id="backup-progress-fill"
                     style="width: 0%"
                   ></div>
                 </div>
-                <div id="backup-status" class="text-sm text-blue-600 mt-2"></div>
+                <p id="backup-status" class="text-sm text-blue-600 mt-1"></p>
               </div>
-            </div>
+            </form>
           </div>
 
           <!-- Backup List Section -->
@@ -166,7 +170,7 @@
                     min="1"
                     max="3650"
                     aria-describedby="retention-days-error"
-                    class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
                   />
                   <div
                     class="text-red-600 text-sm mt-1"
@@ -204,7 +208,7 @@
                     min="1"
                     max="365"
                     aria-describedby="compress-days-error"
-                    class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
                   />
                   <div
                     class="text-red-600 text-sm mt-1"

@@ -60,7 +60,7 @@
               type="text"
               id="user-username"
               readonly
-              class="w-full px-4 py-2 bg-gray-100 border border-gray-200 rounded-md text-gray-600 cursor-not-allowed"
+              class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 bg-gray-50 text-gray-500 cursor-not-allowed"
             />
           </div>
 
@@ -75,7 +75,7 @@
               type="email"
               id="user-email"
               readonly
-              class="w-full px-4 py-2 bg-gray-100 border border-gray-200 rounded-md text-gray-600 cursor-not-allowed"
+              class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 bg-gray-50 text-gray-500 cursor-not-allowed"
             />
           </div>
 
@@ -117,7 +117,7 @@
           >
           <select
             id="language-selector"
-            class="px-4 py-2 border-2 border-gray-200 rounded-md bg-gray-100 focus:border-blue-500 focus:bg-white"
+            class="px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
           >
             <option value="en">English</option>
             <option value="fr">Français</option>
@@ -154,7 +154,7 @@
                   type="password"
                   id="current-password"
                   name="current_password"
-                  class="w-full px-4 py-2 pr-12 border-2 border-gray-200 rounded-md bg-gray-100 focus:border-blue-500 focus:bg-white"
+                  class="w-full px-3 py-2 pr-12 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
                   data-i18n="[placeholder]auth.profile.currentPasswordPlaceholder"
                   required
                   autocomplete="current-password"
@@ -170,12 +170,12 @@
                   <span class="text-xl">👁️</span>
                 </button>
               </div>
-              <div
+              <p
                 id="current-password-error"
-                class="text-red-500 text-sm mt-1 hidden"
+                class="text-red-500 text-xs mt-1 hidden"
                 role="alert"
                 aria-live="assertive"
-              ></div>
+              ></p>
             </div>
 
             <!-- New Password -->
@@ -191,7 +191,7 @@
                   type="password"
                   id="new-password"
                   name="new_password"
-                  class="w-full px-4 py-2 pr-12 border-2 border-gray-200 rounded-md bg-gray-100 focus:border-blue-500 focus:bg-white"
+                  class="w-full px-3 py-2 pr-12 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
                   data-i18n="[placeholder]auth.profile.newPasswordPlaceholder"
                   required
                   autocomplete="new-password"
@@ -207,12 +207,12 @@
                   <span class="text-xl">👁️</span>
                 </button>
               </div>
-              <div
+              <p
                 id="new-password-error"
-                class="text-red-500 text-sm mt-1 hidden"
+                class="text-red-500 text-xs mt-1 hidden"
                 role="alert"
                 aria-live="assertive"
-              ></div>
+              ></p>
 
               <!-- Password Strength Indicator -->
               <div id="password-strength" class="mt-2" aria-live="polite">
@@ -269,7 +269,7 @@
                   type="password"
                   id="confirm-new-password"
                   name="confirm_password"
-                  class="w-full px-4 py-2 pr-12 border-2 border-gray-200 rounded-md bg-gray-100 focus:border-blue-500 focus:bg-white"
+                  class="w-full px-3 py-2 pr-12 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
                   data-i18n="[placeholder]auth.profile.confirmNewPasswordPlaceholder"
                   required
                   autocomplete="new-password"
@@ -285,16 +285,16 @@
                   <span class="text-xl">👁️</span>
                 </button>
               </div>
-              <div
+              <p
                 id="confirm-new-password-error"
-                class="text-red-500 text-sm mt-1 hidden"
+                class="text-red-500 text-xs mt-1 hidden"
                 role="alert"
                 aria-live="assertive"
-              ></div>
+              ></p>
             </div>
 
             <!-- Form Actions -->
-            <div class="flex gap-2 pt-2">
+            <div class="border-t pt-4 mt-4">
               <button
                 type="submit"
                 class="px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 font-medium"
