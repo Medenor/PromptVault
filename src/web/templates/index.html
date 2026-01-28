@@ -588,7 +588,7 @@
                   {{ prompt_info.data.category }}
                 </span>
                 {% if prompt_info.data.tags %} {% for tag in prompt_info.data.tags %}
-                <span class="px-2 py-1 text-xs font-medium rounded-md" style="background-color: #CFF9FC; color: #0E7490;">
+                <span class="px-2 py-1 text-xs font-medium rounded-full border border-gray-300 flex items-center gap-1" data-tag-pill="true" data-tag-name="{{ tag }}">
                   {{ tag }}
                 </span>
                 {% endfor %} {% endif %}

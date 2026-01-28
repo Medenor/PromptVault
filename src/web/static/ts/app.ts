@@ -147,6 +147,168 @@ function resolveCssColor(color?: string | null): string | null {
   return `var(--color-${trimmed}, ${trimmed})`;
 }
 
+/**
+ * Convert hex color to RGB
+ */
+function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result
+    ? {
+        r: parseInt(result[1]!, 16),
+        g: parseInt(result[2]!, 16),
+        b: parseInt(result[3]!, 16)
+      }
+    : null;
+}
+
+/**
+ * Convert RGB to HSL
+ */
+function rgbToHsl(r: number, g: number, b: number): { h: number; s: number; l: number } {
+  r /= 255;
+  g /= 255;
+  b /= 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  let h = 0;
+  let s = 0;
+  const l = (max + min) / 2;
+
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r:
+        h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+        break;
+      case g:
+        h = ((b - r) / d + 2) / 6;
+        break;
+      case b:
+        h = ((r - g) / d + 4) / 6;
+        break;
+    }
+  }
+
+  return { h, s, l };
+}
+
+/**
+ * Convert HSL to RGB
+ */
+function hslToRgb(h: number, s: number, l: number): { r: number; g: number; b: number } {
+  let r, g, b;
+
+  if (s === 0) {
+    r = g = b = l;
+  } else {
+    const hue2rgb = (p: number, q: number, t: number) => {
+      if (t < 0) t += 1;
+      if (t > 1) t -= 1;
+      if (t < 1 / 6) return p + (q - p) * 6 * t;
+      if (t < 1 / 2) return q;
+      if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+      return p;
+    };
+
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    const p = 2 * l - q;
+    r = hue2rgb(p, q, h + 1 / 3);
+    g = hue2rgb(p, q, h);
+    b = hue2rgb(p, q, h - 1 / 3);
+  }
+
+  return {
+    r: Math.round(r * 255),
+    g: Math.round(g * 255),
+    b: Math.round(b * 255)
+  };
+}
+
+/**
+ * Convert RGB to hex
+ */
+function rgbToHex(r: number, g: number, b: number): string {
+  return (
+    '#' +
+    [r, g, b]
+      .map((x) => {
+        const hex = x.toString(16);
+        return hex.length === 1 ? '0' + hex : hex;
+      })
+      .join('')
+  );
+}
+
+/**
+ * Get soft/muted color scheme for tag pills (Option B design)
+ * Converts any color (hex or named) to a light background + colored border + darker text
+ */
+function getSoftMutedColorScheme(
+  colorInput: string | undefined | null
+): { background: string; text: string; border: string } {
+  // Resolve color to hex
+  const borderColor = resolveCssColor(colorInput);
+  if (!borderColor) {
+    // Default fallback if no color provided
+    return {
+      background: '#f3f4f6',
+      text: '#374151',
+      border: '#d1d5db'
+    };
+  }
+
+  // Convert to RGB
+  const rgb = hexToRgb(borderColor);
+  if (!rgb) {
+    // Fallback if color parsing fails
+    return {
+      background: '#f3f4f6',
+      text: '#374151',
+      border: '#d1d5db'
+    };
+  }
+
+  // Convert RGB to HSL
+  const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
+
+  // Create soft/muted version:
+  // - Reduce saturation to 60% (less aggressive, more recognizable)
+  // - Increase lightness to 78% (light but more visible than 90%)
+  const softHsl = {
+    h: hsl.h,
+    s: 0.6, // 60% saturation (more visible, less aggressive)
+    l: 0.78 // 78% lightness (soft but not too pale)
+  };
+
+  // Create border color version:
+  // - Keep hue
+  // - Increase saturation to 70% (more vibrant)
+  // - Set lightness to 52% (more visible)
+  const borderHsl = {
+    h: hsl.h,
+    s: 0.7, // 70% saturation (more vibrant)
+    l: 0.52 // 52% lightness (medium tone, more visible)
+  };
+
+  // Convert back to RGB and then to hex
+  const softRgb = hslToRgb(softHsl.h, softHsl.s, softHsl.l);
+  const borderRgb = hslToRgb(borderHsl.h, borderHsl.s, borderHsl.l);
+
+  const background = rgbToHex(softRgb.r, softRgb.g, softRgb.b);
+  const borderColorHex = rgbToHex(borderRgb.r, borderRgb.g, borderRgb.b);
+
+  // Determine text color based on background luminance
+  // Use darker text for light backgrounds
+  const textColor = '#374151'; // dark gray (works well on light backgrounds)
+
+  return {
+    background,
+    text: textColor,
+    border: borderColorHex
+  };
+}
+
 function getReadableTextColor(background: string): string {
   const cached = colorTextCache.get(background);
   if (cached) {
@@ -183,11 +345,12 @@ function buildPillStyleFilled(color?: string | null): string {
 }
 
 function buildPillStyleOutline(color?: string | null): string {
-  const borderColor = resolveCssColor(color);
-  if (!borderColor) {
+  if (!color) {
     return '';
   }
-  return ` style="border-color: ${borderColor}; color: ${borderColor};"`;
+  // Use soft/muted color scheme (Option B)
+  const colorScheme = getSoftMutedColorScheme(color);
+  return ` style="background-color: ${colorScheme.background}; color: ${colorScheme.text}; border-color: ${colorScheme.border};"`;
 }
 
 function applyPromptColorStyles(): void {
@@ -211,12 +374,11 @@ function applyPromptColorStyles(): void {
     if (!color) {
       return;
     }
-    const borderColor = resolveCssColor(color);
-    if (!borderColor) {
-      return;
-    }
-    pill.style.borderColor = borderColor;
-    pill.style.color = borderColor;
+    // Use soft/muted color scheme (Option B design)
+    const colorScheme = getSoftMutedColorScheme(color);
+    pill.style.backgroundColor = colorScheme.background;
+    pill.style.color = colorScheme.text;
+    pill.style.borderColor = colorScheme.border;
   });
 }
 
@@ -658,12 +820,8 @@ function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement
           .map((tag) => {
             const color = tagColorLookup[tag] ?? tagColorMap[tag];
             const style = buildPillStyleOutline(color);
-            return `<span class="px-2 py-1 text-xs font-medium rounded-full border border-gray-300 flex items-center gap-1" data-tag-pill="true" data-tag-name="${tag}"${style}>
-                <svg class="h-3 w-3" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                  <path d="M3.5 7.5L7.5 3.5H12.5V8.5L8.5 12.5L3.5 7.5Z"></path>
-                  <circle cx="10.5" cy="5.5" r="1"></circle>
-                </svg>
-                <span>${tag}</span>
+            return `<span class="px-2 py-1 text-xs font-medium rounded-full border" data-tag-pill="true" data-tag-name="${tag}"${style}>
+                ${tag}
               </span>`;
           })
           .join('')
@@ -682,11 +840,8 @@ function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement
             </div>
         </div>
         <div class="flex flex-wrap gap-2 mb-3">
-            <span class="px-2 py-1 text-xs font-semibold rounded-md bg-blue-100 text-blue-800 flex items-center gap-1" data-category-pill="true" data-category-name="${prompt.category}"${categoryStyle}>
-              <svg class="h-3 w-3" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-                <path d="M2.5 4.5c0-1.1.9-2 2-2h2.1c.4 0 .8.2 1.1.4l.8.8c.2.2.5.3.7.3h3.8c1.1 0 2 .9 2 2v5.5c0 1.1-.9 2-2 2h-8.5c-1.1 0-2-.9-2-2v-7z"></path>
-              </svg>
-              <span>${prompt.category || t('categories.noCategory')}</span>
+            <span class="px-2 py-1 text-xs font-semibold rounded-md" data-category-pill="true" data-category-name="${prompt.category}"${categoryStyle}>
+              ${prompt.category || t('categories.noCategory')}
             </span>
             ${tagsHTML}
         </div>
@@ -2288,16 +2443,18 @@ function renderTagChips(): void {
     const color = tagColorMap[tag];
     const chip = document.createElement('span');
     chip.className =
-      'inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full border border-gray-300';
-    const borderColor = resolveCssColor(color);
-    if (borderColor) {
-      chip.style.borderColor = borderColor;
-      chip.style.color = borderColor;
-    }
+      'inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full border';
+
+    // Apply soft/muted color scheme (Option B)
+    const colorScheme = getSoftMutedColorScheme(color || '');
+    chip.style.backgroundColor = colorScheme.background;
+    chip.style.color = colorScheme.text;
+    chip.style.borderColor = colorScheme.border;
+
     chip.dataset.tagName = tag;
     chip.innerHTML = `
       <span>${tag}</span>
-      <button type="button" class="text-xs leading-none px-1" aria-label="Remove tag">×</button>
+      <button type="button" class="text-xs leading-none px-1 opacity-70 hover:opacity-100 transition-opacity" aria-label="Remove tag">×</button>
     `;
     chipContainer.appendChild(chip);
   });
