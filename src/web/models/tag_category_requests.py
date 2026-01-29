@@ -137,7 +137,7 @@ class TagUpdateRequest(BaseModel):
 
     @model_validator(mode="after")
     def ensure_at_least_one_field(self):
-        if self.name is None and self.description is None and self.color is None:
+        if self.name is None and self.description is None and self.color is None and self.parent_tag_id is None:
             raise ValueError("At least one field must be provided")
         return self
 

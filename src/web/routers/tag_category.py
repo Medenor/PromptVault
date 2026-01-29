@@ -344,21 +344,21 @@ async def bulk_delete_categories(
             detail=f"Categories in use: {blocked}",
         )
 
-    if payload.force:
-        from src.db.models import Prompt
-
-        db.query(Prompt).filter(Prompt.category_id.in_(payload.ids)).update(
-            {Prompt.category_id: None},
-            synchronize_session=False,
-        )
-
+    # Collect prompt_ids BEFORE clearing category assignments
+    from src.db.models import Prompt
     delete_payloads = []
     for category_id in payload.ids:
         category = category_repo.get_by_id(category_id)
         if category:
-            from src.db.models import Prompt
             prompt_ids = [row[0] for row in db.query(Prompt.id).filter(Prompt.category_id == category_id).all()]
             delete_payloads.append({"category": _category_snapshot(category), "prompt_ids": prompt_ids})
+
+    # Now clear category assignments if force=true
+    if payload.force:
+        db.query(Prompt).filter(Prompt.category_id.in_(payload.ids)).update(
+            {Prompt.category_id: None},
+            synchronize_session=False,
+        )
 
     deleted = category_repo.delete_many(payload.ids)
     db.commit()
@@ -809,17 +809,19 @@ async def bulk_delete_tags(
             detail=f"Tags in use: {blocked}",
         )
 
-    if payload.force:
-        for tag_id in payload.ids:
-            tag = tag_repo.get_by_id(tag_id)
-            if tag:
-                tag.prompts.clear()
-
+    # Collect prompt_ids for all tags BEFORE clearing associations
     delete_payloads = []
     for tag_id in payload.ids:
         tag = tag_repo.get_by_id(tag_id)
         if tag:
             delete_payloads.append({"tag": _tag_snapshot(tag), "prompt_ids": [p.id for p in tag.prompts]})
+
+    # THEN clear tag-prompt associations if force=true
+    if payload.force:
+        for tag_id in payload.ids:
+            tag = tag_repo.get_by_id(tag_id)
+            if tag:
+                tag.prompts.clear()
 
     deleted = tag_repo.delete_many(payload.ids)
     db.commit()
