@@ -486,6 +486,7 @@ async def create_prompt(
     prompt: str = Form(...),
     category: str = Form(""),
     tags: str = Form(""),
+    commit_message: str = Form("Initial commit"),
     user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ):
@@ -496,6 +497,7 @@ async def create_prompt(
         prompt: Prompt content
         category: Category name (optional)
         tags: Comma-separated tags (optional)
+        commit_message: Commit message for the initial version (optional, defaults to "Initial commit")
         user: Authenticated user
         db: Database session
 
@@ -554,7 +556,7 @@ async def create_prompt(
     version = version_repo.create_version(
         prompt=new_prompt,
         author=user.username,
-        message="Initial commit",
+        message=commit_message,
         parent_version_id=None
     )
 
