@@ -245,9 +245,11 @@ function rgbToHex(r: number, g: number, b: number): string {
  * Get soft/muted color scheme for tag pills (Option B design)
  * Converts any color (hex or named) to a light background + colored border + darker text
  */
-function getSoftMutedColorScheme(
-  colorInput: string | undefined | null
-): { background: string; text: string; border: string } {
+function getSoftMutedColorScheme(colorInput: string | undefined | null): {
+  background: string;
+  text: string;
+  border: string;
+} {
   // Resolve color to hex
   const borderColor = resolveCssColor(colorInput);
   if (!borderColor) {
@@ -1494,7 +1496,6 @@ function setupSearchEventListeners() {
     });
   }
 
-
   // Case sensitive toggle (desktop)
   const caseSensitiveToggle = document.getElementById(
     'case-sensitive-toggle'
@@ -2496,13 +2497,7 @@ function renderTagChips(): void {
   }
   chipContainer.innerHTML = '';
 
-  // Show empty state if no tags
-  if (selectedTags.length === 0) {
-    const emptyState = document.createElement('span');
-    emptyState.className = 'text-xs text-gray-500 italic';
-    emptyState.textContent = t('emptyStates.noTagsInEditor.description');
-    chipContainer.appendChild(emptyState);
-  }
+  // Don't show empty state - the input placeholder already provides guidance
 
   selectedTags.forEach((tag) => {
     const color = tagColorMap[tag];
