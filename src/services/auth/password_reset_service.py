@@ -307,7 +307,8 @@ class PasswordResetService:
 
             # Check if token has expired
             now = datetime.now(timezone.utc)
-            if token_record.expires_at < now:
+            expires_at = self._ensure_tz_aware(token_record.expires_at)
+            if expires_at < now:
                 logger.warning(
                     f"Expired password reset token used",
                     extra={"token_id": token_record.id}
@@ -401,7 +402,8 @@ class PasswordResetService:
 
         # Check expiration
         now = datetime.now(timezone.utc)
-        if token_record.expires_at < now:
+        expires_at = self._ensure_tz_aware(token_record.expires_at)
+        if expires_at < now:
             logger.warning(
                 f"Password reset attempted with expired token",
                 extra={"token_id": token_record.id}
@@ -494,6 +496,29 @@ class PasswordResetService:
             logger.info(f"Cleaned up {deleted_count} expired password reset tokens")
 
         return deleted_count
+
+    def _ensure_tz_aware(self, dt: Optional[datetime]) -> Optional[datetime]:
+        """Convert timezone-naive datetime to UTC-aware.
+
+        SQLite does not preserve timezone information even when DateTime(timezone=True)
+        is configured in SQLAlchemy models. This helper ensures datetime objects
+        retrieved from the database are timezone-aware for safe comparison.
+
+        Args:
+            dt: Datetime object that may be timezone-naive
+
+        Returns:
+            Timezone-aware datetime in UTC, or None if input is None
+
+        Note:
+            If the datetime is already timezone-aware, it is returned unchanged.
+            If the datetime is timezone-naive, UTC timezone is added without conversion.
+        """
+        if dt is None:
+            return None
+        if dt.tzinfo is None:
+            return dt.replace(tzinfo=timezone.utc)
+        return dt
 
     def _hash_token(self, token: str) -> str:
         """Hash a token using SHA-256.
