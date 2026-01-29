@@ -112,7 +112,7 @@ def test_category_delete_force_clears_prompts(api_client, api_auth_headers):
     assert forced.status_code == 200
 
     prompt = api_client.get(f"/api/prompts/{prompt_id}", headers=api_auth_headers).json()
-    assert prompt["category"] == ""
+    assert prompt["category"] == "No category"
 
 
 def test_category_find_replace_updates_prompts(api_client, api_auth_headers):
