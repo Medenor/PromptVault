@@ -38,6 +38,13 @@
         border-color: #d1d5db;
       }
 
+      #categories-list li:focus-visible,
+      #tags-list li:focus-visible {
+        outline: 2px solid #3b82f6;
+        outline-offset: 2px;
+        background-color: #f3f4f6;
+      }
+
       #categories-list li.active,
       #tags-list li.active {
         background-color: #eff6ff;
@@ -49,6 +56,12 @@
       #categories-list li.active:hover,
       #tags-list li.active:hover {
         background-color: #dbeafe;
+      }
+
+      #categories-list li.active:focus-visible,
+      #tags-list li.active:focus-visible {
+        outline: 2px solid #1e40af;
+        outline-offset: 2px;
       }
 
       /* Clear All Filters button - use visibility instead of display for smooth layout */
@@ -95,7 +108,7 @@
           <div class="flex items-center justify-between h-16">
             <!-- Logo and Title -->
             <div class="flex items-center gap-4">
-              <a href="/" class="inline-flex">
+              <a href="/" class="inline-flex focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500 rounded-lg">
                 <img
                   src="/static/images/promptvault_logo_frontend.webp"
                   alt="PromptVault Logo"
@@ -110,7 +123,7 @@
               <!-- Desktop-only: New Prompt -->
               <button
                 id="new-prompt-btn"
-                class="hidden md:block px-4 py-2 text-sm font-semibold rounded-lg bg-white text-blue-700 border border-blue-200 hover:bg-blue-50 transition-all hover:scale-105 active:scale-95"
+                class="hidden md:block px-4 py-2 text-sm font-semibold rounded-lg bg-white text-blue-700 border border-blue-200 hover:bg-blue-50 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
                 data-i18n="nav.newPrompt"
               >
                 New Prompt
@@ -120,7 +133,7 @@
               <button
                 id="import-export-btn"
                 onclick="window.location.href = '/import-export'"
-                class="hidden md:block px-3 py-2 text-sm font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all hover:scale-105 active:scale-95"
+                class="hidden md:block px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
                 data-i18n="nav.importExport"
               >
                 Import/Export
@@ -128,7 +141,7 @@
               <button
                 id="backup-btn"
                 onclick="window.location.href = '/backup-management'"
-                class="hidden md:block px-3 py-2 text-sm font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all hover:scale-105 active:scale-95"
+                class="hidden md:block px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
                 data-i18n="nav.backupManagement"
               >
                 Backup
@@ -136,7 +149,7 @@
               <button
                 id="profile-btn"
                 onclick="window.location.href = '/auth/profile'"
-                class="hidden md:block px-3 py-2 text-sm font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all hover:scale-105 active:scale-95"
+                class="hidden md:block px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
                 data-i18n="nav.profile"
               >
                 Profile
@@ -144,7 +157,7 @@
               <button
                 id="admin-btn"
                 onclick="window.location.href = '/admin/users'"
-                class="hidden md:block px-3 py-2 text-sm font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all hover:scale-105 active:scale-95"
+                class="hidden md:block px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
                 data-i18n="nav.admin"
                 style="display: none"
               >
@@ -155,7 +168,7 @@
               <div class="relative md:hidden">
                 <button
                   id="mobile-menu-toggle"
-                  class="px-3 py-2 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-all"
+                  class="px-4 py-2 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
                   aria-label="Open menu"
                 >
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -168,7 +181,7 @@
                 >
                   <button
                     id="new-prompt-btn-mobile"
-                    class="w-full text-left px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50 transition-colors"
+                    class="w-full text-left px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset"
                     data-i18n="nav.newPrompt"
                   >
                     New Prompt
@@ -176,21 +189,21 @@
                   <div class="border-t border-gray-200 my-2"></div>
                   <button
                     onclick="window.location.href = '/import-export'"
-                    class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                    class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset"
                     data-i18n="nav.importExport"
                   >
                     Import/Export
                   </button>
                   <button
                     onclick="window.location.href = '/backup-management'"
-                    class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                    class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset"
                     data-i18n="nav.backupManagement"
                   >
                     Backup
                   </button>
                   <button
                     onclick="window.location.href = '/auth/profile'"
-                    class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                    class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset"
                     data-i18n="nav.profile"
                   >
                     Profile
@@ -198,7 +211,7 @@
                   <button
                     id="admin-btn-mobile"
                     onclick="window.location.href = '/admin/users'"
-                    class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                    class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset"
                     data-i18n="nav.admin"
                     style="display: none"
                   >
@@ -207,7 +220,7 @@
                   <div class="border-t border-gray-200 my-2"></div>
                   <button
                     id="logout-btn-mobile"
-                    class="w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50 transition-colors font-semibold"
+                    class="w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50 transition-colors font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-inset"
                     data-i18n="nav.logout"
                   >
                     Logout
@@ -218,7 +231,7 @@
               <!-- Desktop-only: Logout -->
               <button
                 id="logout-btn"
-                class="hidden md:block px-3 py-2 text-sm font-medium rounded-lg bg-red-500 text-white hover:bg-red-600 transition-all hover:scale-105 active:scale-95"
+                class="hidden md:block px-4 py-2 text-sm font-medium rounded-lg bg-red-600 text-white hover:bg-red-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
                 data-i18n="nav.logout"
               >
                 Logout
@@ -266,26 +279,26 @@
 
               <!-- Case Sensitive Toggle -->
               <label class="flex items-center gap-2 mb-2 cursor-pointer text-sm text-gray-700">
-                <input type="checkbox" id="case-sensitive-toggle" class="rounded text-blue-500 focus:ring-blue-500" />
+                <input type="checkbox" id="case-sensitive-toggle" class="rounded text-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" />
                 <span data-i18n="nav.caseSensitive">Case Sensitive</span>
               </label>
 
               <!-- Favorites Filter -->
               <label class="flex items-center gap-2 mb-3 cursor-pointer text-sm text-gray-700">
-                <input type="checkbox" id="favorites-filter" class="rounded text-blue-500 focus:ring-blue-500" />
+                <input type="checkbox" id="favorites-filter" class="rounded text-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" />
                 <span data-i18n="nav.showFavorites">Show Favorites</span>
               </label>
 
               <!-- Select All Checkbox -->
               <label class="flex items-center gap-2 mb-3 cursor-pointer text-sm text-gray-700">
-                <input type="checkbox" id="select-all-checkbox" class="rounded text-blue-500 focus:ring-blue-500" />
+                <input type="checkbox" id="select-all-checkbox" class="rounded text-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" />
                 <span data-i18n="actions.selectAll">Select All</span>
               </label>
 
               <!-- Clear All Filters Button -->
               <button
                 id="clear-all-filters-btn"
-                class="w-full px-3 py-2 text-sm font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all hidden"
+                class="w-full px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 transition hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                 data-i18n="nav.clearFilters"
               >
                 Clear All Filters
@@ -300,12 +313,12 @@
                 </svg>
                 <span data-i18n="nav.categories">Categories</span>
               </h3>
-              <ul id="categories-list" class="space-y-2">
-                <li data-category="all" class="active" data-i18n="nav.allCategories">
+              <ul id="categories-list" class="space-y-2 max-h-64 overflow-y-auto custom-scrollbar scrollable-with-fade">
+                <li data-category="all" class="active" data-i18n="nav.allCategories" tabindex="0" role="button">
                   All Categories
                 </li>
                 {% for category in categories %}
-                <li data-category="{{ category }}">
+                <li data-category="{{ category }}" tabindex="0" role="button">
                   {{ category }}
                 </li>
                 {% endfor %}
@@ -327,12 +340,12 @@
                 </svg>
                 <span data-i18n="nav.tags">Tags</span>
               </h3>
-              <ul id="tags-list" class="space-y-2">
-                <li data-tag="all" class="active" data-i18n="nav.allTags">
+              <ul id="tags-list" class="space-y-2 max-h-64 overflow-y-auto custom-scrollbar scrollable-with-fade">
+                <li data-tag="all" class="active" data-i18n="nav.allTags" tabindex="0" role="button">
                   All Tags
                 </li>
                 {% for tag in tags %}
-                <li data-tag="{{ tag }}">
+                <li data-tag="{{ tag }}" tabindex="0" role="button">
                   {{ tag }}
                 </li>
                 {% endfor %}
@@ -353,14 +366,14 @@
               <div class="space-y-2">
                 <button
                   onclick="window.location.href = '/manage-categories'"
-                  class="w-full px-3 py-2 text-sm font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition"
+                  class="w-full px-4 py-2 text-sm font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                   data-i18n="categories.manage"
                 >
                   Manage Categories
                 </button>
                 <button
                   onclick="window.location.href = '/manage-tags'"
-                  class="w-full px-3 py-2 text-sm font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition"
+                  class="w-full px-4 py-2 text-sm font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                   data-i18n="tags.manage"
                 >
                   Manage Tags
@@ -381,7 +394,7 @@
               <h2 class="text-lg font-bold text-gray-900" data-i18n="nav.categoriesAndTags">Categories & Tags</h2>
               <button
                 id="sidebar-close"
-                class="text-gray-500 hover:text-gray-700 p-2"
+                class="text-gray-500 hover:text-gray-700 p-2 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                 aria-label="Close sidebar"
               >
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -450,12 +463,12 @@
                 </svg>
                 <span data-i18n="nav.categories">Categories</span>
               </h3>
-              <ul id="categories-list-mobile" class="space-y-2">
+              <ul id="categories-list-mobile" class="space-y-2 max-h-64 overflow-y-auto custom-scrollbar scrollable-with-fade">
                 <li data-category="all" class="active" data-i18n="nav.allCategories">
                   All Categories
                 </li>
                 {% for category in categories %}
-                <li data-category="{{ category }}">
+                <li data-category="{{ category }}" tabindex="0" role="button">
                   {{ category }}
                 </li>
                 {% endfor %}
@@ -477,7 +490,7 @@
                 </svg>
                 <span data-i18n="nav.tags">Tags</span>
               </h3>
-              <ul id="tags-list-mobile" class="space-y-2">
+              <ul id="tags-list-mobile" class="space-y-2 max-h-64 overflow-y-auto custom-scrollbar scrollable-with-fade">
                 <li data-tag="all" class="active" data-i18n="nav.allTags">
                   All Tags
                 </li>
@@ -503,14 +516,14 @@
               <div class="space-y-2">
                 <button
                   onclick="window.location.href = '/manage-categories'"
-                  class="w-full px-3 py-2 text-sm font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition"
+                  class="w-full px-4 py-2 text-sm font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                   data-i18n="categories.manage"
                 >
                   Manage Categories
                 </button>
                 <button
                   onclick="window.location.href = '/manage-tags'"
-                  class="w-full px-3 py-2 text-sm font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition"
+                  class="w-full px-4 py-2 text-sm font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                   data-i18n="tags.manage"
                 >
                   Manage Tags
@@ -526,7 +539,7 @@
           <div class="md:hidden flex items-center gap-3 px-4 py-3 border-b border-gray-200 bg-white">
             <button
               id="sidebar-toggle"
-              class="text-gray-700 hover:text-gray-900 transition-colors"
+              class="text-gray-700 hover:text-gray-900 transition-colors rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
               aria-label="Toggle sidebar"
             >
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -550,23 +563,23 @@
             style="display: none"
           >
             <span id="selected-count" class="text-sm font-semibold text-amber-900">0 selected</span>
-            <div class="flex gap-2">
+            <div class="flex gap-2 items-center">
               <button
                 id="bulk-delete-btn"
-                class="px-4 py-2 text-sm font-semibold rounded-lg bg-red-500 text-white hover:bg-red-600 transition-all hover:scale-105 active:scale-95"
+                class="px-4 py-2 text-sm font-semibold rounded-lg bg-red-600 text-white hover:bg-red-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
               >
                 <span data-i18n="actions.bulkDelete">Delete Selected</span>
               </button>
               <button
                 id="bulk-tag-btn"
-                class="px-4 py-2 text-sm font-semibold rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-all hover:scale-105 active:scale-95"
+                class="px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                 data-i18n="actions.bulkTag"
               >
                 Tag Selected
               </button>
               <button
                 id="clear-selection-btn"
-                class="px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition-all hover:scale-105 active:scale-95"
+                class="px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
               >
                 <span data-i18n="actions.clearSelection">Clear Selection</span>
               </button>
@@ -587,7 +600,7 @@
             <p class="text-sm text-gray-600 mb-6" data-i18n="emptyStates.noPrompts.description">Create your first prompt to get started</p>
             <button
               id="empty-state-new-prompt-btn"
-              class="px-6 py-3 text-sm font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-all hover:scale-105 active:scale-95"
+              class="px-6 py-3 text-base font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
               data-i18n="emptyStates.noPrompts.action"
             >
               Create Prompt
@@ -601,7 +614,7 @@
             <p class="text-sm text-gray-600 mb-6" data-i18n="emptyStates.noSearchResults.description">Try adjusting your search or filters</p>
             <button
               id="empty-state-clear-filters-btn"
-              class="px-6 py-3 text-sm font-semibold rounded-lg bg-gray-600 text-white hover:bg-gray-700 transition-all hover:scale-105 active:scale-95"
+              class="px-6 py-3 text-base font-semibold rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
               data-i18n="emptyStates.noSearchResults.action"
             >
               Clear Filters
@@ -624,12 +637,13 @@
                 <div class="flex items-center gap-1 ml-2">
                   <input
                     type="checkbox"
-                    class="prompt-checkbox rounded text-blue-500 focus:ring-blue-500"
+                    class="prompt-checkbox rounded text-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                     data-prompt-id="{{ prompt_id }}"
                   />
                   <button
-                    class="favorite-btn text-xl hover:scale-110 transition-transform"
+                    class="favorite-btn text-xl hover:scale-110 transition-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
                     data-id="{{ prompt_id }}"
+                    aria-label="Toggle favorite"
                   >
                     {% if prompt_info.data.favorite %}★{% else %}☆{% endif %}
                   </button>
@@ -649,28 +663,28 @@
                 {{ prompt_info.data.prompt[:100] }}{% if prompt_info.data.prompt|length > 100
                 %}...{% endif %}
               </p>
-              <div class="flex flex-wrap gap-2">
+              <div class="flex flex-wrap gap-1">
                 <button
-                  class="history-btn px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all hover:scale-105 active:scale-95"
+                  class="history-btn px-2 py-1 text-xs font-medium rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                   data-id="{{ prompt_id }}"
                   data-i18n="version.history"
                 >
                   History
                 </button>
                 <button
-                  class="copy-btn px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 transition-all hover:scale-105 active:scale-95"
+                  class="copy-btn px-2 py-1 text-xs font-medium rounded-md bg-blue-100 text-blue-700 hover:bg-blue-200 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                   data-id="{{ prompt_id }}"
                 >
                   Copy
                 </button>
                 <button
-                  class="edit-btn px-3 py-1.5 text-xs font-medium rounded-lg bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition-all hover:scale-105 active:scale-95"
+                  class="edit-btn px-2 py-1 text-xs font-medium rounded-md bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
                   data-id="{{ prompt_id }}"
                 >
                   Edit
                 </button>
                 <button
-                  class="delete-btn px-3 py-1.5 text-xs font-medium rounded-lg bg-red-100 text-red-700 hover:bg-red-200 transition-all hover:scale-105 active:scale-95"
+                  class="delete-btn px-2 py-1 text-xs font-medium rounded-md bg-red-100 text-red-700 hover:bg-red-200 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
                   data-id="{{ prompt_id }}"
                 >
                   Delete
@@ -785,14 +799,14 @@
                     <input type="hidden" id="prompt-tags" name="tags" />
                     <div
                       id="tag-autocomplete"
-                      class="hidden absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-auto"
+                      class="hidden absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-auto custom-scrollbar scrollable-with-fade"
                     ></div>
                   </div>
                   <div class="mt-2">
                     <button
                       type="button"
                       id="suggest-tags-btn"
-                      class="px-3 py-2 text-sm font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition"
+                      class="px-4 py-2 text-sm font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                       data-i18n="actions.suggestTags"
                     >
                       Suggest Tags
@@ -844,21 +858,21 @@
                 </div>
 
                 <!-- Actions -->
-                <div class="flex gap-3 pt-2">
-                  <button
-                    type="submit"
-                    class="px-6 py-3 text-sm font-semibold rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition-all hover:scale-105 active:scale-95"
-                    data-i18n="actions.save"
-                  >
-                    Save
-                  </button>
+                <div class="flex gap-2 items-center justify-end pt-2">
                   <button
                     type="button"
                     id="cancel-btn"
-                    class="px-6 py-3 text-sm font-medium rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition-all hover:scale-105 active:scale-95"
+                    class="px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                     data-i18n="actions.cancel"
                   >
                     Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    class="px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                    data-i18n="actions.save"
+                  >
+                    Save
                   </button>
                 </div>
               </form>
@@ -875,12 +889,13 @@
           <h2 class="text-2xl font-bold text-gray-900" data-i18n="version.history">Version History</h2>
           <button
             onclick="hideVersionHistoryModal()"
-            class="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+            class="text-gray-400 hover:text-gray-600 text-2xl leading-none rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            aria-label="Close modal"
           >
             &times;
           </button>
         </div>
-        <div class="p-6 overflow-auto flex-1">
+        <div class="p-6 overflow-auto flex-1 custom-scrollbar scrollable-with-fade">
           <div class="mb-4 relative">
             <input
               type="text"
@@ -901,20 +916,20 @@
             <div class="text-center text-gray-500 py-8" data-i18n="messages.loading">Loading...</div>
           </div>
         </div>
-        <div class="flex items-center justify-end gap-3 p-6 border-t border-gray-200">
-          <button
-            id="compare-versions-btn"
-            class="hidden px-6 py-3 text-sm font-semibold rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-all hover:scale-105 active:scale-95"
-            data-i18n="version.compare"
-          >
-            Compare Selected
-          </button>
+        <div class="flex items-center justify-end gap-2 p-6 border-t border-gray-200">
           <button
             id="close-version-history-btn"
-            class="px-6 py-3 text-sm font-medium rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition-all hover:scale-105 active:scale-95"
+            class="px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
             data-i18n="actions.close"
           >
             Close
+          </button>
+          <button
+            id="compare-versions-btn"
+            class="hidden px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+            data-i18n="version.compare"
+          >
+            Compare Selected
           </button>
         </div>
       </div>
@@ -927,12 +942,13 @@
           <h2 class="text-2xl font-bold text-gray-900" data-i18n="version.compareVersions">Compare Versions</h2>
           <button
             onclick="hideDiffModal()"
-            class="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+            class="text-gray-400 hover:text-gray-600 text-2xl leading-none rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            aria-label="Close modal"
           >
             &times;
           </button>
         </div>
-        <div class="p-6 overflow-auto flex-1">
+        <div class="p-6 overflow-auto flex-1 custom-scrollbar scrollable-with-fade">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <div>
               <label class="block text-sm font-semibold text-gray-700 mb-2" data-i18n="version.version1">Version 1:</label>
@@ -953,10 +969,10 @@
             <div class="text-center text-gray-500 py-8" data-i18n="messages.loading">Loading...</div>
           </div>
         </div>
-        <div class="flex items-center justify-end gap-3 p-6 border-t border-gray-200">
+        <div class="flex items-center justify-end gap-2 p-6 border-t border-gray-200">
           <button
             id="close-diff-btn"
-            class="px-6 py-3 text-sm font-medium rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition-all hover:scale-105 active:scale-95"
+            class="px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
             data-i18n="actions.close"
           >
             Close
@@ -972,7 +988,8 @@
           <h2 class="text-xl font-bold text-gray-900" data-i18n="version.confirmRevert">Confirm Revert</h2>
           <button
             onclick="hideRevertConfirmationModal()"
-            class="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+            class="text-gray-400 hover:text-gray-600 text-2xl leading-none rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            aria-label="Close modal"
           >
             &times;
           </button>
@@ -1006,20 +1023,20 @@
             </div>
           </div>
         </div>
-        <div class="flex items-center justify-end gap-3 p-6 border-t border-gray-200">
-          <button
-            id="confirm-revert-btn"
-            class="px-6 py-3 text-sm font-semibold rounded-lg bg-red-500 text-white hover:bg-red-600 transition-all hover:scale-105 active:scale-95"
-            data-i18n="version.revert"
-          >
-            Revert
-          </button>
+        <div class="flex items-center justify-end gap-2 p-6 border-t border-gray-200">
           <button
             id="cancel-revert-btn"
-            class="px-6 py-3 text-sm font-medium rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition-all hover:scale-105 active:scale-95"
+            class="px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
             data-i18n="actions.cancel"
           >
             Cancel
+          </button>
+          <button
+            id="confirm-revert-btn"
+            class="px-4 py-2 text-sm font-semibold rounded-lg bg-red-600 text-white hover:bg-red-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
+            data-i18n="version.revert"
+          >
+            Revert
           </button>
         </div>
       </div>
@@ -1032,7 +1049,8 @@
           <h2 class="text-xl font-bold text-gray-900" data-i18n="bulkDelete.confirmTitle">Confirm Bulk Deletion</h2>
           <button
             onclick="hideBulkDeleteModal()"
-            class="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+            class="text-gray-400 hover:text-gray-600 text-2xl leading-none rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            aria-label="Close modal"
           >
             &times;
           </button>
@@ -1048,20 +1066,20 @@
             restoring from backup.
           </p>
         </div>
-        <div class="flex items-center justify-end gap-3 p-6 border-t border-gray-200">
-          <button
-            id="confirm-bulk-delete-btn"
-            class="px-6 py-3 text-sm font-semibold rounded-lg bg-red-500 text-white hover:bg-red-600 transition-all hover:scale-105 active:scale-95"
-            data-i18n="actions.confirmDelete"
-          >
-            Confirm Delete
-          </button>
+        <div class="flex items-center justify-end gap-2 p-6 border-t border-gray-200">
           <button
             id="cancel-bulk-delete-btn"
-            class="px-6 py-3 text-sm font-medium rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition-all hover:scale-105 active:scale-95"
+            class="px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
             data-i18n="actions.cancel"
           >
             Cancel
+          </button>
+          <button
+            id="confirm-bulk-delete-btn"
+            class="px-4 py-2 text-sm font-semibold rounded-lg bg-red-600 text-white hover:bg-red-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
+            data-i18n="actions.confirmDelete"
+          >
+            Confirm Delete
           </button>
         </div>
       </div>
@@ -1074,7 +1092,8 @@
           <h2 class="text-xl font-bold text-gray-900" data-i18n="bulkTag.title">Bulk Tag Update</h2>
           <button
             onclick="hideBulkTagModal()"
-            class="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+            class="text-gray-400 hover:text-gray-600 text-2xl leading-none rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            aria-label="Close modal"
           >
             &times;
           </button>
@@ -1109,19 +1128,19 @@
             Tags added or removed will apply to all selected prompts.
           </p>
         </div>
-        <div class="flex items-center justify-end gap-3 p-6 border-t border-gray-200">
+        <div class="flex items-center justify-end gap-2 p-6 border-t border-gray-200">
+          <button
+            id="cancel-bulk-tag-btn"
+            class="px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+          >
+            Cancel
+          </button>
           <button
             id="confirm-bulk-tag-btn"
-            class="px-6 py-3 text-sm font-semibold rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-all hover:scale-105 active:scale-95"
+            class="px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
             data-i18n="actions.applyTags"
           >
             Apply Tags
-          </button>
-          <button
-            id="cancel-bulk-tag-btn"
-            class="px-6 py-3 text-sm font-medium rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition-all hover:scale-105 active:scale-95"
-          >
-            Cancel
           </button>
         </div>
       </div>

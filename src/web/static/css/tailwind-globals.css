@@ -152,10 +152,47 @@
     outline: 2px solid #3b82f6;
     outline-offset: 2px;
   }
+
+  /* Enhanced keyboard focus states for accessibility (WCAG AA compliant) */
+  /* Remove default outline when using custom focus rings */
+  button:focus,
+  a:focus,
+  input:focus,
+  textarea:focus,
+  select:focus {
+    outline: none;
+  }
+
+  /* Apply visible focus rings for keyboard navigation only */
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+  }
 }
 
 /* Validation state classes (migrated from validation.css) */
 @layer components {
+  /* Focus ring utility classes for keyboard accessibility */
+  .focus-ring {
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2;
+  }
+
+  .focus-ring-compact {
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1;
+  }
+
+  .focus-ring-danger {
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2;
+  }
+
+  .focus-ring-success {
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2;
+  }
+
   /* Field validation states */
   .field-valid {
     border-color: #22c55e;
@@ -557,6 +594,91 @@
     /* Adjust main content padding on mobile */
     main {
       padding: 1rem;
+    }
+  }
+
+  /* Custom Scrollbar Styling */
+  /* Webkit browsers (Chrome, Safari, Edge) */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;  /* width of vertical scrollbar */
+    height: 8px; /* height of horizontal scrollbar */
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #9ca3af; /* gray-400 */
+    border-radius: 4px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #6b7280; /* gray-500 */
+    background-clip: content-box;
+  }
+
+  /* Firefox */
+  .custom-scrollbar {
+    scrollbar-color: #9ca3af transparent;
+    scrollbar-width: thin;
+  }
+
+  /* Scrollable Container with Fade Indicators */
+  .scrollable-with-fade {
+    position: relative;
+  }
+
+  .scrollable-with-fade::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 16px;
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.95), transparent);
+    pointer-events: none;
+    z-index: 10;
+    opacity: 0; /* hidden by default */
+    transition: opacity 0.3s ease;
+  }
+
+  .scrollable-with-fade::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 16px;
+    background: linear-gradient(to top, rgba(255, 255, 255, 0.95), transparent);
+    pointer-events: none;
+    z-index: 10;
+    opacity: 0; /* hidden by default */
+    transition: opacity 0.3s ease;
+  }
+
+  .scrollable-with-fade.is-scrolled::before {
+    opacity: 1;
+  }
+
+  .scrollable-with-fade.has-overflow::after {
+    opacity: 1;
+  }
+
+  .scrollable-with-fade.is-scrolled.at-bottom::after {
+    opacity: 0;
+  }
+
+  /* Dark mode support for fade indicators */
+  @media (prefers-color-scheme: dark) {
+    .scrollable-with-fade::before {
+      background: linear-gradient(to bottom, rgba(31, 41, 55, 0.95), transparent);
+    }
+
+    .scrollable-with-fade::after {
+      background: linear-gradient(to top, rgba(31, 41, 55, 0.95), transparent);
     }
   }
 }

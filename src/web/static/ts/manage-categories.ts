@@ -8,6 +8,7 @@ import '../css/tailwind-globals.css';
 import { apiFetch, APIRequestError } from '@/utils/api';
 import { initI18n, tUnsafe, updateStaticTranslations } from '@/utils/i18n';
 import { initializeColorPicker, ColorPicker } from '@/utils/color-picker';
+import { setupScrollIndicators } from '@/utils/dom';
 
 type CategoryItem = {
   id: number;
@@ -145,6 +146,9 @@ function renderRows(items: CategoryItem[]): void {
   }
 
   enableDragAndDrop();
+
+  // Setup scroll indicators for table container
+  setupScrollIndicators(tableContainer);
 }
 
 function parseIdList(value: string): number[] {
@@ -522,6 +526,7 @@ async function loadOrphans(): Promise<void> {
     }
     if (elements.orphansDetails) {
       await renderPromptDetails(data.prompt_ids ?? [], elements.orphansDetails);
+      setupScrollIndicators(elements.orphansDetails);
     }
   } catch (error) {
     handleError(error, 'Failed to load orphans');
@@ -539,6 +544,7 @@ async function loadOrphans(): Promise<void> {
         li.textContent = `${item.name} (#${item.id})`;
         elements.unusedList?.appendChild(li);
       });
+      setupScrollIndicators(elements.unusedList);
     }
   } catch (error) {
     handleError(error, 'Failed to load unused categories');

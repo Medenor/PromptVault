@@ -32,7 +32,7 @@
             </div>
             <button
               onclick="window.location.href = '/'"
-              class="px-4 py-2 text-sm font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all whitespace-nowrap flex-shrink-0"
+              class="px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 transition whitespace-nowrap flex-shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
               data-i18n="nav.backToMain"
             >
               Back to Main
@@ -87,10 +87,10 @@
               </div>
 
               <div class="border-t pt-4 mt-4">
-                <div class="flex flex-col sm:flex-row gap-3">
+                <div class="flex flex-col sm:flex-row gap-2">
                   <button
                     type="button"
-                    class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition"
+                    class="flex-1 px-4 py-2 text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                     onclick="createBackup()"
                     data-i18n="backup.createBtn"
                   >
@@ -98,7 +98,7 @@
                   </button>
                   <button
                     type="button"
-                    class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition"
+                    class="px-4 py-2 text-sm font-medium bg-gray-200 text-gray-900 hover:bg-gray-300 rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                     onclick="clearBackupForm()"
                     data-i18n="backup.clearBtn"
                   >
@@ -134,7 +134,7 @@
 
             <div class="mt-6">
               <button
-                class="w-full px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition"
+                class="w-full px-4 py-2 text-sm font-medium bg-gray-200 text-gray-900 hover:bg-gray-300 rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                 onclick="refreshBackups()"
                 data-i18n="actions.refresh"
               >
@@ -180,7 +180,7 @@
                   ></div>
                 </div>
                 <button
-                  class="w-full px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded font-medium transition"
+                  class="w-full px-4 py-2 text-sm font-semibold bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
                   onclick="cleanupBackups()"
                   data-i18n="backup.cleanupBtn"
                 >
@@ -218,7 +218,7 @@
                   ></div>
                 </div>
                 <button
-                  class="w-full px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded font-medium transition"
+                  class="w-full px-4 py-2 text-sm font-semibold bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2"
                   onclick="compressBackups()"
                   data-i18n="backup.compressBtn"
                 >
@@ -309,10 +309,10 @@
           </div>
         </div>
         <div
-          class="flex flex-col md:flex-row md:justify-end gap-3 md:gap-0 md:space-x-3 p-6 border-t border-gray-200"
+          class="flex items-center justify-end gap-2 p-6 border-t border-gray-200"
         >
           <button
-            class="order-2 md:order-1 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition"
+            class="px-4 py-2 text-sm font-medium bg-gray-200 text-gray-900 hover:bg-gray-300 rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
             onclick="hideRestoreModal()"
             data-i18n="actions.cancel"
           >
@@ -320,7 +320,7 @@
           </button>
           <button
             id="confirm-restore-btn"
-            class="order-1 md:order-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded font-medium transition"
+            class="px-4 py-2 text-sm font-semibold bg-red-600 hover:bg-red-700 text-white rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
             data-i18n="backup.restoreBtn"
           >
             Restore
@@ -352,10 +352,10 @@
           <div class="bg-gray-50 rounded p-3 text-sm" id="delete-backup-info"></div>
         </div>
         <div
-          class="flex flex-col md:flex-row md:justify-end gap-3 md:gap-0 md:space-x-3 p-6 border-t border-gray-200"
+          class="flex items-center justify-end gap-2 p-6 border-t border-gray-200"
         >
           <button
-            class="order-2 md:order-1 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition"
+            class="px-4 py-2 text-sm font-medium bg-gray-200 text-gray-900 hover:bg-gray-300 rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
             onclick="hideDeleteModal()"
             data-i18n="actions.cancel"
           >
@@ -363,7 +363,7 @@
           </button>
           <button
             id="confirm-delete-btn"
-            class="order-1 md:order-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded font-medium transition"
+            class="px-4 py-2 text-sm font-semibold bg-red-600 hover:bg-red-700 text-white rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
             data-i18n="backup.deleteBtn"
           >
             Delete

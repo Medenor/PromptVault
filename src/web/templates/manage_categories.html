@@ -20,7 +20,7 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div class="flex items-center justify-between h-16">
             <div class="flex items-center gap-4">
-              <a href="/" class="inline-flex">
+              <a href="/" class="inline-flex focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500 rounded-lg">
                 <img
                   src="/static/images/promptvault_logo_frontend.webp"
                   alt="PromptVault Logo"
@@ -31,7 +31,7 @@
             </div>
             <button
               onclick="window.location.href = '/'"
-              class="px-4 py-2 text-sm font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all"
+              class="px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
               data-i18n="nav.backToMain"
             >
               Back to Main
@@ -95,7 +95,7 @@
             <div class="mt-4">
               <button
                 type="submit"
-                class="px-6 py-2 bg-emerald-500 text-white rounded-lg font-medium hover:bg-emerald-600 transition"
+                class="px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                 data-i18n="actions.create"
               >
                 Create
@@ -126,7 +126,7 @@
             />
                 <button
                   id="category-merge-btn"
-                  class="w-full px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+                  class="w-full px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                   data-i18n="actions.merge"
                 >
                   Merge
@@ -153,7 +153,7 @@
             />
                 <button
                   id="category-find-replace-btn"
-                  class="w-full px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+                  class="w-full px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                   data-i18n="actions.replace"
                 >
                   Replace
@@ -172,12 +172,12 @@
               class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
             />
             <label class="flex items-center gap-2 text-sm text-gray-700">
-              <input id="category-bulk-delete-force" type="checkbox" class="rounded text-blue-500" />
+              <input id="category-bulk-delete-force" type="checkbox" class="rounded text-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" />
               <span data-i18n="management.forceDelete">Force delete (remove from prompts)</span>
             </label>
                 <button
                   id="category-bulk-delete-btn"
-                  class="w-full px-3 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition"
+                  class="w-full px-4 py-2 text-sm font-semibold bg-red-600 text-white rounded-lg hover:bg-red-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
                   data-i18n="actions.delete"
                 >
                   Delete
@@ -188,7 +188,7 @@
           <div class="mt-4 flex justify-end">
             <button
               id="category-undo-btn"
-              class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition"
+              class="px-4 py-2 text-sm font-medium bg-gray-200 text-gray-900 rounded-lg hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
               data-i18n="actions.undo"
             >
               Undo
@@ -201,7 +201,7 @@
           <div class="flex flex-col md:flex-row gap-4 items-start md:items-center">
             <button
               id="category-export-btn"
-              class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+              class="px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
               data-i18n="actions.export"
             >
               Export JSON
@@ -210,7 +210,7 @@
               <input id="category-import-file" type="file" accept="application/json" />
               <button
                 id="category-import-btn"
-                class="px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 transition"
+                class="px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                 data-i18n="actions.import"
               >
                 Import
@@ -252,7 +252,7 @@
                 <span data-i18n="categories.unusedLabel">Unused categories:</span>
                 <strong id="category-unused-count">0</strong>
               </p>
-              <ul id="category-unused-list" class="text-sm text-gray-700 space-y-1"></ul>
+              <ul id="category-unused-list" class="text-sm text-gray-700 space-y-1 max-h-48 overflow-y-auto custom-scrollbar scrollable-with-fade"></ul>
             </div>
             <div class="border border-gray-200 rounded-lg p-4">
               <h4 class="font-semibold text-gray-800 mb-3" data-i18n="categories.orphanPromptsTitle">
@@ -266,7 +266,7 @@
                 <h5 class="text-sm font-semibold text-gray-700 mb-2" data-i18n="management.promptDetails">
                   Prompt details
                 </h5>
-                <ul id="category-orphans-details" class="text-sm text-gray-700 space-y-1"></ul>
+                <ul id="category-orphans-details" class="text-sm text-gray-700 space-y-1 max-h-48 overflow-y-auto custom-scrollbar scrollable-with-fade"></ul>
               </div>
             </div>
           </div>
@@ -300,14 +300,14 @@
             <p class="text-sm text-gray-600 mb-4" data-i18n="emptyStates.noCategories.description">Create your first category to organize your prompts</p>
             <button
               onclick="document.getElementById('category-create-name').focus()"
-              class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+              class="px-6 py-3 text-base font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
               data-i18n="emptyStates.noCategories.action"
             >
               Create Category
             </button>
           </div>
 
-          <div id="categories-table-container" class="overflow-x-auto">
+          <div id="categories-table-container" class="overflow-x-auto max-h-96 custom-scrollbar scrollable-with-fade">
             <table class="min-w-full text-sm">
               <thead>
                 <tr class="text-left text-gray-600 border-b">
@@ -326,23 +326,23 @@
           <div class="mt-4 flex justify-end">
             <button
               id="category-reorder-btn"
-              class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+              class="px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
               data-i18n="actions.saveOrder"
             >
               Save Order
             </button>
           </div>
-          <div class="mt-4 flex flex-col md:flex-row gap-3">
+          <div class="mt-4 flex flex-col md:flex-row gap-2">
             <button
               id="category-selection-merge-btn"
-              class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+              class="px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
               data-i18n="actions.mergeSelected"
             >
               Merge Selected
             </button>
             <button
               id="category-selection-find-replace-btn"
-              class="px-4 py-2 bg-blue-50 text-blue-700 rounded hover:bg-blue-100 transition"
+              class="px-4 py-2 text-sm font-medium bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
               data-i18n="actions.findReplaceSelected"
             >
               Find/Replace Selected

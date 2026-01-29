@@ -16,6 +16,7 @@ import type { PromptResponse, PromptListResponse } from '@/types';
 import type { TranslationKey } from '@/types/i18n';
 import { initI18n, t, tUnsafe, updateStaticTranslations } from '@/utils/i18n';
 import { apiFetch, apiGet, apiPostForm, APIRequestError } from '@/utils/api';
+import { setupScrollIndicators } from '@/utils/dom';
 
 interface TagInfo {
   name: string;
@@ -708,6 +709,13 @@ function setupEventListeners(): void {
 
   const emptyStateClearFiltersBtn = document.getElementById('empty-state-clear-filters-btn');
   emptyStateClearFiltersBtn?.addEventListener('click', clearAllFilters);
+
+  // Setup scroll indicators for scrollable containers
+  setupScrollIndicators(document.getElementById('categories-list'));
+  setupScrollIndicators(document.getElementById('tags-list'));
+  setupScrollIndicators(document.getElementById('categories-list-mobile'));
+  setupScrollIndicators(document.getElementById('tags-list-mobile'));
+  setupScrollIndicators(document.getElementById('tag-autocomplete'));
 }
 
 async function loadPrompts(): Promise<void> {

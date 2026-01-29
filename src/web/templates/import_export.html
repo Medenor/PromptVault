@@ -32,7 +32,7 @@
             </div>
             <button
               onclick="window.location.href = '/'"
-              class="px-4 py-2 text-sm font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all"
+              class="px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
               data-i18n="nav.backToMain"
             >
               Back to Main
@@ -130,10 +130,10 @@
               </div>
 
               <div class="border-t pt-4 mt-4">
-                <div class="flex flex-col sm:flex-row gap-3">
+                <div class="flex flex-col sm:flex-row gap-2">
                   <button
                     type="button"
-                    class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition"
+                    class="flex-1 px-4 py-2 text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                     onclick="performExport()"
                     data-i18n="importExport.exportBtn"
                   >
@@ -141,7 +141,7 @@
                   </button>
                   <button
                     type="button"
-                    class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition"
+                    class="px-4 py-2 text-sm font-medium bg-gray-200 text-gray-900 hover:bg-gray-300 rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                     onclick="previewExport()"
                     data-i18n="importExport.previewBtn"
                   >
@@ -149,7 +149,7 @@
                   </button>
                   <button
                     type="button"
-                    class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition"
+                    class="px-4 py-2 text-sm font-medium bg-gray-200 text-gray-900 hover:bg-gray-300 rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                     onclick="clearExportSettings()"
                     data-i18n="importExport.clearBtn"
                   >
@@ -252,10 +252,10 @@
               </div>
 
               <div class="border-t pt-4 mt-4">
-                <div class="flex flex-col sm:flex-row gap-3">
+                <div class="flex flex-col sm:flex-row gap-2">
                   <button
                     type="button"
-                    class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition"
+                    class="flex-1 px-4 py-2 text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                     onclick="performImport()"
                     data-i18n="importExport.importBtn"
                   >
@@ -263,7 +263,7 @@
                   </button>
                   <button
                     type="button"
-                    class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition"
+                    class="px-4 py-2 text-sm font-medium bg-gray-200 text-gray-900 hover:bg-gray-300 rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                     onclick="previewImport()"
                     data-i18n="importExport.previewBtn"
                   >
@@ -295,20 +295,20 @@
             class="bg-gray-50 rounded p-4 mb-4 font-mono text-sm overflow-auto max-h-96"
             id="preview-content"
           ></div>
-          <div class="flex space-x-3">
+          <div class="flex gap-2 items-center justify-end">
             <button
-              class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition"
-              onclick="confirmOperation()"
-              id="confirm-btn"
-            >
-              Confirm
-            </button>
-            <button
-              class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition"
+              class="px-4 py-2 text-sm font-medium bg-gray-200 text-gray-900 hover:bg-gray-300 rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
               onclick="cancelPreview()"
               id="cancel-btn"
             >
               Cancel
+            </button>
+            <button
+              class="px-4 py-2 text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+              onclick="confirmOperation()"
+              id="confirm-btn"
+            >
+              Confirm
             </button>
           </div>
         </div>

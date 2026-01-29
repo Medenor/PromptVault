@@ -184,3 +184,61 @@ export function debounce<T extends (...args: unknown[]) => void>(
     }, delay);
   };
 }
+
+/**
+ * Update scroll indicator classes based on scroll position
+ */
+function updateScrollIndicators(element: HTMLElement): void {
+  const { scrollTop, scrollHeight, clientHeight } = element;
+  const hasScroll = scrollHeight > clientHeight;
+  const isScrolled = scrollTop > 0;
+  const isAtBottom = scrollTop + clientHeight >= scrollHeight - 1;
+
+  element.classList.toggle('has-overflow', hasScroll);
+  element.classList.toggle('is-scrolled', isScrolled);
+  element.classList.toggle('at-bottom', isAtBottom);
+}
+
+/**
+ * Setup scroll indicators for a container element
+ * Adds gradient fade indicators at top/bottom based on scroll position
+ */
+export function setupScrollIndicators(element: HTMLElement | null): void {
+  if (!element) return;
+
+  // Add scrollable classes
+  element.classList.add('custom-scrollbar', 'scrollable-with-fade');
+
+  // Create throttled scroll handler
+  let ticking = false;
+  const handleScroll = (): void => {
+    if (!ticking) {
+      window.requestAnimationFrame(() => {
+        updateScrollIndicators(element);
+        ticking = false;
+      });
+      ticking = true;
+    }
+  };
+
+  // Setup event listeners
+  element.addEventListener('scroll', handleScroll, { passive: true });
+
+  // Update on resize
+  const resizeObserver = new ResizeObserver(() => {
+    updateScrollIndicators(element);
+  });
+  resizeObserver.observe(element);
+
+  // Initial update
+  updateScrollIndicators(element);
+}
+
+/**
+ * Setup scroll indicators for multiple elements matching a selector
+ */
+export function setupScrollIndicatorsForSelector(selector: string): void {
+  querySelectorAll<HTMLElement>(selector).forEach((element) => {
+    setupScrollIndicators(element);
+  });
+}

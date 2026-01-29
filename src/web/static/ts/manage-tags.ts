@@ -8,6 +8,7 @@ import '../css/tailwind-globals.css';
 import { apiFetch, APIRequestError } from '@/utils/api';
 import { initI18n, tUnsafe, updateStaticTranslations } from '@/utils/i18n';
 import { initializeColorPicker, ColorPicker } from '@/utils/color-picker';
+import { setupScrollIndicators } from '@/utils/dom';
 
 type TagItem = {
   id: number;
@@ -146,6 +147,9 @@ function renderRows(items: TagItem[]): void {
 
     elements.tableBody.appendChild(row);
   }
+
+  // Setup scroll indicators for table container
+  setupScrollIndicators(tableContainer);
 }
 
 function parseIdList(value: string): number[] {
@@ -408,6 +412,9 @@ function renderHierarchyTree(): void {
     container.appendChild(buildNode(item, byParent));
   });
   elements.hierarchyTree.appendChild(container);
+
+  // Setup scroll indicators for hierarchy tree
+  setupScrollIndicators(elements.hierarchyTree);
 }
 
 function buildNode(item: TagItem, byParent: Record<string, TagItem[]>): HTMLLIElement {
@@ -549,6 +556,7 @@ async function loadOrphans(): Promise<void> {
         li.textContent = item.name;
         elements.orphansList?.appendChild(li);
       });
+      setupScrollIndicators(elements.orphansList);
     }
   } catch (error) {
     handleError(error, 'Failed to load orphan tags');
@@ -561,6 +569,7 @@ async function loadOrphans(): Promise<void> {
     }
     if (elements.orphansPromptDetails) {
       await renderPromptDetails(data.prompt_ids ?? [], elements.orphansPromptDetails);
+      setupScrollIndicators(elements.orphansPromptDetails);
     }
   } catch (error) {
     handleError(error, 'Failed to load prompts without tags');
