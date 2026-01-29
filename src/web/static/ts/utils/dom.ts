@@ -188,33 +188,62 @@ export function debounce<T extends (...args: unknown[]) => void>(
 /**
  * Update scroll indicator classes based on scroll position
  */
-function updateScrollIndicators(element: HTMLElement): void {
+function updateScrollIndicators(element: HTMLElement, wrapper: HTMLElement): void {
   const { scrollTop, scrollHeight, clientHeight } = element;
   const hasScroll = scrollHeight > clientHeight;
   const isScrolled = scrollTop > 0;
   const isAtBottom = scrollTop + clientHeight >= scrollHeight - 1;
 
-  element.classList.toggle('has-overflow', hasScroll);
-  element.classList.toggle('is-scrolled', isScrolled);
-  element.classList.toggle('at-bottom', isAtBottom);
+  wrapper.classList.toggle('has-overflow', hasScroll);
+  wrapper.classList.toggle('is-scrolled', isScrolled);
+  wrapper.classList.toggle('at-bottom', isAtBottom);
 }
 
 /**
  * Setup scroll indicators for a container element
  * Adds gradient fade indicators at top/bottom based on scroll position
+ * This function wraps the element in a container and adds overlay divs for the fade effect
  */
 export function setupScrollIndicators(element: HTMLElement | null): void {
   if (!element) return;
 
-  // Add scrollable classes
-  element.classList.add('custom-scrollbar', 'scrollable-with-fade');
+  // Check if already wrapped (avoid double wrapping)
+  if (element.parentElement?.classList.contains('scrollable-fade-wrapper')) {
+    return;
+  }
+
+  // Add custom scrollbar class to the scrollable element
+  element.classList.add('custom-scrollbar');
+
+  // Create wrapper div
+  const wrapper = document.createElement('div');
+  wrapper.className = 'scrollable-fade-wrapper';
+
+  // Create top fade overlay
+  const topFade = document.createElement('div');
+  topFade.className = 'scroll-fade-top';
+
+  // Create bottom fade overlay
+  const bottomFade = document.createElement('div');
+  bottomFade.className = 'scroll-fade-bottom';
+
+  // Insert wrapper before the element
+  const parent = element.parentElement;
+  if (!parent) return;
+
+  parent.insertBefore(wrapper, element);
+
+  // Move element into wrapper and add overlays
+  wrapper.appendChild(element);
+  wrapper.appendChild(topFade);
+  wrapper.appendChild(bottomFade);
 
   // Create throttled scroll handler
   let ticking = false;
   const handleScroll = (): void => {
     if (!ticking) {
       window.requestAnimationFrame(() => {
-        updateScrollIndicators(element);
+        updateScrollIndicators(element, wrapper);
         ticking = false;
       });
       ticking = true;
@@ -226,12 +255,12 @@ export function setupScrollIndicators(element: HTMLElement | null): void {
 
   // Update on resize
   const resizeObserver = new ResizeObserver(() => {
-    updateScrollIndicators(element);
+    updateScrollIndicators(element, wrapper);
   });
   resizeObserver.observe(element);
 
   // Initial update
-  updateScrollIndicators(element);
+  updateScrollIndicators(element, wrapper);
 }
 
 /**

@@ -627,12 +627,13 @@
   }
 
   /* Scrollable Container with Fade Indicators */
-  .scrollable-with-fade {
+  /* Wrapper that contains the scrollable element and fade overlays */
+  .scrollable-fade-wrapper {
     position: relative;
   }
 
-  .scrollable-with-fade::before {
-    content: '';
+  /* Top fade overlay - stays fixed at top */
+  .scroll-fade-top {
     position: absolute;
     top: 0;
     left: 0;
@@ -645,8 +646,8 @@
     transition: opacity 0.3s ease;
   }
 
-  .scrollable-with-fade::after {
-    content: '';
+  /* Bottom fade overlay - stays fixed at bottom */
+  .scroll-fade-bottom {
     position: absolute;
     bottom: 0;
     left: 0;
@@ -659,25 +660,28 @@
     transition: opacity 0.3s ease;
   }
 
-  .scrollable-with-fade.is-scrolled::before {
+  /* Show top fade when scrolled */
+  .scrollable-fade-wrapper.is-scrolled .scroll-fade-top {
     opacity: 1;
   }
 
-  .scrollable-with-fade.has-overflow::after {
+  /* Show bottom fade when content overflows */
+  .scrollable-fade-wrapper.has-overflow .scroll-fade-bottom {
     opacity: 1;
   }
 
-  .scrollable-with-fade.is-scrolled.at-bottom::after {
+  /* Hide bottom fade when at bottom */
+  .scrollable-fade-wrapper.at-bottom .scroll-fade-bottom {
     opacity: 0;
   }
 
   /* Dark mode support for fade indicators */
   @media (prefers-color-scheme: dark) {
-    .scrollable-with-fade::before {
+    .scroll-fade-top {
       background: linear-gradient(to bottom, rgba(31, 41, 55, 0.95), transparent);
     }
 
-    .scrollable-with-fade::after {
+    .scroll-fade-bottom {
       background: linear-gradient(to top, rgba(31, 41, 55, 0.95), transparent);
     }
   }
