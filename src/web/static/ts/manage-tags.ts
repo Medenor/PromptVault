@@ -153,6 +153,7 @@ function renderRows(items: TagItem[]): void {
       <td class="py-2 pr-4">
         <input type="checkbox" data-select-id="${item.id}" />
       </td>
+      <td class="py-2 pr-4 text-gray-600">#${item.id}</td>
       <td class="py-2 pr-4">
         <input data-field="name" class="w-full px-2 py-1 border border-gray-300 rounded" value="${item.name}" />
       </td>
@@ -255,7 +256,7 @@ async function createTag(event: Event): Promise<void> {
   };
 
   if (!payload.name) {
-    alert('Name is required');
+    alert(tUnsafe('management.nameRequired'));
     return;
   }
 
@@ -289,7 +290,7 @@ async function saveTag(tagId: number, row: HTMLTableRowElement): Promise<void> {
 }
 
 async function deleteTag(tagId: number): Promise<void> {
-  const confirmed = window.confirm('Delete this tag?');
+  const confirmed = window.confirm(tUnsafe('management.deleteConfirm'));
   if (!confirmed) {
     return;
   }
@@ -297,8 +298,26 @@ async function deleteTag(tagId: number): Promise<void> {
     await apiFetch(`/api/tags/${tagId}?confirm=true`, {
       method: 'DELETE',
     });
+    showNotification(tUnsafe('management.deleteSuccess'), 'success');
     await loadTags();
   } catch (error) {
+    if (error instanceof APIRequestError && error.status === 422) {
+      const forceConfirmed = window.confirm(tUnsafe('management.forceDeleteConfirm'));
+      if (!forceConfirmed) {
+        return;
+      }
+      try {
+        await apiFetch(`/api/tags/${tagId}?confirm=true&force=true`, {
+          method: 'DELETE',
+        });
+        showNotification(tUnsafe('management.deleteSuccess'), 'success');
+        await loadTags();
+        return;
+      } catch (forceError) {
+        handleError(forceError, 'Failed to delete tag');
+        return;
+      }
+    }
     handleError(error, 'Failed to delete tag');
   }
 }
@@ -307,10 +326,10 @@ async function mergeTags(): Promise<void> {
   const targetId = Number(elements.mergeTarget?.value || '');
   const sourceIds = parseIdList(elements.mergeSources?.value || '');
   if (!targetId || sourceIds.length === 0) {
-    alert('Target ID and source IDs are required.');
+    alert(tUnsafe('management.mergeRequireIds'));
     return;
   }
-  const confirmed = window.confirm('Merge these tags?');
+  const confirmed = window.confirm(tUnsafe('management.mergeConfirm'));
   if (!confirmed) {
     return;
   }
@@ -319,6 +338,7 @@ async function mergeTags(): Promise<void> {
       method: 'POST',
       body: JSON.stringify({ target_id: targetId, source_ids: sourceIds, confirm: true }),
     });
+    showNotification(tUnsafe('management.mergeSuccess'), 'success');
     await loadTags();
   } catch (error) {
     handleError(error, 'Failed to merge tags');
@@ -329,10 +349,10 @@ async function findReplaceTags(): Promise<void> {
   const findValue = elements.findInput?.value.trim() || '';
   const replaceValue = elements.replaceInput?.value.trim() || '';
   if (!findValue || !replaceValue) {
-    alert('Find and replace values are required.');
+    alert(tUnsafe('management.findReplaceRequired'));
     return;
   }
-  const confirmed = window.confirm('Replace this tag name across prompts?');
+  const confirmed = window.confirm(tUnsafe('management.replaceConfirm'));
   if (!confirmed) {
     return;
   }
@@ -341,6 +361,7 @@ async function findReplaceTags(): Promise<void> {
       method: 'POST',
       body: JSON.stringify({ find: findValue, replace: replaceValue, confirm: true }),
     });
+    showNotification(tUnsafe('management.replaceSuccess'), 'success');
     await loadTags();
   } catch (error) {
     handleError(error, 'Failed to replace tag');
@@ -350,10 +371,10 @@ async function findReplaceTags(): Promise<void> {
 async function bulkDeleteTags(): Promise<void> {
   const ids = parseIdList(elements.bulkDeleteIds?.value || '');
   if (ids.length === 0) {
-    alert('Provide at least one ID.');
+    alert(tUnsafe('management.bulkDeleteRequireIds'));
     return;
   }
-  const confirmed = window.confirm('Delete selected tags?');
+  const confirmed = window.confirm(tUnsafe('management.bulkDeleteConfirm'));
   if (!confirmed) {
     return;
   }
@@ -363,6 +384,7 @@ async function bulkDeleteTags(): Promise<void> {
       method: 'POST',
       body: JSON.stringify({ ids, force, confirm: true }),
     });
+    showNotification(tUnsafe('management.bulkDeleteSuccess'), 'success');
     await loadTags();
   } catch (error) {
     handleError(error, 'Failed to delete tags');
@@ -379,6 +401,7 @@ async function exportTags(): Promise<void> {
     anchor.download = 'tags.json';
     anchor.click();
     URL.revokeObjectURL(url);
+    showNotification(tUnsafe('management.exportSuccess'), 'success');
   } catch (error) {
     handleError(error, 'Failed to export tags');
   }
@@ -387,7 +410,7 @@ async function exportTags(): Promise<void> {
 async function importTags(): Promise<void> {
   const file = elements.importFile?.files?.[0];
   if (!file) {
-    alert('Select a JSON file to import.');
+    alert(tUnsafe('management.importSelectFile'));
     return;
   }
   try {
@@ -403,6 +426,7 @@ async function importTags(): Promise<void> {
       method: 'POST',
       body: JSON.stringify({ items }),
     });
+    showNotification(tUnsafe('management.importSuccess'), 'success');
     await loadTags();
   } catch (error) {
     handleError(error, 'Failed to import tags');
@@ -457,7 +481,7 @@ function renderHierarchyTree(): void {
 
   const rootItems = byParent['root'] ?? [];
   if (rootItems.length === 0) {
-    elements.hierarchyTree.textContent = 'No hierarchy defined.';
+    elements.hierarchyTree.textContent = tUnsafe('management.noHierarchyDefined');
     return;
   }
 
@@ -504,12 +528,12 @@ function getSelectedIds(): number[] {
 async function mergeSelected(): Promise<void> {
   const ids = getSelectedIds();
   if (ids.length < 2) {
-    alert('Select at least two tags to merge.');
+    alert(tUnsafe('management.mergeSelectedRequire'));
     return;
   }
   const targetId = ids[0];
   const sourceIds = ids.slice(1);
-  const confirmed = window.confirm('Merge selected tags into the first selected?');
+  const confirmed = window.confirm(tUnsafe('management.mergeSelectedConfirm'));
   if (!confirmed) {
     return;
   }
@@ -518,6 +542,7 @@ async function mergeSelected(): Promise<void> {
       method: 'POST',
       body: JSON.stringify({ target_id: targetId, source_ids: sourceIds, confirm: true }),
     });
+    showNotification(tUnsafe('management.mergeSuccess'), 'success');
     await loadTags();
   } catch (error) {
     handleError(error, 'Failed to merge tags');
@@ -564,19 +589,21 @@ async function saveAllTags(): Promise<void> {
 async function findReplaceSelected(): Promise<void> {
   const ids = getSelectedIds();
   if (ids.length !== 1) {
-    alert('Select exactly one tag to replace.');
+    alert(tUnsafe('management.replaceSelectedRequireOne'));
     return;
   }
   const selected = cachedItems.find((item) => item.id === ids[0]);
   if (!selected) {
-    alert('Selected tag not found.');
+    alert(tUnsafe('management.replaceSelectedNotFound'));
     return;
   }
-  const replaceValue = window.prompt(`Replace '${selected.name}' with:`);
+  const replaceValue = window.prompt(
+    tUnsafe('management.replacePrompt', { name: selected.name })
+  );
   if (!replaceValue) {
     return;
   }
-  const confirmed = window.confirm('Replace this tag name across prompts?');
+  const confirmed = window.confirm(tUnsafe('management.replaceConfirm'));
   if (!confirmed) {
     return;
   }
@@ -585,6 +612,7 @@ async function findReplaceSelected(): Promise<void> {
       method: 'POST',
       body: JSON.stringify({ find: selected.name, replace: replaceValue, confirm: true }),
     });
+    showNotification(tUnsafe('management.replaceSuccess'), 'success');
     await loadTags();
   } catch (error) {
     handleError(error, 'Failed to replace tag');
@@ -596,6 +624,7 @@ async function undoLastOperation(): Promise<void> {
     await apiFetch('/api/tags/undo', {
       method: 'POST',
     });
+    showNotification(tUnsafe('management.undoSuccess'), 'success');
     await loadTags();
   } catch (error) {
     handleError(error, 'No operation to undo.');
@@ -744,6 +773,7 @@ async function assignTagsToPrompt(promptId: number, tags: string[]): Promise<voi
       method: 'POST',
       body: JSON.stringify({ prompt_ids: [promptId], add: tags, remove: [], confirm: true }),
     });
+    showNotification(tUnsafe('management.bulkUpdateSuccess'), 'success');
     await loadTags();
   } catch (error) {
     handleError(error, 'Failed to apply tags');

@@ -364,6 +364,13 @@ async def bulk_delete_categories(
             prompt_ids = [row[0] for row in db.query(Prompt.id).filter(Prompt.category_id == category_id).all()]
             delete_payloads.append({"category": _category_snapshot(category), "prompt_ids": prompt_ids})
 
+    # Clear historical references to avoid FK violations on delete.
+    from src.db.models import PromptVersion
+    db.query(PromptVersion).filter(PromptVersion.category_id.in_(payload.ids)).update(
+        {PromptVersion.category_id: None},
+        synchronize_session=False,
+    )
+
     # Now clear category assignments if force=true
     if payload.force:
         db.query(Prompt).filter(Prompt.category_id.in_(payload.ids)).update(
@@ -825,18 +832,25 @@ async def bulk_delete_tags(
         )
 
     # Collect prompt_ids for all tags BEFORE clearing associations
+    from sqlalchemy import select, delete
+    from src.db.models.associations import prompt_tags
+
     delete_payloads = []
     for tag_id in payload.ids:
         tag = tag_repo.get_by_id(tag_id)
         if tag:
-            delete_payloads.append({"tag": _tag_snapshot(tag), "prompt_ids": [p.id for p in tag.prompts]})
+            prompt_ids = [
+                row[0] for row in db.execute(
+                    select(prompt_tags.c.prompt_id).where(prompt_tags.c.tag_id == tag_id)
+                ).all()
+            ]
+            delete_payloads.append({"tag": _tag_snapshot(tag), "prompt_ids": prompt_ids})
 
     # THEN clear tag-prompt associations if force=true
     if payload.force:
-        for tag_id in payload.ids:
-            tag = tag_repo.get_by_id(tag_id)
-            if tag:
-                tag.prompts.clear()
+        db.execute(
+            delete(prompt_tags).where(prompt_tags.c.tag_id.in_(payload.ids))
+        )
 
     deleted = tag_repo.delete_many(payload.ids)
     db.commit()

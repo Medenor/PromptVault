@@ -145,6 +145,7 @@ function renderRows(items: CategoryItem[]): void {
       <td class="py-2 pr-4">
         <input type="checkbox" data-select-id="${item.id}" />
       </td>
+      <td class="py-2 pr-4 text-gray-600">#${item.id}</td>
       <td class="py-2 pr-4">
         <input data-field="name" class="w-full px-2 py-1 border border-gray-300 rounded" value="${item.name}" />
       </td>
@@ -239,7 +240,7 @@ async function createCategory(event: Event): Promise<void> {
   };
 
   if (!payload.name) {
-    alert('Name is required');
+    alert(tUnsafe('management.nameRequired'));
     return;
   }
 
@@ -273,7 +274,7 @@ async function saveCategory(categoryId: number, row: HTMLTableRowElement): Promi
 }
 
 async function deleteCategory(categoryId: number): Promise<void> {
-  const confirmed = window.confirm('Delete this category?');
+  const confirmed = window.confirm(tUnsafe('management.deleteConfirm'));
   if (!confirmed) {
     return;
   }
@@ -281,8 +282,26 @@ async function deleteCategory(categoryId: number): Promise<void> {
     await apiFetch(`/api/categories/${categoryId}?confirm=true`, {
       method: 'DELETE',
     });
+    showNotification(tUnsafe('management.deleteSuccess'), 'success');
     await loadCategories();
   } catch (error) {
+    if (error instanceof APIRequestError && error.status === 422) {
+      const forceConfirmed = window.confirm(tUnsafe('management.forceDeleteConfirm'));
+      if (!forceConfirmed) {
+        return;
+      }
+      try {
+        await apiFetch(`/api/categories/${categoryId}?confirm=true&force=true`, {
+          method: 'DELETE',
+        });
+        showNotification(tUnsafe('management.deleteSuccess'), 'success');
+        await loadCategories();
+        return;
+      } catch (forceError) {
+        handleError(forceError, 'Failed to delete category');
+        return;
+      }
+    }
     handleError(error, 'Failed to delete category');
   }
 }
@@ -291,10 +310,10 @@ async function mergeCategories(): Promise<void> {
   const targetId = Number(elements.mergeTarget?.value || '');
   const sourceIds = parseIdList(elements.mergeSources?.value || '');
   if (!targetId || sourceIds.length === 0) {
-    alert('Target ID and source IDs are required.');
+    alert(tUnsafe('management.mergeRequireIds'));
     return;
   }
-  const confirmed = window.confirm('Merge these categories?');
+  const confirmed = window.confirm(tUnsafe('management.mergeConfirm'));
   if (!confirmed) {
     return;
   }
@@ -303,6 +322,7 @@ async function mergeCategories(): Promise<void> {
       method: 'POST',
       body: JSON.stringify({ target_id: targetId, source_ids: sourceIds, confirm: true }),
     });
+    showNotification(tUnsafe('management.mergeSuccess'), 'success');
     await loadCategories();
   } catch (error) {
     handleError(error, 'Failed to merge categories');
@@ -313,10 +333,10 @@ async function findReplaceCategories(): Promise<void> {
   const findValue = elements.findInput?.value.trim() || '';
   const replaceValue = elements.replaceInput?.value.trim() || '';
   if (!findValue || !replaceValue) {
-    alert('Find and replace values are required.');
+    alert(tUnsafe('management.findReplaceRequired'));
     return;
   }
-  const confirmed = window.confirm('Replace this category name across prompts?');
+  const confirmed = window.confirm(tUnsafe('management.replaceConfirm'));
   if (!confirmed) {
     return;
   }
@@ -325,6 +345,7 @@ async function findReplaceCategories(): Promise<void> {
       method: 'POST',
       body: JSON.stringify({ find: findValue, replace: replaceValue, confirm: true }),
     });
+    showNotification(tUnsafe('management.replaceSuccess'), 'success');
     await loadCategories();
   } catch (error) {
     handleError(error, 'Failed to replace category');
@@ -334,10 +355,10 @@ async function findReplaceCategories(): Promise<void> {
 async function bulkDeleteCategories(): Promise<void> {
   const ids = parseIdList(elements.bulkDeleteIds?.value || '');
   if (ids.length === 0) {
-    alert('Provide at least one ID.');
+    alert(tUnsafe('management.bulkDeleteRequireIds'));
     return;
   }
-  const confirmed = window.confirm('Delete selected categories?');
+  const confirmed = window.confirm(tUnsafe('management.bulkDeleteConfirm'));
   if (!confirmed) {
     return;
   }
@@ -347,6 +368,7 @@ async function bulkDeleteCategories(): Promise<void> {
       method: 'POST',
       body: JSON.stringify({ ids, force, confirm: true }),
     });
+    showNotification(tUnsafe('management.bulkDeleteSuccess'), 'success');
     await loadCategories();
   } catch (error) {
     handleError(error, 'Failed to delete categories');
@@ -363,6 +385,7 @@ async function exportCategories(): Promise<void> {
     anchor.download = 'categories.json';
     anchor.click();
     URL.revokeObjectURL(url);
+    showNotification(tUnsafe('management.exportSuccess'), 'success');
   } catch (error) {
     handleError(error, 'Failed to export categories');
   }
@@ -371,7 +394,7 @@ async function exportCategories(): Promise<void> {
 async function importCategories(): Promise<void> {
   const file = elements.importFile?.files?.[0];
   if (!file) {
-    alert('Select a JSON file to import.');
+    alert(tUnsafe('management.importSelectFile'));
     return;
   }
   try {
@@ -387,6 +410,7 @@ async function importCategories(): Promise<void> {
       method: 'POST',
       body: JSON.stringify({ items }),
     });
+    showNotification(tUnsafe('management.importSuccess'), 'success');
     await loadCategories();
   } catch (error) {
     handleError(error, 'Failed to import categories');
@@ -408,12 +432,12 @@ function getSelectedIds(): number[] {
 async function mergeSelected(): Promise<void> {
   const ids = getSelectedIds();
   if (ids.length < 2) {
-    alert('Select at least two categories to merge.');
+    alert(tUnsafe('management.mergeSelectedRequire'));
     return;
   }
   const targetId = ids[0];
   const sourceIds = ids.slice(1);
-  const confirmed = window.confirm('Merge selected categories into the first selected?');
+  const confirmed = window.confirm(tUnsafe('management.mergeSelectedConfirm'));
   if (!confirmed) {
     return;
   }
@@ -422,6 +446,7 @@ async function mergeSelected(): Promise<void> {
       method: 'POST',
       body: JSON.stringify({ target_id: targetId, source_ids: sourceIds, confirm: true }),
     });
+    showNotification(tUnsafe('management.mergeSuccess'), 'success');
     await loadCategories();
   } catch (error) {
     handleError(error, 'Failed to merge categories');
@@ -468,19 +493,21 @@ async function saveAllCategories(): Promise<void> {
 async function findReplaceSelected(): Promise<void> {
   const ids = getSelectedIds();
   if (ids.length !== 1) {
-    alert('Select exactly one category to replace.');
+    alert(tUnsafe('management.replaceSelectedRequireOne'));
     return;
   }
   const selected = cachedItems.find((item) => item.id === ids[0]);
   if (!selected) {
-    alert('Selected category not found.');
+    alert(tUnsafe('management.replaceSelectedNotFound'));
     return;
   }
-  const replaceValue = window.prompt(`Replace '${selected.name}' with:`);
+  const replaceValue = window.prompt(
+    tUnsafe('management.replacePrompt', { name: selected.name })
+  );
   if (!replaceValue) {
     return;
   }
-  const confirmed = window.confirm('Replace this category name across prompts?');
+  const confirmed = window.confirm(tUnsafe('management.replaceConfirm'));
   if (!confirmed) {
     return;
   }
@@ -489,6 +516,7 @@ async function findReplaceSelected(): Promise<void> {
       method: 'POST',
       body: JSON.stringify({ find: selected.name, replace: replaceValue, confirm: true }),
     });
+    showNotification(tUnsafe('management.replaceSuccess'), 'success');
     await loadCategories();
   } catch (error) {
     handleError(error, 'Failed to replace category');
@@ -500,6 +528,7 @@ async function undoLastOperation(): Promise<void> {
     await apiFetch('/api/categories/undo', {
       method: 'POST',
     });
+    showNotification(tUnsafe('management.undoSuccess'), 'success');
     await loadCategories();
   } catch (error) {
     handleError(error, 'No operation to undo.');
@@ -630,6 +659,7 @@ async function assignCategoryToPrompt(promptId: number, category: string): Promi
       method: 'POST',
       body: JSON.stringify({ prompt_ids: [promptId], category, confirm: true }),
     });
+    showNotification(tUnsafe('management.assignSuccess'), 'success');
     await loadCategories();
   } catch (error) {
     handleError(error, 'Failed to assign category');
