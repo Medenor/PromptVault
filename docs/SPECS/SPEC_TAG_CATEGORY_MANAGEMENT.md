@@ -1,7 +1,7 @@
 ---
 id: spec-tag-category-management
 title: Tag and Category Management
-version: 1.2.0
+version: 1.0.0
 date_created: 2026-01-21
 last_updated: 2026-01-30
 owner: medenor
@@ -35,6 +35,8 @@ bulk operations, analytics, orphan detection, and suggestions derived from promp
 - Import/export of Tag and Category definitions.
 - Suggestion generation from prompt content.
 - Compatibility with existing list endpoints.
+- Save-all updates for management tables.
+- Orphan assignment by name or ID.
 
 ### 2.3 Out of Scope
 
@@ -42,6 +44,7 @@ bulk operations, analytics, orphan detection, and suggestions derived from promp
 - External machine learning services.
 - Changes to prompt creation/editing data models beyond Tag/Category management.
 - Full hierarchical taxonomy enforcement (optional future feature).
+- Custom category ordering / drag-and-drop ordering (deferred).
 
 ### 2.4 Assumptions
 
@@ -157,8 +160,8 @@ Not applicable. Any transition not listed MUST be considered invalid.
 - **REQ-015 — Search and Filter**  
   The system **MUST** provide search and filter over Tags and Categories by name and usage.
 
-- **REQ-016 — Ordering**  
-  The system **MUST** allow a custom order for Categories.
+- **REQ-016 — History Integrity**  
+  The system **MUST** preserve referential integrity in prompt history when Tags or Categories are merged or deleted by updating historical references as needed.
 
 ### 5.2 Security Requirements (SEC-***)
 
@@ -313,7 +316,7 @@ Not applicable. Any transition not listed MUST be considered invalid.
 |-------|-------------|
 | Identifier | POST /api/categories/reorder |
 | Auth Required | yes |
-| Description | Sets custom Category ordering. |
+| Description | **Deferred** (not implemented in current UI). |
 
 #### Operation: Category Orphans
 
@@ -558,6 +561,7 @@ Constraints identical to CategoryCreateRequest.
   "ordered_ids": ["string"]
 }
 ```
+**Note:** Reordering is deferred and not currently exposed in the UI.
 
 #### TagCreateRequest
 
@@ -811,7 +815,7 @@ NOTE: Examples are illustrative only.
 | REQ-014b | AC-TCM-011 | TEST-REQ-002 | POST /api/*/undo (user isolation) |
 | REQ-014c | AC-TCM-011 | TEST-REQ-001 | POST /api/*/undo (depth limit) |
 | REQ-015 | AC-TCM-012 | TEST-REQ-001 | GET /api/*/manage |
-| REQ-016 | AC-TCM-013 | TEST-REQ-001 | POST /api/categories/reorder |
+| REQ-016 | AC-TCM-013 | TEST-REQ-001 | Merge/delete operations |
 | SEC-001 | AC-TCM-014 | TEST-REQ-002 | All management interfaces |
 | SEC-002 | AC-TCM-014 | TEST-REQ-002 | All destructive interfaces |
 | NFR-001 | AC-TCM-001 | TEST-REQ-004 | Compatibility interfaces |
@@ -825,6 +829,15 @@ NOTE: Examples are illustrative only.
 
 - docs/PLAN_TAG_CATEGORY_MANAGEMENT.md
 - docs/SPECS/SPEC_DATABASE.md
+
+---
+
+## 15. Implementation Notes (Non-normative)
+
+- Management tables display item IDs to support bulk actions.
+- Save-all actions allow updating multiple rows in a single user workflow.
+- Orphan assignment inputs accept either name or ID (IDs resolve to names before submit).
+- Inline color pickers are available in row editing to speed color selection.
 
 ---
 
