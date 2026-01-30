@@ -172,7 +172,7 @@
     "replacePlaceholder": "Replace name",
     "idsPlaceholder": "IDs (comma-separated)",
     "forceDelete": "Force delete (remove from prompts)",
-    "assignPlaceholder": "Category name to assign",
+    "assignPlaceholder": "Category name or ID to assign",
     "searchCategoriesPlaceholder": "Search categories...",
     "searchTagsPlaceholder": "Search tags...",
     "id": "ID",
@@ -187,7 +187,7 @@
     "promptDetails": "Prompt details",
     "untitledPrompt": "Untitled prompt",
     "promptNotFound": "Prompt not found",
-    "tagsPlaceholder": "Tags (comma-separated)",
+    "tagsPlaceholder": "Tags or IDs (comma-separated)",
     "saveSuccess": "Saved successfully.",
     "noRows": "No rows to save.",
     "createSuccess": "Created successfully.",
@@ -223,7 +223,8 @@
     "importTitle": "Import",
     "exportDesc": "Download your definitions.",
     "importDesc": "Upload a JSON file to create or update items.",
-    "importDrop": "Choose a JSON file"
+    "importDrop": "Choose a JSON file",
+    "idNotFound": "No item found for ID {{id}}."
   },
   "bulkTag": {
     "title": "Bulk Tag Update",

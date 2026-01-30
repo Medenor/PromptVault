@@ -505,7 +505,7 @@
     "replacePlaceholder": "Name ersetzen",
     "idsPlaceholder": "IDs (kommagetrennt)",
     "forceDelete": "Erzwungen löschen (aus Prompts entfernen)",
-    "assignPlaceholder": "Kategorie zum Zuweisen",
+    "assignPlaceholder": "Kategorie-Name oder ID zum Zuweisen",
     "searchCategoriesPlaceholder": "Kategorien durchsuchen...",
     "searchTagsPlaceholder": "Tags durchsuchen...",
     "id": "ID",
@@ -521,7 +521,7 @@
     "promptDetails": "Prompt-Details",
     "untitledPrompt": "Prompt ohne Titel",
     "promptNotFound": "Prompt nicht gefunden",
-    "tagsPlaceholder": "Tags (kommagetrennt)",
+    "tagsPlaceholder": "Tags oder IDs (kommagetrennt)",
     "saveSuccess": "Gespeichert.",
     "noRows": "Keine Zeilen zum Speichern.",
     "createSuccess": "Erstellt.",
@@ -557,7 +557,8 @@
     "importTitle": "Importieren",
     "exportDesc": "Definitionen herunterladen.",
     "importDesc": "Eine JSON-Datei hochladen, um Einträge zu erstellen oder zu aktualisieren.",
-    "importDrop": "JSON-Datei auswählen"
+    "importDrop": "JSON-Datei auswählen",
+    "idNotFound": "Kein Eintrag für die ID {{id}} gefunden."
   },
   "bulkTag": {
     "title": "Massen-Tag-Aktualisierung",

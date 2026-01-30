@@ -504,7 +504,7 @@
     "replacePlaceholder": "Nom de remplacement",
     "idsPlaceholder": "IDs (séparés par des virgules)",
     "forceDelete": "Suppression forcée (retirer des prompts)",
-    "assignPlaceholder": "Nom de catégorie à attribuer",
+    "assignPlaceholder": "Nom ou ID de catégorie à attribuer",
     "searchCategoriesPlaceholder": "Rechercher des catégories...",
     "searchTagsPlaceholder": "Rechercher des étiquettes...",
     "id": "ID",
@@ -520,7 +520,7 @@
     "promptDetails": "Détails du prompt",
     "untitledPrompt": "Prompt sans titre",
     "promptNotFound": "Prompt introuvable",
-    "tagsPlaceholder": "Étiquettes (séparées par des virgules)",
+    "tagsPlaceholder": "Étiquettes ou IDs (séparées par des virgules)",
     "saveSuccess": "Enregistré avec succès.",
     "noRows": "Aucune ligne à enregistrer.",
     "createSuccess": "Créé avec succès.",
@@ -556,7 +556,8 @@
     "importTitle": "Importer",
     "exportDesc": "Téléchargez vos données.",
     "importDesc": "Chargez un fichier JSON pour créer ou mettre à jour des éléments.",
-    "importDrop": "Choisir un fichier JSON"
+    "importDrop": "Choisir un fichier JSON",
+    "idNotFound": "Aucun élément trouvé pour l’ID {{id}}."
   },
   "bulkTag": {
     "title": "Mise à jour groupée des étiquettes",

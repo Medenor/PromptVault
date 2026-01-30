@@ -73,6 +73,30 @@ function normalizeSearch(value: string): string {
   return value.trim().toLowerCase();
 }
 
+function resolveTagInputs(rawTags: string): string[] | null {
+  const tokens = rawTags
+    .split(',')
+    .map((tag) => tag.trim())
+    .filter((tag) => tag.length > 0);
+  if (tokens.length === 0) {
+    return null;
+  }
+  const resolved: string[] = [];
+  for (const token of tokens) {
+    if (/^\d+$/.test(token)) {
+      const id = Number(token);
+      const match = cachedItems.find((item) => item.id === id);
+      if (!match) {
+        alert(tUnsafe('management.idNotFound', { id }));
+        return null;
+      }
+      resolved.push(match.name);
+    } else {
+      resolved.push(token);
+    }
+  }
+  return resolved;
+}
 function normalizeHexValue(value: string | null | undefined): string | null {
   if (!value) {
     return null;
@@ -754,12 +778,8 @@ async function renderPromptDetails(promptIds: number[], container: HTMLElement):
         alert(tUnsafe('management.tagsPlaceholder'));
         return;
       }
-      const tags = rawTags
-        .split(',')
-        .map((tag) => tag.trim())
-        .filter((tag) => tag.length > 0);
-      if (tags.length === 0) {
-        alert(tUnsafe('management.tagsPlaceholder'));
+      const tags = resolveTagInputs(rawTags);
+      if (!tags || tags.length === 0) {
         return;
       }
       void assignTagsToPrompt(promptId, tags);

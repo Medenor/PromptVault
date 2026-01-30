@@ -70,6 +70,22 @@ function normalizeSearch(value: string): string {
   return value.trim().toLowerCase();
 }
 
+function resolveCategoryInput(rawCategory: string): string | null {
+  const trimmed = rawCategory.trim();
+  if (!trimmed) {
+    return null;
+  }
+  if (/^\d+$/.test(trimmed)) {
+    const id = Number(trimmed);
+    const match = cachedItems.find((item) => item.id === id);
+    if (!match) {
+      alert(tUnsafe('management.idNotFound', { id }));
+      return null;
+    }
+    return match.name;
+  }
+  return trimmed;
+}
 function normalizeHexValue(value: string | null | undefined): string | null {
   if (!value) {
     return null;
@@ -648,7 +664,11 @@ async function renderPromptDetails(promptIds: number[], container: HTMLElement):
         alert(tUnsafe('management.assignPlaceholder'));
         return;
       }
-      void assignCategoryToPrompt(promptId, category);
+      const resolved = resolveCategoryInput(category);
+      if (!resolved) {
+        return;
+      }
+      void assignCategoryToPrompt(promptId, resolved);
     });
   });
 }
