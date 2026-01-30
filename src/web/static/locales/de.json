@@ -539,6 +539,8 @@
     "nameRequired": "Name ist erforderlich.",
     "mergeRequireIds": "Ziel-ID und Quell-IDs sind erforderlich.",
     "mergeConfirm": "Diese Einträge zusammenführen?",
+    "mergeTargetHelp": "Ziel ist der Eintrag, der nach dem Zusammenführen bestehen bleibt.",
+    "mergeSourcesHelp": "Quellen werden in das Ziel zusammengeführt und entfernt.",
     "findReplaceRequired": "Such- und Ersatzwerte sind erforderlich.",
     "replaceConfirm": "Diesen Namen in allen Prompts ersetzen?",
     "bulkDeleteRequireIds": "Bitte mindestens eine ID angeben.",
@@ -549,7 +551,13 @@
     "replaceSelectedRequireOne": "Bitte genau ein Element zum Ersetzen auswählen.",
     "replaceSelectedNotFound": "Ausgewähltes Element nicht gefunden.",
     "replacePrompt": "\"{{name}}\" ersetzen durch:",
-    "noHierarchyDefined": "Keine Hierarchie definiert."
+    "noHierarchyDefined": "Keine Hierarchie definiert.",
+    "importExportHint": "Nur JSON",
+    "exportTitle": "Exportieren",
+    "importTitle": "Importieren",
+    "exportDesc": "Definitionen herunterladen.",
+    "importDesc": "Eine JSON-Datei hochladen, um Einträge zu erstellen oder zu aktualisieren.",
+    "importDrop": "JSON-Datei auswählen"
   },
   "bulkTag": {
     "title": "Massen-Tag-Aktualisierung",

@@ -102,15 +102,15 @@
                   />
                 </div>
               </div>
-              <div class="flex items-end">
-                <button
-                  type="submit"
-                  class="px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
-                  data-i18n="actions.create"
-                >
-                  Create
-                </button>
-              </div>
+            </div>
+            <div class="mt-4 flex justify-end">
+              <button
+                type="submit"
+                class="px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                data-i18n="actions.create"
+              >
+                Create
+              </button>
             </div>
           </form>
         </section>
@@ -205,6 +205,7 @@
               data-i18n-placeholder="management.targetIdPlaceholder"
               class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
             />
+                <p class="text-xs text-gray-500" data-i18n="management.mergeTargetHelp">Target is the tag that remains after merge.</p>
                 <input
               id="tag-merge-sources"
               type="text"
@@ -212,6 +213,7 @@
               data-i18n-placeholder="management.sourceIdsPlaceholder"
               class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
             />
+                <p class="text-xs text-gray-500" data-i18n="management.mergeSourcesHelp">Sources will be merged into the target and removed.</p>
                 <button
                   id="tag-merge-btn"
                   class="w-full px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
@@ -285,24 +287,53 @@
         </section>
 
         <section class="bg-white rounded-lg shadow p-6 mb-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4" data-i18n="management.importExport">Import & Export</h3>
-          <div class="flex flex-col md:flex-row gap-4 items-start md:items-center">
-            <button
-              id="tag-export-btn"
-              class="px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
-              data-i18n="actions.export"
-            >
-              Export JSON
-            </button>
-            <div class="flex items-center gap-3">
-              <input id="tag-import-file" type="file" accept="application/json" />
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-gray-900" data-i18n="management.importExport">Import & Export</h3>
+            <span class="text-xs text-gray-500" data-i18n="management.importExportHint">JSON only</span>
+          </div>
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div class="rounded-lg border border-gray-200 bg-gray-50 p-4">
+              <div class="flex items-center justify-between mb-2">
+                <h4 class="text-sm font-semibold text-gray-800" data-i18n="management.exportTitle">Export</h4>
+                <span class="text-xs text-gray-500">.json</span>
+              </div>
+              <p class="text-sm text-gray-600 mb-4" data-i18n="management.exportDesc">
+                Download your tag definitions.
+              </p>
               <button
-                id="tag-import-btn"
-                class="px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
-                data-i18n="actions.import"
+                id="tag-export-btn"
+                class="w-full px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                data-i18n="actions.export"
               >
-                Import
+                Export JSON
               </button>
+            </div>
+            <div class="rounded-lg border border-gray-200 bg-gray-50 p-4">
+              <div class="flex items-center justify-between mb-2">
+                <h4 class="text-sm font-semibold text-gray-800" data-i18n="management.importTitle">Import</h4>
+                <span class="text-xs text-gray-500">.json</span>
+              </div>
+              <p class="text-sm text-gray-600 mb-4" data-i18n="management.importDesc">
+                Upload a JSON file to create or update tags.
+              </p>
+              <div class="flex flex-col gap-3">
+                <label class="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-gray-300 bg-white px-3 py-4 text-sm text-gray-600">
+                  <span data-i18n="management.importDrop">Choose a JSON file</span>
+                  <input
+                    id="tag-import-file"
+                    type="file"
+                    accept="application/json"
+                    class="text-xs text-gray-600"
+                  />
+                </label>
+                <button
+                  id="tag-import-btn"
+                  class="w-full px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                  data-i18n="actions.import"
+                >
+                  Import
+                </button>
+              </div>
             </div>
           </div>
         </section>

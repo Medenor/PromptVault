@@ -205,6 +205,8 @@
     "nameRequired": "Name is required.",
     "mergeRequireIds": "Target ID and source IDs are required.",
     "mergeConfirm": "Merge these items?",
+    "mergeTargetHelp": "Target is the item that remains after merge.",
+    "mergeSourcesHelp": "Sources will be merged into the target and removed.",
     "findReplaceRequired": "Find and replace values are required.",
     "replaceConfirm": "Replace this name across prompts?",
     "bulkDeleteRequireIds": "Provide at least one ID.",
@@ -215,7 +217,13 @@
     "replaceSelectedRequireOne": "Select exactly one item to replace.",
     "replaceSelectedNotFound": "Selected item not found.",
     "replacePrompt": "Replace '{{name}}' with:",
-    "noHierarchyDefined": "No hierarchy defined."
+    "noHierarchyDefined": "No hierarchy defined.",
+    "importExportHint": "JSON only",
+    "exportTitle": "Export",
+    "importTitle": "Import",
+    "exportDesc": "Download your definitions.",
+    "importDesc": "Upload a JSON file to create or update items.",
+    "importDrop": "Choose a JSON file"
   },
   "bulkTag": {
     "title": "Bulk Tag Update",

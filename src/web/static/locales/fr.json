@@ -538,6 +538,8 @@
     "nameRequired": "Le nom est requis.",
     "mergeRequireIds": "L’ID cible et les IDs source sont requis.",
     "mergeConfirm": "Fusionner ces éléments ?",
+    "mergeTargetHelp": "La cible est l’élément qui reste après la fusion.",
+    "mergeSourcesHelp": "Les sources seront fusionnées dans la cible et supprimées.",
     "findReplaceRequired": "Les valeurs de recherche et de remplacement sont requises.",
     "replaceConfirm": "Remplacer ce nom dans tous les prompts ?",
     "bulkDeleteRequireIds": "Fournissez au moins un ID.",
@@ -548,7 +550,13 @@
     "replaceSelectedRequireOne": "Sélectionnez exactement un élément à remplacer.",
     "replaceSelectedNotFound": "Élément sélectionné introuvable.",
     "replacePrompt": "Remplacer « {{name}} » par :",
-    "noHierarchyDefined": "Aucune hiérarchie définie."
+    "noHierarchyDefined": "Aucune hiérarchie définie.",
+    "importExportHint": "JSON uniquement",
+    "exportTitle": "Exporter",
+    "importTitle": "Importer",
+    "exportDesc": "Téléchargez vos données.",
+    "importDesc": "Chargez un fichier JSON pour créer ou mettre à jour des éléments.",
+    "importDrop": "Choisir un fichier JSON"
   },
   "bulkTag": {
     "title": "Mise à jour groupée des étiquettes",

@@ -539,6 +539,8 @@
     "nameRequired": "El nombre es obligatorio.",
     "mergeRequireIds": "Se requieren ID de destino e IDs de origen.",
     "mergeConfirm": "¿Combinar estos elementos?",
+    "mergeTargetHelp": "El destino es el elemento que queda después de combinar.",
+    "mergeSourcesHelp": "Los orígenes se combinarán en el destino y se eliminarán.",
     "findReplaceRequired": "Se requieren valores de búsqueda y reemplazo.",
     "replaceConfirm": "¿Reemplazar este nombre en los prompts?",
     "bulkDeleteRequireIds": "Proporcione al menos un ID.",
@@ -549,7 +551,13 @@
     "replaceSelectedRequireOne": "Seleccione exactamente un elemento para reemplazar.",
     "replaceSelectedNotFound": "Elemento seleccionado no encontrado.",
     "replacePrompt": "Reemplazar \"{{name}}\" por:",
-    "noHierarchyDefined": "No hay jerarquía definida."
+    "noHierarchyDefined": "No hay jerarquía definida.",
+    "importExportHint": "Solo JSON",
+    "exportTitle": "Exportar",
+    "importTitle": "Importar",
+    "exportDesc": "Descarga tus definiciones.",
+    "importDesc": "Sube un archivo JSON para crear o actualizar elementos.",
+    "importDrop": "Elegir un archivo JSON"
   },
   "bulkTag": {
     "title": "Actualización masiva de etiquetas",
