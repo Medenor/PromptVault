@@ -9,6 +9,7 @@ import { apiFetch, APIRequestError } from '@/utils/api';
 import { initI18n, tUnsafe, updateStaticTranslations } from '@/utils/i18n';
 import { initializeColorPicker, ColorPicker } from '@/utils/color-picker';
 import { setupScrollIndicators } from '@/utils/dom';
+import { showNotification } from '@/utils/notifications';
 
 type TagItem = {
   id: number;
@@ -46,6 +47,7 @@ const elements = {
   importButton: document.getElementById('tag-import-btn') as HTMLButtonElement | null,
   selectionMergeButton: document.getElementById('tag-selection-merge-btn') as HTMLButtonElement | null,
   selectionFindReplaceButton: document.getElementById('tag-selection-find-replace-btn') as HTMLButtonElement | null,
+  saveAllButton: document.getElementById('tag-save-all-btn') as HTMLButtonElement | null,
   undoButton: document.getElementById('tag-undo-btn') as HTMLButtonElement | null,
   analyticsTotal: document.getElementById('tag-analytics-total') as HTMLElement | null,
   analyticsUsed: document.getElementById('tag-analytics-used') as HTMLElement | null,
@@ -71,11 +73,43 @@ function normalizeSearch(value: string): string {
   return value.trim().toLowerCase();
 }
 
+function normalizeHexValue(value: string | null | undefined): string | null {
+  if (!value) {
+    return null;
+  }
+  const trimmed = value.trim();
+  const normalized = trimmed.startsWith('#') ? trimmed : `#${trimmed}`;
+  return /^#[0-9a-fA-F]{6}$/.test(normalized) ? normalized.toUpperCase() : null;
+}
+
+function normalizeHexForPicker(value: string | null | undefined): string {
+  return normalizeHexValue(value) ?? '#3B82F6';
+}
+
 function filterItems(items: TagItem[], query: string): TagItem[] {
   if (!query) {
     return items;
   }
   return items.filter((item) => item.name.toLowerCase().includes(query));
+}
+
+function buildTagPayload(row: HTMLTableRowElement): Record<string, unknown> {
+  const fields = row.querySelectorAll<HTMLInputElement | HTMLSelectElement>('[data-field]');
+  const payload: Record<string, unknown> = {};
+
+  fields.forEach((field) => {
+    const key = field.dataset.field as string;
+    if (!key) {
+      return;
+    }
+    if (key === 'parent_tag_id') {
+      payload[key] = field.value ? Number(field.value) : null;
+    } else {
+      payload[key] = field.value.trim();
+    }
+  });
+
+  return payload;
 }
 
 function renderRows(items: TagItem[]): void {
@@ -105,6 +139,11 @@ function renderRows(items: TagItem[]): void {
     }
   }
 
+  const saveLabel = tUnsafe('actions.save');
+  const deleteLabel = tUnsafe('actions.delete');
+  const parentNoneLabel = tUnsafe('management.parentNone');
+  const colorLabel = tUnsafe('management.color');
+
   for (const item of items) {
     const row = document.createElement('tr');
     row.className = 'border-b border-gray-100';
@@ -121,18 +160,28 @@ function renderRows(items: TagItem[]): void {
         <input data-field="description" class="w-full px-2 py-1 border border-gray-300 rounded" value="${item.description ?? ''}" />
       </td>
       <td class="py-2 pr-4">
-        <input data-field="color" class="w-full px-2 py-1 border border-gray-300 rounded" value="${item.color ?? ''}" />
+        <div class="flex items-center gap-2">
+          <input data-field="color" class="w-full px-2 py-1 border border-gray-300 rounded" value="${item.color ?? ''}" />
+          <input
+            data-color-picker
+            type="color"
+            value="${normalizeHexForPicker(item.color)}"
+            title="${colorLabel}"
+            aria-label="${colorLabel}"
+            class="h-8 w-8 rounded border border-gray-300 p-0"
+          />
+        </div>
       </td>
       <td class="py-2 pr-4">
         <select data-field="parent_tag_id" class="w-36 px-2 py-1 border border-gray-300 rounded">
-          ${renderParentOptions(item.id, item.parent_tag_id ?? null)}
+          ${renderParentOptions(item.id, item.parent_tag_id ?? null, parentNoneLabel)}
         </select>
       </td>
       <td class="py-2 pr-4 text-gray-600">${item.usage_count}</td>
       <td class="py-2 pr-4">
         <div class="flex items-center gap-2">
-          <button data-action="save" class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">Save</button>
-          <button data-action="delete" class="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700">Delete</button>
+          <button data-action="save" class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">${saveLabel}</button>
+          <button data-action="delete" class="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700">${deleteLabel}</button>
         </div>
       </td>
     `;
@@ -144,6 +193,20 @@ function renderRows(items: TagItem[]): void {
     row.querySelector('[data-action="delete"]')?.addEventListener('click', () => {
       void deleteTag(item.id);
     });
+
+    const colorInput = row.querySelector<HTMLInputElement>('input[data-field="color"]');
+    const colorPicker = row.querySelector<HTMLInputElement>('input[data-color-picker]');
+    if (colorInput && colorPicker) {
+      colorPicker.addEventListener('input', () => {
+        colorInput.value = colorPicker.value;
+      });
+      colorInput.addEventListener('input', () => {
+        const normalized = normalizeHexValue(colorInput.value);
+        if (normalized) {
+          colorPicker.value = normalized;
+        }
+      });
+    }
 
     elements.tableBody.appendChild(row);
   }
@@ -201,6 +264,7 @@ async function createTag(event: Event): Promise<void> {
       method: 'POST',
       body: JSON.stringify(payload),
     });
+    showNotification(tUnsafe('management.createSuccess'), 'success');
     if (elements.createForm) {
       elements.createForm.reset();
     }
@@ -211,26 +275,13 @@ async function createTag(event: Event): Promise<void> {
 }
 
 async function saveTag(tagId: number, row: HTMLTableRowElement): Promise<void> {
-  const fields = row.querySelectorAll<HTMLInputElement | HTMLSelectElement>('[data-field]');
-  const payload: Record<string, unknown> = {};
-
-  fields.forEach((field) => {
-    const key = field.dataset.field as string;
-    if (!key) {
-      return;
-    }
-    if (key === 'parent_tag_id') {
-      payload[key] = field.value ? Number(field.value) : null;
-    } else {
-      payload[key] = field.value.trim();
-    }
-  });
-
+  const payload = buildTagPayload(row);
   try {
     await apiFetch(`/api/tags/${tagId}`, {
       method: 'PUT',
       body: JSON.stringify(payload),
     });
+    showNotification(tUnsafe('management.saveSuccess'), 'success');
     await loadTags();
   } catch (error) {
     handleError(error, 'Failed to update tag');
@@ -358,8 +409,12 @@ async function importTags(): Promise<void> {
   }
 }
 
-function renderParentOptions(currentId: number, selectedId: number | null): string {
-  const options = ['<option value="">No parent</option>'];
+function renderParentOptions(
+  currentId: number,
+  selectedId: number | null,
+  parentNoneLabel: string
+): string {
+  const options = [`<option value="">${parentNoneLabel}</option>`];
   cachedItems.forEach((item) => {
     if (item.id === currentId) {
       return;
@@ -374,7 +429,7 @@ function populateCreateParentSelect(): void {
   if (!elements.createParent) {
     return;
   }
-  elements.createParent.innerHTML = '<option value="">No parent</option>';
+  elements.createParent.innerHTML = `<option value="">${tUnsafe('management.parentNone')}</option>`;
   cachedItems.forEach((item) => {
     const option = document.createElement('option');
     option.value = String(item.id);
@@ -467,6 +522,43 @@ async function mergeSelected(): Promise<void> {
   } catch (error) {
     handleError(error, 'Failed to merge tags');
   }
+}
+
+async function saveAllTags(): Promise<void> {
+  if (!elements.tableBody) {
+    return;
+  }
+  const rows = Array.from(elements.tableBody.querySelectorAll<HTMLTableRowElement>('tr'));
+  if (rows.length === 0) {
+    alert(tUnsafe('management.noRows'));
+    return;
+  }
+
+  let failed = 0;
+  for (const row of rows) {
+    const idValue = Number(row.dataset.id || '');
+    if (!Number.isFinite(idValue)) {
+      continue;
+    }
+    const payload = buildTagPayload(row);
+    try {
+      await apiFetch(`/api/tags/${idValue}`, {
+        method: 'PUT',
+        body: JSON.stringify(payload),
+      });
+    } catch (error) {
+      failed += 1;
+      console.error(error);
+    }
+  }
+
+  if (failed === 0) {
+    showNotification(tUnsafe('management.saveSuccess'), 'success');
+  } else {
+    showNotification(tUnsafe('messages.error'), 'error');
+  }
+
+  await loadTags();
 }
 
 async function findReplaceSelected(): Promise<void> {
@@ -708,6 +800,9 @@ function init(): void {
   });
   elements.selectionFindReplaceButton?.addEventListener('click', () => {
     void findReplaceSelected();
+  });
+  elements.saveAllButton?.addEventListener('click', () => {
+    void saveAllTags();
   });
   elements.undoButton?.addEventListener('click', () => {
     void undoLastOperation();

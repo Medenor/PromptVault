@@ -285,6 +285,12 @@ async def merge_categories(
     if not target:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Target category not found")
 
+    if payload.target_id in payload.source_ids:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Target category cannot be included in source categories",
+        )
+
     missing = [
         source_id for source_id in payload.source_ids
         if category_repo.get_by_id(source_id) is None

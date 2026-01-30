@@ -49,6 +49,7 @@
     "findReplaceSelected": "Rechercher/Remplacer la sélection",
     "replace": "Remplacer",
     "saveOrder": "Enregistrer l'ordre",
+    "saveAll": "Tout enregistrer",
     "undo": "Annuler"
   },
   "form": {
@@ -518,7 +519,10 @@
     "promptDetails": "Détails du prompt",
     "untitledPrompt": "Prompt sans titre",
     "promptNotFound": "Prompt introuvable",
-    "tagsPlaceholder": "Étiquettes (séparées par des virgules)"
+    "tagsPlaceholder": "Étiquettes (séparées par des virgules)",
+    "saveSuccess": "Enregistré avec succès.",
+    "noRows": "Aucune ligne à enregistrer.",
+    "createSuccess": "Créé avec succès."
   },
   "bulkTag": {
     "title": "Mise à jour groupée des étiquettes",

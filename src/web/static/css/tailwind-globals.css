@@ -242,6 +242,41 @@
     outline-color: #ef4444;
   }
 
+  /* Toast notifications */
+  .notification {
+    @apply fixed top-4 right-4 z-50 rounded-lg border px-4 py-2 text-sm font-medium shadow-lg;
+    @apply bg-white text-gray-900 border-gray-200;
+  }
+
+  .notification-info {
+    @apply bg-blue-50 text-blue-900 border-blue-200;
+  }
+
+  .notification-success {
+    @apply bg-emerald-50 text-emerald-900 border-emerald-200;
+  }
+
+  .notification-error {
+    @apply bg-red-50 text-red-900 border-red-200;
+  }
+
+  /* Inline status messages */
+  .status-message {
+    @apply rounded-md px-3 py-2 text-sm font-medium;
+  }
+
+  .status-info {
+    @apply bg-blue-50 text-blue-900;
+  }
+
+  .status-success {
+    @apply bg-emerald-50 text-emerald-900;
+  }
+
+  .status-error {
+    @apply bg-red-50 text-red-900;
+  }
+
   /* Character counter */
   .char-counter {
     font-size: 0.875rem;

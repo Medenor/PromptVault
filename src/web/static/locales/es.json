@@ -49,6 +49,7 @@
     "findReplaceSelected": "Buscar/Reemplazar selección",
     "replace": "Reemplazar",
     "saveOrder": "Guardar orden",
+    "saveAll": "Guardar todo",
     "undo": "Deshacer"
   },
   "form": {
@@ -519,7 +520,10 @@
     "promptDetails": "Detalles del prompt",
     "untitledPrompt": "Prompt sin título",
     "promptNotFound": "Prompt no encontrado",
-    "tagsPlaceholder": "Etiquetas (separadas por comas)"
+    "tagsPlaceholder": "Etiquetas (separadas por comas)",
+    "saveSuccess": "Guardado correctamente.",
+    "noRows": "No hay filas para guardar.",
+    "createSuccess": "Creado correctamente."
   },
   "bulkTag": {
     "title": "Actualización masiva de etiquetas",

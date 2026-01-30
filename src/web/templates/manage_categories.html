@@ -105,6 +105,81 @@
         </section>
 
         <section class="bg-white rounded-lg shadow p-6 mb-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-gray-900" data-i18n="categories.listTitle">Categories</h3>
+            <div class="relative w-full md:w-64">
+              <input
+                id="category-search"
+                type="text"
+                placeholder="Search categories..."
+                data-i18n-placeholder="management.searchCategoriesPlaceholder"
+                class="w-full pl-3 pr-10 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
+              />
+              <svg class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none w-5 h-5 transition-colors"
+                   fill="none"
+                   stroke="currentColor"
+                   viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+          </div>
+
+          <!-- Empty State -->
+          <div id="categories-empty-state" class="hidden text-center p-12 bg-gray-50 rounded-lg border border-gray-200">
+            <div class="text-4xl text-gray-400 mb-4">📁</div>
+            <h4 class="text-lg font-semibold text-gray-700 mb-2" data-i18n="emptyStates.noCategories.title">No categories yet</h4>
+            <p class="text-sm text-gray-600 mb-4" data-i18n="emptyStates.noCategories.description">Create your first category to organize your prompts</p>
+            <button
+              onclick="document.getElementById('category-create-name').focus()"
+              class="px-6 py-3 text-base font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+              data-i18n="emptyStates.noCategories.action"
+            >
+              Create Category
+            </button>
+          </div>
+
+          <div id="categories-table-container" class="overflow-x-auto max-h-96">
+            <table class="min-w-full text-sm">
+              <thead>
+                <tr class="text-left text-gray-600 border-b">
+                  <th class="py-2 pr-4" data-i18n="management.select">Select</th>
+                  <th class="py-2 pr-4" data-i18n="management.name">Name</th>
+                  <th class="py-2 pr-4" data-i18n="management.description">Description</th>
+                  <th class="py-2 pr-4" data-i18n="management.color">Color</th>
+                  <th class="py-2 pr-4" data-i18n="management.usage">Usage</th>
+                  <th class="py-2 pr-4" data-i18n="management.actions">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="categories-table-body"></tbody>
+            </table>
+          </div>
+          <div class="mt-4 flex flex-col md:flex-row gap-2">
+            <button
+              id="category-save-all-btn"
+              class="px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+              data-i18n="actions.saveAll"
+            >
+              Save All
+            </button>
+            <button
+              id="category-selection-merge-btn"
+              class="px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+              data-i18n="actions.mergeSelected"
+            >
+              Merge Selected
+            </button>
+            <button
+              id="category-selection-find-replace-btn"
+              class="px-4 py-2 text-sm font-medium bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+              data-i18n="actions.findReplaceSelected"
+            >
+              Find/Replace Selected
+            </button>
+          </div>
+        </section>
+
+        <section class="bg-white rounded-lg shadow p-6 mb-6">
           <h3 class="text-lg font-semibold text-gray-900 mb-4" data-i18n="management.bulkActions">Bulk Actions</h3>
           <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div class="border border-gray-200 rounded-lg p-4">
@@ -272,83 +347,7 @@
           </div>
         </section>
 
-        <section class="bg-white rounded-lg shadow p-6">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold text-gray-900" data-i18n="categories.listTitle">Categories</h3>
-            <div class="relative w-full md:w-64">
-              <input
-                id="category-search"
-                type="text"
-                placeholder="Search categories..."
-                data-i18n-placeholder="management.searchCategoriesPlaceholder"
-                class="w-full pl-3 pr-10 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
-              />
-              <svg class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none w-5 h-5 transition-colors"
-                   fill="none"
-                   stroke="currentColor"
-                   viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </div>
-          </div>
-
-          <!-- Empty State -->
-          <div id="categories-empty-state" class="hidden text-center p-12 bg-gray-50 rounded-lg border border-gray-200">
-            <div class="text-4xl text-gray-400 mb-4">📁</div>
-            <h4 class="text-lg font-semibold text-gray-700 mb-2" data-i18n="emptyStates.noCategories.title">No categories yet</h4>
-            <p class="text-sm text-gray-600 mb-4" data-i18n="emptyStates.noCategories.description">Create your first category to organize your prompts</p>
-            <button
-              onclick="document.getElementById('category-create-name').focus()"
-              class="px-6 py-3 text-base font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
-              data-i18n="emptyStates.noCategories.action"
-            >
-              Create Category
-            </button>
-          </div>
-
-          <div id="categories-table-container" class="overflow-x-auto max-h-96">
-            <table class="min-w-full text-sm">
-              <thead>
-                <tr class="text-left text-gray-600 border-b">
-                  <th class="py-2 pr-4" data-i18n="management.select">Select</th>
-                  <th class="py-2 pr-4" data-i18n="management.name">Name</th>
-                  <th class="py-2 pr-4" data-i18n="management.description">Description</th>
-                  <th class="py-2 pr-4" data-i18n="management.color">Color</th>
-                  <th class="py-2 pr-4" data-i18n="management.order">Order</th>
-                  <th class="py-2 pr-4" data-i18n="management.usage">Usage</th>
-                  <th class="py-2 pr-4" data-i18n="management.actions">Actions</th>
-                </tr>
-              </thead>
-              <tbody id="categories-table-body" class="cursor-move"></tbody>
-            </table>
-          </div>
-          <div class="mt-4 flex justify-end">
-            <button
-              id="category-reorder-btn"
-              class="px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
-              data-i18n="actions.saveOrder"
-            >
-              Save Order
-            </button>
-          </div>
-          <div class="mt-4 flex flex-col md:flex-row gap-2">
-            <button
-              id="category-selection-merge-btn"
-              class="px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
-              data-i18n="actions.mergeSelected"
-            >
-              Merge Selected
-            </button>
-            <button
-              id="category-selection-find-replace-btn"
-              class="px-4 py-2 text-sm font-medium bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
-              data-i18n="actions.findReplaceSelected"
-            >
-              Find/Replace Selected
-            </button>
-          </div>
-        </section>
+        
       </main>
     </div>
 

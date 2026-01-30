@@ -1,12 +1,12 @@
 ---
 id: spec-tag-category-management
 title: Tag and Category Management
-version: 1.1.0
+version: 1.2.0
 date_created: 2026-01-21
-last_updated: 2026-01-23
+last_updated: 2026-01-30
 owner: medenor
 tags: [taxonomy, functional, process, api]
-status: draft
+status: published
 ---
 
 ## 1. Introduction
@@ -142,10 +142,17 @@ Not applicable. Any transition not listed MUST be considered invalid.
   format.
 
 - **REQ-013 — Suggestions**  
-  The system **MUST** provide Tag suggestions derived from prompt content and existing taxonomy.
+  The system **MUST** provide Tag suggestions derived from prompt content and existing taxonomy.- **REQ-014 — Undo Support**
+  The system **MUST** provide an undo capability for recent management operations with persistent storage across server restarts.
 
-- **REQ-014 — Undo Support**  
-  The system **MUST** provide an undo capability for recent management operations.
+- **REQ-014a — Undo Persistence**
+  Undo operations **MUST** be persisted to the database and survive server restarts. The system **MUST** maintain undo history with automatic expiration after 30 days.
+
+- **REQ-014b — User-Scoped Undo**
+  Each user **MUST** have isolated undo stacks. One user's undo operations **MUST NOT** affect another user's undo history. Undo operations **MUST** be tied to the user who performed the original operation.
+
+- **REQ-014c — Undo Depth Limit**
+  The system **MUST** maintain a maximum of 50 undo operations per user per entity type (tags or categories) to prevent unbounded storage growth.
 
 - **REQ-015 — Search and Filter**  
   The system **MUST** provide search and filter over Tags and Categories by name and usage.
@@ -178,8 +185,11 @@ Not applicable. Any transition not listed MUST be considered invalid.
   The system **MUST** return deterministic ordering for list responses when no explicit order
   is provided.
 
-- **NFR-004 — Input Validation**  
+- **NFR-004 — Input Validation**
   The system **MUST** validate all inputs and reject invalid names or colors.
+
+- **NFR-005 — Undo Performance**
+  Undo operations **MUST** scale linearly with the number of items in the system. The system **MUST** use efficient database queries (no N+1 query patterns) for all undo-related operations. Response times **MUST** remain sub-100ms for typical operations with 1000+ items.
 
 ### 5.4 Error-Handling Requirements (ERR-***)
 
@@ -797,11 +807,15 @@ NOTE: Examples are illustrative only.
 | REQ-012 | AC-TCM-009 | TEST-REQ-001 | POST /api/*/import, GET /api/*/export |
 | REQ-013 | AC-TCM-010 | TEST-REQ-001 | POST /api/tags/suggest |
 | REQ-014 | AC-TCM-011 | TEST-REQ-001 | POST /api/*/undo |
+| REQ-014a | AC-TCM-011 | TEST-REQ-001 | POST /api/*/undo |
+| REQ-014b | AC-TCM-011 | TEST-REQ-002 | POST /api/*/undo (user isolation) |
+| REQ-014c | AC-TCM-011 | TEST-REQ-001 | POST /api/*/undo (depth limit) |
 | REQ-015 | AC-TCM-012 | TEST-REQ-001 | GET /api/*/manage |
 | REQ-016 | AC-TCM-013 | TEST-REQ-001 | POST /api/categories/reorder |
 | SEC-001 | AC-TCM-014 | TEST-REQ-002 | All management interfaces |
 | SEC-002 | AC-TCM-014 | TEST-REQ-002 | All destructive interfaces |
 | NFR-001 | AC-TCM-001 | TEST-REQ-004 | Compatibility interfaces |
+| NFR-005 | AC-TCM-011 | TEST-REQ-001 | POST /api/*/undo (performance) |
 | INV-001 | AC-TCM-002 | TEST-REQ-001 | Create/rename interfaces |
 | INV-004 | AC-TCM-003 | TEST-REQ-003 | Merge/delete interfaces |
 
@@ -811,3 +825,49 @@ NOTE: Examples are illustrative only.
 
 - docs/PLAN_TAG_CATEGORY_MANAGEMENT.md
 - docs/SPECS/SPEC_DATABASE.md
+
+---
+
+## 15. Implementation Notes (v1.2.0)
+
+### Undo System Implementation (REQ-14, REQ-14a, REQ-14b, REQ-14c, NFR-005)
+
+The undo system is implemented with the following components:
+
+- **Database Migration**: `alembic/versions/c8d9e0f1a2b3_add_undo_operations_table.py`
+  - Creates `undo_operations` table with user_id, entity_type, operation, payload, created_at, expires_at
+  - Foreign key constraint to users table with CASCADE delete
+  - Indexes on (user_id, created_at) and (expires_at) for efficient queries
+
+- **Service Layer**: `src/services/undo_service.py`
+  - UndoService class provides push(), pop(), get_history(), clear_user_undo(), cleanup_expired() methods
+  - Database-backed persistent storage
+  - User-scoped operations via user_id parameter
+  - 50-operation limit per (user_id, entity_type) pair
+  - 30-day automatic expiration
+
+- **FastAPI Integration**: `src/web/dependencies/undo.py`
+  - Dependency injection for UndoService across all endpoints
+
+- **Performance Characteristics**:
+  - Constant query count (1 query) regardless of dataset size (verified with load tests up to 1000+ items)
+  - Sub-100ms response times for typical operations
+  - Linear memory scaling with result set size
+  - No N+1 query patterns detected
+
+### Test Coverage
+
+- **Undo Persistence Tests** (23 tests): `tests/test_undo_persistence.py`
+  - Persistence across server restarts
+  - User-scoped undo isolation
+  - Relationship-aware undo with complex entities
+  - Edge cases and error scenarios
+  - Transaction safety
+  - 50-operation limit enforcement
+  - Performance with large payloads and history
+
+- **Performance Load Tests** (14 tests): `tests/test_performance_tag_category.py`
+  - Benchmark tests for small/medium/large datasets
+  - N+1 query detection and verification
+  - Memory usage scaling analysis
+  - Baseline report generation for regression detection

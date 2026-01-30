@@ -49,6 +49,7 @@
     "findReplaceSelected": "Suchen/Ersetzen (Auswahl)",
     "replace": "Ersetzen",
     "saveOrder": "Reihenfolge speichern",
+    "saveAll": "Alle speichern",
     "undo": "Rückgängig"
   },
   "form": {
@@ -519,7 +520,10 @@
     "promptDetails": "Prompt-Details",
     "untitledPrompt": "Prompt ohne Titel",
     "promptNotFound": "Prompt nicht gefunden",
-    "tagsPlaceholder": "Tags (kommagetrennt)"
+    "tagsPlaceholder": "Tags (kommagetrennt)",
+    "saveSuccess": "Gespeichert.",
+    "noRows": "Keine Zeilen zum Speichern.",
+    "createSuccess": "Erstellt."
   },
   "bulkTag": {
     "title": "Massen-Tag-Aktualisierung",

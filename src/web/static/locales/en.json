@@ -49,6 +49,7 @@
     "findReplaceSelected": "Find/Replace Selected",
     "replace": "Replace",
     "saveOrder": "Save Order",
+    "saveAll": "Save All",
     "undo": "Undo"
   },
   "form": {
@@ -185,7 +186,10 @@
     "promptDetails": "Prompt details",
     "untitledPrompt": "Untitled prompt",
     "promptNotFound": "Prompt not found",
-    "tagsPlaceholder": "Tags (comma-separated)"
+    "tagsPlaceholder": "Tags (comma-separated)",
+    "saveSuccess": "Saved successfully.",
+    "noRows": "No rows to save.",
+    "createSuccess": "Created successfully."
   },
   "bulkTag": {
     "title": "Bulk Tag Update",

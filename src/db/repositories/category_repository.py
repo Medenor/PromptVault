@@ -155,20 +155,32 @@ class CategoryRepository(BaseRepository[Category]):
         Returns:
             Number of categories merged (deleted)
         """
-        from src.db.models import Prompt
+        from src.db.models import Prompt, PromptVersion
 
         if not source_category_ids:
             return 0
 
+        filtered_sources = [cid for cid in source_category_ids if cid != target_category_id]
+        if not filtered_sources:
+            return 0
+
         self.session.query(Prompt).filter(
-            Prompt.category_id.in_(source_category_ids)
+            Prompt.category_id.in_(filtered_sources)
         ).update(
             {Prompt.category_id: target_category_id},
             synchronize_session=False,
         )
 
+        # Preserve historical versions while maintaining FK integrity.
+        self.session.query(PromptVersion).filter(
+            PromptVersion.category_id.in_(filtered_sources)
+        ).update(
+            {PromptVersion.category_id: target_category_id},
+            synchronize_session=False,
+        )
+
         deleted = self.session.query(Category).filter(
-            Category.id.in_(source_category_ids)
+            Category.id.in_(filtered_sources)
         ).delete(synchronize_session=False)
         self.session.flush()
         return deleted

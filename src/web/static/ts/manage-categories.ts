@@ -9,6 +9,7 @@ import { apiFetch, APIRequestError } from '@/utils/api';
 import { initI18n, tUnsafe, updateStaticTranslations } from '@/utils/i18n';
 import { initializeColorPicker, ColorPicker } from '@/utils/color-picker';
 import { setupScrollIndicators } from '@/utils/dom';
+import { showNotification } from '@/utils/notifications';
 
 type CategoryItem = {
   id: number;
@@ -43,9 +44,9 @@ const elements = {
   exportButton: document.getElementById('category-export-btn') as HTMLButtonElement | null,
   importFile: document.getElementById('category-import-file') as HTMLInputElement | null,
   importButton: document.getElementById('category-import-btn') as HTMLButtonElement | null,
-  reorderButton: document.getElementById('category-reorder-btn') as HTMLButtonElement | null,
   selectionMergeButton: document.getElementById('category-selection-merge-btn') as HTMLButtonElement | null,
   selectionFindReplaceButton: document.getElementById('category-selection-find-replace-btn') as HTMLButtonElement | null,
+  saveAllButton: document.getElementById('category-save-all-btn') as HTMLButtonElement | null,
   undoButton: document.getElementById('category-undo-btn') as HTMLButtonElement | null,
   analyticsTotal: document.getElementById('category-analytics-total') as HTMLElement | null,
   analyticsUsed: document.getElementById('category-analytics-used') as HTMLElement | null,
@@ -69,11 +70,39 @@ function normalizeSearch(value: string): string {
   return value.trim().toLowerCase();
 }
 
+function normalizeHexValue(value: string | null | undefined): string | null {
+  if (!value) {
+    return null;
+  }
+  const trimmed = value.trim();
+  const normalized = trimmed.startsWith('#') ? trimmed : `#${trimmed}`;
+  return /^#[0-9a-fA-F]{6}$/.test(normalized) ? normalized.toUpperCase() : null;
+}
+
+function normalizeHexForPicker(value: string | null | undefined): string {
+  return normalizeHexValue(value) ?? '#3B82F6';
+}
+
 function filterItems(items: CategoryItem[], query: string): CategoryItem[] {
   if (!query) {
     return items;
   }
   return items.filter((item) => item.name.toLowerCase().includes(query));
+}
+
+function buildCategoryPayload(row: HTMLTableRowElement): Record<string, unknown> {
+  const fields = row.querySelectorAll<HTMLInputElement>('input[data-field]');
+  const payload: Record<string, unknown> = {};
+
+  fields.forEach((field) => {
+    const key = field.dataset.field as string;
+    if (!key) {
+      return;
+    }
+    payload[key] = field.value.trim();
+  });
+
+  return payload;
 }
 
 function renderRows(items: CategoryItem[]): void {
@@ -103,12 +132,15 @@ function renderRows(items: CategoryItem[]): void {
     }
   }
 
+  const saveLabel = tUnsafe('actions.save');
+  const deleteLabel = tUnsafe('actions.delete');
+  const colorLabel = tUnsafe('management.color');
+
   for (const item of items) {
     const row = document.createElement('tr');
     row.className = 'border-b border-gray-100';
     row.dataset.id = String(item.id);
 
-    row.draggable = true;
     row.innerHTML = `
       <td class="py-2 pr-4">
         <input type="checkbox" data-select-id="${item.id}" />
@@ -120,16 +152,23 @@ function renderRows(items: CategoryItem[]): void {
         <input data-field="description" class="w-full px-2 py-1 border border-gray-300 rounded" value="${item.description ?? ''}" />
       </td>
       <td class="py-2 pr-4">
-        <input data-field="color" class="w-full px-2 py-1 border border-gray-300 rounded" value="${item.color ?? ''}" />
-      </td>
-      <td class="py-2 pr-4">
-        <input data-field="sort_order" type="number" class="w-20 px-2 py-1 border border-gray-300 rounded" value="${item.sort_order ?? ''}" />
+        <div class="flex items-center gap-2">
+          <input data-field="color" class="w-full px-2 py-1 border border-gray-300 rounded" value="${item.color ?? ''}" />
+          <input
+            data-color-picker
+            type="color"
+            value="${normalizeHexForPicker(item.color)}"
+            title="${colorLabel}"
+            aria-label="${colorLabel}"
+            class="h-8 w-8 rounded border border-gray-300 p-0"
+          />
+        </div>
       </td>
       <td class="py-2 pr-4 text-gray-600">${item.usage_count}</td>
       <td class="py-2 pr-4">
         <div class="flex items-center gap-2">
-          <button data-action="save" class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">Save</button>
-          <button data-action="delete" class="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700">Delete</button>
+          <button data-action="save" class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">${saveLabel}</button>
+          <button data-action="delete" class="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700">${deleteLabel}</button>
         </div>
       </td>
     `;
@@ -142,10 +181,22 @@ function renderRows(items: CategoryItem[]): void {
       void deleteCategory(item.id);
     });
 
+    const colorInput = row.querySelector<HTMLInputElement>('input[data-field="color"]');
+    const colorPicker = row.querySelector<HTMLInputElement>('input[data-color-picker]');
+    if (colorInput && colorPicker) {
+      colorPicker.addEventListener('input', () => {
+        colorInput.value = colorPicker.value;
+      });
+      colorInput.addEventListener('input', () => {
+        const normalized = normalizeHexValue(colorInput.value);
+        if (normalized) {
+          colorPicker.value = normalized;
+        }
+      });
+    }
+
     elements.tableBody.appendChild(row);
   }
-
-  enableDragAndDrop();
 
   // Setup scroll indicators for table container
   setupScrollIndicators(tableContainer);
@@ -197,6 +248,7 @@ async function createCategory(event: Event): Promise<void> {
       method: 'POST',
       body: JSON.stringify(payload),
     });
+    showNotification(tUnsafe('management.createSuccess'), 'success');
     if (elements.createForm) {
       elements.createForm.reset();
     }
@@ -207,26 +259,13 @@ async function createCategory(event: Event): Promise<void> {
 }
 
 async function saveCategory(categoryId: number, row: HTMLTableRowElement): Promise<void> {
-  const fields = row.querySelectorAll<HTMLInputElement>('input[data-field]');
-  const payload: Record<string, unknown> = {};
-
-  fields.forEach((field) => {
-    const key = field.dataset.field as string;
-    if (!key) {
-      return;
-    }
-    if (key === 'sort_order') {
-      payload[key] = field.value ? Number(field.value) : null;
-    } else {
-      payload[key] = field.value.trim();
-    }
-  });
-
+  const payload = buildCategoryPayload(row);
   try {
     await apiFetch(`/api/categories/${categoryId}`, {
       method: 'PUT',
       body: JSON.stringify(payload),
     });
+    showNotification(tUnsafe('management.saveSuccess'), 'success');
     await loadCategories();
   } catch (error) {
     handleError(error, 'Failed to update category');
@@ -354,70 +393,6 @@ async function importCategories(): Promise<void> {
   }
 }
 
-async function saveOrder(): Promise<void> {
-  if (!elements.tableBody) {
-    return;
-  }
-  const rows = Array.from(elements.tableBody.querySelectorAll('tr'));
-  const entries: Array<{ id: number; order: number }> = [];
-  rows.forEach((row, index) => {
-    const idValue = Number(row.dataset.id || '');
-    if (!Number.isFinite(idValue)) {
-      return;
-    }
-    const orderField = row.querySelector<HTMLInputElement>('input[data-field="sort_order"]');
-    const orderValue = Number(orderField?.value || '');
-    entries.push({ id: idValue, order: Number.isFinite(orderValue) ? orderValue : index + 1 });
-  });
-
-  const orderedIds = entries
-    .sort((a, b) => a.order - b.order)
-    .map((entry) => entry.id);
-
-  if (orderedIds.length === 0) {
-    alert('No categories to reorder.');
-    return;
-  }
-
-  try {
-    await apiFetch('/api/categories/reorder', {
-      method: 'POST',
-      body: JSON.stringify({ ordered_ids: orderedIds }),
-    });
-    await loadCategories();
-  } catch (error) {
-    handleError(error, 'Failed to reorder categories');
-  }
-}
-
-function enableDragAndDrop(): void {
-  if (!elements.tableBody) {
-    return;
-  }
-  const rows = Array.from(elements.tableBody.querySelectorAll('tr'));
-  rows.forEach((row) => {
-    row.addEventListener('dragstart', () => {
-      row.classList.add('opacity-50');
-    });
-    row.addEventListener('dragend', () => {
-      row.classList.remove('opacity-50');
-    });
-    row.addEventListener('dragover', (event) => {
-      event.preventDefault();
-      const target = event.currentTarget as HTMLTableRowElement;
-      if (target === row) {
-        return;
-      }
-      const bounding = target.getBoundingClientRect();
-      const offset = event.clientY - bounding.top;
-      if (offset > bounding.height / 2) {
-        target.after(row);
-      } else {
-        target.before(row);
-      }
-    });
-  });
-}
 
 function getSelectedIds(): number[] {
   if (!elements.tableBody) {
@@ -451,6 +426,43 @@ async function mergeSelected(): Promise<void> {
   } catch (error) {
     handleError(error, 'Failed to merge categories');
   }
+}
+
+async function saveAllCategories(): Promise<void> {
+  if (!elements.tableBody) {
+    return;
+  }
+  const rows = Array.from(elements.tableBody.querySelectorAll<HTMLTableRowElement>('tr'));
+  if (rows.length === 0) {
+    alert(tUnsafe('management.noRows'));
+    return;
+  }
+
+  let failed = 0;
+  for (const row of rows) {
+    const idValue = Number(row.dataset.id || '');
+    if (!Number.isFinite(idValue)) {
+      continue;
+    }
+    const payload = buildCategoryPayload(row);
+    try {
+      await apiFetch(`/api/categories/${idValue}`, {
+        method: 'PUT',
+        body: JSON.stringify(payload),
+      });
+    } catch (error) {
+      failed += 1;
+      console.error(error);
+    }
+  }
+
+  if (failed === 0) {
+    showNotification(tUnsafe('management.saveSuccess'), 'success');
+  } else {
+    showNotification(tUnsafe('messages.error'), 'error');
+  }
+
+  await loadCategories();
 }
 
 async function findReplaceSelected(): Promise<void> {
@@ -669,14 +681,14 @@ function init(): void {
   elements.importButton?.addEventListener('click', () => {
     void importCategories();
   });
-  elements.reorderButton?.addEventListener('click', () => {
-    void saveOrder();
-  });
   elements.selectionMergeButton?.addEventListener('click', () => {
     void mergeSelected();
   });
   elements.selectionFindReplaceButton?.addEventListener('click', () => {
     void findReplaceSelected();
+  });
+  elements.saveAllButton?.addEventListener('click', () => {
+    void saveAllCategories();
   });
   elements.undoButton?.addEventListener('click', () => {
     void undoLastOperation();
