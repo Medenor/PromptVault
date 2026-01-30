@@ -36,6 +36,11 @@ from .auth_responses import (
     SessionListResponse,
     RevokeSessionResponse,
 )
+from .undo_responses import (
+    UndoOperationResponse,
+    UndoHistoryResponse,
+    UndoResultResponse,
+)
 
 __all__ = [
     # Prompt requests
@@ -69,4 +74,8 @@ __all__ = [
     "PasswordStrengthResponse",
     "SessionListResponse",
     "RevokeSessionResponse",
+    # Undo responses
+    "UndoOperationResponse",
+    "UndoHistoryResponse",
+    "UndoResultResponse",
 ]

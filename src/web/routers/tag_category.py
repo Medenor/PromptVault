@@ -43,8 +43,9 @@ from src.web.models.tag_category_responses import (
     TagSuggestionResponse,
     TagSuggestionItem,
 )
-from src.services.tag_category_undo import category_undo_stack, tag_undo_stack, UndoOperation
 from src.db.models.user import User
+from src.services.undo_service import UndoService
+from src.web.dependencies.undo import get_undo_service
 
 logger = logging.getLogger(__name__)
 
@@ -172,6 +173,7 @@ async def update_category(
     payload: CategoryUpdateRequest,
     user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
+    undo_service: UndoService = Depends(get_undo_service),
 ):
     category_repo = CategoryRepository(db)
     category = category_repo.get_by_id(category_id)
@@ -192,13 +194,13 @@ async def update_category(
     db.commit()
     db.refresh(category)
     usage_count = category_repo.count_usage(category_id)
-    category_undo_stack.push(
-        UndoOperation(
-            entity_type="category",
-            operation="update",
-            payload={"id": category_id, "before": before},
-        )
+    undo_service.push(
+        user_id=user.id,
+        entity_type="category",
+        operation="update",
+        payload={"id": category_id, "before": before},
     )
+    db.commit()
     return _category_response(category, usage_count)
 
 
@@ -213,6 +215,7 @@ async def delete_category(
     confirm: bool = False,
     user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
+    undo_service: UndoService = Depends(get_undo_service),
 ):
     if not confirm:
         raise HTTPException(
@@ -251,13 +254,13 @@ async def delete_category(
 
     category_repo.delete(category_id)
     db.commit()
-    category_undo_stack.push(
-        UndoOperation(
-            entity_type="category",
-            operation="delete",
-            payload={"category": _category_snapshot(category), "prompt_ids": prompt_ids},
-        )
+    undo_service.push(
+        user_id=user.id,
+        entity_type="category",
+        operation="delete",
+        payload={"category": _category_snapshot(category), "prompt_ids": prompt_ids},
     )
+    db.commit()
     return MessageResponse(message="Category deleted")
 
 
@@ -270,6 +273,7 @@ async def merge_categories(
     payload: MergeRequest,
     user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
+    undo_service: UndoService = Depends(get_undo_service),
 ):
     if not payload.confirm:
         raise HTTPException(
@@ -305,13 +309,13 @@ async def merge_categories(
     merged = category_repo.merge_categories(payload.source_ids, payload.target_id)
     db.commit()
     if sources_payload:
-        category_undo_stack.push(
-            UndoOperation(
-                entity_type="category",
-                operation="merge",
-                payload={"target_id": payload.target_id, "sources": sources_payload},
-            )
+        undo_service.push(
+            user_id=user.id,
+            entity_type="category",
+            operation="merge",
+            payload={"target_id": payload.target_id, "sources": sources_payload},
         )
+        db.commit()
     return BulkActionResponse(success=True, affected=merged)
 
 
@@ -324,6 +328,7 @@ async def bulk_delete_categories(
     payload: BulkDeleteRequest,
     user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
+    undo_service: UndoService = Depends(get_undo_service),
 ):
     if not payload.confirm:
         raise HTTPException(
@@ -363,13 +368,13 @@ async def bulk_delete_categories(
     deleted = category_repo.delete_many(payload.ids)
     db.commit()
     if delete_payloads:
-        category_undo_stack.push(
-            UndoOperation(
-                entity_type="category",
-                operation="bulk-delete",
-                payload={"items": delete_payloads},
-            )
+        undo_service.push(
+            user_id=user.id,
+            entity_type="category",
+            operation="bulk-delete",
+            payload={"items": delete_payloads},
         )
+        db.commit()
     return BulkActionResponse(success=True, affected=deleted)
 
 
@@ -382,6 +387,7 @@ async def find_replace_categories(
     payload: CategoryFindReplaceRequest,
     user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
+    undo_service: UndoService = Depends(get_undo_service),
 ):
     if not payload.confirm:
         raise HTTPException(
@@ -402,17 +408,16 @@ async def find_replace_categories(
         from src.db.models import Prompt
         prompt_ids = [row[0] for row in db.query(Prompt.id).filter(Prompt.category_id == find_category.id).all()]
         category_repo.merge_categories([find_category.id], replace_category.id)
-        category_undo_stack.push(
-            UndoOperation(
-                entity_type="category",
-                operation="find-replace",
-                payload={
-                    "target_id": replace_category.id,
-                    "sources": [
-                        {"category": _category_snapshot(find_category), "prompt_ids": prompt_ids}
-                    ],
-                },
-            )
+        undo_service.push(
+            user_id=user.id,
+            entity_type="category",
+            operation="find-replace",
+            payload={
+                "target_id": replace_category.id,
+                "sources": [
+                    {"category": _category_snapshot(find_category), "prompt_ids": prompt_ids}
+                ],
+            },
         )
 
     db.commit()
@@ -635,6 +640,7 @@ async def update_tag(
     payload: TagUpdateRequest,
     user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
+    undo_service: UndoService = Depends(get_undo_service),
 ):
     tag_repo = TagRepository(db)
     tag = tag_repo.get_by_id(tag_id)
@@ -674,13 +680,13 @@ async def update_tag(
     db.commit()
     db.refresh(tag)
     usage_count = tag_repo.count_usage(tag_id)
-    tag_undo_stack.push(
-        UndoOperation(
-            entity_type="tag",
-            operation="update",
-            payload={"id": tag_id, "before": before},
-        )
+    undo_service.push(
+        user_id=user.id,
+        entity_type="tag",
+        operation="update",
+        payload={"id": tag_id, "before": before},
     )
+    db.commit()
     return _tag_response(tag, usage_count)
 
 
@@ -695,6 +701,7 @@ async def delete_tag(
     confirm: bool = False,
     user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
+    undo_service: UndoService = Depends(get_undo_service),
 ):
     if not confirm:
         raise HTTPException(
@@ -719,13 +726,13 @@ async def delete_tag(
 
     tag_repo.delete(tag_id)
     db.commit()
-    tag_undo_stack.push(
-        UndoOperation(
-            entity_type="tag",
-            operation="delete",
-            payload={"tag": _tag_snapshot(tag), "prompt_ids": prompt_ids},
-        )
+    undo_service.push(
+        user_id=user.id,
+        entity_type="tag",
+        operation="delete",
+        payload={"tag": _tag_snapshot(tag), "prompt_ids": prompt_ids},
     )
+    db.commit()
     return MessageResponse(message="Tag deleted")
 
 
@@ -738,6 +745,7 @@ async def merge_tags(
     payload: MergeRequest,
     user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
+    undo_service: UndoService = Depends(get_undo_service),
 ):
     if not payload.confirm:
         raise HTTPException(
@@ -770,13 +778,13 @@ async def merge_tags(
     merged = tag_repo.merge_tags_bulk(payload.source_ids, payload.target_id)
     db.commit()
     if sources_payload:
-        tag_undo_stack.push(
-            UndoOperation(
-                entity_type="tag",
-                operation="merge",
-                payload={"target_id": payload.target_id, "sources": sources_payload},
-            )
+        undo_service.push(
+            user_id=user.id,
+            entity_type="tag",
+            operation="merge",
+            payload={"target_id": payload.target_id, "sources": sources_payload},
         )
+        db.commit()
     return BulkActionResponse(success=True, affected=merged)
 
 
@@ -789,6 +797,7 @@ async def bulk_delete_tags(
     payload: BulkDeleteRequest,
     user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
+    undo_service: UndoService = Depends(get_undo_service),
 ):
     if not payload.confirm:
         raise HTTPException(
@@ -826,13 +835,13 @@ async def bulk_delete_tags(
     deleted = tag_repo.delete_many(payload.ids)
     db.commit()
     if delete_payloads:
-        tag_undo_stack.push(
-            UndoOperation(
-                entity_type="tag",
-                operation="bulk-delete",
-                payload={"items": delete_payloads},
-            )
+        undo_service.push(
+            user_id=user.id,
+            entity_type="tag",
+            operation="bulk-delete",
+            payload={"items": delete_payloads},
         )
+        db.commit()
     return BulkActionResponse(success=True, affected=deleted)
 
 
@@ -845,6 +854,7 @@ async def find_replace_tags(
     payload: TagFindReplaceRequest,
     user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
+    undo_service: UndoService = Depends(get_undo_service),
 ):
     if not payload.confirm:
         raise HTTPException(
@@ -864,17 +874,16 @@ async def find_replace_tags(
     if find_tag.id != replace_tag.id:
         prompt_ids = [prompt.id for prompt in find_tag.prompts]
         tag_repo.merge_tags(find_tag.id, replace_tag.id)
-        tag_undo_stack.push(
-            UndoOperation(
-                entity_type="tag",
-                operation="find-replace",
-                payload={
-                    "target_id": replace_tag.id,
-                    "sources": [
-                        {"tag": _tag_snapshot(find_tag), "prompt_ids": prompt_ids}
-                    ],
-                },
-            )
+        undo_service.push(
+            user_id=user.id,
+            entity_type="tag",
+            operation="find-replace",
+            payload={
+                "target_id": replace_tag.id,
+                "sources": [
+                    {"tag": _tag_snapshot(find_tag), "prompt_ids": prompt_ids}
+                ],
+            },
         )
 
     db.commit()
@@ -998,23 +1007,24 @@ async def tag_analytics(
 async def undo_category_operation(
     user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
+    undo_service: UndoService = Depends(get_undo_service),
 ):
-    op = category_undo_stack.pop()
+    op = undo_service.pop(user.id, "category")
     if not op:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No undo operation available")
 
     category_repo = CategoryRepository(db)
     from src.db.models import Prompt
 
-    if op.operation == "update":
-        category_repo.update(op.payload["id"], **op.payload["before"])
+    if op["operation"] == "update":
+        category_repo.update(op["payload"]["id"], **op["payload"]["before"])
         db.commit()
         return BulkActionResponse(success=True, affected=1)
 
-    if op.operation in {"delete", "merge", "find-replace"}:
-        sources = op.payload.get("sources")
-        if not sources and "category" in op.payload:
-            sources = [op.payload]
+    if op["operation"] in {"delete", "merge", "find-replace"}:
+        sources = op["payload"].get("sources")
+        if not sources and "category" in op["payload"]:
+            sources = [op["payload"]]
         affected = 0
         for source in sources:
             category_data = source["category"]
@@ -1033,9 +1043,9 @@ async def undo_category_operation(
         db.commit()
         return BulkActionResponse(success=True, affected=affected)
 
-    if op.operation == "bulk-delete":
+    if op["operation"] == "bulk-delete":
         affected = 0
-        for item in op.payload.get("items", []):
+        for item in op["payload"].get("items", []):
             category_data = item["category"]
             existing = category_repo.get_by_name_case_insensitive(category_data["name"])
             if existing:
@@ -1063,25 +1073,26 @@ async def undo_category_operation(
 async def undo_tag_operation(
     user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
+    undo_service: UndoService = Depends(get_undo_service),
 ):
-    op = tag_undo_stack.pop()
+    op = undo_service.pop(user.id, "tag")
     if not op:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No undo operation available")
 
     tag_repo = TagRepository(db)
     from src.db.models import Prompt
 
-    if op.operation == "update":
-        tag_repo.update(op.payload["id"], **op.payload["before"])
+    if op["operation"] == "update":
+        tag_repo.update(op["payload"]["id"], **op["payload"]["before"])
         db.commit()
         return BulkActionResponse(success=True, affected=1)
 
-    if op.operation in {"delete", "merge", "find-replace"}:
-        sources = op.payload.get("sources")
-        if not sources and "tag" in op.payload:
-            sources = [op.payload]
+    if op["operation"] in {"delete", "merge", "find-replace"}:
+        sources = op["payload"].get("sources")
+        if not sources and "tag" in op["payload"]:
+            sources = [op["payload"]]
         affected = 0
-        target_id = op.payload.get("target_id")
+        target_id = op["payload"].get("target_id")
         target_tag = tag_repo.get_by_id(target_id) if target_id else None
         for source in sources:
             tag_data = source["tag"]
@@ -1102,9 +1113,9 @@ async def undo_tag_operation(
         db.commit()
         return BulkActionResponse(success=True, affected=affected)
 
-    if op.operation == "bulk-delete":
+    if op["operation"] == "bulk-delete":
         affected = 0
-        for item in op.payload.get("items", []):
+        for item in op["payload"].get("items", []):
             tag_data = item["tag"]
             existing = tag_repo.get_by_name_case_insensitive(tag_data["name"])
             if existing:

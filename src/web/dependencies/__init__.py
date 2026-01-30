@@ -28,6 +28,10 @@ from src.web.dependencies.auth import (
     get_editor_or_admin_user,
 )
 
+from src.web.dependencies.undo import (
+    get_undo_service,
+)
+
 __all__ = [
     # Configuration
     "get_auth_config",
@@ -46,4 +50,6 @@ __all__ = [
     # Composite dependencies
     "get_admin_user",
     "get_editor_or_admin_user",
+    # Services
+    "get_undo_service",
 ]
