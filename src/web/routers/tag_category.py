@@ -95,6 +95,7 @@ def _tag_snapshot(tag) -> dict:
         "name": tag.name,
         "description": tag.description,
         "color": tag.color,
+        "parent_tag_id": tag.parent_tag_id,
     }
 
 
@@ -781,12 +782,21 @@ async def merge_tags(
         )
 
     sources_payload = []
+    # Track which prompts already have the target tag before merge
+    target_prompt_ids = {prompt.id for prompt in target.prompts}
+
     for source_id in payload.source_ids:
         source = tag_repo.get_by_id(source_id)
         if not source:
             continue
         prompt_ids = [prompt.id for prompt in source.prompts]
-        sources_payload.append({"tag": _tag_snapshot(source), "prompt_ids": prompt_ids})
+        # Track which prompts will gain the target tag (didn't have it before)
+        prompts_gaining_target = [pid for pid in prompt_ids if pid not in target_prompt_ids]
+        sources_payload.append({
+            "tag": _tag_snapshot(source),
+            "prompt_ids": prompt_ids,
+            "prompts_gaining_target": prompts_gaining_target
+        })
 
     merged = tag_repo.merge_tags_bulk(payload.source_ids, payload.target_id)
     db.commit()
@@ -893,6 +903,9 @@ async def find_replace_tags(
 
     if find_tag.id != replace_tag.id:
         prompt_ids = [prompt.id for prompt in find_tag.prompts]
+        # Track which prompts already have the replace tag before merge
+        replace_prompt_ids = {prompt.id for prompt in replace_tag.prompts}
+        prompts_gaining_target = [pid for pid in prompt_ids if pid not in replace_prompt_ids]
         tag_repo.merge_tags(find_tag.id, replace_tag.id)
         undo_service.push(
             user_id=user.id,
@@ -901,7 +914,11 @@ async def find_replace_tags(
             payload={
                 "target_id": replace_tag.id,
                 "sources": [
-                    {"tag": _tag_snapshot(find_tag), "prompt_ids": prompt_ids}
+                    {
+                        "tag": _tag_snapshot(find_tag),
+                        "prompt_ids": prompt_ids,
+                        "prompts_gaining_target": prompts_gaining_target
+                    }
                 ],
             },
         )
@@ -1124,10 +1141,14 @@ async def undo_tag_operation(
             prompt_ids = source.get("prompt_ids", [])
             if prompt_ids:
                 prompts = db.query(Prompt).filter(Prompt.id.in_(prompt_ids)).all()
+                # Get list of prompts that gained the target tag during merge
+                prompts_gaining_target = source.get("prompts_gaining_target", [])
+                prompts_gaining_target_set = set(prompts_gaining_target)
                 for prompt in prompts:
                     if tag not in prompt.tags:
                         prompt.tags.append(tag)
-                    if target_tag and target_tag in prompt.tags:
+                    # Only remove target tag from prompts that gained it during merge
+                    if target_tag and target_tag in prompt.tags and prompt.id in prompts_gaining_target_set:
                         prompt.tags.remove(target_tag)
             affected += 1
         db.commit()
@@ -1345,6 +1366,12 @@ async def import_tags(
                     raise HTTPException(
                         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                         detail="Tag hierarchy cycle detected",
+                    )
+                parent = tag_repo.get_by_id(item.parent_tag_id)
+                if not parent:
+                    raise HTTPException(
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        detail="Parent tag not found",
                     )
             tag_repo.update(
                 existing.id,
