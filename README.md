@@ -318,7 +318,7 @@ For detailed deployment instructions including manual installation, environment 
 
 - **[Deployment Guide](docs/DEPLOYMENT.md)** - Complete deployment instructions for Docker, Docker Compose, and manual deployment
 - **[Authentication Deployment Guide](docs/AUTHENTICATION_DEPLOYMENT.md)** - Authentication setup with JWT key generation
-- **[Migration Guide](docs/MIGRATION_GUIDE.md)** - Step-by-step guide for migrating from JSON to database storage
+- **[Migration Guide from JSON to database](docs/MIGRATION_GUIDE_JSON_TO_DB.md)** - Step-by-step guide for migrating from JSON to database storage
 - **[Database Specification](docs/SPECS/SPEC_DATABASE.md)** - Technical specification and architecture details
 
 ## Authentication

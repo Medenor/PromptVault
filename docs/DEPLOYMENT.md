@@ -946,7 +946,7 @@ Before deploying to production:
 
 ## Next Steps
 
-- [Migration Guide](MIGRATION_GUIDE.md) - Detailed migration from JSON to database
+- [Migration Guide](MIGRATION_GUIDE_JSON_TO_DB.md) - Detailed migration from JSON to database
 - [Performance Tuning](phase9_test_infrastructure.md#performance-tests) - Optimize database queries
 - [Backup Strategy](phase8_backup_system_integration.md) - Configure automated backups
 - [API Documentation](API.md) - Complete API reference
