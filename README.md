@@ -264,6 +264,13 @@ Profile page with preferences, security controls, and active session management.
 <img src="docs/images/gallery/promptvault_admin_user_mgmt.jpg" alt="Admin User Management" width="90%"><br/>
 Admin dashboard for user management with filters, role badges, and quick actions.
 
+<br><br>
+
+#### 9. Category and tags management
+
+<img src="docs/images/gallery/promptvaul_category_management.jpg" alt="Category Management" width="90%"><br/>
+Category and tags management interface with color pickers, hierarchization (for tags), organization, statistics and bulk actions.
+
 </div>
 
 </details>
