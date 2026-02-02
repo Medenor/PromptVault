@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 
 _COLOR_TOKEN_PATTERN = re.compile(r"^[A-Za-z0-9_-]+$")
 _COLOR_HEX_PATTERN = re.compile(r"^#(?:[0-9a-fA-F]{3}){1,2}$")
-_NAME_PATTERN = re.compile(r"^[A-Za-z0-9 _-]+$")
+_NAME_PATTERN = re.compile(r"^[\w\s\-]+$", re.UNICODE)
 
 
 def _normalize_name(value: str) -> str:

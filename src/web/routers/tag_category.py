@@ -190,7 +190,7 @@ async def update_category(
             )
 
     before = _category_snapshot(category)
-    updates = payload.model_dump(exclude_unset=True, exclude_none=True)
+    updates = payload.model_dump(exclude_unset=True)
     category = category_repo.update(category_id, **updates)
     db.commit()
     db.refresh(category)
@@ -670,7 +670,7 @@ async def update_tag(
             )
 
     before = _tag_snapshot(tag)
-    updates = payload.model_dump(exclude_unset=True, exclude_none=True)
+    updates = payload.model_dump(exclude_unset=True)
     if "parent_tag_id" in updates:
         parent_id = updates["parent_tag_id"]
         if parent_id is not None:
