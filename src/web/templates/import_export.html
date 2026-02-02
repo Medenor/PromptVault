@@ -17,26 +17,26 @@
   <body class="bg-gray-50 min-h-screen">
     <div class="min-h-screen flex flex-col">
       <!-- Header -->
-      <header class="bg-blue-600 text-white shadow-lg">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center space-x-4">
-              <img
-                src="/static/images/promptvault_logo_frontend.webp"
-                alt="PromptVault Logo"
-                class="h-14 w-14 border-2 border-gray-400 rounded-lg shadow-lg"
-              />
+      <header class="bg-blue-500 text-white shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="flex items-center justify-between h-16">
+            <div class="flex items-center gap-4">
+              <a href="/" class="inline-flex">
+                <img
+                  src="/static/images/promptvault_logo_frontend.webp"
+                  alt="PromptVault Logo"
+                  class="h-14 w-14 border-2 border-gray-400 rounded-lg shadow-lg"
+                />
+              </a>
               <h1 class="text-2xl font-bold">PromptVault</h1>
             </div>
-            <div class="flex items-center space-x-3">
-              <button
-                onclick="window.location.href = '/'"
-                class="px-4 py-2 bg-blue-700 hover:bg-blue-800 rounded text-sm font-medium transition"
-                data-i18n="nav.backToMain"
-              >
-                Back to Main
-              </button>
-            </div>
+            <button
+              onclick="window.location.href = '/'"
+              class="px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
+              data-i18n="nav.backToMain"
+            >
+              Back to Main
+            </button>
           </div>
         </div>
       </header>
@@ -61,17 +61,17 @@
               Export Prompts
             </h3>
 
-            <div class="space-y-4">
+            <form class="space-y-4">
               <div>
                 <label
                   for="export-format"
                   class="block text-sm font-medium text-gray-700 mb-2"
                   data-i18n="importExport.exportFormat"
-                  >Export Format:</label
+                  >Export Format</label
                 >
                 <select
                   id="export-format"
-                  class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
                 >
                   <option value="csv">CSV - Comma-separated values</option>
                   <option value="markdown">Markdown - Human-readable format</option>
@@ -80,25 +80,25 @@
               </div>
 
               <div class="space-y-2">
-                <label class="flex items-center">
+                <label class="flex items-center gap-2">
                   <input
                     type="checkbox"
                     id="include-favorites"
                     checked
                     class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                   />
-                  <span class="ml-2 text-sm text-gray-700" data-i18n="importExport.includeFavorites"
+                  <span class="text-sm text-gray-700" data-i18n="importExport.includeFavorites"
                     >Include only favorite prompts</span
                   >
                 </label>
-                <label class="flex items-center">
+                <label class="flex items-center gap-2">
                   <input
                     type="checkbox"
                     id="include-metadata"
                     checked
                     class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                   />
-                  <span class="ml-2 text-sm text-gray-700" data-i18n="importExport.includeMetadata"
+                  <span class="text-sm text-gray-700" data-i18n="importExport.includeMetadata"
                     >Include metadata (tags, categories)</span
                   >
                 </label>
@@ -109,7 +109,7 @@
                   for="export-filename"
                   class="block text-sm font-medium text-gray-700 mb-2"
                   data-i18n="importExport.filename"
-                  >Filename:</label
+                  >Filename</label
                 >
                 <input
                   type="text"
@@ -119,51 +119,56 @@
                   maxlength="255"
                   pattern="[A-Za-z0-9_\\-]+"
                   aria-describedby="export-filename-error"
-                  class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
                 />
-                <div
-                  class="text-red-600 text-sm mt-1"
+                <p
+                  class="text-red-600 text-xs mt-1"
                   id="export-filename-error"
                   role="alert"
                   aria-live="assertive"
-                ></div>
+                ></p>
               </div>
 
-              <div class="flex space-x-3 pt-4">
-                <button
-                  class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition"
-                  onclick="performExport()"
-                  data-i18n="importExport.exportBtn"
-                >
-                  Export Data
-                </button>
-                <button
-                  class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition"
-                  onclick="previewExport()"
-                  data-i18n="importExport.previewBtn"
-                >
-                  Preview
-                </button>
-                <button
-                  class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition"
-                  onclick="clearExportSettings()"
-                  data-i18n="importExport.clearBtn"
-                >
-                  Clear
-                </button>
+              <div class="border-t pt-4 mt-4">
+                <div class="flex flex-col sm:flex-row gap-2">
+                  <button
+                    type="button"
+                    class="flex-1 px-4 py-2 text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                    onclick="performExport()"
+                    data-i18n="importExport.exportBtn"
+                  >
+                    Export Data
+                  </button>
+                  <button
+                    type="button"
+                    class="px-4 py-2 text-sm font-medium bg-gray-200 text-gray-900 hover:bg-gray-300 rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                    onclick="previewExport()"
+                    data-i18n="importExport.previewBtn"
+                  >
+                    Preview
+                  </button>
+                  <button
+                    type="button"
+                    class="px-4 py-2 text-sm font-medium bg-gray-200 text-gray-900 hover:bg-gray-300 rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                    onclick="clearExportSettings()"
+                    data-i18n="importExport.clearBtn"
+                  >
+                    Clear
+                  </button>
+                </div>
               </div>
 
               <div class="hidden" id="export-progress">
-                <div class="h-2 bg-gray-200 rounded overflow-hidden mt-4">
+                <div class="h-2 bg-gray-200 rounded overflow-hidden mt-2">
                   <div
                     class="h-full bg-blue-600 transition-all duration-300"
                     id="export-progress-fill"
                     style="width: 0%"
                   ></div>
                 </div>
-                <div id="export-status" class="text-sm text-blue-600 mt-2"></div>
+                <p id="export-status" class="text-sm text-blue-600 mt-1"></p>
               </div>
-            </div>
+            </form>
           </div>
 
           <!-- Import Section -->
@@ -172,48 +177,49 @@
               Import Prompts
             </h3>
 
-            <div class="space-y-4">
+            <form class="space-y-4">
               <div>
                 <label
+                  for="import-file"
                   class="block text-sm font-medium text-gray-700 mb-2"
                   data-i18n="importExport.selectFile"
-                  >Select File:</label
+                  >Select File</label
                 >
                 <input
                   type="file"
                   id="import-file"
                   accept=".csv,.json,.md,.markdown"
                   aria-describedby="import-file-error"
-                  class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                  class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                 />
-                <div
-                  class="text-red-600 text-sm mt-1"
+                <p
+                  class="text-red-600 text-xs mt-1"
                   id="import-file-error"
                   role="alert"
                   aria-live="assertive"
-                ></div>
+                ></p>
               </div>
 
               <div class="space-y-2">
-                <label class="flex items-center">
+                <label class="flex items-center gap-2">
                   <input
                     type="checkbox"
                     id="import-merge"
                     checked
                     class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                   />
-                  <span class="ml-2 text-sm text-gray-700" data-i18n="importExport.mergeData"
+                  <span class="text-sm text-gray-700" data-i18n="importExport.mergeData"
                     >Merge with existing data</span
                   >
                 </label>
-                <label class="flex items-center">
+                <label class="flex items-center gap-2">
                   <input
                     type="checkbox"
                     id="import-validate"
                     checked
                     class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                   />
-                  <span class="ml-2 text-sm text-gray-700" data-i18n="importExport.validateData"
+                  <span class="text-sm text-gray-700" data-i18n="importExport.validateData"
                     >Validate data before import</span
                   >
                 </label>
@@ -224,11 +230,11 @@
                   for="import-mode"
                   class="block text-sm font-medium text-gray-700 mb-2"
                   data-i18n="importExport.importMode"
-                  >Import Mode:</label
+                  >Import Mode</label
                 >
                 <select
                   id="import-mode"
-                  class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
                 >
                   <option value="append" data-i18n="importExport.modeAppend">
                     Append to existing
@@ -238,41 +244,45 @@
                   </option>
                   <option value="merge" data-i18n="importExport.modeMerge">Smart merge</option>
                 </select>
-                <small class="text-xs text-gray-500 mt-1 block" data-i18n="importExport.modeHelp">
+                <p class="text-xs text-gray-500 mt-1" data-i18n="importExport.modeHelp">
                   Append adds new prompts and keeps current ones (creating duplicates if titles
                   match). Replace clears existing prompts before import. Smart merge skips prompts
                   whose title already exists.
-                </small>
+                </p>
               </div>
 
-              <div class="flex space-x-3 pt-4">
-                <button
-                  class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition"
-                  onclick="performImport()"
-                  data-i18n="importExport.importBtn"
-                >
-                  Import Data
-                </button>
-                <button
-                  class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition"
-                  onclick="previewImport()"
-                  data-i18n="importExport.previewBtn"
-                >
-                  Preview
-                </button>
+              <div class="border-t pt-4 mt-4">
+                <div class="flex flex-col sm:flex-row gap-2">
+                  <button
+                    type="button"
+                    class="flex-1 px-4 py-2 text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                    onclick="performImport()"
+                    data-i18n="importExport.importBtn"
+                  >
+                    Import Data
+                  </button>
+                  <button
+                    type="button"
+                    class="px-4 py-2 text-sm font-medium bg-gray-200 text-gray-900 hover:bg-gray-300 rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                    onclick="previewImport()"
+                    data-i18n="importExport.previewBtn"
+                  >
+                    Preview
+                  </button>
+                </div>
               </div>
 
               <div class="hidden" id="import-progress">
-                <div class="h-2 bg-gray-200 rounded overflow-hidden mt-4">
+                <div class="h-2 bg-gray-200 rounded overflow-hidden mt-2">
                   <div
                     class="h-full bg-blue-600 transition-all duration-300"
                     id="import-progress-fill"
                     style="width: 0%"
                   ></div>
                 </div>
-                <div id="import-status" class="text-sm text-blue-600 mt-2"></div>
+                <p id="import-status" class="text-sm text-blue-600 mt-1"></p>
               </div>
-            </div>
+            </form>
           </div>
         </div>
 
@@ -285,20 +295,20 @@
             class="bg-gray-50 rounded p-4 mb-4 font-mono text-sm overflow-auto max-h-96"
             id="preview-content"
           ></div>
-          <div class="flex space-x-3">
+          <div class="flex gap-2 items-center justify-end">
             <button
-              class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition"
-              onclick="confirmOperation()"
-              id="confirm-btn"
-            >
-              Confirm
-            </button>
-            <button
-              class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition"
+              class="px-4 py-2 text-sm font-medium bg-gray-200 text-gray-900 hover:bg-gray-300 rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
               onclick="cancelPreview()"
               id="cancel-btn"
             >
               Cancel
+            </button>
+            <button
+              class="px-4 py-2 text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+              onclick="confirmOperation()"
+              id="confirm-btn"
+            >
+              Confirm
             </button>
           </div>
         </div>

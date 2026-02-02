@@ -16,10 +16,24 @@ import type { PromptResponse, PromptListResponse } from '@/types';
 import type { TranslationKey } from '@/types/i18n';
 import { initI18n, t, tUnsafe, updateStaticTranslations } from '@/utils/i18n';
 import { apiFetch, apiGet, apiPostForm, APIRequestError } from '@/utils/api';
+import { setupScrollIndicators } from '@/utils/dom';
 
 interface TagInfo {
   name: string;
   count: number;
+  color?: string | null;
+}
+
+interface CategoryItem {
+  name: string;
+  color?: string | null;
+}
+
+interface TagItem {
+  name: string;
+  color?: string | null;
+  usage_count?: number | null;
+  count?: number | null;
 }
 
 interface VersionSummary {
@@ -80,10 +94,15 @@ type PromptId = string;
 let promptCache: Record<string, PromptResponse> = {};
 let lastSelectedPromptId: number | null = null; // Track the last selected prompt for keyboard shortcuts
 const selectedPromptIds: Set<number> = new Set(); // Track selected prompts for bulk operations
+let tagColorMap: Record<string, string> = {};
+let categoryColorMap: Record<string, string> = {};
+const colorTextCache = new Map<string, string>();
+let selectedTags: string[] = [];
 
 const HIDDEN_CLASS = 'hidden';
 const ERROR_VISIBLE_CLASS = 'validation-error-visible';
 const APP_COMPONENT = 'app';
+const MAX_TAGS = 15;
 
 function reportAppIssue(
   action: string,
@@ -115,6 +134,283 @@ function hideElement(element: HTMLElement | null): void {
   }
 }
 
+function resolveCssColor(color?: string | null): string | null {
+  if (!color) {
+    return null;
+  }
+  const trimmed = color.trim();
+  if (!trimmed) {
+    return null;
+  }
+  if (trimmed.startsWith('#')) {
+    return trimmed;
+  }
+  return `var(--color-${trimmed}, ${trimmed})`;
+}
+
+/**
+ * Convert hex color to RGB
+ */
+function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result
+    ? {
+        r: parseInt(result[1]!, 16),
+        g: parseInt(result[2]!, 16),
+        b: parseInt(result[3]!, 16),
+      }
+    : null;
+}
+
+/**
+ * Convert RGB to HSL
+ */
+function rgbToHsl(r: number, g: number, b: number): { h: number; s: number; l: number } {
+  r /= 255;
+  g /= 255;
+  b /= 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  let h = 0;
+  let s = 0;
+  const l = (max + min) / 2;
+
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r:
+        h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+        break;
+      case g:
+        h = ((b - r) / d + 2) / 6;
+        break;
+      case b:
+        h = ((r - g) / d + 4) / 6;
+        break;
+    }
+  }
+
+  return { h, s, l };
+}
+
+/**
+ * Convert HSL to RGB
+ */
+function hslToRgb(h: number, s: number, l: number): { r: number; g: number; b: number } {
+  let r, g, b;
+
+  if (s === 0) {
+    r = g = b = l;
+  } else {
+    const hue2rgb = (p: number, q: number, t: number) => {
+      if (t < 0) t += 1;
+      if (t > 1) t -= 1;
+      if (t < 1 / 6) return p + (q - p) * 6 * t;
+      if (t < 1 / 2) return q;
+      if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+      return p;
+    };
+
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    const p = 2 * l - q;
+    r = hue2rgb(p, q, h + 1 / 3);
+    g = hue2rgb(p, q, h);
+    b = hue2rgb(p, q, h - 1 / 3);
+  }
+
+  return {
+    r: Math.round(r * 255),
+    g: Math.round(g * 255),
+    b: Math.round(b * 255),
+  };
+}
+
+/**
+ * Convert RGB to hex
+ */
+function rgbToHex(r: number, g: number, b: number): string {
+  return (
+    '#' +
+    [r, g, b]
+      .map((x) => {
+        const hex = x.toString(16);
+        return hex.length === 1 ? '0' + hex : hex;
+      })
+      .join('')
+  );
+}
+
+/**
+ * Get soft/muted color scheme for tag pills (Option B design)
+ * Converts any color (hex or named) to a light background + colored border + darker text
+ */
+function getSoftMutedColorScheme(colorInput: string | undefined | null): {
+  background: string;
+  text: string;
+  border: string;
+} {
+  // Resolve color to hex
+  const borderColor = resolveCssColor(colorInput);
+  if (!borderColor) {
+    // Default fallback if no color provided
+    return {
+      background: '#f3f4f6',
+      text: '#374151',
+      border: '#d1d5db',
+    };
+  }
+
+  // Convert to RGB
+  const rgb = hexToRgb(borderColor);
+  if (!rgb) {
+    // Fallback if color parsing fails
+    return {
+      background: '#f3f4f6',
+      text: '#374151',
+      border: '#d1d5db',
+    };
+  }
+
+  // Convert RGB to HSL
+  const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
+
+  // Create soft/muted version:
+  // - Reduce saturation to 60% (less aggressive, more recognizable)
+  // - Increase lightness to 78% (light but more visible than 90%)
+  const softHsl = {
+    h: hsl.h,
+    s: 0.6, // 60% saturation (more visible, less aggressive)
+    l: 0.78, // 78% lightness (soft but not too pale)
+  };
+
+  // Create border color version:
+  // - Keep hue
+  // - Increase saturation to 70% (more vibrant)
+  // - Set lightness to 52% (more visible)
+  const borderHsl = {
+    h: hsl.h,
+    s: 0.7, // 70% saturation (more vibrant)
+    l: 0.52, // 52% lightness (medium tone, more visible)
+  };
+
+  // Convert back to RGB and then to hex
+  const softRgb = hslToRgb(softHsl.h, softHsl.s, softHsl.l);
+  const borderRgb = hslToRgb(borderHsl.h, borderHsl.s, borderHsl.l);
+
+  const background = rgbToHex(softRgb.r, softRgb.g, softRgb.b);
+  const borderColorHex = rgbToHex(borderRgb.r, borderRgb.g, borderRgb.b);
+
+  // Determine text color based on background luminance
+  // Use darker text for light backgrounds
+  const textColor = '#374151'; // dark gray (works well on light backgrounds)
+
+  return {
+    background,
+    text: textColor,
+    border: borderColorHex,
+  };
+}
+
+function getReadableTextColor(background: string): string {
+  const cached = colorTextCache.get(background);
+  if (cached) {
+    return cached;
+  }
+  const swatch = document.createElement('span');
+  swatch.style.backgroundColor = background;
+  swatch.style.display = 'none';
+  document.body.appendChild(swatch);
+  const computed = window.getComputedStyle(swatch).backgroundColor;
+  swatch.remove();
+
+  const match = computed.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+  if (!match) {
+    colorTextCache.set(background, '#374151');
+    return '#374151';
+  }
+  const r = Number(match[1]) / 255;
+  const g = Number(match[2]) / 255;
+  const b = Number(match[3]) / 255;
+  const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  const textColor = luminance > 0.6 ? '#1f2937' : '#f9fafb';
+  colorTextCache.set(background, textColor);
+  return textColor;
+}
+
+function buildPillStyleFilled(color?: string | null): string {
+  const background = resolveCssColor(color);
+  if (!background) {
+    return '';
+  }
+  const textColor = getReadableTextColor(background);
+  return ` style="background-color: ${background}; color: ${textColor};"`;
+}
+
+function buildPillStyleOutline(color?: string | null): string {
+  if (!color) {
+    return '';
+  }
+  // Use soft/muted color scheme (Option B)
+  const colorScheme = getSoftMutedColorScheme(color);
+  return ` style="background-color: ${colorScheme.background}; color: ${colorScheme.text}; border-color: ${colorScheme.border};"`;
+}
+
+function applyPromptColorStyles(): void {
+  document.querySelectorAll<HTMLElement>('[data-category-pill]').forEach((pill) => {
+    const category = pill.dataset.categoryName || '';
+    const color = categoryColorMap[category];
+    if (!color) {
+      return;
+    }
+    const background = resolveCssColor(color);
+    if (!background) {
+      return;
+    }
+    pill.style.backgroundColor = background;
+    pill.style.color = getReadableTextColor(background);
+  });
+
+  document.querySelectorAll<HTMLElement>('[data-tag-pill]').forEach((pill) => {
+    const tagName = pill.dataset.tagName || '';
+    const color = tagColorMap[tagName];
+    if (!color) {
+      return;
+    }
+    // Use soft/muted color scheme (Option B design)
+    const colorScheme = getSoftMutedColorScheme(color);
+    pill.style.backgroundColor = colorScheme.background;
+    pill.style.color = colorScheme.text;
+    pill.style.borderColor = colorScheme.border;
+  });
+}
+
+function normalizeTagItems(items: TagItem[]): TagInfo[] {
+  return items.map((item) => ({
+    name: item.name,
+    count: item.count ?? item.usage_count ?? 0,
+    color: item.color ?? null,
+  }));
+}
+
+function setTagColorMap(tags: TagInfo[]): void {
+  tagColorMap = {};
+  tags.forEach((tag) => {
+    if (tag.color) {
+      tagColorMap[tag.name] = tag.color;
+    }
+  });
+}
+
+function setCategoryColorMap(items: CategoryItem[]): void {
+  categoryColorMap = {};
+  items.forEach((item) => {
+    if (item.color) {
+      categoryColorMap[item.name] = item.color;
+    }
+  });
+}
+
 function clearPromptFormErrors(): void {
   const errorFields = [
     'prompt-title-error',
@@ -138,6 +434,11 @@ function clearPromptFormErrors(): void {
       field.removeAttribute('aria-invalid');
     }
   });
+  const tagChipInput = document.getElementById('tag-chip-input');
+  if (tagChipInput) {
+    tagChipInput.classList.remove('field-error');
+    tagChipInput.removeAttribute('aria-invalid');
+  }
   const banner = document.getElementById('validation-error-banner');
   if (banner) {
     banner.style.display = 'none';
@@ -157,6 +458,34 @@ function showPromptFieldError(fieldId: string, errorId: string, messageKey: Tran
     field.classList.add('field-error');
     field.setAttribute('aria-invalid', 'true');
     field.focus();
+  }
+  if (fieldId === 'prompt-tags') {
+    const tagChipInput = document.getElementById('tag-chip-input');
+    if (tagChipInput) {
+      tagChipInput.classList.add('field-error');
+      tagChipInput.setAttribute('aria-invalid', 'true');
+    }
+  }
+}
+
+function clearPromptFieldError(fieldId: string, errorId: string): void {
+  const errorEl = document.getElementById(errorId);
+  if (errorEl) {
+    errorEl.textContent = '';
+    delete errorEl.dataset.errorKey;
+    errorEl.classList.remove(ERROR_VISIBLE_CLASS);
+  }
+  const field = document.getElementById(fieldId);
+  if (field) {
+    field.classList.remove('field-error');
+    field.removeAttribute('aria-invalid');
+  }
+  if (fieldId === 'prompt-tags') {
+    const tagChipInput = document.getElementById('tag-chip-input');
+    if (tagChipInput) {
+      tagChipInput.classList.remove('field-error');
+      tagChipInput.removeAttribute('aria-invalid');
+    }
   }
 }
 
@@ -301,6 +630,10 @@ function setupEventListeners(): void {
   });
   const cancelBtn = document.getElementById('cancel-btn');
   cancelBtn?.addEventListener('click', hidePromptEditor);
+  const suggestTagsBtn = document.getElementById('suggest-tags-btn');
+  suggestTagsBtn?.addEventListener('click', () => {
+    void handleSuggestTags();
+  });
 
   // Category and tag filtering (desktop and mobile)
   const categoriesList = document.getElementById('categories-list');
@@ -371,6 +704,20 @@ function setupEventListeners(): void {
 
   // Tag autocomplete
   setupTagAutocomplete();
+
+  // Empty state buttons
+  const emptyStateNewPromptBtn = document.getElementById('empty-state-new-prompt-btn');
+  emptyStateNewPromptBtn?.addEventListener('click', showNewPromptForm);
+
+  const emptyStateClearFiltersBtn = document.getElementById('empty-state-clear-filters-btn');
+  emptyStateClearFiltersBtn?.addEventListener('click', clearAllFilters);
+
+  // Setup scroll indicators for scrollable containers
+  setupScrollIndicators(document.getElementById('categories-list'));
+  setupScrollIndicators(document.getElementById('tags-list'));
+  setupScrollIndicators(document.getElementById('categories-list-mobile'));
+  setupScrollIndicators(document.getElementById('tags-list-mobile'));
+  setupScrollIndicators(document.getElementById('tag-autocomplete'));
 }
 
 async function loadPrompts(): Promise<void> {
@@ -391,8 +738,21 @@ async function loadPrompts(): Promise<void> {
 
 async function loadCategories(): Promise<void> {
   try {
+    try {
+      const data = await apiGet<{ items: CategoryItem[] }>('/api/categories/manage');
+      const categories = (data.items || []).map((item) => item.name);
+      setCategoryColorMap(data.items || []);
+      renderCategories(categories);
+      applyPromptColorStyles();
+      return;
+    } catch (error) {
+      reportAppIssue('loadCategoriesMetadata', error, {}, 'warning');
+    }
+
     const data = await apiGet<{ categories: string[] }>('/api/categories');
+    categoryColorMap = {};
     renderCategories(data.categories || []);
+    applyPromptColorStyles();
   } catch (error) {
     reportAppIssue('loadCategories', error);
   }
@@ -400,8 +760,21 @@ async function loadCategories(): Promise<void> {
 
 async function loadTags(): Promise<void> {
   try {
+    try {
+      const data = await apiGet<{ items: TagItem[] }>('/api/tags/manage');
+      const normalized = normalizeTagItems(data.items || []);
+      setTagColorMap(normalized);
+      renderTags(normalized);
+      applyPromptColorStyles();
+      return;
+    } catch (error) {
+      reportAppIssue('loadTagsMetadata', error, {}, 'warning');
+    }
+
     const data = await apiGet<{ tags: TagInfo[] }>('/api/tags');
+    setTagColorMap(data.tags || []);
     renderTags(data.tags || []);
+    applyPromptColorStyles();
   } catch (error) {
     reportAppIssue('loadTags', error);
   }
@@ -411,6 +784,9 @@ function renderPrompts(prompts: Record<string, PromptResponse>): void {
   promptCache = { ...prompts };
   const container = document.getElementById('prompts-list') as HTMLElement | null;
   const searchResultsInfo = document.getElementById('search-results-info');
+  const promptsEmptyState = document.getElementById('prompts-empty-state');
+  const searchEmptyState = document.getElementById('search-empty-state');
+
   if (!container) {
     return;
   }
@@ -418,17 +794,52 @@ function renderPrompts(prompts: Record<string, PromptResponse>): void {
 
   // Handle case when there are no prompts at all
   if (Object.keys(prompts).length === 0) {
-    container.innerHTML = `<div class="col-span-full text-center text-gray-500 py-12">${t('search.emptyState')}</div>`;
+    // Determine if this is a search/filter result or truly no prompts
+    const hasActiveFilters = isAnyFilterActive();
+
+    if (hasActiveFilters) {
+      // Show search empty state
+      showElement(searchEmptyState);
+      hideElement(promptsEmptyState);
+      hideElement(container);
+    } else {
+      // Show prompts empty state
+      showElement(promptsEmptyState);
+      hideElement(searchEmptyState);
+      hideElement(container);
+    }
+
     if (searchResultsInfo) {
       hideElement(searchResultsInfo);
     }
     return;
   }
 
+  // Hide empty states and show prompts container
+  hideElement(promptsEmptyState);
+  hideElement(searchEmptyState);
+  showElement(container);
+
   for (const [id, prompt] of Object.entries(prompts)) {
     const promptElement = createPromptElement(id, prompt);
     container.appendChild(promptElement);
   }
+
+  applyPromptColorStyles();
+}
+
+function isAnyFilterActive(): boolean {
+  const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
+  const favoritesFilter = document.getElementById('favorites-filter') as HTMLInputElement | null;
+  const selectedCategory = document.querySelector('#categories-list li.active')?.getAttribute('data-category');
+  const selectedTag = document.querySelector('#tags-list li.active')?.getAttribute('data-tag');
+
+  return !!(
+    (searchInput && searchInput.value.trim()) ||
+    (favoritesFilter && favoritesFilter.checked) ||
+    (selectedCategory && selectedCategory !== 'all') ||
+    (selectedTag && selectedTag !== 'all')
+  );
 }
 
 function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement {
@@ -455,15 +866,22 @@ function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement
   });
 
   // Build tags HTML
+  const tagColorLookup = prompt.tag_colors ?? {};
   const tagsHTML =
     prompt.tags && prompt.tags.length > 0
       ? prompt.tags
-          .map(
-            (tag) =>
-              `<span class="px-2 py-1 text-xs font-medium rounded-md" style="background-color: #F3F4F6; color: #6B7280;">${tag}</span>`
-          )
+          .map((tag) => {
+            const color = tagColorLookup[tag] ?? tagColorMap[tag];
+            const style = buildPillStyleOutline(color);
+            return `<span class="px-2 py-1 text-xs font-medium rounded-full border" data-tag-pill="true" data-tag-name="${tag}"${style}>
+                ${tag}
+              </span>`;
+          })
           .join('')
       : '';
+
+  const categoryColor = prompt.category_color ?? categoryColorMap[prompt.category];
+  const categoryStyle = buildPillStyleFilled(categoryColor);
 
   div.innerHTML = `
         <div class="flex items-start justify-between mb-3">
@@ -475,14 +893,16 @@ function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement
             </div>
         </div>
         <div class="flex flex-wrap gap-2 mb-3">
-            <span class="px-2 py-1 text-xs font-medium rounded-md bg-blue-100 text-blue-800">${prompt.category || t('categories.noCategory')}</span>
+            <span class="px-2 py-1 text-xs font-semibold rounded-md" data-category-pill="true" data-category-name="${prompt.category}"${categoryStyle}>
+              ${prompt.category || t('categories.noCategory')}
+            </span>
             ${tagsHTML}
         </div>
         <p class="text-sm text-gray-600 mb-4 line-clamp-3">${truncateText(prompt.prompt, 100)}</p>
         <div class="flex flex-wrap gap-2">
             <button class="history-btn px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all hover:scale-105 active:scale-95" data-id="${id}" data-i18n="version.history">History</button>
-            <button class="copy-btn px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 transition-all hover:scale-105 active:scale-95" data-id="${id}" data-i18n="actions.copy">Copy</button>
-            <button class="edit-btn px-3 py-1.5 text-xs font-medium rounded-lg bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition-all hover:scale-105 active:scale-95" data-id="${id}" data-i18n="actions.edit">Edit</button>
+            <button class="copy-btn px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all hover:scale-105 active:scale-95" data-id="${id}" data-i18n="actions.copy">Copy</button>
+            <button class="edit-btn px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 transition-all hover:scale-105 active:scale-95" data-id="${id}" data-i18n="actions.edit">Edit</button>
             <button class="delete-btn px-3 py-1.5 text-xs font-medium rounded-lg bg-red-100 text-red-700 hover:bg-red-200 transition-all hover:scale-105 active:scale-95" data-id="${id}" data-i18n="actions.delete">Delete</button>
         </div>
     `;
@@ -547,9 +967,14 @@ function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement
     historyBtn.title = t('version.history');
   }
 
-  // Track prompt selection on click
-  div.addEventListener('click', () => {
+  // Track prompt selection on click and open editor
+  div.addEventListener('click', (event) => {
+    const target = event.target as Element | null;
+    if (target && (target.closest('button') || target.closest('input') || target.closest('a'))) {
+      return;
+    }
     lastSelectedPromptId = parseInt(id, 10);
+    void editPrompt(id);
   });
 
   return div;
@@ -557,25 +982,74 @@ function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement
 
 function renderCategories(categories: string[]): void {
   const list = document.getElementById('categories-list');
+  const listMobile = document.getElementById('categories-list-mobile');
+  const emptyState = document.getElementById('categories-sidebar-empty');
+  const emptyStateMobile = document.getElementById('categories-sidebar-empty-mobile');
+
   if (!list) return;
-  // Clear existing categories except "All Prompts"
+
+  // Clear existing categories except "All Categories"
   const allPromptsItem = list.querySelector('[data-category="all"]');
   list.innerHTML = '';
   if (allPromptsItem) {
     list.appendChild(allPromptsItem);
   }
 
+  // Handle mobile list
+  if (listMobile) {
+    const allPromptsItemMobile = listMobile.querySelector('[data-category="all"]');
+    listMobile.innerHTML = '';
+    if (allPromptsItemMobile) {
+      listMobile.appendChild(allPromptsItemMobile);
+    }
+  }
+
+  // Show/hide empty states
+  if (categories.length === 0) {
+    showElement(emptyState);
+    showElement(emptyStateMobile);
+    return;
+  } else {
+    hideElement(emptyState);
+    hideElement(emptyStateMobile);
+  }
+
   categories.forEach((category) => {
     const li = document.createElement('li');
     li.dataset.category = category;
-    li.textContent = category;
+    li.classList.add('flex', 'items-center', 'gap-2');
+
+    const color = categoryColorMap[category];
+    const background = resolveCssColor(color);
+    if (background) {
+      const swatch = document.createElement('span');
+      swatch.className = 'inline-block h-2.5 w-2.5 rounded-full';
+      swatch.style.backgroundColor = background;
+      li.appendChild(swatch);
+    }
+
+    const label = document.createElement('span');
+    label.textContent = category;
+    li.appendChild(label);
+
     list.appendChild(li);
+
+    // Add to mobile list too
+    if (listMobile) {
+      const liMobile = li.cloneNode(true) as HTMLElement;
+      listMobile.appendChild(liMobile);
+    }
   });
 }
 
 function renderTags(tags: TagInfo[]): void {
   const list = document.getElementById('tags-list');
+  const listMobile = document.getElementById('tags-list-mobile');
+  const emptyState = document.getElementById('tags-sidebar-empty');
+  const emptyStateMobile = document.getElementById('tags-sidebar-empty-mobile');
+
   if (!list) return;
+
   // Clear existing tags except "All Tags"
   const allTagsItem = list.querySelector('[data-tag="all"]');
   list.innerHTML = '';
@@ -583,11 +1057,58 @@ function renderTags(tags: TagInfo[]): void {
     list.appendChild(allTagsItem);
   }
 
+  // Handle mobile list
+  if (listMobile) {
+    const allTagsItemMobile = listMobile.querySelector('[data-tag="all"]');
+    listMobile.innerHTML = '';
+    if (allTagsItemMobile) {
+      listMobile.appendChild(allTagsItemMobile);
+    }
+  }
+
+  // Show/hide empty states
+  if (tags.length === 0) {
+    showElement(emptyState);
+    showElement(emptyStateMobile);
+    return;
+  } else {
+    hideElement(emptyState);
+    hideElement(emptyStateMobile);
+  }
+
   tags.forEach((tag) => {
     const li = document.createElement('li');
     li.dataset.tag = tag.name;
-    li.textContent = `${tag.name} (${tag.count})`;
+    li.classList.add('flex', 'items-center', 'justify-between', 'gap-2');
+
+    const left = document.createElement('div');
+    left.className = 'flex items-center gap-2';
+
+    const background = resolveCssColor(tag.color ?? tagColorMap[tag.name]);
+    if (background) {
+      const swatch = document.createElement('span');
+      swatch.className = 'inline-block h-2.5 w-2.5 rounded-full';
+      swatch.style.backgroundColor = background;
+      left.appendChild(swatch);
+    }
+
+    const nameSpan = document.createElement('span');
+    nameSpan.textContent = tag.name;
+    left.appendChild(nameSpan);
+    li.appendChild(left);
+
+    const countSpan = document.createElement('span');
+    countSpan.className = 'text-xs text-gray-500';
+    countSpan.textContent = `(${tag.count})`;
+    li.appendChild(countSpan);
+
     list.appendChild(li);
+
+    // Add to mobile list too
+    if (listMobile) {
+      const liMobile = li.cloneNode(true) as HTMLElement;
+      listMobile.appendChild(liMobile);
+    }
   });
 }
 
@@ -598,6 +1119,11 @@ function showNewPromptForm() {
   showElement(promptEditor);
   const promptForm = document.getElementById('prompt-form') as HTMLFormElement | null;
   promptForm?.reset();
+  setSelectedTags([]);
+  const tagInput = getTagInputElement();
+  if (tagInput) {
+    tagInput.value = '';
+  }
   hideElement(promptsList);
 }
 
@@ -615,6 +1141,10 @@ async function handlePromptSubmit(event: SubmitEvent): Promise<void> {
   const form = event.currentTarget as HTMLFormElement | null;
   if (!form) {
     return;
+  }
+  const tagInput = getTagInputElement();
+  if (tagInput) {
+    commitTagInput(tagInput);
   }
   const formData = new FormData(form);
   const isEditMode = form.dataset.mode === 'edit';
@@ -777,12 +1307,11 @@ async function editPrompt(id: PromptId): Promise<void> {
     const promptTitle = document.getElementById('prompt-title') as HTMLInputElement | null;
     const promptContent = document.getElementById('prompt-content') as HTMLTextAreaElement | null;
     const promptCategory = document.getElementById('prompt-category') as HTMLInputElement | null;
-    const promptTags = document.getElementById('prompt-tags') as HTMLInputElement | null;
     const commitMessage = document.getElementById('commit-message') as HTMLInputElement | null;
     if (promptTitle) promptTitle.value = prompt.title || '';
     if (promptContent) promptContent.value = prompt.prompt || '';
     if (promptCategory) promptCategory.value = prompt.category || '';
-    if (promptTags) promptTags.value = prompt.tags ? prompt.tags.join(', ') : '';
+    setSelectedTags(prompt.tags ? prompt.tags : []);
     if (commitMessage) commitMessage.value = ''; // Clear commit message for new edit
 
     // Change form to update mode
@@ -967,42 +1496,6 @@ function setupSearchEventListeners() {
     });
   }
 
-  // Clear search button (desktop)
-  const clearSearchBtn = document.getElementById('clear-search-btn');
-  if (clearSearchBtn) {
-    clearSearchBtn.addEventListener('click', function () {
-      const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
-      const searchInputMobile = document.getElementById(
-        'search-input-mobile'
-      ) as HTMLInputElement | null;
-      if (searchInput) searchInput.value = '';
-      if (searchInputMobile) searchInputMobile.value = '';
-      searchState.searchTerm = '';
-      toggleElement(clearSearchBtn, false);
-      const clearSearchBtnMobile = document.getElementById('clear-search-btn-mobile');
-      toggleElement(clearSearchBtnMobile, false);
-      void performSearch();
-    });
-  }
-
-  // Clear search button (mobile)
-  const clearSearchBtnMobile = document.getElementById('clear-search-btn-mobile');
-  if (clearSearchBtnMobile) {
-    clearSearchBtnMobile.addEventListener('click', function () {
-      const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
-      const searchInputMobile = document.getElementById(
-        'search-input-mobile'
-      ) as HTMLInputElement | null;
-      if (searchInput) searchInput.value = '';
-      if (searchInputMobile) searchInputMobile.value = '';
-      searchState.searchTerm = '';
-      toggleElement(clearSearchBtnMobile, false);
-      const clearSearchBtn = document.getElementById('clear-search-btn');
-      toggleElement(clearSearchBtn, false);
-      void performSearch();
-    });
-  }
-
   // Case sensitive toggle (desktop)
   const caseSensitiveToggle = document.getElementById(
     'case-sensitive-toggle'
@@ -1066,16 +1559,6 @@ function handleSearchInput(event: Event): void {
   if (searchInput && target.id !== 'search-input') searchInput.value = searchTerm;
   if (searchInputMobile && target.id !== 'search-input-mobile')
     searchInputMobile.value = searchTerm;
-
-  // Show/hide clear search button
-  const clearSearchBtn = document.getElementById('clear-search-btn');
-  const clearSearchBtnMobile = document.getElementById('clear-search-btn-mobile');
-  if (clearSearchBtn) {
-    toggleElement(clearSearchBtn, searchTerm.length > 0);
-  }
-  if (clearSearchBtnMobile) {
-    toggleElement(clearSearchBtnMobile, searchTerm.length > 0);
-  }
 
   // Clear previous timeout
   if (searchTimeout) {
@@ -1283,11 +1766,6 @@ function clearAllFilters(): void {
     searchInput.value = '';
   }
 
-  const clearSearchBtn = document.getElementById('clear-search-btn');
-  if (clearSearchBtn) {
-    hideElement(clearSearchBtn);
-  }
-
   const caseSensitiveToggle = document.getElementById(
     'case-sensitive-toggle'
   ) as HTMLInputElement | null;
@@ -1306,11 +1784,6 @@ function clearAllFilters(): void {
   ) as HTMLInputElement | null;
   if (searchInputMobile) {
     searchInputMobile.value = '';
-  }
-
-  const clearSearchBtnMobile = document.getElementById('clear-search-btn-mobile');
-  if (clearSearchBtnMobile) {
-    hideElement(clearSearchBtnMobile);
   }
 
   const caseSensitiveToggleMobile = document.getElementById(
@@ -1480,7 +1953,7 @@ function createVersionItem(
     } else {
       timestamp = date.toLocaleString();
     }
-  } catch (error) {
+  } catch {
     timestamp = 'Invalid Date';
   }
   const isLatest = index === 0;
@@ -1780,7 +2253,8 @@ function displayDiff(diff: VersionDiffResponse): void {
     // If character-level diff is available, render it
     if (change.diff && change.diff.length > 0) {
       const diffContainer = renderCharacterDiff(change.diff);
-      diffContainer.className = 'p-3 bg-gray-50 border border-gray-200 rounded-lg ' + diffContainer.className;
+      diffContainer.className =
+        'p-3 bg-gray-50 border border-gray-200 rounded-lg ' + diffContainer.className;
       fieldDiv.appendChild(diffContainer);
     } else {
       // Fallback to old/new display for backward compatibility
@@ -1978,11 +2452,183 @@ let tagAutocompleteState = {
   currentPartialTag: '',
 };
 
+function getTagInputElement(): HTMLInputElement | null {
+  return document.getElementById('prompt-tags-input') as HTMLInputElement | null;
+}
+
+function getTagHiddenInput(): HTMLInputElement | null {
+  return document.getElementById('prompt-tags') as HTMLInputElement | null;
+}
+
+function parseTagInput(value: string): string[] {
+  return value
+    .split(',')
+    .map((tag) => tag.trim())
+    .filter((tag) => tag.length > 0);
+}
+
+function dedupeTags(tags: string[]): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const tag of tags) {
+    const normalized = tag.toLowerCase();
+    if (!normalized || seen.has(normalized)) {
+      continue;
+    }
+    seen.add(normalized);
+    result.push(tag);
+  }
+  return result;
+}
+
+function syncHiddenTags(): void {
+  const hidden = getTagHiddenInput();
+  if (!hidden) {
+    return;
+  }
+  hidden.value = selectedTags.join(', ');
+}
+
+function renderTagChips(): void {
+  const chipContainer = document.getElementById('tag-chips');
+  const input = getTagInputElement();
+  if (!chipContainer) {
+    return;
+  }
+  chipContainer.innerHTML = '';
+
+  // Don't show empty state - the input placeholder already provides guidance
+
+  selectedTags.forEach((tag) => {
+    const color = tagColorMap[tag];
+    const chip = document.createElement('span');
+    chip.className =
+      'inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full border';
+
+    // Apply soft/muted color scheme (Option B)
+    const colorScheme = getSoftMutedColorScheme(color || '');
+    chip.style.backgroundColor = colorScheme.background;
+    chip.style.color = colorScheme.text;
+    chip.style.borderColor = colorScheme.border;
+
+    chip.dataset.tagName = tag;
+    chip.innerHTML = `
+      <span>${tag}</span>
+      <button type="button" class="text-xs leading-none px-1 opacity-70 hover:opacity-100 transition-opacity" aria-label="Remove tag">×</button>
+    `;
+    chipContainer.appendChild(chip);
+  });
+
+  if (input) {
+    input.placeholder = selectedTags.length === 0 ? t('form.tagPlaceholder') : '';
+  }
+}
+
+function setSelectedTags(tags: string[]): void {
+  selectedTags = dedupeTags(tags);
+  if (selectedTags.length > MAX_TAGS) {
+    selectedTags = selectedTags.slice(0, MAX_TAGS);
+    showPromptFieldError('prompt-tags', 'prompt-tags-error', 'validation.tagsMax');
+  } else {
+    clearPromptFieldError('prompt-tags', 'prompt-tags-error');
+  }
+  renderTagChips();
+  syncHiddenTags();
+}
+
+function addTags(tags: string[]): void {
+  const existing = selectedTags.map((tag) => tag.toLowerCase());
+  let added = 0;
+  const incoming = dedupeTags(tags);
+  for (const tag of incoming) {
+    if (selectedTags.length >= MAX_TAGS) {
+      showPromptFieldError('prompt-tags', 'prompt-tags-error', 'validation.tagsMax');
+      break;
+    }
+    if (!existing.includes(tag.toLowerCase())) {
+      selectedTags.push(tag);
+      existing.push(tag.toLowerCase());
+      added++;
+    }
+  }
+  if (added > 0) {
+    clearPromptFieldError('prompt-tags', 'prompt-tags-error');
+  }
+  renderTagChips();
+  syncHiddenTags();
+}
+
+function removeTag(tagName: string): void {
+  const normalized = tagName.toLowerCase();
+  selectedTags = selectedTags.filter((tag) => tag.toLowerCase() !== normalized);
+  renderTagChips();
+  syncHiddenTags();
+}
+
+function mergeTagSuggestions(existing: string[], suggestions: string[]): string[] {
+  const existingSet = new Set(existing.map((tag) => tag.toLowerCase()));
+  const merged = [...existing];
+  for (const suggestion of suggestions) {
+    if (!existingSet.has(suggestion.toLowerCase())) {
+      merged.push(suggestion);
+      existingSet.add(suggestion.toLowerCase());
+    }
+  }
+  return merged;
+}
+
+async function handleSuggestTags(): Promise<void> {
+  const promptInput = document.getElementById('prompt-content') as HTMLTextAreaElement | null;
+  const tagInput = getTagInputElement();
+  if (!promptInput || !tagInput) {
+    return;
+  }
+
+  const content = promptInput.value.trim();
+  if (!content) {
+    alert('Add prompt content before requesting suggestions.');
+    return;
+  }
+
+  try {
+    const response = await apiFetch<{ suggestions: Array<{ name: string; score: number }> }>(
+      '/api/tags/suggest',
+      {
+        method: 'POST',
+        body: JSON.stringify({ content, limit: 10 }),
+      }
+    );
+    const suggestedNames = response.suggestions.map((item) => item.name);
+    if (suggestedNames.length === 0) {
+      alert('No suggestions found.');
+      return;
+    }
+    const merged = mergeTagSuggestions(selectedTags, suggestedNames);
+    setSelectedTags(merged);
+    tagInput.value = '';
+  } catch (error) {
+    reportAppIssue('suggestTags', error);
+    alert('Failed to get tag suggestions.');
+  }
+}
+
 async function loadAvailableTags(): Promise<void> {
   try {
+    try {
+      const data = await apiGet<{ items: TagItem[] }>('/api/tags/manage');
+      availableTags = normalizeTagItems(data.items || []);
+      setTagColorMap(availableTags);
+      applyPromptColorStyles();
+      return;
+    } catch (error) {
+      reportAppIssue('loadTagsAutocompleteMetadata', error, {}, 'warning');
+    }
+
     const data = await apiGet<{ tags: TagInfo[] }>('/api/tags');
     // Store tags with counts
     availableTags = data.tags || [];
+    setTagColorMap(availableTags);
+    applyPromptColorStyles();
   } catch (error) {
     reportAppIssue('loadTagsAutocomplete', error);
     availableTags = [];
@@ -1990,10 +2636,12 @@ async function loadAvailableTags(): Promise<void> {
 }
 
 function setupTagAutocomplete() {
-  const tagInput = document.getElementById('prompt-tags') as HTMLInputElement | null;
+  const tagInput = getTagInputElement();
   const autocompleteDiv = document.getElementById('tag-autocomplete') as HTMLElement | null;
+  const chipContainer = document.getElementById('tag-chips');
+  const chipInputWrapper = document.getElementById('tag-chip-input');
 
-  if (!tagInput || !autocompleteDiv) {
+  if (!tagInput || !autocompleteDiv || !chipContainer || !chipInputWrapper) {
     return;
   }
 
@@ -2010,19 +2658,79 @@ function setupTagAutocomplete() {
 
   // Keydown event - handle keyboard navigation
   tagInput.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      if (tagAutocompleteState.isOpen && tagAutocompleteState.highlightedIndex >= 0) {
+        handleTagInputKeydown(event);
+        return;
+      }
+      event.preventDefault();
+      commitTagInput(tagInput);
+      return;
+    }
+    if (event.key === ',') {
+      event.preventDefault();
+      commitTagInput(tagInput);
+      return;
+    }
+    if (event.key === 'Backspace' && tagInput.value.trim() === '' && selectedTags.length > 0) {
+      event.preventDefault();
+      const lastTag = selectedTags[selectedTags.length - 1];
+      if (lastTag) {
+        removeTag(lastTag);
+      }
+      return;
+    }
     handleTagInputKeydown(event);
   });
 
   // Focus event - show suggestions if there's partial input
   tagInput.addEventListener('focus', (event) => {
     const target = event.target as HTMLInputElement | null;
-    if (target) {
+    if (!target) {
+      return;
+    }
+    void loadAvailableTags().then(() => {
+      handleTagInput(target);
+    });
+  });
+
+  // Click event - reopen suggestions even if already focused
+  tagInput.addEventListener('click', (event) => {
+    const target = event.target as HTMLInputElement | null;
+    if (!target) {
+      return;
+    }
+    if (!tagAutocompleteState.isOpen) {
       handleTagInput(target);
     }
   });
 
+  chipInputWrapper.addEventListener('click', () => {
+    tagInput.focus();
+    if (!tagAutocompleteState.isOpen) {
+      handleTagInput(tagInput);
+    }
+  });
+
+  chipContainer.addEventListener('click', (event) => {
+    const target = event.target as HTMLElement | null;
+    if (!target) {
+      return;
+    }
+    if (target.tagName.toLowerCase() === 'button') {
+      const chip = target.closest('[data-tag-name]') as HTMLElement | null;
+      const tagName = chip?.dataset.tagName;
+      if (tagName) {
+        removeTag(tagName);
+      }
+      return;
+    }
+    tagInput.focus();
+  });
+
   // Blur event - close dropdown with delay to allow clicks
   tagInput.addEventListener('blur', () => {
+    commitTagInput(tagInput);
     setTimeout(() => {
       closeTagAutocomplete();
     }, 200);
@@ -2037,6 +2745,13 @@ function setupTagAutocomplete() {
       closeTagAutocomplete();
     }
   });
+
+  const hidden = getTagHiddenInput();
+  if (hidden && hidden.value) {
+    setSelectedTags(parseTagInput(hidden.value));
+  } else {
+    setSelectedTags([]);
+  }
 }
 
 function handleTagInput(input: HTMLInputElement) {
@@ -2050,11 +2765,8 @@ function handleTagInput(input: HTMLInputElement) {
 
   tagAutocompleteState.currentPartialTag = partialTag;
 
-  // Get already entered tags to filter them out
-  const enteredTags = getEnteredTags(input);
-
   // Filter available tags
-  const filtered = filterTags(partialTag, enteredTags);
+  const filtered = filterTags(partialTag, selectedTags);
   tagAutocompleteState.filteredTags = filtered;
   tagAutocompleteState.highlightedIndex = -1;
 
@@ -2066,36 +2778,41 @@ function handleTagInput(input: HTMLInputElement) {
   }
 }
 
-function getEnteredTags(input: HTMLInputElement) {
-  const value = input.value;
-  const tags = value
-    .split(',')
-    .map((tag) => tag.trim().toLowerCase())
-    .filter((tag) => tag.length > 0);
-  return new Set(tags);
+function commitTagInput(input: HTMLInputElement): void {
+  const tags = parseTagInput(input.value);
+  if (tags.length === 0) {
+    return;
+  }
+  addTags(tags);
+  input.value = '';
+  handleTagInput(input);
 }
 
-function filterTags(partialTag: string, enteredTags: Set<string>) {
+function filterTags(partialTag: string, selected: string[]) {
   if (!availableTags || availableTags.length === 0) {
     return [];
   }
 
   // Case-insensitive filtering
   const searchTerm = partialTag.toLowerCase();
+  const selectedSet = new Set(selected.map((tag) => tag.toLowerCase()));
 
-  return availableTags
-    .filter((tag) => {
-      const tagName = tag.name;
-      const tagLower = tagName.toLowerCase();
-      // Don't suggest tags already entered
-      if (enteredTags.has(tagLower)) {
-        return false;
-      }
-      // Match tags that contain the search term
-      return tagLower.includes(searchTerm);
-    })
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 10); // Limit to 10 suggestions
+  const filtered = availableTags.filter((tag) => {
+    const tagName = tag.name;
+    const tagLower = tagName.toLowerCase();
+    // Don't suggest tags already entered
+    if (selectedSet.has(tagLower)) {
+      return false;
+    }
+    // Match tags that contain the search term
+    return searchTerm === '' || tagLower.includes(searchTerm);
+  });
+
+  if (searchTerm === '') {
+    return filtered.sort((a, b) => a.name.localeCompare(b.name)).slice(0, 50);
+  }
+
+  return filtered.sort((a, b) => b.count - a.count).slice(0, 10); // Limit to 10 suggestions
 }
 
 function showTagAutocomplete(filteredTags: TagInfo[]) {
@@ -2248,38 +2965,12 @@ function highlightTagItem(index: number) {
 }
 
 function selectTag(tagName: string): void {
-  const tagInput = document.getElementById('prompt-tags') as HTMLInputElement | null;
+  const tagInput = getTagInputElement();
   if (!tagInput) {
     return;
   }
-
-  const value = tagInput.value;
-  const cursorPosition = tagInput.selectionStart ?? tagInput.value.length;
-
-  // Find the position of the last comma before cursor
-  const beforeCursor = value.substring(0, cursorPosition);
-  const lastCommaIndex = beforeCursor.lastIndexOf(',');
-
-  // Build the new value
-  let newValue = '';
-  let newCursorPosition = 0;
-
-  if (lastCommaIndex === -1) {
-    // No comma yet - replace entire input
-    newValue = tagName + ', ';
-    newCursorPosition = newValue.length;
-  } else {
-    // Replace text after last comma
-    const beforeTag = value.substring(0, lastCommaIndex + 1);
-    const afterCursor = value.substring(cursorPosition);
-    // Remove any existing partial tag and add the selected tag
-    newValue = beforeTag + ' ' + tagName + ', ' + afterCursor;
-    newCursorPosition = (beforeTag + ' ' + tagName + ', ').length;
-  }
-
-  // Update input
-  tagInput.value = newValue;
-  tagInput.setSelectionRange(newCursorPosition, newCursorPosition);
+  addTags([tagName]);
+  tagInput.value = '';
   tagInput.focus();
 
   // Close autocomplete
@@ -2298,9 +2989,12 @@ function selectTag(tagName: string): void {
 function initializeBulkActions() {
   const selectAllCheckbox = document.getElementById('select-all-checkbox');
   const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
+  const bulkTagBtn = document.getElementById('bulk-tag-btn');
   const clearSelectionBtn = document.getElementById('clear-selection-btn');
   const confirmBulkDeleteBtn = document.getElementById('confirm-bulk-delete-btn');
   const cancelBulkDeleteBtn = document.getElementById('cancel-bulk-delete-btn');
+  const confirmBulkTagBtn = document.getElementById('confirm-bulk-tag-btn');
+  const cancelBulkTagBtn = document.getElementById('cancel-bulk-tag-btn');
 
   if (selectAllCheckbox) {
     selectAllCheckbox.addEventListener('change', handleSelectAll);
@@ -2308,6 +3002,9 @@ function initializeBulkActions() {
 
   if (bulkDeleteBtn) {
     bulkDeleteBtn.addEventListener('click', showBulkDeleteConfirmation);
+  }
+  if (bulkTagBtn) {
+    bulkTagBtn.addEventListener('click', showBulkTagModal);
   }
 
   if (clearSelectionBtn) {
@@ -2322,6 +3019,16 @@ function initializeBulkActions() {
 
   if (cancelBulkDeleteBtn) {
     cancelBulkDeleteBtn.addEventListener('click', hideBulkDeleteModal);
+  }
+
+  if (confirmBulkTagBtn) {
+    confirmBulkTagBtn.addEventListener('click', () => {
+      void performBulkTagUpdate();
+    });
+  }
+
+  if (cancelBulkTagBtn) {
+    cancelBulkTagBtn.addEventListener('click', hideBulkTagModal);
   }
 }
 
@@ -2420,6 +3127,32 @@ function hideBulkDeleteModal() {
   }
 }
 
+function showBulkTagModal() {
+  if (selectedPromptIds.size === 0) return;
+
+  const modal = document.getElementById('bulk-tag-modal');
+  const countElement = document.getElementById('bulk-tag-count');
+  if (countElement) {
+    countElement.textContent = String(selectedPromptIds.size);
+  }
+  if (modal) {
+    modal.classList.remove(HIDDEN_CLASS);
+  }
+}
+
+function hideBulkTagModal() {
+  const modal = document.getElementById('bulk-tag-modal');
+  if (modal) {
+    modal.classList.add(HIDDEN_CLASS);
+  }
+}
+
+// Expose modal close handlers for inline template hooks
+(
+  window as typeof window & { hideBulkDeleteModal?: () => void; hideBulkTagModal?: () => void }
+).hideBulkDeleteModal = hideBulkDeleteModal;
+(window as typeof window & { hideBulkTagModal?: () => void }).hideBulkTagModal = hideBulkTagModal;
+
 async function performBulkDelete(): Promise<void> {
   if (selectedPromptIds.size === 0) return;
 
@@ -2467,6 +3200,49 @@ async function performBulkDelete(): Promise<void> {
     reportAppIssue('bulk-delete-failed', error, {
       prompt_ids: promptIdsArray,
     });
+  }
+}
+
+async function performBulkTagUpdate(): Promise<void> {
+  if (selectedPromptIds.size === 0) return;
+
+  const addInput = document.getElementById('bulk-tag-add') as HTMLInputElement | null;
+  const removeInput = document.getElementById('bulk-tag-remove') as HTMLInputElement | null;
+
+  const addTags = parseTagInput(addInput?.value ?? '');
+  const removeTags = parseTagInput(removeInput?.value ?? '');
+
+  if (addTags.length === 0 && removeTags.length === 0) {
+    alert('Provide at least one tag to add or remove.');
+    return;
+  }
+
+  try {
+    await apiFetch('/api/tags/bulk-update', {
+      method: 'POST',
+      body: JSON.stringify({
+        prompt_ids: Array.from(selectedPromptIds),
+        add: addTags,
+        remove: removeTags,
+        confirm: true,
+      }),
+    });
+
+    hideBulkTagModal();
+    clearSelection();
+    if (addInput) addInput.value = '';
+    if (removeInput) removeInput.value = '';
+
+    await loadPrompts();
+    await loadAvailableTags();
+    await loadTags();
+
+    alert('Tags updated for selected prompts.');
+  } catch (error) {
+    reportAppIssue('bulk-tag-update', error, {
+      promptCount: selectedPromptIds.size,
+    });
+    alert('Failed to update tags.');
   }
 }
 

@@ -38,6 +38,13 @@
         border-color: #d1d5db;
       }
 
+      #categories-list li:focus-visible,
+      #tags-list li:focus-visible {
+        outline: 2px solid #3b82f6;
+        outline-offset: 2px;
+        background-color: #f3f4f6;
+      }
+
       #categories-list li.active,
       #tags-list li.active {
         background-color: #eff6ff;
@@ -49,6 +56,12 @@
       #categories-list li.active:hover,
       #tags-list li.active:hover {
         background-color: #dbeafe;
+      }
+
+      #categories-list li.active:focus-visible,
+      #tags-list li.active:focus-visible {
+        outline: 2px solid #1e40af;
+        outline-offset: 2px;
       }
 
       /* Clear All Filters button - use visibility instead of display for smooth layout */
@@ -95,11 +108,13 @@
           <div class="flex items-center justify-between h-16">
             <!-- Logo and Title -->
             <div class="flex items-center gap-4">
-              <img
-                src="/static/images/promptvault_logo_frontend.webp"
-                alt="PromptVault Logo"
-                class="h-14 w-14 border-2 border-gray-400 rounded-lg shadow-lg"
-              />
+              <a href="/" class="inline-flex focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500 rounded-lg">
+                <img
+                  src="/static/images/promptvault_logo_frontend.webp"
+                  alt="PromptVault Logo"
+                  class="h-14 w-14 border-2 border-gray-400 rounded-lg shadow-lg"
+                />
+              </a>
               <h1 class="text-2xl font-bold">PromptVault</h1>
             </div>
 
@@ -108,7 +123,7 @@
               <!-- Desktop-only: New Prompt -->
               <button
                 id="new-prompt-btn"
-                class="hidden md:block px-4 py-2 text-sm font-semibold rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition-all hover:scale-105 active:scale-95"
+                class="hidden md:block px-4 py-2 text-sm font-semibold rounded-lg bg-white text-blue-700 border border-blue-200 hover:bg-blue-50 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
                 data-i18n="nav.newPrompt"
               >
                 New Prompt
@@ -118,7 +133,7 @@
               <button
                 id="import-export-btn"
                 onclick="window.location.href = '/import-export'"
-                class="hidden md:block px-3 py-2 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-all hover:scale-105 active:scale-95"
+                class="hidden md:block px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
                 data-i18n="nav.importExport"
               >
                 Import/Export
@@ -126,7 +141,7 @@
               <button
                 id="backup-btn"
                 onclick="window.location.href = '/backup-management'"
-                class="hidden md:block px-3 py-2 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-all hover:scale-105 active:scale-95"
+                class="hidden md:block px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
                 data-i18n="nav.backupManagement"
               >
                 Backup
@@ -134,7 +149,7 @@
               <button
                 id="profile-btn"
                 onclick="window.location.href = '/auth/profile'"
-                class="hidden md:block px-3 py-2 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-all hover:scale-105 active:scale-95"
+                class="hidden md:block px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
                 data-i18n="nav.profile"
               >
                 Profile
@@ -142,7 +157,7 @@
               <button
                 id="admin-btn"
                 onclick="window.location.href = '/admin/users'"
-                class="hidden md:block px-3 py-2 text-sm font-medium rounded-lg bg-amber-500 text-white hover:bg-amber-600 transition-all hover:scale-105 active:scale-95"
+                class="hidden md:block px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
                 data-i18n="nav.admin"
                 style="display: none"
               >
@@ -153,7 +168,7 @@
               <div class="relative md:hidden">
                 <button
                   id="mobile-menu-toggle"
-                  class="px-3 py-2 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-all"
+                  class="px-4 py-2 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
                   aria-label="Open menu"
                 >
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -166,7 +181,7 @@
                 >
                   <button
                     id="new-prompt-btn-mobile"
-                    class="w-full text-left px-4 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-50 transition-colors"
+                    class="w-full text-left px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset"
                     data-i18n="nav.newPrompt"
                   >
                     New Prompt
@@ -174,21 +189,21 @@
                   <div class="border-t border-gray-200 my-2"></div>
                   <button
                     onclick="window.location.href = '/import-export'"
-                    class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                    class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset"
                     data-i18n="nav.importExport"
                   >
                     Import/Export
                   </button>
                   <button
                     onclick="window.location.href = '/backup-management'"
-                    class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                    class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset"
                     data-i18n="nav.backupManagement"
                   >
                     Backup
                   </button>
                   <button
                     onclick="window.location.href = '/auth/profile'"
-                    class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                    class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset"
                     data-i18n="nav.profile"
                   >
                     Profile
@@ -196,7 +211,7 @@
                   <button
                     id="admin-btn-mobile"
                     onclick="window.location.href = '/admin/users'"
-                    class="w-full text-left px-4 py-2 text-sm text-amber-700 hover:bg-amber-50 transition-colors"
+                    class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset"
                     data-i18n="nav.admin"
                     style="display: none"
                   >
@@ -205,7 +220,7 @@
                   <div class="border-t border-gray-200 my-2"></div>
                   <button
                     id="logout-btn-mobile"
-                    class="w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50 transition-colors font-semibold"
+                    class="w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50 transition-colors font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-inset"
                     data-i18n="nav.logout"
                   >
                     Logout
@@ -216,7 +231,7 @@
               <!-- Desktop-only: Logout -->
               <button
                 id="logout-btn"
-                class="hidden md:block px-3 py-2 text-sm font-medium rounded-lg bg-red-500 text-white hover:bg-red-600 transition-all hover:scale-105 active:scale-95"
+                class="hidden md:block px-4 py-2 text-sm font-medium rounded-lg bg-red-600 text-white hover:bg-red-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
                 data-i18n="nav.logout"
               >
                 Logout
@@ -251,39 +266,39 @@
                   id="search-input"
                   placeholder="Search prompts..."
                   data-i18n="[placeholder]nav.searchPlaceholder"
-                  class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  class="w-full pl-3 pr-10 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
                 />
-                <button
-                  id="clear-search-btn"
-                  class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 hidden"
-                  title="Clear search"
-                >
-                  ✕
-                </button>
+                <svg class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none w-5 h-5 transition-colors"
+                     fill="none"
+                     stroke="currentColor"
+                     viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
               </div>
 
               <!-- Case Sensitive Toggle -->
               <label class="flex items-center gap-2 mb-2 cursor-pointer text-sm text-gray-700">
-                <input type="checkbox" id="case-sensitive-toggle" class="rounded text-blue-500 focus:ring-blue-500" />
+                <input type="checkbox" id="case-sensitive-toggle" class="rounded text-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" />
                 <span data-i18n="nav.caseSensitive">Case Sensitive</span>
               </label>
 
               <!-- Favorites Filter -->
               <label class="flex items-center gap-2 mb-3 cursor-pointer text-sm text-gray-700">
-                <input type="checkbox" id="favorites-filter" class="rounded text-blue-500 focus:ring-blue-500" />
+                <input type="checkbox" id="favorites-filter" class="rounded text-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" />
                 <span data-i18n="nav.showFavorites">Show Favorites</span>
               </label>
 
               <!-- Select All Checkbox -->
               <label class="flex items-center gap-2 mb-3 cursor-pointer text-sm text-gray-700">
-                <input type="checkbox" id="select-all-checkbox" class="rounded text-blue-500 focus:ring-blue-500" />
+                <input type="checkbox" id="select-all-checkbox" class="rounded text-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" />
                 <span data-i18n="actions.selectAll">Select All</span>
               </label>
 
               <!-- Clear All Filters Button -->
               <button
                 id="clear-all-filters-btn"
-                class="w-full px-3 py-2 text-sm font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all hidden"
+                class="w-full px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 transition hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                 data-i18n="nav.clearFilters"
               >
                 Clear All Filters
@@ -292,34 +307,78 @@
 
             <!-- Categories Section -->
             <div class="mb-6">
-              <h3 class="text-sm font-semibold text-gray-700 mb-3" data-i18n="nav.categories">
-                Categories
+              <h3 class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                <svg class="h-4 w-4 text-gray-500" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                  <path d="M2.5 4.5c0-1.1.9-2 2-2h2.1c.4 0 .8.2 1.1.4l.8.8c.2.2.5.3.7.3h3.8c1.1 0 2 .9 2 2v5.5c0 1.1-.9 2-2 2h-8.5c-1.1 0-2-.9-2-2v-7z"></path>
+                </svg>
+                <span data-i18n="nav.categories">Categories</span>
               </h3>
-              <ul id="categories-list" class="space-y-2">
-                <li data-category="all" class="active" data-i18n="nav.allCategories">
+              <ul id="categories-list" class="space-y-2 max-h-64 overflow-y-auto">
+                <li data-category="all" class="active" data-i18n="nav.allCategories" tabindex="0" role="button">
                   All Categories
                 </li>
                 {% for category in categories %}
-                <li data-category="{{ category }}">
+                <li data-category="{{ category }}" tabindex="0" role="button">
                   {{ category }}
                 </li>
                 {% endfor %}
               </ul>
+              <!-- Empty State for Categories -->
+              <div id="categories-sidebar-empty" class="hidden text-center p-4 bg-gray-50 rounded-lg border border-gray-200 mt-2">
+                <div class="text-2xl text-gray-400 mb-2">📁</div>
+                <p class="text-xs font-semibold text-gray-700 mb-1" data-i18n="emptyStates.noCategoriesInSidebar.title">No categories available</p>
+                <p class="text-xs text-gray-600" data-i18n="emptyStates.noCategoriesInSidebar.description">Visit Manage Categories to create one</p>
+              </div>
             </div>
 
             <!-- Tags Section -->
             <div>
-              <h3 class="text-sm font-semibold text-gray-700 mb-3" data-i18n="nav.tags">Tags</h3>
-              <ul id="tags-list" class="space-y-2">
-                <li data-tag="all" class="active" data-i18n="nav.allTags">
+              <h3 class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                <svg class="h-4 w-4 text-gray-500" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                  <path d="M3.5 7.5L7.5 3.5H12.5V8.5L8.5 12.5L3.5 7.5Z"></path>
+                  <circle cx="10.5" cy="5.5" r="1"></circle>
+                </svg>
+                <span data-i18n="nav.tags">Tags</span>
+              </h3>
+              <ul id="tags-list" class="space-y-2 max-h-64 overflow-y-auto">
+                <li data-tag="all" class="active" data-i18n="nav.allTags" tabindex="0" role="button">
                   All Tags
                 </li>
                 {% for tag in tags %}
-                <li data-tag="{{ tag }}">
+                <li data-tag="{{ tag }}" tabindex="0" role="button">
                   {{ tag }}
                 </li>
                 {% endfor %}
               </ul>
+              <!-- Empty State for Tags -->
+              <div id="tags-sidebar-empty" class="hidden text-center p-4 bg-gray-50 rounded-lg border border-gray-200 mt-2">
+                <div class="text-2xl text-gray-400 mb-2">🏷️</div>
+                <p class="text-xs font-semibold text-gray-700 mb-1" data-i18n="emptyStates.noTagsInSidebar.title">No tags available</p>
+                <p class="text-xs text-gray-600" data-i18n="emptyStates.noTagsInSidebar.description">Visit Manage Tags to create one</p>
+              </div>
+            </div>
+
+            <!-- Management Links -->
+            <div class="mt-6 border-t border-gray-200 pt-4">
+              <h3 class="text-sm font-semibold text-gray-700 mb-3" data-i18n="management.manage">
+                Manage
+              </h3>
+              <div class="space-y-2">
+                <button
+                  onclick="window.location.href = '/manage-categories'"
+                  class="w-full px-4 py-2 text-sm font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                  data-i18n="categories.manage"
+                >
+                  Manage Categories
+                </button>
+                <button
+                  onclick="window.location.href = '/manage-tags'"
+                  class="w-full px-4 py-2 text-sm font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                  data-i18n="tags.manage"
+                >
+                  Manage Tags
+                </button>
+              </div>
             </div>
           </div>
         </aside>
@@ -335,7 +394,7 @@
               <h2 class="text-lg font-bold text-gray-900" data-i18n="nav.categoriesAndTags">Categories & Tags</h2>
               <button
                 id="sidebar-close"
-                class="text-gray-500 hover:text-gray-700 p-2"
+                class="text-gray-500 hover:text-gray-700 p-2 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                 aria-label="Close sidebar"
               >
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -357,15 +416,15 @@
                   id="search-input-mobile"
                   placeholder="Search prompts..."
                   data-i18n="[placeholder]nav.searchPlaceholder"
-                  class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  class="w-full pl-3 pr-10 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
                 />
-                <button
-                  id="clear-search-btn-mobile"
-                  class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 hidden"
-                  title="Clear search"
-                >
-                  ✕
-                </button>
+                <svg class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none w-5 h-5 transition-colors"
+                     fill="none"
+                     stroke="currentColor"
+                     viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
               </div>
 
               <!-- Case Sensitive Toggle -->
@@ -398,25 +457,40 @@
 
             <!-- Categories Section -->
             <div class="mb-6">
-              <h3 class="text-sm font-semibold text-gray-700 mb-3" data-i18n="nav.categories">
-                Categories
+              <h3 class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                <svg class="h-4 w-4 text-gray-500" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                  <path d="M2.5 4.5c0-1.1.9-2 2-2h2.1c.4 0 .8.2 1.1.4l.8.8c.2.2.5.3.7.3h3.8c1.1 0 2 .9 2 2v5.5c0 1.1-.9 2-2 2h-8.5c-1.1 0-2-.9-2-2v-7z"></path>
+                </svg>
+                <span data-i18n="nav.categories">Categories</span>
               </h3>
-              <ul id="categories-list-mobile" class="space-y-2">
+              <ul id="categories-list-mobile" class="space-y-2 max-h-64 overflow-y-auto">
                 <li data-category="all" class="active" data-i18n="nav.allCategories">
                   All Categories
                 </li>
                 {% for category in categories %}
-                <li data-category="{{ category }}">
+                <li data-category="{{ category }}" tabindex="0" role="button">
                   {{ category }}
                 </li>
                 {% endfor %}
               </ul>
+              <!-- Empty State for Categories (Mobile) -->
+              <div id="categories-sidebar-empty-mobile" class="hidden text-center p-4 bg-gray-50 rounded-lg border border-gray-200 mt-2">
+                <div class="text-2xl text-gray-400 mb-2">📁</div>
+                <p class="text-xs font-semibold text-gray-700 mb-1" data-i18n="emptyStates.noCategoriesInSidebar.title">No categories available</p>
+                <p class="text-xs text-gray-600" data-i18n="emptyStates.noCategoriesInSidebar.description">Visit Manage Categories to create one</p>
+              </div>
             </div>
 
             <!-- Tags Section -->
             <div>
-              <h3 class="text-sm font-semibold text-gray-700 mb-3" data-i18n="nav.tags">Tags</h3>
-              <ul id="tags-list-mobile" class="space-y-2">
+              <h3 class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                <svg class="h-4 w-4 text-gray-500" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                  <path d="M3.5 7.5L7.5 3.5H12.5V8.5L8.5 12.5L3.5 7.5Z"></path>
+                  <circle cx="10.5" cy="5.5" r="1"></circle>
+                </svg>
+                <span data-i18n="nav.tags">Tags</span>
+              </h3>
+              <ul id="tags-list-mobile" class="space-y-2 max-h-64 overflow-y-auto">
                 <li data-tag="all" class="active" data-i18n="nav.allTags">
                   All Tags
                 </li>
@@ -426,6 +500,35 @@
                 </li>
                 {% endfor %}
               </ul>
+              <!-- Empty State for Tags (Mobile) -->
+              <div id="tags-sidebar-empty-mobile" class="hidden text-center p-4 bg-gray-50 rounded-lg border border-gray-200 mt-2">
+                <div class="text-2xl text-gray-400 mb-2">🏷️</div>
+                <p class="text-xs font-semibold text-gray-700 mb-1" data-i18n="emptyStates.noTagsInSidebar.title">No tags available</p>
+                <p class="text-xs text-gray-600" data-i18n="emptyStates.noTagsInSidebar.description">Visit Manage Tags to create one</p>
+              </div>
+            </div>
+
+            <!-- Management Links -->
+            <div class="mt-6 border-t border-gray-200 pt-4">
+              <h3 class="text-sm font-semibold text-gray-700 mb-3" data-i18n="management.manage">
+                Manage
+              </h3>
+              <div class="space-y-2">
+                <button
+                  onclick="window.location.href = '/manage-categories'"
+                  class="w-full px-4 py-2 text-sm font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                  data-i18n="categories.manage"
+                >
+                  Manage Categories
+                </button>
+                <button
+                  onclick="window.location.href = '/manage-tags'"
+                  class="w-full px-4 py-2 text-sm font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                  data-i18n="tags.manage"
+                >
+                  Manage Tags
+                </button>
+              </div>
             </div>
           </div>
         </aside>
@@ -436,7 +539,7 @@
           <div class="md:hidden flex items-center gap-3 px-4 py-3 border-b border-gray-200 bg-white">
             <button
               id="sidebar-toggle"
-              class="text-gray-700 hover:text-gray-900 transition-colors"
+              class="text-gray-700 hover:text-gray-900 transition-colors rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
               aria-label="Toggle sidebar"
             >
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -460,16 +563,23 @@
             style="display: none"
           >
             <span id="selected-count" class="text-sm font-semibold text-amber-900">0 selected</span>
-            <div class="flex gap-2">
+            <div class="flex gap-2 items-center">
               <button
                 id="bulk-delete-btn"
-                class="px-4 py-2 text-sm font-semibold rounded-lg bg-red-500 text-white hover:bg-red-600 transition-all hover:scale-105 active:scale-95"
+                class="px-4 py-2 text-sm font-semibold rounded-lg bg-red-600 text-white hover:bg-red-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
               >
                 <span data-i18n="actions.bulkDelete">Delete Selected</span>
               </button>
               <button
+                id="bulk-tag-btn"
+                class="px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                data-i18n="actions.bulkTag"
+              >
+                Tag Selected
+              </button>
+              <button
                 id="clear-selection-btn"
-                class="px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition-all hover:scale-105 active:scale-95"
+                class="px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
               >
                 <span data-i18n="actions.clearSelection">Clear Selection</span>
               </button>
@@ -481,6 +591,34 @@
             <h2 class="text-2xl font-bold text-gray-900">
               <span data-i18n="nav.prompts">Prompts</span>
             </h2>
+          </div>
+
+          <!-- Empty State for Prompts -->
+          <div id="prompts-empty-state" class="hidden text-center p-12 bg-gray-50 rounded-lg border border-gray-200">
+            <div class="text-5xl text-gray-400 mb-4">📝</div>
+            <h3 class="text-xl font-semibold text-gray-700 mb-2" data-i18n="emptyStates.noPrompts.title">No prompts yet</h3>
+            <p class="text-sm text-gray-600 mb-6" data-i18n="emptyStates.noPrompts.description">Create your first prompt to get started</p>
+            <button
+              id="empty-state-new-prompt-btn"
+              class="px-6 py-3 text-base font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+              data-i18n="emptyStates.noPrompts.action"
+            >
+              Create Prompt
+            </button>
+          </div>
+
+          <!-- Empty State for Search Results -->
+          <div id="search-empty-state" class="hidden text-center p-12 bg-gray-50 rounded-lg border border-gray-200">
+            <div class="text-5xl text-gray-400 mb-4">🔍</div>
+            <h3 class="text-xl font-semibold text-gray-700 mb-2" data-i18n="emptyStates.noSearchResults.title">No results found</h3>
+            <p class="text-sm text-gray-600 mb-6" data-i18n="emptyStates.noSearchResults.description">Try adjusting your search or filters</p>
+            <button
+              id="empty-state-clear-filters-btn"
+              class="px-6 py-3 text-base font-semibold rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+              data-i18n="emptyStates.noSearchResults.action"
+            >
+              Clear Filters
+            </button>
           </div>
 
           <!-- Prompts Grid (populated by JS) -->
@@ -499,12 +637,13 @@
                 <div class="flex items-center gap-1 ml-2">
                   <input
                     type="checkbox"
-                    class="prompt-checkbox rounded text-blue-500 focus:ring-blue-500"
+                    class="prompt-checkbox rounded text-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                     data-prompt-id="{{ prompt_id }}"
                   />
                   <button
-                    class="favorite-btn text-xl hover:scale-110 transition-transform"
+                    class="favorite-btn text-xl hover:scale-110 transition-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
                     data-id="{{ prompt_id }}"
+                    aria-label="Toggle favorite"
                   >
                     {% if prompt_info.data.favorite %}★{% else %}☆{% endif %}
                   </button>
@@ -515,7 +654,7 @@
                   {{ prompt_info.data.category }}
                 </span>
                 {% if prompt_info.data.tags %} {% for tag in prompt_info.data.tags %}
-                <span class="px-2 py-1 text-xs font-medium rounded-md" style="background-color: #CFF9FC; color: #0E7490;">
+                <span class="px-2 py-1 text-xs font-medium rounded-full border border-gray-300 flex items-center gap-1" data-tag-pill="true" data-tag-name="{{ tag }}">
                   {{ tag }}
                 </span>
                 {% endfor %} {% endif %}
@@ -524,28 +663,28 @@
                 {{ prompt_info.data.prompt[:100] }}{% if prompt_info.data.prompt|length > 100
                 %}...{% endif %}
               </p>
-              <div class="flex flex-wrap gap-2">
+              <div class="flex flex-wrap gap-1">
                 <button
-                  class="history-btn px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all hover:scale-105 active:scale-95"
+                  class="history-btn px-2 py-1 text-xs font-medium rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                   data-id="{{ prompt_id }}"
                   data-i18n="version.history"
                 >
                   History
                 </button>
                 <button
-                  class="copy-btn px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 transition-all hover:scale-105 active:scale-95"
+                  class="copy-btn px-2 py-1 text-xs font-medium rounded-md bg-blue-100 text-blue-700 hover:bg-blue-200 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                   data-id="{{ prompt_id }}"
                 >
                   Copy
                 </button>
                 <button
-                  class="edit-btn px-3 py-1.5 text-xs font-medium rounded-lg bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition-all hover:scale-105 active:scale-95"
+                  class="edit-btn px-2 py-1 text-xs font-medium rounded-md bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
                   data-id="{{ prompt_id }}"
                 >
                   Edit
                 </button>
                 <button
-                  class="delete-btn px-3 py-1.5 text-xs font-medium rounded-lg bg-red-100 text-red-700 hover:bg-red-200 transition-all hover:scale-105 active:scale-95"
+                  class="delete-btn px-2 py-1 text-xs font-medium rounded-md bg-red-100 text-red-700 hover:bg-red-200 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
                   data-id="{{ prompt_id }}"
                 >
                   Delete
@@ -558,11 +697,11 @@
           <!-- Prompt Editor (hidden by default) -->
           <div id="prompt-editor" class="hidden">
             <div class="bg-white rounded-lg border border-gray-200 p-6 max-w-4xl mx-auto">
-              <h2 class="text-2xl font-bold text-gray-900 mb-6">Create/Edit Prompt</h2>
-              <form id="prompt-form" novalidate>
+              <h2 class="text-2xl font-bold text-gray-900 mb-6" data-i18n="prompt.editorTitle">Create/Edit Prompt</h2>
+              <form id="prompt-form" class="space-y-4" novalidate>
                 <!-- Title -->
-                <div class="mb-4">
-                  <label for="prompt-title" class="block text-sm font-semibold text-gray-700 mb-2" data-i18n="form.title">
+                <div>
+                  <label for="prompt-title" class="block text-sm font-medium text-gray-700 mb-2" data-i18n="form.title">
                     Title:
                   </label>
                   <input
@@ -574,7 +713,7 @@
                     maxlength="200"
                     aria-required="true"
                     aria-describedby="prompt-title-counter prompt-title-error"
-                    class="w-full px-4 py-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
                   />
                   <div class="flex justify-between items-center mt-1">
                     <div
@@ -588,8 +727,8 @@
                 </div>
 
                 <!-- Content -->
-                <div class="mb-4">
-                  <label for="prompt-content" class="block text-sm font-semibold text-gray-700 mb-2" data-i18n="form.content">
+                <div>
+                  <label for="prompt-content" class="block text-sm font-medium text-gray-700 mb-2" data-i18n="form.content">
                     Content:
                   </label>
                   <textarea
@@ -600,7 +739,7 @@
                     maxlength="50000"
                     aria-required="true"
                     aria-describedby="prompt-content-counter prompt-content-error"
-                    class="w-full px-4 py-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono"
+                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed font-mono"
                   ></textarea>
                   <div class="flex justify-between items-center mt-1">
                     <div
@@ -614,15 +753,15 @@
                 </div>
 
                 <!-- Category -->
-                <div class="mb-4">
-                  <label for="prompt-category" class="block text-sm font-semibold text-gray-700 mb-2" data-i18n="form.category">
+                <div>
+                  <label for="prompt-category" class="block text-sm font-medium text-gray-700 mb-2" data-i18n="form.category">
                     Category:
                   </label>
                   <select
                     id="prompt-category"
                     name="category"
                     aria-describedby="prompt-category-error"
-                    class="w-full px-4 py-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
                   >
                     <option value="">No category</option>
                     {% for category in categories %}
@@ -638,24 +777,40 @@
                 </div>
 
                 <!-- Tags -->
-                <div class="mb-4">
-                  <label for="prompt-tags" class="block text-sm font-semibold text-gray-700 mb-2" data-i18n="form.tags">
-                    Tags (comma-separated):
-                  </label>
-                  <div class="relative">
-                    <input
-                      type="text"
-                      id="prompt-tags"
-                      name="tags"
-                      data-i18n="[placeholder]form.tagPlaceholder"
-                      autocomplete="off"
-                      aria-describedby="prompt-tags-counter prompt-tags-error prompt-tags-duplicates"
-                      class="w-full px-4 py-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
+                  <div>
+                    <label for="prompt-tags" class="block text-sm font-medium text-gray-700 mb-2" data-i18n="form.tags">
+                      Tags (comma-separated):
+                    </label>
+                    <div class="relative">
+                    <div
+                      id="tag-chip-input"
+                      class="flex flex-wrap items-center gap-2 w-full px-3 py-2 text-sm border border-gray-300 rounded-md bg-white focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent min-h-[42px]"
+                    >
+                      <div id="tag-chips" class="flex flex-wrap gap-2"></div>
+                      <input
+                        type="text"
+                        id="prompt-tags-input"
+                        data-i18n="[placeholder]form.tagPlaceholder"
+                        autocomplete="off"
+                        aria-describedby="prompt-tags-counter prompt-tags-error prompt-tags-duplicates"
+                        class="flex-1 min-w-[120px] py-1 outline-none bg-transparent placeholder-gray-400"
+                      />
+                    </div>
+                    <input type="hidden" id="prompt-tags" name="tags" />
                     <div
                       id="tag-autocomplete"
                       class="hidden absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-auto"
                     ></div>
+                  </div>
+                  <div class="mt-2">
+                    <button
+                      type="button"
+                      id="suggest-tags-btn"
+                      class="px-4 py-2 text-sm font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                      data-i18n="actions.suggestTags"
+                    >
+                      Suggest Tags
+                    </button>
                   </div>
                   <div class="flex justify-between items-center mt-1">
                     <div>
@@ -677,8 +832,8 @@
                 </div>
 
                 <!-- Commit Message -->
-                <div class="mb-6">
-                  <label for="commit-message" class="block text-sm font-semibold text-gray-700 mb-2" data-i18n="version.commitMessage">
+                <div class="border-t pt-4 mt-4">
+                  <label for="commit-message" class="block text-sm font-medium text-gray-700 mb-2" data-i18n="version.commitMessage">
                     Commit Message:
                   </label>
                   <input
@@ -689,7 +844,7 @@
                     placeholder="Describe your changes..."
                     maxlength="500"
                     aria-describedby="commit-message-counter commit-message-error"
-                    class="w-full px-4 py-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
                   />
                   <div class="flex justify-between items-center mt-1">
                     <div
@@ -703,21 +858,21 @@
                 </div>
 
                 <!-- Actions -->
-                <div class="flex gap-3">
-                  <button
-                    type="submit"
-                    class="px-6 py-3 text-sm font-semibold rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition-all hover:scale-105 active:scale-95"
-                    data-i18n="actions.save"
-                  >
-                    Save
-                  </button>
+                <div class="flex gap-2 items-center justify-end pt-2">
                   <button
                     type="button"
                     id="cancel-btn"
-                    class="px-6 py-3 text-sm font-medium rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition-all hover:scale-105 active:scale-95"
+                    class="px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                     data-i18n="actions.cancel"
                   >
                     Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    class="px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                    data-i18n="actions.save"
+                  >
+                    Save
                   </button>
                 </div>
               </form>
@@ -734,39 +889,47 @@
           <h2 class="text-2xl font-bold text-gray-900" data-i18n="version.history">Version History</h2>
           <button
             onclick="hideVersionHistoryModal()"
-            class="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+            class="text-gray-400 hover:text-gray-600 text-2xl leading-none rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            aria-label="Close modal"
           >
             &times;
           </button>
         </div>
         <div class="p-6 overflow-auto flex-1">
-          <div class="mb-4">
+          <div class="mb-4 relative">
             <input
               type="text"
               id="version-search"
               placeholder="Search versions..."
               data-i18n="[placeholder]version.searchPlaceholder"
-              class="w-full px-4 py-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              class="w-full pl-3 pr-10 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
             />
+            <svg class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none w-5 h-5 transition-colors"
+                 fill="none"
+                 stroke="currentColor"
+                 viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
           </div>
           <div id="version-list" class="space-y-3">
             <div class="text-center text-gray-500 py-8" data-i18n="messages.loading">Loading...</div>
           </div>
         </div>
-        <div class="flex items-center justify-end gap-3 p-6 border-t border-gray-200">
-          <button
-            id="compare-versions-btn"
-            class="hidden px-6 py-3 text-sm font-semibold rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-all hover:scale-105 active:scale-95"
-            data-i18n="version.compare"
-          >
-            Compare Selected
-          </button>
+        <div class="flex items-center justify-end gap-2 p-6 border-t border-gray-200">
           <button
             id="close-version-history-btn"
-            class="px-6 py-3 text-sm font-medium rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition-all hover:scale-105 active:scale-95"
+            class="px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
             data-i18n="actions.close"
           >
             Close
+          </button>
+          <button
+            id="compare-versions-btn"
+            class="hidden px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+            data-i18n="version.compare"
+          >
+            Compare Selected
           </button>
         </div>
       </div>
@@ -779,7 +942,8 @@
           <h2 class="text-2xl font-bold text-gray-900" data-i18n="version.compareVersions">Compare Versions</h2>
           <button
             onclick="hideDiffModal()"
-            class="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+            class="text-gray-400 hover:text-gray-600 text-2xl leading-none rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            aria-label="Close modal"
           >
             &times;
           </button>
@@ -790,14 +954,14 @@
               <label class="block text-sm font-semibold text-gray-700 mb-2" data-i18n="version.version1">Version 1:</label>
               <select
                 id="diff-v1-selector"
-                class="w-full px-4 py-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
               ></select>
             </div>
             <div>
               <label class="block text-sm font-semibold text-gray-700 mb-2" data-i18n="version.version2">Version 2:</label>
               <select
                 id="diff-v2-selector"
-                class="w-full px-4 py-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
               ></select>
             </div>
           </div>
@@ -805,10 +969,10 @@
             <div class="text-center text-gray-500 py-8" data-i18n="messages.loading">Loading...</div>
           </div>
         </div>
-        <div class="flex items-center justify-end gap-3 p-6 border-t border-gray-200">
+        <div class="flex items-center justify-end gap-2 p-6 border-t border-gray-200">
           <button
             id="close-diff-btn"
-            class="px-6 py-3 text-sm font-medium rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition-all hover:scale-105 active:scale-95"
+            class="px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
             data-i18n="actions.close"
           >
             Close
@@ -824,7 +988,8 @@
           <h2 class="text-xl font-bold text-gray-900" data-i18n="version.confirmRevert">Confirm Revert</h2>
           <button
             onclick="hideRevertConfirmationModal()"
-            class="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+            class="text-gray-400 hover:text-gray-600 text-2xl leading-none rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            aria-label="Close modal"
           >
             &times;
           </button>
@@ -845,7 +1010,7 @@
               data-i18n="[placeholder]version.revertMessagePlaceholder"
               maxlength="500"
               aria-describedby="revert-commit-counter revert-commit-error"
-              class="w-full px-4 py-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
             />
             <div class="flex justify-between items-center mt-1">
               <div
@@ -858,20 +1023,20 @@
             </div>
           </div>
         </div>
-        <div class="flex items-center justify-end gap-3 p-6 border-t border-gray-200">
-          <button
-            id="confirm-revert-btn"
-            class="px-6 py-3 text-sm font-semibold rounded-lg bg-red-500 text-white hover:bg-red-600 transition-all hover:scale-105 active:scale-95"
-            data-i18n="version.revert"
-          >
-            Revert
-          </button>
+        <div class="flex items-center justify-end gap-2 p-6 border-t border-gray-200">
           <button
             id="cancel-revert-btn"
-            class="px-6 py-3 text-sm font-medium rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition-all hover:scale-105 active:scale-95"
+            class="px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
             data-i18n="actions.cancel"
           >
             Cancel
+          </button>
+          <button
+            id="confirm-revert-btn"
+            class="px-4 py-2 text-sm font-semibold rounded-lg bg-red-600 text-white hover:bg-red-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
+            data-i18n="version.revert"
+          >
+            Revert
           </button>
         </div>
       </div>
@@ -884,7 +1049,8 @@
           <h2 class="text-xl font-bold text-gray-900" data-i18n="bulkDelete.confirmTitle">Confirm Bulk Deletion</h2>
           <button
             onclick="hideBulkDeleteModal()"
-            class="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+            class="text-gray-400 hover:text-gray-600 text-2xl leading-none rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            aria-label="Close modal"
           >
             &times;
           </button>
@@ -900,20 +1066,81 @@
             restoring from backup.
           </p>
         </div>
-        <div class="flex items-center justify-end gap-3 p-6 border-t border-gray-200">
+        <div class="flex items-center justify-end gap-2 p-6 border-t border-gray-200">
+          <button
+            id="cancel-bulk-delete-btn"
+            class="px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+            data-i18n="actions.cancel"
+          >
+            Cancel
+          </button>
           <button
             id="confirm-bulk-delete-btn"
-            class="px-6 py-3 text-sm font-semibold rounded-lg bg-red-500 text-white hover:bg-red-600 transition-all hover:scale-105 active:scale-95"
+            class="px-4 py-2 text-sm font-semibold rounded-lg bg-red-600 text-white hover:bg-red-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
             data-i18n="actions.confirmDelete"
           >
             Confirm Delete
           </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bulk Tag Update Modal -->
+    <div id="bulk-tag-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
+        <div class="flex items-center justify-between p-6 border-b border-gray-200">
+          <h2 class="text-xl font-bold text-gray-900" data-i18n="bulkTag.title">Bulk Tag Update</h2>
           <button
-            id="cancel-bulk-delete-btn"
-            class="px-6 py-3 text-sm font-medium rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition-all hover:scale-105 active:scale-95"
-            data-i18n="actions.cancel"
+            onclick="hideBulkTagModal()"
+            class="text-gray-400 hover:text-gray-600 text-2xl leading-none rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            aria-label="Close modal"
+          >
+            &times;
+          </button>
+        </div>
+        <div class="p-6 space-y-4">
+          <p class="text-sm text-gray-700">
+            <span data-i18n="bulkTag.description">Update tags for</span>
+            <strong id="bulk-tag-count">0</strong>
+            <span data-i18n="bulkTag.prompts">prompt(s).</span>
+          </p>
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2" data-i18n="bulkTag.addLabel">Add Tags</label>
+            <input
+              id="bulk-tag-add"
+              type="text"
+              placeholder="Comma-separated tags"
+              data-i18n="[placeholder]bulkTag.placeholder"
+              class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2" data-i18n="bulkTag.removeLabel">Remove Tags</label>
+            <input
+              id="bulk-tag-remove"
+              type="text"
+              placeholder="Comma-separated tags"
+              data-i18n="[placeholder]bulkTag.placeholder"
+              class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
+            />
+          </div>
+          <p class="text-xs text-gray-500" data-i18n="bulkTag.note">
+            Tags added or removed will apply to all selected prompts.
+          </p>
+        </div>
+        <div class="flex items-center justify-end gap-2 p-6 border-t border-gray-200">
+          <button
+            id="cancel-bulk-tag-btn"
+            class="px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
           >
             Cancel
+          </button>
+          <button
+            id="confirm-bulk-tag-btn"
+            class="px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+            data-i18n="actions.applyTags"
+          >
+            Apply Tags
           </button>
         </div>
       </div>

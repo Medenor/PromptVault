@@ -47,7 +47,7 @@ from src.web.validators import (
     get_file_extension_from_format,
 )
 from src.web.monitoring import ValidationMonitor
-from src.web.routers import auth_router, admin_router, prompts_router, pages_router
+from src.web.routers import auth_router, admin_router, prompts_router, tag_category_router, pages_router
 from src.utils.diff_utils import compute_character_diff
 from src.web.routers.scheduler import router as scheduler_router
 from src.web.middleware.rate_limit import limiter, rate_limit_exceeded_handler
@@ -210,13 +210,14 @@ app.include_router(auth_router, prefix="/api")
 app.include_router(admin_router, prefix="/api")
 app.include_router(scheduler_router, prefix="/api")
 app.include_router(prompts_router, prefix="/api")
+app.include_router(tag_category_router, prefix="/api")
 
 # Register HTML page routes (no /api prefix)
 # - /auth/* - Authentication pages (login, register, profile, etc.)
 # - /admin/* - Admin pages (users, sessions)
 app.include_router(pages_router)
 
-logger.info("API routers registered: /api/auth, /api/admin, /api/prompts")
+logger.info("API routers registered: /api/auth, /api/admin, /api/prompts, /api/categories, /api/tags")
 logger.info("HTML page routes registered: /auth/*, /admin/*")
 
 # ============================================================================
@@ -632,6 +633,12 @@ async def request_logging_middleware(request: Request, call_next):
                 "client": request.client.host if request.client else None,
             },
         )
+        if os.getenv("ENV", "production") == "development":
+            content_type = response.headers.get("content-type", "")
+            if content_type.startswith("text/html"):
+                response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+                response.headers["Pragma"] = "no-cache"
+                response.headers["Expires"] = "0"
         response.headers["X-Request-ID"] = request_id
         return response
 
@@ -833,8 +840,21 @@ async def get_categories():
 @app.get("/api/tags")
 async def get_tags():
     """Get all tags with usage counts"""
-    tags_with_counts = data_service.get_tags_with_counts()
-    return {"tags": tags_with_counts}
+    try:
+        from src.db.session import get_db_session
+        from src.db.repositories.tag_repository import TagRepository
+
+        with get_db_session() as session:
+            tag_repo = TagRepository(session)
+            results = tag_repo.list_all_with_counts()
+            tags_with_counts = [
+                {"name": tag.name, "count": count or 0}
+                for tag, count in results
+            ]
+            return {"tags": tags_with_counts}
+    except Exception:
+        tags_with_counts = data_service.get_tags_with_counts()
+        return {"tags": tags_with_counts}
 
 
 @app.get("/import-export", response_class=HTMLResponse)

@@ -5,7 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.6.0] - 2026-02-02
+
+### ✨ Added
+
+- **Tag and Category Management System**: Comprehensive management interface for tags and categories with CRUD operations, bulk actions, analytics, and undo support (see [SPEC_TAG_CATEGORY_MANAGEMENT](SPECS/SPEC_TAG_CATEGORY_MANAGEMENT.md))
+  - **Management Pages**: Dedicated UI for managing tags and categories with search, filtering, and bulk selection
+  - **CRUD Operations**: Create, read, update, and delete tags and categories with metadata (name, description, color)
+  - **Merge Operations**: Merge multiple tags or categories into a single target with atomic transaction safety
+  - **Bulk Operations**: Delete multiple tags/categories or apply/remove tags across multiple prompts in batch
+  - **Find and Replace**: Replace tag/category names across all prompts in a single operation
+  - **Undo System**: Full undo support for management operations with persistent storage and user-scoped history (50 operations per user per entity type, 30-day automatic expiration)
+  - **Usage Analytics**: Track and display tag/category usage counts, most/least used items, and tag co-occurrence summaries
+  - **Orphan Detection**: Identify unused tags, unused categories, and prompts lacking tags or categories
+  - **Import/Export**: Import and export tag and category definitions in JSON format with validation
+  - **Tag Hierarchy**: Optional parent-child relationships for tags to support hierarchical taxonomy
+  - **Tag Suggestions**: Content-based tag suggestions from prompt text using deterministic keyword extraction
+  - **Performance**: Optimized queries with no N+1 patterns, sub-100ms response times for typical operations
+  - **Test Coverage**: 91+ tests for undo/merge operations, 1411+ total tests with 86.75% coverage
 
 ### 🔄 Changed
 
@@ -184,7 +201,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Database Backups**: SQLite file copy and PostgreSQL pg_dump integration with metadata tracking
   - **Comprehensive Testing**: 509 passing tests (86.90% coverage) for repositories, services, and integration workflows using in-memory SQLite
   - **Docker Integration**: Production-ready Docker Compose setup with PostgreSQL service and health checks
-  - **Complete Documentation**: Deployment guide, migration guide, and technical specification (see `docs/DEPLOYMENT.md`, `docs/MIGRATION_GUIDE.md`, `docs/SPECS/SPEC_DATABASE.md`)
+  - **Complete Documentation**: Deployment guide, migration guide, and technical specification (see `docs/DEPLOYMENT.md`, `docs/MIGRATION_GUIDE_JSON_TO_DB.md`, `docs/SPECS/SPEC_DATABASE.md`)
   - **Performance**: Indexed queries, eager loading to prevent N+1, pagination support for large datasets
   - **Security**: Parameterized queries (SQL injection prevention), SSL/TLS support, environment-based credentials
 

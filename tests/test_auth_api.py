@@ -44,6 +44,7 @@ from typing import Dict, Any
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from src.config.auth_config import AuthConfig
@@ -1012,6 +1013,664 @@ class TestPasswordResetConfirmEndpoint:
 
         # May return 400 for policy violation or 401 for invalid token
         assert response.status_code in [400, 401]
+
+
+# ============================================================================
+# TEST PASSWORD RESET SERVICE (Unit/Integration Tests)
+# ============================================================================
+
+
+class TestPasswordResetService:
+    """Comprehensive tests for PasswordResetService.
+
+    This test class provides security-critical coverage for the password reset
+    service, targeting 95%+ line coverage to ensure robust protection against
+    password reset vulnerabilities.
+
+    Test Categories:
+        - Rate Limiting Tests
+        - Token Validation Tests
+        - Password Reset Flow Tests
+        - Token Hashing Tests
+        - Cleanup Tests
+        - Edge Cases
+
+    Note on SQLite Timezone Handling:
+        SQLite does not preserve timezone information in datetime columns, even when
+        configured with DateTime(timezone=True). This causes timezone-naive datetimes
+        to be returned from the database. To work around this limitation, tests use
+        the request_password_reset method which properly handles token creation through
+        the service layer.
+    """
+
+    @pytest.fixture
+    def password_reset_service(self, test_db_session: Session):
+        """Create PasswordResetService instance with test dependencies."""
+        from src.services.auth.password_reset_service import PasswordResetService
+        from src.services.auth.password_service import PasswordService
+        from src.db.repositories.password_reset_token_repository import PasswordResetTokenRepository
+        from src.db.repositories.user_repository import UserRepository
+        from src.config.auth_config import auth_settings
+
+        password_service = PasswordService(auth_settings)
+        token_repo = PasswordResetTokenRepository(test_db_session)
+        user_repo = UserRepository(test_db_session)
+
+        return PasswordResetService(
+            config=auth_settings,
+            password_service=password_service,
+            token_repository=token_repo,
+            user_repository=user_repo
+        )
+
+    @pytest.fixture
+    def test_user_for_reset(self, test_db_session: Session):
+        """Create a test user for password reset testing."""
+        from src.db.models.user import User
+        from src.services.auth.password_service import PasswordService
+        from src.config.auth_config import auth_settings
+        from datetime import datetime, timezone
+
+        password_service = PasswordService(auth_settings)
+        password_hash = password_service.hash_password("OldP@ssw0rd123")
+
+        user = User(
+            id="test-reset-user-id",
+            username="resetuser",
+            email="reset@example.com",
+            password_hash=password_hash,
+            role="viewer",
+            is_active=True,
+            email_verified=True,
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
+        )
+        test_db_session.add(user)
+        test_db_session.flush()
+        return user
+
+    # ========================================================================
+    # RATE LIMITING TESTS
+    # ========================================================================
+
+    def test_request_password_reset_rate_limit_exceeded(
+        self,
+        password_reset_service,
+        test_user_for_reset,
+        test_db_session: Session
+    ):
+        """Test that rate limit is enforced after 3 requests in 1 hour."""
+        from src.services.exceptions import RateLimitExceededError
+
+        email = test_user_for_reset.email
+
+        # Make 3 successful requests (should work)
+        for i in range(3):
+            token = password_reset_service.request_password_reset(
+                email=email,
+                ip_address="192.168.1.1"
+            )
+            assert token is not None
+            test_db_session.commit()
+
+        # 4th request should hit rate limit
+        with pytest.raises(RateLimitExceededError) as exc_info:
+            password_reset_service.request_password_reset(
+                email=email,
+                ip_address="192.168.1.1"
+            )
+
+        assert exc_info.value.http_status == 429
+        assert exc_info.value.context.get("retry_after_seconds") is not None
+
+    def test_request_password_reset_rate_limit_retry_after(
+        self,
+        password_reset_service,
+        test_user_for_reset,
+        test_db_session: Session
+    ):
+        """Test that retry_after value is correctly calculated."""
+        from src.services.exceptions import RateLimitExceededError
+
+        email = test_user_for_reset.email
+
+        # Exhaust rate limit
+        for i in range(3):
+            password_reset_service.request_password_reset(email=email, ip_address="192.168.1.1")
+            test_db_session.commit()
+
+        # Check retry_after in error
+        with pytest.raises(RateLimitExceededError) as exc_info:
+            password_reset_service.request_password_reset(email=email, ip_address="192.168.1.1")
+
+        # Should have retry_after in context
+        retry_after = exc_info.value.context.get("retry_after_seconds")
+        assert retry_after is not None
+        assert retry_after > 0
+
+    def test_request_password_reset_invalidates_old_tokens(
+        self,
+        password_reset_service,
+        test_user_for_reset,
+        test_db_session: Session
+    ):
+        """Test that requesting new token invalidates existing tokens."""
+        from src.db.repositories.password_reset_token_repository import PasswordResetTokenRepository
+
+        email = test_user_for_reset.email
+        token_repo = PasswordResetTokenRepository(test_db_session)
+
+        # Create first token
+        token1 = password_reset_service.request_password_reset(email=email, ip_address="192.168.1.1")
+        test_db_session.commit()
+
+        # Verify first token exists and is valid
+        hashed_token1 = password_reset_service._hash_token(token1)
+        token_record1 = token_repo.get_by_token(hashed_token1)
+        assert token_record1 is not None
+        assert not token_record1.is_used
+
+        # Create second token
+        token2 = password_reset_service.request_password_reset(email=email, ip_address="192.168.1.2")
+        test_db_session.commit()
+
+        # Refresh token_record1 from database
+        test_db_session.expire(token_record1)
+        test_db_session.refresh(token_record1)
+
+        # First token should now be invalidated
+        assert token_record1.is_used is True
+        assert token_record1.used_at is not None
+
+    # ========================================================================
+    # TOKEN VALIDATION TESTS
+    # ========================================================================
+
+    def test_verify_token_expired(
+        self,
+        password_reset_service,
+        test_user_for_reset,
+        test_db_session: Session
+    ):
+        """Test that expired token is rejected."""
+        from src.db.repositories.password_reset_token_repository import PasswordResetTokenRepository
+        from datetime import datetime, timezone, timedelta
+
+        email = test_user_for_reset.email
+        token_repo = PasswordResetTokenRepository(test_db_session)
+
+        # Create a valid token using the service
+        token = password_reset_service.request_password_reset(email=email, ip_address="192.168.1.1")
+        test_db_session.commit()
+
+        # Manually expire the token by updating its expires_at directly in DB using raw SQL
+        # This avoids SQLite timezone issues
+        hashed_token = password_reset_service._hash_token(token)
+        test_db_session.execute(
+            text("UPDATE password_reset_tokens SET expires_at = datetime('now', '-2 hours') WHERE token = :token"),
+            {"token": hashed_token}
+        )
+        test_db_session.commit()
+
+        # Now verify token - should be expired
+        is_valid, result = password_reset_service.verify_reset_token(token)
+
+        assert is_valid is False
+        assert "expired" in result.lower()
+
+    def test_verify_token_already_used(
+        self,
+        password_reset_service,
+        test_user_for_reset,
+        test_db_session: Session
+    ):
+        """Test that already-used token is rejected."""
+        from src.db.repositories.password_reset_token_repository import PasswordResetTokenRepository
+
+        email = test_user_for_reset.email
+        token_repo = PasswordResetTokenRepository(test_db_session)
+
+        # Create token using the service
+        token = password_reset_service.request_password_reset(email=email, ip_address="192.168.1.1")
+        test_db_session.commit()
+
+        # Mark token as used
+        hashed_token = password_reset_service._hash_token(token)
+        token_record = token_repo.get_by_token(hashed_token)
+        token_repo.mark_token_used(token_record.id)
+        test_db_session.commit()
+
+        # Verify token
+        is_valid, result = password_reset_service.verify_reset_token(token)
+
+        assert is_valid is False
+        assert "used" in result.lower()
+
+    def test_verify_token_user_not_found(
+        self,
+        password_reset_service,
+        test_user_for_reset,
+        test_db_session: Session
+    ):
+        """Test that token for non-existent user is rejected."""
+        from src.db.repositories.user_repository import UserRepository
+
+        email = test_user_for_reset.email
+        user_repo = UserRepository(test_db_session)
+
+        # Create token using the service
+        token = password_reset_service.request_password_reset(email=email, ip_address="192.168.1.1")
+        test_db_session.commit()
+
+        # Delete the user
+        test_db_session.delete(test_user_for_reset)
+        test_db_session.commit()
+
+        # Verify token - user no longer exists
+        is_valid, result = password_reset_service.verify_reset_token(token)
+
+        assert is_valid is False
+        assert "invalid" in result.lower()
+
+    def test_verify_token_user_inactive(
+        self,
+        password_reset_service,
+        test_user_for_reset,
+        test_db_session: Session
+    ):
+        """Test that token for inactive user is rejected."""
+        email = test_user_for_reset.email
+
+        # Create token while user is active
+        token = password_reset_service.request_password_reset(email=email, ip_address="192.168.1.1")
+        test_db_session.commit()
+
+        # Now deactivate the user
+        test_user_for_reset.is_active = False
+        test_db_session.commit()
+
+        # Verify token - user is now inactive
+        is_valid, result = password_reset_service.verify_reset_token(token)
+
+        assert is_valid is False
+        assert "active" in result.lower()
+
+    def test_verify_token_valid(
+        self,
+        password_reset_service,
+        test_user_for_reset,
+        test_db_session: Session
+    ):
+        """Test that valid token is accepted."""
+        email = test_user_for_reset.email
+
+        # Request password reset
+        token = password_reset_service.request_password_reset(email=email, ip_address="192.168.1.1")
+        test_db_session.commit()
+
+        # Verify token
+        is_valid, result = password_reset_service.verify_reset_token(token)
+
+        assert is_valid is True
+        assert result == test_user_for_reset.id
+
+    # ========================================================================
+    # PASSWORD RESET FLOW TESTS
+    # ========================================================================
+
+    def test_reset_password_success(
+        self,
+        password_reset_service,
+        test_user_for_reset,
+        test_db_session: Session
+    ):
+        """Test successful password reset."""
+        from src.services.auth.password_service import PasswordService
+        from src.config.auth_config import auth_settings
+
+        email = test_user_for_reset.email
+        new_password = "NewSecureP@ssw0rd456"
+
+        # Request password reset
+        token = password_reset_service.request_password_reset(email=email, ip_address="192.168.1.1")
+        test_db_session.commit()
+
+        # Reset password
+        success = password_reset_service.reset_password(token, new_password)
+        test_db_session.commit()
+
+        assert success is True
+
+        # Verify new password works
+        test_db_session.refresh(test_user_for_reset)
+        password_service = PasswordService(auth_settings)
+        assert password_service.verify_password(new_password, test_user_for_reset.password_hash)
+
+    def test_reset_password_policy_violation(
+        self,
+        password_reset_service,
+        test_user_for_reset,
+        test_db_session: Session
+    ):
+        """Test that weak password is rejected."""
+        from src.services.exceptions import PasswordPolicyError
+
+        email = test_user_for_reset.email
+        weak_password = "weak"
+
+        # Request password reset
+        token = password_reset_service.request_password_reset(email=email, ip_address="192.168.1.1")
+        test_db_session.commit()
+
+        # Try to reset with weak password
+        with pytest.raises(PasswordPolicyError) as exc_info:
+            password_reset_service.reset_password(token, weak_password)
+
+        assert exc_info.value.http_status == 400
+        assert "policy_errors" in exc_info.value.context
+
+    def test_reset_password_marks_token_used(
+        self,
+        password_reset_service,
+        test_user_for_reset,
+        test_db_session: Session
+    ):
+        """Test that token is marked as used after password reset."""
+        from src.db.repositories.password_reset_token_repository import PasswordResetTokenRepository
+
+        email = test_user_for_reset.email
+        new_password = "NewSecureP@ssw0rd456"
+
+        # Request password reset
+        token = password_reset_service.request_password_reset(email=email, ip_address="192.168.1.1")
+        test_db_session.commit()
+
+        # Get token record
+        token_repo = PasswordResetTokenRepository(test_db_session)
+        hashed_token = password_reset_service._hash_token(token)
+        token_record = token_repo.get_by_token(hashed_token)
+        assert not token_record.is_used
+
+        # Reset password
+        password_reset_service.reset_password(token, new_password)
+        test_db_session.commit()
+
+        # Verify token is marked as used
+        test_db_session.refresh(token_record)
+        assert token_record.is_used is True
+        assert token_record.used_at is not None
+
+    def test_reset_password_invalidates_other_tokens(
+        self,
+        password_reset_service,
+        test_user_for_reset,
+        test_db_session: Session
+    ):
+        """Test that resetting password invalidates all other user tokens."""
+        from src.db.repositories.password_reset_token_repository import PasswordResetTokenRepository
+
+        email = test_user_for_reset.email
+        new_password = "NewSecureP@ssw0rd456"
+
+        # Request two password resets
+        token1 = password_reset_service.request_password_reset(email=email, ip_address="192.168.1.1")
+        test_db_session.commit()
+
+        # Wait a bit and create another
+        import time
+        time.sleep(0.1)
+        token2 = password_reset_service.request_password_reset(email=email, ip_address="192.168.1.2")
+        test_db_session.commit()
+
+        # Reset password with token2
+        password_reset_service.reset_password(token2, new_password)
+        test_db_session.commit()
+
+        # Verify all tokens are invalidated
+        token_repo = PasswordResetTokenRepository(test_db_session)
+        user_tokens = token_repo.get_user_tokens(test_user_for_reset.id)
+
+        for token_record in user_tokens:
+            assert token_record.is_used is True
+
+    # ========================================================================
+    # TOKEN HASHING TESTS
+    # ========================================================================
+
+    def test_hash_token_consistency(self, password_reset_service):
+        """Test that same input produces same hash."""
+        token = "test-token-consistency"
+
+        hash1 = password_reset_service._hash_token(token)
+        hash2 = password_reset_service._hash_token(token)
+
+        assert hash1 == hash2
+
+    def test_hash_token_hex_format(self, password_reset_service):
+        """Test that hash is valid hexadecimal."""
+        token = "test-token-hex"
+
+        hash_result = password_reset_service._hash_token(token)
+
+        # Should be valid hex string
+        assert isinstance(hash_result, str)
+        assert len(hash_result) == 64  # SHA-256 produces 64 hex characters
+        # Verify it's valid hex
+        try:
+            int(hash_result, 16)
+        except ValueError:
+            pytest.fail("Hash is not valid hexadecimal")
+
+    def test_hash_token_different_inputs(self, password_reset_service):
+        """Test that different tokens produce different hashes."""
+        token1 = "test-token-1"
+        token2 = "test-token-2"
+
+        hash1 = password_reset_service._hash_token(token1)
+        hash2 = password_reset_service._hash_token(token2)
+
+        assert hash1 != hash2
+
+    # ========================================================================
+    # CLEANUP TESTS
+    # ========================================================================
+
+    def test_cleanup_expired_tokens_deletes_expired(
+        self,
+        password_reset_service,
+        test_user_for_reset,
+        test_db_session: Session
+    ):
+        """Test that cleanup removes expired tokens."""
+        from src.db.repositories.password_reset_token_repository import PasswordResetTokenRepository
+
+        email = test_user_for_reset.email
+        token_repo = PasswordResetTokenRepository(test_db_session)
+
+        # Create token
+        token = password_reset_service.request_password_reset(email=email, ip_address="192.168.1.1")
+        test_db_session.commit()
+
+        # Manually expire the token using raw SQL
+        hashed_token = password_reset_service._hash_token(token)
+        test_db_session.execute(
+            text("UPDATE password_reset_tokens SET expires_at = datetime('now', '-2 hours') WHERE token = :token"),
+            {"token": hashed_token}
+        )
+        test_db_session.commit()
+
+        # Run cleanup
+        deleted_count = password_reset_service.cleanup_expired_tokens()
+        test_db_session.commit()
+
+        assert deleted_count >= 1
+
+        # Verify token is gone
+        token_record = token_repo.get_by_token(hashed_token)
+        assert token_record is None
+
+    def test_cleanup_expired_tokens_keeps_valid(
+        self,
+        password_reset_service,
+        test_user_for_reset,
+        test_db_session: Session
+    ):
+        """Test that cleanup doesn't remove valid tokens."""
+        from src.db.repositories.password_reset_token_repository import PasswordResetTokenRepository
+
+        email = test_user_for_reset.email
+
+        # Create valid token
+        token = password_reset_service.request_password_reset(email=email, ip_address="192.168.1.1")
+        test_db_session.commit()
+
+        # Run cleanup
+        password_reset_service.cleanup_expired_tokens()
+        test_db_session.commit()
+
+        # Verify token still exists and is valid
+        token_repo = PasswordResetTokenRepository(test_db_session)
+        hashed_token = password_reset_service._hash_token(token)
+        token_record = token_repo.get_by_token(hashed_token)
+
+        assert token_record is not None
+        assert not token_record.is_used
+
+    def test_cleanup_expired_tokens_returns_count(
+        self,
+        password_reset_service,
+        test_user_for_reset,
+        test_db_session: Session
+    ):
+        """Test that cleanup returns correct count of deleted tokens."""
+        email = test_user_for_reset.email
+
+        # Create 3 tokens
+        tokens = []
+        for i in range(3):
+            token = password_reset_service.request_password_reset(email=email, ip_address="192.168.1.1")
+            tokens.append(token)
+            test_db_session.commit()
+
+        # Expire all tokens using raw SQL
+        test_db_session.execute(
+            text("UPDATE password_reset_tokens SET expires_at = datetime('now', '-2 hours') WHERE user_id = :user_id"),
+            {"user_id": test_user_for_reset.id}
+        )
+        test_db_session.commit()
+
+        # Run cleanup
+        deleted_count = password_reset_service.cleanup_expired_tokens()
+        test_db_session.commit()
+
+        assert deleted_count == 3
+
+    # ========================================================================
+    # EDGE CASES
+    # ========================================================================
+
+    def test_request_password_reset_nonexistent_email(
+        self,
+        password_reset_service
+    ):
+        """Test that requesting reset for non-existent email raises UserNotFoundError."""
+        from src.services.exceptions import UserNotFoundError
+
+        with pytest.raises(UserNotFoundError):
+            password_reset_service.request_password_reset(
+                email="nonexistent@example.com",
+                ip_address="192.168.1.1"
+            )
+
+    def test_verify_token_malformed_token(self, password_reset_service):
+        """Test that malformed token is rejected."""
+        malformed_token = "this-is-not-a-valid-token"
+
+        is_valid, result = password_reset_service.verify_reset_token(malformed_token)
+
+        assert is_valid is False
+        assert "invalid" in result.lower() or "expired" in result.lower()
+
+    def test_reset_password_empty_password(
+        self,
+        password_reset_service,
+        test_user_for_reset,
+        test_db_session: Session
+    ):
+        """Test that empty password is rejected."""
+        from src.services.exceptions import PasswordPolicyError
+
+        email = test_user_for_reset.email
+
+        # Request password reset
+        token = password_reset_service.request_password_reset(email=email, ip_address="192.168.1.1")
+        test_db_session.commit()
+
+        # Try to reset with empty password
+        with pytest.raises(PasswordPolicyError):
+            password_reset_service.reset_password(token, "")
+
+    def test_reset_password_token_not_found(
+        self,
+        password_reset_service
+    ):
+        """Test that resetting with non-existent token raises error."""
+        from src.services.exceptions import TokenNotFoundError
+
+        fake_token = "non-existent-token-123456"
+
+        with pytest.raises(TokenNotFoundError):
+            password_reset_service.reset_password(fake_token, "NewP@ssw0rd123")
+
+    def test_reset_password_expired_token(
+        self,
+        password_reset_service,
+        test_user_for_reset,
+        test_db_session: Session
+    ):
+        """Test that resetting with expired token raises error."""
+        from src.services.exceptions import TokenExpiredError
+
+        email = test_user_for_reset.email
+
+        # Create token
+        token = password_reset_service.request_password_reset(email=email, ip_address="192.168.1.1")
+        test_db_session.commit()
+
+        # Expire the token using raw SQL
+        hashed_token = password_reset_service._hash_token(token)
+        test_db_session.execute(
+            text("UPDATE password_reset_tokens SET expires_at = datetime('now', '-1 hours') WHERE token = :token"),
+            {"token": hashed_token}
+        )
+        test_db_session.commit()
+
+        # Try to reset password
+        with pytest.raises(TokenExpiredError):
+            password_reset_service.reset_password(token, "NewP@ssw0rd123")
+
+    def test_reset_password_already_used_token(
+        self,
+        password_reset_service,
+        test_user_for_reset,
+        test_db_session: Session
+    ):
+        """Test that resetting with already-used token raises error."""
+        from src.services.exceptions import TokenAlreadyUsedError
+
+        email = test_user_for_reset.email
+
+        # Request password reset
+        token = password_reset_service.request_password_reset(email=email, ip_address="192.168.1.1")
+        test_db_session.commit()
+
+        # Reset password once (should work)
+        password_reset_service.reset_password(token, "NewP@ssw0rd123")
+        test_db_session.commit()
+
+        # Try to use token again
+        with pytest.raises(TokenAlreadyUsedError):
+            password_reset_service.reset_password(token, "AnotherP@ssw0rd456")
 
 
 # ============================================================================

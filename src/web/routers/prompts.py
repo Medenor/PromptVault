@@ -146,7 +146,9 @@ def _prompt_to_dict(prompt: Prompt) -> dict:
         "title": prompt.title,
         "prompt": prompt.prompt,
         "category": prompt.category.name if prompt.category else "",
+        "category_color": prompt.category.color if prompt.category else None,
         "tags": [tag.name for tag in prompt.tags] if prompt.tags else [],
+        "tag_colors": {tag.name: tag.color for tag in prompt.tags} if prompt.tags else {},
         "note": prompt.note or "",
         "favorite": prompt.favorite,
         "user_id": prompt.user_id,
@@ -211,7 +213,9 @@ async def list_prompts(
                 "title": data.get("title", ""),
                 "prompt": data.get("prompt", ""),
                 "category": data.get("category", ""),
+                "category_color": None,
                 "tags": data.get("tags", []),
+                "tag_colors": {},
                 "note": data.get("note", ""),
                 "favorite": data.get("favorite", False),
                 "user_id": data.get("user_id"),
@@ -318,7 +322,9 @@ async def search_prompts(
                 "title": data.get("title", ""),
                 "prompt": data.get("prompt", ""),
                 "category": data.get("category", ""),
+                "category_color": None,
                 "tags": data.get("tags", []),
+                "tag_colors": {},
                 "note": data.get("note", ""),
                 "favorite": data.get("favorite", False),
                 "user_id": data.get("user_id"),
@@ -419,7 +425,9 @@ async def get_prompt(
                 "title": data.get("title", ""),
                 "prompt": data.get("prompt", ""),
                 "category": data.get("category", ""),
+                "category_color": None,
                 "tags": data.get("tags", []),
+                "tag_colors": {},
                 "note": data.get("note", ""),
                 "favorite": data.get("favorite", False),
                 "user_id": data.get("user_id"),
@@ -478,6 +486,7 @@ async def create_prompt(
     prompt: str = Form(...),
     category: str = Form(""),
     tags: str = Form(""),
+    commit_message: str = Form("Initial commit"),
     user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ):
@@ -488,6 +497,7 @@ async def create_prompt(
         prompt: Prompt content
         category: Category name (optional)
         tags: Comma-separated tags (optional)
+        commit_message: Commit message for the initial version (optional, defaults to "Initial commit")
         user: Authenticated user
         db: Database session
 
@@ -546,7 +556,7 @@ async def create_prompt(
     version = version_repo.create_version(
         prompt=new_prompt,
         author=user.username,
-        message="Initial commit",
+        message=commit_message,
         parent_version_id=None
     )
 

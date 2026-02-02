@@ -318,7 +318,7 @@ For detailed deployment instructions including manual installation, environment 
 
 - **[Deployment Guide](docs/DEPLOYMENT.md)** - Complete deployment instructions for Docker, Docker Compose, and manual deployment
 - **[Authentication Deployment Guide](docs/AUTHENTICATION_DEPLOYMENT.md)** - Authentication setup with JWT key generation
-- **[Migration Guide](docs/MIGRATION_GUIDE.md)** - Step-by-step guide for migrating from JSON to database storage
+- **[Migration Guide from JSON to database](docs/MIGRATION_GUIDE_JSON_TO_DB.md)** - Step-by-step guide for migrating from JSON to database storage
 - **[Database Specification](docs/SPECS/SPEC_DATABASE.md)** - Technical specification and architecture details
 
 ## Authentication
@@ -535,46 +535,6 @@ Testing instructions live in **[docs/TESTING.md](docs/TESTING.md)**, including b
 ## Roadmap
 
 For a comprehensive feature improvement roadmap with detailed implementation plans, see [ROADMAP.md](ROADMAP.md).
-
-### Completed Features
-
-- [x] **Version Control System:** Git-like versioning with history tracking, diff visualization, and revert functionality
-- [x] **Search & Filtering:** Advanced searching and filtering capabilities across all prompts
-- [x] **Data Backup System:** Comprehensive backup and restoration with automatic pre-operation backups, manual backups, cleanup, and compression
-- [x] **Unit Tests:** Comprehensive test coverage (85%+) for core functionality with performance benchmarks
-- [x] **Database Migration:** Complete transition from JSON to SQLite/PostgreSQL with backward compatibility (see [Migration Guide](docs/MIGRATION_GUIDE.md))
-- [x] **Docker & Deployment:** Production-ready Docker setup with PostgreSQL integration and health checks (see [Deployment Guide](docs/DEPLOYMENT.md))
-- [x] **Authentication & Authorization:** Multi-user JWT authentication with role-based access control (viewer, editor, admin), Argon2id password hashing, ES256 tokens, session management, password reset flow, and 481 passing tests with 99.8% coverage (see [Authentication Guide](docs/AUTHENTICATION_DEPLOYMENT.md))
-
-### Phase 1: Foundation Strengthening (Priority: High)
-
-- [x] **Input Validation & Sanitization:** Comprehensive validation framework preventing injection attacks and ensuring data integrity
-- [x] **Error Handling & Logging:** Centralized logging infrastructure with structured logs and audit trails
-- [x] **Database Backend:** SQLAlchemy ORM with repository pattern, Alembic migrations, and PostgreSQL/SQLite support
-- [ ] **Performance Monitoring:** Real-time monitoring with APM, error tracking, and analytics dashboards
-- [ ] **Accessibility Compliance:** WCAG 2.1 AA compliance with full keyboard navigation and screen reader support
-
-### Phase 2: Security & Architecture (Priority: High)
-
-- [x] **Authentication & Authorization:** User management with JWT tokens and role-based access control (COMPLETED)
-- [x] **TypeScript Migration:** Convert frontend to TypeScript for type safety and better developer experience
-- [ ] **API Documentation:** Interactive OpenAPI/Swagger documentation with client SDKs
-- [ ] **Full-Text Search:** PostgreSQL FTS for advanced search capabilities with ranking and relevance scoring
-
-### Phase 3: User Experience (Priority: Medium)
-
-- [ ] **Pagination & Lazy Loading:** Server-side pagination for handling large datasets efficiently
-- [ ] **Advanced Search:** Full-text search, fuzzy matching, saved searches, and advanced filters
-- [ ] **Tag & Category Management:** Dedicated interface for managing taxonomy with merge and bulk operations
-- [ ] **Mobile UI Enhancements:** Touch-optimized controls, offline support, and mobile-friendly gestures
-
-### Phase 4: Collaboration & Integration (Priority: Medium)
-
-- [ ] **Collaborative Editing:** Real-time updates with WebSockets, presence indicators, and conflict resolution
-- [ ] **Enhanced Backup System:** Scheduled backups, cloud storage integration, incremental backups, and encryption
-- [ ] **Export & Sharing:** PDF/HTML export, public sharing links, and integrations (Notion, Confluence, Slack)
-
-See [ROADMAP.md](ROADMAP.md) for detailed task breakdowns, implementation estimates, and success metrics.
 
 For proposed features and known issues, visit the [open issues](https://codeberg.org/medenor/promptvault/issues) page.
 

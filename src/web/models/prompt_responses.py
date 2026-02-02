@@ -34,6 +34,14 @@ class PromptResponse(BaseModel):
     prompt: str = Field(..., description="Prompt content")
     category: str = Field(..., description="Category name")
     tags: List[str] = Field(..., description="List of tags")
+    category_color: Optional[str] = Field(
+        None,
+        description="Category color (token or hex)",
+    )
+    tag_colors: Dict[str, Optional[str]] = Field(
+        default_factory=dict,
+        description="Tag name -> color (token or hex)",
+    )
     note: str = Field(..., description="Optional note")
     favorite: bool = Field(..., description="Favorite status")
     user_id: str = Field(..., description="Owner's user ID")

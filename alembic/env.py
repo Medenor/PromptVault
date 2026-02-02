@@ -24,6 +24,7 @@ from src.db.models.prompt import Prompt
 from src.db.models.prompt_version import PromptVersion
 from src.db.models.prompt_branch import PromptBranch
 from src.db.models.backup import Backup
+from src.db.models.undo_operation import UndoOperation
 from src.db.models.associations import prompt_tags
 
 # this is the Alembic Config object, which provides

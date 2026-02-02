@@ -39,7 +39,18 @@
     "bulkDelete": "Delete Selected",
     "selectAll": "Select All",
     "clearSelection": "Clear Selection",
-    "confirmDelete": "Confirm Delete"
+    "confirmDelete": "Confirm Delete",
+    "bulkTag": "Tag Selected",
+    "suggestTags": "Suggest Tags",
+    "applyTags": "Apply Tags",
+    "merge": "Merge",
+    "mergeSelected": "Merge Selected",
+    "findReplace": "Find & Replace",
+    "findReplaceSelected": "Find/Replace Selected",
+    "replace": "Replace",
+    "saveOrder": "Save Order",
+    "saveAll": "Save All",
+    "undo": "Undo"
   },
   "form": {
     "title": "Prompt Title:",
@@ -84,6 +95,7 @@
     "categoryTooLong": "Category cannot exceed 100 characters.",
     "tagsRequired": "At least one tag is required.",
     "tooManyTags": "You cannot add more than 50 tags.",
+    "tagsMax": "Maximum 15 tags allowed.",
     "tagTooLong": "Individual tags cannot exceed 50 characters.",
     "duplicateTags": "Duplicate tags detected: {{tags}}",
     "noteRequired": "The 'Note' field cannot be empty.",
@@ -118,12 +130,110 @@
   },
   "categories": {
     "manage": "Manage Categories",
-    "manageDesc": "Manage prompt categories",
-    "noCategory": "No category"
+    "manageDesc": "Create, edit, and remove categories across all prompts.",
+    "noCategory": "No category",
+    "createTitle": "Create Category",
+    "listTitle": "Categories",
+    "orphans": "Prompts without a category:",
+    "assignOrphans": "Assign Category",
+    "orphanPromptsTitle": "Prompts without a category",
+    "unusedTitle": "Unused categories",
+    "unusedLabel": "Unused categories:"
   },
   "tags": {
     "manage": "Manage Tags",
-    "manageDesc": "Manage tags globally"
+    "manageDesc": "Create, edit, and remove tags across all prompts.",
+    "createTitle": "Create Tag",
+    "listTitle": "Tags",
+    "orphans": "Unused tags:",
+    "unusedTitle": "Unused tags",
+    "orphanPromptsTitle": "Prompts without tags",
+    "orphanPromptsLabel": "Prompts without tags:"
+  },
+  "management": {
+    "manage": "Manage",
+    "bulkActions": "Bulk Actions",
+    "importExport": "Import & Export",
+    "analytics": "Analytics",
+    "hierarchy": "Hierarchy",
+    "orphans": "Orphans",
+    "total": "Total",
+    "used": "Used",
+    "unused": "Unused",
+    "top": "Top",
+    "cooccurrence": "Co-occurrence",
+    "namePlaceholder": "Name",
+    "descriptionPlaceholder": "Description",
+    "colorPlaceholder": "Color token or hex",
+    "parentNone": "No parent",
+    "targetIdPlaceholder": "Target ID",
+    "sourceIdsPlaceholder": "Source IDs (comma-separated)",
+    "findPlaceholder": "Find name",
+    "replacePlaceholder": "Replace name",
+    "idsPlaceholder": "IDs (comma-separated)",
+    "forceDelete": "Force delete (remove from prompts)",
+    "assignPlaceholder": "Category name or ID to assign",
+    "searchCategoriesPlaceholder": "Search categories...",
+    "searchTagsPlaceholder": "Search tags...",
+    "id": "ID",
+    "select": "Select",
+    "name": "Name",
+    "description": "Description",
+    "color": "Color",
+    "order": "Order",
+    "parent": "Parent",
+    "usage": "Usage",
+    "actions": "Actions",
+    "promptDetails": "Prompt details",
+    "untitledPrompt": "Untitled prompt",
+    "promptNotFound": "Prompt not found",
+    "tagsPlaceholder": "Tags or IDs (comma-separated)",
+    "saveSuccess": "Saved successfully.",
+    "noRows": "No rows to save.",
+    "createSuccess": "Created successfully.",
+    "deleteSuccess": "Deleted successfully.",
+    "mergeSuccess": "Merged successfully.",
+    "replaceSuccess": "Replaced successfully.",
+    "bulkDeleteSuccess": "Deleted successfully.",
+    "importSuccess": "Import completed.",
+    "exportSuccess": "Export completed.",
+    "undoSuccess": "Undo completed.",
+    "assignSuccess": "Updated successfully.",
+    "bulkUpdateSuccess": "Updated successfully.",
+    "forceDeleteConfirm": "This item is in use. Force delete and remove it from prompts?",
+    "deleteConfirm": "Delete this item?",
+    "nameRequired": "Name is required.",
+    "mergeRequireIds": "Target ID and source IDs are required.",
+    "mergeConfirm": "Merge these items?",
+    "mergeTargetHelp": "Target is the item that remains after merge.",
+    "mergeSourcesHelp": "Sources will be merged into the target and removed.",
+    "findReplaceRequired": "Find and replace values are required.",
+    "replaceConfirm": "Replace this name across prompts?",
+    "bulkDeleteRequireIds": "Provide at least one ID.",
+    "bulkDeleteConfirm": "Delete selected items?",
+    "importSelectFile": "Select a JSON file to import.",
+    "mergeSelectedRequire": "Select at least two items to merge.",
+    "mergeSelectedConfirm": "Merge selected items into the first selected?",
+    "replaceSelectedRequireOne": "Select exactly one item to replace.",
+    "replaceSelectedNotFound": "Selected item not found.",
+    "replacePrompt": "Replace '{{name}}' with:",
+    "noHierarchyDefined": "No hierarchy defined.",
+    "importExportHint": "JSON only",
+    "exportTitle": "Export",
+    "importTitle": "Import",
+    "exportDesc": "Download your definitions.",
+    "importDesc": "Upload a JSON file to create or update items.",
+    "importDrop": "Choose a JSON file",
+    "idNotFound": "No item found for ID {{id}}."
+  },
+  "bulkTag": {
+    "title": "Bulk Tag Update",
+    "description": "Update tags for",
+    "prompts": "prompt(s).",
+    "addLabel": "Add Tags",
+    "removeLabel": "Remove Tags",
+    "placeholder": "Comma-separated tags",
+    "note": "Tags added or removed will apply to all selected prompts."
   },
   "importExport": {
     "title": "Import & Export Management",
@@ -195,6 +305,43 @@
       "favorites": "favorites only",
       "caseSensitive": "case sensitive"
     }
+  },
+  "emptyStates": {
+    "noPrompts": {
+      "title": "No prompts yet",
+      "description": "Create your first prompt to get started",
+      "action": "Create Prompt"
+    },
+    "noSearchResults": {
+      "title": "No results found",
+      "description": "Try adjusting your search or filters",
+      "action": "Clear Filters"
+    },
+    "noCategories": {
+      "title": "No categories yet",
+      "description": "Create your first category to organize your prompts",
+      "action": "Create Category"
+    },
+    "noCategoriesInSidebar": {
+      "title": "No categories available",
+      "description": "Visit Manage Categories to create one"
+    },
+    "noTags": {
+      "title": "No tags yet",
+      "description": "Create your first tag to organize your prompts",
+      "action": "Create Tag"
+    },
+    "noTagsInSidebar": {
+      "title": "No tags available",
+      "description": "Visit Manage Tags to create one"
+    },
+    "noTagsInEditor": {
+      "title": "No tags added",
+      "description": "Start typing or select from suggestions"
+    }
+  },
+  "prompt": {
+    "editorTitle": "Create/Edit Prompt"
   },
   "version": {
     "history": "History",
