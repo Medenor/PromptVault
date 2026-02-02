@@ -86,6 +86,224 @@ docker-compose exec -T db psql -U promptvault -d promptvault -c "SELECT COUNT(*)
 
 ---
 
+## 📦 Updating PromptVault
+
+### Pre-Update Requirements
+
+**BEFORE updating to a new version:**
+
+1. ✅ Read `CHANGELOG.md` for breaking changes or migration notes
+2. ✅ Backup your database (see Pre-Deployment Checklist above)
+3. ✅ Test on staging environment first (if available)
+4. ✅ Plan for potential downtime (usually < 5 minutes)
+
+### Update with Docker Compose (Recommended)
+
+This is the safest approach with proper database migration handling:
+
+```bash
+# 1. Pull latest code from main branch
+git checkout main
+git pull origin main
+
+# 2. Create database backup (CRITICAL!)
+docker-compose exec db pg_dump -U promptvault -d promptvault --verbose | gzip > \
+  data/backups/promptvault-backup-$(date +%Y%m%d_%H%M%S).sql.gz
+
+# 3. Build new Docker image with latest code
+docker-compose build --no-cache
+
+# 4. Stop web service (keep db/redis running)
+docker-compose stop web
+docker-compose rm web
+
+# 5. Ensure database is fully ready
+docker-compose up -d db redis
+sleep 15  # CRITICAL: Give database time to initialize
+
+# 6. Run pending database migrations
+# NOTE: This MUST happen before starting the web service
+docker-compose exec web alembic upgrade head
+
+# 7. Start updated web service
+docker-compose up -d web
+
+# 8. Verify update was successful
+docker-compose logs web | head -50
+curl http://localhost:8001/api/health
+```
+
+### Important: Database Migrations
+
+**Why is the sleep command critical?**
+
+When you restart the database container, it needs time to:
+- Initialize the PostgreSQL cluster
+- Load all data from persistent volumes
+- Become fully responsive to connections
+
+If migrations run too soon, they may:
+- ❌ Appear to succeed but silently fail
+- ❌ Not actually apply, leaving schema out of sync
+- ❌ Cause API errors like "column does not exist"
+
+**Solution:** Always include `sleep 15` between starting database and running migrations.
+
+**Verify migrations ran:**
+
+```bash
+# Check which migrations were applied
+docker-compose exec -T db psql -U promptvault -d promptvault -c \
+  "SELECT version_num FROM alembic_version ORDER BY version_num DESC LIMIT 5;"
+
+# Expected: Should show latest migration versions (e.g., b7a1c2d3e4f5, c8d9e0f1a2b3)
+```
+
+### One-Command Update (Quick)
+
+For experienced users, here's a single command that handles everything:
+
+```bash
+git checkout main && git pull && \
+docker-compose build --no-cache && \
+docker-compose stop web && docker-compose rm web && \
+docker-compose up -d && sleep 15 && \
+docker-compose exec web alembic upgrade head && \
+docker-compose logs web --tail=20
+```
+
+### Manual Deployment Update
+
+If running without Docker Compose:
+
+```bash
+# 1. Pull latest code
+git pull origin main
+
+# 2. Backup database
+pg_dump -U promptvault -d promptvault | gzip > backup-$(date +%Y%m%d_%H%M%S).sql.gz
+
+# 3. Install dependencies (in case requirements changed)
+source venv/bin/activate
+pip install -e . --upgrade
+
+# 4. Run migrations
+alembic upgrade head
+
+# 5. Restart application
+systemctl restart promptvault
+# or manually:
+# pkill -f "python run_web.py"
+# python run_web.py &
+```
+
+### Verify Update Success
+
+After update completes, verify:
+
+```bash
+# 1. Health endpoint returns 200
+curl -i http://localhost:8001/api/health
+
+# 2. Expected response
+{
+  "status": "healthy",
+  "database": "connected",
+  "version": "1.5.0"
+}
+
+# 3. Check logs for errors
+docker-compose logs web | grep -i error
+
+# 4. Verify database is accessible
+docker-compose exec -T db psql -U promptvault -d promptvault -c "SELECT COUNT(*) FROM prompts;"
+
+# 5. Test basic functionality in UI
+# Visit: http://localhost:8001
+# Create/read/update a prompt to ensure everything works
+```
+
+### Troubleshooting Update Issues
+
+#### Migration Failed Silently
+
+**Problem:** First `alembic upgrade head` showed no output, second one applied migrations
+
+**Cause:** Database wasn't fully initialized when migrations ran
+
+**Solution:**
+
+```bash
+# Stop everything
+docker-compose down
+
+# Start only database, wait longer
+docker-compose up -d db
+sleep 30  # Longer wait
+
+# Run migrations
+docker-compose exec web alembic upgrade head
+
+# Start web service
+docker-compose up -d web
+```
+
+#### "Column does not exist" Errors
+
+**Problem:** API returns errors like `column categories.updated_at does not exist`
+
+**Cause:** Migrations weren't applied despite appearing to succeed
+
+**Solution:**
+
+```bash
+# Check which migrations have been applied
+docker-compose exec -T db psql -U promptvault -d promptvault -c \
+  "SELECT version_num FROM alembic_version ORDER BY version_num DESC;"
+
+# If migrations are missing, run again
+docker-compose exec web alembic upgrade head
+
+# If still failing, check for migration locks
+docker-compose exec -T db psql -U promptvault -d promptvault -c \
+  "SELECT * FROM alembic_version_table WHERE locked = true;"
+
+# Force reset if stuck (use with caution!)
+docker-compose exec -T db psql -U promptvault -d promptvault -c \
+  "UPDATE alembic_version_table SET locked = false WHERE locked = true;"
+docker-compose exec web alembic upgrade head
+```
+
+#### Rollback to Previous Version
+
+If the update causes critical issues:
+
+```bash
+# 1. Stop application
+docker-compose stop web
+
+# 2. Restore database from backup
+docker-compose exec -T db psql -U promptvault postgres -c "DROP DATABASE promptvault;"
+docker-compose exec -T db psql -U promptvault postgres -c "CREATE DATABASE promptvault;"
+gunzip -c data/backups/promptvault-backup-YYYYMMDD_HHMMSS.sql.gz | \
+  docker-compose exec -T db psql -U promptvault -d promptvault
+
+# 3. Checkout previous version
+git log --oneline | head -5  # Find previous version
+git checkout <previous-commit-hash>
+
+# 4. Rebuild with old code
+docker-compose build --no-cache
+
+# 5. Restart
+docker-compose up -d web
+
+# 6. Verify
+docker-compose logs web | tail -20
+```
+
+---
+
 ## ⚠️ Permissions & Non-Root Containers (PostgreSQL, Redis, Web)
 
 Recent versions of PromptVault run all services as **non-root users** inside their containers:
