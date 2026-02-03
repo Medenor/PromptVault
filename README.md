@@ -71,9 +71,11 @@
   - [Built With](#built-with)
   - [Version Control](#version-control)
   - [Screenshots](#screenshots-and-gallery)
+- [Quick Start](#quick-start)
 - [Getting Started](#getting-started)
   - [Prerequisites](#prerequisites)
-  - [Installation](#installation)
+  - [Automated Setup (Recommended)](#automated-setup-recommended)
+  - [Alternative: Manual Installation](#alternative-manual-installation)
 - [Authentication](#authentication)
   - [User Roles](#user-roles)
   - [Security Features](#security-features)
@@ -282,8 +284,78 @@ Category and tags management interface with color pickers, hierarchization (for 
 - Python 3.11+
 - PostgreSQL 15+ (for production) or SQLite 3.x (for development)
 - Docker and Docker Compose (recommended for production deployment)
+- Git
 
-### Quick Start with Docker Compose
+## Quick Start
+
+Get PromptVault running in under 5 minutes with our automated setup wizard:
+
+```bash
+# Clone the repository
+git clone https://codeberg.org/medenor/promptvault.git
+cd PromptVault
+
+# Run the setup wizard
+python scripts/setup/setup.py
+```
+
+The setup wizard will guide you through:
+- JWT key generation
+- Environment configuration
+- Database setup (SQLite or PostgreSQL)
+- Admin user creation
+- Application deployment
+
+For a detailed walkthrough, see the **[Quick Start Guide](docs/QUICK_START.md)**.
+
+### Automated Setup (Recommended)
+
+PromptVault includes a comprehensive setup wizard that automates the entire deployment process. The wizard provides three modes:
+
+**Quick Setup** (5 minutes, recommended for development):
+```bash
+python scripts/setup/setup.py --quick
+```
+- Uses SQLite database
+- Generates JWT keys automatically
+- Creates development configuration
+- Sets up admin user
+- Starts the application
+
+**Advanced Setup** (customizable, recommended for production):
+```bash
+python scripts/setup/setup.py --advanced
+```
+- Choose PostgreSQL or SQLite
+- Customize all configuration options
+- Full control over security settings
+- Production-ready deployment
+
+**Component Setup** (run individual components):
+```bash
+# JWT keys only
+python scripts/setup/setup.py --component jwt
+
+# Environment configuration only
+python scripts/setup/setup.py --component env
+
+# Database setup only
+python scripts/setup/setup.py --component database
+
+# Deployment only
+python scripts/setup/setup.py --component deploy
+```
+
+For complete documentation on the automated setup system, see:
+- **[Quick Start Guide](docs/QUICK_START.md)** - 5-minute setup walkthrough
+- **[Troubleshooting Guide](docs/TROUBLESHOOTING.md)** - Common issues and solutions
+- **[Deployment Guide](docs/DEPLOYMENT.md)** - Detailed deployment documentation
+
+### Alternative: Manual Installation
+
+For manual installation without the setup wizard, see below:
+
+#### Quick Start with Docker Compose
 
 The fastest way to get started with full database support:
 
@@ -319,13 +391,20 @@ docker-compose exec web python scripts/migrate_json_to_db.py
 
 Then open your browser to `http://localhost:8001` and login with your admin credentials.
 
-### Additional Installation Options
+### Additional Documentation
 
-For detailed deployment instructions including manual installation, environment configuration, and production setup, see:
+For detailed instructions and guides:
 
+**Setup and Deployment:**
+- **[Quick Start Guide](docs/QUICK_START.md)** - Get started in 5 minutes with automated setup
+- **[Troubleshooting Guide](docs/TROUBLESHOOTING.md)** - Common issues and solutions
 - **[Deployment Guide](docs/DEPLOYMENT.md)** - Complete deployment instructions for Docker, Docker Compose, and manual deployment
 - **[Authentication Deployment Guide](docs/AUTHENTICATION_DEPLOYMENT.md)** - Authentication setup with JWT key generation
+
+**Data Migration:**
 - **[Migration Guide from JSON to database](docs/MIGRATION_GUIDE_JSON_TO_DB.md)** - Step-by-step guide for migrating from JSON to database storage
+
+**Technical Specifications:**
 - **[Database Specification](docs/SPECS/SPEC_DATABASE.md)** - Technical specification and architecture details
 
 ## Authentication

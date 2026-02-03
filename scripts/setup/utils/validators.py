@@ -225,7 +225,8 @@ def validate_hostname(hostname: str) -> Tuple[bool, str | None]:
     if len(hostname) > 253:
         return False, "Hostname exceeds maximum length of 253 characters"
 
-    hostname_pattern = r'^(?!-)[a-zA-Z0-9-]{1,63}(?<!-)(\.[a-zA-Z0-9-]{1,63})*$'
+    # Check basic hostname format (don't enforce length here, do it per-label below)
+    hostname_pattern = r'^(?!-)[a-zA-Z0-9-]+(?<!-)(\.[a-zA-Z0-9-]+(?<!-))*$'
     if not re.match(hostname_pattern, hostname):
         return False, "Invalid hostname format. Must contain only alphanumeric characters, hyphens, and dots"
 
@@ -233,7 +234,7 @@ def validate_hostname(hostname: str) -> Tuple[bool, str | None]:
     labels = hostname.split('.')
     for label in labels:
         if len(label) > 63:
-            return False, f"Hostname label '{label}' exceeds maximum length of 63 characters"
+            return False, f"Hostname label '{label}' exceeds maximum length of 63 characters (has {len(label)})"
         if label.startswith('-') or label.endswith('-'):
             return False, f"Hostname label '{label}' cannot start or end with hyphen"
 
@@ -326,10 +327,12 @@ def validate_path(path: str, must_exist: bool = False) -> Tuple[bool, str | None
         if not path_obj.exists():
             return False, f"Path does not exist: {path}"
     else:
-        # Check if parent directory exists
-        parent = path_obj.parent
-        if parent != path_obj and not parent.exists():
-            return False, f"Parent directory does not exist: {parent}"
+        # For absolute paths, check if parent directory exists
+        # For relative paths, don't validate parent (they're relative to CWD)
+        if path_obj.is_absolute():
+            parent = path_obj.parent
+            if parent != path_obj and not parent.exists():
+                return False, f"Parent directory does not exist: {parent}"
 
     return True, None
 

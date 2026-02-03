@@ -449,12 +449,12 @@ def wait_for_healthy(
             if success and stdout:
                 # Check if health status is present
                 output_lower = stdout.lower()
-                if "healthy" in output_lower:
+                # Check for unhealthy first (before healthy) since "healthy" is a substring of "unhealthy"
+                if "unhealthy" in output_lower:
+                    # Container is unhealthy, return False
+                    return False
+                elif "healthy" in output_lower:
                     return True
-                elif "unhealthy" in output_lower:
-                    # Container is unhealthy, continue waiting
-                    time.sleep(poll_interval)
-                    continue
                 else:
                     # No health check defined, just check if running
                     # If container is running without health check, consider it healthy
