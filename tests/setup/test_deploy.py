@@ -182,6 +182,45 @@ class TestPreflightChecks:
 
             assert result is False
 
+    @patch('scripts.setup.deploy.check_docker_installed')
+    @patch('scripts.setup.deploy.check_docker_running')
+    @patch('scripts.setup.deploy.check_docker_compose_installed')
+    @patch('scripts.setup.deploy.check_port_available')
+    def test_preflight_checks_low_disk_space_fails(
+        self, mock_port, mock_compose, mock_running, mock_installed
+    ):
+        """Test pre-flight checks fail when disk space is insufficient."""
+        console = Mock()
+        console.spinner = MagicMock()
+        console.spinner.return_value.__enter__ = Mock(return_value=None)
+        console.spinner.return_value.__exit__ = Mock(return_value=None)
+
+        mock_installed.return_value = (True, "20.10.0")
+        mock_running.return_value = (True, "")
+        mock_compose.return_value = (True, "v2.0.0")
+        mock_port.return_value = (True, "")
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            working_dir = Path(tmpdir)
+            (working_dir / "docker-compose.yml").touch()
+            (working_dir / "secrets" / "jwt").mkdir(parents=True)
+            (working_dir / "secrets" / "jwt" / "private_key.pem").write_text(
+                "-----BEGIN PRIVATE KEY-----\n" + "A" * 200 + "\n-----END PRIVATE KEY-----"
+            )
+            (working_dir / "secrets" / "jwt" / "public_key.pem").write_text(
+                "-----BEGIN PUBLIC KEY-----\n" + "A" * 200 + "\n-----END PUBLIC KEY-----"
+            )
+
+            orchestrator = DeploymentOrchestrator(
+                console=console,
+                working_dir=working_dir
+            )
+
+            with patch.object(orchestrator, "_check_disk_space", return_value=0.5):
+                result = orchestrator.run_preflight_checks()
+
+            assert result is False
+
 
 class TestPhase1Preparation:
     """Test Phase 1: Preparation."""
@@ -270,6 +309,42 @@ class TestPhase1Preparation:
 
                 assert result is True
                 assert orchestrator.backup_file is None
+
+    def test_phase1_preparation_backup_failure(self):
+        """Test Phase 1 when backup creation fails."""
+        console = Mock()
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            working_dir = Path(tmpdir)
+            orchestrator = DeploymentOrchestrator(
+                console=console,
+                working_dir=working_dir
+            )
+            orchestrator._create_backup = Mock(return_value=False)
+
+            result = orchestrator.phase1_preparation()
+
+            assert result is False
+            console.error.assert_any_call("Backup failed")
+
+    def test_phase1_preparation_image_failure(self):
+        """Test Phase 1 when pull/build images fails."""
+        console = Mock()
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            working_dir = Path(tmpdir)
+            orchestrator = DeploymentOrchestrator(
+                console=console,
+                working_dir=working_dir
+            )
+            orchestrator._create_backup = Mock(return_value=True)
+            orchestrator._save_container_states = Mock()
+            orchestrator._pull_or_build_images = Mock(return_value=False)
+
+            result = orchestrator.phase1_preparation()
+
+            assert result is False
+            console.error.assert_any_call("Failed to pull/build images")
 
 
 class TestPhase2Infrastructure:
@@ -696,6 +771,72 @@ class TestHelperMethods:
             )
 
             result = orchestrator._validate_jwt_keys(private_key, public_key)
+
+            assert result is False
+
+    def test_validate_jwt_keys_missing_headers(self):
+        """Test JWT key validation when PEM headers are missing."""
+        console = Mock()
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            working_dir = Path(tmpdir)
+            jwt_dir = working_dir / "secrets" / "jwt"
+            jwt_dir.mkdir(parents=True)
+
+            private_key = jwt_dir / "private_key.pem"
+            public_key = jwt_dir / "public_key.pem"
+
+            private_key.write_text("A" * 200)
+            public_key.write_text("A" * 200)
+
+            orchestrator = DeploymentOrchestrator(
+                console=console,
+                working_dir=working_dir
+            )
+
+            result = orchestrator._validate_jwt_keys(private_key, public_key)
+
+            assert result is False
+
+    @patch('scripts.setup.deploy.get_container_status')
+    def test_create_backup_db_not_running(self, mock_status):
+        """Test backup creation when database is not running."""
+        console = Mock()
+        mock_status.return_value = "exited"
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            working_dir = Path(tmpdir)
+            orchestrator = DeploymentOrchestrator(
+                console=console,
+                working_dir=working_dir
+            )
+
+            result = orchestrator._create_backup()
+
+            assert result is True
+            console.warning.assert_called_with("Database not running, skipping backup")
+
+    @patch('scripts.setup.deploy.run_docker_compose')
+    def test_pull_or_build_images_pull_fallback_build_fails(self, mock_compose):
+        """Test image pull failure followed by build failure."""
+        console = Mock()
+        console.spinner = MagicMock()
+        console.spinner.return_value.__enter__ = Mock(return_value=None)
+        console.spinner.return_value.__exit__ = Mock(return_value=None)
+
+        mock_compose.side_effect = [
+            (False, "", "Pull error"),
+            (False, "", "Build error"),
+        ]
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            working_dir = Path(tmpdir)
+            orchestrator = DeploymentOrchestrator(
+                console=console,
+                working_dir=working_dir
+            )
+
+            result = orchestrator._pull_or_build_images()
 
             assert result is False
 

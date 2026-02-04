@@ -989,6 +989,142 @@ class TestErrorHandling:
             assert wizard.scripts_dir.exists() is False
 
 
+class TestAdditionalCoverage:
+    """Targeted tests to cover uncovered branches."""
+
+    @patch('scripts.setup.setup.SetupConsole')
+    def test_run_interactive_resume_declined_unknown_mode(self, mock_console_class):
+        """Test interactive flow when resume is declined and mode is invalid."""
+        mock_console = create_mock_console()
+        mock_console.confirm.return_value = False
+        mock_console_class.return_value = mock_console
+
+        wizard = SetupWizard()
+        wizard.state.load = Mock(return_value=True)
+        wizard.state.state = {"last_updated": "2026-01-01"}
+        wizard.state.clear = Mock()
+        wizard.state.save = Mock()
+        wizard.select_mode = Mock(return_value="invalid")
+
+        exit_code = wizard.run_interactive()
+
+        assert exit_code == 1
+        mock_console.error.assert_called_with("Unknown mode: invalid")
+
+    @patch('scripts.setup.setup.SetupConsole')
+    def test_run_component_menu_exit(self, mock_console_class):
+        """Test component menu exit option."""
+        mock_console = create_mock_console()
+        mock_console.select.return_value = "exit"
+        mock_console_class.return_value = mock_console
+
+        wizard = SetupWizard()
+        wizard.run_component = Mock()
+
+        exit_code = wizard.run_component_menu()
+
+        assert exit_code == 0
+        wizard.run_component.assert_not_called()
+
+    @patch('scripts.setup.setup.subprocess.run')
+    @patch('scripts.setup.setup.SetupConsole')
+    def test_run_env_setup_failure_with_stderr(self, mock_console_class, mock_subprocess):
+        """Test environment setup failure prints stderr."""
+        mock_console = create_mock_console()
+        mock_console_class.return_value = mock_console
+        mock_subprocess.return_value = Mock(returncode=1, stderr="ENV error")
+
+        wizard = SetupWizard()
+        result = wizard.run_env_setup(profile="development", non_interactive=False)
+
+        assert result is False
+        mock_console.error.assert_called_with("Environment configuration failed")
+        mock_console.console.print.assert_any_call("ENV error", style="red")
+
+    @patch('scripts.setup.setup.subprocess.run')
+    @patch('scripts.setup.setup.SetupConsole')
+    def test_run_database_setup_failure(self, mock_console_class, mock_subprocess):
+        """Test database setup failure path."""
+        mock_console = create_mock_console()
+        mock_console_class.return_value = mock_console
+        mock_subprocess.return_value = Mock(returncode=1)
+
+        wizard = SetupWizard()
+        result = wizard.run_database_setup(db_type="sqlite")
+
+        assert result is False
+        mock_console.error.assert_called_with("Database setup failed")
+
+    @patch('scripts.setup.setup.subprocess.run')
+    @patch('scripts.setup.setup.SetupConsole')
+    def test_run_deploy_failure(self, mock_console_class, mock_subprocess):
+        """Test deploy failure path."""
+        mock_console = create_mock_console()
+        mock_console_class.return_value = mock_console
+        mock_subprocess.return_value = Mock(returncode=1)
+
+        wizard = SetupWizard()
+        result = wizard.run_deploy(non_interactive=True)
+
+        assert result is False
+        mock_console.error.assert_called_with("Deployment failed")
+
+    @patch('scripts.setup.setup.SetupConsole')
+    def test_run_advanced_setup_jwt_failure_non_interactive(self, mock_console_class):
+        """Test advanced setup when non-interactive JWT setup fails."""
+        mock_console = create_mock_console()
+        mock_console_class.return_value = mock_console
+
+        wizard = SetupWizard(non_interactive=True)
+        wizard.state.state["profile"] = "production"
+        wizard.state.is_complete = Mock(return_value=False)
+        wizard.run_jwt_setup = Mock(return_value=False)
+
+        exit_code = wizard.run_advanced_setup()
+
+        assert exit_code == 1
+        mock_console.error.assert_called_with("JWT key generation failed")
+
+    @patch('scripts.setup.setup.SetupConsole')
+    def test_run_advanced_setup_deploy_postponed(self, mock_console_class):
+        """Test advanced setup when deployment is postponed."""
+        mock_console = create_mock_console()
+        mock_console.confirm.return_value = False
+        mock_console.select.side_effect = ["production", "postgresql"]
+        mock_console_class.return_value = mock_console
+
+        wizard = SetupWizard(non_interactive=False)
+        wizard.state.is_complete = Mock(return_value=False)
+        wizard.run_jwt_setup = Mock(return_value=True)
+        wizard.run_env_setup = Mock(return_value=True)
+        wizard.run_database_setup = Mock(return_value=True)
+        wizard.create_admin_user = Mock(return_value=True)
+
+        exit_code = wizard.run_advanced_setup()
+
+        assert exit_code == 0
+        mock_console.info.assert_any_call("Deployment postponed")
+
+    @patch('scripts.setup.setup.SetupConsole')
+    def test_run_quick_setup_skips_completed_steps(self, mock_console_class):
+        """Test quick setup when all steps are already complete."""
+        mock_console = create_mock_console()
+        mock_console.confirm.return_value = True
+        mock_console_class.return_value = mock_console
+
+        wizard = SetupWizard(non_interactive=False)
+        wizard.state = Mock()
+        wizard.state.state = {}
+        wizard.state.is_complete = Mock(return_value=True)
+        wizard.state.save = Mock()
+        wizard.state.clear = Mock()
+        wizard.show_success_summary = Mock()
+
+        exit_code = wizard.run_quick_setup()
+
+        assert exit_code == 0
+
+
 class TestIntegrationWorkflows:
     """Integration tests for complete workflows."""
 
