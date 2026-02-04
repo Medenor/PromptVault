@@ -717,7 +717,8 @@ function setupEventListeners(): void {
   setupScrollIndicators(document.getElementById('tags-list'));
   setupScrollIndicators(document.getElementById('categories-list-mobile'));
   setupScrollIndicators(document.getElementById('tags-list-mobile'));
-  setupScrollIndicators(document.getElementById('tag-autocomplete'));
+  // NOTE: tag autocomplete is absolutely positioned; wrapping it for scroll fades
+  // would clip the dropdown. Keep it unwrapped so suggestions remain visible.
 }
 
 async function loadPrompts(): Promise<void> {
