@@ -1035,3 +1035,298 @@ class TestIntegration:
 
             assert result is False
             assert "infrastructure" not in orchestrator.phases_completed
+
+
+class TestDryRunCompletion:
+    """Test dry-run mode completion and behavior."""
+
+    @patch('scripts.setup.deploy.wait_for_healthy')
+    @patch('scripts.setup.deploy.run_docker_compose')
+    @patch('scripts.setup.deploy.check_docker_installed')
+    @patch('scripts.setup.deploy.check_docker_running')
+    @patch('scripts.setup.deploy.check_docker_compose_installed')
+    @patch('scripts.setup.deploy.check_port_available')
+    def test_dry_run_completes_all_phases(
+        self, mock_port, mock_compose_check, mock_running, mock_installed,
+        mock_compose, mock_wait
+    ):
+        """Test that dry-run mode completes all 5 phases without errors."""
+        console = Mock()
+        console.spinner = MagicMock()
+        console.spinner.return_value.__enter__ = Mock(return_value=None)
+        console.spinner.return_value.__exit__ = Mock(return_value=None)
+
+        # Setup mocks
+        mock_installed.return_value = (True, "20.10.0")
+        mock_running.return_value = (True, "")
+        mock_compose_check.return_value = (True, "v2.0.0")
+        mock_port.return_value = (True, "")
+        mock_compose.return_value = (True, "PONG", "")
+        mock_wait.return_value = True
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            working_dir = Path(tmpdir)
+            (working_dir / "docker-compose.yml").touch()
+            (working_dir / "secrets" / "jwt").mkdir(parents=True)
+            (working_dir / "secrets" / "jwt" / "private_key.pem").write_text(
+                "-----BEGIN PRIVATE KEY-----\n" + "A" * 200 + "\n-----END PRIVATE KEY-----"
+            )
+            (working_dir / "secrets" / "jwt" / "public_key.pem").write_text(
+                "-----BEGIN PUBLIC KEY-----\n" + "A" * 200 + "\n-----END PUBLIC KEY-----"
+            )
+
+            orchestrator = DeploymentOrchestrator(
+                console=console,
+                dry_run=True,
+                working_dir=working_dir
+            )
+
+            # Run all phases
+            assert orchestrator.phase1_preparation() is True
+            assert orchestrator.phase2_infrastructure() is True
+            assert orchestrator.phase3_migrations() is True
+            assert orchestrator.phase4_application() is True
+            assert orchestrator.phase5_verification() is True
+
+            # Verify all phases were marked complete
+            assert len(orchestrator.phases_completed) == 5
+
+    def test_dry_run_exits_with_zero_code(self):
+        """Test that dry-run mode exits with code 0."""
+        console = Mock()
+        console.spinner = MagicMock()
+        console.spinner.return_value.__enter__ = Mock(return_value=None)
+        console.spinner.return_value.__exit__ = Mock(return_value=None)
+
+        orchestrator = DeploymentOrchestrator(
+            console=console,
+            dry_run=True
+        )
+
+        result = orchestrator.phase1_preparation()
+
+        assert result is True
+
+    def test_dry_run_shows_dry_run_messages(self):
+        """Test that dry-run mode shows [DRY RUN] messages for health checks."""
+        console = Mock()
+
+        orchestrator = DeploymentOrchestrator(
+            console=console,
+            dry_run=True
+        )
+
+        result = orchestrator.phase3_migrations()
+
+        assert result is True
+        # Verify [DRY RUN] message was printed
+        console.info.assert_called()
+        call_args = [str(call) for call in console.info.call_args_list]
+        assert any("[DRY RUN]" in str(call) for call in call_args)
+
+    def test_dry_run_no_containers_started(self):
+        """Test that no actual containers are started in dry-run mode."""
+        console = Mock()
+        console.spinner = MagicMock()
+        console.spinner.return_value.__enter__ = Mock(return_value=None)
+        console.spinner.return_value.__exit__ = Mock(return_value=None)
+
+        with patch('scripts.setup.deploy.get_container_status') as mock_status:
+            mock_status.return_value = "not running"
+
+            with tempfile.TemporaryDirectory() as tmpdir:
+                working_dir = Path(tmpdir)
+
+                orchestrator = DeploymentOrchestrator(
+                    console=console,
+                    dry_run=True,
+                    working_dir=working_dir
+                )
+
+                result = orchestrator.phase1_preparation()
+
+                assert result is True
+                # In dry-run mode, no actual container operations should be performed
+                # backup_file should remain None
+                assert orchestrator.backup_file is None
+
+
+class TestHealthCheckRetryLogic:
+    """Test health check retry behavior and retry delays."""
+
+    @patch('scripts.setup.deploy.subprocess.run')
+    @patch('scripts.setup.deploy.time.sleep')
+    @patch('httpx.get')
+    @patch('scripts.setup.deploy.run_docker_compose')
+    def test_health_check_succeeds_on_first_attempt(
+        self, mock_compose, mock_httpx_get, mock_sleep, mock_subprocess
+    ):
+        """Test health check succeeds on first attempt."""
+        console = Mock()
+        console.spinner = MagicMock()
+        console.spinner.return_value.__enter__ = Mock(return_value=None)
+        console.spinner.return_value.__exit__ = Mock(return_value=None)
+
+        mock_compose.return_value = (True, "PONG", "")
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_httpx_get.return_value = mock_response
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            working_dir = Path(tmpdir)
+
+            orchestrator = DeploymentOrchestrator(
+                console=console,
+                working_dir=working_dir
+            )
+
+            result = orchestrator.phase5_verification()
+
+            assert result is True
+            # No retry delays should occur
+            mock_sleep.assert_not_called()
+
+    @patch('scripts.setup.deploy.subprocess.run')
+    @patch('scripts.setup.deploy.time.sleep')
+    @patch('httpx.get')
+    @patch('scripts.setup.deploy.run_docker_compose')
+    def test_health_check_succeeds_on_second_attempt(
+        self, mock_compose, mock_httpx_get, mock_sleep, mock_subprocess
+    ):
+        """Test health check succeeds on second attempt after first failure."""
+        console = Mock()
+        console.spinner = MagicMock()
+        console.spinner.return_value.__enter__ = Mock(return_value=None)
+        console.spinner.return_value.__exit__ = Mock(return_value=None)
+
+        mock_compose.return_value = (True, "PONG", "")
+        # First call fails, second succeeds
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_httpx_get.side_effect = [
+            Exception("Connection refused"),
+            mock_response
+        ]
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            working_dir = Path(tmpdir)
+
+            orchestrator = DeploymentOrchestrator(
+                console=console,
+                working_dir=working_dir
+            )
+
+            result = orchestrator.phase5_verification()
+
+            assert result is True
+            # Should have slept once (2 second delay between attempts)
+            mock_sleep.assert_called_with(2)
+
+    @patch('scripts.setup.deploy.subprocess.run')
+    @patch('scripts.setup.deploy.time.sleep')
+    @patch('httpx.get')
+    @patch('scripts.setup.deploy.run_docker_compose')
+    def test_health_check_succeeds_on_third_attempt(
+        self, mock_compose, mock_httpx_get, mock_sleep, mock_subprocess
+    ):
+        """Test health check succeeds on third attempt after two failures."""
+        console = Mock()
+        console.spinner = MagicMock()
+        console.spinner.return_value.__enter__ = Mock(return_value=None)
+        console.spinner.return_value.__exit__ = Mock(return_value=None)
+
+        mock_compose.return_value = (True, "PONG", "")
+        # First two calls fail, third succeeds
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_httpx_get.side_effect = [
+            Exception("Connection refused"),
+            Exception("Connection refused"),
+            mock_response
+        ]
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            working_dir = Path(tmpdir)
+
+            orchestrator = DeploymentOrchestrator(
+                console=console,
+                working_dir=working_dir
+            )
+
+            result = orchestrator.phase5_verification()
+
+            assert result is True
+            # Should have slept twice (2 second delay between each attempt)
+            assert mock_sleep.call_count == 2
+            mock_sleep.assert_called_with(2)
+
+    @patch('scripts.setup.deploy.subprocess.run')
+    @patch('scripts.setup.deploy.time.sleep')
+    @patch('httpx.get')
+    @patch('scripts.setup.deploy.run_docker_compose')
+    def test_health_check_fails_after_all_attempts_exhausted(
+        self, mock_compose, mock_httpx_get, mock_sleep, mock_subprocess
+    ):
+        """Test health check fails after all 3 attempts exhausted."""
+        console = Mock()
+        console.spinner = MagicMock()
+        console.spinner.return_value.__enter__ = Mock(return_value=None)
+        console.spinner.return_value.__exit__ = Mock(return_value=None)
+
+        mock_compose.return_value = (True, "PONG", "")
+        # All attempts fail
+        mock_httpx_get.side_effect = Exception("Connection refused")
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            working_dir = Path(tmpdir)
+
+            orchestrator = DeploymentOrchestrator(
+                console=console,
+                working_dir=working_dir
+            )
+
+            result = orchestrator.phase5_verification()
+
+            # Phase still succeeds (smoke tests are non-critical)
+            assert result is True
+            # Should have slept after each of the first 2 failed attempts
+            assert mock_sleep.call_count == 2
+            mock_sleep.assert_called_with(2)
+
+    @patch('scripts.setup.deploy.subprocess.run')
+    @patch('scripts.setup.deploy.time.sleep')
+    @patch('httpx.get')
+    @patch('scripts.setup.deploy.run_docker_compose')
+    def test_health_check_retry_delays_applied(
+        self, mock_compose, mock_httpx_get, mock_sleep, mock_subprocess
+    ):
+        """Test that retry delays of 2 seconds are applied between attempts."""
+        console = Mock()
+        console.spinner = MagicMock()
+        console.spinner.return_value.__enter__ = Mock(return_value=None)
+        console.spinner.return_value.__exit__ = Mock(return_value=None)
+
+        mock_compose.return_value = (True, "PONG", "")
+        # First attempt fails, second succeeds
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_httpx_get.side_effect = [
+            Exception("Connection refused"),
+            mock_response
+        ]
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            working_dir = Path(tmpdir)
+
+            orchestrator = DeploymentOrchestrator(
+                console=console,
+                working_dir=working_dir
+            )
+
+            result = orchestrator.phase5_verification()
+
+            assert result is True
+            # Verify sleep was called with 2 seconds
+            mock_sleep.assert_called()
+            for call in mock_sleep.call_args_list:
+                assert call[0][0] == 2  # 2 second delay

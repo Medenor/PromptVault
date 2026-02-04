@@ -1250,3 +1250,138 @@ class TestShowSuccessSummary:
 
             # Should still display without error
             assert mock_console.console.print.called
+
+
+class TestComponentNonInteractiveRegression:
+    """Regression tests for component mode respecting --non-interactive flag."""
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.temp_dir = Path(tempfile.mkdtemp())
+
+    def teardown_method(self):
+        """Clean up test fixtures."""
+        if self.temp_dir.exists():
+            shutil.rmtree(self.temp_dir)
+
+    @patch('scripts.setup.setup.subprocess.run')
+    @patch('scripts.setup.setup.SetupConsole')
+    def test_component_env_respects_non_interactive_flag(
+        self, mock_console_class, mock_subprocess
+    ):
+        """Test run_component('env') respects non_interactive=True flag."""
+        mock_console = create_mock_console()
+        mock_console_class.return_value = mock_console
+        mock_subprocess.return_value = Mock(returncode=0, stderr='')
+
+        with patch('scripts.setup.setup.project_root', self.temp_dir):
+            wizard = SetupWizard(non_interactive=True)
+            exit_code = wizard.run_component('env')
+
+            assert exit_code == 0
+            assert wizard.non_interactive is True
+            # Verify no interactive prompts were made
+            mock_console.prompt.assert_not_called()
+            mock_console.select.assert_not_called()
+
+    @patch('scripts.setup.setup.subprocess.run')
+    @patch('scripts.setup.setup.SetupConsole')
+    def test_component_database_respects_non_interactive_flag(
+        self, mock_console_class, mock_subprocess
+    ):
+        """Test run_component('database') respects non_interactive=True flag."""
+        mock_console = create_mock_console()
+        mock_console_class.return_value = mock_console
+        mock_subprocess.return_value = Mock(returncode=0, stderr='')
+
+        with patch('scripts.setup.setup.project_root', self.temp_dir):
+            wizard = SetupWizard(non_interactive=True)
+            exit_code = wizard.run_component('database')
+
+            assert exit_code == 0
+            assert wizard.non_interactive is True
+            # Verify no interactive prompts were made
+            mock_console.prompt.assert_not_called()
+            mock_console.select.assert_not_called()
+
+    @patch('scripts.setup.setup.subprocess.run')
+    @patch('scripts.setup.setup.SetupConsole')
+    def test_component_deploy_respects_non_interactive_flag(
+        self, mock_console_class, mock_subprocess
+    ):
+        """Test run_component('deploy') respects non_interactive=True flag."""
+        mock_console = create_mock_console()
+        mock_console_class.return_value = mock_console
+        mock_subprocess.return_value = Mock(returncode=0, stderr='')
+
+        with patch('scripts.setup.setup.project_root', self.temp_dir):
+            wizard = SetupWizard(non_interactive=True)
+            exit_code = wizard.run_component('deploy')
+
+            assert exit_code == 0
+            assert wizard.non_interactive is True
+            # Verify no interactive prompts were made
+            mock_console.prompt.assert_not_called()
+            mock_console.select.assert_not_called()
+
+    @patch('scripts.setup.setup.subprocess.run')
+    @patch('scripts.setup.setup.SetupConsole')
+    def test_all_components_respect_non_interactive(
+        self, mock_console_class, mock_subprocess
+    ):
+        """Test all components respect non_interactive flag consistently."""
+        mock_console = create_mock_console()
+        mock_console_class.return_value = mock_console
+        mock_subprocess.return_value = Mock(returncode=0, stderr='')
+
+        components = ['jwt', 'env', 'database', 'deploy']
+
+        with patch('scripts.setup.setup.project_root', self.temp_dir):
+            wizard = SetupWizard(non_interactive=True)
+
+            for component in components:
+                exit_code = wizard.run_component(component)
+                assert exit_code == 0
+
+            # Verify no interactive prompts were made across all components
+            mock_console.prompt.assert_not_called()
+            mock_console.select.assert_not_called()
+
+    @patch('scripts.setup.setup.subprocess.run')
+    @patch('scripts.setup.setup.SetupConsole')
+    def test_component_passes_non_interactive_flag_to_subprocess(
+        self, mock_console_class, mock_subprocess
+    ):
+        """Test that non_interactive flag is passed to subprocess calls."""
+        mock_console = create_mock_console()
+        mock_console_class.return_value = mock_console
+        mock_subprocess.return_value = Mock(returncode=0, stderr='')
+
+        with patch('scripts.setup.setup.project_root', self.temp_dir):
+            wizard = SetupWizard(non_interactive=True)
+            exit_code = wizard.run_component('env')
+
+            assert exit_code == 0
+            # Verify subprocess was called with non-interactive flag
+            mock_subprocess.assert_called()
+            # Check that --non-interactive was passed in the command
+            call_args_list = mock_subprocess.call_args_list
+            assert any('--non-interactive' in str(call) for call in call_args_list)
+
+    @patch('scripts.setup.setup.subprocess.run')
+    @patch('scripts.setup.setup.SetupConsole')
+    def test_interactive_mode_allows_prompts(
+        self, mock_console_class, mock_subprocess
+    ):
+        """Test that interactive mode allows prompts for components."""
+        mock_console = create_mock_console()
+        mock_console_class.return_value = mock_console
+        mock_subprocess.return_value = Mock(returncode=0, stderr='')
+
+        with patch('scripts.setup.setup.project_root', self.temp_dir):
+            wizard = SetupWizard(non_interactive=False)
+            # In interactive mode, components should execute normally
+            exit_code = wizard.run_component('env')
+
+            assert exit_code == 0
+            assert wizard.non_interactive is False

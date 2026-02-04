@@ -275,12 +275,15 @@ class DeploymentOrchestrator:
 
             # Step 2: Wait for database to be healthy
             self.console.step(2, 3, "Waiting for database to be ready")
-            with self.console.spinner("Database is starting up"):
-                if not wait_for_healthy("db", timeout=120, working_dir=str(self.working_dir)):
-                    self.console.error("Database failed to become healthy")
-                    self._show_service_logs("db")
-                    return False
-            self.console.success("Database is healthy")
+            if self.dry_run:
+                self.console.info("[DRY RUN] Would wait for database to be healthy")
+            else:
+                with self.console.spinner("Database is starting up"):
+                    if not wait_for_healthy("db", timeout=120, working_dir=str(self.working_dir)):
+                        self.console.error("Database failed to become healthy")
+                        self._show_service_logs("db")
+                        return False
+                    self.console.success("Database is healthy")
 
             # Step 3: Start Redis
             self.console.step(3, 3, "Starting Redis cache")
@@ -288,12 +291,15 @@ class DeploymentOrchestrator:
                 self.console.error("Failed to start Redis")
                 return False
 
-            with self.console.spinner("Redis is starting up"):
-                if not wait_for_healthy("redis", timeout=60, working_dir=str(self.working_dir)):
-                    self.console.error("Redis failed to become healthy")
-                    self._show_service_logs("redis")
-                    return False
-            self.console.success("Redis is healthy")
+            if self.dry_run:
+                self.console.info("[DRY RUN] Would wait for Redis to be healthy")
+            else:
+                with self.console.spinner("Redis is starting up"):
+                    if not wait_for_healthy("redis", timeout=60, working_dir=str(self.working_dir)):
+                        self.console.error("Redis failed to become healthy")
+                        self._show_service_logs("redis")
+                        return False
+                    self.console.success("Redis is healthy")
 
             self.phases_completed.append("infrastructure")
             return True
@@ -386,12 +392,15 @@ class DeploymentOrchestrator:
 
             # Step 2: Wait for application to be healthy
             self.console.step(2, 2, "Waiting for application to be ready")
-            with self.console.spinner("Application is starting up (this may take 40+ seconds)"):
-                if not wait_for_healthy("web", timeout=180, working_dir=str(self.working_dir)):
-                    self.console.error("Application failed to become healthy")
-                    self._show_service_logs("web", tail=100)
-                    return False
-            self.console.success("Application is healthy")
+            if self.dry_run:
+                self.console.info("[DRY RUN] Would wait for application to be healthy")
+            else:
+                with self.console.spinner("Application is starting up (this may take 40+ seconds)"):
+                    if not wait_for_healthy("web", timeout=180, working_dir=str(self.working_dir)):
+                        self.console.error("Application failed to become healthy")
+                        self._show_service_logs("web", tail=100)
+                        return False
+                    self.console.success("Application is healthy")
 
             self.phases_completed.append("application")
             return True
@@ -722,18 +731,40 @@ class DeploymentOrchestrator:
         try:
             import httpx
 
-            with self.console.spinner("Testing health endpoint"):
-                response = httpx.get("http://localhost:8001/api/health", timeout=10)
+            health_check_passed = False
+            last_error = None
 
-            if response.status_code == 200:
-                self.console.success("Health endpoint responding")
-                tests_passed += 1
-            else:
-                self.console.error(f"Health endpoint returned {response.status_code}")
-                tests_failed += 1
+            for attempt in range(1, 4):  # Try up to 3 times
+                try:
+                    with self.console.spinner(f"Testing health endpoint (attempt {attempt}/3)"):
+                        response = httpx.get("http://localhost:8001/api/health", timeout=10)
+
+                    if response.status_code == 200:
+                        self.console.success("Health endpoint responding")
+                        health_check_passed = True
+                        tests_passed += 1
+                        break  # Success, exit retry loop
+                    else:
+                        # Non-200 status code
+                        last_error = f"Health endpoint returned {response.status_code}"
+                        if attempt < 3:
+                            self.console.warning(f"Health check attempt {attempt} failed, retrying in 2s...")
+                            time.sleep(2)
+                        else:
+                            self.console.error(last_error)
+                            tests_failed += 1
+
+                except Exception as e:
+                    last_error = str(e)
+                    if attempt < 3:
+                        self.console.warning(f"Health check attempt {attempt} failed, retrying in 2s...")
+                        time.sleep(2)
+                    else:
+                        self.console.error(f"Health check failed: {last_error}")
+                        tests_failed += 1
 
         except Exception as e:
-            self.console.error(f"Health check failed: {str(e)}")
+            self.console.error(f"Health check initialization failed: {str(e)}")
             tests_failed += 1
 
         # Test 2: Database connectivity

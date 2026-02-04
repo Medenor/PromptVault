@@ -568,11 +568,11 @@ class SetupWizard:
         if component == 'jwt':
             return 0 if self.run_jwt_setup() else 1
         elif component == 'env':
-            return 0 if self.run_env_setup() else 1
+            return 0 if self.run_env_setup(non_interactive=self.non_interactive) else 1
         elif component == 'database':
-            return 0 if self.run_database_setup() else 1
+            return 0 if self.run_database_setup(non_interactive=self.non_interactive) else 1
         elif component == 'deploy':
-            return 0 if self.run_deploy() else 1
+            return 0 if self.run_deploy(non_interactive=self.non_interactive) else 1
         else:
             self.console.error(f"Unknown component: {component}")
             return 1
@@ -641,12 +641,13 @@ class SetupWizard:
                 self.console.console.print(result.stderr, style="red")
             return False
 
-    def run_database_setup(self, db_type: Optional[str] = None) -> bool:
+    def run_database_setup(self, db_type: Optional[str] = None, non_interactive: bool = False) -> bool:
         """
         Run database setup script.
 
         Args:
             db_type: Database type ('sqlite' or 'postgresql'), None for interactive
+            non_interactive: If True, use defaults without prompts
 
         Returns:
             True if successful, False otherwise
@@ -658,8 +659,8 @@ class SetupWizard:
         if db_type:
             args.extend(["--type", db_type])
 
-            if db_type == "sqlite":
-                args.append("--non-interactive")
+        if non_interactive or (db_type == "sqlite"):
+            args.append("--non-interactive")
 
         result = subprocess.run(
             args,
