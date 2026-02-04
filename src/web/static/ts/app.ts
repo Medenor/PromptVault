@@ -2855,9 +2855,17 @@ function showTagAutocomplete(filteredTags: TagInfo[]) {
       }
 
       // Click handler
-      item.addEventListener('click', function () {
+      const usePointerEvents = 'PointerEvent' in window;
+      const selectHandler = (event: Event) => {
+        // Prevent input blur so we don't commit the partial tag.
+        event.preventDefault();
         selectTag(tagName);
-      });
+      };
+      if (usePointerEvents) {
+        item.addEventListener('pointerdown', selectHandler);
+      } else {
+        item.addEventListener('mousedown', selectHandler);
+      }
 
       // Hover handler
       item.addEventListener('mouseenter', function () {
