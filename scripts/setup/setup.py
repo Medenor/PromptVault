@@ -688,7 +688,7 @@ class SetupWizard:
         if self.non_interactive:
             self.console.warning("Non-interactive mode: Skipping admin user creation")
             self.console.info("Create an admin user later with:")
-            self.console.console.print("  python scripts/create_admin.py")
+            self.console.console.print("  python scripts/create_admin_user.py")
             return True
 
         # Get admin credentials
@@ -699,7 +699,7 @@ class SetupWizard:
         # The actual user creation should be done after deployment
         self.console.success(f"Admin user '{self.admin_username}' will be created")
         self.console.info("Note: Create the user after deployment with:")
-        self.console.console.print(f"  python scripts/create_admin.py --username {self.admin_username} --email {self.admin_email}")
+        self.console.console.print(f"  python scripts/create_admin_user.py --username {self.admin_username} --email {self.admin_email}")
 
         return True
 
@@ -772,11 +772,11 @@ class SetupWizard:
         self.console.console.print("  1. Open http://localhost:8001 in your browser")
 
         if self.admin_username:
-            self.console.console.print(f"  2. Create admin user: python scripts/create_admin.py --username {self.admin_username}")
+            self.console.console.print(f"  2. Create admin user: python scripts/create_admin_user.py --username {self.admin_username}")
             self.console.console.print("  3. Log in with your admin credentials")
             self.console.console.print("  4. Start organizing your prompts!")
         else:
-            self.console.console.print("  2. Create an admin user: python scripts/create_admin.py")
+            self.console.console.print("  2. Create an admin user: python scripts/create_admin_user.py")
             self.console.console.print("  3. Log in with your credentials")
             self.console.console.print("  4. Start organizing your prompts!")
 

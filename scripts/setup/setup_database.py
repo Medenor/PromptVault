@@ -118,7 +118,7 @@ class PostgreSQLSetup:
                     timeout=5,
                     env={**os.environ, "PGPASSWORD": ""}
                 )
-                return "FATAL" not in result.stderr or "connection" in result.stderr
+                return result.returncode == 0
             except (subprocess.TimeoutExpired, FileNotFoundError):
                 return False
 
