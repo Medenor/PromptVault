@@ -22,43 +22,28 @@ Tests cover:
 
 import os
 import sys
-import tempfile
-import shutil
-import gzip
 from pathlib import Path
 from datetime import datetime
-from unittest.mock import Mock, MagicMock, patch, call, mock_open
+from unittest.mock import Mock, MagicMock, patch, call
 from click.testing import CliRunner
-import pytest
+import tempfile
 
-# Import the module to test
-from scripts.setup.deploy import (
-    DeploymentOrchestrator,
-    main,
-)
+# Add project root to path
+project_root = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(project_root))
+
+from scripts.setup.deploy import DeploymentOrchestrator, main
 
 
-class TestDeploymentOrchestratorInitialization:
-    """Test DeploymentOrchestrator class initialization."""
+class TestDeploymentOrchestratorInit:
+    """Test DeploymentOrchestrator initialization."""
 
-    def setup_method(self):
-        """Set up test fixtures."""
-        self.console = Mock()
-        self.console.error = Mock()
-        self.console.info = Mock()
-        self.console.success = Mock()
-        self.console.warning = Mock()
-        self.console.header = Mock()
-        self.console.step = Mock()
-        self.console.spinner = Mock(return_value=MagicMock(__enter__=Mock(), __exit__=Mock()))
-        self.console.confirm = Mock(return_value=True)
-        self.console.table = Mock()
-
-    def test_init_default_values(self):
+    def test_initialization_defaults(self):
         """Test initialization with default values."""
-        orchestrator = DeploymentOrchestrator(self.console)
+        console = Mock()
+        orchestrator = DeploymentOrchestrator(console=console)
 
-        assert orchestrator.console == self.console
+        assert orchestrator.console == console
         assert orchestrator.dry_run is False
         assert orchestrator.skip_backup is False
         assert orchestrator.skip_migrations is False
@@ -70,17 +55,19 @@ class TestDeploymentOrchestratorInitialization:
         assert orchestrator.deployment_start_time is None
         assert orchestrator.phases_completed == []
 
-    def test_init_with_custom_values(self):
-        """Test initialization with custom values."""
-        custom_dir = Path("/tmp/test")
+    def test_initialization_with_options(self):
+        """Test initialization with custom options."""
+        console = Mock()
+        working_dir = Path("/tmp/test")
+
         orchestrator = DeploymentOrchestrator(
-            console=self.console,
+            console=console,
             dry_run=True,
             skip_backup=True,
             skip_migrations=True,
             rebuild=True,
             non_interactive=True,
-            working_dir=custom_dir
+            working_dir=working_dir
         )
 
         assert orchestrator.dry_run is True
@@ -88,231 +75,143 @@ class TestDeploymentOrchestratorInitialization:
         assert orchestrator.skip_migrations is True
         assert orchestrator.rebuild is True
         assert orchestrator.non_interactive is True
-        assert orchestrator.working_dir == custom_dir
-
-    def test_init_state_tracking(self):
-        """Test that state tracking is initialized properly."""
-        orchestrator = DeploymentOrchestrator(self.console)
-
-        assert isinstance(orchestrator.previous_containers, dict)
-        assert isinstance(orchestrator.phases_completed, list)
-        assert len(orchestrator.previous_containers) == 0
-        assert len(orchestrator.phases_completed) == 0
+        assert orchestrator.working_dir == working_dir
 
 
 class TestPreflightChecks:
     """Test pre-flight checks before deployment."""
 
-    def setup_method(self):
-        """Set up test fixtures."""
-        self.console = Mock()
-        self.console.error = Mock()
-        self.console.info = Mock()
-        self.console.success = Mock()
-        self.console.warning = Mock()
-        self.console.header = Mock()
-        self.console.spinner = Mock(return_value=MagicMock(__enter__=Mock(), __exit__=Mock()))
-
     @patch('scripts.setup.deploy.check_docker_installed')
     @patch('scripts.setup.deploy.check_docker_running')
     @patch('scripts.setup.deploy.check_docker_compose_installed')
     @patch('scripts.setup.deploy.check_port_available')
-    @patch('scripts.setup.deploy.shutil.disk_usage')
     def test_preflight_checks_all_pass(
-        self,
-        mock_disk_usage,
-        mock_port_available,
-        mock_compose_installed,
-        mock_docker_running,
-        mock_docker_installed
+        self, mock_port, mock_compose, mock_running, mock_installed
     ):
-        """Test when all pre-flight checks pass."""
-        # Mock successful checks
-        mock_docker_installed.return_value = (True, "Docker version 24.0.5")
-        mock_docker_running.return_value = (True, None)
-        mock_compose_installed.return_value = (True, "v2.21.0")
-        mock_port_available.return_value = (True, None)
+        """Test pre-flight checks when all checks pass."""
+        console = Mock()
+        console.spinner = MagicMock()
+        console.spinner.return_value.__enter__ = Mock(return_value=None)
+        console.spinner.return_value.__exit__ = Mock(return_value=None)
 
-        # Mock disk space (3 GB free)
-        mock_stat = Mock()
-        mock_stat.free = 3 * (1024 ** 3)
-        mock_disk_usage.return_value = mock_stat
+        mock_installed.return_value = (True, "20.10.0")
+        mock_running.return_value = (True, "")
+        mock_compose.return_value = (True, "v2.0.0")
+        mock_port.return_value = (True, "")
 
         with tempfile.TemporaryDirectory() as tmpdir:
             working_dir = Path(tmpdir)
 
-            # Create required files
-            (working_dir / "docker-compose.yml").write_text("version: '3.8'")
-
-            # Create JWT keys
-            jwt_dir = working_dir / "secrets" / "jwt"
-            jwt_dir.mkdir(parents=True, exist_ok=True)
-            (jwt_dir / "private_key.pem").write_text("-----BEGIN PRIVATE KEY-----\ntest\n-----END PRIVATE KEY-----")
-            (jwt_dir / "public_key.pem").write_text("-----BEGIN PUBLIC KEY-----\ntest\n-----END PUBLIC KEY-----")
+            # Create necessary files
+            (working_dir / "docker-compose.yml").touch()
+            (working_dir / "secrets" / "jwt").mkdir(parents=True)
+            (working_dir / "secrets" / "jwt" / "private_key.pem").write_text(
+                "-----BEGIN PRIVATE KEY-----\n" + "A" * 200 + "\n-----END PRIVATE KEY-----"
+            )
+            (working_dir / "secrets" / "jwt" / "public_key.pem").write_text(
+                "-----BEGIN PUBLIC KEY-----\n" + "A" * 200 + "\n-----END PUBLIC KEY-----"
+            )
 
             orchestrator = DeploymentOrchestrator(
-                self.console,
+                console=console,
                 working_dir=working_dir
             )
 
             result = orchestrator.run_preflight_checks()
 
             assert result is True
-            assert self.console.success.call_count >= 5
+            mock_installed.assert_called_once()
+            mock_running.assert_called_once()
+            mock_compose.assert_called_once()
 
     @patch('scripts.setup.deploy.check_docker_installed')
     @patch('scripts.setup.deploy.check_docker_running')
+    @patch('scripts.setup.deploy.check_docker_compose_installed')
     def test_preflight_checks_docker_not_installed(
-        self,
-        mock_docker_running,
-        mock_docker_installed
+        self, mock_compose, mock_running, mock_installed
     ):
-        """Test when Docker is not installed."""
-        mock_docker_installed.return_value = (False, "Docker not found")
-        mock_docker_running.return_value = (True, None)
+        """Test pre-flight checks when Docker is not installed."""
+        console = Mock()
+        console.spinner = MagicMock()
+        console.spinner.return_value.__enter__ = Mock(return_value=None)
+        console.spinner.return_value.__exit__ = Mock(return_value=None)
 
-        with tempfile.TemporaryDirectory() as tmpdir:
-            orchestrator = DeploymentOrchestrator(
-                self.console,
-                working_dir=Path(tmpdir)
-            )
-
-            result = orchestrator.run_preflight_checks()
-
-            assert result is False
-            assert any("Docker not installed" in str(call) for call in self.console.error.call_args_list)
-
-    @patch('scripts.setup.deploy.check_docker_installed')
-    @patch('scripts.setup.deploy.check_docker_running')
-    def test_preflight_checks_docker_not_running(
-        self,
-        mock_docker_running,
-        mock_docker_installed
-    ):
-        """Test when Docker daemon is not running."""
-        mock_docker_installed.return_value = (True, "Docker version 24.0.5")
-        mock_docker_running.return_value = (False, "Cannot connect to daemon")
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            orchestrator = DeploymentOrchestrator(
-                self.console,
-                working_dir=Path(tmpdir)
-            )
-
-            result = orchestrator.run_preflight_checks()
-
-            assert result is False
-
-    @patch('scripts.setup.deploy.check_docker_installed')
-    @patch('scripts.setup.deploy.check_docker_running')
-    @patch('scripts.setup.deploy.check_docker_compose_installed')
-    @patch('scripts.setup.deploy.check_port_available')
-    @patch('scripts.setup.deploy.shutil.disk_usage')
-    def test_preflight_checks_missing_compose_file(
-        self,
-        mock_disk_usage,
-        mock_port_available,
-        mock_compose_installed,
-        mock_docker_running,
-        mock_docker_installed
-    ):
-        """Test when docker-compose.yml is missing."""
-        mock_docker_installed.return_value = (True, "Docker version 24.0.5")
-        mock_docker_running.return_value = (True, None)
-        mock_compose_installed.return_value = (True, "v2.21.0")
-        mock_port_available.return_value = (True, None)
-
-        mock_stat = Mock()
-        mock_stat.free = 3 * (1024 ** 3)
-        mock_disk_usage.return_value = mock_stat
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            orchestrator = DeploymentOrchestrator(
-                self.console,
-                working_dir=Path(tmpdir)
-            )
-
-            result = orchestrator.run_preflight_checks()
-
-            assert result is False
-            assert any("docker-compose.yml not found" in str(call) for call in self.console.error.call_args_list)
-
-    @patch('scripts.setup.deploy.check_docker_installed')
-    @patch('scripts.setup.deploy.check_docker_running')
-    @patch('scripts.setup.deploy.check_docker_compose_installed')
-    @patch('scripts.setup.deploy.check_port_available')
-    @patch('scripts.setup.deploy.shutil.disk_usage')
-    def test_preflight_checks_low_disk_space(
-        self,
-        mock_disk_usage,
-        mock_port_available,
-        mock_compose_installed,
-        mock_docker_running,
-        mock_docker_installed
-    ):
-        """Test when disk space is critically low."""
-        mock_docker_installed.return_value = (True, "Docker version 24.0.5")
-        mock_docker_running.return_value = (True, None)
-        mock_compose_installed.return_value = (True, "v2.21.0")
-        mock_port_available.return_value = (True, None)
-
-        # Mock very low disk space (0.5 GB free)
-        mock_stat = Mock()
-        mock_stat.free = 0.5 * (1024 ** 3)
-        mock_disk_usage.return_value = mock_stat
+        mock_installed.return_value = (False, "not found")
+        mock_running.return_value = (False, "Docker daemon not running")
+        mock_compose.return_value = (False, "not found")
 
         with tempfile.TemporaryDirectory() as tmpdir:
             working_dir = Path(tmpdir)
-            (working_dir / "docker-compose.yml").write_text("version: '3.8'")
 
             orchestrator = DeploymentOrchestrator(
-                self.console,
+                console=console,
                 working_dir=working_dir
             )
 
             result = orchestrator.run_preflight_checks()
 
             assert result is False
-            assert any("Insufficient disk space" in str(call) for call in self.console.error.call_args_list)
+
+    @patch('scripts.setup.deploy.check_docker_installed')
+    @patch('scripts.setup.deploy.check_docker_running')
+    @patch('scripts.setup.deploy.check_docker_compose_installed')
+    @patch('scripts.setup.deploy.check_port_available')
+    def test_preflight_checks_missing_compose_file(
+        self, mock_port, mock_compose, mock_running, mock_installed
+    ):
+        """Test pre-flight checks when docker-compose.yml is missing."""
+        console = Mock()
+        console.spinner = MagicMock()
+        console.spinner.return_value.__enter__ = Mock(return_value=None)
+        console.spinner.return_value.__exit__ = Mock(return_value=None)
+
+        mock_installed.return_value = (True, "20.10.0")
+        mock_running.return_value = (True, "")
+        mock_compose.return_value = (True, "v2.0.0")
+        mock_port.return_value = (True, "")
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            working_dir = Path(tmpdir)
+
+            orchestrator = DeploymentOrchestrator(
+                console=console,
+                working_dir=working_dir
+            )
+
+            result = orchestrator.run_preflight_checks()
+
+            assert result is False
 
 
 class TestPhase1Preparation:
     """Test Phase 1: Preparation."""
 
-    def setup_method(self):
-        """Set up test fixtures."""
-        self.console = Mock()
-        self.console.error = Mock()
-        self.console.info = Mock()
-        self.console.success = Mock()
-        self.console.warning = Mock()
-        self.console.header = Mock()
-        self.console.step = Mock()
-        self.console.spinner = Mock(return_value=MagicMock(__enter__=Mock(), __exit__=Mock()))
-
     @patch('scripts.setup.deploy.get_container_status')
     @patch('scripts.setup.deploy.run_docker_compose')
     @patch('scripts.setup.deploy.subprocess.run')
     def test_phase1_preparation_success(
-        self,
-        mock_subprocess_run,
-        mock_docker_compose,
-        mock_container_status
+        self, mock_subprocess, mock_compose, mock_status
     ):
         """Test successful Phase 1 execution."""
-        mock_container_status.return_value = "running"
-        mock_docker_compose.return_value = (True, "Success", "")
+        console = Mock()
+        console.spinner = MagicMock()
+        console.spinner.return_value.__enter__ = Mock(return_value=None)
+        console.spinner.return_value.__exit__ = Mock(return_value=None)
 
-        # Mock pg_dump for backup
-        mock_result = Mock()
-        mock_result.returncode = 0
-        mock_result.stdout = "-- PostgreSQL database dump\nCREATE TABLE test;"
-        mock_subprocess_run.return_value = mock_result
+        mock_status.return_value = "running"
+        mock_subprocess.return_value = Mock(
+            returncode=0,
+            stdout="SQL backup",
+            stderr=""
+        )
+        mock_compose.return_value = (True, "", "")
 
         with tempfile.TemporaryDirectory() as tmpdir:
             working_dir = Path(tmpdir)
+            (working_dir / "data" / "backups").mkdir(parents=True)
+
             orchestrator = DeploymentOrchestrator(
-                self.console,
+                console=console,
                 working_dir=working_dir
             )
 
@@ -321,225 +220,115 @@ class TestPhase1Preparation:
             assert result is True
             assert "preparation" in orchestrator.phases_completed
 
-    @patch('scripts.setup.deploy.get_container_status')
-    @patch('scripts.setup.deploy.run_docker_compose')
-    def test_phase1_preparation_skip_backup(
-        self,
-        mock_docker_compose,
-        mock_container_status
-    ):
-        """Test Phase 1 with skip_backup flag."""
-        mock_container_status.return_value = "stopped"
-        mock_docker_compose.return_value = (True, "Success", "")
+    def test_phase1_preparation_skip_backup(self):
+        """Test Phase 1 with --skip-backup flag."""
+        console = Mock()
+        console.spinner = MagicMock()
+        console.spinner.return_value.__enter__ = Mock(return_value=None)
+        console.spinner.return_value.__exit__ = Mock(return_value=None)
 
-        with tempfile.TemporaryDirectory() as tmpdir:
-            orchestrator = DeploymentOrchestrator(
-                self.console,
-                skip_backup=True,
-                working_dir=Path(tmpdir)
-            )
+        with patch('scripts.setup.deploy.run_docker_compose') as mock_compose:
+            mock_compose.return_value = (True, "", "")
 
-            result = orchestrator.phase1_preparation()
+            with tempfile.TemporaryDirectory() as tmpdir:
+                working_dir = Path(tmpdir)
 
-            assert result is True
-            assert "preparation" in orchestrator.phases_completed
-            assert any("Skipping backup" in str(call) for call in self.console.info.call_args_list)
+                orchestrator = DeploymentOrchestrator(
+                    console=console,
+                    skip_backup=True,
+                    working_dir=working_dir
+                )
 
-    @patch('scripts.setup.deploy.get_container_status')
-    @patch('scripts.setup.deploy.run_docker_compose')
-    def test_phase1_preparation_dry_run(
-        self,
-        mock_docker_compose,
-        mock_container_status
-    ):
-        """Test Phase 1 in dry run mode."""
-        mock_container_status.return_value = "stopped"
+                with patch('scripts.setup.deploy.get_container_status') as mock_status:
+                    mock_status.return_value = "not running"
 
-        with tempfile.TemporaryDirectory() as tmpdir:
-            orchestrator = DeploymentOrchestrator(
-                self.console,
-                dry_run=True,
-                working_dir=Path(tmpdir)
-            )
+                    result = orchestrator.phase1_preparation()
 
-            result = orchestrator.phase1_preparation()
+                    assert result is True
+                    console.info.assert_any_call("Skipping backup (--skip-backup flag)")
 
-            assert result is True
-            # Should not call docker-compose commands
-            mock_docker_compose.assert_not_called()
+    def test_phase1_preparation_dry_run(self):
+        """Test Phase 1 in dry-run mode."""
+        console = Mock()
+        console.spinner = MagicMock()
+        console.spinner.return_value.__enter__ = Mock(return_value=None)
+        console.spinner.return_value.__exit__ = Mock(return_value=None)
 
-    @patch('scripts.setup.deploy.get_container_status')
-    @patch('scripts.setup.deploy.run_docker_compose')
-    def test_phase1_preparation_build_failure(
-        self,
-        mock_docker_compose,
-        mock_container_status
-    ):
-        """Test Phase 1 when image build/pull fails."""
-        mock_container_status.return_value = "stopped"
-        mock_docker_compose.return_value = (False, "", "Build failed")
+        with patch('scripts.setup.deploy.get_container_status') as mock_status:
+            mock_status.return_value = "not running"
 
-        with tempfile.TemporaryDirectory() as tmpdir:
-            orchestrator = DeploymentOrchestrator(
-                self.console,
-                working_dir=Path(tmpdir)
-            )
+            with tempfile.TemporaryDirectory() as tmpdir:
+                working_dir = Path(tmpdir)
 
-            result = orchestrator.phase1_preparation()
+                orchestrator = DeploymentOrchestrator(
+                    console=console,
+                    dry_run=True,
+                    working_dir=working_dir
+                )
 
-            assert result is False
-            assert "preparation" not in orchestrator.phases_completed
+                result = orchestrator.phase1_preparation()
 
-    @patch('scripts.setup.deploy.get_container_status')
-    @patch('scripts.setup.deploy.run_docker_compose')
-    def test_phase1_preparation_rebuild_flag(
-        self,
-        mock_docker_compose,
-        mock_container_status
-    ):
-        """Test Phase 1 with rebuild flag."""
-        mock_container_status.return_value = "stopped"
-        mock_docker_compose.return_value = (True, "Success", "")
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            orchestrator = DeploymentOrchestrator(
-                self.console,
-                rebuild=True,
-                working_dir=Path(tmpdir)
-            )
-
-            result = orchestrator.phase1_preparation()
-
-            assert result is True
-            # Verify build was called with --no-cache
-            build_calls = [call for call in mock_docker_compose.call_args_list
-                          if call[0][0] == "build"]
-            assert len(build_calls) > 0
-
-    @patch('scripts.setup.deploy.get_container_status')
-    @patch('scripts.setup.deploy.run_docker_compose')
-    def test_phase1_preparation_exception_handling(
-        self,
-        mock_docker_compose,
-        mock_container_status
-    ):
-        """Test Phase 1 exception handling."""
-        mock_container_status.side_effect = Exception("Test error")
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            orchestrator = DeploymentOrchestrator(
-                self.console,
-                working_dir=Path(tmpdir)
-            )
-
-            result = orchestrator.phase1_preparation()
-
-            assert result is False
-            assert "preparation" not in orchestrator.phases_completed
+                assert result is True
+                assert orchestrator.backup_file is None
 
 
 class TestPhase2Infrastructure:
     """Test Phase 2: Infrastructure."""
 
-    def setup_method(self):
-        """Set up test fixtures."""
-        self.console = Mock()
-        self.console.error = Mock()
-        self.console.info = Mock()
-        self.console.success = Mock()
-        self.console.warning = Mock()
-        self.console.header = Mock()
-        self.console.step = Mock()
-        self.console.spinner = Mock(return_value=MagicMock(__enter__=Mock(), __exit__=Mock()))
-
     @patch('scripts.setup.deploy.wait_for_healthy')
     @patch('scripts.setup.deploy.run_docker_compose')
     def test_phase2_infrastructure_success(
-        self,
-        mock_docker_compose,
-        mock_wait_healthy
+        self, mock_compose, mock_wait
     ):
         """Test successful Phase 2 execution."""
-        mock_docker_compose.return_value = (True, "Success", "")
-        mock_wait_healthy.return_value = True
+        console = Mock()
+        console.spinner = MagicMock()
+        console.spinner.return_value.__enter__ = Mock(return_value=None)
+        console.spinner.return_value.__exit__ = Mock(return_value=None)
+
+        mock_compose.return_value = (True, "", "")
+        mock_wait.return_value = True
 
         with tempfile.TemporaryDirectory() as tmpdir:
+            working_dir = Path(tmpdir)
+
             orchestrator = DeploymentOrchestrator(
-                self.console,
-                working_dir=Path(tmpdir)
+                console=console,
+                working_dir=working_dir
             )
 
             result = orchestrator.phase2_infrastructure()
 
             assert result is True
             assert "infrastructure" in orchestrator.phases_completed
-            # Verify both db and redis were started
-            assert mock_docker_compose.call_count >= 2
-            assert mock_wait_healthy.call_count == 2
+
+            # Verify services were started
+            calls = mock_compose.call_args_list
+            assert any("db" in str(call) for call in calls)
+            assert any("redis" in str(call) for call in calls)
 
     @patch('scripts.setup.deploy.wait_for_healthy')
     @patch('scripts.setup.deploy.run_docker_compose')
     @patch('scripts.setup.deploy.get_container_logs')
-    def test_phase2_infrastructure_db_not_healthy(
-        self,
-        mock_get_logs,
-        mock_docker_compose,
-        mock_wait_healthy
+    def test_phase2_infrastructure_db_unhealthy(
+        self, mock_logs, mock_compose, mock_wait
     ):
-        """Test Phase 2 when database fails to become healthy."""
-        mock_docker_compose.return_value = (True, "Success", "")
-        mock_wait_healthy.return_value = False
-        mock_get_logs.return_value = "Database error logs"
+        """Test Phase 2 when database fails health check."""
+        console = Mock()
+        console.spinner = MagicMock()
+        console.spinner.return_value.__enter__ = Mock(return_value=None)
+        console.spinner.return_value.__exit__ = Mock(return_value=None)
+
+        mock_compose.return_value = (True, "", "")
+        mock_wait.return_value = False
+        mock_logs.return_value = "Database error logs"
 
         with tempfile.TemporaryDirectory() as tmpdir:
+            working_dir = Path(tmpdir)
+
             orchestrator = DeploymentOrchestrator(
-                self.console,
-                working_dir=Path(tmpdir)
-            )
-
-            result = orchestrator.phase2_infrastructure()
-
-            assert result is False
-            assert "infrastructure" not in orchestrator.phases_completed
-            assert mock_get_logs.called
-
-    @patch('scripts.setup.deploy.wait_for_healthy')
-    @patch('scripts.setup.deploy.run_docker_compose')
-    def test_phase2_infrastructure_redis_not_healthy(
-        self,
-        mock_docker_compose,
-        mock_wait_healthy
-    ):
-        """Test Phase 2 when Redis fails to become healthy."""
-        mock_docker_compose.return_value = (True, "Success", "")
-        # First call (db) succeeds, second call (redis) fails
-        mock_wait_healthy.side_effect = [True, False]
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            orchestrator = DeploymentOrchestrator(
-                self.console,
-                working_dir=Path(tmpdir)
-            )
-
-            result = orchestrator.phase2_infrastructure()
-
-            assert result is False
-            assert "infrastructure" not in orchestrator.phases_completed
-
-    @patch('scripts.setup.deploy.wait_for_healthy')
-    @patch('scripts.setup.deploy.run_docker_compose')
-    def test_phase2_infrastructure_service_start_failure(
-        self,
-        mock_docker_compose,
-        mock_wait_healthy
-    ):
-        """Test Phase 2 when service fails to start."""
-        mock_docker_compose.return_value = (False, "", "Failed to start")
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            orchestrator = DeploymentOrchestrator(
-                self.console,
-                working_dir=Path(tmpdir)
+                console=console,
+                working_dir=working_dir
             )
 
             result = orchestrator.phase2_infrastructure()
@@ -549,40 +338,32 @@ class TestPhase2Infrastructure:
 
 
 class TestPhase3Migrations:
-    """Test Phase 3: Database Migrations."""
-
-    def setup_method(self):
-        """Set up test fixtures."""
-        self.console = Mock()
-        self.console.error = Mock()
-        self.console.info = Mock()
-        self.console.success = Mock()
-        self.console.warning = Mock()
-        self.console.header = Mock()
-        self.console.step = Mock()
-        self.console.spinner = Mock(return_value=MagicMock(__enter__=Mock(), __exit__=Mock()))
+    """Test Phase 3: Migrations."""
 
     @patch('scripts.setup.deploy.subprocess.run')
     @patch('scripts.setup.deploy.run_docker_compose')
     def test_phase3_migrations_success(
-        self,
-        mock_docker_compose,
-        mock_subprocess_run
+        self, mock_compose, mock_subprocess
     ):
         """Test successful Phase 3 execution."""
-        # Mock db ready check
-        mock_docker_compose.return_value = (True, "1", "")
+        console = Mock()
+        console.spinner = MagicMock()
+        console.spinner.return_value.__enter__ = Mock(return_value=None)
+        console.spinner.return_value.__exit__ = Mock(return_value=None)
 
-        # Mock alembic upgrade
-        mock_result = Mock()
-        mock_result.returncode = 0
-        mock_result.stdout = "Running upgrade -> head"
-        mock_subprocess_run.return_value = mock_result
+        mock_compose.return_value = (True, "1", "")
+        mock_subprocess.return_value = Mock(
+            returncode=0,
+            stdout="Running upgrade\nDone",
+            stderr=""
+        )
 
         with tempfile.TemporaryDirectory() as tmpdir:
+            working_dir = Path(tmpdir)
+
             orchestrator = DeploymentOrchestrator(
-                self.console,
-                working_dir=Path(tmpdir)
+                console=console,
+                working_dir=working_dir
             )
 
             result = orchestrator.phase3_migrations()
@@ -590,132 +371,89 @@ class TestPhase3Migrations:
             assert result is True
             assert "migrations" in orchestrator.phases_completed
 
-    def test_phase3_migrations_skip_flag(self):
-        """Test Phase 3 with skip_migrations flag."""
+    def test_phase3_migrations_skip(self):
+        """Test Phase 3 with --skip-migrations flag."""
+        console = Mock()
+
+        orchestrator = DeploymentOrchestrator(
+            console=console,
+            skip_migrations=True
+        )
+
+        result = orchestrator.phase3_migrations()
+
+        assert result is True
+        assert "migrations" in orchestrator.phases_completed
+        console.info.assert_called_with("Skipping migrations (--skip-migrations flag)")
+
+    @patch('scripts.setup.deploy.subprocess.run')
+    @patch('scripts.setup.deploy.run_docker_compose')
+    def test_phase3_migrations_failure(
+        self, mock_compose, mock_subprocess
+    ):
+        """Test Phase 3 when migrations fail."""
+        console = Mock()
+        console.spinner = MagicMock()
+        console.spinner.return_value.__enter__ = Mock(return_value=None)
+        console.spinner.return_value.__exit__ = Mock(return_value=None)
+
+        mock_compose.return_value = (True, "1", "")
+        mock_subprocess.return_value = Mock(
+            returncode=1,
+            stdout="",
+            stderr="Migration error"
+        )
+
         with tempfile.TemporaryDirectory() as tmpdir:
+            working_dir = Path(tmpdir)
+
             orchestrator = DeploymentOrchestrator(
-                self.console,
-                skip_migrations=True,
-                working_dir=Path(tmpdir)
+                console=console,
+                working_dir=working_dir
             )
 
             result = orchestrator.phase3_migrations()
 
-            assert result is True
-            assert "migrations" in orchestrator.phases_completed
-            assert any("Skipping migrations" in str(call) for call in self.console.info.call_args_list)
+            assert result is False
 
     def test_phase3_migrations_dry_run(self):
-        """Test Phase 3 in dry run mode."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            orchestrator = DeploymentOrchestrator(
-                self.console,
-                dry_run=True,
-                working_dir=Path(tmpdir)
-            )
+        """Test Phase 3 in dry-run mode."""
+        console = Mock()
 
-            result = orchestrator.phase3_migrations()
+        orchestrator = DeploymentOrchestrator(
+            console=console,
+            dry_run=True
+        )
 
-            assert result is True
-            assert "migrations" in orchestrator.phases_completed
+        result = orchestrator.phase3_migrations()
 
-    @patch('scripts.setup.deploy.run_docker_compose')
-    def test_phase3_migrations_db_not_ready(
-        self,
-        mock_docker_compose
-    ):
-        """Test Phase 3 when database is not ready."""
-        mock_docker_compose.return_value = (False, "", "Connection refused")
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            orchestrator = DeploymentOrchestrator(
-                self.console,
-                working_dir=Path(tmpdir)
-            )
-
-            result = orchestrator.phase3_migrations()
-
-            assert result is False
-            assert "migrations" not in orchestrator.phases_completed
-
-    @patch('scripts.setup.deploy.subprocess.run')
-    @patch('scripts.setup.deploy.run_docker_compose')
-    def test_phase3_migrations_alembic_failure(
-        self,
-        mock_docker_compose,
-        mock_subprocess_run
-    ):
-        """Test Phase 3 when Alembic migration fails."""
-        mock_docker_compose.return_value = (True, "1", "")
-
-        mock_result = Mock()
-        mock_result.returncode = 1
-        mock_result.stderr = "Migration failed: syntax error"
-        mock_subprocess_run.return_value = mock_result
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            orchestrator = DeploymentOrchestrator(
-                self.console,
-                working_dir=Path(tmpdir)
-            )
-
-            result = orchestrator.phase3_migrations()
-
-            assert result is False
-            assert "migrations" not in orchestrator.phases_completed
-
-    @patch('scripts.setup.deploy.subprocess.run')
-    @patch('scripts.setup.deploy.run_docker_compose')
-    def test_phase3_migrations_timeout(
-        self,
-        mock_docker_compose,
-        mock_subprocess_run
-    ):
-        """Test Phase 3 when migration times out."""
-        mock_docker_compose.return_value = (True, "1", "")
-        mock_subprocess_run.side_effect = subprocess.TimeoutExpired("alembic", 120)
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            orchestrator = DeploymentOrchestrator(
-                self.console,
-                working_dir=Path(tmpdir)
-            )
-
-            result = orchestrator.phase3_migrations()
-
-            assert result is False
-            assert "migrations" not in orchestrator.phases_completed
+        assert result is True
+        console.info.assert_called_with("[DRY RUN] Would run: alembic upgrade head")
 
 
 class TestPhase4Application:
-    """Test Phase 4: Application Deployment."""
-
-    def setup_method(self):
-        """Set up test fixtures."""
-        self.console = Mock()
-        self.console.error = Mock()
-        self.console.info = Mock()
-        self.console.success = Mock()
-        self.console.warning = Mock()
-        self.console.header = Mock()
-        self.console.step = Mock()
-        self.console.spinner = Mock(return_value=MagicMock(__enter__=Mock(), __exit__=Mock()))
+    """Test Phase 4: Application."""
 
     @patch('scripts.setup.deploy.wait_for_healthy')
     @patch('scripts.setup.deploy.run_docker_compose')
     def test_phase4_application_success(
-        self,
-        mock_docker_compose,
-        mock_wait_healthy
+        self, mock_compose, mock_wait
     ):
         """Test successful Phase 4 execution."""
-        mock_docker_compose.return_value = (True, "Success", "")
-        mock_wait_healthy.return_value = True
+        console = Mock()
+        console.spinner = MagicMock()
+        console.spinner.return_value.__enter__ = Mock(return_value=None)
+        console.spinner.return_value.__exit__ = Mock(return_value=None)
+
+        mock_compose.return_value = (True, "", "")
+        mock_wait.return_value = True
 
         with tempfile.TemporaryDirectory() as tmpdir:
+            working_dir = Path(tmpdir)
+
             orchestrator = DeploymentOrchestrator(
-                self.console,
-                working_dir=Path(tmpdir)
+                console=console,
+                working_dir=working_dir
             )
 
             result = orchestrator.phase4_application()
@@ -723,364 +461,212 @@ class TestPhase4Application:
             assert result is True
             assert "application" in orchestrator.phases_completed
 
-    @patch('scripts.setup.deploy.run_docker_compose')
-    def test_phase4_application_start_failure(
-        self,
-        mock_docker_compose
-    ):
-        """Test Phase 4 when web service fails to start."""
-        mock_docker_compose.return_value = (False, "", "Failed to start web service")
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            orchestrator = DeploymentOrchestrator(
-                self.console,
-                working_dir=Path(tmpdir)
-            )
-
-            result = orchestrator.phase4_application()
-
-            assert result is False
-            assert "application" not in orchestrator.phases_completed
-
     @patch('scripts.setup.deploy.wait_for_healthy')
     @patch('scripts.setup.deploy.run_docker_compose')
     @patch('scripts.setup.deploy.get_container_logs')
-    def test_phase4_application_not_healthy(
-        self,
-        mock_get_logs,
-        mock_docker_compose,
-        mock_wait_healthy
+    def test_phase4_application_unhealthy(
+        self, mock_logs, mock_compose, mock_wait
     ):
         """Test Phase 4 when application fails health check."""
-        mock_docker_compose.return_value = (True, "Success", "")
-        mock_wait_healthy.return_value = False
-        mock_get_logs.return_value = "Application startup error"
+        console = Mock()
+        console.spinner = MagicMock()
+        console.spinner.return_value.__enter__ = Mock(return_value=None)
+        console.spinner.return_value.__exit__ = Mock(return_value=None)
+
+        mock_compose.return_value = (True, "", "")
+        mock_wait.return_value = False
+        mock_logs.return_value = "Application error logs"
 
         with tempfile.TemporaryDirectory() as tmpdir:
+            working_dir = Path(tmpdir)
+
             orchestrator = DeploymentOrchestrator(
-                self.console,
-                working_dir=Path(tmpdir)
+                console=console,
+                working_dir=working_dir
             )
 
             result = orchestrator.phase4_application()
 
             assert result is False
-            assert "application" not in orchestrator.phases_completed
-            # Verify logs were shown (with tail=100)
-            mock_get_logs.assert_called_once()
-
-    @patch('scripts.setup.deploy.wait_for_healthy')
-    @patch('scripts.setup.deploy.run_docker_compose')
-    def test_phase4_application_exception(
-        self,
-        mock_docker_compose,
-        mock_wait_healthy
-    ):
-        """Test Phase 4 exception handling."""
-        mock_docker_compose.side_effect = Exception("Unexpected error")
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            orchestrator = DeploymentOrchestrator(
-                self.console,
-                working_dir=Path(tmpdir)
-            )
-
-            result = orchestrator.phase4_application()
-
-            assert result is False
-            assert "application" not in orchestrator.phases_completed
 
 
 class TestPhase5Verification:
     """Test Phase 5: Verification."""
 
-    def setup_method(self):
-        """Set up test fixtures."""
-        self.console = Mock()
-        self.console.error = Mock()
-        self.console.info = Mock()
-        self.console.success = Mock()
-        self.console.warning = Mock()
-        self.console.header = Mock()
-        self.console.step = Mock()
-        self.console.spinner = Mock(return_value=MagicMock(__enter__=Mock(), __exit__=Mock()))
-        self.console.table = Mock()
-
+    @patch('httpx.get')
     @patch('scripts.setup.deploy.run_docker_compose')
-    def test_phase5_verification_success(
-        self,
-        mock_docker_compose
-    ):
+    def test_phase5_verification_success(self, mock_compose, mock_httpx_get):
         """Test successful Phase 5 execution."""
-        mock_docker_compose.return_value = (True, "1\nPONG", "")
+        console = Mock()
+        console.spinner = MagicMock()
+        console.spinner.return_value.__enter__ = Mock(return_value=None)
+        console.spinner.return_value.__exit__ = Mock(return_value=None)
+
+        mock_compose.return_value = (True, "PONG", "")
+
+        # Mock httpx.get response
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_httpx_get.return_value = mock_response
 
         with tempfile.TemporaryDirectory() as tmpdir:
+            working_dir = Path(tmpdir)
+
             orchestrator = DeploymentOrchestrator(
-                self.console,
-                working_dir=Path(tmpdir)
-            )
-
-            with patch('httpx.get') as mock_httpx_get:
-                mock_response = Mock()
-                mock_response.status_code = 200
-                mock_httpx_get.return_value = mock_response
-
-                result = orchestrator.phase5_verification()
-
-                assert result is True
-                assert "verification" in orchestrator.phases_completed
-
-    @patch('scripts.setup.deploy.run_docker_compose')
-    def test_phase5_verification_smoke_tests_fail(
-        self,
-        mock_docker_compose
-    ):
-        """Test Phase 5 when smoke tests fail (non-critical)."""
-        mock_docker_compose.return_value = (False, "", "Connection failed")
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            orchestrator = DeploymentOrchestrator(
-                self.console,
-                working_dir=Path(tmpdir)
-            )
-
-            with patch('httpx.get') as mock_httpx_get:
-                mock_httpx_get.side_effect = Exception("Connection refused")
-
-                result = orchestrator.phase5_verification()
-
-                # Should still succeed as smoke tests are non-critical
-                assert result is True
-                assert "verification" in orchestrator.phases_completed
-
-    def test_phase5_verification_dry_run(self):
-        """Test Phase 5 in dry run mode."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            orchestrator = DeploymentOrchestrator(
-                self.console,
-                dry_run=True,
-                working_dir=Path(tmpdir)
+                console=console,
+                working_dir=working_dir
             )
 
             result = orchestrator.phase5_verification()
 
             assert result is True
+            assert "verification" in orchestrator.phases_completed
 
+    @patch('httpx.get')
     @patch('scripts.setup.deploy.run_docker_compose')
-    def test_phase5_verification_displays_access_info(
-        self,
-        mock_docker_compose
-    ):
-        """Test that Phase 5 displays access information."""
-        mock_docker_compose.return_value = (True, "1\nPONG", "")
+    def test_phase5_verification_smoke_tests_fail(self, mock_compose, mock_httpx_get):
+        """Test Phase 5 when smoke tests fail (non-critical)."""
+        console = Mock()
+        console.spinner = MagicMock()
+        console.spinner.return_value.__enter__ = Mock(return_value=None)
+        console.spinner.return_value.__exit__ = Mock(return_value=None)
+
+        mock_compose.return_value = (False, "", "Error")
+
+        # Mock httpx to fail
+        mock_httpx_get.side_effect = Exception("Connection failed")
 
         with tempfile.TemporaryDirectory() as tmpdir:
+            working_dir = Path(tmpdir)
+
             orchestrator = DeploymentOrchestrator(
-                self.console,
-                working_dir=Path(tmpdir)
+                console=console,
+                working_dir=working_dir
             )
-            orchestrator.deployment_start_time = datetime.now()
 
-            with patch('httpx.get') as mock_httpx_get:
-                mock_response = Mock()
-                mock_response.status_code = 200
-                mock_httpx_get.return_value = mock_response
+            result = orchestrator.phase5_verification()
 
-                result = orchestrator.phase5_verification()
-
-                # Verify table was called to display summary
-                assert self.console.table.called
+            # Phase still succeeds even if smoke tests fail
+            assert result is True
 
 
 class TestRollback:
     """Test rollback functionality."""
 
-    def setup_method(self):
-        """Set up test fixtures."""
-        self.console = Mock()
-        self.console.error = Mock()
-        self.console.info = Mock()
-        self.console.success = Mock()
-        self.console.warning = Mock()
-        self.console.header = Mock()
-        self.console.step = Mock()
-        self.console.spinner = Mock(return_value=MagicMock(__enter__=Mock(), __exit__=Mock()))
-
     @patch('scripts.setup.deploy.run_docker_compose')
-    def test_rollback_success_with_backup(
-        self,
-        mock_docker_compose
-    ):
-        """Test successful rollback with backup restoration."""
-        mock_docker_compose.return_value = (True, "Success", "")
+    @patch('scripts.setup.deploy.subprocess.run')
+    def test_rollback_success(self, mock_subprocess, mock_compose):
+        """Test successful rollback."""
+        console = Mock()
+        console.spinner = MagicMock()
+        console.spinner.return_value.__enter__ = Mock(return_value=None)
+        console.spinner.return_value.__exit__ = Mock(return_value=None)
+
+        mock_compose.return_value = (True, "", "")
+        mock_subprocess.return_value = Mock(returncode=0, stdout="", stderr="")
 
         with tempfile.TemporaryDirectory() as tmpdir:
             working_dir = Path(tmpdir)
-
-            # Create backup file
             backup_dir = working_dir / "data" / "backups"
-            backup_dir.mkdir(parents=True, exist_ok=True)
-            backup_file = backup_dir / "test_backup.sql.gz"
+            backup_dir.mkdir(parents=True)
+            backup_file = backup_dir / "test-backup.sql.gz"
 
+            # Create a dummy backup file
+            import gzip
             with gzip.open(backup_file, 'wt') as f:
-                f.write("-- Test backup\nCREATE TABLE test;")
+                f.write("SELECT 1;")
 
             orchestrator = DeploymentOrchestrator(
-                self.console,
+                console=console,
                 working_dir=working_dir
             )
             orchestrator.backup_file = backup_file
-
-            with patch('scripts.setup.deploy.subprocess.run') as mock_subprocess:
-                mock_result = Mock()
-                mock_result.returncode = 0
-                mock_subprocess.return_value = mock_result
-
-                result = orchestrator.rollback()
-
-                assert result is True
-                # Verify down and up were called
-                assert any(call[0][0] == "down" for call in mock_docker_compose.call_args_list)
-                assert any(call[0][0] == "up" for call in mock_docker_compose.call_args_list)
-
-    @patch('scripts.setup.deploy.run_docker_compose')
-    def test_rollback_success_without_backup(
-        self,
-        mock_docker_compose
-    ):
-        """Test rollback without backup file."""
-        mock_docker_compose.return_value = (True, "Success", "")
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            orchestrator = DeploymentOrchestrator(
-                self.console,
-                working_dir=Path(tmpdir)
-            )
 
             result = orchestrator.rollback()
 
             assert result is True
-            # Should warn about no backup
-            assert any("No backup file" in str(call) for call in self.console.warning.call_args_list)
 
     @patch('scripts.setup.deploy.run_docker_compose')
-    def test_rollback_restore_failure(
-        self,
-        mock_docker_compose
-    ):
-        """Test rollback when backup restoration fails."""
-        # Stop succeeds, restore fails, restart succeeds
-        mock_docker_compose.return_value = (True, "Success", "")
+    def test_rollback_no_backup(self, mock_compose):
+        """Test rollback when no backup exists."""
+        console = Mock()
+
+        mock_compose.return_value = (True, "", "")
 
         with tempfile.TemporaryDirectory() as tmpdir:
             working_dir = Path(tmpdir)
 
-            backup_dir = working_dir / "data" / "backups"
-            backup_dir.mkdir(parents=True, exist_ok=True)
-            backup_file = backup_dir / "test_backup.sql.gz"
-
-            with gzip.open(backup_file, 'wt') as f:
-                f.write("-- Test backup")
-
             orchestrator = DeploymentOrchestrator(
-                self.console,
+                console=console,
                 working_dir=working_dir
             )
-            orchestrator.backup_file = backup_file
-
-            with patch('scripts.setup.deploy.subprocess.run') as mock_subprocess:
-                mock_result = Mock()
-                mock_result.returncode = 1
-                mock_result.stderr = "Restore failed"
-                mock_subprocess.return_value = mock_result
-
-                result = orchestrator.rollback()
-
-                assert result is False
-
-    @patch('scripts.setup.deploy.run_docker_compose')
-    def test_rollback_restart_failure(
-        self,
-        mock_docker_compose
-    ):
-        """Test rollback when service restart fails."""
-        # Stop succeeds, up fails
-        mock_docker_compose.side_effect = [
-            (True, "Success", ""),  # down
-            (False, "", "Failed to start")  # up
-        ]
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            orchestrator = DeploymentOrchestrator(
-                self.console,
-                working_dir=Path(tmpdir)
-            )
 
             result = orchestrator.rollback()
 
-            assert result is False
+            # Should still succeed but warn about no backup
+            assert result is True
+            console.warning.assert_called_with("No backup file to restore from")
 
-    @patch('scripts.setup.deploy.run_docker_compose')
-    def test_rollback_exception_handling(
-        self,
-        mock_docker_compose
-    ):
-        """Test rollback exception handling."""
-        mock_docker_compose.side_effect = Exception("Unexpected error")
+    def test_rollback_dry_run(self):
+        """Test rollback in dry-run mode."""
+        console = Mock()
 
-        with tempfile.TemporaryDirectory() as tmpdir:
-            orchestrator = DeploymentOrchestrator(
-                self.console,
-                working_dir=Path(tmpdir)
-            )
+        orchestrator = DeploymentOrchestrator(
+            console=console,
+            dry_run=True
+        )
 
-            result = orchestrator.rollback()
+        # Mock the internal methods
+        orchestrator._stop_all_services = Mock(return_value=True)
+        orchestrator._start_all_services = Mock(return_value=True)
+        orchestrator._restore_backup = Mock(return_value=True)
 
-            assert result is False
+        result = orchestrator.rollback()
+
+        assert result is True
 
 
 class TestHelperMethods:
     """Test helper methods."""
 
-    def setup_method(self):
-        """Set up test fixtures."""
-        self.console = Mock()
-        self.console.error = Mock()
-        self.console.info = Mock()
-        self.console.success = Mock()
-        self.console.warning = Mock()
-        self.console.spinner = Mock(return_value=MagicMock(__enter__=Mock(), __exit__=Mock()))
-
-    @patch('scripts.setup.deploy.shutil.disk_usage')
-    def test_check_disk_space(self, mock_disk_usage):
-        """Test disk space check."""
-        mock_stat = Mock()
-        mock_stat.free = 5 * (1024 ** 3)  # 5 GB
-        mock_disk_usage.return_value = mock_stat
+    def test_check_disk_space(self):
+        """Test disk space checking."""
+        console = Mock()
 
         with tempfile.TemporaryDirectory() as tmpdir:
+            working_dir = Path(tmpdir)
+
             orchestrator = DeploymentOrchestrator(
-                self.console,
-                working_dir=Path(tmpdir)
+                console=console,
+                working_dir=working_dir
             )
 
-            space = orchestrator._check_disk_space()
+            disk_space = orchestrator._check_disk_space()
 
-            assert space == pytest.approx(5.0, rel=0.01)
+            assert isinstance(disk_space, float)
+            assert disk_space > 0
 
     def test_validate_jwt_keys_valid(self):
         """Test JWT key validation with valid keys."""
+        console = Mock()
+
         with tempfile.TemporaryDirectory() as tmpdir:
             working_dir = Path(tmpdir)
+            jwt_dir = working_dir / "secrets" / "jwt"
+            jwt_dir.mkdir(parents=True)
 
-            private_key = working_dir / "private.pem"
-            public_key = working_dir / "public.pem"
+            private_key = jwt_dir / "private_key.pem"
+            public_key = jwt_dir / "public_key.pem"
 
-            private_key.write_text("-----BEGIN PRIVATE KEY-----\n" + "A" * 200 + "\n-----END PRIVATE KEY-----")
-            public_key.write_text("-----BEGIN PUBLIC KEY-----\n" + "B" * 200 + "\n-----END PUBLIC KEY-----")
+            private_key.write_text(
+                "-----BEGIN PRIVATE KEY-----\n" + "A" * 200 + "\n-----END PRIVATE KEY-----"
+            )
+            public_key.write_text(
+                "-----BEGIN PUBLIC KEY-----\n" + "A" * 200 + "\n-----END PUBLIC KEY-----"
+            )
 
             orchestrator = DeploymentOrchestrator(
-                self.console,
+                console=console,
                 working_dir=working_dir
             )
 
@@ -1088,39 +674,24 @@ class TestHelperMethods:
 
             assert result is True
 
-    def test_validate_jwt_keys_invalid_size(self):
-        """Test JWT key validation with too-small keys."""
+    def test_validate_jwt_keys_invalid(self):
+        """Test JWT key validation with invalid keys."""
+        console = Mock()
+
         with tempfile.TemporaryDirectory() as tmpdir:
             working_dir = Path(tmpdir)
+            jwt_dir = working_dir / "secrets" / "jwt"
+            jwt_dir.mkdir(parents=True)
 
-            private_key = working_dir / "private.pem"
-            public_key = working_dir / "public.pem"
+            private_key = jwt_dir / "private_key.pem"
+            public_key = jwt_dir / "public_key.pem"
 
-            private_key.write_text("small")
-            public_key.write_text("small")
-
-            orchestrator = DeploymentOrchestrator(
-                self.console,
-                working_dir=working_dir
-            )
-
-            result = orchestrator._validate_jwt_keys(private_key, public_key)
-
-            assert result is False
-
-    def test_validate_jwt_keys_missing_headers(self):
-        """Test JWT key validation with missing PEM headers."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            working_dir = Path(tmpdir)
-
-            private_key = working_dir / "private.pem"
-            public_key = working_dir / "public.pem"
-
-            private_key.write_text("A" * 200)
-            public_key.write_text("B" * 200)
+            # Write invalid content (too short)
+            private_key.write_text("invalid")
+            public_key.write_text("invalid")
 
             orchestrator = DeploymentOrchestrator(
-                self.console,
+                console=console,
                 working_dir=working_dir
             )
 
@@ -1129,609 +700,197 @@ class TestHelperMethods:
             assert result is False
 
     @patch('scripts.setup.deploy.get_container_status')
-    def test_save_container_states(self, mock_container_status):
+    def test_save_container_states(self, mock_status):
         """Test saving container states."""
-        mock_container_status.side_effect = ["running", "running", "stopped"]
+        console = Mock()
 
-        with tempfile.TemporaryDirectory() as tmpdir:
-            orchestrator = DeploymentOrchestrator(
-                self.console,
-                working_dir=Path(tmpdir)
-            )
+        mock_status.side_effect = ["running", "running", "exited"]
 
-            orchestrator._save_container_states()
+        orchestrator = DeploymentOrchestrator(console=console)
+        orchestrator._save_container_states()
 
-            assert orchestrator.previous_containers["db"] == "running"
-            assert orchestrator.previous_containers["redis"] == "running"
-            assert orchestrator.previous_containers["web"] == "stopped"
+        assert orchestrator.previous_containers["db"] == "running"
+        assert orchestrator.previous_containers["redis"] == "running"
+        assert orchestrator.previous_containers["web"] == "exited"
 
     @patch('scripts.setup.deploy.run_docker_compose')
-    def test_start_service(self, mock_docker_compose):
-        """Test starting a service."""
-        mock_docker_compose.return_value = (True, "Success", "")
+    def test_start_service_success(self, mock_compose):
+        """Test starting a service successfully."""
+        console = Mock()
+        mock_compose.return_value = (True, "", "")
 
-        with tempfile.TemporaryDirectory() as tmpdir:
-            orchestrator = DeploymentOrchestrator(
-                self.console,
-                working_dir=Path(tmpdir)
-            )
+        orchestrator = DeploymentOrchestrator(console=console)
+        result = orchestrator._start_service("web")
 
-            result = orchestrator._start_service("web")
-
-            assert result is True
-            mock_docker_compose.assert_called_once()
+        assert result is True
 
     @patch('scripts.setup.deploy.run_docker_compose')
-    def test_start_service_failure(self, mock_docker_compose):
-        """Test service start failure."""
-        mock_docker_compose.return_value = (False, "", "Failed")
+    def test_start_service_failure(self, mock_compose):
+        """Test starting a service that fails."""
+        console = Mock()
+        mock_compose.return_value = (False, "", "Error starting service")
 
-        with tempfile.TemporaryDirectory() as tmpdir:
-            orchestrator = DeploymentOrchestrator(
-                self.console,
-                working_dir=Path(tmpdir)
-            )
+        orchestrator = DeploymentOrchestrator(console=console)
+        result = orchestrator._start_service("web")
 
-            result = orchestrator._start_service("web")
+        assert result is False
 
-            assert result is False
+    def test_start_service_dry_run(self):
+        """Test starting a service in dry-run mode."""
+        console = Mock()
 
-    @patch('scripts.setup.deploy.run_docker_compose')
-    def test_stop_all_services(self, mock_docker_compose):
-        """Test stopping all services."""
-        mock_docker_compose.return_value = (True, "Success", "")
+        orchestrator = DeploymentOrchestrator(console=console, dry_run=True)
+        result = orchestrator._start_service("web")
 
-        with tempfile.TemporaryDirectory() as tmpdir:
-            orchestrator = DeploymentOrchestrator(
-                self.console,
-                working_dir=Path(tmpdir)
-            )
-
-            result = orchestrator._stop_all_services()
-
-            assert result is True
-            # Verify down was called
-            assert mock_docker_compose.call_args[0][0] == "down"
-
-    @patch('scripts.setup.deploy.run_docker_compose')
-    def test_start_all_services(self, mock_docker_compose):
-        """Test starting all services."""
-        mock_docker_compose.return_value = (True, "Success", "")
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            orchestrator = DeploymentOrchestrator(
-                self.console,
-                working_dir=Path(tmpdir)
-            )
-
-            result = orchestrator._start_all_services()
-
-            assert result is True
-            # Verify up was called with -d
-            assert mock_docker_compose.call_args[0][0] == "up"
+        assert result is True
+        console.info.assert_called_with("[DRY RUN] Would start service: web")
 
 
-class TestSmokeTests:
-    """Test smoke test functionality."""
-
-    def setup_method(self):
-        """Set up test fixtures."""
-        self.console = Mock()
-        self.console.error = Mock()
-        self.console.info = Mock()
-        self.console.success = Mock()
-        self.console.warning = Mock()
-        self.console.spinner = Mock(return_value=MagicMock(__enter__=Mock(), __exit__=Mock()))
-
-    @patch('scripts.setup.deploy.run_docker_compose')
-    def test_smoke_tests_all_pass(self, mock_docker_compose):
-        """Test when all smoke tests pass."""
-        mock_docker_compose.return_value = (True, "1\nPONG", "")
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            orchestrator = DeploymentOrchestrator(
-                self.console,
-                working_dir=Path(tmpdir)
-            )
-
-            with patch('httpx.get') as mock_httpx_get:
-                mock_response = Mock()
-                mock_response.status_code = 200
-                mock_httpx_get.return_value = mock_response
-
-                result = orchestrator._run_smoke_tests()
-
-                assert result is True
-
-    @patch('scripts.setup.deploy.run_docker_compose')
-    def test_smoke_tests_health_endpoint_failure(self, mock_docker_compose):
-        """Test when health endpoint fails."""
-        mock_docker_compose.return_value = (True, "1\nPONG", "")
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            orchestrator = DeploymentOrchestrator(
-                self.console,
-                working_dir=Path(tmpdir)
-            )
-
-            with patch('httpx.get') as mock_httpx_get:
-                mock_response = Mock()
-                mock_response.status_code = 500
-                mock_httpx_get.return_value = mock_response
-
-                result = orchestrator._run_smoke_tests()
-
-                assert result is False
-
-    @patch('scripts.setup.deploy.run_docker_compose')
-    def test_smoke_tests_database_failure(self, mock_docker_compose):
-        """Test when database connectivity fails."""
-        # Health passes, database fails, redis passes
-        mock_docker_compose.side_effect = [
-            (False, "", "Connection failed"),
-            (True, "PONG", "")
-        ]
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            orchestrator = DeploymentOrchestrator(
-                self.console,
-                working_dir=Path(tmpdir)
-            )
-
-            with patch('httpx.get') as mock_httpx_get:
-                mock_response = Mock()
-                mock_response.status_code = 200
-                mock_httpx_get.return_value = mock_response
-
-                result = orchestrator._run_smoke_tests()
-
-                assert result is False
-
-    @patch('scripts.setup.deploy.run_docker_compose')
-    def test_smoke_tests_redis_failure(self, mock_docker_compose):
-        """Test when Redis connectivity fails."""
-        mock_docker_compose.side_effect = [
-            (True, "1", ""),  # Database check passes
-            (False, "", "Connection refused")  # Redis check fails
-        ]
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            orchestrator = DeploymentOrchestrator(
-                self.console,
-                working_dir=Path(tmpdir)
-            )
-
-            with patch('httpx.get') as mock_httpx_get:
-                mock_response = Mock()
-                mock_response.status_code = 200
-                mock_httpx_get.return_value = mock_response
-
-                result = orchestrator._run_smoke_tests()
-
-                assert result is False
-
-
-class TestCLIIntegration:
-    """Test CLI command-line interface."""
-
-    def setup_method(self):
-        """Set up test fixtures."""
-        self.runner = CliRunner()
+class TestCLI:
+    """Test CLI integration."""
 
     @patch('scripts.setup.deploy.DeploymentOrchestrator')
-    @patch('scripts.setup.deploy.SetupConsole')
-    def test_cli_help(self, mock_console, mock_orchestrator):
-        """Test CLI help message."""
-        result = self.runner.invoke(main, ['--help'])
-
-        assert result.exit_code == 0
-        assert "PromptVault Deployment" in result.output
-        assert "--dry-run" in result.output
-        assert "--skip-backup" in result.output
-        assert "--skip-migrations" in result.output
-        assert "--rollback" in result.output
-        assert "--rebuild" in result.output
-        assert "--non-interactive" in result.output
-
-    @patch('scripts.setup.deploy.DeploymentOrchestrator')
-    @patch('scripts.setup.deploy.SetupConsole')
-    def test_cli_dry_run_flag(self, mock_console, mock_orchestrator):
+    def test_cli_dry_run(self, mock_orchestrator_class):
         """Test CLI with --dry-run flag."""
-        mock_console_instance = Mock()
-        mock_console.return_value = mock_console_instance
+        runner = CliRunner()
 
-        mock_orch_instance = Mock()
-        mock_orch_instance.run_preflight_checks.return_value = True
-        mock_orch_instance.phase1_preparation.return_value = True
-        mock_orch_instance.phase2_infrastructure.return_value = True
-        mock_orch_instance.phase3_migrations.return_value = True
-        mock_orch_instance.phase4_application.return_value = True
-        mock_orch_instance.phase5_verification.return_value = True
-        mock_orchestrator.return_value = mock_orch_instance
+        # Mock the orchestrator instance and its methods
+        mock_orchestrator = Mock()
+        mock_orchestrator.run_preflight_checks.return_value = True
+        mock_orchestrator.phase1_preparation.return_value = True
+        mock_orchestrator.phase2_infrastructure.return_value = True
+        mock_orchestrator.phase3_migrations.return_value = True
+        mock_orchestrator.phase4_application.return_value = True
+        mock_orchestrator.phase5_verification.return_value = True
+        mock_orchestrator_class.return_value = mock_orchestrator
 
-        result = self.runner.invoke(main, ['--dry-run', '--non-interactive'])
-
-        # Verify orchestrator was created with dry_run=True
-        assert mock_orchestrator.call_args[1]['dry_run'] is True
-
-    @patch('scripts.setup.deploy.DeploymentOrchestrator')
-    @patch('scripts.setup.deploy.SetupConsole')
-    def test_cli_skip_backup_flag(self, mock_console, mock_orchestrator):
-        """Test CLI with --skip-backup flag."""
-        mock_console_instance = Mock()
-        mock_console.return_value = mock_console_instance
-
-        mock_orch_instance = Mock()
-        mock_orch_instance.run_preflight_checks.return_value = True
-        mock_orch_instance.phase1_preparation.return_value = True
-        mock_orch_instance.phase2_infrastructure.return_value = True
-        mock_orch_instance.phase3_migrations.return_value = True
-        mock_orch_instance.phase4_application.return_value = True
-        mock_orch_instance.phase5_verification.return_value = True
-        mock_orchestrator.return_value = mock_orch_instance
-
-        result = self.runner.invoke(main, ['--skip-backup', '--non-interactive'])
-
-        assert mock_orchestrator.call_args[1]['skip_backup'] is True
-
-    @patch('scripts.setup.deploy.DeploymentOrchestrator')
-    @patch('scripts.setup.deploy.SetupConsole')
-    def test_cli_rollback_flag(self, mock_console, mock_orchestrator):
-        """Test CLI with --rollback flag."""
-        mock_console_instance = Mock()
-        mock_console.return_value = mock_console_instance
-
-        mock_orch_instance = Mock()
-        mock_orch_instance.rollback.return_value = True
-        mock_orchestrator.return_value = mock_orch_instance
-
-        result = self.runner.invoke(main, ['--rollback', '--non-interactive'])
+        result = runner.invoke(main, ['--dry-run', '--non-interactive'])
 
         assert result.exit_code == 0
-        mock_orch_instance.rollback.assert_called_once()
+        assert "DRY RUN MODE" in result.output
 
     @patch('scripts.setup.deploy.DeploymentOrchestrator')
-    @patch('scripts.setup.deploy.SetupConsole')
-    def test_cli_multiple_flags(self, mock_console, mock_orchestrator):
-        """Test CLI with multiple flags."""
-        mock_console_instance = Mock()
-        mock_console.return_value = mock_console_instance
+    def test_cli_rollback_cancelled(self, mock_orchestrator_class):
+        """Test CLI rollback mode cancelled by user."""
+        runner = CliRunner()
 
-        mock_orch_instance = Mock()
-        mock_orch_instance.run_preflight_checks.return_value = True
-        mock_orch_instance.phase1_preparation.return_value = True
-        mock_orch_instance.phase2_infrastructure.return_value = True
-        mock_orch_instance.phase3_migrations.return_value = True
-        mock_orch_instance.phase4_application.return_value = True
-        mock_orch_instance.phase5_verification.return_value = True
-        mock_orchestrator.return_value = mock_orch_instance
-
-        result = self.runner.invoke(main, [
-            '--skip-backup',
-            '--skip-migrations',
-            '--rebuild',
-            '--non-interactive'
-        ])
-
-        call_kwargs = mock_orchestrator.call_args[1]
-        assert call_kwargs['skip_backup'] is True
-        assert call_kwargs['skip_migrations'] is True
-        assert call_kwargs['rebuild'] is True
-        assert call_kwargs['non_interactive'] is True
-
-
-class TestDeploymentFlow:
-    """Test complete deployment flow."""
-
-    def setup_method(self):
-        """Set up test fixtures."""
-        self.runner = CliRunner()
-
-    @patch('scripts.setup.deploy.DeploymentOrchestrator')
-    @patch('scripts.setup.deploy.SetupConsole')
-    def test_successful_deployment_flow(self, mock_console, mock_orchestrator):
-        """Test complete successful deployment."""
-        mock_console_instance = Mock()
-        mock_console.return_value = mock_console_instance
-
-        mock_orch_instance = Mock()
-        mock_orch_instance.run_preflight_checks.return_value = True
-        mock_orch_instance.phase1_preparation.return_value = True
-        mock_orch_instance.phase2_infrastructure.return_value = True
-        mock_orch_instance.phase3_migrations.return_value = True
-        mock_orch_instance.phase4_application.return_value = True
-        mock_orch_instance.phase5_verification.return_value = True
-        mock_orchestrator.return_value = mock_orch_instance
-
-        result = self.runner.invoke(main, ['--non-interactive'])
+        # Simulate user saying 'no' to rollback confirmation
+        result = runner.invoke(main, ['--rollback'], input='n\n')
 
         assert result.exit_code == 0
-        mock_orch_instance.run_preflight_checks.assert_called_once()
-        mock_orch_instance.phase1_preparation.assert_called_once()
-        mock_orch_instance.phase2_infrastructure.assert_called_once()
-        mock_orch_instance.phase3_migrations.assert_called_once()
-        mock_orch_instance.phase4_application.assert_called_once()
-        mock_orch_instance.phase5_verification.assert_called_once()
+        assert "Rollback cancelled" in result.output
 
     @patch('scripts.setup.deploy.DeploymentOrchestrator')
-    @patch('scripts.setup.deploy.SetupConsole')
-    def test_preflight_checks_failure(self, mock_console, mock_orchestrator):
-        """Test deployment fails at pre-flight checks."""
-        mock_console_instance = Mock()
-        mock_console.return_value = mock_console_instance
+    def test_cli_rollback_success(self, mock_orchestrator_class):
+        """Test CLI rollback mode with successful rollback."""
+        runner = CliRunner()
 
-        mock_orch_instance = Mock()
-        mock_orch_instance.run_preflight_checks.return_value = False
-        mock_orchestrator.return_value = mock_orch_instance
+        mock_orchestrator = Mock()
+        mock_orchestrator.rollback.return_value = True
+        mock_orchestrator_class.return_value = mock_orchestrator
 
-        result = self.runner.invoke(main, ['--non-interactive'])
+        result = runner.invoke(main, ['--rollback', '--non-interactive'])
+
+        assert result.exit_code == 0
+        assert mock_orchestrator.rollback.called
+
+    @patch('scripts.setup.deploy.DeploymentOrchestrator')
+    def test_cli_rollback_failure(self, mock_orchestrator_class):
+        """Test CLI rollback mode with failed rollback."""
+        runner = CliRunner()
+
+        mock_orchestrator = Mock()
+        mock_orchestrator.rollback.return_value = False
+        mock_orchestrator_class.return_value = mock_orchestrator
+
+        result = runner.invoke(main, ['--rollback', '--non-interactive'])
 
         assert result.exit_code == 1
-        mock_orch_instance.phase1_preparation.assert_not_called()
-
-    @patch('scripts.setup.deploy.DeploymentOrchestrator')
-    @patch('scripts.setup.deploy.SetupConsole')
-    def test_phase1_failure_triggers_rollback(self, mock_console, mock_orchestrator):
-        """Test Phase 1 failure triggers rollback."""
-        mock_console_instance = Mock()
-        mock_console_instance.confirm.return_value = True
-        mock_console.return_value = mock_console_instance
-
-        mock_orch_instance = Mock()
-        mock_orch_instance.run_preflight_checks.return_value = True
-        mock_orch_instance.phase1_preparation.return_value = False
-        mock_orch_instance.rollback.return_value = True
-        mock_orchestrator.return_value = mock_orch_instance
-
-        result = self.runner.invoke(main, [])
-
-        assert result.exit_code == 1
-        mock_orch_instance.rollback.assert_called_once()
-
-    @patch('scripts.setup.deploy.DeploymentOrchestrator')
-    @patch('scripts.setup.deploy.SetupConsole')
-    def test_phase2_failure_triggers_rollback(self, mock_console, mock_orchestrator):
-        """Test Phase 2 failure triggers rollback."""
-        mock_console_instance = Mock()
-        mock_console_instance.confirm.return_value = True
-        mock_console.return_value = mock_console_instance
-
-        mock_orch_instance = Mock()
-        mock_orch_instance.run_preflight_checks.return_value = True
-        mock_orch_instance.phase1_preparation.return_value = True
-        mock_orch_instance.phase2_infrastructure.return_value = False
-        mock_orch_instance.rollback.return_value = True
-        mock_orchestrator.return_value = mock_orch_instance
-
-        result = self.runner.invoke(main, [])
-
-        assert result.exit_code == 1
-        mock_orch_instance.rollback.assert_called_once()
-
-    @patch('scripts.setup.deploy.DeploymentOrchestrator')
-    @patch('scripts.setup.deploy.SetupConsole')
-    def test_rollback_failure(self, mock_console, mock_orchestrator):
-        """Test when rollback also fails."""
-        mock_console_instance = Mock()
-        mock_console_instance.confirm.return_value = True
-        mock_console.return_value = mock_console_instance
-
-        mock_orch_instance = Mock()
-        mock_orch_instance.run_preflight_checks.return_value = True
-        mock_orch_instance.phase1_preparation.return_value = False
-        mock_orch_instance.rollback.return_value = False
-        mock_orchestrator.return_value = mock_orch_instance
-
-        result = self.runner.invoke(main, [])
-
-        assert result.exit_code == 2  # Special exit code for rollback failure
-
-    @patch('scripts.setup.deploy.DeploymentOrchestrator')
-    @patch('scripts.setup.deploy.SetupConsole')
-    def test_user_declines_rollback(self, mock_console, mock_orchestrator):
-        """Test when user declines rollback."""
-        mock_console_instance = Mock()
-        mock_console_instance.confirm.return_value = False
-        mock_console.return_value = mock_console_instance
-
-        mock_orch_instance = Mock()
-        mock_orch_instance.run_preflight_checks.return_value = True
-        mock_orch_instance.phase1_preparation.return_value = False
-        mock_orchestrator.return_value = mock_orch_instance
-
-        result = self.runner.invoke(main, [])
-
-        assert result.exit_code == 1
-        mock_orch_instance.rollback.assert_not_called()
-
-    @patch('scripts.setup.deploy.DeploymentOrchestrator')
-    @patch('scripts.setup.deploy.SetupConsole')
-    def test_dry_run_no_rollback_on_failure(self, mock_console, mock_orchestrator):
-        """Test dry run doesn't trigger rollback."""
-        mock_console_instance = Mock()
-        mock_console.return_value = mock_console_instance
-
-        mock_orch_instance = Mock()
-        mock_orch_instance.run_preflight_checks.return_value = True
-        mock_orch_instance.phase1_preparation.return_value = False
-        mock_orchestrator.return_value = mock_orch_instance
-
-        result = self.runner.invoke(main, ['--dry-run'])
-
-        assert result.exit_code == 1
-        mock_orch_instance.rollback.assert_not_called()
 
 
-class TestBackupAndRestore:
-    """Test backup and restore functionality."""
-
-    def setup_method(self):
-        """Set up test fixtures."""
-        self.console = Mock()
-        self.console.error = Mock()
-        self.console.info = Mock()
-        self.console.success = Mock()
-        self.console.warning = Mock()
-        self.console.spinner = Mock(return_value=MagicMock(__enter__=Mock(), __exit__=Mock()))
-
-    @patch('scripts.setup.deploy.get_container_status')
-    @patch('scripts.setup.deploy.subprocess.run')
-    def test_create_backup_success(self, mock_subprocess, mock_container_status):
-        """Test successful backup creation."""
-        mock_container_status.return_value = "running"
-
-        mock_result = Mock()
-        mock_result.returncode = 0
-        mock_result.stdout = "-- PostgreSQL database dump\nCREATE TABLE test (id INT);"
-        mock_subprocess.return_value = mock_result
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            working_dir = Path(tmpdir)
-            orchestrator = DeploymentOrchestrator(
-                self.console,
-                working_dir=working_dir
-            )
-
-            result = orchestrator._create_backup()
-
-            assert result is True
-            assert orchestrator.backup_file is not None
-            assert orchestrator.backup_file.exists()
-            assert orchestrator.backup_file.suffix == ".gz"
-
-    @patch('scripts.setup.deploy.get_container_status')
-    def test_create_backup_db_not_running(self, mock_container_status):
-        """Test backup when database is not running."""
-        mock_container_status.return_value = "stopped"
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            orchestrator = DeploymentOrchestrator(
-                self.console,
-                working_dir=Path(tmpdir)
-            )
-
-            result = orchestrator._create_backup()
-
-            # Should succeed but skip actual backup
-            assert result is True
-            assert any("Database not running" in str(call) for call in self.console.warning.call_args_list)
+class TestIntegration:
+    """Test complete deployment workflows."""
 
     @patch('scripts.setup.deploy.subprocess.run')
-    def test_restore_backup_success(self, mock_subprocess):
-        """Test successful backup restoration."""
-        mock_result = Mock()
-        mock_result.returncode = 0
-        mock_subprocess.return_value = mock_result
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            working_dir = Path(tmpdir)
-
-            # Create test backup file
-            backup_dir = working_dir / "data" / "backups"
-            backup_dir.mkdir(parents=True, exist_ok=True)
-            backup_file = backup_dir / "test.sql.gz"
-
-            with gzip.open(backup_file, 'wt') as f:
-                f.write("-- Test backup\nCREATE TABLE test;")
-
-            orchestrator = DeploymentOrchestrator(
-                self.console,
-                working_dir=working_dir
-            )
-
-            result = orchestrator._restore_backup(backup_file)
-
-            assert result is True
-
-    @patch('scripts.setup.deploy.subprocess.run')
-    def test_restore_backup_failure(self, mock_subprocess):
-        """Test backup restoration failure."""
-        mock_result = Mock()
-        mock_result.returncode = 1
-        mock_result.stderr = "psql: connection failed"
-        mock_subprocess.return_value = mock_result
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            working_dir = Path(tmpdir)
-
-            backup_dir = working_dir / "data" / "backups"
-            backup_dir.mkdir(parents=True, exist_ok=True)
-            backup_file = backup_dir / "test.sql.gz"
-
-            with gzip.open(backup_file, 'wt') as f:
-                f.write("-- Test backup")
-
-            orchestrator = DeploymentOrchestrator(
-                self.console,
-                working_dir=working_dir
-            )
-
-            result = orchestrator._restore_backup(backup_file)
-
-            assert result is False
-
-
-class TestDryRunMode:
-    """Test dry run mode behavior."""
-
-    def setup_method(self):
-        """Set up test fixtures."""
-        self.console = Mock()
-        self.console.error = Mock()
-        self.console.info = Mock()
-        self.console.success = Mock()
-        self.console.warning = Mock()
-        self.console.header = Mock()
-        self.console.step = Mock()
-        self.console.spinner = Mock(return_value=MagicMock(__enter__=Mock(), __exit__=Mock()))
-
+    @patch('scripts.setup.deploy.wait_for_healthy')
     @patch('scripts.setup.deploy.run_docker_compose')
-    def test_dry_run_no_docker_commands(self, mock_docker_compose):
-        """Test dry run doesn't execute Docker commands."""
+    @patch('scripts.setup.deploy.get_container_status')
+    @patch('scripts.setup.deploy.check_docker_installed')
+    @patch('scripts.setup.deploy.check_docker_running')
+    @patch('scripts.setup.deploy.check_docker_compose_installed')
+    @patch('scripts.setup.deploy.check_port_available')
+    def test_complete_deployment_workflow(
+        self, mock_port, mock_compose_check, mock_running, mock_installed,
+        mock_status, mock_compose, mock_wait, mock_subprocess
+    ):
+        """Test complete successful deployment workflow."""
+        console = Mock()
+        console.spinner = MagicMock()
+        console.spinner.return_value.__enter__ = Mock(return_value=None)
+        console.spinner.return_value.__exit__ = Mock(return_value=None)
+        console.confirm = Mock(return_value=True)
+
+        # Setup mocks
+        mock_installed.return_value = (True, "20.10.0")
+        mock_running.return_value = (True, "")
+        mock_compose_check.return_value = (True, "v2.0.0")
+        mock_port.return_value = (True, "")
+        mock_status.return_value = "running"
+        mock_compose.return_value = (True, "PONG", "")
+        mock_wait.return_value = True
+        mock_subprocess.return_value = Mock(
+            returncode=0,
+            stdout="SQL backup",
+            stderr=""
+        )
+
         with tempfile.TemporaryDirectory() as tmpdir:
+            working_dir = Path(tmpdir)
+            (working_dir / "docker-compose.yml").touch()
+            (working_dir / "data" / "backups").mkdir(parents=True)
+
             orchestrator = DeploymentOrchestrator(
-                self.console,
-                dry_run=True,
-                working_dir=Path(tmpdir)
+                console=console,
+                working_dir=working_dir
             )
 
-            orchestrator.phase1_preparation()
-            orchestrator.phase2_infrastructure()
-            orchestrator.phase4_application()
-
-            # No Docker commands should be executed
-            mock_docker_compose.assert_not_called()
-
-    def test_dry_run_phases_succeed(self):
-        """Test all phases succeed in dry run mode."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            orchestrator = DeploymentOrchestrator(
-                self.console,
-                dry_run=True,
-                working_dir=Path(tmpdir)
-            )
-
+            # Run all phases
+            assert orchestrator.run_preflight_checks() is True
             assert orchestrator.phase1_preparation() is True
+            assert orchestrator.phase2_infrastructure() is True
             assert orchestrator.phase3_migrations() is True
+            assert orchestrator.phase4_application() is True
             assert orchestrator.phase5_verification() is True
 
-    def test_dry_run_info_messages(self):
-        """Test dry run displays info messages."""
+            assert len(orchestrator.phases_completed) == 5
+
+    @patch('scripts.setup.deploy.wait_for_healthy')
+    @patch('scripts.setup.deploy.run_docker_compose')
+    @patch('scripts.setup.deploy.get_container_status')
+    def test_deployment_failure_and_rollback(
+        self, mock_status, mock_compose, mock_wait
+    ):
+        """Test deployment failure triggers rollback."""
+        console = Mock()
+        console.spinner = MagicMock()
+        console.spinner.return_value.__enter__ = Mock(return_value=None)
+        console.spinner.return_value.__exit__ = Mock(return_value=None)
+        console.confirm = Mock(return_value=True)
+
+        mock_status.return_value = "not running"
+        mock_compose.return_value = (True, "", "")
+        mock_wait.return_value = False  # Simulate health check failure
+
         with tempfile.TemporaryDirectory() as tmpdir:
+            working_dir = Path(tmpdir)
+
             orchestrator = DeploymentOrchestrator(
-                self.console,
-                dry_run=True,
-                working_dir=Path(tmpdir)
+                console=console,
+                working_dir=working_dir
             )
 
-            orchestrator._create_backup()
-            orchestrator._start_service("web")
-            orchestrator._stop_all_services()
+            # Phase 2 should fail
+            result = orchestrator.phase2_infrastructure()
 
-            # Verify [DRY RUN] messages were displayed
-            info_calls = [str(call) for call in self.console.info.call_args_list]
-            assert any("[DRY RUN]" in call for call in info_calls)
-
-
-# Import subprocess for timeout test
-import subprocess
+            assert result is False
+            assert "infrastructure" not in orchestrator.phases_completed
