@@ -29,6 +29,7 @@ import subprocess
 from pathlib import Path
 from typing import Tuple, Optional, Dict, List
 from datetime import datetime
+from urllib.parse import urlparse
 
 # Add parent directory to path for imports
 script_dir = Path(__file__).resolve().parent
@@ -47,6 +48,68 @@ from scripts.setup.utils.docker_utils import (
     get_container_status,
     get_container_logs,
 )
+
+
+def parse_database_url(working_dir: Path) -> Dict[str, str]:
+    """
+    Parse DATABASE_URL from .env file to extract connection credentials.
+
+    Supports both PostgreSQL and SQLite URLs:
+    - postgresql://user:password@host:port/database
+    - sqlite:///./path/to/database.db
+
+    Args:
+        working_dir: Project root directory to find .env file
+
+    Returns:
+        Dictionary with parsed credentials:
+        {
+            'user': database user (PostgreSQL only),
+            'password': database password (PostgreSQL only),
+            'host': database host (PostgreSQL only),
+            'port': database port (PostgreSQL only, default 5432),
+            'database': database name,
+            'type': 'postgresql' or 'sqlite'
+        }
+
+    Raises:
+        ValueError: If DATABASE_URL is not found or malformed
+    """
+    env_file = working_dir / ".env"
+
+    if not env_file.exists():
+        raise ValueError(f".env file not found at {env_file}")
+
+    database_url = None
+    with open(env_file, 'r') as f:
+        for line in f:
+            line = line.strip()
+            if line.startswith("DATABASE_URL="):
+                database_url = line.split("=", 1)[1]
+                break
+
+    if not database_url:
+        raise ValueError("DATABASE_URL not found in .env file")
+
+    # Parse the URL
+    parsed = urlparse(database_url)
+
+    if parsed.scheme == "postgresql":
+        return {
+            'user': parsed.username or 'promptvault',
+            'password': parsed.password or '',
+            'host': parsed.hostname or 'localhost',
+            'port': str(parsed.port or 5432),
+            'database': parsed.path.lstrip('/') or 'promptvault',
+            'type': 'postgresql'
+        }
+    elif parsed.scheme == "sqlite":
+        return {
+            'database': database_url,
+            'type': 'sqlite'
+        }
+    else:
+        raise ValueError(f"Unsupported database URL scheme: {parsed.scheme}")
 
 
 class DeploymentOrchestrator:
@@ -82,6 +145,23 @@ class DeploymentOrchestrator:
         self.deployment_start_time: Optional[datetime] = None
         self.phases_completed: List[str] = []
 
+        # Database credentials (parsed from DATABASE_URL)
+        self.db_credentials: Dict[str, str] = {}
+
+    def _load_database_credentials(self) -> bool:
+        """
+        Load database credentials from DATABASE_URL in .env file.
+
+        Returns:
+            True if credentials loaded successfully, False otherwise
+        """
+        try:
+            self.db_credentials = parse_database_url(self.working_dir)
+            return True
+        except ValueError as e:
+            self.console.error(f"Failed to parse database credentials: {str(e)}")
+            return False
+
     def run_preflight_checks(self) -> bool:
         """
         Run all pre-flight checks before deployment.
@@ -102,6 +182,10 @@ class DeploymentOrchestrator:
             "Pre-flight Checks",
             "Verifying system requirements before deployment"
         )
+
+        # Load database credentials early
+        if not self._load_database_credentials():
+            return False
 
         checks_passed = 0
         checks_failed = 0
@@ -334,9 +418,17 @@ class DeploymentOrchestrator:
 
             # Run migrations using docker-compose exec
             with self.console.spinner("Applying database migrations"):
+                # Build psql command with dynamic credentials
+                psql_cmd = [
+                    "-T", "db", "psql",
+                    "-U", self.db_credentials['user'],
+                    "-d", self.db_credentials['database'],
+                    "-c", "SELECT 1"
+                ]
+
                 success, stdout, stderr = run_docker_compose(
                     "exec",
-                    ["-T", "db", "psql", "-U", "promptvault", "-d", "promptvault", "-c", "SELECT 1"],
+                    psql_cmd,
                     working_dir=str(self.working_dir)
                 )
 
@@ -538,25 +630,27 @@ class DeploymentOrchestrator:
 
             # Create backup using docker-compose exec
             with self.console.spinner("Creating database backup"):
-                result = subprocess.run(
-                    [
-                        "docker-compose", "exec", "-T", "db",
-                        "pg_dump", "-U", "promptvault", "-d", "promptvault"
-                    ],
-                    cwd=str(self.working_dir),
-                    capture_output=True,
-                    text=True,
-                    timeout=300
+                # Build pg_dump command with dynamic credentials
+                pg_dump_cmd = [
+                    "-T", "db",
+                    "pg_dump", "-U", self.db_credentials['user'],
+                    "-d", self.db_credentials['database']
+                ]
+
+                success, stdout, stderr = run_docker_compose(
+                    "exec",
+                    pg_dump_cmd,
+                    working_dir=str(self.working_dir)
                 )
 
-                if result.returncode != 0:
-                    self.console.error(f"Backup failed: {result.stderr}")
+                if not success:
+                    self.console.error(f"Backup failed: {stderr}")
                     return False
 
                 # Compress and save
                 import gzip
                 with gzip.open(backup_file, 'wt') as f:
-                    f.write(result.stdout)
+                    f.write(stdout)
 
             # Verify backup
             if not backup_file.exists() or backup_file.stat().st_size == 0:
@@ -703,11 +797,48 @@ class DeploymentOrchestrator:
 
             # Restore using psql
             with self.console.spinner("Restoring database"):
+                # Determine which Docker Compose command to use (v1 or v2)
+                # This mirrors the logic in run_docker_compose helper
+                compose_cmd = None
+
+                try:
+                    result = subprocess.run(
+                        ["docker", "compose", "version"],
+                        capture_output=True,
+                        text=True,
+                        timeout=5
+                    )
+                    if result.returncode == 0:
+                        compose_cmd = ["docker", "compose"]
+                except Exception:
+                    pass
+
+                if compose_cmd is None:
+                    try:
+                        result = subprocess.run(
+                            ["docker-compose", "--version"],
+                            capture_output=True,
+                            text=True,
+                            timeout=5
+                        )
+                        if result.returncode == 0:
+                            compose_cmd = ["docker-compose"]
+                    except Exception:
+                        pass
+
+                if compose_cmd is None:
+                    self.console.error("Docker Compose is not available")
+                    return False
+
+                # Build psql command with dynamic credentials
+                psql_cmd = compose_cmd + [
+                    "exec", "-T", "db",
+                    "psql", "-U", self.db_credentials['user'],
+                    "-d", self.db_credentials['database']
+                ]
+
                 result = subprocess.run(
-                    [
-                        "docker-compose", "exec", "-T", "db",
-                        "psql", "-U", "promptvault", "-d", "promptvault"
-                    ],
+                    psql_cmd,
                     cwd=str(self.working_dir),
                     input=sql_content,
                     capture_output=True,
@@ -776,9 +907,17 @@ class DeploymentOrchestrator:
 
         # Test 2: Database connectivity
         try:
+            # Build psql command with dynamic credentials
+            psql_cmd = [
+                "-T", "db", "psql",
+                "-U", self.db_credentials['user'],
+                "-d", self.db_credentials['database'],
+                "-c", "SELECT COUNT(*) FROM prompts;"
+            ]
+
             success, stdout, stderr = run_docker_compose(
                 "exec",
-                ["-T", "db", "psql", "-U", "promptvault", "-d", "promptvault", "-c", "SELECT COUNT(*) FROM prompts;"],
+                psql_cmd,
                 working_dir=str(self.working_dir)
             )
 

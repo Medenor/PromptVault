@@ -442,13 +442,13 @@ class TestWaitForHealthy:
 
         assert result is False
 
+    @patch('scripts.setup.utils.docker_utils.get_container_health_status')
     @patch('scripts.setup.utils.docker_utils.get_container_status')
-    @patch('scripts.setup.utils.docker_utils.run_docker_compose')
     @patch('scripts.setup.utils.docker_utils.time.sleep')
-    def test_wait_for_healthy_becomes_unhealthy(self, mock_sleep, mock_compose, mock_status):
+    def test_wait_for_healthy_becomes_unhealthy(self, mock_sleep, mock_status, mock_health):
         """Test waiting for container that becomes unhealthy."""
         mock_status.return_value = "running"
-        mock_compose.return_value = (True, '{"Health": "unhealthy"}', "")
+        mock_health.return_value = "unhealthy"
 
         result = wait_for_healthy("db", timeout=2, poll_interval=1)
 

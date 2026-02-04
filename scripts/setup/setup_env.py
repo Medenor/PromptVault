@@ -32,6 +32,7 @@ import secrets
 import string
 from pathlib import Path
 from typing import Dict, Optional, List, Tuple
+from urllib.parse import quote_plus
 
 import click
 
@@ -190,7 +191,7 @@ class EnvConfigurator:
             else:
                 db_password = self.console.prompt("Database password", password=True)
 
-            config['DATABASE_URL'] = f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
+            config['DATABASE_URL'] = f"postgresql://{db_user}:{quote_plus(db_password)}@{db_host}:{db_port}/{db_name}"
 
             # PostgreSQL pool settings
             config['DB_POOL_SIZE'] = self.console.prompt("Connection pool size", default="20")

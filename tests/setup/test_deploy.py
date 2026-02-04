@@ -111,6 +111,10 @@ class TestPreflightChecks:
             (working_dir / "secrets" / "jwt" / "public_key.pem").write_text(
                 "-----BEGIN PUBLIC KEY-----\n" + "A" * 200 + "\n-----END PUBLIC KEY-----"
             )
+            # Create .env file with DATABASE_URL (required by preflight checks)
+            (working_dir / ".env").write_text(
+                "DATABASE_URL=postgresql://promptvault:testpass@localhost:5432/promptvault\n"
+            )
 
             orchestrator = DeploymentOrchestrator(
                 console=console,
@@ -210,6 +214,10 @@ class TestPreflightChecks:
             (working_dir / "secrets" / "jwt" / "public_key.pem").write_text(
                 "-----BEGIN PUBLIC KEY-----\n" + "A" * 200 + "\n-----END PUBLIC KEY-----"
             )
+            # Create .env file with DATABASE_URL (required by preflight checks)
+            (working_dir / ".env").write_text(
+                "DATABASE_URL=postgresql://promptvault:testpass@localhost:5432/promptvault\n"
+            )
 
             orchestrator = DeploymentOrchestrator(
                 console=console,
@@ -248,11 +256,17 @@ class TestPhase1Preparation:
         with tempfile.TemporaryDirectory() as tmpdir:
             working_dir = Path(tmpdir)
             (working_dir / "data" / "backups").mkdir(parents=True)
+            # Create .env file with DATABASE_URL (required for backup operations)
+            (working_dir / ".env").write_text(
+                "DATABASE_URL=postgresql://promptvault:testpass@localhost:5432/promptvault\n"
+            )
 
             orchestrator = DeploymentOrchestrator(
                 console=console,
                 working_dir=working_dir
             )
+            # Load database credentials (normally done in preflight checks)
+            orchestrator._load_database_credentials()
 
             result = orchestrator.phase1_preparation()
 
@@ -435,11 +449,17 @@ class TestPhase3Migrations:
 
         with tempfile.TemporaryDirectory() as tmpdir:
             working_dir = Path(tmpdir)
+            # Create .env file with DATABASE_URL (required for migrations)
+            (working_dir / ".env").write_text(
+                "DATABASE_URL=postgresql://promptvault:testpass@localhost:5432/promptvault\n"
+            )
 
             orchestrator = DeploymentOrchestrator(
                 console=console,
                 working_dir=working_dir
             )
+            # Load database credentials (normally done in preflight checks)
+            orchestrator._load_database_credentials()
 
             result = orchestrator.phase3_migrations()
 
@@ -645,6 +665,10 @@ class TestRollback:
             backup_dir = working_dir / "data" / "backups"
             backup_dir.mkdir(parents=True)
             backup_file = backup_dir / "test-backup.sql.gz"
+            # Create .env file with DATABASE_URL (required for rollback)
+            (working_dir / ".env").write_text(
+                "DATABASE_URL=postgresql://promptvault:testpass@localhost:5432/promptvault\n"
+            )
 
             # Create a dummy backup file
             import gzip
@@ -655,6 +679,8 @@ class TestRollback:
                 console=console,
                 working_dir=working_dir
             )
+            # Load database credentials (normally done in preflight checks)
+            orchestrator._load_database_credentials()
             orchestrator.backup_file = backup_file
 
             result = orchestrator.rollback()
@@ -989,6 +1015,17 @@ class TestIntegration:
             working_dir = Path(tmpdir)
             (working_dir / "docker-compose.yml").touch()
             (working_dir / "data" / "backups").mkdir(parents=True)
+            (working_dir / "secrets" / "jwt").mkdir(parents=True)
+            (working_dir / "secrets" / "jwt" / "private_key.pem").write_text(
+                "-----BEGIN PRIVATE KEY-----\n" + "A" * 200 + "\n-----END PRIVATE KEY-----"
+            )
+            (working_dir / "secrets" / "jwt" / "public_key.pem").write_text(
+                "-----BEGIN PUBLIC KEY-----\n" + "A" * 200 + "\n-----END PUBLIC KEY-----"
+            )
+            # Create .env file with DATABASE_URL (required by preflight checks)
+            (working_dir / ".env").write_text(
+                "DATABASE_URL=postgresql://promptvault:testpass@localhost:5432/promptvault\n"
+            )
 
             orchestrator = DeploymentOrchestrator(
                 console=console,
@@ -1352,6 +1389,10 @@ class TestManualRollback:
             backup_dir = working_dir / "data" / "backups"
             backup_dir.mkdir(parents=True)
             backup_file = backup_dir / "test-backup.sql.gz"
+            # Create .env file with DATABASE_URL (required for rollback)
+            (working_dir / ".env").write_text(
+                "DATABASE_URL=postgresql://promptvault:testpass@localhost:5432/promptvault\n"
+            )
 
             # Create a dummy backup file
             import gzip
@@ -1362,6 +1403,8 @@ class TestManualRollback:
                 console=console,
                 working_dir=working_dir
             )
+            # Load database credentials (normally done in preflight checks)
+            orchestrator._load_database_credentials()
             orchestrator.backup_file = backup_file
 
             result = orchestrator.rollback()
@@ -1389,6 +1432,10 @@ class TestManualRollback:
             backup_dir = working_dir / "data" / "backups"
             backup_dir.mkdir(parents=True)
             backup_file = backup_dir / "test-backup.sql.gz"
+            # Create .env file with DATABASE_URL (required for rollback)
+            (working_dir / ".env").write_text(
+                "DATABASE_URL=postgresql://promptvault:testpass@localhost:5432/promptvault\n"
+            )
 
             # Create a dummy backup file with SQL content
             import gzip
@@ -1400,6 +1447,8 @@ class TestManualRollback:
                 console=console,
                 working_dir=working_dir
             )
+            # Load database credentials (normally done in preflight checks)
+            orchestrator._load_database_credentials()
             orchestrator.backup_file = backup_file
 
             result = orchestrator.rollback()
@@ -1493,6 +1542,10 @@ class TestManualRollback:
             backup_dir = working_dir / "data" / "backups"
             backup_dir.mkdir(parents=True)
             backup_file = backup_dir / "test-backup.sql.gz"
+            # Create .env file with DATABASE_URL (required for rollback)
+            (working_dir / ".env").write_text(
+                "DATABASE_URL=postgresql://promptvault:testpass@localhost:5432/promptvault\n"
+            )
 
             # Create a dummy backup file
             import gzip
@@ -1503,6 +1556,8 @@ class TestManualRollback:
                 console=console,
                 working_dir=working_dir
             )
+            # Load database credentials (normally done in preflight checks)
+            orchestrator._load_database_credentials()
             orchestrator.backup_file = backup_file
 
             with patch('scripts.setup.deploy.subprocess.run') as mock_subprocess:
@@ -1531,6 +1586,10 @@ class TestManualRollback:
             backup_dir = working_dir / "data" / "backups"
             backup_dir.mkdir(parents=True)
             backup_file = backup_dir / "test-backup.sql.gz"
+            # Create .env file with DATABASE_URL (required for rollback)
+            (working_dir / ".env").write_text(
+                "DATABASE_URL=postgresql://promptvault:testpass@localhost:5432/promptvault\n"
+            )
 
             # Create a dummy backup file
             import gzip
@@ -1541,6 +1600,8 @@ class TestManualRollback:
                 console=console,
                 working_dir=working_dir
             )
+            # Load database credentials (normally done in preflight checks)
+            orchestrator._load_database_credentials()
             orchestrator.backup_file = backup_file
 
             with patch('scripts.setup.deploy.subprocess.run') as mock_subprocess:

@@ -40,13 +40,14 @@ Usage Example:
         print("Database failed to become healthy")
 """
 
+import json
 import socket
 import subprocess
 import time
-from typing import Tuple
+from typing import List, Optional, Tuple
 
 
-def check_docker_installed() -> Tuple[bool, str | None]:
+def check_docker_installed() -> Tuple[bool, Optional[str]]:
     """
     Verify Docker is installed.
 
@@ -85,7 +86,7 @@ def check_docker_installed() -> Tuple[bool, str | None]:
         return False, f"Error checking Docker installation: {str(e)}"
 
 
-def check_docker_running() -> Tuple[bool, str | None]:
+def check_docker_running() -> Tuple[bool, Optional[str]]:
     """
     Verify Docker daemon is running.
 
@@ -126,7 +127,7 @@ def check_docker_running() -> Tuple[bool, str | None]:
         return False, f"Error checking Docker daemon: {str(e)}"
 
 
-def check_docker_compose_installed() -> Tuple[bool, str | None]:
+def check_docker_compose_installed() -> Tuple[bool, Optional[str]]:
     """
     Verify Docker Compose is installed.
 
@@ -180,7 +181,7 @@ def check_docker_compose_installed() -> Tuple[bool, str | None]:
     return False, "Docker Compose is not installed (tried both 'docker compose' and 'docker-compose')"
 
 
-def check_port_available(port: int) -> Tuple[bool, str | None]:
+def check_port_available(port: int) -> Tuple[bool, Optional[str]]:
     """
     Check if a port is available for binding.
 
@@ -229,9 +230,9 @@ def check_port_available(port: int) -> Tuple[bool, str | None]:
 
 def run_docker_compose(
     command: str,
-    args: list[str] | None = None,
+    args: Optional[List[str]] = None,
     capture_output: bool = True,
-    working_dir: str | None = None
+    working_dir: Optional[str] = None
 ) -> Tuple[bool, str, str]:
     """
     Execute docker-compose commands.
@@ -323,7 +324,181 @@ def run_docker_compose(
         return False, "", f"Error running Docker Compose command: {str(e)}"
 
 
-def get_container_status(service_name: str, working_dir: str | None = None) -> str | None:
+def get_docker_compose_version() -> Tuple[int, int]:
+    """
+    Get the Docker Compose version (major, minor).
+
+    Returns:
+        Tuple of (major, minor) version numbers
+        - (2, 0) for v2+
+        - (1, 0) for v1
+        - (0, 0) if version cannot be determined
+
+    Examples:
+        >>> get_docker_compose_version()
+        (2, 21)
+        >>> get_docker_compose_version()
+        (1, 29)
+    """
+    # Try docker compose (v2 - plugin)
+    try:
+        result = subprocess.run(
+            ["docker", "compose", "version"],
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+        if result.returncode == 0:
+            version_str = result.stdout.strip()
+            # Parse version like "Docker Compose version v2.21.0" or "Docker Compose version 1.29.2"
+            parts = version_str.split()
+            for part in parts:
+                if part.startswith('v'):
+                    # Remove 'v' prefix and parse major.minor
+                    version_num = part[1:].split('.')
+                    if len(version_num) >= 2:
+                        try:
+                            return int(version_num[0]), int(version_num[1])
+                        except ValueError:
+                            pass
+    except Exception:
+        pass
+
+    # Try docker-compose (v1 - standalone)
+    try:
+        result = subprocess.run(
+            ["docker-compose", "--version"],
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+        if result.returncode == 0:
+            version_str = result.stdout.strip()
+            # Parse version like "docker-compose version 1.29.2, build 5becea4c"
+            parts = version_str.split()
+            for i, part in enumerate(parts):
+                if part == "version" and i + 1 < len(parts):
+                    version_num = parts[i + 1].split('.')
+                    if len(version_num) >= 2:
+                        try:
+                            return int(version_num[0]), int(version_num[1])
+                        except ValueError:
+                            pass
+    except Exception:
+        pass
+
+    return 0, 0
+
+
+def get_container_health_status(service_name: str, working_dir: Optional[str] = None) -> Optional[str]:
+    """
+    Get the health status of a Docker Compose service container.
+
+    Detects Docker Compose version and uses appropriate method:
+    - v2+: Uses 'docker compose ps --format json' for JSON output
+    - v1: Uses 'docker inspect' to get health status from container
+
+    Args:
+        service_name: Name of the service to check
+        working_dir: Working directory containing docker-compose.yml
+
+    Returns:
+        Health status string ("healthy", "unhealthy", "starting") or None if cannot determine
+
+    Examples:
+        >>> get_container_health_status("db")
+        "healthy"
+        >>> get_container_health_status("db")
+        "starting"
+    """
+    if not service_name:
+        return None
+
+    major, minor = get_docker_compose_version()
+
+    # For Docker Compose v2+, try using --format json
+    if major >= 2:
+        success, stdout, stderr = run_docker_compose(
+            "ps",
+            ["--format", "json", service_name],
+            capture_output=True,
+            working_dir=working_dir
+        )
+
+        if success and stdout:
+            try:
+                # Parse JSON output
+                containers = json.loads(stdout)
+                if isinstance(containers, list) and len(containers) > 0:
+                    container = containers[0]
+                    health = container.get("Health", "").lower()
+                    if "unhealthy" in health:
+                        return "unhealthy"
+                    elif "healthy" in health:
+                        return "healthy"
+                    elif "starting" in health:
+                        return "starting"
+            except (json.JSONDecodeError, KeyError, IndexError, TypeError):
+                pass
+
+    # For Docker Compose v1 or if v2 JSON format fails, use docker inspect
+    try:
+        # Get container name by running ps and parsing output
+        success, stdout, stderr = run_docker_compose(
+            "ps",
+            ["-a", service_name],
+            capture_output=True,
+            working_dir=working_dir
+        )
+
+        if success and stdout:
+            # Parse text output to find container ID or name
+            lines = stdout.strip().split('\n')
+
+            # Skip header lines
+            for line in lines:
+                if service_name in line and line.strip():
+                    # Extract container name or ID from the line
+                    parts = line.split()
+                    if len(parts) > 0:
+                        # The first column is typically the container name
+                        container_name_or_id = parts[0]
+
+                        # Use docker inspect to get health status
+                        try:
+                            inspect_result = subprocess.run(
+                                ["docker", "inspect", container_name_or_id],
+                                capture_output=True,
+                                text=True,
+                                timeout=10
+                            )
+
+                            if inspect_result.returncode == 0:
+                                try:
+                                    container_info = json.loads(inspect_result.stdout)
+                                    if isinstance(container_info, list) and len(container_info) > 0:
+                                        state = container_info[0].get("State", {})
+                                        health = state.get("Health", {})
+                                        status = health.get("Status", "").lower()
+
+                                        if status in ["healthy", "unhealthy", "starting"]:
+                                            return status
+                                except (json.JSONDecodeError, KeyError, TypeError):
+                                    pass
+                        except Exception:
+                            pass
+
+                        # If we found the container but couldn't get health status,
+                        # assume it's starting or doesn't have health check
+                        return "starting"
+
+    except Exception:
+        pass
+
+    return None
+
+
+def get_container_status(service_name: str, working_dir: Optional[str] = None) -> Optional[str]:
     """
     Get the status of a Docker Compose service container.
 
@@ -390,13 +565,14 @@ def get_container_status(service_name: str, working_dir: str | None = None) -> s
 def wait_for_healthy(
     service_name: str,
     timeout: int = 120,
-    working_dir: str | None = None,
+    working_dir: Optional[str] = None,
     poll_interval: int = 2
 ) -> bool:
     """
     Wait for a Docker Compose service to become healthy.
 
     Polls the container's health status until it becomes "healthy" or timeout occurs.
+    Works with both Docker Compose v1 and v2 by auto-detecting version.
     Requires the service to have a HEALTHCHECK defined in docker-compose.yml.
 
     Args:
@@ -436,31 +612,24 @@ def wait_for_healthy(
             time.sleep(poll_interval)
             continue
 
-        # Container is running, check health status
+        # Container is running, check health status using version-aware method
         try:
-            # Get detailed container info using docker inspect
-            success, stdout, stderr = run_docker_compose(
-                "ps",
-                ["--format", "json", service_name],
-                capture_output=True,
-                working_dir=working_dir
-            )
+            health_status = get_container_health_status(service_name, working_dir)
 
-            if success and stdout:
-                # Check if health status is present
-                output_lower = stdout.lower()
-                # Check for unhealthy first (before healthy) since "healthy" is a substring of "unhealthy"
-                if "unhealthy" in output_lower:
-                    # Container is unhealthy, return False
-                    return False
-                elif "healthy" in output_lower:
-                    return True
-                else:
-                    # No health check defined, just check if running
-                    # If container is running without health check, consider it healthy
-                    return True
-
-            time.sleep(poll_interval)
+            if health_status == "unhealthy":
+                # Container is explicitly unhealthy
+                return False
+            elif health_status == "healthy":
+                # Container is healthy
+                return True
+            elif health_status == "starting":
+                # Container is still starting up
+                time.sleep(poll_interval)
+                continue
+            else:
+                # No health status available (no HEALTHCHECK defined)
+                # If container is running without health check, consider it healthy
+                return True
 
         except Exception:
             time.sleep(poll_interval)
@@ -473,7 +642,7 @@ def wait_for_healthy(
 def get_container_logs(
     service_name: str,
     tail: int = 50,
-    working_dir: str | None = None
+    working_dir: Optional[str] = None
 ) -> str:
     """
     Get logs from a Docker Compose service container.
