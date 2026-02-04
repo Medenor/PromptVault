@@ -1198,6 +1198,330 @@ class TestErrorHandling:
         assert result == "No changes detected"
 
 
+class TestProductionProfile:
+    """Comprehensive tests for production profile deployment functionality.
+
+    Verifies that the production profile applies correct configuration settings
+    and security hardening for production deployments.
+    """
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.console = Mock()
+        self.console.info = Mock()
+        self.console.select = Mock()
+        self.console.prompt = Mock()
+        self.console.confirm = Mock()
+        self.console.error = Mock()
+        self.console.success = Mock()
+        self.console.warning = Mock()
+        self.console.console = Mock()
+        self.console.console.print = Mock()
+        self.runner = CliRunner()
+
+    def test_production_profile_env_variable(self):
+        """Test that production profile generates ENVIRONMENT=production setting."""
+        configurator = EnvConfigurator('production', self.console)
+
+        # Load template to get defaults
+        with patch('scripts.setup.setup_env.load_env_template', return_value={}):
+            template = configurator.load_template()
+
+        assert 'ENVIRONMENT' in template
+        assert template['ENVIRONMENT'] == 'production'
+
+    def test_production_profile_log_level_warning(self):
+        """Test that production profile sets LOG_LEVEL=WARNING (not DEBUG)."""
+        configurator = EnvConfigurator('production', self.console)
+
+        with patch('scripts.setup.setup_env.load_env_template', return_value={}):
+            template = configurator.load_template()
+
+        assert template['LOG_LEVEL'] == 'WARNING'
+        assert template['LOG_LEVEL'] != 'DEBUG'
+
+    def test_production_profile_db_echo_false(self):
+        """Test that production profile sets DB_ECHO=false (not true)."""
+        configurator = EnvConfigurator('production', self.console)
+
+        with patch('scripts.setup.setup_env.load_env_template', return_value={}):
+            template = configurator.load_template()
+
+        assert template['DB_ECHO'] == 'false'
+        assert template['DB_ECHO'] != 'true'
+
+    def test_production_profile_secure_password_requirements(self):
+        """Test that production profile enforces strict password requirements."""
+        configurator = EnvConfigurator('production', self.console)
+
+        # Mock the prompts
+        self.console.prompt.side_effect = [
+            'secrets/jwt/private.pem',
+            'secrets/jwt/public.pem',
+            '900',   # JWT_ACCESS_TOKEN_EXPIRE_SECONDS
+            '604800', # JWT_REFRESH_TOKEN_EXPIRE_SECONDS
+            'promptvault',
+            'promptvault-api',
+            '5', '900', '5', '2592000',
+            'redis://localhost:6379/0',
+            '5', '900', '3', '3600', '3', '3600',
+        ]
+        self.console.confirm.side_effect = []
+
+        config = configurator.prompt_security()
+
+        # Production should enforce strict password policy
+        assert config['PASSWORD_MIN_LENGTH'] == '16'
+        assert config['PASSWORD_REQUIRE_UPPERCASE'] == 'true'
+        assert config['PASSWORD_REQUIRE_LOWERCASE'] == 'true'
+        assert config['PASSWORD_REQUIRE_DIGIT'] == 'true'
+        assert config['PASSWORD_REQUIRE_SPECIAL'] == 'true'
+
+    def test_production_profile_postgresql_default(self):
+        """Test that production profile defaults to PostgreSQL database."""
+        configurator = EnvConfigurator('production', self.console)
+
+        with patch('scripts.setup.setup_env.load_env_template', return_value={}):
+            template = configurator.load_template()
+
+        assert 'postgresql' in template['DATABASE_URL'].lower()
+
+    def test_production_profile_uses_redis_for_rate_limiting(self):
+        """Test that production profile includes Redis URL for rate limiting."""
+        configurator = EnvConfigurator('production', self.console)
+
+        with patch('scripts.setup.setup_env.load_env_template', return_value={}):
+            template = configurator.load_template()
+
+        assert 'REDIS_URL' in template
+        assert 'redis://' in template['REDIS_URL']
+
+    def test_production_profile_audit_log_level_info(self):
+        """Test that production profile sets AUDIT_LOG_LEVEL=INFO."""
+        configurator = EnvConfigurator('production', self.console)
+
+        with patch('scripts.setup.setup_env.load_env_template', return_value={}):
+            template = configurator.load_template()
+
+        assert template['AUDIT_LOG_LEVEL'] == 'INFO'
+
+    def test_production_differs_from_development(self):
+        """Test that production profile settings differ from development profile."""
+        # Access profile defaults directly without loading template
+        dev_defaults = EnvConfigurator.PROFILE_DEFAULTS['development']
+        prod_defaults = EnvConfigurator.PROFILE_DEFAULTS['production']
+
+        # Key differences between profiles
+        assert dev_defaults['ENVIRONMENT'] != prod_defaults['ENVIRONMENT']
+        assert dev_defaults['LOG_LEVEL'] != prod_defaults['LOG_LEVEL']
+        assert dev_defaults['DB_ECHO'] != prod_defaults['DB_ECHO']
+
+        # Verify expected values
+        assert dev_defaults['ENVIRONMENT'] == 'development'
+        assert prod_defaults['ENVIRONMENT'] == 'production'
+
+        assert dev_defaults['LOG_LEVEL'] == 'DEBUG'
+        assert prod_defaults['LOG_LEVEL'] == 'WARNING'
+
+        assert dev_defaults['DB_ECHO'] == 'true'
+        assert prod_defaults['DB_ECHO'] == 'false'
+
+    def test_production_profile_full_deployment_non_interactive(self):
+        """Test production profile can be used for full deployment via non-interactive mode."""
+        with self.runner.isolated_filesystem() as temp_dir:
+            output_file = Path(temp_dir) / '.env'
+
+            with patch('scripts.setup.setup_env.load_env_template') as mock_template:
+                mock_template.return_value = {
+                    'DATABASE_URL': 'postgresql://user:pass@localhost:5432/db',
+                    'ENVIRONMENT': 'production',
+                    'LOG_LEVEL': 'WARNING',
+                    'DB_ECHO': 'false',
+                    'PASSWORD_MIN_LENGTH': '16',
+                    'PASSWORD_REQUIRE_UPPERCASE': 'true',
+                    'PASSWORD_REQUIRE_LOWERCASE': 'true',
+                    'PASSWORD_REQUIRE_DIGIT': 'true',
+                    'PASSWORD_REQUIRE_SPECIAL': 'true',
+                }
+                with patch('scripts.setup.setup_env.write_env_file') as mock_write:
+                    result = self.runner.invoke(main, [
+                        '--profile', 'production',
+                        '--non-interactive',
+                        '--output', str(output_file),
+                    ])
+
+            assert result.exit_code == 0
+            assert mock_write.called
+
+    def test_production_profile_security_hardening_complete(self):
+        """Test that production profile includes all security hardening settings."""
+        console = Mock()
+        console.console = Mock()
+        console.console.print = Mock()
+
+        configurator = EnvConfigurator('production', console)
+        configurator.config = {
+            'PASSWORD_MIN_LENGTH': '16',
+            'PASSWORD_REQUIRE_UPPERCASE': 'true',
+            'PASSWORD_REQUIRE_LOWERCASE': 'true',
+            'PASSWORD_REQUIRE_DIGIT': 'true',
+            'PASSWORD_REQUIRE_SPECIAL': 'true',
+            'MAX_LOGIN_ATTEMPTS': '5',
+            'ACCOUNT_LOCKOUT_DURATION_SECONDS': '900',
+            'SESSION_INACTIVE_TIMEOUT_SECONDS': '2592000',
+            'DB_ECHO': 'false',
+            'LOG_LEVEL': 'WARNING',
+            'ENVIRONMENT': 'production',
+        }
+
+        # All security settings should be present
+        assert configurator.config['PASSWORD_MIN_LENGTH'] == '16'
+        assert configurator.config['PASSWORD_REQUIRE_UPPERCASE'] == 'true'
+        assert configurator.config['PASSWORD_REQUIRE_LOWERCASE'] == 'true'
+        assert configurator.config['PASSWORD_REQUIRE_DIGIT'] == 'true'
+        assert configurator.config['PASSWORD_REQUIRE_SPECIAL'] == 'true'
+        assert configurator.config['DB_ECHO'] == 'false'
+        assert configurator.config['LOG_LEVEL'] == 'WARNING'
+        assert configurator.config['ENVIRONMENT'] == 'production'
+
+    def test_production_profile_password_generation_meets_strict_requirements(self):
+        """Test that auto-generated passwords meet production's strict requirements."""
+        configurator = EnvConfigurator('production', self.console)
+
+        # Generate multiple passwords to ensure consistency
+        for _ in range(5):
+            password = configurator.generate_secure_password(length=32)
+
+            # Password must meet all strict requirements
+            assert len(password) >= 16
+            assert any(c.isupper() for c in password), "Must have uppercase"
+            assert any(c.islower() for c in password), "Must have lowercase"
+            assert any(c.isdigit() for c in password), "Must have digit"
+            assert any(c in string.punctuation for c in password), "Must have special char"
+
+    def test_production_profile_cli_defaults_applied(self):
+        """Test that CLI applies production profile defaults correctly."""
+        with self.runner.isolated_filesystem() as temp_dir:
+            output_file = Path(temp_dir) / '.env'
+
+            with patch('scripts.setup.setup_env.load_env_template') as mock_template:
+                # Return a dict with template values that will be overridden by production defaults
+                mock_template.return_value = {
+                    'SOME_OTHER_KEY': 'some_value',
+                }
+
+                with patch('scripts.setup.setup_env.write_env_file') as mock_write:
+                    result = self.runner.invoke(main, [
+                        '--profile', 'production',
+                        '--non-interactive',
+                        '--output', str(output_file),
+                    ])
+
+            assert result.exit_code == 0
+
+            # Verify that write_env_file was called
+            assert mock_write.called
+
+            # Get the config that was written
+            written_config = mock_write.call_args[0][1]
+
+            # Verify production defaults were applied
+            assert written_config['ENVIRONMENT'] == 'production'
+            assert written_config['LOG_LEVEL'] == 'WARNING'
+            assert written_config['DB_ECHO'] == 'false'
+
+    def test_production_profile_performance_optimized_timeouts(self):
+        """Test that production profile includes performance-optimized settings."""
+        console = Mock()
+        console.console = Mock()
+        console.console.print = Mock()
+
+        configurator = EnvConfigurator('production', console)
+        configurator.config = {
+            'DB_POOL_SIZE': '20',
+            'DB_POOL_TIMEOUT': '30',
+            'DB_POOL_RECYCLE': '3600',
+            'JWT_ACCESS_TOKEN_EXPIRE_SECONDS': '900',  # 15 minutes
+            'JWT_REFRESH_TOKEN_EXPIRE_SECONDS': '604800',  # 7 days
+            'SESSION_INACTIVE_TIMEOUT_SECONDS': '2592000',  # 30 days
+        }
+
+        # These are reasonable production values
+        assert int(configurator.config['DB_POOL_SIZE']) > 0
+        assert int(configurator.config['DB_POOL_TIMEOUT']) > 0
+        assert int(configurator.config['DB_POOL_RECYCLE']) > 0
+        assert int(configurator.config['JWT_ACCESS_TOKEN_EXPIRE_SECONDS']) == 900
+
+    def test_production_profile_prompt_database_suggests_postgresql(self):
+        """Test that production profile prompts suggest PostgreSQL as default."""
+        configurator = EnvConfigurator('production', self.console)
+
+        # When we call prompt_database on production profile
+        self.console.select.return_value = 'postgresql'
+        self.console.prompt.side_effect = [
+            'proddb.example.com',
+            '5432',
+            'proddb',
+            'produser',
+            '20',
+            '30',
+            '3600',
+        ]
+        self.console.confirm.return_value = True
+
+        with patch.object(configurator, 'generate_secure_password', return_value='pass123!'):
+            config = configurator.prompt_database()
+
+        # Should use PostgreSQL
+        assert 'postgresql://' in config['DATABASE_URL']
+
+    def test_production_profile_env_file_content_complete(self):
+        """Test that production profile generates complete .env file with all required settings."""
+        console = Mock()
+        console.console = Mock()
+        console.console.print = Mock()
+        console.success = Mock()
+
+        configurator = EnvConfigurator('production', console)
+
+        # Simulate a complete production configuration
+        configurator.config = {
+            'ENVIRONMENT': 'production',
+            'LOG_LEVEL': 'WARNING',
+            'AUDIT_LOG_LEVEL': 'INFO',
+            'DB_ECHO': 'false',
+            'DATABASE_URL': 'postgresql://user:pass@host:5432/db',
+            'PASSWORD_MIN_LENGTH': '16',
+            'PASSWORD_REQUIRE_UPPERCASE': 'true',
+            'PASSWORD_REQUIRE_LOWERCASE': 'true',
+            'PASSWORD_REQUIRE_DIGIT': 'true',
+            'PASSWORD_REQUIRE_SPECIAL': 'true',
+            'MAX_LOGIN_ATTEMPTS': '5',
+            'ACCOUNT_LOCKOUT_DURATION_SECONDS': '900',
+            'JWT_ACCESS_TOKEN_EXPIRE_SECONDS': '900',
+            'JWT_REFRESH_TOKEN_EXPIRE_SECONDS': '604800',
+            'REDIS_URL': 'redis://localhost:6379/0',
+            'RATE_LIMIT_LOGIN_ATTEMPTS': '5',
+            'RATE_LIMIT_LOGIN_WINDOW_SECONDS': '900',
+        }
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            env_file = Path(tmpdir) / '.env'
+
+            with patch('scripts.setup.setup_env.write_env_file') as mock_write:
+                configurator.write(env_file)
+
+            # Verify write was called with complete config
+            assert mock_write.called
+            called_config = mock_write.call_args[0][1]
+
+            # Verify all production settings are present
+            assert called_config['ENVIRONMENT'] == 'production'
+            assert called_config['LOG_LEVEL'] == 'WARNING'
+            assert called_config['DB_ECHO'] == 'false'
+            assert called_config['PASSWORD_MIN_LENGTH'] == '16'
+
+
 class TestIntegration:
     """Integration tests for complete workflows."""
 

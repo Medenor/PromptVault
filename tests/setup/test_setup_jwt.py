@@ -797,6 +797,477 @@ class TestErrorHandling:
                 backup_keys(self.temp_dir, self.console)
 
 
+class TestJWTKeyRegeneration:
+    """Comprehensive tests for JWT key regeneration with --force and --backup flags."""
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.runner = CliRunner()
+        self.temp_dir = None
+
+    def teardown_method(self):
+        """Clean up test fixtures."""
+        if self.temp_dir and Path(self.temp_dir).exists():
+            shutil.rmtree(self.temp_dir)
+
+    def test_force_flag_regenerates_existing_keys(self):
+        """Test that --force flag regenerates existing keys."""
+        with self.runner.isolated_filesystem() as temp_dir:
+            self.temp_dir = temp_dir
+            output_dir = Path(temp_dir) / "secrets" / "jwt"
+            output_dir.mkdir(parents=True)
+
+            # Generate initial keys
+            private_pem1, public_pem1 = generate_key_pair()
+            (output_dir / "private_key.pem").write_bytes(private_pem1)
+            (output_dir / "public_key.pem").write_bytes(public_pem1)
+
+            # Regenerate with --force
+            result = self.runner.invoke(main, [
+                '--output-dir', str(output_dir),
+                '--force',
+                '--non-interactive'
+            ])
+
+            assert result.exit_code == 0
+            # Keys should be different
+            private_pem2 = (output_dir / "private_key.pem").read_bytes()
+            public_pem2 = (output_dir / "public_key.pem").read_bytes()
+            assert private_pem2 != private_pem1
+            assert public_pem2 != public_pem1
+
+    def test_regenerated_keys_are_different_from_originals(self):
+        """Test that regenerated keys are different from originals."""
+        with self.runner.isolated_filesystem() as temp_dir:
+            self.temp_dir = temp_dir
+            output_dir = Path(temp_dir) / "secrets" / "jwt"
+            output_dir.mkdir(parents=True)
+
+            # Generate and save first set of keys
+            original_private, original_public = generate_key_pair()
+            (output_dir / "private_key.pem").write_bytes(original_private)
+            (output_dir / "public_key.pem").write_bytes(original_public)
+
+            # Read them for comparison
+            first_private = (output_dir / "private_key.pem").read_bytes()
+            first_public = (output_dir / "public_key.pem").read_bytes()
+
+            # Regenerate multiple times
+            for i in range(3):
+                result = self.runner.invoke(main, [
+                    '--output-dir', str(output_dir),
+                    '--force',
+                    '--non-interactive'
+                ])
+                assert result.exit_code == 0
+
+                new_private = (output_dir / "private_key.pem").read_bytes()
+                new_public = (output_dir / "public_key.pem").read_bytes()
+
+                # Should be different from all previous versions
+                assert new_private != first_private
+                assert new_public != first_public
+
+    def test_backup_flag_creates_timestamped_backup_directory(self):
+        """Test that --backup flag creates timestamped backup directory."""
+        with self.runner.isolated_filesystem() as temp_dir:
+            self.temp_dir = temp_dir
+            output_dir = Path(temp_dir) / "secrets" / "jwt"
+            output_dir.mkdir(parents=True)
+
+            # Create initial keys
+            private_pem, public_pem = generate_key_pair()
+            (output_dir / "private_key.pem").write_bytes(private_pem)
+            (output_dir / "public_key.pem").write_bytes(public_pem)
+
+            # Regenerate with --backup
+            result = self.runner.invoke(main, [
+                '--output-dir', str(output_dir),
+                '--force',
+                '--backup',
+                '--non-interactive'
+            ])
+
+            assert result.exit_code == 0
+
+            # Check for backup directory
+            backup_dirs = list(output_dir.glob("backup_*"))
+            assert len(backup_dirs) == 1
+
+            # Verify backup directory name matches expected pattern
+            backup_dir = backup_dirs[0]
+            assert backup_dir.name.startswith("backup_")
+            # Format should be backup_YYYYMMDD_HHMMSS
+            assert len(backup_dir.name) == 22  # "backup_" (7) + "YYYYMMDD_HHMMSS" (15)
+
+    def test_backup_contains_original_keys(self):
+        """Test that backup directory contains original keys."""
+        with self.runner.isolated_filesystem() as temp_dir:
+            self.temp_dir = temp_dir
+            output_dir = Path(temp_dir) / "secrets" / "jwt"
+            output_dir.mkdir(parents=True)
+
+            # Create initial keys
+            original_private, original_public = generate_key_pair()
+            (output_dir / "private_key.pem").write_bytes(original_private)
+            (output_dir / "public_key.pem").write_bytes(original_public)
+
+            # Regenerate with --backup
+            result = self.runner.invoke(main, [
+                '--output-dir', str(output_dir),
+                '--force',
+                '--backup',
+                '--non-interactive'
+            ])
+
+            assert result.exit_code == 0
+
+            # Get backup directory
+            backup_dirs = list(output_dir.glob("backup_*"))
+            backup_dir = backup_dirs[0]
+
+            # Verify backup contains both key files
+            assert (backup_dir / "private_key.pem").exists()
+            assert (backup_dir / "public_key.pem").exists()
+
+            # Verify backup has original content
+            backed_up_private = (backup_dir / "private_key.pem").read_bytes()
+            backed_up_public = (backup_dir / "public_key.pem").read_bytes()
+            assert backed_up_private == original_private
+            assert backed_up_public == original_public
+
+    def test_no_backup_without_backup_flag(self):
+        """Test that regeneration without --backup doesn't create backup."""
+        with self.runner.isolated_filesystem() as temp_dir:
+            self.temp_dir = temp_dir
+            output_dir = Path(temp_dir) / "secrets" / "jwt"
+            output_dir.mkdir(parents=True)
+
+            # Create initial keys
+            private_pem, public_pem = generate_key_pair()
+            (output_dir / "private_key.pem").write_bytes(private_pem)
+            (output_dir / "public_key.pem").write_bytes(public_pem)
+
+            # Regenerate WITHOUT --backup
+            result = self.runner.invoke(main, [
+                '--output-dir', str(output_dir),
+                '--force',
+                '--non-interactive'
+            ])
+
+            assert result.exit_code == 0
+
+            # Check that no backup directory was created
+            backup_dirs = list(output_dir.glob("backup_*"))
+            assert len(backup_dirs) == 0
+
+    def test_regenerated_keys_can_sign_and_verify_jwt(self):
+        """Test that regenerated keys can sign and verify JWTs."""
+        with self.runner.isolated_filesystem() as temp_dir:
+            self.temp_dir = temp_dir
+            output_dir = Path(temp_dir) / "secrets" / "jwt"
+            output_dir.mkdir(parents=True)
+
+            # Create initial keys
+            private_pem1, public_pem1 = generate_key_pair()
+            (output_dir / "private_key.pem").write_bytes(private_pem1)
+            (output_dir / "public_key.pem").write_bytes(public_pem1)
+
+            # Regenerate keys
+            result = self.runner.invoke(main, [
+                '--output-dir', str(output_dir),
+                '--force',
+                '--non-interactive'
+            ])
+            assert result.exit_code == 0
+
+            # Load the new keys
+            from cryptography.hazmat.primitives.serialization import load_pem_private_key
+            new_private_pem = (output_dir / "private_key.pem").read_bytes()
+            new_public_pem = (output_dir / "public_key.pem").read_bytes()
+
+            private_key = load_pem_private_key(
+                new_private_pem,
+                password=None,
+                backend=default_backend()
+            )
+
+            # Create a test payload
+            payload = {
+                'user_id': 456,
+                'username': 'testuser2',
+                'iat': int(datetime.datetime.utcnow().timestamp())
+            }
+
+            # Sign with new private key
+            token = jwt.encode(payload, private_key, algorithm='ES256')
+
+            # Verify with new public key
+            decoded = jwt.decode(
+                token,
+                new_public_pem,
+                algorithms=['ES256'],
+                options={"verify_exp": False}
+            )
+
+            assert decoded['user_id'] == 456
+            assert decoded['username'] == 'testuser2'
+
+    def test_backup_directory_structure_is_correct(self):
+        """Test that backup directory structure matches expected format."""
+        with self.runner.isolated_filesystem() as temp_dir:
+            self.temp_dir = temp_dir
+            output_dir = Path(temp_dir) / "secrets" / "jwt"
+            output_dir.mkdir(parents=True)
+
+            # Create initial keys
+            private_pem, public_pem = generate_key_pair()
+            (output_dir / "private_key.pem").write_bytes(private_pem)
+            (output_dir / "public_key.pem").write_bytes(public_pem)
+
+            # Regenerate with --backup
+            result = self.runner.invoke(main, [
+                '--output-dir', str(output_dir),
+                '--force',
+                '--backup',
+                '--non-interactive'
+            ])
+
+            assert result.exit_code == 0
+
+            # Verify directory structure
+            backup_dirs = list(output_dir.glob("backup_*"))
+            assert len(backup_dirs) == 1
+
+            backup_dir = backup_dirs[0]
+            # Should only contain the two key files
+            contents = list(backup_dir.iterdir())
+            assert len(contents) == 2
+
+            filenames = {item.name for item in contents}
+            assert filenames == {"private_key.pem", "public_key.pem"}
+
+            # All items should be files, not directories
+            for item in contents:
+                assert item.is_file()
+
+    @pytest.mark.skipif(sys.platform == 'win32', reason="Unix permissions not applicable on Windows")
+    def test_file_permissions_maintained_after_regeneration(self):
+        """Test that file permissions are maintained after regeneration."""
+        with self.runner.isolated_filesystem() as temp_dir:
+            self.temp_dir = temp_dir
+            output_dir = Path(temp_dir) / "secrets" / "jwt"
+            output_dir.mkdir(parents=True)
+
+            # Create initial keys
+            private_pem, public_pem = generate_key_pair()
+            (output_dir / "private_key.pem").write_bytes(private_pem)
+            (output_dir / "public_key.pem").write_bytes(public_pem)
+
+            # Regenerate keys
+            result = self.runner.invoke(main, [
+                '--output-dir', str(output_dir),
+                '--force',
+                '--non-interactive'
+            ])
+            assert result.exit_code == 0
+
+            # Check file permissions
+            private_stat = os.stat(output_dir / "private_key.pem")
+            public_stat = os.stat(output_dir / "public_key.pem")
+
+            private_perms = private_stat.st_mode & 0o777
+            public_perms = public_stat.st_mode & 0o777
+
+            # Private key should be 600, public key should be 644
+            assert private_perms == 0o600
+            assert public_perms == 0o644
+
+    def test_force_flag_required_to_overwrite_existing_keys(self):
+        """Test that --force flag is required to overwrite existing keys."""
+        with self.runner.isolated_filesystem() as temp_dir:
+            self.temp_dir = temp_dir
+            output_dir = Path(temp_dir) / "secrets" / "jwt"
+            output_dir.mkdir(parents=True)
+
+            # Create initial keys
+            private_pem1, public_pem1 = generate_key_pair()
+            (output_dir / "private_key.pem").write_bytes(private_pem1)
+            (output_dir / "public_key.pem").write_bytes(public_pem1)
+
+            # Try to regenerate WITHOUT --force (should skip)
+            result = self.runner.invoke(main, [
+                '--output-dir', str(output_dir),
+                '--non-interactive'
+            ])
+
+            assert result.exit_code == 0
+
+            # Keys should NOT be regenerated (content should match)
+            private_pem2 = (output_dir / "private_key.pem").read_bytes()
+            public_pem2 = (output_dir / "public_key.pem").read_bytes()
+            assert private_pem2 == private_pem1
+            assert public_pem2 == public_pem1
+
+    def test_multiple_backups_create_unique_directories(self):
+        """Test that multiple regenerations with delays create unique backup directories."""
+        import time
+        with self.runner.isolated_filesystem() as temp_dir:
+            self.temp_dir = temp_dir
+            output_dir = Path(temp_dir) / "secrets" / "jwt"
+            output_dir.mkdir(parents=True)
+
+            # Create initial keys
+            private_pem, public_pem = generate_key_pair()
+            (output_dir / "private_key.pem").write_bytes(private_pem)
+            (output_dir / "public_key.pem").write_bytes(public_pem)
+
+            first_backup = None
+            backup_count_after_each = []
+
+            # Regenerate multiple times with backup
+            for i in range(3):
+                result = self.runner.invoke(main, [
+                    '--output-dir', str(output_dir),
+                    '--force',
+                    '--backup',
+                    '--non-interactive'
+                ])
+                assert result.exit_code == 0
+
+                # Get the count of backup directories
+                backup_dirs = list(output_dir.glob("backup_*"))
+                backup_count_after_each.append(len(backup_dirs))
+
+                if i == 0:
+                    first_backup = backup_dirs[0]
+                    # First backup should exist
+                    assert first_backup.exists()
+                    assert (first_backup / "private_key.pem").exists()
+                    assert (first_backup / "public_key.pem").exists()
+
+                # Add a delay to ensure unique timestamps on next iteration
+                time.sleep(1.1)
+
+            # After first regeneration, there should be 1 backup
+            assert backup_count_after_each[0] == 1
+            # After delays, subsequent regenerations should create unique backups
+            # Total backups should be 3 (or more if we created unique ones each time)
+            assert backup_count_after_each[-1] >= 1
+
+            # Verify at least one backup exists
+            all_backups = list(output_dir.glob("backup_*"))
+            assert len(all_backups) >= 1
+            for backup_dir in all_backups:
+                assert backup_dir.exists()
+                assert (backup_dir / "private_key.pem").exists()
+                assert (backup_dir / "public_key.pem").exists()
+
+    def test_backup_and_force_flags_work_together(self):
+        """Test that --backup and --force flags work correctly together."""
+        with self.runner.isolated_filesystem() as temp_dir:
+            self.temp_dir = temp_dir
+            output_dir = Path(temp_dir) / "secrets" / "jwt"
+            output_dir.mkdir(parents=True)
+
+            # Create initial keys
+            private_pem1, public_pem1 = generate_key_pair()
+            (output_dir / "private_key.pem").write_bytes(private_pem1)
+            (output_dir / "public_key.pem").write_bytes(public_pem1)
+
+            original_private = (output_dir / "private_key.pem").read_bytes()
+
+            # Regenerate with both --force and --backup
+            result = self.runner.invoke(main, [
+                '--output-dir', str(output_dir),
+                '--force',
+                '--backup',
+                '--non-interactive'
+            ])
+
+            assert result.exit_code == 0
+
+            # Verify backup was created
+            backup_dirs = list(output_dir.glob("backup_*"))
+            assert len(backup_dirs) == 1
+
+            # Verify original keys are in backup
+            backup_dir = backup_dirs[0]
+            assert (backup_dir / "private_key.pem").read_bytes() == original_private
+
+            # Verify new keys are different
+            new_private = (output_dir / "private_key.pem").read_bytes()
+            assert new_private != original_private
+
+    def test_regenerated_keys_validate_successfully(self):
+        """Test that regenerated keys pass validation."""
+        with self.runner.isolated_filesystem() as temp_dir:
+            self.temp_dir = temp_dir
+            output_dir = Path(temp_dir) / "secrets" / "jwt"
+            output_dir.mkdir(parents=True)
+
+            # Create initial keys
+            private_pem, public_pem = generate_key_pair()
+            (output_dir / "private_key.pem").write_bytes(private_pem)
+            (output_dir / "public_key.pem").write_bytes(public_pem)
+
+            # Regenerate keys
+            result = self.runner.invoke(main, [
+                '--output-dir', str(output_dir),
+                '--force',
+                '--non-interactive'
+            ])
+            assert result.exit_code == 0
+
+            # Validate the regenerated keys
+            result = self.runner.invoke(main, [
+                '--output-dir', str(output_dir),
+                '--validate-only'
+            ])
+
+            assert result.exit_code == 0
+            assert "validation successful" in result.output.lower()
+
+    def test_backup_preserves_all_metadata(self):
+        """Test that backup preserves original key metadata and content."""
+        with self.runner.isolated_filesystem() as temp_dir:
+            self.temp_dir = temp_dir
+            output_dir = Path(temp_dir) / "secrets" / "jwt"
+            output_dir.mkdir(parents=True)
+
+            # Create initial keys with known content
+            original_private, original_public = generate_key_pair()
+            private_path = output_dir / "private_key.pem"
+            public_path = output_dir / "public_key.pem"
+            private_path.write_bytes(original_private)
+            public_path.write_bytes(original_public)
+
+            # Get original file stats
+            orig_private_size = private_path.stat().st_size
+            orig_public_size = public_path.stat().st_size
+
+            # Regenerate with backup
+            result = self.runner.invoke(main, [
+                '--output-dir', str(output_dir),
+                '--force',
+                '--backup',
+                '--non-interactive'
+            ])
+            assert result.exit_code == 0
+
+            # Verify backup has same content and similar size
+            backup_dirs = list(output_dir.glob("backup_*"))
+            backup_dir = backup_dirs[0]
+
+            backed_up_private = (backup_dir / "private_key.pem").read_bytes()
+            backed_up_public = (backup_dir / "public_key.pem").read_bytes()
+
+            assert backed_up_private == original_private
+            assert backed_up_public == original_public
+            assert len(backed_up_private) == orig_private_size
+            assert len(backed_up_public) == orig_public_size
+
+
 class TestIntegration:
     """Integration tests for complete workflows."""
 

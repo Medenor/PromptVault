@@ -450,6 +450,13 @@ class DeploymentOrchestrator:
         """
         self.console.header("Rollback", "Reverting to previous state")
 
+        if self.dry_run:
+            self.console.info("[DRY RUN] Would stop current containers")
+            self.console.info("[DRY RUN] Would restore database from backup")
+            self.console.info("[DRY RUN] Would restart services")
+            self.console.info("[DRY RUN] Rollback completed (no changes made)")
+            return True
+
         try:
             # Step 1: Stop current containers
             self.console.step(1, 3, "Stopping current containers")

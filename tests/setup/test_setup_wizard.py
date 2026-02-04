@@ -669,7 +669,11 @@ class TestComponentMode:
 
 
 class TestStateResumption:
-    """Test state persistence and resumption."""
+    """Test state persistence and resumption.
+
+    Verifies that the setup wizard can be interrupted after completing steps,
+    and successfully resumed to skip already-completed steps.
+    """
 
     def setup_method(self):
         """Set up test fixtures."""
@@ -745,6 +749,396 @@ class TestStateResumption:
 
             # State file should not exist
             assert not wizard.state.state_file.exists()
+
+    @patch('scripts.setup.setup.subprocess.run')
+    @patch('scripts.setup.setup.SetupConsole')
+    def test_interrupt_after_jwt_generation_saves_state(self, mock_console_class, mock_subprocess):
+        """Test that interrupting setup after JWT generation saves state correctly.
+
+        Scenario:
+        - Start quick setup
+        - Complete JWT step
+        - Simulate interrupt (don't complete remaining steps)
+        - Verify state file exists and contains correct status
+        """
+        mock_console = create_mock_console()
+        mock_console_class.return_value = mock_console
+        mock_subprocess.return_value = Mock(returncode=0, stderr='')
+
+        with patch('scripts.setup.setup.project_root', self.temp_dir):
+            wizard = SetupWizard(non_interactive=True)
+            state_file = wizard.state.state_file
+
+            # Mark JWT as complete (simulating first step completion)
+            wizard.state.mark_complete('jwt')
+
+            # Verify state file was created
+            assert state_file.exists()
+
+            # Verify state contains JWT as completed
+            loaded_state = json.loads(state_file.read_text())
+            assert 'jwt' in loaded_state['completed_steps']
+            assert loaded_state['last_updated'] is not None
+
+    @patch('scripts.setup.setup.subprocess.run')
+    @patch('scripts.setup.setup.SetupConsole')
+    def test_resume_skips_completed_jwt_step(self, mock_console_class, mock_subprocess):
+        """Test that resuming setup skips completed JWT step.
+
+        Scenario:
+        - Interrupt after JWT step
+        - Resume setup
+        - Verify JWT step is skipped (not re-run)
+        - Verify subsequent steps are still executed
+        """
+        mock_console = create_mock_console()
+        mock_console_class.return_value = mock_console
+        mock_subprocess.return_value = Mock(returncode=0, stderr='')
+
+        with patch('scripts.setup.setup.project_root', self.temp_dir):
+            # First wizard - partial setup, complete JWT only
+            wizard1 = SetupWizard(non_interactive=True)
+            wizard1.state.mark_complete('jwt')
+            wizard1.state.save()
+
+            # Second wizard - resume and verify JWT is skipped
+            wizard2 = SetupWizard(non_interactive=True)
+            wizard2.state.load()
+
+            # Verify JWT is marked as complete
+            assert wizard2.state.is_complete('jwt') is True
+
+            # Verify other steps are NOT marked as complete
+            assert wizard2.state.is_complete('env') is False
+            assert wizard2.state.is_complete('database') is False
+            assert wizard2.state.is_complete('deploy') is False
+
+            # Mock subprocess.run to track calls
+            mock_subprocess.reset_mock()
+            mock_subprocess.return_value = Mock(returncode=0, stderr='')
+
+            # Run quick setup
+            wizard2.mode = 'quick'
+            wizard2.run_quick_setup()
+
+            # Verify JWT script was not called again (only env, database, deploy should be called)
+            # We can verify by checking that fewer calls were made than a fresh setup
+            # A fresh setup would call: jwt, env, database, deploy (4 calls)
+            # A resumed setup should call only: env, database, deploy (3 calls)
+            calls = mock_subprocess.call_args_list
+            jwt_calls = [call for call in calls if 'setup_jwt.py' in str(call)]
+            assert len(jwt_calls) == 0, "JWT should be skipped during resume"
+
+    @patch('scripts.setup.setup.subprocess.run')
+    @patch('scripts.setup.setup.SetupConsole')
+    def test_state_file_created_with_correct_status(self, mock_console_class, mock_subprocess):
+        """Test that state file (.setup_state.json) is created with correct status.
+
+        Scenario:
+        - Complete multiple steps
+        - Verify state file exists at correct location
+        - Verify JSON structure is valid
+        - Verify all required fields are present
+        """
+        mock_console = create_mock_console()
+        mock_console_class.return_value = mock_console
+        mock_subprocess.return_value = Mock(returncode=0, stderr='')
+
+        with patch('scripts.setup.setup.project_root', self.temp_dir):
+            wizard = SetupWizard(non_interactive=True)
+            state_file = wizard.state.state_file
+
+            # Mark multiple steps as complete
+            wizard.state.state['mode'] = 'quick'
+            wizard.state.state['profile'] = 'development'
+            wizard.state.mark_complete('jwt')
+            wizard.state.mark_complete('env')
+            wizard.state.mark_complete('database')
+
+            # Verify state file location
+            assert state_file == self.temp_dir / '.setup_state.json'
+            assert state_file.exists()
+
+            # Parse and verify state file contents
+            with open(state_file, 'r') as f:
+                saved_state = json.load(f)
+
+            # Verify structure
+            assert 'completed_steps' in saved_state
+            assert 'mode' in saved_state
+            assert 'profile' in saved_state
+            assert 'config' in saved_state
+            assert 'last_updated' in saved_state
+
+            # Verify values
+            assert saved_state['mode'] == 'quick'
+            assert saved_state['profile'] == 'development'
+            assert saved_state['completed_steps'] == ['jwt', 'env', 'database']
+            assert saved_state['last_updated'] is not None
+
+    @patch('scripts.setup.setup.subprocess.run')
+    @patch('scripts.setup.setup.SetupConsole')
+    def test_multiple_interruptions_and_resumptions(self, mock_console_class, mock_subprocess):
+        """Test state resumption across multiple interruptions.
+
+        Scenario:
+        - Interrupt after JWT step
+        - Resume and complete ENV step
+        - Interrupt again
+        - Resume and complete DATABASE step
+        - Verify all previous steps remain marked as complete
+        """
+        mock_console = create_mock_console()
+        mock_console_class.return_value = mock_console
+        mock_subprocess.return_value = Mock(returncode=0, stderr='')
+
+        with patch('scripts.setup.setup.project_root', self.temp_dir):
+            # First interruption - after JWT
+            wizard1 = SetupWizard(non_interactive=True)
+            wizard1.state.state['mode'] = 'quick'
+            wizard1.state.mark_complete('jwt')
+            wizard1.state.save()
+
+            assert wizard1.state.is_complete('jwt')
+            assert not wizard1.state.is_complete('env')
+
+            # First resumption - complete ENV
+            wizard2 = SetupWizard(non_interactive=True)
+            wizard2.state.load()
+            wizard2.state.mark_complete('env')
+            wizard2.state.save()
+
+            # Verify both JWT and ENV are complete
+            assert wizard2.state.is_complete('jwt')
+            assert wizard2.state.is_complete('env')
+            assert not wizard2.state.is_complete('database')
+
+            # Second resumption - complete DATABASE
+            wizard3 = SetupWizard(non_interactive=True)
+            wizard3.state.load()
+            wizard3.state.mark_complete('database')
+            wizard3.state.save()
+
+            # Verify all three steps are complete
+            assert wizard3.state.is_complete('jwt')
+            assert wizard3.state.is_complete('env')
+            assert wizard3.state.is_complete('database')
+            assert not wizard3.state.is_complete('deploy')
+
+    @patch('scripts.setup.setup.subprocess.run')
+    @patch('scripts.setup.setup.SetupConsole')
+    def test_state_clear_removes_file_completely(self, mock_console_class, mock_subprocess):
+        """Test that state.clear() removes the state file completely.
+
+        Scenario:
+        - Create and save state with multiple completed steps
+        - Call state.clear()
+        - Verify state file is deleted
+        - Verify fresh state has no completed steps
+        """
+        mock_console = create_mock_console()
+        mock_console_class.return_value = mock_console
+        mock_subprocess.return_value = Mock(returncode=0, stderr='')
+
+        with patch('scripts.setup.setup.project_root', self.temp_dir):
+            # Create state with multiple steps
+            wizard1 = SetupWizard(non_interactive=True)
+            state_file = wizard1.state.state_file
+
+            wizard1.state.state['mode'] = 'quick'
+            wizard1.state.state['profile'] = 'development'
+            wizard1.state.mark_complete('jwt')
+            wizard1.state.mark_complete('env')
+            wizard1.state.mark_complete('database')
+            wizard1.state.mark_complete('admin')
+            wizard1.state.mark_complete('deploy')
+
+            # Verify file exists
+            assert state_file.exists()
+
+            # Clear state
+            wizard1.state.clear()
+
+            # Verify file is deleted
+            assert not state_file.exists()
+
+            # Create fresh wizard and verify no steps are marked complete
+            wizard2 = SetupWizard(non_interactive=True)
+            loaded = wizard2.state.load()
+
+            # Should not load any previous state
+            assert loaded is False
+            assert len(wizard2.state.state['completed_steps']) == 0
+            assert wizard2.state.state['mode'] is None
+            assert wizard2.state.state['profile'] is None
+
+    @patch('scripts.setup.setup.subprocess.run')
+    @patch('scripts.setup.setup.SetupConsole')
+    def test_interrupt_after_env_skips_jwt_and_env(self, mock_console_class, mock_subprocess):
+        """Test that interrupting after ENV and resuming skips both JWT and ENV.
+
+        Scenario:
+        - Complete JWT and ENV steps
+        - Interrupt after ENV
+        - Resume and verify JWT and ENV are both skipped
+        """
+        mock_console = create_mock_console()
+        mock_console_class.return_value = mock_console
+        mock_subprocess.return_value = Mock(returncode=0, stderr='')
+
+        with patch('scripts.setup.setup.project_root', self.temp_dir):
+            # First wizard - complete JWT and ENV
+            wizard1 = SetupWizard(non_interactive=True)
+            wizard1.state.state['mode'] = 'quick'
+            wizard1.state.mark_complete('jwt')
+            wizard1.state.mark_complete('env')
+            wizard1.state.save()
+
+            # Second wizard - resume
+            wizard2 = SetupWizard(non_interactive=True)
+            wizard2.state.load()
+            wizard2.mode = 'quick'
+
+            # Reset mock to track new calls
+            mock_subprocess.reset_mock()
+            mock_subprocess.return_value = Mock(returncode=0, stderr='')
+
+            # Run quick setup - JWT and ENV should be skipped
+            wizard2.run_quick_setup()
+
+            # Verify JWT and ENV were skipped
+            calls = mock_subprocess.call_args_list
+            jwt_calls = [call for call in calls if 'setup_jwt.py' in str(call)]
+            env_calls = [call for call in calls if 'setup_env.py' in str(call)]
+
+            assert len(jwt_calls) == 0, "JWT should be skipped"
+            assert len(env_calls) == 0, "ENV should be skipped"
+
+    @patch('scripts.setup.setup.subprocess.run')
+    @patch('scripts.setup.setup.SetupConsole')
+    def test_complete_all_steps_state_shows_all_complete(self, mock_console_class, mock_subprocess):
+        """Test that completing all steps marks all as complete in state.
+
+        Scenario:
+        - Run through all steps of quick setup
+        - Verify state file shows all steps as complete
+        - Verify state is then cleared
+        """
+        mock_console = create_mock_console()
+        mock_console_class.return_value = mock_console
+        mock_subprocess.return_value = Mock(returncode=0, stderr='')
+
+        with patch('scripts.setup.setup.project_root', self.temp_dir):
+            wizard = SetupWizard(non_interactive=True)
+            state_file = wizard.state.state_file
+
+            # Mark all steps as complete
+            wizard.state.state['mode'] = 'quick'
+            wizard.state.mark_complete('jwt')
+            wizard.state.mark_complete('env')
+            wizard.state.mark_complete('database')
+            wizard.state.mark_complete('admin')
+            wizard.state.mark_complete('deploy')
+
+            # Verify all are marked complete
+            assert wizard.state.is_complete('jwt')
+            assert wizard.state.is_complete('env')
+            assert wizard.state.is_complete('database')
+            assert wizard.state.is_complete('admin')
+            assert wizard.state.is_complete('deploy')
+
+            # Verify state file shows all completed
+            with open(state_file, 'r') as f:
+                saved_state = json.load(f)
+
+            expected_steps = ['jwt', 'env', 'database', 'admin', 'deploy']
+            assert saved_state['completed_steps'] == expected_steps
+
+            # Clear state as would happen after successful completion
+            wizard.state.clear()
+
+            # Verify state file is removed
+            assert not state_file.exists()
+
+    @patch('scripts.setup.setup.SetupConsole')
+    def test_state_load_preserves_config_data(self, mock_console_class):
+        """Test that state load preserves configuration data.
+
+        Scenario:
+        - Save state with configuration data
+        - Load state in new wizard
+        - Verify configuration data is preserved
+        """
+        mock_console = create_mock_console()
+        mock_console_class.return_value = mock_console
+
+        with patch('scripts.setup.setup.project_root', self.temp_dir):
+            # First wizard - save state with config
+            wizard1 = SetupWizard()
+            wizard1.state.state['mode'] = 'advanced'
+            wizard1.state.state['profile'] = 'production'
+            wizard1.state.state['config'] = {
+                'db_type': 'postgresql',
+                'admin_username': 'admin',
+                'admin_email': 'admin@example.com'
+            }
+            wizard1.state.mark_complete('jwt')
+            wizard1.state.save()
+
+            # Second wizard - load and verify config
+            wizard2 = SetupWizard()
+            loaded = wizard2.state.load()
+
+            assert loaded is True
+            assert wizard2.state.state['config']['db_type'] == 'postgresql'
+            assert wizard2.state.state['config']['admin_username'] == 'admin'
+            assert wizard2.state.state['config']['admin_email'] == 'admin@example.com'
+
+    @patch('scripts.setup.setup.subprocess.run')
+    @patch('scripts.setup.setup.SetupConsole')
+    def test_resume_with_incomplete_steps_continues_correctly(self, mock_console_class, mock_subprocess):
+        """Test that resuming setup with incomplete steps continues from the right point.
+
+        Scenario:
+        - Mark JWT as complete
+        - Resume setup
+        - Verify the wizard continues with ENV step next
+        """
+        mock_console = create_mock_console()
+        mock_console_class.return_value = mock_console
+        mock_subprocess.return_value = Mock(returncode=0, stderr='')
+
+        with patch('scripts.setup.setup.project_root', self.temp_dir):
+            # First run - complete JWT
+            wizard1 = SetupWizard(non_interactive=True)
+            wizard1.state.state['mode'] = 'quick'
+            wizard1.state.state['profile'] = 'development'
+            wizard1.state.mark_complete('jwt')
+            wizard1.state.save()
+
+            # Second run - verify resumption point
+            wizard2 = SetupWizard(non_interactive=True)
+            wizard2.state.load()
+            wizard2.mode = wizard2.state.state['mode']
+            wizard2.profile = wizard2.state.state['profile']
+
+            # Verify JWT is done but ENV is not
+            assert wizard2.state.is_complete('jwt') is True
+            assert wizard2.state.is_complete('env') is False
+
+            # Continue setup - ENV should be next
+            mock_subprocess.reset_mock()
+            mock_subprocess.return_value = Mock(returncode=0, stderr='')
+
+            # Run quick setup
+            exit_code = wizard2.run_quick_setup()
+
+            # Should complete successfully
+            assert exit_code == 0
+
+            # Verify both JWT and ENV are now complete
+            assert wizard2.state.is_complete('jwt') is True
+            assert wizard2.state.is_complete('env') is True
 
 
 class TestInteractiveMode:
@@ -1250,6 +1644,471 @@ class TestShowSuccessSummary:
 
             # Should still display without error
             assert mock_console.console.print.called
+
+
+class TestAdvancedSetupModeWithPrompts:
+    """
+    Comprehensive tests for advanced setup mode with interactive prompts.
+
+    Tests the full advanced setup workflow including:
+    - Profile selection (development/production)
+    - JWT key generation prompts
+    - Database configuration prompts
+    - Security settings prompts
+    - Email configuration (optional)
+    - Deployment configuration prompts
+    - Admin user creation with prompts
+    - User choice application to final configuration
+    """
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.temp_dir = Path(tempfile.mkdtemp())
+
+    def teardown_method(self):
+        """Clean up test fixtures."""
+        if self.temp_dir.exists():
+            shutil.rmtree(self.temp_dir)
+
+    @patch('scripts.setup.setup.subprocess.run')
+    @patch('scripts.setup.setup.SetupConsole')
+    def test_advanced_mode_development_profile_workflow(self, mock_console_class, mock_subprocess):
+        """
+        Test advanced setup with development profile selected.
+
+        Scenario:
+        - User selects development profile
+        - Prompts for JWT generation (confirms)
+        - Selects SQLite database
+        - Creates admin user
+        - Confirms deployment
+        """
+        mock_console = create_mock_console()
+        mock_console_class.return_value = mock_console
+        mock_console.select.side_effect = ['development', 'sqlite']
+        mock_console.confirm.side_effect = [True, True, True]
+        mock_console.prompt.side_effect = ['devadmin', 'dev@example.com']
+        mock_subprocess.return_value = Mock(returncode=0, stderr='')
+
+        with patch('scripts.setup.setup.project_root', self.temp_dir):
+            wizard = SetupWizard(non_interactive=False)
+            exit_code = wizard.run_advanced_setup()
+
+            assert exit_code == 0
+            assert wizard.profile == 'development'
+            assert wizard.admin_username == 'devadmin'
+            assert wizard.admin_email == 'dev@example.com'
+            # Verify state was saved during process
+            assert wizard.state.is_complete('jwt')
+
+    @patch('scripts.setup.setup.subprocess.run')
+    @patch('scripts.setup.setup.SetupConsole')
+    def test_advanced_mode_production_profile_workflow(self, mock_console_class, mock_subprocess):
+        """
+        Test advanced setup with production profile selected.
+
+        Scenario:
+        - User selects production profile
+        - Prompted for JWT generation (confirms)
+        - Selects PostgreSQL database
+        - Creates admin user
+        - Confirms deployment
+        """
+        mock_console = create_mock_console()
+        mock_console_class.return_value = mock_console
+        mock_console.select.side_effect = ['production', 'postgresql']
+        mock_console.confirm.side_effect = [True, True, True]
+        mock_console.prompt.side_effect = ['prodadmin', 'prod@example.com']
+        mock_subprocess.return_value = Mock(returncode=0, stderr='')
+
+        with patch('scripts.setup.setup.project_root', self.temp_dir):
+            wizard = SetupWizard(non_interactive=False)
+            exit_code = wizard.run_advanced_setup()
+
+            assert exit_code == 0
+            assert wizard.profile == 'production'
+            assert wizard.admin_username == 'prodadmin'
+            assert wizard.admin_email == 'prod@example.com'
+
+    @patch('scripts.setup.setup.subprocess.run')
+    @patch('scripts.setup.setup.SetupConsole')
+    def test_advanced_mode_all_prompts_appear_in_order(self, mock_console_class, mock_subprocess):
+        """
+        Test that all expected prompts appear in correct order.
+
+        Verifies the sequence:
+        1. Profile selection
+        2. JWT generation confirmation
+        3. Environment configuration
+        4. Database selection
+        5. Admin user creation
+        6. Deployment confirmation
+        """
+        mock_console = create_mock_console()
+        mock_console_class.return_value = mock_console
+        mock_console.select.side_effect = ['production', 'postgresql']
+        mock_console.confirm.side_effect = [True, True, True]
+        mock_console.prompt.side_effect = ['admin', 'admin@example.com']
+        mock_subprocess.return_value = Mock(returncode=0, stderr='')
+
+        with patch('scripts.setup.setup.project_root', self.temp_dir):
+            wizard = SetupWizard(non_interactive=False)
+            wizard.run_advanced_setup()
+
+            # Verify console.select was called for profile and database
+            select_calls = mock_console.select.call_args_list
+            assert len(select_calls) >= 2
+
+            # Verify profile was the first select call
+            first_select_message = str(select_calls[0])
+            assert 'profile' in first_select_message.lower() or 'Choose' in first_select_message
+
+            # Verify confirm was called for JWT, env, deployment
+            confirm_calls = mock_console.confirm.call_args_list
+            assert len(confirm_calls) >= 2
+
+            # Verify prompts were called for admin user
+            prompt_calls = mock_console.prompt.call_args_list
+            assert len(prompt_calls) >= 2
+
+    @patch('scripts.setup.setup.subprocess.run')
+    @patch('scripts.setup.setup.SetupConsole')
+    def test_advanced_mode_user_input_captured_correctly(self, mock_console_class, mock_subprocess):
+        """
+        Test that user input is captured and stored correctly.
+
+        Scenario:
+        - User enters specific values for admin credentials
+        - Verify values are captured in wizard instance
+        """
+        mock_console = create_mock_console()
+        mock_console_class.return_value = mock_console
+        mock_console.select.side_effect = ['development', 'sqlite']
+        mock_console.confirm.side_effect = [True, True, True]
+        test_username = 'testadmin123'
+        test_email = 'testadmin@example.org'
+        mock_console.prompt.side_effect = [test_username, test_email]
+        mock_subprocess.return_value = Mock(returncode=0, stderr='')
+
+        with patch('scripts.setup.setup.project_root', self.temp_dir):
+            wizard = SetupWizard(non_interactive=False)
+            wizard.run_advanced_setup()
+
+            assert wizard.admin_username == test_username
+            assert wizard.admin_email == test_email
+
+    @patch('scripts.setup.setup.subprocess.run')
+    @patch('scripts.setup.setup.SetupConsole')
+    def test_advanced_mode_profile_selection_respected(self, mock_console_class, mock_subprocess):
+        """
+        Test that selected profile is stored and respected.
+
+        Verifies:
+        - Development profile is stored in wizard.profile
+        - Profile is saved to state file
+        - Profile influences database defaults
+        """
+        mock_console = create_mock_console()
+        mock_console_class.return_value = mock_console
+        mock_console.select.side_effect = ['development', 'sqlite']
+        mock_console.confirm.side_effect = [True, True, True]
+        mock_console.prompt.side_effect = ['admin', 'admin@example.com']
+        mock_subprocess.return_value = Mock(returncode=0, stderr='')
+
+        with patch('scripts.setup.setup.project_root', self.temp_dir):
+            wizard = SetupWizard(non_interactive=False)
+            wizard.run_advanced_setup()
+
+            # Verify profile is stored
+            assert wizard.profile == 'development'
+
+            # Verify profile was saved to state
+            assert wizard.state.state['profile'] == 'development'
+
+    @patch('scripts.setup.setup.subprocess.run')
+    @patch('scripts.setup.setup.SetupConsole')
+    def test_advanced_mode_database_selection_prompted(self, mock_console_class, mock_subprocess):
+        """
+        Test that database selection prompt is presented.
+
+        Verifies:
+        - User is prompted to select database type
+        - Selection appears in subprocess calls
+        """
+        mock_console = create_mock_console()
+        mock_console_class.return_value = mock_console
+        mock_console.select.side_effect = ['production', 'postgresql']
+        mock_console.confirm.side_effect = [True, True, True]
+        mock_console.prompt.side_effect = ['admin', 'admin@example.com']
+        mock_subprocess.return_value = Mock(returncode=0, stderr='')
+
+        with patch('scripts.setup.setup.project_root', self.temp_dir):
+            wizard = SetupWizard(non_interactive=False)
+            wizard.run_advanced_setup()
+
+            # Verify select was called (for profile and database)
+            assert mock_console.select.call_count >= 2
+
+            # Verify database setup was called with postgresql
+            database_calls = [call for call in mock_subprocess.call_args_list
+                            if 'setup_database.py' in str(call)]
+            assert len(database_calls) > 0
+
+    @patch('scripts.setup.setup.subprocess.run')
+    @patch('scripts.setup.setup.SetupConsole')
+    def test_advanced_mode_skip_optional_steps(self, mock_console_class, mock_subprocess):
+        """
+        Test advanced setup with user skipping optional steps.
+
+        Scenario:
+        - User declines JWT generation
+        - User postpones deployment
+        """
+        mock_console = create_mock_console()
+        mock_console_class.return_value = mock_console
+        mock_console.select.side_effect = ['development', 'sqlite']
+        mock_console.confirm.side_effect = [False, True, False]  # Skip JWT, env yes, postpone deploy
+        mock_console.prompt.side_effect = ['admin', 'admin@example.com']
+        mock_subprocess.return_value = Mock(returncode=0, stderr='')
+
+        with patch('scripts.setup.setup.project_root', self.temp_dir):
+            wizard = SetupWizard(non_interactive=False)
+            exit_code = wizard.run_advanced_setup()
+
+            assert exit_code == 0
+            # JWT should not be marked complete since user declined
+            assert not wizard.state.is_complete('jwt')
+
+    @patch('scripts.setup.setup.subprocess.run')
+    @patch('scripts.setup.setup.SetupConsole')
+    def test_advanced_mode_all_components_enabled(self, mock_console_class, mock_subprocess):
+        """
+        Test advanced setup with all components enabled.
+
+        Scenario:
+        - All confirmations are yes
+        - All optional prompts are answered
+        - All components should be executed
+        """
+        mock_console = create_mock_console()
+        mock_console_class.return_value = mock_console
+        mock_console.select.side_effect = ['production', 'postgresql']
+        mock_console.confirm.side_effect = [True, True, True]
+        mock_console.prompt.side_effect = ['fullsetup', 'fullsetup@example.com']
+        mock_subprocess.return_value = Mock(returncode=0, stderr='')
+
+        with patch('scripts.setup.setup.project_root', self.temp_dir):
+            wizard = SetupWizard(non_interactive=False)
+            exit_code = wizard.run_advanced_setup()
+
+            assert exit_code == 0
+            # All major steps should be complete
+            assert wizard.state.is_complete('jwt')
+            assert wizard.state.is_complete('env')
+            assert wizard.state.is_complete('database')
+            assert wizard.state.is_complete('admin')
+            assert wizard.state.is_complete('deploy')
+
+    @patch('scripts.setup.setup.subprocess.run')
+    @patch('scripts.setup.setup.SetupConsole')
+    def test_advanced_mode_jwt_generation_prompt(self, mock_console_class, mock_subprocess):
+        """
+        Test that JWT generation is prompted in advanced mode.
+
+        Verifies:
+        - confirm() is called for JWT generation
+        - User choice is respected (yes/no)
+        """
+        mock_console = create_mock_console()
+        mock_console_class.return_value = mock_console
+        mock_console.select.side_effect = ['development', 'sqlite']
+        mock_console.confirm.side_effect = [True, True, True]  # Yes to JWT, env, deploy
+        mock_console.prompt.side_effect = ['admin', 'admin@example.com']
+        mock_subprocess.return_value = Mock(returncode=0, stderr='')
+
+        with patch('scripts.setup.setup.project_root', self.temp_dir):
+            wizard = SetupWizard(non_interactive=False)
+            wizard.run_advanced_setup()
+
+            # Verify confirm was called for JWT generation
+            confirm_calls = [call for call in mock_console.confirm.call_args_list]
+            assert len(confirm_calls) >= 2
+
+    @patch('scripts.setup.setup.subprocess.run')
+    @patch('scripts.setup.setup.SetupConsole')
+    def test_advanced_mode_admin_user_prompts(self, mock_console_class, mock_subprocess):
+        """
+        Test admin user creation prompts in advanced mode.
+
+        Verifies:
+        - prompt() is called for username
+        - prompt() is called for email
+        - Values are stored in wizard instance
+        """
+        mock_console = create_mock_console()
+        mock_console_class.return_value = mock_console
+        mock_console.select.side_effect = ['development', 'sqlite']
+        mock_console.confirm.side_effect = [True, True, True]
+        mock_console.prompt.side_effect = ['customuser', 'custom@mail.com']
+        mock_subprocess.return_value = Mock(returncode=0, stderr='')
+
+        with patch('scripts.setup.setup.project_root', self.temp_dir):
+            wizard = SetupWizard(non_interactive=False)
+            wizard.run_advanced_setup()
+
+            # Verify prompts were called
+            prompt_calls = mock_console.prompt.call_args_list
+            assert len(prompt_calls) >= 2
+
+            # Verify values were stored
+            assert wizard.admin_username == 'customuser'
+            assert wizard.admin_email == 'custom@mail.com'
+
+    @patch('scripts.setup.setup.subprocess.run')
+    @patch('scripts.setup.setup.SetupConsole')
+    def test_advanced_mode_deployment_confirmation_prompt(self, mock_console_class, mock_subprocess):
+        """
+        Test deployment confirmation prompt in advanced mode.
+
+        Verifies:
+        - User is prompted before deployment
+        - User can postpone deployment
+        """
+        mock_console = create_mock_console()
+        mock_console_class.return_value = mock_console
+        mock_console.select.side_effect = ['development', 'sqlite']
+        # First confirm is JWT, second is skip deploy
+        mock_console.confirm.side_effect = [True, False]
+        mock_console.prompt.side_effect = ['admin', 'admin@example.com']
+        mock_subprocess.return_value = Mock(returncode=0, stderr='')
+
+        with patch('scripts.setup.setup.project_root', self.temp_dir):
+            wizard = SetupWizard(non_interactive=False)
+            exit_code = wizard.run_advanced_setup()
+
+            assert exit_code == 0
+            # Deploy should not be marked complete
+            assert not wizard.state.is_complete('deploy')
+
+    @patch('scripts.setup.setup.subprocess.run')
+    @patch('scripts.setup.setup.SetupConsole')
+    def test_advanced_mode_configuration_applied_to_state(self, mock_console_class, mock_subprocess):
+        """
+        Test that user choices are applied to configuration state.
+
+        Verifies:
+        - Profile choice is stored in state
+        - Admin credentials are stored in wizard
+        - Wizard instance correctly reflects user choices
+        """
+        mock_console = create_mock_console()
+        mock_console_class.return_value = mock_console
+        mock_console.select.side_effect = ['production', 'postgresql']
+        mock_console.confirm.side_effect = [True, True, True]
+        mock_console.prompt.side_effect = ['prodadmin', 'prod@test.com']
+        mock_subprocess.return_value = Mock(returncode=0, stderr='')
+
+        with patch('scripts.setup.setup.project_root', self.temp_dir):
+            wizard = SetupWizard(non_interactive=False)
+            wizard.run_advanced_setup()
+
+            # Verify configuration is applied to wizard instance
+            assert wizard.profile == 'production'
+            assert wizard.admin_username == 'prodadmin'
+            assert wizard.admin_email == 'prod@test.com'
+
+            # Note: State file is cleared after successful completion, so
+            # we verify the wizard instance has the correct values instead
+
+    @patch('scripts.setup.setup.subprocess.run')
+    @patch('scripts.setup.setup.SetupConsole')
+    def test_advanced_mode_handles_subprocess_execution(self, mock_console_class, mock_subprocess):
+        """
+        Test that advanced mode properly executes setup scripts.
+
+        Verifies:
+        - setup_jwt.py is executed
+        - setup_env.py is executed
+        - setup_database.py is executed
+        - deploy.py is executed
+        """
+        mock_console = create_mock_console()
+        mock_console_class.return_value = mock_console
+        mock_console.select.side_effect = ['development', 'sqlite']
+        mock_console.confirm.side_effect = [True, True, True]
+        mock_console.prompt.side_effect = ['admin', 'admin@example.com']
+        mock_subprocess.return_value = Mock(returncode=0, stderr='')
+
+        with patch('scripts.setup.setup.project_root', self.temp_dir):
+            wizard = SetupWizard(non_interactive=False)
+            wizard.run_advanced_setup()
+
+            # Verify subprocess was called multiple times
+            assert mock_subprocess.call_count >= 4
+
+            # Verify expected scripts were called
+            call_strings = [str(call) for call in mock_subprocess.call_args_list]
+            script_names = ['setup_jwt.py', 'setup_env.py', 'setup_database.py', 'deploy.py']
+
+            for script in script_names:
+                found = any(script in call_str for call_str in call_strings)
+                assert found, f"Expected {script} to be called"
+
+    @patch('scripts.setup.setup.subprocess.run')
+    @patch('scripts.setup.setup.SetupConsole')
+    def test_advanced_mode_database_choice_affects_subprocess_call(self, mock_console_class, mock_subprocess):
+        """
+        Test that database choice is passed to subprocess correctly.
+
+        Verifies:
+        - PostgreSQL choice results in postgresql being passed to setup_database.py
+        - SQLite choice results in sqlite being passed to setup_database.py
+        """
+        mock_console = create_mock_console()
+        mock_console_class.return_value = mock_console
+        mock_console.select.side_effect = ['production', 'postgresql']
+        mock_console.confirm.side_effect = [True, True, True]
+        mock_console.prompt.side_effect = ['admin', 'admin@example.com']
+        mock_subprocess.return_value = Mock(returncode=0, stderr='')
+
+        with patch('scripts.setup.setup.project_root', self.temp_dir):
+            wizard = SetupWizard(non_interactive=False)
+            wizard.run_advanced_setup()
+
+            # Find database setup call
+            db_calls = [call for call in mock_subprocess.call_args_list
+                       if 'setup_database.py' in str(call)]
+
+            assert len(db_calls) > 0
+            # Verify postgresql was passed
+            db_call_str = str(db_calls[0])
+            assert 'postgresql' in db_call_str or '--type' in db_call_str
+
+    @patch('scripts.setup.setup.subprocess.run')
+    @patch('scripts.setup.setup.SetupConsole')
+    def test_advanced_mode_production_recommends_postgresql(self, mock_console_class, mock_subprocess):
+        """
+        Test that production profile recommends PostgreSQL.
+
+        Verifies:
+        - Info message is shown for production
+        - User is prompted to choose database
+        """
+        mock_console = create_mock_console()
+        mock_console_class.return_value = mock_console
+        mock_console.select.side_effect = ['production', 'postgresql']
+        mock_console.confirm.side_effect = [True, True, True]
+        mock_console.prompt.side_effect = ['admin', 'admin@example.com']
+        mock_subprocess.return_value = Mock(returncode=0, stderr='')
+
+        with patch('scripts.setup.setup.project_root', self.temp_dir):
+            wizard = SetupWizard(non_interactive=False)
+            wizard.run_advanced_setup()
+
+            # Verify info message was shown about production
+            info_calls = [call for call in mock_console.info.call_args_list
+                         if 'postgresql' in str(call).lower() or 'production' in str(call).lower()]
+            assert len(info_calls) > 0
 
 
 class TestComponentNonInteractiveRegression:

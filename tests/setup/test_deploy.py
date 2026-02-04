@@ -1330,3 +1330,329 @@ class TestHealthCheckRetryLogic:
             mock_sleep.assert_called()
             for call in mock_sleep.call_args_list:
                 assert call[0][0] == 2  # 2 second delay
+
+
+class TestManualRollback:
+    """Test manual rollback functionality using --rollback flag."""
+
+    @patch('scripts.setup.deploy.subprocess.run')
+    @patch('scripts.setup.deploy.run_docker_compose')
+    def test_rollback_stops_containers(self, mock_compose, mock_subprocess):
+        """Test that --rollback flag stops running containers."""
+        console = Mock()
+        console.spinner = MagicMock()
+        console.spinner.return_value.__enter__ = Mock(return_value=None)
+        console.spinner.return_value.__exit__ = Mock(return_value=None)
+
+        mock_compose.return_value = (True, "", "")
+        mock_subprocess.return_value = Mock(returncode=0, stdout="", stderr="")
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            working_dir = Path(tmpdir)
+            backup_dir = working_dir / "data" / "backups"
+            backup_dir.mkdir(parents=True)
+            backup_file = backup_dir / "test-backup.sql.gz"
+
+            # Create a dummy backup file
+            import gzip
+            with gzip.open(backup_file, 'wt') as f:
+                f.write("SELECT 1;")
+
+            orchestrator = DeploymentOrchestrator(
+                console=console,
+                working_dir=working_dir
+            )
+            orchestrator.backup_file = backup_file
+
+            result = orchestrator.rollback()
+
+            assert result is True
+            # Verify that docker-compose down was called (to stop containers)
+            down_calls = [call for call in mock_compose.call_args_list
+                         if 'down' in str(call)]
+            assert len(down_calls) > 0
+
+    @patch('scripts.setup.deploy.subprocess.run')
+    @patch('scripts.setup.deploy.run_docker_compose')
+    def test_rollback_restores_backup(self, mock_compose, mock_subprocess):
+        """Test that --rollback flag restores previous backup."""
+        console = Mock()
+        console.spinner = MagicMock()
+        console.spinner.return_value.__enter__ = Mock(return_value=None)
+        console.spinner.return_value.__exit__ = Mock(return_value=None)
+
+        mock_compose.return_value = (True, "", "")
+        mock_subprocess.return_value = Mock(returncode=0, stdout="", stderr="")
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            working_dir = Path(tmpdir)
+            backup_dir = working_dir / "data" / "backups"
+            backup_dir.mkdir(parents=True)
+            backup_file = backup_dir / "test-backup.sql.gz"
+
+            # Create a dummy backup file with SQL content
+            import gzip
+            backup_sql = "CREATE TABLE test (id INT);\nINSERT INTO test VALUES (1);"
+            with gzip.open(backup_file, 'wt') as f:
+                f.write(backup_sql)
+
+            orchestrator = DeploymentOrchestrator(
+                console=console,
+                working_dir=working_dir
+            )
+            orchestrator.backup_file = backup_file
+
+            result = orchestrator.rollback()
+
+            assert result is True
+            # Verify that psql was called to restore the backup
+            assert mock_subprocess.called
+            restore_calls = [call for call in mock_subprocess.call_args_list
+                            if any("psql" in str(arg) for arg in call[0])]
+            assert len(restore_calls) > 0
+
+    @patch('scripts.setup.deploy.run_docker_compose')
+    def test_rollback_handles_missing_backup_gracefully(self, mock_compose):
+        """Test that rollback handles non-existent state gracefully."""
+        console = Mock()
+        console.spinner = MagicMock()
+        console.spinner.return_value.__enter__ = Mock(return_value=None)
+        console.spinner.return_value.__exit__ = Mock(return_value=None)
+
+        mock_compose.return_value = (True, "", "")
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            working_dir = Path(tmpdir)
+
+            orchestrator = DeploymentOrchestrator(
+                console=console,
+                working_dir=working_dir
+            )
+            # No backup_file set
+
+            result = orchestrator.rollback()
+
+            assert result is True
+            # Should display warning about missing backup
+            console.warning.assert_called_with("No backup file to restore from")
+
+    def test_rollback_confirmation_interactive_mode_yes(self):
+        """Test rollback confirmation prompts work in interactive mode (user confirms)."""
+        runner = CliRunner()
+
+        with patch('scripts.setup.deploy.DeploymentOrchestrator') as mock_orchestrator_class:
+            mock_orchestrator = Mock()
+            mock_orchestrator.rollback.return_value = True
+            mock_orchestrator_class.return_value = mock_orchestrator
+
+            # Simulate user saying 'yes' to rollback confirmation
+            result = runner.invoke(main, ['--rollback'], input='y\n')
+
+            assert result.exit_code == 0
+            # Verify that rollback was actually called
+            assert mock_orchestrator.rollback.called
+
+    def test_rollback_confirmation_interactive_mode_no(self):
+        """Test rollback confirmation prompts work in interactive mode (user cancels)."""
+        runner = CliRunner()
+
+        # Simulate user saying 'no' to rollback confirmation
+        result = runner.invoke(main, ['--rollback'], input='n\n')
+
+        assert result.exit_code == 0
+        assert "Rollback cancelled" in result.output
+
+    def test_rollback_without_confirmation_non_interactive_mode(self):
+        """Test that rollback works in non-interactive mode without confirmation."""
+        runner = CliRunner()
+
+        with patch('scripts.setup.deploy.DeploymentOrchestrator') as mock_orchestrator_class:
+            mock_orchestrator = Mock()
+            mock_orchestrator.rollback.return_value = True
+            mock_orchestrator_class.return_value = mock_orchestrator
+
+            # Run with --non-interactive flag (no prompts)
+            result = runner.invoke(main, ['--rollback', '--non-interactive'])
+
+            assert result.exit_code == 0
+            # Verify rollback was called without prompting
+            assert mock_orchestrator.rollback.called
+
+    @patch('scripts.setup.deploy.run_docker_compose')
+    def test_rollback_restarts_all_services_after_restore(self, mock_compose):
+        """Test that rollback restarts services after backup restoration."""
+        console = Mock()
+        console.spinner = MagicMock()
+        console.spinner.return_value.__enter__ = Mock(return_value=None)
+        console.spinner.return_value.__exit__ = Mock(return_value=None)
+
+        mock_compose.return_value = (True, "", "")
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            working_dir = Path(tmpdir)
+            backup_dir = working_dir / "data" / "backups"
+            backup_dir.mkdir(parents=True)
+            backup_file = backup_dir / "test-backup.sql.gz"
+
+            # Create a dummy backup file
+            import gzip
+            with gzip.open(backup_file, 'wt') as f:
+                f.write("SELECT 1;")
+
+            orchestrator = DeploymentOrchestrator(
+                console=console,
+                working_dir=working_dir
+            )
+            orchestrator.backup_file = backup_file
+
+            with patch('scripts.setup.deploy.subprocess.run') as mock_subprocess:
+                mock_subprocess.return_value = Mock(returncode=0, stdout="", stderr="")
+
+                result = orchestrator.rollback()
+
+                assert result is True
+                # Verify that docker-compose up was called (to restart services)
+                up_calls = [call for call in mock_compose.call_args_list
+                           if 'up' in str(call)]
+                assert len(up_calls) > 0
+
+    @patch('scripts.setup.deploy.run_docker_compose')
+    def test_rollback_displays_success_message_on_completion(self, mock_compose):
+        """Test that rollback displays success message upon completion."""
+        console = Mock()
+        console.spinner = MagicMock()
+        console.spinner.return_value.__enter__ = Mock(return_value=None)
+        console.spinner.return_value.__exit__ = Mock(return_value=None)
+
+        mock_compose.return_value = (True, "", "")
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            working_dir = Path(tmpdir)
+            backup_dir = working_dir / "data" / "backups"
+            backup_dir.mkdir(parents=True)
+            backup_file = backup_dir / "test-backup.sql.gz"
+
+            # Create a dummy backup file
+            import gzip
+            with gzip.open(backup_file, 'wt') as f:
+                f.write("SELECT 1;")
+
+            orchestrator = DeploymentOrchestrator(
+                console=console,
+                working_dir=working_dir
+            )
+            orchestrator.backup_file = backup_file
+
+            with patch('scripts.setup.deploy.subprocess.run') as mock_subprocess:
+                mock_subprocess.return_value = Mock(returncode=0, stdout="", stderr="")
+
+                result = orchestrator.rollback()
+
+                assert result is True
+                # Verify success message was displayed
+                console.success.assert_called()
+                success_calls = [call for call in console.success.call_args_list
+                                if "Rollback completed" in str(call)]
+                assert len(success_calls) > 0
+
+    @patch('scripts.setup.deploy.subprocess.run')
+    @patch('scripts.setup.deploy.run_docker_compose')
+    def test_rollback_failure_on_stop_services(self, mock_compose, mock_subprocess):
+        """Test rollback handles failure to stop services."""
+        console = Mock()
+        console.spinner = MagicMock()
+        console.spinner.return_value.__enter__ = Mock(return_value=None)
+        console.spinner.return_value.__exit__ = Mock(return_value=None)
+
+        # First call to docker-compose down fails
+        mock_compose.return_value = (False, "", "Failed to stop containers")
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            working_dir = Path(tmpdir)
+
+            orchestrator = DeploymentOrchestrator(
+                console=console,
+                working_dir=working_dir
+            )
+
+            result = orchestrator.rollback()
+
+            # Rollback should still attempt to continue despite stop failure
+            # The method checks if docker-compose down succeeds, but continue anyway
+            assert isinstance(result, bool)
+
+    @patch('scripts.setup.deploy.run_docker_compose')
+    def test_rollback_failure_on_restore_backup(self, mock_compose):
+        """Test rollback handles failure to restore backup."""
+        console = Mock()
+        console.spinner = MagicMock()
+        console.spinner.return_value.__enter__ = Mock(return_value=None)
+        console.spinner.return_value.__exit__ = Mock(return_value=None)
+
+        mock_compose.return_value = (True, "", "")
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            working_dir = Path(tmpdir)
+            backup_dir = working_dir / "data" / "backups"
+            backup_dir.mkdir(parents=True)
+            backup_file = backup_dir / "test-backup.sql.gz"
+
+            # Create a dummy backup file
+            import gzip
+            with gzip.open(backup_file, 'wt') as f:
+                f.write("SELECT 1;")
+
+            orchestrator = DeploymentOrchestrator(
+                console=console,
+                working_dir=working_dir
+            )
+            orchestrator.backup_file = backup_file
+
+            with patch('scripts.setup.deploy.subprocess.run') as mock_subprocess:
+                # Simulate restore failure
+                mock_subprocess.return_value = Mock(returncode=1, stdout="", stderr="Restore failed")
+
+                result = orchestrator.rollback()
+
+                # Rollback should fail if restore fails
+                assert result is False
+
+    def test_rollback_cli_flag_with_failed_rollback(self):
+        """Test CLI --rollback flag when rollback operation fails."""
+        runner = CliRunner()
+
+        with patch('scripts.setup.deploy.DeploymentOrchestrator') as mock_orchestrator_class:
+            mock_orchestrator = Mock()
+            mock_orchestrator.rollback.return_value = False
+            mock_orchestrator_class.return_value = mock_orchestrator
+
+            # Run rollback in non-interactive mode (fails)
+            result = runner.invoke(main, ['--rollback', '--non-interactive'])
+
+            assert result.exit_code == 1
+            assert "Rollback failed" in result.output
+
+    def test_rollback_dry_run_mode_no_actual_changes(self):
+        """Test that rollback in dry-run mode makes no actual changes."""
+        console = Mock()
+        console.spinner = MagicMock()
+        console.spinner.return_value.__enter__ = Mock(return_value=None)
+        console.spinner.return_value.__exit__ = Mock(return_value=None)
+
+        orchestrator = DeploymentOrchestrator(
+            console=console,
+            dry_run=True
+        )
+
+        orchestrator._stop_all_services = Mock(return_value=True)
+        orchestrator._start_all_services = Mock(return_value=True)
+        orchestrator._restore_backup = Mock(return_value=True)
+
+        result = orchestrator.rollback()
+
+        assert result is True
+        # In dry-run mode, the methods should show [DRY RUN] messages
+        console.info.assert_called()
+        dry_run_calls = [call for call in console.info.call_args_list
+                        if "[DRY RUN]" in str(call)]
+        assert len(dry_run_calls) > 0

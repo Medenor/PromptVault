@@ -7,11 +7,11 @@ All validators return a tuple: (is_valid: bool, error_message: str | None)
 import re
 import os
 from pathlib import Path
-from typing import Tuple
+from typing import Tuple, Optional
 from urllib.parse import urlparse
 
 
-def validate_database_url(url: str) -> Tuple[bool, str | None]:
+def validate_database_url(url: str) -> Tuple[bool, Optional[str]]:
     """
     Validate database URL format.
 
@@ -80,7 +80,7 @@ def validate_database_url(url: str) -> Tuple[bool, str | None]:
     return True, None
 
 
-def validate_password_strength(password: str, min_length: int = 16) -> Tuple[bool, str | None]:
+def validate_password_strength(password: str, min_length: int = 16) -> Tuple[bool, Optional[str]]:
     """
     Validate password complexity and strength.
 
@@ -132,7 +132,7 @@ def validate_password_strength(password: str, min_length: int = 16) -> Tuple[boo
     return True, None
 
 
-def validate_port(port: int | str) -> Tuple[bool, str | None]:
+def validate_port(port) -> Tuple[bool, Optional[str]]:
     """
     Validate port number.
 
@@ -165,7 +165,7 @@ def validate_port(port: int | str) -> Tuple[bool, str | None]:
     return True, None
 
 
-def validate_hostname(hostname: str) -> Tuple[bool, str | None]:
+def validate_hostname(hostname: str) -> Tuple[bool, Optional[str]]:
     """
     Validate hostname format.
 
@@ -241,7 +241,7 @@ def validate_hostname(hostname: str) -> Tuple[bool, str | None]:
     return True, None
 
 
-def validate_email(email: str) -> Tuple[bool, str | None]:
+def validate_email(email: str) -> Tuple[bool, Optional[str]]:
     """
     Validate email address format.
 
@@ -294,7 +294,7 @@ def validate_email(email: str) -> Tuple[bool, str | None]:
     return True, None
 
 
-def validate_path(path: str, must_exist: bool = False) -> Tuple[bool, str | None]:
+def validate_path(path: str, must_exist: bool = False) -> Tuple[bool, Optional[str]]:
     """
     Validate file or directory path.
 
@@ -337,7 +337,7 @@ def validate_path(path: str, must_exist: bool = False) -> Tuple[bool, str | None
     return True, None
 
 
-def validate_jwt_key(path: str, key_type: str) -> Tuple[bool, str | None]:
+def validate_jwt_key(path: str, key_type: str) -> Tuple[bool, Optional[str]]:
     """
     Validate JWT key file.
 
@@ -427,7 +427,7 @@ def validate_jwt_key(path: str, key_type: str) -> Tuple[bool, str | None]:
     return True, None
 
 
-def validate_env_file(path: str) -> Tuple[bool, str | None]:
+def validate_env_file(path: str) -> Tuple[bool, Optional[str]]:
     """
     Validate .env file format and required variables.
 
