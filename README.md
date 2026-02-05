@@ -306,7 +306,7 @@ The setup wizard will guide you through:
 - Admin user creation
 - Application deployment
 
-For a detailed walkthrough, see the **[Quick Start Guide](docs/QUICK_START.md)**.
+For a detailed walkthrough, see the **[Turnkey Deployment Guide](docs/DEPLOYMENT.md)**.
 
 ### Automated Setup (Recommended)
 
@@ -347,7 +347,7 @@ python scripts/setup/setup.py --component deploy
 ```
 
 For complete documentation on the automated setup system, see:
-- **[Quick Start Guide](docs/QUICK_START.md)** - 5-minute setup walkthrough
+- **[Turnkey Deployment Guide](docs/DEPLOYMENT.md)** - Automated deployment with rollback
 - **[Troubleshooting Guide](docs/TROUBLESHOOTING.md)** - Common issues and solutions
 - **[Deployment Guide](docs/DEPLOYMENT.md)** - Detailed deployment documentation
 
@@ -396,7 +396,7 @@ Then open your browser to `http://localhost:8001` and login with your admin cred
 For detailed instructions and guides:
 
 **Setup and Deployment:**
-- **[Quick Start Guide](docs/QUICK_START.md)** - Get started in 5 minutes with automated setup
+- **[Turnkey Deployment Guide](docs/DEPLOYMENT.md)** - Automated deployment with pre-flight checks and rollback
 - **[Troubleshooting Guide](docs/TROUBLESHOOTING.md)** - Common issues and solutions
 - **[Deployment Guide](docs/DEPLOYMENT.md)** - Complete deployment instructions for Docker, Docker Compose, and manual deployment
 - **[Authentication Deployment Guide](docs/AUTHENTICATION_DEPLOYMENT.md)** - Authentication setup with JWT key generation
