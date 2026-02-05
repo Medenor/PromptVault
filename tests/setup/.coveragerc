@@ -1,0 +1,5 @@
+[run]
+omit =
+    scripts/setup/tests/*
+    */scripts/setup/tests/*
+    */tests/*

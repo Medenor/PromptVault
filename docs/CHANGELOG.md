@@ -5,6 +5,58 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] - 2026-02-05
+
+### ✨ Added
+
+- **Turnkey Deployment System**: Complete deployment automation with pre-flight checks, five-phase deployment, and automatic rollback
+  - **Deployment Orchestration Script**: `scripts/setup/deploy.py` provides comprehensive deployment automation
+  - **Pre-flight Checks**: Validates Docker, ports, disk space, JWT keys, and configuration before deployment
+  - **Five-Phase Deployment**:
+    - **Preparation**: Database backup, container state preservation, image pulling/building
+    - **Infrastructure**: PostgreSQL and Redis service startup with health verification
+    - **Migrations**: Alembic database schema updates with validation
+    - **Application**: PromptVault web service deployment with health monitoring
+    - **Verification**: Smoke tests, deployment summary, and access information
+  - **Automatic Rollback**: Full rollback capability on failure with database restoration
+  - **Dry Run Mode**: Safe testing without making changes (`--dry-run`)
+  - **CI/CD Integration**: Non-interactive mode for automated deployments (`--non-interactive`)
+  - **Flexible Options**: Skip backup/migrations, force rebuild, and other configuration options
+  - **Comprehensive Logging**: Detailed progress reporting and error handling
+  - **Health Monitoring**: Service health checks with configurable timeouts
+  - **Backup Management**: Automatic timestamped backups with verification
+  - **Docker Integration**: Full Docker Compose orchestration with error handling
+  - **Documentation**: Complete deployment guide in `scripts/setup/DEPLOY_README.md`
+
+- **Enhanced Deployment Wizard**: Improved user experience with comprehensive information display
+  - **Critical Information Display**: Highlights JWT keys, database backups, and configuration files that must be saved
+  - **Visual Deployment Plan**: Step-by-step breakdown of the entire deployment process
+  - **System Status Overview**: Shows current running services before deployment
+  - **Change Preview**: Details what components will be modified during deployment
+  - **Risky Operation Confirmations**: Explicit confirmation for database changes and container restarts
+  - **Improved Console Methods**: Added `critical()` and `section()` methods for better information presentation
+
+### 🔄 Changed
+
+- **Deployment Process**: Replaced manual deployment steps with automated orchestration script
+- **User Experience**: Enhanced deployment wizard provides comprehensive guidance and safety checks
+- **Error Handling**: Improved error messages and rollback capabilities
+- **Console Utilities**: Extended `SetupConsole` class with new methods for critical information display
+
+### 🐛 Fixed
+
+- **Live Tag Autocomplete**: Fixed tag autocomplete functionality in prompt editor
+  - **Root Cause**: Tag autocomplete was not properly handling input events and tag selection
+  - **Fix**: Improved event handling to prevent input blur on tag selection and ensure proper tag suggestions
+  - **Impact**: Users can now seamlessly add tags during prompt creation/editing with live autocomplete suggestions
+  - **Files Modified**: Frontend tag autocomplete logic in prompt editor components
+
+### 📝 Documentation
+
+- **Deployment Guide**: Added comprehensive `scripts/setup/DEPLOY_README.md` with usage examples, troubleshooting, and best practices
+- **Changelog**: Updated to reflect new turnkey deployment features and improvements
+- **Tag Autocomplete**: Updated documentation to include live autocomplete feature in prompt editor
+
 ## [1.6.0] - 2026-02-02
 
 ### ✨ Added

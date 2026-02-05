@@ -34,6 +34,7 @@ bulk operations, analytics, orphan detection, and suggestions derived from promp
 - Find-and-replace across prompts.
 - Import/export of Tag and Category definitions.
 - Suggestion generation from prompt content.
+- Live Tag autocomplete during prompt create/edit.
 - Compatibility with existing list endpoints.
 - Save-all updates for management tables.
 - Orphan assignment by name or ID.
@@ -146,6 +147,15 @@ Not applicable. Any transition not listed MUST be considered invalid.
 
 - **REQ-013 — Suggestions**  
   The system **MUST** provide Tag suggestions derived from prompt content and existing taxonomy.- **REQ-014 — Undo Support**
+
+- **REQ-013a — Live Tag Autocomplete**  
+  The system **MUST** provide a live autocomplete dropdown for Tags during prompt creation and editing.  
+  - As the user types, the dropdown **MUST** filter existing Tags by the current partial term (case-insensitive).  
+  - Selecting a suggestion **MUST** add the Tag to the prompt and remove it from the dropdown list.  
+  - The dropdown **MUST** support keyboard navigation (Up/Down, Enter, Escape).  
+  - If no Tags match, the dropdown **MUST** indicate that no matches were found.
+
+- **REQ-014 — Undo Support**
   The system **MUST** provide an undo capability for recent management operations with persistent storage across server restarts.
 
 - **REQ-014a — Undo Persistence**

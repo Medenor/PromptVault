@@ -6,15 +6,15 @@
 
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, Dict, Optional
 
 MANIFEST_PATH = Path(__file__).parent.parent.parent.parent / "dist" / "static" / ".vite" / "manifest.json"
 DIST_PATH = Path(__file__).parent.parent.parent.parent / "dist" / "static"
 
-_manifest_cache: dict[str, Any] = {}
-_manifest_mtime: float | None = None
+_manifest_cache: Dict[str, Any] = {}
+_manifest_mtime: Optional[float] = None
 
-def load_manifest() -> dict[str, Any]:
+def load_manifest() -> Dict[str, Any]:
     """Load Vite manifest file for production builds."""
     global _manifest_cache, _manifest_mtime
     if not MANIFEST_PATH.exists():

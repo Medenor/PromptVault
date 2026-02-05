@@ -1,0 +1,244 @@
+# PromptVault Setup Configuration File
+#
+# This file can be used with the setup wizard for automated deployments:
+#   python scripts/setup/setup.py --config config.yaml --non-interactive
+#
+# Copy this file and customize for your deployment:
+#   cp scripts/setup/templates/config.example.yaml my-config.yaml
+
+# Development Configuration
+# Perfect for local development and testing
+development:
+  # Database Configuration
+  DATABASE_URL: sqlite:///./data/promptvault.db
+
+  # Environment Settings
+  ENVIRONMENT: development
+  LOG_LEVEL: DEBUG
+  AUDIT_LOG_LEVEL: INFO
+  DB_ECHO: "true"
+
+  # Application Settings
+  APP_BASE_URL: http://localhost:8000
+
+  # JWT Configuration
+  JWT_PRIVATE_KEY_PATH: secrets/jwt/private_key.pem
+  JWT_PUBLIC_KEY_PATH: secrets/jwt/public_key.pem
+  JWT_ACCESS_TOKEN_EXPIRE_SECONDS: "900"        # 15 minutes
+  JWT_REFRESH_TOKEN_EXPIRE_SECONDS: "604800"    # 7 days
+  JWT_ISSUER: promptvault
+  JWT_AUDIENCE: promptvault-api
+
+  # Password Policy (Relaxed for Development)
+  PASSWORD_MIN_LENGTH: "12"
+  PASSWORD_REQUIRE_UPPERCASE: "true"
+  PASSWORD_REQUIRE_LOWERCASE: "true"
+  PASSWORD_REQUIRE_DIGIT: "true"
+  PASSWORD_REQUIRE_SPECIAL: "true"
+
+  # Account Security
+  MAX_LOGIN_ATTEMPTS: "5"
+  ACCOUNT_LOCKOUT_DURATION_SECONDS: "900"       # 15 minutes
+  MAX_SESSIONS_PER_USER: "5"
+  SESSION_INACTIVE_TIMEOUT_SECONDS: "2592000"   # 30 days
+
+  # Redis Configuration
+  REDIS_URL: redis://localhost:6379/0
+
+  # Rate Limiting (Relaxed for Development)
+  RATE_LIMIT_LOGIN_ATTEMPTS: "10"
+  RATE_LIMIT_LOGIN_WINDOW_SECONDS: "900"
+  RATE_LIMIT_REGISTER_ATTEMPTS: "5"
+  RATE_LIMIT_REGISTER_WINDOW_SECONDS: "3600"
+  RATE_LIMIT_PASSWORD_RESET_ATTEMPTS: "5"
+  RATE_LIMIT_PASSWORD_RESET_WINDOW_SECONDS: "3600"
+
+  # Email Configuration (Placeholder for Development)
+  SMTP_HOST: smtp.example.com
+  SMTP_PORT: "587"
+  SMTP_USE_TLS: "true"
+  SMTP_USERNAME: noreply@example.com
+  SMTP_PASSWORD: changeme
+  EMAIL_FROM_ADDRESS: noreply@example.com
+  EMAIL_FROM_NAME: PromptVault
+  PASSWORD_RESET_TOKEN_EXPIRE_SECONDS: "3600"   # 1 hour
+
+# Production Configuration
+# Optimized for production deployments with strict security
+production:
+  # Database Configuration (PostgreSQL Recommended)
+  DATABASE_URL: postgresql://promptvault:CHANGE_THIS_PASSWORD@localhost:5432/promptvault
+  DB_POOL_SIZE: "20"
+  DB_POOL_TIMEOUT: "30"
+  DB_POOL_RECYCLE: "3600"
+
+  # Environment Settings
+  ENVIRONMENT: production
+  LOG_LEVEL: WARNING
+  AUDIT_LOG_LEVEL: INFO
+  DB_ECHO: "false"
+
+  # Application Settings
+  APP_BASE_URL: https://promptvault.example.com
+
+  # JWT Configuration
+  JWT_PRIVATE_KEY_PATH: /etc/promptvault/jwt/private_key.pem
+  JWT_PUBLIC_KEY_PATH: /etc/promptvault/jwt/public_key.pem
+  JWT_ACCESS_TOKEN_EXPIRE_SECONDS: "900"        # 15 minutes
+  JWT_REFRESH_TOKEN_EXPIRE_SECONDS: "604800"    # 7 days
+  JWT_ISSUER: promptvault
+  JWT_AUDIENCE: promptvault-api
+
+  # Password Policy (Strict for Production)
+  PASSWORD_MIN_LENGTH: "16"
+  PASSWORD_REQUIRE_UPPERCASE: "true"
+  PASSWORD_REQUIRE_LOWERCASE: "true"
+  PASSWORD_REQUIRE_DIGIT: "true"
+  PASSWORD_REQUIRE_SPECIAL: "true"
+
+  # Account Security (Strict)
+  MAX_LOGIN_ATTEMPTS: "3"
+  ACCOUNT_LOCKOUT_DURATION_SECONDS: "1800"      # 30 minutes
+  MAX_SESSIONS_PER_USER: "3"
+  SESSION_INACTIVE_TIMEOUT_SECONDS: "1800"      # 30 minutes
+
+  # Redis Configuration
+  REDIS_URL: redis://localhost:6379/0
+
+  # Rate Limiting (Strict for Production)
+  RATE_LIMIT_LOGIN_ATTEMPTS: "5"
+  RATE_LIMIT_LOGIN_WINDOW_SECONDS: "900"
+  RATE_LIMIT_REGISTER_ATTEMPTS: "3"
+  RATE_LIMIT_REGISTER_WINDOW_SECONDS: "3600"
+  RATE_LIMIT_PASSWORD_RESET_ATTEMPTS: "3"
+  RATE_LIMIT_PASSWORD_RESET_WINDOW_SECONDS: "3600"
+
+  # Email Configuration (Production)
+  SMTP_HOST: smtp.example.com
+  SMTP_PORT: "587"
+  SMTP_USE_TLS: "true"
+  SMTP_USERNAME: noreply@example.com
+  SMTP_PASSWORD: CHANGE_THIS_PASSWORD
+  EMAIL_FROM_ADDRESS: noreply@example.com
+  EMAIL_FROM_NAME: PromptVault
+  PASSWORD_RESET_TOKEN_EXPIRE_SECONDS: "3600"   # 1 hour
+
+# Staging Configuration
+# Similar to production but with relaxed settings for testing
+staging:
+  # Database Configuration
+  DATABASE_URL: postgresql://promptvault:CHANGE_THIS_PASSWORD@localhost:5432/promptvault_staging
+  DB_POOL_SIZE: "10"
+  DB_POOL_TIMEOUT: "30"
+  DB_POOL_RECYCLE: "3600"
+
+  # Environment Settings
+  ENVIRONMENT: staging
+  LOG_LEVEL: INFO
+  AUDIT_LOG_LEVEL: INFO
+  DB_ECHO: "false"
+
+  # Application Settings
+  APP_BASE_URL: https://staging.promptvault.example.com
+
+  # JWT Configuration
+  JWT_PRIVATE_KEY_PATH: /etc/promptvault/jwt/private_key.pem
+  JWT_PUBLIC_KEY_PATH: /etc/promptvault/jwt/public_key.pem
+  JWT_ACCESS_TOKEN_EXPIRE_SECONDS: "900"
+  JWT_REFRESH_TOKEN_EXPIRE_SECONDS: "604800"
+  JWT_ISSUER: promptvault-staging
+  JWT_AUDIENCE: promptvault-api-staging
+
+  # Password Policy (Moderate)
+  PASSWORD_MIN_LENGTH: "12"
+  PASSWORD_REQUIRE_UPPERCASE: "true"
+  PASSWORD_REQUIRE_LOWERCASE: "true"
+  PASSWORD_REQUIRE_DIGIT: "true"
+  PASSWORD_REQUIRE_SPECIAL: "true"
+
+  # Account Security (Moderate)
+  MAX_LOGIN_ATTEMPTS: "5"
+  ACCOUNT_LOCKOUT_DURATION_SECONDS: "900"
+  MAX_SESSIONS_PER_USER: "5"
+  SESSION_INACTIVE_TIMEOUT_SECONDS: "2592000"
+
+  # Redis Configuration
+  REDIS_URL: redis://localhost:6379/1
+
+  # Rate Limiting (Moderate)
+  RATE_LIMIT_LOGIN_ATTEMPTS: "5"
+  RATE_LIMIT_LOGIN_WINDOW_SECONDS: "900"
+  RATE_LIMIT_REGISTER_ATTEMPTS: "3"
+  RATE_LIMIT_REGISTER_WINDOW_SECONDS: "3600"
+  RATE_LIMIT_PASSWORD_RESET_ATTEMPTS: "3"
+  RATE_LIMIT_PASSWORD_RESET_WINDOW_SECONDS: "3600"
+
+  # Email Configuration
+  SMTP_HOST: smtp.example.com
+  SMTP_PORT: "587"
+  SMTP_USE_TLS: "true"
+  SMTP_USERNAME: noreply@example.com
+  SMTP_PASSWORD: CHANGE_THIS_PASSWORD
+  EMAIL_FROM_ADDRESS: noreply@example.com
+  EMAIL_FROM_NAME: PromptVault Staging
+  PASSWORD_RESET_TOKEN_EXPIRE_SECONDS: "3600"
+
+# Docker Configuration
+# For containerized deployments
+docker:
+  # Database Configuration (Uses Docker service names)
+  DATABASE_URL: postgresql://promptvault:CHANGE_THIS_PASSWORD@db:5432/promptvault
+  DB_POOL_SIZE: "20"
+  DB_POOL_TIMEOUT: "30"
+  DB_POOL_RECYCLE: "3600"
+
+  # Environment Settings
+  ENVIRONMENT: production
+  LOG_LEVEL: WARNING
+  AUDIT_LOG_LEVEL: INFO
+  DB_ECHO: "false"
+
+  # Application Settings (Internal Docker network)
+  APP_BASE_URL: http://web:8000
+
+  # JWT Configuration (Docker volumes)
+  JWT_PRIVATE_KEY_PATH: /app/secrets/jwt/private_key.pem
+  JWT_PUBLIC_KEY_PATH: /app/secrets/jwt/public_key.pem
+  JWT_ACCESS_TOKEN_EXPIRE_SECONDS: "900"
+  JWT_REFRESH_TOKEN_EXPIRE_SECONDS: "604800"
+  JWT_ISSUER: promptvault
+  JWT_AUDIENCE: promptvault-api
+
+  # Password Policy
+  PASSWORD_MIN_LENGTH: "16"
+  PASSWORD_REQUIRE_UPPERCASE: "true"
+  PASSWORD_REQUIRE_LOWERCASE: "true"
+  PASSWORD_REQUIRE_DIGIT: "true"
+  PASSWORD_REQUIRE_SPECIAL: "true"
+
+  # Account Security
+  MAX_LOGIN_ATTEMPTS: "3"
+  ACCOUNT_LOCKOUT_DURATION_SECONDS: "1800"
+  MAX_SESSIONS_PER_USER: "3"
+  SESSION_INACTIVE_TIMEOUT_SECONDS: "1800"
+
+  # Redis Configuration (Docker service name)
+  REDIS_URL: redis://redis:6379/0
+
+  # Rate Limiting
+  RATE_LIMIT_LOGIN_ATTEMPTS: "5"
+  RATE_LIMIT_LOGIN_WINDOW_SECONDS: "900"
+  RATE_LIMIT_REGISTER_ATTEMPTS: "3"
+  RATE_LIMIT_REGISTER_WINDOW_SECONDS: "3600"
+  RATE_LIMIT_PASSWORD_RESET_ATTEMPTS: "3"
+  RATE_LIMIT_PASSWORD_RESET_WINDOW_SECONDS: "3600"
+
+  # Email Configuration
+  SMTP_HOST: smtp.example.com
+  SMTP_PORT: "587"
+  SMTP_USE_TLS: "true"
+  SMTP_USERNAME: noreply@example.com
+  SMTP_PASSWORD: CHANGE_THIS_PASSWORD
+  EMAIL_FROM_ADDRESS: noreply@example.com
+  EMAIL_FROM_NAME: PromptVault
+  PASSWORD_RESET_TOKEN_EXPIRE_SECONDS: "3600"

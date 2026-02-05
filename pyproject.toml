@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "promptvault"
-version = "1.6.0"
+version = "1.7.0"
 description = "Web-based prompt manager for organizing and versioning AI prompts."
 readme = "README.md"
 requires-python = ">=3.8"
@@ -50,6 +50,8 @@ dependencies = [
   "user-agents>=2.2.0",
   "apscheduler>=3.10.0",
   "diff-match-patch>=20230430",
+  "click>=8.1.0",
+  "rich>=13.0.0",
 ]
 
 [project.optional-dependencies]
@@ -58,6 +60,11 @@ test = [
   "pytest-cov>=4.1.0",
   "pytest-asyncio>=0.23.0",
   "freezegun>=1.4.0",
+]
+setup = [
+  "click>=8.1.0",
+  "rich>=13.0.0",
+  "PyYAML>=6.0",
 ]
 
 [project.urls]

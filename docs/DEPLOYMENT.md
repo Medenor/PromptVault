@@ -4,6 +4,12 @@ This guide covers deploying PromptVault with database support using Docker, Dock
 
 ## Table of Contents
 
+- [🚀 Automated Setup (Recommended)](#-automated-setup-recommended)
+  - [Setup Wizard Modes](#setup-wizard-modes)
+  - [Quick Setup](#quick-setup)
+  - [Advanced Setup](#advanced-setup)
+  - [Component Setup](#component-setup)
+  - [Non-Interactive Setup](#non-interactive-setup)
 - [⚠️ Pre-Deployment Checklist](#-pre-deployment-checklist)
 - [Quick Start with Docker Compose](#quick-start-with-docker-compose)
 - [JWT Key Generation](#jwt-key-generation)
@@ -14,6 +20,206 @@ This guide covers deploying PromptVault with database support using Docker, Dock
 - [Migration from JSON](#migration-from-json)
 - [Health Checks](#health-checks)
 - [Troubleshooting](#troubleshooting)
+
+---
+
+## 🚀 Automated Setup (Recommended)
+
+PromptVault includes a comprehensive setup wizard that automates the entire deployment process, from JWT key generation to application startup. This is the **fastest and most reliable** way to deploy PromptVault.
+
+### Prerequisites
+
+- Docker and Docker Compose installed
+- Python 3.11+ installed
+- Git installed
+
+### Setup Wizard Modes
+
+The setup wizard provides three modes to match your needs:
+
+#### Quick Setup
+
+Perfect for development and testing. Gets you running in under 5 minutes with sensible defaults:
+
+```bash
+python scripts/setup/setup.py --quick
+```
+
+**What it does:**
+- ✅ Generates JWT keys (ES256) automatically
+- ✅ Creates development configuration (SQLite database)
+- ✅ Initializes database and runs migrations
+- ✅ Prompts for admin user credentials
+- ✅ Starts all services (web, database, Redis)
+- ✅ Verifies health and displays access information
+
+**Access:** http://localhost:8001
+
+#### Advanced Setup
+
+Full customization for production deployments:
+
+```bash
+python scripts/setup/setup.py --advanced
+```
+
+**What it configures:**
+- JWT key generation (with custom paths)
+- Environment configuration (development vs production profiles)
+- Database selection (PostgreSQL or SQLite)
+- Security settings (passwords, rate limiting, session management)
+- Email configuration (SMTP for password reset)
+- Admin user creation
+- Full deployment with health checks
+
+**Production features:**
+- PostgreSQL with connection pooling
+- Strict password policies
+- Rate limiting enabled
+- Full audit logging
+- Email notifications
+
+#### Component Setup
+
+Run individual setup components independently:
+
+```bash
+# JWT keys only
+python scripts/setup/setup.py --component jwt
+
+# Environment configuration only
+python scripts/setup/setup.py --component env
+
+# Database setup only
+python scripts/setup/setup.py --component database
+
+# Deployment only
+python scripts/setup/setup.py --component deploy
+```
+
+**Use cases:**
+- Regenerate JWT keys
+- Update environment configuration
+- Re-run database migrations
+- Redeploy without changing configuration
+
+#### Non-Interactive Setup
+
+For CI/CD pipelines and automation:
+
+```bash
+# Quick setup without prompts
+python scripts/setup/setup.py --quick --non-interactive
+
+# Advanced setup with config file
+python scripts/setup/setup.py --config config.yaml --non-interactive
+```
+
+**Example config.yaml:**
+```yaml
+profile: production
+
+jwt:
+  output_dir: secrets/jwt
+  regenerate: false
+  backup: true
+
+database:
+  type: postgresql
+  host: localhost
+  port: 5432
+  name: promptvault
+  user: promptvault
+
+environment:
+  ENVIRONMENT: production
+  LOG_LEVEL: WARNING
+
+admin:
+  create: true
+  username: admin
+  email: admin@example.com
+
+deploy:
+  rebuild: false
+  skip_backup: false
+  wait_timeout: 120
+```
+
+### Individual Setup Scripts
+
+You can also use the individual setup scripts directly:
+
+**JWT Key Generation:**
+```bash
+# Generate keys with defaults
+python scripts/setup/setup_jwt.py
+
+# Validate existing keys
+python scripts/setup/setup_jwt.py --validate-only
+
+# Force regeneration with backup
+python scripts/setup/setup_jwt.py --force --backup
+```
+
+**Environment Configuration:**
+```bash
+# Interactive configuration
+python scripts/setup/setup_env.py
+
+# Use development profile
+python scripts/setup/setup_env.py --profile development
+
+# Use production profile
+python scripts/setup/setup_env.py --profile production
+
+# Validate existing .env
+python scripts/setup/setup_env.py --validate-only
+```
+
+**Database Setup:**
+```bash
+# SQLite setup
+python scripts/setup/setup_database.py --type sqlite --non-interactive
+
+# PostgreSQL setup
+python scripts/setup/setup_database.py --type postgresql \
+    --host localhost --port 5432 \
+    --database promptvault --user promptvault
+
+# Migrations only
+python scripts/setup/setup_database.py --migrate-only
+
+# With admin user creation
+python scripts/setup/setup_database.py --type sqlite --create-admin
+```
+
+**Deployment:**
+```bash
+# Full deployment
+python scripts/setup/deploy.py
+
+# Dry run (test without executing)
+python scripts/setup/deploy.py --dry-run
+
+# Skip backup and migrations
+python scripts/setup/deploy.py --skip-backup --skip-migrations
+
+# Rollback to previous state
+python scripts/setup/deploy.py --rollback
+```
+
+### Troubleshooting
+
+If you encounter issues with the automated setup:
+
+1. **Check Prerequisites:** Ensure Docker, Docker Compose, and Python 3.11+ are installed
+2. **View Logs:** Check `.setup_state.json` for the last completed step
+3. **Resume Setup:** The wizard can resume from the last checkpoint
+4. **Component Retry:** Run individual components to isolate issues
+5. **Manual Fallback:** Use the manual installation method below
+
+For detailed troubleshooting, see **[Troubleshooting Guide](TROUBLESHOOTING.md)**.
 
 ---
 
