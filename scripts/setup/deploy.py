@@ -120,6 +120,9 @@ class DeploymentOrchestrator:
     verification, with automatic rollback capabilities.
     """
 
+    # Service names for status checking and management
+    SERVICES = ["db", "redis", "web"]
+
     def __init__(
         self,
         console: SetupConsole,
@@ -508,21 +511,26 @@ class DeploymentOrchestrator:
         - Run smoke tests
         - Display access information
         - Show deployment summary
+        - Show critical information
 
         Returns:
             True if phase completed successfully
         """
-        self.console.header("Phase 5: Verification", "Running smoke tests")
+        self.console.header("Phase 5: Verification", "Running smoke tests and final checks")
 
         try:
             # Step 1: Smoke tests
-            self.console.step(1, 2, "Running smoke tests")
+            self.console.step(1, 3, "Running smoke tests")
             if not self._run_smoke_tests():
                 self.console.warning("Some smoke tests failed (non-critical)")
 
             # Step 2: Display access info
-            self.console.step(2, 2, "Deployment complete")
+            self.console.step(2, 3, "Showing deployment summary")
             self._display_access_info()
+
+            # Step 3: Show critical information
+            self.console.step(3, 3, "Displaying critical information")
+            self._show_critical_information()
 
             self.phases_completed.append("verification")
             return True
@@ -674,7 +682,7 @@ class DeploymentOrchestrator:
 
     def _save_container_states(self) -> None:
         """Save current container states for potential rollback."""
-        for service in ["db", "redis", "web"]:
+        for service in self.SERVICES:
             status = get_container_status(service, str(self.working_dir))
             if status:
                 self.previous_containers[service] = status
@@ -987,6 +995,183 @@ class DeploymentOrchestrator:
         self.console.info("  Check status: docker-compose ps")
         self.console.info("  Stop services: docker-compose down")
 
+    def _format_file_size(self, file_path: Path) -> str:
+        """
+        Format file size in MB.
+
+        Args:
+            file_path: Path to the file
+
+        Returns:
+            Formatted file size string (e.g., "12.34 MB")
+        """
+        size_mb = file_path.stat().st_size / (1024 * 1024)
+        return f"{size_mb:.2f} MB"
+
+    def _show_critical_information(self) -> None:
+        """Display critical information that users must save/backup."""
+        # In dry run mode, skip this section as no actual changes are made
+        if self.dry_run:
+            self.console.info("ℹ️  Dry run mode - no actual changes will be made")
+            return
+
+        self.console.header("CRITICAL INFORMATION", "SAVE THESE ITEMS!")
+
+        # JWT Keys
+        jwt_private = self.working_dir / "secrets" / "jwt" / "private_key.pem"
+        jwt_public = self.working_dir / "secrets" / "jwt" / "public_key.pem"
+
+        # Check if this is initial deployment (no data directory yet)
+        data_dir = self.working_dir / "data"
+        is_initial_deploy = not data_dir.exists()
+
+        if jwt_private.exists() and jwt_public.exists():
+            self.console.critical("JWT Authentication Keys:")
+            self.console.info(f"  🔑 Private Key: {jwt_private}")
+            self.console.info(f"  🔑 Public Key: {jwt_public}")
+            self.console.warning("BACKUP THESE FILES IMMEDIATELY!")
+            self.console.warning("Store them securely - they cannot be recovered if lost!")
+            self.console.warning("Losing these keys will invalidate all user sessions!")
+        elif is_initial_deploy:
+            self.console.info("ℹ️  JWT keys will be generated on first startup")
+            self.console.warning("REMEMBER to backup JWT keys after first startup!")
+        else:
+            self.console.error("❌ JWT keys missing but expected to exist!")
+            self.console.warning("Check secrets/jwt/ directory for missing key files")
+
+        # Database backup
+        if self.backup_file and self.backup_file.exists():
+            self.console.critical("Database Backup:")
+            self.console.info(f"  💾 Location: {self.backup_file}")
+            self.console.info(f"  📏 Size: {self._format_file_size(self.backup_file)}")
+            self.console.success("Backup created successfully")
+        else:
+            if not self.skip_backup:
+                self.console.warning("No database backup was created")
+                self.console.warning("Backup failed or was skipped")
+            # If skip_backup is True, don't warn - it was intentional
+
+        # Configuration files
+        env_file = self.working_dir / ".env"
+        if env_file.exists():
+            self.console.critical("Configuration Files:")
+            self.console.info(f"  📄 Main Config: {env_file}")
+            self.console.warning("Backup your .env file - it contains sensitive credentials!")
+
+    def _show_system_status(self) -> None:
+        """Show current system state before deployment."""
+        self.console.header("Current System Status", "What's running now")
+
+        status_info = []
+        for service in self.SERVICES:
+            status = get_container_status(service, str(self.working_dir))
+            status_info.append((service, status or "not running"))
+
+        self.console.table("Service Status", headers=["Service", "Status"], rows=status_info)
+
+    def _show_change_preview(self) -> None:
+        """Show what the deployment will change."""
+        self.console.header("What Will Change", "Actions to be performed")
+
+        changes = [
+            ("Database", "Will be backed up and migrated" if not self.skip_backup else "No changes"),
+            ("Docker Images", "Will be pulled/built" if not self.dry_run else "No changes"),
+            ("Containers", "Will be restarted" if not self.dry_run else "No changes"),
+            ("Data", "Will be preserved with backup" if not self.skip_backup else "No backup created")
+        ]
+
+        self.console.table("Deployment Changes", headers=["Component", "Action"], rows=changes)
+
+    def _confirm_risky_operations(self) -> bool:
+        """Get explicit confirmation for risky operations."""
+        confirmations_needed = []
+
+        # Database changes
+        if not self.skip_backup and not self.dry_run:
+            confirmations_needed.append((
+                "database_backup",
+                "Create database backup?",
+                "This will create a backup of your entire database"
+            ))
+
+        # Migration confirmation
+        if not self.skip_migrations and not self.dry_run:
+            confirmations_needed.append((
+                "database_migration",
+                "Run database migrations?",
+                "This will apply any pending schema changes"
+            ))
+
+        # Container changes
+        if not self.dry_run:
+            confirmations_needed.append((
+                "container_changes",
+                "Restart Docker containers?",
+                "This will stop and restart your services"
+            ))
+
+        # Get confirmations
+        for confirm_id, question, description in confirmations_needed:
+            self.console.info(f"\n{description}")
+            if not self.console.confirm(question, default=True):
+                self.console.warning(f"Operation cancelled: {confirm_id}")
+                return False
+
+        return True
+
+    def _show_visual_deployment_plan(self) -> None:
+        """Show a visual representation of the deployment process."""
+        self.console.header("Deployment Plan", "What will happen step by step")
+
+        phases = [
+            ("🛠️  Preparation", [
+                "Create database backup",
+                "Save current container states",
+                "Pull/build Docker images"
+            ]),
+            ("🏗️  Infrastructure", [
+                "Start PostgreSQL database",
+                "Start Redis cache",
+                "Verify service health"
+            ]),
+            ("🔄 Migrations", [
+                "Run Alembic migrations",
+                "Update database schema",
+                "Verify migration success"
+            ]),
+            ("🚀 Application", [
+                "Start PromptVault web service",
+                "Wait for healthy status",
+                "Verify application readiness"
+            ]),
+            ("✅ Verification", [
+                "Run smoke tests",
+                "Display access information",
+                "Show deployment summary"
+            ])
+        ]
+
+        for phase_name, steps in phases:
+            self.console.section(phase_name)
+            for step in steps:
+                self.console.info(f"  • {step}")
+
+    def show_deployment_preview(self) -> None:
+        """
+        Show comprehensive deployment preview.
+
+        Public method that displays all pre-deployment information:
+        - Visual deployment plan (what will happen step-by-step)
+        - Current system status (what's running now)
+        - Change preview (what will be modified)
+
+        This method is called before deployment confirmation to help users
+        understand exactly what the deployment will do.
+        """
+        self._show_visual_deployment_plan()
+        self._show_system_status()
+        self._show_change_preview()
+
 
 @click.command()
 @click.option(
@@ -1078,9 +1263,21 @@ def main(
         console.error("Pre-flight checks failed. Aborting deployment.")
         sys.exit(1)
 
-    # Confirm deployment
-    if not non_interactive and not dry_run:
-        console.info("\nAll pre-flight checks passed.")
+    # Enhanced deployment confirmation with visual plan and status
+    console.info("\nAll pre-flight checks passed.")
+
+    # Show comprehensive deployment preview
+    orchestrator.show_deployment_preview()
+
+    # Get confirmation for risky operations and final confirmation (only in interactive mode)
+    if not non_interactive:
+        # Get confirmation for risky operations (only if not dry-run)
+        if not dry_run:
+            if not orchestrator._confirm_risky_operations():
+                console.info("Deployment cancelled by user")
+                sys.exit(0)
+        
+        # Final confirmation
         if not console.confirm("Proceed with deployment?", default=True):
             console.info("Deployment cancelled")
             sys.exit(0)

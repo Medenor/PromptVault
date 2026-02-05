@@ -117,6 +117,40 @@ class SetupConsole:
         """
         self.console.print(f"[yellow]⚠[/yellow] {message}", style="yellow")
 
+    def critical(self, message: str) -> None:
+        """
+        Display a critical message with red highlighting.
+
+        Used for information that users MUST pay attention to, like
+        backup locations, key files, etc.
+
+        Args:
+            message: The critical message to display.
+
+        Example:
+            console.critical("BACKUP THIS FILE: /path/to/keys")
+        """
+        self.console.print(f"[bold red]⚠️ {message}[/bold red]")
+
+    def section(self, title: str) -> None:
+        """
+        Display a section header within a process.
+
+        Creates a visually distinct section header that's less prominent
+        than the main header but more prominent than regular text.
+
+        Args:
+            title: The section title to display.
+
+        Example:
+            console.section("Database Configuration")
+        """
+        section_text = Text()
+        section_text.append("📋 ", style="bold cyan")
+        section_text.append(title, style="bold white")
+        self.console.print(section_text)
+        self.console.print()
+
     def info(self, message: str) -> None:
         """
         Display an informational message with a blue info icon.
