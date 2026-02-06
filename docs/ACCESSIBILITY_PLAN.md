@@ -44,11 +44,10 @@ Ce plan détaille les étapes nécessaires pour atteindre la conformité WCAG 2.
 - `[x] T-ACC023` Résumé d'erreurs en haut des formulaires: bannières sur tous les formulaires principaux (auth/import-export/backup/manage/admin + éditeur de prompt), liens vers champs en erreur + focus sur le premier champ invalide
 - `[x] T-ACC024` Liaison erreurs/champs: `aria-invalid` cohérent + `aria-describedby` vers erreurs/aide + focus premier champ invalide (incl. champs composites comme tags)
 - `[x] T-ACC025` Validation temps réel améliorée: annonces SR via live region (`validation-announcer`), nettoyage des erreurs au fil de la saisie, confirmations non bloquantes (remplacement `window.confirm` sur manage categories/tags + prompt delete), couverture formulaires principaux (auth/profile/password reset/import-export/backup/manage/admin/prompt)
+- `[x] T-ACC033` Icônes décoratives: audit global SVG terminé, ajout `aria-hidden="true"` + `focusable="false"` sur icônes non informatives (menus, recherche, sidebar, etc.)
+- `[x] T-ACC029` Différencier états success/error/warning: notifications/toasts et statuts inline avec styles dédiés (warning distinct), rôles `status/alert` et `aria-live` cohérents + icône (hors couleur seule)
 
 ### Tâches partiellement implémentées
-
-- `[~] T-ACC033` Icônes décoratives: ajout `aria-hidden="true"`/`focusable="false"` sur SVG décoratifs (recherche, menus, sidebar), audit global restant
-- `[~] T-ACC029` Différencier états success/error/warning: notifications renforcées (role/aria-live cohérents), extension restante aux autres patterns visuels
 
 ### Tâches restantes
 

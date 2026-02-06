@@ -291,6 +291,7 @@
   .notification {
     @apply fixed top-4 right-4 z-50 rounded-lg border px-4 py-2 text-sm font-medium shadow-lg;
     @apply bg-white text-gray-900 border-gray-200;
+    @apply flex items-center gap-2 max-w-[min(28rem,calc(100vw-2rem))];
   }
 
   .notification-info {
@@ -301,13 +302,26 @@
     @apply bg-emerald-50 text-emerald-900 border-emerald-200;
   }
 
+  .notification-warning {
+    @apply bg-amber-50 text-amber-950 border-amber-200;
+  }
+
   .notification-error {
     @apply bg-red-50 text-red-900 border-red-200;
+  }
+
+  .notification-icon {
+    @apply shrink-0 opacity-90;
+  }
+
+  .notification-text {
+    @apply leading-snug;
   }
 
   /* Inline status messages */
   .status-message {
     @apply rounded-md px-3 py-2 text-sm font-medium;
+    @apply border border-transparent;
   }
 
   .status-info {
@@ -316,6 +330,10 @@
 
   .status-success {
     @apply bg-emerald-50 text-emerald-900;
+  }
+
+  .status-warning {
+    @apply bg-amber-50 text-amber-950;
   }
 
   .status-error {
