@@ -40,7 +40,7 @@ const USER_STATE_PATH = join(STATE_DIR, 'user-state.json');
 const ADMIN_STATE_PATH = join(STATE_DIR, 'admin-state.json');
 
 // Login retries may wait for server-side rate-limit windows.
-test.setTimeout(180000);
+test.setTimeout(300000);
 
 type AccessLevel = 'public' | 'user' | 'admin';
 
@@ -102,6 +102,8 @@ async function createStateForCredentials(
 }
 
 test.beforeAll(async ({ browser }) => {
+  test.setTimeout(300000);
+
   if (ACCESSIBILITY_USER_USERNAME && ACCESSIBILITY_USER_PASSWORD) {
     await createStateForCredentials(
       browser,

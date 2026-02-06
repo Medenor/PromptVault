@@ -2374,6 +2374,32 @@ function handleKeyboardShortcuts(event: KeyboardEvent): void {
 }
 
 function showKeyboardShortcutsHelpModal(): void {
+  const buildLandmarksHelpList = (): string => {
+    const landmarks = Array.from(
+      document.querySelectorAll<HTMLElement>(
+        'header[role="banner"], nav[role="navigation"], main[role="main"], aside[role="complementary"], footer[role="contentinfo"]'
+      )
+    );
+
+    if (landmarks.length === 0) {
+      return '<li>No landmarks detected on this page.</li>';
+    }
+
+    return landmarks
+      .map((landmark, index) => {
+        const role = landmark.getAttribute('role') ?? landmark.tagName.toLowerCase();
+        const ariaLabel = landmark.getAttribute('aria-label')?.trim();
+        const ariaLabelledBy = landmark.getAttribute('aria-labelledby');
+        const labelledByText = ariaLabelledBy
+          ? document.getElementById(ariaLabelledBy)?.textContent?.trim()
+          : '';
+        const label = ariaLabel || labelledByText;
+        const description = label ? `${role} (${label})` : role;
+        return `<li><strong>${index + 1}.</strong> ${escapeHtml(description)}</li>`;
+      })
+      .join('');
+  };
+
   if (!keyboardHelpModal) {
     const content = document.createElement('div');
     content.className = 'space-y-3 text-sm text-gray-700';
@@ -2385,13 +2411,19 @@ function showKeyboardShortcutsHelpModal(): void {
         <li><strong>Escape</strong>: Close open dialogs and editor</li>
         <li><strong>?</strong>: Open this keyboard shortcuts help</li>
       </ul>
+      <div class="pt-2 border-t border-gray-200">
+        <p class="text-gray-600">Landmarks on this page:</p>
+        <ul id="keyboard-help-landmarks-list" class="list-disc list-inside space-y-1">
+          ${buildLandmarksHelpList()}
+        </ul>
+      </div>
     `;
 
     keyboardHelpModal = createModal({
       id: 'keyboard-shortcuts-help-modal',
-      title: 'Keyboard Shortcuts',
+      title: 'Keyboard Shortcuts and Landmarks',
       content,
-      ariaLabel: 'Keyboard shortcuts help',
+      ariaLabel: 'Keyboard shortcuts and landmarks help',
       size: 'md',
       actions: [
         {
@@ -2408,6 +2440,13 @@ function showKeyboardShortcutsHelpModal(): void {
     });
 
     document.body.appendChild(keyboardHelpModal.element);
+  }
+
+  const landmarksList = keyboardHelpModal.element.querySelector<HTMLElement>(
+    '#keyboard-help-landmarks-list'
+  );
+  if (landmarksList) {
+    landmarksList.innerHTML = buildLandmarksHelpList();
   }
 
   keyboardHelpModal.open();
