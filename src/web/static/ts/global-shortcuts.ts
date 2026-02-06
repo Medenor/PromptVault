@@ -13,12 +13,35 @@
  */
 
 import { createModal } from '@components';
+import { t } from '@/utils/i18n';
 
 type KeyboardHelpEventDetail = {
   markHandled: () => void;
 };
 
 let fallbackHelpModal: ReturnType<typeof createModal> | null = null;
+
+function ensureKeyboardNavigationAnnouncer(): void {
+  if (document.getElementById('keyboard-navigation-announcer')) {
+    return;
+  }
+  const el = document.createElement('div');
+  el.id = 'keyboard-navigation-announcer';
+  el.className = 'sr-only';
+  el.setAttribute('aria-live', 'polite');
+  document.body.insertBefore(el, document.body.firstChild);
+}
+
+function escapeHtml(text: string): string {
+  const map: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;',
+  };
+  return String(text).replace(/[&<>"']/g, (m) => map[m] ?? m);
+}
 
 function isTypingTarget(target: EventTarget | null): boolean {
   const el = target as HTMLElement | null;
@@ -51,26 +74,26 @@ function openFallbackKeyboardHelpModal(): void {
     const content = document.createElement('div');
     content.className = 'space-y-3 text-sm text-gray-700';
     content.innerHTML = `
-      <p class="text-gray-600">Keyboard shortcuts help:</p>
+      <p class="text-gray-600">${escapeHtml(t('accessibility.keyboardHelp.shortcutsHeading'))}</p>
       <ul class="list-disc list-inside space-y-1">
-        <li><strong>?</strong>: Open this help modal</li>
-        <li><strong>Escape</strong>: Close dialogs (when supported)</li>
+        <li><strong>?</strong>: ${escapeHtml(t('accessibility.keyboardHelp.shortcutQuestion'))}</li>
+        <li><strong>Escape</strong>: ${escapeHtml(t('accessibility.keyboardHelp.shortcutEscape'))}</li>
       </ul>
       <div class="pt-2 border-t border-gray-200">
-        <p class="text-gray-600">Note:</p>
-        <p class="text-gray-600">Some shortcuts are only available on the main prompts page.</p>
+        <p class="text-gray-600">${escapeHtml(t('accessibility.keyboardHelp.fallbackNoteHeading'))}</p>
+        <p class="text-gray-600">${escapeHtml(t('accessibility.keyboardHelp.fallbackNoteBody'))}</p>
       </div>
     `;
 
     fallbackHelpModal = createModal({
       id: 'keyboard-shortcuts-help-modal-fallback',
-      title: 'Keyboard Shortcuts',
+      title: t('accessibility.keyboardHelp.title'),
       content,
-      ariaLabel: 'Keyboard shortcuts help',
+      ariaLabel: t('accessibility.keyboardHelp.ariaLabel'),
       size: 'md',
       actions: [
         {
-          label: 'Close',
+          label: t('actions.close'),
           variant: 'primary',
           onClick: () => {
             fallbackHelpModal?.close();
@@ -89,6 +112,9 @@ function openFallbackKeyboardHelpModal(): void {
 }
 
 document.addEventListener('keydown', (event: KeyboardEvent) => {
+  if (document.readyState !== 'loading') {
+    ensureKeyboardNavigationAnnouncer();
+  }
   if (!isQuestionShortcut(event)) {
     return;
   }
@@ -113,3 +139,10 @@ document.addEventListener('keydown', (event: KeyboardEvent) => {
   }
 });
 
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    ensureKeyboardNavigationAnnouncer();
+  });
+} else {
+  ensureKeyboardNavigationAnnouncer();
+}

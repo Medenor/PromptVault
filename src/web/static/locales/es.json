@@ -580,6 +580,24 @@
     "note": "Las etiquetas añadidas o eliminadas se aplicarán a todos los prompts seleccionados."
   },
   "accessibility": {
-    "navigateTo": "Navegar a {{item}}"
+    "navigateTo": "Navegar a {{item}}",
+    "keyboardHelp": {
+      "title": "Atajos de teclado y puntos de referencia",
+      "ariaLabel": "Ayuda de atajos de teclado y puntos de referencia",
+      "shortcutsHeading": "Atajos de teclado disponibles:",
+      "landmarksHeading": "Puntos de referencia en esta página:",
+      "noLandmarks": "No se detectaron puntos de referencia en esta página.",
+      "shortcutHistory": "Abrir el historial de versiones del prompt seleccionado",
+      "shortcutNewPrompt": "Crear un nuevo prompt",
+      "shortcutEscape": "Cerrar diálogos y el editor abiertos",
+      "shortcutQuestion": "Abrir esta ayuda de atajos de teclado",
+      "shortcutArrows": "Mover el foco en las listas de filtros de categorías y etiquetas (y en la lista de historial de versiones)",
+      "shortcutActivate": "Activar el elemento enfocado",
+      "shortcutHomeEnd": "Saltar al primer y último elemento de la lista",
+      "shortcutCharacterKey": "Cualquier letra o carácter",
+      "shortcutCharacter": "Saltar al siguiente elemento que comience con ese carácter (incluidos caracteres CJK)",
+      "fallbackNoteHeading": "Nota:",
+      "fallbackNoteBody": "Algunos atajos solo están disponibles en la página principal de prompts."
+    }
   }
 }

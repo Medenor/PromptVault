@@ -289,19 +289,19 @@
               </div>
 
               <!-- Case Sensitive Toggle -->
-              <label class="flex items-center gap-2 mb-2 cursor-pointer text-sm text-gray-700">
+              <label for="case-sensitive-toggle" class="flex items-center gap-2 mb-2 cursor-pointer text-sm text-gray-700">
                 <input type="checkbox" id="case-sensitive-toggle" class="rounded text-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" />
                 <span data-i18n="nav.caseSensitive">Case Sensitive</span>
               </label>
 
               <!-- Favorites Filter -->
-              <label class="flex items-center gap-2 mb-3 cursor-pointer text-sm text-gray-700">
+              <label for="favorites-filter" class="flex items-center gap-2 mb-3 cursor-pointer text-sm text-gray-700">
                 <input type="checkbox" id="favorites-filter" class="rounded text-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" />
                 <span data-i18n="nav.showFavorites">Show Favorites</span>
               </label>
 
               <!-- Select All Checkbox -->
-              <label class="flex items-center gap-2 mb-3 cursor-pointer text-sm text-gray-700">
+              <label for="select-all-checkbox" class="flex items-center gap-2 mb-3 cursor-pointer text-sm text-gray-700">
                 <input type="checkbox" id="select-all-checkbox" class="rounded text-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" />
                 <span data-i18n="actions.selectAll">Select All</span>
               </label>
@@ -444,19 +444,19 @@
               </div>
 
               <!-- Case Sensitive Toggle -->
-              <label class="flex items-center gap-2 mb-2 cursor-pointer text-sm text-gray-700">
+              <label for="case-sensitive-toggle-mobile" class="flex items-center gap-2 mb-2 cursor-pointer text-sm text-gray-700">
                 <input type="checkbox" id="case-sensitive-toggle-mobile" class="rounded text-blue-500 focus:ring-blue-500" />
                 <span data-i18n="nav.caseSensitive">Case Sensitive</span>
               </label>
 
               <!-- Favorites Filter -->
-              <label class="flex items-center gap-2 mb-3 cursor-pointer text-sm text-gray-700">
+              <label for="favorites-filter-mobile" class="flex items-center gap-2 mb-3 cursor-pointer text-sm text-gray-700">
                 <input type="checkbox" id="favorites-filter-mobile" class="rounded text-blue-500 focus:ring-blue-500" />
                 <span data-i18n="nav.showFavorites">Show Favorites</span>
               </label>
 
               <!-- Select All Checkbox -->
-              <label class="flex items-center gap-2 mb-3 cursor-pointer text-sm text-gray-700">
+              <label for="select-all-checkbox-mobile" class="flex items-center gap-2 mb-3 cursor-pointer text-sm text-gray-700">
                 <input type="checkbox" id="select-all-checkbox-mobile" class="rounded text-blue-500 focus:ring-blue-500" />
                 <span data-i18n="actions.selectAll">Select All</span>
               </label>
@@ -647,6 +647,7 @@
 	            <div
 	              class="prompt-item bg-white rounded-lg border border-gray-200 p-4 transition-all hover:scale-[1.02] cursor-pointer"
 	              data-id="{{ prompt_id }}"
+	              data-nav-label="{{ prompt_info.data.title }}"
 	            >
 	              <div class="flex items-start justify-between mb-3">
 	                <h4 id="prompt-title-{{ prompt_id }}" class="text-lg font-semibold text-gray-900 flex-1">{{ prompt_info.data.title }}</h4>
@@ -660,7 +661,8 @@
 	                  <button
 	                    class="favorite-btn text-xl hover:scale-110 transition-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
 	                    data-id="{{ prompt_id }}"
-	                    aria-label="Toggle favorite"
+	                    aria-label="{% if prompt_info.data.favorite %}Remove from favorites{% else %}Add to favorites{% endif %}"
+	                    data-i18n="[aria-label]{% if prompt_info.data.favorite %}actions.removeFavorite{% else %}actions.addFavorite{% endif %}"
 	                    aria-pressed="{% if prompt_info.data.favorite %}true{% else %}false{% endif %}"
 	                  >
 	                    {% if prompt_info.data.favorite %}★{% else %}☆{% endif %}
@@ -717,6 +719,14 @@
             <div class="bg-white rounded-lg border border-gray-200 p-6 max-w-4xl mx-auto">
               <h2 class="text-2xl font-bold text-gray-900 mb-6" data-i18n="prompt.editorTitle">Create/Edit Prompt</h2>
               <form id="prompt-form" class="space-y-4" novalidate>
+                <div
+                  id="validation-error-banner"
+                  class="validation-error-banner"
+                  role="alert"
+                  aria-live="polite"
+                  tabindex="-1"
+                  style="display: none;"
+                ></div>
                 <!-- Title -->
                 <div>
                   <label for="prompt-title" class="block text-sm font-medium text-gray-700 mb-2" data-i18n="form.title">

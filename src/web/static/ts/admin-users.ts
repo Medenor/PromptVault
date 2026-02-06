@@ -13,6 +13,7 @@ import { reportError } from '@/telemetry';
 import { changeLanguage, initI18n, t, tUnsafe, updateStaticTranslations } from '@/utils/i18n';
 import { showNotification } from '@/utils/notifications';
 import { apiGet, apiPost, apiPut, apiDelete, APIRequestError } from '@/utils/api';
+import { createTypeahead } from '@/utils/typeahead';
 
 const API_BASE = '/api/admin';
 const HIDDEN_CLASS = 'hidden';
@@ -149,6 +150,121 @@ function updatePagination(): void {
   if (nextBtn) nextBtn.disabled = currentPage === totalPages;
 }
 
+let usersTableKeyboardNavInitialized = false;
+
+function announceKeyboardNavigation(message: string): void {
+  const announcer = document.getElementById('keyboard-navigation-announcer');
+  if (!announcer) {
+    return;
+  }
+  announcer.textContent = '';
+  requestAnimationFrame(() => {
+    announcer.textContent = message;
+  });
+}
+
+function isTextEditingTarget(target: EventTarget | null): boolean {
+  const el = target as HTMLElement | null;
+  if (!el) return false;
+  return el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable;
+}
+
+function initializeUsersTableFirstCharNavigation(): void {
+  if (usersTableKeyboardNavInitialized) {
+    return;
+  }
+  usersTableKeyboardNavInitialized = true;
+
+  const typeahead = createTypeahead();
+
+  const body = document.getElementById('users-table-body');
+  if (!body) {
+    return;
+  }
+
+  body.addEventListener('keydown', (event) => {
+    if (event.metaKey || event.ctrlKey || event.altKey) {
+      return;
+    }
+    if (isTextEditingTarget(event.target)) {
+      return;
+    }
+    if ((event as KeyboardEvent).isComposing || event.key === 'Process') {
+      return;
+    }
+    if (event.key.length !== 1) {
+      return;
+    }
+
+    const rows = Array.from(body.querySelectorAll<HTMLTableRowElement>('tr'));
+    if (rows.length === 0) {
+      return;
+    }
+
+    const target = event.target as HTMLElement | null;
+    const currentRow = target?.closest('tr');
+    const currentIndex = currentRow ? rows.indexOf(currentRow) : -1;
+
+    const query = typeahead.pushKey(event.key);
+    if (!query) {
+      return;
+    }
+
+    for (let offset = 1; offset <= rows.length; offset++) {
+      const index = (currentIndex + offset + rows.length) % rows.length;
+      const row = rows[index];
+      if (!row) continue;
+      const usernameCell = row.querySelector('td');
+      const username = usernameCell?.textContent?.trim() ?? '';
+      if (!username.toLocaleLowerCase().startsWith(query)) {
+        continue;
+      }
+
+      const viewButton = row.querySelector<HTMLButtonElement>('button[onclick^="window.viewUser"]');
+      if (!viewButton) {
+        return;
+      }
+
+      event.preventDefault();
+      viewButton.focus();
+      announceKeyboardNavigation(t('accessibility.navigateTo', { item: username }));
+      return;
+    }
+  });
+
+  body.addEventListener('compositionend', (event) => {
+    const composed = (event as CompositionEvent).data ?? '';
+    const query = typeahead.pushText(composed);
+    if (!query) {
+      return;
+    }
+
+    const rows = Array.from(body.querySelectorAll<HTMLTableRowElement>('tr'));
+    if (rows.length === 0) {
+      return;
+    }
+    const active = document.activeElement as HTMLElement | null;
+    const currentRow = active?.closest?.('tr') as HTMLTableRowElement | null;
+    const currentIndex = currentRow ? rows.indexOf(currentRow) : -1;
+
+    for (let offset = 1; offset <= rows.length; offset++) {
+      const index = (currentIndex + offset + rows.length) % rows.length;
+      const row = rows[index];
+      if (!row) continue;
+      const usernameCell = row.querySelector('td');
+      const username = usernameCell?.textContent?.trim() ?? '';
+      if (!username.toLocaleLowerCase().startsWith(query)) {
+        continue;
+      }
+      const viewButton = row.querySelector<HTMLButtonElement>('button[onclick^="window.viewUser"]');
+      if (!viewButton) return;
+      viewButton.focus();
+      announceKeyboardNavigation(t('accessibility.navigateTo', { item: username }));
+      return;
+    }
+  });
+}
+
 async function loadUsers(): Promise<void> {
   const tableBody = document.getElementById('users-table-body');
   if (!tableBody) return;
@@ -225,6 +341,7 @@ async function loadUsers(): Promise<void> {
 
     updatePagination();
     updateStaticTranslations();
+    initializeUsersTableFirstCharNavigation();
   } catch (error) {
     reportError('admin-users', 'loadUsers', error);
     tableBody.innerHTML =

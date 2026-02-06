@@ -312,7 +312,7 @@
               class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
             />
             <p id="tag-bulk-delete-ids-error" class="text-red-600 text-xs mt-1" role="alert" aria-live="assertive"></p>
-            <label class="flex items-center gap-2 text-sm text-gray-700">
+            <label for="tag-bulk-delete-force" class="flex items-center gap-2 text-sm text-gray-700">
               <input id="tag-bulk-delete-force" type="checkbox" class="rounded text-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" />
               <span data-i18n="management.forceDelete">Force delete (remove from prompts)</span>
             </label>
@@ -375,7 +375,7 @@
                 Upload a JSON file to create or update tags.
               </p>
               <div class="flex flex-col gap-3">
-                <label class="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-gray-300 bg-white px-3 py-4 text-sm text-gray-600">
+                <label for="tag-import-file" class="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-gray-300 bg-white px-3 py-4 text-sm text-gray-600">
                   <span data-i18n="management.importDrop">Choose a JSON file</span>
                   <input
                     id="tag-import-file"

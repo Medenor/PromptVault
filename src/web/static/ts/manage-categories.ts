@@ -6,10 +6,11 @@
 
 import '../css/tailwind-globals.css';
 import { apiFetch, APIRequestError } from '@/utils/api';
-import { initI18n, tUnsafe, updateStaticTranslations } from '@/utils/i18n';
+import { initI18n, t, tUnsafe, updateStaticTranslations } from '@/utils/i18n';
 import { initializeColorPicker, ColorPicker } from '@/utils/color-picker';
 import { setupScrollIndicators } from '@/utils/dom';
 import { showNotification } from '@/utils/notifications';
+import { createTypeahead } from '@/utils/typeahead';
 
 type CategoryItem = {
   id: number;
@@ -66,6 +67,7 @@ const elements = {
 let cachedItems: CategoryItem[] = [];
 // @ts-expect-error - Used for cleanup, but not referenced directly
 let colorPickerInstance: ColorPicker | null = null;
+let tableKeyboardNavInitialized = false;
 type OrphanPromptDetailsResponse = {
   items: Array<{ id: number; title: string }>;
   count: number;
@@ -73,6 +75,120 @@ type OrphanPromptDetailsResponse = {
 
 function normalizeSearch(value: string): string {
   return value.trim().toLowerCase();
+}
+
+function announceKeyboardNavigation(message: string): void {
+  const announcer = document.getElementById('keyboard-navigation-announcer');
+  if (!announcer) {
+    return;
+  }
+  announcer.textContent = '';
+  requestAnimationFrame(() => {
+    announcer.textContent = message;
+  });
+}
+
+function isTextEditingTarget(target: EventTarget | null): boolean {
+  const el = target as HTMLElement | null;
+  if (!el) return false;
+  return el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable;
+}
+
+function initializeTableFirstCharNavigation(): void {
+  if (tableKeyboardNavInitialized) {
+    return;
+  }
+  tableKeyboardNavInitialized = true;
+
+  const typeahead = createTypeahead();
+
+  const container = document.getElementById('categories-table-container');
+  const body = elements.tableBody;
+  if (!container || !body) {
+    return;
+  }
+
+  container.addEventListener('keydown', (event) => {
+    if (event.metaKey || event.ctrlKey || event.altKey) {
+      return;
+    }
+    if (isTextEditingTarget(event.target)) {
+      return;
+    }
+    if ((event as KeyboardEvent).isComposing || event.key === 'Process') {
+      return;
+    }
+    if (event.key.length !== 1) {
+      return;
+    }
+
+    const rows = Array.from(body.querySelectorAll<HTMLTableRowElement>('tr'));
+    if (rows.length === 0) {
+      return;
+    }
+
+    const target = event.target as HTMLElement | null;
+    const currentRow = target?.closest('tr');
+    const currentIndex = currentRow ? rows.indexOf(currentRow) : -1;
+
+    const query = typeahead.pushKey(event.key);
+    if (!query) {
+      return;
+    }
+
+    for (let offset = 1; offset <= rows.length; offset++) {
+      const index = (currentIndex + offset + rows.length) % rows.length;
+      const row = rows[index];
+      if (!row) continue;
+      const nameInput = row.querySelector<HTMLInputElement>('input[data-field="name"]');
+      const label = (nameInput?.value ?? '').trim();
+      if (!label.toLocaleLowerCase().startsWith(query)) {
+        continue;
+      }
+
+      const checkbox = row.querySelector<HTMLInputElement>('input[type=\"checkbox\"][data-select-id]');
+      if (!checkbox) {
+        return;
+      }
+
+      event.preventDefault();
+      checkbox.focus();
+      announceKeyboardNavigation(t('accessibility.navigateTo', { item: label }));
+      return;
+    }
+  });
+
+  container.addEventListener('compositionend', (event) => {
+    const composed = (event as CompositionEvent).data ?? '';
+    const query = typeahead.pushText(composed);
+    if (!query) {
+      return;
+    }
+
+    const rows = Array.from(body.querySelectorAll<HTMLTableRowElement>('tr'));
+    if (rows.length === 0) {
+      return;
+    }
+    const active = document.activeElement as HTMLElement | null;
+    const currentRow = active?.closest?.('tr') as HTMLTableRowElement | null;
+    const currentIndex = currentRow ? rows.indexOf(currentRow) : -1;
+
+    for (let offset = 1; offset <= rows.length; offset++) {
+      const index = (currentIndex + offset + rows.length) % rows.length;
+      const row = rows[index];
+      if (!row) continue;
+      const nameInput = row.querySelector<HTMLInputElement>('input[data-field="name"]');
+      const label = (nameInput?.value ?? '').trim();
+      if (!label.toLocaleLowerCase().startsWith(query)) {
+        continue;
+      }
+      const checkbox = row.querySelector<HTMLInputElement>('input[type="checkbox"][data-select-id]');
+      if (!checkbox) return;
+      checkbox.focus();
+      announceKeyboardNavigation(t('accessibility.navigateTo', { item: label }));
+      return;
+    }
+  });
 }
 
 function resetFieldError(inputId: string, errorId: string): void {
@@ -296,6 +412,7 @@ function renderRows(items: CategoryItem[]): void {
 
   // Setup scroll indicators for table container
   setupScrollIndicators(tableContainer);
+  initializeTableFirstCharNavigation();
 }
 
 function parseIdList(value: string): number[] {

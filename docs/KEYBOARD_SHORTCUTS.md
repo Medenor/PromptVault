@@ -16,6 +16,15 @@ PromptVault supports keyboard shortcuts to speed up navigation and editing.
 - `Enter` / `Space`: Activate focused filter item
 - `Any letter/character`: Jump to next filter item starting with that character (including CJK characters)
 
+## Lists & Tables (Prompts, Versions, Admin/Management Tables)
+
+- `Any letter/character`: Jump to the next matching item in:
+- Prompts grid (focus moves to the prompt checkbox)
+- Version history list (focus moves within version items)
+- Categories/Tags management tables (focus moves to the row checkbox)
+- Admin Users table (focus moves to the View button)
+- Admin Sessions table (focus moves to the Revoke button)
+
 ## Notes
 
 - `Ctrl` applies on Windows/Linux, `Cmd` applies on macOS.

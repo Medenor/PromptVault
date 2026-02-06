@@ -72,37 +72,53 @@ async function login(
   password: string,
   attempt = 1
 ) {
-  await page.goto(`${BASE_URL}/auth/login`, { waitUntil: 'networkidle' });
+  const maxAttempts = 7;
+  let currentAttempt = attempt;
 
-  const usernameInput = page.locator('#username-or-email').first();
-  const passwordInput = page.locator('#password').first();
-  const loginButton = page.locator('button[type="submit"]').first();
+  while (true) {
+    await page.goto(`${BASE_URL}/auth/login`, { waitUntil: 'networkidle' });
 
-  await usernameInput.fill(username);
-  await passwordInput.fill(password);
-  const [loginResponse] = await Promise.all([
-    page.waitForResponse(
-      (response) =>
-        response.url().includes('/api/auth/login') && response.request().method() === 'POST',
-      { timeout: 30000 }
-    ),
-    loginButton.click(),
-  ]);
+    const usernameInput = page.locator('#username-or-email').first();
+    const passwordInput = page.locator('#password').first();
+    const loginButton = page.locator('button[type="submit"]').first();
 
-  if (loginResponse.status() === 429 && attempt < 4) {
-    const retryAfter = Number(loginResponse.headers()['retry-after'] ?? '60');
-    await page.waitForTimeout((Number.isFinite(retryAfter) ? retryAfter : 60) * 1000 + 1500);
-    await login(page, username, password, attempt + 1);
+    await usernameInput.fill(username);
+    await passwordInput.fill(password);
+    const [loginResponse] = await Promise.all([
+      page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/auth/login') && response.request().method() === 'POST',
+        { timeout: 30000 }
+      ),
+      loginButton.click(),
+    ]);
+
+    if (loginResponse.status() === 429 && currentAttempt < maxAttempts) {
+      const rawRetryAfter = loginResponse.headers()['retry-after'];
+      const retryAfter = rawRetryAfter ? Number(rawRetryAfter) : NaN;
+      const backoffSeconds = Number.isFinite(retryAfter)
+        ? Math.max(1, retryAfter)
+        : Math.min(180, Math.pow(2, currentAttempt - 1) * 15);
+
+      // Add a small cushion so we don't retry right at the edge of the window.
+      await page.waitForTimeout(backoffSeconds * 1000 + 1250);
+      currentAttempt += 1;
+      continue;
+    }
+
+    if (!loginResponse.ok()) {
+      const extra =
+        loginResponse.status() === 429
+          ? ` (rate limited; try reusing ACCESSIBILITY_AUTH_STATE_DIR or using a single admin account for both user/admin scans)`
+          : '';
+      throw new Error(
+        `Login failed for "${username}": received status ${loginResponse.status()} from /api/auth/login.${extra}`
+      );
+    }
+
+    await page.waitForURL((url) => !url.pathname.includes('/auth/login'), { timeout: 20000 });
     return;
   }
-
-  if (!loginResponse.ok()) {
-    throw new Error(
-      `Login failed for "${username}": received status ${loginResponse.status()} from /api/auth/login.`
-    );
-  }
-
-  await page.waitForURL((url) => !url.pathname.includes('/auth/login'), { timeout: 20000 });
 }
 
 async function createStateForCredentials(
@@ -164,13 +180,21 @@ test.afterAll(() => {
 for (const route of ROUTES) {
   test(`ACC-AXE: ${route} has no critical/serious accessibility violations`, async ({ browser }) => {
     const accessLevel = getRouteAccessLevel(route);
+    const hasReusableUserState = USING_EXTERNAL_STATE_DIR && existsSync(USER_STATE_PATH);
+    const hasReusableAdminState = USING_EXTERNAL_STATE_DIR && existsSync(ADMIN_STATE_PATH);
+
     test.skip(
-      accessLevel === 'user' && (!ACCESSIBILITY_USER_USERNAME || !ACCESSIBILITY_USER_PASSWORD),
-      `Skipping ${route}: set ACCESSIBILITY_USER_USERNAME and ACCESSIBILITY_USER_PASSWORD to scan protected user pages.`
+      accessLevel === 'user' &&
+        !hasReusableUserState &&
+        (!ACCESSIBILITY_USER_USERNAME || !ACCESSIBILITY_USER_PASSWORD),
+      `Skipping ${route}: set ACCESSIBILITY_USER_USERNAME and ACCESSIBILITY_USER_PASSWORD (or provide ACCESSIBILITY_AUTH_STATE_DIR with an existing user-state.json) to scan protected user pages.`
     );
     test.skip(
-      accessLevel === 'admin' && (!ACCESSIBILITY_ADMIN_USERNAME || !ACCESSIBILITY_ADMIN_PASSWORD),
-      `Skipping ${route}: set ACCESSIBILITY_ADMIN_USERNAME and ACCESSIBILITY_ADMIN_PASSWORD to scan protected admin pages.`
+      accessLevel === 'admin' &&
+        !hasReusableAdminState &&
+        !hasReusableUserState &&
+        (!ACCESSIBILITY_ADMIN_USERNAME || !ACCESSIBILITY_ADMIN_PASSWORD),
+      `Skipping ${route}: set ACCESSIBILITY_ADMIN_USERNAME and ACCESSIBILITY_ADMIN_PASSWORD (or provide ACCESSIBILITY_AUTH_STATE_DIR with an existing admin-state.json) to scan protected admin pages.`
     );
 
     const storageState =
@@ -188,6 +212,7 @@ for (const route of ROUTES) {
 
     try {
       const targetUrl = new URL(route, BASE_URL).toString();
+      const expectedPathname = new URL(route, BASE_URL).pathname;
       const response = await page.goto(targetUrl, { waitUntil: 'networkidle' });
       const contentType = response?.headers()['content-type'] ?? '';
       const status = response?.status() ?? 0;
@@ -202,6 +227,19 @@ for (const route of ROUTES) {
         throw new Error(
           `Expected HTML protected page for ${route}, received status ${status} and content-type "${contentType}". Check credentials/session state.`
         );
+      }
+
+      if (accessLevel !== 'public') {
+        // Catch silent redirects to /auth/login (or other pages) so protected routes actually get scanned.
+        const normalizePath = (pathname: string) =>
+          pathname !== '/' && pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
+        const finalPath = normalizePath(new URL(page.url()).pathname);
+        const expectedPath = normalizePath(expectedPathname);
+        if (finalPath !== expectedPath) {
+          throw new Error(
+            `Expected to scan protected route ${expectedPath}, but ended up at ${finalPath}. Check credentials/session state.`
+          );
+        }
       }
 
       const scan = await new AxeBuilder({ page }).withTags(AXE_TAGS).analyze();

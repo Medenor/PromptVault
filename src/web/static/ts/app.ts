@@ -18,6 +18,7 @@ import { initI18n, t, tUnsafe, updateStaticTranslations } from '@/utils/i18n';
 import { apiFetch, apiGet, apiPostForm, APIRequestError } from '@/utils/api';
 import { setupScrollIndicators } from '@/utils/dom';
 import { showNotification } from '@/utils/notifications';
+import { createTypeahead } from '@/utils/typeahead';
 import { createModal } from '@components';
 
 interface TagInfo {
@@ -161,6 +162,138 @@ function announceKeyboardNavigation(message: string): void {
   });
 }
 
+let promptsListKeyboardNavInitialized = false;
+
+function isTextEditingTarget(target: EventTarget | null): boolean {
+  const el = target as HTMLElement | null;
+  if (!el) {
+    return false;
+  }
+  if (el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable) {
+    return true;
+  }
+  if (el.tagName !== 'INPUT') {
+    return false;
+  }
+  const input = el as HTMLInputElement;
+  const type = (input.type || 'text').toLowerCase();
+  return (
+    type === 'text' ||
+    type === 'search' ||
+    type === 'email' ||
+    type === 'url' ||
+    type === 'tel' ||
+    type === 'password' ||
+    type === 'number'
+  );
+}
+
+function initializePromptsListKeyboardNavigation(container: HTMLElement): void {
+  if (promptsListKeyboardNavInitialized) {
+    return;
+  }
+  promptsListKeyboardNavInitialized = true;
+
+  const typeahead = createTypeahead();
+
+  container.addEventListener('keydown', (event) => {
+    if (event.metaKey || event.ctrlKey || event.altKey) {
+      return;
+    }
+    if (isTextEditingTarget(event.target)) {
+      return;
+    }
+    if ((event as KeyboardEvent).isComposing || event.key === 'Process') {
+      return;
+    }
+
+    const isCharacterNavigation = event.key.length === 1;
+    if (!isCharacterNavigation) {
+      return;
+    }
+
+    const target = event.target as HTMLElement | null;
+    if (!target) {
+      return;
+    }
+    if (!container.contains(target)) {
+      return;
+    }
+
+    const items = Array.from(container.querySelectorAll<HTMLElement>('.prompt-item'));
+    if (items.length === 0) {
+      return;
+    }
+
+    const currentItem = target.closest<HTMLElement>('.prompt-item');
+    const currentIndex = currentItem ? items.indexOf(currentItem) : -1;
+
+    const query = typeahead.pushKey(event.key);
+    if (!query) {
+      return;
+    }
+
+    for (let offset = 1; offset <= items.length; offset++) {
+      const index = (currentIndex + offset + items.length) % items.length;
+      const candidate = items[index];
+      if (!candidate) {
+        continue;
+      }
+      const label =
+        (candidate.dataset.navLabel || '').trim() ||
+        candidate.querySelector('h4')?.textContent?.trim() ||
+        '';
+      const normalizedLabel = label.toLocaleLowerCase();
+      if (!normalizedLabel.startsWith(query)) {
+        continue;
+      }
+
+      const checkbox = candidate.querySelector<HTMLInputElement>('input.prompt-checkbox');
+      if (checkbox) {
+        event.preventDefault();
+        checkbox.focus();
+        announceKeyboardNavigation(t('accessibility.navigateTo', { item: label }));
+      }
+      return;
+    }
+  });
+
+  container.addEventListener('compositionend', (event) => {
+    const composed = (event as CompositionEvent).data ?? '';
+    const query = typeahead.pushText(composed);
+    if (!query) {
+      return;
+    }
+
+    const items = Array.from(container.querySelectorAll<HTMLElement>('.prompt-item'));
+    if (items.length === 0) {
+      return;
+    }
+    const active = document.activeElement as HTMLElement | null;
+    const currentItem = active?.closest?.('.prompt-item') as HTMLElement | null;
+    const currentIndex = currentItem ? items.indexOf(currentItem) : -1;
+
+    for (let offset = 1; offset <= items.length; offset++) {
+      const index = (currentIndex + offset + items.length) % items.length;
+      const candidate = items[index];
+      if (!candidate) continue;
+      const label =
+        (candidate.dataset.navLabel || '').trim() ||
+        candidate.querySelector('h4')?.textContent?.trim() ||
+        '';
+      if (!label.toLocaleLowerCase().startsWith(query)) {
+        continue;
+      }
+      const checkbox = candidate.querySelector<HTMLInputElement>('input.prompt-checkbox');
+      if (checkbox) {
+        checkbox.focus();
+        announceKeyboardNavigation(t('accessibility.navigateTo', { item: label }));
+      }
+      return;
+    }
+  });
+}
+
 function getListItems(list: HTMLElement): HTMLLIElement[] {
   return Array.from(list.querySelectorAll<HTMLLIElement>('li'));
 }
@@ -212,6 +345,8 @@ function findNextItemByCharacter(
 }
 
 function setupFilterListKeyboardNavigation(list: HTMLElement): void {
+  const typeahead = createTypeahead();
+
   list.addEventListener('click', (event) => {
     const target = event.target as HTMLElement | null;
     const item = target?.closest('li');
@@ -224,6 +359,9 @@ function setupFilterListKeyboardNavigation(list: HTMLElement): void {
   });
 
   list.addEventListener('keydown', (event) => {
+    if ((event as KeyboardEvent).isComposing || event.key === 'Process') {
+      return;
+    }
     const target = event.target as HTMLElement | null;
     const currentItem = target?.closest('li');
     if (!currentItem || !list.contains(currentItem)) {
@@ -290,13 +428,44 @@ function setupFilterListKeyboardNavigation(list: HTMLElement): void {
       return;
     }
 
-    const matchedItem = findNextItemByCharacter(items, currentIndex, event.key);
+    const query = typeahead.pushKey(event.key);
+    const matchedItem = findNextItemByCharacter(items, currentIndex, query);
     if (!matchedItem) {
       return;
     }
 
     event.preventDefault();
     focusItem(matchedItem);
+    const matchedText = matchedItem.textContent?.trim() ?? '';
+    announceKeyboardNavigation(t('accessibility.navigateTo', { item: matchedText }));
+  });
+
+  list.addEventListener('compositionend', (event) => {
+    const composed = (event as CompositionEvent).data ?? '';
+    const target = event.target as HTMLElement | null;
+    const currentItem = target?.closest('li');
+    if (!currentItem || !list.contains(currentItem)) {
+      return;
+    }
+    const items = getListItems(list);
+    if (items.length === 0) {
+      return;
+    }
+    const currentIndex = items.indexOf(currentItem);
+    if (currentIndex < 0) {
+      return;
+    }
+
+    const query = typeahead.pushText(composed);
+    const matchedItem = findNextItemByCharacter(items, currentIndex, query);
+    if (!matchedItem) {
+      return;
+    }
+
+    items.forEach((listItem) => {
+      listItem.tabIndex = listItem === matchedItem ? 0 : -1;
+    });
+    matchedItem.focus();
     const matchedText = matchedItem.textContent?.trim() ?? '';
     announceKeyboardNavigation(t('accessibility.navigateTo', { item: matchedText }));
   });
@@ -619,11 +788,17 @@ function clearPromptFormErrors(): void {
   }
   const banner = document.getElementById('validation-error-banner');
   if (banner) {
+    banner.textContent = '';
     banner.style.display = 'none';
   }
 }
 
-function showPromptFieldError(fieldId: string, errorId: string, messageKey: TranslationKey): void {
+function showPromptFieldError(
+  fieldId: string,
+  errorId: string,
+  messageKey: TranslationKey,
+  shouldFocus: boolean = true
+): void {
   const errorEl = document.getElementById(errorId);
   const field = document.getElementById(fieldId);
   const message = t(messageKey);
@@ -635,7 +810,9 @@ function showPromptFieldError(fieldId: string, errorId: string, messageKey: Tran
   if (field) {
     field.classList.add('field-error');
     field.setAttribute('aria-invalid', 'true');
-    field.focus();
+    if (shouldFocus) {
+      field.focus();
+    }
   }
   if (fieldId === 'prompt-tags') {
     const tagChipInput = document.getElementById('tag-chip-input');
@@ -644,6 +821,51 @@ function showPromptFieldError(fieldId: string, errorId: string, messageKey: Tran
       tagChipInput.setAttribute('aria-invalid', 'true');
     }
   }
+}
+
+type PromptFieldError = {
+  fieldId: string;
+  errorId: string;
+  messageKey: TranslationKey;
+};
+
+function showPromptErrorSummary(errors: PromptFieldError[]): void {
+  const banner = document.getElementById('validation-error-banner');
+  if (!banner) {
+    return;
+  }
+  if (errors.length === 0) {
+    banner.textContent = '';
+    banner.style.display = 'none';
+    return;
+  }
+
+  const itemsHtml = errors
+    .map((err) => {
+      const message = t(err.messageKey);
+      return `<li><a href="#${escapeHtml(err.fieldId)}" class="underline">${escapeHtml(message)}</a></li>`;
+    })
+    .join('');
+
+  banner.innerHTML = `
+    <p class="font-semibold">${escapeHtml(t('validation.errorSummaryHeader'))}</p>
+    <ul class="list-disc list-inside mt-2 space-y-1">${itemsHtml}</ul>
+  `;
+  banner.style.display = 'block';
+
+  banner.querySelectorAll<HTMLAnchorElement>('a[href^="#"]').forEach((a) => {
+    a.addEventListener('click', (event) => {
+      event.preventDefault();
+      const targetId = a.getAttribute('href')?.slice(1);
+      if (!targetId) {
+        return;
+      }
+      const field = document.getElementById(targetId) as HTMLElement | null;
+      field?.focus();
+    });
+  });
+
+  banner.focus();
 }
 
 function clearPromptFieldError(fieldId: string, errorId: string): void {
@@ -1011,6 +1233,7 @@ function renderPrompts(prompts: Record<string, PromptResponse>): void {
   }
 
   applyPromptColorStyles();
+  initializePromptsListKeyboardNavigation(container);
 }
 
 function isAnyFilterActive(): boolean {
@@ -1032,6 +1255,7 @@ function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement
   div.className =
     'prompt-item bg-white rounded-lg border border-gray-200 p-4 transition-all hover:scale-[1.02] cursor-pointer';
   div.dataset.id = id;
+  div.dataset.navLabel = prompt.title || '';
 
   // Add selected class if prompt is in selection
   if (selectedPromptIds.has(parseInt(id))) {
@@ -1361,19 +1585,29 @@ async function handlePromptSubmit(event: SubmitEvent): Promise<void> {
   const title = typeof titleValue === 'string' ? titleValue.trim() : '';
   const promptValue = formData.get('prompt');
   const promptContent = typeof promptValue === 'string' ? promptValue.trim() : '';
-  let hasError = false;
+  const errors: PromptFieldError[] = [];
 
   if (!title) {
-    showPromptFieldError('prompt-title', 'prompt-title-error', 'validation.titleRequired');
-    hasError = true;
+    errors.push({
+      fieldId: 'prompt-title',
+      errorId: 'prompt-title-error',
+      messageKey: 'validation.titleRequired',
+    });
   }
 
   if (!promptContent) {
-    showPromptFieldError('prompt-content', 'prompt-content-error', 'validation.contentRequired');
-    hasError = true;
+    errors.push({
+      fieldId: 'prompt-content',
+      errorId: 'prompt-content-error',
+      messageKey: 'validation.contentRequired',
+    });
   }
 
-  if (hasError) {
+  if (errors.length > 0) {
+    errors.forEach((err) => {
+      showPromptFieldError(err.fieldId, err.errorId, err.messageKey, false);
+    });
+    showPromptErrorSummary(errors);
     return;
   }
 
@@ -2571,7 +2805,7 @@ function showKeyboardShortcutsHelpModal(): void {
     );
 
     if (landmarks.length === 0) {
-      return '<li>No landmarks detected on this page.</li>';
+      return `<li>${escapeHtml(t('accessibility.keyboardHelp.noLandmarks'))}</li>`;
     }
 
     return landmarks
@@ -2593,19 +2827,19 @@ function showKeyboardShortcutsHelpModal(): void {
     const content = document.createElement('div');
     content.className = 'space-y-3 text-sm text-gray-700';
     content.innerHTML = `
-      <p class="text-gray-600">Available keyboard shortcuts:</p>
+      <p class="text-gray-600">${escapeHtml(t('accessibility.keyboardHelp.shortcutsHeading'))}</p>
       <ul class="list-disc list-inside space-y-1">
-        <li><strong>Ctrl/Cmd + H</strong>: Open version history for selected prompt</li>
-        <li><strong>Ctrl/Cmd + N</strong>: Create a new prompt</li>
-        <li><strong>Escape</strong>: Close open dialogs and editor</li>
-        <li><strong>?</strong>: Open this keyboard shortcuts help</li>
-        <li><strong>Arrow keys</strong>: Move focus in category/tag filter lists</li>
-        <li><strong>Enter / Space</strong>: Activate focused category/tag filter</li>
-        <li><strong>Home / End</strong>: Jump to first/last item in filter lists</li>
-        <li><strong>Any letter/character</strong>: Jump to next matching filter item</li>
+        <li><strong>Ctrl/Cmd + H</strong>: ${escapeHtml(t('accessibility.keyboardHelp.shortcutHistory'))}</li>
+        <li><strong>Ctrl/Cmd + N</strong>: ${escapeHtml(t('accessibility.keyboardHelp.shortcutNewPrompt'))}</li>
+        <li><strong>Escape</strong>: ${escapeHtml(t('accessibility.keyboardHelp.shortcutEscape'))}</li>
+        <li><strong>?</strong>: ${escapeHtml(t('accessibility.keyboardHelp.shortcutQuestion'))}</li>
+        <li><strong>Arrow keys</strong>: ${escapeHtml(t('accessibility.keyboardHelp.shortcutArrows'))}</li>
+        <li><strong>Enter / Space</strong>: ${escapeHtml(t('accessibility.keyboardHelp.shortcutActivate'))}</li>
+        <li><strong>Home / End</strong>: ${escapeHtml(t('accessibility.keyboardHelp.shortcutHomeEnd'))}</li>
+        <li><strong>${escapeHtml(t('accessibility.keyboardHelp.shortcutCharacterKey'))}</strong>: ${escapeHtml(t('accessibility.keyboardHelp.shortcutCharacter'))}</li>
       </ul>
       <div class="pt-2 border-t border-gray-200">
-        <p class="text-gray-600">Landmarks on this page:</p>
+        <p class="text-gray-600">${escapeHtml(t('accessibility.keyboardHelp.landmarksHeading'))}</p>
         <ul id="keyboard-help-landmarks-list" class="list-disc list-inside space-y-1">
           ${buildLandmarksHelpList()}
         </ul>
@@ -2614,13 +2848,13 @@ function showKeyboardShortcutsHelpModal(): void {
 
     keyboardHelpModal = createModal({
       id: 'keyboard-shortcuts-help-modal',
-      title: 'Keyboard Shortcuts and Landmarks',
+      title: t('accessibility.keyboardHelp.title'),
       content,
-      ariaLabel: 'Keyboard shortcuts and landmarks help',
+      ariaLabel: t('accessibility.keyboardHelp.ariaLabel'),
       size: 'md',
       actions: [
         {
-          label: 'Close',
+          label: t('actions.close'),
           variant: 'primary',
           onClick: () => {
             keyboardHelpModal?.close();
@@ -2652,14 +2886,15 @@ function addTooltips() {
     '.copy-btn': t('actions.copy'),
     '.edit-btn': t('actions.edit'),
     '.delete-btn': t('actions.delete'),
-    '.favorite-btn': 'Toggle favorite',
+    '.favorite-btn': t('actions.favorite'),
   };
 
   Object.entries(tooltips).forEach(([selector, title]) => {
     document.querySelectorAll(selector).forEach((element) => {
       const htmlElement = element as HTMLElement;
-      htmlElement.title = title;
-      htmlElement.setAttribute('data-tooltip', title);
+      const derivedTitle = selector === '.favorite-btn' ? (htmlElement.getAttribute('aria-label') || title) : title;
+      htmlElement.title = derivedTitle;
+      htmlElement.setAttribute('data-tooltip', derivedTitle);
     });
   });
 }
@@ -2763,6 +2998,8 @@ function initializeVersionListKeyboardNavigation(versionList: HTMLElement): void
   }
   versionListKeyboardNavInitialized = true;
 
+  const typeahead = createTypeahead();
+
   versionList.addEventListener('click', (event) => {
     const target = event.target as HTMLElement | null;
     const item = target?.closest<HTMLElement>('.version-item');
@@ -2775,6 +3012,9 @@ function initializeVersionListKeyboardNavigation(versionList: HTMLElement): void
   });
 
   versionList.addEventListener('keydown', (event) => {
+    if ((event as KeyboardEvent).isComposing || event.key === 'Process') {
+      return;
+    }
     const target = event.target as HTMLElement | null;
     if (!target || !target.classList.contains('version-item')) {
       return;
@@ -2841,13 +3081,45 @@ function initializeVersionListKeyboardNavigation(versionList: HTMLElement): void
       return;
     }
 
-    const matchedItem = findNextVersionItemByCharacter(items, currentIndex, event.key);
+    const query = typeahead.pushKey(event.key);
+    const matchedItem = findNextVersionItemByCharacter(items, currentIndex, query);
     if (!matchedItem) {
       return;
     }
 
     event.preventDefault();
     focusItem(matchedItem);
+    const matchedText = matchedItem.dataset.navLabel ?? matchedItem.textContent?.trim() ?? '';
+    announceKeyboardNavigation(t('accessibility.navigateTo', { item: matchedText }));
+  });
+
+  versionList.addEventListener('compositionend', (event) => {
+    const composed = (event as CompositionEvent).data ?? '';
+    const active = document.activeElement as HTMLElement | null;
+    const currentItem = active?.closest?.('.version-item') as HTMLElement | null;
+    if (!currentItem || !versionList.contains(currentItem)) {
+      return;
+    }
+
+    const items = Array.from(versionList.querySelectorAll<HTMLElement>('.version-item'));
+    if (items.length === 0) {
+      return;
+    }
+    const currentIndex = items.indexOf(currentItem);
+    if (currentIndex < 0) {
+      return;
+    }
+
+    const query = typeahead.pushText(composed);
+    const matchedItem = findNextVersionItemByCharacter(items, currentIndex, query);
+    if (!matchedItem) {
+      return;
+    }
+
+    items.forEach((listItem) => {
+      listItem.tabIndex = listItem === matchedItem ? 0 : -1;
+    });
+    matchedItem.focus();
     const matchedText = matchedItem.dataset.navLabel ?? matchedItem.textContent?.trim() ?? '';
     announceKeyboardNavigation(t('accessibility.navigateTo', { item: matchedText }));
   });

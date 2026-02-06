@@ -580,6 +580,24 @@
     "note": "Hinzugefügte oder entfernte Tags gelten für alle ausgewählten Prompts."
   },
   "accessibility": {
-    "navigateTo": "Wechsel zu {{item}}"
+    "navigateTo": "Wechsel zu {{item}}",
+    "keyboardHelp": {
+      "title": "Tastaturkurzbefehle und Landmarken",
+      "ariaLabel": "Hilfe zu Tastaturkurzbefehlen und Landmarken",
+      "shortcutsHeading": "Verfügbare Tastaturkurzbefehle:",
+      "landmarksHeading": "Landmarken auf dieser Seite:",
+      "noLandmarks": "Keine Landmarken auf dieser Seite erkannt.",
+      "shortcutHistory": "Versionsverlauf für den ausgewählten Prompt öffnen",
+      "shortcutNewPrompt": "Neuen Prompt erstellen",
+      "shortcutEscape": "Offene Dialoge und Editor schließen",
+      "shortcutQuestion": "Diese Hilfe zu Tastaturkurzbefehlen offnen",
+      "shortcutArrows": "Fokus in Kategorien- und Tag-Filterlisten bewegen (und in der Versionsverlaufsliste)",
+      "shortcutActivate": "Fokussiertes Element aktivieren",
+      "shortcutHomeEnd": "Zum ersten und letzten Element in der Liste springen",
+      "shortcutCharacterKey": "Jeder Buchstabe oder Zeichen",
+      "shortcutCharacter": "Zum nächsten Element springen, das mit diesem Zeichen beginnt (einschließlich CJK-Zeichen)",
+      "fallbackNoteHeading": "Hinweis:",
+      "fallbackNoteBody": "Einige Kurzbefehle sind nur auf der Hauptseite der Prompts verfügbar."
+    }
   }
 }

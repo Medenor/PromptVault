@@ -613,6 +613,24 @@
     }
   },
   "accessibility": {
-    "navigateTo": "Moved to {{item}}"
+    "navigateTo": "Moved to {{item}}",
+    "keyboardHelp": {
+      "title": "Keyboard Shortcuts and Landmarks",
+      "ariaLabel": "Keyboard shortcuts and landmarks help",
+      "shortcutsHeading": "Available keyboard shortcuts:",
+      "landmarksHeading": "Landmarks on this page:",
+      "noLandmarks": "No landmarks detected on this page.",
+      "shortcutHistory": "Open version history for selected prompt",
+      "shortcutNewPrompt": "Create a new prompt",
+      "shortcutEscape": "Close open dialogs and editor",
+      "shortcutQuestion": "Open this keyboard shortcuts help",
+      "shortcutArrows": "Move focus in category and tag filter lists (and version history list)",
+      "shortcutActivate": "Activate the focused item",
+      "shortcutHomeEnd": "Jump to first and last item in the list",
+      "shortcutCharacterKey": "Any letter or character",
+      "shortcutCharacter": "Jump to the next item starting with that character (including CJK characters)",
+      "fallbackNoteHeading": "Note:",
+      "fallbackNoteBody": "Some shortcuts are only available on the main prompts page."
+    }
   }
 }
