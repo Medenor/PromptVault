@@ -26,8 +26,9 @@ export function showNotification(
 
   notification.className = `notification notification-${classType}`;
   notification.textContent = message;
-  notification.setAttribute('role', 'alert');
-  notification.setAttribute('aria-live', 'polite');
+  notification.setAttribute('role', type === 'error' ? 'alert' : 'status');
+  notification.setAttribute('aria-live', type === 'error' ? 'assertive' : 'polite');
+  notification.setAttribute('aria-atomic', 'true');
 
   document.body.appendChild(notification);
 

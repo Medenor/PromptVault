@@ -30,6 +30,8 @@
     "cancel": "Abbrechen",
     "copy": "Kopieren",
     "favorite": "Favorit",
+    "addFavorite": "Zu Favoriten hinzufugen",
+    "removeFavorite": "Aus Favoriten entfernen",
     "export": "Exportieren",
     "import": "Importieren",
     "close": "Schließen",

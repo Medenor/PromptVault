@@ -133,6 +133,17 @@
     color: #2563eb;
   }
 
+  /* Don't rely on color alone to indicate links in main content. */
+  main a:not(.no-underline) {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.15em;
+  }
+
+  main a:not(.no-underline):hover {
+    text-decoration-thickness: 2px;
+  }
+
   /* Form input base styles */
   input,
   textarea,
@@ -171,6 +182,18 @@
   select:focus-visible {
     outline: 2px solid #3b82f6;
     outline-offset: 2px;
+  }
+
+  /* Respect user preference for reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }
 

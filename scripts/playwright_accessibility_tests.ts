@@ -4,9 +4,9 @@
 
 import { expect, test } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { isAbsolute, join, resolve } from 'node:path';
 
 const BASE_URL = process.env.ACCESSIBILITY_BASE_URL ?? 'http://127.0.0.1:8003';
 const AXE_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
@@ -35,7 +35,18 @@ const ACCESSIBILITY_ADMIN_USERNAME =
   process.env.ACCESSIBILITY_ADMIN_USERNAME ?? ACCESSIBILITY_USER_USERNAME;
 const ACCESSIBILITY_ADMIN_PASSWORD =
   process.env.ACCESSIBILITY_ADMIN_PASSWORD ?? ACCESSIBILITY_USER_PASSWORD;
-const STATE_DIR = mkdtempSync(join(tmpdir(), 'promptvault-acc-'));
+const EXTERNAL_STATE_DIR_RAW = process.env.ACCESSIBILITY_AUTH_STATE_DIR;
+const USING_EXTERNAL_STATE_DIR = Boolean(EXTERNAL_STATE_DIR_RAW);
+const STATE_DIR = USING_EXTERNAL_STATE_DIR
+  ? isAbsolute(EXTERNAL_STATE_DIR_RAW!)
+    ? EXTERNAL_STATE_DIR_RAW!
+    : resolve(process.cwd(), EXTERNAL_STATE_DIR_RAW!)
+  : mkdtempSync(join(tmpdir(), 'promptvault-acc-'));
+
+if (USING_EXTERNAL_STATE_DIR) {
+  mkdirSync(STATE_DIR, { recursive: true });
+}
+
 const USER_STATE_PATH = join(STATE_DIR, 'user-state.json');
 const ADMIN_STATE_PATH = join(STATE_DIR, 'admin-state.json');
 
@@ -109,14 +120,19 @@ async function createStateForCredentials(
 
 test.beforeAll(async ({ browser }) => {
   test.setTimeout(300000);
+  const forceRelogin = process.env.ACCESSIBILITY_FORCE_RELOGIN === '1';
 
   if (ACCESSIBILITY_USER_USERNAME && ACCESSIBILITY_USER_PASSWORD) {
-    await createStateForCredentials(
-      browser,
-      ACCESSIBILITY_USER_USERNAME,
-      ACCESSIBILITY_USER_PASSWORD,
-      USER_STATE_PATH
-    );
+    if (!forceRelogin && existsSync(USER_STATE_PATH)) {
+      // Reuse state to avoid hammering rate-limited login endpoints across runs.
+    } else {
+      await createStateForCredentials(
+        browser,
+        ACCESSIBILITY_USER_USERNAME,
+        ACCESSIBILITY_USER_PASSWORD,
+        USER_STATE_PATH
+      );
+    }
   }
 
   if (
@@ -126,17 +142,23 @@ test.beforeAll(async ({ browser }) => {
       ACCESSIBILITY_USER_USERNAME !== ACCESSIBILITY_ADMIN_USERNAME ||
       ACCESSIBILITY_USER_PASSWORD !== ACCESSIBILITY_ADMIN_PASSWORD)
   ) {
-    await createStateForCredentials(
-      browser,
-      ACCESSIBILITY_ADMIN_USERNAME,
-      ACCESSIBILITY_ADMIN_PASSWORD,
-      ADMIN_STATE_PATH
-    );
+    if (!forceRelogin && existsSync(ADMIN_STATE_PATH)) {
+      // Reuse state to avoid hammering rate-limited login endpoints across runs.
+    } else {
+      await createStateForCredentials(
+        browser,
+        ACCESSIBILITY_ADMIN_USERNAME,
+        ACCESSIBILITY_ADMIN_PASSWORD,
+        ADMIN_STATE_PATH
+      );
+    }
   }
 });
 
 test.afterAll(() => {
-  rmSync(STATE_DIR, { recursive: true, force: true });
+  if (!USING_EXTERNAL_STATE_DIR) {
+    rmSync(STATE_DIR, { recursive: true, force: true });
+  }
 });
 
 for (const route of ROUTES) {

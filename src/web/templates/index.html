@@ -652,13 +652,14 @@
                     class="prompt-checkbox rounded text-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                     data-prompt-id="{{ prompt_id }}"
                   />
-                  <button
-                    class="favorite-btn text-xl hover:scale-110 transition-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
-                    data-id="{{ prompt_id }}"
-                    aria-label="Toggle favorite"
-                  >
-                    {% if prompt_info.data.favorite %}★{% else %}☆{% endif %}
-                  </button>
+	                  <button
+	                    class="favorite-btn text-xl hover:scale-110 transition-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
+	                    data-id="{{ prompt_id }}"
+	                    aria-label="Toggle favorite"
+	                    aria-pressed="{% if prompt_info.data.favorite %}true{% else %}false{% endif %}"
+	                  >
+	                    {% if prompt_info.data.favorite %}★{% else %}☆{% endif %}
+	                  </button>
                 </div>
               </div>
               <div class="flex flex-wrap gap-2 mb-3">

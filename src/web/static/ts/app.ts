@@ -1062,15 +1062,15 @@ function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement
   const categoryColor = prompt.category_color ?? categoryColorMap[prompt.category];
   const categoryStyle = buildPillStyleFilled(categoryColor);
 
-  div.innerHTML = `
-        <div class="flex items-start justify-between mb-3">
-            <h4 class="text-lg font-semibold text-gray-900 flex-1">${prompt.title}</h4>
-            <div class="flex items-center gap-1 ml-2" id="prompt-actions-${id}">
-                <button class="favorite-btn text-xl hover:scale-110 transition-transform" data-id="${id}">
-                    ${prompt.favorite ? '★' : '☆'}
-                </button>
-            </div>
-        </div>
+	  div.innerHTML = `
+	        <div class="flex items-start justify-between mb-3">
+	            <h4 class="text-lg font-semibold text-gray-900 flex-1">${prompt.title}</h4>
+	            <div class="flex items-center gap-1 ml-2" id="prompt-actions-${id}">
+	                <button class="favorite-btn text-xl hover:scale-110 transition-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded" data-id="${id}">
+	                    ${prompt.favorite ? '★' : '☆'}
+	                </button>
+	            </div>
+	        </div>
         <div class="flex flex-wrap gap-2 mb-3">
             <span class="px-2 py-1 text-xs font-semibold rounded-md" data-category-pill="true" data-category-name="${prompt.category}"${categoryStyle}>
               ${prompt.category || t('categories.noCategory')}
@@ -1128,14 +1128,14 @@ function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement
     deleteBtn.title = t('actions.delete');
   }
 
-  const favoriteBtn = div.querySelector('.favorite-btn') as HTMLButtonElement | null;
-  favoriteBtn?.addEventListener('click', () => {
-    lastSelectedPromptId = parseInt(id, 10);
-    void toggleFavorite(id);
-  });
-  if (favoriteBtn) {
-    favoriteBtn.title = t('actions.favorite');
-  }
+	  const favoriteBtn = div.querySelector('.favorite-btn') as HTMLButtonElement | null;
+	  favoriteBtn?.addEventListener('click', () => {
+	    lastSelectedPromptId = parseInt(id, 10);
+	    void toggleFavorite(id);
+	  });
+	  if (favoriteBtn) {
+	    setFavoriteButtonA11y(favoriteBtn, Boolean(prompt.favorite));
+	  }
 
   const historyBtn = div.querySelector('.history-btn') as HTMLButtonElement | null;
   historyBtn?.addEventListener('click', () => {
@@ -1156,7 +1156,14 @@ function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement
     void editPrompt(id);
   });
 
-  return div;
+	  return div;
+	}
+
+function setFavoriteButtonA11y(button: HTMLButtonElement, isFavorite: boolean): void {
+  button.setAttribute('aria-pressed', isFavorite ? 'true' : 'false');
+  const label = isFavorite ? t('actions.removeFavorite') : t('actions.addFavorite');
+  button.setAttribute('aria-label', label);
+  button.title = label;
 }
 
 function renderCategories(categories: string[]): void {
@@ -1539,13 +1546,19 @@ async function toggleFavorite(id: PromptId): Promise<void> {
     // Optimistic update - immediately toggle the UI
     const favoriteBtn = document.querySelector<HTMLButtonElement>(`.favorite-btn[data-id="${id}"]`);
     if (favoriteBtn) {
-      const currentIcon = favoriteBtn.textContent ?? '';
-      const newIcon = currentIcon === '★' ? '☆' : '★';
-      favoriteBtn.textContent = newIcon;
+      const currentFavorite =
+        typeof promptCache[id]?.favorite === 'boolean'
+          ? promptCache[id].favorite
+          : favoriteBtn.getAttribute('aria-pressed') === 'true' ||
+            (favoriteBtn.textContent ?? '').trim() === '★';
+      const nextFavorite = !currentFavorite;
+
+      favoriteBtn.textContent = nextFavorite ? '★' : '☆';
+      setFavoriteButtonA11y(favoriteBtn, nextFavorite);
 
       // Also update the cached prompt data
       if (promptCache[id]) {
-        promptCache[id].favorite = !promptCache[id].favorite;
+        promptCache[id].favorite = nextFavorite;
       }
     }
 
@@ -1557,13 +1570,19 @@ async function toggleFavorite(id: PromptId): Promise<void> {
     // Revert optimistic update on error
     const favoriteBtn = document.querySelector<HTMLButtonElement>(`.favorite-btn[data-id="${id}"]`);
     if (favoriteBtn) {
-      const currentIcon = favoriteBtn.textContent ?? '';
-      const revertedIcon = currentIcon === '★' ? '☆' : '★';
-      favoriteBtn.textContent = revertedIcon;
+      const currentFavorite =
+        typeof promptCache[id]?.favorite === 'boolean'
+          ? promptCache[id].favorite
+          : favoriteBtn.getAttribute('aria-pressed') === 'true' ||
+            (favoriteBtn.textContent ?? '').trim() === '★';
+      const revertedFavorite = !currentFavorite;
+
+      favoriteBtn.textContent = revertedFavorite ? '★' : '☆';
+      setFavoriteButtonA11y(favoriteBtn, revertedFavorite);
 
       // Also revert the cached prompt data
       if (promptCache[id]) {
-        promptCache[id].favorite = !promptCache[id].favorite;
+        promptCache[id].favorite = revertedFavorite;
       }
     }
 

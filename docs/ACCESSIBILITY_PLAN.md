@@ -34,6 +34,9 @@ Ce plan détaille les étapes nécessaires pour atteindre la conformité WCAG 2.
 - `[x] T-ACC021` `aria-label` ajouté sur les champs sans label visible identifiés (recherche/filtres/actions rapides)
 - `[x] T-ACC046` Tests axe-core Playwright (règles WCAG 2.0/2.1 A/AA)
 - `[x] T-ACC047` Ajouter étape CI accessibilité (Forgejo Actions: axe + Lighthouse)
+- `[x] T-ACC042` Respecter `prefers-reduced-motion` (désactivation animations/transitions)
+- `[x] T-ACC028` Indicateur favori hors couleur seule (icône + `aria-pressed` + label add/remove)
+- `[x] T-ACC030` Liens non uniquement par couleur (soulignage dans `main`)
 - `[x] T-ACC005` Audit automatique exécuté sur routes publiques et protégées (validation dev `http://127.0.0.1:8003`)
 
 ### Tâches partiellement implémentées
