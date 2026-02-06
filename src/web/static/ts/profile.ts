@@ -201,7 +201,7 @@ async function loadSessions(): Promise<void> {
                 <div class="flex-1">
                   <div class="flex items-center gap-2 mb-2">
                     <div class="font-medium text-gray-900">${deviceDisplay}</div>
-                    ${session.is_current ? '<span class="px-2 py-1 text-xs bg-blue-500 text-white rounded">Current Session</span>' : ''}
+                    ${session.is_current ? '<span class="px-2 py-1 text-xs bg-blue-700 text-white rounded">Current Session</span>' : ''}
                   </div>
                   <div class="text-sm text-gray-600 mb-1">${browserDisplay} on ${osDisplay}</div>
                   <div class="text-xs text-gray-500">
@@ -215,7 +215,7 @@ async function loadSessions(): Promise<void> {
                   <button
                     onclick="window.revokeSession('${sessionId}')"
                     ${session.is_current ? 'disabled' : ''}
-                    class="px-3 py-1 text-sm ${session.is_current ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-red-500 hover:bg-red-600 text-white'} rounded-md font-medium"
+                    class="px-3 py-1 text-sm ${session.is_current ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-red-700 hover:bg-red-800 text-white'} rounded-md font-medium"
                   >
                     ${t('auth.profile.revokeSession') || 'Revoke'}
                   </button>

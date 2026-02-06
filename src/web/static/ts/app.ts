@@ -17,6 +17,7 @@ import type { TranslationKey } from '@/types/i18n';
 import { initI18n, t, tUnsafe, updateStaticTranslations } from '@/utils/i18n';
 import { apiFetch, apiGet, apiPostForm, APIRequestError } from '@/utils/api';
 import { setupScrollIndicators } from '@/utils/dom';
+import { createModal } from '@components';
 
 interface TagInfo {
   name: string;
@@ -98,6 +99,13 @@ let tagColorMap: Record<string, string> = {};
 let categoryColorMap: Record<string, string> = {};
 const colorTextCache = new Map<string, string>();
 let selectedTags: string[] = [];
+let keyboardHelpModal:
+  | {
+      element: HTMLDivElement;
+      open: () => void;
+      close: () => void;
+    }
+  | null = null;
 
 const HIDDEN_CLASS = 'hidden';
 const ERROR_VISIBLE_CLASS = 'validation-error-visible';
@@ -2314,6 +2322,32 @@ function clearVersionCache(promptId: number | string | null | undefined): void {
 
 // Keyboard Shortcuts (Phase 6)
 function handleKeyboardShortcuts(event: KeyboardEvent): void {
+  const target = event.target as HTMLElement | null;
+  const isTypingTarget =
+    !!target &&
+    (target.tagName === 'INPUT' ||
+      target.tagName === 'TEXTAREA' ||
+      target.tagName === 'SELECT' ||
+      target.isContentEditable);
+
+  const isQuestionShortcut =
+    !event.ctrlKey &&
+    !event.metaKey &&
+    (
+      event.key === '?' ||
+      (event.shiftKey &&
+        (event.code === 'Slash' ||
+          event.code === 'NumpadDivide' ||
+          event.code === 'Comma' ||
+          event.code === 'Digit6'))
+    );
+
+  if (isQuestionShortcut && !isTypingTarget) {
+    event.preventDefault();
+    showKeyboardShortcutsHelpModal();
+    return;
+  }
+
   // Ctrl/Cmd + H: Open version history for last selected prompt
   if ((event.ctrlKey || event.metaKey) && event.key === 'h') {
     event.preventDefault();
@@ -2337,6 +2371,46 @@ function handleKeyboardShortcuts(event: KeyboardEvent): void {
     hideRevertConfirmationModal();
     hidePromptEditor();
   }
+}
+
+function showKeyboardShortcutsHelpModal(): void {
+  if (!keyboardHelpModal) {
+    const content = document.createElement('div');
+    content.className = 'space-y-3 text-sm text-gray-700';
+    content.innerHTML = `
+      <p class="text-gray-600">Available keyboard shortcuts:</p>
+      <ul class="list-disc list-inside space-y-1">
+        <li><strong>Ctrl/Cmd + H</strong>: Open version history for selected prompt</li>
+        <li><strong>Ctrl/Cmd + N</strong>: Create a new prompt</li>
+        <li><strong>Escape</strong>: Close open dialogs and editor</li>
+        <li><strong>?</strong>: Open this keyboard shortcuts help</li>
+      </ul>
+    `;
+
+    keyboardHelpModal = createModal({
+      id: 'keyboard-shortcuts-help-modal',
+      title: 'Keyboard Shortcuts',
+      content,
+      ariaLabel: 'Keyboard shortcuts help',
+      size: 'md',
+      actions: [
+        {
+          label: 'Close',
+          variant: 'primary',
+          onClick: () => {
+            keyboardHelpModal?.close();
+          },
+        },
+      ],
+      closeOnEscape: true,
+      closeOnBackdrop: true,
+      showClose: true,
+    });
+
+    document.body.appendChild(keyboardHelpModal.element);
+  }
+
+  keyboardHelpModal.open();
 }
 
 // Tooltips (Phase 6 & 8)

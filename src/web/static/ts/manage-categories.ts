@@ -151,6 +151,9 @@ function renderRows(items: CategoryItem[]): void {
   const saveLabel = tUnsafe('actions.save');
   const deleteLabel = tUnsafe('actions.delete');
   const colorLabel = tUnsafe('management.color');
+  const nameLabel = tUnsafe('management.name');
+  const descriptionLabel = tUnsafe('management.description');
+  const selectLabel = tUnsafe('management.select');
 
   for (const item of items) {
     const row = document.createElement('tr');
@@ -159,18 +162,18 @@ function renderRows(items: CategoryItem[]): void {
 
     row.innerHTML = `
       <td class="py-2 pr-4">
-        <input type="checkbox" data-select-id="${item.id}" />
+        <input type="checkbox" data-select-id="${item.id}" aria-label="${selectLabel} #${item.id}" />
       </td>
       <td class="py-2 pr-4 text-gray-600">#${item.id}</td>
       <td class="py-2 pr-4">
-        <input data-field="name" class="w-full px-2 py-1 border border-gray-300 rounded" value="${item.name}" />
+        <input data-field="name" aria-label="${nameLabel}" class="w-full px-2 py-1 border border-gray-300 rounded" value="${item.name}" />
       </td>
       <td class="py-2 pr-4">
-        <input data-field="description" class="w-full px-2 py-1 border border-gray-300 rounded" value="${item.description ?? ''}" />
+        <input data-field="description" aria-label="${descriptionLabel}" class="w-full px-2 py-1 border border-gray-300 rounded" value="${item.description ?? ''}" />
       </td>
       <td class="py-2 pr-4">
         <div class="flex items-center gap-2">
-          <input data-field="color" class="w-full px-2 py-1 border border-gray-300 rounded" value="${item.color ?? ''}" />
+          <input data-field="color" aria-label="${colorLabel}" class="w-full px-2 py-1 border border-gray-300 rounded" value="${item.color ?? ''}" />
           <input
             data-color-picker
             type="color"

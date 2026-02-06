@@ -143,7 +143,7 @@ function displaySessions(): void {
       const rowClass = session.is_current ? 'bg-blue-50 hover:bg-blue-100' : 'hover:bg-gray-50';
       const textClass = session.is_current ? 'font-semibold' : '';
       const currentBadge = session.is_current
-        ? `<span class="ml-2 px-2 py-1 bg-blue-500 text-white text-xs rounded font-medium">${t('admin.sessions.currentBadge')}</span>`
+        ? `<span class="ml-2 px-2 py-1 bg-blue-700 text-white text-xs rounded font-medium">${t('admin.sessions.currentBadge')}</span>`
         : '';
 
       return `

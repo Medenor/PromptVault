@@ -6,6 +6,51 @@ Ce plan détaille les étapes nécessaires pour atteindre la conformité WCAG 2.
 
 **Complexité technique:** Moyenne | **Effort estimé:** 3 semaines | **Valeur utilisateur:** Haute
 
+## Statut d'avancement (mise à jour: 2026-02-06)
+
+### Légende
+
+- `[x]` Implémenté
+- `[~]` Partiellement implémenté / en cours
+- `[ ]` Non implémenté
+
+### Tâches implémentées
+
+- `[x] T-ACC001` Configurer axe-core pour les tests navigateur (Playwright + `@axe-core/playwright`)
+- `[x] T-ACC003` Créer un script de test d'accessibilité local (`scripts/accessibility_test.py`)
+- `[x] T-ACC004` Documenter les outils d'accessibilité (`docs/ACCESSIBILITY_TESTING.md`)
+- `[x] T-ACC011` Créer le lien "Aller au contenu principal" (skip link) sur les pages principales/templates actifs
+- `[x] T-ACC013` Indicateurs de focus visibles (styles focus + skip link visible au focus)
+- `[x] T-ACC014` Trap focus pour modales (dans `src/web/static/ts/components/modal.ts`)
+- `[x] T-ACC015` Restauration du focus après fermeture modale
+- `[x] T-ACC017` Documenter les raccourcis clavier (`docs/KEYBOARD_SHORTCUTS.md`)
+- `[x] T-ACC018` Raccourci `?` pour aide clavier (modal d'aide des raccourcis)
+- `[x] T-ACC008` Landmarks ARIA (`header`/`main`) + skip link sur templates actifs
+- `[x] T-ACC021` `aria-label` ajouté sur les champs sans label visible identifiés (recherche/filtres/actions rapides)
+- `[x] T-ACC046` Tests axe-core Playwright (règles WCAG 2.0/2.1 A/AA)
+- `[x] T-ACC005` Audit automatique exécuté sur routes publiques et protégées (validation dev `http://127.0.0.1:8003`)
+
+### Tâches partiellement implémentées
+
+- `[~] Aucun élément actuellement.`
+
+### Tâches restantes
+
+- `[ ]` Toutes les autres tâches du plan, notamment:
+- `[ ] T-ACC002` Lighthouse CI dans pipeline
+- `[ ] T-ACC006` / `[ ] T-ACC007` Audit clavier manuel + lecteurs d'écran
+- `[ ] T-ACC009` / `[ ] T-ACC010` Hiérarchie des titres + live regions documentées
+- `[ ] T-ACC012` Navigation par landmarks avec aide dédiée
+- `[ ] T-ACC016` Roving tabindex
+- `[ ] T-ACC019` Navigation première lettre (scénario CJK)
+- `[ ] T-ACC020` / `[ ] T-ACC022` à `[ ] T-ACC025` couverture formulaires/erreurs temps réel complète
+- `[ ] T-ACC026` à `[ ] T-ACC030` audit contraste complet + indicateurs hors couleur
+- `[ ] T-ACC031` à `[ ] T-ACC034` images/icônes (alt/aria-hidden) complet
+- `[ ] T-ACC035` à `[ ] T-ACC039` composants avancés (modales/tabs/tooltips) conformité complète
+- `[ ] T-ACC040` à `[ ] T-ACC045` préférences accessibilité (contraste élevé, reduced motion, taille texte)
+- `[ ] T-ACC047` à `[ ] T-ACC050` CI + validation manuelle + audit final
+- `[ ] T-ACC051` à `[ ] T-ACC053` documentation finale + déclaration accessibilité
+
 ---
 
 ## Phase 1: Fondation et Outils (3-4 jours)

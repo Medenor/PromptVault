@@ -15,9 +15,10 @@
     <script src="https://unpkg.com/i18next-http-backend@2.4.2/i18nextHttpBackend.min.js"></script>
   </head>
   <body class="bg-gray-50 min-h-screen">
+    <a href="#main-content" class="skip-link">Skip to main content</a>
     <div class="min-h-screen flex flex-col">
       <!-- Header -->
-      <header class="bg-blue-500 text-white shadow-sm">
+      <header class="bg-blue-500 text-white shadow-sm" role="banner">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div class="flex items-center justify-between h-16">
             <div class="flex items-center gap-4 min-w-0">
@@ -42,7 +43,7 @@
       </header>
 
       <!-- Main Content -->
-      <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+      <main id="main-content" role="main" class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
         <!-- Page Header -->
         <div class="mb-8">
           <h2 class="text-3xl font-bold text-gray-900 mb-2" data-i18n="backup.title">

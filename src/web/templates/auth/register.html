@@ -15,7 +15,12 @@
     <script src="https://unpkg.com/i18next-http-backend@2.4.2/i18nextHttpBackend.min.js"></script>
   </head>
   <body class="bg-white min-h-screen">
-    <div class="min-h-screen flex flex-col items-center justify-center px-4 py-8">
+    <a
+      href="#main-content"
+      class="skip-link text-blue-800 border-blue-900 hover:text-blue-900 focus-visible:ring-blue-900"
+      >Skip to main content</a
+    >
+    <main id="main-content" role="main" class="min-h-screen flex flex-col items-center justify-center px-4 py-8">
       <!-- Logo/Header Section -->
       <div class="text-center mb-8">
         <a href="/" class="inline-flex">
@@ -223,7 +228,7 @@
           <div class="border-t pt-4 mt-4">
             <button
               type="submit"
-              class="w-full px-4 py-3 bg-blue-500 text-white font-medium rounded-md hover:bg-blue-600 hover:scale-105 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              class="w-full px-4 py-3 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 hover:scale-105 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2"
               data-i18n="auth.register.registerButton"
             >
               Register
@@ -235,7 +240,7 @@
             <span data-i18n="auth.register.haveAccount">Already have an account?</span>
             <a
               href="/auth/login"
-              class="text-blue-500 hover:text-blue-600 font-medium ml-1 transition-colors"
+              class="text-blue-700 hover:text-blue-800 font-medium ml-1 transition-colors"
               data-i18n="auth.register.loginLink"
             >
               Login
@@ -243,7 +248,7 @@
           </p>
         </form>
       </div>
-    </div>
+    </main>
 
     {{ scripts.load_scripts('auth', true, 'auth', true) }}
   </body>

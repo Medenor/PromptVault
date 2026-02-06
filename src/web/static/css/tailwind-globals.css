@@ -176,6 +176,28 @@
 
 /* Validation state classes (migrated from validation.css) */
 @layer components {
+  .skip-link {
+    position: absolute;
+    top: 0.75rem;
+    left: -9999px;
+    z-index: 10000;
+    border-radius: 0.5rem;
+    border: 2px solid #1e3a8a;
+    background-color: #ffffff;
+    color: #1e3a8a;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .skip-link:focus,
+  .skip-link:focus-visible {
+    left: 0.75rem;
+    outline: 2px solid #1e3a8a;
+    outline-offset: 2px;
+  }
+
   /* Focus ring utility classes for keyboard accessibility */
   .focus-ring {
     @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2;

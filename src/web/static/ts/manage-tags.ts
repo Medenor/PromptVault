@@ -167,6 +167,10 @@ function renderRows(items: TagItem[]): void {
   const deleteLabel = tUnsafe('actions.delete');
   const parentNoneLabel = tUnsafe('management.parentNone');
   const colorLabel = tUnsafe('management.color');
+  const nameLabel = tUnsafe('management.name');
+  const descriptionLabel = tUnsafe('management.description');
+  const parentLabel = tUnsafe('management.parent');
+  const selectLabel = tUnsafe('management.select');
 
   for (const item of items) {
     const row = document.createElement('tr');
@@ -175,18 +179,18 @@ function renderRows(items: TagItem[]): void {
 
     row.innerHTML = `
       <td class="py-2 pr-4">
-        <input type="checkbox" data-select-id="${item.id}" />
+        <input type="checkbox" data-select-id="${item.id}" aria-label="${selectLabel} #${item.id}" />
       </td>
       <td class="py-2 pr-4 text-gray-600">#${item.id}</td>
       <td class="py-2 pr-4">
-        <input data-field="name" class="w-full px-2 py-1 border border-gray-300 rounded" value="${item.name}" />
+        <input data-field="name" aria-label="${nameLabel}" class="w-full px-2 py-1 border border-gray-300 rounded" value="${item.name}" />
       </td>
       <td class="py-2 pr-4">
-        <input data-field="description" class="w-full px-2 py-1 border border-gray-300 rounded" value="${item.description ?? ''}" />
+        <input data-field="description" aria-label="${descriptionLabel}" class="w-full px-2 py-1 border border-gray-300 rounded" value="${item.description ?? ''}" />
       </td>
       <td class="py-2 pr-4">
         <div class="flex items-center gap-2">
-          <input data-field="color" class="w-full px-2 py-1 border border-gray-300 rounded" value="${item.color ?? ''}" />
+          <input data-field="color" aria-label="${colorLabel}" class="w-full px-2 py-1 border border-gray-300 rounded" value="${item.color ?? ''}" />
           <input
             data-color-picker
             type="color"
@@ -198,7 +202,7 @@ function renderRows(items: TagItem[]): void {
         </div>
       </td>
       <td class="py-2 pr-4">
-        <select data-field="parent_tag_id" class="w-36 px-2 py-1 border border-gray-300 rounded">
+        <select data-field="parent_tag_id" aria-label="${parentLabel}" class="w-36 px-2 py-1 border border-gray-300 rounded">
           ${renderParentOptions(item.id, item.parent_tag_id ?? null, parentNoneLabel)}
         </select>
       </td>

@@ -15,9 +15,10 @@
     <script src="https://unpkg.com/i18next-http-backend@2.4.2/i18nextHttpBackend.min.js"></script>
   </head>
   <body class="bg-gray-50 min-h-screen">
+    <a href="#main-content" class="skip-link">Skip to main content</a>
     <div class="min-h-screen flex flex-col">
       <!-- Header -->
-      <header class="bg-blue-500 text-white shadow-sm">
+      <header class="bg-blue-500 text-white shadow-sm" role="banner">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div class="flex items-center justify-between gap-2 h-16">
             <div class="flex items-center space-x-4 min-w-0">
@@ -97,7 +98,7 @@
       </header>
 
       <!-- Main Content -->
-      <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+      <main id="main-content" role="main" class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
         <!-- Page Header -->
         <div class="mb-6">
           <h2
@@ -134,6 +135,7 @@
                 type="text"
                 id="search-input"
                 placeholder="Search by username..."
+                aria-label="Search sessions by username"
                 data-i18n="[placeholder]admin.sessions.searchPlaceholder"
                 class="w-full pl-3 pr-10 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
               />

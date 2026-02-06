@@ -16,7 +16,7 @@ import { defineConfig, devices } from '@playwright/test';
  */
 export default defineConfig({
   testDir: './scripts',
-  testMatch: '**/playwright_auth_ui_tests.ts',
+  testMatch: '**/playwright_*_tests.ts',
 
   /* Run tests in files in parallel */
   fullyParallel: true,
@@ -41,7 +41,7 @@ export default defineConfig({
   /* Shared settings for all the projects below */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: 'http://127.0.0.1:8003',
+    baseURL: process.env.ACCESSIBILITY_BASE_URL ?? 'http://127.0.0.1:8003',
 
     /* Collect trace when retrying the failed test. */
     trace: 'on-first-retry',
@@ -83,12 +83,14 @@ export default defineConfig({
   ],
 
   /* Run your local dev server before starting the tests */
-  webServer: {
-    command: 'python run_web.py',
-    url: 'http://127.0.0.1:8003',
-    reuseExistingServer: !process.env.CI,
-    timeout: 120 * 1000,
-  },
+  webServer: process.env.ACCESSIBILITY_EXTERNAL_SERVER
+    ? undefined
+    : {
+        command: 'UVICORN_RELOAD=false python3 run_web.py',
+        url: process.env.ACCESSIBILITY_BASE_URL ?? 'http://127.0.0.1:8003',
+        reuseExistingServer: !process.env.CI,
+        timeout: 120 * 1000,
+      },
 
   /* Global timeout */
   timeout: 30 * 1000,

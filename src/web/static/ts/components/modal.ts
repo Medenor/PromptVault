@@ -22,7 +22,11 @@ export function createModal(props: ModalProps): {
   modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/50 hidden';
   modal.setAttribute('role', 'dialog');
   modal.setAttribute('aria-modal', 'true');
-  if (props.ariaLabel) modal.setAttribute('aria-label', props.ariaLabel);
+  const dialogId = props.id || `pv-modal-${Math.random().toString(36).slice(2, 10)}`;
+  modal.id = dialogId;
+  if (props.ariaLabel) {
+    modal.setAttribute('aria-label', props.ariaLabel);
+  }
 
   // Modal card container
   const modalContent = document.createElement('div');
@@ -34,14 +38,21 @@ export function createModal(props: ModalProps): {
     `${baseClasses} ${sizeClasses} ${paddingClasses} ${props.className || ''}`.trim();
 
   // Header with title and close button
+  const titleId = `${dialogId}-title`;
+  const descriptionId = `${dialogId}-description`;
+
   if (props.title) {
     const header = document.createElement('div');
     header.className = 'flex items-center justify-between mb-4';
 
     const title = document.createElement('h2');
+    title.id = titleId;
     title.textContent = props.title;
     title.className = 'text-xl font-bold text-gray-900';
     header.appendChild(title);
+    if (!props.ariaLabel) {
+      modal.setAttribute('aria-labelledby', titleId);
+    }
 
     // Close button (X) in top-right
     if (props.showClose !== false && (props.closable === undefined || props.closable)) {
@@ -61,6 +72,7 @@ export function createModal(props: ModalProps): {
 
   // Body content
   const body = document.createElement('div');
+  body.id = descriptionId;
   body.className = 'mb-6';
   if (typeof props.content === 'string') {
     body.innerHTML = props.content;
@@ -68,6 +80,7 @@ export function createModal(props: ModalProps): {
     body.appendChild(props.content);
   }
   modalContent.appendChild(body);
+  modal.setAttribute('aria-describedby', descriptionId);
 
   // Actions footer (buttons)
   if (props.actions && props.actions.length > 0) {
@@ -107,14 +120,17 @@ export function createModal(props: ModalProps): {
     }
   };
 
-  // Focus trap elements
+  // Focus trap state
   const focusableElements =
     'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
   let firstFocusable: HTMLElement | null = null;
   let lastFocusable: HTMLElement | null = null;
+  let previouslyFocused: HTMLElement | null = null;
 
   const open = () => {
+    previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
     document.addEventListener('keydown', escapeHandler);
 
     // Set up focus trap
@@ -125,6 +141,9 @@ export function createModal(props: ModalProps): {
       if (firstFocusable) {
         firstFocusable.focus();
       }
+    } else {
+      modalContent.setAttribute('tabindex', '-1');
+      modalContent.focus();
     }
 
     // Trap focus within modal
@@ -133,8 +152,12 @@ export function createModal(props: ModalProps): {
 
   const close = () => {
     modal.classList.add('hidden');
+    document.body.style.overflow = '';
     document.removeEventListener('keydown', escapeHandler);
     document.removeEventListener('keydown', trapFocus);
+    if (previouslyFocused) {
+      previouslyFocused.focus();
+    }
     if (props.onClose) {
       props.onClose();
     }
@@ -157,8 +180,6 @@ export function createModal(props: ModalProps): {
       }
     }
   };
-
-  if (props.id) modal.id = props.id;
 
   return {
     element: modal,
