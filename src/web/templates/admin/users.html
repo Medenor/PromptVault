@@ -576,7 +576,7 @@
 	                  type="password"
 	                  id="create-password"
 	                  name="password"
-	                  aria-describedby="create-password-error create-strength-text"
+	                  aria-describedby="create-password-error create-strength-text create-password-policy"
 	                  class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
 	                  minlength="12"
 	                  maxlength="128"
@@ -602,7 +602,7 @@
                 </div>
                 <p class="text-xs mt-1" id="create-strength-text"></p>
               </div>
-              <div class="mt-2 space-y-1">
+              <div id="create-password-policy" class="mt-2 space-y-1">
                 <div id="req-length" class="text-xs text-gray-600 flex items-center gap-2">
                   <span>○</span>
                   <span data-i18n="auth.register.reqLength">At least 12 characters</span>

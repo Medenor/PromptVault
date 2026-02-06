@@ -39,10 +39,10 @@ Ce plan détaille les étapes nécessaires pour atteindre la conformité WCAG 2.
 - `[x] T-ACC030` Liens non uniquement par couleur (soulignage dans `main`)
 - `[x] T-ACC005` Audit automatique exécuté sur routes publiques et protégées (validation dev `http://127.0.0.1:8003`)
 - `[x] T-ACC019` Navigation première lettre (typeahead + support IME/composition): prompts, filtres catégories/tags, historique versions, tableaux manage/admin (annonce SR localisée)
+- `[x] T-ACC022` `aria-describedby` global: tous les textes d'aide/erreur inline sont reliés aux champs (auth, import/export, backup, manage, admin, modales)
 
 ### Tâches partiellement implémentées
 
-- `[~] T-ACC022` `aria-describedby` renforcé sur auth + import/export + backup + manage categories/tags + admin users (create/edit), extension restante à d'autres formulaires
 - `[~] T-ACC023` Résumé d'erreurs en haut des formulaires sur auth + import/export + backup + manage categories/tags + admin users (create/edit), extension restante à l'ensemble de l'application
 - `[~] T-ACC024` Liaison erreurs/champs (`aria-invalid` + `aria-describedby` + focus) sur auth + import/export + backup + manage categories/tags + admin users (create), extension restante globale
 - `[~] T-ACC025` Annonces de validation améliorées (live regions + résumés d'erreurs + navigation clavier) étendues aux formulaires principaux + remplacement des `alert` bloquants sur manage categories/tags, couverture temps réel complète restante
@@ -55,7 +55,7 @@ Ce plan détaille les étapes nécessaires pour atteindre la conformité WCAG 2.
 
 - `[ ]` Toutes les autres tâches du plan, notamment:
 - `[ ] T-ACC006` / `[ ] T-ACC007` Audit clavier manuel + lecteurs d'écran
-- `[ ] T-ACC022` à `[ ] T-ACC025` couverture formulaires/erreurs temps réel complète
+- `[ ] T-ACC023` à `[ ] T-ACC025` couverture formulaires/erreurs temps réel complète
 - `[ ] T-ACC026` à `[ ] T-ACC030` audit contraste complet + indicateurs hors couleur
 - `[ ] T-ACC031` à `[ ] T-ACC034` images/icônes (alt/aria-hidden) complet
 - `[ ] T-ACC035` à `[ ] T-ACC039` composants avancés (modales/tabs/tooltips) conformité complète

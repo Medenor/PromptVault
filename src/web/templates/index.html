@@ -1142,6 +1142,7 @@
               type="text"
               placeholder="Comma-separated tags"
               data-i18n="[placeholder]bulkTag.placeholder"
+              aria-describedby="bulk-tag-note"
               class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
             />
           </div>
@@ -1152,10 +1153,11 @@
               type="text"
               placeholder="Comma-separated tags"
               data-i18n="[placeholder]bulkTag.placeholder"
+              aria-describedby="bulk-tag-note"
               class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
             />
           </div>
-          <p class="text-xs text-gray-500" data-i18n="bulkTag.note">
+          <p id="bulk-tag-note" class="text-xs text-gray-500" data-i18n="bulkTag.note">
             Tags added or removed will apply to all selected prompts.
           </p>
         </div>

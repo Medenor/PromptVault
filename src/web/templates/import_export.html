@@ -251,6 +251,7 @@
                 >
                 <select
                   id="import-mode"
+                  aria-describedby="import-mode-help"
                   class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
                 >
                   <option value="append" data-i18n="importExport.modeAppend">
@@ -261,7 +262,11 @@
                   </option>
                   <option value="merge" data-i18n="importExport.modeMerge">Smart merge</option>
                 </select>
-                <p class="text-xs text-gray-500 mt-1" data-i18n="importExport.modeHelp">
+                <p
+                  id="import-mode-help"
+                  class="text-xs text-gray-500 mt-1"
+                  data-i18n="importExport.modeHelp"
+                >
                   Append adds new prompts and keeps current ones (creating duplicates if titles
                   match). Replace clears existing prompts before import. Smart merge skips prompts
                   whose title already exists.
