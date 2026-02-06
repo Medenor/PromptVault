@@ -586,6 +586,7 @@
   "accessibility": {
     "navigateTo": "Wechsel zu {{item}}",
     "labels": {
+      "home": "PromptVault Startseite",
       "pageNavigation": "Seitennavigation",
       "primaryActions": "Hauptaktionen",
       "primaryActionsMobile": "Hauptaktionen (mobil)",
