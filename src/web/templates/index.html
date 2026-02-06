@@ -290,7 +290,7 @@
                   aria-label="Search prompts"
                   data-i18n="[aria-label]nav.searchPlaceholder"
                   data-i18n="[placeholder]nav.searchPlaceholder"
-                  class="w-full pl-3 pr-10 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
+                  class="w-full pl-3 pr-10 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-500 disabled:bg-gray-50 disabled:text-gray-600 disabled:cursor-not-allowed"
                 />
 	                <svg class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none w-5 h-5 transition-colors"
 	                     fill="none"
@@ -448,7 +448,7 @@
                   aria-label="Search prompts"
                   data-i18n="[aria-label]nav.searchPlaceholder"
                   data-i18n="[placeholder]nav.searchPlaceholder"
-                  class="w-full pl-3 pr-10 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
+                  class="w-full pl-3 pr-10 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-500 disabled:bg-gray-50 disabled:text-gray-600 disabled:cursor-not-allowed"
                 />
                 <svg class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none w-5 h-5 transition-colors"
                      fill="none"
@@ -693,7 +693,7 @@
                   {{ prompt_info.data.category }}
                 </span>
                 {% if prompt_info.data.tags %} {% for tag in prompt_info.data.tags %}
-                <span class="px-2 py-1 text-xs font-medium rounded-full border border-gray-300 flex items-center gap-1" data-tag-pill="true" data-tag-name="{{ tag }}">
+                <span class="px-2 py-1 text-xs font-medium rounded-full border border-gray-400 flex items-center gap-1" data-tag-pill="true" data-tag-name="{{ tag }}">
                   {{ tag }}
                 </span>
                 {% endfor %} {% endif %}
@@ -760,7 +760,7 @@
                     maxlength="200"
                     aria-required="true"
                     aria-describedby="prompt-title-counter prompt-title-error"
-                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
+                    class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-500 disabled:bg-gray-50 disabled:text-gray-600 disabled:cursor-not-allowed"
                   />
                   <div class="flex justify-between items-center mt-1">
                     <div
@@ -786,7 +786,7 @@
                     maxlength="50000"
                     aria-required="true"
                     aria-describedby="prompt-content-counter prompt-content-error"
-                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed font-mono"
+                    class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-500 disabled:bg-gray-50 disabled:text-gray-600 disabled:cursor-not-allowed font-mono"
                   ></textarea>
                   <div class="flex justify-between items-center mt-1">
                     <div
@@ -808,7 +808,7 @@
                     id="prompt-category"
                     name="category"
                     aria-describedby="prompt-category-error"
-                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
+                    class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-600 disabled:cursor-not-allowed"
                   >
                     <option value="">No category</option>
                     {% for category in categories %}
@@ -831,7 +831,7 @@
                     <div class="relative">
                     <div
                       id="tag-chip-input"
-                      class="flex flex-wrap items-center gap-2 w-full px-3 py-2 text-sm border border-gray-300 rounded-md bg-white focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent min-h-[42px]"
+                      class="flex flex-wrap items-center gap-2 w-full px-3 py-2 text-sm border border-gray-400 rounded-md bg-white focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent min-h-[42px]"
                     >
                       <div id="tag-chips" class="flex flex-wrap gap-2"></div>
                       <input
@@ -840,7 +840,7 @@
                         data-i18n="[placeholder]form.tagPlaceholder"
                         autocomplete="off"
                         aria-describedby="prompt-tags-counter prompt-tags-error prompt-tags-duplicates"
-                        class="flex-1 min-w-[120px] py-1 outline-none bg-transparent placeholder-gray-400"
+                        class="flex-1 min-w-[120px] py-1 outline-none bg-transparent placeholder-gray-500"
                       />
                     </div>
                     <input type="hidden" id="prompt-tags" name="tags" />
@@ -891,7 +891,7 @@
                     placeholder="Describe your changes..."
                     maxlength="500"
                     aria-describedby="commit-message-counter commit-message-error"
-                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
+                    class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-500 disabled:bg-gray-50 disabled:text-gray-600 disabled:cursor-not-allowed"
                   />
                   <div class="flex justify-between items-center mt-1">
                     <div
@@ -952,7 +952,7 @@
               data-i18n="[aria-label]version.searchPlaceholder"
               placeholder="Search versions..."
               data-i18n="[placeholder]version.searchPlaceholder"
-              class="w-full pl-3 pr-10 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
+              class="w-full pl-3 pr-10 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-500 disabled:bg-gray-50 disabled:text-gray-600 disabled:cursor-not-allowed"
             />
 	            <svg class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none w-5 h-5 transition-colors"
 	                 fill="none"
@@ -1007,14 +1007,14 @@
               <label for="diff-v1-selector" class="block text-sm font-semibold text-gray-700 mb-2" data-i18n="version.version1">Version 1:</label>
               <select
                 id="diff-v1-selector"
-                class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
+                class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-600 disabled:cursor-not-allowed"
               ></select>
             </div>
             <div>
               <label for="diff-v2-selector" class="block text-sm font-semibold text-gray-700 mb-2" data-i18n="version.version2">Version 2:</label>
               <select
                 id="diff-v2-selector"
-                class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
+                class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-600 disabled:cursor-not-allowed"
               ></select>
             </div>
           </div>
@@ -1064,7 +1064,7 @@
               data-i18n="[placeholder]version.revertMessagePlaceholder"
               maxlength="500"
               aria-describedby="revert-commit-counter revert-commit-error"
-              class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
+              class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-500 disabled:bg-gray-50 disabled:text-gray-600 disabled:cursor-not-allowed"
             />
             <div class="flex justify-between items-center mt-1">
               <div
@@ -1168,7 +1168,7 @@
               placeholder="Comma-separated tags"
               data-i18n="[placeholder]bulkTag.placeholder"
               aria-describedby="bulk-tag-note"
-              class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
+              class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-500 disabled:bg-gray-50 disabled:text-gray-600 disabled:cursor-not-allowed"
             />
           </div>
           <div>
@@ -1179,7 +1179,7 @@
               placeholder="Comma-separated tags"
               data-i18n="[placeholder]bulkTag.placeholder"
               aria-describedby="bulk-tag-note"
-              class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
+              class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-500 disabled:bg-gray-50 disabled:text-gray-600 disabled:cursor-not-allowed"
             />
           </div>
           <p id="bulk-tag-note" class="text-xs text-gray-500" data-i18n="bulkTag.note">

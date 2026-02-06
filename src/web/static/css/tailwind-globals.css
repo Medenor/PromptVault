@@ -199,6 +199,19 @@
 
 /* Validation state classes (migrated from validation.css) */
 @layer components {
+  /* Screen reader only utility class */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+
   .skip-link {
     position: absolute;
     top: 0.75rem;
@@ -303,7 +316,7 @@
   }
 
   .notification-warning {
-    @apply bg-amber-50 text-amber-950 border-amber-200;
+    @apply bg-amber-50 text-amber-900 border-amber-200;
   }
 
   .notification-error {
@@ -333,7 +346,7 @@
   }
 
   .status-warning {
-    @apply bg-amber-50 text-amber-950;
+    @apply bg-amber-50 text-amber-900;
   }
 
   .status-error {
