@@ -722,6 +722,16 @@ function addFieldError(
 ): void {
   showFieldError(errorId, message);
   const input = document.getElementById(inputId);
+  if (input) {
+    const existing =
+      input
+        .getAttribute('aria-describedby')
+        ?.split(/\s+/)
+        .map((s) => s.trim())
+        .filter(Boolean) ?? [];
+    const next = Array.from(new Set([...existing, errorId]));
+    input.setAttribute('aria-describedby', next.join(' '));
+  }
   input?.setAttribute('aria-invalid', 'true');
   errors.push({ inputId, message });
 }

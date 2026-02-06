@@ -773,7 +773,13 @@ function clearPromptFormErrors(): void {
       el.classList.remove(ERROR_VISIBLE_CLASS);
     }
   });
-  const inputs = ['prompt-title', 'prompt-content', 'prompt-tags', 'commit-message'];
+  const inputs = [
+    'prompt-title',
+    'prompt-content',
+    'prompt-tags',
+    'prompt-tags-input',
+    'commit-message',
+  ];
   inputs.forEach((id) => {
     const field = document.getElementById(id);
     if (field) {
@@ -807,18 +813,50 @@ function showPromptFieldError(
     errorEl.dataset.errorKey = messageKey;
     errorEl.classList.add(ERROR_VISIBLE_CLASS);
   }
-  if (field) {
-    field.classList.add('field-error');
-    field.setAttribute('aria-invalid', 'true');
-    if (shouldFocus) {
-      field.focus();
-    }
-  }
+
+  const mergeDescribedBy = (el: HTMLElement | null, ids: string[]) => {
+    if (!el) return;
+    const existing =
+      el
+        .getAttribute('aria-describedby')
+        ?.split(/\s+/)
+        .map((s) => s.trim())
+        .filter(Boolean) ?? [];
+    const next = Array.from(new Set([...existing, ...ids.filter(Boolean)]));
+    if (next.length) el.setAttribute('aria-describedby', next.join(' '));
+  };
+
+  // Special-case tags: the "real" form field is hidden, but the focusable control is #prompt-tags-input.
   if (fieldId === 'prompt-tags') {
+    const hidden = field as HTMLInputElement | null;
+    const tagInput = getTagInputElement();
     const tagChipInput = document.getElementById('tag-chip-input');
+
+    hidden?.setAttribute('aria-invalid', 'true');
+
+    if (tagInput) {
+      tagInput.classList.add('field-error');
+      tagInput.setAttribute('aria-invalid', 'true');
+      mergeDescribedBy(tagInput, [errorId]);
+      if (shouldFocus) {
+        tagInput.focus();
+      }
+    }
+
     if (tagChipInput) {
       tagChipInput.classList.add('field-error');
       tagChipInput.setAttribute('aria-invalid', 'true');
+    }
+
+    return;
+  }
+
+  if (field) {
+    field.classList.add('field-error');
+    field.setAttribute('aria-invalid', 'true');
+    mergeDescribedBy(field, [errorId]);
+    if (shouldFocus) {
+      field.focus();
     }
   }
 }
@@ -888,6 +926,11 @@ function clearPromptFieldError(fieldId: string, errorId: string): void {
     field.removeAttribute('aria-invalid');
   }
   if (fieldId === 'prompt-tags') {
+    const tagInput = getTagInputElement();
+    if (tagInput) {
+      tagInput.classList.remove('field-error');
+      tagInput.removeAttribute('aria-invalid');
+    }
     const tagChipInput = document.getElementById('tag-chip-input');
     if (tagChipInput) {
       tagChipInput.classList.remove('field-error');
