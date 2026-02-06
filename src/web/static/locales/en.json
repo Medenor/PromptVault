@@ -23,6 +23,7 @@
   },
   "actions": {
     "add": "Add",
+    "remove": "Remove",
     "view": "View",
     "edit": "Edit",
     "delete": "Delete",
@@ -94,6 +95,7 @@
     "bulkTagUpdateFailed": "Failed to update tags."
   },
   "validation": {
+    "errorSummaryHeader": "Please correct the following errors:",
     "required": "This field is required.",
     "titleRequired": "The 'Prompt Title' field cannot be empty.",
     "titleTooLong": "Title cannot exceed 200 characters.",
@@ -609,5 +611,8 @@
       "confirmRevokeAllForUser": "Are you sure you want to revoke ALL sessions for user \"{{username}}\"? They will be logged out of all devices.",
       "confirmRevokeAllForAllUsers": "Are you sure you want to revoke ALL sessions for ALL users? All users will be logged out of all devices."
     }
+  },
+  "accessibility": {
+    "navigateTo": "Moved to {{item}}"
   }
 }

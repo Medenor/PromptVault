@@ -45,6 +45,11 @@ interface PasswordChecks {
   special: boolean;
 }
 
+interface FormValidationError {
+  inputId: string;
+  message: string;
+}
+
 let currentPage = 1;
 let totalPages = 1;
 let currentFilters = {
@@ -492,6 +497,7 @@ function clearCreateUserForm(): void {
 
 function clearAllCreateUserErrors(): void {
   const errorIds = [
+    'create-user-error-summary',
     'create-username-error',
     'create-email-error',
     'create-password-error',
@@ -500,7 +506,10 @@ function clearAllCreateUserErrors(): void {
   ];
   errorIds.forEach((id) => {
     const element = document.getElementById(id);
-    if (element) element.textContent = '';
+    if (element) {
+      element.textContent = '';
+      element.classList.add('hidden');
+    }
   });
 }
 
@@ -508,6 +517,93 @@ function showFieldError(elementId: string, message: string): void {
   const element = document.getElementById(elementId);
   if (element) {
     element.textContent = message;
+    element.classList.toggle('hidden', message.trim().length === 0);
+  }
+}
+
+function resetFormAccessibilityState(
+  form: HTMLFormElement | null,
+  inputIds: string[],
+  summaryId: string
+): void {
+  if (form) {
+    inputIds.forEach((inputId) => {
+      const input = form.querySelector<HTMLElement>(`#${inputId}`);
+      if (input) {
+        input.setAttribute('aria-invalid', 'false');
+      }
+    });
+  }
+
+  const summary = document.getElementById(summaryId);
+  if (summary) {
+    summary.textContent = '';
+    summary.classList.add('hidden');
+  }
+}
+
+function addFieldError(
+  errors: FormValidationError[],
+  inputId: string,
+  errorId: string,
+  message: string
+): void {
+  showFieldError(errorId, message);
+  const input = document.getElementById(inputId);
+  input?.setAttribute('aria-invalid', 'true');
+  errors.push({ inputId, message });
+}
+
+function renderErrorSummary(summaryId: string, errors: FormValidationError[]): void {
+  if (errors.length === 0) return;
+
+  const summary = document.getElementById(summaryId);
+  if (!summary) {
+    document.getElementById(errors[0]?.inputId ?? '')?.focus();
+    return;
+  }
+
+  summary.textContent = '';
+  summary.classList.remove('hidden');
+
+  const header = document.createElement('p');
+  header.className = 'error-banner-header';
+  header.textContent = t('validation.errorSummaryHeader') || 'Please correct the following errors:';
+  summary.appendChild(header);
+
+  const list = document.createElement('ul');
+  list.className = 'error-banner-list';
+  for (const error of errors) {
+    const item = document.createElement('li');
+    const link = document.createElement('a');
+    link.href = `#${error.inputId}`;
+    link.className = 'underline';
+    link.textContent = error.message;
+    link.addEventListener('click', (event) => {
+      event.preventDefault();
+      const target = document.getElementById(error.inputId) as HTMLElement | null;
+      target?.focus();
+    });
+    item.appendChild(link);
+    list.appendChild(item);
+  }
+  summary.appendChild(list);
+
+  summary.focus();
+}
+
+function mapCreateUserField(field: string): { inputId: string; errorId: string } | null {
+  switch (field) {
+    case 'username':
+      return { inputId: 'create-username', errorId: 'create-username-error' };
+    case 'email':
+      return { inputId: 'create-email', errorId: 'create-email-error' };
+    case 'password':
+      return { inputId: 'create-password', errorId: 'create-password-error' };
+    case 'confirm_password':
+      return { inputId: 'create-confirm-password', errorId: 'create-confirm-password-error' };
+    default:
+      return null;
   }
 }
 
@@ -602,7 +698,14 @@ function updatePasswordRequirements(): void {
 }
 
 async function submitCreateUserForm(): Promise<void> {
+  const form = document.getElementById('create-user-form') as HTMLFormElement | null;
+  resetFormAccessibilityState(
+    form,
+    ['create-username', 'create-email', 'create-password', 'create-confirm-password'],
+    'create-user-error-summary'
+  );
   clearAllCreateUserErrors();
+  const validationErrors: FormValidationError[] = [];
 
   const username =
     (document.getElementById('create-username') as HTMLInputElement | null)?.value.trim() ?? '';
@@ -619,22 +722,39 @@ async function submitCreateUserForm(): Promise<void> {
   let hasErrors = false;
 
   if (!username) {
-    showFieldError('create-username-error', t('validation.required') || 'Username is required');
+    addFieldError(
+      validationErrors,
+      'create-username',
+      'create-username-error',
+      t('validation.required') || 'Username is required'
+    );
     hasErrors = true;
   }
 
   if (!email) {
-    showFieldError('create-email-error', t('validation.required') || 'Email is required');
+    addFieldError(
+      validationErrors,
+      'create-email',
+      'create-email-error',
+      t('validation.required') || 'Email is required'
+    );
     hasErrors = true;
   }
 
   if (!password) {
-    showFieldError('create-password-error', t('validation.required') || 'Password is required');
+    addFieldError(
+      validationErrors,
+      'create-password',
+      'create-password-error',
+      t('validation.required') || 'Password is required'
+    );
     hasErrors = true;
   }
 
   if (!confirmPassword) {
-    showFieldError(
+    addFieldError(
+      validationErrors,
+      'create-confirm-password',
       'create-confirm-password-error',
       t('validation.required') || 'Confirm password is required'
     );
@@ -642,14 +762,19 @@ async function submitCreateUserForm(): Promise<void> {
   }
 
   if (password && confirmPassword && password !== confirmPassword) {
-    showFieldError(
+    addFieldError(
+      validationErrors,
+      'create-confirm-password',
       'create-confirm-password-error',
       t('auth.register.passwordMismatch') || 'Passwords do not match'
     );
     hasErrors = true;
   }
 
-  if (hasErrors) return;
+  if (hasErrors) {
+    renderErrorSummary('create-user-error-summary', validationErrors);
+    return;
+  }
 
   const submitBtn = document.getElementById('create-user-submit-btn') as HTMLButtonElement | null;
   if (submitBtn) {
@@ -674,13 +799,20 @@ async function submitCreateUserForm(): Promise<void> {
   } catch (error) {
     if (error instanceof APIRequestError) {
       if (error.status === 422 && Array.isArray(error.error.detail)) {
+        const apiErrors: FormValidationError[] = [];
         error.error.detail.forEach((err) => {
           if (err.loc && err.loc.length > 1) {
-            const field = err.loc[1];
             const errorMsg = err.msg || 'Validation error';
-            showFieldError(`create-${String(field)}-error`, errorMsg);
+            const field = String(err.loc[1]);
+            const mapping = mapCreateUserField(field);
+            if (mapping) {
+              addFieldError(apiErrors, mapping.inputId, mapping.errorId, errorMsg);
+            } else {
+              showFieldError('create-form-error', errorMsg);
+            }
           }
         });
+        renderErrorSummary('create-user-error-summary', apiErrors);
       } else if (error.status === 409) {
         const detailMessage = normalizeErrorDetail(error.error.detail);
         showFieldError(

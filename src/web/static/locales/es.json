@@ -23,6 +23,7 @@
   },
   "actions": {
     "add": "Añadir",
+    "remove": "Quitar",
     "view": "Ver",
     "edit": "Editar",
     "delete": "Eliminar",
@@ -94,6 +95,7 @@
     "bulkTagUpdateFailed": "No se pudieron actualizar las etiquetas."
   },
   "validation": {
+    "errorSummaryHeader": "Corrija los siguientes errores:",
     "required": "Este campo es obligatorio.",
     "titleRequired": "El campo 'Título del Prompt' no puede estar vacío.",
     "titleTooLong": "El título no puede exceder 200 caracteres.",
@@ -576,5 +578,8 @@
     "removeLabel": "Quitar etiquetas",
     "placeholder": "Etiquetas separadas por comas",
     "note": "Las etiquetas añadidas o eliminadas se aplicarán a todos los prompts seleccionados."
+  },
+  "accessibility": {
+    "navigateTo": "Navegar a {{item}}"
   }
 }

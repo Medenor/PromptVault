@@ -17,6 +17,7 @@ import type { TranslationKey } from '@/types/i18n';
 import { initI18n, t, tUnsafe, updateStaticTranslations } from '@/utils/i18n';
 import { apiFetch, apiGet, apiPostForm, APIRequestError } from '@/utils/api';
 import { setupScrollIndicators } from '@/utils/dom';
+import { showNotification } from '@/utils/notifications';
 import { createModal } from '@components';
 
 interface TagInfo {
@@ -297,7 +298,7 @@ function setupFilterListKeyboardNavigation(list: HTMLElement): void {
     event.preventDefault();
     focusItem(matchedItem);
     const matchedText = matchedItem.textContent?.trim() ?? '';
-    announceKeyboardNavigation(`导航到 ${matchedText}`);
+    announceKeyboardNavigation(t('accessibility.navigateTo', { item: matchedText }));
   });
 }
 
@@ -873,6 +874,11 @@ function setupEventListeners(): void {
 
   // Keyboard shortcuts
   document.addEventListener('keydown', handleKeyboardShortcuts);
+  document.addEventListener('promptvault:open-keyboard-help', (event) => {
+    const customEvent = event as CustomEvent<{ markHandled?: () => void }>;
+    customEvent.detail?.markHandled?.();
+    showKeyboardShortcutsHelpModal();
+  });
 
   // Add tooltips
   addTooltips();
@@ -1033,10 +1039,12 @@ function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement
   }
 
   // Create checkbox for bulk selection
+  const titleId = `prompt-title-${id}`;
   const checkbox = document.createElement('input');
   checkbox.type = 'checkbox';
   checkbox.className = 'prompt-checkbox rounded text-blue-500 focus:ring-blue-500';
   checkbox.dataset.promptId = id;
+  checkbox.setAttribute('aria-labelledby', titleId);
   checkbox.checked = selectedPromptIds.has(parseInt(id));
   checkbox.addEventListener('change', (event) => {
     const target = event.target as HTMLInputElement | null;
@@ -1062,9 +1070,9 @@ function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement
   const categoryColor = prompt.category_color ?? categoryColorMap[prompt.category];
   const categoryStyle = buildPillStyleFilled(categoryColor);
 
-	  div.innerHTML = `
+  div.innerHTML = `
 	        <div class="flex items-start justify-between mb-3">
-	            <h4 class="text-lg font-semibold text-gray-900 flex-1">${prompt.title}</h4>
+	            <h4 id="${titleId}" class="text-lg font-semibold text-gray-900 flex-1">${prompt.title}</h4>
 	            <div class="flex items-center gap-1 ml-2" id="prompt-actions-${id}">
 	                <button class="favorite-btn text-xl hover:scale-110 transition-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded" data-id="${id}">
 	                    ${prompt.favorite ? '★' : '☆'}
@@ -2146,6 +2154,8 @@ function renderVersionHistory(versions: VersionSummary[]): void {
     const versionItem = createVersionItem(version, index, versions.length);
     versionList.appendChild(versionItem);
   });
+
+  initializeVersionListKeyboardNavigation(versionList);
 }
 
 function createVersionItem(
@@ -2157,6 +2167,10 @@ function createVersionItem(
   div.className =
     'version-item bg-white border border-gray-200 rounded-lg p-4 cursor-pointer hover:bg-gray-50 transition-colors';
   div.dataset.versionId = version.version_id;
+  div.dataset.navLabel = version.message;
+  div.setAttribute('role', 'button');
+  div.setAttribute('aria-pressed', 'false');
+  div.tabIndex = -1;
 
   // Format timestamp with fallback for invalid dates
   let timestamp = 'Invalid Date';
@@ -2207,9 +2221,11 @@ function toggleVersionSelection(versionId: string, element: HTMLElement | null):
   if (selectedVersions.has(versionId)) {
     selectedVersions.delete(versionId);
     element.classList.remove('selected', 'ring-2', 'ring-blue-500', 'bg-blue-50');
+    element.setAttribute('aria-pressed', 'false');
   } else {
     selectedVersions.add(versionId);
     element.classList.add('selected', 'ring-2', 'ring-blue-500', 'bg-blue-50');
+    element.setAttribute('aria-pressed', 'true');
   }
   updateCompareButton();
 }
@@ -2271,16 +2287,6 @@ async function performRevert(versionId: string): Promise<void> {
     });
     showNotification(t('version.revertError'), 'error');
   }
-}
-
-function showNotification(message: string, type: 'info' | 'success' | 'error' = 'info'): void {
-  const notification = document.createElement('div');
-  notification.className = `notification notification-${type}`;
-  notification.textContent = message;
-  notification.setAttribute('role', type === 'error' ? 'alert' : 'status');
-  notification.setAttribute('aria-live', type === 'error' ? 'assertive' : 'polite');
-  document.body.appendChild(notification);
-  setTimeout(() => notification.remove(), 3000);
 }
 
 // Diff Visualization Functions
@@ -2531,32 +2537,6 @@ function clearVersionCache(promptId: number | string | null | undefined): void {
 
 // Keyboard Shortcuts (Phase 6)
 function handleKeyboardShortcuts(event: KeyboardEvent): void {
-  const target = event.target as HTMLElement | null;
-  const isTypingTarget =
-    !!target &&
-    (target.tagName === 'INPUT' ||
-      target.tagName === 'TEXTAREA' ||
-      target.tagName === 'SELECT' ||
-      target.isContentEditable);
-
-  const isQuestionShortcut =
-    !event.ctrlKey &&
-    !event.metaKey &&
-    (
-      event.key === '?' ||
-      (event.shiftKey &&
-        (event.code === 'Slash' ||
-          event.code === 'NumpadDivide' ||
-          event.code === 'Comma' ||
-          event.code === 'Digit6'))
-    );
-
-  if (isQuestionShortcut && !isTypingTarget) {
-    event.preventDefault();
-    showKeyboardShortcutsHelpModal();
-    return;
-  }
-
   // Ctrl/Cmd + H: Open version history for last selected prompt
   if ((event.ctrlKey || event.metaKey) && event.key === 'h') {
     event.preventDefault();
@@ -2734,6 +2714,145 @@ function loadMoreVersions() {
   }
 }
 
+let versionListKeyboardNavInitialized = false;
+
+function syncVersionListRovingTabindex(versionList: HTMLElement): void {
+  const items = Array.from(versionList.querySelectorAll<HTMLElement>('.version-item'));
+  if (items.length === 0) {
+    return;
+  }
+
+  const selectedItem = versionList.querySelector<HTMLElement>('.version-item.selected');
+  const tabbableItem = selectedItem ?? items[0];
+
+  items.forEach((item) => {
+    item.tabIndex = item === tabbableItem ? 0 : -1;
+  });
+}
+
+function findNextVersionItemByCharacter(
+  items: HTMLElement[],
+  currentIndex: number,
+  key: string
+): HTMLElement | null {
+  const normalizedKey = key.trim().toLocaleLowerCase();
+  if (!normalizedKey) {
+    return null;
+  }
+
+  for (let offset = 1; offset <= items.length; offset++) {
+    const index = (currentIndex + offset) % items.length;
+    const candidate = items[index];
+    if (!candidate) {
+      continue;
+    }
+    const text = (candidate.dataset.navLabel ?? '').trim().toLocaleLowerCase();
+    if (text.startsWith(normalizedKey)) {
+      return candidate;
+    }
+  }
+
+  return null;
+}
+
+function initializeVersionListKeyboardNavigation(versionList: HTMLElement): void {
+  syncVersionListRovingTabindex(versionList);
+
+  if (versionListKeyboardNavInitialized) {
+    return;
+  }
+  versionListKeyboardNavInitialized = true;
+
+  versionList.addEventListener('click', (event) => {
+    const target = event.target as HTMLElement | null;
+    const item = target?.closest<HTMLElement>('.version-item');
+    if (!item || !versionList.contains(item)) {
+      return;
+    }
+    syncVersionListRovingTabindex(versionList);
+    item.tabIndex = 0;
+    item.focus();
+  });
+
+  versionList.addEventListener('keydown', (event) => {
+    const target = event.target as HTMLElement | null;
+    if (!target || !target.classList.contains('version-item')) {
+      return;
+    }
+
+    const items = Array.from(versionList.querySelectorAll<HTMLElement>('.version-item'));
+    if (items.length === 0) {
+      return;
+    }
+
+    const currentIndex = items.indexOf(target);
+    if (currentIndex < 0) {
+      return;
+    }
+
+    const focusItem = (item: HTMLElement): void => {
+      items.forEach((listItem) => {
+        listItem.tabIndex = listItem === item ? 0 : -1;
+      });
+      item.focus();
+    };
+
+    switch (event.key) {
+      case 'ArrowDown': {
+        event.preventDefault();
+        const nextItem = items[(currentIndex + 1) % items.length];
+        if (nextItem) focusItem(nextItem);
+        return;
+      }
+      case 'ArrowUp': {
+        event.preventDefault();
+        const previousItem = items[(currentIndex - 1 + items.length) % items.length];
+        if (previousItem) focusItem(previousItem);
+        return;
+      }
+      case 'Home': {
+        event.preventDefault();
+        const firstItem = items[0];
+        if (firstItem) focusItem(firstItem);
+        return;
+      }
+      case 'End': {
+        event.preventDefault();
+        const lastItem = items[items.length - 1];
+        if (lastItem) focusItem(lastItem);
+        return;
+      }
+      case 'Enter':
+      case ' ': {
+        event.preventDefault();
+        const versionId = target.dataset.versionId;
+        if (versionId) {
+          toggleVersionSelection(versionId, target);
+        }
+        return;
+      }
+      default:
+        break;
+    }
+
+    const isCharacterNavigation =
+      event.key.length === 1 && !event.metaKey && !event.ctrlKey && !event.altKey;
+    if (!isCharacterNavigation) {
+      return;
+    }
+
+    const matchedItem = findNextVersionItemByCharacter(items, currentIndex, event.key);
+    if (!matchedItem) {
+      return;
+    }
+
+    event.preventDefault();
+    focusItem(matchedItem);
+    const matchedText = matchedItem.dataset.navLabel ?? matchedItem.textContent?.trim() ?? '';
+    announceKeyboardNavigation(t('accessibility.navigateTo', { item: matchedText }));
+  });
+}
+
 // API Response Time Profiling (Phase 9)
 const apiMetrics: Record<
   string,
@@ -2841,7 +2960,9 @@ function renderTagChips(): void {
     chip.dataset.tagName = tag;
     chip.innerHTML = `
       <span>${tag}</span>
-      <button type="button" class="text-xs leading-none px-1 opacity-70 hover:opacity-100 transition-opacity" aria-label="Remove tag">×</button>
+      <button type="button" class="text-xs leading-none px-1 opacity-70 hover:opacity-100 transition-opacity" aria-label="${t(
+        'actions.remove'
+      )}">×</button>
     `;
     chipContainer.appendChild(chip);
   });

@@ -23,6 +23,7 @@
   },
   "actions": {
     "add": "Hinzufügen",
+    "remove": "Entfernen",
     "view": "Anzeigen",
     "edit": "Bearbeiten",
     "delete": "Löschen",
@@ -94,6 +95,7 @@
     "bulkTagUpdateFailed": "Tags konnten nicht aktualisiert werden."
   },
   "validation": {
+    "errorSummaryHeader": "Bitte korrigieren Sie die folgenden Fehler:",
     "required": "Dieses Feld ist erforderlich.",
     "titleRequired": "Das Feld 'Prompt-Titel' darf nicht leer sein.",
     "titleTooLong": "Der Titel darf 200 Zeichen nicht überschreiten.",
@@ -576,5 +578,8 @@
     "removeLabel": "Tags entfernen",
     "placeholder": "Kommagetrennte Tags",
     "note": "Hinzugefügte oder entfernte Tags gelten für alle ausgewählten Prompts."
+  },
+  "accessibility": {
+    "navigateTo": "Wechsel zu {{item}}"
   }
 }

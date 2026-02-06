@@ -26,12 +26,11 @@ Ce plan détaille les étapes nécessaires pour atteindre la conformité WCAG 2.
 - `[x] T-ACC015` Restauration du focus après fermeture modale
 - `[x] T-ACC016` Roving tabindex implémenté pour les listes filtres catégories/tags (desktop + mobile)
 - `[x] T-ACC017` Documenter les raccourcis clavier (`docs/KEYBOARD_SHORTCUTS.md`)
-- `[x] T-ACC018` Raccourci `?` pour aide clavier (modal d'aide des raccourcis)
+- `[x] T-ACC018` Raccourci `?` pour aide clavier (modal d'aide des raccourcis, dispo sur toutes les pages)
 - `[x] T-ACC008` Landmarks ARIA (`header`/`main`) + skip link sur templates actifs
 - `[x] T-ACC009` Hiérarchie des titres validée sur templates actifs (1 `h1`/page, sans saut de niveau)
 - `[x] T-ACC010` Régions live ARIA identifiées et documentées (`docs/ACCESSIBILITY_LANDMARKS_LIVE_REGIONS.md`)
 - `[x] T-ACC012` Navigation par landmarks implémentée avec aide dédiée (modal `?` + landmarks dynamiques)
-- `[x] T-ACC021` `aria-label` ajouté sur les champs sans label visible identifiés (recherche/filtres/actions rapides)
 - `[x] T-ACC046` Tests axe-core Playwright (règles WCAG 2.0/2.1 A/AA)
 - `[x] T-ACC047` Ajouter étape CI accessibilité (Forgejo Actions: axe + Lighthouse)
 - `[x] T-ACC042` Respecter `prefers-reduced-motion` (désactivation animations/transitions)
@@ -41,17 +40,19 @@ Ce plan détaille les étapes nécessaires pour atteindre la conformité WCAG 2.
 
 ### Tâches partiellement implémentées
 
-- `[~] T-ACC019` Navigation première lettre: implémentée sur listes catégories/tags (inclut annonce SR "导航到 …"), extension restante pour autres listes interactives
+- `[~] T-ACC019` Navigation première lettre: implémentée sur listes catégories/tags + liste d'historique des versions (annonce SR localisée), extension restante pour autres listes interactives
 - `[~] T-ACC020` Associations `label`/`for`: corrections appliquées sur formulaires ciblés (manage categories/tags + comparateur de versions + auth/import/backup), audit global restant
-- `[~] T-ACC022` `aria-describedby` renforcé sur formulaires auth + import/export + backup + manage categories/tags (hints contextuels + erreurs), extension restante à d'autres formulaires
-- `[~] T-ACC023` Résumé d'erreurs en haut des formulaires implémenté sur auth + import/export + backup + manage categories/tags, extension restante à l'ensemble de l'application
-- `[~] T-ACC024` Liaison erreurs/champs renforcée (`aria-invalid` dynamique + focus) sur auth + import/export + backup + manage categories/tags, extension restante globale
+- `[~] T-ACC022` `aria-describedby` renforcé sur auth + import/export + backup + manage categories/tags + admin users (create/edit), extension restante à d'autres formulaires
+- `[~] T-ACC023` Résumé d'erreurs en haut des formulaires sur auth + import/export + backup + manage categories/tags + admin users (create/edit), extension restante à l'ensemble de l'application
+- `[~] T-ACC024` Liaison erreurs/champs (`aria-invalid` + `aria-describedby` + focus) sur auth + import/export + backup + manage categories/tags + admin users (create), extension restante globale
 - `[~] T-ACC025` Annonces de validation améliorées (live regions + résumés d'erreurs + navigation clavier) étendues aux formulaires principaux + remplacement des `alert` bloquants sur manage categories/tags, couverture temps réel complète restante
+- `[~] T-ACC021` `aria-label`/noms accessibles: ajout d'un nom accessible pour la checkbox de sélection de prompt (liaison `aria-labelledby` au titre), audit global restant
+- `[~] T-ACC033` Icônes décoratives: ajout `aria-hidden="true"`/`focusable="false"` sur SVG décoratifs (recherche, menus, sidebar), audit global restant
+- `[~] T-ACC029` Différencier états success/error/warning: notifications renforcées (role/aria-live cohérents), extension restante aux autres patterns visuels
 
 ### Tâches restantes
 
 - `[ ]` Toutes les autres tâches du plan, notamment:
-- `[ ] T-ACC002` Lighthouse CI dans pipeline
 - `[ ] T-ACC006` / `[ ] T-ACC007` Audit clavier manuel + lecteurs d'écran
 - `[ ] T-ACC019` Navigation première lettre (scénario CJK) - finaliser couverture complète
 - `[ ] T-ACC020` / `[ ] T-ACC022` à `[ ] T-ACC025` couverture formulaires/erreurs temps réel complète
@@ -59,7 +60,7 @@ Ce plan détaille les étapes nécessaires pour atteindre la conformité WCAG 2.
 - `[ ] T-ACC031` à `[ ] T-ACC034` images/icônes (alt/aria-hidden) complet
 - `[ ] T-ACC035` à `[ ] T-ACC039` composants avancés (modales/tabs/tooltips) conformité complète
 - `[ ] T-ACC040` à `[ ] T-ACC045` préférences accessibilité (contraste élevé, reduced motion, taille texte)
-- `[ ] T-ACC047` à `[ ] T-ACC050` CI + validation manuelle + audit final
+- `[ ] T-ACC048` à `[ ] T-ACC050` CI + validation manuelle + audit final
 - `[ ] T-ACC051` à `[ ] T-ACC053` documentation finale + déclaration accessibilité
 
 ---

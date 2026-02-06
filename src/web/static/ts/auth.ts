@@ -179,7 +179,7 @@ function renderErrorSummary(summaryId: string, errors: FormValidationError[]): v
 
   const header = document.createElement('p');
   header.className = 'error-banner-header';
-  header.textContent = 'Please correct the following errors:';
+  header.textContent = t('validation.errorSummaryHeader') || 'Please correct the following errors:';
   summary.appendChild(header);
 
   const list = document.createElement('ul');
