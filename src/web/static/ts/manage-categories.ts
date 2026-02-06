@@ -11,6 +11,8 @@ import { initializeColorPicker, ColorPicker } from '@/utils/color-picker';
 import { setupScrollIndicators } from '@/utils/dom';
 import { showNotification } from '@/utils/notifications';
 import { createTypeahead } from '@/utils/typeahead';
+import { announce } from '@/utils/a11y';
+import { confirmAsync } from '@/utils/dialogs';
 
 type CategoryItem = {
   id: number;
@@ -68,6 +70,7 @@ let cachedItems: CategoryItem[] = [];
 // @ts-expect-error - Used for cleanup, but not referenced directly
 let colorPickerInstance: ColorPicker | null = null;
 let tableKeyboardNavInitialized = false;
+const liveValidationState = new Map<string, boolean>();
 type OrphanPromptDetailsResponse = {
   items: Array<{ id: number; title: string }>;
   count: number;
@@ -198,6 +201,84 @@ function resetFieldError(inputId: string, errorId: string): void {
   if (error) {
     error.textContent = '';
   }
+}
+
+function setLiveFieldError(inputId: string, errorId: string, message: string): void {
+  const input = document.getElementById(inputId) as HTMLElement | null;
+  const error = document.getElementById(errorId) as HTMLElement | null;
+  const hadError = liveValidationState.get(inputId) === true;
+
+  input?.setAttribute('aria-invalid', 'true');
+  if (error) {
+    error.textContent = message;
+  }
+  liveValidationState.set(inputId, true);
+
+  if (!hadError) {
+    announce(message, { id: 'validation-announcer', politeness: 'polite' });
+  }
+}
+
+function clearLiveFieldError(inputId: string, errorId: string): void {
+  const input = document.getElementById(inputId) as HTMLElement | null;
+  const error = document.getElementById(errorId) as HTMLElement | null;
+  const hadError = liveValidationState.get(inputId) === true;
+
+  input?.setAttribute('aria-invalid', 'false');
+  if (error) {
+    error.textContent = '';
+  }
+  liveValidationState.set(inputId, false);
+
+  if (hadError) {
+    announce(t('validation.fieldValid') || 'Field is valid.', {
+      id: 'validation-announcer',
+      politeness: 'polite',
+    });
+  }
+}
+
+function attachRequiredLiveValidation(
+  input: HTMLInputElement | null,
+  inputId: string,
+  errorId: string,
+  message: string
+): void {
+  if (!input) return;
+
+  input.addEventListener('blur', () => {
+    if (!input.value.trim()) {
+      setLiveFieldError(inputId, errorId, message);
+    } else {
+      clearLiveFieldError(inputId, errorId);
+    }
+  });
+
+  input.addEventListener('input', () => {
+    if (liveValidationState.get(inputId) !== true) {
+      return;
+    }
+    if (input.value.trim()) {
+      clearLiveFieldError(inputId, errorId);
+    }
+  });
+}
+
+function attachFileRequiredLiveValidation(
+  input: HTMLInputElement | null,
+  inputId: string,
+  errorId: string,
+  message: string
+): void {
+  if (!input) return;
+  input.addEventListener('change', () => {
+    const file = input.files?.[0];
+    if (!file) {
+      setLiveFieldError(inputId, errorId, message);
+    } else {
+      clearLiveFieldError(inputId, errorId);
+    }
+  });
 }
 
 function addFieldError(
@@ -512,7 +593,12 @@ async function saveCategory(categoryId: number, row: HTMLTableRowElement): Promi
 }
 
 async function deleteCategory(categoryId: number): Promise<void> {
-  const confirmed = window.confirm(tUnsafe('management.deleteConfirm'));
+  const confirmed = await confirmAsync({
+    title: t('actions.confirmDelete') || 'Confirm',
+    message: tUnsafe('management.deleteConfirm'),
+    confirmLabel: t('actions.delete') || 'Delete',
+    cancelLabel: t('actions.cancel') || 'Cancel',
+  });
   if (!confirmed) {
     return;
   }
@@ -524,7 +610,12 @@ async function deleteCategory(categoryId: number): Promise<void> {
     await loadCategories();
   } catch (error) {
     if (error instanceof APIRequestError && error.status === 422) {
-      const forceConfirmed = window.confirm(tUnsafe('management.forceDeleteConfirm'));
+      const forceConfirmed = await confirmAsync({
+        title: t('actions.confirmDelete') || 'Confirm',
+        message: tUnsafe('management.forceDeleteConfirm'),
+        confirmLabel: t('actions.delete') || 'Delete',
+        cancelLabel: t('actions.cancel') || 'Cancel',
+      });
       if (!forceConfirmed) {
         return;
       }
@@ -571,7 +662,12 @@ async function mergeCategories(): Promise<void> {
     renderErrorSummary('category-merge-error-summary', validationErrors);
     return;
   }
-  const confirmed = window.confirm(tUnsafe('management.mergeConfirm'));
+  const confirmed = await confirmAsync({
+    title: t('actions.confirm') || 'Confirm',
+    message: tUnsafe('management.mergeConfirm'),
+    confirmLabel: t('actions.merge') || 'Merge',
+    cancelLabel: t('actions.cancel') || 'Cancel',
+  });
   if (!confirmed) {
     return;
   }
@@ -614,7 +710,12 @@ async function findReplaceCategories(): Promise<void> {
     renderErrorSummary('category-find-replace-error-summary', validationErrors);
     return;
   }
-  const confirmed = window.confirm(tUnsafe('management.replaceConfirm'));
+  const confirmed = await confirmAsync({
+    title: t('actions.confirm') || 'Confirm',
+    message: tUnsafe('management.replaceConfirm'),
+    confirmLabel: t('actions.replace') || 'Replace',
+    cancelLabel: t('actions.cancel') || 'Cancel',
+  });
   if (!confirmed) {
     return;
   }
@@ -645,7 +746,12 @@ async function bulkDeleteCategories(): Promise<void> {
     renderErrorSummary('category-bulk-delete-error-summary', validationErrors);
     return;
   }
-  const confirmed = window.confirm(tUnsafe('management.bulkDeleteConfirm'));
+  const confirmed = await confirmAsync({
+    title: t('actions.confirm') || 'Confirm',
+    message: tUnsafe('management.bulkDeleteConfirm'),
+    confirmLabel: t('actions.bulkDelete') || 'Delete Selected',
+    cancelLabel: t('actions.cancel') || 'Cancel',
+  });
   if (!confirmed) {
     return;
   }
@@ -733,7 +839,12 @@ async function mergeSelected(): Promise<void> {
   }
   const targetId = ids[0];
   const sourceIds = ids.slice(1);
-  const confirmed = window.confirm(tUnsafe('management.mergeSelectedConfirm'));
+  const confirmed = await confirmAsync({
+    title: t('actions.confirm') || 'Confirm',
+    message: tUnsafe('management.mergeSelectedConfirm'),
+    confirmLabel: t('actions.mergeSelected') || t('actions.merge') || 'Merge',
+    cancelLabel: t('actions.cancel') || 'Cancel',
+  });
   if (!confirmed) {
     return;
   }
@@ -803,7 +914,12 @@ async function findReplaceSelected(): Promise<void> {
   if (!replaceValue) {
     return;
   }
-  const confirmed = window.confirm(tUnsafe('management.replaceConfirm'));
+  const confirmed = await confirmAsync({
+    title: t('actions.confirm') || 'Confirm',
+    message: tUnsafe('management.replaceConfirm'),
+    confirmLabel: t('actions.findReplaceSelected') || t('actions.replace') || 'Replace',
+    cancelLabel: t('actions.cancel') || 'Cancel',
+  });
   if (!confirmed) {
     return;
   }
@@ -991,6 +1107,49 @@ function init(): void {
   if (elements.searchInput) {
     elements.searchInput.addEventListener('input', applySearchFilter);
   }
+  // Live validation (T-ACC025) for the main form inputs.
+  attachRequiredLiveValidation(
+    elements.createName,
+    'category-create-name',
+    'category-create-name-error',
+    tUnsafe('management.nameRequired')
+  );
+  attachRequiredLiveValidation(
+    elements.mergeTarget,
+    'category-merge-target',
+    'category-merge-target-error',
+    tUnsafe('management.mergeRequireIds')
+  );
+  attachRequiredLiveValidation(
+    elements.mergeSources,
+    'category-merge-sources',
+    'category-merge-sources-error',
+    tUnsafe('management.mergeRequireIds')
+  );
+  attachRequiredLiveValidation(
+    elements.findInput,
+    'category-find',
+    'category-find-error',
+    tUnsafe('management.findReplaceRequired')
+  );
+  attachRequiredLiveValidation(
+    elements.replaceInput,
+    'category-replace',
+    'category-replace-error',
+    tUnsafe('management.findReplaceRequired')
+  );
+  attachRequiredLiveValidation(
+    elements.bulkDeleteIds,
+    'category-bulk-delete-ids',
+    'category-bulk-delete-ids-error',
+    tUnsafe('management.bulkDeleteRequireIds')
+  );
+  attachFileRequiredLiveValidation(
+    elements.importFile,
+    'category-import-file',
+    'category-import-file-error',
+    tUnsafe('management.importSelectFile')
+  );
   if (elements.createForm) {
     elements.createForm.addEventListener('submit', (event) => {
       void createCategory(event);

@@ -42,11 +42,10 @@ Ce plan détaille les étapes nécessaires pour atteindre la conformité WCAG 2.
 - `[x] T-ACC022` `aria-describedby` global: tous les textes d'aide/erreur inline sont reliés aux champs (auth, import/export, backup, manage, admin, modales)
 - `[x] T-ACC023` Résumé d'erreurs en haut des formulaires: bannières sur tous les formulaires principaux (auth/import-export/backup/manage/admin + éditeur de prompt), liens vers champs en erreur + focus sur le premier champ invalide
 - `[x] T-ACC024` Liaison erreurs/champs: `aria-invalid` cohérent + `aria-describedby` vers erreurs/aide + focus premier champ invalide (incl. champs composites comme tags)
+- `[x] T-ACC025` Validation temps réel améliorée: annonces SR via live region (`validation-announcer`), nettoyage des erreurs au fil de la saisie, confirmations non bloquantes (remplacement `window.confirm` sur manage categories/tags + prompt delete), couverture formulaires principaux (auth/profile/password reset/import-export/backup/manage/admin/prompt)
 
 ### Tâches partiellement implémentées
 
-- `[~] T-ACC025` Annonces de validation améliorées (live regions + résumés d'erreurs + navigation clavier) étendues aux formulaires principaux + remplacement des `alert` bloquants sur manage categories/tags, couverture temps réel complète restante
-- `[~] T-ACC025` Formulaire d'édition/creation de prompt: couverture temps réel complète (reste: validations live + autres formulaires secondaires)
 - `[~] T-ACC021` `aria-label`/noms accessibles: ajout d'un nom accessible pour la checkbox de sélection de prompt (liaison `aria-labelledby` au titre) + localisation des libellés (aide `?`, favoris), audit global restant
 - `[~] T-ACC033` Icônes décoratives: ajout `aria-hidden="true"`/`focusable="false"` sur SVG décoratifs (recherche, menus, sidebar), audit global restant
 - `[~] T-ACC029` Différencier états success/error/warning: notifications renforcées (role/aria-live cohérents), extension restante aux autres patterns visuels
@@ -55,7 +54,6 @@ Ce plan détaille les étapes nécessaires pour atteindre la conformité WCAG 2.
 
 - `[ ]` Toutes les autres tâches du plan, notamment:
 - `[ ] T-ACC006` / `[ ] T-ACC007` Audit clavier manuel + lecteurs d'écran
-- `[ ] T-ACC025` couverture formulaires/validation temps réel complète
 - `[ ] T-ACC026` à `[ ] T-ACC030` audit contraste complet + indicateurs hors couleur
 - `[ ] T-ACC031` à `[ ] T-ACC034` images/icônes (alt/aria-hidden) complet
 - `[ ] T-ACC035` à `[ ] T-ACC039` composants avancés (modales/tabs/tooltips) conformité complète

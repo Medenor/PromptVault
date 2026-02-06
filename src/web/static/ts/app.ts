@@ -20,6 +20,8 @@ import { setupScrollIndicators } from '@/utils/dom';
 import { showNotification } from '@/utils/notifications';
 import { createTypeahead } from '@/utils/typeahead';
 import { createModal } from '@components';
+import { announce } from '@/utils/a11y';
+import { confirmAsync } from '@/utils/dialogs';
 
 interface TagInfo {
   name: string;
@@ -113,6 +115,7 @@ const HIDDEN_CLASS = 'hidden';
 const ERROR_VISIBLE_CLASS = 'validation-error-visible';
 const APP_COMPONENT = 'app';
 const MAX_TAGS = 15;
+const promptLiveValidationState = new Map<string, boolean>();
 const FILTER_LIST_IDS = [
   'categories-list',
   'tags-list',
@@ -803,7 +806,8 @@ function showPromptFieldError(
   fieldId: string,
   errorId: string,
   messageKey: TranslationKey,
-  shouldFocus: boolean = true
+  shouldFocus: boolean = true,
+  shouldAnnounce: boolean = false
 ): void {
   const errorEl = document.getElementById(errorId);
   const field = document.getElementById(fieldId);
@@ -824,6 +828,15 @@ function showPromptFieldError(
         .filter(Boolean) ?? [];
     const next = Array.from(new Set([...existing, ...ids.filter(Boolean)]));
     if (next.length) el.setAttribute('aria-describedby', next.join(' '));
+  };
+
+  const hadError = promptLiveValidationState.get(fieldId) === true;
+  const maybeAnnounce = () => {
+    if (!shouldAnnounce) return;
+    if (!hadError) {
+      announce(message, { id: 'validation-announcer', politeness: 'polite' });
+    }
+    promptLiveValidationState.set(fieldId, true);
   };
 
   // Special-case tags: the "real" form field is hidden, but the focusable control is #prompt-tags-input.
@@ -848,6 +861,7 @@ function showPromptFieldError(
       tagChipInput.setAttribute('aria-invalid', 'true');
     }
 
+    maybeAnnounce();
     return;
   }
 
@@ -858,6 +872,7 @@ function showPromptFieldError(
     if (shouldFocus) {
       field.focus();
     }
+    maybeAnnounce();
   }
 }
 
@@ -913,7 +928,7 @@ function showPromptErrorSummary(errors: PromptFieldError[]): void {
   }
 }
 
-function clearPromptFieldError(fieldId: string, errorId: string): void {
+function clearPromptFieldError(fieldId: string, errorId: string, shouldAnnounce: boolean = false): void {
   const errorEl = document.getElementById(errorId);
   if (errorEl) {
     errorEl.textContent = '';
@@ -936,6 +951,15 @@ function clearPromptFieldError(fieldId: string, errorId: string): void {
       tagChipInput.classList.remove('field-error');
       tagChipInput.removeAttribute('aria-invalid');
     }
+  }
+
+  const hadError = promptLiveValidationState.get(fieldId) === true;
+  promptLiveValidationState.set(fieldId, false);
+  if (shouldAnnounce && hadError) {
+    announce(t('validation.fieldValid') || 'Field is valid.', {
+      id: 'validation-announcer',
+      politeness: 'polite',
+    });
   }
 }
 
@@ -1084,6 +1108,47 @@ function setupEventListeners(): void {
   suggestTagsBtn?.addEventListener('click', () => {
     void handleSuggestTags();
   });
+
+  // Live validation (T-ACC025) for the prompt editor required fields.
+  const titleInput = document.getElementById('prompt-title') as HTMLInputElement | null;
+  if (titleInput) {
+    const validate = () => {
+      if (!titleInput.value.trim()) {
+        showPromptFieldError('prompt-title', 'prompt-title-error', 'validation.titleRequired', false, true);
+      } else {
+        clearPromptFieldError('prompt-title', 'prompt-title-error', true);
+      }
+    };
+    titleInput.addEventListener('blur', validate);
+    titleInput.addEventListener('input', () => {
+      if (promptLiveValidationState.get('prompt-title') === true) {
+        validate();
+      }
+    });
+  }
+
+  const contentInput = document.getElementById('prompt-content') as HTMLTextAreaElement | null;
+  if (contentInput) {
+    const validate = () => {
+      if (!contentInput.value.trim()) {
+        showPromptFieldError(
+          'prompt-content',
+          'prompt-content-error',
+          'validation.contentRequired',
+          false,
+          true
+        );
+      } else {
+        clearPromptFieldError('prompt-content', 'prompt-content-error', true);
+      }
+    };
+    contentInput.addEventListener('blur', validate);
+    contentInput.addEventListener('input', () => {
+      if (promptLiveValidationState.get('prompt-content') === true) {
+        validate();
+      }
+    });
+  }
 
   // Category and tag filtering (desktop and mobile)
   const categoriesList = document.getElementById('categories-list');
@@ -1817,9 +1882,13 @@ async function editPrompt(id: PromptId): Promise<void> {
 }
 
 async function deletePrompt(id: PromptId): Promise<void> {
-  if (!confirm(t('messages.confirmDelete'))) {
-    return;
-  }
+  const confirmed = await confirmAsync({
+    title: t('actions.confirmDelete') || 'Confirm',
+    message: t('messages.confirmDelete') || 'Are you sure?',
+    confirmLabel: t('actions.delete') || 'Delete',
+    cancelLabel: t('actions.cancel') || 'Cancel',
+  });
+  if (!confirmed) return;
 
   try {
     await apiFetch<void>(`/api/prompts/${id}`, { method: 'DELETE' });
@@ -3298,7 +3367,7 @@ function setSelectedTags(tags: string[]): void {
   selectedTags = dedupeTags(tags);
   if (selectedTags.length > MAX_TAGS) {
     selectedTags = selectedTags.slice(0, MAX_TAGS);
-    showPromptFieldError('prompt-tags', 'prompt-tags-error', 'validation.tagsMax');
+    showPromptFieldError('prompt-tags', 'prompt-tags-error', 'validation.tagsMax', false, true);
   } else {
     clearPromptFieldError('prompt-tags', 'prompt-tags-error');
   }
@@ -3312,7 +3381,7 @@ function addTags(tags: string[]): void {
   const incoming = dedupeTags(tags);
   for (const tag of incoming) {
     if (selectedTags.length >= MAX_TAGS) {
-      showPromptFieldError('prompt-tags', 'prompt-tags-error', 'validation.tagsMax');
+      showPromptFieldError('prompt-tags', 'prompt-tags-error', 'validation.tagsMax', false, true);
       break;
     }
     if (!existing.includes(tag.toLowerCase())) {
@@ -3322,7 +3391,7 @@ function addTags(tags: string[]): void {
     }
   }
   if (added > 0) {
-    clearPromptFieldError('prompt-tags', 'prompt-tags-error');
+    clearPromptFieldError('prompt-tags', 'prompt-tags-error', true);
   }
   renderTagChips();
   syncHiddenTags();

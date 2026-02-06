@@ -12,6 +12,7 @@ import '../css/tailwind-globals.css';
 import { reportError } from '@/telemetry';
 import { changeLanguage, initI18n, t, updateStaticTranslations } from '@/utils/i18n';
 import { clearAllErrors, hideElement, showElement, showError } from '@/utils/dom';
+import { announce } from '@/utils/a11y';
 
 const API_BASE = '/api/auth';
 
@@ -26,6 +27,53 @@ interface PasswordChecks {
 interface FormValidationError {
   inputId: string;
   message: string;
+}
+
+const liveValidationState = new Map<string, boolean>();
+
+function setLiveError(inputId: string, errorId: string, message: string): void {
+  showError(document.getElementById(errorId), message);
+  const input = document.getElementById(inputId);
+  const hadError = liveValidationState.get(inputId) === true;
+  input?.setAttribute('aria-invalid', 'true');
+  liveValidationState.set(inputId, true);
+  if (!hadError) {
+    announce(message, { id: 'validation-announcer', politeness: 'polite' });
+  }
+}
+
+function clearLiveError(inputId: string, errorId: string): void {
+  showError(document.getElementById(errorId), '');
+  const input = document.getElementById(inputId);
+  const hadError = liveValidationState.get(inputId) === true;
+  input?.setAttribute('aria-invalid', 'false');
+  liveValidationState.set(inputId, false);
+  if (hadError) {
+    announce(t('validation.fieldValid') || 'Field is valid.', {
+      id: 'validation-announcer',
+      politeness: 'polite',
+    });
+  }
+}
+
+function attachRequiredLiveValidation(inputId: string, errorId: string, message: string): void {
+  const input = document.getElementById(inputId) as HTMLInputElement | null;
+  if (!input) return;
+
+  input.addEventListener('blur', () => {
+    if (!input.value.trim()) {
+      setLiveError(inputId, errorId, message);
+    } else {
+      clearLiveError(inputId, errorId);
+    }
+  });
+
+  input.addEventListener('input', () => {
+    if (liveValidationState.get(inputId) !== true) return;
+    if (input.value.trim()) {
+      clearLiveError(inputId, errorId);
+    }
+  });
 }
 
 function getInputValue(id: string): string {
@@ -375,6 +423,13 @@ function setupForgotPasswordForm(): void {
   if (!form) return;
 
   form.addEventListener('submit', handleForgotPasswordSubmit);
+
+  // Live validation (T-ACC025): required email.
+  attachRequiredLiveValidation(
+    'email',
+    'email-error',
+    t('validation.required') || 'This field is required.'
+  );
 }
 
 function setupResetPasswordForm(): void {
@@ -408,6 +463,38 @@ function setupResetPasswordForm(): void {
   form.addEventListener('submit', (event) => {
     void handleResetPasswordSubmit(event, token);
   });
+
+  // Live validation (T-ACC025): required fields + confirmation match.
+  attachRequiredLiveValidation(
+    'password',
+    'password-error',
+    t('validation.required') || 'This field is required.'
+  );
+  attachRequiredLiveValidation(
+    'confirm-password',
+    'confirm-password-error',
+    t('validation.required') || 'This field is required.'
+  );
+
+  const confirmPasswordInput = document.getElementById('confirm-password') as HTMLInputElement | null;
+  const passwordConfirmCheck = () => {
+    const password = (document.getElementById('password') as HTMLInputElement | null)?.value ?? '';
+    const confirm = confirmPasswordInput?.value ?? '';
+    if (!confirm.trim()) {
+      return;
+    }
+    if (password && confirm && password !== confirm) {
+      setLiveError(
+        'confirm-password',
+        'confirm-password-error',
+        t('auth.register.passwordMismatch') || 'Passwords do not match'
+      );
+    } else if (password && confirm) {
+      clearLiveError('confirm-password', 'confirm-password-error');
+    }
+  };
+  confirmPasswordInput?.addEventListener('input', passwordConfirmCheck);
+  passwordInput?.addEventListener('input', passwordConfirmCheck);
 }
 
 function initializePasswordResetPage(): void {

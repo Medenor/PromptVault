@@ -14,6 +14,7 @@ import { changeLanguage, initI18n, t, tUnsafe, updateStaticTranslations } from '
 import { hideElement, showElement } from '@/utils/dom';
 import { reportError } from '@/telemetry';
 import { apiGet, apiPostForm, APIRequestError } from '@/utils/api';
+import { announce } from '@/utils/a11y';
 
 type OperationType = 'export' | 'import' | null;
 interface FormValidationError {
@@ -24,6 +25,38 @@ interface FormValidationError {
 let currentOperation: OperationType = null;
 const IMPORT_EXPORT_COMPONENT = 'importExport';
 const HIDDEN_CLASS = 'hidden';
+const liveValidationState = new Map<string, boolean>();
+
+function setLiveFieldError(inputId: string, errorId: string, message: string): void {
+  const input = document.getElementById(inputId) as HTMLElement | null;
+  const error = document.getElementById(errorId) as HTMLElement | null;
+  const hadError = liveValidationState.get(inputId) === true;
+  input?.setAttribute('aria-invalid', 'true');
+  if (error) {
+    error.textContent = message;
+  }
+  liveValidationState.set(inputId, true);
+  if (!hadError) {
+    announce(message, { id: 'validation-announcer', politeness: 'polite' });
+  }
+}
+
+function clearLiveFieldError(inputId: string, errorId: string): void {
+  const input = document.getElementById(inputId) as HTMLElement | null;
+  const error = document.getElementById(errorId) as HTMLElement | null;
+  const hadError = liveValidationState.get(inputId) === true;
+  input?.setAttribute('aria-invalid', 'false');
+  if (error) {
+    error.textContent = '';
+  }
+  liveValidationState.set(inputId, false);
+  if (hadError) {
+    announce(t('validation.fieldValid') || 'Field is valid.', {
+      id: 'validation-announcer',
+      politeness: 'polite',
+    });
+  }
+}
 
 function resetFieldError(inputId: string, errorId: string): void {
   const input = document.getElementById(inputId) as HTMLElement | null;
@@ -233,8 +266,52 @@ function setupEventListeners(): void {
   const exportFormat = document.getElementById('export-format');
   exportFormat?.addEventListener('change', updateFilenameFromDropdown);
 
+  const exportFilename = document.getElementById('export-filename') as HTMLInputElement | null;
+  if (exportFilename) {
+    const validateExportFilename = () => {
+      const trimmed = exportFilename.value.trim();
+      if (!trimmed) {
+        setLiveFieldError(
+          'export-filename',
+          'export-filename-error',
+          t('validation.filenameRequired') || 'Filename is required.'
+        );
+        return;
+      }
+      const filenamePattern = /^[A-Za-z0-9_-]+(\.(csv|json|md|markdown))?$/i;
+      if (!filenamePattern.test(trimmed)) {
+        setLiveFieldError(
+          'export-filename',
+          'export-filename-error',
+          t('validation.filenameInvalid') || 'Filename is invalid.'
+        );
+        return;
+      }
+      clearLiveFieldError('export-filename', 'export-filename-error');
+    };
+
+    exportFilename.addEventListener('blur', validateExportFilename);
+    exportFilename.addEventListener('input', () => {
+      if (liveValidationState.get('export-filename') === true) {
+        validateExportFilename();
+      }
+    });
+  }
+
   const importFile = document.getElementById('import-file') as HTMLInputElement | null;
   importFile?.addEventListener('change', handleFileSelection);
+  importFile?.addEventListener('change', () => {
+    const file = importFile.files?.[0];
+    if (!file) {
+      setLiveFieldError(
+        'import-file',
+        'import-file-error',
+        t('validation.fileRequired') || 'Please select a file to upload.'
+      );
+    } else {
+      clearLiveFieldError('import-file', 'import-file-error');
+    }
+  });
 
   const previewButtons = document.querySelectorAll('[onclick*="preview"]');
   previewButtons.forEach((btn) => {

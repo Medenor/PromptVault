@@ -14,6 +14,7 @@ import { changeLanguage, initI18n, t, tUnsafe, updateStaticTranslations } from '
 import { showNotification } from '@/utils/notifications';
 import { apiGet, apiPost, apiPut, apiDelete, APIRequestError } from '@/utils/api';
 import { createTypeahead } from '@/utils/typeahead';
+import { announce } from '@/utils/a11y';
 
 const API_BASE = '/api/admin';
 const HIDDEN_CLASS = 'hidden';
@@ -50,6 +51,8 @@ interface FormValidationError {
   inputId: string;
   message: string;
 }
+
+const liveValidationState = new Map<string, boolean>();
 
 let currentPage = 1;
 let totalPages = 1;
@@ -628,6 +631,74 @@ function setupCreateUserForm(): void {
 
   setupPasswordToggle('toggle-password-create', 'create-password');
   setupPasswordToggle('toggle-confirm-password-create', 'create-confirm-password');
+
+  // Live validation (T-ACC025) for create modal fields.
+  const usernameInput = document.getElementById('create-username') as HTMLInputElement | null;
+  const emailInput = document.getElementById('create-email') as HTMLInputElement | null;
+  const createPasswordInput = document.getElementById('create-password') as HTMLInputElement | null;
+  const confirmInput = document.getElementById('create-confirm-password') as HTMLInputElement | null;
+
+  const requiredMessage = t('validation.required') || 'This field is required.';
+
+  const attachRequired = (
+    input: HTMLInputElement | null,
+    inputId: string,
+    errorId: string,
+    message: string
+  ) => {
+    if (!input) return;
+    input.addEventListener('blur', () => {
+      if (!input.value.trim()) {
+        setLiveFieldError(inputId, errorId, message);
+      } else {
+        clearLiveFieldError(inputId, errorId);
+      }
+    });
+    input.addEventListener('input', () => {
+      if (liveValidationState.get(inputId) !== true) return;
+      if (input.value.trim()) {
+        clearLiveFieldError(inputId, errorId);
+      }
+    });
+  };
+
+  attachRequired(usernameInput, 'create-username', 'create-username-error', requiredMessage);
+  attachRequired(emailInput, 'create-email', 'create-email-error', requiredMessage);
+  attachRequired(createPasswordInput, 'create-password', 'create-password-error', requiredMessage);
+  attachRequired(
+    confirmInput,
+    'create-confirm-password',
+    'create-confirm-password-error',
+    requiredMessage
+  );
+
+  emailInput?.addEventListener('blur', () => {
+    if (!emailInput.value.trim()) return;
+    if (!emailInput.checkValidity()) {
+      setLiveFieldError(
+        'create-email',
+        'create-email-error',
+        t('auth.register.emailInvalid') || 'Invalid email address'
+      );
+    }
+  });
+
+  const passwordConfirmCheck = () => {
+    const password = createPasswordInput?.value ?? '';
+    const confirm = confirmInput?.value ?? '';
+    if (!confirm.trim()) return;
+    if (password && confirm && password !== confirm) {
+      setLiveFieldError(
+        'create-confirm-password',
+        'create-confirm-password-error',
+        t('auth.register.passwordMismatch') || 'Passwords do not match'
+      );
+    } else if (password && confirm) {
+      clearLiveFieldError('create-confirm-password', 'create-confirm-password-error');
+    }
+  };
+  createPasswordInput?.addEventListener('input', passwordConfirmCheck);
+  confirmInput?.addEventListener('input', passwordConfirmCheck);
 }
 
 function setupPasswordToggle(toggleButtonId: string, passwordInputId: string): void {
@@ -689,6 +760,31 @@ function showFieldError(elementId: string, message: string): void {
   if (element) {
     element.textContent = message;
     element.classList.toggle('hidden', message.trim().length === 0);
+  }
+}
+
+function setLiveFieldError(inputId: string, errorId: string, message: string): void {
+  const input = document.getElementById(inputId) as HTMLElement | null;
+  const hadError = liveValidationState.get(inputId) === true;
+  input?.setAttribute('aria-invalid', 'true');
+  showFieldError(errorId, message);
+  liveValidationState.set(inputId, true);
+  if (!hadError) {
+    announce(message, { id: 'validation-announcer', politeness: 'polite' });
+  }
+}
+
+function clearLiveFieldError(inputId: string, errorId: string): void {
+  const input = document.getElementById(inputId) as HTMLElement | null;
+  const hadError = liveValidationState.get(inputId) === true;
+  input?.setAttribute('aria-invalid', 'false');
+  showFieldError(errorId, '');
+  liveValidationState.set(inputId, false);
+  if (hadError) {
+    announce(t('validation.fieldValid') || 'Field is valid.', {
+      id: 'validation-announcer',
+      politeness: 'polite',
+    });
   }
 }
 

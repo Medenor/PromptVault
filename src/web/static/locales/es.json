@@ -29,6 +29,7 @@
     "delete": "Eliminar",
     "save": "Guardar",
     "cancel": "Cancelar",
+    "confirm": "Confirmar",
     "copy": "Copiar",
     "favorite": "Favorito",
     "addFavorite": "Agregar a favoritos",
@@ -96,6 +97,8 @@
   },
   "validation": {
     "errorSummaryHeader": "Corrija los siguientes errores:",
+    "fieldValid": "Campo valido.",
+    "errorCleared": "Error corregido.",
     "required": "Este campo es obligatorio.",
     "titleRequired": "El campo 'Título del Prompt' no puede estar vacío.",
     "titleTooLong": "El título no puede exceder 200 caracteres.",

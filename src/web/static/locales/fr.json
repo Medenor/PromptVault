@@ -29,6 +29,7 @@
     "delete": "Supprimer",
     "save": "Enregistrer",
     "cancel": "Annuler",
+    "confirm": "Confirmer",
     "copy": "Copier",
     "favorite": "Favori",
     "addFavorite": "Ajouter aux favoris",
@@ -96,6 +97,8 @@
   },
   "validation": {
     "errorSummaryHeader": "Veuillez corriger les erreurs suivantes :",
+    "fieldValid": "Champ valide.",
+    "errorCleared": "Erreur corrigée.",
     "required": "Ce champ est obligatoire.",
     "titleRequired": "Le champ 'Titre du Prompt' ne peut pas être vide.",
     "titleTooLong": "Le titre ne peut pas dépasser 200 caractères.",

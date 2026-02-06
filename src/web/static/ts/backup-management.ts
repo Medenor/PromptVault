@@ -15,6 +15,7 @@ import { changeLanguage, initI18n, t, updateStaticTranslations } from '@/utils/i
 import type { TranslationKey } from '@/types/i18n';
 import { hideElement, showElement } from '@/utils/dom';
 import { apiFetch, apiGet, apiPost, APIRequestError } from '@/utils/api';
+import { announce } from '@/utils/a11y';
 
 interface BackupItem {
   backup_id: string;
@@ -66,6 +67,7 @@ interface FormValidationError {
 }
 
 const BACKUP_COMPONENT = 'backupManagement';
+const liveValidationState = new Map<string, boolean>();
 
 let currentBackups: BackupItem[] = [];
 let selectedBackupId: string | null = null;
@@ -102,6 +104,37 @@ function addFieldError(
     error.textContent = message;
   }
   errors.push({ inputId, message });
+}
+
+function setLiveFieldError(inputId: string, errorId: string, message: string): void {
+  const input = document.getElementById(inputId) as HTMLElement | null;
+  const error = document.getElementById(errorId) as HTMLElement | null;
+  const hadError = liveValidationState.get(inputId) === true;
+  input?.setAttribute('aria-invalid', 'true');
+  if (error) {
+    error.textContent = message;
+  }
+  liveValidationState.set(inputId, true);
+  if (!hadError) {
+    announce(message, { id: 'validation-announcer', politeness: 'polite' });
+  }
+}
+
+function clearLiveFieldError(inputId: string, errorId: string): void {
+  const input = document.getElementById(inputId) as HTMLElement | null;
+  const error = document.getElementById(errorId) as HTMLElement | null;
+  const hadError = liveValidationState.get(inputId) === true;
+  input?.setAttribute('aria-invalid', 'false');
+  if (error) {
+    error.textContent = '';
+  }
+  liveValidationState.set(inputId, false);
+  if (hadError) {
+    announce(t('validation.fieldValid') || 'Field is valid.', {
+      id: 'validation-announcer',
+      politeness: 'polite',
+    });
+  }
 }
 
 function resetErrorSummary(summaryId: string): void {
@@ -167,6 +200,118 @@ function initializeBackupManagement(): void {
 function setupEventListeners(): void {
   const languageSelector = document.getElementById('language-selector');
   languageSelector?.addEventListener('change', handleLanguageChange);
+
+  const backupNameInput = document.getElementById('backup-name') as HTMLInputElement | null;
+  if (backupNameInput) {
+    const validateBackupName = () => {
+      const value = backupNameInput.value.trim();
+      if (!value) {
+        clearLiveFieldError('backup-name', 'backup-name-error');
+        return;
+      }
+      if (!/^[A-Za-z0-9_-]*$/.test(value)) {
+        setLiveFieldError(
+          'backup-name',
+          'backup-name-error',
+          t('validation.backupNameInvalid') || 'Backup name is invalid.'
+        );
+        return;
+      }
+      clearLiveFieldError('backup-name', 'backup-name-error');
+    };
+    backupNameInput.addEventListener('blur', validateBackupName);
+    backupNameInput.addEventListener('input', () => {
+      if (liveValidationState.get('backup-name') === true) {
+        validateBackupName();
+      }
+    });
+  }
+
+  const retentionInput = document.getElementById('retention-days') as HTMLInputElement | null;
+  if (retentionInput) {
+    const validateRetention = () => {
+      const raw = retentionInput.value.trim();
+      const value = Number(raw);
+      if (!raw) {
+        clearLiveFieldError('retention-days', 'retention-days-error');
+        return;
+      }
+      if (!Number.isFinite(value)) {
+        setLiveFieldError(
+          'retention-days',
+          'retention-days-error',
+          t('validation.retentionDaysInvalid') || 'Retention days must be a valid number.'
+        );
+        return;
+      }
+      if (value < 1) {
+        setLiveFieldError(
+          'retention-days',
+          'retention-days-error',
+          t('validation.retentionDaysTooLow') || 'Retention days is too low.'
+        );
+        return;
+      }
+      if (value > 3650) {
+        setLiveFieldError(
+          'retention-days',
+          'retention-days-error',
+          t('validation.retentionDaysTooHigh') || 'Retention days is too high.'
+        );
+        return;
+      }
+      clearLiveFieldError('retention-days', 'retention-days-error');
+    };
+    retentionInput.addEventListener('blur', validateRetention);
+    retentionInput.addEventListener('input', () => {
+      if (liveValidationState.get('retention-days') === true) {
+        validateRetention();
+      }
+    });
+  }
+
+  const compressInput = document.getElementById('compress-days') as HTMLInputElement | null;
+  if (compressInput) {
+    const validateCompress = () => {
+      const raw = compressInput.value.trim();
+      const value = Number(raw);
+      if (!raw) {
+        clearLiveFieldError('compress-days', 'compress-days-error');
+        return;
+      }
+      if (!Number.isFinite(value)) {
+        setLiveFieldError(
+          'compress-days',
+          'compress-days-error',
+          t('validation.compressionDaysInvalid') || 'Compression days must be a valid number.'
+        );
+        return;
+      }
+      if (value < 1) {
+        setLiveFieldError(
+          'compress-days',
+          'compress-days-error',
+          t('validation.compressionDaysTooLow') || 'Compression days is too low.'
+        );
+        return;
+      }
+      if (value > 365) {
+        setLiveFieldError(
+          'compress-days',
+          'compress-days-error',
+          t('validation.compressionDaysTooHigh') || 'Compression days is too high.'
+        );
+        return;
+      }
+      clearLiveFieldError('compress-days', 'compress-days-error');
+    };
+    compressInput.addEventListener('blur', validateCompress);
+    compressInput.addEventListener('input', () => {
+      if (liveValidationState.get('compress-days') === true) {
+        validateCompress();
+      }
+    });
+  }
 
   const confirmRestoreBtn = document.getElementById('confirm-restore-btn');
   confirmRestoreBtn?.addEventListener('click', confirmRestore);
@@ -282,7 +427,7 @@ async function createBackup(): Promise<void> {
       validationErrors,
       'backup-name',
       'backup-name-error',
-      'Use letters, numbers, "_" or "-" only.'
+      t('validation.backupNameInvalid') || 'Backup name is invalid.'
     );
   }
 
@@ -432,7 +577,11 @@ async function cleanupBackups(): Promise<void> {
       validationErrors,
       'retention-days',
       'retention-days-error',
-      'Enter a value between 1 and 3650 days.'
+      !Number.isFinite(retentionValue)
+        ? t('validation.retentionDaysInvalid') || 'Retention days must be a valid number.'
+        : retentionValue < 1
+          ? t('validation.retentionDaysTooLow') || 'Retention period is too low.'
+          : t('validation.retentionDaysTooHigh') || 'Retention period is too high.'
     );
   }
   if (validationErrors.length > 0) {
@@ -482,7 +631,11 @@ async function compressBackups(): Promise<void> {
       validationErrors,
       'compress-days',
       'compress-days-error',
-      'Enter a value between 1 and 365 days.'
+      !Number.isFinite(compressValue)
+        ? t('validation.compressionDaysInvalid') || 'Compression days must be a valid number.'
+        : compressValue < 1
+          ? t('validation.compressionDaysTooLow') || 'Compression threshold is too low.'
+          : t('validation.compressionDaysTooHigh') || 'Compression threshold is too high.'
     );
   }
   if (validationErrors.length > 0) {

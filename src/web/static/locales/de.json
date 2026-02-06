@@ -29,6 +29,7 @@
     "delete": "Löschen",
     "save": "Speichern",
     "cancel": "Abbrechen",
+    "confirm": "Bestaetigen",
     "copy": "Kopieren",
     "favorite": "Favorit",
     "addFavorite": "Zu Favoriten hinzufugen",
@@ -96,6 +97,8 @@
   },
   "validation": {
     "errorSummaryHeader": "Bitte korrigieren Sie die folgenden Fehler:",
+    "fieldValid": "Feld ist gueltig.",
+    "errorCleared": "Fehler behoben.",
     "required": "Dieses Feld ist erforderlich.",
     "titleRequired": "Das Feld 'Prompt-Titel' darf nicht leer sein.",
     "titleTooLong": "Der Titel darf 200 Zeichen nicht überschreiten.",

@@ -29,6 +29,7 @@
     "delete": "Delete",
     "save": "Save",
     "cancel": "Cancel",
+    "confirm": "Confirm",
     "copy": "Copy",
     "favorite": "Favorite",
     "addFavorite": "Add to favorites",
@@ -96,6 +97,8 @@
   },
   "validation": {
     "errorSummaryHeader": "Please correct the following errors:",
+    "fieldValid": "Field is valid.",
+    "errorCleared": "Error cleared.",
     "required": "This field is required.",
     "titleRequired": "The 'Prompt Title' field cannot be empty.",
     "titleTooLong": "Title cannot exceed 200 characters.",
