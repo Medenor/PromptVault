@@ -32,6 +32,7 @@ Ce plan détaille les étapes nécessaires pour atteindre la conformité WCAG 2.
 - `[x] T-ACC010` Régions live ARIA identifiées et documentées (`docs/ACCESSIBILITY_LANDMARKS_LIVE_REGIONS.md`)
 - `[x] T-ACC012` Navigation par landmarks implémentée avec aide dédiée (modal `?` + landmarks dynamiques)
 - `[x] T-ACC020` Associations `label`/`for`: audit global terminé + corrections appliquées sur tous les templates (labels explicites pour checkboxes/file inputs, ids cohérents)
+- `[x] T-ACC021` `aria-label`/noms accessibles: noms accessibles et libellés localisés sur les contrôles sans texte visible (menus, recherche, navigation, fermeture modales, visibilité mot de passe, pages manage/admin) + checkbox de sélection de prompt liée au titre via `aria-labelledby`
 - `[x] T-ACC046` Tests axe-core Playwright (règles WCAG 2.0/2.1 A/AA)
 - `[x] T-ACC047` Ajouter étape CI accessibilité (Forgejo Actions: axe + Lighthouse)
 - `[x] T-ACC042` Respecter `prefers-reduced-motion` (désactivation animations/transitions)
@@ -46,7 +47,6 @@ Ce plan détaille les étapes nécessaires pour atteindre la conformité WCAG 2.
 
 ### Tâches partiellement implémentées
 
-- `[~] T-ACC021` `aria-label`/noms accessibles: ajout d'un nom accessible pour la checkbox de sélection de prompt (liaison `aria-labelledby` au titre) + localisation des libellés (aide `?`, favoris), audit global restant
 - `[~] T-ACC033` Icônes décoratives: ajout `aria-hidden="true"`/`focusable="false"` sur SVG décoratifs (recherche, menus, sidebar), audit global restant
 - `[~] T-ACC029` Différencier états success/error/warning: notifications renforcées (role/aria-live cohérents), extension restante aux autres patterns visuels
 

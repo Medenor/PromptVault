@@ -525,6 +525,7 @@
     "name": "Nom",
     "description": "Description",
     "color": "Couleur",
+    "pickColor": "Choisir une couleur",
     "order": "Ordre",
     "usage": "Utilisation",
     "actions": "Actions",
@@ -583,6 +584,20 @@
   },
   "accessibility": {
     "navigateTo": "Navigation vers {{item}}",
+    "labels": {
+      "pageNavigation": "Navigation de page",
+      "primaryActions": "Actions principales",
+      "primaryActionsMobile": "Actions principales (mobile)",
+      "openMenu": "Ouvrir le menu",
+      "promptFiltersNavigation": "Filtres et navigation des prompts",
+      "promptFiltersNavigationMobile": "Filtres et navigation des prompts (mobile)",
+      "closeSidebar": "Fermer la barre latérale",
+      "toggleSidebar": "Basculer la barre latérale",
+      "adminPageNavigation": "Navigation des pages d'administration",
+      "adminPageNavigationMobile": "Navigation des pages d'administration (mobile)",
+      "toggleMenu": "Basculer le menu",
+      "togglePasswordVisibility": "Afficher ou masquer le mot de passe"
+    },
     "keyboardHelp": {
       "title": "Raccourcis clavier et repères",
       "ariaLabel": "Aide des raccourcis clavier et repères",

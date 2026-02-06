@@ -526,6 +526,7 @@
     "name": "Nombre",
     "description": "Descripción",
     "color": "Color",
+    "pickColor": "Elegir un color",
     "order": "Orden",
     "usage": "Uso",
     "actions": "Acciones",
@@ -584,6 +585,20 @@
   },
   "accessibility": {
     "navigateTo": "Navegar a {{item}}",
+    "labels": {
+      "pageNavigation": "Navegacion de pagina",
+      "primaryActions": "Acciones principales",
+      "primaryActionsMobile": "Acciones principales (movil)",
+      "openMenu": "Abrir menu",
+      "promptFiltersNavigation": "Filtros y navegacion de prompts",
+      "promptFiltersNavigationMobile": "Filtros y navegacion de prompts (movil)",
+      "closeSidebar": "Cerrar barra lateral",
+      "toggleSidebar": "Alternar barra lateral",
+      "adminPageNavigation": "Navegacion de pagina de administracion",
+      "adminPageNavigationMobile": "Navegacion de pagina de administracion (movil)",
+      "toggleMenu": "Alternar menu",
+      "togglePasswordVisibility": "Mostrar u ocultar contrasena"
+    },
     "keyboardHelp": {
       "title": "Atajos de teclado y puntos de referencia",
       "ariaLabel": "Ayuda de atajos de teclado y puntos de referencia",

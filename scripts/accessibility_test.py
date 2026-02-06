@@ -11,6 +11,7 @@ import argparse
 import os
 import subprocess
 import sys
+from pathlib import Path
 
 
 def parse_args() -> argparse.Namespace:
@@ -60,6 +61,7 @@ def run_accessibility_tests(args: argparse.Namespace) -> int:
     env["ACCESSIBILITY_BASE_URL"] = args.base_url
     # Use an already running dev environment instead of launching run_web.py
     env["ACCESSIBILITY_EXTERNAL_SERVER"] = "1"
+    env.setdefault("ACCESSIBILITY_AUTH_STATE_DIR", str(Path("/tmp") / "promptvault-acc-state"))
     if args.pages:
         env["ACCESSIBILITY_PAGES"] = ",".join(args.pages)
 

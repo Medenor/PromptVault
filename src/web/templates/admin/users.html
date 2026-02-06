@@ -35,6 +35,7 @@
               class="hidden md:flex items-center space-x-3 flex-shrink-0"
               role="navigation"
               aria-label="Admin page navigation"
+              data-i18n="[aria-label]accessibility.labels.adminPageNavigation"
             >
               <button
                 onclick="window.location.href = '/admin/sessions'"
@@ -63,6 +64,7 @@
 	              id="admin-menu-toggle"
 	              class="md:hidden p-2 text-blue-100 hover:text-white flex-shrink-0"
 	              aria-label="Toggle menu"
+	              data-i18n="[aria-label]accessibility.labels.toggleMenu"
 	            >
 	              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
 	                <path
@@ -80,6 +82,7 @@
             class="hidden md:hidden mt-4 flex flex-col gap-2"
             role="navigation"
             aria-label="Admin page navigation mobile"
+            data-i18n="[aria-label]accessibility.labels.adminPageNavigationMobile"
           >
             <button
               onclick="window.location.href = '/admin/sessions'"
@@ -142,6 +145,7 @@
                 id="search-input"
                 placeholder="Search users..."
                 aria-label="Search users"
+                data-i18n="[aria-label]admin.users.searchPlaceholder"
                 data-i18n="[placeholder]admin.users.searchPlaceholder"
                 class="w-full pl-3 pr-10 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
               />
@@ -351,6 +355,7 @@
 	            type="button"
 	            class="text-gray-400 hover:text-gray-600 text-2xl leading-none rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
 	            aria-label="Close modal"
+	            data-i18n="[aria-label]actions.close"
 	            onclick="closeEditUserModal()"
 	          >
 	            &times;
@@ -453,6 +458,7 @@
 	            type="button"
 	            class="text-gray-400 hover:text-gray-600 text-2xl leading-none rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
 	            aria-label="Close modal"
+	            data-i18n="[aria-label]actions.close"
 	            onclick="closeConfirmDeleteModal()"
 	          >
 	            &times;
@@ -498,6 +504,7 @@
 	            type="button"
 	            class="text-gray-400 hover:text-gray-600 text-2xl leading-none rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
 	            aria-label="Close modal"
+	            data-i18n="[aria-label]actions.close"
 	            onclick="closeCreateUserModal()"
 	          >
 	            &times;
@@ -589,6 +596,7 @@
 	                  id="toggle-password-create"
 	                  class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
 	                  aria-label="Toggle password visibility"
+	                  data-i18n="[aria-label]accessibility.labels.togglePasswordVisibility"
 	                >
 	                  ⊙
 	                </button>
@@ -657,6 +665,7 @@
 	                  id="toggle-confirm-password-create"
 	                  class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
 	                  aria-label="Toggle password visibility"
+	                  data-i18n="[aria-label]accessibility.labels.togglePasswordVisibility"
 	                >
 	                  ⊙
 	                </button>

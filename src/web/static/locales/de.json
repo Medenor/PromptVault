@@ -526,6 +526,7 @@
     "name": "Name",
     "description": "Beschreibung",
     "color": "Farbe",
+    "pickColor": "Farbe auswählen",
     "order": "Reihenfolge",
     "usage": "Verwendung",
     "actions": "Aktionen",
@@ -584,6 +585,20 @@
   },
   "accessibility": {
     "navigateTo": "Wechsel zu {{item}}",
+    "labels": {
+      "pageNavigation": "Seitennavigation",
+      "primaryActions": "Hauptaktionen",
+      "primaryActionsMobile": "Hauptaktionen (mobil)",
+      "openMenu": "Menü öffnen",
+      "promptFiltersNavigation": "Prompt-Filter und Navigation",
+      "promptFiltersNavigationMobile": "Prompt-Filter und Navigation (mobil)",
+      "closeSidebar": "Seitenleiste schließen",
+      "toggleSidebar": "Seitenleiste umschalten",
+      "adminPageNavigation": "Admin-Seitennavigation",
+      "adminPageNavigationMobile": "Admin-Seitennavigation (mobil)",
+      "toggleMenu": "Menü umschalten",
+      "togglePasswordVisibility": "Passwortsichtbarkeit umschalten"
+    },
     "keyboardHelp": {
       "title": "Tastaturkurzbefehle und Landmarken",
       "ariaLabel": "Hilfe zu Tastaturkurzbefehlen und Landmarken",

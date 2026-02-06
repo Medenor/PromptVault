@@ -193,6 +193,7 @@
     "name": "Name",
     "description": "Description",
     "color": "Color",
+    "pickColor": "Pick a color",
     "order": "Order",
     "parent": "Parent",
     "usage": "Usage",
@@ -617,6 +618,20 @@
   },
   "accessibility": {
     "navigateTo": "Moved to {{item}}",
+    "labels": {
+      "pageNavigation": "Page navigation",
+      "primaryActions": "Primary actions",
+      "primaryActionsMobile": "Primary actions (mobile)",
+      "openMenu": "Open menu",
+      "promptFiltersNavigation": "Prompt filters and navigation",
+      "promptFiltersNavigationMobile": "Prompt filters and navigation (mobile)",
+      "closeSidebar": "Close sidebar",
+      "toggleSidebar": "Toggle sidebar",
+      "adminPageNavigation": "Admin page navigation",
+      "adminPageNavigationMobile": "Admin page navigation (mobile)",
+      "toggleMenu": "Toggle menu",
+      "togglePasswordVisibility": "Toggle password visibility"
+    },
     "keyboardHelp": {
       "title": "Keyboard Shortcuts and Landmarks",
       "ariaLabel": "Keyboard shortcuts and landmarks help",
