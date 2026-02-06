@@ -23,6 +23,11 @@ type CategoryItem = {
 type CategoryListResponse = {
   items: CategoryItem[];
 };
+type FormValidationError = {
+  inputId: string;
+  errorId: string;
+  message: string;
+};
 
 const elements = {
   tableBody: document.getElementById('categories-table-body') as HTMLTableSectionElement | null,
@@ -70,6 +75,76 @@ function normalizeSearch(value: string): string {
   return value.trim().toLowerCase();
 }
 
+function resetFieldError(inputId: string, errorId: string): void {
+  const input = document.getElementById(inputId) as HTMLElement | null;
+  const error = document.getElementById(errorId);
+  input?.setAttribute('aria-invalid', 'false');
+  if (error) {
+    error.textContent = '';
+  }
+}
+
+function addFieldError(
+  errors: FormValidationError[],
+  inputId: string,
+  errorId: string,
+  message: string
+): void {
+  const input = document.getElementById(inputId) as HTMLElement | null;
+  const error = document.getElementById(errorId);
+  input?.setAttribute('aria-invalid', 'true');
+  if (error) {
+    error.textContent = message;
+  }
+  errors.push({ inputId, errorId, message });
+}
+
+function resetErrorSummary(summaryId: string): void {
+  const summary = document.getElementById(summaryId);
+  if (!summary) return;
+  summary.textContent = '';
+  summary.style.display = 'none';
+}
+
+function renderErrorSummary(summaryId: string, errors: FormValidationError[]): void {
+  if (errors.length === 0) {
+    return;
+  }
+
+  const summary = document.getElementById(summaryId);
+  if (!summary) {
+    const firstInput = document.getElementById(errors[0]?.inputId ?? '') as HTMLElement | null;
+    firstInput?.focus();
+    return;
+  }
+
+  summary.textContent = '';
+  const header = document.createElement('p');
+  header.className = 'error-banner-header';
+  header.textContent = 'Please correct the following errors:';
+  summary.appendChild(header);
+
+  const list = document.createElement('ul');
+  list.className = 'error-banner-list';
+  errors.forEach((error) => {
+    const item = document.createElement('li');
+    const link = document.createElement('a');
+    link.href = `#${error.inputId}`;
+    link.className = 'underline';
+    link.textContent = error.message;
+    link.addEventListener('click', (event) => {
+      event.preventDefault();
+      const target = document.getElementById(error.inputId) as HTMLElement | null;
+      target?.focus();
+    });
+    item.appendChild(link);
+    list.appendChild(item);
+  });
+  summary.appendChild(list);
+  summary.style.display = 'block';
+  summary.focus();
+}
+
 function resolveCategoryInput(rawCategory: string): string | null {
   const trimmed = rawCategory.trim();
   if (!trimmed) {
@@ -79,7 +154,7 @@ function resolveCategoryInput(rawCategory: string): string | null {
     const id = Number(trimmed);
     const match = cachedItems.find((item) => item.id === id);
     if (!match) {
-      alert(tUnsafe('management.idNotFound', { id }));
+      showNotification(tUnsafe('management.idNotFound', { id }), 'error');
       return null;
     }
     return match.name;
@@ -251,6 +326,9 @@ async function createCategory(event: Event): Promise<void> {
   if (!elements.createName) {
     return;
   }
+  resetFieldError('category-create-name', 'category-create-name-error');
+  resetErrorSummary('category-create-error-summary');
+  const validationErrors: FormValidationError[] = [];
 
   const payload = {
     name: elements.createName.value.trim(),
@@ -259,7 +337,13 @@ async function createCategory(event: Event): Promise<void> {
   };
 
   if (!payload.name) {
-    alert(tUnsafe('management.nameRequired'));
+    addFieldError(
+      validationErrors,
+      'category-create-name',
+      'category-create-name-error',
+      tUnsafe('management.nameRequired')
+    );
+    renderErrorSummary('category-create-error-summary', validationErrors);
     return;
   }
 
@@ -326,10 +410,30 @@ async function deleteCategory(categoryId: number): Promise<void> {
 }
 
 async function mergeCategories(): Promise<void> {
+  resetFieldError('category-merge-target', 'category-merge-target-error');
+  resetFieldError('category-merge-sources', 'category-merge-sources-error');
+  resetErrorSummary('category-merge-error-summary');
+  const validationErrors: FormValidationError[] = [];
   const targetId = Number(elements.mergeTarget?.value || '');
   const sourceIds = parseIdList(elements.mergeSources?.value || '');
-  if (!targetId || sourceIds.length === 0) {
-    alert(tUnsafe('management.mergeRequireIds'));
+  if (!targetId) {
+    addFieldError(
+      validationErrors,
+      'category-merge-target',
+      'category-merge-target-error',
+      tUnsafe('management.mergeRequireIds')
+    );
+  }
+  if (sourceIds.length === 0) {
+    addFieldError(
+      validationErrors,
+      'category-merge-sources',
+      'category-merge-sources-error',
+      tUnsafe('management.mergeRequireIds')
+    );
+  }
+  if (validationErrors.length > 0) {
+    renderErrorSummary('category-merge-error-summary', validationErrors);
     return;
   }
   const confirmed = window.confirm(tUnsafe('management.mergeConfirm'));
@@ -349,10 +453,30 @@ async function mergeCategories(): Promise<void> {
 }
 
 async function findReplaceCategories(): Promise<void> {
+  resetFieldError('category-find', 'category-find-error');
+  resetFieldError('category-replace', 'category-replace-error');
+  resetErrorSummary('category-find-replace-error-summary');
+  const validationErrors: FormValidationError[] = [];
   const findValue = elements.findInput?.value.trim() || '';
   const replaceValue = elements.replaceInput?.value.trim() || '';
-  if (!findValue || !replaceValue) {
-    alert(tUnsafe('management.findReplaceRequired'));
+  if (!findValue) {
+    addFieldError(
+      validationErrors,
+      'category-find',
+      'category-find-error',
+      tUnsafe('management.findReplaceRequired')
+    );
+  }
+  if (!replaceValue) {
+    addFieldError(
+      validationErrors,
+      'category-replace',
+      'category-replace-error',
+      tUnsafe('management.findReplaceRequired')
+    );
+  }
+  if (validationErrors.length > 0) {
+    renderErrorSummary('category-find-replace-error-summary', validationErrors);
     return;
   }
   const confirmed = window.confirm(tUnsafe('management.replaceConfirm'));
@@ -372,9 +496,18 @@ async function findReplaceCategories(): Promise<void> {
 }
 
 async function bulkDeleteCategories(): Promise<void> {
+  resetFieldError('category-bulk-delete-ids', 'category-bulk-delete-ids-error');
+  resetErrorSummary('category-bulk-delete-error-summary');
+  const validationErrors: FormValidationError[] = [];
   const ids = parseIdList(elements.bulkDeleteIds?.value || '');
   if (ids.length === 0) {
-    alert(tUnsafe('management.bulkDeleteRequireIds'));
+    addFieldError(
+      validationErrors,
+      'category-bulk-delete-ids',
+      'category-bulk-delete-ids-error',
+      tUnsafe('management.bulkDeleteRequireIds')
+    );
+    renderErrorSummary('category-bulk-delete-error-summary', validationErrors);
     return;
   }
   const confirmed = window.confirm(tUnsafe('management.bulkDeleteConfirm'));
@@ -411,9 +544,18 @@ async function exportCategories(): Promise<void> {
 }
 
 async function importCategories(): Promise<void> {
+  resetFieldError('category-import-file', 'category-import-file-error');
+  resetErrorSummary('category-import-error-summary');
+  const validationErrors: FormValidationError[] = [];
   const file = elements.importFile?.files?.[0];
   if (!file) {
-    alert(tUnsafe('management.importSelectFile'));
+    addFieldError(
+      validationErrors,
+      'category-import-file',
+      'category-import-file-error',
+      tUnsafe('management.importSelectFile')
+    );
+    renderErrorSummary('category-import-error-summary', validationErrors);
     return;
   }
   try {
@@ -451,7 +593,7 @@ function getSelectedIds(): number[] {
 async function mergeSelected(): Promise<void> {
   const ids = getSelectedIds();
   if (ids.length < 2) {
-    alert(tUnsafe('management.mergeSelectedRequire'));
+    showNotification(tUnsafe('management.mergeSelectedRequire'), 'error');
     return;
   }
   const targetId = ids[0];
@@ -478,7 +620,7 @@ async function saveAllCategories(): Promise<void> {
   }
   const rows = Array.from(elements.tableBody.querySelectorAll<HTMLTableRowElement>('tr'));
   if (rows.length === 0) {
-    alert(tUnsafe('management.noRows'));
+    showNotification(tUnsafe('management.noRows'), 'error');
     return;
   }
 
@@ -512,12 +654,12 @@ async function saveAllCategories(): Promise<void> {
 async function findReplaceSelected(): Promise<void> {
   const ids = getSelectedIds();
   if (ids.length !== 1) {
-    alert(tUnsafe('management.replaceSelectedRequireOne'));
+    showNotification(tUnsafe('management.replaceSelectedRequireOne'), 'error');
     return;
   }
   const selected = cachedItems.find((item) => item.id === ids[0]);
   if (!selected) {
-    alert(tUnsafe('management.replaceSelectedNotFound'));
+    showNotification(tUnsafe('management.replaceSelectedNotFound'), 'error');
     return;
   }
   const replaceValue = window.prompt(
@@ -664,7 +806,7 @@ async function renderPromptDetails(promptIds: number[], container: HTMLElement):
       }
       const category = input.value.trim();
       if (!category) {
-        alert(tUnsafe('management.assignPlaceholder'));
+        showNotification(tUnsafe('management.assignPlaceholder'), 'error');
         return;
       }
       const resolved = resolveCategoryInput(category);
@@ -691,11 +833,11 @@ async function assignCategoryToPrompt(promptId: number, category: string): Promi
 
 function handleError(error: unknown, fallback: string): void {
   if (error instanceof APIRequestError) {
-    alert(error.message);
+    showNotification(error.message, 'error');
     return;
   }
   console.error(error);
-  alert(fallback);
+  showNotification(fallback, 'error');
 }
 
 function init(): void {

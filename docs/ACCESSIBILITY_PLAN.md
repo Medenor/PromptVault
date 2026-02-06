@@ -17,12 +17,14 @@ Ce plan détaille les étapes nécessaires pour atteindre la conformité WCAG 2.
 ### Tâches implémentées
 
 - `[x] T-ACC001` Configurer axe-core pour les tests navigateur (Playwright + `@axe-core/playwright`)
+- `[x] T-ACC002` Lighthouse CI dans pipeline (workflow Forgejo + seuil accessibilité >= 95)
 - `[x] T-ACC003` Créer un script de test d'accessibilité local (`scripts/accessibility_test.py`)
 - `[x] T-ACC004` Documenter les outils d'accessibilité (`docs/ACCESSIBILITY_TESTING.md`)
 - `[x] T-ACC011` Créer le lien "Aller au contenu principal" (skip link) sur les pages principales/templates actifs
 - `[x] T-ACC013` Indicateurs de focus visibles (styles focus + skip link visible au focus)
 - `[x] T-ACC014` Trap focus pour modales (dans `src/web/static/ts/components/modal.ts`)
 - `[x] T-ACC015` Restauration du focus après fermeture modale
+- `[x] T-ACC016` Roving tabindex implémenté pour les listes filtres catégories/tags (desktop + mobile)
 - `[x] T-ACC017` Documenter les raccourcis clavier (`docs/KEYBOARD_SHORTCUTS.md`)
 - `[x] T-ACC018` Raccourci `?` pour aide clavier (modal d'aide des raccourcis)
 - `[x] T-ACC008` Landmarks ARIA (`header`/`main`) + skip link sur templates actifs
@@ -31,19 +33,24 @@ Ce plan détaille les étapes nécessaires pour atteindre la conformité WCAG 2.
 - `[x] T-ACC012` Navigation par landmarks implémentée avec aide dédiée (modal `?` + landmarks dynamiques)
 - `[x] T-ACC021` `aria-label` ajouté sur les champs sans label visible identifiés (recherche/filtres/actions rapides)
 - `[x] T-ACC046` Tests axe-core Playwright (règles WCAG 2.0/2.1 A/AA)
+- `[x] T-ACC047` Ajouter étape CI accessibilité (Forgejo Actions: axe + Lighthouse)
 - `[x] T-ACC005` Audit automatique exécuté sur routes publiques et protégées (validation dev `http://127.0.0.1:8003`)
 
 ### Tâches partiellement implémentées
 
-- `[~] Aucun élément actuellement.`
+- `[~] T-ACC019` Navigation première lettre: implémentée sur listes catégories/tags (inclut annonce SR "导航到 …"), extension restante pour autres listes interactives
+- `[~] T-ACC020` Associations `label`/`for`: corrections appliquées sur formulaires ciblés (manage categories/tags + comparateur de versions + auth/import/backup), audit global restant
+- `[~] T-ACC022` `aria-describedby` renforcé sur formulaires auth + import/export + backup + manage categories/tags (hints contextuels + erreurs), extension restante à d'autres formulaires
+- `[~] T-ACC023` Résumé d'erreurs en haut des formulaires implémenté sur auth + import/export + backup + manage categories/tags, extension restante à l'ensemble de l'application
+- `[~] T-ACC024` Liaison erreurs/champs renforcée (`aria-invalid` dynamique + focus) sur auth + import/export + backup + manage categories/tags, extension restante globale
+- `[~] T-ACC025` Annonces de validation améliorées (live regions + résumés d'erreurs + navigation clavier) étendues aux formulaires principaux + remplacement des `alert` bloquants sur manage categories/tags, couverture temps réel complète restante
 
 ### Tâches restantes
 
 - `[ ]` Toutes les autres tâches du plan, notamment:
 - `[ ] T-ACC002` Lighthouse CI dans pipeline
 - `[ ] T-ACC006` / `[ ] T-ACC007` Audit clavier manuel + lecteurs d'écran
-- `[ ] T-ACC016` Roving tabindex
-- `[ ] T-ACC019` Navigation première lettre (scénario CJK)
+- `[ ] T-ACC019` Navigation première lettre (scénario CJK) - finaliser couverture complète
 - `[ ] T-ACC020` / `[ ] T-ACC022` à `[ ] T-ACC025` couverture formulaires/erreurs temps réel complète
 - `[ ] T-ACC026` à `[ ] T-ACC030` audit contraste complet + indicateurs hors couleur
 - `[ ] T-ACC031` à `[ ] T-ACC034` images/icônes (alt/aria-hidden) complet

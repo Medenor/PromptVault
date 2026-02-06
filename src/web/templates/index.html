@@ -89,6 +89,7 @@
   </head>
   <body class="bg-gray-50">
     <a href="#main-content" class="skip-link">Skip to main content</a>
+    <div id="keyboard-navigation-announcer" class="sr-only" aria-live="polite"></div>
 
     <!-- Authentication loading overlay -->
     <div
@@ -963,14 +964,14 @@
         <div class="p-6 overflow-auto flex-1">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2" data-i18n="version.version1">Version 1:</label>
+              <label for="diff-v1-selector" class="block text-sm font-semibold text-gray-700 mb-2" data-i18n="version.version1">Version 1:</label>
               <select
                 id="diff-v1-selector"
                 class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
               ></select>
             </div>
             <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2" data-i18n="version.version2">Version 2:</label>
+              <label for="diff-v2-selector" class="block text-sm font-semibold text-gray-700 mb-2" data-i18n="version.version2">Version 2:</label>
               <select
                 id="diff-v2-selector"
                 class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"

@@ -83,7 +83,13 @@
     "missingCommitMessage": "Champ obligatoire manquant",
     "unknownError": "Erreur inconnue",
     "selectTwoVersions": "Veuillez sélectionner exactement 2 versions à comparer",
-    "selectPromptFirst": "Veuillez d'abord sélectionner une invite"
+    "selectPromptFirst": "Veuillez d'abord sélectionner une invite",
+    "suggestTagsMissingContent": "Ajoutez du contenu au prompt avant de demander des suggestions.",
+    "suggestTagsNoSuggestions": "Aucune suggestion trouvée.",
+    "suggestTagsFailed": "Échec de la récupération des suggestions de tags.",
+    "bulkTagProvideAtLeastOne": "Indiquez au moins un tag à ajouter ou à supprimer.",
+    "bulkTagUpdateSuccess": "Tags mis à jour pour les invites sélectionnées.",
+    "bulkTagUpdateFailed": "Échec de la mise à jour des tags."
   },
   "validation": {
     "required": "Ce champ est obligatoire.",

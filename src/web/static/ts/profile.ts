@@ -45,6 +45,11 @@ interface UserInfo {
   last_login?: string | null;
 }
 
+interface FormValidationError {
+  inputId: string;
+  message: string;
+}
+
 function formatDate(dateString?: string | null): string {
   if (!dateString) return 'Never';
   const date = new Date(dateString);
@@ -156,6 +161,80 @@ function setupPasswordToggle(toggleButtonId: string, passwordInputId: string): v
       passwordInput.type = passwordInput.type === 'password' ? 'text' : 'password';
     });
   }
+}
+
+function resetFormAccessibilityState(
+  form: HTMLFormElement | null,
+  inputIds: string[],
+  summaryId: string
+): void {
+  if (form) {
+    inputIds.forEach((inputId) => {
+      const input = form.querySelector<HTMLElement>(`#${inputId}`);
+      if (input) {
+        input.setAttribute('aria-invalid', 'false');
+      }
+    });
+  }
+
+  const summary = document.getElementById(summaryId);
+  if (summary) {
+    summary.textContent = '';
+    summary.style.display = 'none';
+  }
+}
+
+function addFieldError(
+  errors: FormValidationError[],
+  inputId: string,
+  errorId: string,
+  message: string
+): void {
+  showError(document.getElementById(errorId), message);
+  const input = document.getElementById(inputId);
+  input?.setAttribute('aria-invalid', 'true');
+  errors.push({ inputId, message });
+}
+
+function renderErrorSummary(summaryId: string, errors: FormValidationError[]): void {
+  if (errors.length === 0) {
+    return;
+  }
+
+  const summary = document.getElementById(summaryId);
+  if (!summary) {
+    const firstInput = document.getElementById(errors[0]?.inputId ?? '');
+    firstInput?.focus();
+    return;
+  }
+
+  summary.textContent = '';
+
+  const header = document.createElement('p');
+  header.className = 'error-banner-header';
+  header.textContent = 'Please correct the following errors:';
+  summary.appendChild(header);
+
+  const list = document.createElement('ul');
+  list.className = 'error-banner-list';
+  errors.forEach((error) => {
+    const item = document.createElement('li');
+    const link = document.createElement('a');
+    link.href = `#${error.inputId}`;
+    link.className = 'underline';
+    link.textContent = error.message;
+    link.addEventListener('click', (event) => {
+      event.preventDefault();
+      const target = document.getElementById(error.inputId) as HTMLElement | null;
+      target?.focus();
+    });
+    item.appendChild(link);
+    list.appendChild(item);
+  });
+  summary.appendChild(list);
+
+  summary.style.display = 'block';
+  summary.focus();
 }
 
 async function loadSessions(): Promise<void> {
@@ -291,6 +370,12 @@ function setupChangePasswordForm(): void {
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
     clearAllErrors();
+    resetFormAccessibilityState(
+      form,
+      ['current-password', 'new-password', 'confirm-new-password'],
+      'change-password-error-summary'
+    );
+    const validationErrors: FormValidationError[] = [];
 
     const currentPassword =
       (document.getElementById('current-password') as HTMLInputElement | null)?.value ?? '';
@@ -299,34 +384,38 @@ function setupChangePasswordForm(): void {
     const confirmNewPassword =
       (document.getElementById('confirm-new-password') as HTMLInputElement | null)?.value ?? '';
 
-    let hasErrors = false;
-
     if (!currentPassword) {
-      showError(
-        document.getElementById('current-password-error'),
+      addFieldError(
+        validationErrors,
+        'current-password',
+        'current-password-error',
         t('auth.profile.currentPasswordRequired') || 'Current password is required'
       );
-      hasErrors = true;
     }
 
     const { checks } = checkPasswordStrength(newPassword);
     if (!Object.values(checks).every((value) => value)) {
-      showError(
-        document.getElementById('new-password-error'),
+      addFieldError(
+        validationErrors,
+        'new-password',
+        'new-password-error',
         t('auth.register.passwordPolicy') || 'Password does not meet requirements'
       );
-      hasErrors = true;
     }
 
     if (newPassword !== confirmNewPassword) {
-      showError(
-        document.getElementById('confirm-new-password-error'),
+      addFieldError(
+        validationErrors,
+        'confirm-new-password',
+        'confirm-new-password-error',
         t('auth.register.passwordMismatch') || 'Passwords do not match'
       );
-      hasErrors = true;
     }
 
-    if (hasErrors) return;
+    if (validationErrors.length > 0) {
+      renderErrorSummary('change-password-error-summary', validationErrors);
+      return;
+    }
 
     const submitButton = form.querySelector('button[type="submit"]') as HTMLButtonElement | null;
     if (submitButton) {
@@ -350,10 +439,13 @@ function setupChangePasswordForm(): void {
     } catch (error) {
       if (error instanceof APIRequestError) {
         if (error.status === 401) {
-          showError(
-            document.getElementById('current-password-error'),
+          addFieldError(
+            validationErrors,
+            'current-password',
+            'current-password-error',
             error.message || t('auth.profile.incorrectPassword') || 'Incorrect current password'
           );
+          renderErrorSummary('change-password-error-summary', validationErrors);
         } else {
           showNotification(
             error.message || t('messages.error') || 'Failed to change password',

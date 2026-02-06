@@ -85,6 +85,12 @@ async function login(
     return;
   }
 
+  if (!loginResponse.ok()) {
+    throw new Error(
+      `Login failed for "${username}": received status ${loginResponse.status()} from /api/auth/login.`
+    );
+  }
+
   await page.waitForURL((url) => !url.pathname.includes('/auth/login'), { timeout: 20000 });
 }
 

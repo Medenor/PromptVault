@@ -24,6 +24,11 @@ interface PasswordChecks {
   special: boolean;
 }
 
+interface FormValidationError {
+  inputId: string;
+  message: string;
+}
+
 function getInputValue(id: string): string {
   const input = document.getElementById(id) as HTMLInputElement | null;
   return input?.value ?? '';
@@ -125,31 +130,114 @@ function setupPasswordToggle(toggleButtonId: string, passwordInputId: string): v
   }
 }
 
+function resetFormAccessibilityState(
+  form: HTMLFormElement | null,
+  inputIds: string[],
+  summaryId: string
+): void {
+  if (form) {
+    inputIds.forEach((inputId) => {
+      const input = form.querySelector<HTMLElement>(`#${inputId}`);
+      if (input) {
+        input.setAttribute('aria-invalid', 'false');
+      }
+    });
+  }
+
+  const summary = document.getElementById(summaryId);
+  if (summary) {
+    summary.textContent = '';
+    summary.style.display = 'none';
+  }
+}
+
+function addFieldError(
+  errors: FormValidationError[],
+  inputId: string,
+  errorId: string,
+  message: string
+): void {
+  showError(document.getElementById(errorId), message);
+  const input = document.getElementById(inputId);
+  input?.setAttribute('aria-invalid', 'true');
+  errors.push({ inputId, message });
+}
+
+function renderErrorSummary(summaryId: string, errors: FormValidationError[]): void {
+  if (errors.length === 0) {
+    return;
+  }
+
+  const summary = document.getElementById(summaryId);
+  if (!summary) {
+    const firstInput = document.getElementById(errors[0]?.inputId ?? '');
+    firstInput?.focus();
+    return;
+  }
+
+  summary.textContent = '';
+
+  const header = document.createElement('p');
+  header.className = 'error-banner-header';
+  header.textContent = 'Please correct the following errors:';
+  summary.appendChild(header);
+
+  const list = document.createElement('ul');
+  list.className = 'error-banner-list';
+  errors.forEach((error) => {
+    const item = document.createElement('li');
+    const link = document.createElement('a');
+    link.href = `#${error.inputId}`;
+    link.className = 'underline';
+    link.textContent = error.message;
+    link.addEventListener('click', (event) => {
+      event.preventDefault();
+      const target = document.getElementById(error.inputId) as HTMLElement | null;
+      target?.focus();
+    });
+    item.appendChild(link);
+    list.appendChild(item);
+  });
+  summary.appendChild(list);
+
+  summary.style.display = 'block';
+  summary.focus();
+}
+
 async function handleLoginSubmit(event: Event): Promise<void> {
   event.preventDefault();
   clearAllErrors();
+  const form = document.getElementById('login-form') as HTMLFormElement | null;
+  resetFormAccessibilityState(form, ['username-or-email', 'password'], 'login-error-summary');
+  const validationErrors: FormValidationError[] = [];
 
   const usernameOrEmail = getInputValue('username-or-email').trim();
   const password = getInputValue('password');
   const rememberMe = getCheckboxValue('remember-me');
 
   if (!usernameOrEmail) {
-    showError(
-      document.getElementById('username-error'),
+    addFieldError(
+      validationErrors,
+      'username-or-email',
+      'username-error',
       t('auth.login.usernameRequired') || 'Username or email is required'
     );
-    return;
   }
 
   if (!password) {
-    showError(
-      document.getElementById('password-error'),
+    addFieldError(
+      validationErrors,
+      'password',
+      'password-error',
       t('auth.login.passwordRequired') || 'Password is required'
     );
+  }
+
+  if (validationErrors.length > 0) {
+    renderErrorSummary('login-error-summary', validationErrors);
     return;
   }
 
-  const form = document.getElementById('login-form') as HTMLFormElement | null;
   const submitButton = form?.querySelector('button[type="submit"]') as HTMLButtonElement | null;
   if (submitButton) {
     submitButton.disabled = true;
@@ -195,31 +283,43 @@ async function handleLoginSubmit(event: Event): Promise<void> {
         window.location.href = '/';
       }, 1000);
     } else if (response.status === 401) {
-      showError(
-        document.getElementById('password-error'),
+      addFieldError(
+        validationErrors,
+        'password',
+        'password-error',
         data.detail || t('auth.login.invalidCredentials') || 'Invalid credentials'
       );
+      renderErrorSummary('login-error-summary', validationErrors);
     } else if (response.status === 403) {
       if (data.detail && data.detail.includes('locked')) {
         showElement(document.getElementById('account-locked-message'));
       } else {
-        showError(
-          document.getElementById('password-error'),
+        addFieldError(
+          validationErrors,
+          'password',
+          'password-error',
           data.detail || t('auth.login.accountInactive') || 'Account inactive'
         );
+        renderErrorSummary('login-error-summary', validationErrors);
       }
     } else {
-      showError(
-        document.getElementById('password-error'),
+      addFieldError(
+        validationErrors,
+        'password',
+        'password-error',
         data.detail || t('messages.error') || 'An error occurred'
       );
+      renderErrorSummary('login-error-summary', validationErrors);
     }
   } catch (error) {
     reportError('auth', 'login', error);
-    showError(
-      document.getElementById('password-error'),
+    addFieldError(
+      validationErrors,
+      'password',
+      'password-error',
       t('messages.error') || 'An error occurred'
     );
+    renderErrorSummary('login-error-summary', validationErrors);
   } finally {
     if (submitButton) {
       submitButton.disabled = false;
@@ -231,59 +331,72 @@ async function handleLoginSubmit(event: Event): Promise<void> {
 async function handleRegisterSubmit(event: Event): Promise<void> {
   event.preventDefault();
   clearAllErrors();
+  const form = document.getElementById('register-form') as HTMLFormElement | null;
+  resetFormAccessibilityState(
+    form,
+    ['username', 'email', 'password', 'confirm-password'],
+    'register-error-summary'
+  );
 
   const username = getInputValue('username').trim();
   const email = getInputValue('email').trim();
   const password = getInputValue('password');
   const confirmPassword = getInputValue('confirm-password');
 
-  let hasErrors = false;
+  const validationErrors: FormValidationError[] = [];
 
   if (!username || username.length < 3 || username.length > 50) {
-    showError(
-      document.getElementById('username-error'),
+    addFieldError(
+      validationErrors,
+      'username',
+      'username-error',
       t('auth.register.usernameInvalid') || 'Username must be 3-50 characters'
     );
-    hasErrors = true;
   }
 
   if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
-    showError(
-      document.getElementById('username-error'),
+    addFieldError(
+      validationErrors,
+      'username',
+      'username-error',
       t('auth.register.usernamePattern') ||
         'Username can only contain letters, numbers, underscore, and hyphen'
     );
-    hasErrors = true;
   }
 
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    showError(
-      document.getElementById('email-error'),
+    addFieldError(
+      validationErrors,
+      'email',
+      'email-error',
       t('auth.register.emailInvalid') || 'Invalid email address'
     );
-    hasErrors = true;
   }
 
   const { checks } = checkPasswordStrength(password);
   if (!Object.values(checks).every((value) => value)) {
-    showError(
-      document.getElementById('password-error'),
+    addFieldError(
+      validationErrors,
+      'password',
+      'password-error',
       t('auth.register.passwordPolicy') || 'Password does not meet requirements'
     );
-    hasErrors = true;
   }
 
   if (password !== confirmPassword) {
-    showError(
-      document.getElementById('confirm-password-error'),
+    addFieldError(
+      validationErrors,
+      'confirm-password',
+      'confirm-password-error',
       t('auth.register.passwordMismatch') || 'Passwords do not match'
     );
-    hasErrors = true;
   }
 
-  if (hasErrors) return;
+  if (validationErrors.length > 0) {
+    renderErrorSummary('register-error-summary', validationErrors);
+    return;
+  }
 
-  const form = document.getElementById('register-form') as HTMLFormElement | null;
   const submitButton = form?.querySelector('button[type="submit"]') as HTMLButtonElement | null;
   if (submitButton) {
     submitButton.disabled = true;
@@ -325,14 +438,15 @@ async function handleRegisterSubmit(event: Event): Promise<void> {
       }, 1000);
     } else if (data.detail) {
       if (data.detail.includes('username')) {
-        showError(document.getElementById('username-error'), data.detail);
+        addFieldError(validationErrors, 'username', 'username-error', data.detail);
       } else if (data.detail.includes('email')) {
-        showError(document.getElementById('email-error'), data.detail);
+        addFieldError(validationErrors, 'email', 'email-error', data.detail);
       } else if (data.detail.includes('password')) {
-        showError(document.getElementById('password-error'), data.detail);
+        addFieldError(validationErrors, 'password', 'password-error', data.detail);
       } else {
         showNotification(data.detail, 'error');
       }
+      renderErrorSummary('register-error-summary', validationErrors);
     }
   } catch (error) {
     reportError('auth', 'register', error);

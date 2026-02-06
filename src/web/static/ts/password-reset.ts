@@ -23,6 +23,11 @@ interface PasswordChecks {
   special: boolean;
 }
 
+interface FormValidationError {
+  inputId: string;
+  message: string;
+}
+
 function getInputValue(id: string): string {
   const input = document.getElementById(id) as HTMLInputElement | null;
   return input?.value ?? '';
@@ -115,21 +120,100 @@ function setupPasswordToggle(toggleButtonId: string, passwordInputId: string): v
   }
 }
 
+function resetFormAccessibilityState(
+  form: HTMLFormElement | null,
+  inputIds: string[],
+  summaryId: string
+): void {
+  if (form) {
+    inputIds.forEach((inputId) => {
+      const input = form.querySelector<HTMLElement>(`#${inputId}`);
+      if (input) {
+        input.setAttribute('aria-invalid', 'false');
+      }
+    });
+  }
+
+  const summary = document.getElementById(summaryId);
+  if (summary) {
+    summary.textContent = '';
+    summary.style.display = 'none';
+  }
+}
+
+function addFieldError(
+  errors: FormValidationError[],
+  inputId: string,
+  errorId: string,
+  message: string
+): void {
+  showError(document.getElementById(errorId), message);
+  const input = document.getElementById(inputId);
+  input?.setAttribute('aria-invalid', 'true');
+  errors.push({ inputId, message });
+}
+
+function renderErrorSummary(summaryId: string, errors: FormValidationError[]): void {
+  if (errors.length === 0) {
+    return;
+  }
+
+  const summary = document.getElementById(summaryId);
+  if (!summary) {
+    const firstInput = document.getElementById(errors[0]?.inputId ?? '');
+    firstInput?.focus();
+    return;
+  }
+
+  summary.textContent = '';
+
+  const header = document.createElement('p');
+  header.className = 'error-banner-header';
+  header.textContent = 'Please correct the following errors:';
+  summary.appendChild(header);
+
+  const list = document.createElement('ul');
+  list.className = 'error-banner-list';
+  errors.forEach((error) => {
+    const item = document.createElement('li');
+    const link = document.createElement('a');
+    link.href = `#${error.inputId}`;
+    link.className = 'underline';
+    link.textContent = error.message;
+    link.addEventListener('click', (event) => {
+      event.preventDefault();
+      const target = document.getElementById(error.inputId) as HTMLElement | null;
+      target?.focus();
+    });
+    item.appendChild(link);
+    list.appendChild(item);
+  });
+  summary.appendChild(list);
+
+  summary.style.display = 'block';
+  summary.focus();
+}
+
 async function handleForgotPasswordSubmit(event: Event): Promise<void> {
   event.preventDefault();
   clearAllErrors();
+  const form = document.getElementById('forgot-password-form') as HTMLFormElement | null;
+  resetFormAccessibilityState(form, ['email'], 'forgot-password-error-summary');
+  const validationErrors: FormValidationError[] = [];
 
   const email = getInputValue('email').trim();
 
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    showError(
-      document.getElementById('email-error'),
+    addFieldError(
+      validationErrors,
+      'email',
+      'email-error',
       t('auth.forgotPassword.emailInvalid') || 'Invalid email address'
     );
+    renderErrorSummary('forgot-password-error-summary', validationErrors);
     return;
   }
 
-  const form = document.getElementById('forgot-password-form') as HTMLFormElement | null;
   const submitButton = form?.querySelector('button[type="submit"]') as HTMLButtonElement | null;
   if (submitButton) {
     submitButton.disabled = true;
@@ -153,14 +237,23 @@ async function handleForgotPasswordSubmit(event: Event): Promise<void> {
     } else if (response.status === 429) {
       showElement(document.getElementById('rate-limit-message'));
     } else {
-      showError(
-        document.getElementById('email-error'),
+      addFieldError(
+        validationErrors,
+        'email',
+        'email-error',
         data.detail || t('messages.error') || 'An error occurred'
       );
+      renderErrorSummary('forgot-password-error-summary', validationErrors);
     }
   } catch (error) {
     reportError('password-reset', 'forgot', error);
-    showError(document.getElementById('email-error'), t('messages.error') || 'An error occurred');
+    addFieldError(
+      validationErrors,
+      'email',
+      'email-error',
+      t('messages.error') || 'An error occurred'
+    );
+    renderErrorSummary('forgot-password-error-summary', validationErrors);
   } finally {
     if (submitButton) {
       submitButton.disabled = false;
@@ -172,32 +265,41 @@ async function handleForgotPasswordSubmit(event: Event): Promise<void> {
 async function handleResetPasswordSubmit(event: Event, token: string): Promise<void> {
   event.preventDefault();
   clearAllErrors();
+  const form = document.getElementById('reset-password-form') as HTMLFormElement | null;
+  resetFormAccessibilityState(
+    form,
+    ['password', 'confirm-password'],
+    'reset-password-error-summary'
+  );
+  const validationErrors: FormValidationError[] = [];
 
   const password = getInputValue('password');
   const confirmPassword = getInputValue('confirm-password');
 
-  let hasErrors = false;
-
   const { checks } = checkPasswordStrength(password);
   if (!Object.values(checks).every((value) => value)) {
-    showError(
-      document.getElementById('password-error'),
+    addFieldError(
+      validationErrors,
+      'password',
+      'password-error',
       t('auth.register.passwordPolicy') || 'Password does not meet requirements'
     );
-    hasErrors = true;
   }
 
   if (password !== confirmPassword) {
-    showError(
-      document.getElementById('confirm-password-error'),
+    addFieldError(
+      validationErrors,
+      'confirm-password',
+      'confirm-password-error',
       t('auth.register.passwordMismatch') || 'Passwords do not match'
     );
-    hasErrors = true;
   }
 
-  if (hasErrors) return;
+  if (validationErrors.length > 0) {
+    renderErrorSummary('reset-password-error-summary', validationErrors);
+    return;
+  }
 
-  const form = document.getElementById('reset-password-form') as HTMLFormElement | null;
   const submitButton = form?.querySelector('button[type="submit"]') as HTMLButtonElement | null;
   if (submitButton) {
     submitButton.disabled = true;
@@ -226,17 +328,23 @@ async function handleResetPasswordSubmit(event: Event, token: string): Promise<v
       hideElement(form?.parentElement ?? null);
       showElement(document.getElementById('token-error-message'));
     } else {
-      showError(
-        document.getElementById('password-error'),
+      addFieldError(
+        validationErrors,
+        'password',
+        'password-error',
         data.detail || t('messages.error') || 'An error occurred'
       );
+      renderErrorSummary('reset-password-error-summary', validationErrors);
     }
   } catch (error) {
     reportError('password-reset', 'reset', error);
-    showError(
-      document.getElementById('password-error'),
+    addFieldError(
+      validationErrors,
+      'password',
+      'password-error',
       t('messages.error') || 'An error occurred'
     );
+    renderErrorSummary('reset-password-error-summary', validationErrors);
   } finally {
     if (submitButton) {
       submitButton.disabled = false;

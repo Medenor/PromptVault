@@ -31,6 +31,12 @@ npm run test:ui:accessibility
 npm run test:ui:accessibility:all
 ```
 
+Lighthouse (accessibility score threshold enforced via `lighthouserc.json`):
+
+```bash
+npm run test:ui:lighthouse
+```
+
 ### Python runner
 
 ```bash

@@ -41,6 +41,14 @@
         </h2>
 
         <form id="register-form" class="space-y-4" novalidate>
+          <div
+            id="register-error-summary"
+            class="validation-error-banner"
+            role="alert"
+            aria-live="polite"
+            tabindex="-1"
+          ></div>
+
           <!-- Username Input -->
           <div>
             <label
@@ -125,7 +133,7 @@
                 required
                 autocomplete="new-password"
                 aria-required="true"
-                aria-describedby="password-error password-strength password-policy"
+                aria-describedby="password-hint password-error password-strength password-policy"
                 class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
               />
               <button
@@ -138,6 +146,7 @@
                 ⊙
               </button>
             </div>
+            <p id="password-hint" class="text-xs text-gray-500 mt-1">Minimum 12 characters.</p>
             <!-- Password Strength Indicator -->
             <div id="password-strength" class="mt-2" aria-live="polite">
               <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
@@ -171,7 +180,7 @@
                 required
                 autocomplete="new-password"
                 aria-required="true"
-                aria-describedby="confirm-password-error"
+                aria-describedby="confirm-password-hint confirm-password-error"
                 class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
               />
               <button
@@ -184,6 +193,7 @@
                 ⊙
               </button>
             </div>
+            <p id="confirm-password-hint" class="text-xs text-gray-500 mt-1">Must match the password field.</p>
             <p
               id="confirm-password-error"
               class="text-red-500 text-xs mt-1 hidden"

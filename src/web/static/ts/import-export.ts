@@ -16,10 +16,121 @@ import { reportError } from '@/telemetry';
 import { apiGet, apiPostForm, APIRequestError } from '@/utils/api';
 
 type OperationType = 'export' | 'import' | null;
+interface FormValidationError {
+  inputId: string;
+  message: string;
+}
 
 let currentOperation: OperationType = null;
 const IMPORT_EXPORT_COMPONENT = 'importExport';
 const HIDDEN_CLASS = 'hidden';
+
+function resetFieldError(inputId: string, errorId: string): void {
+  const input = document.getElementById(inputId) as HTMLElement | null;
+  const error = document.getElementById(errorId);
+  input?.setAttribute('aria-invalid', 'false');
+  if (error) {
+    error.textContent = '';
+  }
+}
+
+function addFieldError(
+  errors: FormValidationError[],
+  inputId: string,
+  errorId: string,
+  message: string
+): void {
+  const input = document.getElementById(inputId) as HTMLElement | null;
+  const error = document.getElementById(errorId);
+  input?.setAttribute('aria-invalid', 'true');
+  if (error) {
+    error.textContent = message;
+  }
+  errors.push({ inputId, message });
+}
+
+function resetErrorSummary(summaryId: string): void {
+  const summary = document.getElementById(summaryId);
+  if (!summary) return;
+  summary.textContent = '';
+  summary.style.display = 'none';
+}
+
+function renderErrorSummary(summaryId: string, errors: FormValidationError[]): void {
+  if (errors.length === 0) {
+    return;
+  }
+
+  const summary = document.getElementById(summaryId);
+  if (!summary) {
+    const firstInput = document.getElementById(errors[0]?.inputId ?? '') as HTMLElement | null;
+    firstInput?.focus();
+    return;
+  }
+
+  summary.textContent = '';
+  const header = document.createElement('p');
+  header.className = 'error-banner-header';
+  header.textContent = 'Please correct the following errors:';
+  summary.appendChild(header);
+
+  const list = document.createElement('ul');
+  list.className = 'error-banner-list';
+  errors.forEach((error) => {
+    const item = document.createElement('li');
+    const link = document.createElement('a');
+    link.href = `#${error.inputId}`;
+    link.className = 'underline';
+    link.textContent = error.message;
+    link.addEventListener('click', (event) => {
+      event.preventDefault();
+      const target = document.getElementById(error.inputId) as HTMLElement | null;
+      target?.focus();
+    });
+    item.appendChild(link);
+    list.appendChild(item);
+  });
+  summary.appendChild(list);
+  summary.style.display = 'block';
+  summary.focus();
+}
+
+function validateExportForm(filename: string): FormValidationError[] {
+  const errors: FormValidationError[] = [];
+  resetFieldError('export-filename', 'export-filename-error');
+  resetErrorSummary('export-error-summary');
+
+  const trimmed = filename.trim();
+  if (!trimmed) {
+    addFieldError(errors, 'export-filename', 'export-filename-error', 'Filename is required.');
+    return errors;
+  }
+
+  const filenamePattern = /^[A-Za-z0-9_-]+(\.(csv|json|md|markdown))?$/i;
+  if (!filenamePattern.test(trimmed)) {
+    addFieldError(
+      errors,
+      'export-filename',
+      'export-filename-error',
+      'Use letters, numbers, "_" or "-" only.'
+    );
+  }
+
+  return errors;
+}
+
+function validateImportForm(file: File | undefined): FormValidationError[] {
+  const errors: FormValidationError[] = [];
+  resetFieldError('import-file', 'import-file-error');
+  resetErrorSummary('import-error-summary');
+
+  if (!file) {
+    addFieldError(errors, 'import-file', 'import-file-error', t('importExport.noFileSelected'));
+    return errors;
+  }
+
+  return errors;
+}
 
 /**
  * Helper function to handle blob downloads with automatic token refresh
@@ -232,23 +343,24 @@ async function previewExport(): Promise<void> {
 async function previewImport(): Promise<void> {
   const fileInput = document.getElementById('import-file') as HTMLInputElement | null;
   const file = fileInput?.files?.[0];
-
-  if (!file) {
-    alert(t('importExport.noFileSelected'));
+  const validationErrors = validateImportForm(file);
+  if (validationErrors.length > 0) {
+    renderErrorSummary('import-error-summary', validationErrors);
     return;
   }
+  const selectedFile = file as File;
 
   currentOperation = 'import';
 
   try {
     showProgress('import', 'preparingImport');
 
-    const previewContent = await generateImportPreview(file.name);
+    const previewContent = await generateImportPreview(selectedFile.name);
 
     showPreview('previewImportTitle', previewContent);
     hideProgress('import');
   } catch (error) {
-    reportError(IMPORT_EXPORT_COMPONENT, 'previewImport', error, { filename: file.name });
+    reportError(IMPORT_EXPORT_COMPONENT, 'previewImport', error, { filename: selectedFile.name });
     showStatus('import', 'importFailed', 'error');
   }
 }
@@ -374,6 +486,12 @@ async function performExport(): Promise<void> {
   const includeMetadata =
     (document.getElementById('include-metadata') as HTMLInputElement | null)?.checked ?? false;
 
+  const validationErrors = validateExportForm(rawFilename);
+  if (validationErrors.length > 0) {
+    renderErrorSummary('export-error-summary', validationErrors);
+    return;
+  }
+
   try {
     showProgress('export', 'exportProgress');
 
@@ -403,11 +521,15 @@ async function performExport(): Promise<void> {
 async function performImport(): Promise<void> {
   const fileInput = document.getElementById('import-file') as HTMLInputElement | null;
   const file = fileInput?.files?.[0];
-
-  if (!file) {
-    alert(t('importExport.noFileSelected'));
+  const validationErrors = validateImportForm(file);
+  if (validationErrors.length > 0) {
+    renderErrorSummary('import-error-summary', validationErrors);
     return;
   }
+  if (!fileInput || !file) {
+    return;
+  }
+  const selectedFile = file as File;
 
   const mode =
     (document.getElementById('import-mode') as HTMLSelectElement | null)?.value || 'append';
@@ -418,7 +540,7 @@ async function performImport(): Promise<void> {
     showProgress('import', 'importProgress');
 
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('file', selectedFile);
     formData.append('mode', mode);
     formData.append('validate', String(validate));
 
@@ -438,7 +560,7 @@ async function performImport(): Promise<void> {
     reportError(IMPORT_EXPORT_COMPONENT, 'performImport', error, {
       mode,
       validate,
-      filename: file.name,
+      filename: selectedFile.name,
     });
 
     // Handle API errors with better messages
@@ -516,6 +638,8 @@ function clearExportSettings(): void {
   if (filenameInput) filenameInput.value = 'promptvault_export.csv';
   if (includeFavorites) includeFavorites.checked = true;
   if (includeMetadata) includeMetadata.checked = true;
+  resetFieldError('export-filename', 'export-filename-error');
+  resetErrorSummary('export-error-summary');
 
   hideProgress('export');
   showStatus('export', '', 'info');

@@ -83,7 +83,13 @@
     "missingCommitMessage": "Missing Required Field",
     "unknownError": "Unknown error",
     "selectTwoVersions": "Please select exactly 2 versions to compare",
-    "selectPromptFirst": "Please select a prompt first"
+    "selectPromptFirst": "Please select a prompt first",
+    "suggestTagsMissingContent": "Add prompt content before requesting suggestions.",
+    "suggestTagsNoSuggestions": "No suggestions found.",
+    "suggestTagsFailed": "Failed to get tag suggestions.",
+    "bulkTagProvideAtLeastOne": "Provide at least one tag to add or remove.",
+    "bulkTagUpdateSuccess": "Tags updated for selected prompts.",
+    "bulkTagUpdateFailed": "Failed to update tags."
   },
   "validation": {
     "required": "This field is required.",

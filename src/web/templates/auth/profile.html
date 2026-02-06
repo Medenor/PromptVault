@@ -146,6 +146,14 @@
             Change Password
           </h3>
           <form id="change-password-form" class="space-y-4" novalidate>
+            <div
+              id="change-password-error-summary"
+              class="validation-error-banner"
+              role="alert"
+              aria-live="polite"
+              tabindex="-1"
+            ></div>
+
             <!-- Current Password -->
             <div>
               <label
@@ -164,7 +172,7 @@
                   required
                   autocomplete="current-password"
                   aria-required="true"
-                  aria-describedby="current-password-error"
+                  aria-describedby="current-password-hint current-password-error"
                 />
                 <button
                   type="button"
@@ -175,6 +183,7 @@
                   <span class="text-xl">👁️</span>
                 </button>
               </div>
+              <p id="current-password-hint" class="text-xs text-gray-500 mt-1">Required field.</p>
               <p
                 id="current-password-error"
                 class="text-red-500 text-xs mt-1 hidden"
@@ -201,7 +210,7 @@
                   required
                   autocomplete="new-password"
                   aria-required="true"
-                  aria-describedby="new-password-error password-strength"
+                  aria-describedby="new-password-hint new-password-error password-strength"
                 />
                 <button
                   type="button"
@@ -212,6 +221,7 @@
                   <span class="text-xl">👁️</span>
                 </button>
               </div>
+              <p id="new-password-hint" class="text-xs text-gray-500 mt-1">Minimum 12 characters.</p>
               <p
                 id="new-password-error"
                 class="text-red-500 text-xs mt-1 hidden"
@@ -279,7 +289,7 @@
                   required
                   autocomplete="new-password"
                   aria-required="true"
-                  aria-describedby="confirm-new-password-error"
+                  aria-describedby="confirm-new-password-hint confirm-new-password-error"
                 />
                 <button
                   type="button"
@@ -290,6 +300,7 @@
                   <span class="text-xl">👁️</span>
                 </button>
               </div>
+              <p id="confirm-new-password-hint" class="text-xs text-gray-500 mt-1">Must match the new password field.</p>
               <p
                 id="confirm-new-password-error"
                 class="text-red-500 text-xs mt-1 hidden"

@@ -64,7 +64,14 @@
               Create Backup
             </h3>
 
-            <form class="space-y-4">
+            <form id="backup-create-form" class="space-y-4" novalidate>
+              <div
+                id="backup-create-error-summary"
+                class="validation-error-banner"
+                role="alert"
+                aria-live="polite"
+                tabindex="-1"
+              ></div>
               <div>
                 <label
                   for="backup-name"
@@ -159,6 +166,13 @@
                 Cleanup Old Backups
               </h4>
               <div class="space-y-4">
+                <div
+                  id="cleanup-error-summary"
+                  class="validation-error-banner"
+                  role="alert"
+                  aria-live="polite"
+                  tabindex="-1"
+                ></div>
                 <div>
                   <label
                     for="retention-days"
@@ -197,6 +211,13 @@
                 Compress Old Backups
               </h4>
               <div class="space-y-4">
+                <div
+                  id="compress-error-summary"
+                  class="validation-error-banner"
+                  role="alert"
+                  aria-live="polite"
+                  tabindex="-1"
+                ></div>
                 <div>
                   <label
                     for="compress-days"

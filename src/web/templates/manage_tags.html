@@ -52,6 +52,13 @@
         <section class="bg-white rounded-lg shadow p-6 mb-6">
           <h3 class="text-lg font-semibold text-gray-900 mb-4" data-i18n="tags.createTitle">Create Tag</h3>
           <form id="tag-create-form" class="space-y-4">
+            <div
+              id="tag-create-error-summary"
+              class="validation-error-banner"
+              role="alert"
+              aria-live="polite"
+              tabindex="-1"
+            ></div>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
                 <label for="tag-create-name" class="block text-sm font-medium text-gray-700 mb-2">Name</label>
@@ -60,9 +67,11 @@
                   type="text"
                   placeholder="Name"
                   data-i18n-placeholder="management.namePlaceholder"
+                  aria-describedby="tag-create-name-error"
                   class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
                   required
                 />
+                <p id="tag-create-name-error" class="text-red-600 text-xs mt-1" role="alert" aria-live="assertive"></p>
               </div>
               <div>
                 <label for="tag-create-description" class="block text-sm font-medium text-gray-700 mb-2">Description</label>
@@ -86,7 +95,7 @@
             </div>
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Color</label>
+                <label for="tag-create-color" class="block text-sm font-medium text-gray-700 mb-2">Color</label>
                 <div id="tag-create-color-picker-container">
                   <!-- Enhanced color picker will be inserted here -->
                   <input
@@ -201,24 +210,35 @@
           <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div class="border border-gray-200 rounded-lg p-4">
               <h4 class="font-semibold text-gray-800 mb-3" data-i18n="actions.merge">Merge</h4>
+              <div
+                id="tag-merge-error-summary"
+                class="validation-error-banner"
+                role="alert"
+                aria-live="polite"
+                tabindex="-1"
+              ></div>
               <div class="space-y-3">
                 <input
               id="tag-merge-target"
               type="number"
               aria-label="Merge target tag ID"
+              aria-describedby="tag-merge-target-error"
               placeholder="Target ID"
               data-i18n-placeholder="management.targetIdPlaceholder"
               class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
             />
+                <p id="tag-merge-target-error" class="text-red-600 text-xs mt-1" role="alert" aria-live="assertive"></p>
                 <p class="text-xs text-gray-500" data-i18n="management.mergeTargetHelp">Target is the tag that remains after merge.</p>
                 <input
               id="tag-merge-sources"
               type="text"
               aria-label="Source tag IDs for merge"
+              aria-describedby="tag-merge-sources-error"
               placeholder="Source IDs (comma-separated)"
               data-i18n-placeholder="management.sourceIdsPlaceholder"
               class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
             />
+                <p id="tag-merge-sources-error" class="text-red-600 text-xs mt-1" role="alert" aria-live="assertive"></p>
                 <p class="text-xs text-gray-500" data-i18n="management.mergeSourcesHelp">Sources will be merged into the target and removed.</p>
                 <button
                   id="tag-merge-btn"
@@ -232,23 +252,34 @@
 
             <div class="border border-gray-200 rounded-lg p-4">
               <h4 class="font-semibold text-gray-800 mb-3" data-i18n="actions.findReplace">Find & Replace</h4>
+              <div
+                id="tag-find-replace-error-summary"
+                class="validation-error-banner"
+                role="alert"
+                aria-live="polite"
+                tabindex="-1"
+              ></div>
               <div class="space-y-3">
                 <input
               id="tag-find"
               type="text"
               aria-label="Find tag name"
+              aria-describedby="tag-find-error"
               placeholder="Find name"
               data-i18n-placeholder="management.findPlaceholder"
               class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
             />
+                <p id="tag-find-error" class="text-red-600 text-xs mt-1" role="alert" aria-live="assertive"></p>
                 <input
               id="tag-replace"
               type="text"
               aria-label="Replacement tag name"
+              aria-describedby="tag-replace-error"
               placeholder="Replace name"
               data-i18n-placeholder="management.replacePlaceholder"
               class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
             />
+                <p id="tag-replace-error" class="text-red-600 text-xs mt-1" role="alert" aria-live="assertive"></p>
                 <button
                   id="tag-find-replace-btn"
                   class="w-full px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
@@ -261,15 +292,24 @@
 
             <div class="border border-gray-200 rounded-lg p-4">
               <h4 class="font-semibold text-gray-800 mb-3" data-i18n="actions.bulkDelete">Bulk Delete</h4>
+              <div
+                id="tag-bulk-delete-error-summary"
+                class="validation-error-banner"
+                role="alert"
+                aria-live="polite"
+                tabindex="-1"
+              ></div>
               <div class="space-y-3">
                 <input
               id="tag-bulk-delete-ids"
               type="text"
               aria-label="Tag IDs to delete"
+              aria-describedby="tag-bulk-delete-ids-error"
               placeholder="IDs (comma-separated)"
               data-i18n-placeholder="management.idsPlaceholder"
               class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
             />
+            <p id="tag-bulk-delete-ids-error" class="text-red-600 text-xs mt-1" role="alert" aria-live="assertive"></p>
             <label class="flex items-center gap-2 text-sm text-gray-700">
               <input id="tag-bulk-delete-force" type="checkbox" class="rounded text-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" />
               <span data-i18n="management.forceDelete">Force delete (remove from prompts)</span>
@@ -322,6 +362,13 @@
                 <h4 class="text-sm font-semibold text-gray-800" data-i18n="management.importTitle">Import</h4>
                 <span class="text-xs text-gray-500">.json</span>
               </div>
+              <div
+                id="tag-import-error-summary"
+                class="validation-error-banner"
+                role="alert"
+                aria-live="polite"
+                tabindex="-1"
+              ></div>
               <p class="text-sm text-gray-600 mb-4" data-i18n="management.importDesc">
                 Upload a JSON file to create or update tags.
               </p>
@@ -332,9 +379,11 @@
                     id="tag-import-file"
                     type="file"
                     accept="application/json"
+                    aria-describedby="tag-import-file-error"
                     class="text-xs text-gray-600"
                   />
                 </label>
+                <p id="tag-import-file-error" class="text-red-600 text-xs mt-1" role="alert" aria-live="assertive"></p>
                 <button
                   id="tag-import-btn"
                   class="w-full px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"

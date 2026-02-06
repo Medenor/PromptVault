@@ -111,6 +111,12 @@ const HIDDEN_CLASS = 'hidden';
 const ERROR_VISIBLE_CLASS = 'validation-error-visible';
 const APP_COMPONENT = 'app';
 const MAX_TAGS = 15;
+const FILTER_LIST_IDS = [
+  'categories-list',
+  'tags-list',
+  'categories-list-mobile',
+  'tags-list-mobile',
+] as const;
 
 function reportAppIssue(
   action: string,
@@ -140,6 +146,169 @@ function hideElement(element: HTMLElement | null): void {
   if (element) {
     element.classList.add(HIDDEN_CLASS);
   }
+}
+
+function announceKeyboardNavigation(message: string): void {
+  const announcer = document.getElementById('keyboard-navigation-announcer');
+  if (!announcer) {
+    return;
+  }
+  announcer.textContent = '';
+  // Force text change so screen readers always announce the update.
+  requestAnimationFrame(() => {
+    announcer.textContent = message;
+  });
+}
+
+function getListItems(list: HTMLElement): HTMLLIElement[] {
+  return Array.from(list.querySelectorAll<HTMLLIElement>('li'));
+}
+
+function syncRovingTabindexForList(list: HTMLElement | null): void {
+  if (!list) return;
+
+  const items = getListItems(list);
+  if (items.length === 0) return;
+
+  const activeItem = list.querySelector<HTMLLIElement>('li.active');
+  const tabbableItem = activeItem ?? items[0];
+
+  items.forEach((item) => {
+    item.setAttribute('role', 'button');
+    item.tabIndex = item === tabbableItem ? 0 : -1;
+  });
+}
+
+function syncFilterListsRovingTabindex(): void {
+  FILTER_LIST_IDS.forEach((id) => {
+    syncRovingTabindexForList(document.getElementById(id));
+  });
+}
+
+function findNextItemByCharacter(
+  items: HTMLLIElement[],
+  currentIndex: number,
+  key: string
+): HTMLLIElement | null {
+  const normalizedKey = key.trim().toLocaleLowerCase();
+  if (!normalizedKey) {
+    return null;
+  }
+
+  for (let offset = 1; offset <= items.length; offset += 1) {
+    const index = (currentIndex + offset) % items.length;
+    const candidate = items[index];
+    if (!candidate) {
+      continue;
+    }
+    const text = candidate?.textContent?.trim().toLocaleLowerCase() ?? '';
+    if (text.startsWith(normalizedKey)) {
+      return candidate;
+    }
+  }
+
+  return null;
+}
+
+function setupFilterListKeyboardNavigation(list: HTMLElement): void {
+  list.addEventListener('click', (event) => {
+    const target = event.target as HTMLElement | null;
+    const item = target?.closest('li');
+    if (!item || !list.contains(item)) {
+      return;
+    }
+    syncRovingTabindexForList(list);
+    item.tabIndex = 0;
+    item.focus();
+  });
+
+  list.addEventListener('keydown', (event) => {
+    const target = event.target as HTMLElement | null;
+    const currentItem = target?.closest('li');
+    if (!currentItem || !list.contains(currentItem)) {
+      return;
+    }
+
+    const items = getListItems(list);
+    if (items.length === 0) {
+      return;
+    }
+
+    const currentIndex = items.indexOf(currentItem);
+    if (currentIndex < 0) {
+      return;
+    }
+
+    const focusItem = (item: HTMLLIElement): void => {
+      items.forEach((listItem) => {
+        listItem.tabIndex = listItem === item ? 0 : -1;
+      });
+      item.focus();
+    };
+
+    switch (event.key) {
+      case 'ArrowDown':
+      case 'ArrowRight': {
+        event.preventDefault();
+        const nextItem = items[(currentIndex + 1) % items.length];
+        if (nextItem) focusItem(nextItem);
+        return;
+      }
+      case 'ArrowUp':
+      case 'ArrowLeft': {
+        event.preventDefault();
+        const previousItem = items[(currentIndex - 1 + items.length) % items.length];
+        if (previousItem) focusItem(previousItem);
+        return;
+      }
+      case 'Home': {
+        event.preventDefault();
+        const firstItem = items[0];
+        if (firstItem) focusItem(firstItem);
+        return;
+      }
+      case 'End': {
+        event.preventDefault();
+        const lastItem = items[items.length - 1];
+        if (lastItem) focusItem(lastItem);
+        return;
+      }
+      case 'Enter':
+      case ' ': {
+        event.preventDefault();
+        currentItem.click();
+        return;
+      }
+      default:
+        break;
+    }
+
+    const isCharacterNavigation =
+      event.key.length === 1 && !event.metaKey && !event.ctrlKey && !event.altKey;
+    if (!isCharacterNavigation) {
+      return;
+    }
+
+    const matchedItem = findNextItemByCharacter(items, currentIndex, event.key);
+    if (!matchedItem) {
+      return;
+    }
+
+    event.preventDefault();
+    focusItem(matchedItem);
+    const matchedText = matchedItem.textContent?.trim() ?? '';
+    announceKeyboardNavigation(`导航到 ${matchedText}`);
+  });
+}
+
+function initializeFilterListKeyboardNavigation(): void {
+  FILTER_LIST_IDS.forEach((id) => {
+    const list = document.getElementById(id);
+    if (list) {
+      setupFilterListKeyboardNavigation(list);
+    }
+  });
+  syncFilterListsRovingTabindex();
 }
 
 function resolveCssColor(color?: string | null): string | null {
@@ -659,6 +828,7 @@ function setupEventListeners(): void {
     handleTagFilter(event);
     closeMobileSidebar();
   });
+  initializeFilterListKeyboardNavigation();
 
   const favoritesFilter = document.getElementById('favorites-filter');
   favoritesFilter?.addEventListener('change', handleFavoritesFilter);
@@ -1017,6 +1187,8 @@ function renderCategories(categories: string[]): void {
   if (categories.length === 0) {
     showElement(emptyState);
     showElement(emptyStateMobile);
+    syncRovingTabindexForList(list);
+    syncRovingTabindexForList(listMobile);
     return;
   } else {
     hideElement(emptyState);
@@ -1049,6 +1221,9 @@ function renderCategories(categories: string[]): void {
       listMobile.appendChild(liMobile);
     }
   });
+
+  syncRovingTabindexForList(list);
+  syncRovingTabindexForList(listMobile);
 }
 
 function renderTags(tags: TagInfo[]): void {
@@ -1079,6 +1254,8 @@ function renderTags(tags: TagInfo[]): void {
   if (tags.length === 0) {
     showElement(emptyState);
     showElement(emptyStateMobile);
+    syncRovingTabindexForList(list);
+    syncRovingTabindexForList(listMobile);
     return;
   } else {
     hideElement(emptyState);
@@ -1119,6 +1296,9 @@ function renderTags(tags: TagInfo[]): void {
       listMobile.appendChild(liMobile);
     }
   });
+
+  syncRovingTabindexForList(list);
+  syncRovingTabindexForList(listMobile);
 }
 
 function showNewPromptForm() {
@@ -1209,14 +1389,17 @@ async function handlePromptSubmit(event: SubmitEvent): Promise<void> {
       delete form.dataset.mode;
       delete form.dataset.id;
     } else {
-      alert(`${t('messages.error')}: ${responseData.error || t('messages.unknownError')}`);
+      showNotification(
+        `${t('messages.error')}: ${responseData.error || t('messages.unknownError')}`,
+        'error'
+      );
     }
   } catch (error) {
     reportAppIssue('savePrompt', error, {
       mode: isEditMode ? 'edit' : 'create',
       promptId: promptId || null,
     });
-    alert(t('messages.error'));
+    showNotification(t('messages.error'), 'error');
   }
 }
 
@@ -1347,7 +1530,7 @@ async function deletePrompt(id: PromptId): Promise<void> {
     void loadTags(); // Refresh sidebar tag list
   } catch (error) {
     reportAppIssue('deletePrompt', error, { promptId: id });
-    alert(t('messages.error'));
+    showNotification(t('messages.error'), 'error');
   }
 }
 
@@ -1385,13 +1568,14 @@ async function toggleFavorite(id: PromptId): Promise<void> {
     }
 
     reportAppIssue('toggleFavorite', error, { promptId: id });
-    alert(t('messages.error'));
+    showNotification(t('messages.error'), 'error');
   }
 }
 
 function handleCategoryFilter(event: Event): void {
   const target = event.target as HTMLElement | null;
-  if (target?.tagName === 'LI') {
+  const item = target?.closest('li');
+  if (item) {
     // Update active state in both desktop and mobile lists
     document.querySelectorAll('#categories-list li').forEach((li) => li.classList.remove('active'));
     document
@@ -1399,10 +1583,10 @@ function handleCategoryFilter(event: Event): void {
       .forEach((li) => li.classList.remove('active'));
 
     // Add active to the clicked item
-    target.classList.add('active');
+    item.classList.add('active');
 
     // Sync the corresponding item in the other list
-    const category = target.dataset.category || 'all';
+    const category = item.dataset.category || 'all';
     const desktopItem = document.querySelector(`#categories-list li[data-category="${category}"]`);
     const mobileItem = document.querySelector(
       `#categories-list-mobile li[data-category="${category}"]`
@@ -1410,6 +1594,7 @@ function handleCategoryFilter(event: Event): void {
 
     if (desktopItem) desktopItem.classList.add('active');
     if (mobileItem) mobileItem.classList.add('active');
+    syncFilterListsRovingTabindex();
 
     // Update search state and trigger search
     searchState.category = category;
@@ -1419,7 +1604,8 @@ function handleCategoryFilter(event: Event): void {
 
 function handleTagFilter(event: Event): void {
   const target = event.target as HTMLElement | null;
-  if (target?.tagName === 'LI') {
+  const item = target?.closest('li');
+  if (item) {
     // Update active state in both desktop and mobile lists
     document.querySelectorAll('#tags-list li').forEach((li) => li.classList.remove('active'));
     document
@@ -1427,15 +1613,16 @@ function handleTagFilter(event: Event): void {
       .forEach((li) => li.classList.remove('active'));
 
     // Add active to the clicked item
-    target.classList.add('active');
+    item.classList.add('active');
 
     // Sync the corresponding item in the other list
-    const tag = target.dataset.tag || 'all';
+    const tag = item.dataset.tag || 'all';
     const desktopItem = document.querySelector(`#tags-list li[data-tag="${tag}"]`);
     const mobileItem = document.querySelector(`#tags-list-mobile li[data-tag="${tag}"]`);
 
     if (desktopItem) desktopItem.classList.add('active');
     if (mobileItem) mobileItem.classList.add('active');
+    syncFilterListsRovingTabindex();
 
     // Update search state and trigger search
     searchState.tag = tag;
@@ -1828,6 +2015,7 @@ function clearAllFilters(): void {
   document
     .querySelectorAll('#tags-list-mobile [data-tag="all"]')
     .forEach((li) => li.classList.add('active'));
+  syncFilterListsRovingTabindex();
 
   // Hide clear filters button and search results info
   const clearAllFiltersBtn = document.getElementById('clear-all-filters-btn');
@@ -2070,6 +2258,8 @@ function showNotification(message: string, type: 'info' | 'success' | 'error' = 
   const notification = document.createElement('div');
   notification.className = `notification notification-${type}`;
   notification.textContent = message;
+  notification.setAttribute('role', type === 'error' ? 'alert' : 'status');
+  notification.setAttribute('aria-live', type === 'error' ? 'assertive' : 'polite');
   document.body.appendChild(notification);
   setTimeout(() => notification.remove(), 3000);
 }
@@ -2410,6 +2600,10 @@ function showKeyboardShortcutsHelpModal(): void {
         <li><strong>Ctrl/Cmd + N</strong>: Create a new prompt</li>
         <li><strong>Escape</strong>: Close open dialogs and editor</li>
         <li><strong>?</strong>: Open this keyboard shortcuts help</li>
+        <li><strong>Arrow keys</strong>: Move focus in category/tag filter lists</li>
+        <li><strong>Enter / Space</strong>: Activate focused category/tag filter</li>
+        <li><strong>Home / End</strong>: Jump to first/last item in filter lists</li>
+        <li><strong>Any letter/character</strong>: Jump to next matching filter item</li>
       </ul>
       <div class="pt-2 border-t border-gray-200">
         <p class="text-gray-600">Landmarks on this page:</p>
@@ -2700,7 +2894,7 @@ async function handleSuggestTags(): Promise<void> {
 
   const content = promptInput.value.trim();
   if (!content) {
-    alert('Add prompt content before requesting suggestions.');
+    showNotification(t('messages.suggestTagsMissingContent'), 'info');
     return;
   }
 
@@ -2714,7 +2908,7 @@ async function handleSuggestTags(): Promise<void> {
     );
     const suggestedNames = response.suggestions.map((item) => item.name);
     if (suggestedNames.length === 0) {
-      alert('No suggestions found.');
+      showNotification(t('messages.suggestTagsNoSuggestions'), 'info');
       return;
     }
     const merged = mergeTagSuggestions(selectedTags, suggestedNames);
@@ -2722,7 +2916,7 @@ async function handleSuggestTags(): Promise<void> {
     tagInput.value = '';
   } catch (error) {
     reportAppIssue('suggestTags', error);
-    alert('Failed to get tag suggestions.');
+    showNotification(t('messages.suggestTagsFailed'), 'error');
   }
 }
 
@@ -3297,7 +3491,7 @@ async function performBulkDelete(): Promise<void> {
         deleted: result.deleted_count,
         failed: result.failed_count,
       });
-      alert(message);
+      showNotification(message, 'success');
 
       // Refresh UI
       await loadPrompts();
@@ -3318,7 +3512,7 @@ async function performBulkDelete(): Promise<void> {
     }
   } catch (error) {
     console.error('Bulk delete error:', error);
-    alert(t('bulkDelete.errorMessage'));
+    showNotification(t('bulkDelete.errorMessage'), 'error');
     reportAppIssue('bulk-delete-failed', error, {
       prompt_ids: promptIdsArray,
     });
@@ -3335,7 +3529,7 @@ async function performBulkTagUpdate(): Promise<void> {
   const removeTags = parseTagInput(removeInput?.value ?? '');
 
   if (addTags.length === 0 && removeTags.length === 0) {
-    alert('Provide at least one tag to add or remove.');
+    showNotification(t('messages.bulkTagProvideAtLeastOne'), 'info');
     return;
   }
 
@@ -3359,12 +3553,12 @@ async function performBulkTagUpdate(): Promise<void> {
     await loadAvailableTags();
     await loadTags();
 
-    alert('Tags updated for selected prompts.');
+    showNotification(t('messages.bulkTagUpdateSuccess'), 'success');
   } catch (error) {
     reportAppIssue('bulk-tag-update', error, {
       promptCount: selectedPromptIds.size,
     });
-    alert('Failed to update tags.');
+    showNotification(t('messages.bulkTagUpdateFailed'), 'error');
   }
 }
 

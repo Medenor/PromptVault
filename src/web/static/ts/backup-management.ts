@@ -60,10 +60,85 @@ interface AuthResponse {
   role?: string;
 }
 
+interface FormValidationError {
+  inputId: string;
+  message: string;
+}
+
 const BACKUP_COMPONENT = 'backupManagement';
 
 let currentBackups: BackupItem[] = [];
 let selectedBackupId: string | null = null;
+
+function resetFieldError(inputId: string, errorId: string): void {
+  const input = document.getElementById(inputId) as HTMLElement | null;
+  const error = document.getElementById(errorId);
+  input?.setAttribute('aria-invalid', 'false');
+  if (error) {
+    error.textContent = '';
+  }
+}
+
+function addFieldError(
+  errors: FormValidationError[],
+  inputId: string,
+  errorId: string,
+  message: string
+): void {
+  const input = document.getElementById(inputId) as HTMLElement | null;
+  const error = document.getElementById(errorId);
+  input?.setAttribute('aria-invalid', 'true');
+  if (error) {
+    error.textContent = message;
+  }
+  errors.push({ inputId, message });
+}
+
+function resetErrorSummary(summaryId: string): void {
+  const summary = document.getElementById(summaryId);
+  if (!summary) return;
+  summary.textContent = '';
+  summary.style.display = 'none';
+}
+
+function renderErrorSummary(summaryId: string, errors: FormValidationError[]): void {
+  if (errors.length === 0) {
+    return;
+  }
+
+  const summary = document.getElementById(summaryId);
+  if (!summary) {
+    const firstInput = document.getElementById(errors[0]?.inputId ?? '') as HTMLElement | null;
+    firstInput?.focus();
+    return;
+  }
+
+  summary.textContent = '';
+  const header = document.createElement('p');
+  header.className = 'error-banner-header';
+  header.textContent = 'Please correct the following errors:';
+  summary.appendChild(header);
+
+  const list = document.createElement('ul');
+  list.className = 'error-banner-list';
+  errors.forEach((error) => {
+    const item = document.createElement('li');
+    const link = document.createElement('a');
+    link.href = `#${error.inputId}`;
+    link.className = 'underline';
+    link.textContent = error.message;
+    link.addEventListener('click', (event) => {
+      event.preventDefault();
+      const target = document.getElementById(error.inputId) as HTMLElement | null;
+      target?.focus();
+    });
+    item.appendChild(link);
+    list.appendChild(item);
+  });
+  summary.appendChild(list);
+  summary.style.display = 'block';
+  summary.focus();
+}
 
 function initializeBackupManagement(): void {
   setupEventListeners();
@@ -181,6 +256,23 @@ function createBackupItem(backup: BackupItem): string {
 async function createBackup(): Promise<void> {
   const backupNameInput = document.getElementById('backup-name') as HTMLInputElement | null;
   const backupName = backupNameInput?.value.trim() ?? '';
+  resetFieldError('backup-name', 'backup-name-error');
+  resetErrorSummary('backup-create-error-summary');
+  const validationErrors: FormValidationError[] = [];
+
+  if (backupName && !/^[A-Za-z0-9_-]*$/.test(backupName)) {
+    addFieldError(
+      validationErrors,
+      'backup-name',
+      'backup-name-error',
+      'Use letters, numbers, "_" or "-" only.'
+    );
+  }
+
+  if (validationErrors.length > 0) {
+    renderErrorSummary('backup-create-error-summary', validationErrors);
+    return;
+  }
 
   showProgress('backup-progress', 'Creating backup...');
 
@@ -314,6 +406,22 @@ async function confirmDelete(): Promise<void> {
 async function cleanupBackups(): Promise<void> {
   const retentionInput = document.getElementById('retention-days') as HTMLInputElement | null;
   const retentionDays = retentionInput?.value ?? '';
+  resetFieldError('retention-days', 'retention-days-error');
+  resetErrorSummary('cleanup-error-summary');
+  const validationErrors: FormValidationError[] = [];
+  const retentionValue = Number(retentionDays);
+  if (!Number.isFinite(retentionValue) || retentionValue < 1 || retentionValue > 3650) {
+    addFieldError(
+      validationErrors,
+      'retention-days',
+      'retention-days-error',
+      'Enter a value between 1 and 3650 days.'
+    );
+  }
+  if (validationErrors.length > 0) {
+    renderErrorSummary('cleanup-error-summary', validationErrors);
+    return;
+  }
 
   showProgress('maintenance-progress', 'Cleaning up old backups...');
 
@@ -348,6 +456,22 @@ async function cleanupBackups(): Promise<void> {
 async function compressBackups(): Promise<void> {
   const compressInput = document.getElementById('compress-days') as HTMLInputElement | null;
   const compressDays = compressInput?.value ?? '';
+  resetFieldError('compress-days', 'compress-days-error');
+  resetErrorSummary('compress-error-summary');
+  const validationErrors: FormValidationError[] = [];
+  const compressValue = Number(compressDays);
+  if (!Number.isFinite(compressValue) || compressValue < 1 || compressValue > 365) {
+    addFieldError(
+      validationErrors,
+      'compress-days',
+      'compress-days-error',
+      'Enter a value between 1 and 365 days.'
+    );
+  }
+  if (validationErrors.length > 0) {
+    renderErrorSummary('compress-error-summary', validationErrors);
+    return;
+  }
 
   showProgress('maintenance-progress', 'Compressing old backups...');
 
@@ -387,6 +511,8 @@ function refreshBackups(): void {
 function clearBackupForm(): void {
   const backupNameInput = document.getElementById('backup-name') as HTMLInputElement | null;
   if (backupNameInput) backupNameInput.value = '';
+  resetFieldError('backup-name', 'backup-name-error');
+  resetErrorSummary('backup-create-error-summary');
 }
 
 function formatBytes(bytes: number): string {

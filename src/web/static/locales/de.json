@@ -83,7 +83,13 @@
     "missingCommitMessage": "Erforderliches Feld fehlt",
     "unknownError": "Unbekannter Fehler",
     "selectTwoVersions": "Bitte wählen Sie genau 2 Versionen zum Vergleichen aus",
-    "selectPromptFirst": "Bitte wählen Sie zunächst eine Eingabeaufforderung aus"
+    "selectPromptFirst": "Bitte wählen Sie zunächst eine Eingabeaufforderung aus",
+    "suggestTagsMissingContent": "Fügen Sie Prompt-Inhalt hinzu, bevor Sie Vorschläge anfordern.",
+    "suggestTagsNoSuggestions": "Keine Vorschläge gefunden.",
+    "suggestTagsFailed": "Tag-Vorschläge konnten nicht abgerufen werden.",
+    "bulkTagProvideAtLeastOne": "Geben Sie mindestens einen Tag zum Hinzufügen oder Entfernen an.",
+    "bulkTagUpdateSuccess": "Tags für die ausgewählten Prompts aktualisiert.",
+    "bulkTagUpdateFailed": "Tags konnten nicht aktualisiert werden."
   },
   "validation": {
     "required": "Dieses Feld ist erforderlich.",

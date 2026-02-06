@@ -83,7 +83,13 @@
     "missingCommitMessage": "Campo requerido faltante",
     "unknownError": "Error desconocido",
     "selectTwoVersions": "Por favor, seleccione exactamente 2 versiones para comparar",
-    "selectPromptFirst": "Por favor, seleccione primero una sugerencia"
+    "selectPromptFirst": "Por favor, seleccione primero una sugerencia",
+    "suggestTagsMissingContent": "Agregue contenido al prompt antes de solicitar sugerencias.",
+    "suggestTagsNoSuggestions": "No se encontraron sugerencias.",
+    "suggestTagsFailed": "No se pudieron obtener sugerencias de etiquetas.",
+    "bulkTagProvideAtLeastOne": "Proporcione al menos una etiqueta para agregar o eliminar.",
+    "bulkTagUpdateSuccess": "Etiquetas actualizadas para los prompts seleccionados.",
+    "bulkTagUpdateFailed": "No se pudieron actualizar las etiquetas."
   },
   "validation": {
     "required": "Este campo es obligatorio.",

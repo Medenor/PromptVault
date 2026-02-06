@@ -9,6 +9,13 @@ PromptVault supports keyboard shortcuts to speed up navigation and editing.
 - `Escape`: Close open dialogs and editor panels
 - `?`: Open keyboard shortcuts and landmarks help modal
 
+## Filter Lists (Categories/Tags)
+
+- `Arrow Up` / `Arrow Down` (`Arrow Left` / `Arrow Right`): Move focus between filter items
+- `Home` / `End`: Jump to first/last filter item
+- `Enter` / `Space`: Activate focused filter item
+- `Any letter/character`: Jump to next filter item starting with that character (including CJK characters)
+
 ## Notes
 
 - `Ctrl` applies on Windows/Linux, `Cmd` applies on macOS.
