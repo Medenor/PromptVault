@@ -424,6 +424,17 @@ async function viewUser(userId: string): Promise<void> {
 async function editUser(userId: string): Promise<void> {
   try {
     const user = await apiGet<AdminUser>(`${API_BASE}/users/${userId}`);
+    // Reset validation state for the edit modal each time it opens.
+    const editSummary = document.getElementById('edit-user-error-summary') as HTMLElement | null;
+    if (editSummary) {
+      editSummary.textContent = '';
+      editSummary.style.display = 'none';
+      editSummary.classList.add('hidden');
+    }
+    showFieldError('edit-form-error', '');
+    const editRole = document.getElementById('edit-role') as HTMLElement | null;
+    editRole?.setAttribute('aria-invalid', 'false');
+
     (document.getElementById('edit-user-id') as HTMLInputElement | null)!.value = user.id;
     (document.getElementById('edit-role') as HTMLSelectElement | null)!.value = user.role;
     (document.getElementById('edit-is-active') as HTMLInputElement | null)!.checked =
@@ -446,6 +457,26 @@ async function saveUser(): Promise<void> {
   const emailVerified =
     (document.getElementById('edit-email-verified') as HTMLInputElement | null)?.checked || false;
 
+  // Minimal client-side validation to support the error summary pattern (T-ACC023).
+  const validationErrors: FormValidationError[] = [];
+  const editForm = document.getElementById('edit-user-form') as HTMLFormElement | null;
+  resetFormAccessibilityState(
+    editForm,
+    ['edit-role', 'edit-is-active', 'edit-email-verified'],
+    'edit-user-error-summary'
+  );
+  showFieldError('edit-form-error', '');
+  if (!role.trim()) {
+    addFieldError(
+      validationErrors,
+      'edit-role',
+      'edit-form-error',
+      t('validation.required') || 'Role is required'
+    );
+    renderErrorSummary('edit-user-error-summary', validationErrors);
+    return;
+  }
+
   try {
     await apiPut(`${API_BASE}/users/${userId}`, {
       role,
@@ -458,7 +489,26 @@ async function saveUser(): Promise<void> {
     await loadUsers();
   } catch (error) {
     if (error instanceof APIRequestError) {
-      showNotification(error.message || 'Failed to update user', 'error');
+      if (error.status === 422 && Array.isArray(error.error.detail)) {
+        const apiErrors: FormValidationError[] = [];
+        error.error.detail.forEach((err) => {
+          const errorMsg = err.msg || 'Validation error';
+          const field = String(err.loc?.[1] ?? '');
+          // Edit modal has few fields, so keep mapping small and predictable.
+          if (field === 'role') {
+            addFieldError(apiErrors, 'edit-role', 'edit-form-error', errorMsg);
+          } else if (field === 'is_active') {
+            addFieldError(apiErrors, 'edit-is-active', 'edit-form-error', errorMsg);
+          } else if (field === 'email_verified') {
+            addFieldError(apiErrors, 'edit-email-verified', 'edit-form-error', errorMsg);
+          } else {
+            showFieldError('edit-form-error', errorMsg);
+          }
+        });
+        renderErrorSummary('edit-user-error-summary', apiErrors);
+      } else {
+        showNotification(error.message || 'Failed to update user', 'error');
+      }
     } else {
       reportError('admin-users', 'saveUser', error);
       showNotification('Failed to update user', 'error');
@@ -625,6 +675,10 @@ function clearAllCreateUserErrors(): void {
     const element = document.getElementById(id);
     if (element) {
       element.textContent = '';
+      // Inline field errors are toggled via `.hidden`; the summary uses inline style (CSS default is `display:none`).
+      if (id === 'create-user-error-summary') {
+        (element as HTMLElement).style.display = 'none';
+      }
       element.classList.add('hidden');
     }
   });
@@ -655,6 +709,7 @@ function resetFormAccessibilityState(
   const summary = document.getElementById(summaryId);
   if (summary) {
     summary.textContent = '';
+    (summary as HTMLElement).style.display = 'none';
     summary.classList.add('hidden');
   }
 }
@@ -682,6 +737,7 @@ function renderErrorSummary(summaryId: string, errors: FormValidationError[]): v
 
   summary.textContent = '';
   summary.classList.remove('hidden');
+  (summary as HTMLElement).style.display = 'block';
 
   const header = document.createElement('p');
   header.className = 'error-banner-header';
@@ -706,7 +762,13 @@ function renderErrorSummary(summaryId: string, errors: FormValidationError[]): v
   }
   summary.appendChild(list);
 
-  summary.focus();
+  // Per plan T-ACC023: focus the first invalid field after rendering the summary.
+  const firstInput = document.getElementById(errors[0]?.inputId ?? '') as HTMLElement | null;
+  if (firstInput) {
+    firstInput.focus();
+  } else {
+    summary.focus();
+  }
 }
 
 function mapCreateUserField(field: string): { inputId: string; errorId: string } | null {

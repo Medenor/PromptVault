@@ -865,7 +865,14 @@ function showPromptErrorSummary(errors: PromptFieldError[]): void {
     });
   });
 
-  banner.focus();
+  // Per plan T-ACC023: focus the first invalid field after rendering the summary.
+  const firstFieldId = errors[0]?.fieldId;
+  const firstField = firstFieldId ? (document.getElementById(firstFieldId) as HTMLElement | null) : null;
+  if (firstField) {
+    firstField.focus();
+  } else {
+    banner.focus();
+  }
 }
 
 function clearPromptFieldError(fieldId: string, errorId: string): void {

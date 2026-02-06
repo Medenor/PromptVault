@@ -191,7 +191,14 @@ function renderErrorSummary(summaryId: string, errors: FormValidationError[]): v
   summary.appendChild(list);
 
   summary.style.display = 'block';
-  summary.focus();
+
+  // Per plan T-ACC023: focus the first invalid field after rendering the summary.
+  const firstInput = document.getElementById(errors[0]?.inputId ?? '') as HTMLElement | null;
+  if (firstInput) {
+    firstInput.focus();
+  } else {
+    summary.focus();
+  }
 }
 
 async function handleForgotPasswordSubmit(event: Event): Promise<void> {
