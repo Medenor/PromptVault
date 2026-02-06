@@ -55,7 +55,6 @@ def create_test_user(
     email: str,
     password: str,
     role: str = "viewer",
-    is_admin: bool = False
 ) -> User:
     """Create a test user if it doesn't exist.
     
@@ -65,7 +64,6 @@ def create_test_user(
         email: Email address
         password: Plain password
         role: User role (viewer, editor, admin)
-        is_admin: Whether user is admin
         
     Returns:
         User object (created or existing)
@@ -79,8 +77,8 @@ def create_test_user(
         logger.info(f"✓ Test user '{username}' already exists (ID: {existing_user.id})")
         return existing_user
     
-    # Create password hash
-    password_service = PasswordService()
+    # Create password hash (policy/params from auth_settings)
+    password_service = PasswordService(auth_settings)
     password_hash = password_service.hash_password(password)
     
     # Create new user
@@ -89,7 +87,6 @@ def create_test_user(
         email=email,
         password_hash=password_hash,
         role=role,
-        is_admin=is_admin,
         is_active=True,
         created_at=datetime.now(timezone.utc),
         updated_at=datetime.now(timezone.utc),
@@ -100,8 +97,7 @@ def create_test_user(
         session.commit()
         session.refresh(user)
         
-        role_str = "admin" if is_admin else role
-        logger.info(f"✓ Created test user '{username}' (role: {role_str}, ID: {user.id})")
+        logger.info(f"✓ Created test user '{username}' (role: {role}, ID: {user.id})")
         
         return user
     except IntegrityError as e:
@@ -125,8 +121,7 @@ def init_test_users():
             username=TEST_ADMIN_USERNAME,
             email=TEST_ADMIN_EMAIL,
             password=TEST_ADMIN_PASSWORD,
-            role="admin",
-            is_admin=True
+            role="admin"
         )
         
         logger.info("")
@@ -138,8 +133,7 @@ def init_test_users():
             username=TEST_USER_USERNAME,
             email=TEST_USER_EMAIL,
             password=TEST_USER_PASSWORD,
-            role="viewer",
-            is_admin=False
+            role="viewer"
         )
         
         logger.info("")
