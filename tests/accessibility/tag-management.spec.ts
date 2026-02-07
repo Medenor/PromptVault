@@ -17,7 +17,7 @@
  * - Live regions and announcements
  */
 
-import { test, expect } from '@playwright/test';
+import { expect } from '@playwright/test';
 import {
   validateSkipLinks,
   checkLandmarkRegions,
@@ -38,11 +38,12 @@ import {
 } from './utils/index.js';
 import { authenticatedAdminTest, navigateToProtectedRoute, getBaseURL } from './fixtures/auth.js';
 
+const test = authenticatedAdminTest;
 const baseURL = getBaseURL();
 
 // Define test suites organized by feature
-authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () => {
-  authenticatedAdminTest.beforeEach(async ({ authenticatedPage: page }) => {
+test.describe('Tag Management Page Accessibility Tests', () => {
+  test.beforeEach(async ({ authenticatedPage: page }) => {
     // Navigate to the tag management page
     await navigateToProtectedRoute(page, '/manage-tags');
     await page.waitForLoadState('networkidle');
@@ -51,13 +52,13 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
   // ============================================================================
   // 1. PAGE STRUCTURE TESTS
   // ============================================================================
-  authenticatedAdminTest.describe('Page Structure', () => {
-    authenticatedAdminTest('should have correct page title', async ({ authenticatedPage: page }) => {
+  test.describe('Page Structure', () => {
+    test('should have correct page title', async ({ authenticatedPage: page }) => {
       const title = await page.title();
       expect(title).toContain('Manage Tags');
     });
 
-    authenticatedAdminTest('should have required landmark regions', async ({ authenticatedPage: page }) => {
+    test('should have required landmark regions', async ({ authenticatedPage: page }) => {
       const landmarks = await checkLandmarkRegions(page);
       expect(landmarks.hasLandmarks).toBe(true);
 
@@ -70,7 +71,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       expect(hasBanner).toBe(true);
     });
 
-    authenticatedAdminTest('should have proper heading hierarchy', async ({ authenticatedPage: page }) => {
+    test('should have proper heading hierarchy', async ({ authenticatedPage: page }) => {
       const hierarchy = await validateHeadingHierarchy(page);
       expect(hierarchy.validHierarchy).toBe(
         true,
@@ -79,7 +80,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       expect(hierarchy.headings.length).toBeGreaterThan(0);
     });
 
-    authenticatedAdminTest('should have skip link to main content', async ({ authenticatedPage: page }) => {
+    test('should have skip link to main content', async ({ authenticatedPage: page }) => {
       const skipLinks = await validateSkipLinks(page);
       expect(skipLinks.hasSkipLink).toBe(
         true,
@@ -91,7 +92,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       expect(mainLink).toBeDefined();
     });
 
-    authenticatedAdminTest('skip link should focus main content when activated', async ({ authenticatedPage: page }) => {
+    test('skip link should focus main content when activated', async ({ authenticatedPage: page }) => {
       // Tab to skip link
       await page.keyboard.press('Tab');
 
@@ -117,15 +118,15 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
   // ============================================================================
   // 2. TAG LIST STRUCTURE TESTS
   // ============================================================================
-  authenticatedAdminTest.describe('Tag List Structure', () => {
-    authenticatedAdminTest('should have tags listed in table format', async ({ authenticatedPage: page }) => {
+  test.describe('Tag List Structure', () => {
+    test('should have tags listed in table format', async ({ authenticatedPage: page }) => {
       // Check if table or list exists
       const table = page.locator('#tags-table-body');
       const exists = await table.count();
       expect(exists).toBeGreaterThan(0);
     });
 
-    authenticatedAdminTest('tag table should have proper headers', async ({ authenticatedPage: page }) => {
+    test('tag table should have proper headers', async ({ authenticatedPage: page }) => {
       // Check for table headers
       const headers = await page.locator('table thead th').all();
       expect(headers.length).toBeGreaterThan(0);
@@ -137,7 +138,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       expect(headerTexts.some((t) => t?.toLowerCase().includes('name'))).toBe(true);
     });
 
-    authenticatedAdminTest('each tag row should have accessible checkbox for selection', async ({ authenticatedPage: page }) => {
+    test('each tag row should have accessible checkbox for selection', async ({ authenticatedPage: page }) => {
       // If there are tag rows, check for checkboxes
       const checkboxes = await page.locator('tbody tr input[type="checkbox"]').all();
 
@@ -152,7 +153,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       }
     });
 
-    authenticatedAdminTest('tag items should have tag name accessible in each row', async ({ authenticatedPage: page }) => {
+    test('tag items should have tag name accessible in each row', async ({ authenticatedPage: page }) => {
       // Get first tag row if any
       const firstRow = page.locator('tbody tr').first();
       const exists = await firstRow.count();
@@ -164,7 +165,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       }
     });
 
-    authenticatedAdminTest('tag color badge should not be the only indicator', async ({ authenticatedPage: page }) => {
+    test('tag color badge should not be the only indicator', async ({ authenticatedPage: page }) => {
       // Verify tags have text labels, not just color
       const firstRow = page.locator('tbody tr').first();
       const exists = await firstRow.count();
@@ -181,8 +182,8 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
   // ============================================================================
   // 3. ROVING TABINDEX PATTERN TESTS
   // ============================================================================
-  authenticatedAdminTest.describe('Roving Tabindex Pattern in Tag List', () => {
-    authenticatedAdminTest('only ONE tag item should have tabindex="0" at a time', async ({ authenticatedPage: page }) => {
+  test.describe('Roving Tabindex Pattern in Tag List', () => {
+    test('only ONE tag item should have tabindex="0" at a time', async ({ authenticatedPage: page }) => {
       // Get all tag rows
       const rows = await page.locator('tbody tr').all();
       if (rows.length === 0) {
@@ -205,7 +206,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       }
     });
 
-    authenticatedAdminTest('all other tag items should have tabindex="-1"', async ({ authenticatedPage: page }) => {
+    test('all other tag items should have tabindex="-1"', async ({ authenticatedPage: page }) => {
       // Get all checkboxes in tag list
       const checkboxes = await page.locator('tbody input[type="checkbox"]').all();
       if (checkboxes.length < 2) {
@@ -232,7 +233,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       }
     });
 
-    authenticatedAdminTest('Tab key should move focus into the list', async ({ authenticatedPage: page }) => {
+    test('Tab key should move focus into the list', async ({ authenticatedPage: page }) => {
       // Get the table container
       const tableContainer = page.locator('#tags-table-container');
       const exists = await tableContainer.count();
@@ -258,7 +259,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       expect(focusedElement.isInTable || focusedElement.id || focusedElement.type).toBeTruthy();
     });
 
-    authenticatedAdminTest('Tab again should move focus OUT of the list', async ({ authenticatedPage: page }) => {
+    test('Tab again should move focus OUT of the list', async ({ authenticatedPage: page }) => {
       // Get all rows
       const rows = await page.locator('tbody tr').all();
       if (rows.length === 0) {
@@ -285,7 +286,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       expect(nextFocusId || 'focus-moved').toBeTruthy();
     });
 
-    authenticatedAdminTest('focus should not be trapped in the list', async ({ authenticatedPage: page }) => {
+    test('focus should not be trapped in the list', async ({ authenticatedPage: page }) => {
       // Tab multiple times and verify we exit eventually
       const focusHistory = [];
 
@@ -308,8 +309,8 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
   // ============================================================================
   // 4. ARROW KEY NAVIGATION TESTS
   // ============================================================================
-  authenticatedAdminTest.describe('Arrow Key Navigation', () => {
-    authenticatedAdminTest('Down arrow should move to next tag', async ({ authenticatedPage: page }) => {
+  test.describe('Arrow Key Navigation', () => {
+    test('Down arrow should move to next tag', async ({ authenticatedPage: page }) => {
       // Get all rows
       const rows = await page.locator('tbody tr').all();
       if (rows.length < 2) {
@@ -348,7 +349,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       expect(newFocus.rowIndex >= 0 || newFocus.elementId).toBeTruthy();
     });
 
-    authenticatedAdminTest('Up arrow should move to previous tag', async ({ authenticatedPage: page }) => {
+    test('Up arrow should move to previous tag', async ({ authenticatedPage: page }) => {
       // Get all rows
       const rows = await page.locator('tbody tr').all();
       if (rows.length < 2) {
@@ -381,7 +382,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       expect(newRowIndex >= 0 || initialRowIndex >= 0).toBeTruthy();
     });
 
-    authenticatedAdminTest('tabindex should update during navigation', async ({ authenticatedPage: page }) => {
+    test('tabindex should update during navigation', async ({ authenticatedPage: page }) => {
       // Get all rows
       const rows = await page.locator('tbody tr').all();
       if (rows.length < 2) {
@@ -414,7 +415,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       expect([firstTabindexAfter, secondTabindexAfter]).toContain('-1');
     });
 
-    authenticatedAdminTest('focus styling should be visible during navigation', async ({ authenticatedPage: page }) => {
+    test('focus styling should be visible during navigation', async ({ authenticatedPage: page }) => {
       // Get rows
       const rows = await page.locator('tbody tr').all();
       if (rows.length < 2) {
@@ -434,8 +435,8 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
   // ============================================================================
   // 5. HOME/END KEY NAVIGATION TESTS
   // ============================================================================
-  authenticatedAdminTest.describe('Home/End Key Navigation', () => {
-    authenticatedAdminTest('Home key should jump to first tag', async ({ authenticatedPage: page }) => {
+  test.describe('Home/End Key Navigation', () => {
+    test('Home key should jump to first tag', async ({ authenticatedPage: page }) => {
       // Get all rows
       const rows = await page.locator('tbody tr').all();
       if (rows.length < 2) {
@@ -464,7 +465,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       expect(focusedRowIndex).toBeLessThanOrEqual(middleIndex);
     });
 
-    authenticatedAdminTest('End key should jump to last tag', async ({ authenticatedPage: page }) => {
+    test('End key should jump to last tag', async ({ authenticatedPage: page }) => {
       // Get all rows
       const rows = await page.locator('tbody tr').all();
       if (rows.length < 2) {
@@ -492,7 +493,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       expect(focusedRowIndex > 0 || focusedRowIndex === 0).toBeTruthy();
     });
 
-    authenticatedAdminTest('tabindex values should update after Home/End navigation', async ({ authenticatedPage: page }) => {
+    test('tabindex values should update after Home/End navigation', async ({ authenticatedPage: page }) => {
       // Get all rows
       const rows = await page.locator('tbody tr').all();
       if (rows.length < 2) {
@@ -521,8 +522,8 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
   // ============================================================================
   // 6. TYPEAHEAD SEARCH TESTS
   // ============================================================================
-  authenticatedAdminTest.describe('Typeahead Search', () => {
-    authenticatedAdminTest('typing a letter should focus matching tag', async ({ authenticatedPage: page }) => {
+  test.describe('Typeahead Search', () => {
+    test('typing a letter should focus matching tag', async ({ authenticatedPage: page }) => {
       // Get all rows and first tag name
       const rows = await page.locator('tbody tr').all();
       if (rows.length === 0) {
@@ -555,7 +556,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       expect(focusedElement.isCheckbox || focusedElement.inTable).toBeTruthy();
     });
 
-    authenticatedAdminTest('typing multiple letters in quick succession should search', async ({ authenticatedPage: page }) => {
+    test('typing multiple letters in quick succession should search', async ({ authenticatedPage: page }) => {
       // Get all rows
       const rows = await page.locator('tbody tr').all();
       if (rows.length === 0) {
@@ -581,7 +582,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       expect(focused).toBe(true);
     });
 
-    authenticatedAdminTest('typeahead should be case-insensitive', async ({ authenticatedPage: page }) => {
+    test('typeahead should be case-insensitive', async ({ authenticatedPage: page }) => {
       // Get all rows and first tag name
       const rows = await page.locator('tbody tr').all();
       if (rows.length === 0) {
@@ -611,7 +612,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       expect(focused).toBe(true);
     });
 
-    authenticatedAdminTest('typeahead timeout should clear search state', async ({ authenticatedPage: page }) => {
+    test('typeahead timeout should clear search state', async ({ authenticatedPage: page }) => {
       // Get all rows
       const rows = await page.locator('tbody tr').all();
       if (rows.length < 2) {
@@ -637,7 +638,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       expect(focused).toBe(true);
     });
 
-    authenticatedAdminTest('typeahead should wrap around in search results', async ({ authenticatedPage: page }) => {
+    test('typeahead should wrap around in search results', async ({ authenticatedPage: page }) => {
       // Get all rows
       const rows = await page.locator('tbody tr').all();
       if (rows.length < 2) {
@@ -668,8 +669,8 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
   // ============================================================================
   // 7. TAG OPERATIONS - MERGE FUNCTIONALITY
   // ============================================================================
-  authenticatedAdminTest.describe('Tag Merge Operation', () => {
-    authenticatedAdminTest('merge button should have accessible label', async ({ authenticatedPage: page }) => {
+  test.describe('Tag Merge Operation', () => {
+    test('merge button should have accessible label', async ({ authenticatedPage: page }) => {
       const mergeBtn = page.locator('#tag-merge-btn');
       const exists = await mergeBtn.count();
 
@@ -679,7 +680,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       }
     });
 
-    authenticatedAdminTest('merge target input should be labeled', async ({ authenticatedPage: page }) => {
+    test('merge target input should be labeled', async ({ authenticatedPage: page }) => {
       const mergeTargetInput = page.locator('#tag-merge-target');
       const exists = await mergeTargetInput.count();
 
@@ -690,7 +691,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       }
     });
 
-    authenticatedAdminTest('merge sources input should be labeled', async ({ authenticatedPage: page }) => {
+    test('merge sources input should be labeled', async ({ authenticatedPage: page }) => {
       const mergeSourcesInput = page.locator('#tag-merge-sources');
       const exists = await mergeSourcesInput.count();
 
@@ -701,7 +702,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       }
     });
 
-    authenticatedAdminTest('merge help text should be associated with inputs', async ({ authenticatedPage: page }) => {
+    test('merge help text should be associated with inputs', async ({ authenticatedPage: page }) => {
       // Help text should be associated via aria-describedby
       const targetInput = page.locator('#tag-merge-target');
       const hasDescribedBy = await targetInput.evaluate((el) => {
@@ -712,7 +713,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       expect(targetInput).toBeDefined();
     });
 
-    authenticatedAdminTest('merge section should have error announcements', async ({ authenticatedPage: page }) => {
+    test('merge section should have error announcements', async ({ authenticatedPage: page }) => {
       // Check for live region
       const errorBanner = page.locator('#tag-merge-error-summary');
       const exists = await errorBanner.count();
@@ -726,7 +727,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       expect(hasAlertRole || errorBanner).toBeDefined();
     });
 
-    authenticatedAdminTest('merge operation should be completable via keyboard', async ({ authenticatedPage: page }) => {
+    test('merge operation should be completable via keyboard', async ({ authenticatedPage: page }) => {
       const targetInput = page.locator('#tag-merge-target');
       const exists = await targetInput.count();
 
@@ -751,8 +752,8 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
   // ============================================================================
   // 8. TAG OPERATIONS - FIND & REPLACE FUNCTIONALITY
   // ============================================================================
-  authenticatedAdminTest.describe('Tag Find & Replace Operation', () => {
-    authenticatedAdminTest('find input should be labeled', async ({ authenticatedPage: page }) => {
+  test.describe('Tag Find & Replace Operation', () => {
+    test('find input should be labeled', async ({ authenticatedPage: page }) => {
       const findInput = page.locator('#tag-find');
       const exists = await findInput.count();
 
@@ -763,7 +764,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       }
     });
 
-    authenticatedAdminTest('replace input should be labeled', async ({ authenticatedPage: page }) => {
+    test('replace input should be labeled', async ({ authenticatedPage: page }) => {
       const replaceInput = page.locator('#tag-replace');
       const exists = await replaceInput.count();
 
@@ -774,7 +775,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       }
     });
 
-    authenticatedAdminTest('find/replace button should have accessible label', async ({ authenticatedPage: page }) => {
+    test('find/replace button should have accessible label', async ({ authenticatedPage: page }) => {
       const replaceBtn = page.locator('#tag-find-replace-btn');
       const exists = await replaceBtn.count();
 
@@ -784,13 +785,13 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       }
     });
 
-    authenticatedAdminTest('find/replace section should have error announcements', async ({ authenticatedPage: page }) => {
+    test('find/replace section should have error announcements', async ({ authenticatedPage: page }) => {
       const errorBanner = page.locator('#tag-find-replace-error-summary');
       const exists = await errorBanner.count();
       expect(exists).toBeGreaterThan(0);
     });
 
-    authenticatedAdminTest('find/replace operation should be completable via keyboard', async ({ authenticatedPage: page }) => {
+    test('find/replace operation should be completable via keyboard', async ({ authenticatedPage: page }) => {
       const findInput = page.locator('#tag-find');
       const exists = await findInput.count();
 
@@ -811,8 +812,8 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
   // ============================================================================
   // 9. TAG OPERATIONS - BULK DELETE FUNCTIONALITY
   // ============================================================================
-  authenticatedAdminTest.describe('Tag Bulk Delete Operation', () => {
-    authenticatedAdminTest('bulk delete IDs input should be labeled', async ({ authenticatedPage: page }) => {
+  test.describe('Tag Bulk Delete Operation', () => {
+    test('bulk delete IDs input should be labeled', async ({ authenticatedPage: page }) => {
       const bulkDeleteInput = page.locator('#tag-bulk-delete-ids');
       const exists = await bulkDeleteInput.count();
 
@@ -822,7 +823,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       }
     });
 
-    authenticatedAdminTest('force delete checkbox should be labeled', async ({ authenticatedPage: page }) => {
+    test('force delete checkbox should be labeled', async ({ authenticatedPage: page }) => {
       const forceCheckbox = page.locator('#tag-bulk-delete-force');
       const exists = await forceCheckbox.count();
 
@@ -834,7 +835,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       }
     });
 
-    authenticatedAdminTest('bulk delete button should have accessible label', async ({ authenticatedPage: page }) => {
+    test('bulk delete button should have accessible label', async ({ authenticatedPage: page }) => {
       const deleteBtn = page.locator('#tag-bulk-delete-btn');
       const exists = await deleteBtn.count();
 
@@ -844,7 +845,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       }
     });
 
-    authenticatedAdminTest('bulk delete section should have error announcements', async ({ authenticatedPage: page }) => {
+    test('bulk delete section should have error announcements', async ({ authenticatedPage: page }) => {
       const errorBanner = page.locator('#tag-bulk-delete-error-summary');
       const exists = await errorBanner.count();
       expect(exists).toBeGreaterThan(0);
@@ -854,8 +855,8 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
   // ============================================================================
   // 10. TAG SEARCH/FILTER FUNCTIONALITY
   // ============================================================================
-  authenticatedAdminTest.describe('Tag Search/Filter', () => {
-    authenticatedAdminTest('search input should have accessible label', async ({ authenticatedPage: page }) => {
+  test.describe('Tag Search/Filter', () => {
+    test('search input should have accessible label', async ({ authenticatedPage: page }) => {
       const searchInput = page.locator('#tag-search');
       const exists = await searchInput.count();
 
@@ -866,7 +867,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       }
     });
 
-    authenticatedAdminTest('search input should be keyboard accessible', async ({ authenticatedPage: page }) => {
+    test('search input should be keyboard accessible', async ({ authenticatedPage: page }) => {
       const searchInput = page.locator('#tag-search');
       const exists = await searchInput.count();
 
@@ -898,7 +899,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       }
     });
 
-    authenticatedAdminTest('search results should maintain focus management', async ({ authenticatedPage: page }) => {
+    test('search results should maintain focus management', async ({ authenticatedPage: page }) => {
       const searchInput = page.locator('#tag-search');
       const exists = await searchInput.count();
 
@@ -922,8 +923,8 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
   // ============================================================================
   // 11. CREATE TAG FORM ACCESSIBILITY
   // ============================================================================
-  authenticatedAdminTest.describe('Create Tag Form', () => {
-    authenticatedAdminTest('should have properly labeled form inputs', async ({ authenticatedPage: page }) => {
+  test.describe('Create Tag Form', () => {
+    test('should have properly labeled form inputs', async ({ authenticatedPage: page }) => {
       const formLabels = await validateFormLabels(page);
       expect(formLabels.allLabeled).toBe(
         true,
@@ -931,7 +932,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       );
     });
 
-    authenticatedAdminTest('tag name input should have accessible name', async ({ authenticatedPage: page }) => {
+    test('tag name input should have accessible name', async ({ authenticatedPage: page }) => {
       const nameInput = page.locator('#tag-create-name');
       const exists = await nameInput.count();
 
@@ -942,7 +943,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       }
     });
 
-    authenticatedAdminTest('tag description input should have accessible name', async ({ authenticatedPage: page }) => {
+    test('tag description input should have accessible name', async ({ authenticatedPage: page }) => {
       const descInput = page.locator('#tag-create-description');
       const exists = await descInput.count();
 
@@ -952,7 +953,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       }
     });
 
-    authenticatedAdminTest('tag color input should have accessible name', async ({ authenticatedPage: page }) => {
+    test('tag color input should have accessible name', async ({ authenticatedPage: page }) => {
       const colorInput = page.locator('#tag-create-color');
       const exists = await colorInput.count();
 
@@ -962,7 +963,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       }
     });
 
-    authenticatedAdminTest('tag color picker should have accessible name', async ({ authenticatedPage: page }) => {
+    test('tag color picker should have accessible name', async ({ authenticatedPage: page }) => {
       const colorPicker = page.locator('#tag-create-color-picker');
       const exists = await colorPicker.count();
 
@@ -973,7 +974,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       }
     });
 
-    authenticatedAdminTest('create button should have accessible label', async ({ authenticatedPage: page }) => {
+    test('create button should have accessible label', async ({ authenticatedPage: page }) => {
       const createBtn = page.locator('#tag-create-form button[type="submit"]');
       const exists = await createBtn.count();
 
@@ -983,7 +984,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       }
     });
 
-    authenticatedAdminTest('form should be keyboard navigable', async ({ authenticatedPage: page }) => {
+    test('form should be keyboard navigable', async ({ authenticatedPage: page }) => {
       // Tab through form inputs
       await page.keyboard.press('Tab'); // Skip link
       await page.keyboard.press('Tab'); // Logo/home link
@@ -1016,8 +1017,8 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
   // ============================================================================
   // 12. TAG OPERATIONS - ADD/EDIT/DELETE
   // ============================================================================
-  authenticatedAdminTest.describe('Tag Add/Edit/Delete Operations', () => {
-    authenticatedAdminTest('add tag button should be accessible', async ({ authenticatedPage: page }) => {
+  test.describe('Tag Add/Edit/Delete Operations', () => {
+    test('add tag button should be accessible', async ({ authenticatedPage: page }) => {
       const addBtn = page.locator('#tag-create-form button[type="submit"]');
       const exists = await addBtn.count();
 
@@ -1027,7 +1028,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       }
     });
 
-    authenticatedAdminTest('tag form modal should be accessible', async ({ authenticatedPage: page }) => {
+    test('tag form modal should be accessible', async ({ authenticatedPage: page }) => {
       const createForm = page.locator('#tag-create-form');
       const exists = await createForm.count();
       expect(exists).toBeGreaterThan(0);
@@ -1038,7 +1039,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       expect(formLabels).toBeDefined();
     });
 
-    authenticatedAdminTest('delete confirmation should be accessible', async ({ authenticatedPage: page }) => {
+    test('delete confirmation should be accessible', async ({ authenticatedPage: page }) => {
       // Confirm page has delete functionality available
       const deleteButtons = await page.locator('button:has-text("Delete"), button[aria-label*="Delete"], button[aria-label*="delete"]').count();
       // May or may not have delete buttons visible without data
@@ -1049,8 +1050,8 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
   // ============================================================================
   // 13. TAG VISUAL INDICATORS AND ACCESSIBILITY
   // ============================================================================
-  authenticatedAdminTest.describe('Tag Visual Indicators', () => {
-    authenticatedAdminTest('tag color should not be only indicator', async ({ authenticatedPage: page }) => {
+  test.describe('Tag Visual Indicators', () => {
+    test('tag color should not be only indicator', async ({ authenticatedPage: page }) => {
       // Verify tags have text labels alongside color
       const rows = await page.locator('tbody tr').all();
 
@@ -1062,14 +1063,14 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       }
     });
 
-    authenticatedAdminTest('tag usage count should be accessible', async ({ authenticatedPage: page }) => {
+    test('tag usage count should be accessible', async ({ authenticatedPage: page }) => {
       // Check for usage count elements
       const usageElements = await page.locator('[id*="usage"], [id*="count"]').count();
       // Should have some indicators
       expect(usageElements >= 0).toBe(true);
     });
 
-    authenticatedAdminTest('tag associations should be accessible', async ({ authenticatedPage: page }) => {
+    test('tag associations should be accessible', async ({ authenticatedPage: page }) => {
       // Check if tag associations are displayed
       const rows = await page.locator('tbody tr').all();
       if (rows.length > 0) {
@@ -1083,8 +1084,8 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
   // ============================================================================
   // 14. BUTTONS AND INTERACTIVE ELEMENTS
   // ============================================================================
-  authenticatedAdminTest.describe('Buttons and Interactive Elements', () => {
-    authenticatedAdminTest('all buttons should have accessible labels', async ({ authenticatedPage: page }) => {
+  test.describe('Buttons and Interactive Elements', () => {
+    test('all buttons should have accessible labels', async ({ authenticatedPage: page }) => {
       const buttonLabels = await validateButtonLabels(page);
       expect(buttonLabels.allButtonsLabeled).toBe(
         true,
@@ -1092,7 +1093,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       );
     });
 
-    authenticatedAdminTest('save all button should have accessible label', async ({ authenticatedPage: page }) => {
+    test('save all button should have accessible label', async ({ authenticatedPage: page }) => {
       const saveAllBtn = page.locator('#tag-save-all-btn');
       const exists = await saveAllBtn.count();
 
@@ -1102,7 +1103,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       }
     });
 
-    authenticatedAdminTest('merge selected button should have accessible label', async ({ authenticatedPage: page }) => {
+    test('merge selected button should have accessible label', async ({ authenticatedPage: page }) => {
       const mergeSelectedBtn = page.locator('#tag-selection-merge-btn');
       const exists = await mergeSelectedBtn.count();
 
@@ -1112,7 +1113,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       }
     });
 
-    authenticatedAdminTest('find/replace selected button should have accessible label', async ({ authenticatedPage: page }) => {
+    test('find/replace selected button should have accessible label', async ({ authenticatedPage: page }) => {
       const findReplaceSelectedBtn = page.locator('#tag-selection-find-replace-btn');
       const exists = await findReplaceSelectedBtn.count();
 
@@ -1122,7 +1123,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       }
     });
 
-    authenticatedAdminTest('undo button should have accessible label', async ({ authenticatedPage: page }) => {
+    test('undo button should have accessible label', async ({ authenticatedPage: page }) => {
       const undoBtn = page.locator('#tag-undo-btn');
       const exists = await undoBtn.count();
 
@@ -1132,12 +1133,12 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       }
     });
 
-    authenticatedAdminTest('all buttons should be keyboard accessible', async ({ authenticatedPage: page }) => {
+    test('all buttons should be keyboard accessible', async ({ authenticatedPage: page }) => {
       const tabOrder = await extractTabOrder(page);
       expect(tabOrder.length).toBeGreaterThan(0);
     });
 
-    authenticatedAdminTest('export button should have accessible label', async ({ authenticatedPage: page }) => {
+    test('export button should have accessible label', async ({ authenticatedPage: page }) => {
       const exportBtn = page.locator('#tag-export-btn');
       const exists = await exportBtn.count();
 
@@ -1147,7 +1148,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       }
     });
 
-    authenticatedAdminTest('import button should have accessible label', async ({ authenticatedPage: page }) => {
+    test('import button should have accessible label', async ({ authenticatedPage: page }) => {
       const importBtn = page.locator('#tag-import-btn');
       const exists = await importBtn.count();
 
@@ -1157,7 +1158,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       }
     });
 
-    authenticatedAdminTest('import file input should be labeled', async ({ authenticatedPage: page }) => {
+    test('import file input should be labeled', async ({ authenticatedPage: page }) => {
       const importInput = page.locator('#tag-import-file');
       const exists = await importInput.count();
 
@@ -1172,13 +1173,13 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
   // ============================================================================
   // 15. LIVE REGIONS AND ANNOUNCEMENTS
   // ============================================================================
-  authenticatedAdminTest.describe('Live Regions and Announcements', () => {
-    authenticatedAdminTest('page should have live regions for announcements', async ({ authenticatedPage: page }) => {
+  test.describe('Live Regions and Announcements', () => {
+    test('page should have live regions for announcements', async ({ authenticatedPage: page }) => {
       const liveRegions = await checkLiveRegions(page);
       expect(liveRegions).toBeDefined();
     });
 
-    authenticatedAdminTest('error banners should be live regions', async ({ authenticatedPage: page }) => {
+    test('error banners should be live regions', async ({ authenticatedPage: page }) => {
       const errorBanners = await page.locator('[role="alert"]').all();
 
       if (errorBanners.length > 0) {
@@ -1189,7 +1190,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       }
     });
 
-    authenticatedAdminTest('validation announcements should use aria-live', async ({ authenticatedPage: page }) => {
+    test('validation announcements should use aria-live', async ({ authenticatedPage: page }) => {
       const liveElements = await page.locator('[aria-live]').all();
 
       if (liveElements.length > 0) {
@@ -1201,8 +1202,8 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
   // ============================================================================
   // 16. COLOR CONTRAST TESTS
   // ============================================================================
-  authenticatedAdminTest.describe('Color Contrast (WCAG AA)', () => {
-    authenticatedAdminTest('page headings should have sufficient contrast', async ({ authenticatedPage: page }) => {
+  test.describe('Color Contrast (WCAG AA)', () => {
+    test('page headings should have sufficient contrast', async ({ authenticatedPage: page }) => {
       const headings = await page.locator('h1, h2, h3').all();
 
       if (headings.length > 0) {
@@ -1216,7 +1217,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       }
     });
 
-    authenticatedAdminTest('button text should have sufficient contrast', async ({ authenticatedPage: page }) => {
+    test('button text should have sufficient contrast', async ({ authenticatedPage: page }) => {
       const buttons = await page.locator('button').all();
 
       if (buttons.length > 0) {
@@ -1230,7 +1231,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       }
     });
 
-    authenticatedAdminTest('form label text should have sufficient contrast', async ({ authenticatedPage: page }) => {
+    test('form label text should have sufficient contrast', async ({ authenticatedPage: page }) => {
       const labels = await page.locator('label').all();
 
       if (labels.length > 0) {
@@ -1244,7 +1245,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       }
     });
 
-    authenticatedAdminTest('input fields should have sufficient contrast on border', async ({ authenticatedPage: page }) => {
+    test('input fields should have sufficient contrast on border', async ({ authenticatedPage: page }) => {
       const inputs = await page.locator('input[type="text"], input[type="number"]').all();
 
       if (inputs.length > 0) {
@@ -1258,7 +1259,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       }
     });
 
-    authenticatedAdminTest('focus indicators should have sufficient contrast', async ({ authenticatedPage: page }) => {
+    test('focus indicators should have sufficient contrast', async ({ authenticatedPage: page }) => {
       await page.keyboard.press('Tab');
 
       const activeElement = page.locator(':focus');
@@ -1270,7 +1271,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       }
     });
 
-    authenticatedAdminTest('error message text should have sufficient contrast', async ({ authenticatedPage: page }) => {
+    test('error message text should have sufficient contrast', async ({ authenticatedPage: page }) => {
       const errorMessages = await page.locator('[id*="-error"]').all();
 
       if (errorMessages.length > 0) {
@@ -1287,8 +1288,8 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
   // ============================================================================
   // 17. FOCUS MANAGEMENT AND KEYBOARD-ONLY WORKFLOW
   // ============================================================================
-  authenticatedAdminTest.describe('Focus Management and Keyboard-Only Workflow', () => {
-    authenticatedAdminTest('focus should be visible when tabbing through page', async ({ authenticatedPage: page }) => {
+  test.describe('Focus Management and Keyboard-Only Workflow', () => {
+    test('focus should be visible when tabbing through page', async ({ authenticatedPage: page }) => {
       for (let i = 0; i < 5; i++) {
         await page.keyboard.press('Tab');
 
@@ -1301,7 +1302,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       }
     });
 
-    authenticatedAdminTest('focus should not be trapped in any section', async ({ authenticatedPage: page }) => {
+    test('focus should not be trapped in any section', async ({ authenticatedPage: page }) => {
       const focusHistory = [];
 
       for (let i = 0; i < 20; i++) {
@@ -1323,7 +1324,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       expect(uniqueFocuses.size).toBeGreaterThan(1);
     });
 
-    authenticatedAdminTest('Shift+Tab should navigate backwards', async ({ authenticatedPage: page }) => {
+    test('Shift+Tab should navigate backwards', async ({ authenticatedPage: page }) => {
       await page.keyboard.press('Tab');
       const firstFocus = await page.evaluate(() => document.activeElement?.id || '');
 
@@ -1336,7 +1337,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       expect(backFocus).toBeTruthy();
     });
 
-    authenticatedAdminTest('keyboard-only navigation of tag list should work', async ({ authenticatedPage: page }) => {
+    test('keyboard-only navigation of tag list should work', async ({ authenticatedPage: page }) => {
       const rows = await page.locator('tbody tr').all();
       if (rows.length < 2) {
         return;
@@ -1365,8 +1366,8 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
   // ============================================================================
   // 18. BULK OPERATIONS ACCESSIBILITY
   // ============================================================================
-  authenticatedAdminTest.describe('Bulk Operations Accessibility', () => {
-    authenticatedAdminTest('bulk select functionality should be accessible', async ({ authenticatedPage: page }) => {
+  test.describe('Bulk Operations Accessibility', () => {
+    test('bulk select functionality should be accessible', async ({ authenticatedPage: page }) => {
       const checkboxes = await page.locator('tbody input[type="checkbox"]').all();
       if (checkboxes.length < 2) {
         return;
@@ -1383,7 +1384,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       expect([firstChecked, secondChecked]).toContain(true);
     });
 
-    authenticatedAdminTest('select all button should be accessible', async ({ authenticatedPage: page }) => {
+    test('select all button should be accessible', async ({ authenticatedPage: page }) => {
       const selectAllBtn = page.locator('button:has-text("Select All"), button[aria-label*="Select All"]').first();
       const exists = await selectAllBtn.count();
 
@@ -1393,7 +1394,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       }
     });
 
-    authenticatedAdminTest('bulk operation buttons should have clear names', async ({ authenticatedPage: page }) => {
+    test('bulk operation buttons should have clear names', async ({ authenticatedPage: page }) => {
       const bulkBtns = await page.locator('button[id*="selection"]').all();
 
       for (const btn of bulkBtns) {
@@ -1403,7 +1404,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       }
     });
 
-    authenticatedAdminTest('selected count announcement should be accessible', async ({ authenticatedPage: page }) => {
+    test('selected count announcement should be accessible', async ({ authenticatedPage: page }) => {
       const rows = await page.locator('tbody tr').all();
       if (rows.length < 2) {
         return;
@@ -1425,8 +1426,8 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
   // ============================================================================
   // 19. TAG USAGE INFORMATION ACCESSIBILITY
   // ============================================================================
-  authenticatedAdminTest.describe('Tag Usage Information', () => {
-    authenticatedAdminTest('tag usage count should be accessible', async ({ authenticatedPage: page }) => {
+  test.describe('Tag Usage Information', () => {
+    test('tag usage count should be accessible', async ({ authenticatedPage: page }) => {
       const rows = await page.locator('tbody tr').all();
       if (rows.length === 0) {
         return;
@@ -1437,7 +1438,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       expect(usageText).toBeTruthy();
     });
 
-    authenticatedAdminTest('unused tag indicator should be accessible', async ({ authenticatedPage: page }) => {
+    test('unused tag indicator should be accessible', async ({ authenticatedPage: page }) => {
       // Check if unused tag information is available
       const unusedIndicators = await page.locator('[id*="unused"], [aria-label*="unused"]').count();
       expect(unusedIndicators >= 0).toBe(true);
@@ -1447,15 +1448,15 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
   // ============================================================================
   // 20. VISUAL TESTING - SCREENSHOTS
   // ============================================================================
-  authenticatedAdminTest.describe('Visual Accessibility Tests', () => {
-    authenticatedAdminTest('should capture page in normal state', async ({ authenticatedPage: page }) => {
+  test.describe('Visual Accessibility Tests', () => {
+    test('should capture page in normal state', async ({ authenticatedPage: page }) => {
       await capturePageWithHighlight(
         page,
         'tests/accessibility/reports/tag-management-normal.png'
       );
     });
 
-    authenticatedAdminTest('should capture focused form input', async ({ authenticatedPage: page }) => {
+    test('should capture focused form input', async ({ authenticatedPage: page }) => {
       const nameInput = page.locator('#tag-create-name');
       const exists = await nameInput.count();
 
@@ -1469,7 +1470,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       }
     });
 
-    authenticatedAdminTest('should capture tag table with focus', async ({ authenticatedPage: page }) => {
+    test('should capture tag table with focus', async ({ authenticatedPage: page }) => {
       const table = page.locator('#tags-table-body');
       await table.scrollIntoViewIfNeeded();
 
@@ -1485,7 +1486,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       }
     });
 
-    authenticatedAdminTest('should capture tag table with selected items', async ({ authenticatedPage: page }) => {
+    test('should capture tag table with selected items', async ({ authenticatedPage: page }) => {
       const checkboxes = await page.locator('tbody input[type="checkbox"]').all();
       if (checkboxes.length < 2) {
         return;
@@ -1503,7 +1504,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       await checkboxes[0].click();
     });
 
-    authenticatedAdminTest('should demonstrate accessible button focus states', async ({ authenticatedPage: page }) => {
+    test('should demonstrate accessible button focus states', async ({ authenticatedPage: page }) => {
       const mergeBtn = page.locator('#tag-merge-btn');
       const exists = await mergeBtn.count();
 
@@ -1523,8 +1524,8 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
   // ============================================================================
   // 21. EDGE CASES AND ERROR HANDLING
   // ============================================================================
-  authenticatedAdminTest.describe('Edge Cases and Error Handling', () => {
-    authenticatedAdminTest('page should remain accessible with empty tag list', async ({ authenticatedPage: page }) => {
+  test.describe('Edge Cases and Error Handling', () => {
+    test('page should remain accessible with empty tag list', async ({ authenticatedPage: page }) => {
       const landmarks = await checkLandmarkRegions(page);
       expect(landmarks.hasLandmarks).toBe(true);
 
@@ -1532,7 +1533,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       expect(await createForm.count()).toBeGreaterThan(0);
     });
 
-    authenticatedAdminTest('search input should remain accessible when clearing text', async ({ authenticatedPage: page }) => {
+    test('search input should remain accessible when clearing text', async ({ authenticatedPage: page }) => {
       const searchInput = page.locator('#tag-search');
       const exists = await searchInput.count();
 
@@ -1551,7 +1552,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       }
     });
 
-    authenticatedAdminTest('form elements should be accessible even with validation errors', async ({ authenticatedPage: page }) => {
+    test('form elements should be accessible even with validation errors', async ({ authenticatedPage: page }) => {
       const nameInput = page.locator('#tag-create-name');
       const exists = await nameInput.count();
 
@@ -1567,7 +1568,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       }
     });
 
-    authenticatedAdminTest('disabled state should be accessible', async ({ authenticatedPage: page }) => {
+    test('disabled state should be accessible', async ({ authenticatedPage: page }) => {
       const disabledInputs = await page.locator('input[disabled]').all();
 
       if (disabledInputs.length > 0) {
@@ -1579,7 +1580,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       }
     });
 
-    authenticatedAdminTest('page should handle rapid checkbox toggling', async ({ authenticatedPage: page }) => {
+    test('page should handle rapid checkbox toggling', async ({ authenticatedPage: page }) => {
       const checkboxes = await page.locator('tbody input[type="checkbox"]').all();
       if (checkboxes.length < 2) {
         return;
@@ -1600,8 +1601,8 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
   // ============================================================================
   // 22. ARIA ATTRIBUTES VALIDATION
   // ============================================================================
-  authenticatedAdminTest.describe('ARIA Attributes', () => {
-    authenticatedAdminTest('list should have proper ARIA role', async ({ authenticatedPage: page }) => {
+  test.describe('ARIA Attributes', () => {
+    test('list should have proper ARIA role', async ({ authenticatedPage: page }) => {
       const table = page.locator('#tags-table-body');
       const exists = await table.count();
 
@@ -1623,7 +1624,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       }
     });
 
-    authenticatedAdminTest('selected items should have aria-selected or checked state', async ({ authenticatedPage: page }) => {
+    test('selected items should have aria-selected or checked state', async ({ authenticatedPage: page }) => {
       const checkboxes = await page.locator('tbody input[type="checkbox"]').all();
       if (checkboxes.length === 0) {
         return;
@@ -1638,7 +1639,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       expect(typeof isChecked === 'boolean').toBe(true);
     });
 
-    authenticatedAdminTest('inputs should not have duplicate IDs', async ({ authenticatedPage: page }) => {
+    test('inputs should not have duplicate IDs', async ({ authenticatedPage: page }) => {
       const allIds = await page.evaluate(() => {
         const elements = document.querySelectorAll('[id]');
         const ids: string[] = [];
@@ -1654,7 +1655,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       expect(unique.size === allIds.length).toBe(true);
     });
 
-    authenticatedAdminTest('form inputs should have aria-describedby for help text', async ({ authenticatedPage: page }) => {
+    test('form inputs should have aria-describedby for help text', async ({ authenticatedPage: page }) => {
       const inputs = await page.locator('[aria-describedby]').all();
       // May or may not have aria-describedby, but should have proper structure
       expect(inputs.length >= 0).toBe(true);
@@ -1664,8 +1665,8 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
   // ============================================================================
   // 23. RESPONSIVE DESIGN AND MOBILE ACCESSIBILITY
   // ============================================================================
-  authenticatedAdminTest.describe('Responsive Design', () => {
-    authenticatedAdminTest('page elements should be accessible at different screen sizes', async ({ authenticatedPage: page }) => {
+  test.describe('Responsive Design', () => {
+    test('page elements should be accessible at different screen sizes', async ({ authenticatedPage: page }) => {
       await page.setViewportSize({ width: 375, height: 812 });
 
       const firstButton = page.locator('button').first();
@@ -1676,7 +1677,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       await page.setViewportSize({ width: 1280, height: 720 });
     });
 
-    authenticatedAdminTest('form inputs should be accessible on mobile', async ({ authenticatedPage: page }) => {
+    test('form inputs should be accessible on mobile', async ({ authenticatedPage: page }) => {
       await page.setViewportSize({ width: 375, height: 812 });
 
       const nameInput = page.locator('#tag-create-name');
@@ -1691,7 +1692,7 @@ authenticatedAdminTest.describe('Tag Management Page Accessibility Tests', () =>
       await page.setViewportSize({ width: 1280, height: 720 });
     });
 
-    authenticatedAdminTest('tag list should be navigable on mobile', async ({ authenticatedPage: page }) => {
+    test('tag list should be navigable on mobile', async ({ authenticatedPage: page }) => {
       await page.setViewportSize({ width: 375, height: 812 });
 
       const checkboxes = await page.locator('tbody input[type="checkbox"]').all();

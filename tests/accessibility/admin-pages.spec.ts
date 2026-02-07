@@ -17,7 +17,7 @@
  * - Live regions and status updates
  */
 
-import { test, expect } from '@playwright/test';
+import { expect } from '@playwright/test';
 import {
   validateSkipLinks,
   checkLandmarkRegions,
@@ -38,13 +38,14 @@ import {
 } from './utils/index.js';
 import { authenticatedAdminTest, navigateToProtectedRoute, getBaseURL } from './fixtures/auth.js';
 
+const test = authenticatedAdminTest;
 const baseURL = getBaseURL();
 
 // ============================================================================
 // ADMIN USERS PAGE TESTS
 // ============================================================================
-authenticatedAdminTest.describe('Admin Users Page Accessibility', () => {
-  authenticatedAdminTest.beforeEach(async ({ authenticatedPage: page }) => {
+test.describe('Admin Users Page Accessibility', () => {
+  test.beforeEach(async ({ authenticatedPage: page }) => {
     await navigateToProtectedRoute(page, '/admin/users');
     await page.waitForLoadState('networkidle');
   });
@@ -52,13 +53,13 @@ authenticatedAdminTest.describe('Admin Users Page Accessibility', () => {
   // ============================================================================
   // PAGE STRUCTURE TESTS
   // ============================================================================
-  authenticatedAdminTest.describe('Page Structure', () => {
-    authenticatedAdminTest('should have correct page title', async ({ authenticatedPage: page }) => {
+  test.describe('Page Structure', () => {
+    test('should have correct page title', async ({ authenticatedPage: page }) => {
       const title = await page.title();
       expect(title).toContain('User Management');
     });
 
-    authenticatedAdminTest('should have required landmark regions', async ({ authenticatedPage: page }) => {
+    test('should have required landmark regions', async ({ authenticatedPage: page }) => {
       const landmarks = await checkLandmarkRegions(page);
       expect(landmarks.hasLandmarks).toBe(true);
 
@@ -69,7 +70,7 @@ authenticatedAdminTest.describe('Admin Users Page Accessibility', () => {
       expect(hasBanner).toBe(true);
     });
 
-    authenticatedAdminTest('should have proper heading hierarchy', async ({ authenticatedPage: page }) => {
+    test('should have proper heading hierarchy', async ({ authenticatedPage: page }) => {
       const hierarchy = await validateHeadingHierarchy(page);
       expect(hierarchy.validHierarchy).toBe(
         true,
@@ -77,7 +78,7 @@ authenticatedAdminTest.describe('Admin Users Page Accessibility', () => {
       );
     });
 
-    authenticatedAdminTest('should have skip link to main content', async ({ authenticatedPage: page }) => {
+    test('should have skip link to main content', async ({ authenticatedPage: page }) => {
       const skipLinks = await validateSkipLinks(page);
       expect(skipLinks.hasSkipLink).toBe(true);
 
@@ -85,7 +86,7 @@ authenticatedAdminTest.describe('Admin Users Page Accessibility', () => {
       expect(mainLink).toBeDefined();
     });
 
-    authenticatedAdminTest('skip link should be invisible until focused', async ({ authenticatedPage: page }) => {
+    test('skip link should be invisible until focused', async ({ authenticatedPage: page }) => {
       const isHidden = await page.evaluate(() => {
         const skipLink = document.querySelector('a[href="#main-content"]');
         if (!skipLink) return true;
@@ -95,7 +96,7 @@ authenticatedAdminTest.describe('Admin Users Page Accessibility', () => {
       expect(isHidden).toBe(true);
     });
 
-    authenticatedAdminTest('skip link should be visible when focused', async ({ authenticatedPage: page }) => {
+    test('skip link should be visible when focused', async ({ authenticatedPage: page }) => {
       await page.keyboard.press('Tab');
 
       const isVisible = await page.evaluate(() => {
@@ -111,8 +112,8 @@ authenticatedAdminTest.describe('Admin Users Page Accessibility', () => {
   // ============================================================================
   // TABLE ACCESSIBILITY TESTS
   // ============================================================================
-  authenticatedAdminTest.describe('Users Table Accessibility', () => {
-    authenticatedAdminTest('table should have proper semantic structure', async ({ authenticatedPage: page }) => {
+  test.describe('Users Table Accessibility', () => {
+    test('table should have proper semantic structure', async ({ authenticatedPage: page }) => {
       const table = page.locator('table').first();
       expect(await table.count()).toBeGreaterThan(0);
 
@@ -125,7 +126,7 @@ authenticatedAdminTest.describe('Admin Users Page Accessibility', () => {
       expect(await tbody.count()).toBeGreaterThan(0);
     });
 
-    authenticatedAdminTest('table headers should use th elements with scope', async ({ authenticatedPage: page }) => {
+    test('table headers should use th elements with scope', async ({ authenticatedPage: page }) => {
       const headers = page.locator('table thead th');
       const count = await headers.count();
       expect(count).toBeGreaterThan(0);
@@ -137,7 +138,7 @@ authenticatedAdminTest.describe('Admin Users Page Accessibility', () => {
       expect(allHaveScope).toBe(true);
     });
 
-    authenticatedAdminTest('table should have caption or aria-label', async ({ authenticatedPage: page }) => {
+    test('table should have caption or aria-label', async ({ authenticatedPage: page }) => {
       const table = page.locator('table').first();
 
       const hasCaption = await page.locator('table caption').count();
@@ -148,7 +149,7 @@ authenticatedAdminTest.describe('Admin Users Page Accessibility', () => {
       expect(hasCaption > 0 || hasAriaLabel).toBe(true);
     });
 
-    authenticatedAdminTest('table should be keyboard navigable', async ({ authenticatedPage: page }) => {
+    test('table should be keyboard navigable', async ({ authenticatedPage: page }) => {
       const table = page.locator('table').first();
 
       // Tab to first cell
@@ -160,7 +161,7 @@ authenticatedAdminTest.describe('Admin Users Page Accessibility', () => {
       expect(initialFocus).toBeTruthy();
     });
 
-    authenticatedAdminTest('column headers should have text content', async ({ authenticatedPage: page }) => {
+    test('column headers should have text content', async ({ authenticatedPage: page }) => {
       const headers = page.locator('table thead th');
       const texts = await headers.allTextContents();
 
@@ -172,15 +173,15 @@ authenticatedAdminTest.describe('Admin Users Page Accessibility', () => {
   // ============================================================================
   // TABLE NAVIGATION TESTS
   // ============================================================================
-  authenticatedAdminTest.describe('Table Navigation', () => {
-    authenticatedAdminTest('Tab key should move focus through table headers', async ({ authenticatedPage: page }) => {
+  test.describe('Table Navigation', () => {
+    test('Tab key should move focus through table headers', async ({ authenticatedPage: page }) => {
       const headers = page.locator('table thead th');
       const headerCount = await headers.count();
 
       expect(headerCount).toBeGreaterThan(0);
     });
 
-    authenticatedAdminTest('focus indicators should be visible on table elements', async ({ authenticatedPage: page }) => {
+    test('focus indicators should be visible on table elements', async ({ authenticatedPage: page }) => {
       const table = page.locator('table').first();
 
       // Focus on first cell
@@ -196,7 +197,7 @@ authenticatedAdminTest.describe('Admin Users Page Accessibility', () => {
       expect(table.locator('th, td').count()).toBeGreaterThan(0);
     });
 
-    authenticatedAdminTest('table should not create keyboard traps', async ({ authenticatedPage: page }) => {
+    test('table should not create keyboard traps', async ({ authenticatedPage: page }) => {
       const initialUrl = page.url();
 
       // Try to navigate through page
@@ -208,7 +209,7 @@ authenticatedAdminTest.describe('Admin Users Page Accessibility', () => {
       expect(page.url()).toBe(initialUrl);
     });
 
-    authenticatedAdminTest('should be able to navigate backward with Shift+Tab', async ({ authenticatedPage: page }) => {
+    test('should be able to navigate backward with Shift+Tab', async ({ authenticatedPage: page }) => {
       const tabOrder = await extractTabOrder(page);
       expect(tabOrder.length).toBeGreaterThan(0);
 
@@ -226,8 +227,8 @@ authenticatedAdminTest.describe('Admin Users Page Accessibility', () => {
   // ============================================================================
   // ROW ACTIONS TESTS
   // ============================================================================
-  authenticatedAdminTest.describe('Row Action Buttons', () => {
-    authenticatedAdminTest('action buttons should have clear accessible names', async ({ authenticatedPage: page }) => {
+  test.describe('Row Action Buttons', () => {
+    test('action buttons should have clear accessible names', async ({ authenticatedPage: page }) => {
       const actionButtons = page.locator('button[aria-label*="user"], button[aria-label*="edit"], button[aria-label*="delete"]');
       const count = await actionButtons.count();
 
@@ -243,7 +244,7 @@ authenticatedAdminTest.describe('Admin Users Page Accessibility', () => {
       }
     });
 
-    authenticatedAdminTest('action buttons should be keyboard accessible', async ({ authenticatedPage: page }) => {
+    test('action buttons should be keyboard accessible', async ({ authenticatedPage: page }) => {
       const tabOrder = await extractTabOrder(page);
 
       const hasActionButtons = tabOrder.some((item) =>
@@ -253,7 +254,7 @@ authenticatedAdminTest.describe('Admin Users Page Accessibility', () => {
       expect(tabOrder.length).toBeGreaterThan(0);
     });
 
-    authenticatedAdminTest('action buttons should be in tab order', async ({ authenticatedPage: page }) => {
+    test('action buttons should be in tab order', async ({ authenticatedPage: page }) => {
       const tabOrder = await extractTabOrder(page);
       expect(tabOrder.length).toBeGreaterThan(0);
     });
@@ -262,8 +263,8 @@ authenticatedAdminTest.describe('Admin Users Page Accessibility', () => {
   // ============================================================================
   // FILTER/SEARCH FUNCTIONALITY TESTS
   // ============================================================================
-  authenticatedAdminTest.describe('Filter and Search', () => {
-    authenticatedAdminTest('search input should have label', async ({ authenticatedPage: page }) => {
+  test.describe('Filter and Search', () => {
+    test('search input should have label', async ({ authenticatedPage: page }) => {
       const searchInput = page.locator('input[type="search"], input[placeholder*="search" i]').first();
 
       if (await searchInput.count() > 0) {
@@ -272,7 +273,7 @@ authenticatedAdminTest.describe('Admin Users Page Accessibility', () => {
       }
     });
 
-    authenticatedAdminTest('filter controls should be keyboard accessible', async ({ authenticatedPage: page }) => {
+    test('filter controls should be keyboard accessible', async ({ authenticatedPage: page }) => {
       const filterInputs = page.locator('input[type="text"], input[type="search"], select').first();
 
       if (await filterInputs.count() > 0) {
@@ -287,7 +288,7 @@ authenticatedAdminTest.describe('Admin Users Page Accessibility', () => {
       }
     });
 
-    authenticatedAdminTest('clear filter button should be accessible', async ({ authenticatedPage: page }) => {
+    test('clear filter button should be accessible', async ({ authenticatedPage: page }) => {
       const clearButton = page.locator('button:has-text("Clear"), button[aria-label*="Clear"]').first();
 
       if (await clearButton.count() > 0) {
@@ -300,8 +301,8 @@ authenticatedAdminTest.describe('Admin Users Page Accessibility', () => {
   // ============================================================================
   // PAGINATION TESTS
   // ============================================================================
-  authenticatedAdminTest.describe('Pagination Accessibility', () => {
-    authenticatedAdminTest('pagination controls should be keyboard accessible', async ({ authenticatedPage: page }) => {
+  test.describe('Pagination Accessibility', () => {
+    test('pagination controls should be keyboard accessible', async ({ authenticatedPage: page }) => {
       const pagination = page.locator('[role="navigation"][aria-label*="pagination" i], nav[aria-label*="pagination" i]').first();
 
       if (await pagination.count() > 0) {
@@ -309,7 +310,7 @@ authenticatedAdminTest.describe('Admin Users Page Accessibility', () => {
       }
     });
 
-    authenticatedAdminTest('pagination buttons should have clear labels', async ({ authenticatedPage: page }) => {
+    test('pagination buttons should have clear labels', async ({ authenticatedPage: page }) => {
       const prevButton = page.locator('button[aria-label*="Previous"], button:has-text("Previous")').first();
       const nextButton = page.locator('button[aria-label*="Next"], button:has-text("Next")').first();
 
@@ -319,7 +320,7 @@ authenticatedAdminTest.describe('Admin Users Page Accessibility', () => {
       }
     });
 
-    authenticatedAdminTest('current page should be indicated', async ({ authenticatedPage: page }) => {
+    test('current page should be indicated', async ({ authenticatedPage: page }) => {
       const pageButtons = page.locator('button[aria-current="page"], span[aria-current="page"]');
 
       if (await pageButtons.count() > 0) {
@@ -328,7 +329,7 @@ authenticatedAdminTest.describe('Admin Users Page Accessibility', () => {
       }
     });
 
-    authenticatedAdminTest('disabled pagination buttons should not be in tab order', async ({ authenticatedPage: page }) => {
+    test('disabled pagination buttons should not be in tab order', async ({ authenticatedPage: page }) => {
       const disabledButtons = page.locator('button[disabled]');
       const count = await disabledButtons.count();
 
@@ -345,8 +346,8 @@ authenticatedAdminTest.describe('Admin Users Page Accessibility', () => {
   // ============================================================================
   // SORT FUNCTIONALITY TESTS
   // ============================================================================
-  authenticatedAdminTest.describe('Sort Functionality', () => {
-    authenticatedAdminTest('sortable column headers should be accessible', async ({ authenticatedPage: page }) => {
+  test.describe('Sort Functionality', () => {
+    test('sortable column headers should be accessible', async ({ authenticatedPage: page }) => {
       const sortableHeaders = page.locator('th[role="button"], button.sort-button, th:has-text("^") th');
 
       if (await sortableHeaders.count() > 0) {
@@ -354,7 +355,7 @@ authenticatedAdminTest.describe('Admin Users Page Accessibility', () => {
       }
     });
 
-    authenticatedAdminTest('sort direction should be communicated via aria-sort', async ({ authenticatedPage: page }) => {
+    test('sort direction should be communicated via aria-sort', async ({ authenticatedPage: page }) => {
       const headers = page.locator('th[aria-sort]');
 
       if (await headers.count() > 0) {
@@ -363,7 +364,7 @@ authenticatedAdminTest.describe('Admin Users Page Accessibility', () => {
       }
     });
 
-    authenticatedAdminTest('sort state should be visually and textually indicated', async ({ authenticatedPage: page }) => {
+    test('sort state should be visually and textually indicated', async ({ authenticatedPage: page }) => {
       const sortedHeader = page.locator('th[aria-sort="ascending"], th[aria-sort="descending"]').first();
 
       if (await sortedHeader.count() > 0) {
@@ -376,8 +377,8 @@ authenticatedAdminTest.describe('Admin Users Page Accessibility', () => {
   // ============================================================================
   // COLOR CONTRAST TESTS
   // ============================================================================
-  authenticatedAdminTest.describe('Color Contrast', () => {
-    authenticatedAdminTest('table header text should have sufficient contrast', async ({ authenticatedPage: page }) => {
+  test.describe('Color Contrast', () => {
+    test('table header text should have sufficient contrast', async ({ authenticatedPage: page }) => {
       const headers = page.locator('table thead th');
 
       if (await headers.count() > 0) {
@@ -390,7 +391,7 @@ authenticatedAdminTest.describe('Admin Users Page Accessibility', () => {
       }
     });
 
-    authenticatedAdminTest('table cell text should have sufficient contrast', async ({ authenticatedPage: page }) => {
+    test('table cell text should have sufficient contrast', async ({ authenticatedPage: page }) => {
       const cells = page.locator('table tbody td').first();
 
       if (await cells.count() > 0) {
@@ -399,7 +400,7 @@ authenticatedAdminTest.describe('Admin Users Page Accessibility', () => {
       }
     });
 
-    authenticatedAdminTest('action button text should have sufficient contrast', async ({ authenticatedPage: page }) => {
+    test('action button text should have sufficient contrast', async ({ authenticatedPage: page }) => {
       const buttons = page.locator('button[class*="btn"], button[class*="button"]').first();
 
       if (await buttons.count() > 0) {
@@ -408,7 +409,7 @@ authenticatedAdminTest.describe('Admin Users Page Accessibility', () => {
       }
     });
 
-    authenticatedAdminTest('link text should have sufficient contrast', async ({ authenticatedPage: page }) => {
+    test('link text should have sufficient contrast', async ({ authenticatedPage: page }) => {
       const links = page.locator('a[href]').first();
 
       if (await links.count() > 0) {
@@ -417,7 +418,7 @@ authenticatedAdminTest.describe('Admin Users Page Accessibility', () => {
       }
     });
 
-    authenticatedAdminTest('status indicators should have sufficient contrast', async ({ authenticatedPage: page }) => {
+    test('status indicators should have sufficient contrast', async ({ authenticatedPage: page }) => {
       const badges = page.locator('span[class*="badge"], span[class*="status"], span[class*="indicator"]').first();
 
       if (await badges.count() > 0) {
@@ -430,13 +431,13 @@ authenticatedAdminTest.describe('Admin Users Page Accessibility', () => {
   // ============================================================================
   // KEYBOARD-ONLY WORKFLOW TESTS
   // ============================================================================
-  authenticatedAdminTest.describe('Keyboard-Only Workflows', () => {
-    authenticatedAdminTest('should navigate to users page with keyboard', async ({ authenticatedPage: page }) => {
+  test.describe('Keyboard-Only Workflows', () => {
+    test('should navigate to users page with keyboard', async ({ authenticatedPage: page }) => {
       const initialUrl = page.url();
       expect(initialUrl).toContain('/admin/users');
     });
 
-    authenticatedAdminTest('should search for user with keyboard', async ({ authenticatedPage: page }) => {
+    test('should search for user with keyboard', async ({ authenticatedPage: page }) => {
       const searchInput = page.locator('input[type="search"], input[placeholder*="search" i]').first();
 
       if (await searchInput.count() > 0) {
@@ -448,7 +449,7 @@ authenticatedAdminTest.describe('Admin Users Page Accessibility', () => {
       }
     });
 
-    authenticatedAdminTest('should be able to complete workflow without mouse', async ({ authenticatedPage: page }) => {
+    test('should be able to complete workflow without mouse', async ({ authenticatedPage: page }) => {
       const buttons = page.locator('button').first();
 
       if (await buttons.count() > 0) {
@@ -462,7 +463,7 @@ authenticatedAdminTest.describe('Admin Users Page Accessibility', () => {
       }
     });
 
-    authenticatedAdminTest('should not have keyboard traps', async ({ authenticatedPage: page }) => {
+    test('should not have keyboard traps', async ({ authenticatedPage: page }) => {
       const initialUrl = page.url();
 
       for (let i = 0; i < 20; i++) {
@@ -477,8 +478,8 @@ authenticatedAdminTest.describe('Admin Users Page Accessibility', () => {
   // ============================================================================
   // ARIA ATTRIBUTES TESTS
   // ============================================================================
-  authenticatedAdminTest.describe('ARIA Attributes', () => {
-    authenticatedAdminTest('table should have proper ARIA role structure', async ({ authenticatedPage: page }) => {
+  test.describe('ARIA Attributes', () => {
+    test('table should have proper ARIA role structure', async ({ authenticatedPage: page }) => {
       const table = page.locator('table').first();
 
       if (await table.count() > 0) {
@@ -487,7 +488,7 @@ authenticatedAdminTest.describe('Admin Users Page Accessibility', () => {
       }
     });
 
-    authenticatedAdminTest('should not have duplicate IDs', async ({ authenticatedPage: page }) => {
+    test('should not have duplicate IDs', async ({ authenticatedPage: page }) => {
       const duplicateIds = await page.evaluate(() => {
         const ids = new Map();
         const elements = document.querySelectorAll('[id]');
@@ -510,7 +511,7 @@ authenticatedAdminTest.describe('Admin Users Page Accessibility', () => {
       expect(duplicateIds.length).toBe(0);
     });
 
-    authenticatedAdminTest('action buttons should have descriptive aria-labels when needed', async ({ authenticatedPage: page }) => {
+    test('action buttons should have descriptive aria-labels when needed', async ({ authenticatedPage: page }) => {
       const actionButtons = page.locator('button[aria-label], button[title]').first();
 
       if (await actionButtons.count() > 0) {
@@ -526,8 +527,8 @@ authenticatedAdminTest.describe('Admin Users Page Accessibility', () => {
   // ============================================================================
   // FOCUS MANAGEMENT TESTS
   // ============================================================================
-  authenticatedAdminTest.describe('Focus Management', () => {
-    authenticatedAdminTest('focus should be visible on interactive elements', async ({ authenticatedPage: page }) => {
+  test.describe('Focus Management', () => {
+    test('focus should be visible on interactive elements', async ({ authenticatedPage: page }) => {
       const buttons = page.locator('button').first();
 
       if (await buttons.count() > 0) {
@@ -546,7 +547,7 @@ authenticatedAdminTest.describe('Admin Users Page Accessibility', () => {
       }
     });
 
-    authenticatedAdminTest('should maintain focus on page navigation', async ({ authenticatedPage: page }) => {
+    test('should maintain focus on page navigation', async ({ authenticatedPage: page }) => {
       const initialFocus = await page.evaluate(() => document.activeElement?.id || '');
       expect(true).toBe(true);
     });
@@ -555,13 +556,13 @@ authenticatedAdminTest.describe('Admin Users Page Accessibility', () => {
   // ============================================================================
   // VISUAL TESTING
   // ============================================================================
-  authenticatedAdminTest.describe('Visual State Verification', () => {
-    authenticatedAdminTest('should capture page in default state', async ({ authenticatedPage: page }) => {
+  test.describe('Visual State Verification', () => {
+    test('should capture page in default state', async ({ authenticatedPage: page }) => {
       await captureNormalState(page, 'tests/accessibility/reports/admin-users-default.png');
       expect(true).toBe(true);
     });
 
-    authenticatedAdminTest('should capture table with focus state', async ({ authenticatedPage: page }) => {
+    test('should capture table with focus state', async ({ authenticatedPage: page }) => {
       const table = page.locator('table').first();
 
       if (await table.count() > 0) {
@@ -577,8 +578,8 @@ authenticatedAdminTest.describe('Admin Users Page Accessibility', () => {
 // ============================================================================
 // ADMIN SESSIONS PAGE TESTS
 // ============================================================================
-authenticatedAdminTest.describe('Admin Sessions Page Accessibility', () => {
-  authenticatedAdminTest.beforeEach(async ({ authenticatedPage: page }) => {
+test.describe('Admin Sessions Page Accessibility', () => {
+  test.beforeEach(async ({ authenticatedPage: page }) => {
     await navigateToProtectedRoute(page, '/admin/sessions');
     await page.waitForLoadState('networkidle');
   });
@@ -586,13 +587,13 @@ authenticatedAdminTest.describe('Admin Sessions Page Accessibility', () => {
   // ============================================================================
   // PAGE STRUCTURE TESTS
   // ============================================================================
-  authenticatedAdminTest.describe('Page Structure', () => {
-    authenticatedAdminTest('should have correct page title', async ({ authenticatedPage: page }) => {
+  test.describe('Page Structure', () => {
+    test('should have correct page title', async ({ authenticatedPage: page }) => {
       const title = await page.title();
       expect(title).toContain('Session Management');
     });
 
-    authenticatedAdminTest('should have required landmark regions', async ({ authenticatedPage: page }) => {
+    test('should have required landmark regions', async ({ authenticatedPage: page }) => {
       const landmarks = await checkLandmarkRegions(page);
       expect(landmarks.hasLandmarks).toBe(true);
 
@@ -600,7 +601,7 @@ authenticatedAdminTest.describe('Admin Sessions Page Accessibility', () => {
       expect(hasMain).toBe(true);
     });
 
-    authenticatedAdminTest('should have proper heading hierarchy', async ({ authenticatedPage: page }) => {
+    test('should have proper heading hierarchy', async ({ authenticatedPage: page }) => {
       const hierarchy = await validateHeadingHierarchy(page);
       expect(hierarchy.validHierarchy).toBe(
         true,
@@ -608,7 +609,7 @@ authenticatedAdminTest.describe('Admin Sessions Page Accessibility', () => {
       );
     });
 
-    authenticatedAdminTest('should have skip link to main content', async ({ authenticatedPage: page }) => {
+    test('should have skip link to main content', async ({ authenticatedPage: page }) => {
       const skipLinks = await validateSkipLinks(page);
       expect(skipLinks.hasSkipLink).toBe(true);
     });
@@ -617,8 +618,8 @@ authenticatedAdminTest.describe('Admin Sessions Page Accessibility', () => {
   // ============================================================================
   // SESSIONS TABLE TESTS
   // ============================================================================
-  authenticatedAdminTest.describe('Sessions Table', () => {
-    authenticatedAdminTest('table should have proper semantic structure', async ({ authenticatedPage: page }) => {
+  test.describe('Sessions Table', () => {
+    test('table should have proper semantic structure', async ({ authenticatedPage: page }) => {
       const table = page.locator('table').first();
       expect(await table.count()).toBeGreaterThan(0);
 
@@ -629,7 +630,7 @@ authenticatedAdminTest.describe('Admin Sessions Page Accessibility', () => {
       expect(await tbody.count()).toBeGreaterThan(0);
     });
 
-    authenticatedAdminTest('table headers should have proper scope attributes', async ({ authenticatedPage: page }) => {
+    test('table headers should have proper scope attributes', async ({ authenticatedPage: page }) => {
       const headers = page.locator('table thead th');
       const count = await headers.count();
       expect(count).toBeGreaterThan(0);
@@ -640,7 +641,7 @@ authenticatedAdminTest.describe('Admin Sessions Page Accessibility', () => {
       expect(allHaveScope).toBe(true);
     });
 
-    authenticatedAdminTest('session ID should be accessible', async ({ authenticatedPage: page }) => {
+    test('session ID should be accessible', async ({ authenticatedPage: page }) => {
       const sessionCells = page.locator('table tbody td').first();
 
       if (await sessionCells.count() > 0) {
@@ -649,7 +650,7 @@ authenticatedAdminTest.describe('Admin Sessions Page Accessibility', () => {
       }
     });
 
-    authenticatedAdminTest('session status should be accessible', async ({ authenticatedPage: page }) => {
+    test('session status should be accessible', async ({ authenticatedPage: page }) => {
       const statusCells = page.locator('table tbody td[class*="status"], table tbody td[aria-label*="status" i]').first();
 
       if (await statusCells.count() > 0) {
@@ -662,8 +663,8 @@ authenticatedAdminTest.describe('Admin Sessions Page Accessibility', () => {
   // ============================================================================
   // SESSION ACTIONS TESTS
   // ============================================================================
-  authenticatedAdminTest.describe('Session Actions', () => {
-    authenticatedAdminTest('view session button should have accessible label', async ({ authenticatedPage: page }) => {
+  test.describe('Session Actions', () => {
+    test('view session button should have accessible label', async ({ authenticatedPage: page }) => {
       const viewButton = page.locator('button[aria-label*="view"], button:has-text("View")').first();
 
       if (await viewButton.count() > 0) {
@@ -672,7 +673,7 @@ authenticatedAdminTest.describe('Admin Sessions Page Accessibility', () => {
       }
     });
 
-    authenticatedAdminTest('terminate session button should have clear context', async ({ authenticatedPage: page }) => {
+    test('terminate session button should have clear context', async ({ authenticatedPage: page }) => {
       const terminateButton = page.locator('button[aria-label*="terminate"], button[aria-label*="delete"], button:has-text("Terminate")').first();
 
       if (await terminateButton.count() > 0) {
@@ -681,7 +682,7 @@ authenticatedAdminTest.describe('Admin Sessions Page Accessibility', () => {
       }
     });
 
-    authenticatedAdminTest('action buttons should be keyboard accessible', async ({ authenticatedPage: page }) => {
+    test('action buttons should be keyboard accessible', async ({ authenticatedPage: page }) => {
       const tabOrder = await extractTabOrder(page);
       expect(tabOrder.length).toBeGreaterThan(0);
     });
@@ -690,8 +691,8 @@ authenticatedAdminTest.describe('Admin Sessions Page Accessibility', () => {
   // ============================================================================
   // KEYBOARD-ONLY WORKFLOWS
   // ============================================================================
-  authenticatedAdminTest.describe('Keyboard-Only Workflows', () => {
-    authenticatedAdminTest('should navigate sessions table with keyboard', async ({ authenticatedPage: page }) => {
+  test.describe('Keyboard-Only Workflows', () => {
+    test('should navigate sessions table with keyboard', async ({ authenticatedPage: page }) => {
       const table = page.locator('table').first();
 
       if (await table.count() > 0) {
@@ -700,7 +701,7 @@ authenticatedAdminTest.describe('Admin Sessions Page Accessibility', () => {
       }
     });
 
-    authenticatedAdminTest('should search sessions with keyboard', async ({ authenticatedPage: page }) => {
+    test('should search sessions with keyboard', async ({ authenticatedPage: page }) => {
       const searchInput = page.locator('input[type="search"], input[placeholder*="search" i]').first();
 
       if (await searchInput.count() > 0) {
@@ -712,7 +713,7 @@ authenticatedAdminTest.describe('Admin Sessions Page Accessibility', () => {
       }
     });
 
-    authenticatedAdminTest('should not have keyboard traps', async ({ authenticatedPage: page }) => {
+    test('should not have keyboard traps', async ({ authenticatedPage: page }) => {
       const initialUrl = page.url();
 
       for (let i = 0; i < 20; i++) {
@@ -726,8 +727,8 @@ authenticatedAdminTest.describe('Admin Sessions Page Accessibility', () => {
   // ============================================================================
   // COLOR CONTRAST TESTS
   // ============================================================================
-  authenticatedAdminTest.describe('Color Contrast', () => {
-    authenticatedAdminTest('table header text should have sufficient contrast', async ({ authenticatedPage: page }) => {
+  test.describe('Color Contrast', () => {
+    test('table header text should have sufficient contrast', async ({ authenticatedPage: page }) => {
       const headers = page.locator('table thead th');
 
       if (await headers.count() > 0) {
@@ -739,7 +740,7 @@ authenticatedAdminTest.describe('Admin Sessions Page Accessibility', () => {
       }
     });
 
-    authenticatedAdminTest('action button text should have sufficient contrast', async ({ authenticatedPage: page }) => {
+    test('action button text should have sufficient contrast', async ({ authenticatedPage: page }) => {
       const buttons = page.locator('button').first();
 
       if (await buttons.count() > 0) {
@@ -748,7 +749,7 @@ authenticatedAdminTest.describe('Admin Sessions Page Accessibility', () => {
       }
     });
 
-    authenticatedAdminTest('status text should have sufficient contrast', async ({ authenticatedPage: page }) => {
+    test('status text should have sufficient contrast', async ({ authenticatedPage: page }) => {
       const status = page.locator('[class*="status"], [class*="badge"]').first();
 
       if (await status.count() > 0) {
@@ -761,8 +762,8 @@ authenticatedAdminTest.describe('Admin Sessions Page Accessibility', () => {
   // ============================================================================
   // FOCUS MANAGEMENT TESTS
   // ============================================================================
-  authenticatedAdminTest.describe('Focus Management', () => {
-    authenticatedAdminTest('focus indicators should be visible', async ({ authenticatedPage: page }) => {
+  test.describe('Focus Management', () => {
+    test('focus indicators should be visible', async ({ authenticatedPage: page }) => {
       const buttons = page.locator('button').first();
 
       if (await buttons.count() > 0) {
@@ -785,13 +786,13 @@ authenticatedAdminTest.describe('Admin Sessions Page Accessibility', () => {
   // ============================================================================
   // VISUAL TESTING
   // ============================================================================
-  authenticatedAdminTest.describe('Visual State Verification', () => {
-    authenticatedAdminTest('should capture page in default state', async ({ authenticatedPage: page }) => {
+  test.describe('Visual State Verification', () => {
+    test('should capture page in default state', async ({ authenticatedPage: page }) => {
       await captureNormalState(page, 'tests/accessibility/reports/admin-sessions-default.png');
       expect(true).toBe(true);
     });
 
-    authenticatedAdminTest('should capture table with focus state', async ({ authenticatedPage: page }) => {
+    test('should capture table with focus state', async ({ authenticatedPage: page }) => {
       const table = page.locator('table').first();
 
       if (await table.count() > 0) {
@@ -807,12 +808,12 @@ authenticatedAdminTest.describe('Admin Sessions Page Accessibility', () => {
 // ============================================================================
 // CROSS-PAGE TESTS
 // ============================================================================
-authenticatedAdminTest.describe('Admin Pages Cross-Page Accessibility', () => {
+test.describe('Admin Pages Cross-Page Accessibility', () => {
   // ============================================================================
   // ADMIN NAVIGATION TESTS
   // ============================================================================
-  authenticatedAdminTest.describe('Admin Navigation', () => {
-    authenticatedAdminTest('should navigate between admin pages via menu', async ({ authenticatedPage: page }) => {
+  test.describe('Admin Navigation', () => {
+    test('should navigate between admin pages via menu', async ({ authenticatedPage: page }) => {
       await navigateToProtectedRoute(page, '/admin/users');
       await page.waitForLoadState('networkidle');
 
@@ -827,7 +828,7 @@ authenticatedAdminTest.describe('Admin Pages Cross-Page Accessibility', () => {
       }
     });
 
-    authenticatedAdminTest('admin menu should be keyboard accessible', async ({ authenticatedPage: page }) => {
+    test('admin menu should be keyboard accessible', async ({ authenticatedPage: page }) => {
       await navigateToProtectedRoute(page, '/admin/users');
       await page.waitForLoadState('networkidle');
 
@@ -836,7 +837,7 @@ authenticatedAdminTest.describe('Admin Pages Cross-Page Accessibility', () => {
       expect(count).toBeGreaterThan(0);
     });
 
-    authenticatedAdminTest('active page indicator should be present', async ({ authenticatedPage: page }) => {
+    test('active page indicator should be present', async ({ authenticatedPage: page }) => {
       await navigateToProtectedRoute(page, '/admin/users');
       await page.waitForLoadState('networkidle');
 
@@ -849,8 +850,8 @@ authenticatedAdminTest.describe('Admin Pages Cross-Page Accessibility', () => {
   // ============================================================================
   // CONSISTENT ACCESSIBILITY ACROSS PAGES
   // ============================================================================
-  authenticatedAdminTest.describe('Consistency Across Admin Pages', () => {
-    authenticatedAdminTest('both pages should have skip links', async ({ authenticatedPage: page }) => {
+  test.describe('Consistency Across Admin Pages', () => {
+    test('both pages should have skip links', async ({ authenticatedPage: page }) => {
       await navigateToProtectedRoute(page, '/admin/users');
       const skipLinksUsers = await validateSkipLinks(page);
       expect(skipLinksUsers.hasSkipLink).toBe(true);
@@ -860,7 +861,7 @@ authenticatedAdminTest.describe('Admin Pages Cross-Page Accessibility', () => {
       expect(skipLinksSessions.hasSkipLink).toBe(true);
     });
 
-    authenticatedAdminTest('both pages should have proper landmarks', async ({ authenticatedPage: page }) => {
+    test('both pages should have proper landmarks', async ({ authenticatedPage: page }) => {
       await navigateToProtectedRoute(page, '/admin/users');
       const landmarksUsers = await checkLandmarkRegions(page);
       expect(landmarksUsers.hasLandmarks).toBe(true);
@@ -870,7 +871,7 @@ authenticatedAdminTest.describe('Admin Pages Cross-Page Accessibility', () => {
       expect(landmarksSessions.hasLandmarks).toBe(true);
     });
 
-    authenticatedAdminTest('both pages should have proper heading hierarchy', async ({ authenticatedPage: page }) => {
+    test('both pages should have proper heading hierarchy', async ({ authenticatedPage: page }) => {
       await navigateToProtectedRoute(page, '/admin/users');
       const hierarchyUsers = await validateHeadingHierarchy(page);
       expect(hierarchyUsers.validHierarchy).toBe(true);
@@ -880,7 +881,7 @@ authenticatedAdminTest.describe('Admin Pages Cross-Page Accessibility', () => {
       expect(hierarchySessions.validHierarchy).toBe(true);
     });
 
-    authenticatedAdminTest('both pages should have tables with proper structure', async ({ authenticatedPage: page }) => {
+    test('both pages should have tables with proper structure', async ({ authenticatedPage: page }) => {
       await navigateToProtectedRoute(page, '/admin/users');
       const usersTable = page.locator('table');
       expect(await usersTable.count()).toBeGreaterThan(0);
@@ -894,8 +895,8 @@ authenticatedAdminTest.describe('Admin Pages Cross-Page Accessibility', () => {
   // ============================================================================
   // COMPREHENSIVE KEYBOARD WORKFLOW
   // ============================================================================
-  authenticatedAdminTest.describe('Complete Keyboard Workflow', () => {
-    authenticatedAdminTest('should complete full admin workflow with keyboard only', async ({ authenticatedPage: page }) => {
+  test.describe('Complete Keyboard Workflow', () => {
+    test('should complete full admin workflow with keyboard only', async ({ authenticatedPage: page }) => {
       // Navigate to users page
       await navigateToProtectedRoute(page, '/admin/users');
       await page.waitForLoadState('networkidle');

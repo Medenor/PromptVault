@@ -14,7 +14,7 @@
  * - Live regions
  */
 
-import { test, expect } from '@playwright/test';
+import { expect } from '@playwright/test';
 import {
   validateSkipLinks,
   extractTabOrder,
@@ -28,15 +28,12 @@ import {
   validateHeadingHierarchy,
   testTextContrast,
   testUIContrast,
-  testContrastBatch,
   captureNormalState,
   captureFocusState,
-  capturePageWithHighlight,
-  validateAccessibleNamesBatch,
 } from './utils/index.js';
-import { authenticatedUserTest, getBaseURL } from './fixtures/auth.js';
+import { authenticatedUserTest } from './fixtures/auth.js';
 
-const baseURL = getBaseURL();
+const test = authenticatedUserTest;
 
 // Define test suites organized by feature
 test.describe('Main Page Accessibility Tests', () => {
@@ -55,7 +52,7 @@ test.describe('Main Page Accessibility Tests', () => {
       expect(tabOrder.length).toBeGreaterThan(0);
 
       // First element should be a skip link (href starts with #)
-      const firstElement = tabOrder[0];
+      const firstElement = tabOrder[Math.min(0, tabOrder.length - 1)]!;
       expect(firstElement.selector).toBeTruthy();
 
       // Tab to the first element and verify it's a skip link
@@ -174,7 +171,7 @@ test.describe('Main Page Accessibility Tests', () => {
       if (navItems.length > 0) {
         // Check first few navigation items
         for (let i = 0; i < Math.min(3, navItems.length); i++) {
-          const nameInfo = await checkAccessibleName(navItems[i]);
+          const nameInfo = await checkAccessibleName(navItems[Math.min(i, navItems.length - 1)]!);
           expect(nameInfo.hasAccessibleName).toBe(true);
           expect(nameInfo.name.length).toBeGreaterThan(0);
         }
@@ -313,9 +310,9 @@ test.describe('Main Page Accessibility Tests', () => {
       if (filterItems.length > 0) {
         // Check first few items
         for (let i = 0; i < Math.min(3, filterItems.length); i++) {
-          const nameInfo = await checkAccessibleName(filterItems[i]);
+          const nameInfo = await checkAccessibleName(filterItems[Math.min(i, filterItems.length - 1)]!);
           // Filter items should have text content or aria labels
-          expect(nameInfo.hasAccessibleName || filterItems[i].textContent()).toBeTruthy();
+          expect(nameInfo.hasAccessibleName || (await filterItems[Math.min(i, filterItems.length - 1)]!.textContent())).toBeTruthy();
         }
       }
     });
@@ -346,12 +343,12 @@ test.describe('Main Page Accessibility Tests', () => {
 
       if (filterItems.length > 1) {
         // Get text of second item
-        const secondItemText = await filterItems[1].textContent();
+        const secondItemText = await filterItems[Math.min(1, filterItems.length - 1)]!.textContent();
         const firstChar = secondItemText?.charAt(0).toLowerCase() || '';
 
         if (firstChar) {
           // Focus first item
-          await filterItems[0].focus();
+          await filterItems[Math.min(0, filterItems.length - 1)]!.focus();
 
           // Type first character of second item
           await page.keyboard.type(firstChar);
@@ -459,7 +456,7 @@ test.describe('Main Page Accessibility Tests', () => {
       if (links.length > 0) {
         // Check first 10 links
         for (let i = 0; i < Math.min(10, links.length); i++) {
-          const nameInfo = await checkAccessibleName(links[i]);
+          const nameInfo = await checkAccessibleName(links[Math.min(i, links.length - 1)]!);
           expect(nameInfo.hasAccessibleName).toBe(true);
         }
       }
@@ -498,7 +495,7 @@ test.describe('Main Page Accessibility Tests', () => {
       if (buttons.length > 0) {
         // Check first few buttons
         for (let i = 0; i < Math.min(3, buttons.length); i++) {
-          const ariaPressed = await buttons[i].getAttribute('aria-pressed');
+          const ariaPressed = await buttons[Math.min(i, buttons.length - 1)]!.getAttribute('aria-pressed');
           expect(ariaPressed === 'true' || ariaPressed === 'false').toBe(true);
         }
       }
@@ -527,7 +524,7 @@ test.describe('Main Page Accessibility Tests', () => {
       if (labels.length > 0) {
         // Test first few labels
         for (let i = 0; i < Math.min(3, labels.length); i++) {
-          const contrast = await testTextContrast(page, labels[i], 'AA');
+          const contrast = await testTextContrast(page, labels[Math.min(i, labels.length - 1)]!, 'AA');
           expect(contrast.passes).toBe(true);
         }
       }
@@ -539,7 +536,7 @@ test.describe('Main Page Accessibility Tests', () => {
       if (buttons.length > 0) {
         // Test first few buttons
         for (let i = 0; i < Math.min(3, buttons.length); i++) {
-          const contrast = await testUIContrast(page, buttons[i], 'AA');
+          const contrast = await testUIContrast(page, buttons[Math.min(i, buttons.length - 1)]!, 'AA');
           expect(contrast.passes).toBe(true);
         }
       }
@@ -551,7 +548,7 @@ test.describe('Main Page Accessibility Tests', () => {
       if (links.length > 0) {
         // Test first few links
         for (let i = 0; i < Math.min(3, links.length); i++) {
-          const contrast = await testTextContrast(page, links[i], 'AA');
+          const contrast = await testTextContrast(page, links[Math.min(i, links.length - 1)]!, 'AA');
           expect(contrast.passes).toBe(true);
         }
       }
@@ -563,7 +560,7 @@ test.describe('Main Page Accessibility Tests', () => {
       if (inputs.length > 0) {
         // Test first few inputs
         for (let i = 0; i < Math.min(3, inputs.length); i++) {
-          const contrast = await testUIContrast(page, inputs[i], 'AA');
+          const contrast = await testUIContrast(page, inputs[Math.min(i, inputs.length - 1)]!, 'AA');
           expect(contrast.passes).toBe(true);
         }
       }
@@ -574,7 +571,7 @@ test.describe('Main Page Accessibility Tests', () => {
 
       if (focusableElements.length > 0) {
         // Focus first element and check contrast
-        const element = focusableElements[0];
+        const element = focusableElements[Math.min(0, focusableElements.length - 1)]!;
         await element.focus();
 
         // Get focus outline color
@@ -594,7 +591,7 @@ test.describe('Main Page Accessibility Tests', () => {
       if (navItems.length > 0) {
         // Test first few nav items
         for (let i = 0; i < Math.min(3, navItems.length); i++) {
-          const contrast = await testTextContrast(page, navItems[i], 'AA');
+          const contrast = await testTextContrast(page, navItems[Math.min(i, navItems.length - 1)]!, 'AA');
           expect(contrast.passes).toBe(true);
         }
       }
@@ -606,7 +603,7 @@ test.describe('Main Page Accessibility Tests', () => {
       if (alerts.length > 0) {
         // Test first few alerts
         for (let i = 0; i < Math.min(3, alerts.length); i++) {
-          const contrast = await testTextContrast(page, alerts[i], 'AA');
+          const contrast = await testTextContrast(page, alerts[Math.min(i, alerts.length - 1)]!, 'AA');
           expect(contrast.passes).toBe(true);
         }
       }
@@ -618,7 +615,7 @@ test.describe('Main Page Accessibility Tests', () => {
       if (disabledElements.length > 0) {
         // Test first few disabled elements
         for (let i = 0; i < Math.min(2, disabledElements.length); i++) {
-          const contrast = await testUIContrast(page, disabledElements[i], 'AA');
+          const contrast = await testUIContrast(page, disabledElements[Math.min(i, disabledElements.length - 1)]!, 'AA');
           // Disabled elements have different contrast requirements but should still be visible
           expect(contrast.ratio).toBeGreaterThan(0);
         }
@@ -641,7 +638,7 @@ test.describe('Main Page Accessibility Tests', () => {
 
       if (notifications.length > 0) {
         // Check first notification
-        const hasAriaLive = await notifications[0].evaluate((el) => {
+        const hasAriaLive = await notifications[Math.min(0, notifications.length - 1)]!.evaluate((el) => {
           return el.hasAttribute('aria-live') || el.hasAttribute('role');
         });
         expect(hasAriaLive).toBe(true);
@@ -653,7 +650,7 @@ test.describe('Main Page Accessibility Tests', () => {
 
       if (liveRegions.length > 0) {
         for (let i = 0; i < Math.min(2, liveRegions.length); i++) {
-          const attrs = await liveRegions[i].evaluate((el) => ({
+          const attrs = await liveRegions[Math.min(i, liveRegions.length - 1)]!.evaluate((el) => ({
             ariaLive: el.getAttribute('aria-live'),
             ariaAtomic: el.getAttribute('aria-atomic'),
             ariaRelevant: el.getAttribute('aria-relevant'),
@@ -704,9 +701,9 @@ test.describe('Main Page Accessibility Tests', () => {
       const buttons = await page.locator('button, [role="button"]').all();
 
       if (buttons.length > 0) {
-        const results = [];
+        const results: Array<{ name: string; hasName: boolean }> = [];
         for (let i = 0; i < Math.min(5, buttons.length); i++) {
-          const nameInfo = await checkAccessibleName(buttons[i]);
+          const nameInfo = await checkAccessibleName(buttons[Math.min(i, buttons.length - 1)]!);
           results.push({
             name: nameInfo.name || 'no-name',
             hasName: nameInfo.hasAccessibleName,
@@ -723,13 +720,13 @@ test.describe('Main Page Accessibility Tests', () => {
 
       if (iconButtons.length > 0) {
         for (let i = 0; i < Math.min(3, iconButtons.length); i++) {
-          const hasText = await iconButtons[i].evaluate((el) => {
+          const hasText = await iconButtons[Math.min(i, iconButtons.length - 1)]!.evaluate((el) => {
             return (el.textContent?.trim() || '').length > 0;
           });
 
           if (!hasText) {
             // If no text, should have aria-label
-            const nameInfo = await checkAccessibleName(iconButtons[i]);
+            const nameInfo = await checkAccessibleName(iconButtons[Math.min(i, iconButtons.length - 1)]!);
             expect(nameInfo.hasAccessibleName).toBe(true);
           }
         }
@@ -747,10 +744,10 @@ test.describe('Main Page Accessibility Tests', () => {
 
       if (loaders.length > 0) {
         // Check if loading indicator is properly announced
-        const hasAriaLabel = await loaders[0].evaluate((el) => {
+        const hasAriaLabel = await loaders[Math.min(0, loaders.length - 1)]!.evaluate((el) => {
           return el.hasAttribute('aria-label') || el.hasAttribute('aria-labelledby');
         });
-        expect(hasAriaLabel || loaders[0].textContent()).toBeTruthy();
+        expect(hasAriaLabel || (await loaders[Math.min(0, loaders.length - 1)]!.textContent())).toBeTruthy();
       }
     });
 
@@ -856,7 +853,7 @@ test.describe('Main Page Accessibility Tests', () => {
 
     test('should have valid aria-labelledby references', async ({ page }) => {
       const labelledByErrors = await page.evaluate(() => {
-        const errors = [];
+        const errors: string[] = [];
         document.querySelectorAll('[aria-labelledby]').forEach((el) => {
           const ids = (el.getAttribute('aria-labelledby') || '').split(/\s+/);
           for (const id of ids) {
@@ -873,7 +870,7 @@ test.describe('Main Page Accessibility Tests', () => {
 
     test('should have valid aria-describedby references', async ({ page }) => {
       const describedByErrors = await page.evaluate(() => {
-        const errors = [];
+        const errors: string[] = [];
         document.querySelectorAll('[aria-describedby]').forEach((el) => {
           const ids = (el.getAttribute('aria-describedby') || '').split(/\s+/);
           for (const id of ids) {

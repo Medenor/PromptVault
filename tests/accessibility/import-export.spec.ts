@@ -15,7 +15,7 @@
  * - Keyboard-only workflow
  */
 
-import { test, expect } from '@playwright/test';
+import { expect } from '@playwright/test';
 import {
   validateSkipLinks,
   extractTabOrder,
@@ -39,6 +39,7 @@ import {
 } from './utils/index.js';
 import { authenticatedUserTest, getBaseURL, navigateToProtectedRoute } from './fixtures/auth.js';
 
+const test = authenticatedUserTest;
 const baseURL = getBaseURL();
 
 // Define test suites organized by feature

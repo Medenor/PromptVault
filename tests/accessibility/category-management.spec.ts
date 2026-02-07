@@ -17,7 +17,7 @@
  * - Live regions and announcements
  */
 
-import { test, expect } from '@playwright/test';
+import { expect } from '@playwright/test';
 import {
   validateSkipLinks,
   checkLandmarkRegions,
@@ -38,11 +38,12 @@ import {
 } from './utils/index.js';
 import { authenticatedAdminTest, navigateToProtectedRoute, getBaseURL } from './fixtures/auth.js';
 
+const test = authenticatedAdminTest;
 const baseURL = getBaseURL();
 
 // Define test suites organized by feature
-authenticatedAdminTest.describe('Category Management Page Accessibility Tests', () => {
-  authenticatedAdminTest.beforeEach(async ({ authenticatedPage: page }) => {
+test.describe('Category Management Page Accessibility Tests', () => {
+  test.beforeEach(async ({ authenticatedPage: page }) => {
     // Navigate to the category management page
     await navigateToProtectedRoute(page, '/manage-categories');
     await page.waitForLoadState('networkidle');
@@ -51,13 +52,13 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
   // ============================================================================
   // 1. PAGE STRUCTURE TESTS
   // ============================================================================
-  authenticatedAdminTest.describe('Page Structure', () => {
-    authenticatedAdminTest('should have correct page title', async ({ authenticatedPage: page }) => {
+  test.describe('Page Structure', () => {
+    test('should have correct page title', async ({ authenticatedPage: page }) => {
       const title = await page.title();
       expect(title).toContain('Manage Categories');
     });
 
-    authenticatedAdminTest('should have required landmark regions', async ({ authenticatedPage: page }) => {
+    test('should have required landmark regions', async ({ authenticatedPage: page }) => {
       const landmarks = await checkLandmarkRegions(page);
       expect(landmarks.hasLandmarks).toBe(true);
 
@@ -70,7 +71,7 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
       expect(hasBanner).toBe(true);
     });
 
-    authenticatedAdminTest('should have proper heading hierarchy', async ({ authenticatedPage: page }) => {
+    test('should have proper heading hierarchy', async ({ authenticatedPage: page }) => {
       const hierarchy = await validateHeadingHierarchy(page);
       expect(hierarchy.validHierarchy).toBe(
         true,
@@ -79,7 +80,7 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
       expect(hierarchy.headings.length).toBeGreaterThan(0);
     });
 
-    authenticatedAdminTest('should have skip link to main content', async ({ authenticatedPage: page }) => {
+    test('should have skip link to main content', async ({ authenticatedPage: page }) => {
       const skipLinks = await validateSkipLinks(page);
       expect(skipLinks.hasSkipLink).toBe(
         true,
@@ -91,7 +92,7 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
       expect(mainLink).toBeDefined();
     });
 
-    authenticatedAdminTest('skip link should focus main content when activated', async ({ authenticatedPage: page }) => {
+    test('skip link should focus main content when activated', async ({ authenticatedPage: page }) => {
       // Tab to skip link
       await page.keyboard.press('Tab');
 
@@ -117,8 +118,8 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
   // ============================================================================
   // 2. CREATE CATEGORY FORM ACCESSIBILITY
   // ============================================================================
-  authenticatedAdminTest.describe('Create Category Form', () => {
-    authenticatedAdminTest('should have properly labeled form inputs', async ({ authenticatedPage: page }) => {
+  test.describe('Create Category Form', () => {
+    test('should have properly labeled form inputs', async ({ authenticatedPage: page }) => {
       const formLabels = await validateFormLabels(page);
       expect(formLabels.allLabeled).toBe(
         true,
@@ -126,32 +127,32 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
       );
     });
 
-    authenticatedAdminTest('category name input should have accessible name', async ({ authenticatedPage: page }) => {
+    test('category name input should have accessible name', async ({ authenticatedPage: page }) => {
       const nameInput = page.locator('#category-create-name');
       const nameInfo = await checkAccessibleName(nameInput);
       expect(nameInfo.hasAccessibleName).toBe(true);
       expect(nameInfo.name).toMatch(/name/i);
     });
 
-    authenticatedAdminTest('category description input should have accessible name', async ({ authenticatedPage: page }) => {
+    test('category description input should have accessible name', async ({ authenticatedPage: page }) => {
       const descInput = page.locator('#category-create-description');
       const nameInfo = await checkAccessibleName(descInput);
       expect(nameInfo.hasAccessibleName).toBe(true);
     });
 
-    authenticatedAdminTest('category color input should have accessible name', async ({ authenticatedPage: page }) => {
+    test('category color input should have accessible name', async ({ authenticatedPage: page }) => {
       const colorInput = page.locator('#category-create-color');
       const nameInfo = await checkAccessibleName(colorInput);
       expect(nameInfo.hasAccessibleName).toBe(true);
     });
 
-    authenticatedAdminTest('create button should have accessible label', async ({ authenticatedPage: page }) => {
+    test('create button should have accessible label', async ({ authenticatedPage: page }) => {
       const createBtn = page.locator('#category-create-form button[type="submit"]');
       const nameInfo = await checkAccessibleName(createBtn);
       expect(nameInfo.hasAccessibleName).toBe(true);
     });
 
-    authenticatedAdminTest('error messages should be associated with form inputs', async ({ authenticatedPage: page }) => {
+    test('error messages should be associated with form inputs', async ({ authenticatedPage: page }) => {
       // Try to submit empty form
       const submitBtn = page.locator('#category-create-form button[type="submit"]');
       await submitBtn.click();
@@ -172,7 +173,7 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
       // Note: aria-describedby may only appear after validation error
     });
 
-    authenticatedAdminTest('form should be keyboard navigable', async ({ authenticatedPage: page }) => {
+    test('form should be keyboard navigable', async ({ authenticatedPage: page }) => {
       // Tab through form inputs
       await page.keyboard.press('Tab'); // Skip link
       await page.keyboard.press('Tab'); // Logo/home link
@@ -193,15 +194,15 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
   // ============================================================================
   // 3. CATEGORY LIST AND ROVING TABINDEX TESTS
   // ============================================================================
-  authenticatedAdminTest.describe('Category List Structure', () => {
-    authenticatedAdminTest('should have categories listed in table format', async ({ authenticatedPage: page }) => {
+  test.describe('Category List Structure', () => {
+    test('should have categories listed in table format', async ({ authenticatedPage: page }) => {
       // Check if table or list exists
       const table = page.locator('#categories-table-body');
       const exists = await table.count();
       expect(exists).toBeGreaterThan(0);
     });
 
-    authenticatedAdminTest('category table should have proper headers', async ({ authenticatedPage: page }) => {
+    test('category table should have proper headers', async ({ authenticatedPage: page }) => {
       // Check for table headers
       const headers = await page.locator('table thead th').all();
       expect(headers.length).toBeGreaterThan(0);
@@ -213,7 +214,7 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
       expect(headerTexts.some((t) => t?.toLowerCase().includes('name'))).toBe(true);
     });
 
-    authenticatedAdminTest('each category row should have accessible checkbox for selection', async ({ authenticatedPage: page }) => {
+    test('each category row should have accessible checkbox for selection', async ({ authenticatedPage: page }) => {
       // If there are category rows, check for checkboxes
       const checkboxes = await page.locator('tbody tr input[type="checkbox"]').all();
 
@@ -228,7 +229,7 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
       }
     });
 
-    authenticatedAdminTest('category items should have category name accessible in each row', async ({ authenticatedPage: page }) => {
+    test('category items should have category name accessible in each row', async ({ authenticatedPage: page }) => {
       // Get first category row if any
       const firstRow = page.locator('tbody tr').first();
       const exists = await firstRow.count();
@@ -244,8 +245,8 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
   // ============================================================================
   // 4. CATEGORY LIST KEYBOARD NAVIGATION TESTS
   // ============================================================================
-  authenticatedAdminTest.describe('Category List Keyboard Navigation', () => {
-    authenticatedAdminTest('category list should support keyboard navigation', async ({ authenticatedPage: page }) => {
+  test.describe('Category List Keyboard Navigation', () => {
+    test('category list should support keyboard navigation', async ({ authenticatedPage: page }) => {
       // Get categories table container
       const tableContainer = page.locator('#categories-table-container');
       const exists = await tableContainer.count();
@@ -267,7 +268,7 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
       }
     });
 
-    authenticatedAdminTest('keyboard navigation should support typeahead search by first letter', async ({ authenticatedPage: page }) => {
+    test('keyboard navigation should support typeahead search by first letter', async ({ authenticatedPage: page }) => {
       // This tests the typeahead functionality mentioned in manage-categories.ts
       const tableContainer = page.locator('#categories-table-container');
       await tableContainer.focus();
@@ -288,7 +289,7 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
       }
     });
 
-    authenticatedAdminTest('focus should remain visible during list navigation', async ({ authenticatedPage: page }) => {
+    test('focus should remain visible during list navigation', async ({ authenticatedPage: page }) => {
       // Check for focus indicators
       const focusIndicators = await verifyFocusIndicators(page);
       // Note: Some elements might not have visible focus initially
@@ -299,8 +300,8 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
   // ============================================================================
   // 5. CATEGORY OPERATIONS - MERGE FUNCTIONALITY
   // ============================================================================
-  authenticatedAdminTest.describe('Category Merge Operation', () => {
-    authenticatedAdminTest('merge button should have accessible label', async ({ authenticatedPage: page }) => {
+  test.describe('Category Merge Operation', () => {
+    test('merge button should have accessible label', async ({ authenticatedPage: page }) => {
       const mergeBtn = page.locator('#category-merge-btn');
       const exists = await mergeBtn.count();
 
@@ -310,7 +311,7 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
       }
     });
 
-    authenticatedAdminTest('merge target input should be labeled', async ({ authenticatedPage: page }) => {
+    test('merge target input should be labeled', async ({ authenticatedPage: page }) => {
       const mergeTargetInput = page.locator('#category-merge-target');
       const exists = await mergeTargetInput.count();
 
@@ -321,7 +322,7 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
       }
     });
 
-    authenticatedAdminTest('merge sources input should be labeled', async ({ authenticatedPage: page }) => {
+    test('merge sources input should be labeled', async ({ authenticatedPage: page }) => {
       const mergeSourcesInput = page.locator('#category-merge-sources');
       const exists = await mergeSourcesInput.count();
 
@@ -332,7 +333,7 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
       }
     });
 
-    authenticatedAdminTest('merge help text should be associated with inputs', async ({ authenticatedPage: page }) => {
+    test('merge help text should be associated with inputs', async ({ authenticatedPage: page }) => {
       // Help text should be associated via aria-describedby
       const targetInput = page.locator('#category-merge-target');
       const hasDescribedBy = await targetInput.evaluate((el) => {
@@ -342,7 +343,7 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
       expect(hasDescribedBy).toBe(true);
     });
 
-    authenticatedAdminTest('merge section should have error announcements', async ({ authenticatedPage: page }) => {
+    test('merge section should have error announcements', async ({ authenticatedPage: page }) => {
       // Check for live region
       const errorBanner = page.locator('#category-merge-error-summary');
       const exists = await errorBanner.count();
@@ -356,7 +357,7 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
       expect(hasAlertRole).toBe(true);
     });
 
-    authenticatedAdminTest('merge operation should be completable via keyboard', async ({ authenticatedPage: page }) => {
+    test('merge operation should be completable via keyboard', async ({ authenticatedPage: page }) => {
       // Get target input and enter valid ID
       const targetInput = page.locator('#category-merge-target');
       const exists = await targetInput.count();
@@ -382,8 +383,8 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
   // ============================================================================
   // 6. CATEGORY OPERATIONS - FIND & REPLACE FUNCTIONALITY
   // ============================================================================
-  authenticatedAdminTest.describe('Category Find & Replace Operation', () => {
-    authenticatedAdminTest('find input should be labeled', async ({ authenticatedPage: page }) => {
+  test.describe('Category Find & Replace Operation', () => {
+    test('find input should be labeled', async ({ authenticatedPage: page }) => {
       const findInput = page.locator('#category-find');
       const exists = await findInput.count();
 
@@ -394,7 +395,7 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
       }
     });
 
-    authenticatedAdminTest('replace input should be labeled', async ({ authenticatedPage: page }) => {
+    test('replace input should be labeled', async ({ authenticatedPage: page }) => {
       const replaceInput = page.locator('#category-replace');
       const exists = await replaceInput.count();
 
@@ -405,7 +406,7 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
       }
     });
 
-    authenticatedAdminTest('find/replace button should have accessible label', async ({ authenticatedPage: page }) => {
+    test('find/replace button should have accessible label', async ({ authenticatedPage: page }) => {
       const replaceBtn = page.locator('#category-find-replace-btn');
       const exists = await replaceBtn.count();
 
@@ -415,7 +416,7 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
       }
     });
 
-    authenticatedAdminTest('find/replace section should have error announcements', async ({ authenticatedPage: page }) => {
+    test('find/replace section should have error announcements', async ({ authenticatedPage: page }) => {
       const errorBanner = page.locator('#category-find-replace-error-summary');
       const exists = await errorBanner.count();
       expect(exists).toBeGreaterThan(0);
@@ -427,7 +428,7 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
       expect(hasAlertRole).toBe(true);
     });
 
-    authenticatedAdminTest('find/replace operation should be completable via keyboard', async ({ authenticatedPage: page }) => {
+    test('find/replace operation should be completable via keyboard', async ({ authenticatedPage: page }) => {
       const findInput = page.locator('#category-find');
       const exists = await findInput.count();
 
@@ -448,8 +449,8 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
   // ============================================================================
   // 7. CATEGORY OPERATIONS - BULK DELETE FUNCTIONALITY
   // ============================================================================
-  authenticatedAdminTest.describe('Category Bulk Delete Operation', () => {
-    authenticatedAdminTest('bulk delete IDs input should be labeled', async ({ authenticatedPage: page }) => {
+  test.describe('Category Bulk Delete Operation', () => {
+    test('bulk delete IDs input should be labeled', async ({ authenticatedPage: page }) => {
       const bulkDeleteInput = page.locator('#category-bulk-delete-ids');
       const exists = await bulkDeleteInput.count();
 
@@ -459,7 +460,7 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
       }
     });
 
-    authenticatedAdminTest('force delete checkbox should be labeled', async ({ authenticatedPage: page }) => {
+    test('force delete checkbox should be labeled', async ({ authenticatedPage: page }) => {
       const forceCheckbox = page.locator('#category-bulk-delete-force');
       const exists = await forceCheckbox.count();
 
@@ -471,7 +472,7 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
       }
     });
 
-    authenticatedAdminTest('bulk delete button should have accessible label', async ({ authenticatedPage: page }) => {
+    test('bulk delete button should have accessible label', async ({ authenticatedPage: page }) => {
       const deleteBtn = page.locator('#category-bulk-delete-btn');
       const exists = await deleteBtn.count();
 
@@ -481,7 +482,7 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
       }
     });
 
-    authenticatedAdminTest('bulk delete section should have error announcements', async ({ authenticatedPage: page }) => {
+    test('bulk delete section should have error announcements', async ({ authenticatedPage: page }) => {
       const errorBanner = page.locator('#category-bulk-delete-error-summary');
       const exists = await errorBanner.count();
       expect(exists).toBeGreaterThan(0);
@@ -497,8 +498,8 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
   // ============================================================================
   // 8. CATEGORY SEARCH FUNCTIONALITY
   // ============================================================================
-  authenticatedAdminTest.describe('Category Search/Filter', () => {
-    authenticatedAdminTest('search input should have accessible label', async ({ authenticatedPage: page }) => {
+  test.describe('Category Search/Filter', () => {
+    test('search input should have accessible label', async ({ authenticatedPage: page }) => {
       const searchInput = page.locator('#category-search');
       const exists = await searchInput.count();
 
@@ -509,7 +510,7 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
       }
     });
 
-    authenticatedAdminTest('search input should be keyboard accessible', async ({ authenticatedPage: page }) => {
+    test('search input should be keyboard accessible', async ({ authenticatedPage: page }) => {
       const searchInput = page.locator('#category-search');
       const exists = await searchInput.count();
 
@@ -538,7 +539,7 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
       }
     });
 
-    authenticatedAdminTest('search results should maintain focus management', async ({ authenticatedPage: page }) => {
+    test('search results should maintain focus management', async ({ authenticatedPage: page }) => {
       const searchInput = page.locator('#category-search');
       const exists = await searchInput.count();
 
@@ -559,8 +560,8 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
   // ============================================================================
   // 9. IMPORT/EXPORT FUNCTIONALITY
   // ============================================================================
-  authenticatedAdminTest.describe('Import/Export Operations', () => {
-    authenticatedAdminTest('export button should have accessible label', async ({ authenticatedPage: page }) => {
+  test.describe('Import/Export Operations', () => {
+    test('export button should have accessible label', async ({ authenticatedPage: page }) => {
       const exportBtn = page.locator('#category-export-btn');
       const exists = await exportBtn.count();
 
@@ -570,7 +571,7 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
       }
     });
 
-    authenticatedAdminTest('import file input should be labeled', async ({ authenticatedPage: page }) => {
+    test('import file input should be labeled', async ({ authenticatedPage: page }) => {
       const importInput = page.locator('#category-import-file');
       const exists = await importInput.count();
 
@@ -581,7 +582,7 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
       }
     });
 
-    authenticatedAdminTest('import button should have accessible label', async ({ authenticatedPage: page }) => {
+    test('import button should have accessible label', async ({ authenticatedPage: page }) => {
       const importBtn = page.locator('#category-import-btn');
       const exists = await importBtn.count();
 
@@ -591,7 +592,7 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
       }
     });
 
-    authenticatedAdminTest('import section should have error announcements', async ({ authenticatedPage: page }) => {
+    test('import section should have error announcements', async ({ authenticatedPage: page }) => {
       const errorBanner = page.locator('#category-import-error-summary');
       const exists = await errorBanner.count();
       expect(exists).toBeGreaterThan(0);
@@ -607,8 +608,8 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
   // ============================================================================
   // 10. BUTTONS AND INTERACTIVE ELEMENTS
   // ============================================================================
-  authenticatedAdminTest.describe('Buttons and Interactive Elements', () => {
-    authenticatedAdminTest('all buttons should have accessible labels', async ({ authenticatedPage: page }) => {
+  test.describe('Buttons and Interactive Elements', () => {
+    test('all buttons should have accessible labels', async ({ authenticatedPage: page }) => {
       const buttonLabels = await validateButtonLabels(page);
       expect(buttonLabels.allButtonsLabeled).toBe(
         true,
@@ -616,7 +617,7 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
       );
     });
 
-    authenticatedAdminTest('save all button should have accessible label', async ({ authenticatedPage: page }) => {
+    test('save all button should have accessible label', async ({ authenticatedPage: page }) => {
       const saveAllBtn = page.locator('#category-save-all-btn');
       const exists = await saveAllBtn.count();
 
@@ -626,7 +627,7 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
       }
     });
 
-    authenticatedAdminTest('merge selected button should have accessible label', async ({ authenticatedPage: page }) => {
+    test('merge selected button should have accessible label', async ({ authenticatedPage: page }) => {
       const mergeSelectedBtn = page.locator('#category-selection-merge-btn');
       const exists = await mergeSelectedBtn.count();
 
@@ -636,7 +637,7 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
       }
     });
 
-    authenticatedAdminTest('find/replace selected button should have accessible label', async ({ authenticatedPage: page }) => {
+    test('find/replace selected button should have accessible label', async ({ authenticatedPage: page }) => {
       const findReplaceSelectedBtn = page.locator('#category-selection-find-replace-btn');
       const exists = await findReplaceSelectedBtn.count();
 
@@ -646,7 +647,7 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
       }
     });
 
-    authenticatedAdminTest('undo button should have accessible label', async ({ authenticatedPage: page }) => {
+    test('undo button should have accessible label', async ({ authenticatedPage: page }) => {
       const undoBtn = page.locator('#category-undo-btn');
       const exists = await undoBtn.count();
 
@@ -656,7 +657,7 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
       }
     });
 
-    authenticatedAdminTest('all buttons should be keyboard accessible', async ({ authenticatedPage: page }) => {
+    test('all buttons should be keyboard accessible', async ({ authenticatedPage: page }) => {
       // Extract tab order
       const tabOrder = await extractTabOrder(page);
       expect(tabOrder.length).toBeGreaterThan(0);
@@ -671,14 +672,14 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
   // ============================================================================
   // 11. LIVE REGIONS AND ANNOUNCEMENTS
   // ============================================================================
-  authenticatedAdminTest.describe('Live Regions and Announcements', () => {
-    authenticatedAdminTest('page should have live regions for announcements', async ({ authenticatedPage: page }) => {
+  test.describe('Live Regions and Announcements', () => {
+    test('page should have live regions for announcements', async ({ authenticatedPage: page }) => {
       const liveRegions = await checkLiveRegions(page);
       // Page may or may not have explicit live regions - check for alert regions
       expect(liveRegions).toBeDefined();
     });
 
-    authenticatedAdminTest('error banners should be live regions', async ({ authenticatedPage: page }) => {
+    test('error banners should be live regions', async ({ authenticatedPage: page }) => {
       // Check for error summary regions
       const errorBanners = await page.locator('[role="alert"]').all();
 
@@ -691,7 +692,7 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
       }
     });
 
-    authenticatedAdminTest('error messages should be associated with inputs', async ({ authenticatedPage: page }) => {
+    test('error messages should be associated with inputs', async ({ authenticatedPage: page }) => {
       // Check form validation error elements
       const errorElements = await page.locator('[id*="-error"]').all();
 
@@ -707,7 +708,7 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
       }
     });
 
-    authenticatedAdminTest('validation announcements should use aria-live', async ({ authenticatedPage: page }) => {
+    test('validation announcements should use aria-live', async ({ authenticatedPage: page }) => {
       // Check for aria-live elements
       const liveElements = await page.locator('[aria-live]').all();
 
@@ -721,8 +722,8 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
   // ============================================================================
   // 12. COLOR CONTRAST TESTS
   // ============================================================================
-  authenticatedAdminTest.describe('Color Contrast (WCAG AA)', () => {
-    authenticatedAdminTest('page headings should have sufficient contrast', async ({ authenticatedPage: page }) => {
+  test.describe('Color Contrast (WCAG AA)', () => {
+    test('page headings should have sufficient contrast', async ({ authenticatedPage: page }) => {
       const headings = await page.locator('h1, h2, h3').all();
 
       if (headings.length > 0) {
@@ -737,7 +738,7 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
       }
     });
 
-    authenticatedAdminTest('button text should have sufficient contrast', async ({ authenticatedPage: page }) => {
+    test('button text should have sufficient contrast', async ({ authenticatedPage: page }) => {
       const buttons = await page.locator('button').all();
 
       if (buttons.length > 0) {
@@ -752,7 +753,7 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
       }
     });
 
-    authenticatedAdminTest('form label text should have sufficient contrast', async ({ authenticatedPage: page }) => {
+    test('form label text should have sufficient contrast', async ({ authenticatedPage: page }) => {
       const labels = await page.locator('label').all();
 
       if (labels.length > 0) {
@@ -767,7 +768,7 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
       }
     });
 
-    authenticatedAdminTest('input fields should have sufficient contrast on border', async ({ authenticatedPage: page }) => {
+    test('input fields should have sufficient contrast on border', async ({ authenticatedPage: page }) => {
       const inputs = await page.locator('input[type="text"], input[type="number"]').all();
 
       if (inputs.length > 0) {
@@ -782,7 +783,7 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
       }
     });
 
-    authenticatedAdminTest('focus indicators should have sufficient contrast', async ({ authenticatedPage: page }) => {
+    test('focus indicators should have sufficient contrast', async ({ authenticatedPage: page }) => {
       // Tab to first element to show focus
       await page.keyboard.press('Tab');
 
@@ -797,7 +798,7 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
       }
     });
 
-    authenticatedAdminTest('error message text should have sufficient contrast', async ({ authenticatedPage: page }) => {
+    test('error message text should have sufficient contrast', async ({ authenticatedPage: page }) => {
       const errorMessages = await page.locator('[id*="-error"]').all();
 
       if (errorMessages.length > 0) {
@@ -815,8 +816,8 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
   // ============================================================================
   // 13. FOCUS MANAGEMENT AND KEYBOARD WORKFLOW TESTS
   // ============================================================================
-  authenticatedAdminTest.describe('Focus Management and Keyboard-Only Workflow', () => {
-    authenticatedAdminTest('focus should be visible when tabbing through page', async ({ authenticatedPage: page }) => {
+  test.describe('Focus Management and Keyboard-Only Workflow', () => {
+    test('focus should be visible when tabbing through page', async ({ authenticatedPage: page }) => {
       // Tab through several elements
       for (let i = 0; i < 5; i++) {
         await page.keyboard.press('Tab');
@@ -831,7 +832,7 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
       }
     });
 
-    authenticatedAdminTest('focus should not be trapped in any section', async ({ authenticatedPage: page }) => {
+    test('focus should not be trapped in any section', async ({ authenticatedPage: page }) => {
       // Tab multiple times to ensure we don't get stuck
       const focusHistory = [];
 
@@ -857,7 +858,7 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
       expect(uniqueFocuses.size).toBeGreaterThan(1);
     });
 
-    authenticatedAdminTest('Shift+Tab should navigate backwards', async ({ authenticatedPage: page }) => {
+    test('Shift+Tab should navigate backwards', async ({ authenticatedPage: page }) => {
       // Tab forward
       await page.keyboard.press('Tab');
       const firstFocus = await page.evaluate(() => document.activeElement?.id || '');
@@ -874,7 +875,7 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
       expect(backFocus).toBeTruthy();
     });
 
-    authenticatedAdminTest('create category workflow should be completable via keyboard only', async ({ authenticatedPage: page }) => {
+    test('create category workflow should be completable via keyboard only', async ({ authenticatedPage: page }) => {
       // Skip link
       await page.keyboard.press('Tab');
 
@@ -918,8 +919,8 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
   // ============================================================================
   // 14. RESPONSIVE DESIGN AND MOBILE ACCESSIBILITY
   // ============================================================================
-  authenticatedAdminTest.describe('Responsive Design', () => {
-    authenticatedAdminTest('page elements should be accessible at different screen sizes', async ({ authenticatedPage: page }) => {
+  test.describe('Responsive Design', () => {
+    test('page elements should be accessible at different screen sizes', async ({ authenticatedPage: page }) => {
       // Set viewport to mobile size
       await page.setViewportSize({ width: 375, height: 812 });
 
@@ -933,7 +934,7 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
       await page.setViewportSize({ width: 1280, height: 720 });
     });
 
-    authenticatedAdminTest('form inputs should be accessible on mobile', async ({ authenticatedPage: page }) => {
+    test('form inputs should be accessible on mobile', async ({ authenticatedPage: page }) => {
       // Set mobile viewport
       await page.setViewportSize({ width: 375, height: 812 });
 
@@ -955,8 +956,8 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
   // ============================================================================
   // 15. VISUAL TESTING - SCREENSHOTS
   // ============================================================================
-  authenticatedAdminTest.describe('Visual Accessibility Tests', () => {
-    authenticatedAdminTest('should capture page in normal state', async ({ authenticatedPage: page }) => {
+  test.describe('Visual Accessibility Tests', () => {
+    test('should capture page in normal state', async ({ authenticatedPage: page }) => {
       // Capture full page
       await capturePageWithHighlight(
         page,
@@ -964,7 +965,7 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
       );
     });
 
-    authenticatedAdminTest('should capture focused form input', async ({ authenticatedPage: page }) => {
+    test('should capture focused form input', async ({ authenticatedPage: page }) => {
       const nameInput = page.locator('#category-create-name');
       const exists = await nameInput.count();
 
@@ -978,7 +979,7 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
       }
     });
 
-    authenticatedAdminTest('should capture category table with focus', async ({ authenticatedPage: page }) => {
+    test('should capture category table with focus', async ({ authenticatedPage: page }) => {
       // Scroll to table
       const table = page.locator('#categories-table-body');
       await table.scrollIntoViewIfNeeded();
@@ -996,7 +997,7 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
       }
     });
 
-    authenticatedAdminTest('should demonstrate accessible button focus states', async ({ authenticatedPage: page }) => {
+    test('should demonstrate accessible button focus states', async ({ authenticatedPage: page }) => {
       // Get merge button
       const mergeBtn = page.locator('#category-merge-btn');
       const exists = await mergeBtn.count();
@@ -1020,8 +1021,8 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
   // ============================================================================
   // 16. EDGE CASES AND ERROR HANDLING
   // ============================================================================
-  authenticatedAdminTest.describe('Edge Cases and Error Handling', () => {
-    authenticatedAdminTest('page should remain accessible with empty category list', async ({ authenticatedPage: page }) => {
+  test.describe('Edge Cases and Error Handling', () => {
+    test('page should remain accessible with empty category list', async ({ authenticatedPage: page }) => {
       // Page should still have proper structure
       const landmarks = await checkLandmarkRegions(page);
       expect(landmarks.hasLandmarks).toBe(true);
@@ -1031,7 +1032,7 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
       expect(await createForm.count()).toBeGreaterThan(0);
     });
 
-    authenticatedAdminTest('search input should remain accessible when clearing text', async ({ authenticatedPage: page }) => {
+    test('search input should remain accessible when clearing text', async ({ authenticatedPage: page }) => {
       const searchInput = page.locator('#category-search');
       const exists = await searchInput.count();
 
@@ -1052,7 +1053,7 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
       }
     });
 
-    authenticatedAdminTest('form elements should be accessible even with validation errors', async ({ authenticatedPage: page }) => {
+    test('form elements should be accessible even with validation errors', async ({ authenticatedPage: page }) => {
       const nameInput = page.locator('#category-create-name');
       const exists = await nameInput.count();
 
@@ -1071,7 +1072,7 @@ authenticatedAdminTest.describe('Category Management Page Accessibility Tests', 
       }
     });
 
-    authenticatedAdminTest('disabled state should be accessible', async ({ authenticatedPage: page }) => {
+    test('disabled state should be accessible', async ({ authenticatedPage: page }) => {
       // Find any disabled inputs
       const disabledInputs = await page.locator('input[disabled]').all();
 

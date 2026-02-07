@@ -19,7 +19,7 @@
  * - Help text and instructions
  */
 
-import { test, expect } from '@playwright/test';
+import { expect } from '@playwright/test';
 import {
   validateSkipLinks,
   extractTabOrder,
@@ -34,6 +34,8 @@ import {
   captureFocusState,
 } from './utils/index.js';
 import { authenticatedUserTest, navigateToProtectedRoute } from './fixtures/auth.js';
+
+const test = authenticatedUserTest;
 
 // Define test suites organized by feature
 test.describe('Backup Management Page Accessibility Tests', () => {
