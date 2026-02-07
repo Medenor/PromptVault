@@ -46,7 +46,7 @@ test.describe('Tag Management Page Accessibility Tests', () => {
   test.beforeEach(async ({ authenticatedPage: page }) => {
     // Navigate to the tag management page
     await navigateToProtectedRoute(page, '/manage-tags');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
   });
 
   // ============================================================================

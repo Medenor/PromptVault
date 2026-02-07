@@ -46,7 +46,7 @@ test.describe('Category Management Page Accessibility Tests', () => {
   test.beforeEach(async ({ authenticatedPage: page }) => {
     // Navigate to the category management page
     await navigateToProtectedRoute(page, '/manage-categories');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
   });
 
   // ============================================================================

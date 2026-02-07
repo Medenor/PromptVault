@@ -764,7 +764,7 @@ test.describe('Import-Export Page Accessibility Tests', () => {
 
       // Start fresh
       await page.reload();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Tab to file input
       let tabCount = 0;

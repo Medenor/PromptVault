@@ -47,7 +47,7 @@ const baseURL = getBaseURL();
 test.describe('Admin Users Page Accessibility', () => {
   test.beforeEach(async ({ authenticatedPage: page }) => {
     await navigateToProtectedRoute(page, '/admin/users');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
   });
 
   // ============================================================================
@@ -581,7 +581,7 @@ test.describe('Admin Users Page Accessibility', () => {
 test.describe('Admin Sessions Page Accessibility', () => {
   test.beforeEach(async ({ authenticatedPage: page }) => {
     await navigateToProtectedRoute(page, '/admin/sessions');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
   });
 
   // ============================================================================
@@ -815,14 +815,14 @@ test.describe('Admin Pages Cross-Page Accessibility', () => {
   test.describe('Admin Navigation', () => {
     test('should navigate between admin pages via menu', async ({ authenticatedPage: page }) => {
       await navigateToProtectedRoute(page, '/admin/users');
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Click to sessions if available
       const sessionsButton = page.locator('button:has-text("Sessions"), a:has-text("Sessions")').first();
 
       if (await sessionsButton.count() > 0) {
         await sessionsButton.click();
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('domcontentloaded');
 
         expect(page.url()).toContain('/admin/sessions');
       }
@@ -830,7 +830,7 @@ test.describe('Admin Pages Cross-Page Accessibility', () => {
 
     test('admin menu should be keyboard accessible', async ({ authenticatedPage: page }) => {
       await navigateToProtectedRoute(page, '/admin/users');
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       const navLinks = page.locator('nav button, nav a');
       const count = await navLinks.count();
@@ -839,7 +839,7 @@ test.describe('Admin Pages Cross-Page Accessibility', () => {
 
     test('active page indicator should be present', async ({ authenticatedPage: page }) => {
       await navigateToProtectedRoute(page, '/admin/users');
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Check for aria-current or active class
       const activeIndicator = page.locator('[aria-current], [class*="active"]').first();
@@ -899,7 +899,7 @@ test.describe('Admin Pages Cross-Page Accessibility', () => {
     test('should complete full admin workflow with keyboard only', async ({ authenticatedPage: page }) => {
       // Navigate to users page
       await navigateToProtectedRoute(page, '/admin/users');
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Focus on search input
       const searchInput = page.locator('input[type="search"], input[placeholder*="search" i]').first();
@@ -917,7 +917,7 @@ test.describe('Admin Pages Cross-Page Accessibility', () => {
       if (await sessionsButton.count() > 0) {
         await sessionsButton.focus();
         await sessionsButton.press('Enter');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('domcontentloaded');
       }
 
       expect(true).toBe(true);
