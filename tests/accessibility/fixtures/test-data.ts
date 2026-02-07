@@ -250,10 +250,11 @@ export async function getAllFormInputs(
 
     allInputs.forEach((input, index) => {
       const type = input.getAttribute('type') || input.tagName.toLowerCase();
-      const label = input.getAttribute('aria-label');
+      const label = input.getAttribute('aria-label') ?? undefined;
+      const testId = input.getAttribute('data-testid');
 
       inputs.push({
-        selector: `[data-testid="${input.getAttribute('data-testid') || ''}"]` || `input:nth-of-type(${index})`,
+        selector: testId ? `[data-testid="${testId}"]` : `input:nth-of-type(${index})`,
         type,
         label,
       });
@@ -354,8 +355,8 @@ export async function getAllInteractiveElements(
 
     interactive.forEach((el) => {
       const type = el.getAttribute('role') || el.tagName.toLowerCase();
-      const label = el.textContent?.trim().substring(0, 50) || el.getAttribute('aria-label');
-      const ariaLabel = el.getAttribute('aria-label');
+      const ariaLabel = el.getAttribute('aria-label') ?? undefined;
+      const label = el.textContent?.trim().substring(0, 50) || ariaLabel;
 
       elements.push({
         selector: el.className || type,

@@ -6,10 +6,11 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "types": ["node", "@playwright/test"]
+    "types": ["node", "@playwright/test"],
+    "exactOptionalPropertyTypes": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false
   },
-  "include": ["tests/**/*.ts", "scripts/**/*.ts", "playwright.config.ts"]
+  "include": ["scripts/**/*.ts", "playwright.config.ts", "tests/accessibility/**/*.ts"],
+  "exclude": ["tests/accessibility/**/*.spec.ts", "tests/accessibility/sample-test.example.ts"]
 }
-

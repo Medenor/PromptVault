@@ -122,6 +122,7 @@ export async function createAuthState(context, username, password, outputPath) {
  * Authenticated user fixture
  * Provides a logged-in page for user-level tests
  */
+/** @type {import('@playwright/test').TestType<import('playwright/types/test').PlaywrightTestArgs & import('playwright/types/test').PlaywrightTestOptions & { authenticatedPage: import('@playwright/test').Page }, import('playwright/types/test').PlaywrightWorkerArgs & import('playwright/types/test').PlaywrightWorkerOptions>} */
 export const authenticatedUserTest = base.extend({
   /**
    * @param {any} _use - Playwright parameter
@@ -165,6 +166,7 @@ export const authenticatedUserTest = base.extend({
  * Authenticated admin fixture
  * Provides a logged-in page with admin privileges
  */
+/** @type {import('@playwright/test').TestType<import('playwright/types/test').PlaywrightTestArgs & import('playwright/types/test').PlaywrightTestOptions & { authenticatedPage: import('@playwright/test').Page }, import('playwright/types/test').PlaywrightWorkerArgs & import('playwright/types/test').PlaywrightWorkerOptions>} */
 export const authenticatedAdminTest = base.extend({
   /**
    * @param {any} _use - Playwright parameter
@@ -208,6 +210,7 @@ export const authenticatedAdminTest = base.extend({
  * Dual-role fixture for testing both user and admin paths
  * Provides both authenticated user and admin pages
  */
+/** @type {import('@playwright/test').TestType<import('playwright/types/test').PlaywrightTestArgs & import('playwright/types/test').PlaywrightTestOptions & { authenticatedPages: Array<{ role: 'user' | 'admin', page: import('@playwright/test').Page, context: import('@playwright/test').BrowserContext }> }, import('playwright/types/test').PlaywrightWorkerArgs & import('playwright/types/test').PlaywrightWorkerOptions>} */
 export const dualAuthTest = base.extend({
   /**
    * @type {[import('@playwright/test').Page, import('@playwright/test').Page]}

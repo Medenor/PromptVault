@@ -90,14 +90,16 @@ export default defineConfig({
   ],
 
   /* Run your local dev server before starting the tests */
-  webServer: process.env.ACCESSIBILITY_EXTERNAL_SERVER
-    ? undefined
+  ...(process.env.ACCESSIBILITY_EXTERNAL_SERVER
+    ? {}
     : {
-        command: 'UVICORN_RELOAD=false python3 run_web.py',
-        url: process.env.ACCESSIBILITY_BASE_URL ?? 'http://127.0.0.1:8003',
-        reuseExistingServer: !process.env.CI,
-        timeout: 120 * 1000,
-      },
+        webServer: {
+          command: 'UVICORN_RELOAD=false python3 run_web.py',
+          url: process.env.ACCESSIBILITY_BASE_URL ?? 'http://127.0.0.1:8003',
+          reuseExistingServer: !process.env.CI,
+          timeout: 120 * 1000,
+        },
+      }),
 
   /* Global timeout - 60s for accessibility tests that may need extra time */
   timeout: 60 * 1000,

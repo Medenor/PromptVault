@@ -135,6 +135,7 @@
             >
               <!-- Desktop-only: New Prompt -->
               <button
+                type="button"
                 id="new-prompt-btn"
                 class="hidden md:block px-4 py-2 text-sm font-semibold rounded-lg bg-white text-blue-700 border border-blue-200 hover:bg-blue-50 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
                 data-i18n="nav.newPrompt"
@@ -144,6 +145,7 @@
 
               <!-- Desktop-only buttons -->
               <button
+                type="button"
                 id="import-export-btn"
                 onclick="window.location.href = '/import-export'"
                 class="hidden md:block px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
@@ -152,6 +154,7 @@
                 Import/Export
               </button>
               <button
+                type="button"
                 id="backup-btn"
                 onclick="window.location.href = '/backup-management'"
                 class="hidden md:block px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
@@ -160,6 +163,7 @@
                 Backup
               </button>
               <button
+                type="button"
                 id="profile-btn"
                 onclick="window.location.href = '/auth/profile'"
                 class="hidden md:block px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
@@ -168,6 +172,7 @@
                 Profile
               </button>
               <button
+                type="button"
                 id="admin-btn"
                 onclick="window.location.href = '/admin/users'"
                 class="hidden md:block px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
@@ -197,6 +202,7 @@
                   data-i18n="[aria-label]accessibility.labels.primaryActionsMobile"
                 >
                   <button
+                    type="button"
                     id="new-prompt-btn-mobile"
                     class="w-full text-left px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-inset"
                     data-i18n="nav.newPrompt"
@@ -205,6 +211,7 @@
                   </button>
                   <div class="border-t border-gray-200 my-2"></div>
                   <button
+                    type="button"
                     onclick="window.location.href = '/import-export'"
                     class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-inset"
                     data-i18n="nav.importExport"
@@ -212,6 +219,7 @@
                     Import/Export
                   </button>
                   <button
+                    type="button"
                     onclick="window.location.href = '/backup-management'"
                     class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-inset"
                     data-i18n="nav.backupManagement"
@@ -219,6 +227,7 @@
                     Backup
                   </button>
                   <button
+                    type="button"
                     onclick="window.location.href = '/auth/profile'"
                     class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-inset"
                     data-i18n="nav.profile"
@@ -226,6 +235,7 @@
                     Profile
                   </button>
                   <button
+                    type="button"
                     id="admin-btn-mobile"
                     onclick="window.location.href = '/admin/users'"
                     class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-inset"
@@ -236,6 +246,7 @@
                   </button>
                   <div class="border-t border-gray-200 my-2"></div>
                   <button
+                    type="button"
                     id="logout-btn-mobile"
                     class="w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50 transition-colors font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-inset"
                     data-i18n="nav.logout"
@@ -247,6 +258,7 @@
 
               <!-- Desktop-only: Logout -->
               <button
+                type="button"
                 id="logout-btn"
                 class="hidden md:block px-4 py-2 text-sm font-medium rounded-lg bg-red-600 text-white hover:bg-red-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
                 data-i18n="nav.logout"
@@ -323,6 +335,7 @@
 
               <!-- Clear All Filters Button -->
               <button
+                type="button"
                 id="clear-all-filters-btn"
                 class="w-full px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 transition hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
                 data-i18n="nav.clearFilters"
@@ -391,6 +404,7 @@
               </h3>
               <div class="space-y-2">
                 <button
+                  type="button"
                   onclick="window.location.href = '/manage-categories'"
                   class="w-full px-4 py-2 text-sm font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
                   data-i18n="categories.manage"
@@ -398,6 +412,7 @@
                   Manage Categories
                 </button>
                 <button
+                  type="button"
                   onclick="window.location.href = '/manage-tags'"
                   class="w-full px-4 py-2 text-sm font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
                   data-i18n="tags.manage"
@@ -421,16 +436,17 @@
             <!-- Close Button -->
             <div class="flex items-center justify-between mb-4">
               <h2 class="text-lg font-bold text-gray-900" data-i18n="nav.categoriesAndTags">Categories & Tags</h2>
-	              <button
-	                id="sidebar-close"
-	                class="text-gray-500 hover:text-gray-700 p-2 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
-	                aria-label="Close sidebar"
-	                data-i18n="[aria-label]accessibility.labels.closeSidebar"
-	              >
-	                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-	                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-	                </svg>
-	              </button>
+              <button
+                type="button"
+                id="sidebar-close"
+                class="text-gray-500 hover:text-gray-700 p-2 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
+                aria-label="Close sidebar"
+                data-i18n="[aria-label]accessibility.labels.closeSidebar"
+              >
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </button>
             </div>
 
             <!-- Filters Section -->
@@ -481,6 +497,7 @@
 
               <!-- Clear All Filters Button -->
               <button
+                type="button"
                 id="clear-all-filters-btn-mobile"
                 class="w-full px-3 py-2 text-sm font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all hidden"
                 data-i18n="nav.clearFilters"
@@ -549,6 +566,7 @@
               </h3>
               <div class="space-y-2">
                 <button
+                  type="button"
                   onclick="window.location.href = '/manage-categories'"
                   class="w-full px-4 py-2 text-sm font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
                   data-i18n="categories.manage"
@@ -556,6 +574,7 @@
                   Manage Categories
                 </button>
                 <button
+                  type="button"
                   onclick="window.location.href = '/manage-tags'"
                   class="w-full px-4 py-2 text-sm font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
                   data-i18n="tags.manage"
@@ -571,16 +590,17 @@
         <main id="main-content" role="main" class="flex-1 w-full">
           <!-- Mobile Sidebar Toggle Bar -->
           <div class="md:hidden flex items-center gap-3 px-4 py-3 border-b border-gray-200 bg-white">
-	            <button
-	              id="sidebar-toggle"
-	              class="text-gray-700 hover:text-gray-900 transition-colors rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
-	              aria-label="Toggle sidebar"
-	              data-i18n="[aria-label]accessibility.labels.toggleSidebar"
-	            >
-	              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-	                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-	              </svg>
-	            </button>
+            <button
+              type="button"
+              id="sidebar-toggle"
+              class="text-gray-700 hover:text-gray-900 transition-colors rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
+              aria-label="Toggle sidebar"
+              data-i18n="[aria-label]accessibility.labels.toggleSidebar"
+            >
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+              </svg>
+            </button>
             <h2 class="text-lg font-bold text-gray-900" data-i18n="nav.categoriesAndTags">Categories & Tags</h2>
           </div>
 
@@ -600,12 +620,16 @@
             <span id="selected-count" class="text-sm font-semibold text-amber-900">0 selected</span>
             <div class="flex gap-2 items-center">
               <button
+                type="button"
                 id="bulk-delete-btn"
                 class="px-4 py-2 text-sm font-semibold rounded-lg bg-red-600 text-white hover:bg-red-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
+                aria-label="Delete all selected prompts"
+                data-i18n="[aria-label]actions.bulkDeletePrompts"
               >
                 <span data-i18n="actions.bulkDelete">Delete Selected</span>
               </button>
               <button
+                type="button"
                 id="bulk-tag-btn"
                 class="px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
                 data-i18n="actions.bulkTag"
@@ -613,6 +637,7 @@
                 Tag Selected
               </button>
               <button
+                type="button"
                 id="clear-selection-btn"
                 class="px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
               >
@@ -634,6 +659,7 @@
             <h3 class="text-xl font-semibold text-gray-700 mb-2" data-i18n="emptyStates.noPrompts.title">No prompts yet</h3>
             <p class="text-sm text-gray-600 mb-6" data-i18n="emptyStates.noPrompts.description">Create your first prompt to get started</p>
             <button
+              type="button"
               id="empty-state-new-prompt-btn"
               class="px-6 py-3 text-base font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
               data-i18n="emptyStates.noPrompts.action"
@@ -648,6 +674,7 @@
             <h3 class="text-xl font-semibold text-gray-700 mb-2" data-i18n="emptyStates.noSearchResults.title">No results found</h3>
             <p class="text-sm text-gray-600 mb-6" data-i18n="emptyStates.noSearchResults.description">Try adjusting your search or filters</p>
             <button
+              type="button"
               id="empty-state-clear-filters-btn"
               class="px-6 py-3 text-base font-semibold rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
               data-i18n="emptyStates.noSearchResults.action"
@@ -704,27 +731,39 @@
               </p>
               <div class="flex flex-wrap gap-1">
                 <button
+                  type="button"
                   class="history-btn px-2 py-1 text-xs font-medium rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
                   data-id="{{ prompt_id }}"
                   data-i18n="version.history"
+                  aria-label="View version history"
+                  data-i18n="[aria-label]version.historyAriaLabel"
                 >
                   History
                 </button>
                 <button
+                  type="button"
                   class="copy-btn px-2 py-1 text-xs font-medium rounded-md bg-blue-100 text-blue-700 hover:bg-blue-200 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
                   data-id="{{ prompt_id }}"
+                  aria-label="Copy prompt to clipboard"
+                  data-i18n="[aria-label]actions.copyPrompt"
                 >
                   Copy
                 </button>
                 <button
+                  type="button"
                   class="edit-btn px-2 py-1 text-xs font-medium rounded-md bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
                   data-id="{{ prompt_id }}"
+                  aria-label="Edit prompt"
+                  data-i18n="[aria-label]actions.editPrompt"
                 >
                   Edit
                 </button>
                 <button
+                  type="button"
                   class="delete-btn px-2 py-1 text-xs font-medium rounded-md bg-red-100 text-red-700 hover:bg-red-200 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
                   data-id="{{ prompt_id }}"
+                  aria-label="Delete prompt"
+                  data-i18n="[aria-label]actions.deletePrompt"
                 >
                   Delete
                 </button>
@@ -935,6 +974,7 @@
         <div class="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 class="text-2xl font-bold text-gray-900" data-i18n="version.history">Version History</h2>
           <button
+            type="button"
             onclick="hideVersionHistoryModal()"
             class="text-gray-400 hover:text-gray-600 text-2xl leading-none rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
             aria-label="Close modal"
@@ -970,6 +1010,7 @@
         </div>
         <div class="flex items-center justify-end gap-2 p-6 border-t border-gray-200">
           <button
+            type="button"
             id="close-version-history-btn"
             class="px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
             data-i18n="actions.close"
@@ -977,6 +1018,7 @@
             Close
           </button>
           <button
+            type="button"
             id="compare-versions-btn"
             class="hidden px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
             data-i18n="version.compare"
@@ -993,6 +1035,7 @@
         <div class="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 class="text-2xl font-bold text-gray-900" data-i18n="version.compareVersions">Compare Versions</h2>
           <button
+            type="button"
             onclick="hideDiffModal()"
             class="text-gray-400 hover:text-gray-600 text-2xl leading-none rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
             aria-label="Close modal"
@@ -1024,6 +1067,7 @@
         </div>
         <div class="flex items-center justify-end gap-2 p-6 border-t border-gray-200">
           <button
+            type="button"
             id="close-diff-btn"
             class="px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
             data-i18n="actions.close"
@@ -1040,6 +1084,7 @@
         <div class="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 class="text-xl font-bold text-gray-900" data-i18n="version.confirmRevert">Confirm Revert</h2>
           <button
+            type="button"
             onclick="hideRevertConfirmationModal()"
             class="text-gray-400 hover:text-gray-600 text-2xl leading-none rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
             aria-label="Close modal"
@@ -1079,6 +1124,7 @@
         </div>
         <div class="flex items-center justify-end gap-2 p-6 border-t border-gray-200">
           <button
+            type="button"
             id="cancel-revert-btn"
             class="px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
             data-i18n="actions.cancel"
@@ -1086,6 +1132,7 @@
             Cancel
           </button>
           <button
+            type="button"
             id="confirm-revert-btn"
             class="px-4 py-2 text-sm font-semibold rounded-lg bg-red-600 text-white hover:bg-red-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
             data-i18n="version.revert"
@@ -1102,6 +1149,7 @@
         <div class="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 class="text-xl font-bold text-gray-900" data-i18n="bulkDelete.confirmTitle">Confirm Bulk Deletion</h2>
           <button
+            type="button"
             onclick="hideBulkDeleteModal()"
             class="text-gray-400 hover:text-gray-600 text-2xl leading-none rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
             aria-label="Close modal"
@@ -1123,6 +1171,7 @@
         </div>
         <div class="flex items-center justify-end gap-2 p-6 border-t border-gray-200">
           <button
+            type="button"
             id="cancel-bulk-delete-btn"
             class="px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
             data-i18n="actions.cancel"
@@ -1130,6 +1179,7 @@
             Cancel
           </button>
           <button
+            type="button"
             id="confirm-bulk-delete-btn"
             class="px-4 py-2 text-sm font-semibold rounded-lg bg-red-600 text-white hover:bg-red-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
             data-i18n="actions.confirmDelete"
@@ -1146,6 +1196,7 @@
         <div class="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 class="text-xl font-bold text-gray-900" data-i18n="bulkTag.title">Bulk Tag Update</h2>
           <button
+            type="button"
             onclick="hideBulkTagModal()"
             class="text-gray-400 hover:text-gray-600 text-2xl leading-none rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
             aria-label="Close modal"
@@ -1188,12 +1239,14 @@
         </div>
         <div class="flex items-center justify-end gap-2 p-6 border-t border-gray-200">
           <button
+            type="button"
             id="cancel-bulk-tag-btn"
             class="px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
           >
             Cancel
           </button>
           <button
+            type="button"
             id="confirm-bulk-tag-btn"
             class="px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
             data-i18n="actions.applyTags"

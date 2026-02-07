@@ -3,7 +3,8 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import { expect, test } from '@playwright/test';
-import AxeBuilder from '@axe-core/playwright';
+import { AxeBuilder } from '@axe-core/playwright';
+import type { AxeResults, Result } from 'axe-core';
 import { existsSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { isAbsolute, join, resolve } from 'node:path';
@@ -242,15 +243,15 @@ for (const route of ROUTES) {
         }
       }
 
-      const scan = await new AxeBuilder({ page }).withTags(AXE_TAGS).analyze();
+      const scan: AxeResults = await new AxeBuilder({ page }).withTags(AXE_TAGS).analyze();
       const blockingViolations = scan.violations.filter(
-        (violation) => violation.impact === 'critical' || violation.impact === 'serious'
+        (violation: Result) => violation.impact === 'critical' || violation.impact === 'serious'
       );
 
       const violationSummary = blockingViolations
-        .map((violation) => {
+        .map((violation: Result) => {
           const targets = violation.nodes
-            .flatMap((node) => node.target)
+            .flatMap((node: Result['nodes'][number]) => node.target)
             .map((target) => String(target))
             .join(', ');
           return `${violation.id}: ${violation.help} [${targets}]`;

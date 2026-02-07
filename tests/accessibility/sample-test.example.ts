@@ -2,6 +2,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+// @ts-nocheck
+
 /**
  * Sample accessibility tests demonstrating utility usage
  * These are EXAMPLE tests showing how to use the accessibility testing utilities

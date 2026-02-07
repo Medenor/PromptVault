@@ -44,6 +44,7 @@
               data-i18n="[aria-label]accessibility.labels.adminPageNavigation"
             >
               <button
+                type="button"
                 onclick="window.location.href = '/admin/sessions'"
                 class="px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all whitespace-nowrap"
                 data-i18n="admin.nav.sessions"
@@ -51,6 +52,7 @@
                 Sessions
               </button>
               <button
+                type="button"
                 onclick="window.location.href = '/auth/profile'"
                 class="px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all whitespace-nowrap"
                 data-i18n="admin.nav.profile"
@@ -58,6 +60,7 @@
                 Profile
               </button>
               <button
+                type="button"
                 onclick="window.location.href = '/'"
                 class="px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all whitespace-nowrap"
                 data-i18n="nav.backToMain"
@@ -91,6 +94,7 @@
             data-i18n="[aria-label]accessibility.labels.adminPageNavigationMobile"
           >
             <button
+              type="button"
               onclick="window.location.href = '/admin/sessions'"
               class="w-full px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all text-left"
               data-i18n="admin.nav.sessions"
@@ -98,6 +102,7 @@
               Sessions
             </button>
             <button
+              type="button"
               onclick="window.location.href = '/auth/profile'"
               class="w-full px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all text-left"
               data-i18n="admin.nav.profile"
@@ -105,6 +110,7 @@
               Profile
             </button>
             <button
+              type="button"
               onclick="window.location.href = '/'"
               class="w-full px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all text-left"
               data-i18n="nav.backToMain"
@@ -125,6 +131,7 @@
           <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-0">
             <div class="flex flex-col sm:flex-row gap-3 md:space-x-3">
               <button
+                type="button"
                 id="add-user-btn"
                 class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition"
                 data-i18n="admin.users.addUser"
@@ -132,6 +139,7 @@
                 Add User
               </button>
               <button
+                type="button"
                 id="refresh-users-btn"
                 class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition"
                 data-i18n="actions.refresh"
@@ -231,46 +239,54 @@
         <!-- Users Table -->
         <div class="bg-white rounded-lg shadow overflow-hidden">
           <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
+            <table class="min-w-full divide-y divide-gray-200" aria-label="User Management">
+              <caption class="sr-only">User Management Table</caption>
               <thead class="bg-gray-50">
                 <tr>
                   <th
+                    scope="col"
                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                     data-i18n="admin.users.username"
                   >
                     Username
                   </th>
                   <th
+                    scope="col"
                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                     data-i18n="admin.users.email"
                   >
                     Email
                   </th>
                   <th
+                    scope="col"
                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                     data-i18n="admin.users.role"
                   >
                     Role
                   </th>
                   <th
+                    scope="col"
                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                     data-i18n="admin.users.status"
                   >
                     Status
                   </th>
                   <th
+                    scope="col"
                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                     data-i18n="admin.users.lastLogin"
                   >
                     Last Login
                   </th>
                   <th
+                    scope="col"
                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                     data-i18n="admin.users.sessions"
                   >
                     Sessions
                   </th>
                   <th
+                    scope="col"
                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                     data-i18n="admin.users.actions"
                   >
@@ -293,6 +309,7 @@
             class="bg-gray-50 px-6 py-4 flex items-center justify-between border-t border-gray-200"
           >
             <button
+              type="button"
               id="prev-page"
               class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
               disabled
@@ -302,6 +319,7 @@
             </button>
             <span id="page-info" class="text-sm text-gray-700">Page 1 of 1</span>
             <button
+              type="button"
               id="next-page"
               class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
               disabled
@@ -324,11 +342,13 @@
           <h2 class="text-xl font-bold text-gray-900" data-i18n="admin.users.userDetails">
             User Details
           </h2>
-          <span
-            class="text-gray-400 hover:text-gray-600 text-2xl cursor-pointer"
+          <button
+            type="button"
+            class="text-gray-400 hover:text-gray-600 text-2xl cursor-pointer rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
+            aria-label="Close modal"
+            data-i18n="[aria-label]actions.close"
             onclick="closeUserDetailModal()"
-            >&times;</span
-          >
+          >&times;</button>
         </div>
         <div class="p-6">
           <div id="user-detail-content">
@@ -337,6 +357,7 @@
         </div>
         <div class="flex justify-end space-x-3 p-6 border-t border-gray-200">
           <button
+            type="button"
             id="close-user-detail-btn"
             class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition"
             data-i18n="actions.close"
@@ -433,6 +454,7 @@
 	        </div>
         <div class="flex justify-end space-x-3 p-6 border-t border-gray-200">
           <button
+            type="button"
             id="save-user-btn"
             class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition"
             data-i18n="actions.save"
@@ -440,6 +462,7 @@
             Save
           </button>
           <button
+            type="button"
             id="cancel-edit-btn"
             class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition"
             data-i18n="actions.cancel"
@@ -456,20 +479,20 @@
       class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50"
     >
       <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
-	        <div class="flex items-center justify-between p-6 border-b border-gray-200">
-	          <h2 class="text-xl font-bold text-gray-900" data-i18n="admin.users.confirmDelete">
-	            Confirm Delete
-	          </h2>
-	          <button
-	            type="button"
-	            class="text-gray-400 hover:text-gray-600 text-2xl leading-none rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
-	            aria-label="Close modal"
-	            data-i18n="[aria-label]actions.close"
-	            onclick="closeConfirmDeleteModal()"
-	          >
-	            &times;
-	          </button>
-	        </div>
+        <div class="flex items-center justify-between p-6 border-b border-gray-200">
+          <h2 class="text-xl font-bold text-gray-900" data-i18n="admin.users.confirmDelete">
+            Confirm Delete
+          </h2>
+          <button
+            type="button"
+            class="text-gray-400 hover:text-gray-600 text-2xl leading-none rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
+            aria-label="Close modal"
+            data-i18n="[aria-label]actions.close"
+            onclick="closeConfirmDeleteModal()"
+          >
+            &times;
+          </button>
+        </div>
         <div class="p-6">
           <p class="text-gray-700 mb-4" data-i18n="admin.users.deleteWarning">
             Are you sure you want to permanently delete this user? This action cannot be undone and
@@ -479,6 +502,7 @@
         </div>
         <div class="flex justify-end space-x-3 p-6 border-t border-gray-200">
           <button
+            type="button"
             id="confirm-delete-btn"
             class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded font-medium transition"
             data-i18n="actions.delete"
@@ -486,6 +510,7 @@
             Delete
           </button>
           <button
+            type="button"
             id="cancel-delete-btn"
             class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition"
             data-i18n="actions.cancel"
@@ -502,20 +527,20 @@
       class="hidden fixed inset-0 bg-black/25 flex items-center justify-center z-50"
     >
       <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-	        <div class="flex items-center justify-between p-6 border-b border-gray-200">
-	          <h2 class="text-xl font-bold text-gray-900" data-i18n="admin.users.createUser">
-	            Create New User
-	          </h2>
-	          <button
-	            type="button"
-	            class="text-gray-400 hover:text-gray-600 text-2xl leading-none rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
-	            aria-label="Close modal"
-	            data-i18n="[aria-label]actions.close"
-	            onclick="closeCreateUserModal()"
-	          >
-	            &times;
-	          </button>
-	        </div>
+        <div class="flex items-center justify-between p-6 border-b border-gray-200">
+          <h2 class="text-xl font-bold text-gray-900" data-i18n="admin.users.createUser">
+            Create New User
+          </h2>
+          <button
+            type="button"
+            class="text-gray-400 hover:text-gray-600 text-2xl leading-none rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
+            aria-label="Close modal"
+            data-i18n="[aria-label]actions.close"
+            onclick="closeCreateUserModal()"
+          >
+            &times;
+          </button>
+        </div>
 	        <div class="p-6">
 	          <form id="create-user-form" class="space-y-4" novalidate>
 	            <div
@@ -585,28 +610,28 @@
                 >Password</label
               >
               <div class="relative">
-	                <input
-	                  type="password"
-	                  id="create-password"
-	                  name="password"
-	                  aria-describedby="create-password-error create-strength-text create-password-policy"
-	                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-500 disabled:bg-gray-50 disabled:text-gray-600 disabled:cursor-not-allowed"
-	                  minlength="12"
-	                  maxlength="128"
-	                  required
-	                  data-i18n="[placeholder]admin.users.passwordPlaceholder"
-	                  placeholder="Min 12 chars: uppercase, lowercase, digit, special char"
-	                />
-	                <button
-	                  type="button"
-	                  id="toggle-password-create"
-	                  class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-	                  aria-label="Toggle password visibility"
-	                  data-i18n="[aria-label]accessibility.labels.togglePasswordVisibility"
-	                >
-	                  ⊙
-	                </button>
-	              </div>
+                <input
+                  type="password"
+                  id="create-password"
+                  name="password"
+                  aria-describedby="create-password-error create-strength-text create-password-policy"
+                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-500 disabled:bg-gray-50 disabled:text-gray-600 disabled:cursor-not-allowed"
+                  minlength="12"
+                  maxlength="128"
+                  required
+                  data-i18n="[placeholder]admin.users.passwordPlaceholder"
+                  placeholder="Min 12 chars: uppercase, lowercase, digit, special char"
+                />
+                <button
+                  type="button"
+                  id="toggle-password-create"
+                  class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  aria-label="Toggle password visibility"
+                  data-i18n="[aria-label]accessibility.labels.togglePasswordVisibility"
+                >
+                  ⊙
+                </button>
+              </div>
               <div id="create-password-strength" class="mt-2" aria-live="polite">
                 <div class="h-2 bg-gray-200 rounded overflow-hidden">
                   <div
@@ -654,28 +679,28 @@
                 >Confirm Password</label
               >
               <div class="relative">
-	                <input
-	                  type="password"
-	                  id="create-confirm-password"
-	                  name="confirm_password"
-	                  aria-describedby="create-confirm-password-error"
-	                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-500 disabled:bg-gray-50 disabled:text-gray-600 disabled:cursor-not-allowed"
-	                  minlength="12"
-	                  maxlength="128"
-	                  required
-	                  data-i18n="[placeholder]admin.users.confirmPasswordPlaceholder"
-	                  placeholder="Confirm password"
-	                />
-	                <button
-	                  type="button"
-	                  id="toggle-confirm-password-create"
-	                  class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-	                  aria-label="Toggle password visibility"
-	                  data-i18n="[aria-label]accessibility.labels.togglePasswordVisibility"
-	                >
-	                  ⊙
-	                </button>
-	              </div>
+                <input
+                  type="password"
+                  id="create-confirm-password"
+                  name="confirm_password"
+                  aria-describedby="create-confirm-password-error"
+                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-500 disabled:bg-gray-50 disabled:text-gray-600 disabled:cursor-not-allowed"
+                  minlength="12"
+                  maxlength="128"
+                  required
+                  data-i18n="[placeholder]admin.users.confirmPasswordPlaceholder"
+                  placeholder="Confirm password"
+                />
+                <button
+                  type="button"
+                  id="toggle-confirm-password-create"
+                  class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  aria-label="Toggle password visibility"
+                  data-i18n="[aria-label]accessibility.labels.togglePasswordVisibility"
+                >
+                  ⊙
+                </button>
+              </div>
 	              <p
 	                class="text-red-600 text-xs mt-1 hidden"
 	                id="create-confirm-password-error"
@@ -726,6 +751,7 @@
 	        </div>
         <div class="flex justify-end space-x-3 p-6 border-t border-gray-200">
           <button
+            type="button"
             id="create-user-submit-btn"
             class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition"
             data-i18n="actions.create"
@@ -733,6 +759,7 @@
             Create User
           </button>
           <button
+            type="button"
             id="create-user-cancel-btn"
             class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition"
             data-i18n="actions.cancel"

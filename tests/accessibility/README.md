@@ -1,7 +1,3 @@
-// This Source Code Form is subject to the terms of the Mozilla Public
-// License, v. 2.0. If a copy of the MPL was not distributed with this
-// file, You can obtain one at https://mozilla.org/MPL/2.0/.
-
 # Accessibility Testing Infrastructure
 
 Comprehensive test infrastructure for automated WCAG 2.1 AA accessibility testing of PromptVault.
@@ -10,6 +6,7 @@ Comprehensive test infrastructure for automated WCAG 2.1 AA accessibility testin
 
 Start here based on your task:
 
+- **Overview?** → See [ACCESSIBILITY_TESTING.md](./ACCESSIBILITY_TESTING.md)
 - **Running Tests?** → See [RUN_TESTS.md](./RUN_TESTS.md)
 - **Writing Tests?** → See [CONTRIBUTING.md](./CONTRIBUTING.md)
 - **Test Coverage?** → See [COVERAGE.md](./COVERAGE.md)

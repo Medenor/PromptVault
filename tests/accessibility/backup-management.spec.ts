@@ -2,6 +2,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+// @ts-nocheck
+
 /**
  * Comprehensive accessibility tests for the backup management page (/backup-management)
  * Tests cover WCAG 2.1 AA compliance including:

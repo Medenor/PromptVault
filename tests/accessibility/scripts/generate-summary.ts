@@ -49,10 +49,13 @@ function countDescribeBlocks(content: string): number {
 function extractWCAGCriteria(content: string): string[] {
   const criteria = new Set<string>();
   const wcagPattern = /WCAG\s+(\d+\.\d+\.\d+)/gi;
-  let match;
+  let match: RegExpExecArray | null;
 
   while ((match = wcagPattern.exec(content)) !== null) {
-    criteria.add(match[1]);
+    const captured = match[1];
+    if (captured) {
+      criteria.add(captured);
+    }
   }
 
   return Array.from(criteria).sort();

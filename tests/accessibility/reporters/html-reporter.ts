@@ -123,6 +123,10 @@ class AccessibilityHTMLReporter implements Reporter {
       '4.1.2': 0,
     };
 
+    const bump = (key: string) => {
+      criteriaMap[key] = (criteriaMap[key] ?? 0) + 1;
+    };
+
     // Map tests to WCAG criteria by test name/file patterns
     this.tests.forEach((test) => {
       const testLower = (test.title + test.file).toLowerCase();
@@ -132,28 +136,28 @@ class AccessibilityHTMLReporter implements Reporter {
         testLower.includes('color') ||
         testLower.includes('1.4.3')
       ) {
-        criteriaMap['1.4.3']++;
+        bump('1.4.3');
       }
       if (testLower.includes('keyboard') || testLower.includes('2.1.1')) {
-        criteriaMap['2.1.1']++;
+        bump('2.1.1');
       }
       if (testLower.includes('skip link') || testLower.includes('2.4.1')) {
-        criteriaMap['2.4.1']++;
+        bump('2.4.1');
       }
       if (testLower.includes('tab order') || testLower.includes('2.4.3')) {
-        criteriaMap['2.4.3']++;
+        bump('2.4.3');
       }
       if (testLower.includes('focus') || testLower.includes('2.4.7')) {
-        criteriaMap['2.4.7']++;
+        bump('2.4.7');
       }
       if (testLower.includes('label') || testLower.includes('3.3.2')) {
-        criteriaMap['3.3.2']++;
+        bump('3.3.2');
       }
       if (testLower.includes('landmark') || testLower.includes('1.3.1')) {
-        criteriaMap['1.3.1']++;
+        bump('1.3.1');
       }
       if (testLower.includes('aria') || testLower.includes('4.1.2')) {
-        criteriaMap['4.1.2']++;
+        bump('4.1.2');
       }
     });
 

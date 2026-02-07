@@ -44,6 +44,7 @@
               data-i18n="[aria-label]accessibility.labels.adminPageNavigation"
             >
               <button
+                type="button"
                 onclick="window.location.href = '/admin/users'"
                 class="px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all whitespace-nowrap"
                 data-i18n="admin.nav.users"
@@ -51,6 +52,7 @@
                 Users
               </button>
               <button
+                type="button"
                 onclick="window.location.href = '/auth/profile'"
                 class="px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all whitespace-nowrap"
                 data-i18n="admin.nav.profile"
@@ -58,6 +60,7 @@
                 Profile
               </button>
               <button
+                type="button"
                 onclick="window.location.href = '/'"
                 class="px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all whitespace-nowrap"
                 data-i18n="nav.backToMain"
@@ -91,6 +94,7 @@
             data-i18n="[aria-label]accessibility.labels.adminPageNavigationMobile"
           >
             <button
+              type="button"
               onclick="window.location.href = '/admin/users'"
               class="w-full px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all text-left"
               data-i18n="admin.nav.users"
@@ -98,6 +102,7 @@
               Users
             </button>
             <button
+              type="button"
               onclick="window.location.href = '/auth/profile'"
               class="w-full px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all text-left"
               data-i18n="admin.nav.profile"
@@ -105,6 +110,7 @@
               Profile
             </button>
             <button
+              type="button"
               onclick="window.location.href = '/'"
               class="w-full px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all text-left"
               data-i18n="nav.backToMain"
@@ -128,6 +134,7 @@
           <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-0">
             <div class="flex flex-col sm:flex-row gap-3 md:space-x-3">
               <button
+                type="button"
                 id="revoke-all-sessions-btn"
                 class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded font-medium transition"
                 data-i18n="admin.sessions.revokeAll"
@@ -135,6 +142,7 @@
                 Revoke All Sessions
               </button>
               <button
+                type="button"
                 id="refresh-sessions-btn"
                 class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition"
                 data-i18n="actions.refresh"
@@ -210,46 +218,54 @@
         <!-- Sessions Table -->
         <div class="bg-white rounded-lg shadow overflow-hidden">
           <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
+            <table class="min-w-full divide-y divide-gray-200" aria-label="Active Sessions">
+              <caption class="sr-only">Active Sessions Table</caption>
               <thead class="bg-gray-50">
                 <tr>
                   <th
+                    scope="col"
                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                     data-i18n="admin.sessions.username"
                   >
                     Username
                   </th>
                   <th
+                    scope="col"
                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                     data-i18n="admin.sessions.ipAddress"
                   >
                     IP Address
                   </th>
                   <th
+                    scope="col"
                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                     data-i18n="admin.sessions.userAgent"
                   >
                     User Agent
                   </th>
                   <th
+                    scope="col"
                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                     data-i18n="admin.sessions.createdAt"
                   >
                     Created
                   </th>
                   <th
+                    scope="col"
                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                     data-i18n="admin.sessions.lastUsed"
                   >
                     Last Used
                   </th>
                   <th
+                    scope="col"
                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                     data-i18n="admin.sessions.expiresAt"
                   >
                     Expires
                   </th>
                   <th
+                    scope="col"
                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                     data-i18n="admin.sessions.actions"
                   >
@@ -280,11 +296,13 @@
           <h2 class="text-xl font-bold text-gray-900" data-i18n="admin.sessions.sessionDetails">
             Session Details
           </h2>
-          <span
-            class="text-gray-400 hover:text-gray-600 text-2xl cursor-pointer"
+          <button
+            type="button"
+            class="text-gray-400 hover:text-gray-600 text-2xl cursor-pointer rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
+            aria-label="Close modal"
+            data-i18n="[aria-label]actions.close"
             onclick="closeSessionDetailModal()"
-            >&times;</span
-          >
+          >&times;</button>
         </div>
         <div class="p-6">
           <div id="session-detail-content">
@@ -293,13 +311,17 @@
         </div>
         <div class="flex justify-end space-x-3 p-6 border-t border-gray-200">
           <button
+            type="button"
             id="revoke-session-btn"
             class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded font-medium transition"
+            aria-label="Revoke this session and log out the user"
+            data-i18n="[aria-label]admin.sessions.revokeSessionAriaLabel"
             data-i18n="admin.sessions.revokeSession"
           >
             Revoke Session
           </button>
           <button
+            type="button"
             id="close-session-detail-btn"
             class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition"
             data-i18n="actions.close"
@@ -320,11 +342,13 @@
           <h2 class="text-xl font-bold text-gray-900" data-i18n="admin.sessions.confirmRevoke">
             Confirm Revoke
           </h2>
-          <span
-            class="text-gray-400 hover:text-gray-600 text-2xl cursor-pointer"
+          <button
+            type="button"
+            class="text-gray-400 hover:text-gray-600 text-2xl cursor-pointer rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
+            aria-label="Close modal"
+            data-i18n="[aria-label]actions.close"
             onclick="closeConfirmRevokeModal()"
-            >&times;</span
-          >
+          >&times;</button>
         </div>
         <div class="p-6">
           <p class="text-gray-700" data-i18n="admin.sessions.revokeWarning">
@@ -333,6 +357,7 @@
         </div>
         <div class="flex justify-end space-x-3 p-6 border-t border-gray-200">
           <button
+            type="button"
             id="confirm-revoke-btn"
             class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded font-medium transition"
             data-i18n="admin.sessions.confirmRevokeButton"
@@ -340,6 +365,7 @@
             Revoke
           </button>
           <button
+            type="button"
             id="cancel-revoke-btn"
             class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition"
             data-i18n="actions.cancel"

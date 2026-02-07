@@ -1,7 +1,3 @@
-// This Source Code Form is subject to the terms of the Mozilla Public
-// License, v. 2.0. If a copy of the MPL was not distributed with this
-// file, You can obtain one at https://mozilla.org/MPL/2.0/.
-
 # Running Accessibility Tests
 
 Complete guide for running and debugging PromptVault accessibility tests.
@@ -48,6 +44,36 @@ npm run test:ui:accessibility:all
 
 # Run in headed mode (see browser window)
 HEADED=1 npm run test:ui:accessibility
+```
+
+### Route Scans (axe-core) Without Maintaining Specs
+
+If you want broad page coverage without relying on the `tests/accessibility/*.spec.ts` suite, use the Python runner:
+
+```bash
+python3 scripts/accessibility_test.py --verbose
+```
+
+Custom base URL:
+
+```bash
+python3 scripts/accessibility_test.py --base-url http://127.0.0.1:8001 --verbose
+```
+
+Specific pages only:
+
+```bash
+python3 scripts/accessibility_test.py --page /auth/login --page /auth/register --verbose
+```
+
+Protected pages with credentials:
+
+```bash
+ACCESSIBILITY_USER_USERNAME=test_user \
+ACCESSIBILITY_USER_PASSWORD='your_password' \
+ACCESSIBILITY_ADMIN_USERNAME=test_admin \
+ACCESSIBILITY_ADMIN_PASSWORD='your_admin_password' \
+python3 scripts/accessibility_test.py --page /auth/profile --page /admin/users --verbose
 ```
 
 ### View Test Reports
