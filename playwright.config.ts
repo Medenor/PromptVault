@@ -11,8 +11,11 @@ import { defineConfig, devices } from '@playwright/test';
 // require('dotenv').config();
 
 /**
- * Playwright configuration for PromptVault AUTH-UI tests
+ * Playwright configuration for PromptVault accessibility and UI tests
  * See https://playwright.dev/docs/test-configuration.
+ *
+ * Supports both automated accessibility testing (axe-core + custom utilities)
+ * and manual UI/authentication testing.
  */
 export default defineConfig({
   testDir: './scripts',
@@ -51,6 +54,9 @@ export default defineConfig({
 
     /* Video on failure */
     video: 'retain-on-failure',
+
+    /* Headless mode for debugging - set HEADED=1 to run in headed mode */
+    headless: !process.env.HEADED,
   },
 
   /* Configure projects for major browsers */
@@ -92,8 +98,8 @@ export default defineConfig({
         timeout: 120 * 1000,
       },
 
-  /* Global timeout */
-  timeout: 30 * 1000,
+  /* Global timeout - 60s for accessibility tests that may need extra time */
+  timeout: 60 * 1000,
 
   /* Global test timeout */
   expect: {
