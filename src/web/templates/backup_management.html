@@ -107,6 +107,8 @@
                 <div class="flex flex-col sm:flex-row gap-2">
                   <button
                     type="button"
+                    aria-label="Create a new backup of your data"
+                    data-i18n="[aria-label]backup.createBtnAriaLabel"
                     class="flex-1 px-4 py-2 text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
                     onclick="createBackup()"
                     data-i18n="backup.createBtn"
@@ -115,6 +117,8 @@
                   </button>
                   <button
                     type="button"
+                    aria-label="Clear the backup form"
+                    data-i18n="[aria-label]backup.clearBtnAriaLabel"
                     class="px-4 py-2 text-sm font-medium bg-gray-200 text-gray-900 hover:bg-gray-300 rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
                     onclick="clearBackupForm()"
                     data-i18n="backup.clearBtn"
@@ -152,6 +156,8 @@
             <div class="mt-6">
               <button
                 type="button"
+                aria-label="Refresh the list of available backups"
+                data-i18n="[aria-label]backup.refreshBtnAriaLabel"
                 class="w-full px-4 py-2 text-sm font-medium bg-gray-200 text-gray-900 hover:bg-gray-300 rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
                 onclick="refreshBackups()"
                 data-i18n="actions.refresh"
@@ -206,6 +212,8 @@
                 </div>
                 <button
                   type="button"
+                  aria-label="Delete old backups based on retention days setting"
+                  data-i18n="[aria-label]backup.cleanupBtnAriaLabel"
                   class="w-full px-4 py-2 text-sm font-semibold bg-amber-700 hover:bg-amber-800 text-white rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 focus-visible:ring-offset-2"
                   onclick="cleanupBackups()"
                   data-i18n="backup.cleanupBtn"
@@ -252,6 +260,8 @@
                 </div>
                 <button
                   type="button"
+                  aria-label="Compress old backups older than the specified number of days"
+                  data-i18n="[aria-label]backup.compressBtnAriaLabel"
                   class="w-full px-4 py-2 text-sm font-semibold bg-cyan-700 hover:bg-cyan-800 text-white rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-600 focus-visible:ring-offset-2"
                   onclick="compressBackups()"
                   data-i18n="backup.compressBtn"
