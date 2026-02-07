@@ -74,6 +74,10 @@ class AuthConfig(BaseSettings):
     modifications at runtime.
 
     Attributes:
+        Environment:
+            environment: Current deployment environment (development/testing/production)
+            disable_rate_limiting: Disable API rate limiting (dev/test only)
+
         JWT Configuration:
             jwt_private_key_path: Path to ES256 private key file
             jwt_public_key_path: Path to ES256 public key file
@@ -116,6 +120,16 @@ class AuthConfig(BaseSettings):
             password_reset_token_expire_seconds: Reset token lifetime
             app_base_url: Application base URL
     """
+
+    # Environment
+    environment: str = Field(
+        default="development",
+        description="Environment (development/testing/production)"
+    )
+    disable_rate_limiting: bool = Field(
+        default=False,
+        description="Disable rate limiting (dev/test only; never enable in production)"
+    )
 
     # JWT Configuration
     jwt_private_key_path: str = Field(

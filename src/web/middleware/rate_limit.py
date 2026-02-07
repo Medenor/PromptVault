@@ -91,7 +91,8 @@ def is_rate_limiting_disabled() -> bool:
 
     Precedence:
       1. `DISABLE_RATE_LIMITING` (explicit on/off)
-      2. `ENVIRONMENT` in development/testing (implicit disable)
+      2. `.env` / settings value (if present)
+      3. `ENVIRONMENT` in development/testing (implicit disable)
 
     This keeps production safe by requiring an explicit opt-out.
     """
@@ -99,7 +100,16 @@ def is_rate_limiting_disabled() -> bool:
     if explicit is not None:
         return explicit
 
-    env = os.getenv("ENVIRONMENT")
+    # Support `.env` without requiring a separate dotenv loader: auth_settings
+    # reads from env_file=".env" (and is overridden by real env vars).
+    try:
+        if bool(getattr(auth_settings, "disable_rate_limiting", False)):
+            return True
+    except Exception:
+        # If settings initialization fails for any reason, fall back to env vars.
+        pass
+
+    env = os.getenv("ENVIRONMENT") or getattr(auth_settings, "environment", None)
     if env and env.strip().lower() in ("development", "dev", "local", "testing", "test"):
         return True
 
