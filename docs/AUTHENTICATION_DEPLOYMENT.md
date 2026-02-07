@@ -745,7 +745,7 @@ tail -f logs/promptvault.log
 2. Review configuration in `.env`
 3. Verify all prerequisites are met
 4. Consult API documentation at `/docs`
-5. Check GitHub issues for similar problems
+5. Check Codeberg issues for similar problems
 
 ---
 

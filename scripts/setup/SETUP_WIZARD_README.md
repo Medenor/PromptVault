@@ -253,7 +253,7 @@ python scripts/setup/setup.py --component jwt --non-interactive
 
 **Example CI/CD usage**:
 ```yaml
-# GitHub Actions
+# forgejo Actions
 - name: Setup PromptVault
   run: |
     python scripts/setup/setup.py --quick --non-interactive
@@ -646,7 +646,7 @@ For issues or questions:
    - `scripts/setup/setup_env.py --help`
    - `scripts/setup/setup_database.py --help`
    - `scripts/setup/deploy.py --help`
-3. Check GitHub issues or create a new one
+3. Check Codeberg issues or create a new one
 4. Review Docker logs: `docker-compose logs -f`
 
 ## License

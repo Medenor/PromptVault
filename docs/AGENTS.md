@@ -1,6 +1,6 @@
 # AGENTS.md
 
-This file provides guidance to any coding agent when working with code in this repository.
+This file provides guidance to any coding agent when working with code in this repository. Repository is hosted on on [Codeberg](https://codeberg.org/medenor/promptvault.git) (not GitHub).
 
 ## Overview
 

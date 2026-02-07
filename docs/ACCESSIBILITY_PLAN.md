@@ -86,7 +86,7 @@ Ce plan détaille les étapes nécessaires pour atteindre la conformité WCAG 2.
 
 **[T-ACC002]** Configurer les tests Lighthouse CI
 
-- Emplacement: `.github/workflows/` (ou `.forgejo/workflows/`)
+- Emplacement: `.forgejo/workflows/`
 - Détails: Ajouter une étape de test accessibilité dans le pipeline CI
 - Métriques cibles: Score accessibilité ≥ 95
 
@@ -734,7 +734,7 @@ Phase 10: Documentation (dépend de Phase 9)
 ### Configuration
 
 - `playwright.config.ts`
-- `.github/workflows/` (ou `.forgejo/workflows/`)
+- `.forgejo/workflows/`
 
 ### Documentation
 

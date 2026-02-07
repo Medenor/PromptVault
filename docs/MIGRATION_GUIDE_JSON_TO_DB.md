@@ -787,7 +787,7 @@ Use this checklist to ensure smooth migration:
 
 If you encounter issues not covered in this guide:
 
-1. Check [GitHub Issues](https://github.com/your-repo/PromptVault/issues)
+1. Check [Codeberg Issues](https://codeberg.org/medenor/promptvault/issues)
 2. Review migration logs: `migration.log`
 3. Enable debug logging: `LOG_LEVEL=DEBUG`
 4. Run tests: `pytest tests/ -v`

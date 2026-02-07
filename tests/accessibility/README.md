@@ -6,23 +6,56 @@
 
 Comprehensive test infrastructure for automated WCAG 2.1 AA accessibility testing of PromptVault.
 
+## Quick Links
+
+Start here based on your task:
+
+- **Running Tests?** → See [RUN_TESTS.md](./RUN_TESTS.md)
+- **Writing Tests?** → See [CONTRIBUTING.md](./CONTRIBUTING.md)
+- **Test Coverage?** → See [COVERAGE.md](./COVERAGE.md)
+- **Quick Reference?** → See [QUICK_START.md](./QUICK_START.md)
+- **Compliance Status?** → See [CHECKLIST.md](./CHECKLIST.md)
+
 ## Directory Structure
 
 ```
 tests/accessibility/
-├── utils/                    # Utility functions for accessibility testing
-│   ├── contrast.js          # Color contrast ratio calculations
-│   ├── aria.js              # ARIA attribute validation
-│   ├── keyboard.js          # Keyboard navigation testing
-│   ├── screenshots.js       # Screenshot utilities for visual testing
-│   └── index.js             # Central export for all utilities
-├── fixtures/                # Test fixtures and helpers
-│   ├── auth.js              # Authentication fixtures and helpers
-│   └── index.js             # Central export for fixtures
-├── reports/                 # Test report templates and output
-│   └── report-template.json # JSON schema for test reports
-└── README.md                # This file
+├── utils/                           # Utility functions for accessibility testing
+│   ├── contrast.js                 # Color contrast ratio calculations
+│   ├── aria.js                     # ARIA attribute validation
+│   ├── keyboard.js                 # Keyboard navigation testing
+│   ├── screenshots.js              # Screenshot utilities for visual testing
+│   └── index.js                    # Central export for all utilities
+├── fixtures/                        # Test fixtures and helpers
+│   ├── auth.js                     # Authentication fixtures and helpers
+│   ├── test-data.ts                # Test data setup and management
+│   └── index.js                    # Central export for fixtures
+├── reporters/                       # Custom test reporters
+│   └── html-reporter.ts            # Beautiful HTML test report generator
+├── scripts/                         # Build and utility scripts
+│   └── generate-summary.ts         # Generate test statistics and summary
+├── reports/                         # Test report templates and output
+│   └── report-template.json        # JSON schema for test reports
+├── .forgejo-actions-example.yml     # Forgejo Actions CI/CD workflow example
+├── visual-regression.config.ts     # Visual regression testing configuration
+├── *.spec.ts                       # Test files (main-page, authentication, etc.)
+├── README.md                       # This file
+├── RUN_TESTS.md                    # Comprehensive testing guide
+├── QUICK_START.md                  # Quick reference guide
+├── CONTRIBUTING.md                 # Guide for adding new tests
+├── COVERAGE.md                     # Detailed coverage breakdown
+├── CHECKLIST.md                    # WCAG compliance checklist
+└── SUMMARY.md                      # Auto-generated test summary
 ```
+
+## Test Statistics
+
+- **Total Test Files**: 7 major test files
+- **Total Test Cases**: 556 automated tests
+- **Test Suites**: Multiple organized test groups
+- **WCAG Criteria Covered**: 25+ criteria from WCAG 2.1 AA
+- **Coverage Rate**: ~80% automated, 20% manual testing required
+- **Last Updated**: Auto-generated on each test run
 
 ## Utilities
 
@@ -410,6 +443,158 @@ Key report sections:
 - [axe-core Rules](https://github.com/dequelabs/axe-core/blob/develop/doc/rule-descriptions.md)
 - [ARIA Authoring Practices](https://www.w3.org/WAI/ARIA/apg/)
 
+## Documentation Files
+
+### For Test Runners
+- **[RUN_TESTS.md](./RUN_TESTS.md)** - Complete guide for running, debugging, and CI/CD integration
+  - Commands for different browsers and test files
+  - Debugging techniques and tools
+  - Forgejo Actions and GitLab CI examples
+  - Troubleshooting common issues
+
+### For Test Writers
+- **[CONTRIBUTING.md](./CONTRIBUTING.md)** - Guide for writing new accessibility tests
+  - Test file structure and naming conventions
+  - Best practices and patterns
+  - Using utility functions
+  - Example tests and common patterns
+  - Submission checklist
+
+### For Coverage Analysis
+- **[COVERAGE.md](./COVERAGE.md)** - Detailed breakdown of what's tested
+  - WCAG 2.1 AA criteria mapping
+  - Page-by-page coverage
+  - Component coverage
+  - Known limitations and gaps
+  - Future improvements
+
+### For Quick Reference
+- **[QUICK_START.md](./QUICK_START.md)** - Fast reference guide
+  - Common utility functions
+  - Environment variables
+  - Troubleshooting tips
+  - WCAG quick reference
+
+### For Compliance Tracking
+- **[CHECKLIST.md](./CHECKLIST.md)** - Interactive WCAG 2.1 AA checklist
+  - All 50 criteria with status
+  - Test coverage percentage
+  - Manual testing items
+  - Status tracking
+
+### For Configuration
+- **[.forgejo-actions-example.yml](./.forgejo-actions-example.yml)** - CI/CD workflow template
+  - Forgejo Actions examples
+  - GitLab CI examples
+  - PR commenting
+  - Scheduled reports
+
+- **[visual-regression.config.ts](./visual-regression.config.ts)** - Visual regression settings
+  - Focus indicator testing
+  - State-based visual comparisons
+  - Browser-specific considerations
+
+### For Data Management
+- **[fixtures/test-data.ts](./fixtures/test-data.ts)** - Test data management
+  - Create test prompts, categories, tags
+  - Cleanup test data
+  - Seed database for testing
+  - Export test metadata
+
+### For Report Generation
+- **[reporters/html-reporter.ts](./reporters/html-reporter.ts)** - Custom HTML reporter
+  - Beautiful test report generation
+  - WCAG criteria coverage display
+  - Page-by-page results
+  - Failed test details
+
+- **[scripts/generate-summary.ts](./scripts/generate-summary.ts)** - Test summary generator
+  - Analyze test files
+  - Generate statistics
+  - Create markdown summaries
+  - Update README
+
+## Getting Started
+
+### 1. Run Tests (5 minutes)
+```bash
+npm run test:ui:accessibility
+# View report: open playwright-report/index.html
+```
+
+### 2. Write a Test (15 minutes)
+```bash
+# See CONTRIBUTING.md for detailed guide
+# Copy pattern from existing test file
+# Run: npx playwright test --grep "your test"
+```
+
+### 3. Debug a Failure (10 minutes)
+```bash
+# Run in debug mode
+HEADED=1 npx playwright test --grep "failing test"
+# Use Playwright Inspector to step through
+```
+
+### 4. Generate Report (2 minutes)
+```bash
+npm run test:ui:accessibility:report
+# View at: accessibility-report/index.html
+```
+
+## Test Execution Examples
+
+### Run Everything
+```bash
+npm run test:ui:accessibility           # Chromium only
+npm run test:ui:accessibility:all      # All browsers
+```
+
+### Run Specific Tests
+```bash
+npx playwright test main-page.spec.ts              # Single file
+npx playwright test --grep "contrast"              # Test pattern
+npx playwright test --project=firefox              # Specific browser
+```
+
+### Debug and Develop
+```bash
+HEADED=1 npm run test:ui:accessibility            # See browser
+DEBUG=1 npx playwright test                        # Inspector mode
+npx playwright test --ui                          # Interactive UI
+```
+
+### Generate Reports
+```bash
+npm run test:ui:accessibility:report               # HTML report
+npm run test:ui:accessibility:summary              # Statistics
+```
+
+## CI/CD Integration
+
+### Forgejo Actions
+Copy [.forgejo-actions-example.yml](./.forgejo-actions-example.yml) to `.forgejo/workflows/accessibility-tests.yml`
+
+Includes:
+- Automatic test runs on push and PR
+- Multi-browser testing
+- HTML report artifacts
+- PR comments with results
+- Daily scheduled reports
+
+### Local Verification
+```bash
+# Run tests before committing
+npm run test:ui:accessibility
+
+# Update coverage docs
+npm run test:ui:accessibility:summary
+
+# Commit if passing
+git add tests/accessibility
+git commit -m "test: update accessibility test results"
+```
+
 ## Contributing
 
 When adding new accessibility utilities:
@@ -420,3 +605,12 @@ When adding new accessibility utilities:
 4. Add example usage to this README
 5. Include error handling for edge cases
 6. Test with actual Playwright pages when possible
+
+## Submitting Test Improvements
+
+1. Read [CONTRIBUTING.md](./CONTRIBUTING.md)
+2. Create test file or update existing
+3. Follow naming conventions and patterns
+4. Run tests locally: `npm run test:ui:accessibility`
+5. Update [COVERAGE.md](./COVERAGE.md) if adding new criteria
+6. Submit PR with summary of changes

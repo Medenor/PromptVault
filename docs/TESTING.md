@@ -545,7 +545,7 @@ def test_get_nonexistent_prompt(prompt_repo):
 
 ## Continuous Integration
 
-### GitHub Actions Example
+### Forgejo Actions Example
 
 ```yaml
 name: Tests

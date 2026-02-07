@@ -288,7 +288,7 @@ BASE_URL=http://127.0.0.1:8004 npm run test:ui
 
 ## CI/CD Integration
 
-### GitHub Actions
+### Forgejo Actions
 
 ```yaml
 name: AUTH-UI Tests

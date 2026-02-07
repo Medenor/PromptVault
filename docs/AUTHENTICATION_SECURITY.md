@@ -930,7 +930,7 @@ DELETE /auth/sessions/{session_id}
 
 If you discover a security vulnerability in PromptVault, please report it responsibly:
 
-1. **DO NOT** create a public GitHub issue
+1. **DO NOT** create a public Codeberg issue
 2. Email security@yourdomain.com with details
 3. Include steps to reproduce
 4. Allow time for fix before disclosure

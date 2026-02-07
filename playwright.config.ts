@@ -18,8 +18,8 @@ import { defineConfig, devices } from '@playwright/test';
  * and manual UI/authentication testing.
  */
 export default defineConfig({
-  testDir: './scripts',
-  testMatch: '**/playwright_*_tests.ts',
+  testDir: './tests/accessibility',
+  testMatch: '**/*.spec.ts',
 
   /* Run tests in files in parallel */
   fullyParallel: true,
