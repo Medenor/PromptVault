@@ -3,6 +3,7 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import { test as base } from '@playwright/test';
+import { existsSync } from 'fs';
 
 /**
  * Authentication fixtures for accessibility testing
@@ -140,14 +141,17 @@ export const authenticatedUserTest = base.extend({
       ? `${stateDir}/user-state.json`
       : undefined;
 
+    // Only use storageState if the file actually exists
+    const hasStorageState = storageStatePath && existsSync(storageStatePath);
+
     const context = await browser.newContext(
-      storageStatePath ? { storageState: storageStatePath } : undefined
+      hasStorageState ? { storageState: storageStatePath } : undefined
     );
     const page = await context.newPage();
 
     try {
       // If we don't have pre-saved state, login now
-      if (!storageStatePath) {
+      if (!hasStorageState) {
         await login(page, username, password);
       }
       await use(page);
@@ -180,14 +184,17 @@ export const authenticatedAdminTest = base.extend({
       ? `${stateDir}/admin-state.json`
       : undefined;
 
+    // Only use storageState if the file actually exists
+    const hasStorageState = storageStatePath && existsSync(storageStatePath);
+
     const context = await browser.newContext(
-      storageStatePath ? { storageState: storageStatePath } : undefined
+      hasStorageState ? { storageState: storageStatePath } : undefined
     );
     const page = await context.newPage();
 
     try {
       // If we don't have pre-saved state, login now
-      if (!storageStatePath) {
+      if (!hasStorageState) {
         await login(page, username, password);
       }
       await use(page);

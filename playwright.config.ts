@@ -3,12 +3,13 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import { defineConfig, devices } from '@playwright/test';
+import dotenv from 'dotenv';
 
 /**
  * Read environment variables from file.
  * https://github.com/motdotla/dotenv
  */
-// require('dotenv').config();
+dotenv.config();
 
 /**
  * Playwright configuration for PromptVault accessibility and UI tests
