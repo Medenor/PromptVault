@@ -44,6 +44,9 @@
       "@components": ["src/web/static/ts/components/index.ts"]
     }
   },
-  "include": ["src/web/static/ts/**/*", "vite.config.ts", "tests/**/*.ts"],
+  "include": [
+    "src/web/static/ts/**/*",
+    "vite.config.ts"
+  ],
   "exclude": ["node_modules", "dist", "src/web/static/js"]
 }

@@ -41,6 +41,7 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
+    "typecheck:tests": "tsc -p tsconfig.tests.json --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
