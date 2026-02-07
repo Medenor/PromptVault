@@ -53,6 +53,8 @@
     "test:ui": "playwright test scripts/playwright_auth_ui_tests.ts --ui",
     "test:ui:accessibility": "playwright test scripts/playwright_accessibility_tests.ts --project=chromium",
     "test:ui:accessibility:all": "playwright test scripts/playwright_accessibility_tests.ts",
+    "test:ui:focus": "playwright test scripts/playwright_focus_indicators_tests.ts --project=chromium",
+    "test:ui:focus:all": "playwright test scripts/playwright_focus_indicators_tests.ts",
     "test:ui:lighthouse": "npx -y @lhci/cli@0.15.1 autorun --config=./lighthouserc.json",
     "test:ui:headed": "HEADED=1 playwright test scripts/playwright_auth_ui_tests.ts",
     "test:ui:debug": "DEBUG=1 playwright test scripts/playwright_auth_ui_tests.ts --debug",

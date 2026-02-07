@@ -249,9 +249,34 @@ function setupEventListeners() {
   document.getElementById('cancel-btn').addEventListener('click', hidePromptEditor);
 
   // Category and tag filtering
-  document.getElementById('categories-list').addEventListener('click', handleCategoryFilter);
-  document.getElementById('tags-list').addEventListener('click', handleTagFilter);
+  const categoriesListDesktop = document.getElementById('categories-list');
+  if (categoriesListDesktop) {
+    categoriesListDesktop.addEventListener('click', handleCategoryFilter);
+  }
+  const categoriesListMobile = document.getElementById('categories-list-mobile');
+  if (categoriesListMobile) {
+    categoriesListMobile.addEventListener('click', handleCategoryFilter);
+  }
+
+  const tagsListDesktop = document.getElementById('tags-list');
+  if (tagsListDesktop) {
+    tagsListDesktop.addEventListener('click', handleTagFilter);
+  }
+  const tagsListMobile = document.getElementById('tags-list-mobile');
+  if (tagsListMobile) {
+    tagsListMobile.addEventListener('click', handleTagFilter);
+  }
+
   document.getElementById('favorites-filter').addEventListener('change', handleFavoritesFilter);
+
+  // Add keyboard handlers to initial "All Categories" and "All Tags" items
+  document.querySelectorAll('[data-category="all"], [data-tag="all"]').forEach((item) => {
+    if (item.dataset.category !== undefined) {
+      item.addEventListener('keydown', handleCategoryKeydown);
+    } else if (item.dataset.tag !== undefined) {
+      item.addEventListener('keydown', handleTagKeydown);
+    }
+  });
 
   // Modal close
   document.querySelector('.close').addEventListener('click', hideModal);
@@ -456,38 +481,64 @@ function createPromptElement(id, prompt) {
 }
 
 function renderCategories(categories) {
-  const list = document.getElementById('categories-list');
-  // Clear existing categories except "All Prompts"
-  const allPromptsItem = list.querySelector('[data-category="all"]');
-  list.innerHTML = '';
-  list.appendChild(allPromptsItem);
+  // Update both desktop and mobile lists
+  ['categories-list', 'categories-list-mobile'].forEach((listId) => {
+    const list = document.getElementById(listId);
+    if (!list) return;
 
-  categories.forEach((category) => {
-    const li = document.createElement('li');
-    li.dataset.category = category;
-    li.textContent = category;
-    list.appendChild(li);
+    // Clear existing categories except "All Prompts"
+    const allPromptsItem = list.querySelector('[data-category="all"]');
+    list.innerHTML = '';
+    list.appendChild(allPromptsItem);
+
+    categories.forEach((category) => {
+      const li = document.createElement('li');
+      li.dataset.category = category;
+      li.textContent = category;
+      li.setAttribute('tabindex', '0');
+      li.setAttribute('role', 'button');
+      li.addEventListener('keydown', handleCategoryKeydown);
+      list.appendChild(li);
+    });
+
+    // Add keydown handler to "All Categories" item
+    if (allPromptsItem) {
+      allPromptsItem.addEventListener('keydown', handleCategoryKeydown);
+    }
   });
 }
 
 function renderTags(tags) {
-  const list = document.getElementById('tags-list');
-  // Clear existing tags except "All Tags"
-  const allTagsItem = list.querySelector('[data-tag="all"]');
-  list.innerHTML = '';
-  list.appendChild(allTagsItem);
+  // Update both desktop and mobile lists
+  ['tags-list', 'tags-list-mobile'].forEach((listId) => {
+    const list = document.getElementById(listId);
+    if (!list) return;
 
-  tags.forEach((tag) => {
-    const li = document.createElement('li');
-    // Handle both old format (string) and new format (object with name and count)
-    if (typeof tag === 'string') {
-      li.dataset.tag = tag;
-      li.textContent = tag;
-    } else {
-      li.dataset.tag = tag.name;
-      li.textContent = `${tag.name} (${tag.count})`;
+    // Clear existing tags except "All Tags"
+    const allTagsItem = list.querySelector('[data-tag="all"]');
+    list.innerHTML = '';
+    list.appendChild(allTagsItem);
+
+    tags.forEach((tag) => {
+      const li = document.createElement('li');
+      // Handle both old format (string) and new format (object with name and count)
+      if (typeof tag === 'string') {
+        li.dataset.tag = tag;
+        li.textContent = tag;
+      } else {
+        li.dataset.tag = tag.name;
+        li.textContent = `${tag.name} (${tag.count})`;
+      }
+      li.setAttribute('tabindex', '0');
+      li.setAttribute('role', 'button');
+      li.addEventListener('keydown', handleTagKeydown);
+      list.appendChild(li);
+    });
+
+    // Add keydown handler to "All Tags" item
+    if (allTagsItem) {
+      allTagsItem.addEventListener('keydown', handleTagKeydown);
     }
-    list.appendChild(li);
   });
 }
 
@@ -776,9 +827,13 @@ async function toggleFavorite(id) {
 
 function handleCategoryFilter(event) {
   if (event.target.tagName === 'LI') {
-    // Update active state
-    document.querySelectorAll('#categories-list li').forEach((li) => li.classList.remove('active'));
+    // Update active state in both desktop and mobile lists
+    document.querySelectorAll('#categories-list li, #categories-list-mobile li').forEach((li) => {
+      li.classList.remove('active');
+      li.removeAttribute('aria-current');
+    });
     event.target.classList.add('active');
+    event.target.setAttribute('aria-current', 'page');
 
     // Update search state and trigger search
     searchState.category = event.target.dataset.category;
@@ -786,15 +841,111 @@ function handleCategoryFilter(event) {
   }
 }
 
+function handleCategoryKeydown(event) {
+  // Find which list this item belongs to (desktop or mobile)
+  let list = event.target.closest('#categories-list');
+  if (!list) {
+    list = event.target.closest('#categories-list-mobile');
+  }
+  if (!list) return;
+
+  const items = Array.from(list.querySelectorAll('li'));
+  const currentIndex = items.indexOf(event.target);
+
+  if (currentIndex === -1) return;
+
+  let nextIndex = -1;
+
+  switch (event.key) {
+    case 'ArrowUp':
+      event.preventDefault();
+      nextIndex = Math.max(0, currentIndex - 1);
+      break;
+    case 'ArrowDown':
+      event.preventDefault();
+      nextIndex = Math.min(items.length - 1, currentIndex + 1);
+      break;
+    case 'Home':
+      event.preventDefault();
+      nextIndex = 0;
+      break;
+    case 'End':
+      event.preventDefault();
+      nextIndex = items.length - 1;
+      break;
+    case 'Enter':
+    case ' ':
+      event.preventDefault();
+      handleCategoryFilter({ target: event.target });
+      return;
+    default:
+      return;
+  }
+
+  if (nextIndex !== -1 && nextIndex !== currentIndex) {
+    items[nextIndex].focus();
+  }
+}
+
 function handleTagFilter(event) {
   if (event.target.tagName === 'LI') {
-    // Update active state
-    document.querySelectorAll('#tags-list li').forEach((li) => li.classList.remove('active'));
+    // Update active state in both desktop and mobile lists
+    document.querySelectorAll('#tags-list li, #tags-list-mobile li').forEach((li) => {
+      li.classList.remove('active');
+      li.removeAttribute('aria-current');
+    });
     event.target.classList.add('active');
+    event.target.setAttribute('aria-current', 'page');
 
     // Update search state and trigger search
     searchState.tag = event.target.dataset.tag;
     performSearch();
+  }
+}
+
+function handleTagKeydown(event) {
+  // Find which list this item belongs to (desktop or mobile)
+  let list = event.target.closest('#tags-list');
+  if (!list) {
+    list = event.target.closest('#tags-list-mobile');
+  }
+  if (!list) return;
+
+  const items = Array.from(list.querySelectorAll('li'));
+  const currentIndex = items.indexOf(event.target);
+
+  if (currentIndex === -1) return;
+
+  let nextIndex = -1;
+
+  switch (event.key) {
+    case 'ArrowUp':
+      event.preventDefault();
+      nextIndex = Math.max(0, currentIndex - 1);
+      break;
+    case 'ArrowDown':
+      event.preventDefault();
+      nextIndex = Math.min(items.length - 1, currentIndex + 1);
+      break;
+    case 'Home':
+      event.preventDefault();
+      nextIndex = 0;
+      break;
+    case 'End':
+      event.preventDefault();
+      nextIndex = items.length - 1;
+      break;
+    case 'Enter':
+    case ' ':
+      event.preventDefault();
+      handleTagFilter({ target: event.target });
+      return;
+    default:
+      return;
+  }
+
+  if (nextIndex !== -1 && nextIndex !== currentIndex) {
+    items[nextIndex].focus();
   }
 }
 

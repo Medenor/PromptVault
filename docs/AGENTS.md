@@ -219,6 +219,7 @@ PromptVault is a modern web-based prompt management application built with FastA
 - **Async Operations**: FastAPI async support for file operations (aiofiles)
 - **Event-Driven UI**: JavaScript event handlers for real-time updates
 - **i18n Support**: Internationalization with i18next library
+- **Accessibility**: WCAG 2.1 Level AA compliant UI
 
 ## Code Style Guidelines
 
@@ -969,7 +970,7 @@ PromptVault is a production-ready web application for managing AI prompts with c
 - **Service-Oriented Design**: Clear separation between repositories, services, and web layer
 - **High Test Coverage**: 83.54% backend (1087 tests), 89.83% frontend (49 tests) - 100% pass rate
 - **Fast Test Execution**: ~70 seconds full suite using in-memory SQLite for backend, <5 seconds for frontend
-- **Modern UI**: Tailwind CSS v4 with responsive design, accessibility features, and component library
+- **Modern UI**: Tailwind CSS v4 with responsive design, WCAG 2.1 Level AA accessibility features, and component library
 - **Multi-Language Support**: Internationalization for English, French, Spanish, and German
 - **Security**: JWT ES256 authentication, Argon2id password hashing, rate limiting, session management
 - **Docker Deployment**: Production-ready containerization with data persistence

@@ -1413,7 +1413,7 @@ function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement
 	        <div class="flex items-start justify-between mb-3">
 	            <h4 id="${titleId}" class="text-lg font-semibold text-gray-900 flex-1">${prompt.title}</h4>
 	            <div class="flex items-center gap-1 ml-2" id="prompt-actions-${id}">
-	                <button class="favorite-btn text-xl hover:scale-110 transition-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded" data-id="${id}">
+	                <button class="favorite-btn text-xl hover:scale-110 transition-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 rounded" data-id="${id}">
 	                    ${prompt.favorite ? '★' : '☆'}
 	                </button>
 	            </div>

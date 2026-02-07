@@ -124,7 +124,6 @@ export class ColorPicker {
       button.style.backgroundColor = color;
       button.dataset.color = color;
       button.title = color;
-      button.setAttribute('tabindex', '0');
       button.setAttribute('aria-label', `Color ${color}`);
 
       if (this.presetsContainer) {

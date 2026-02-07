@@ -23,9 +23,9 @@ export function createButton(label: string, props: ButtonProps = {}): HTMLButton
 
   // Variant classes - following design system colors
   const variantClasses: Record<string, string> = {
-    primary: 'bg-blue-500 text-white hover:bg-blue-600 hover:scale-105 focus:ring-blue-500',
+    primary: 'bg-blue-700 text-white hover:bg-blue-800 hover:scale-105 focus:ring-blue-700',
     secondary: 'bg-gray-200 text-gray-900 hover:bg-gray-300 hover:scale-105 focus:ring-gray-500',
-    accent: 'bg-amber-500 text-white hover:bg-amber-600 hover:scale-105 focus:ring-amber-500',
+    accent: 'bg-amber-700 text-white hover:bg-amber-800 hover:scale-105 focus:ring-amber-700',
     ghost:
       'bg-transparent text-gray-900 hover:bg-gray-100 border border-gray-300 focus:ring-gray-500',
     danger: 'bg-red-500 text-white hover:bg-red-600 hover:scale-105 focus:ring-red-500',

@@ -124,13 +124,13 @@
 
   /* Link styling defaults */
   a {
-    color: #3b82f6;
+    color: #1d4ed8;
     text-decoration: none;
     transition: color 200ms;
   }
 
   a:hover {
-    color: #2563eb;
+    color: #1e40af;
   }
 
   /* Don't rely on color alone to indicate links in main content. */
@@ -158,29 +158,37 @@
     cursor: pointer;
   }
 
-  /* Allow default focus styles from browser and Tailwind utilities to work */
-  *:focus-visible {
-    outline: 2px solid #3b82f6;
-    outline-offset: 2px;
-  }
+  /* Keyboard Navigation and Focus Indicators */
+  /* Enhanced visible focus indicators for WCAG 2.1 AA compliance */
+  /* 3px solid outline with 2px offset for high contrast and visibility */
 
-  /* Enhanced keyboard focus states for accessibility (WCAG AA compliant) */
   /* Remove default outline when using custom focus rings */
   button:focus,
   a:focus,
   input:focus,
   textarea:focus,
-  select:focus {
+  select:focus,
+  [tabindex]:focus,
+  th:focus,
+  tr:focus,
+  [role="button"]:focus,
+  [role="link"]:focus {
     outline: none;
   }
 
-  /* Apply visible focus rings for keyboard navigation only */
+  /* Apply visible focus indicators for keyboard navigation only */
+  /* 3px solid outline with 2px offset for accessibility (WCAG 2.1 AA) */
   button:focus-visible,
   a:focus-visible,
   input:focus-visible,
+  select:focus-visible,
   textarea:focus-visible,
-  select:focus-visible {
-    outline: 2px solid #3b82f6;
+  [tabindex]:focus-visible,
+  th:focus-visible,
+  tr:focus-visible,
+  [role="button"]:focus-visible,
+  [role="link"]:focus-visible {
+    outline: 3px solid #1e40af;
     outline-offset: 2px;
   }
 
@@ -236,11 +244,11 @@
 
   /* Focus ring utility classes for keyboard accessibility */
   .focus-ring {
-    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2;
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2;
   }
 
   .focus-ring-compact {
-    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1;
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-1;
   }
 
   .focus-ring-danger {
