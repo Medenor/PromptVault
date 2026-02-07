@@ -969,10 +969,10 @@
     </div>
 
     <!-- Version History Modal -->
-    <div id="version-history-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div id="version-history-modal" aria-modal="true" aria-labelledby="version-history-title" role="dialog" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
       <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col">
         <div class="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 class="text-2xl font-bold text-gray-900" data-i18n="version.history">Version History</h2>
+          <h2 id="version-history-title" class="text-2xl font-bold text-gray-900" data-i18n="version.history">Version History</h2>
           <button
             type="button"
             onclick="hideVersionHistoryModal()"
@@ -1030,10 +1030,10 @@
     </div>
 
     <!-- Diff Viewer Modal -->
-    <div id="diff-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div id="diff-modal" aria-modal="true" aria-labelledby="diff-modal-title" role="dialog" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
       <div class="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] flex flex-col">
         <div class="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 class="text-2xl font-bold text-gray-900" data-i18n="version.compareVersions">Compare Versions</h2>
+          <h2 id="diff-modal-title" class="text-2xl font-bold text-gray-900" data-i18n="version.compareVersions">Compare Versions</h2>
           <button
             type="button"
             onclick="hideDiffModal()"
@@ -1079,10 +1079,10 @@
     </div>
 
     <!-- Revert Confirmation Modal -->
-    <div id="revert-confirmation-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div id="revert-confirmation-modal" aria-modal="true" aria-labelledby="revert-confirmation-title" role="dialog" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
       <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
         <div class="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 class="text-xl font-bold text-gray-900" data-i18n="version.confirmRevert">Confirm Revert</h2>
+          <h2 id="revert-confirmation-title" class="text-xl font-bold text-gray-900" data-i18n="version.confirmRevert">Confirm Revert</h2>
           <button
             type="button"
             onclick="hideRevertConfirmationModal()"
@@ -1144,10 +1144,10 @@
     </div>
 
     <!-- Bulk Delete Confirmation Modal -->
-    <div id="bulk-delete-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div id="bulk-delete-modal" aria-modal="true" aria-labelledby="bulk-delete-title" role="dialog" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
       <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
         <div class="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 class="text-xl font-bold text-gray-900" data-i18n="bulkDelete.confirmTitle">Confirm Bulk Deletion</h2>
+          <h2 id="bulk-delete-title" class="text-xl font-bold text-gray-900" data-i18n="bulkDelete.confirmTitle">Confirm Bulk Deletion</h2>
           <button
             type="button"
             onclick="hideBulkDeleteModal()"
@@ -1191,10 +1191,10 @@
     </div>
 
     <!-- Bulk Tag Update Modal -->
-    <div id="bulk-tag-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div id="bulk-tag-modal" aria-modal="true" aria-labelledby="bulk-tag-title" role="dialog" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
       <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
         <div class="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 class="text-xl font-bold text-gray-900" data-i18n="bulkTag.title">Bulk Tag Update</h2>
+          <h2 id="bulk-tag-title" class="text-xl font-bold text-gray-900" data-i18n="bulkTag.title">Bulk Tag Update</h2>
           <button
             type="button"
             onclick="hideBulkTagModal()"

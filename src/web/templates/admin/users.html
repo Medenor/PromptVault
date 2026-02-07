@@ -335,11 +335,14 @@
     <!-- User Detail Modal -->
     <div
       id="user-detail-modal"
+      aria-modal="true"
+      aria-labelledby="user-detail-title"
+      role="dialog"
       class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50"
     >
       <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div class="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 class="text-xl font-bold text-gray-900" data-i18n="admin.users.userDetails">
+          <h2 id="user-detail-title" class="text-xl font-bold text-gray-900" data-i18n="admin.users.userDetails">
             User Details
           </h2>
           <button
@@ -371,11 +374,14 @@
     <!-- Edit User Modal -->
     <div
       id="edit-user-modal"
+      aria-modal="true"
+      aria-labelledby="edit-user-title"
+      role="dialog"
       class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50"
     >
       <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
 	        <div class="flex items-center justify-between p-6 border-b border-gray-200">
-	          <h2 class="text-xl font-bold text-gray-900" data-i18n="admin.users.editUser">
+	          <h2 id="edit-user-title" class="text-xl font-bold text-gray-900" data-i18n="admin.users.editUser">
 	            Edit User
 	          </h2>
 	          <button
@@ -476,11 +482,14 @@
     <!-- Confirm Delete Modal -->
     <div
       id="confirm-delete-modal"
+      aria-modal="true"
+      aria-labelledby="confirm-delete-title"
+      role="dialog"
       class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50"
     >
       <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
         <div class="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 class="text-xl font-bold text-gray-900" data-i18n="admin.users.confirmDelete">
+          <h2 id="confirm-delete-title" class="text-xl font-bold text-gray-900" data-i18n="admin.users.confirmDelete">
             Confirm Delete
           </h2>
           <button
@@ -524,11 +533,14 @@
     <!-- Create User Modal -->
     <div
       id="create-user-modal"
+      aria-modal="true"
+      aria-labelledby="create-user-title"
+      role="dialog"
       class="hidden fixed inset-0 bg-black/25 flex items-center justify-center z-50"
     >
       <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div class="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 class="text-xl font-bold text-gray-900" data-i18n="admin.users.createUser">
+          <h2 id="create-user-title" class="text-xl font-bold text-gray-900" data-i18n="admin.users.createUser">
             Create New User
           </h2>
           <button

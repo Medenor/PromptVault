@@ -316,11 +316,14 @@
     <!-- Restore Confirmation Modal -->
     <div
       id="restore-modal"
+      aria-modal="true"
+      aria-labelledby="restore-modal-title"
+      role="dialog"
       class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50"
     >
       <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
         <div class="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 class="text-xl font-bold text-gray-900" data-i18n="backup.confirmRestore">
+          <h2 id="restore-modal-title" class="text-xl font-bold text-gray-900" data-i18n="backup.confirmRestore">
             Confirm Restore
           </h2>
           <button
@@ -368,11 +371,14 @@
     <!-- Delete Confirmation Modal -->
     <div
       id="delete-modal"
+      aria-modal="true"
+      aria-labelledby="delete-modal-title"
+      role="dialog"
       class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50"
     >
       <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
         <div class="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 class="text-xl font-bold text-gray-900" data-i18n="backup.confirmDelete">
+          <h2 id="delete-modal-title" class="text-xl font-bold text-gray-900" data-i18n="backup.confirmDelete">
             Confirm Delete
           </h2>
           <button
