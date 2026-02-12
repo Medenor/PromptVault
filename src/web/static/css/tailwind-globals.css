@@ -177,7 +177,8 @@
   }
 
   /* Apply visible focus indicators for keyboard navigation only */
-  /* 3px solid outline with 2px offset for accessibility (WCAG 2.1 AA) */
+  /* Double-ring approach: white inner ring + dark blue outer ring for high contrast on all backgrounds */
+  /* Provides 3:1+ contrast on blue, gray, and white backgrounds (WCAG 2.1 AA) */
   button:focus-visible,
   a:focus-visible,
   input:focus-visible,
@@ -188,8 +189,8 @@
   tr:focus-visible,
   [role="button"]:focus-visible,
   [role="link"]:focus-visible {
-    outline: 3px solid #1e40af;
-    outline-offset: 2px;
+    outline: none;
+    box-shadow: 0 0 0 3px #ffffff, 0 0 0 6px #1e40af;
   }
 
   /* Respect user preference for reduced motion */
