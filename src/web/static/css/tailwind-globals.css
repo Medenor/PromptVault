@@ -266,52 +266,53 @@
   }
 
   /* Field validation states */
+  /* Using darker colors for 3:1+ contrast on all backgrounds (WCAG 2.1 AA) */
   .field-valid {
-    border-color: #22c55e;
-    box-shadow: 0 0 0 0.2rem rgba(34, 197, 94, 0.25);
+    border-color: #15803d;
+    box-shadow: 0 0 0 0.2rem rgba(21, 128, 61, 0.25);
   }
 
   .field-valid:focus {
-    border-color: #22c55e;
-    box-shadow: 0 0 0 0.3rem rgba(34, 197, 94, 0.35);
-    outline: 2px solid #22c55e;
+    border-color: #15803d;
+    box-shadow: 0 0 0 0.3rem rgba(21, 128, 61, 0.35);
+    outline: 2px solid #15803d;
     outline-offset: 2px;
   }
 
   .field-valid:focus-visible {
-    outline-color: #22c55e;
+    outline-color: #15803d;
   }
 
   .field-warning {
-    border-color: #eab308;
-    box-shadow: 0 0 0 0.2rem rgba(234, 179, 8, 0.25);
+    border-color: #b45309;
+    box-shadow: 0 0 0 0.2rem rgba(180, 83, 9, 0.25);
   }
 
   .field-warning:focus {
-    border-color: #eab308;
-    box-shadow: 0 0 0 0.3rem rgba(234, 179, 8, 0.35);
-    outline: 2px solid #eab308;
+    border-color: #b45309;
+    box-shadow: 0 0 0 0.3rem rgba(180, 83, 9, 0.35);
+    outline: 2px solid #b45309;
     outline-offset: 2px;
   }
 
   .field-warning:focus-visible {
-    outline-color: #eab308;
+    outline-color: #b45309;
   }
 
   .field-error {
-    border-color: #ef4444;
-    box-shadow: 0 0 0 0.2rem rgba(239, 68, 68, 0.25);
+    border-color: #7f1d1d;
+    box-shadow: 0 0 0 0.2rem rgba(127, 29, 29, 0.25);
   }
 
   .field-error:focus {
-    border-color: #ef4444;
-    box-shadow: 0 0 0 0.3rem rgba(239, 68, 68, 0.35);
-    outline: 2px solid #ef4444;
+    border-color: #7f1d1d;
+    box-shadow: 0 0 0 0.3rem rgba(127, 29, 29, 0.35);
+    outline: 2px solid #7f1d1d;
     outline-offset: 2px;
   }
 
   .field-error:focus-visible {
-    outline-color: #ef4444;
+    outline-color: #7f1d1d;
   }
 
   /* Toast notifications */
