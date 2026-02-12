@@ -225,6 +225,8 @@
     top: 0.75rem;
     left: -9999px;
     z-index: 10000;
+    visibility: hidden;
+    opacity: 0;
     border-radius: 0.5rem;
     border: 2px solid #1e3a8a;
     background-color: #ffffff;
@@ -233,11 +235,14 @@
     font-size: 0.875rem;
     font-weight: 600;
     text-decoration: none;
+    transition: opacity 200ms;
   }
 
   .skip-link:focus,
   .skip-link:focus-visible {
     left: 0.75rem;
+    visibility: visible;
+    opacity: 1;
     outline: 2px solid #1e3a8a;
     outline-offset: 2px;
   }
@@ -377,12 +382,12 @@
   }
 
   .char-counter-warning {
-    color: #eab308;
+    color: #b45309;
     font-weight: 600;
   }
 
   .char-counter-error {
-    color: #ef4444;
+    color: #7f1d1d;
     font-weight: 700;
   }
 
@@ -396,7 +401,7 @@
 
   .validation-error-visible {
     display: block;
-    color: #ef4444;
+    color: #7f1d1d;
     font-weight: 500;
   }
 
@@ -414,7 +419,7 @@
 
   .validation-warning-visible {
     display: block;
-    color: #eab308;
+    color: #b45309;
     font-weight: 500;
   }
 
@@ -530,17 +535,17 @@
 
   .form-group.has-validation-icon.is-valid::after {
     content: '✓';
-    color: #22c55e;
+    color: #15803d;
   }
 
   .form-group.has-validation-icon.is-warning::after {
     content: '⚠';
-    color: #eab308;
+    color: #b45309;
   }
 
   .form-group.has-validation-icon.is-error::after {
     content: '✗';
-    color: #ef4444;
+    color: #7f1d1d;
   }
 
   /* Input transitions */
