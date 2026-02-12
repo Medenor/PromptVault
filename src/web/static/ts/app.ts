@@ -1109,7 +1109,7 @@ function setupEventListeners(): void {
   promptForm?.addEventListener('submit', (event) => {
     void handlePromptSubmit(event as SubmitEvent);
   });
-  const cancelBtn = document.getElementById('cancel-btn');
+  const cancelBtn = document.getElementById('cancel-btn-edit-modal');
   cancelBtn?.addEventListener('click', hidePromptEditor);
   const suggestTagsBtn = document.getElementById('suggest-tags-btn');
   suggestTagsBtn?.addEventListener('click', () => {
