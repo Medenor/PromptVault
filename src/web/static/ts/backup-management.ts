@@ -72,6 +72,10 @@ const liveValidationState = new Map<string, boolean>();
 let currentBackups: BackupItem[] = [];
 let selectedBackupId: string | null = null;
 
+// Focus management for modals
+let restoreConfirmationModalTrigger: HTMLElement | null = null;
+let deleteConfirmationModalTrigger: HTMLElement | null = null;
+
 function resetFieldError(inputId: string, errorId: string): void {
   const input = document.getElementById(inputId) as HTMLElement | null;
   const error = document.getElementById(errorId);
@@ -468,6 +472,8 @@ function showRestoreModal(backupId: string): void {
   const backup = currentBackups.find((item) => item.backup_id === backupId);
   if (!backup) return;
 
+  // Store trigger element for focus return
+  restoreConfirmationModalTrigger = (event as unknown as { target: HTMLElement }).target || null;
   const infoDiv = document.getElementById('restore-backup-info');
   if (infoDiv) {
     infoDiv.innerHTML = `
@@ -478,13 +484,25 @@ function showRestoreModal(backupId: string): void {
     `;
   }
 
-  showElement(document.getElementById('restore-modal') as HTMLElement | null);
+  const modal = document.getElementById('restore-modal') as HTMLElement | null;
+  showElement(modal);
+  // Move focus to first focusable element in modal
+  if (modal) {
+    const firstFocusable = modal.querySelector('h2, button, input, [tabindex="0"]') as HTMLElement;
+    if (firstFocusable) {
+      firstFocusable.focus();
+    }
+  }
   setRestoreInProgress(false);
 }
 
 function hideRestoreModal(): void {
   hideElement(document.getElementById('restore-modal') as HTMLElement | null);
   selectedBackupId = null;
+  // Return focus to trigger element
+  if (restoreConfirmationModalTrigger) {
+    restoreConfirmationModalTrigger.focus();
+  }
 }
 
 async function confirmRestore(): Promise<void> {
@@ -521,6 +539,8 @@ function showDeleteModal(backupId: string): void {
   const backup = currentBackups.find((item) => item.backup_id === backupId);
   if (!backup) return;
 
+  // Store trigger element for focus return
+  deleteConfirmationModalTrigger = (event as unknown as { target: HTMLElement }).target || null;
   const infoDiv = document.getElementById('delete-backup-info');
   if (infoDiv) {
     infoDiv.innerHTML = `
@@ -530,12 +550,24 @@ function showDeleteModal(backupId: string): void {
     `;
   }
 
-  showElement(document.getElementById('delete-modal') as HTMLElement | null);
+  const modal = document.getElementById('delete-modal') as HTMLElement | null;
+  showElement(modal);
+  // Move focus to first focusable element in modal
+  if (modal) {
+    const firstFocusable = modal.querySelector('h2, button, input, [tabindex="0"]') as HTMLElement;
+    if (firstFocusable) {
+      firstFocusable.focus();
+    }
+  }
 }
 
 function hideDeleteModal(): void {
   hideElement(document.getElementById('delete-modal') as HTMLElement | null);
   selectedBackupId = null;
+  // Return focus to trigger element
+  if (deleteConfirmationModalTrigger) {
+    deleteConfirmationModalTrigger.focus();
+  }
 }
 
 async function confirmDelete(): Promise<void> {

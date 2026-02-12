@@ -45,6 +45,10 @@ let currentFilters = {
 };
 let currentSession: { userId: string; sessionId: string; username: string } | null = null;
 
+// Focus management for modals
+let sessionDetailModalTrigger: HTMLElement | null = null;
+let confirmRevokeModalTrigger: HTMLElement | null = null;
+
 function formatDate(dateString?: string | null): string {
   if (!dateString) return 'Never';
   const date = new Date(dateString);
@@ -53,12 +57,25 @@ function formatDate(dateString?: string | null): string {
 
 function showModal(modalId: string): void {
   const modal = document.getElementById(modalId);
-  if (modal) modal.classList.remove(HIDDEN_CLASS);
+  if (modal) {
+    modal.classList.remove(HIDDEN_CLASS);
+    // Move focus to first focusable element in modal
+    const firstFocusable = modal.querySelector('h2, button, input, [tabindex="0"]') as HTMLElement;
+    if (firstFocusable) {
+      firstFocusable.focus();
+    }
+  }
 }
 
 function hideModal(modalId: string): void {
   const modal = document.getElementById(modalId);
   if (modal) modal.classList.add(HIDDEN_CLASS);
+  // Return focus to trigger element
+  if (modalId === 'session-detail-modal' && sessionDetailModalTrigger) {
+    sessionDetailModalTrigger.focus();
+  } else if (modalId === 'confirm-revoke-modal' && confirmRevokeModalTrigger) {
+    confirmRevokeModalTrigger.focus();
+  }
 }
 
 function truncateText(text: string, maxLength: number): string {
@@ -491,6 +508,8 @@ function initializeAdminSessionsPage(): void {
   }
 ).showRevokeConfirmation = (userId: string, sessionId: string, username: string) => {
   currentSession = { userId, sessionId, username };
+  // Store trigger element for focus return
+  confirmRevokeModalTrigger = (event as unknown as { target: HTMLElement }).target || null;
   showModal('confirm-revoke-modal');
 };
 

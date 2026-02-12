@@ -62,6 +62,12 @@ let currentFilters = {
   status: 'all',
 };
 
+// Focus management for modals
+let userDetailModalTrigger: HTMLElement | null = null;
+let editUserModalTrigger: HTMLElement | null = null;
+let confirmDeleteModalTrigger: HTMLElement | null = null;
+let createUserModalTrigger: HTMLElement | null = null;
+
 function formatDate(dateString?: string | null): string {
   if (!dateString) return 'Never';
   const date = new Date(dateString);
@@ -94,12 +100,29 @@ function normalizeErrorDetail(
 
 function showModal(modalId: string): void {
   const modal = document.getElementById(modalId);
-  if (modal) modal.classList.remove(HIDDEN_CLASS);
+  if (modal) {
+    modal.classList.remove(HIDDEN_CLASS);
+    // Move focus to first focusable element in modal
+    const firstFocusable = modal.querySelector('h2, button, input, [tabindex="0"]') as HTMLElement;
+    if (firstFocusable) {
+      firstFocusable.focus();
+    }
+  }
 }
 
 function hideModal(modalId: string): void {
   const modal = document.getElementById(modalId);
   if (modal) modal.classList.add(HIDDEN_CLASS);
+  // Return focus to trigger element
+  if (modalId === 'user-detail-modal' && userDetailModalTrigger) {
+    userDetailModalTrigger.focus();
+  } else if (modalId === 'edit-user-modal' && editUserModalTrigger) {
+    editUserModalTrigger.focus();
+  } else if (modalId === 'confirm-delete-modal' && confirmDeleteModalTrigger) {
+    confirmDeleteModalTrigger.focus();
+  } else if (modalId === 'create-user-modal' && createUserModalTrigger) {
+    createUserModalTrigger.focus();
+  }
 }
 
 function getStatusClass(user: AdminUser): string {
@@ -357,6 +380,8 @@ async function viewUser(userId: string): Promise<void> {
   if (content) {
     content.innerHTML = '<div class="text-gray-500">Loading...</div>';
   }
+  // Store trigger element for focus return
+  userDetailModalTrigger = (event as unknown as { target: HTMLElement }).target || null;
   showModal('user-detail-modal');
 
   try {
@@ -445,6 +470,8 @@ async function editUser(userId: string): Promise<void> {
     (document.getElementById('edit-email-verified') as HTMLInputElement | null)!.checked =
       !!user.email_verified;
 
+    // Store trigger element for focus return
+    editUserModalTrigger = (event as unknown as { target: HTMLElement }).target || null;
     showModal('edit-user-modal');
   } catch (error) {
     reportError('admin-users', 'editUser', error);
@@ -524,6 +551,8 @@ async function deleteUser(userId: string, username: string): Promise<void> {
   if (deleteUsername) {
     deleteUsername.textContent = username;
   }
+  // Store trigger element for focus return
+  confirmDeleteModalTrigger = (event as unknown as { target: HTMLElement }).target || null;
   showModal('confirm-delete-modal');
 
   const confirmBtn = document.getElementById('confirm-delete-btn') as HTMLButtonElement | null;
@@ -714,6 +743,8 @@ function setupPasswordToggle(toggleButtonId: string, passwordInputId: string): v
 }
 
 function openCreateUserModal(): void {
+  // Store trigger element for focus return
+  createUserModalTrigger = (event as unknown as { target: HTMLElement }).target || null;
   showModal('create-user-modal');
   clearCreateUserForm();
   updateStaticTranslations();

@@ -361,11 +361,55 @@ function normalizeExportFilename(filename: string, format: string): string {
 function handleFileSelection(event: Event): void {
   const target = event.target as HTMLInputElement | null;
   const file = target?.files?.[0];
+  const errorElement = document.getElementById('import-file-error');
+
+  // Clear previous error messages
+  if (errorElement) {
+    errorElement.textContent = '';
+  }
+
   if (file) {
+    // Validate file type
+    const allowedExtensions = ['.csv', '.json', '.md', '.markdown'];
+    const fileName = file.name.toLowerCase();
+    const isValidType = allowedExtensions.some((ext) => fileName.endsWith(ext));
+
+    if (!isValidType) {
+      const errorMsg = 'File format not supported. Please use CSV, JSON, or Markdown files.';
+      if (errorElement) {
+        errorElement.textContent = errorMsg;
+      }
+      setLiveFieldError('import-file', 'import-file-error', errorMsg);
+      // Reset file input
+      if (target) {
+        target.value = '';
+      }
+      return;
+    }
+
+    // Validate file size (10MB limit)
+    const maxSizeBytes = 10 * 1024 * 1024;
+    if (file.size > maxSizeBytes) {
+      const errorMsg = 'File is too large. Maximum size is 10MB.';
+      if (errorElement) {
+        errorElement.textContent = errorMsg;
+      }
+      setLiveFieldError('import-file', 'import-file-error', errorMsg);
+      // Reset file input
+      if (target) {
+        target.value = '';
+      }
+      return;
+    }
+
+    // Update filename input if empty
     const filenameInput = document.getElementById('export-filename') as HTMLInputElement | null;
     if (filenameInput && !filenameInput.value) {
-      filenameInput.value = file.name.replace(/\.(csv|md|json)$/i, '');
+      filenameInput.value = file.name.replace(/\.(csv|json|md|markdown)$/i, '');
     }
+
+    // Clear any previous errors if file is valid
+    clearLiveFieldError('import-file', 'import-file-error');
   }
 }
 
@@ -615,6 +659,13 @@ async function performExport(): Promise<void> {
 async function performImport(): Promise<void> {
   const fileInput = document.getElementById('import-file') as HTMLInputElement | null;
   const file = fileInput?.files?.[0];
+  const errorElement = document.getElementById('import-file-error');
+
+  // Clear previous error messages
+  if (errorElement) {
+    errorElement.textContent = '';
+  }
+
   const validationErrors = validateImportForm(file);
   if (validationErrors.length > 0) {
     renderErrorSummary('import-error-summary', validationErrors);
@@ -624,6 +675,30 @@ async function performImport(): Promise<void> {
     return;
   }
   const selectedFile = file as File;
+
+  // Re-validate file before import (in case conditions changed)
+  const allowedExtensions = ['.csv', '.json', '.md', '.markdown'];
+  const fileName = selectedFile.name.toLowerCase();
+  const isValidType = allowedExtensions.some((ext) => fileName.endsWith(ext));
+
+  if (!isValidType) {
+    const errorMsg = 'File format not supported. Please use CSV, JSON, or Markdown files.';
+    if (errorElement) {
+      errorElement.textContent = errorMsg;
+    }
+    showStatus('import', errorMsg, 'error');
+    return;
+  }
+
+  const maxSizeBytes = 10 * 1024 * 1024;
+  if (selectedFile.size > maxSizeBytes) {
+    const errorMsg = 'File is too large. Maximum size is 10MB.';
+    if (errorElement) {
+      errorElement.textContent = errorMsg;
+    }
+    showStatus('import', errorMsg, 'error');
+    return;
+  }
 
   const mode =
     (document.getElementById('import-mode') as HTMLSelectElement | null)?.value || 'append';

@@ -123,6 +123,13 @@ const FILTER_LIST_IDS = [
   'tags-list-mobile',
 ] as const;
 
+// Focus management for modals
+let versionHistoryModalTrigger: HTMLElement | null = null;
+let diffModalTrigger: HTMLElement | null = null;
+let revertConfirmationModalTrigger: HTMLElement | null = null;
+let bulkDeleteModalTrigger: HTMLElement | null = null;
+let bulkTagModalTrigger: HTMLElement | null = null;
+
 function reportAppIssue(
   action: string,
   error: unknown,
@@ -2427,7 +2434,17 @@ const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
 function showVersionHistoryModal(promptId: number): void {
   currentVersionPromptId = promptId;
   selectedVersions.clear();
+  // Store trigger element for focus return
+  versionHistoryModalTrigger = (event as unknown as { target: HTMLElement }).target || null;
   showElement(document.getElementById('version-history-modal'));
+  // Move focus to first focusable element in modal
+  const modal = document.getElementById('version-history-modal');
+  if (modal) {
+    const firstFocusable = modal.querySelector('h2, button, input, [tabindex="0"]') as HTMLElement;
+    if (firstFocusable) {
+      firstFocusable.focus();
+    }
+  }
   // Update search placeholder with current language
   const searchInput = document.getElementById('version-search') as HTMLInputElement | null;
   if (searchInput) {
@@ -2440,14 +2457,26 @@ function hideVersionHistoryModal(): void {
   hideElement(document.getElementById('version-history-modal'));
   currentVersionPromptId = null;
   selectedVersions.clear();
+  // Return focus to trigger element
+  if (versionHistoryModalTrigger) {
+    versionHistoryModalTrigger.focus();
+  }
 }
 
 function hideDiffModal(): void {
   hideElement(document.getElementById('diff-modal'));
+  // Return focus to trigger element
+  if (diffModalTrigger) {
+    diffModalTrigger.focus();
+  }
 }
 
 function hideRevertConfirmationModal(): void {
   hideElement(document.getElementById('revert-confirmation-modal'));
+  // Return focus to trigger element
+  if (revertConfirmationModalTrigger) {
+    revertConfirmationModalTrigger.focus();
+  }
 }
 
 async function loadVersionHistory(promptId: number): Promise<void> {
@@ -2596,7 +2625,17 @@ function updateCompareButton() {
 }
 
 function showRevertConfirmation(versionId: string): void {
+  // Store trigger element for focus return
+  revertConfirmationModalTrigger = (event as unknown as { target: HTMLElement }).target || null;
   showElement(document.getElementById('revert-confirmation-modal'));
+  // Move focus to first focusable element in modal
+  const modal = document.getElementById('revert-confirmation-modal');
+  if (modal) {
+    const firstFocusable = modal.querySelector('h2, button, input, [tabindex="0"]') as HTMLElement;
+    if (firstFocusable) {
+      firstFocusable.focus();
+    }
+  }
   const confirmRevertBtn = document.getElementById(
     'confirm-revert-btn'
   ) as HTMLButtonElement | null;
@@ -2651,7 +2690,17 @@ async function showDiffModal(): Promise<void> {
     return;
   }
 
+  // Store trigger element for focus return
+  diffModalTrigger = (event as unknown as { target: HTMLElement }).target || null;
   showElement(document.getElementById('diff-modal'));
+  // Move focus to first focusable element in modal
+  const modal = document.getElementById('diff-modal');
+  if (modal) {
+    const firstFocusable = modal.querySelector('h2, button, input, [tabindex="0"]') as HTMLElement;
+    if (firstFocusable) {
+      firstFocusable.focus();
+    }
+  }
   let versionIds = Array.from(selectedVersions);
 
   // Sort versions by their version_number to ensure older is first (for old/new comparison)
@@ -3957,6 +4006,8 @@ function clearSelection() {
 function showBulkDeleteConfirmation() {
   if (selectedPromptIds.size === 0) return;
 
+  // Store trigger element for focus return
+  bulkDeleteModalTrigger = (event as unknown as { target: HTMLElement }).target || null;
   const modal = document.getElementById('bulk-delete-modal');
   const countElement = document.getElementById('bulk-delete-count');
   if (countElement) {
@@ -3964,6 +4015,11 @@ function showBulkDeleteConfirmation() {
   }
   if (modal) {
     modal.classList.remove(HIDDEN_CLASS);
+    // Move focus to first focusable element in modal
+    const firstFocusable = modal.querySelector('h2, button, input, [tabindex="0"]') as HTMLElement;
+    if (firstFocusable) {
+      firstFocusable.focus();
+    }
   }
 }
 
@@ -3972,11 +4028,17 @@ function hideBulkDeleteModal() {
   if (modal) {
     modal.classList.add(HIDDEN_CLASS);
   }
+  // Return focus to trigger element
+  if (bulkDeleteModalTrigger) {
+    bulkDeleteModalTrigger.focus();
+  }
 }
 
 function showBulkTagModal() {
   if (selectedPromptIds.size === 0) return;
 
+  // Store trigger element for focus return
+  bulkTagModalTrigger = (event as unknown as { target: HTMLElement }).target || null;
   const modal = document.getElementById('bulk-tag-modal');
   const countElement = document.getElementById('bulk-tag-count');
   if (countElement) {
@@ -3984,6 +4046,11 @@ function showBulkTagModal() {
   }
   if (modal) {
     modal.classList.remove(HIDDEN_CLASS);
+    // Move focus to first focusable element in modal
+    const firstFocusable = modal.querySelector('h2, button, input, [tabindex="0"]') as HTMLElement;
+    if (firstFocusable) {
+      firstFocusable.focus();
+    }
   }
 }
 
@@ -3991,6 +4058,10 @@ function hideBulkTagModal() {
   const modal = document.getElementById('bulk-tag-modal');
   if (modal) {
     modal.classList.add(HIDDEN_CLASS);
+  }
+  // Return focus to trigger element
+  if (bulkTagModalTrigger) {
+    bulkTagModalTrigger.focus();
   }
 }
 

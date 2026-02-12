@@ -606,12 +606,16 @@
 
           <div class="p-6 max-w-7xl mx-auto">
             <!-- Search Results Info -->
+          <h3 class="sr-only">Search Results</h3>
           <div
             id="search-results-info"
             class="mb-4 px-4 py-3 bg-blue-50 text-blue-800 rounded-lg text-sm hidden"
+            role="status"
+            aria-live="polite"
           ></div>
 
           <!-- Bulk Actions Toolbar -->
+          <h3 class="sr-only">Bulk Actions</h3>
           <div
             id="bulk-actions-toolbar"
             class="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-center justify-between"
@@ -648,9 +652,9 @@
 
           <!-- Prompts List Header -->
           <div class="flex items-center justify-between mb-4">
-            <h2 class="text-2xl font-bold text-gray-900">
+            <h3 class="text-2xl font-bold text-gray-900">
               <span data-i18n="nav.prompts">Prompts</span>
-            </h2>
+            </h3>
           </div>
 
           <!-- Empty State for Prompts -->
@@ -684,6 +688,7 @@
           </div>
 
           <!-- Prompts Grid (populated by JS) -->
+          <h3 class="sr-only">Prompts List</h3>
           <div
             id="prompts-list"
             class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
@@ -696,7 +701,7 @@
 	              data-nav-label="{{ prompt_info.data.title }}"
 	            >
 	              <div class="flex items-start justify-between mb-3">
-	                <h4 id="prompt-title-{{ prompt_id }}" class="text-lg font-semibold text-gray-900 flex-1">{{ prompt_info.data.title }}</h4>
+	                <h4 id="prompt-title-{{ prompt_id }}" class="text-lg font-semibold text-gray-900 flex-1" aria-level="3">{{ prompt_info.data.title }}</h4>
 	                <div class="flex items-center gap-1 ml-2">
 	                  <input
 	                    type="checkbox"
