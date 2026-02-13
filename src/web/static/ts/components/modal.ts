@@ -6,6 +6,7 @@
 
 import type { ModalProps } from './types';
 import { createButton } from './button';
+import { getFocusableElements, handleEscapeKey } from '@/utils/keyboard-nav';
 
 /**
  * Creates a modal dialog with overlay
@@ -59,7 +60,7 @@ export function createModal(props: ModalProps): {
       const closeBtn = document.createElement('button');
       closeBtn.innerHTML = '&times;';
       closeBtn.className =
-        'text-gray-400 hover:text-gray-600 text-3xl leading-none transition-colors duration-200';
+        'text-gray-400 hover:text-gray-600 text-3xl leading-none transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded';
       closeBtn.setAttribute('aria-label', 'Close modal');
       closeBtn.addEventListener('click', () => {
         close();
@@ -111,73 +112,84 @@ export function createModal(props: ModalProps): {
     });
   }
 
-  // Close on ESC key
-  const escapeHandler = (e: KeyboardEvent) => {
-    if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
-      if (props.closeOnEscape !== false) {
-        close();
-      }
-    }
-  };
-
   // Focus trap state
-  const focusableElements =
-    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
-  let firstFocusable: HTMLElement | null = null;
-  let lastFocusable: HTMLElement | null = null;
   let previouslyFocused: HTMLElement | null = null;
+  let escapeHandler: ((e: KeyboardEvent) => void) | null = null;
+  let trapFocusHandler: ((e: KeyboardEvent) => void) | null = null;
 
   const open = () => {
     previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     modal.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
+
+    // Escape key handler
+    escapeHandler = (e: KeyboardEvent) => {
+      if (!modal.classList.contains('hidden') && props.closeOnEscape !== false) {
+        handleEscapeKey(e, close);
+      }
+    };
     document.addEventListener('keydown', escapeHandler);
 
-    // Set up focus trap
-    const focusables = modalContent.querySelectorAll<HTMLElement>(focusableElements);
+    // Get all focusable elements in modal
+    const focusables = getFocusableElements(modalContent);
+
+    // Move focus to first element
     if (focusables.length > 0) {
-      firstFocusable = focusables[0] || null;
-      lastFocusable = focusables[focusables.length - 1] || null;
-      if (firstFocusable) {
-        firstFocusable.focus();
-      }
+      const first = focusables[0];
+      if (first) first.focus();
     } else {
       modalContent.setAttribute('tabindex', '-1');
       modalContent.focus();
     }
 
-    // Trap focus within modal
-    document.addEventListener('keydown', trapFocus);
+    // Set up focus trap to keep Tab within modal
+    if (focusables.length > 0) {
+      const firstFocusable = focusables[0];
+      const lastFocusable = focusables[focusables.length - 1];
+
+      if (firstFocusable && lastFocusable) {
+        trapFocusHandler = (e: KeyboardEvent) => {
+          if (e.key !== 'Tab') return;
+
+          if (e.shiftKey) {
+            // Shift + Tab
+            if (document.activeElement === firstFocusable) {
+              e.preventDefault();
+              lastFocusable.focus();
+            }
+          } else {
+            // Tab
+            if (document.activeElement === lastFocusable) {
+              e.preventDefault();
+              firstFocusable.focus();
+            }
+          }
+        };
+        document.addEventListener('keydown', trapFocusHandler);
+      }
+    }
   };
 
   const close = () => {
     modal.classList.add('hidden');
     document.body.style.overflow = '';
-    document.removeEventListener('keydown', escapeHandler);
-    document.removeEventListener('keydown', trapFocus);
-    if (previouslyFocused) {
+
+    if (escapeHandler) {
+      document.removeEventListener('keydown', escapeHandler);
+      escapeHandler = null;
+    }
+
+    if (trapFocusHandler) {
+      document.removeEventListener('keydown', trapFocusHandler);
+      trapFocusHandler = null;
+    }
+
+    if (previouslyFocused && previouslyFocused.isConnected) {
       previouslyFocused.focus();
     }
+
     if (props.onClose) {
       props.onClose();
-    }
-  };
-
-  const trapFocus = (e: KeyboardEvent) => {
-    if (e.key !== 'Tab') return;
-
-    if (e.shiftKey) {
-      // Shift + Tab
-      if (document.activeElement === firstFocusable && lastFocusable) {
-        e.preventDefault();
-        lastFocusable.focus();
-      }
-    } else {
-      // Tab
-      if (document.activeElement === lastFocusable && firstFocusable) {
-        e.preventDefault();
-        firstFocusable.focus();
-      }
     }
   };
 

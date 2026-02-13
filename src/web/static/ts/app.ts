@@ -318,7 +318,10 @@ function syncRovingTabindexForList(list: HTMLElement | null): void {
   const tabbableItem = activeItem ?? items[0];
 
   items.forEach((item) => {
-    item.setAttribute('role', 'button');
+    // Use role="option" for listbox items (set in HTML)
+    // Update aria-selected based on active state
+    const isActive = item === activeItem || item === tabbableItem;
+    item.setAttribute('aria-selected', isActive ? 'true' : 'false');
     item.tabIndex = item === tabbableItem ? 0 : -1;
   });
 }
@@ -2440,9 +2443,15 @@ function showVersionHistoryModal(promptId: number): void {
   // Move focus to first focusable element in modal
   const modal = document.getElementById('version-history-modal');
   if (modal) {
-    const firstFocusable = modal.querySelector('h2, button, input, [tabindex="0"]') as HTMLElement;
-    if (firstFocusable) {
-      firstFocusable.focus();
+    const focusableElements = Array.from(
+      modal.querySelectorAll<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')
+    ).filter((el) => {
+      const style = window.getComputedStyle(el);
+      return style.display !== 'none' && style.visibility !== 'hidden';
+    });
+    if (focusableElements.length > 0) {
+      const first = focusableElements[0];
+      if (first) first.focus();
     }
   }
   // Update search placeholder with current language
@@ -2631,9 +2640,15 @@ function showRevertConfirmation(versionId: string): void {
   // Move focus to first focusable element in modal
   const modal = document.getElementById('revert-confirmation-modal');
   if (modal) {
-    const firstFocusable = modal.querySelector('h2, button, input, [tabindex="0"]') as HTMLElement;
-    if (firstFocusable) {
-      firstFocusable.focus();
+    const focusableElements = Array.from(
+      modal.querySelectorAll<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')
+    ).filter((el) => {
+      const style = window.getComputedStyle(el);
+      return style.display !== 'none' && style.visibility !== 'hidden';
+    });
+    if (focusableElements.length > 0) {
+      const first = focusableElements[0];
+      if (first) first.focus();
     }
   }
   const confirmRevertBtn = document.getElementById(
@@ -2696,9 +2711,15 @@ async function showDiffModal(): Promise<void> {
   // Move focus to first focusable element in modal
   const modal = document.getElementById('diff-modal');
   if (modal) {
-    const firstFocusable = modal.querySelector('h2, button, input, [tabindex="0"]') as HTMLElement;
-    if (firstFocusable) {
-      firstFocusable.focus();
+    const focusableElements = Array.from(
+      modal.querySelectorAll<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')
+    ).filter((el) => {
+      const style = window.getComputedStyle(el);
+      return style.display !== 'none' && style.visibility !== 'hidden';
+    });
+    if (focusableElements.length > 0) {
+      const first = focusableElements[0];
+      if (first) first.focus();
     }
   }
   let versionIds = Array.from(selectedVersions);
@@ -4016,9 +4037,15 @@ function showBulkDeleteConfirmation() {
   if (modal) {
     modal.classList.remove(HIDDEN_CLASS);
     // Move focus to first focusable element in modal
-    const firstFocusable = modal.querySelector('h2, button, input, [tabindex="0"]') as HTMLElement;
-    if (firstFocusable) {
-      firstFocusable.focus();
+    const focusableElements = Array.from(
+      modal.querySelectorAll<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')
+    ).filter((el) => {
+      const style = window.getComputedStyle(el);
+      return style.display !== 'none' && style.visibility !== 'hidden';
+    });
+    if (focusableElements.length > 0) {
+      const first = focusableElements[0];
+      if (first) first.focus();
     }
   }
 }
@@ -4047,9 +4074,15 @@ function showBulkTagModal() {
   if (modal) {
     modal.classList.remove(HIDDEN_CLASS);
     // Move focus to first focusable element in modal
-    const firstFocusable = modal.querySelector('h2, button, input, [tabindex="0"]') as HTMLElement;
-    if (firstFocusable) {
-      firstFocusable.focus();
+    const focusableElements = Array.from(
+      modal.querySelectorAll<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')
+    ).filter((el) => {
+      const style = window.getComputedStyle(el);
+      return style.display !== 'none' && style.visibility !== 'hidden';
+    });
+    if (focusableElements.length > 0) {
+      const first = focusableElements[0];
+      if (first) first.focus();
     }
   }
 }
