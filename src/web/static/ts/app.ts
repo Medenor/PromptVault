@@ -1562,6 +1562,8 @@ function renderCategories(categories: string[]): void {
   categories.forEach((category) => {
     const li = document.createElement('li');
     li.dataset.category = category;
+    li.setAttribute('role', 'option');
+    li.setAttribute('aria-selected', 'false');
     li.classList.add('flex', 'items-center', 'gap-2');
 
     const color = categoryColorMap[category];
@@ -1629,6 +1631,8 @@ function renderTags(tags: TagInfo[]): void {
   tags.forEach((tag) => {
     const li = document.createElement('li');
     li.dataset.tag = tag.name;
+    li.setAttribute('role', 'option');
+    li.setAttribute('aria-selected', 'false');
     li.classList.add('flex', 'items-center', 'justify-between', 'gap-2');
 
     const left = document.createElement('div');

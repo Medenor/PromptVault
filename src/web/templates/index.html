@@ -353,11 +353,11 @@
                 <span data-i18n="nav.categories">Categories</span>
               </h3>
               <ul id="categories-list" class="space-y-2 max-h-64 overflow-y-auto" role="listbox" aria-label="Filter prompts by category">
-                <li data-category="all" class="active" data-i18n="nav.allCategories" role="option" aria-selected="true" aria-current="page">
+                <li data-category="all" class="active" data-i18n="nav.allCategories" role="option" aria-selected="true" tabindex="0">
                   All Categories
                 </li>
                 {% for category in categories %}
-                <li data-category="{{ category }}" role="option" aria-selected="false">
+                <li data-category="{{ category }}" role="option" aria-selected="false" tabindex="-1">
                   {{ category }}
                 </li>
                 {% endfor %}
@@ -380,11 +380,11 @@
                 <span data-i18n="nav.tags">Tags</span>
               </h3>
               <ul id="tags-list" class="space-y-2 max-h-64 overflow-y-auto" role="listbox" aria-label="Filter prompts by tag">
-                <li data-tag="all" class="active" data-i18n="nav.allTags" role="option" aria-selected="true" aria-current="page">
+                <li data-tag="all" class="active" data-i18n="nav.allTags" role="option" aria-selected="true" tabindex="0">
                   All Tags
                 </li>
                 {% for tag in tags %}
-                <li data-tag="{{ tag }}" role="option" aria-selected="false">
+                <li data-tag="{{ tag }}" role="option" aria-selected="false" tabindex="-1">
                   {{ tag }}
                 </li>
                 {% endfor %}
@@ -515,11 +515,11 @@
                 <span data-i18n="nav.categories">Categories</span>
               </h3>
               <ul id="categories-list-mobile" class="space-y-2 max-h-64 overflow-y-auto" role="listbox" aria-label="Filter prompts by category">
-                <li data-category="all" class="active" data-i18n="nav.allCategories" role="option" aria-selected="true" aria-current="page">
+                <li data-category="all" class="active" data-i18n="nav.allCategories" role="option" aria-selected="true" tabindex="0">
                   All Categories
                 </li>
                 {% for category in categories %}
-                <li data-category="{{ category }}" role="option" aria-selected="false">
+                <li data-category="{{ category }}" role="option" aria-selected="false" tabindex="-1">
                   {{ category }}
                 </li>
                 {% endfor %}
@@ -542,11 +542,11 @@
                 <span data-i18n="nav.tags">Tags</span>
               </h3>
               <ul id="tags-list-mobile" class="space-y-2 max-h-64 overflow-y-auto" role="listbox" aria-label="Filter prompts by tag">
-                <li data-tag="all" class="active" data-i18n="nav.allTags" role="option" aria-selected="true" aria-current="page">
+                <li data-tag="all" class="active" data-i18n="nav.allTags" role="option" aria-selected="true" tabindex="0">
                   All Tags
                 </li>
                 {% for tag in tags %}
-                <li data-tag="{{ tag }}" role="option" aria-selected="false">
+                <li data-tag="{{ tag }}" role="option" aria-selected="false" tabindex="-1">
                   {{ tag }}
                 </li>
                 {% endfor %}
