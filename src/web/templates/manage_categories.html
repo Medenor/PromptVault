@@ -86,8 +86,10 @@
                   type="text"
                   placeholder="Description"
                   data-i18n-placeholder="management.descriptionPlaceholder"
+                  aria-describedby="category-create-description-error"
                   class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-600 disabled:bg-gray-50 disabled:text-gray-600 disabled:cursor-not-allowed"
                 />
+                <p id="category-create-description-error" class="text-red-600 text-xs mt-1" role="alert" aria-live="assertive"></p>
               </div>
               <div>
                 <label for="category-create-color" class="block text-sm font-medium text-gray-700 mb-2">Color</label>
@@ -98,8 +100,10 @@
                     type="text"
                     placeholder="Color token or hex"
                     data-i18n-placeholder="management.colorPlaceholder"
+                    aria-describedby="category-create-color-error"
                     class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-600 disabled:bg-gray-50 disabled:text-gray-600 disabled:cursor-not-allowed"
                   />
+                  <p id="category-create-color-error" class="text-red-600 text-xs mt-1" role="alert" aria-live="assertive"></p>
                   <input
                     id="category-create-color-picker"
                     type="color"
@@ -127,6 +131,7 @@
           <div class="flex items-center justify-between mb-4">
             <h3 class="text-lg font-semibold text-gray-900" data-i18n="categories.listTitle">Categories</h3>
             <div class="relative w-full md:w-64">
+              <label for="category-search" class="sr-only">Search categories</label>
               <input
                 id="category-search"
                 type="text"
