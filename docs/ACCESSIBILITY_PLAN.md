@@ -48,6 +48,8 @@ Ce plan détaille les étapes nécessaires pour atteindre la conformité WCAG 2.
 - `[x] T-ACC029` Différencier états success/error/warning: notifications/toasts et statuts inline avec styles dédiés (warning distinct), rôles `status/alert` et `aria-live` cohérents + icône (hors couleur seule)
 - `[x] T-ACC034` Logos décoratifs: logo `alt="" aria-hidden="true"` + lien home nommé via `aria-label` localisé (évite la redondance avec le titre affiché)
 - `[x] T-ACC031` Texte alternatif images: audit global terminé, toutes les images ont un `alt` pertinent (ou `alt=""` si décoratif)
+- `[x] T-ACC028` à `[x] T-ACC030` indicateurs hors couleur
+- `[x] T-ACC031` à `[x] T-ACC034` images/icônes (alt/aria-hidden) complet
 
 ### Tâches partiellement implémentées
 
@@ -55,14 +57,12 @@ Ce plan détaille les étapes nécessaires pour atteindre la conformité WCAG 2.
 - `[~] T-ACC007` Audit lecteurs d'écran: checklist créée (`docs/ACCESSIBILITY_MANUAL_AUDIT.md`), exécution VoiceOver/NVDA restante
 - `[~] T-ACC026` Audit contraste texte/fond: guide et table de suivi créés (`docs/ACCESSIBILITY_CONTRAST_AUDIT.md`), audit manuel complet restant
 - `[~] T-ACC027` Audit contraste composants UI: guide et table de suivi créés (`docs/ACCESSIBILITY_CONTRAST_AUDIT.md`), audit manuel complet restant
+- `[~] T-ACC006` / `[~] T-ACC007` Audit clavier manuel + lecteurs d'écran
+- `[~] T-ACC026` / `[~] T-ACC027` audit contraste complet (texte + composants UI)
 
 ### Tâches restantes
 
 - `[ ]` Toutes les autres tâches du plan, notamment:
-- `[~] T-ACC006` / `[~] T-ACC007` Audit clavier manuel + lecteurs d'écran
-- `[~] T-ACC026` / `[~] T-ACC027` audit contraste complet (texte + composants UI)
-- `[x] T-ACC028` à `[x] T-ACC030` indicateurs hors couleur
-- `[x] T-ACC031` à `[x] T-ACC034` images/icônes (alt/aria-hidden) complet
 - `[ ] T-ACC035` à `[ ] T-ACC039` composants avancés (modales/tabs/tooltips) conformité complète
 - `[ ] T-ACC040` à `[ ] T-ACC045` préférences accessibilité (contraste élevé, reduced motion, taille texte)
 - `[ ] T-ACC048` à `[ ] T-ACC050` CI + validation manuelle + audit final
