@@ -161,8 +161,9 @@
   /* Keyboard Navigation and Focus Indicators */
   /* Enhanced visible focus indicators for WCAG 2.1 AA compliance */
   /* 3px solid outline with 2px offset for high contrast and visibility */
+  /* Comprehensive coverage of all interactive elements */
 
-  /* Remove default outline when using custom focus rings */
+  /* Remove default outline for all interactive elements */
   button:focus,
   a:focus,
   input:focus,
@@ -172,7 +173,12 @@
   th:focus,
   tr:focus,
   [role="button"]:focus,
-  [role="link"]:focus {
+  [role="link"]:focus,
+  [role="menuitem"]:focus,
+  [role="tab"]:focus,
+  [role="checkbox"]:focus,
+  [role="radio"]:focus,
+  [role="option"]:focus {
     outline: none;
   }
 
@@ -188,9 +194,14 @@
   th:focus-visible,
   tr:focus-visible,
   [role="button"]:focus-visible,
-  [role="link"]:focus-visible {
-    outline: none;
-    box-shadow: 0 0 0 3px #ffffff, 0 0 0 6px #1e40af;
+  [role="link"]:focus-visible,
+  [role="menuitem"]:focus-visible,
+  [role="tab"]:focus-visible,
+  [role="checkbox"]:focus-visible,
+  [role="radio"]:focus-visible,
+  [role="option"]:focus-visible {
+    outline: 3px solid #4A90E2;
+    outline-offset: 2px;
   }
 
   /* Respect user preference for reduced motion */
