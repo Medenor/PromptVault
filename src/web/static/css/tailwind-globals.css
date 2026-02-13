@@ -723,6 +723,23 @@
     }
   }
 
+  /* Table styling for accessibility - WCAG AA compliance */
+  /* Ensure table headers have sufficient contrast */
+  table thead th {
+    color: #374151; /* gray-700 instead of gray-500/600 */
+    font-weight: 600;
+  }
+
+  /* Table cells should use gray-700 for normal text */
+  table tbody td {
+    color: #374151; /* gray-700 */
+  }
+
+  /* Table header background should have dark text */
+  table thead tr {
+    background-color: #f3f4f6; /* gray-100 */
+  }
+
   /* Custom Scrollbar Styling */
   /* Webkit browsers (Chrome, Safari, Edge) */
   .custom-scrollbar::-webkit-scrollbar {

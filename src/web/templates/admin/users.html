@@ -161,7 +161,7 @@
                 aria-label="Search users"
                 data-i18n="[aria-label]admin.users.searchPlaceholder"
                 data-i18n="[placeholder]admin.users.searchPlaceholder"
-                class="w-full pl-3 pr-10 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-500 disabled:bg-gray-50 disabled:text-gray-600 disabled:cursor-not-allowed"
+                class="w-full pl-3 pr-10 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-600 disabled:bg-gray-50 disabled:text-gray-600 disabled:cursor-not-allowed"
               />
 	              <svg class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none w-5 h-5 transition-colors"
 	                   fill="none"
@@ -182,7 +182,7 @@
               >
               <select
                 id="role-filter"
-                class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-500 disabled:bg-gray-50 disabled:text-gray-600 disabled:cursor-not-allowed"
+                class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-600 disabled:bg-gray-50 disabled:text-gray-600 disabled:cursor-not-allowed"
               >
                 <option value="all" data-i18n="admin.users.allRoles">All Roles</option>
                 <option value="viewer" data-i18n="admin.users.roleViewer">Viewer</option>
@@ -199,7 +199,7 @@
               >
               <select
                 id="status-filter"
-                class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-500 disabled:bg-gray-50 disabled:text-gray-600 disabled:cursor-not-allowed"
+                class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-600 disabled:bg-gray-50 disabled:text-gray-600 disabled:cursor-not-allowed"
               >
                 <option value="all" data-i18n="admin.users.allStatuses">All Statuses</option>
                 <option value="active" data-i18n="admin.users.statusActive">Active</option>
@@ -245,49 +245,49 @@
                 <tr>
                   <th
                     scope="col"
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
                     data-i18n="admin.users.username"
                   >
                     Username
                   </th>
                   <th
                     scope="col"
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
                     data-i18n="admin.users.email"
                   >
                     Email
                   </th>
                   <th
                     scope="col"
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
                     data-i18n="admin.users.role"
                   >
                     Role
                   </th>
                   <th
                     scope="col"
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
                     data-i18n="admin.users.status"
                   >
                     Status
                   </th>
                   <th
                     scope="col"
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
                     data-i18n="admin.users.lastLogin"
                   >
                     Last Login
                   </th>
                   <th
                     scope="col"
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
                     data-i18n="admin.users.sessions"
                   >
                     Sessions
                   </th>
                   <th
                     scope="col"
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
                     data-i18n="admin.users.actions"
                   >
                     Actions
@@ -296,7 +296,7 @@
               </thead>
               <tbody id="users-table-body" class="bg-white divide-y divide-gray-200">
                 <tr>
-                  <td colspan="7" class="px-6 py-4 text-center text-gray-500">
+                  <td colspan="7" class="px-6 py-4 text-center text-gray-600">
                     <div data-i18n="messages.loading">Loading...</div>
                   </td>
                 </tr>
@@ -355,7 +355,7 @@
         </div>
         <div class="p-6">
           <div id="user-detail-content">
-            <div class="text-gray-500" data-i18n="messages.loading">Loading...</div>
+            <div class="text-gray-600" data-i18n="messages.loading">Loading...</div>
           </div>
         </div>
         <div class="flex justify-end space-x-3 p-6 border-t border-gray-200">
@@ -416,7 +416,7 @@
 	                id="edit-role"
 	                name="role"
 	                aria-describedby="edit-form-error"
-	                class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-500 disabled:bg-gray-50 disabled:text-gray-600 disabled:cursor-not-allowed"
+	                class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-600 disabled:bg-gray-50 disabled:text-gray-600 disabled:cursor-not-allowed"
 	              >
                 <option value="viewer" data-i18n="admin.users.roleViewer">Viewer</option>
                 <option value="editor" data-i18n="admin.users.roleEditor">Editor</option>
@@ -574,7 +574,7 @@
 	                id="create-username"
 	                name="username"
 	                aria-describedby="create-username-error"
-	                class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-500 disabled:bg-gray-50 disabled:text-gray-600 disabled:cursor-not-allowed"
+	                class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-600 disabled:bg-gray-50 disabled:text-gray-600 disabled:cursor-not-allowed"
 	                minlength="3"
 	                maxlength="32"
 	                required
@@ -601,7 +601,7 @@
 	                id="create-email"
 	                name="email"
 	                aria-describedby="create-email-error"
-	                class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-500 disabled:bg-gray-50 disabled:text-gray-600 disabled:cursor-not-allowed"
+	                class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-600 disabled:bg-gray-50 disabled:text-gray-600 disabled:cursor-not-allowed"
 	                required
 	                data-i18n="[placeholder]admin.users.emailPlaceholder"
 	                placeholder="user@example.com"
@@ -627,7 +627,7 @@
                   id="create-password"
                   name="password"
                   aria-describedby="create-password-error create-strength-text create-password-policy"
-                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-500 disabled:bg-gray-50 disabled:text-gray-600 disabled:cursor-not-allowed"
+                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-600 disabled:bg-gray-50 disabled:text-gray-600 disabled:cursor-not-allowed"
                   minlength="12"
                   maxlength="128"
                   required
@@ -696,7 +696,7 @@
                   id="create-confirm-password"
                   name="confirm_password"
                   aria-describedby="create-confirm-password-error"
-                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-500 disabled:bg-gray-50 disabled:text-gray-600 disabled:cursor-not-allowed"
+                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-600 disabled:bg-gray-50 disabled:text-gray-600 disabled:cursor-not-allowed"
                   minlength="12"
                   maxlength="128"
                   required
@@ -731,7 +731,7 @@
               <select
                 id="create-role"
                 name="role"
-                class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-500 disabled:bg-gray-50 disabled:text-gray-600 disabled:cursor-not-allowed"
+                class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-600 disabled:bg-gray-50 disabled:text-gray-600 disabled:cursor-not-allowed"
               >
                 <option value="viewer" data-i18n="admin.users.roleViewer">Viewer</option>
                 <option value="editor" data-i18n="admin.users.roleEditor">Editor</option>
