@@ -38,6 +38,7 @@
             </div>
             <nav role="navigation" aria-label="Page navigation" data-i18n="[aria-label]accessibility.labels.pageNavigation">
               <button
+                type="button"
                 onclick="window.location.href = '/'"
                 class="px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
                 data-i18n="nav.backToMain"
@@ -159,6 +160,7 @@
             <h4 class="text-lg font-semibold text-gray-700 mb-2" data-i18n="emptyStates.noCategories.title">No categories yet</h4>
             <p class="text-sm text-gray-600 mb-4" data-i18n="emptyStates.noCategories.description">Create your first category to organize your prompts</p>
             <button
+              type="button"
               onclick="document.getElementById('category-create-name').focus()"
               class="px-6 py-3 text-base font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
               data-i18n="emptyStates.noCategories.action"
@@ -185,6 +187,7 @@
           </div>
           <div class="mt-4 flex flex-col md:flex-row gap-2">
             <button
+              type="button"
               id="category-save-all-btn"
               class="px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
               data-i18n="actions.saveAll"
@@ -192,6 +195,7 @@
               Save All
             </button>
             <button
+              type="button"
               id="category-selection-merge-btn"
               class="px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
               data-i18n="actions.mergeSelected"
@@ -199,6 +203,7 @@
               Merge Selected
             </button>
             <button
+              type="button"
               id="category-selection-find-replace-btn"
               class="px-4 py-2 text-sm font-medium bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
               data-i18n="actions.findReplaceSelected"
@@ -246,6 +251,7 @@
                 <p id="category-merge-sources-error" class="text-red-600 text-xs mt-1" role="alert" aria-live="assertive"></p>
                 <p id="category-merge-sources-help" class="text-xs text-gray-600" data-i18n="management.mergeSourcesHelp">Sources will be merged into the target and removed.</p>
                 <button
+                  type="button"
                   id="category-merge-btn"
                   class="w-full px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
                   data-i18n="actions.merge"
@@ -288,6 +294,7 @@
             />
                 <p id="category-replace-error" class="text-red-600 text-xs mt-1" role="alert" aria-live="assertive"></p>
                 <button
+                  type="button"
                   id="category-find-replace-btn"
                   class="w-full px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
                   data-i18n="actions.replace"
@@ -323,6 +330,7 @@
               <span data-i18n="management.forceDelete">Force delete (remove from prompts)</span>
             </label>
                 <button
+                  type="button"
                   id="category-bulk-delete-btn"
                   class="w-full px-4 py-2 text-sm font-semibold bg-red-600 text-white rounded-lg hover:bg-red-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
                   data-i18n="actions.delete"
@@ -334,6 +342,7 @@
           </div>
           <div class="mt-4 flex justify-end">
             <button
+              type="button"
               id="category-undo-btn"
               class="px-4 py-2 text-sm font-medium bg-gray-200 text-gray-900 rounded-lg hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
               data-i18n="actions.undo"
@@ -358,6 +367,7 @@
                 Download your category definitions.
               </p>
               <button
+                type="button"
                 id="category-export-btn"
                 class="w-full px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
                 data-i18n="actions.export"
@@ -393,6 +403,7 @@
                 </label>
                 <p id="category-import-file-error" class="text-red-600 text-xs mt-1" role="alert" aria-live="assertive"></p>
                 <button
+                  type="button"
                   id="category-import-btn"
                   class="w-full px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
                   data-i18n="actions.import"

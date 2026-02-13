@@ -185,6 +185,7 @@
               <!-- Mobile Menu Dropdown -->
               <div class="relative md:hidden">
 	                <button
+	                  type="button"
 	                  id="mobile-menu-toggle"
 	                  class="px-4 py-2 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
 	                  aria-label="Open menu"
@@ -710,6 +711,7 @@
 	                    aria-labelledby="prompt-title-{{ prompt_id }}"
 	                  />
 	                  <button
+	                    type="button"
 	                    class="favorite-btn text-xl hover:scale-110 transition-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 rounded"
 	                    data-id="{{ prompt_id }}"
 	                    aria-label="{% if prompt_info.data.favorite %}Remove from favorites{% else %}Add to favorites{% endif %}"
