@@ -16,6 +16,7 @@ import { changeLanguage, initI18n, updateStaticTranslations, t } from '@/utils/i
 import { showNotification } from '@/utils/notifications';
 import { apiGet, apiDelete, APIRequestError } from '@/utils/api';
 import { createTypeahead } from '@/utils/typeahead';
+import { announceToScreenReader } from '@/utils/focus-management';
 
 const API_BASE = '/api/admin';
 const HIDDEN_CLASS = 'hidden';
@@ -346,6 +347,8 @@ async function revokeSession(userId: string, sessionId: string, username: string
     showNotification(`Session for ${username} revoked successfully`, 'success');
     hideModal('confirm-revoke-modal');
     await loadAllSessions();
+    // Announce to screen reader that session was revoked
+    announceToScreenReader(`Session for ${username} has been revoked. Focus returned to revoke button.`, 'polite');
   } catch (error) {
     if (error instanceof APIRequestError) {
       showNotification(error.message || 'Failed to revoke session', 'error');

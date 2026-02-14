@@ -13,6 +13,7 @@ import { showNotification } from '@/utils/notifications';
 import { createTypeahead } from '@/utils/typeahead';
 import { announce } from '@/utils/a11y';
 import { confirmAsync } from '@/utils/dialogs';
+import { announceToScreenReader } from '@/utils/focus-management';
 
 type CategoryItem = {
   id: number;
@@ -487,9 +488,12 @@ function renderRows(items: CategoryItem[]): void {
       void saveCategory(item.id, row);
     });
 
-    row.querySelector('[data-action="delete"]')?.addEventListener('click', () => {
-      void deleteCategory(item.id);
-    });
+    const deleteBtn = row.querySelector<HTMLButtonElement>('[data-action="delete"]');
+    if (deleteBtn) {
+      deleteBtn.addEventListener('click', () => {
+        void deleteCategory(item.id);
+      });
+    }
 
     const colorInput = row.querySelector<HTMLInputElement>('input[data-field="color"]');
     const colorPicker = row.querySelector<HTMLInputElement>('input[data-color-picker]');
@@ -608,6 +612,9 @@ async function deleteCategory(categoryId: number): Promise<void> {
     });
     showNotification(tUnsafe('management.deleteSuccess'), 'success');
     await loadCategories();
+
+    // Restore focus after delete completes
+    restoreFocusAfterDelete();
   } catch (error) {
     if (error instanceof APIRequestError && error.status === 422) {
       const forceConfirmed = await confirmAsync({
@@ -625,6 +632,9 @@ async function deleteCategory(categoryId: number): Promise<void> {
         });
         showNotification(tUnsafe('management.deleteSuccess'), 'success');
         await loadCategories();
+
+        // Restore focus after delete completes
+        restoreFocusAfterDelete();
         return;
       } catch (forceError) {
         handleError(forceError, 'Failed to delete category');
@@ -1183,6 +1193,53 @@ function init(): void {
     void undoLastOperation();
   });
   void loadCategories();
+}
+
+/**
+ * Restores focus after a category is deleted from the table
+ * Focuses the next row's delete button, or previous row's button, or the table body
+ */
+function restoreFocusAfterDelete(): void {
+  if (!elements.tableBody) return;
+
+  // Find the row that would have been after the deleted item
+  const rows = Array.from(elements.tableBody.querySelectorAll<HTMLTableRowElement>('tr'));
+  if (rows.length === 0) {
+    // Table is empty, focus the empty state or search input
+    const emptyState = document.getElementById('categories-empty-state');
+    if (emptyState && !emptyState.classList.contains('hidden')) {
+      const createBtn = emptyState.querySelector<HTMLButtonElement>('button');
+      if (createBtn) {
+        createBtn.focus();
+        announceToScreenReader('Category deleted. No categories remaining.', 'polite');
+        return;
+      }
+    }
+    // Focus search input if available
+    if (elements.searchInput) {
+      elements.searchInput.focus();
+      announceToScreenReader('Category deleted. Table is now empty.', 'polite');
+    }
+    return;
+  }
+
+  // Focus the first row's delete button
+  const firstRow = rows[0];
+  if (firstRow) {
+    const deleteBtn = firstRow.querySelector<HTMLElement>('[data-action="delete"]');
+    if (deleteBtn) {
+      deleteBtn.focus();
+      announceToScreenReader('Category deleted. Focus moved to next category.', 'polite');
+      return;
+    }
+  }
+
+  // Fall back to table body
+  if (elements.tableBody) {
+    (elements.tableBody as HTMLElement).setAttribute('tabindex', '-1');
+    (elements.tableBody as HTMLElement).focus();
+    announceToScreenReader('Category deleted.', 'polite');
+  }
 }
 
 initI18n(() => {

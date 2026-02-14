@@ -10,3 +10,4 @@ export * from './i18n';
 export * from './notifications';
 export * from './a11y';
 export * from './dialogs';
+export * from './focus-management';

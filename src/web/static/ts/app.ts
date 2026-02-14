@@ -22,6 +22,7 @@ import { createTypeahead } from '@/utils/typeahead';
 import { createModal } from '@components';
 import { announce } from '@/utils/a11y';
 import { confirmAsync } from '@/utils/dialogs';
+import { focusFirstElement, announceToScreenReader } from '@/utils/focus-management';
 
 interface TagInfo {
   name: string;
@@ -4041,16 +4042,7 @@ function showBulkDeleteConfirmation() {
   if (modal) {
     modal.classList.remove(HIDDEN_CLASS);
     // Move focus to first focusable element in modal
-    const focusableElements = Array.from(
-      modal.querySelectorAll<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')
-    ).filter((el) => {
-      const style = window.getComputedStyle(el);
-      return style.display !== 'none' && style.visibility !== 'hidden';
-    });
-    if (focusableElements.length > 0) {
-      const first = focusableElements[0];
-      if (first) first.focus();
-    }
+    focusFirstElement(modal);
   }
 }
 
@@ -4078,16 +4070,7 @@ function showBulkTagModal() {
   if (modal) {
     modal.classList.remove(HIDDEN_CLASS);
     // Move focus to first focusable element in modal
-    const focusableElements = Array.from(
-      modal.querySelectorAll<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')
-    ).filter((el) => {
-      const style = window.getComputedStyle(el);
-      return style.display !== 'none' && style.visibility !== 'hidden';
-    });
-    if (focusableElements.length > 0) {
-      const first = focusableElements[0];
-      if (first) first.focus();
-    }
+    focusFirstElement(modal);
   }
 }
 
@@ -4131,6 +4114,12 @@ async function performBulkDelete(): Promise<void> {
         failed: result.failed_count,
       });
       showNotification(message, 'success');
+
+      // Announce deletion result to screen reader
+      announceToScreenReader(
+        `${result.deleted_count} prompt(s) deleted successfully. Focus returned to bulk delete button.`,
+        'polite'
+      );
 
       // Refresh UI
       await loadPrompts();

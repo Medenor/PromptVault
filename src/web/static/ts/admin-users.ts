@@ -15,6 +15,7 @@ import { showNotification } from '@/utils/notifications';
 import { apiGet, apiPost, apiPut, apiDelete, APIRequestError } from '@/utils/api';
 import { createTypeahead } from '@/utils/typeahead';
 import { announce } from '@/utils/a11y';
+import { announceToScreenReader } from '@/utils/focus-management';
 
 const API_BASE = '/api/admin';
 const HIDDEN_CLASS = 'hidden';
@@ -563,6 +564,8 @@ async function deleteUser(userId: string, username: string): Promise<void> {
         showNotification('User permanently deleted from database', 'success');
         hideModal('confirm-delete-modal');
         await loadUsers();
+        // Announce to screen reader that user was deleted
+        announceToScreenReader(`User ${username} has been deleted. Focus returned to delete button.`, 'polite');
       } catch (error) {
         if (error instanceof APIRequestError) {
           showNotification(error.message || 'Failed to delete user', 'error');

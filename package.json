@@ -53,6 +53,7 @@
     "test:unit:watch": "vitest",
     "test:unit:ui": "vitest --ui",
     "test:ui": "playwright test scripts/playwright_auth_ui_tests.ts --ui",
+    "test:a11y": "playwright test",
     "test:ui:accessibility": "playwright test scripts/playwright_accessibility_tests.ts --project=chromium",
     "test:ui:accessibility:all": "playwright test scripts/playwright_accessibility_tests.ts",
     "test:ui:focus": "playwright test scripts/playwright_focus_indicators_tests.ts --project=chromium",
