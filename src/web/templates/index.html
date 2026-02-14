@@ -123,7 +123,7 @@
                   class="h-14 w-14 border-2 border-gray-400 rounded-lg shadow-lg"
                 />
               </a>
-              <h1 class="text-2xl font-bold">PromptVault</h1>
+              <div class="text-2xl font-bold">PromptVault</div>
             </div>
 
             <!-- Actions -->
@@ -286,6 +286,7 @@
           data-i18n="[aria-label]accessibility.labels.promptFiltersNavigation"
         >
           <div class="p-4">
+            <h1 class="sr-only">Prompts Dashboard</h1>
             <h2 class="text-lg font-bold text-gray-900 mb-4" data-i18n="nav.prompts">Prompts</h2>
 
             <!-- Filters Section -->
@@ -653,15 +654,16 @@
 
           <!-- Prompts List Header -->
           <div class="flex items-center justify-between mb-4">
-            <h3 class="text-2xl font-bold text-gray-900">
+            <h2 class="text-2xl font-bold text-gray-900">
               <span data-i18n="nav.prompts">Prompts</span>
-            </h3>
+            </h2>
           </div>
 
           <!-- Empty State for Prompts -->
           <div id="prompts-empty-state" class="hidden text-center p-12 bg-gray-50 rounded-lg border border-gray-200">
             <div class="text-5xl text-gray-400 mb-4">📝</div>
-            <h3 class="text-xl font-semibold text-gray-700 mb-2" data-i18n="emptyStates.noPrompts.title">No prompts yet</h3>
+            <h3 class="sr-only">No prompts available</h3>
+            <p class="text-xl font-semibold text-gray-700 mb-2" data-i18n="emptyStates.noPrompts.title">No prompts yet</p>
             <p class="text-sm text-gray-600 mb-6" data-i18n="emptyStates.noPrompts.description">Create your first prompt to get started</p>
             <button
               type="button"
@@ -676,7 +678,8 @@
           <!-- Empty State for Search Results -->
           <div id="search-empty-state" class="hidden text-center p-12 bg-gray-50 rounded-lg border border-gray-200">
             <div class="text-5xl text-gray-400 mb-4">🔍</div>
-            <h3 class="text-xl font-semibold text-gray-700 mb-2" data-i18n="emptyStates.noSearchResults.title">No results found</h3>
+            <h3 class="sr-only">No search results</h3>
+            <p class="text-xl font-semibold text-gray-700 mb-2" data-i18n="emptyStates.noSearchResults.title">No results found</p>
             <p class="text-sm text-gray-600 mb-6" data-i18n="emptyStates.noSearchResults.description">Try adjusting your search or filters</p>
             <button
               type="button"
@@ -702,7 +705,7 @@
 	              data-nav-label="{{ prompt_info.data.title }}"
 	            >
 	              <div class="flex items-start justify-between mb-3">
-	                <h4 id="prompt-title-{{ prompt_id }}" class="text-lg font-semibold text-gray-900 flex-1" aria-level="3">{{ prompt_info.data.title }}</h4>
+	                <h3 id="prompt-title-{{ prompt_id }}" class="text-lg font-semibold text-gray-900 flex-1">{{ prompt_info.data.title }}</h3>
 	                <div class="flex items-center gap-1 ml-2">
 	                  <input
 	                    type="checkbox"

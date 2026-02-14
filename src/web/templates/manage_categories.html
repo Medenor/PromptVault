@@ -34,7 +34,7 @@
                   class="h-14 w-14 border-2 border-gray-400 rounded-lg shadow-lg"
                 />
               </a>
-              <h1 class="text-2xl font-bold">PromptVault</h1>
+              <div class="text-2xl font-bold">PromptVault</div>
             </div>
             <nav role="navigation" aria-label="Page navigation" data-i18n="[aria-label]accessibility.labels.pageNavigation">
               <button
@@ -52,12 +52,12 @@
 
       <main id="main-content" role="main" class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
         <div class="mb-6">
-          <h2 class="text-3xl font-bold text-gray-900 mb-2" data-i18n="categories.manage">Manage Categories</h2>
+          <h1 class="text-3xl font-bold text-gray-900 mb-2" data-i18n="categories.manage">Manage Categories</h1>
           <p class="text-gray-600" data-i18n="categories.manageDesc">Create, edit, and remove categories across all prompts.</p>
         </div>
 
         <section class="bg-white rounded-lg shadow p-6 mb-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4" data-i18n="categories.createTitle">Create Category</h3>
+          <h2 class="text-lg font-semibold text-gray-900 mb-4" data-i18n="categories.createTitle">Create Category</h2>
           <form id="category-create-form" class="space-y-4">
             <div
               id="category-create-error-summary"
@@ -130,7 +130,7 @@
 
         <section class="bg-white rounded-lg shadow p-6 mb-6">
           <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold text-gray-900" data-i18n="categories.listTitle">Categories</h3>
+            <h2 class="text-lg font-semibold text-gray-900" data-i18n="categories.listTitle">Categories</h2>
             <div class="relative w-full md:w-64">
               <label for="category-search" class="sr-only">Search categories</label>
               <input
@@ -157,7 +157,8 @@
           <!-- Empty State -->
           <div id="categories-empty-state" class="hidden text-center p-12 bg-gray-50 rounded-lg border border-gray-200">
             <div class="text-4xl text-gray-400 mb-4">📁</div>
-            <h4 class="text-lg font-semibold text-gray-700 mb-2" data-i18n="emptyStates.noCategories.title">No categories yet</h4>
+            <h3 class="sr-only">No categories available</h3>
+            <p class="text-lg font-semibold text-gray-700 mb-2" data-i18n="emptyStates.noCategories.title">No categories yet</p>
             <p class="text-sm text-gray-600 mb-4" data-i18n="emptyStates.noCategories.description">Create your first category to organize your prompts</p>
             <button
               type="button"
@@ -215,10 +216,10 @@
         </section>
 
         <section class="bg-white rounded-lg shadow p-6 mb-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4" data-i18n="management.bulkActions">Bulk Actions</h3>
+          <h2 class="text-lg font-semibold text-gray-900 mb-4" data-i18n="management.bulkActions">Bulk Actions</h2>
           <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div class="border border-gray-200 rounded-lg p-4">
-              <h4 class="font-semibold text-gray-800 mb-3" data-i18n="actions.merge">Merge</h4>
+              <h3 class="font-semibold text-gray-800 mb-3" data-i18n="actions.merge">Merge</h3>
               <div
                 id="category-merge-error-summary"
                 class="validation-error-banner"
@@ -263,7 +264,7 @@
             </div>
 
             <div class="border border-gray-200 rounded-lg p-4">
-              <h4 class="font-semibold text-gray-800 mb-3" data-i18n="actions.findReplace">Find & Replace</h4>
+              <h3 class="font-semibold text-gray-800 mb-3" data-i18n="actions.findReplace">Find & Replace</h3>
               <div
                 id="category-find-replace-error-summary"
                 class="validation-error-banner"
@@ -306,7 +307,7 @@
             </div>
 
             <div class="border border-gray-200 rounded-lg p-4">
-              <h4 class="font-semibold text-gray-800 mb-3" data-i18n="actions.bulkDelete">Bulk Delete</h4>
+              <h3 class="font-semibold text-gray-800 mb-3" data-i18n="actions.bulkDelete">Bulk Delete</h3>
               <div
                 id="category-bulk-delete-error-summary"
                 class="validation-error-banner"
@@ -355,13 +356,13 @@
 
         <section class="bg-white rounded-lg shadow p-6 mb-6">
           <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold text-gray-900" data-i18n="management.importExport">Import & Export</h3>
+            <h2 class="text-lg font-semibold text-gray-900" data-i18n="management.importExport">Import & Export</h2>
             <span class="text-xs text-gray-600" data-i18n="management.importExportHint">JSON only</span>
           </div>
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div class="rounded-lg border border-gray-200 bg-gray-50 p-4">
               <div class="flex items-center justify-between mb-2">
-                <h4 class="text-sm font-semibold text-gray-800" data-i18n="management.exportTitle">Export</h4>
+                <h3 class="text-sm font-semibold text-gray-800" data-i18n="management.exportTitle">Export</h3>
                 <span class="text-xs text-gray-600">.json</span>
               </div>
               <p class="text-sm text-gray-600 mb-4" data-i18n="management.exportDesc">
@@ -378,7 +379,7 @@
             </div>
             <div class="rounded-lg border border-gray-200 bg-gray-50 p-4">
               <div class="flex items-center justify-between mb-2">
-                <h4 class="text-sm font-semibold text-gray-800" data-i18n="management.importTitle">Import</h4>
+                <h3 class="text-sm font-semibold text-gray-800" data-i18n="management.importTitle">Import</h3>
                 <span class="text-xs text-gray-600">.json</span>
               </div>
               <div
@@ -420,7 +421,7 @@
         </section>
 
         <section class="bg-white rounded-lg shadow p-6 mb-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4" data-i18n="management.analytics">Analytics</h3>
+          <h2 class="text-lg font-semibold text-gray-900 mb-4" data-i18n="management.analytics">Analytics</h2>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div class="p-4 rounded-lg bg-blue-50">
               <div class="text-sm text-blue-800" data-i18n="management.total">Total Categories</div>
@@ -436,18 +437,18 @@
             </div>
           </div>
           <div>
-            <h4 class="text-sm font-semibold text-gray-700 mb-2" data-i18n="management.top">Top Categories</h4>
+            <h3 class="text-sm font-semibold text-gray-700 mb-2" data-i18n="management.top">Top Categories</h3>
             <ul id="category-analytics-top" class="text-sm text-gray-700 space-y-1"></ul>
           </div>
         </section>
 
         <section class="bg-white rounded-lg shadow p-6 mb-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4" data-i18n="management.orphans">Orphans</h3>
+          <h2 class="text-lg font-semibold text-gray-900 mb-4" data-i18n="management.orphans">Orphans</h2>
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div class="border border-gray-200 rounded-lg p-4">
-              <h4 class="font-semibold text-gray-800 mb-3" data-i18n="categories.unusedTitle">
+              <h3 class="font-semibold text-gray-800 mb-3" data-i18n="categories.unusedTitle">
                 Unused categories
-              </h4>
+              </h3>
               <p class="text-sm text-gray-600 mb-3">
                 <span data-i18n="categories.unusedLabel">Unused categories:</span>
                 <strong id="category-unused-count">0</strong>
@@ -455,17 +456,17 @@
               <ul id="category-unused-list" class="text-sm text-gray-700 space-y-1 max-h-48 overflow-y-auto"></ul>
             </div>
             <div class="border border-gray-200 rounded-lg p-4">
-              <h4 class="font-semibold text-gray-800 mb-3" data-i18n="categories.orphanPromptsTitle">
+              <h3 class="font-semibold text-gray-800 mb-3" data-i18n="categories.orphanPromptsTitle">
                 Prompts without a category
-              </h4>
+              </h3>
               <p class="text-sm text-gray-600 mb-3">
                 <span data-i18n="categories.orphans">Prompts without a category:</span>
                 <strong id="category-orphans-count">0</strong>
               </p>
               <div class="mt-3">
-                <h5 class="text-sm font-semibold text-gray-700 mb-2" data-i18n="management.promptDetails">
+                <h4 class="text-sm font-semibold text-gray-700 mb-2" data-i18n="management.promptDetails">
                   Prompt details
-                </h5>
+                </h4>
                 <ul id="category-orphans-details" class="text-sm text-gray-700 space-y-1 max-h-48 overflow-y-auto"></ul>
               </div>
             </div>
