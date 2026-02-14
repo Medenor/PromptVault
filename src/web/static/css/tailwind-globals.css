@@ -163,27 +163,8 @@
   /* 3px solid outline with 2px offset for high contrast and visibility */
   /* Comprehensive coverage of all interactive elements */
 
-  /* Remove default outline for all interactive elements */
-  button:focus,
-  a:focus,
-  input:focus,
-  textarea:focus,
-  select:focus,
-  [tabindex]:focus,
-  th:focus,
-  tr:focus,
-  [role="button"]:focus,
-  [role="link"]:focus,
-  [role="menuitem"]:focus,
-  [role="tab"]:focus,
-  [role="checkbox"]:focus,
-  [role="radio"]:focus,
-  [role="option"]:focus {
-    outline: none;
-  }
-
   /* Apply visible focus indicators for keyboard navigation only */
-  /* Double-ring approach: white inner ring + dark blue outer ring for high contrast on all backgrounds */
+  /* 3px solid blue outline with 2px offset for high contrast on all backgrounds */
   /* Provides 3:1+ contrast on blue, gray, and white backgrounds (WCAG 2.1 AA) */
   button:focus-visible,
   a:focus-visible,

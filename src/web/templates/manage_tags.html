@@ -71,6 +71,7 @@
                 <label for="tag-create-name" class="block text-sm font-medium text-gray-700 mb-2">Name</label>
                 <input
                   id="tag-create-name"
+                  name="tag_name"
                   type="text"
                   placeholder="Name"
                   data-i18n-placeholder="management.namePlaceholder"
@@ -84,6 +85,7 @@
                 <label for="tag-create-description" class="block text-sm font-medium text-gray-700 mb-2">Description</label>
                 <input
                   id="tag-create-description"
+                  name="tag_description"
                   type="text"
                   placeholder="Description"
                   data-i18n-placeholder="management.descriptionPlaceholder"
@@ -96,6 +98,7 @@
                 <label for="tag-create-parent" class="block text-sm font-medium text-gray-700 mb-2">Parent</label>
                 <select
                   id="tag-create-parent"
+                  name="tag_parent"
                   aria-describedby="tag-create-parent-error"
                   class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
                 >
@@ -111,6 +114,7 @@
                   <!-- Enhanced color picker will be inserted here -->
                   <input
                     id="tag-create-color"
+                    name="tag_color"
                     type="text"
                     placeholder="Color token or hex"
                     data-i18n-placeholder="management.colorPlaceholder"
@@ -132,6 +136,7 @@
             <div class="mt-4 flex justify-end">
               <button
                 type="submit"
+                name="create_tag"
                 class="px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
                 data-i18n="actions.create"
               >
@@ -148,6 +153,7 @@
               <label for="tag-search" class="sr-only">Search tags</label>
               <input
                 id="tag-search"
+                name="tag_search"
                 type="text"
                 placeholder="Search tags..."
                 aria-label="Search tags"
@@ -205,6 +211,7 @@
             <button
               type="button"
               id="tag-save-all-btn"
+              name="save_all_tags"
               class="px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
               data-i18n="actions.saveAll"
             >
@@ -213,6 +220,7 @@
             <button
               type="button"
               id="tag-selection-merge-btn"
+              name="merge_selected_tags"
               class="px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
               data-i18n="actions.mergeSelected"
             >
@@ -221,6 +229,7 @@
             <button
               type="button"
               id="tag-selection-find-replace-btn"
+              name="find_replace_selected"
               class="px-4 py-2 text-sm font-medium bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
               data-i18n="actions.findReplaceSelected"
             >
@@ -269,6 +278,7 @@
                 <button
                   type="button"
                   id="tag-merge-btn"
+                  name="merge_tags"
                   class="w-full px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
                   data-i18n="actions.merge"
                 >
@@ -312,6 +322,7 @@
                 <button
                   type="button"
                   id="tag-find-replace-btn"
+                  name="find_replace_tags"
                   class="w-full px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
                   data-i18n="actions.replace"
                 >
@@ -342,12 +353,13 @@
             />
             <p id="tag-bulk-delete-ids-error" class="text-red-600 text-xs mt-1" role="alert" aria-live="assertive"></p>
             <label for="tag-bulk-delete-force" class="flex items-center gap-2 text-sm text-gray-700">
-              <input id="tag-bulk-delete-force" type="checkbox" class="rounded text-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" />
+              <input id="tag-bulk-delete-force" type="checkbox" name="bulk_delete_force" class="rounded text-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" />
               <span data-i18n="management.forceDelete">Force delete (remove from prompts)</span>
             </label>
                 <button
                   type="button"
                   id="tag-bulk-delete-btn"
+                  name="bulk_delete_tags"
                   class="w-full px-4 py-2 text-sm font-semibold bg-red-600 text-white rounded-lg hover:bg-red-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
                   data-i18n="actions.delete"
                 >
@@ -360,6 +372,7 @@
             <button
               type="button"
               id="tag-undo-btn"
+              name="undo_action"
               class="px-4 py-2 text-sm font-medium bg-gray-200 text-gray-900 rounded-lg hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
               data-i18n="actions.undo"
             >
@@ -385,6 +398,7 @@
               <button
                 type="button"
                 id="tag-export-btn"
+                name="export_tags"
                 class="w-full px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
                 data-i18n="actions.export"
               >
@@ -414,6 +428,7 @@
                   <span data-i18n="management.importDrop">Choose a JSON file</span>
                   <input
                     id="tag-import-file"
+                    name="import_file"
                     type="file"
                     accept="application/json"
                     aria-describedby="tag-import-file-help tag-import-file-error"
@@ -424,6 +439,7 @@
                 <button
                   type="button"
                   id="tag-import-btn"
+                  name="import_tags"
                   class="w-full px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
                   data-i18n="actions.import"
                 >

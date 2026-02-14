@@ -88,6 +88,7 @@
                 >
                 <select
                   id="export-format"
+                  name="export_format"
                   class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
                 >
                   <option value="csv">CSV - Comma-separated values</option>
@@ -101,6 +102,7 @@
                   <input
                     type="checkbox"
                     id="include-favorites"
+                    name="include_favorites"
                     checked
                     class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                   />
@@ -112,6 +114,7 @@
                   <input
                     type="checkbox"
                     id="include-metadata"
+                    name="include_metadata"
                     checked
                     class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                   />
@@ -131,6 +134,7 @@
                 <input
                   type="text"
                   id="export-filename"
+                  name="export_filename"
                   value="promptvault_export"
                   placeholder="Enter filename"
                   maxlength="255"
@@ -150,6 +154,7 @@
                 <div class="flex flex-col sm:flex-row gap-2">
                   <button
                     type="button"
+                    name="export_action"
                     class="flex-1 px-4 py-2 text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
                     onclick="performExport()"
                     data-i18n="importExport.exportBtn"
@@ -158,6 +163,7 @@
                   </button>
                   <button
                     type="button"
+                    name="preview_export"
                     class="px-4 py-2 text-sm font-medium bg-gray-200 text-gray-900 hover:bg-gray-300 rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
                     onclick="previewExport()"
                     data-i18n="importExport.previewBtn"
@@ -166,6 +172,7 @@
                   </button>
                   <button
                     type="button"
+                    name="clear_export"
                     class="px-4 py-2 text-sm font-medium bg-gray-200 text-gray-900 hover:bg-gray-300 rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
                     onclick="clearExportSettings()"
                     data-i18n="importExport.clearBtn"
@@ -216,6 +223,7 @@
                 <input
                   type="file"
                   id="import-file"
+                  name="import_file"
                   accept=".csv,.json,.md,.markdown"
                   aria-describedby="import-file-help import-file-error"
                   aria-errormessage="import-file-error"
@@ -234,6 +242,7 @@
                   <input
                     type="checkbox"
                     id="import-merge"
+                    name="import_merge"
                     checked
                     class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                   />
@@ -245,6 +254,7 @@
                   <input
                     type="checkbox"
                     id="import-validate"
+                    name="import_validate"
                     checked
                     class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                   />
@@ -263,6 +273,7 @@
                 >
                 <select
                   id="import-mode"
+                  name="import_mode"
                   aria-describedby="import-mode-help"
                   class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
                 >
@@ -289,6 +300,7 @@
                 <div class="flex flex-col sm:flex-row gap-2">
                   <button
                     type="button"
+                    name="import_action"
                     class="flex-1 px-4 py-2 text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
                     onclick="performImport()"
                     data-i18n="importExport.importBtn"
@@ -297,6 +309,7 @@
                   </button>
                   <button
                     type="button"
+                    name="preview_import"
                     class="px-4 py-2 text-sm font-medium bg-gray-200 text-gray-900 hover:bg-gray-300 rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
                     onclick="previewImport()"
                     data-i18n="importExport.previewBtn"
@@ -332,6 +345,7 @@
           <div class="flex gap-2 items-center justify-end">
             <button
               type="button"
+              name="cancel_preview"
               class="px-4 py-2 text-sm font-medium bg-gray-200 text-gray-900 hover:bg-gray-300 rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
               onclick="cancelPreview()"
               id="cancel-btn-import-preview"
@@ -340,6 +354,7 @@
             </button>
             <button
               type="button"
+              name="confirm_operation"
               class="px-4 py-2 text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
               onclick="confirmOperation()"
               id="confirm-btn"

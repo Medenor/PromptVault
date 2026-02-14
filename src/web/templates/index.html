@@ -300,6 +300,7 @@
                 <input
                   type="text"
                   id="search-input"
+                  name="search_input"
                   placeholder="Search prompts..."
                   aria-label="Search prompts"
                   data-i18n="[aria-label]nav.searchPlaceholder"
@@ -462,6 +463,7 @@
                 <input
                   type="text"
                   id="search-input-mobile"
+                  name="search_input_mobile"
                   placeholder="Search prompts..."
                   aria-label="Search prompts"
                   data-i18n="[aria-label]nav.searchPlaceholder"
@@ -1012,6 +1014,7 @@
             <input
               type="text"
               id="version-search"
+              name="version_search"
               aria-label="Search versions"
               data-i18n="[aria-label]version.searchPlaceholder"
               placeholder="Search versions..."
@@ -1074,6 +1077,7 @@
               <label for="diff-v1-selector" class="block text-sm font-semibold text-gray-700 mb-2" data-i18n="version.version1">Version 1:</label>
               <select
                 id="diff-v1-selector"
+                name="diff_v1"
                 class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
               ></select>
             </div>
@@ -1081,6 +1085,7 @@
               <label for="diff-v2-selector" class="block text-sm font-semibold text-gray-700 mb-2" data-i18n="version.version2">Version 2:</label>
               <select
                 id="diff-v2-selector"
+                name="diff_v2"
                 class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
               ></select>
             </div>
@@ -1129,6 +1134,7 @@
             <input
               type="text"
               id="revert-commit-message"
+              name="revert_commit_message"
               placeholder="Describe why you're reverting..."
               data-i18n="[placeholder]version.revertMessagePlaceholder"
               maxlength="500"
