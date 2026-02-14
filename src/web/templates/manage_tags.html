@@ -405,13 +405,16 @@
                 Upload a JSON file to create or update tags.
               </p>
               <div class="flex flex-col gap-3">
+                <div id="tag-import-file-help" class="text-xs text-gray-600">
+                  <p>Supported format: JSON (.json)</p>
+                </div>
                 <label for="tag-import-file" class="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-gray-300 bg-white px-3 py-4 text-sm text-gray-600">
                   <span data-i18n="management.importDrop">Choose a JSON file</span>
                   <input
                     id="tag-import-file"
                     type="file"
                     accept="application/json"
-                    aria-describedby="tag-import-file-error"
+                    aria-describedby="tag-import-file-help tag-import-file-error"
                     class="text-xs text-gray-600"
                   />
                 </label>

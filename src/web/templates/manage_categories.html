@@ -391,13 +391,16 @@
                 Upload a JSON file to create or update categories.
               </p>
               <div class="flex flex-col gap-3">
+                <div id="category-import-file-help" class="text-xs text-gray-600">
+                  <p>Supported format: JSON (.json)</p>
+                </div>
                 <label for="category-import-file" class="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-gray-300 bg-white px-3 py-4 text-sm text-gray-600">
                   <span data-i18n="management.importDrop">Choose a JSON file</span>
                   <input
                     id="category-import-file"
                     type="file"
                     accept="application/json"
-                    aria-describedby="category-import-file-error"
+                    aria-describedby="category-import-file-help category-import-file-error"
                     class="text-xs text-gray-600"
                   />
                 </label>
