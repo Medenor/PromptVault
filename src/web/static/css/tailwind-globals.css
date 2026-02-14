@@ -383,13 +383,13 @@
     margin-top: 0.25rem;
     margin-bottom: 0.5rem;
     font-weight: 500;
-    color: #4b5563;
+    color: #374151;
     transition: color 0.2s ease;
   }
 
   .char-counter-pristine,
   .char-counter-valid {
-    color: #4b5563;
+    color: #374151;
   }
 
   .char-counter-warning {

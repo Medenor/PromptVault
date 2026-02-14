@@ -58,7 +58,7 @@
           <h1 class="text-3xl font-bold text-gray-900 mb-2" data-i18n="importExport.title">
             Import & Export Management
           </h2>
-          <p class="text-gray-600" data-i18n="importExport.description">
+          <p class="text-gray-700" data-i18n="importExport.description">
             Manage your prompt data with comprehensive import and export capabilities
           </p>
         </div>
@@ -88,7 +88,7 @@
                 >
                 <select
                   id="export-format"
-                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-600 disabled:bg-gray-50 disabled:text-gray-600 disabled:cursor-not-allowed"
+                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
                 >
                   <option value="csv">CSV - Comma-separated values</option>
                   <option value="markdown">Markdown - Human-readable format</option>
@@ -136,7 +136,7 @@
                   maxlength="255"
                   pattern="[A-Za-z0-9_\\-]+"
                   aria-describedby="export-filename-error"
-                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-600 disabled:bg-gray-50 disabled:text-gray-600 disabled:cursor-not-allowed"
+                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
                 />
                 <p
                   class="text-red-600 text-xs mt-1"
@@ -209,7 +209,7 @@
                   data-i18n="importExport.selectFile"
                   >Select File</label
                 >
-                <div id="import-file-help" class="text-sm text-gray-600 mb-3">
+                <div id="import-file-help" class="text-sm text-gray-700 mb-3">
                   <p class="mb-2">Supported formats: CSV, JSON, Markdown (.csv, .json, .md, .markdown)</p>
                   <p>Maximum file size: 10MB</p>
                 </div>
@@ -219,7 +219,7 @@
                   accept=".csv,.json,.md,.markdown"
                   aria-describedby="import-file-help import-file-error"
                   aria-errormessage="import-file-error"
-                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-600 disabled:cursor-not-allowed file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                 />
                 <p
                   class="text-red-600 text-xs mt-1"
@@ -264,7 +264,7 @@
                 <select
                   id="import-mode"
                   aria-describedby="import-mode-help"
-                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-600 disabled:bg-gray-50 disabled:text-gray-600 disabled:cursor-not-allowed"
+                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
                 >
                   <option value="append" data-i18n="importExport.modeAppend">
                     Append to existing
@@ -276,7 +276,7 @@
                 </select>
                 <p
                   id="import-mode-help"
-                  class="text-xs text-gray-600 mt-1"
+                  class="text-xs text-gray-700 mt-1"
                   data-i18n="importExport.modeHelp"
                 >
                   Append adds new prompts and keeps current ones (creating duplicates if titles
@@ -361,25 +361,25 @@
               </h4>
               <div class="space-y-3">
                 <div class="flex justify-between py-2 border-b border-gray-200">
-                  <span class="text-sm text-gray-600" data-i18n="importExport.totalPrompts"
+                  <span class="text-sm text-gray-700" data-i18n="importExport.totalPrompts"
                     >Total Prompts:</span
                   >
                   <span class="text-sm font-medium text-gray-900" id="total-prompts">-</span>
                 </div>
                 <div class="flex justify-between py-2 border-b border-gray-200">
-                  <span class="text-sm text-gray-600" data-i18n="importExport.totalCategories"
+                  <span class="text-sm text-gray-700" data-i18n="importExport.totalCategories"
                     >Categories:</span
                   >
                   <span class="text-sm font-medium text-gray-900" id="total-categories">-</span>
                 </div>
                 <div class="flex justify-between py-2 border-b border-gray-200">
-                  <span class="text-sm text-gray-600" data-i18n="importExport.totalTags"
+                  <span class="text-sm text-gray-700" data-i18n="importExport.totalTags"
                     >Tags:</span
                   >
                   <span class="text-sm font-medium text-gray-900" id="total-tags">-</span>
                 </div>
                 <div class="flex justify-between py-2">
-                  <span class="text-sm text-gray-600" data-i18n="importExport.favoritePrompts"
+                  <span class="text-sm text-gray-700" data-i18n="importExport.favoritePrompts"
                     >Favorite Prompts:</span
                   >
                   <span class="text-sm font-medium text-gray-900" id="favorite-prompts">-</span>
@@ -404,11 +404,11 @@
       <footer class="bg-gray-100 border-t border-gray-200 mt-8 py-6 px-4" role="contentinfo">
         <div class="max-w-7xl mx-auto">
           <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p class="text-sm text-gray-600">PromptVault 2024. All rights reserved.</p>
+            <p class="text-sm text-gray-700">PromptVault 2024. All rights reserved.</p>
             <nav class="flex gap-6 text-sm" aria-label="Footer links">
-              <a href="/" class="text-gray-600 hover:text-gray-900 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 rounded-lg px-2 py-1" data-i18n="nav.home">Home</a>
-              <a href="/manage-categories" class="text-gray-600 hover:text-gray-900 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 rounded-lg px-2 py-1" data-i18n="categories.manage">Categories</a>
-              <a href="/manage-tags" class="text-gray-600 hover:text-gray-900 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 rounded-lg px-2 py-1" data-i18n="tags.manage">Tags</a>
+              <a href="/" class="text-gray-700 hover:text-gray-900 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 rounded-lg px-2 py-1" data-i18n="nav.home">Home</a>
+              <a href="/manage-categories" class="text-gray-700 hover:text-gray-900 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 rounded-lg px-2 py-1" data-i18n="categories.manage">Categories</a>
+              <a href="/manage-tags" class="text-gray-700 hover:text-gray-900 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 rounded-lg px-2 py-1" data-i18n="tags.manage">Tags</a>
             </nav>
           </div>
         </div>

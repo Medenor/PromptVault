@@ -58,7 +58,7 @@
           <h1 class="text-3xl font-bold text-gray-900 mb-2" data-i18n="backup.title">
             Backup Management
           </h2>
-          <p class="text-gray-600" data-i18n="backup.description">
+          <p class="text-gray-700" data-i18n="backup.description">
             Manage your data backups with comprehensive backup and restoration capabilities
           </p>
         </div>
@@ -93,7 +93,7 @@
                   maxlength="64"
                   pattern="[A-Za-z0-9_-]*"
                   aria-describedby="backup-name-error"
-                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-600 disabled:bg-gray-50 disabled:text-gray-600 disabled:cursor-not-allowed"
+                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
                 />
                 <p
                   class="text-red-600 text-xs mt-1"
@@ -148,7 +148,7 @@
             </h3>
 
             <div class="space-y-3 max-h-96 overflow-y-auto" id="backup-list">
-              <div class="text-gray-600 text-sm" data-i18n="messages.loading">
+              <div class="text-gray-700 text-sm" data-i18n="messages.loading">
                 Loading backups...
               </div>
             </div>
@@ -201,7 +201,7 @@
                     min="1"
                     max="3650"
                     aria-describedby="retention-days-error"
-                    class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-600 disabled:bg-gray-50 disabled:text-gray-600 disabled:cursor-not-allowed"
+                    class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
                   />
                   <div
                     class="text-red-600 text-sm mt-1"
@@ -249,7 +249,7 @@
                     min="1"
                     max="365"
                     aria-describedby="compress-days-error"
-                    class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-600 disabled:bg-gray-50 disabled:text-gray-600 disabled:cursor-not-allowed"
+                    class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
                   />
                   <div
                     class="text-red-600 text-sm mt-1"
@@ -292,29 +292,29 @@
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
             <div class="text-center">
               <div class="text-3xl font-bold text-gray-900" id="total-backups">-</div>
-              <div class="text-sm text-gray-600 mt-1" data-i18n="backup.totalBackups">
+              <div class="text-sm text-gray-700 mt-1" data-i18n="backup.totalBackups">
                 Total Backups
               </div>
             </div>
             <div class="text-center">
               <div class="text-3xl font-bold text-blue-600" id="total-size">-</div>
-              <div class="text-sm text-gray-600 mt-1" data-i18n="backup.totalSize">Total Size</div>
+              <div class="text-sm text-gray-700 mt-1" data-i18n="backup.totalSize">Total Size</div>
             </div>
             <div class="text-center">
               <div class="text-3xl font-bold text-green-600" id="compressed-count">-</div>
-              <div class="text-sm text-gray-600 mt-1" data-i18n="backup.compressedCount">
+              <div class="text-sm text-gray-700 mt-1" data-i18n="backup.compressedCount">
                 Compressed
               </div>
             </div>
             <div class="text-center">
               <div class="text-sm font-medium text-gray-900" id="newest-backup">-</div>
-              <div class="text-xs text-gray-600 mt-1" data-i18n="backup.newestBackup">
+              <div class="text-xs text-gray-700 mt-1" data-i18n="backup.newestBackup">
                 Newest Backup
               </div>
             </div>
             <div class="text-center">
               <div class="text-sm font-medium text-gray-900" id="oldest-backup">-</div>
-              <div class="text-xs text-gray-600 mt-1" data-i18n="backup.oldestBackup">
+              <div class="text-xs text-gray-700 mt-1" data-i18n="backup.oldestBackup">
                 Oldest Backup
               </div>
             </div>
@@ -326,11 +326,11 @@
       <footer class="bg-gray-100 border-t border-gray-200 mt-8 py-6 px-4" role="contentinfo">
         <div class="max-w-7xl mx-auto">
           <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p class="text-sm text-gray-600">PromptVault 2024. All rights reserved.</p>
+            <p class="text-sm text-gray-700">PromptVault 2024. All rights reserved.</p>
             <nav class="flex gap-6 text-sm" aria-label="Footer links">
-              <a href="/" class="text-gray-600 hover:text-gray-900 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 rounded-lg px-2 py-1" data-i18n="nav.home">Home</a>
-              <a href="/manage-categories" class="text-gray-600 hover:text-gray-900 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 rounded-lg px-2 py-1" data-i18n="categories.manage">Categories</a>
-              <a href="/manage-tags" class="text-gray-600 hover:text-gray-900 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 rounded-lg px-2 py-1" data-i18n="tags.manage">Tags</a>
+              <a href="/" class="text-gray-700 hover:text-gray-900 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 rounded-lg px-2 py-1" data-i18n="nav.home">Home</a>
+              <a href="/manage-categories" class="text-gray-700 hover:text-gray-900 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 rounded-lg px-2 py-1" data-i18n="categories.manage">Categories</a>
+              <a href="/manage-tags" class="text-gray-700 hover:text-gray-900 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 rounded-lg px-2 py-1" data-i18n="tags.manage">Tags</a>
             </nav>
           </div>
         </div>
@@ -352,7 +352,7 @@
           </h2>
           <button
             type="button"
-            class="text-gray-400 hover:text-gray-600 text-2xl cursor-pointer rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
+            class="text-gray-400 hover:text-gray-700 text-2xl cursor-pointer rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
             aria-label="Close modal"
             data-i18n="[aria-label]actions.close"
             onclick="hideRestoreModal()"
@@ -409,7 +409,7 @@
           </h2>
           <button
             type="button"
-            class="text-gray-400 hover:text-gray-600 text-2xl cursor-pointer rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
+            class="text-gray-400 hover:text-gray-700 text-2xl cursor-pointer rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
             aria-label="Close modal"
             data-i18n="[aria-label]actions.close"
             onclick="hideDeleteModal()"
