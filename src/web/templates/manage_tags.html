@@ -184,16 +184,17 @@
 
           <div id="tags-table-container" class="overflow-x-auto max-h-96">
             <table class="min-w-full text-sm">
+              <caption class="sr-only">Tags management table with columns for selection, ID, name, description, color, parent, usage, and actions</caption>
               <thead>
                 <tr class="text-left text-gray-600 border-b">
-                  <th class="py-2 pr-4" data-i18n="management.select">Select</th>
-                  <th class="py-2 pr-4" data-i18n="management.id">ID</th>
-                  <th class="py-2 pr-4" data-i18n="management.name">Name</th>
-                  <th class="py-2 pr-4" data-i18n="management.description">Description</th>
-                  <th class="py-2 pr-4" data-i18n="management.color">Color</th>
-                  <th class="py-2 pr-4" data-i18n="management.parent">Parent</th>
-                  <th class="py-2 pr-4" data-i18n="management.usage">Usage</th>
-                  <th class="py-2 pr-4" data-i18n="management.actions">Actions</th>
+                  <th scope="col" class="py-2 pr-4" data-i18n="management.select">Select</th>
+                  <th scope="col" class="py-2 pr-4" data-i18n="management.id">ID</th>
+                  <th scope="col" class="py-2 pr-4" data-i18n="management.name">Name</th>
+                  <th scope="col" class="py-2 pr-4" data-i18n="management.description">Description</th>
+                  <th scope="col" class="py-2 pr-4" data-i18n="management.color">Color</th>
+                  <th scope="col" class="py-2 pr-4" data-i18n="management.parent">Parent</th>
+                  <th scope="col" class="py-2 pr-4" data-i18n="management.usage">Usage</th>
+                  <th scope="col" class="py-2 pr-4" data-i18n="management.actions">Actions</th>
                 </tr>
               </thead>
               <tbody id="tags-table-body"></tbody>
@@ -495,9 +496,21 @@
             </div>
           </div>
         </section>
-
-        
       </main>
+
+      <!-- Footer -->
+      <footer class="bg-gray-100 border-t border-gray-200 mt-8 py-6 px-4" role="contentinfo">
+        <div class="max-w-7xl mx-auto">
+          <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+            <p class="text-sm text-gray-600">PromptVault 2024. All rights reserved.</p>
+            <nav class="flex gap-6 text-sm" aria-label="Footer links">
+              <a href="/" class="text-gray-600 hover:text-gray-900 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 rounded-lg px-2 py-1" data-i18n="nav.home">Home</a>
+              <a href="/manage-categories" class="text-gray-600 hover:text-gray-900 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 rounded-lg px-2 py-1" data-i18n="categories.manage">Categories</a>
+              <a href="/manage-tags" class="text-gray-600 hover:text-gray-900 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 rounded-lg px-2 py-1" data-i18n="tags.manage">Tags</a>
+            </nav>
+          </div>
+        </div>
+      </footer>
     </div>
 
     {{ scripts.load_scripts('manage-tags', true) }}

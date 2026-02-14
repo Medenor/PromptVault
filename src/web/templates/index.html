@@ -103,7 +103,7 @@
       ></div>
     </div>
 
-    <div class="app min-h-screen bg-gray-50" style="display: none">
+    <div class="app min-h-screen bg-gray-50 flex flex-col" style="display: none">
       <!-- Header -->
       <header class="bg-blue-700 text-white shadow-sm" role="banner">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -130,8 +130,8 @@
             <nav
               class="flex items-center gap-2"
               role="navigation"
-              aria-label="Primary actions"
-              data-i18n="[aria-label]accessibility.labels.primaryActions"
+              aria-label="Main navigation"
+              data-i18n="[aria-label]accessibility.labels.mainNavigation"
             >
               <!-- Desktop-only: New Prompt -->
               <button
@@ -973,6 +973,20 @@
           </div>
         </main>
       </div>
+
+      <!-- Footer -->
+      <footer class="bg-gray-100 border-t border-gray-200 mt-8 py-6 px-4" role="contentinfo">
+        <div class="max-w-7xl mx-auto">
+          <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+            <p class="text-sm text-gray-600">PromptVault 2024. All rights reserved.</p>
+            <nav class="flex gap-6 text-sm" aria-label="Footer links">
+              <a href="/" class="text-gray-600 hover:text-gray-900 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 rounded-lg px-2 py-1" data-i18n="nav.home">Home</a>
+              <a href="/manage-categories" class="text-gray-600 hover:text-gray-900 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 rounded-lg px-2 py-1" data-i18n="categories.manage">Categories</a>
+              <a href="/manage-tags" class="text-gray-600 hover:text-gray-900 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 rounded-lg px-2 py-1" data-i18n="tags.manage">Tags</a>
+            </nav>
+          </div>
+        </div>
+      </footer>
     </div>
 
     <!-- Version History Modal -->
