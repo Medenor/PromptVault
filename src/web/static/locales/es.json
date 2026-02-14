@@ -19,7 +19,9 @@
     "profile": "Perfil",
     "admin": "Administración",
     "logout": "Cerrar sesión",
-    "backToMain": "Volver al menú principal"
+    "backToMain": "Volver al menú principal",
+    "skipToMainContent": "Saltar al contenido principal",
+    "home": "Inicio"
   },
   "actions": {
     "add": "Añadir",

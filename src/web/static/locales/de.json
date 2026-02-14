@@ -19,7 +19,9 @@
     "profile": "Profil",
     "admin": "Verwaltung",
     "logout": "Abmelden",
-    "backToMain": "Zurück zum Hauptmenü"
+    "backToMain": "Zurück zum Hauptmenü",
+    "skipToMainContent": "Zum Hauptinhalten springen",
+    "home": "Startseite"
   },
   "actions": {
     "add": "Hinzufügen",

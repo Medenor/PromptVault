@@ -19,7 +19,9 @@
     "profile": "Profile",
     "admin": "Admin",
     "logout": "Logout",
-    "backToMain": "Back to Main"
+    "backToMain": "Back to Main",
+    "skipToMainContent": "Skip to main content",
+    "home": "Home"
   },
   "actions": {
     "add": "Add",
