@@ -56,6 +56,7 @@ test.describe('@regression-a11y Import-Export Page Accessibility Tests', () => {
   // ============================================================================
   test.describe('@regression-a11y Page Structure', () => {
     test('page should have correct title', async ({ page }) => {
+      await navigateToProtectedRoute(page, '/import-export');
       const title = await page.title();
       expect(title).toContain('Import');
       expect(title).toContain('Export');

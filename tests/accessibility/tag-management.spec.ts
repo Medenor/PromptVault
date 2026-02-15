@@ -80,6 +80,8 @@ test.describe('@regression-a11y Tag Management Page Accessibility Tests', () => 
   // ============================================================================
   test.describe('@regression-a11y Page Structure', () => {
     test('should have correct page title', async ({ authenticatedPage: page }) => {
+      await navigateToProtectedRoute(page, '/manage-tags');
+      await page.waitForLoadState('networkidle');
       const title = await page.title();
       expect(title).toContain('Manage Tags');
     });

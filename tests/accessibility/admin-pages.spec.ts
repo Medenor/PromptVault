@@ -86,6 +86,8 @@ test.describe('@regression-a11y Admin Users Page Accessibility', () => {
   // ============================================================================
   test.describe('@regression-a11y Page Structure', () => {
     test('should have correct page title', async ({ authenticatedPage: page }) => {
+      await navigateToProtectedRoute(page, '/admin/users');
+      await page.waitForLoadState('networkidle');
       const title = await page.title();
       expect(title).toContain('User Management');
     });
@@ -655,6 +657,8 @@ test.describe('@regression-a11y Admin Sessions Page Accessibility', () => {
   // ============================================================================
   test.describe('@regression-a11y Page Structure', () => {
     test('should have correct page title', async ({ authenticatedPage: page }) => {
+      await navigateToProtectedRoute(page, '/admin/sessions');
+      await page.waitForLoadState('networkidle');
       const title = await page.title();
       expect(title).toContain('Session Management');
     });

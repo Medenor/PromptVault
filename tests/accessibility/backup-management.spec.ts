@@ -51,6 +51,7 @@ test.describe('@regression-a11y Backup Management Page Accessibility Tests', () 
   // ============================================================================
   test.describe('@regression-a11y Page Structure', () => {
     test('page should have correct title', async ({ page }) => {
+      await navigateToProtectedRoute(page, '/backup-management');
       const title = await page.title();
       expect(title).toContain('Backup');
       expect(title).toContain('Management');
