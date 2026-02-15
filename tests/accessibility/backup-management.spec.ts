@@ -40,7 +40,7 @@ import { authenticatedUserTest, navigateToProtectedRoute } from './fixtures/auth
 const test = authenticatedUserTest;
 
 // Define test suites organized by feature
-test.describe('Backup Management Page Accessibility Tests', () => {
+test.describe('@regression-a11y Backup Management Page Accessibility Tests', () => {
   test.beforeEach(async ({ page }) => {
     // Navigate to the backup management page
     await navigateToProtectedRoute(page, '/backup-management');
@@ -49,7 +49,7 @@ test.describe('Backup Management Page Accessibility Tests', () => {
   // ============================================================================
   // 1. PAGE STRUCTURE TESTS
   // ============================================================================
-  test.describe('Page Structure', () => {
+  test.describe('@regression-a11y Page Structure', () => {
     test('page should have correct title', async ({ page }) => {
       const title = await page.title();
       expect(title).toContain('Backup');
@@ -108,7 +108,7 @@ test.describe('Backup Management Page Accessibility Tests', () => {
   // ============================================================================
   // 2. FORM INPUT ACCESSIBILITY TESTS
   // ============================================================================
-  test.describe('Form Input Accessibility', () => {
+  test.describe('@regression-a11y Form Input Accessibility', () => {
     test('backup create form should have error summary with alert role', async ({ page }) => {
       const errorSummary = page.locator('#backup-create-error-summary').first();
       expect(await errorSummary.count()).toBeGreaterThan(0);
@@ -207,7 +207,7 @@ test.describe('Backup Management Page Accessibility Tests', () => {
   // ============================================================================
   // 3. KEYBOARD NAVIGATION TESTS
   // ============================================================================
-  test.describe('Keyboard Navigation', () => {
+  test.describe('@regression-a11y Keyboard Navigation', () => {
     test('should be able to navigate to all buttons via Tab', async ({ page }) => {
       const buttons = await page.locator('button[type="button"], button[type="submit"]').all();
       expect(buttons.length).toBeGreaterThan(0);
@@ -249,7 +249,7 @@ test.describe('Backup Management Page Accessibility Tests', () => {
 
       // Tab to focus
       await page.keyboard.press('Tab');
-      await page.waitForTimeout(50);
+      await page.waitForLoadState("networkidle").catch(() => {});
 
       // Cycle through elements until we find the input or confirm it's reachable
       let attempts = 0;
@@ -260,7 +260,7 @@ test.describe('Backup Management Page Accessibility Tests', () => {
         });
 
         if (focused === 'backup-name') {
-          expect(true).toBe(true);
+          expect(focused).toBe('backup-name');
           return;
         }
 
@@ -338,7 +338,7 @@ test.describe('Backup Management Page Accessibility Tests', () => {
   // ============================================================================
   // 4. MODAL DIALOG ACCESSIBILITY TESTS
   // ============================================================================
-  test.describe('Modal Dialog Accessibility', () => {
+  test.describe('@regression-a11y Modal Dialog Accessibility', () => {
     test('restore modal should be hidden initially', async ({ page }) => {
       const modal = page.locator('#restore-modal').first();
       const isHidden = await modal.evaluate((el) =>
@@ -408,7 +408,7 @@ test.describe('Backup Management Page Accessibility Tests', () => {
   // ============================================================================
   // 5. VALIDATION ERROR ACCESSIBILITY TESTS
   // ============================================================================
-  test.describe('Validation Error Accessibility', () => {
+  test.describe('@regression-a11y Validation Error Accessibility', () => {
     test('error messages should have alert role', async ({ page }) => {
       const errorElements = await page.locator('[id$="-error"]').all();
 
@@ -464,7 +464,7 @@ test.describe('Backup Management Page Accessibility Tests', () => {
   // ============================================================================
   // 6. SUCCESS MESSAGE ACCESSIBILITY TESTS
   // ============================================================================
-  test.describe('Success Message Accessibility', () => {
+  test.describe('@regression-a11y Success Message Accessibility', () => {
     test('backup status text should be associated with proper container', async ({ page }) => {
       const statusText = page.locator('#backup-status').first();
       expect(await statusText.count()).toBeGreaterThan(0);
@@ -484,7 +484,7 @@ test.describe('Backup Management Page Accessibility Tests', () => {
   // ============================================================================
   // 7. BACKUP LIST ACCESSIBILITY TESTS
   // ============================================================================
-  test.describe('Backup List Accessibility', () => {
+  test.describe('@regression-a11y Backup List Accessibility', () => {
     test('backup list container should be accessible', async ({ page }) => {
       const backupList = page.locator('#backup-list').first();
       expect(await backupList.count()).toBeGreaterThan(0);
@@ -513,7 +513,7 @@ test.describe('Backup Management Page Accessibility Tests', () => {
   // ============================================================================
   // 8. ACTION BUTTON ACCESSIBILITY TESTS
   // ============================================================================
-  test.describe('Action Button Accessibility', () => {
+  test.describe('@regression-a11y Action Button Accessibility', () => {
     test('create backup button should have accessible name', async ({ page }) => {
       const createBtn = page.locator('button[onclick="createBackup()"]').first();
       const nameInfo = await checkAccessibleName(createBtn);
@@ -577,7 +577,7 @@ test.describe('Backup Management Page Accessibility Tests', () => {
   // ============================================================================
   // 9. COLOR CONTRAST TESTS
   // ============================================================================
-  test.describe('Color Contrast - WCAG 2.1 AA Compliance', () => {
+  test.describe('@regression-a11y Color Contrast - WCAG 2.1 AA Compliance', () => {
     test('form labels should have sufficient contrast', async ({ page }) => {
       const labels = await page.locator('label').all();
 
@@ -692,7 +692,7 @@ test.describe('Backup Management Page Accessibility Tests', () => {
   // ============================================================================
   // 10. DISABLED STATE ACCESSIBILITY TESTS
   // ============================================================================
-  test.describe('Disabled State Accessibility', () => {
+  test.describe('@regression-a11y Disabled State Accessibility', () => {
     test('disabled buttons should not be in tab order', async ({ page }) => {
       const tabOrder = await extractTabOrder(page);
 
@@ -733,7 +733,7 @@ test.describe('Backup Management Page Accessibility Tests', () => {
   // ============================================================================
   // 11. KEYBOARD-ONLY WORKFLOW TESTS
   // ============================================================================
-  test.describe('Keyboard-Only Workflows', () => {
+  test.describe('@regression-a11y Keyboard-Only Workflows', () => {
     test('should navigate backup create form with keyboard only', async ({ page }) => {
       const tabOrder = await extractTabOrder(page);
       expect(tabOrder.length).toBeGreaterThan(0);
@@ -764,7 +764,7 @@ test.describe('Backup Management Page Accessibility Tests', () => {
         });
 
         if (focusedId === 'backup-name') {
-          expect(true).toBe(true);
+          expect(focusedId).toBe('backup-name');
           return;
         }
         tabCount++;
@@ -856,7 +856,7 @@ test.describe('Backup Management Page Accessibility Tests', () => {
   // ============================================================================
   // 12. HELP TEXT AND INSTRUCTIONS TESTS
   // ============================================================================
-  test.describe('Help Text and Instructions', () => {
+  test.describe('@regression-a11y Help Text and Instructions', () => {
     test('form labels should be properly associated with inputs', async ({ page }) => {
       const labels = await page.locator('label').all();
 
@@ -891,7 +891,7 @@ test.describe('Backup Management Page Accessibility Tests', () => {
   // ============================================================================
   // 13. SKIP LINK FUNCTIONALITY TESTS
   // ============================================================================
-  test.describe('Skip Link Functionality', () => {
+  test.describe('@regression-a11y Skip Link Functionality', () => {
     test('should have skip link as first focusable element', async ({ page }) => {
       const skipLinks = await validateSkipLinks(page);
       expect(skipLinks.hasSkipLink).toBe(true);
@@ -941,7 +941,7 @@ test.describe('Backup Management Page Accessibility Tests', () => {
   // ============================================================================
   // 14. ARIA ATTRIBUTES TESTS
   // ============================================================================
-  test.describe('ARIA Attributes', () => {
+  test.describe('@regression-a11y ARIA Attributes', () => {
     test('should not have duplicate IDs', async ({ page }) => {
       const ids = await page.evaluate(() => {
         const allIds = Array.from(document.querySelectorAll('[id]')).map((el) => el.id);
@@ -999,7 +999,7 @@ test.describe('Backup Management Page Accessibility Tests', () => {
   // ============================================================================
   // 15. RESPONSIVE ACCESSIBILITY TESTS
   // ============================================================================
-  test.describe('Mobile Viewport Accessibility', () => {
+  test.describe('@regression-a11y Mobile Viewport Accessibility', () => {
     test('should maintain accessibility at mobile viewport', async ({ page }) => {
       // Set mobile viewport
       await page.setViewportSize({ width: 375, height: 667 });
@@ -1044,10 +1044,10 @@ test.describe('Backup Management Page Accessibility Tests', () => {
   // ============================================================================
   // 16. VISUAL TESTING TESTS
   // ============================================================================
-  test.describe('Visual Accessibility', () => {
+  test.describe('@regression-a11y Visual Accessibility', () => {
     test('should capture backup management page state for visual review', async ({ page }) => {
       await page.screenshot({ path: 'tests/accessibility/reports/backup-management-page.png' });
-      expect(true).toBe(true);
+      await expect(page.locator('body')).toBeVisible();
     });
 
     test('should capture create backup button focus state', async ({ page }) => {
@@ -1140,7 +1140,7 @@ authenticatedUserTest.describe(
         // Navigate through form fields
         for (let i = 0; i < Math.min(3, tabOrder.length); i++) {
           await page.keyboard.press('Tab');
-          expect(true).toBe(true);
+          await expect(page.locator(':focus')).toHaveCount(1);
         }
       }
     );

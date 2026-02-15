@@ -43,8 +43,32 @@ import { authenticatedAdminTest, navigateToProtectedRoute, getBaseURL } from './
 const test = authenticatedAdminTest;
 const baseURL = getBaseURL();
 
+async function hasVisibleDialog(page) {
+  return await page.evaluate(() => {
+    const dialogs = Array.from(document.querySelectorAll('[role="dialog"]'));
+    return dialogs.some((dialog) => {
+      const style = window.getComputedStyle(dialog);
+      return !dialog.classList.contains('hidden') && style.display !== 'none' && style.visibility !== 'hidden';
+    });
+  });
+}
+
+async function focusInsideVisibleDialog(page) {
+  return await page.evaluate(() => {
+    const dialogs = Array.from(document.querySelectorAll('[role="dialog"]'));
+    const visibleDialog = dialogs.find((dialog) => {
+      const style = window.getComputedStyle(dialog);
+      return !dialog.classList.contains('hidden') && style.display !== 'none' && style.visibility !== 'hidden';
+    });
+    if (!visibleDialog) {
+      return false;
+    }
+    return Boolean(document.activeElement && visibleDialog.contains(document.activeElement));
+  });
+}
+
 // Define test suites organized by feature
-test.describe('Tag Management Page Accessibility Tests', () => {
+test.describe('@regression-a11y Tag Management Page Accessibility Tests', () => {
   test.beforeEach(async ({ authenticatedPage: page }) => {
     // Navigate to the tag management page
     await navigateToProtectedRoute(page, '/manage-tags');
@@ -54,7 +78,7 @@ test.describe('Tag Management Page Accessibility Tests', () => {
   // ============================================================================
   // 1. PAGE STRUCTURE TESTS
   // ============================================================================
-  test.describe('Page Structure', () => {
+  test.describe('@regression-a11y Page Structure', () => {
     test('should have correct page title', async ({ authenticatedPage: page }) => {
       const title = await page.title();
       expect(title).toContain('Manage Tags');
@@ -102,7 +126,7 @@ test.describe('Tag Management Page Accessibility Tests', () => {
       await page.keyboard.press('Enter');
 
       // Wait for focus to move
-      await page.waitForTimeout(100);
+      await page.waitForLoadState("networkidle").catch(() => {});
 
       // Verify focus is on main content or within it
       const focusedId = await page.evaluate(() => {
@@ -120,7 +144,7 @@ test.describe('Tag Management Page Accessibility Tests', () => {
   // ============================================================================
   // 2. TAG LIST STRUCTURE TESTS
   // ============================================================================
-  test.describe('Tag List Structure', () => {
+  test.describe('@regression-a11y Tag List Structure', () => {
     test('should have tags listed in table format', async ({ authenticatedPage: page }) => {
       // Check if table or list exists
       const table = page.locator('#tags-table-body');
@@ -184,7 +208,7 @@ test.describe('Tag Management Page Accessibility Tests', () => {
   // ============================================================================
   // 3. ROVING TABINDEX PATTERN TESTS
   // ============================================================================
-  test.describe('Roving Tabindex Pattern in Tag List', () => {
+  test.describe('@regression-a11y Roving Tabindex Pattern in Tag List', () => {
     test('only ONE tag item should have tabindex="0" at a time', async ({ authenticatedPage: page }) => {
       // Get all tag rows
       const rows = await page.locator('tbody tr').all();
@@ -281,7 +305,7 @@ test.describe('Tag Management Page Accessibility Tests', () => {
 
       // Tab from the focused checkbox should move to next focusable element
       await page.keyboard.press('Tab');
-      await page.waitForTimeout(100);
+      await page.waitForLoadState("networkidle").catch(() => {});
 
       // Focus should move to next element
       const nextFocusId = await page.evaluate(() => (document.activeElement as HTMLElement)?.id || 'unknown');
@@ -311,7 +335,7 @@ test.describe('Tag Management Page Accessibility Tests', () => {
   // ============================================================================
   // 4. ARROW KEY NAVIGATION TESTS
   // ============================================================================
-  test.describe('Arrow Key Navigation', () => {
+  test.describe('@regression-a11y Arrow Key Navigation', () => {
     test('Down arrow should move to next tag', async ({ authenticatedPage: page }) => {
       // Get all rows
       const rows = await page.locator('tbody tr').all();
@@ -335,7 +359,7 @@ test.describe('Tag Management Page Accessibility Tests', () => {
 
       // Press down arrow
       await page.keyboard.press('ArrowDown');
-      await page.waitForTimeout(50);
+      await page.waitForLoadState("networkidle").catch(() => {});
 
       // Verify focus moved or stayed valid
       const newFocus = await page.evaluate(() => {
@@ -371,7 +395,7 @@ test.describe('Tag Management Page Accessibility Tests', () => {
 
       // Press up arrow
       await page.keyboard.press('ArrowUp');
-      await page.waitForTimeout(50);
+      await page.waitForLoadState("networkidle").catch(() => {});
 
       // Verify focus is still valid
       const newRowIndex = await page.evaluate(() => {
@@ -406,7 +430,7 @@ test.describe('Tag Management Page Accessibility Tests', () => {
 
       // Press down arrow
       await page.keyboard.press('ArrowDown');
-      await page.waitForTimeout(50);
+      await page.waitForLoadState("networkidle").catch(() => {});
 
       // Verify tabindex values updated
       const firstTabindexAfter = await firstCheckbox.getAttribute('tabindex');
@@ -437,7 +461,7 @@ test.describe('Tag Management Page Accessibility Tests', () => {
   // ============================================================================
   // 5. HOME/END KEY NAVIGATION TESTS
   // ============================================================================
-  test.describe('Home/End Key Navigation', () => {
+  test.describe('@regression-a11y Home/End Key Navigation', () => {
     test('Home key should jump to first tag', async ({ authenticatedPage: page }) => {
       // Get all rows
       const rows = await page.locator('tbody tr').all();
@@ -452,7 +476,7 @@ test.describe('Tag Management Page Accessibility Tests', () => {
 
       // Press Home key
       await page.keyboard.press('Home');
-      await page.waitForTimeout(50);
+      await page.waitForLoadState("networkidle").catch(() => {});
 
       // Verify focus is on first row or first element
       const focusedRowIndex = await page.evaluate(() => {
@@ -480,7 +504,7 @@ test.describe('Tag Management Page Accessibility Tests', () => {
 
       // Press End key
       await page.keyboard.press('End');
-      await page.waitForTimeout(50);
+      await page.waitForLoadState("networkidle").catch(() => {});
 
       // Verify focus is near end
       const focusedRowIndex = await page.evaluate(() => {
@@ -513,7 +537,7 @@ test.describe('Tag Management Page Accessibility Tests', () => {
 
       // Press Home
       await page.keyboard.press('Home');
-      await page.waitForTimeout(50);
+      await page.waitForLoadState("networkidle").catch(() => {});
 
       // Verify still only one tabindex="0"
       const zeroCount2 = await page.locator('tbody input[type="checkbox"][tabindex="0"]').count();
@@ -524,7 +548,7 @@ test.describe('Tag Management Page Accessibility Tests', () => {
   // ============================================================================
   // 6. TYPEAHEAD SEARCH TESTS
   // ============================================================================
-  test.describe('Typeahead Search', () => {
+  test.describe('@regression-a11y Typeahead Search', () => {
     test('typing a letter should focus matching tag', async ({ authenticatedPage: page }) => {
       // Get all rows and first tag name
       const rows = await page.locator('tbody tr').all();
@@ -544,7 +568,7 @@ test.describe('Tag Management Page Accessibility Tests', () => {
       // Type first letter
       const firstLetter = firstTagName[0].toUpperCase();
       await page.keyboard.type(firstLetter, { delay: 100 });
-      await page.waitForTimeout(200);
+      await page.waitForLoadState("networkidle").catch(() => {});
 
       // Verify focus is on a tag (may be the same or matching one)
       const focusedElement = await page.evaluate(() => {
@@ -573,7 +597,7 @@ test.describe('Tag Management Page Accessibility Tests', () => {
       for (const char of searchTerm) {
         await page.keyboard.type(char, { delay: 50 });
       }
-      await page.waitForTimeout(200);
+      await page.waitForLoadState("networkidle").catch(() => {});
 
       // Verify focus is still valid
       const focused = await page.evaluate(() => {
@@ -603,7 +627,7 @@ test.describe('Tag Management Page Accessibility Tests', () => {
       // Type lowercase first letter
       const firstLetter = firstTagName[0].toLowerCase();
       await page.keyboard.type(firstLetter, { delay: 100 });
-      await page.waitForTimeout(200);
+      await page.waitForLoadState("networkidle").catch(() => {});
 
       // Verify typeahead works (should match regardless of case)
       const focused = await page.evaluate(() => {
@@ -626,14 +650,14 @@ test.describe('Tag Management Page Accessibility Tests', () => {
 
       // Type first letter
       await page.keyboard.type('a', { delay: 100 });
-      await page.waitForTimeout(100);
+      await page.waitForLoadState("networkidle").catch(() => {});
 
       // Wait for typeahead timeout (usually 500-1000ms)
-      await page.waitForTimeout(1200);
+      await page.waitForLoadState("networkidle").catch(() => {});
 
       // Type a different letter - should be treated as new search
       await page.keyboard.type('b', { delay: 100 });
-      await page.waitForTimeout(200);
+      await page.waitForLoadState("networkidle").catch(() => {});
 
       // Should have processed without error
       const focused = await page.evaluate(() => document.activeElement !== null);
@@ -660,7 +684,7 @@ test.describe('Tag Management Page Accessibility Tests', () => {
       // Type first letter (may wrap to another tag starting with same letter)
       const firstLetter = lastTagName[0].toLowerCase();
       await page.keyboard.type(firstLetter, { delay: 100 });
-      await page.waitForTimeout(200);
+      await page.waitForLoadState("networkidle").catch(() => {});
 
       // Verify focus is valid (may have wrapped)
       const focused = await page.evaluate(() => document.activeElement !== null);
@@ -671,7 +695,7 @@ test.describe('Tag Management Page Accessibility Tests', () => {
   // ============================================================================
   // 7. TAG OPERATIONS - MERGE FUNCTIONALITY
   // ============================================================================
-  test.describe('Tag Merge Operation', () => {
+  test.describe('@regression-a11y Tag Merge Operation', () => {
     test('merge button should have accessible label', async ({ authenticatedPage: page }) => {
       const mergeBtn = page.locator('#tag-merge-btn');
       const exists = await mergeBtn.count();
@@ -754,7 +778,7 @@ test.describe('Tag Management Page Accessibility Tests', () => {
   // ============================================================================
   // 8. TAG OPERATIONS - FIND & REPLACE FUNCTIONALITY
   // ============================================================================
-  test.describe('Tag Find & Replace Operation', () => {
+  test.describe('@regression-a11y Tag Find & Replace Operation', () => {
     test('find input should be labeled', async ({ authenticatedPage: page }) => {
       const findInput = page.locator('#tag-find');
       const exists = await findInput.count();
@@ -814,7 +838,7 @@ test.describe('Tag Management Page Accessibility Tests', () => {
   // ============================================================================
   // 9. TAG OPERATIONS - BULK DELETE FUNCTIONALITY
   // ============================================================================
-  test.describe('Tag Bulk Delete Operation', () => {
+  test.describe('@regression-a11y Tag Bulk Delete Operation', () => {
     test('bulk delete IDs input should be labeled', async ({ authenticatedPage: page }) => {
       const bulkDeleteInput = page.locator('#tag-bulk-delete-ids');
       const exists = await bulkDeleteInput.count();
@@ -857,7 +881,7 @@ test.describe('Tag Management Page Accessibility Tests', () => {
   // ============================================================================
   // 10. TAG SEARCH/FILTER FUNCTIONALITY
   // ============================================================================
-  test.describe('Tag Search/Filter', () => {
+  test.describe('@regression-a11y Tag Search/Filter', () => {
     test('search input should have accessible label', async ({ authenticatedPage: page }) => {
       const searchInput = page.locator('#tag-search');
       const exists = await searchInput.count();
@@ -910,7 +934,7 @@ test.describe('Tag Management Page Accessibility Tests', () => {
         await searchInput.fill('test');
 
         // Wait for filtering
-        await page.waitForTimeout(300);
+        await page.waitForLoadState("networkidle").catch(() => {});
 
         // Verify page is still functional
         const tableBody = page.locator('#tags-table-body');
@@ -925,7 +949,7 @@ test.describe('Tag Management Page Accessibility Tests', () => {
   // ============================================================================
   // 11. CREATE TAG FORM ACCESSIBILITY
   // ============================================================================
-  test.describe('Create Tag Form', () => {
+  test.describe('@regression-a11y Create Tag Form', () => {
     test('should have properly labeled form inputs', async ({ authenticatedPage: page }) => {
       const formLabels = await validateFormLabels(page);
       expect(formLabels.allLabeled).toBe(
@@ -999,7 +1023,7 @@ test.describe('Tag Management Page Accessibility Tests', () => {
       }
 
       // Should be at or near the form
-      await page.waitForTimeout(100);
+      await page.waitForLoadState("networkidle").catch(() => {});
 
       // Check if we can reach the name input
       const nameInput = page.locator('#tag-create-name');
@@ -1019,7 +1043,7 @@ test.describe('Tag Management Page Accessibility Tests', () => {
   // ============================================================================
   // 12. TAG OPERATIONS - ADD/EDIT/DELETE
   // ============================================================================
-  test.describe('Tag Add/Edit/Delete Operations', () => {
+  test.describe('@regression-a11y Tag Add/Edit/Delete Operations', () => {
     test('add tag button should be accessible', async ({ authenticatedPage: page }) => {
       const addBtn = page.locator('#tag-create-form button[type="submit"]');
       const exists = await addBtn.count();
@@ -1042,17 +1066,36 @@ test.describe('Tag Management Page Accessibility Tests', () => {
     });
 
     test('delete confirmation should be accessible', async ({ authenticatedPage: page }) => {
-      // Confirm page has delete functionality available
-      const deleteButtons = await page.locator('button:has-text("Delete"), button[aria-label*="Delete"], button[aria-label*="delete"]').count();
-      // May or may not have delete buttons visible without data
-      expect(deleteButtons >= 0).toBe(true);
+      const deleteTrigger = page.locator(
+        'button:has-text("Delete"), button[aria-label*="delete" i], button[aria-label*="remove" i]'
+      ).first();
+
+      if ((await deleteTrigger.count()) === 0) {
+        test.skip();
+        return;
+      }
+
+      await deleteTrigger.focus();
+      await deleteTrigger.click();
+
+      await expect
+        .poll(async () => await hasVisibleDialog(page), { timeout: 5000 })
+        .toBe(true);
+      await expect
+        .poll(async () => await focusInsideVisibleDialog(page), { timeout: 5000 })
+        .toBe(true);
+
+      await page.keyboard.press('Escape');
+      await expect
+        .poll(async () => await hasVisibleDialog(page), { timeout: 5000 })
+        .toBe(false);
     });
   });
 
   // ============================================================================
   // 13. TAG VISUAL INDICATORS AND ACCESSIBILITY
   // ============================================================================
-  test.describe('Tag Visual Indicators', () => {
+  test.describe('@regression-a11y Tag Visual Indicators', () => {
     test('tag color should not be only indicator', async ({ authenticatedPage: page }) => {
       // Verify tags have text labels alongside color
       const rows = await page.locator('tbody tr').all();
@@ -1086,7 +1129,7 @@ test.describe('Tag Management Page Accessibility Tests', () => {
   // ============================================================================
   // 14. BUTTONS AND INTERACTIVE ELEMENTS
   // ============================================================================
-  test.describe('Buttons and Interactive Elements', () => {
+  test.describe('@regression-a11y Buttons and Interactive Elements', () => {
     test('all buttons should have accessible labels', async ({ authenticatedPage: page }) => {
       const buttonLabels = await validateButtonLabels(page);
       expect(buttonLabels.allButtonsLabeled).toBe(
@@ -1175,7 +1218,7 @@ test.describe('Tag Management Page Accessibility Tests', () => {
   // ============================================================================
   // 15. LIVE REGIONS AND ANNOUNCEMENTS
   // ============================================================================
-  test.describe('Live Regions and Announcements', () => {
+  test.describe('@regression-a11y Live Regions and Announcements', () => {
     test('page should have live regions for announcements', async ({ authenticatedPage: page }) => {
       const liveRegions = await checkLiveRegions(page);
       expect(liveRegions).toBeDefined();
@@ -1204,7 +1247,7 @@ test.describe('Tag Management Page Accessibility Tests', () => {
   // ============================================================================
   // 16. COLOR CONTRAST TESTS
   // ============================================================================
-  test.describe('Color Contrast (WCAG AA)', () => {
+  test.describe('@regression-a11y Color Contrast (WCAG AA)', () => {
     test('page headings should have sufficient contrast', async ({ authenticatedPage: page }) => {
       const headings = await page.locator('h1, h2, h3').all();
 
@@ -1290,7 +1333,7 @@ test.describe('Tag Management Page Accessibility Tests', () => {
   // ============================================================================
   // 17. FOCUS MANAGEMENT AND KEYBOARD-ONLY WORKFLOW
   // ============================================================================
-  test.describe('Focus Management and Keyboard-Only Workflow', () => {
+  test.describe('@regression-a11y Focus Management and Keyboard-Only Workflow', () => {
     test('focus should be visible when tabbing through page', async ({ authenticatedPage: page }) => {
       for (let i = 0; i < 5; i++) {
         await page.keyboard.press('Tab');
@@ -1368,7 +1411,7 @@ test.describe('Tag Management Page Accessibility Tests', () => {
   // ============================================================================
   // 18. BULK OPERATIONS ACCESSIBILITY
   // ============================================================================
-  test.describe('Bulk Operations Accessibility', () => {
+  test.describe('@regression-a11y Bulk Operations Accessibility', () => {
     test('bulk select functionality should be accessible', async ({ authenticatedPage: page }) => {
       const checkboxes = await page.locator('tbody input[type="checkbox"]').all();
       if (checkboxes.length < 2) {
@@ -1428,7 +1471,7 @@ test.describe('Tag Management Page Accessibility Tests', () => {
   // ============================================================================
   // 19. TAG USAGE INFORMATION ACCESSIBILITY
   // ============================================================================
-  test.describe('Tag Usage Information', () => {
+  test.describe('@regression-a11y Tag Usage Information', () => {
     test('tag usage count should be accessible', async ({ authenticatedPage: page }) => {
       const rows = await page.locator('tbody tr').all();
       if (rows.length === 0) {
@@ -1450,7 +1493,7 @@ test.describe('Tag Management Page Accessibility Tests', () => {
   // ============================================================================
   // 20. VISUAL TESTING - SCREENSHOTS
   // ============================================================================
-  test.describe('Visual Accessibility Tests', () => {
+  test.describe('@regression-a11y Visual Accessibility Tests', () => {
     test('should capture page in normal state', async ({ authenticatedPage: page }) => {
       await capturePageWithHighlight(
         page,
@@ -1526,7 +1569,7 @@ test.describe('Tag Management Page Accessibility Tests', () => {
   // ============================================================================
   // 21. EDGE CASES AND ERROR HANDLING
   // ============================================================================
-  test.describe('Edge Cases and Error Handling', () => {
+  test.describe('@regression-a11y Edge Cases and Error Handling', () => {
     test('page should remain accessible with empty tag list', async ({ authenticatedPage: page }) => {
       const landmarks = await checkLandmarkRegions(page);
       expect(landmarks.hasLandmarks).toBe(true);
@@ -1603,7 +1646,7 @@ test.describe('Tag Management Page Accessibility Tests', () => {
   // ============================================================================
   // 22. ARIA ATTRIBUTES VALIDATION
   // ============================================================================
-  test.describe('ARIA Attributes', () => {
+  test.describe('@regression-a11y ARIA Attributes', () => {
     test('list should have proper ARIA role', async ({ authenticatedPage: page }) => {
       const table = page.locator('#tags-table-body');
       const exists = await table.count();
@@ -1667,7 +1710,7 @@ test.describe('Tag Management Page Accessibility Tests', () => {
   // ============================================================================
   // 23. RESPONSIVE DESIGN AND MOBILE ACCESSIBILITY
   // ============================================================================
-  test.describe('Responsive Design', () => {
+  test.describe('@regression-a11y Responsive Design', () => {
     test('page elements should be accessible at different screen sizes', async ({ authenticatedPage: page }) => {
       await page.setViewportSize({ width: 375, height: 812 });
 

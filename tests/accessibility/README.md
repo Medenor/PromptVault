@@ -47,12 +47,35 @@ tests/accessibility/
 
 ## Test Statistics
 
-- **Total Test Files**: 7 major test files
-- **Total Test Cases**: 556 automated tests
-- **Test Suites**: Multiple organized test groups
+- **Canonical Test Files**: 8 maintained specs
+- **Test Cases**: Use `npx playwright test tests/accessibility --list` for current count
+- **Suite Strategy**: Domain-first canonical suite + focused smoke checks
 - **WCAG Criteria Covered**: 25+ criteria from WCAG 2.1 AA
-- **Coverage Rate**: ~80% automated, 20% manual testing required
+- **Coverage Rate**: See `COVERAGE.md` for current mapping and known gaps
 - **Last Updated**: Auto-generated on each test run
+
+## Canonical Spec Set
+
+The accessibility suite is intentionally consolidated to these maintained files:
+
+- `authentication.spec.ts`
+- `main-page.spec.ts`
+- `admin-pages.spec.ts`
+- `category-management.spec.ts`
+- `tag-management.spec.ts`
+- `import-export.spec.ts`
+- `backup-management.spec.ts`
+- `focus-indicators.spec.ts`
+
+This keeps CI signal high and avoids duplicate/debug variants.
+
+## Test Tags
+
+The canonical suite uses test-title tags for filtering:
+
+- `@regression-a11y`: full canonical regression coverage
+- `@smoke-a11y`: fast cross-page smoke checks
+- `@diagnostic-a11y`: optional diagnostics (excluded from default CI)
 
 ## Utilities
 

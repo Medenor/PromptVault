@@ -36,14 +36,24 @@ npx playwright install
 ### Run All Tests
 
 ```bash
-# Run accessibility tests on chromium browser
-npm run test:ui:accessibility
+# Run canonical accessibility suite (diagnostic tests excluded)
+npm run test:a11y:canonical
 
-# Run on all browsers (chromium, firefox, webkit, mobile)
-npm run test:ui:accessibility:all
+# Run hygiene guardrails (no hardcoded URLs/creds/sleeps in specs)
+npm run test:a11y:hygiene
 
-# Run in headed mode (see browser window)
-HEADED=1 npm run test:ui:accessibility
+# List all canonical tests without executing
+npx playwright test tests/accessibility --grep-invert @diagnostic-a11y --list
+```
+
+### Run By Tag
+
+```bash
+# Smoke-only accessibility checks
+npx playwright test tests/accessibility --grep @smoke-a11y
+
+# Full regression checks
+npx playwright test tests/accessibility --grep @regression-a11y
 ```
 
 ### Route Scans (axe-core) Without Maintaining Specs

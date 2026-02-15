@@ -16,11 +16,26 @@ Detailed breakdown of WCAG 2.1 AA criteria coverage and test automation status.
 
 ### Overall Statistics
 
-- **Total Test Cases**: 556 automated tests
+- **Canonical Specs**: 8 maintained files
 - **WCAG 2.1 AA Criteria Covered**: 25 of 50 (50%)
-- **Pages Tested**: 7 major pages
+- **Pages Tested**: 7 major product pages + cross-page focus smoke coverage
 - **Browsers Tested**: 5 (Chrome, Firefox, Safari, Mobile Chrome, Mobile Safari)
 - **Coverage Percentage**: ~65% of critical accessibility issues
+
+### Canonical Strategy
+
+Coverage is maintained through a consolidated canonical suite:
+
+- `authentication.spec.ts`
+- `main-page.spec.ts`
+- `admin-pages.spec.ts`
+- `category-management.spec.ts`
+- `tag-management.spec.ts`
+- `import-export.spec.ts`
+- `backup-management.spec.ts`
+- `focus-indicators.spec.ts`
+
+Duplicate/diagnostic variants were removed from default coverage accounting.
 
 ### Test Breakdown by Type
 

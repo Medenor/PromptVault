@@ -45,7 +45,7 @@ const test = authenticatedUserTest;
 const baseURL = getBaseURL();
 
 // Define test suites organized by feature
-test.describe('Import-Export Page Accessibility Tests', () => {
+test.describe('@regression-a11y Import-Export Page Accessibility Tests', () => {
   test.beforeEach(async ({ page }) => {
     // Navigate to the import-export page
     await navigateToProtectedRoute(page, '/import-export');
@@ -54,7 +54,7 @@ test.describe('Import-Export Page Accessibility Tests', () => {
   // ============================================================================
   // 1. PAGE STRUCTURE TESTS
   // ============================================================================
-  test.describe('Page Structure', () => {
+  test.describe('@regression-a11y Page Structure', () => {
     test('page should have correct title', async ({ page }) => {
       const title = await page.title();
       expect(title).toContain('Import');
@@ -115,7 +115,7 @@ test.describe('Import-Export Page Accessibility Tests', () => {
   // ============================================================================
   // 2. FILE UPLOAD ACCESSIBILITY TESTS
   // ============================================================================
-  test.describe('File Upload Accessibility', () => {
+  test.describe('@regression-a11y File Upload Accessibility', () => {
     test('file input should have accessible label', async ({ page }) => {
       const fileInput = page.locator('#import-file').first();
       expect(await fileInput.count()).toBeGreaterThan(0);
@@ -182,7 +182,7 @@ test.describe('Import-Export Page Accessibility Tests', () => {
   // ============================================================================
   // 3. FORM FIELD NAVIGATION TESTS
   // ============================================================================
-  test.describe('Form Field Navigation', () => {
+  test.describe('@regression-a11y Form Field Navigation', () => {
     test('export form should have logical tab order', async ({ page }) => {
       const exportForm = page.locator('#export-form').first();
       expect(await exportForm.count()).toBeGreaterThan(0);
@@ -303,7 +303,7 @@ test.describe('Import-Export Page Accessibility Tests', () => {
   // ============================================================================
   // 4. MODAL DIALOG ACCESSIBILITY TESTS
   // ============================================================================
-  test.describe('Modal Dialog Accessibility', () => {
+  test.describe('@regression-a11y Modal Dialog Accessibility', () => {
     test('preview panel should be hidden initially', async ({ page }) => {
       const previewPanel = page.locator('#preview-panel').first();
       const isHidden = await previewPanel.evaluate((el) =>
@@ -376,7 +376,7 @@ test.describe('Import-Export Page Accessibility Tests', () => {
   // ============================================================================
   // 5. PROGRESS INDICATION TESTS
   // ============================================================================
-  test.describe('Progress Indication', () => {
+  test.describe('@regression-a11y Progress Indication', () => {
     test('export progress bar should be hidden initially', async ({ page }) => {
       const progressContainer = page.locator('#export-progress').first();
       const isHidden = await progressContainer.evaluate((el) =>
@@ -426,7 +426,7 @@ test.describe('Import-Export Page Accessibility Tests', () => {
   // ============================================================================
   // 6. ERROR MESSAGE ACCESSIBILITY TESTS
   // ============================================================================
-  test.describe('Error Message Accessibility', () => {
+  test.describe('@regression-a11y Error Message Accessibility', () => {
     test('export error banner should have alert role', async ({ page }) => {
       const errorBanner = page.locator('#export-error-summary').first();
       const role = await errorBanner.getAttribute('role');
@@ -517,7 +517,7 @@ test.describe('Import-Export Page Accessibility Tests', () => {
   // ============================================================================
   // 7. SUCCESS/STATUS MESSAGE ACCESSIBILITY TESTS
   // ============================================================================
-  test.describe('Success/Status Messages', () => {
+  test.describe('@regression-a11y Success/Status Messages', () => {
     test('status messages should be announced to screen readers', async ({ page }) => {
       const exportStatus = page.locator('#export-status').first();
       const importStatus = page.locator('#import-status').first();
@@ -561,7 +561,7 @@ test.describe('Import-Export Page Accessibility Tests', () => {
   // ============================================================================
   // 8. EXPORT FUNCTIONALITY TESTS
   // ============================================================================
-  test.describe('Export Functionality', () => {
+  test.describe('@regression-a11y Export Functionality', () => {
     test('export button should have accessible name', async ({ page }) => {
       const exportBtn = page.locator('button[onclick="performExport()"]').first();
       const nameInfo = await checkAccessibleName(exportBtn);
@@ -627,7 +627,7 @@ test.describe('Import-Export Page Accessibility Tests', () => {
   // ============================================================================
   // 9. COLOR CONTRAST TESTS
   // ============================================================================
-  test.describe('Color Contrast - WCAG 2.1 AA Compliance', () => {
+  test.describe('@regression-a11y Color Contrast - WCAG 2.1 AA Compliance', () => {
     test('form labels should have sufficient contrast', async ({ page }) => {
       const labels = await page.locator('label').all();
 
@@ -742,7 +742,7 @@ test.describe('Import-Export Page Accessibility Tests', () => {
   // ============================================================================
   // 10. KEYBOARD-ONLY WORKFLOW TESTS
   // ============================================================================
-  test.describe('Keyboard-Only Workflow', () => {
+  test.describe('@regression-a11y Keyboard-Only Workflow', () => {
     test('should navigate export form with keyboard only', async ({ page }) => {
       const tabOrder = await extractTabOrder(page);
       expect(tabOrder.length).toBeGreaterThan(0);
@@ -777,7 +777,7 @@ test.describe('Import-Export Page Accessibility Tests', () => {
         });
 
         if (focusedId === 'import-file') {
-          expect(true).toBe(true);
+          expect(focusedId).toBe('import-file');
           return;
         }
         tabCount++;
@@ -799,7 +799,7 @@ test.describe('Import-Export Page Accessibility Tests', () => {
         await page.keyboard.press('Enter');
 
         // Verify some action occurred or no error was thrown
-        expect(true).toBe(true);
+        await expect(page.locator('body')).toBeVisible();
       }
     });
 
@@ -869,7 +869,7 @@ test.describe('Import-Export Page Accessibility Tests', () => {
   // ============================================================================
   // 11. FORM VALIDATION AND SUBMISSION TESTS
   // ============================================================================
-  test.describe('Form Validation and Submission', () => {
+  test.describe('@regression-a11y Form Validation and Submission', () => {
     test('export filename input should have maxlength attribute', async ({ page }) => {
       const input = page.locator('#export-filename').first();
       const maxlength = await input.getAttribute('maxlength');
@@ -902,10 +902,10 @@ test.describe('Import-Export Page Accessibility Tests', () => {
   // ============================================================================
   // 12. VISUAL TESTING TESTS
   // ============================================================================
-  test.describe('Visual Accessibility', () => {
+  test.describe('@regression-a11y Visual Accessibility', () => {
     test('should capture import-export page state for visual review', async ({ page }) => {
       await page.screenshot({ path: 'tests/accessibility/reports/import-export-page.png' });
-      expect(true).toBe(true);
+      await expect(page.locator('body')).toBeVisible();
     });
 
     test('should capture export form focus state', async ({ page }) => {
@@ -945,7 +945,7 @@ test.describe('Import-Export Page Accessibility Tests', () => {
   // ============================================================================
   // 13. ARIA ATTRIBUTES TESTS
   // ============================================================================
-  test.describe('ARIA Attributes', () => {
+  test.describe('@regression-a11y ARIA Attributes', () => {
     test('should not have duplicate IDs', async ({ page }) => {
       const ids = await page.evaluate(() => {
         const allIds = Array.from(document.querySelectorAll('[id]')).map((el) => el.id);
@@ -1018,7 +1018,7 @@ test.describe('Import-Export Page Accessibility Tests', () => {
   // ============================================================================
   // 14. SKIP LINK FUNCTIONALITY TESTS
   // ============================================================================
-  test.describe('Skip Link Functionality', () => {
+  test.describe('@regression-a11y Skip Link Functionality', () => {
     test('should have skip link as first focusable element', async ({ page }) => {
       const skipLinks = await validateSkipLinks(page);
       expect(skipLinks.hasSkipLink).toBe(true);
@@ -1068,7 +1068,7 @@ test.describe('Import-Export Page Accessibility Tests', () => {
   // ============================================================================
   // 15. RESPONSIVE ACCESSIBILITY TESTS
   // ============================================================================
-  test.describe('Mobile Viewport Accessibility', () => {
+  test.describe('@regression-a11y Mobile Viewport Accessibility', () => {
     test('should maintain accessibility at mobile viewport', async ({ page }) => {
       // Set mobile viewport
       await page.setViewportSize({ width: 375, height: 667 });
@@ -1155,7 +1155,7 @@ authenticatedUserTest.describe(
         // Navigate through form fields
         for (let i = 0; i < Math.min(3, tabOrder.length); i++) {
           await page.keyboard.press('Tab');
-          expect(true).toBe(true);
+          await expect(page.locator(':focus')).toHaveCount(1);
         }
       }
     );

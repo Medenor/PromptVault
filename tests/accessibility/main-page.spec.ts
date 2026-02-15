@@ -38,7 +38,7 @@ import { authenticatedUserTest } from './fixtures/auth.js';
 const test = authenticatedUserTest;
 
 // Define test suites organized by feature
-test.describe('Main Page Accessibility Tests', () => {
+test.describe('@regression-a11y Main Page Accessibility Tests', () => {
   test.beforeEach(async ({ page }) => {
     // Navigate to the main page
     await page.goto('/', { waitUntil: 'networkidle' });
@@ -47,7 +47,7 @@ test.describe('Main Page Accessibility Tests', () => {
   // ============================================================================
   // 1. SKIP LINK FUNCTIONALITY TESTS
   // ============================================================================
-  test.describe('Skip Link Functionality', () => {
+  test.describe('@regression-a11y Skip Link Functionality', () => {
     test('should have skip link as first focusable element', async ({ page }) => {
       // Extract tab order to verify skip link is first
       const tabOrder = await extractTabOrder(page);
@@ -111,7 +111,7 @@ test.describe('Main Page Accessibility Tests', () => {
       await page.keyboard.press('Enter');
 
       // Wait a moment for focus to move
-      await page.waitForTimeout(100);
+      await page.waitForLoadState("networkidle").catch(() => {});
 
       // Verify focus moved to the target element
       const focusedElement = await page.evaluate(() => {
@@ -134,7 +134,7 @@ test.describe('Main Page Accessibility Tests', () => {
   // ============================================================================
   // 2. HEADER NAVIGATION TESTS
   // ============================================================================
-  test.describe('Header Navigation', () => {
+  test.describe('@regression-a11y Header Navigation', () => {
     test('header should have logical tab order', async ({ page }) => {
       const tabOrder = await extractTabOrder(page);
       expect(tabOrder.length).toBeGreaterThan(0);
@@ -203,7 +203,7 @@ test.describe('Main Page Accessibility Tests', () => {
   // ============================================================================
   // 3. LANDMARK REGIONS TESTS
   // ============================================================================
-  test.describe('Landmark Regions', () => {
+  test.describe('@regression-a11y Landmark Regions', () => {
     test('page should have required landmark regions', async ({ page }) => {
       const landmarks = await checkLandmarkRegions(page);
       expect(landmarks.hasLandmarks).toBe(true);
@@ -256,7 +256,7 @@ test.describe('Main Page Accessibility Tests', () => {
   // ============================================================================
   // 4. MAIN CONTENT - CATEGORY/TAG FILTERS TESTS
   // ============================================================================
-  test.describe('Main Content - Category/Tag Filters', () => {
+  test.describe('@regression-a11y Main Content - Category/Tag Filters', () => {
     test('filter list should be keyboard navigable', async ({ page }) => {
       // Find filter/category elements
       const filterList = page.locator('[role="listbox"], [role="list"] [role="option"], .filters li, .categories li').first();
@@ -356,7 +356,7 @@ test.describe('Main Page Accessibility Tests', () => {
           await page.keyboard.type(firstChar);
 
           // Wait for typeahead
-          await page.waitForTimeout(50);
+          await page.waitForLoadState("networkidle").catch(() => {});
 
           // Check if focus moved (typeahead may not always be implemented)
           const focusedText = await page.evaluate(() => {
@@ -373,7 +373,7 @@ test.describe('Main Page Accessibility Tests', () => {
   // ============================================================================
   // 5. SEARCH FUNCTIONALITY TESTS
   // ============================================================================
-  test.describe('Search Functionality', () => {
+  test.describe('@regression-a11y Search Functionality', () => {
     test('search input should have accessible label', async ({ page }) => {
       const searchInput = page.locator('input[type="search"], input[placeholder*="search" i], [role="searchbox"]').first();
 
@@ -442,7 +442,7 @@ test.describe('Main Page Accessibility Tests', () => {
   // ============================================================================
   // 6. INTERACTIVE ELEMENTS TESTS
   // ============================================================================
-  test.describe('Interactive Elements', () => {
+  test.describe('@regression-a11y Interactive Elements', () => {
     test('all buttons should have accessible names', async ({ page }) => {
       const buttonLabels = await validateButtonLabels(page);
       expect(buttonLabels.allButtonsLabeled).toBe(true);
@@ -507,7 +507,7 @@ test.describe('Main Page Accessibility Tests', () => {
   // ============================================================================
   // 7. COLOR CONTRAST TESTS
   // ============================================================================
-  test.describe('Color Contrast - WCAG 2.1 AA Compliance', () => {
+  test.describe('@regression-a11y Color Contrast - WCAG 2.1 AA Compliance', () => {
     test('primary body text should have sufficient contrast', async ({ page }) => {
       const bodyText = page.locator('body p, body li, body span').first();
 
@@ -628,7 +628,7 @@ test.describe('Main Page Accessibility Tests', () => {
   // ============================================================================
   // 8. LIVE REGIONS TESTS
   // ============================================================================
-  test.describe('Live Regions', () => {
+  test.describe('@regression-a11y Live Regions', () => {
     test('page should have live regions for notifications', async ({ page }) => {
       const liveRegions = await checkLiveRegions(page);
       // May or may not have live regions - log findings
@@ -670,7 +670,7 @@ test.describe('Main Page Accessibility Tests', () => {
   // ============================================================================
   // 9. HEADING HIERARCHY TESTS
   // ============================================================================
-  test.describe('Heading Hierarchy', () => {
+  test.describe('@regression-a11y Heading Hierarchy', () => {
     test('headings should have valid hierarchy', async ({ page }) => {
       const hierarchy = await validateHeadingHierarchy(page);
       expect(hierarchy.validHierarchy).toBe(true);
@@ -698,7 +698,7 @@ test.describe('Main Page Accessibility Tests', () => {
   // ============================================================================
   // 10. COMPREHENSIVE BUTTON LABEL TEST
   // ============================================================================
-  test.describe('Button Label Accessibility', () => {
+  test.describe('@regression-a11y Button Label Accessibility', () => {
     test('all buttons should have clear accessible names', async ({ page }) => {
       const buttons = await page.locator('button, [role="button"]').all();
 
@@ -739,7 +739,7 @@ test.describe('Main Page Accessibility Tests', () => {
   // ============================================================================
   // 11. DYNAMIC CONTENT AND CONDITIONAL UI TESTS
   // ============================================================================
-  test.describe('Dynamic Content and Conditional UI', () => {
+  test.describe('@regression-a11y Dynamic Content and Conditional UI', () => {
     test('should handle loading states accessibly', async ({ page }) => {
       // Look for loading indicators
       const loaders = await page.locator('[role="progressbar"], .loading, .spinner').all();
@@ -763,7 +763,7 @@ test.describe('Main Page Accessibility Tests', () => {
   // ============================================================================
   // 12. MOBILE VIEWPORT TESTS (if applicable)
   // ============================================================================
-  test.describe('Mobile Viewport Accessibility', () => {
+  test.describe('@regression-a11y Mobile Viewport Accessibility', () => {
     test('should maintain accessibility at mobile viewport', async ({ page }) => {
       // Set mobile viewport
       await page.setViewportSize({ width: 375, height: 667 });
@@ -786,7 +786,7 @@ test.describe('Main Page Accessibility Tests', () => {
   // ============================================================================
   // 13. TAB ORDER CONSISTENCY TESTS
   // ============================================================================
-  test.describe('Tab Order Consistency', () => {
+  test.describe('@regression-a11y Tab Order Consistency', () => {
     test('tab order should be logical and consistent', async ({ page }) => {
       const tabOrder = await extractTabOrder(page);
 
@@ -815,7 +815,7 @@ test.describe('Main Page Accessibility Tests', () => {
   // ============================================================================
   // 14. VISUAL TESTING TESTS
   // ============================================================================
-  test.describe('Visual Accessibility', () => {
+  test.describe('@regression-a11y Visual Accessibility', () => {
     test('focus indicators should be visually distinct', async ({ page }) => {
       const focusResult = await verifyFocusIndicators(page);
 
@@ -842,7 +842,7 @@ test.describe('Main Page Accessibility Tests', () => {
   // ============================================================================
   // 15. ARIA ATTRIBUTES TESTS
   // ============================================================================
-  test.describe('ARIA Attributes', () => {
+  test.describe('@regression-a11y ARIA Attributes', () => {
     test('should not have duplicate IDs', async ({ page }) => {
       const ids = await page.evaluate(() => {
         const allIds = Array.from(document.querySelectorAll('[id]')).map((el) => el.id);
@@ -892,7 +892,7 @@ test.describe('Main Page Accessibility Tests', () => {
 // ============================================================================
 // AUTHENTICATED USER TESTS (if applicable)
 // ============================================================================
-test.describe('Main Page Accessibility - Authenticated User', () => {
+test.describe('@regression-a11y Main Page Accessibility - Authenticated User', () => {
   test.beforeEach(async ({ page }) => {
     // Navigate to main page (user should already be authenticated via fixture)
     await page.goto('/', { waitUntil: 'networkidle' });
