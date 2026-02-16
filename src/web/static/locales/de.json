@@ -2,6 +2,7 @@
   "nav": {
     "newPrompt": "Neuer Prompt",
     "prompts": "Prompts",
+    "myPrompts": "Meine Prompts",
     "categories": "Kategorien",
     "allCategories": "Alle Kategorien",
     "tags": "Tags",
@@ -360,6 +361,8 @@
       "passwordMismatch": "Passwörter stimmen nicht überein",
       "registerButton": "Registrieren",
       "haveAccount": "Haben Sie bereits ein Konto? Anmelden",
+      "alreadyHaveAccount": "Haben Sie bereits ein Konto?",
+      "login": "Anmelden",
       "success": "Registrierung erfolgreich!",
       "strengthWeak": "Schwaches Passwort",
       "strengthMedium": "Mittleres Passwort",
