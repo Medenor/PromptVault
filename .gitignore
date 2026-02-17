@@ -78,6 +78,3 @@ test-results/
 .nyc_output/
 accessibility-report/
 tests/accessibility/reports/
-ACCESSIBILITY_FIX_PLAN.md
-PHASE_3_TEST_RESULTS.md
-fixplan.md
