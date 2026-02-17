@@ -178,6 +178,8 @@ function setupPasswordToggle(toggleButtonId: string, passwordInputId: string): v
       passwordInput.type = isPasswordVisible ? 'text' : 'password';
       // Update aria-pressed state
       toggleButton.setAttribute('aria-pressed', isPasswordVisible ? 'true' : 'false');
+      // CRITICAL: Keep focus on toggle button after state change (WCAG 2.1 AA)
+      toggleButton.focus();
     });
   }
 }

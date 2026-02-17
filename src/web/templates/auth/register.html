@@ -76,6 +76,7 @@
               data-i18n="auth.register.username"
             >
               Username
+              <span aria-label="required" class="text-red-600 ml-1">*</span>
             </label>
             <input
               type="text"
@@ -114,6 +115,7 @@
               data-i18n="auth.register.email"
             >
               Email
+              <span aria-label="required" class="text-red-600 ml-1">*</span>
             </label>
             <input
               type="email"
@@ -142,6 +144,7 @@
               data-i18n="auth.register.password"
             >
               Password
+              <span aria-label="required" class="text-red-600 ml-1">*</span>
             </label>
             <div class="relative">
               <input
@@ -191,6 +194,7 @@
               data-i18n="auth.register.confirmPassword"
             >
               Confirm Password
+              <span aria-label="required" class="text-red-600 ml-1">*</span>
             </label>
             <div class="relative">
               <input
@@ -227,12 +231,12 @@
 
           <!-- Password Policy Requirements -->
           <div id="password-policy" class="bg-gray-50 border border-gray-200 rounded-md p-4">
-            <h3
+            <h2
               class="text-sm font-medium text-gray-900 mb-2"
               data-i18n="auth.register.passwordPolicy"
             >
               Password Requirements:
-            </h3>
+            </h2>
             <ul class="space-y-1 text-sm">
               <li id="policy-length" class="flex items-center text-gray-700">
                 <span class="policy-icon mr-2">○</span>

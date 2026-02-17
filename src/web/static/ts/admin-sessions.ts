@@ -174,7 +174,7 @@ function displaySessions(): void {
           <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 ${textClass}">${formatDate(session.last_used_at)}</td>
           <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 ${textClass}">${formatDate(session.expires_at)}</td>
           <td class="px-6 py-4 whitespace-nowrap text-sm">
-            <button class="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 text-xs font-medium" onclick="window.showRevokeConfirmation('${userId}', '${sessionId}', '${username}')" data-i18n="actions.revoke">Revoke</button>
+            <button class="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 text-xs font-medium focus:outline-2 focus:outline-red-500 focus:outline-offset-1" onclick="window.showRevokeConfirmation('${userId}', '${sessionId}', '${username}')" data-i18n="actions.revoke">Revoke</button>
           </td>
         </tr>
       `;
@@ -460,6 +460,82 @@ function setupConfirmRevokeModal(): void {
   }
 }
 
+function setupAdminMenuKeyboardNavigation(): void {
+  const adminMenuToggle = document.getElementById('admin-menu-toggle');
+  const adminMenuDropdown = document.getElementById('admin-menu-dropdown');
+
+  if (!adminMenuToggle || !adminMenuDropdown) {
+    return;
+  }
+
+  // When menu opens, focus first menu item
+  adminMenuToggle.addEventListener('click', () => {
+    const isOpen = !adminMenuDropdown.classList.contains('hidden');
+    if (isOpen) {
+      // Menu just opened, focus first button
+      setTimeout(() => {
+        const firstButton = adminMenuDropdown.querySelector('button') as HTMLButtonElement;
+        if (firstButton) {
+          firstButton.focus();
+        }
+      }, 0);
+    }
+  });
+
+  // Handle keyboard navigation within dropdown menu
+  adminMenuDropdown.addEventListener('keydown', (event: KeyboardEvent) => {
+    const isOpen = !adminMenuDropdown.classList.contains('hidden');
+    if (!isOpen) {
+      return;
+    }
+
+    const menuItems = Array.from(adminMenuDropdown.querySelectorAll('button')) as HTMLButtonElement[];
+    if (menuItems.length === 0) {
+      return;
+    }
+
+    const currentFocused = document.activeElement as HTMLElement | null;
+    const currentIndex = currentFocused ? menuItems.indexOf(currentFocused as HTMLButtonElement) : -1;
+
+    switch (event.key) {
+      case 'Escape': {
+        // Close menu and return focus to toggle button
+        adminMenuDropdown.classList.add('hidden');
+        adminMenuToggle.setAttribute('aria-expanded', 'false');
+        adminMenuToggle.focus();
+        event.preventDefault();
+        break;
+      }
+      case 'ArrowDown': {
+        // Move to next menu item or wrap around
+        const nextIndex = currentIndex === -1 || currentIndex >= menuItems.length - 1 ? 0 : currentIndex + 1;
+        menuItems[nextIndex]?.focus();
+        event.preventDefault();
+        break;
+      }
+      case 'ArrowUp': {
+        // Move to previous menu item or wrap around
+        const prevIndex = currentIndex === -1 || currentIndex === 0 ? menuItems.length - 1 : currentIndex - 1;
+        menuItems[prevIndex]?.focus();
+        event.preventDefault();
+        break;
+      }
+      case 'Home': {
+        // Jump to first menu item
+        menuItems[0]?.focus();
+        event.preventDefault();
+        break;
+      }
+      case 'End': {
+        // Jump to last menu item
+        menuItems[menuItems.length - 1]?.focus();
+        event.preventDefault();
+        break;
+      }
+    }
+  });
+}
+
 function initializeAdminSessionsPage(): void {
   updateStaticTranslations();
 
@@ -476,6 +552,9 @@ function initializeAdminSessionsPage(): void {
       }
     });
   }
+
+  // Setup keyboard navigation for menu (WCAG 2.1 AA)
+  setupAdminMenuKeyboardNavigation();
 
   const languageSelector = document.getElementById('language-selector') as HTMLSelectElement | null;
   if (languageSelector) {
