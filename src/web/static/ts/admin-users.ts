@@ -355,9 +355,9 @@ async function loadUsers(): Promise<void> {
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${user.session_count || 0}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm">
                   <div class="flex space-x-2">
-                    <button class="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 text-xs font-medium" onclick="window.viewUser('${user.id}')" data-i18n="actions.view">View</button>
-                    <button class="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 text-xs font-medium" onclick="window.editUser('${user.id}')" data-i18n="actions.edit">Edit</button>
-                    <button class="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 text-xs font-medium" onclick="window.deleteUser('${user.id}', '${user.username}')" data-i18n="actions.delete">Delete</button>
+                    <button class="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 text-xs font-medium" onclick="window.viewUser('${user.id}')" aria-label="View user ${user.username}" data-i18n="actions.view">View</button>
+                    <button class="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 text-xs font-medium" onclick="window.editUser('${user.id}')" aria-label="Edit user ${user.username}" data-i18n="actions.edit">Edit</button>
+                    <button class="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 text-xs font-medium" onclick="window.deleteUser('${user.id}', '${user.username}')" aria-label="Delete user ${user.username}" data-i18n="actions.delete">Delete</button>
                   </div>
                 </td>
               </tr>
@@ -740,7 +740,10 @@ function setupPasswordToggle(toggleButtonId: string, passwordInputId: string): v
   if (toggleButton && passwordInput) {
     toggleButton.addEventListener('click', (event) => {
       event.preventDefault();
-      passwordInput.type = passwordInput.type === 'password' ? 'text' : 'password';
+      const isPasswordVisible = passwordInput.type === 'password';
+      passwordInput.type = isPasswordVisible ? 'text' : 'password';
+      // Update aria-pressed state
+      toggleButton.setAttribute('aria-pressed', isPasswordVisible ? 'true' : 'false');
     });
   }
 }
@@ -1167,6 +1170,9 @@ function initializeAdminUsersPage(): void {
       const dropdown = document.getElementById('admin-menu-dropdown');
       if (dropdown) {
         dropdown.classList.toggle('hidden');
+        // Update aria-expanded state
+        const isExpanded = !dropdown.classList.contains('hidden');
+        adminMenuToggle.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
       }
     });
   }

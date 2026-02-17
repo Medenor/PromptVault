@@ -470,6 +470,9 @@ function initializeAdminSessionsPage(): void {
       const dropdown = document.getElementById('admin-menu-dropdown');
       if (dropdown) {
         dropdown.classList.toggle('hidden');
+        // Update aria-expanded state
+        const isExpanded = !dropdown.classList.contains('hidden');
+        adminMenuToggle.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
       }
     });
   }

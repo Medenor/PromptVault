@@ -172,8 +172,12 @@ function setupPasswordToggle(toggleButtonId: string, passwordInputId: string): v
   const passwordInput = document.getElementById(passwordInputId) as HTMLInputElement | null;
 
   if (toggleButton && passwordInput) {
-    toggleButton.addEventListener('click', () => {
-      passwordInput.type = passwordInput.type === 'password' ? 'text' : 'password';
+    toggleButton.addEventListener('click', (event) => {
+      event.preventDefault();
+      const isPasswordVisible = passwordInput.type === 'password';
+      passwordInput.type = isPasswordVisible ? 'text' : 'password';
+      // Update aria-pressed state
+      toggleButton.setAttribute('aria-pressed', isPasswordVisible ? 'true' : 'false');
     });
   }
 }
