@@ -206,11 +206,12 @@ def main() -> int:
 
     # Update output file with results
     output_file = Path(args.output_file)
-    if not output_file.exists():
-        print(f"Error: Output file not found: {output_file}")
-        return 1
 
-    content = output_file.read_text()
+    # Read existing content (or empty string if file doesn't exist)
+    if output_file.exists():
+        content = output_file.read_text().strip()
+    else:
+        content = ''
 
     # Update with actual test results
     if json_stats and json_stats.get('passed') is not None:
@@ -224,20 +225,18 @@ def main() -> int:
         baseline_pass_pct = 70.9  # From previous documentation
         improvement = pass_pct - baseline_pass_pct
 
-        # Update executive summary statistics
-        old_stats = r'- \*\*Total Tests\*\*:.*?\n- \*\*Tests Passed\*\*:.*?\n- \*\*Tests Failed\*\*:.*?(?:\n|$)'
-        new_exec_stats = f"""- **Total Tests**: {total:,}
-- **Tests Passed**: {passed:,} ({pass_pct:.1f}%)
-- **Tests Failed**: {failed:,} ({100-pass_pct:.1f}%)"""
-
-        content = re.sub(old_stats, new_exec_stats, content)
-
-        # Build new statistics section with metrics table
         execution_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         duration_min = duration_sec / 60
 
-        # Calculate estimated violations remaining
-        violations_est = failed  # Each failure typically represents one violation
+        # Determine status
+        if pass_pct >= 95:
+            status_text = "TARGET ACHIEVED - WCAG 2.1 AA compliance reached!"
+        elif pass_pct >= 85:
+            status_text = "SIGNIFICANT PROGRESS - Major improvements achieved"
+        elif pass_pct >= 75:
+            status_text = "MODERATE PROGRESS - Continuing improvements"
+        else:
+            status_text = "NEEDS ATTENTION - Further fixes required"
 
         new_detailed_stats = f"""## Test Execution Summary (Latest Run)
 
@@ -255,34 +254,36 @@ def main() -> int:
 
 ### Status
 
+**Status:** {status_text}
 """
 
-        # Determine status
-        if pass_pct >= 95:
-            status_text = "✅ **TARGET ACHIEVED** - WCAG 2.1 AA compliance reached!"
-        elif pass_pct >= 85:
-            status_text = "🟢 **SIGNIFICANT PROGRESS** - Major improvements achieved"
-        elif pass_pct >= 75:
-            status_text = "🟡 **MODERATE PROGRESS** - Continuing improvements"
-        else:
-            status_text = "🔴 **NEEDS ATTENTION** - Further fixes required"
+        if not content:
+            # Generate a fresh report when file is empty or missing
+            content = f"""# Phase 3 - Accessibility Test Results
 
-        new_detailed_stats += f"**Status:** {status_text}\n"
+## Executive Summary
 
-        # Try to find and replace an existing "Test Execution Summary" section
-        summary_pattern = r'## Test Execution Summary.*?(?=\n## |$)'
-        if re.search(summary_pattern, content, re.DOTALL):
-            content = re.sub(summary_pattern, new_detailed_stats.rstrip(), content, flags=re.DOTALL)
+- **Total Tests**: {total:,}
+- **Tests Passed**: {passed:,} ({pass_pct:.1f}%)
+- **Tests Failed**: {failed:,} ({100-pass_pct:.1f}%)
+
+{new_detailed_stats}"""
         else:
-            # If no summary section exists, insert it after the executive summary
-            insert_pattern = r'(## Executive Summary.*?\n\n.*?(?=\n\n## |\n---|\Z))'
-            content = re.sub(
-                insert_pattern,
-                r'\1\n\n' + new_detailed_stats,
-                content,
-                flags=re.DOTALL,
-                count=1
-            )
+            # Update existing content via regex replacement
+            new_exec_stats = f"""- **Total Tests**: {total:,}
+- **Tests Passed**: {passed:,} ({pass_pct:.1f}%)
+- **Tests Failed**: {failed:,} ({100-pass_pct:.1f}%)"""
+
+            old_stats = r'- \*\*Total Tests\*\*:.*?\n- \*\*Tests Passed\*\*:.*?\n- \*\*Tests Failed\*\*:.*?(?:\n|$)'
+            content = re.sub(old_stats, new_exec_stats, content)
+
+            # Try to find and replace an existing "Test Execution Summary" section
+            summary_pattern = r'## Test Execution Summary.*?(?=\n## |$)'
+            if re.search(summary_pattern, content, re.DOTALL):
+                content = re.sub(summary_pattern, new_detailed_stats.rstrip(), content, flags=re.DOTALL)
+            else:
+                # Append at the end if no section found to replace
+                content += '\n\n' + new_detailed_stats
 
     output_file.write_text(content)
     print(f"\nUpdated: {output_file}")
