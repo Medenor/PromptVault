@@ -71,12 +71,13 @@ export function getFocusableElements(
  * Create a focus trap for a modal or dialog
  * Ensures Tab/Shift+Tab cycles only within the element
  */
-export function createFocusTrap(element: HTMLElement): {
+export function createFocusTrap(element: HTMLElement, options?: { manageFocus?: boolean }): {
   activate: () => void;
   deactivate: () => void;
   moveFocusToFirst: () => void;
 } {
   let state: FocusTrapState | null = null;
+  const manageFocus = options?.manageFocus !== false; // Default to true for backward compatibility
 
   const keydownHandler = (e: Event) => {
     const ke = e as KeyboardEvent;
@@ -112,9 +113,9 @@ export function createFocusTrap(element: HTMLElement): {
 
   return {
     activate: () => {
-      // Store current focus to restore later
+      // Store current focus to restore later (only if manageFocus is enabled)
       const previousFocus =
-        document.activeElement instanceof HTMLElement ? document.activeElement : null;
+        manageFocus && document.activeElement instanceof HTMLElement ? document.activeElement : null;
 
       // Get all focusable elements
       const focusables = getFocusableElements(element);
@@ -156,8 +157,8 @@ export function createFocusTrap(element: HTMLElement): {
       // Remove keydown listener
       document.removeEventListener('keydown', keydownHandler, true);
 
-      // Restore focus to trigger element
-      if (state.previousFocus && state.previousFocus.isConnected) {
+      // Restore focus to trigger element (only if manageFocus is enabled)
+      if (manageFocus && state.previousFocus && state.previousFocus.isConnected) {
         state.previousFocus.focus();
       }
 

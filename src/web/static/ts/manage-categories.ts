@@ -102,7 +102,7 @@ function isTextEditingTarget(target: EventTarget | null): boolean {
 
 /**
  * Initialize roving tabindex pattern for category list
- * Sets first item to tabindex="0" and others to tabindex="-1"
+ * Sets first item's checkbox to tabindex="0" and others to tabindex="-1"
  * Handles arrow key navigation to move focus and update tabindex values
  */
 function initializeRovingTabindex(): void {
@@ -116,14 +116,14 @@ function initializeRovingTabindex(): void {
     return;
   }
 
-  // Update roving tabindex attributes on all rows
+  // Update roving tabindex attributes on all checkboxes in rows
   const updateTabindexAttributes = (): void => {
-    const rows = Array.from(container.querySelectorAll<HTMLTableRowElement>('tbody tr'));
-    rows.forEach((row, index) => {
+    const checkboxes = Array.from(container.querySelectorAll<HTMLInputElement>('tbody input[type="checkbox"]'));
+    checkboxes.forEach((checkbox, index) => {
       if (index === currentCategoryFocusIndex) {
-        row.setAttribute('tabindex', '0');
+        checkbox.setAttribute('tabindex', '0');
       } else {
-        row.setAttribute('tabindex', '-1');
+        checkbox.setAttribute('tabindex', '-1');
       }
     });
   };
@@ -134,16 +134,16 @@ function initializeRovingTabindex(): void {
   // Handle arrow key navigation
   container.addEventListener('keydown', (event: Event) => {
     const keyEvent = event as KeyboardEvent;
-    const rows = Array.from(container.querySelectorAll<HTMLTableRowElement>('tbody tr'));
+    const checkboxes = Array.from(container.querySelectorAll<HTMLInputElement>('tbody input[type="checkbox"]'));
 
-    if (rows.length === 0) {
+    if (checkboxes.length === 0) {
       return;
     }
 
-    // Check if target is a row or inside a row (but not an input field)
+    // Check if target is a checkbox or inside a row containing a checkbox
     const target = keyEvent.target as HTMLElement | null;
     const row = target?.closest('tr');
-    if (!row || isTextEditingTarget(keyEvent.target)) {
+    if (!row) {
       return;
     }
 
@@ -154,7 +154,7 @@ function initializeRovingTabindex(): void {
       case 'ArrowDown':
       case 'ArrowRight':
         keyEvent.preventDefault();
-        newIndex = Math.min(currentCategoryFocusIndex + 1, rows.length - 1);
+        newIndex = Math.min(currentCategoryFocusIndex + 1, checkboxes.length - 1);
         shouldMove = true;
         break;
       case 'ArrowUp':
@@ -170,7 +170,7 @@ function initializeRovingTabindex(): void {
         break;
       case 'End':
         keyEvent.preventDefault();
-        newIndex = rows.length - 1;
+        newIndex = checkboxes.length - 1;
         shouldMove = true;
         break;
     }
@@ -178,21 +178,22 @@ function initializeRovingTabindex(): void {
     if (shouldMove && newIndex !== currentCategoryFocusIndex) {
       currentCategoryFocusIndex = newIndex;
       updateTabindexAttributes();
-      rows[newIndex]?.focus();
-      const nameInput = rows[newIndex]?.querySelector<HTMLInputElement>('input[data-field="name"]');
+      checkboxes[newIndex]?.focus();
+      const row = checkboxes[newIndex]?.closest('tr');
+      const nameInput = row?.querySelector<HTMLInputElement>('input[data-field="name"]');
       announceKeyboardNavigation(
         t('accessibility.navigateTo', { item: nameInput?.value || `Item ${newIndex + 1}` })
       );
     }
   });
 
-  // Update focus index when user clicks a row
+  // Update focus index when user clicks a checkbox
   container.addEventListener('click', (event: Event) => {
     const target = event.target as HTMLElement | null;
-    const row = target?.closest('tr');
-    if (row) {
-      const rows = Array.from(container.querySelectorAll<HTMLTableRowElement>('tbody tr'));
-      const index = rows.indexOf(row);
+    const checkbox = target?.closest('input[type="checkbox"]') as HTMLInputElement | null;
+    if (checkbox) {
+      const checkboxes = Array.from(container.querySelectorAll<HTMLInputElement>('tbody input[type="checkbox"]'));
+      const index = checkboxes.indexOf(checkbox);
       if (index !== -1) {
         currentCategoryFocusIndex = index;
         updateTabindexAttributes();
@@ -200,13 +201,13 @@ function initializeRovingTabindex(): void {
     }
   });
 
-  // Update focus index when user tabs to a row
+  // Update focus index when user tabs to a checkbox
   container.addEventListener('focus', (event: Event) => {
     const target = event.target as HTMLElement | null;
-    const row = target?.closest('tr');
-    if (row) {
-      const rows = Array.from(container.querySelectorAll<HTMLTableRowElement>('tbody tr'));
-      const index = rows.indexOf(row);
+    const checkbox = target?.closest('input[type="checkbox"]') as HTMLInputElement | null;
+    if (checkbox) {
+      const checkboxes = Array.from(container.querySelectorAll<HTMLInputElement>('tbody input[type="checkbox"]'));
+      const index = checkboxes.indexOf(checkbox);
       if (index !== -1) {
         currentCategoryFocusIndex = index;
         updateTabindexAttributes();
@@ -571,7 +572,7 @@ function renderRows(items: CategoryItem[]): void {
 
     row.innerHTML = `
       <td class="py-2 pr-4">
-        <input type="checkbox" data-select-id="${item.id}" aria-label="${selectLabel} #${item.id}" />
+        <input type="checkbox" data-select-id="${item.id}" aria-label="${selectLabel} #${item.id}" tabindex="-1" />
       </td>
       <td class="py-2 pr-4 text-gray-600">#${item.id}</td>
       <td class="py-2 pr-4">

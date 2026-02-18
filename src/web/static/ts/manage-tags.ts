@@ -120,7 +120,7 @@ function isTextEditingTarget(target: EventTarget | null): boolean {
 
 /**
  * Initialize roving tabindex pattern for tag list
- * Sets first item to tabindex="0" and others to tabindex="-1"
+ * Sets first item's checkbox to tabindex="0" and others to tabindex="-1"
  * Handles arrow key navigation to move focus and update tabindex values
  */
 function initializeRovingTabindex(): void {
@@ -134,14 +134,14 @@ function initializeRovingTabindex(): void {
     return;
   }
 
-  // Update roving tabindex attributes on all rows
+  // Update roving tabindex attributes on all checkboxes in rows
   const updateTabindexAttributes = (): void => {
-    const rows = Array.from(container.querySelectorAll<HTMLTableRowElement>('tbody tr'));
-    rows.forEach((row, index) => {
+    const checkboxes = Array.from(container.querySelectorAll<HTMLInputElement>('tbody input[type="checkbox"]'));
+    checkboxes.forEach((checkbox, index) => {
       if (index === currentTagFocusIndex) {
-        row.setAttribute('tabindex', '0');
+        checkbox.setAttribute('tabindex', '0');
       } else {
-        row.setAttribute('tabindex', '-1');
+        checkbox.setAttribute('tabindex', '-1');
       }
     });
   };
@@ -152,16 +152,16 @@ function initializeRovingTabindex(): void {
   // Handle arrow key navigation
   container.addEventListener('keydown', (event: Event) => {
     const keyEvent = event as KeyboardEvent;
-    const rows = Array.from(container.querySelectorAll<HTMLTableRowElement>('tbody tr'));
+    const checkboxes = Array.from(container.querySelectorAll<HTMLInputElement>('tbody input[type="checkbox"]'));
 
-    if (rows.length === 0) {
+    if (checkboxes.length === 0) {
       return;
     }
 
-    // Check if target is a row or inside a row (but not an input field)
+    // Check if target is a checkbox or inside a row containing a checkbox
     const target = keyEvent.target as HTMLElement | null;
     const row = target?.closest('tr');
-    if (!row || isTextEditingTarget(keyEvent.target)) {
+    if (!row) {
       return;
     }
 
@@ -172,7 +172,7 @@ function initializeRovingTabindex(): void {
       case 'ArrowDown':
       case 'ArrowRight':
         keyEvent.preventDefault();
-        newIndex = Math.min(currentTagFocusIndex + 1, rows.length - 1);
+        newIndex = Math.min(currentTagFocusIndex + 1, checkboxes.length - 1);
         shouldMove = true;
         break;
       case 'ArrowUp':
@@ -188,7 +188,7 @@ function initializeRovingTabindex(): void {
         break;
       case 'End':
         keyEvent.preventDefault();
-        newIndex = rows.length - 1;
+        newIndex = checkboxes.length - 1;
         shouldMove = true;
         break;
     }
@@ -196,21 +196,22 @@ function initializeRovingTabindex(): void {
     if (shouldMove && newIndex !== currentTagFocusIndex) {
       currentTagFocusIndex = newIndex;
       updateTabindexAttributes();
-      rows[newIndex]?.focus();
-      const nameInput = rows[newIndex]?.querySelector<HTMLInputElement>('input[data-field="name"]');
+      checkboxes[newIndex]?.focus();
+      const row = checkboxes[newIndex]?.closest('tr');
+      const nameInput = row?.querySelector<HTMLInputElement>('input[data-field="name"]');
       announceKeyboardNavigation(
         t('accessibility.navigateTo', { item: nameInput?.value || `Item ${newIndex + 1}` })
       );
     }
   });
 
-  // Update focus index when user clicks a row
+  // Update focus index when user clicks a checkbox
   container.addEventListener('click', (event: Event) => {
     const target = event.target as HTMLElement | null;
-    const row = target?.closest('tr');
-    if (row) {
-      const rows = Array.from(container.querySelectorAll<HTMLTableRowElement>('tbody tr'));
-      const index = rows.indexOf(row);
+    const checkbox = target?.closest('input[type="checkbox"]') as HTMLInputElement | null;
+    if (checkbox) {
+      const checkboxes = Array.from(container.querySelectorAll<HTMLInputElement>('tbody input[type="checkbox"]'));
+      const index = checkboxes.indexOf(checkbox);
       if (index !== -1) {
         currentTagFocusIndex = index;
         updateTabindexAttributes();
@@ -218,13 +219,13 @@ function initializeRovingTabindex(): void {
     }
   });
 
-  // Update focus index when user tabs to a row
+  // Update focus index when user tabs to a checkbox
   container.addEventListener('focus', (event: Event) => {
     const target = event.target as HTMLElement | null;
-    const row = target?.closest('tr');
-    if (row) {
-      const rows = Array.from(container.querySelectorAll<HTMLTableRowElement>('tbody tr'));
-      const index = rows.indexOf(row);
+    const checkbox = target?.closest('input[type="checkbox"]') as HTMLInputElement | null;
+    if (checkbox) {
+      const checkboxes = Array.from(container.querySelectorAll<HTMLInputElement>('tbody input[type="checkbox"]'));
+      const index = checkboxes.indexOf(checkbox);
       if (index !== -1) {
         currentTagFocusIndex = index;
         updateTabindexAttributes();
@@ -600,22 +601,24 @@ function renderRows(items: TagItem[]): void {
     row.className = 'border-b border-gray-100 tag-item';
     row.setAttribute('role', 'option');
     row.dataset.id = String(item.id);
+    row.id = `data-tag-id-${item.id}`;
 
     row.innerHTML = `
       <td class="py-2 pr-4">
-        <input type="checkbox" data-select-id="${item.id}" aria-label="${selectLabel} #${item.id}" />
+        <input type="checkbox" id="checkbox-${item.id}" data-select-id="${item.id}" aria-label="${selectLabel} #${item.id}" tabindex="-1" />
       </td>
       <td class="py-2 pr-4 text-gray-600">#${item.id}</td>
       <td class="py-2 pr-4">
-        <input data-field="name" aria-label="${nameLabel}" class="w-full px-2 py-1 border border-gray-300 rounded" value="${item.name}" />
+        <input id="name-input-${item.id}" data-field="name" aria-label="${nameLabel}" class="w-full px-2 py-1 border border-gray-300 rounded" value="${item.name}" />
       </td>
       <td class="py-2 pr-4">
-        <input data-field="description" aria-label="${descriptionLabel}" class="w-full px-2 py-1 border border-gray-300 rounded" value="${item.description ?? ''}" />
+        <input id="desc-input-${item.id}" data-field="description" aria-label="${descriptionLabel}" class="w-full px-2 py-1 border border-gray-300 rounded" value="${item.description ?? ''}" />
       </td>
       <td class="py-2 pr-4">
         <div class="flex items-center gap-2">
-          <input data-field="color" aria-label="${colorLabel}" class="w-full px-2 py-1 border border-gray-300 rounded" value="${item.color ?? ''}" />
+          <input id="color-input-${item.id}" data-field="color" aria-label="${colorLabel}" class="w-full px-2 py-1 border border-gray-300 rounded" value="${item.color ?? ''}" />
           <input
+            id="color-picker-${item.id}"
             data-color-picker
             type="color"
             value="${normalizeHexForPicker(item.color)}"
@@ -626,15 +629,15 @@ function renderRows(items: TagItem[]): void {
         </div>
       </td>
       <td class="py-2 pr-4">
-        <select data-field="parent_tag_id" aria-label="${parentLabel}" class="w-36 px-2 py-1 border border-gray-300 rounded">
+        <select id="parent-select-${item.id}" data-field="parent_tag_id" aria-label="${parentLabel}" class="w-36 px-2 py-1 border border-gray-300 rounded">
           ${renderParentOptions(item.id, item.parent_tag_id ?? null, parentNoneLabel)}
         </select>
       </td>
       <td class="py-2 pr-4 text-gray-600">${item.usage_count}</td>
       <td class="py-2 pr-4">
         <div class="flex items-center gap-2">
-          <button data-action="save" class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">${saveLabel}</button>
-          <button data-action="delete" class="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700">${deleteLabel}</button>
+          <button id="save-btn-${item.id}" data-action="save" class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">${saveLabel}</button>
+          <button id="delete-btn-${item.id}" data-action="delete" class="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700">${deleteLabel}</button>
         </div>
       </td>
     `;
@@ -1462,6 +1465,35 @@ function init(): void {
   elements.undoButton?.addEventListener('click', () => {
     void undoLastOperation();
   });
+
+  // Apply focus styles to all form inputs and selects on the page
+  // This ensures proper focus visibility for keyboard navigation users
+  document.querySelectorAll<HTMLInputElement | HTMLSelectElement>(
+    'input[type="text"], input[type="number"], input[type="color"], input[type="checkbox"], select'
+  ).forEach((el) => {
+    if (el.id !== 'tag-import-file' && el.id !== 'tag-create-color-picker') {
+      applyFocusStyles(el);
+    }
+  });
+
+  // Apply focus styles to all buttons on the page
+  document.querySelectorAll<HTMLButtonElement>('button').forEach((btn) => {
+    // Determine ring color based on button type
+    const ringColor = btn.classList.contains('bg-red-600') || btn.classList.contains('bg-red-700')
+      ? '#ef4444'
+      : '#3b82f6';
+    applyFocusStyles(btn, ringColor);
+  });
+
+  // Apply focus styles to the file input specifically (since it's often hidden)
+  if (elements.importFile) {
+    applyFocusStyles(elements.importFile);
+  }
+
+  // Apply focus styles to the color picker (despite being hidden initially)
+  if (elements.createColorPicker) {
+    applyFocusStyles(elements.createColorPicker);
+  }
 
   // Button keyboard activation (Enter and Space keys)
   // Enables keyboard accessibility for all buttons
