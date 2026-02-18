@@ -124,7 +124,9 @@ test.describe('@regression-a11y Admin Users Page Accessibility', () => {
         const skipLink = document.querySelector('a[href="#main-content"]');
         if (!skipLink) return true;
         const style = window.getComputedStyle(skipLink);
-        return style.visibility === 'hidden' || style.display === 'none' || style.opacity === '0';
+        const clipPath = style.clipPath || '';
+        // Hidden if: visibility hidden, display none, opacity 0, OR clip-path inset(100%)
+        return style.visibility === 'hidden' || style.display === 'none' || style.opacity === '0' || clipPath.includes('inset(100%)');
       });
       expect(isHidden).toBe(true);
     });

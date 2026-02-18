@@ -186,28 +186,34 @@ export async function compareFocusIndicators(normalPath, focusPath) {
  * Useful for documenting accessibility issues
  *
  * @param {import('@playwright/test').Page} page - Page context
- * @param {import('@playwright/test').Locator} element - Element to highlight
+ * @param {string} selector - CSS selector for element to highlight
  * @param {string} filename - Output filename
  * @param {string} highlightColor - Color for highlight (default: red)
  * @returns {Promise<void>}
  */
-export async function capturePageWithHighlight(page, element, filename, highlightColor = 'red') {
+export async function capturePageWithHighlight(page, selector, filename, highlightColor = 'red') {
   // Add temporary highlight to element
-  await element.evaluate(
-    (el, color) => {
-      el.style.outline = `4px solid ${color}`;
-      el.style.outlineOffset = '2px';
+  await page.evaluate(
+    ({ sel, color }) => {
+      const el = document.querySelector(sel);
+      if (el) {
+        el.style.outline = `4px solid ${color}`;
+        el.style.outlineOffset = '2px';
+      }
     },
-    highlightColor
+    { sel: selector, color: highlightColor }
   );
 
   await page.screenshot({ path: filename });
 
   // Remove highlight
-  await element.evaluate((el) => {
-    el.style.outline = '';
-    el.style.outlineOffset = '';
-  });
+  await page.evaluate((sel) => {
+    const el = document.querySelector(sel);
+    if (el) {
+      el.style.outline = '';
+      el.style.outlineOffset = '';
+    }
+  }, selector);
 }
 
 /**

@@ -151,42 +151,54 @@ export async function verifyFocusIndicators(page) {
   let elementsWithoutFocus = 0;
 
   for (const element of focusableElements) {
-    const hasFocus = await page.evaluate(
-      (selector) => {
+    try {
+      // Focus the element first
+      await page.focus(element.selector);
+
+      // NOW check if it has visible focus indicators
+      const focusInfo = await page.evaluate((selector) => {
         const el = document.querySelector(selector);
-        if (!el) return false;
+        if (!el) return { hasFocus: false, outline: '' };
 
-        const style = window.getComputedStyle(el, ':focus');
-        const outline = style.outline || style.outlineWidth;
-        const boxShadow = style.boxShadow;
+        // Get the currently focused element
+        const isActuallyFocused = document.activeElement === el;
+        if (!isActuallyFocused) return { hasFocus: false, outline: '' };
 
-        // Check for visible focus indicator
-        return (
-          (outline && outline !== 'none') || (boxShadow && boxShadow !== 'none')
-        );
-      },
-      element.selector
-    );
+        // Check computed styles of the focused element
+        const style = window.getComputedStyle(el);
+        const outline = style.outline || style.outlineWidth || '';
+        const boxShadow = style.boxShadow || '';
+        const outlineStyle = style.outlineStyle || '';
 
-    const outline = await page.evaluate(
-      (selector) => {
-        const el = document.querySelector(selector);
-        if (!el) return '';
-        const style = window.getComputedStyle(el, ':focus');
-        return style.outline || '';
-      },
-      element.selector
-    );
+        // Element has visible focus if outline or box-shadow exists
+        const hasOutline = outline && outline !== 'none' && outlineStyle !== 'none';
+        const hasBoxShadow = boxShadow && boxShadow !== 'none';
+        const hasFocusIndicator = hasOutline || hasBoxShadow;
 
-    details.push({
-      selector: element.selector,
-      hasFocus,
-      outline,
-    });
+        return {
+          hasFocus: hasFocusIndicator,
+          outline: outline,
+        };
+      }, element.selector);
 
-    if (hasFocus) {
-      elementsWithFocus++;
-    } else {
+      details.push({
+        selector: element.selector,
+        hasFocus: focusInfo.hasFocus,
+        outline: focusInfo.outline,
+      });
+
+      if (focusInfo.hasFocus) {
+        elementsWithFocus++;
+      } else {
+        elementsWithoutFocus++;
+      }
+    } catch (error) {
+      // Element not focusable or other error - count as missing focus indicator
+      details.push({
+        selector: element.selector,
+        hasFocus: false,
+        outline: `Error: ${error.message}`,
+      });
       elementsWithoutFocus++;
     }
   }
@@ -211,8 +223,6 @@ export async function testKeyboardShortcuts(page, shortcuts) {
 
   for (const shortcut of shortcuts) {
     try {
-      const initialFocus = await page.evaluate(() => document.activeElement?.id || '');
-
       // Press the shortcut
       await page.keyboard.press(shortcut.key);
 
