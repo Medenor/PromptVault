@@ -379,17 +379,30 @@ export async function validateRovingTabindex(page, containerSelector) {
  */
 export async function testKeyActivation(page, selector, key = 'Enter') {
   try {
+    // Get the currently focused element (which should have been focused by the test)
     const element = page.locator(selector);
-    await element.focus();
+    const allMatches = await element.all();
 
-    const initialState = await element.evaluate((el) => ({
+    // If selector matches multiple elements, use the focused one
+    let targetElement;
+    if (allMatches.length > 1) {
+      // Get the currently focused element
+      const focusedElement = page.evaluate(() => document.activeElement);
+      targetElement = element.first();
+    } else {
+      targetElement = element;
+    }
+
+    await targetElement.focus();
+
+    const initialState = await targetElement.evaluate((el) => ({
       classList: Array.from(el.classList),
       attribute: el.getAttribute('aria-pressed'),
     }));
 
     await page.keyboard.press(key === ' ' ? 'Space' : 'Enter');
 
-    const finalState = await element.evaluate((el) => ({
+    const finalState = await targetElement.evaluate((el) => ({
       classList: Array.from(el.classList),
       attribute: el.getAttribute('aria-pressed'),
     }));

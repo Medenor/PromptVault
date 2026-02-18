@@ -1228,6 +1228,19 @@ function setupEventListeners(): void {
     showKeyboardShortcutsHelpModal();
   });
 
+  // Button keyboard activation (Enter and Space keys)
+  // Enables keyboard accessibility for all buttons across the application
+  document.addEventListener('keydown', (e) => {
+    if (document.activeElement instanceof HTMLButtonElement) {
+      const button = document.activeElement;
+      // Enter and Space keys should activate buttons (standard keyboard behavior)
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        button.click();
+      }
+    }
+  });
+
   // Add tooltips
   addTooltips();
 

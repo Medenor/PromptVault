@@ -74,6 +74,8 @@ let cachedItems: TagItem[] = [];
 // @ts-expect-error - Used for cleanup, but not referenced directly
 let colorPickerInstance: ColorPicker | null = null;
 let tableKeyboardNavInitialized = false;
+let rovingTabindexInitialized = false;
+let currentTagFocusIndex = 0;
 const liveValidationState = new Map<string, boolean>();
 type OrphanPromptDetailsResponse = {
   items: Array<{ id: number; title: string }>;
@@ -99,6 +101,121 @@ function isTextEditingTarget(target: EventTarget | null): boolean {
   const el = target as HTMLElement | null;
   if (!el) return false;
   return el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable;
+}
+
+/**
+ * Initialize roving tabindex pattern for tag list
+ * Sets first item to tabindex="0" and others to tabindex="-1"
+ * Handles arrow key navigation to move focus and update tabindex values
+ */
+function initializeRovingTabindex(): void {
+  if (rovingTabindexInitialized) {
+    return;
+  }
+  rovingTabindexInitialized = true;
+
+  const container = document.getElementById('tags-table-container');
+  if (!container) {
+    return;
+  }
+
+  // Update roving tabindex attributes on all rows
+  const updateTabindexAttributes = (): void => {
+    const rows = Array.from(container.querySelectorAll<HTMLTableRowElement>('tbody tr'));
+    rows.forEach((row, index) => {
+      if (index === currentTagFocusIndex) {
+        row.setAttribute('tabindex', '0');
+      } else {
+        row.setAttribute('tabindex', '-1');
+      }
+    });
+  };
+
+  // Initial setup
+  updateTabindexAttributes();
+
+  // Handle arrow key navigation
+  container.addEventListener('keydown', (event: Event) => {
+    const keyEvent = event as KeyboardEvent;
+    const rows = Array.from(container.querySelectorAll<HTMLTableRowElement>('tbody tr'));
+
+    if (rows.length === 0) {
+      return;
+    }
+
+    // Check if target is a row or inside a row (but not an input field)
+    const target = keyEvent.target as HTMLElement | null;
+    const row = target?.closest('tr');
+    if (!row || isTextEditingTarget(keyEvent.target)) {
+      return;
+    }
+
+    let newIndex = currentTagFocusIndex;
+    let shouldMove = false;
+
+    switch (keyEvent.key) {
+      case 'ArrowDown':
+      case 'ArrowRight':
+        keyEvent.preventDefault();
+        newIndex = Math.min(currentTagFocusIndex + 1, rows.length - 1);
+        shouldMove = true;
+        break;
+      case 'ArrowUp':
+      case 'ArrowLeft':
+        keyEvent.preventDefault();
+        newIndex = Math.max(currentTagFocusIndex - 1, 0);
+        shouldMove = true;
+        break;
+      case 'Home':
+        keyEvent.preventDefault();
+        newIndex = 0;
+        shouldMove = true;
+        break;
+      case 'End':
+        keyEvent.preventDefault();
+        newIndex = rows.length - 1;
+        shouldMove = true;
+        break;
+    }
+
+    if (shouldMove && newIndex !== currentTagFocusIndex) {
+      currentTagFocusIndex = newIndex;
+      updateTabindexAttributes();
+      rows[newIndex]?.focus();
+      const nameInput = rows[newIndex]?.querySelector<HTMLInputElement>('input[data-field="name"]');
+      announceKeyboardNavigation(
+        t('accessibility.navigateTo', { item: nameInput?.value || `Item ${newIndex + 1}` })
+      );
+    }
+  });
+
+  // Update focus index when user clicks a row
+  container.addEventListener('click', (event: Event) => {
+    const target = event.target as HTMLElement | null;
+    const row = target?.closest('tr');
+    if (row) {
+      const rows = Array.from(container.querySelectorAll<HTMLTableRowElement>('tbody tr'));
+      const index = rows.indexOf(row);
+      if (index !== -1) {
+        currentTagFocusIndex = index;
+        updateTabindexAttributes();
+      }
+    }
+  });
+
+  // Update focus index when user tabs to a row
+  container.addEventListener('focus', (event: Event) => {
+    const target = event.target as HTMLElement | null;
+    const row = target?.closest('tr');
+    if (row) {
+      const rows = Array.from(container.querySelectorAll<HTMLTableRowElement>('tbody tr'));
+      const index = rows.indexOf(row);
+      if (index !== -1) {
+        currentTagFocusIndex = index;
+        updateTabindexAttributes();
+      }
+    }
+  }, true);
 }
 
 function initializeTableFirstCharNavigation(): void {
@@ -465,7 +582,8 @@ function renderRows(items: TagItem[]): void {
 
   for (const item of items) {
     const row = document.createElement('tr');
-    row.className = 'border-b border-gray-100';
+    row.className = 'border-b border-gray-100 tag-item';
+    row.setAttribute('role', 'option');
     row.dataset.id = String(item.id);
 
     row.innerHTML = `
@@ -537,6 +655,11 @@ function renderRows(items: TagItem[]): void {
   // Setup scroll indicators for table container
   setupScrollIndicators(tableContainer);
   initializeTableFirstCharNavigation();
+
+  // Reset and reinitialize roving tabindex pattern
+  rovingTabindexInitialized = false;
+  currentTagFocusIndex = 0;
+  initializeRovingTabindex();
 }
 
 function parseIdList(value: string): number[] {
@@ -1307,6 +1430,20 @@ function init(): void {
   elements.undoButton?.addEventListener('click', () => {
     void undoLastOperation();
   });
+
+  // Button keyboard activation (Enter and Space keys)
+  // Enables keyboard accessibility for all buttons
+  document.addEventListener('keydown', (e) => {
+    if (document.activeElement instanceof HTMLButtonElement) {
+      const button = document.activeElement;
+      // Enter and Space keys should activate buttons (standard keyboard behavior)
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        button.click();
+      }
+    }
+  });
+
   void loadTags();
 }
 

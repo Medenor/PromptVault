@@ -73,7 +73,8 @@
               type="text"
               id="user-username"
               readonly
-              class="w-full px-3 py-2 text-sm text-gray-900 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 bg-gray-50 cursor-not-allowed"
+              tabindex="-1"
+              class="w-full px-3 py-2 text-sm text-gray-900 border border-gray-600 rounded-md placeholder-gray-700 bg-gray-50 cursor-not-allowed"
             />
           </div>
 
@@ -89,7 +90,8 @@
               type="email"
               id="user-email"
               readonly
-              class="w-full px-3 py-2 text-sm text-gray-900 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 bg-gray-50 cursor-not-allowed"
+              tabindex="-1"
+              class="w-full px-3 py-2 text-sm text-gray-900 border border-gray-600 rounded-md placeholder-gray-700 bg-gray-50 cursor-not-allowed"
             />
           </div>
 
@@ -131,7 +133,7 @@
           >
           <select
             id="language-selector"
-            class="px-3 py-2 text-sm text-gray-900 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
+            class="px-3 py-2 text-sm text-gray-900 border border-gray-600 rounded-md disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
           >
             <option value="en">English</option>
             <option value="fr">Français</option>
@@ -177,7 +179,7 @@
                   type="password"
                   id="current-password"
                   name="current_password"
-                  class="w-full px-3 py-2 pr-12 text-sm text-gray-900 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
+                  class="w-full px-3 py-2 pr-12 text-sm text-gray-900 border border-gray-600 rounded-md placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
                   data-i18n="[placeholder]auth.profile.currentPasswordPlaceholder"
                   required
                   autocomplete="current-password"
@@ -186,7 +188,7 @@
                 />
                 <button
                   type="button"
-                  class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-700 hover:text-gray-900 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                  class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-700 hover:text-gray-900 rounded"
                   id="toggle-current-password"
                   aria-label="Toggle password visibility"
                   data-i18n="[aria-label]accessibility.labels.togglePasswordVisibility"
@@ -218,7 +220,7 @@
                   type="password"
                   id="new-password"
                   name="new_password"
-                  class="w-full px-3 py-2 pr-12 text-sm text-gray-900 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
+                  class="w-full px-3 py-2 pr-12 text-sm text-gray-900 border border-gray-600 rounded-md placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
                   data-i18n="[placeholder]auth.profile.newPasswordPlaceholder"
                   required
                   autocomplete="new-password"
@@ -227,7 +229,7 @@
                 />
                 <button
                   type="button"
-                  class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-700 hover:text-gray-900 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                  class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-700 hover:text-gray-900 rounded"
                   id="toggle-new-password"
                   aria-label="Toggle password visibility"
                   data-i18n="[aria-label]accessibility.labels.togglePasswordVisibility"
@@ -300,7 +302,7 @@
                   type="password"
                   id="confirm-new-password"
                   name="confirm_password"
-                  class="w-full px-3 py-2 pr-12 text-sm text-gray-900 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
+                  class="w-full px-3 py-2 pr-12 text-sm text-gray-900 border border-gray-600 rounded-md placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
                   data-i18n="[placeholder]auth.profile.confirmNewPasswordPlaceholder"
                   required
                   autocomplete="new-password"
@@ -309,7 +311,7 @@
                 />
                 <button
                   type="button"
-                  class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-700 hover:text-gray-900 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                  class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-700 hover:text-gray-900 rounded"
                   id="toggle-confirm-new-password"
                   aria-label="Toggle password visibility"
                   data-i18n="[aria-label]accessibility.labels.togglePasswordVisibility"
@@ -328,13 +330,21 @@
             </div>
 
             <!-- Form Actions -->
-            <div class="border-t pt-4 mt-4">
+            <div class="border-t pt-4 mt-4 flex gap-3">
               <button
                 type="submit"
                 class="px-6 py-2 bg-blue-800 text-white rounded-md hover:bg-blue-900 font-medium"
                 data-i18n="auth.profile.updatePassword"
               >
                 Update Password
+              </button>
+              <button
+                type="button"
+                class="px-6 py-2 bg-gray-300 text-gray-900 rounded-md hover:bg-gray-400 font-medium"
+                onclick="document.getElementById('change-password-form').reset();"
+                data-i18n="common.cancel"
+              >
+                Cancel
               </button>
             </div>
           </form>

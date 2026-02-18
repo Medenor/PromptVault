@@ -14,6 +14,7 @@
 
 import { createModal } from '@components';
 import { t } from '@/utils/i18n';
+import { initButtonKeyboardActivation } from '@/utils/button-keyboard-activation';
 
 type KeyboardHelpEventDetail = {
   markHandled: () => void;
@@ -142,7 +143,9 @@ document.addEventListener('keydown', (event: KeyboardEvent) => {
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
     ensureKeyboardNavigationAnnouncer();
+    initButtonKeyboardActivation();
   });
 } else {
   ensureKeyboardNavigationAnnouncer();
+  initButtonKeyboardActivation();
 }

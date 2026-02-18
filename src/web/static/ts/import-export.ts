@@ -317,6 +317,19 @@ function setupEventListeners(): void {
   previewButtons.forEach((btn) => {
     btn.addEventListener('click', handlePreview);
   });
+
+  // Button keyboard activation (Enter and Space keys)
+  // Enables keyboard accessibility for all buttons
+  document.addEventListener('keydown', (e) => {
+    if (document.activeElement instanceof HTMLButtonElement) {
+      const button = document.activeElement;
+      // Enter and Space keys should activate buttons (standard keyboard behavior)
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        button.click();
+      }
+    }
+  });
 }
 
 function handlePreview(event: Event): void {
