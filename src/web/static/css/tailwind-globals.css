@@ -185,6 +185,17 @@
     outline-offset: 2px;
   }
 
+  /* Fallback for older/webkit browsers that don't reliably fire :focus-visible */
+  button:focus,
+  a:focus,
+  input:focus,
+  select:focus,
+  textarea:focus,
+  [tabindex]:focus {
+    outline: 3px solid #4A90E2;
+    outline-offset: 2px;
+  }
+
   /* Respect user preference for reduced motion */
   @media (prefers-reduced-motion: reduce) {
     *,

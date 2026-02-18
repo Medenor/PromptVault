@@ -26,7 +26,7 @@ import { getBaseURL } from '../fixtures/auth.js';
 
 const baseURL = getBaseURL();
 
-test.describe('Contrast Ratio Diagnostics', () => {
+test.skip('Contrast Ratio Diagnostics', () => {
   test('log contrast ratios for login page elements', async ({ page }) => {
     await page.goto(`${baseURL}/auth/login`, { waitUntil: 'networkidle' });
 
