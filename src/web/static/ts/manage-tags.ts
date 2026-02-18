@@ -33,6 +33,21 @@ type FormValidationError = {
   message: string;
 };
 
+// Global focus style handler for all interactive elements
+function applyFocusStyles(element: HTMLElement, ringColor: string = '#3b82f6'): void {
+  const focusHandler = () => {
+    element.style.outline = 'none';
+    element.style.boxShadow = `0 0 0 3px rgba(255, 255, 255, 0.5), 0 0 0 5px ${ringColor}`;
+  };
+
+  const blurHandler = () => {
+    element.style.boxShadow = '';
+  };
+
+  element.addEventListener('focus', focusHandler);
+  element.addEventListener('blur', blurHandler);
+}
+
 const elements = {
   tableBody: document.getElementById('tags-table-body') as HTMLTableSectionElement | null,
   searchInput: document.getElementById('tag-search') as HTMLInputElement | null,
@@ -624,27 +639,44 @@ function renderRows(items: TagItem[]): void {
       </td>
     `;
 
-    row.querySelector('[data-action="save"]')?.addEventListener('click', () => {
+    // Apply focus styles using event listeners
+    const checkbox = row.querySelector<HTMLInputElement>('input[type="checkbox"]');
+    const nameInput = row.querySelector<HTMLInputElement>('input[data-field="name"]');
+    const descInput = row.querySelector<HTMLInputElement>('input[data-field="description"]');
+    const colorInput = row.querySelector<HTMLInputElement>('input[data-field="color"]');
+    const colorPickerInput = row.querySelector<HTMLInputElement>('input[data-color-picker]');
+    const parentSelect = row.querySelector<HTMLSelectElement>('select[data-field="parent_tag_id"]');
+    const saveBtn = row.querySelector<HTMLButtonElement>('[data-action="save"]');
+    const deleteBtn = row.querySelector<HTMLButtonElement>('[data-action="delete"]');
+
+    // Add focus styles to all interactive elements
+    if (checkbox) applyFocusStyles(checkbox);
+    if (nameInput) applyFocusStyles(nameInput);
+    if (descInput) applyFocusStyles(descInput);
+    if (colorInput) applyFocusStyles(colorInput);
+    if (colorPickerInput) applyFocusStyles(colorPickerInput);
+    if (parentSelect) applyFocusStyles(parentSelect);
+    if (saveBtn) applyFocusStyles(saveBtn);
+    if (deleteBtn) applyFocusStyles(deleteBtn, '#ef4444');
+
+    saveBtn?.addEventListener('click', () => {
       void saveTag(item.id, row);
     });
 
-    const deleteBtn = row.querySelector<HTMLButtonElement>('[data-action="delete"]');
     if (deleteBtn) {
       deleteBtn.addEventListener('click', () => {
         void deleteTag(item.id);
       });
     }
 
-    const colorInput = row.querySelector<HTMLInputElement>('input[data-field="color"]');
-    const colorPicker = row.querySelector<HTMLInputElement>('input[data-color-picker]');
-    if (colorInput && colorPicker) {
-      colorPicker.addEventListener('input', () => {
-        colorInput.value = colorPicker.value;
+    if (colorInput && colorPickerInput) {
+      colorPickerInput.addEventListener('input', () => {
+        colorInput.value = colorPickerInput.value;
       });
       colorInput.addEventListener('input', () => {
         const normalized = normalizeHexValue(colorInput.value);
         if (normalized) {
-          colorPicker.value = normalized;
+          colorPickerInput.value = normalized;
         }
       });
     }
