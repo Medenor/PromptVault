@@ -8,15 +8,79 @@
  */
 
 /**
- * Parse CSS color string to RGB values
- * Supports: rgb(), rgba(), hex, named colors, hsl()
+ * Convert OKLCH color to RGB
+ * OKLCH uses Lightness, Chroma, and Hue in the OKLab color space
+ * Formula: https://bottosson.github.io/posts/oklab/
  *
- * @param {string} color - CSS color string (e.g., 'rgb(255, 0, 0)', '#FF0000', 'red')
+ * @param {number} L - Lightness (0-1)
+ * @param {number} C - Chroma (0-0.4)
+ * @param {number} H - Hue (0-360 degrees)
+ * @returns {{r: number, g: number, b: number}} RGB values (0-255)
+ */
+function oklchToRgb(L, C, H) {
+  // Convert hue from degrees to radians
+  const hueRad = (H % 360) * (Math.PI / 180);
+
+  // Convert OKLCh to OKLab
+  const OKL = L;
+  const OKa = Math.cos(hueRad) * C;
+  const OKb = Math.sin(hueRad) * C;
+
+  // Convert OKLab to linear RGB
+  // This is the inverse of the linear RGB to OKLab transformation
+  const l_ = OKL + 0.3963377774 * OKa + 0.2158037573 * OKb;
+  const m_ = OKL - 0.1055613458 * OKa - 0.0638541728 * OKb;
+  const s_ = OKL - 0.0894841775 * OKa - 1.291486575 * OKb;
+
+  // Cube the values (these were the cube roots)
+  const l = l_ * l_ * l_;
+  const m = m_ * m_ * m_;
+  const s = s_ * s_ * s_;
+
+  // Convert linear RGB to sRGB
+  let r = 4.0767416621 * l - 3.3077363322 * m + 0.2309101289 * s;
+  let g = -1.2684380046 * l + 2.6097574011 * m - 0.3413193761 * s;
+  let b = -0.0041960771 * l - 0.7034186147 * m + 1.7076147010 * s;
+
+  // Apply gamma correction (sRGB)
+  const gammaCorrect = (c) => {
+    if (c <= 0.0031308) {
+      return c * 12.92;
+    }
+    return 1.055 * Math.pow(c, 1 / 2.4) - 0.055;
+  };
+
+  r = gammaCorrect(r);
+  g = gammaCorrect(g);
+  b = gammaCorrect(b);
+
+  // Clamp to 0-255 range and convert to integers
+  return {
+    r: Math.max(0, Math.min(255, Math.round(r * 255))),
+    g: Math.max(0, Math.min(255, Math.round(g * 255))),
+    b: Math.max(0, Math.min(255, Math.round(b * 255))),
+  };
+}
+
+/**
+ * Parse CSS color string to RGB values
+ * Supports: rgb(), rgba(), hex, named colors, oklch()
+ *
+ * @param {string} color - CSS color string (e.g., 'rgb(255, 0, 0)', '#FF0000', 'red', 'oklch(0.623 0.214 259.815)')
  * @returns {{r: number, g: number, b: number}} RGB values (0-255)
  * @throws {Error} If color format is not recognized
  */
 export function parseColor(color) {
   const trimmed = color.trim().toLowerCase();
+
+  // Handle oklch()
+  const oklchMatch = trimmed.match(/oklch\s*\(\s*([\d.]+)\s+([\d.]+)\s+([\d.]+)\s*\)/);
+  if (oklchMatch) {
+    const L = parseFloat(oklchMatch[1]);
+    const C = parseFloat(oklchMatch[2]);
+    const H = parseFloat(oklchMatch[3]);
+    return oklchToRgb(L, C, H);
+  }
 
   // Handle rgb() and rgba()
   const rgbMatch = trimmed.match(/rgba?\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);

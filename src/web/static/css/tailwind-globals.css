@@ -124,7 +124,7 @@
 
   /* Link styling defaults */
   a {
-    color: #1d4ed8;
+    color: #1e3a8a;
     text-decoration: none;
     transition: color 200ms;
   }
@@ -213,6 +213,16 @@
     border-width: 0;
   }
 
+  /* Ensure red error text has high contrast for WCAG AA compliance (4.5:1) */
+  .text-red-500 {
+    color: #b91c1c !important; /* red-700 for high contrast on light backgrounds */
+  }
+
+  /* Ensure yellow/amber warning text has high contrast for WCAG AA compliance */
+  .text-yellow-700 {
+    color: #854d0e !important; /* amber-800 for high contrast on light backgrounds */
+  }
+
   .skip-link {
     position: absolute;
     top: 0.75rem;
@@ -290,6 +300,7 @@
   .field-error {
     border-color: #7f1d1d;
     box-shadow: 0 0 0 0.2rem rgba(127, 29, 29, 0.25);
+    color: #7f1d1d;
   }
 
   .field-error:focus {
@@ -393,6 +404,7 @@
     display: block;
     color: #7f1d1d;
     font-weight: 500;
+    /* Ensures 4.5:1 contrast ratio on white background for WCAG AA */
   }
 
   .validation-error-visible::before {
