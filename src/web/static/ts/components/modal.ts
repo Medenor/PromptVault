@@ -55,7 +55,7 @@ export function createModal(props: ModalProps): {
       modal.setAttribute('aria-labelledby', titleId);
     }
 
-    // Close button (X) in top-right
+    // Close button (X) in top-right (user-initiated dismissal → fromAction=false)
     if (props.showClose !== false && (props.closable === undefined || props.closable)) {
       const closeBtn = document.createElement('button');
       closeBtn.innerHTML = '&times;';
@@ -63,7 +63,7 @@ export function createModal(props: ModalProps): {
         'text-gray-400 hover:text-gray-600 text-3xl leading-none transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded';
       closeBtn.setAttribute('aria-label', 'Close modal');
       closeBtn.addEventListener('click', () => {
-        close();
+        close(false);
       });
       header.appendChild(closeBtn);
     }
@@ -92,6 +92,9 @@ export function createModal(props: ModalProps): {
       const button = createButton(action.label, {
         variant: action.variant || 'secondary',
         onClick: () => {
+          // Pass fromAction=true so that close() does not invoke onClose.
+          // The action's own onClick is responsible for resolving the promise.
+          close(true);
           action.onClick();
         },
       });
@@ -103,11 +106,11 @@ export function createModal(props: ModalProps): {
 
   modal.appendChild(modalContent);
 
-  // Close on backdrop click
+  // Close on backdrop click (user-initiated dismissal → fromAction=false)
   if (props.closeOnBackdrop !== false) {
     modal.addEventListener('click', (e) => {
       if (e.target === modal) {
-        close();
+        close(false);
       }
     });
   }
@@ -116,6 +119,11 @@ export function createModal(props: ModalProps): {
   let focusTrap: ReturnType<typeof createFocusTrap> | null = null;
   let escapeHandler: ((e: KeyboardEvent) => void) | null = null;
   let previouslyFocused: HTMLElement | null = null;
+  // Tracks whether the modal was closed via an action button click.
+  // When true, subsequent close() calls (e.g. from dialogs.ts action onClick
+  // calling modal.close() after the wrapper already called close(true)) must
+  // not invoke onClose, which would incorrectly resolve the promise as cancelled.
+  let closedByAction = false;
 
   const open = () => {
     // Store reference to currently focused element before opening modal
@@ -130,7 +138,7 @@ export function createModal(props: ModalProps): {
       escapeHandler = (e: KeyboardEvent) => {
         if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
           e.preventDefault();
-          close();
+          close(false);
         }
       };
       document.addEventListener('keydown', escapeHandler);
@@ -143,7 +151,15 @@ export function createModal(props: ModalProps): {
     focusTrap.activate();
   };
 
-  const close = () => {
+  const close = (fromAction = false) => {
+    // If this close was triggered by an action button, record it so that any
+    // subsequent close() call (e.g. from dialogs.ts action onClick calling
+    // modal.close() after the wrapper already ran close(true)) does not invoke
+    // onClose and incorrectly resolve the promise as cancelled.
+    if (fromAction) {
+      closedByAction = true;
+    }
+
     // Deactivate focus trap
     if (focusTrap) {
       focusTrap.deactivate();
@@ -165,8 +181,12 @@ export function createModal(props: ModalProps): {
       previouslyFocused.focus();
     }
 
-    // Call onClose callback if provided
-    if (props.onClose) {
+    // Only call onClose for user-initiated dismissals (ESC, backdrop, X button).
+    // Action buttons (Confirm / Cancel) handle their own promise resolution and
+    // must NOT trigger onClose, which would resolve the promise as a cancellation.
+    // closedByAction guards against dialogs.ts calling modal.close() inside the
+    // action onClick after the wrapper has already called close(true).
+    if (!closedByAction && props.onClose) {
       props.onClose();
     }
   };
