@@ -19,7 +19,7 @@ PromptVault is a modern web-based prompt management application built with FastA
 ### Code Quality
 
 - **Format Code**: Use black code formatter (configured in project)
-- **Python Version**: Python 3.11+ minimum (required for database features)
+- **Python Version**: Python 3.14+ minimum (required for database features)
 - **Before Commits**: Run full test suite and ensure coverage meets 85% threshold
 - **Frontend Lint**: `npm run lint` (ESLint) and `npm run format` (Prettier)
 - **Frontend Typecheck**: `npm run typecheck`

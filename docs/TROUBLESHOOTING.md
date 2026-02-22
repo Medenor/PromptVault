@@ -66,10 +66,10 @@ python --version
 
 # Install Python (Ubuntu/Debian)
 sudo apt-get update
-sudo apt-get install python3.11 python3-pip
+sudo apt-get install python3.14 python3-pip
 
 # Install Python (macOS with Homebrew)
-brew install python@3.11
+brew install python@3.14
 
 # Create alias if needed
 alias python=python3

@@ -68,7 +68,7 @@ This guide provides step-by-step instructions for migrating PromptVault from JSO
 2. **Verify Dependencies**
 
    ```bash
-   # Check Python version (3.11+ required)
+   # Check Python version (3.14+ required)
    python --version
 
    # Verify dependencies installed
@@ -86,13 +86,13 @@ This guide provides step-by-step instructions for migrating PromptVault from JSO
 
 **Minimum:**
 
-- Python 3.11+
+- Python 3.14+
 - 100MB disk space (SQLite)
 - 512MB RAM
 
 **Recommended:**
 
-- Python 3.11+
+- Python 3.14+
 - 1GB disk space (PostgreSQL)
 - 2GB RAM
 - PostgreSQL 15+

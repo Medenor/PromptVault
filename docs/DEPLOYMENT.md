@@ -30,7 +30,7 @@ PromptVault includes a comprehensive setup wizard that automates the entire depl
 ### Prerequisites
 
 - Docker and Docker Compose installed
-- Python 3.11+ installed
+- Python 3.14+ installed
 - Git installed
 
 ### Setup Wizard Modes
@@ -213,7 +213,7 @@ python scripts/setup/deploy.py --rollback
 
 If you encounter issues with the automated setup:
 
-1. **Check Prerequisites:** Ensure Docker, Docker Compose, and Python 3.11+ are installed
+1. **Check Prerequisites:** Ensure Docker, Docker Compose, and Python 3.14+ are installed
 2. **View Logs:** Check `.setup_state.json` for the last completed step
 3. **Resume Setup:** The wizard can resume from the last checkpoint
 4. **Component Retry:** Run individual components to isolate issues
@@ -814,7 +814,7 @@ docker exec promptvault alembic upgrade head
 
 ### Prerequisites
 
-- Python 3.11+
+- Python 3.14+
 - PostgreSQL 15+ (for production) or SQLite (for development)
 - Git
 
@@ -826,7 +826,7 @@ git clone <repository-url>
 cd PromptVault
 
 # Create virtual environment
-python3.11 -m venv venv
+python3.14 -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 # Install dependencies

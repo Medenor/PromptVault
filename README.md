@@ -24,7 +24,7 @@
   <img src="https://img.shields.io/badge/MPL--2.0-blue?style=for-the-badge&logo=mozilla&logoColor=white" alt="MPL-2.0 License">
 </a>
 <a href="https://www.python.org/">
-  <img src="https://img.shields.io/badge/Python-3.11%2B-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.11+">
+  <img src="https://img.shields.io/badge/Python-3.14%2B-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.14+">
 </a>
 <a href="https://www.typescriptlang.org/">
   <img src="https://img.shields.io/badge/TypeScript-5.x-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript">
@@ -113,7 +113,7 @@ PromptVault is **fully tested and production-ready**:
 
 ### Built With
 
-- [Python](https://www.python.org/) 3.11+
+- [Python](https://www.python.org/) 3.14+
 - [FastAPI](https://fastapi.tiangolo.com/) - Modern web framework
 - [Uvicorn](https://www.uvicorn.org/) - High-performance ASGI server
 - [TypeScript](https://www.typescriptlang.org/) - Frontend logic (migration complete)
@@ -281,7 +281,7 @@ Category and tags management interface with color pickers, hierarchization (for 
 
 ### Prerequisites
 
-- Python 3.11+
+- Python 3.14+
 - PostgreSQL 15+ (for production) or SQLite 3.x (for development)
 - Docker and Docker Compose (recommended for production deployment)
 - Git
