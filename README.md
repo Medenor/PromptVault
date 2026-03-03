@@ -574,7 +574,7 @@ PORT=8001 python3 run_web.py
 
 ### Internationalization
 
-PromptVault supports multiple languages (English, French, Spanish, German). The application will automatically detect your system language, but you can also change languages from the language selector in the header. <!-- TODO: moving language selection into profil -->
+PromptVault supports multiple languages (English, French, Spanish, German). The application will automatically detect your system language, but you can also change languages from the language selector in the profile page.
 
 **Translation Files:**
 
