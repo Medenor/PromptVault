@@ -663,14 +663,13 @@ This project is licensed under the **MPL 2.0 license**.
 
 See [LICENSE](LICENSE) for more information.
 
-## Disclaimer – Vibe coding & AI assistance
+## Disclaimer – Spec Driven Development & AI collaboration
 
-This repository was developed using a _vibe coding_ approach, with assistance from AI tools.
+This repository was developed using a *Spec Driven Development* approach, with extensive AI collaboration throughout the process.
 
-The code was written iteratively, with human review, testing, and decision-making at each step.  
-AI assistance was used to accelerate ideation, refactoring, and documentation, but responsibility for the design choices, validation, and final output remains entirely human.
+AI is used to build and brainstorm detailed specifications before delegating coding tasks. The development follows a collaborative process where AI handles implementation, while human oversight ensures quality through review, testing, and debugging.
 
-Transparency matters: this project reflects a human–AI collaborative workflow.
+Transparency matters: this project reflects a comprehensive human–AI collaborative workflow from specification to deployment.
 
 ## Acknowledgements
 
