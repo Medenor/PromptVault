@@ -1,0 +1,351 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "WCAG 2.1 Accessibility Test Report",
+  "description": "JSON schema for accessibility test results",
+  "type": "object",
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "description": "Test execution metadata",
+      "properties": {
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp of test execution"
+        },
+        "environment": {
+          "type": "object",
+          "properties": {
+            "baseURL": { "type": "string" },
+            "browser": { "type": "string" },
+            "wcagLevel": {
+              "type": "string",
+              "enum": ["A", "AA", "AAA"]
+            }
+          }
+        },
+        "duration": {
+          "type": "number",
+          "description": "Test execution duration in milliseconds"
+        }
+      },
+      "required": ["timestamp", "environment"]
+    },
+    "summary": {
+      "type": "object",
+      "description": "High-level test summary",
+      "properties": {
+        "totalPages": {
+          "type": "number",
+          "description": "Total number of pages tested"
+        },
+        "passed": {
+          "type": "number",
+          "description": "Number of pages with no violations"
+        },
+        "failed": {
+          "type": "number",
+          "description": "Number of pages with violations"
+        },
+        "skipped": {
+          "type": "number",
+          "description": "Number of pages skipped"
+        },
+        "criticalViolations": {
+          "type": "number",
+          "description": "Total critical severity violations across all pages"
+        },
+        "seriousViolations": {
+          "type": "number",
+          "description": "Total serious severity violations across all pages"
+        },
+        "moderateViolations": {
+          "type": "number",
+          "description": "Total moderate severity violations across all pages"
+        },
+        "minorViolations": {
+          "type": "number",
+          "description": "Total minor severity violations across all pages"
+        }
+      },
+      "required": ["totalPages", "passed", "failed"]
+    },
+    "pages": {
+      "type": "array",
+      "description": "Test results for each page",
+      "items": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "Full URL of the page tested"
+          },
+          "route": {
+            "type": "string",
+            "description": "Route/path of the page"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["passed", "failed", "skipped"],
+            "description": "Overall status of the page"
+          },
+          "accessLevel": {
+            "type": "string",
+            "enum": ["public", "user", "admin"],
+            "description": "Required access level for the page"
+          },
+          "axeResults": {
+            "type": "object",
+            "description": "Axe-core scan results",
+            "properties": {
+              "violations": {
+                "type": "array",
+                "description": "WCAG violations found",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "description": "Violation ID from axe-core"
+                    },
+                    "impact": {
+                      "type": "string",
+                      "enum": ["critical", "serious", "moderate", "minor"]
+                    },
+                    "description": {
+                      "type": "string"
+                    },
+                    "help": {
+                      "type": "string"
+                    },
+                    "helpUrl": {
+                      "type": "string"
+                    },
+                    "nodes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "html": { "type": "string" },
+                          "target": {
+                            "type": "array",
+                            "items": { "type": "string" }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "passes": {
+                "type": "array",
+                "description": "Passed checks"
+              },
+              "incomplete": {
+                "type": "array",
+                "description": "Checks that need manual review"
+              }
+            }
+          },
+          "contrastTests": {
+            "type": "object",
+            "description": "Custom contrast ratio tests",
+            "properties": {
+              "passed": {
+                "type": "number"
+              },
+              "failed": {
+                "type": "number"
+              },
+              "results": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "selector": { "type": "string" },
+                    "ratio": { "type": "number" },
+                    "required": { "type": "number" },
+                    "passes": { "type": "boolean" },
+                    "foreground": { "type": "string" },
+                    "background": { "type": "string" },
+                    "violation": { "type": ["string", "null"] }
+                  }
+                }
+              }
+            }
+          },
+          "keyboardTests": {
+            "type": "object",
+            "description": "Keyboard navigation tests",
+            "properties": {
+              "tabOrder": {
+                "type": "object",
+                "properties": {
+                  "success": { "type": "boolean" },
+                  "focusableElements": { "type": "number" },
+                  "issues": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                  }
+                }
+              },
+              "focusIndicators": {
+                "type": "object",
+                "properties": {
+                  "hasFocusIndicators": { "type": "boolean" },
+                  "elementsWithFocus": { "type": "number" },
+                  "elementsWithoutFocus": { "type": "number" }
+                }
+              },
+              "skipLinks": {
+                "type": "object",
+                "properties": {
+                  "hasSkipLink": { "type": "boolean" },
+                  "count": { "type": "number" },
+                  "issues": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "ariaTests": {
+            "type": "object",
+            "description": "ARIA attribute tests",
+            "properties": {
+              "landmarks": {
+                "type": "object",
+                "properties": {
+                  "hasLandmarks": { "type": "boolean" },
+                  "count": { "type": "number" }
+                }
+              },
+              "formLabels": {
+                "type": "object",
+                "properties": {
+                  "allLabeled": { "type": "boolean" },
+                  "labeled": { "type": "number" },
+                  "unlabeled": { "type": "number" }
+                }
+              },
+              "buttonLabels": {
+                "type": "object",
+                "properties": {
+                  "allButtonsLabeled": { "type": "boolean" },
+                  "labeled": { "type": "number" },
+                  "unlabeled": { "type": "number" }
+                }
+              },
+              "headingHierarchy": {
+                "type": "object",
+                "properties": {
+                  "validHierarchy": { "type": "boolean" },
+                  "issues": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                  }
+                }
+              },
+              "liveRegions": {
+                "type": "object",
+                "properties": {
+                  "hasLiveRegions": { "type": "boolean" },
+                  "count": { "type": "number" }
+                }
+              }
+            }
+          },
+          "screenshots": {
+            "type": "object",
+            "description": "Paths to captured screenshots",
+            "additionalProperties": { "type": "string" }
+          },
+          "errors": {
+            "type": "array",
+            "description": "Any errors encountered during testing",
+            "items": { "type": "string" }
+          }
+        },
+        "required": ["url", "status"]
+      }
+    },
+    "issues": {
+      "type": "object",
+      "description": "Aggregated issues by category",
+      "properties": {
+        "byImpact": {
+          "type": "object",
+          "properties": {
+            "critical": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": { "type": "string" },
+                  "description": { "type": "string" },
+                  "affectedPages": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                  },
+                  "affectedCount": { "type": "number" }
+                }
+              }
+            },
+            "serious": { "type": "array" },
+            "moderate": { "type": "array" },
+            "minor": { "type": "array" }
+          }
+        },
+        "contrast": {
+          "type": "object",
+          "properties": {
+            "failed": { "type": "number" },
+            "issues": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "page": { "type": "string" },
+                  "selector": { "type": "string" },
+                  "actual": { "type": "number" },
+                  "required": { "type": "number" }
+                }
+              }
+            }
+          }
+        },
+        "keyboard": {
+          "type": "object",
+          "properties": {
+            "pages": { "type": "number" },
+            "issues": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "recommendations": {
+      "type": "array",
+      "description": "Recommended fixes for failing issues",
+      "items": {
+        "type": "object",
+        "properties": {
+          "issue": { "type": "string" },
+          "severity": {
+            "type": "string",
+            "enum": ["critical", "serious", "moderate", "minor"]
+          },
+          "recommendation": { "type": "string" },
+          "resources": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      }
+    }
+  },
+  "required": ["metadata", "summary", "pages"]
+}

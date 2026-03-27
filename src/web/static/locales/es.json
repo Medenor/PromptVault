@@ -2,6 +2,7 @@
   "nav": {
     "newPrompt": "Nuevo Prompt",
     "prompts": "Prompts",
+    "myPrompts": "Mis Prompts",
     "categories": "Categorías",
     "allCategories": "Todas las categorías",
     "tags": "Etiquetas",
@@ -19,17 +20,23 @@
     "profile": "Perfil",
     "admin": "Administración",
     "logout": "Cerrar sesión",
-    "backToMain": "Volver al menú principal"
+    "backToMain": "Volver al menú principal",
+    "skipToMainContent": "Saltar al contenido principal",
+    "home": "Inicio"
   },
   "actions": {
     "add": "Añadir",
+    "remove": "Quitar",
     "view": "Ver",
     "edit": "Editar",
     "delete": "Eliminar",
     "save": "Guardar",
     "cancel": "Cancelar",
+    "confirm": "Confirmar",
     "copy": "Copiar",
     "favorite": "Favorito",
+    "addFavorite": "Agregar a favoritos",
+    "removeFavorite": "Quitar de favoritos",
     "export": "Exportar",
     "import": "Importar",
     "close": "Cerrar",
@@ -83,9 +90,18 @@
     "missingCommitMessage": "Campo requerido faltante",
     "unknownError": "Error desconocido",
     "selectTwoVersions": "Por favor, seleccione exactamente 2 versiones para comparar",
-    "selectPromptFirst": "Por favor, seleccione primero una sugerencia"
+    "selectPromptFirst": "Por favor, seleccione primero una sugerencia",
+    "suggestTagsMissingContent": "Agregue contenido al prompt antes de solicitar sugerencias.",
+    "suggestTagsNoSuggestions": "No se encontraron sugerencias.",
+    "suggestTagsFailed": "No se pudieron obtener sugerencias de etiquetas.",
+    "bulkTagProvideAtLeastOne": "Proporcione al menos una etiqueta para agregar o eliminar.",
+    "bulkTagUpdateSuccess": "Etiquetas actualizadas para los prompts seleccionados.",
+    "bulkTagUpdateFailed": "No se pudieron actualizar las etiquetas."
   },
   "validation": {
+    "errorSummaryHeader": "Corrija los siguientes errores:",
+    "fieldValid": "Campo valido.",
+    "errorCleared": "Error corregido.",
     "required": "Este campo es obligatorio.",
     "titleRequired": "El campo 'Título del Prompt' no puede estar vacío.",
     "titleTooLong": "El título no puede exceder 200 caracteres.",
@@ -345,6 +361,8 @@
       "passwordMismatch": "Las contraseñas no coinciden",
       "registerButton": "Registrarse",
       "haveAccount": "¿Ya tiene una cuenta? Iniciar sesión",
+      "alreadyHaveAccount": "¿Ya tienes cuenta?",
+      "login": "Iniciar sesión",
       "success": "¡Registro exitoso!",
       "strengthWeak": "Contraseña débil",
       "strengthMedium": "Contraseña media",
@@ -513,6 +531,7 @@
     "name": "Nombre",
     "description": "Descripción",
     "color": "Color",
+    "pickColor": "Elegir un color",
     "order": "Orden",
     "usage": "Uso",
     "actions": "Acciones",
@@ -568,5 +587,41 @@
     "removeLabel": "Quitar etiquetas",
     "placeholder": "Etiquetas separadas por comas",
     "note": "Las etiquetas añadidas o eliminadas se aplicarán a todos los prompts seleccionados."
+  },
+  "accessibility": {
+    "navigateTo": "Navegar a {{item}}",
+    "labels": {
+      "home": "Inicio de PromptVault",
+      "pageNavigation": "Navegacion de pagina",
+      "primaryActions": "Acciones principales",
+      "primaryActionsMobile": "Acciones principales (movil)",
+      "openMenu": "Abrir menu",
+      "promptFiltersNavigation": "Filtros y navegacion de prompts",
+      "promptFiltersNavigationMobile": "Filtros y navegacion de prompts (movil)",
+      "closeSidebar": "Cerrar barra lateral",
+      "toggleSidebar": "Alternar barra lateral",
+      "adminPageNavigation": "Navegacion de pagina de administracion",
+      "adminPageNavigationMobile": "Navegacion de pagina de administracion (movil)",
+      "toggleMenu": "Alternar menu",
+      "togglePasswordVisibility": "Mostrar u ocultar contrasena"
+    },
+    "keyboardHelp": {
+      "title": "Atajos de teclado y puntos de referencia",
+      "ariaLabel": "Ayuda de atajos de teclado y puntos de referencia",
+      "shortcutsHeading": "Atajos de teclado disponibles:",
+      "landmarksHeading": "Puntos de referencia en esta página:",
+      "noLandmarks": "No se detectaron puntos de referencia en esta página.",
+      "shortcutHistory": "Abrir el historial de versiones del prompt seleccionado",
+      "shortcutNewPrompt": "Crear un nuevo prompt",
+      "shortcutEscape": "Cerrar diálogos y el editor abiertos",
+      "shortcutQuestion": "Abrir esta ayuda de atajos de teclado",
+      "shortcutArrows": "Mover el foco en las listas de filtros de categorías y etiquetas (y en la lista de historial de versiones)",
+      "shortcutActivate": "Activar el elemento enfocado",
+      "shortcutHomeEnd": "Saltar al primer y último elemento de la lista",
+      "shortcutCharacterKey": "Cualquier letra o carácter",
+      "shortcutCharacter": "Saltar al siguiente elemento que comience con ese carácter (incluidos caracteres CJK)",
+      "fallbackNoteHeading": "Nota:",
+      "fallbackNoteBody": "Algunos atajos solo están disponibles en la página principal de prompts."
+    }
   }
 }

@@ -63,6 +63,58 @@ from src.services.exceptions import RateLimitExceededError
 
 logger = logging.getLogger(__name__)
 
+_TRUE_VALUES = ("true", "1", "yes", "y", "on")
+_FALSE_VALUES = ("false", "0", "no", "n", "off")
+
+
+def _parse_bool_env(name: str) -> Optional[bool]:
+    """Parse an environment variable as a boolean.
+
+    Returns:
+        True/False when the variable is present and parseable, otherwise None.
+    """
+    raw = os.getenv(name)
+    if raw is None:
+        return None
+    value = raw.strip().lower()
+    if not value:
+        return None
+    if value in _TRUE_VALUES:
+        return True
+    if value in _FALSE_VALUES:
+        return False
+    return None
+
+
+def is_rate_limiting_disabled() -> bool:
+    """Decide whether rate limiting should be disabled.
+
+    Precedence:
+      1. `DISABLE_RATE_LIMITING` (explicit on/off)
+      2. `.env` / settings value (if present)
+      3. `ENVIRONMENT` in development/testing (implicit disable)
+
+    This keeps production safe by requiring an explicit opt-out.
+    """
+    explicit = _parse_bool_env("DISABLE_RATE_LIMITING")
+    if explicit is not None:
+        return explicit
+
+    # Support `.env` without requiring a separate dotenv loader: auth_settings
+    # reads from env_file=".env" (and is overridden by real env vars).
+    try:
+        if bool(getattr(auth_settings, "disable_rate_limiting", False)):
+            return True
+    except Exception:
+        # If settings initialization fails for any reason, fall back to env vars.
+        pass
+
+    env = os.getenv("ENVIRONMENT") or getattr(auth_settings, "environment", None)
+    if env and env.strip().lower() in ("development", "dev", "local", "testing", "test"):
+        return True
+
+    return False
+
 
 def get_rate_limit_key(request: Request) -> str:
     """Extract rate limit key from request.
@@ -160,12 +212,11 @@ def create_limiter() -> Limiter:
         >>> async def my_endpoint(request: Request):
         >>>     return {"status": "ok"}
     """
-    # Check if rate limiting is disabled (development mode)
-    disable_rate_limiting = os.getenv("DISABLE_RATE_LIMITING", "").lower() in ("true", "1", "yes")
-    
-    if disable_rate_limiting:
+    if is_rate_limiting_disabled():
         logger.warning(
-            "⚠️  RATE LIMITING IS DISABLED (DISABLE_RATE_LIMITING=true). "
+            "⚠️  RATE LIMITING IS DISABLED "
+            f"(DISABLE_RATE_LIMITING={os.getenv('DISABLE_RATE_LIMITING')!r}, "
+            f"ENVIRONMENT={os.getenv('ENVIRONMENT')!r}). "
             "This is only safe for development environments. "
             "Do NOT use in production!"
         )
@@ -220,7 +271,7 @@ class DynamicLimiter:
     
     def _is_disabled(self) -> bool:
         """Check if rate limiting is disabled."""
-        return os.getenv("DISABLE_RATE_LIMITING", "").lower() in ("true", "1", "yes")
+        return is_rate_limiting_disabled()
     
     def limit(self, limit_string: str):
         """Decorator for rate limiting that respects DISABLE_RATE_LIMITING.

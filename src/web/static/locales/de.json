@@ -2,6 +2,7 @@
   "nav": {
     "newPrompt": "Neuer Prompt",
     "prompts": "Prompts",
+    "myPrompts": "Meine Prompts",
     "categories": "Kategorien",
     "allCategories": "Alle Kategorien",
     "tags": "Tags",
@@ -19,17 +20,23 @@
     "profile": "Profil",
     "admin": "Verwaltung",
     "logout": "Abmelden",
-    "backToMain": "Zurück zum Hauptmenü"
+    "backToMain": "Zurück zum Hauptmenü",
+    "skipToMainContent": "Zum Hauptinhalten springen",
+    "home": "Startseite"
   },
   "actions": {
     "add": "Hinzufügen",
+    "remove": "Entfernen",
     "view": "Anzeigen",
     "edit": "Bearbeiten",
     "delete": "Löschen",
     "save": "Speichern",
     "cancel": "Abbrechen",
+    "confirm": "Bestaetigen",
     "copy": "Kopieren",
     "favorite": "Favorit",
+    "addFavorite": "Zu Favoriten hinzufugen",
+    "removeFavorite": "Aus Favoriten entfernen",
     "export": "Exportieren",
     "import": "Importieren",
     "close": "Schließen",
@@ -83,9 +90,18 @@
     "missingCommitMessage": "Erforderliches Feld fehlt",
     "unknownError": "Unbekannter Fehler",
     "selectTwoVersions": "Bitte wählen Sie genau 2 Versionen zum Vergleichen aus",
-    "selectPromptFirst": "Bitte wählen Sie zunächst eine Eingabeaufforderung aus"
+    "selectPromptFirst": "Bitte wählen Sie zunächst eine Eingabeaufforderung aus",
+    "suggestTagsMissingContent": "Fügen Sie Prompt-Inhalt hinzu, bevor Sie Vorschläge anfordern.",
+    "suggestTagsNoSuggestions": "Keine Vorschläge gefunden.",
+    "suggestTagsFailed": "Tag-Vorschläge konnten nicht abgerufen werden.",
+    "bulkTagProvideAtLeastOne": "Geben Sie mindestens einen Tag zum Hinzufügen oder Entfernen an.",
+    "bulkTagUpdateSuccess": "Tags für die ausgewählten Prompts aktualisiert.",
+    "bulkTagUpdateFailed": "Tags konnten nicht aktualisiert werden."
   },
   "validation": {
+    "errorSummaryHeader": "Bitte korrigieren Sie die folgenden Fehler:",
+    "fieldValid": "Feld ist gueltig.",
+    "errorCleared": "Fehler behoben.",
     "required": "Dieses Feld ist erforderlich.",
     "titleRequired": "Das Feld 'Prompt-Titel' darf nicht leer sein.",
     "titleTooLong": "Der Titel darf 200 Zeichen nicht überschreiten.",
@@ -345,6 +361,8 @@
       "passwordMismatch": "Passwörter stimmen nicht überein",
       "registerButton": "Registrieren",
       "haveAccount": "Haben Sie bereits ein Konto? Anmelden",
+      "alreadyHaveAccount": "Haben Sie bereits ein Konto?",
+      "login": "Anmelden",
       "success": "Registrierung erfolgreich!",
       "strengthWeak": "Schwaches Passwort",
       "strengthMedium": "Mittleres Passwort",
@@ -513,6 +531,7 @@
     "name": "Name",
     "description": "Beschreibung",
     "color": "Farbe",
+    "pickColor": "Farbe auswählen",
     "order": "Reihenfolge",
     "usage": "Verwendung",
     "actions": "Aktionen",
@@ -568,5 +587,41 @@
     "removeLabel": "Tags entfernen",
     "placeholder": "Kommagetrennte Tags",
     "note": "Hinzugefügte oder entfernte Tags gelten für alle ausgewählten Prompts."
+  },
+  "accessibility": {
+    "navigateTo": "Wechsel zu {{item}}",
+    "labels": {
+      "home": "PromptVault Startseite",
+      "pageNavigation": "Seitennavigation",
+      "primaryActions": "Hauptaktionen",
+      "primaryActionsMobile": "Hauptaktionen (mobil)",
+      "openMenu": "Menü öffnen",
+      "promptFiltersNavigation": "Prompt-Filter und Navigation",
+      "promptFiltersNavigationMobile": "Prompt-Filter und Navigation (mobil)",
+      "closeSidebar": "Seitenleiste schließen",
+      "toggleSidebar": "Seitenleiste umschalten",
+      "adminPageNavigation": "Admin-Seitennavigation",
+      "adminPageNavigationMobile": "Admin-Seitennavigation (mobil)",
+      "toggleMenu": "Menü umschalten",
+      "togglePasswordVisibility": "Passwortsichtbarkeit umschalten"
+    },
+    "keyboardHelp": {
+      "title": "Tastaturkurzbefehle und Landmarken",
+      "ariaLabel": "Hilfe zu Tastaturkurzbefehlen und Landmarken",
+      "shortcutsHeading": "Verfügbare Tastaturkurzbefehle:",
+      "landmarksHeading": "Landmarken auf dieser Seite:",
+      "noLandmarks": "Keine Landmarken auf dieser Seite erkannt.",
+      "shortcutHistory": "Versionsverlauf für den ausgewählten Prompt öffnen",
+      "shortcutNewPrompt": "Neuen Prompt erstellen",
+      "shortcutEscape": "Offene Dialoge und Editor schließen",
+      "shortcutQuestion": "Diese Hilfe zu Tastaturkurzbefehlen offnen",
+      "shortcutArrows": "Fokus in Kategorien- und Tag-Filterlisten bewegen (und in der Versionsverlaufsliste)",
+      "shortcutActivate": "Fokussiertes Element aktivieren",
+      "shortcutHomeEnd": "Zum ersten und letzten Element in der Liste springen",
+      "shortcutCharacterKey": "Jeder Buchstabe oder Zeichen",
+      "shortcutCharacter": "Zum nächsten Element springen, das mit diesem Zeichen beginnt (einschließlich CJK-Zeichen)",
+      "fallbackNoteHeading": "Hinweis:",
+      "fallbackNoteBody": "Einige Kurzbefehle sind nur auf der Hauptseite der Prompts verfügbar."
+    }
   }
 }

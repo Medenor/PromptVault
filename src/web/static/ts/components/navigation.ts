@@ -176,7 +176,7 @@ function createNavItem(item: NavItemProps): HTMLElement {
   const baseClasses = 'px-3 py-2 text-sm font-medium rounded-md transition-colors duration-200';
 
   // Active/inactive states
-  const stateClasses = item.active ? 'bg-blue-500 text-white' : 'text-gray-900 hover:bg-gray-100';
+  const stateClasses = item.active ? 'bg-blue-700 text-white' : 'text-gray-900 hover:bg-gray-100';
 
   // Disabled state
   const disabledClasses = item.disabled ? 'opacity-50 cursor-not-allowed pointer-events-none' : '';

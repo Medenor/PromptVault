@@ -1,3 +1,8 @@
+// -----------------------------------------------------------------------------
+// LEGACY JAVASCRIPT (HISTORICAL REFERENCE ONLY)
+// This file remains only for historical reference and should not be edited for
+// new work. Make changes in the TypeScript sources under src/web/static/ts.
+// -----------------------------------------------------------------------------
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
@@ -157,11 +162,46 @@ function updateFilename(format) {
 
 function handleFileSelection(event) {
   const file = event.target.files[0];
+  const errorElement = document.getElementById('import-file-error');
+
+  // Clear previous error messages
+  if (errorElement) {
+    errorElement.textContent = '';
+  }
+
   if (file) {
+    // Validate file type
+    const allowedExtensions = ['.csv', '.json', '.md', '.markdown'];
+    const fileName = file.name.toLowerCase();
+    const fileExtension = fileName.substring(fileName.lastIndexOf('.'));
+    const isValidType = allowedExtensions.some((ext) => fileName.endsWith(ext));
+
+    if (!isValidType) {
+      const errorMsg = 'File format not supported. Please use CSV, JSON, or Markdown files.';
+      if (errorElement) {
+        errorElement.textContent = errorMsg;
+      }
+      // Reset file input
+      event.target.value = '';
+      return;
+    }
+
+    // Validate file size (10MB limit)
+    const maxSizeBytes = 10 * 1024 * 1024;
+    if (file.size > maxSizeBytes) {
+      const errorMsg = 'File is too large. Maximum size is 10MB.';
+      if (errorElement) {
+        errorElement.textContent = errorMsg;
+      }
+      // Reset file input
+      event.target.value = '';
+      return;
+    }
+
     // Update filename input if empty
     const filenameInput = document.getElementById('export-filename');
     if (!filenameInput.value) {
-      filenameInput.value = file.name.replace(/\.(csv|md|json)$/, '');
+      filenameInput.value = file.name.replace(/\.(csv|json|md|markdown)$/, '');
     }
   }
 }
@@ -432,9 +472,37 @@ async function performExport() {
 async function performImport() {
   const fileInput = document.getElementById('import-file');
   const file = fileInput.files[0];
+  const errorElement = document.getElementById('import-file-error');
+
+  // Clear previous error messages
+  if (errorElement) {
+    errorElement.textContent = '';
+  }
 
   if (!file) {
     alert(i18next.t('importExport.noFileSelected'));
+    return;
+  }
+
+  // Re-validate file before import (in case conditions changed)
+  const allowedExtensions = ['.csv', '.json', '.md', '.markdown'];
+  const fileName = file.name.toLowerCase();
+  const isValidType = allowedExtensions.some((ext) => fileName.endsWith(ext));
+
+  if (!isValidType) {
+    const errorMsg = 'File format not supported. Please use CSV, JSON, or Markdown files.';
+    if (errorElement) {
+      errorElement.textContent = errorMsg;
+    }
+    return;
+  }
+
+  const maxSizeBytes = 10 * 1024 * 1024;
+  if (file.size > maxSizeBytes) {
+    const errorMsg = 'File is too large. Maximum size is 10MB.';
+    if (errorElement) {
+      errorElement.textContent = errorMsg;
+    }
     return;
   }
 
@@ -466,7 +534,18 @@ async function performImport() {
       // Clear file input
       fileInput.value = '';
     } else {
-      showStatus('import', result.error || 'importFailed', 'error');
+      // Display specific error message in both the error element and status
+      let errorMsg = result.error || 'importFailed';
+
+      // Handle common validation errors
+      if (errorMsg.includes('format') || errorMsg.includes('invalid')) {
+        errorMsg = 'File validation failed. Please check the format.';
+      }
+
+      if (errorElement) {
+        errorElement.textContent = errorMsg;
+      }
+      showStatus('import', errorMsg, 'error');
     }
   } catch (error) {
     reportImportExportIssue('performImport', error, {
@@ -474,6 +553,11 @@ async function performImport() {
       validate,
       filename: file.name,
     });
+
+    const errorMsg = 'File validation failed. Please check the format.';
+    if (errorElement) {
+      errorElement.textContent = errorMsg;
+    }
     showStatus('import', 'importFailed', 'error');
   } finally {
     hideProgress('import');

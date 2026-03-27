@@ -203,6 +203,39 @@ async def profile_page(
     )
 
 
+@router.get("/profile", response_class=HTMLResponse)
+async def profile_page_alias(
+    request: Request,
+    user: User = Depends(get_current_active_user)
+):
+    """Alias route for user profile page.
+
+    Provides access to profile page at /profile as an alternative to /auth/profile.
+    This is primarily for convenience and accessibility testing.
+
+    Args:
+        request: FastAPI request object (injected)
+        user: Authenticated active user (injected)
+
+    Returns:
+        HTMLResponse: Rendered profile.html template
+
+    Raises:
+        HTTPException: 401 if not authenticated or account inactive
+
+    Template:
+        src/web/templates/auth/profile.html
+
+    Template Context:
+        - request: FastAPI request object
+        - user: User model instance with profile data
+    """
+    return templates.TemplateResponse(
+        "auth/profile.html",
+        {"request": request, "user": user}
+    )
+
+
 # ============================================================================
 # Tag/Category Management Pages (Protected)
 # ============================================================================

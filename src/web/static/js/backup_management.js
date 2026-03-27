@@ -1,3 +1,8 @@
+// -----------------------------------------------------------------------------
+// LEGACY JAVASCRIPT (HISTORICAL REFERENCE ONLY)
+// This file remains only for historical reference and should not be edited for
+// new work. Make changes in the TypeScript sources under src/web/static/ts.
+// -----------------------------------------------------------------------------
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */

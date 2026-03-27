@@ -17,7 +17,7 @@ These tests verify the user interface and user experience of the authentication 
 
 ## Prerequisites
 
-- Python 3.11+
+- Python 3.14+
 - Node.js 18+ (for Playwright)
 - PromptVault server running on http://127.0.0.1:8003
 - SQLAlchemy/PostgreSQL or SQLite database
@@ -288,7 +288,7 @@ BASE_URL=http://127.0.0.1:8004 npm run test:ui
 
 ## CI/CD Integration
 
-### GitHub Actions
+### Forgejo Actions
 
 ```yaml
 name: AUTH-UI Tests
@@ -305,7 +305,7 @@ jobs:
           node-version: '18'
       - uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: '3.14'
 
       - name: Install dependencies
         run: npm install && npx playwright install

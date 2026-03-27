@@ -3,20 +3,24 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import { defineConfig, devices } from '@playwright/test';
+import dotenv from 'dotenv';
 
 /**
  * Read environment variables from file.
  * https://github.com/motdotla/dotenv
  */
-// require('dotenv').config();
+dotenv.config();
 
 /**
- * Playwright configuration for PromptVault AUTH-UI tests
+ * Playwright configuration for PromptVault accessibility and UI tests
  * See https://playwright.dev/docs/test-configuration.
+ *
+ * Supports both automated accessibility testing (axe-core + custom utilities)
+ * and manual UI/authentication testing.
  */
 export default defineConfig({
-  testDir: './scripts',
-  testMatch: '**/playwright_auth_ui_tests.ts',
+  testDir: './tests/accessibility',
+  testMatch: '**/*.spec.ts',
 
   /* Run tests in files in parallel */
   fullyParallel: true,
@@ -41,7 +45,7 @@ export default defineConfig({
   /* Shared settings for all the projects below */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: 'http://127.0.0.1:8003',
+    baseURL: process.env.ACCESSIBILITY_BASE_URL ?? 'http://127.0.0.1:8003',
 
     /* Collect trace when retrying the failed test. */
     trace: 'on-first-retry',
@@ -51,6 +55,9 @@ export default defineConfig({
 
     /* Video on failure */
     video: 'retain-on-failure',
+
+    /* Headless mode for debugging - set HEADED=1 to run in headed mode */
+    headless: !process.env.HEADED,
   },
 
   /* Configure projects for major browsers */
@@ -83,15 +90,19 @@ export default defineConfig({
   ],
 
   /* Run your local dev server before starting the tests */
-  webServer: {
-    command: 'python run_web.py',
-    url: 'http://127.0.0.1:8003',
-    reuseExistingServer: !process.env.CI,
-    timeout: 120 * 1000,
-  },
+  ...(process.env.ACCESSIBILITY_EXTERNAL_SERVER
+    ? {}
+    : {
+        webServer: {
+          command: 'UVICORN_RELOAD=false python3 run_web.py',
+          url: process.env.ACCESSIBILITY_BASE_URL ?? 'http://127.0.0.1:8003',
+          reuseExistingServer: !process.env.CI,
+          timeout: 120 * 1000,
+        },
+      }),
 
-  /* Global timeout */
-  timeout: 30 * 1000,
+  /* Global timeout - 60s for accessibility tests that may need extra time */
+  timeout: 60 * 1000,
 
   /* Global test timeout */
   expect: {

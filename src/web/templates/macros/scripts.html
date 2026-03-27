@@ -15,6 +15,7 @@ Vite dev server #}
 {% if include_telemetry %}
 <script type="module" src="http://localhost:5173/static/ts/telemetry.ts"></script>
 {% endif %}
+<script type="module" src="http://localhost:5173/static/ts/global-shortcuts.ts"></script>
 <script type="module" src="http://localhost:5173/static/ts/{{ entry_name }}.ts"></script>
 {% else %} {# Production mode - load built files #} {% set manifest = load_manifest() %} {% if
 (use_vite_assets() or is_production()) and use_vite and include_telemetry and 'ts/telemetry.ts' in
@@ -24,6 +25,9 @@ manifest %}
 <script src="/static/js/telemetry.js" defer></script>
 {% endif %} {% if (use_vite_assets() or is_production()) and use_vite and 'ts/' + entry_name + '.ts'
 in manifest %}
+{% if (use_vite_assets() or is_production()) and use_vite and 'ts/global-shortcuts.ts' in manifest %}
+<script type="module" src="/static/dist/{{ manifest['ts/global-shortcuts.ts']['file'] }}"></script>
+{% endif %}
 <script
   type="module"
   src="/static/dist/{{ manifest['ts/' + entry_name + '.ts']['file'] }}"

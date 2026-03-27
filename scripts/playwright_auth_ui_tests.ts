@@ -15,7 +15,6 @@ import { test, expect, Page } from '@playwright/test';
 // Test configuration
 const BASE_URL = 'http://127.0.0.1:8003';
 const TEST_ADMIN_USERNAME = 'test_admin_ui';
-const TEST_ADMIN_EMAIL = 'test_admin_ui@example.com';
 const TEST_ADMIN_PASSWORD = 'TestAdmin@Pass123456';
 const TEST_USER_USERNAME = 'test_user_ui';
 const TEST_USER_EMAIL = 'test_user_ui@example.com';
@@ -165,7 +164,7 @@ test('AUTH-UI-004: Login form shows error for empty fields', async ({ page }) =>
   }
 
   // Still on login page
-  expect(page.url()).toContain('/login') || expect(page.url()).toContain('/auth');
+  expect(page.url()).toMatch(/\/(auth\/login|login|auth)\b/);
 });
 
 /**

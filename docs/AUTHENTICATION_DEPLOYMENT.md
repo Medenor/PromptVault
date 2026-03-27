@@ -21,7 +21,7 @@ This guide covers the deployment and initial setup of PromptVault's authenticati
 
 ### System Requirements
 
-- **Python**: 3.11 or higher
+- **Python**: 3.14 or higher
 - **PostgreSQL**: 14 or higher (recommended for production)
   - SQLite 3.35+ (acceptable for development/testing)
 - **Redis**: 6.2 or higher (required for rate limiting)
@@ -745,7 +745,7 @@ tail -f logs/promptvault.log
 2. Review configuration in `.env`
 3. Verify all prerequisites are met
 4. Consult API documentation at `/docs`
-5. Check GitHub issues for similar problems
+5. Check Codeberg issues for similar problems
 
 ---
 

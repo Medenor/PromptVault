@@ -1,0 +1,265 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+# Example codeberg Actions workflow for running accessibility tests
+# Copy this to .forgejo/workflows/accessibility-tests.yml to enable CI/CD
+
+name: Accessibility Tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+jobs:
+  accessibility:
+    name: Run Accessibility Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium]
+        # Uncomment to test multiple browsers
+        # browser: [chromium, firefox, webkit]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps ${{ matrix.browser }}
+
+      - name: Start application server
+        run: |
+          UVICORN_RELOAD=false python3 run_web.py &
+          sleep 10
+          curl -f http://127.0.0.1:8003 || exit 1
+        timeout-minutes: 2
+
+      - name: Run accessibility tests
+        run: npx playwright test --project=${{ matrix.browser }}
+        env:
+          ACCESSIBILITY_BASE_URL: http://127.0.0.1:8003
+          CI: true
+
+      - name: Generate accessibility report
+        if: always()
+        run: npm run test:ui:accessibility:report || true
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: accessibility-report-${{ matrix.browser }}
+          path: |
+            playwright-report/
+            accessibility-report/
+            test-results/
+          retention-days: 30
+
+      - name: Comment PR with results
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            // Try to read summary
+            const summaryPath = 'accessibility-report/summary.json';
+            let summary = null;
+
+            if (fs.existsSync(summaryPath)) {
+              summary = JSON.parse(fs.readFileSync(summaryPath, 'utf-8'));
+            }
+
+            let comment = '## Accessibility Test Results\n\n';
+
+            if (summary) {
+              const { stats } = summary;
+              comment += `| Metric | Value |\n`;
+              comment += `|--------|-------|\n`;
+              comment += `| Passed | ${stats.passed} |\n`;
+              comment += `| Failed | ${stats.failed} |\n`;
+              comment += `| Skipped | ${stats.skipped} |\n`;
+              comment += `| Pass Rate | ${stats.passRate?.toFixed(1) || 'N/A'}% |\n\n`;
+
+              if (stats.failed > 0) {
+                comment += '⚠️ Some tests failed. Check the full report for details.\n\n';
+              } else {
+                comment += '✅ All tests passed!\n\n';
+              }
+            } else {
+              comment += 'No summary available. Check artifacts for full results.\n\n';
+            }
+
+            comment += `[View Full Report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+      - name: Fail if tests failed
+        if: failure()
+        run: |
+          echo "Accessibility tests failed!"
+          exit 1
+
+  # Optional: Notify on failure
+  notify-failure:
+    name: Notify on Failure
+    runs-on: ubuntu-latest
+    if: failure() && github.event_name == 'push'
+    needs: accessibility
+
+    steps:
+      - name: Notify Slack (optional)
+        uses: slackapi/slack-github-action@v1
+        with:
+          webhook-url: ${{ secrets.SLACK_WEBHOOK }}
+          payload: |
+            {
+              "text": "Accessibility tests failed on ${{ github.ref }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Accessibility Tests Failed*\n${{ github.repository }}\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>"
+                  }
+                }
+              ]
+            }
+        if: always()
+
+# Alternative: Run tests on schedule and create report issue
+  scheduled-report:
+    name: Generate Scheduled Report
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Start application server
+        run: |
+          UVICORN_RELOAD=false python3 run_web.py &
+          sleep 10
+          curl -f http://127.0.0.1:8003 || exit 1
+        timeout-minutes: 2
+
+      - name: Run all accessibility tests
+        run: npm run test:ui:accessibility:all
+        env:
+          ACCESSIBILITY_BASE_URL: http://127.0.0.1:8003
+          CI: true
+
+      - name: Create report issue
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const { exec } = require('child_process');
+
+            // Try to read summary
+            const summaryPath = 'accessibility-report/summary.json';
+            let summary = null;
+
+            if (fs.existsSync(summaryPath)) {
+              summary = JSON.parse(fs.readFileSync(summaryPath, 'utf-8'));
+            }
+
+            let body = '# Daily Accessibility Test Report\n\n';
+            body += `Generated: ${new Date().toLocaleString()}\n\n`;
+
+            if (summary) {
+              const { stats } = summary;
+              body += `## Summary\n\n`;
+              body += `| Metric | Value |\n`;
+              body += `|--------|-------|\n`;
+              body += `| Passed | ${stats.passed} |\n`;
+              body += `| Failed | ${stats.failed} |\n`;
+              body += `| Skipped | ${stats.skipped} |\n`;
+              body += `| Pass Rate | ${stats.passRate?.toFixed(1) || 'N/A'}% |\n\n`;
+            }
+
+            body += `[View Artifacts](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})`;
+
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Daily Accessibility Report - ${new Date().toLocaleDateString()}`,
+              body: body,
+              labels: ['accessibility', 'automated']
+            });
+
+# Manual trigger workflow
+  manual-test:
+    name: Manual Accessibility Test Run
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Run tests
+        run: npm run test:ui:accessibility:all
+        env:
+          ACCESSIBILITY_BASE_URL: http://127.0.0.1:8003
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: manual-test-results
+          path: |
+            playwright-report/
+            accessibility-report/
+            test-results/
+          retention-days: 90

@@ -6,6 +6,7 @@
 
 import type { ModalProps } from './types';
 import { createButton } from './button';
+import { createFocusTrap } from '@/utils/keyboard-nav';
 
 /**
  * Creates a modal dialog with overlay
@@ -22,7 +23,11 @@ export function createModal(props: ModalProps): {
   modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/50 hidden';
   modal.setAttribute('role', 'dialog');
   modal.setAttribute('aria-modal', 'true');
-  if (props.ariaLabel) modal.setAttribute('aria-label', props.ariaLabel);
+  const dialogId = props.id || `pv-modal-${Math.random().toString(36).slice(2, 10)}`;
+  modal.id = dialogId;
+  if (props.ariaLabel) {
+    modal.setAttribute('aria-label', props.ariaLabel);
+  }
 
   // Modal card container
   const modalContent = document.createElement('div');
@@ -34,24 +39,31 @@ export function createModal(props: ModalProps): {
     `${baseClasses} ${sizeClasses} ${paddingClasses} ${props.className || ''}`.trim();
 
   // Header with title and close button
+  const titleId = `${dialogId}-title`;
+  const descriptionId = `${dialogId}-description`;
+
   if (props.title) {
     const header = document.createElement('div');
     header.className = 'flex items-center justify-between mb-4';
 
     const title = document.createElement('h2');
+    title.id = titleId;
     title.textContent = props.title;
     title.className = 'text-xl font-bold text-gray-900';
     header.appendChild(title);
+    if (!props.ariaLabel) {
+      modal.setAttribute('aria-labelledby', titleId);
+    }
 
-    // Close button (X) in top-right
+    // Close button (X) in top-right (user-initiated dismissal → fromAction=false)
     if (props.showClose !== false && (props.closable === undefined || props.closable)) {
       const closeBtn = document.createElement('button');
       closeBtn.innerHTML = '&times;';
       closeBtn.className =
-        'text-gray-400 hover:text-gray-600 text-3xl leading-none transition-colors duration-200';
+        'text-gray-400 hover:text-gray-600 text-3xl leading-none transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded';
       closeBtn.setAttribute('aria-label', 'Close modal');
       closeBtn.addEventListener('click', () => {
-        close();
+        close(false);
       });
       header.appendChild(closeBtn);
     }
@@ -61,6 +73,7 @@ export function createModal(props: ModalProps): {
 
   // Body content
   const body = document.createElement('div');
+  body.id = descriptionId;
   body.className = 'mb-6';
   if (typeof props.content === 'string') {
     body.innerHTML = props.content;
@@ -68,6 +81,7 @@ export function createModal(props: ModalProps): {
     body.appendChild(props.content);
   }
   modalContent.appendChild(body);
+  modal.setAttribute('aria-describedby', descriptionId);
 
   // Actions footer (buttons)
   if (props.actions && props.actions.length > 0) {
@@ -78,6 +92,9 @@ export function createModal(props: ModalProps): {
       const button = createButton(action.label, {
         variant: action.variant || 'secondary',
         onClick: () => {
+          // Pass fromAction=true so that close() does not invoke onClose.
+          // The action's own onClick is responsible for resolving the promise.
+          close(true);
           action.onClick();
         },
       });
@@ -89,76 +106,90 @@ export function createModal(props: ModalProps): {
 
   modal.appendChild(modalContent);
 
-  // Close on backdrop click
+  // Close on backdrop click (user-initiated dismissal → fromAction=false)
   if (props.closeOnBackdrop !== false) {
     modal.addEventListener('click', (e) => {
       if (e.target === modal) {
-        close();
+        close(false);
       }
     });
   }
 
-  // Close on ESC key
-  const escapeHandler = (e: KeyboardEvent) => {
-    if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
-      if (props.closeOnEscape !== false) {
-        close();
-      }
-    }
-  };
-
-  // Focus trap elements
-  const focusableElements =
-    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
-  let firstFocusable: HTMLElement | null = null;
-  let lastFocusable: HTMLElement | null = null;
+  // Focus trap state
+  let focusTrap: ReturnType<typeof createFocusTrap> | null = null;
+  let escapeHandler: ((e: KeyboardEvent) => void) | null = null;
+  let previouslyFocused: HTMLElement | null = null;
+  // Tracks whether the modal was closed via an action button click.
+  // When true, subsequent close() calls (e.g. from dialogs.ts action onClick
+  // calling modal.close() after the wrapper already called close(true)) must
+  // not invoke onClose, which would incorrectly resolve the promise as cancelled.
+  let closedByAction = false;
 
   const open = () => {
-    modal.classList.remove('hidden');
-    document.addEventListener('keydown', escapeHandler);
+    // Store reference to currently focused element before opening modal
+    previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
 
-    // Set up focus trap
-    const focusables = modalContent.querySelectorAll<HTMLElement>(focusableElements);
-    if (focusables.length > 0) {
-      firstFocusable = focusables[0] || null;
-      lastFocusable = focusables[focusables.length - 1] || null;
-      if (firstFocusable) {
-        firstFocusable.focus();
-      }
+    // Show modal
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+
+    // Set up escape key handler if enabled
+    if (props.closeOnEscape !== false) {
+      escapeHandler = (e: KeyboardEvent) => {
+        if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+          e.preventDefault();
+          close(false);
+        }
+      };
+      document.addEventListener('keydown', escapeHandler);
     }
 
-    // Trap focus within modal
-    document.addEventListener('keydown', trapFocus);
+    // Create and activate focus trap
+    // The trap will manage Tab/Shift+Tab cycling within the modal
+    // but the modal itself manages focus restoration (not the trap)
+    focusTrap = createFocusTrap(modalContent, { manageFocus: false });
+    focusTrap.activate();
   };
 
-  const close = () => {
+  const close = (fromAction = false) => {
+    // If this close was triggered by an action button, record it so that any
+    // subsequent close() call (e.g. from dialogs.ts action onClick calling
+    // modal.close() after the wrapper already ran close(true)) does not invoke
+    // onClose and incorrectly resolve the promise as cancelled.
+    if (fromAction) {
+      closedByAction = true;
+    }
+
+    // Deactivate focus trap
+    if (focusTrap) {
+      focusTrap.deactivate();
+      focusTrap = null;
+    }
+
+    // Remove escape key handler
+    if (escapeHandler) {
+      document.removeEventListener('keydown', escapeHandler);
+      escapeHandler = null;
+    }
+
+    // Hide modal
     modal.classList.add('hidden');
-    document.removeEventListener('keydown', escapeHandler);
-    document.removeEventListener('keydown', trapFocus);
-    if (props.onClose) {
+    document.body.style.overflow = '';
+
+    // Restore focus to previously focused element
+    if (previouslyFocused && previouslyFocused.isConnected) {
+      previouslyFocused.focus();
+    }
+
+    // Only call onClose for user-initiated dismissals (ESC, backdrop, X button).
+    // Action buttons (Confirm / Cancel) handle their own promise resolution and
+    // must NOT trigger onClose, which would resolve the promise as a cancellation.
+    // closedByAction guards against dialogs.ts calling modal.close() inside the
+    // action onClick after the wrapper has already called close(true).
+    if (!closedByAction && props.onClose) {
       props.onClose();
     }
   };
-
-  const trapFocus = (e: KeyboardEvent) => {
-    if (e.key !== 'Tab') return;
-
-    if (e.shiftKey) {
-      // Shift + Tab
-      if (document.activeElement === firstFocusable && lastFocusable) {
-        e.preventDefault();
-        lastFocusable.focus();
-      }
-    } else {
-      // Tab
-      if (document.activeElement === lastFocusable && firstFocusable) {
-        e.preventDefault();
-        firstFocusable.focus();
-      }
-    }
-  };
-
-  if (props.id) modal.id = props.id;
 
   return {
     element: modal,

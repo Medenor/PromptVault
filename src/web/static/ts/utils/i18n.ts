@@ -24,7 +24,8 @@ export function updateStaticTranslations(): void {
     if (!key) return;
 
     if (key.includes('[') && key.includes(']')) {
-      const match = key.match(/\[(\w+)\](.+)/);
+      // Support attribute names containing dashes, e.g. `[aria-label]actions.close`.
+      const match = key.match(/\[([^\]]+)\](.+)/);
       if (match) {
         const [, attribute, translationKey] = match;
         if (!translationKey) {
@@ -32,7 +33,7 @@ export function updateStaticTranslations(): void {
         }
         const translation = tUnsafe(translationKey);
         if (translation && attribute) {
-          element.setAttribute(attribute, translation);
+          element.setAttribute(attribute.trim(), translation);
         }
       }
     } else {

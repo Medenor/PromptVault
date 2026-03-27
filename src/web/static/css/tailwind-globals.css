@@ -124,13 +124,24 @@
 
   /* Link styling defaults */
   a {
-    color: #3b82f6;
+    color: #1e3a8a;
     text-decoration: none;
     transition: color 200ms;
   }
 
   a:hover {
-    color: #2563eb;
+    color: #1e40af;
+  }
+
+  /* Don't rely on color alone to indicate links in main content. */
+  main a:not(.no-underline) {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.15em;
+  }
+
+  main a:not(.no-underline):hover {
+    text-decoration-thickness: 2px;
   }
 
   /* Form input base styles */
@@ -147,42 +158,112 @@
     cursor: pointer;
   }
 
-  /* Allow default focus styles from browser and Tailwind utilities to work */
-  *:focus-visible {
-    outline: 2px solid #3b82f6;
-    outline-offset: 2px;
-  }
+  /* Keyboard Navigation and Focus Indicators */
+  /* Enhanced visible focus indicators for WCAG 2.1 AA compliance */
+  /* 3px solid outline with 2px offset for high contrast and visibility */
+  /* Comprehensive coverage of all interactive elements */
 
-  /* Enhanced keyboard focus states for accessibility (WCAG AA compliant) */
-  /* Remove default outline when using custom focus rings */
-  button:focus,
-  a:focus,
-  input:focus,
-  textarea:focus,
-  select:focus {
-    outline: none;
-  }
-
-  /* Apply visible focus rings for keyboard navigation only */
+  /* Apply visible focus indicators for keyboard navigation only */
+  /* 3px solid blue outline with 2px offset for high contrast on all backgrounds */
+  /* Provides 3:1+ contrast on blue, gray, and white backgrounds (WCAG 2.1 AA) */
   button:focus-visible,
   a:focus-visible,
   input:focus-visible,
+  select:focus-visible,
   textarea:focus-visible,
-  select:focus-visible {
-    outline: 2px solid #3b82f6;
+  [tabindex]:focus-visible,
+  th:focus-visible,
+  tr:focus-visible,
+  [role="button"]:focus-visible,
+  [role="link"]:focus-visible,
+  [role="menuitem"]:focus-visible,
+  [role="tab"]:focus-visible,
+  [role="checkbox"]:focus-visible,
+  [role="radio"]:focus-visible,
+  [role="option"]:focus-visible {
+    outline: 3px solid #4A90E2;
     outline-offset: 2px;
+  }
+
+  /* Fallback for older/webkit browsers that don't reliably fire :focus-visible */
+  button:focus,
+  a:focus,
+  input:focus,
+  select:focus,
+  textarea:focus,
+  [tabindex]:focus {
+    outline: 3px solid #4A90E2;
+    outline-offset: 2px;
+  }
+
+  /* Respect user preference for reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }
 
 /* Validation state classes (migrated from validation.css) */
 @layer components {
+  /* Screen reader only utility class */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+
+  /* Ensure red error text has high contrast for WCAG AA compliance (4.5:1) */
+  .text-red-500 {
+    color: #b91c1c !important; /* red-700 for high contrast on light backgrounds */
+  }
+
+  /* Ensure yellow/amber warning text has high contrast for WCAG AA compliance */
+  .text-yellow-700 {
+    color: #854d0e !important; /* amber-800 for high contrast on light backgrounds */
+  }
+
+  .skip-link {
+    position: absolute;
+    top: 0.75rem;
+    left: 0.75rem;
+    z-index: 10000;
+    background: #1e3a8a;
+    color: #ffffff;
+    padding: 0.5rem 0.75rem;
+    text-decoration: none;
+    font-weight: 600;
+    border-radius: 0.375rem;
+    white-space: nowrap;
+    display: block;
+    clip-path: inset(100%);
+  }
+
+  .skip-link:focus,
+  .skip-link:focus-visible {
+    clip-path: unset;
+    outline: 3px solid #4A90E2;
+    outline-offset: 2px;
+  }
+
   /* Focus ring utility classes for keyboard accessibility */
   .focus-ring {
-    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2;
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2;
   }
 
   .focus-ring-compact {
-    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1;
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-1;
   }
 
   .focus-ring-danger {
@@ -194,58 +275,61 @@
   }
 
   /* Field validation states */
+  /* Using darker colors for 3:1+ contrast on all backgrounds (WCAG 2.1 AA) */
   .field-valid {
-    border-color: #22c55e;
-    box-shadow: 0 0 0 0.2rem rgba(34, 197, 94, 0.25);
+    border-color: #15803d;
+    box-shadow: 0 0 0 0.2rem rgba(21, 128, 61, 0.25);
   }
 
   .field-valid:focus {
-    border-color: #22c55e;
-    box-shadow: 0 0 0 0.3rem rgba(34, 197, 94, 0.35);
-    outline: 2px solid #22c55e;
+    border-color: #15803d;
+    box-shadow: 0 0 0 0.3rem rgba(21, 128, 61, 0.35);
+    outline: 2px solid #15803d;
     outline-offset: 2px;
   }
 
   .field-valid:focus-visible {
-    outline-color: #22c55e;
+    outline-color: #15803d;
   }
 
   .field-warning {
-    border-color: #eab308;
-    box-shadow: 0 0 0 0.2rem rgba(234, 179, 8, 0.25);
+    border-color: #b45309;
+    box-shadow: 0 0 0 0.2rem rgba(180, 83, 9, 0.25);
   }
 
   .field-warning:focus {
-    border-color: #eab308;
-    box-shadow: 0 0 0 0.3rem rgba(234, 179, 8, 0.35);
-    outline: 2px solid #eab308;
+    border-color: #b45309;
+    box-shadow: 0 0 0 0.3rem rgba(180, 83, 9, 0.35);
+    outline: 2px solid #b45309;
     outline-offset: 2px;
   }
 
   .field-warning:focus-visible {
-    outline-color: #eab308;
+    outline-color: #b45309;
   }
 
   .field-error {
-    border-color: #ef4444;
-    box-shadow: 0 0 0 0.2rem rgba(239, 68, 68, 0.25);
+    border-color: #7f1d1d;
+    box-shadow: 0 0 0 0.2rem rgba(127, 29, 29, 0.25);
+    color: #7f1d1d;
   }
 
   .field-error:focus {
-    border-color: #ef4444;
-    box-shadow: 0 0 0 0.3rem rgba(239, 68, 68, 0.35);
-    outline: 2px solid #ef4444;
+    border-color: #7f1d1d;
+    box-shadow: 0 0 0 0.3rem rgba(127, 29, 29, 0.35);
+    outline: 2px solid #7f1d1d;
     outline-offset: 2px;
   }
 
   .field-error:focus-visible {
-    outline-color: #ef4444;
+    outline-color: #7f1d1d;
   }
 
   /* Toast notifications */
   .notification {
     @apply fixed top-4 right-4 z-50 rounded-lg border px-4 py-2 text-sm font-medium shadow-lg;
     @apply bg-white text-gray-900 border-gray-200;
+    @apply flex items-center gap-2 max-w-[min(28rem,calc(100vw-2rem))];
   }
 
   .notification-info {
@@ -256,13 +340,26 @@
     @apply bg-emerald-50 text-emerald-900 border-emerald-200;
   }
 
+  .notification-warning {
+    @apply bg-amber-50 text-amber-900 border-amber-200;
+  }
+
   .notification-error {
     @apply bg-red-50 text-red-900 border-red-200;
+  }
+
+  .notification-icon {
+    @apply shrink-0 opacity-90;
+  }
+
+  .notification-text {
+    @apply leading-snug;
   }
 
   /* Inline status messages */
   .status-message {
     @apply rounded-md px-3 py-2 text-sm font-medium;
+    @apply border border-transparent;
   }
 
   .status-info {
@@ -271,6 +368,10 @@
 
   .status-success {
     @apply bg-emerald-50 text-emerald-900;
+  }
+
+  .status-warning {
+    @apply bg-amber-50 text-amber-900;
   }
 
   .status-error {
@@ -283,22 +384,22 @@
     margin-top: 0.25rem;
     margin-bottom: 0.5rem;
     font-weight: 500;
-    color: #4b5563;
+    color: #374151;
     transition: color 0.2s ease;
   }
 
   .char-counter-pristine,
   .char-counter-valid {
-    color: #4b5563;
+    color: #374151;
   }
 
   .char-counter-warning {
-    color: #eab308;
+    color: #b45309;
     font-weight: 600;
   }
 
   .char-counter-error {
-    color: #ef4444;
+    color: #7f1d1d;
     font-weight: 700;
   }
 
@@ -312,8 +413,9 @@
 
   .validation-error-visible {
     display: block;
-    color: #ef4444;
+    color: #7f1d1d;
     font-weight: 500;
+    /* Ensures 4.5:1 contrast ratio on white background for WCAG AA */
   }
 
   .validation-error-visible::before {
@@ -330,7 +432,7 @@
 
   .validation-warning-visible {
     display: block;
-    color: #eab308;
+    color: #b45309;
     font-weight: 500;
   }
 
@@ -446,17 +548,17 @@
 
   .form-group.has-validation-icon.is-valid::after {
     content: '✓';
-    color: #22c55e;
+    color: #15803d;
   }
 
   .form-group.has-validation-icon.is-warning::after {
     content: '⚠';
-    color: #eab308;
+    color: #b45309;
   }
 
   .form-group.has-validation-icon.is-error::after {
     content: '✗';
-    color: #ef4444;
+    color: #7f1d1d;
   }
 
   /* Input transitions */
@@ -630,6 +732,23 @@
     main {
       padding: 1rem;
     }
+  }
+
+  /* Table styling for accessibility - WCAG AA compliance */
+  /* Ensure table headers have sufficient contrast */
+  table thead th {
+    color: #374151; /* gray-700 instead of gray-500/600 */
+    font-weight: 600;
+  }
+
+  /* Table cells should use gray-700 for normal text */
+  table tbody td {
+    color: #374151; /* gray-700 */
+  }
+
+  /* Table header background should have dark text */
+  table thead tr {
+    background-color: #f3f4f6; /* gray-100 */
   }
 
   /* Custom Scrollbar Styling */

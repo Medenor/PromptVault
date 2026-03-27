@@ -13,7 +13,7 @@ Get PromptVault running in 5 minutes with the setup wizard.
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/your-org/promptvault.git
+git clone https://codeberg.org/medenor/promptvault.git
 cd promptvault
 ```
 

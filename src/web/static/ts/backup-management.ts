@@ -15,6 +15,7 @@ import { changeLanguage, initI18n, t, updateStaticTranslations } from '@/utils/i
 import type { TranslationKey } from '@/types/i18n';
 import { hideElement, showElement } from '@/utils/dom';
 import { apiFetch, apiGet, apiPost, APIRequestError } from '@/utils/api';
+import { announce } from '@/utils/a11y';
 
 interface BackupItem {
   backup_id: string;
@@ -60,10 +61,138 @@ interface AuthResponse {
   role?: string;
 }
 
+interface FormValidationError {
+  inputId: string;
+  message: string;
+}
+
 const BACKUP_COMPONENT = 'backupManagement';
+const liveValidationState = new Map<string, boolean>();
 
 let currentBackups: BackupItem[] = [];
 let selectedBackupId: string | null = null;
+
+// Focus management for modals
+let restoreConfirmationModalTrigger: HTMLElement | null = null;
+let deleteConfirmationModalTrigger: HTMLElement | null = null;
+
+function resetFieldError(inputId: string, errorId: string): void {
+  const input = document.getElementById(inputId) as HTMLElement | null;
+  const error = document.getElementById(errorId);
+  input?.setAttribute('aria-invalid', 'false');
+  if (error) {
+    error.textContent = '';
+  }
+}
+
+function addFieldError(
+  errors: FormValidationError[],
+  inputId: string,
+  errorId: string,
+  message: string
+): void {
+  const input = document.getElementById(inputId) as HTMLElement | null;
+  const error = document.getElementById(errorId);
+  if (input) {
+    const existing =
+      input
+        .getAttribute('aria-describedby')
+        ?.split(/\s+/)
+        .map((s) => s.trim())
+        .filter(Boolean) ?? [];
+    const next = Array.from(new Set([...existing, errorId]));
+    input.setAttribute('aria-describedby', next.join(' '));
+  }
+  input?.setAttribute('aria-invalid', 'true');
+  if (error) {
+    error.textContent = message;
+  }
+  errors.push({ inputId, message });
+}
+
+function setLiveFieldError(inputId: string, errorId: string, message: string): void {
+  const input = document.getElementById(inputId) as HTMLElement | null;
+  const error = document.getElementById(errorId) as HTMLElement | null;
+  const hadError = liveValidationState.get(inputId) === true;
+  input?.setAttribute('aria-invalid', 'true');
+  if (error) {
+    error.textContent = message;
+  }
+  liveValidationState.set(inputId, true);
+  if (!hadError) {
+    announce(message, { id: 'validation-announcer', politeness: 'polite' });
+  }
+}
+
+function clearLiveFieldError(inputId: string, errorId: string): void {
+  const input = document.getElementById(inputId) as HTMLElement | null;
+  const error = document.getElementById(errorId) as HTMLElement | null;
+  const hadError = liveValidationState.get(inputId) === true;
+  input?.setAttribute('aria-invalid', 'false');
+  if (error) {
+    error.textContent = '';
+  }
+  liveValidationState.set(inputId, false);
+  if (hadError) {
+    announce(t('validation.fieldValid') || 'Field is valid.', {
+      id: 'validation-announcer',
+      politeness: 'polite',
+    });
+  }
+}
+
+function resetErrorSummary(summaryId: string): void {
+  const summary = document.getElementById(summaryId);
+  if (!summary) return;
+  summary.textContent = '';
+  summary.style.display = 'none';
+}
+
+function renderErrorSummary(summaryId: string, errors: FormValidationError[]): void {
+  if (errors.length === 0) {
+    return;
+  }
+
+  const summary = document.getElementById(summaryId);
+  if (!summary) {
+    const firstInput = document.getElementById(errors[0]?.inputId ?? '') as HTMLElement | null;
+    firstInput?.focus();
+    return;
+  }
+
+  summary.textContent = '';
+  const header = document.createElement('p');
+  header.className = 'error-banner-header';
+  header.textContent = t('validation.errorSummaryHeader') || 'Please correct the following errors:';
+  summary.appendChild(header);
+
+  const list = document.createElement('ul');
+  list.className = 'error-banner-list';
+  errors.forEach((error) => {
+    const item = document.createElement('li');
+    const link = document.createElement('a');
+    link.href = `#${error.inputId}`;
+    link.className = 'underline';
+    link.textContent = error.message;
+    link.addEventListener('click', (event) => {
+      event.preventDefault();
+      const target = document.getElementById(error.inputId) as HTMLElement | null;
+      target?.focus();
+    });
+    item.appendChild(link);
+    list.appendChild(item);
+  });
+  summary.appendChild(list);
+  summary.style.display = 'block';
+
+  // Per plan T-ACC023: focus the first invalid field after rendering the summary.
+  const firstInput = document.getElementById(errors[0]?.inputId ?? '') as HTMLElement | null;
+  if (firstInput) {
+    firstInput.focus();
+  } else {
+    summary.focus();
+  }
+}
 
 function initializeBackupManagement(): void {
   setupEventListeners();
@@ -76,11 +205,136 @@ function setupEventListeners(): void {
   const languageSelector = document.getElementById('language-selector');
   languageSelector?.addEventListener('change', handleLanguageChange);
 
+  const backupNameInput = document.getElementById('backup-name') as HTMLInputElement | null;
+  if (backupNameInput) {
+    const validateBackupName = () => {
+      const value = backupNameInput.value.trim();
+      if (!value) {
+        clearLiveFieldError('backup-name', 'backup-name-error');
+        return;
+      }
+      if (!/^[A-Za-z0-9_-]*$/.test(value)) {
+        setLiveFieldError(
+          'backup-name',
+          'backup-name-error',
+          t('validation.backupNameInvalid') || 'Backup name is invalid.'
+        );
+        return;
+      }
+      clearLiveFieldError('backup-name', 'backup-name-error');
+    };
+    backupNameInput.addEventListener('blur', validateBackupName);
+    backupNameInput.addEventListener('input', () => {
+      if (liveValidationState.get('backup-name') === true) {
+        validateBackupName();
+      }
+    });
+  }
+
+  const retentionInput = document.getElementById('retention-days') as HTMLInputElement | null;
+  if (retentionInput) {
+    const validateRetention = () => {
+      const raw = retentionInput.value.trim();
+      const value = Number(raw);
+      if (!raw) {
+        clearLiveFieldError('retention-days', 'retention-days-error');
+        return;
+      }
+      if (!Number.isFinite(value)) {
+        setLiveFieldError(
+          'retention-days',
+          'retention-days-error',
+          t('validation.retentionDaysInvalid') || 'Retention days must be a valid number.'
+        );
+        return;
+      }
+      if (value < 1) {
+        setLiveFieldError(
+          'retention-days',
+          'retention-days-error',
+          t('validation.retentionDaysTooLow') || 'Retention days is too low.'
+        );
+        return;
+      }
+      if (value > 3650) {
+        setLiveFieldError(
+          'retention-days',
+          'retention-days-error',
+          t('validation.retentionDaysTooHigh') || 'Retention days is too high.'
+        );
+        return;
+      }
+      clearLiveFieldError('retention-days', 'retention-days-error');
+    };
+    retentionInput.addEventListener('blur', validateRetention);
+    retentionInput.addEventListener('input', () => {
+      if (liveValidationState.get('retention-days') === true) {
+        validateRetention();
+      }
+    });
+  }
+
+  const compressInput = document.getElementById('compress-days') as HTMLInputElement | null;
+  if (compressInput) {
+    const validateCompress = () => {
+      const raw = compressInput.value.trim();
+      const value = Number(raw);
+      if (!raw) {
+        clearLiveFieldError('compress-days', 'compress-days-error');
+        return;
+      }
+      if (!Number.isFinite(value)) {
+        setLiveFieldError(
+          'compress-days',
+          'compress-days-error',
+          t('validation.compressionDaysInvalid') || 'Compression days must be a valid number.'
+        );
+        return;
+      }
+      if (value < 1) {
+        setLiveFieldError(
+          'compress-days',
+          'compress-days-error',
+          t('validation.compressionDaysTooLow') || 'Compression days is too low.'
+        );
+        return;
+      }
+      if (value > 365) {
+        setLiveFieldError(
+          'compress-days',
+          'compress-days-error',
+          t('validation.compressionDaysTooHigh') || 'Compression days is too high.'
+        );
+        return;
+      }
+      clearLiveFieldError('compress-days', 'compress-days-error');
+    };
+    compressInput.addEventListener('blur', validateCompress);
+    compressInput.addEventListener('input', () => {
+      if (liveValidationState.get('compress-days') === true) {
+        validateCompress();
+      }
+    });
+  }
+
   const confirmRestoreBtn = document.getElementById('confirm-restore-btn');
   confirmRestoreBtn?.addEventListener('click', confirmRestore);
 
   const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
   confirmDeleteBtn?.addEventListener('click', confirmDelete);
+
+  // Button keyboard activation (Enter and Space keys)
+  // Enables keyboard accessibility for all buttons
+  document.addEventListener('keydown', (e) => {
+    if (document.activeElement instanceof HTMLButtonElement) {
+      const button = document.activeElement;
+      // Enter and Space keys should activate buttons (standard keyboard behavior)
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        button.click();
+      }
+    }
+  });
 }
 
 function handleLanguageChange(event: Event): void {
@@ -181,6 +435,23 @@ function createBackupItem(backup: BackupItem): string {
 async function createBackup(): Promise<void> {
   const backupNameInput = document.getElementById('backup-name') as HTMLInputElement | null;
   const backupName = backupNameInput?.value.trim() ?? '';
+  resetFieldError('backup-name', 'backup-name-error');
+  resetErrorSummary('backup-create-error-summary');
+  const validationErrors: FormValidationError[] = [];
+
+  if (backupName && !/^[A-Za-z0-9_-]*$/.test(backupName)) {
+    addFieldError(
+      validationErrors,
+      'backup-name',
+      'backup-name-error',
+      t('validation.backupNameInvalid') || 'Backup name is invalid.'
+    );
+  }
+
+  if (validationErrors.length > 0) {
+    renderErrorSummary('backup-create-error-summary', validationErrors);
+    return;
+  }
 
   showProgress('backup-progress', 'Creating backup...');
 
@@ -214,6 +485,8 @@ function showRestoreModal(backupId: string): void {
   const backup = currentBackups.find((item) => item.backup_id === backupId);
   if (!backup) return;
 
+  // Store trigger element for focus return
+  restoreConfirmationModalTrigger = (event as unknown as { target: HTMLElement }).target || null;
   const infoDiv = document.getElementById('restore-backup-info');
   if (infoDiv) {
     infoDiv.innerHTML = `
@@ -224,13 +497,25 @@ function showRestoreModal(backupId: string): void {
     `;
   }
 
-  showElement(document.getElementById('restore-modal') as HTMLElement | null);
+  const modal = document.getElementById('restore-modal') as HTMLElement | null;
+  showElement(modal);
+  // Move focus to first focusable element in modal
+  if (modal) {
+    const firstFocusable = modal.querySelector('h2, button, input, [tabindex="0"]') as HTMLElement;
+    if (firstFocusable) {
+      firstFocusable.focus();
+    }
+  }
   setRestoreInProgress(false);
 }
 
 function hideRestoreModal(): void {
   hideElement(document.getElementById('restore-modal') as HTMLElement | null);
   selectedBackupId = null;
+  // Return focus to trigger element
+  if (restoreConfirmationModalTrigger) {
+    restoreConfirmationModalTrigger.focus();
+  }
 }
 
 async function confirmRestore(): Promise<void> {
@@ -267,6 +552,8 @@ function showDeleteModal(backupId: string): void {
   const backup = currentBackups.find((item) => item.backup_id === backupId);
   if (!backup) return;
 
+  // Store trigger element for focus return
+  deleteConfirmationModalTrigger = (event as unknown as { target: HTMLElement }).target || null;
   const infoDiv = document.getElementById('delete-backup-info');
   if (infoDiv) {
     infoDiv.innerHTML = `
@@ -276,12 +563,24 @@ function showDeleteModal(backupId: string): void {
     `;
   }
 
-  showElement(document.getElementById('delete-modal') as HTMLElement | null);
+  const modal = document.getElementById('delete-modal') as HTMLElement | null;
+  showElement(modal);
+  // Move focus to first focusable element in modal
+  if (modal) {
+    const firstFocusable = modal.querySelector('h2, button, input, [tabindex="0"]') as HTMLElement;
+    if (firstFocusable) {
+      firstFocusable.focus();
+    }
+  }
 }
 
 function hideDeleteModal(): void {
   hideElement(document.getElementById('delete-modal') as HTMLElement | null);
   selectedBackupId = null;
+  // Return focus to trigger element
+  if (deleteConfirmationModalTrigger) {
+    deleteConfirmationModalTrigger.focus();
+  }
 }
 
 async function confirmDelete(): Promise<void> {
@@ -314,6 +613,26 @@ async function confirmDelete(): Promise<void> {
 async function cleanupBackups(): Promise<void> {
   const retentionInput = document.getElementById('retention-days') as HTMLInputElement | null;
   const retentionDays = retentionInput?.value ?? '';
+  resetFieldError('retention-days', 'retention-days-error');
+  resetErrorSummary('cleanup-error-summary');
+  const validationErrors: FormValidationError[] = [];
+  const retentionValue = Number(retentionDays);
+  if (!Number.isFinite(retentionValue) || retentionValue < 1 || retentionValue > 3650) {
+    addFieldError(
+      validationErrors,
+      'retention-days',
+      'retention-days-error',
+      !Number.isFinite(retentionValue)
+        ? t('validation.retentionDaysInvalid') || 'Retention days must be a valid number.'
+        : retentionValue < 1
+          ? t('validation.retentionDaysTooLow') || 'Retention period is too low.'
+          : t('validation.retentionDaysTooHigh') || 'Retention period is too high.'
+    );
+  }
+  if (validationErrors.length > 0) {
+    renderErrorSummary('cleanup-error-summary', validationErrors);
+    return;
+  }
 
   showProgress('maintenance-progress', 'Cleaning up old backups...');
 
@@ -348,6 +667,26 @@ async function cleanupBackups(): Promise<void> {
 async function compressBackups(): Promise<void> {
   const compressInput = document.getElementById('compress-days') as HTMLInputElement | null;
   const compressDays = compressInput?.value ?? '';
+  resetFieldError('compress-days', 'compress-days-error');
+  resetErrorSummary('compress-error-summary');
+  const validationErrors: FormValidationError[] = [];
+  const compressValue = Number(compressDays);
+  if (!Number.isFinite(compressValue) || compressValue < 1 || compressValue > 365) {
+    addFieldError(
+      validationErrors,
+      'compress-days',
+      'compress-days-error',
+      !Number.isFinite(compressValue)
+        ? t('validation.compressionDaysInvalid') || 'Compression days must be a valid number.'
+        : compressValue < 1
+          ? t('validation.compressionDaysTooLow') || 'Compression threshold is too low.'
+          : t('validation.compressionDaysTooHigh') || 'Compression threshold is too high.'
+    );
+  }
+  if (validationErrors.length > 0) {
+    renderErrorSummary('compress-error-summary', validationErrors);
+    return;
+  }
 
   showProgress('maintenance-progress', 'Compressing old backups...');
 
@@ -387,6 +726,8 @@ function refreshBackups(): void {
 function clearBackupForm(): void {
   const backupNameInput = document.getElementById('backup-name') as HTMLInputElement | null;
   if (backupNameInput) backupNameInput.value = '';
+  resetFieldError('backup-name', 'backup-name-error');
+  resetErrorSummary('backup-create-error-summary');
 }
 
 function formatBytes(bytes: number): string {

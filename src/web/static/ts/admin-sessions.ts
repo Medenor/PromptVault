@@ -15,6 +15,8 @@ import { reportError } from '@/telemetry';
 import { changeLanguage, initI18n, updateStaticTranslations, t } from '@/utils/i18n';
 import { showNotification } from '@/utils/notifications';
 import { apiGet, apiDelete, APIRequestError } from '@/utils/api';
+import { createTypeahead } from '@/utils/typeahead';
+import { announceToScreenReader } from '@/utils/focus-management';
 
 const API_BASE = '/api/admin';
 const HIDDEN_CLASS = 'hidden';
@@ -44,6 +46,10 @@ let currentFilters = {
 };
 let currentSession: { userId: string; sessionId: string; username: string } | null = null;
 
+// Focus management for modals
+let sessionDetailModalTrigger: HTMLElement | null = null;
+let confirmRevokeModalTrigger: HTMLElement | null = null;
+
 function formatDate(dateString?: string | null): string {
   if (!dateString) return 'Never';
   const date = new Date(dateString);
@@ -52,12 +58,25 @@ function formatDate(dateString?: string | null): string {
 
 function showModal(modalId: string): void {
   const modal = document.getElementById(modalId);
-  if (modal) modal.classList.remove(HIDDEN_CLASS);
+  if (modal) {
+    modal.classList.remove(HIDDEN_CLASS);
+    // Move focus to first focusable element in modal
+    const firstFocusable = modal.querySelector('h2, button, input, [tabindex="0"]') as HTMLElement;
+    if (firstFocusable) {
+      firstFocusable.focus();
+    }
+  }
 }
 
 function hideModal(modalId: string): void {
   const modal = document.getElementById(modalId);
   if (modal) modal.classList.add(HIDDEN_CLASS);
+  // Return focus to trigger element
+  if (modalId === 'session-detail-modal' && sessionDetailModalTrigger) {
+    sessionDetailModalTrigger.focus();
+  } else if (modalId === 'confirm-revoke-modal' && confirmRevokeModalTrigger) {
+    confirmRevokeModalTrigger.focus();
+  }
 }
 
 function truncateText(text: string, maxLength: number): string {
@@ -143,7 +162,7 @@ function displaySessions(): void {
       const rowClass = session.is_current ? 'bg-blue-50 hover:bg-blue-100' : 'hover:bg-gray-50';
       const textClass = session.is_current ? 'font-semibold' : '';
       const currentBadge = session.is_current
-        ? `<span class="ml-2 px-2 py-1 bg-blue-500 text-white text-xs rounded font-medium">${t('admin.sessions.currentBadge')}</span>`
+        ? `<span class="ml-2 px-2 py-1 bg-blue-700 text-white text-xs rounded font-medium">${t('admin.sessions.currentBadge')}</span>`
         : '';
 
       return `
@@ -155,7 +174,7 @@ function displaySessions(): void {
           <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 ${textClass}">${formatDate(session.last_used_at)}</td>
           <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 ${textClass}">${formatDate(session.expires_at)}</td>
           <td class="px-6 py-4 whitespace-nowrap text-sm">
-            <button class="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 text-xs font-medium" onclick="window.showRevokeConfirmation('${userId}', '${sessionId}', '${username}')" data-i18n="actions.revoke">Revoke</button>
+            <button class="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 text-xs font-medium focus:outline-2 focus:outline-red-500 focus:outline-offset-1" onclick="window.showRevokeConfirmation('${userId}', '${sessionId}', '${username}')" data-i18n="actions.revoke">Revoke</button>
           </td>
         </tr>
       `;
@@ -163,6 +182,122 @@ function displaySessions(): void {
     .join('');
 
   updateStaticTranslations();
+  initializeSessionsTableFirstCharNavigation();
+}
+
+let sessionsTableKeyboardNavInitialized = false;
+
+function announceKeyboardNavigation(message: string): void {
+  const announcer = document.getElementById('keyboard-navigation-announcer');
+  if (!announcer) {
+    return;
+  }
+  announcer.textContent = '';
+  requestAnimationFrame(() => {
+    announcer.textContent = message;
+  });
+}
+
+function isTextEditingTarget(target: EventTarget | null): boolean {
+  const el = target as HTMLElement | null;
+  if (!el) return false;
+  return el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable;
+}
+
+function initializeSessionsTableFirstCharNavigation(): void {
+  if (sessionsTableKeyboardNavInitialized) {
+    return;
+  }
+  sessionsTableKeyboardNavInitialized = true;
+
+  const typeahead = createTypeahead();
+
+  const body = document.getElementById('sessions-table-body');
+  if (!body) {
+    return;
+  }
+
+  body.addEventListener('keydown', (event) => {
+    if (event.metaKey || event.ctrlKey || event.altKey) {
+      return;
+    }
+    if (isTextEditingTarget(event.target)) {
+      return;
+    }
+    if ((event as KeyboardEvent).isComposing || event.key === 'Process') {
+      return;
+    }
+    if (event.key.length !== 1) {
+      return;
+    }
+
+    const rows = Array.from(body.querySelectorAll<HTMLTableRowElement>('tr'));
+    if (rows.length === 0) {
+      return;
+    }
+
+    const target = event.target as HTMLElement | null;
+    const currentRow = target?.closest('tr');
+    const currentIndex = currentRow ? rows.indexOf(currentRow) : -1;
+
+    const query = typeahead.pushKey(event.key);
+    if (!query) {
+      return;
+    }
+
+    for (let offset = 1; offset <= rows.length; offset++) {
+      const index = (currentIndex + offset + rows.length) % rows.length;
+      const row = rows[index];
+      if (!row) continue;
+      const usernameCell = row.querySelector('td');
+      const username = usernameCell?.textContent?.trim() ?? '';
+      if (!username.toLocaleLowerCase().startsWith(query)) {
+        continue;
+      }
+
+      const revokeButton = row.querySelector<HTMLButtonElement>('button[data-i18n="actions.revoke"]');
+      if (!revokeButton) {
+        return;
+      }
+
+      event.preventDefault();
+      revokeButton.focus();
+      announceKeyboardNavigation(t('accessibility.navigateTo', { item: username }));
+      return;
+    }
+  });
+
+  body.addEventListener('compositionend', (event) => {
+    const composed = (event as CompositionEvent).data ?? '';
+    const query = typeahead.pushText(composed);
+    if (!query) {
+      return;
+    }
+
+    const rows = Array.from(body.querySelectorAll<HTMLTableRowElement>('tr'));
+    if (rows.length === 0) {
+      return;
+    }
+    const active = document.activeElement as HTMLElement | null;
+    const currentRow = active?.closest?.('tr') as HTMLTableRowElement | null;
+    const currentIndex = currentRow ? rows.indexOf(currentRow) : -1;
+
+    for (let offset = 1; offset <= rows.length; offset++) {
+      const index = (currentIndex + offset + rows.length) % rows.length;
+      const row = rows[index];
+      if (!row) continue;
+      const usernameCell = row.querySelector('td');
+      const username = usernameCell?.textContent?.trim() ?? '';
+      if (!username.toLocaleLowerCase().startsWith(query)) {
+        continue;
+      }
+      const revokeButton = row.querySelector<HTMLButtonElement>('button[data-i18n=\"actions.revoke\"]');
+      if (!revokeButton) return;
+      revokeButton.focus();
+      announceKeyboardNavigation(t('accessibility.navigateTo', { item: username }));
+      return;
+    }
+  });
 }
 
 async function loadAllSessions(): Promise<void> {
@@ -212,6 +347,8 @@ async function revokeSession(userId: string, sessionId: string, username: string
     showNotification(`Session for ${username} revoked successfully`, 'success');
     hideModal('confirm-revoke-modal');
     await loadAllSessions();
+    // Announce to screen reader that session was revoked
+    announceToScreenReader(`Session for ${username} has been revoked. Focus returned to revoke button.`, 'polite');
   } catch (error) {
     if (error instanceof APIRequestError) {
       showNotification(error.message || 'Failed to revoke session', 'error');
@@ -323,6 +460,82 @@ function setupConfirmRevokeModal(): void {
   }
 }
 
+function setupAdminMenuKeyboardNavigation(): void {
+  const adminMenuToggle = document.getElementById('admin-menu-toggle');
+  const adminMenuDropdown = document.getElementById('admin-menu-dropdown');
+
+  if (!adminMenuToggle || !adminMenuDropdown) {
+    return;
+  }
+
+  // When menu opens, focus first menu item
+  adminMenuToggle.addEventListener('click', () => {
+    const isOpen = !adminMenuDropdown.classList.contains('hidden');
+    if (isOpen) {
+      // Menu just opened, focus first button
+      setTimeout(() => {
+        const firstButton = adminMenuDropdown.querySelector('button') as HTMLButtonElement;
+        if (firstButton) {
+          firstButton.focus();
+        }
+      }, 0);
+    }
+  });
+
+  // Handle keyboard navigation within dropdown menu
+  adminMenuDropdown.addEventListener('keydown', (event: KeyboardEvent) => {
+    const isOpen = !adminMenuDropdown.classList.contains('hidden');
+    if (!isOpen) {
+      return;
+    }
+
+    const menuItems = Array.from(adminMenuDropdown.querySelectorAll('button')) as HTMLButtonElement[];
+    if (menuItems.length === 0) {
+      return;
+    }
+
+    const currentFocused = document.activeElement as HTMLElement | null;
+    const currentIndex = currentFocused ? menuItems.indexOf(currentFocused as HTMLButtonElement) : -1;
+
+    switch (event.key) {
+      case 'Escape': {
+        // Close menu and return focus to toggle button
+        adminMenuDropdown.classList.add('hidden');
+        adminMenuToggle.setAttribute('aria-expanded', 'false');
+        adminMenuToggle.focus();
+        event.preventDefault();
+        break;
+      }
+      case 'ArrowDown': {
+        // Move to next menu item or wrap around
+        const nextIndex = currentIndex === -1 || currentIndex >= menuItems.length - 1 ? 0 : currentIndex + 1;
+        menuItems[nextIndex]?.focus();
+        event.preventDefault();
+        break;
+      }
+      case 'ArrowUp': {
+        // Move to previous menu item or wrap around
+        const prevIndex = currentIndex === -1 || currentIndex === 0 ? menuItems.length - 1 : currentIndex - 1;
+        menuItems[prevIndex]?.focus();
+        event.preventDefault();
+        break;
+      }
+      case 'Home': {
+        // Jump to first menu item
+        menuItems[0]?.focus();
+        event.preventDefault();
+        break;
+      }
+      case 'End': {
+        // Jump to last menu item
+        menuItems[menuItems.length - 1]?.focus();
+        event.preventDefault();
+        break;
+      }
+    }
+  });
+}
+
 function initializeAdminSessionsPage(): void {
   updateStaticTranslations();
 
@@ -333,9 +546,15 @@ function initializeAdminSessionsPage(): void {
       const dropdown = document.getElementById('admin-menu-dropdown');
       if (dropdown) {
         dropdown.classList.toggle('hidden');
+        // Update aria-expanded state
+        const isExpanded = !dropdown.classList.contains('hidden');
+        adminMenuToggle.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
       }
     });
   }
+
+  // Setup keyboard navigation for menu (WCAG 2.1 AA)
+  setupAdminMenuKeyboardNavigation();
 
   const languageSelector = document.getElementById('language-selector') as HTMLSelectElement | null;
   if (languageSelector) {
@@ -374,6 +593,8 @@ function initializeAdminSessionsPage(): void {
   }
 ).showRevokeConfirmation = (userId: string, sessionId: string, username: string) => {
   currentSession = { userId, sessionId, username };
+  // Store trigger element for focus return
+  confirmRevokeModalTrigger = (event as unknown as { target: HTMLElement }).target || null;
   showModal('confirm-revoke-modal');
 };
 

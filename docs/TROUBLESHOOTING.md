@@ -66,10 +66,10 @@ python --version
 
 # Install Python (Ubuntu/Debian)
 sudo apt-get update
-sudo apt-get install python3.11 python3-pip
+sudo apt-get install python3.14 python3-pip
 
 # Install Python (macOS with Homebrew)
-brew install python@3.11
+brew install python@3.14
 
 # Create alias if needed
 alias python=python3
@@ -1836,18 +1836,18 @@ sudo logrotate -d /etc/logrotate.d/promptvault
 
 ## Getting Help
 
-### GitHub Issues
+### Codeberg Issues
 
 **Before creating an issue:**
 
-1. Search existing issues: https://github.com/your-repo/PromptVault/issues
+1. Search existing issues: https://codeberg.org/medenor/promptvault/issues
 2. Check if your version is up to date
 3. Review this troubleshooting guide
 4. Collect relevant information (see below)
 
 **Creating a new issue:**
 
-1. Go to: https://github.com/your-repo/PromptVault/issues/new
+1. Go to: https://codeberg.org/medenor/promptvault/issues/new
 2. Choose appropriate template (Bug Report, Feature Request, etc.)
 3. Fill in all required information
 4. Include debug information (see next section)
@@ -1975,10 +1975,7 @@ DATABASE_URL=postgresql://promptvault:REDACTED@db:5432/promptvault
 ### Community Support
 
 **Resources:**
-- Documentation: https://github.com/your-repo/PromptVault/tree/main/docs
-- Discussions: https://github.com/your-repo/PromptVault/discussions
-- Discord: [If available]
-- Stack Overflow: Tag with `promptvault`
+- Documentation: https://codeberg.org/medenor/promptvault/src/branch/main/docs
 
 **Before asking:**
 1. Search existing discussions

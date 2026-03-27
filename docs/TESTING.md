@@ -545,7 +545,7 @@ def test_get_nonexistent_prompt(prompt_repo):
 
 ## Continuous Integration
 
-### GitHub Actions Example
+### Forgejo Actions Example
 
 ```yaml
 name: Tests
@@ -562,7 +562,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: '3.14'
 
       - name: Install dependencies
         run: |

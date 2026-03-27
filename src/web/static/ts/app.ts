@@ -17,6 +17,12 @@ import type { TranslationKey } from '@/types/i18n';
 import { initI18n, t, tUnsafe, updateStaticTranslations } from '@/utils/i18n';
 import { apiFetch, apiGet, apiPostForm, APIRequestError } from '@/utils/api';
 import { setupScrollIndicators } from '@/utils/dom';
+import { showNotification } from '@/utils/notifications';
+import { createTypeahead } from '@/utils/typeahead';
+import { createModal } from '@components';
+import { announce } from '@/utils/a11y';
+import { confirmAsync } from '@/utils/dialogs';
+import { focusFirstElement, announceToScreenReader } from '@/utils/focus-management';
 
 interface TagInfo {
   name: string;
@@ -98,11 +104,32 @@ let tagColorMap: Record<string, string> = {};
 let categoryColorMap: Record<string, string> = {};
 const colorTextCache = new Map<string, string>();
 let selectedTags: string[] = [];
+let keyboardHelpModal:
+  | {
+      element: HTMLDivElement;
+      open: () => void;
+      close: () => void;
+    }
+  | null = null;
 
 const HIDDEN_CLASS = 'hidden';
 const ERROR_VISIBLE_CLASS = 'validation-error-visible';
 const APP_COMPONENT = 'app';
 const MAX_TAGS = 15;
+const promptLiveValidationState = new Map<string, boolean>();
+const FILTER_LIST_IDS = [
+  'categories-list',
+  'tags-list',
+  'categories-list-mobile',
+  'tags-list-mobile',
+] as const;
+
+// Focus management for modals
+let versionHistoryModalTrigger: HTMLElement | null = null;
+let diffModalTrigger: HTMLElement | null = null;
+let revertConfirmationModalTrigger: HTMLElement | null = null;
+let bulkDeleteModalTrigger: HTMLElement | null = null;
+let bulkTagModalTrigger: HTMLElement | null = null;
 
 function reportAppIssue(
   action: string,
@@ -132,6 +159,340 @@ function hideElement(element: HTMLElement | null): void {
   if (element) {
     element.classList.add(HIDDEN_CLASS);
   }
+}
+
+function announceKeyboardNavigation(message: string): void {
+  const announcer = document.getElementById('keyboard-navigation-announcer');
+  if (!announcer) {
+    return;
+  }
+  announcer.textContent = '';
+  // Force text change so screen readers always announce the update.
+  requestAnimationFrame(() => {
+    announcer.textContent = message;
+  });
+}
+
+let promptsListKeyboardNavInitialized = false;
+
+function isTextEditingTarget(target: EventTarget | null): boolean {
+  const el = target as HTMLElement | null;
+  if (!el) {
+    return false;
+  }
+  if (el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable) {
+    return true;
+  }
+  if (el.tagName !== 'INPUT') {
+    return false;
+  }
+  const input = el as HTMLInputElement;
+  const type = (input.type || 'text').toLowerCase();
+  return (
+    type === 'text' ||
+    type === 'search' ||
+    type === 'email' ||
+    type === 'url' ||
+    type === 'tel' ||
+    type === 'password' ||
+    type === 'number'
+  );
+}
+
+function initializePromptsListKeyboardNavigation(container: HTMLElement): void {
+  if (promptsListKeyboardNavInitialized) {
+    return;
+  }
+  promptsListKeyboardNavInitialized = true;
+
+  const typeahead = createTypeahead();
+
+  container.addEventListener('keydown', (event) => {
+    if (event.metaKey || event.ctrlKey || event.altKey) {
+      return;
+    }
+    if (isTextEditingTarget(event.target)) {
+      return;
+    }
+    if ((event as KeyboardEvent).isComposing || event.key === 'Process') {
+      return;
+    }
+
+    const isCharacterNavigation = event.key.length === 1;
+    if (!isCharacterNavigation) {
+      return;
+    }
+
+    const target = event.target as HTMLElement | null;
+    if (!target) {
+      return;
+    }
+    if (!container.contains(target)) {
+      return;
+    }
+
+    const items = Array.from(container.querySelectorAll<HTMLElement>('.prompt-item'));
+    if (items.length === 0) {
+      return;
+    }
+
+    const currentItem = target.closest<HTMLElement>('.prompt-item');
+    const currentIndex = currentItem ? items.indexOf(currentItem) : -1;
+
+    const query = typeahead.pushKey(event.key);
+    if (!query) {
+      return;
+    }
+
+    for (let offset = 1; offset <= items.length; offset++) {
+      const index = (currentIndex + offset + items.length) % items.length;
+      const candidate = items[index];
+      if (!candidate) {
+        continue;
+      }
+      const label =
+        (candidate.dataset.navLabel || '').trim() ||
+        candidate.querySelector('h4')?.textContent?.trim() ||
+        '';
+      const normalizedLabel = label.toLocaleLowerCase();
+      if (!normalizedLabel.startsWith(query)) {
+        continue;
+      }
+
+      const checkbox = candidate.querySelector<HTMLInputElement>('input.prompt-checkbox');
+      if (checkbox) {
+        event.preventDefault();
+        checkbox.focus();
+        announceKeyboardNavigation(t('accessibility.navigateTo', { item: label }));
+      }
+      return;
+    }
+  });
+
+  container.addEventListener('compositionend', (event) => {
+    const composed = (event as CompositionEvent).data ?? '';
+    const query = typeahead.pushText(composed);
+    if (!query) {
+      return;
+    }
+
+    const items = Array.from(container.querySelectorAll<HTMLElement>('.prompt-item'));
+    if (items.length === 0) {
+      return;
+    }
+    const active = document.activeElement as HTMLElement | null;
+    const currentItem = active?.closest?.('.prompt-item') as HTMLElement | null;
+    const currentIndex = currentItem ? items.indexOf(currentItem) : -1;
+
+    for (let offset = 1; offset <= items.length; offset++) {
+      const index = (currentIndex + offset + items.length) % items.length;
+      const candidate = items[index];
+      if (!candidate) continue;
+      const label =
+        (candidate.dataset.navLabel || '').trim() ||
+        candidate.querySelector('h4')?.textContent?.trim() ||
+        '';
+      if (!label.toLocaleLowerCase().startsWith(query)) {
+        continue;
+      }
+      const checkbox = candidate.querySelector<HTMLInputElement>('input.prompt-checkbox');
+      if (checkbox) {
+        checkbox.focus();
+        announceKeyboardNavigation(t('accessibility.navigateTo', { item: label }));
+      }
+      return;
+    }
+  });
+}
+
+function getListItems(list: HTMLElement): HTMLLIElement[] {
+  return Array.from(list.querySelectorAll<HTMLLIElement>('li'));
+}
+
+function syncRovingTabindexForList(list: HTMLElement | null): void {
+  if (!list) return;
+
+  const items = getListItems(list);
+  if (items.length === 0) return;
+
+  const activeItem = list.querySelector<HTMLLIElement>('li.active');
+  const tabbableItem = activeItem ?? items[0];
+
+  items.forEach((item) => {
+    // Use role="option" for listbox items (set in HTML)
+    // Update aria-selected based on active state
+    const isActive = item === activeItem || item === tabbableItem;
+    item.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    item.tabIndex = item === tabbableItem ? 0 : -1;
+  });
+}
+
+function syncFilterListsRovingTabindex(): void {
+  FILTER_LIST_IDS.forEach((id) => {
+    syncRovingTabindexForList(document.getElementById(id));
+  });
+}
+
+function findNextItemByCharacter(
+  items: HTMLLIElement[],
+  currentIndex: number,
+  key: string
+): HTMLLIElement | null {
+  const normalizedKey = key.trim().toLocaleLowerCase();
+  if (!normalizedKey) {
+    return null;
+  }
+
+  for (let offset = 1; offset <= items.length; offset += 1) {
+    const index = (currentIndex + offset) % items.length;
+    const candidate = items[index];
+    if (!candidate) {
+      continue;
+    }
+    const text = candidate?.textContent?.trim().toLocaleLowerCase() ?? '';
+    if (text.startsWith(normalizedKey)) {
+      return candidate;
+    }
+  }
+
+  return null;
+}
+
+function setupFilterListKeyboardNavigation(list: HTMLElement): void {
+  const typeahead = createTypeahead();
+
+  list.addEventListener('click', (event) => {
+    const target = event.target as HTMLElement | null;
+    const item = target?.closest('li');
+    if (!item || !list.contains(item)) {
+      return;
+    }
+    syncRovingTabindexForList(list);
+    item.tabIndex = 0;
+    item.focus();
+  });
+
+  list.addEventListener('keydown', (event) => {
+    if ((event as KeyboardEvent).isComposing || event.key === 'Process') {
+      return;
+    }
+    const target = event.target as HTMLElement | null;
+    const currentItem = target?.closest('li');
+    if (!currentItem || !list.contains(currentItem)) {
+      return;
+    }
+
+    const items = getListItems(list);
+    if (items.length === 0) {
+      return;
+    }
+
+    const currentIndex = items.indexOf(currentItem);
+    if (currentIndex < 0) {
+      return;
+    }
+
+    const focusItem = (item: HTMLLIElement): void => {
+      items.forEach((listItem) => {
+        listItem.tabIndex = listItem === item ? 0 : -1;
+      });
+      item.focus();
+    };
+
+    switch (event.key) {
+      case 'ArrowDown':
+      case 'ArrowRight': {
+        event.preventDefault();
+        const nextItem = items[(currentIndex + 1) % items.length];
+        if (nextItem) focusItem(nextItem);
+        return;
+      }
+      case 'ArrowUp':
+      case 'ArrowLeft': {
+        event.preventDefault();
+        const previousItem = items[(currentIndex - 1 + items.length) % items.length];
+        if (previousItem) focusItem(previousItem);
+        return;
+      }
+      case 'Home': {
+        event.preventDefault();
+        const firstItem = items[0];
+        if (firstItem) focusItem(firstItem);
+        return;
+      }
+      case 'End': {
+        event.preventDefault();
+        const lastItem = items[items.length - 1];
+        if (lastItem) focusItem(lastItem);
+        return;
+      }
+      case 'Enter':
+      case ' ': {
+        event.preventDefault();
+        currentItem.click();
+        return;
+      }
+      default:
+        break;
+    }
+
+    const isCharacterNavigation =
+      event.key.length === 1 && !event.metaKey && !event.ctrlKey && !event.altKey;
+    if (!isCharacterNavigation) {
+      return;
+    }
+
+    const query = typeahead.pushKey(event.key);
+    const matchedItem = findNextItemByCharacter(items, currentIndex, query);
+    if (!matchedItem) {
+      return;
+    }
+
+    event.preventDefault();
+    focusItem(matchedItem);
+    const matchedText = matchedItem.textContent?.trim() ?? '';
+    announceKeyboardNavigation(t('accessibility.navigateTo', { item: matchedText }));
+  });
+
+  list.addEventListener('compositionend', (event) => {
+    const composed = (event as CompositionEvent).data ?? '';
+    const target = event.target as HTMLElement | null;
+    const currentItem = target?.closest('li');
+    if (!currentItem || !list.contains(currentItem)) {
+      return;
+    }
+    const items = getListItems(list);
+    if (items.length === 0) {
+      return;
+    }
+    const currentIndex = items.indexOf(currentItem);
+    if (currentIndex < 0) {
+      return;
+    }
+
+    const query = typeahead.pushText(composed);
+    const matchedItem = findNextItemByCharacter(items, currentIndex, query);
+    if (!matchedItem) {
+      return;
+    }
+
+    items.forEach((listItem) => {
+      listItem.tabIndex = listItem === matchedItem ? 0 : -1;
+    });
+    matchedItem.focus();
+    const matchedText = matchedItem.textContent?.trim() ?? '';
+    announceKeyboardNavigation(t('accessibility.navigateTo', { item: matchedText }));
+  });
+}
+
+function initializeFilterListKeyboardNavigation(): void {
+  FILTER_LIST_IDS.forEach((id) => {
+    const list = document.getElementById(id);
+    if (list) {
+      setupFilterListKeyboardNavigation(list);
+    }
+  });
+  syncFilterListsRovingTabindex();
 }
 
 function resolveCssColor(color?: string | null): string | null {
@@ -426,7 +787,13 @@ function clearPromptFormErrors(): void {
       el.classList.remove(ERROR_VISIBLE_CLASS);
     }
   });
-  const inputs = ['prompt-title', 'prompt-content', 'prompt-tags', 'commit-message'];
+  const inputs = [
+    'prompt-title',
+    'prompt-content',
+    'prompt-tags',
+    'prompt-tags-input',
+    'commit-message',
+  ];
   inputs.forEach((id) => {
     const field = document.getElementById(id);
     if (field) {
@@ -441,11 +808,18 @@ function clearPromptFormErrors(): void {
   }
   const banner = document.getElementById('validation-error-banner');
   if (banner) {
+    banner.textContent = '';
     banner.style.display = 'none';
   }
 }
 
-function showPromptFieldError(fieldId: string, errorId: string, messageKey: TranslationKey): void {
+function showPromptFieldError(
+  fieldId: string,
+  errorId: string,
+  messageKey: TranslationKey,
+  shouldFocus: boolean = true,
+  shouldAnnounce: boolean = false
+): void {
   const errorEl = document.getElementById(errorId);
   const field = document.getElementById(fieldId);
   const message = t(messageKey);
@@ -454,21 +828,118 @@ function showPromptFieldError(fieldId: string, errorId: string, messageKey: Tran
     errorEl.dataset.errorKey = messageKey;
     errorEl.classList.add(ERROR_VISIBLE_CLASS);
   }
-  if (field) {
-    field.classList.add('field-error');
-    field.setAttribute('aria-invalid', 'true');
-    field.focus();
-  }
+
+  const mergeDescribedBy = (el: HTMLElement | null, ids: string[]) => {
+    if (!el) return;
+    const existing =
+      el
+        .getAttribute('aria-describedby')
+        ?.split(/\s+/)
+        .map((s) => s.trim())
+        .filter(Boolean) ?? [];
+    const next = Array.from(new Set([...existing, ...ids.filter(Boolean)]));
+    if (next.length) el.setAttribute('aria-describedby', next.join(' '));
+  };
+
+  const hadError = promptLiveValidationState.get(fieldId) === true;
+  const maybeAnnounce = () => {
+    if (!shouldAnnounce) return;
+    if (!hadError) {
+      announce(message, { id: 'validation-announcer', politeness: 'polite' });
+    }
+    promptLiveValidationState.set(fieldId, true);
+  };
+
+  // Special-case tags: the "real" form field is hidden, but the focusable control is #prompt-tags-input.
   if (fieldId === 'prompt-tags') {
+    const hidden = field as HTMLInputElement | null;
+    const tagInput = getTagInputElement();
     const tagChipInput = document.getElementById('tag-chip-input');
+
+    hidden?.setAttribute('aria-invalid', 'true');
+
+    if (tagInput) {
+      tagInput.classList.add('field-error');
+      tagInput.setAttribute('aria-invalid', 'true');
+      mergeDescribedBy(tagInput, [errorId]);
+      if (shouldFocus) {
+        tagInput.focus();
+      }
+    }
+
     if (tagChipInput) {
       tagChipInput.classList.add('field-error');
       tagChipInput.setAttribute('aria-invalid', 'true');
     }
+
+    maybeAnnounce();
+    return;
+  }
+
+  if (field) {
+    field.classList.add('field-error');
+    field.setAttribute('aria-invalid', 'true');
+    mergeDescribedBy(field, [errorId]);
+    if (shouldFocus) {
+      field.focus();
+    }
+    maybeAnnounce();
   }
 }
 
-function clearPromptFieldError(fieldId: string, errorId: string): void {
+type PromptFieldError = {
+  fieldId: string;
+  errorId: string;
+  messageKey: TranslationKey;
+};
+
+function showPromptErrorSummary(errors: PromptFieldError[]): void {
+  const banner = document.getElementById('validation-error-banner');
+  if (!banner) {
+    return;
+  }
+  if (errors.length === 0) {
+    banner.textContent = '';
+    banner.style.display = 'none';
+    return;
+  }
+
+  const itemsHtml = errors
+    .map((err) => {
+      const message = t(err.messageKey);
+      return `<li><a href="#${escapeHtml(err.fieldId)}" class="underline">${escapeHtml(message)}</a></li>`;
+    })
+    .join('');
+
+  banner.innerHTML = `
+    <p class="font-semibold">${escapeHtml(t('validation.errorSummaryHeader'))}</p>
+    <ul class="list-disc list-inside mt-2 space-y-1">${itemsHtml}</ul>
+  `;
+  banner.style.display = 'block';
+
+  banner.querySelectorAll<HTMLAnchorElement>('a[href^="#"]').forEach((a) => {
+    a.addEventListener('click', (event) => {
+      event.preventDefault();
+      const targetId = a.getAttribute('href')?.slice(1);
+      if (!targetId) {
+        return;
+      }
+      const field = document.getElementById(targetId) as HTMLElement | null;
+      field?.focus();
+    });
+  });
+
+  // Per plan T-ACC023: focus the first invalid field after rendering the summary.
+  const firstFieldId = errors[0]?.fieldId;
+  const firstField = firstFieldId ? (document.getElementById(firstFieldId) as HTMLElement | null) : null;
+  if (firstField) {
+    firstField.focus();
+  } else {
+    banner.focus();
+  }
+}
+
+function clearPromptFieldError(fieldId: string, errorId: string, shouldAnnounce: boolean = false): void {
   const errorEl = document.getElementById(errorId);
   if (errorEl) {
     errorEl.textContent = '';
@@ -481,11 +952,25 @@ function clearPromptFieldError(fieldId: string, errorId: string): void {
     field.removeAttribute('aria-invalid');
   }
   if (fieldId === 'prompt-tags') {
+    const tagInput = getTagInputElement();
+    if (tagInput) {
+      tagInput.classList.remove('field-error');
+      tagInput.removeAttribute('aria-invalid');
+    }
     const tagChipInput = document.getElementById('tag-chip-input');
     if (tagChipInput) {
       tagChipInput.classList.remove('field-error');
       tagChipInput.removeAttribute('aria-invalid');
     }
+  }
+
+  const hadError = promptLiveValidationState.get(fieldId) === true;
+  promptLiveValidationState.set(fieldId, false);
+  if (shouldAnnounce && hadError) {
+    announce(t('validation.fieldValid') || 'Field is valid.', {
+      id: 'validation-announcer',
+      politeness: 'polite',
+    });
   }
 }
 
@@ -628,12 +1113,53 @@ function setupEventListeners(): void {
   promptForm?.addEventListener('submit', (event) => {
     void handlePromptSubmit(event as SubmitEvent);
   });
-  const cancelBtn = document.getElementById('cancel-btn');
+  const cancelBtn = document.getElementById('cancel-btn-edit-modal');
   cancelBtn?.addEventListener('click', hidePromptEditor);
   const suggestTagsBtn = document.getElementById('suggest-tags-btn');
   suggestTagsBtn?.addEventListener('click', () => {
     void handleSuggestTags();
   });
+
+  // Live validation (T-ACC025) for the prompt editor required fields.
+  const titleInput = document.getElementById('prompt-title') as HTMLInputElement | null;
+  if (titleInput) {
+    const validate = () => {
+      if (!titleInput.value.trim()) {
+        showPromptFieldError('prompt-title', 'prompt-title-error', 'validation.titleRequired', false, true);
+      } else {
+        clearPromptFieldError('prompt-title', 'prompt-title-error', true);
+      }
+    };
+    titleInput.addEventListener('blur', validate);
+    titleInput.addEventListener('input', () => {
+      if (promptLiveValidationState.get('prompt-title') === true) {
+        validate();
+      }
+    });
+  }
+
+  const contentInput = document.getElementById('prompt-content') as HTMLTextAreaElement | null;
+  if (contentInput) {
+    const validate = () => {
+      if (!contentInput.value.trim()) {
+        showPromptFieldError(
+          'prompt-content',
+          'prompt-content-error',
+          'validation.contentRequired',
+          false,
+          true
+        );
+      } else {
+        clearPromptFieldError('prompt-content', 'prompt-content-error', true);
+      }
+    };
+    contentInput.addEventListener('blur', validate);
+    contentInput.addEventListener('input', () => {
+      if (promptLiveValidationState.get('prompt-content') === true) {
+        validate();
+      }
+    });
+  }
 
   // Category and tag filtering (desktop and mobile)
   const categoriesList = document.getElementById('categories-list');
@@ -651,6 +1177,7 @@ function setupEventListeners(): void {
     handleTagFilter(event);
     closeMobileSidebar();
   });
+  initializeFilterListKeyboardNavigation();
 
   const favoritesFilter = document.getElementById('favorites-filter');
   favoritesFilter?.addEventListener('change', handleFavoritesFilter);
@@ -695,6 +1222,24 @@ function setupEventListeners(): void {
 
   // Keyboard shortcuts
   document.addEventListener('keydown', handleKeyboardShortcuts);
+  document.addEventListener('promptvault:open-keyboard-help', (event) => {
+    const customEvent = event as CustomEvent<{ markHandled?: () => void }>;
+    customEvent.detail?.markHandled?.();
+    showKeyboardShortcutsHelpModal();
+  });
+
+  // Button keyboard activation (Enter and Space keys)
+  // Enables keyboard accessibility for all buttons across the application
+  document.addEventListener('keydown', (e) => {
+    if (document.activeElement instanceof HTMLButtonElement) {
+      const button = document.activeElement;
+      // Enter and Space keys should activate buttons (standard keyboard behavior)
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        button.click();
+      }
+    }
+  });
 
   // Add tooltips
   addTooltips();
@@ -827,6 +1372,7 @@ function renderPrompts(prompts: Record<string, PromptResponse>): void {
   }
 
   applyPromptColorStyles();
+  initializePromptsListKeyboardNavigation(container);
 }
 
 function isAnyFilterActive(): boolean {
@@ -848,6 +1394,7 @@ function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement
   div.className =
     'prompt-item bg-white rounded-lg border border-gray-200 p-4 transition-all hover:scale-[1.02] cursor-pointer';
   div.dataset.id = id;
+  div.dataset.navLabel = prompt.title || '';
 
   // Add selected class if prompt is in selection
   if (selectedPromptIds.has(parseInt(id))) {
@@ -855,10 +1402,12 @@ function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement
   }
 
   // Create checkbox for bulk selection
+  const titleId = `prompt-title-${id}`;
   const checkbox = document.createElement('input');
   checkbox.type = 'checkbox';
   checkbox.className = 'prompt-checkbox rounded text-blue-500 focus:ring-blue-500';
   checkbox.dataset.promptId = id;
+  checkbox.setAttribute('aria-labelledby', titleId);
   checkbox.checked = selectedPromptIds.has(parseInt(id));
   checkbox.addEventListener('change', (event) => {
     const target = event.target as HTMLInputElement | null;
@@ -885,14 +1434,14 @@ function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement
   const categoryStyle = buildPillStyleFilled(categoryColor);
 
   div.innerHTML = `
-        <div class="flex items-start justify-between mb-3">
-            <h4 class="text-lg font-semibold text-gray-900 flex-1">${prompt.title}</h4>
-            <div class="flex items-center gap-1 ml-2" id="prompt-actions-${id}">
-                <button class="favorite-btn text-xl hover:scale-110 transition-transform" data-id="${id}">
-                    ${prompt.favorite ? '★' : '☆'}
-                </button>
-            </div>
-        </div>
+	        <div class="flex items-start justify-between mb-3">
+	            <h4 id="${titleId}" class="text-lg font-semibold text-gray-900 flex-1">${prompt.title}</h4>
+	            <div class="flex items-center gap-1 ml-2" id="prompt-actions-${id}">
+	                <button class="favorite-btn text-xl hover:scale-110 transition-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 rounded" data-id="${id}">
+	                    ${prompt.favorite ? '★' : '☆'}
+	                </button>
+	            </div>
+	        </div>
         <div class="flex flex-wrap gap-2 mb-3">
             <span class="px-2 py-1 text-xs font-semibold rounded-md" data-category-pill="true" data-category-name="${prompt.category}"${categoryStyle}>
               ${prompt.category || t('categories.noCategory')}
@@ -950,14 +1499,14 @@ function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement
     deleteBtn.title = t('actions.delete');
   }
 
-  const favoriteBtn = div.querySelector('.favorite-btn') as HTMLButtonElement | null;
-  favoriteBtn?.addEventListener('click', () => {
-    lastSelectedPromptId = parseInt(id, 10);
-    void toggleFavorite(id);
-  });
-  if (favoriteBtn) {
-    favoriteBtn.title = t('actions.favorite');
-  }
+	  const favoriteBtn = div.querySelector('.favorite-btn') as HTMLButtonElement | null;
+	  favoriteBtn?.addEventListener('click', () => {
+	    lastSelectedPromptId = parseInt(id, 10);
+	    void toggleFavorite(id);
+	  });
+	  if (favoriteBtn) {
+	    setFavoriteButtonA11y(favoriteBtn, Boolean(prompt.favorite));
+	  }
 
   const historyBtn = div.querySelector('.history-btn') as HTMLButtonElement | null;
   historyBtn?.addEventListener('click', () => {
@@ -978,7 +1527,14 @@ function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement
     void editPrompt(id);
   });
 
-  return div;
+	  return div;
+	}
+
+function setFavoriteButtonA11y(button: HTMLButtonElement, isFavorite: boolean): void {
+  button.setAttribute('aria-pressed', isFavorite ? 'true' : 'false');
+  const label = isFavorite ? t('actions.removeFavorite') : t('actions.addFavorite');
+  button.setAttribute('aria-label', label);
+  button.title = label;
 }
 
 function renderCategories(categories: string[]): void {
@@ -1009,6 +1565,8 @@ function renderCategories(categories: string[]): void {
   if (categories.length === 0) {
     showElement(emptyState);
     showElement(emptyStateMobile);
+    syncRovingTabindexForList(list);
+    syncRovingTabindexForList(listMobile);
     return;
   } else {
     hideElement(emptyState);
@@ -1018,6 +1576,8 @@ function renderCategories(categories: string[]): void {
   categories.forEach((category) => {
     const li = document.createElement('li');
     li.dataset.category = category;
+    li.setAttribute('role', 'option');
+    li.setAttribute('aria-selected', 'false');
     li.classList.add('flex', 'items-center', 'gap-2');
 
     const color = categoryColorMap[category];
@@ -1041,6 +1601,9 @@ function renderCategories(categories: string[]): void {
       listMobile.appendChild(liMobile);
     }
   });
+
+  syncRovingTabindexForList(list);
+  syncRovingTabindexForList(listMobile);
 }
 
 function renderTags(tags: TagInfo[]): void {
@@ -1071,6 +1634,8 @@ function renderTags(tags: TagInfo[]): void {
   if (tags.length === 0) {
     showElement(emptyState);
     showElement(emptyStateMobile);
+    syncRovingTabindexForList(list);
+    syncRovingTabindexForList(listMobile);
     return;
   } else {
     hideElement(emptyState);
@@ -1080,6 +1645,8 @@ function renderTags(tags: TagInfo[]): void {
   tags.forEach((tag) => {
     const li = document.createElement('li');
     li.dataset.tag = tag.name;
+    li.setAttribute('role', 'option');
+    li.setAttribute('aria-selected', 'false');
     li.classList.add('flex', 'items-center', 'justify-between', 'gap-2');
 
     const left = document.createElement('div');
@@ -1111,6 +1678,9 @@ function renderTags(tags: TagInfo[]): void {
       listMobile.appendChild(liMobile);
     }
   });
+
+  syncRovingTabindexForList(list);
+  syncRovingTabindexForList(listMobile);
 }
 
 function showNewPromptForm() {
@@ -1158,19 +1728,29 @@ async function handlePromptSubmit(event: SubmitEvent): Promise<void> {
   const title = typeof titleValue === 'string' ? titleValue.trim() : '';
   const promptValue = formData.get('prompt');
   const promptContent = typeof promptValue === 'string' ? promptValue.trim() : '';
-  let hasError = false;
+  const errors: PromptFieldError[] = [];
 
   if (!title) {
-    showPromptFieldError('prompt-title', 'prompt-title-error', 'validation.titleRequired');
-    hasError = true;
+    errors.push({
+      fieldId: 'prompt-title',
+      errorId: 'prompt-title-error',
+      messageKey: 'validation.titleRequired',
+    });
   }
 
   if (!promptContent) {
-    showPromptFieldError('prompt-content', 'prompt-content-error', 'validation.contentRequired');
-    hasError = true;
+    errors.push({
+      fieldId: 'prompt-content',
+      errorId: 'prompt-content-error',
+      messageKey: 'validation.contentRequired',
+    });
   }
 
-  if (hasError) {
+  if (errors.length > 0) {
+    errors.forEach((err) => {
+      showPromptFieldError(err.fieldId, err.errorId, err.messageKey, false);
+    });
+    showPromptErrorSummary(errors);
     return;
   }
 
@@ -1201,14 +1781,17 @@ async function handlePromptSubmit(event: SubmitEvent): Promise<void> {
       delete form.dataset.mode;
       delete form.dataset.id;
     } else {
-      alert(`${t('messages.error')}: ${responseData.error || t('messages.unknownError')}`);
+      showNotification(
+        `${t('messages.error')}: ${responseData.error || t('messages.unknownError')}`,
+        'error'
+      );
     }
   } catch (error) {
     reportAppIssue('savePrompt', error, {
       mode: isEditMode ? 'edit' : 'create',
       promptId: promptId || null,
     });
-    alert(t('messages.error'));
+    showNotification(t('messages.error'), 'error');
   }
 }
 
@@ -1327,9 +1910,13 @@ async function editPrompt(id: PromptId): Promise<void> {
 }
 
 async function deletePrompt(id: PromptId): Promise<void> {
-  if (!confirm(t('messages.confirmDelete'))) {
-    return;
-  }
+  const confirmed = await confirmAsync({
+    title: t('actions.confirmDelete') || 'Confirm',
+    message: t('messages.confirmDelete') || 'Are you sure?',
+    confirmLabel: t('actions.delete') || 'Delete',
+    cancelLabel: t('actions.cancel') || 'Cancel',
+  });
+  if (!confirmed) return;
 
   try {
     await apiFetch<void>(`/api/prompts/${id}`, { method: 'DELETE' });
@@ -1339,7 +1926,7 @@ async function deletePrompt(id: PromptId): Promise<void> {
     void loadTags(); // Refresh sidebar tag list
   } catch (error) {
     reportAppIssue('deletePrompt', error, { promptId: id });
-    alert(t('messages.error'));
+    showNotification(t('messages.error'), 'error');
   }
 }
 
@@ -1348,13 +1935,19 @@ async function toggleFavorite(id: PromptId): Promise<void> {
     // Optimistic update - immediately toggle the UI
     const favoriteBtn = document.querySelector<HTMLButtonElement>(`.favorite-btn[data-id="${id}"]`);
     if (favoriteBtn) {
-      const currentIcon = favoriteBtn.textContent ?? '';
-      const newIcon = currentIcon === '★' ? '☆' : '★';
-      favoriteBtn.textContent = newIcon;
+      const currentFavorite =
+        typeof promptCache[id]?.favorite === 'boolean'
+          ? promptCache[id].favorite
+          : favoriteBtn.getAttribute('aria-pressed') === 'true' ||
+            (favoriteBtn.textContent ?? '').trim() === '★';
+      const nextFavorite = !currentFavorite;
+
+      favoriteBtn.textContent = nextFavorite ? '★' : '☆';
+      setFavoriteButtonA11y(favoriteBtn, nextFavorite);
 
       // Also update the cached prompt data
       if (promptCache[id]) {
-        promptCache[id].favorite = !promptCache[id].favorite;
+        promptCache[id].favorite = nextFavorite;
       }
     }
 
@@ -1366,24 +1959,31 @@ async function toggleFavorite(id: PromptId): Promise<void> {
     // Revert optimistic update on error
     const favoriteBtn = document.querySelector<HTMLButtonElement>(`.favorite-btn[data-id="${id}"]`);
     if (favoriteBtn) {
-      const currentIcon = favoriteBtn.textContent ?? '';
-      const revertedIcon = currentIcon === '★' ? '☆' : '★';
-      favoriteBtn.textContent = revertedIcon;
+      const currentFavorite =
+        typeof promptCache[id]?.favorite === 'boolean'
+          ? promptCache[id].favorite
+          : favoriteBtn.getAttribute('aria-pressed') === 'true' ||
+            (favoriteBtn.textContent ?? '').trim() === '★';
+      const revertedFavorite = !currentFavorite;
+
+      favoriteBtn.textContent = revertedFavorite ? '★' : '☆';
+      setFavoriteButtonA11y(favoriteBtn, revertedFavorite);
 
       // Also revert the cached prompt data
       if (promptCache[id]) {
-        promptCache[id].favorite = !promptCache[id].favorite;
+        promptCache[id].favorite = revertedFavorite;
       }
     }
 
     reportAppIssue('toggleFavorite', error, { promptId: id });
-    alert(t('messages.error'));
+    showNotification(t('messages.error'), 'error');
   }
 }
 
 function handleCategoryFilter(event: Event): void {
   const target = event.target as HTMLElement | null;
-  if (target?.tagName === 'LI') {
+  const item = target?.closest('li');
+  if (item) {
     // Update active state in both desktop and mobile lists
     document.querySelectorAll('#categories-list li').forEach((li) => li.classList.remove('active'));
     document
@@ -1391,10 +1991,10 @@ function handleCategoryFilter(event: Event): void {
       .forEach((li) => li.classList.remove('active'));
 
     // Add active to the clicked item
-    target.classList.add('active');
+    item.classList.add('active');
 
     // Sync the corresponding item in the other list
-    const category = target.dataset.category || 'all';
+    const category = item.dataset.category || 'all';
     const desktopItem = document.querySelector(`#categories-list li[data-category="${category}"]`);
     const mobileItem = document.querySelector(
       `#categories-list-mobile li[data-category="${category}"]`
@@ -1402,6 +2002,7 @@ function handleCategoryFilter(event: Event): void {
 
     if (desktopItem) desktopItem.classList.add('active');
     if (mobileItem) mobileItem.classList.add('active');
+    syncFilterListsRovingTabindex();
 
     // Update search state and trigger search
     searchState.category = category;
@@ -1411,7 +2012,8 @@ function handleCategoryFilter(event: Event): void {
 
 function handleTagFilter(event: Event): void {
   const target = event.target as HTMLElement | null;
-  if (target?.tagName === 'LI') {
+  const item = target?.closest('li');
+  if (item) {
     // Update active state in both desktop and mobile lists
     document.querySelectorAll('#tags-list li').forEach((li) => li.classList.remove('active'));
     document
@@ -1419,15 +2021,16 @@ function handleTagFilter(event: Event): void {
       .forEach((li) => li.classList.remove('active'));
 
     // Add active to the clicked item
-    target.classList.add('active');
+    item.classList.add('active');
 
     // Sync the corresponding item in the other list
-    const tag = target.dataset.tag || 'all';
+    const tag = item.dataset.tag || 'all';
     const desktopItem = document.querySelector(`#tags-list li[data-tag="${tag}"]`);
     const mobileItem = document.querySelector(`#tags-list-mobile li[data-tag="${tag}"]`);
 
     if (desktopItem) desktopItem.classList.add('active');
     if (mobileItem) mobileItem.classList.add('active');
+    syncFilterListsRovingTabindex();
 
     // Update search state and trigger search
     searchState.tag = tag;
@@ -1820,6 +2423,7 @@ function clearAllFilters(): void {
   document
     .querySelectorAll('#tags-list-mobile [data-tag="all"]')
     .forEach((li) => li.classList.add('active'));
+  syncFilterListsRovingTabindex();
 
   // Hide clear filters button and search results info
   const clearAllFiltersBtn = document.getElementById('clear-all-filters-btn');
@@ -1851,7 +2455,23 @@ const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
 function showVersionHistoryModal(promptId: number): void {
   currentVersionPromptId = promptId;
   selectedVersions.clear();
+  // Store trigger element for focus return
+  versionHistoryModalTrigger = (event as unknown as { target: HTMLElement }).target || null;
   showElement(document.getElementById('version-history-modal'));
+  // Move focus to first focusable element in modal
+  const modal = document.getElementById('version-history-modal');
+  if (modal) {
+    const focusableElements = Array.from(
+      modal.querySelectorAll<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')
+    ).filter((el) => {
+      const style = window.getComputedStyle(el);
+      return style.display !== 'none' && style.visibility !== 'hidden';
+    });
+    if (focusableElements.length > 0) {
+      const first = focusableElements[0];
+      if (first) first.focus();
+    }
+  }
   // Update search placeholder with current language
   const searchInput = document.getElementById('version-search') as HTMLInputElement | null;
   if (searchInput) {
@@ -1864,14 +2484,26 @@ function hideVersionHistoryModal(): void {
   hideElement(document.getElementById('version-history-modal'));
   currentVersionPromptId = null;
   selectedVersions.clear();
+  // Return focus to trigger element
+  if (versionHistoryModalTrigger) {
+    versionHistoryModalTrigger.focus();
+  }
 }
 
 function hideDiffModal(): void {
   hideElement(document.getElementById('diff-modal'));
+  // Return focus to trigger element
+  if (diffModalTrigger) {
+    diffModalTrigger.focus();
+  }
 }
 
 function hideRevertConfirmationModal(): void {
   hideElement(document.getElementById('revert-confirmation-modal'));
+  // Return focus to trigger element
+  if (revertConfirmationModalTrigger) {
+    revertConfirmationModalTrigger.focus();
+  }
 }
 
 async function loadVersionHistory(promptId: number): Promise<void> {
@@ -1931,6 +2563,8 @@ function renderVersionHistory(versions: VersionSummary[]): void {
     const versionItem = createVersionItem(version, index, versions.length);
     versionList.appendChild(versionItem);
   });
+
+  initializeVersionListKeyboardNavigation(versionList);
 }
 
 function createVersionItem(
@@ -1942,6 +2576,10 @@ function createVersionItem(
   div.className =
     'version-item bg-white border border-gray-200 rounded-lg p-4 cursor-pointer hover:bg-gray-50 transition-colors';
   div.dataset.versionId = version.version_id;
+  div.dataset.navLabel = version.message;
+  div.setAttribute('role', 'button');
+  div.setAttribute('aria-pressed', 'false');
+  div.tabIndex = -1;
 
   // Format timestamp with fallback for invalid dates
   let timestamp = 'Invalid Date';
@@ -1992,9 +2630,11 @@ function toggleVersionSelection(versionId: string, element: HTMLElement | null):
   if (selectedVersions.has(versionId)) {
     selectedVersions.delete(versionId);
     element.classList.remove('selected', 'ring-2', 'ring-blue-500', 'bg-blue-50');
+    element.setAttribute('aria-pressed', 'false');
   } else {
     selectedVersions.add(versionId);
     element.classList.add('selected', 'ring-2', 'ring-blue-500', 'bg-blue-50');
+    element.setAttribute('aria-pressed', 'true');
   }
   updateCompareButton();
 }
@@ -2012,7 +2652,23 @@ function updateCompareButton() {
 }
 
 function showRevertConfirmation(versionId: string): void {
+  // Store trigger element for focus return
+  revertConfirmationModalTrigger = (event as unknown as { target: HTMLElement }).target || null;
   showElement(document.getElementById('revert-confirmation-modal'));
+  // Move focus to first focusable element in modal
+  const modal = document.getElementById('revert-confirmation-modal');
+  if (modal) {
+    const focusableElements = Array.from(
+      modal.querySelectorAll<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')
+    ).filter((el) => {
+      const style = window.getComputedStyle(el);
+      return style.display !== 'none' && style.visibility !== 'hidden';
+    });
+    if (focusableElements.length > 0) {
+      const first = focusableElements[0];
+      if (first) first.focus();
+    }
+  }
   const confirmRevertBtn = document.getElementById(
     'confirm-revert-btn'
   ) as HTMLButtonElement | null;
@@ -2058,14 +2714,6 @@ async function performRevert(versionId: string): Promise<void> {
   }
 }
 
-function showNotification(message: string, type: 'info' | 'success' | 'error' = 'info'): void {
-  const notification = document.createElement('div');
-  notification.className = `notification notification-${type}`;
-  notification.textContent = message;
-  document.body.appendChild(notification);
-  setTimeout(() => notification.remove(), 3000);
-}
-
 // Diff Visualization Functions
 let allVersions: VersionSummary[] = [];
 
@@ -2075,7 +2723,23 @@ async function showDiffModal(): Promise<void> {
     return;
   }
 
+  // Store trigger element for focus return
+  diffModalTrigger = (event as unknown as { target: HTMLElement }).target || null;
   showElement(document.getElementById('diff-modal'));
+  // Move focus to first focusable element in modal
+  const modal = document.getElementById('diff-modal');
+  if (modal) {
+    const focusableElements = Array.from(
+      modal.querySelectorAll<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')
+    ).filter((el) => {
+      const style = window.getComputedStyle(el);
+      return style.display !== 'none' && style.visibility !== 'hidden';
+    });
+    if (focusableElements.length > 0) {
+      const first = focusableElements[0];
+      if (first) first.focus();
+    }
+  }
   let versionIds = Array.from(selectedVersions);
 
   // Sort versions by their version_number to ensure older is first (for old/new comparison)
@@ -2339,6 +3003,89 @@ function handleKeyboardShortcuts(event: KeyboardEvent): void {
   }
 }
 
+function showKeyboardShortcutsHelpModal(): void {
+  const buildLandmarksHelpList = (): string => {
+    const landmarks = Array.from(
+      document.querySelectorAll<HTMLElement>(
+        'header[role="banner"], nav[role="navigation"], main[role="main"], aside[role="complementary"], footer[role="contentinfo"]'
+      )
+    );
+
+    if (landmarks.length === 0) {
+      return `<li>${escapeHtml(t('accessibility.keyboardHelp.noLandmarks'))}</li>`;
+    }
+
+    return landmarks
+      .map((landmark, index) => {
+        const role = landmark.getAttribute('role') ?? landmark.tagName.toLowerCase();
+        const ariaLabel = landmark.getAttribute('aria-label')?.trim();
+        const ariaLabelledBy = landmark.getAttribute('aria-labelledby');
+        const labelledByText = ariaLabelledBy
+          ? document.getElementById(ariaLabelledBy)?.textContent?.trim()
+          : '';
+        const label = ariaLabel || labelledByText;
+        const description = label ? `${role} (${label})` : role;
+        return `<li><strong>${index + 1}.</strong> ${escapeHtml(description)}</li>`;
+      })
+      .join('');
+  };
+
+  if (!keyboardHelpModal) {
+    const content = document.createElement('div');
+    content.className = 'space-y-3 text-sm text-gray-700';
+    content.innerHTML = `
+      <p class="text-gray-600">${escapeHtml(t('accessibility.keyboardHelp.shortcutsHeading'))}</p>
+      <ul class="list-disc list-inside space-y-1">
+        <li><strong>Ctrl/Cmd + H</strong>: ${escapeHtml(t('accessibility.keyboardHelp.shortcutHistory'))}</li>
+        <li><strong>Ctrl/Cmd + N</strong>: ${escapeHtml(t('accessibility.keyboardHelp.shortcutNewPrompt'))}</li>
+        <li><strong>Escape</strong>: ${escapeHtml(t('accessibility.keyboardHelp.shortcutEscape'))}</li>
+        <li><strong>?</strong>: ${escapeHtml(t('accessibility.keyboardHelp.shortcutQuestion'))}</li>
+        <li><strong>Arrow keys</strong>: ${escapeHtml(t('accessibility.keyboardHelp.shortcutArrows'))}</li>
+        <li><strong>Enter / Space</strong>: ${escapeHtml(t('accessibility.keyboardHelp.shortcutActivate'))}</li>
+        <li><strong>Home / End</strong>: ${escapeHtml(t('accessibility.keyboardHelp.shortcutHomeEnd'))}</li>
+        <li><strong>${escapeHtml(t('accessibility.keyboardHelp.shortcutCharacterKey'))}</strong>: ${escapeHtml(t('accessibility.keyboardHelp.shortcutCharacter'))}</li>
+      </ul>
+      <div class="pt-2 border-t border-gray-200">
+        <p class="text-gray-600">${escapeHtml(t('accessibility.keyboardHelp.landmarksHeading'))}</p>
+        <ul id="keyboard-help-landmarks-list" class="list-disc list-inside space-y-1">
+          ${buildLandmarksHelpList()}
+        </ul>
+      </div>
+    `;
+
+    keyboardHelpModal = createModal({
+      id: 'keyboard-shortcuts-help-modal',
+      title: t('accessibility.keyboardHelp.title'),
+      content,
+      ariaLabel: t('accessibility.keyboardHelp.ariaLabel'),
+      size: 'md',
+      actions: [
+        {
+          label: t('actions.close'),
+          variant: 'primary',
+          onClick: () => {
+            keyboardHelpModal?.close();
+          },
+        },
+      ],
+      closeOnEscape: true,
+      closeOnBackdrop: true,
+      showClose: true,
+    });
+
+    document.body.appendChild(keyboardHelpModal.element);
+  }
+
+  const landmarksList = keyboardHelpModal.element.querySelector<HTMLElement>(
+    '#keyboard-help-landmarks-list'
+  );
+  if (landmarksList) {
+    landmarksList.innerHTML = buildLandmarksHelpList();
+  }
+
+  keyboardHelpModal.open();
+}
+
 // Tooltips (Phase 6 & 8)
 function addTooltips() {
   const tooltips = {
@@ -2346,14 +3093,15 @@ function addTooltips() {
     '.copy-btn': t('actions.copy'),
     '.edit-btn': t('actions.edit'),
     '.delete-btn': t('actions.delete'),
-    '.favorite-btn': 'Toggle favorite',
+    '.favorite-btn': t('actions.favorite'),
   };
 
   Object.entries(tooltips).forEach(([selector, title]) => {
     document.querySelectorAll(selector).forEach((element) => {
       const htmlElement = element as HTMLElement;
-      htmlElement.title = title;
-      htmlElement.setAttribute('data-tooltip', title);
+      const derivedTitle = selector === '.favorite-btn' ? (htmlElement.getAttribute('aria-label') || title) : title;
+      htmlElement.title = derivedTitle;
+      htmlElement.setAttribute('data-tooltip', derivedTitle);
     });
   });
 }
@@ -2406,6 +3154,182 @@ function loadMoreVersions() {
       versionListObserver.observe(lastItem);
     }
   }
+}
+
+let versionListKeyboardNavInitialized = false;
+
+function syncVersionListRovingTabindex(versionList: HTMLElement): void {
+  const items = Array.from(versionList.querySelectorAll<HTMLElement>('.version-item'));
+  if (items.length === 0) {
+    return;
+  }
+
+  const selectedItem = versionList.querySelector<HTMLElement>('.version-item.selected');
+  const tabbableItem = selectedItem ?? items[0];
+
+  items.forEach((item) => {
+    item.tabIndex = item === tabbableItem ? 0 : -1;
+  });
+}
+
+function findNextVersionItemByCharacter(
+  items: HTMLElement[],
+  currentIndex: number,
+  key: string
+): HTMLElement | null {
+  const normalizedKey = key.trim().toLocaleLowerCase();
+  if (!normalizedKey) {
+    return null;
+  }
+
+  for (let offset = 1; offset <= items.length; offset++) {
+    const index = (currentIndex + offset) % items.length;
+    const candidate = items[index];
+    if (!candidate) {
+      continue;
+    }
+    const text = (candidate.dataset.navLabel ?? '').trim().toLocaleLowerCase();
+    if (text.startsWith(normalizedKey)) {
+      return candidate;
+    }
+  }
+
+  return null;
+}
+
+function initializeVersionListKeyboardNavigation(versionList: HTMLElement): void {
+  syncVersionListRovingTabindex(versionList);
+
+  if (versionListKeyboardNavInitialized) {
+    return;
+  }
+  versionListKeyboardNavInitialized = true;
+
+  const typeahead = createTypeahead();
+
+  versionList.addEventListener('click', (event) => {
+    const target = event.target as HTMLElement | null;
+    const item = target?.closest<HTMLElement>('.version-item');
+    if (!item || !versionList.contains(item)) {
+      return;
+    }
+    syncVersionListRovingTabindex(versionList);
+    item.tabIndex = 0;
+    item.focus();
+  });
+
+  versionList.addEventListener('keydown', (event) => {
+    if ((event as KeyboardEvent).isComposing || event.key === 'Process') {
+      return;
+    }
+    const target = event.target as HTMLElement | null;
+    if (!target || !target.classList.contains('version-item')) {
+      return;
+    }
+
+    const items = Array.from(versionList.querySelectorAll<HTMLElement>('.version-item'));
+    if (items.length === 0) {
+      return;
+    }
+
+    const currentIndex = items.indexOf(target);
+    if (currentIndex < 0) {
+      return;
+    }
+
+    const focusItem = (item: HTMLElement): void => {
+      items.forEach((listItem) => {
+        listItem.tabIndex = listItem === item ? 0 : -1;
+      });
+      item.focus();
+    };
+
+    switch (event.key) {
+      case 'ArrowDown': {
+        event.preventDefault();
+        const nextItem = items[(currentIndex + 1) % items.length];
+        if (nextItem) focusItem(nextItem);
+        return;
+      }
+      case 'ArrowUp': {
+        event.preventDefault();
+        const previousItem = items[(currentIndex - 1 + items.length) % items.length];
+        if (previousItem) focusItem(previousItem);
+        return;
+      }
+      case 'Home': {
+        event.preventDefault();
+        const firstItem = items[0];
+        if (firstItem) focusItem(firstItem);
+        return;
+      }
+      case 'End': {
+        event.preventDefault();
+        const lastItem = items[items.length - 1];
+        if (lastItem) focusItem(lastItem);
+        return;
+      }
+      case 'Enter':
+      case ' ': {
+        event.preventDefault();
+        const versionId = target.dataset.versionId;
+        if (versionId) {
+          toggleVersionSelection(versionId, target);
+        }
+        return;
+      }
+      default:
+        break;
+    }
+
+    const isCharacterNavigation =
+      event.key.length === 1 && !event.metaKey && !event.ctrlKey && !event.altKey;
+    if (!isCharacterNavigation) {
+      return;
+    }
+
+    const query = typeahead.pushKey(event.key);
+    const matchedItem = findNextVersionItemByCharacter(items, currentIndex, query);
+    if (!matchedItem) {
+      return;
+    }
+
+    event.preventDefault();
+    focusItem(matchedItem);
+    const matchedText = matchedItem.dataset.navLabel ?? matchedItem.textContent?.trim() ?? '';
+    announceKeyboardNavigation(t('accessibility.navigateTo', { item: matchedText }));
+  });
+
+  versionList.addEventListener('compositionend', (event) => {
+    const composed = (event as CompositionEvent).data ?? '';
+    const active = document.activeElement as HTMLElement | null;
+    const currentItem = active?.closest?.('.version-item') as HTMLElement | null;
+    if (!currentItem || !versionList.contains(currentItem)) {
+      return;
+    }
+
+    const items = Array.from(versionList.querySelectorAll<HTMLElement>('.version-item'));
+    if (items.length === 0) {
+      return;
+    }
+    const currentIndex = items.indexOf(currentItem);
+    if (currentIndex < 0) {
+      return;
+    }
+
+    const query = typeahead.pushText(composed);
+    const matchedItem = findNextVersionItemByCharacter(items, currentIndex, query);
+    if (!matchedItem) {
+      return;
+    }
+
+    items.forEach((listItem) => {
+      listItem.tabIndex = listItem === matchedItem ? 0 : -1;
+    });
+    matchedItem.focus();
+    const matchedText = matchedItem.dataset.navLabel ?? matchedItem.textContent?.trim() ?? '';
+    announceKeyboardNavigation(t('accessibility.navigateTo', { item: matchedText }));
+  });
 }
 
 // API Response Time Profiling (Phase 9)
@@ -2515,7 +3439,9 @@ function renderTagChips(): void {
     chip.dataset.tagName = tag;
     chip.innerHTML = `
       <span>${tag}</span>
-      <button type="button" class="text-xs leading-none px-1 opacity-70 hover:opacity-100 transition-opacity" aria-label="Remove tag">×</button>
+      <button type="button" class="text-xs leading-none px-1 opacity-70 hover:opacity-100 transition-opacity" aria-label="${t(
+        'actions.remove'
+      )}">×</button>
     `;
     chipContainer.appendChild(chip);
   });
@@ -2529,7 +3455,7 @@ function setSelectedTags(tags: string[]): void {
   selectedTags = dedupeTags(tags);
   if (selectedTags.length > MAX_TAGS) {
     selectedTags = selectedTags.slice(0, MAX_TAGS);
-    showPromptFieldError('prompt-tags', 'prompt-tags-error', 'validation.tagsMax');
+    showPromptFieldError('prompt-tags', 'prompt-tags-error', 'validation.tagsMax', false, true);
   } else {
     clearPromptFieldError('prompt-tags', 'prompt-tags-error');
   }
@@ -2543,7 +3469,7 @@ function addTags(tags: string[]): void {
   const incoming = dedupeTags(tags);
   for (const tag of incoming) {
     if (selectedTags.length >= MAX_TAGS) {
-      showPromptFieldError('prompt-tags', 'prompt-tags-error', 'validation.tagsMax');
+      showPromptFieldError('prompt-tags', 'prompt-tags-error', 'validation.tagsMax', false, true);
       break;
     }
     if (!existing.includes(tag.toLowerCase())) {
@@ -2553,7 +3479,7 @@ function addTags(tags: string[]): void {
     }
   }
   if (added > 0) {
-    clearPromptFieldError('prompt-tags', 'prompt-tags-error');
+    clearPromptFieldError('prompt-tags', 'prompt-tags-error', true);
   }
   renderTagChips();
   syncHiddenTags();
@@ -2587,7 +3513,7 @@ async function handleSuggestTags(): Promise<void> {
 
   const content = promptInput.value.trim();
   if (!content) {
-    alert('Add prompt content before requesting suggestions.');
+    showNotification(t('messages.suggestTagsMissingContent'), 'info');
     return;
   }
 
@@ -2601,7 +3527,7 @@ async function handleSuggestTags(): Promise<void> {
     );
     const suggestedNames = response.suggestions.map((item) => item.name);
     if (suggestedNames.length === 0) {
-      alert('No suggestions found.');
+      showNotification(t('messages.suggestTagsNoSuggestions'), 'info');
       return;
     }
     const merged = mergeTagSuggestions(selectedTags, suggestedNames);
@@ -2609,7 +3535,7 @@ async function handleSuggestTags(): Promise<void> {
     tagInput.value = '';
   } catch (error) {
     reportAppIssue('suggestTags', error);
-    alert('Failed to get tag suggestions.');
+    showNotification(t('messages.suggestTagsFailed'), 'error');
   }
 }
 
@@ -3119,6 +4045,8 @@ function clearSelection() {
 function showBulkDeleteConfirmation() {
   if (selectedPromptIds.size === 0) return;
 
+  // Store trigger element for focus return
+  bulkDeleteModalTrigger = (event as unknown as { target: HTMLElement }).target || null;
   const modal = document.getElementById('bulk-delete-modal');
   const countElement = document.getElementById('bulk-delete-count');
   if (countElement) {
@@ -3126,6 +4054,8 @@ function showBulkDeleteConfirmation() {
   }
   if (modal) {
     modal.classList.remove(HIDDEN_CLASS);
+    // Move focus to first focusable element in modal
+    focusFirstElement(modal);
   }
 }
 
@@ -3134,11 +4064,17 @@ function hideBulkDeleteModal() {
   if (modal) {
     modal.classList.add(HIDDEN_CLASS);
   }
+  // Return focus to trigger element
+  if (bulkDeleteModalTrigger) {
+    bulkDeleteModalTrigger.focus();
+  }
 }
 
 function showBulkTagModal() {
   if (selectedPromptIds.size === 0) return;
 
+  // Store trigger element for focus return
+  bulkTagModalTrigger = (event as unknown as { target: HTMLElement }).target || null;
   const modal = document.getElementById('bulk-tag-modal');
   const countElement = document.getElementById('bulk-tag-count');
   if (countElement) {
@@ -3146,6 +4082,8 @@ function showBulkTagModal() {
   }
   if (modal) {
     modal.classList.remove(HIDDEN_CLASS);
+    // Move focus to first focusable element in modal
+    focusFirstElement(modal);
   }
 }
 
@@ -3153,6 +4091,10 @@ function hideBulkTagModal() {
   const modal = document.getElementById('bulk-tag-modal');
   if (modal) {
     modal.classList.add(HIDDEN_CLASS);
+  }
+  // Return focus to trigger element
+  if (bulkTagModalTrigger) {
+    bulkTagModalTrigger.focus();
   }
 }
 
@@ -3184,7 +4126,13 @@ async function performBulkDelete(): Promise<void> {
         deleted: result.deleted_count,
         failed: result.failed_count,
       });
-      alert(message);
+      showNotification(message, 'success');
+
+      // Announce deletion result to screen reader
+      announceToScreenReader(
+        `${result.deleted_count} prompt(s) deleted successfully. Focus returned to bulk delete button.`,
+        'polite'
+      );
 
       // Refresh UI
       await loadPrompts();
@@ -3205,7 +4153,7 @@ async function performBulkDelete(): Promise<void> {
     }
   } catch (error) {
     console.error('Bulk delete error:', error);
-    alert(t('bulkDelete.errorMessage'));
+    showNotification(t('bulkDelete.errorMessage'), 'error');
     reportAppIssue('bulk-delete-failed', error, {
       prompt_ids: promptIdsArray,
     });
@@ -3222,7 +4170,7 @@ async function performBulkTagUpdate(): Promise<void> {
   const removeTags = parseTagInput(removeInput?.value ?? '');
 
   if (addTags.length === 0 && removeTags.length === 0) {
-    alert('Provide at least one tag to add or remove.');
+    showNotification(t('messages.bulkTagProvideAtLeastOne'), 'info');
     return;
   }
 
@@ -3246,12 +4194,12 @@ async function performBulkTagUpdate(): Promise<void> {
     await loadAvailableTags();
     await loadTags();
 
-    alert('Tags updated for selected prompts.');
+    showNotification(t('messages.bulkTagUpdateSuccess'), 'success');
   } catch (error) {
     reportAppIssue('bulk-tag-update', error, {
       promptCount: selectedPromptIds.size,
     });
-    alert('Failed to update tags.');
+    showNotification(t('messages.bulkTagUpdateFailed'), 'error');
   }
 }
 

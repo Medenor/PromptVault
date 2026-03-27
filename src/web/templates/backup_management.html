@@ -7,6 +7,7 @@
     {% import "macros/scripts.html" as scripts %}
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Backup Management - Create, restore, and manage database backups of your PromptVault data." />
     <title>PromptVault - Backup Management</title>
     <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon.png" />
     {{ scripts.load_css('backup-management', true) }}
@@ -15,40 +16,50 @@
     <script src="https://unpkg.com/i18next-http-backend@2.4.2/i18nextHttpBackend.min.js"></script>
   </head>
   <body class="bg-gray-50 min-h-screen">
+    <a href="#main-content" class="skip-link" data-i18n="nav.skipToMainContent">Skip to main content</a>
     <div class="min-h-screen flex flex-col">
       <!-- Header -->
-      <header class="bg-blue-500 text-white shadow-sm">
+      <header class="bg-blue-700 text-white shadow-sm" role="banner" aria-label="Site header">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div class="flex items-center justify-between h-16">
             <div class="flex items-center gap-4 min-w-0">
-              <a href="/" class="inline-flex flex-shrink-0">
+              <a
+                href="/"
+                class="inline-flex flex-shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-700 rounded-lg"
+                aria-label="PromptVault home"
+                data-i18n="[aria-label]accessibility.labels.home"
+              >
                 <img
                   src="/static/images/promptvault_logo_frontend.webp"
-                  alt="PromptVault Logo"
+                  alt=""
+                  aria-hidden="true"
                   class="h-14 w-14 border-2 border-gray-400 rounded-lg shadow-lg flex-shrink-0"
                 />
               </a>
-              <h1 class="text-2xl font-bold truncate">PromptVault</h1>
+              <div class="text-2xl font-bold truncate">PromptVault</div>
             </div>
-            <button
-              onclick="window.location.href = '/'"
-              class="px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 transition whitespace-nowrap flex-shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
-              data-i18n="nav.backToMain"
-            >
-              Back to Main
-            </button>
+            <nav role="navigation" aria-label="Page navigation" data-i18n="[aria-label]accessibility.labels.pageNavigation">
+              <button
+                type="button"
+                onclick="window.location.href = '/'"
+                class="px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 transition whitespace-nowrap flex-shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
+                data-i18n="nav.backToMain"
+              >
+                Back to Main
+              </button>
+            </nav>
           </div>
         </div>
       </header>
 
       <!-- Main Content -->
-      <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+      <main id="main-content" role="main" class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2" data-i18n="backup.title">
+          Backup Management
+        </h1>
         <!-- Page Header -->
         <div class="mb-8">
-          <h2 class="text-3xl font-bold text-gray-900 mb-2" data-i18n="backup.title">
-            Backup Management
-          </h2>
-          <p class="text-gray-600" data-i18n="backup.description">
+          <p class="text-gray-700" data-i18n="backup.description">
             Manage your data backups with comprehensive backup and restoration capabilities
           </p>
         </div>
@@ -57,11 +68,18 @@
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           <!-- Create Backup Section -->
           <div class="bg-white rounded-lg shadow p-6">
-            <h3 class="text-xl font-bold text-gray-900 mb-6" data-i18n="backup.createTitle">
+            <h2 class="text-xl font-bold text-gray-900 mb-6" data-i18n="backup.createTitle">
               Create Backup
             </h3>
 
-            <form class="space-y-4">
+            <form id="backup-create-form" class="space-y-4" novalidate>
+              <div
+                id="backup-create-error-summary"
+                class="validation-error-banner"
+                role="alert"
+                aria-live="polite"
+                tabindex="-1"
+              ></div>
               <div>
                 <label
                   for="backup-name"
@@ -72,11 +90,12 @@
                 <input
                   type="text"
                   id="backup-name"
+                  name="backup_name"
                   data-i18n="[placeholder]backup.backupNamePlaceholder"
                   maxlength="64"
                   pattern="[A-Za-z0-9_-]*"
                   aria-describedby="backup-name-error"
-                  class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
+                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
                 />
                 <p
                   class="text-red-600 text-xs mt-1"
@@ -90,7 +109,9 @@
                 <div class="flex flex-col sm:flex-row gap-2">
                   <button
                     type="button"
-                    class="flex-1 px-4 py-2 text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                    aria-label="Create a new backup of your data"
+                    data-i18n="[aria-label]backup.createBtnAriaLabel"
+                    class="flex-1 px-4 py-2 text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
                     onclick="createBackup()"
                     data-i18n="backup.createBtn"
                   >
@@ -98,7 +119,9 @@
                   </button>
                   <button
                     type="button"
-                    class="px-4 py-2 text-sm font-medium bg-gray-200 text-gray-900 hover:bg-gray-300 rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                    aria-label="Clear the backup form"
+                    data-i18n="[aria-label]backup.clearBtnAriaLabel"
+                    class="px-4 py-2 text-sm font-medium bg-gray-200 text-gray-900 hover:bg-gray-300 rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
                     onclick="clearBackupForm()"
                     data-i18n="backup.clearBtn"
                   >
@@ -122,19 +145,22 @@
 
           <!-- Backup List Section -->
           <div class="bg-white rounded-lg shadow p-6">
-            <h3 class="text-xl font-bold text-gray-900 mb-6" data-i18n="backup.listTitle">
+            <h2 class="text-xl font-bold text-gray-900 mb-6" data-i18n="backup.listTitle">
               Available Backups
             </h3>
 
             <div class="space-y-3 max-h-96 overflow-y-auto" id="backup-list">
-              <div class="text-gray-500 text-sm" data-i18n="messages.loading">
+              <div class="text-gray-700 text-sm" data-i18n="messages.loading">
                 Loading backups...
               </div>
             </div>
 
             <div class="mt-6">
               <button
-                class="w-full px-4 py-2 text-sm font-medium bg-gray-200 text-gray-900 hover:bg-gray-300 rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                type="button"
+                aria-label="Refresh the list of available backups"
+                data-i18n="[aria-label]backup.refreshBtnAriaLabel"
+                class="w-full px-4 py-2 text-sm font-medium bg-gray-200 text-gray-900 hover:bg-gray-300 rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
                 onclick="refreshBackups()"
                 data-i18n="actions.refresh"
               >
@@ -146,16 +172,23 @@
 
         <!-- Maintenance Section -->
         <div class="bg-white rounded-lg shadow p-6 mb-8">
-          <h3 class="text-xl font-bold text-gray-900 mb-6" data-i18n="backup.maintenanceTitle">
+          <h2 class="text-xl font-bold text-gray-900 mb-6" data-i18n="backup.maintenanceTitle">
             Maintenance
           </h3>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <h4 class="font-semibold text-gray-900 mb-4" data-i18n="backup.cleanupTitle">
+              <h3 class="font-semibold text-gray-900 mb-4" data-i18n="backup.cleanupTitle">
                 Cleanup Old Backups
               </h4>
               <div class="space-y-4">
+                <div
+                  id="cleanup-error-summary"
+                  class="validation-error-banner"
+                  role="alert"
+                  aria-live="polite"
+                  tabindex="-1"
+                ></div>
                 <div>
                   <label
                     for="retention-days"
@@ -166,11 +199,12 @@
                   <input
                     type="number"
                     id="retention-days"
+                    name="retention_days"
                     value="30"
                     min="1"
                     max="3650"
                     aria-describedby="retention-days-error"
-                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
+                    class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
                   />
                   <div
                     class="text-red-600 text-sm mt-1"
@@ -180,7 +214,10 @@
                   ></div>
                 </div>
                 <button
-                  class="w-full px-4 py-2 text-sm font-semibold bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
+                  type="button"
+                  aria-label="Delete old backups based on retention days setting"
+                  data-i18n="[aria-label]backup.cleanupBtnAriaLabel"
+                  class="w-full px-4 py-2 text-sm font-semibold bg-amber-700 hover:bg-amber-800 text-white rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 focus-visible:ring-offset-2"
                   onclick="cleanupBackups()"
                   data-i18n="backup.cleanupBtn"
                 >
@@ -190,10 +227,17 @@
             </div>
 
             <div>
-              <h4 class="font-semibold text-gray-900 mb-4" data-i18n="backup.compressTitle">
+              <h3 class="font-semibold text-gray-900 mb-4" data-i18n="backup.compressTitle">
                 Compress Old Backups
               </h4>
               <div class="space-y-4">
+                <div
+                  id="compress-error-summary"
+                  class="validation-error-banner"
+                  role="alert"
+                  aria-live="polite"
+                  tabindex="-1"
+                ></div>
                 <div>
                   <label
                     for="compress-days"
@@ -204,11 +248,12 @@
                   <input
                     type="number"
                     id="compress-days"
+                    name="compress_days"
                     value="7"
                     min="1"
                     max="365"
                     aria-describedby="compress-days-error"
-                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
+                    class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
                   />
                   <div
                     class="text-red-600 text-sm mt-1"
@@ -218,7 +263,10 @@
                   ></div>
                 </div>
                 <button
-                  class="w-full px-4 py-2 text-sm font-semibold bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2"
+                  type="button"
+                  aria-label="Compress old backups older than the specified number of days"
+                  data-i18n="[aria-label]backup.compressBtnAriaLabel"
+                  class="w-full px-4 py-2 text-sm font-semibold bg-cyan-700 hover:bg-cyan-800 text-white rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-600 focus-visible:ring-offset-2"
                   onclick="compressBackups()"
                   data-i18n="backup.compressBtn"
                 >
@@ -242,136 +290,328 @@
 
         <!-- Statistics Panel -->
         <div class="bg-white rounded-lg shadow p-6">
-          <h3 class="text-xl font-bold text-gray-900 mb-6" data-i18n="backup.statisticsTitle">
+          <h2 class="text-xl font-bold text-gray-900 mb-6" data-i18n="backup.statisticsTitle">
             Backup Statistics
           </h3>
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
             <div class="text-center">
               <div class="text-3xl font-bold text-gray-900" id="total-backups">-</div>
-              <div class="text-sm text-gray-600 mt-1" data-i18n="backup.totalBackups">
+              <div class="text-sm text-gray-700 mt-1" data-i18n="backup.totalBackups">
                 Total Backups
               </div>
             </div>
             <div class="text-center">
               <div class="text-3xl font-bold text-blue-600" id="total-size">-</div>
-              <div class="text-sm text-gray-600 mt-1" data-i18n="backup.totalSize">Total Size</div>
+              <div class="text-sm text-gray-700 mt-1" data-i18n="backup.totalSize">Total Size</div>
             </div>
             <div class="text-center">
               <div class="text-3xl font-bold text-green-600" id="compressed-count">-</div>
-              <div class="text-sm text-gray-600 mt-1" data-i18n="backup.compressedCount">
+              <div class="text-sm text-gray-700 mt-1" data-i18n="backup.compressedCount">
                 Compressed
               </div>
             </div>
             <div class="text-center">
               <div class="text-sm font-medium text-gray-900" id="newest-backup">-</div>
-              <div class="text-xs text-gray-600 mt-1" data-i18n="backup.newestBackup">
+              <div class="text-xs text-gray-700 mt-1" data-i18n="backup.newestBackup">
                 Newest Backup
               </div>
             </div>
             <div class="text-center">
               <div class="text-sm font-medium text-gray-900" id="oldest-backup">-</div>
-              <div class="text-xs text-gray-600 mt-1" data-i18n="backup.oldestBackup">
+              <div class="text-xs text-gray-700 mt-1" data-i18n="backup.oldestBackup">
                 Oldest Backup
               </div>
             </div>
           </div>
         </div>
       </main>
-    </div>
 
-    <!-- Restore Confirmation Modal -->
-    <div
-      id="restore-modal"
-      class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-    >
-      <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
-        <div class="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 class="text-xl font-bold text-gray-900" data-i18n="backup.confirmRestore">
-            Confirm Restore
-          </h2>
-          <span
-            class="text-gray-400 hover:text-gray-600 text-2xl cursor-pointer"
-            onclick="hideRestoreModal()"
-            >&times;</span
-          >
-        </div>
-        <div class="p-6">
-          <p class="text-gray-700 mb-4" data-i18n="backup.restoreWarning">
-            Are you sure you want to restore from this backup? This will replace your current data.
-          </p>
-          <div class="bg-gray-50 rounded p-3 text-sm" id="restore-backup-info"></div>
-          <div
-            class="hidden text-sm text-blue-600 mt-4"
-            id="restore-status"
-            data-i18n="backup.restoreInProgress"
-          >
-            Restoring backup...
-          </div>
-        </div>
-        <div
-          class="flex items-center justify-end gap-2 p-6 border-t border-gray-200"
-        >
-          <button
-            class="px-4 py-2 text-sm font-medium bg-gray-200 text-gray-900 hover:bg-gray-300 rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
-            onclick="hideRestoreModal()"
-            data-i18n="actions.cancel"
-          >
-            Cancel
-          </button>
-          <button
-            id="confirm-restore-btn"
-            class="px-4 py-2 text-sm font-semibold bg-red-600 hover:bg-red-700 text-white rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
-            data-i18n="backup.restoreBtn"
-          >
-            Restore
-          </button>
-        </div>
-      </div>
-    </div>
+      <footer role="contentinfo" aria-label="Site footer" class="mt-auto border-t border-gray-200 bg-gray-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div class="flex flex-col gap-3 text-sm text-gray-600">
+            <p>
+              PromptVault is licensed under <a href="https://www.mozilla.org/en-US/MPL/2.0/" class="text-blue-600 hover:text-blue-800 underline" target="_blank" rel="noopener noreferrer">Mozilla Public License 2.0</a>.
+            </p>
+            <a href="https://codeberg.org/medenor/promptvault" class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 transition" target="_blank" rel="noopener noreferrer" aria-label="PromptVault on Codeberg">
+              <?xml version="1.0" encoding="UTF-8" standalone="no"?>
+                <svg
+                 width="16"
+                 height="16"
+                 viewBox="0 0 4.2333332 4.2333335"
+                 version="1.1"
+                 id="svg1468"
+                 sodipodi:docname="codeberg-logo_icon_blue.svg"
+                 inkscape:version="1.2-alpha1 (b6a15bb, 2022-02-23)"
+                 inkscape:export-filename="/home/mray/Projects/Codeberg/logo/icon/png/codeberg-logo_icon_blue.png"
+                 inkscape:export-xdpi="384"
+                 inkscape:export-ydpi="384"
+                 xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+                 xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+                 xmlns:xlink="http://www.w3.org/1999/xlink"
+                 xmlns="http://www.w3.org/2000/svg"
+                 xmlns:svg="http://www.w3.org/2000/svg"
+                 xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+                 xmlns:cc="http://creativecommons.org/ns#"
+                 xmlns:dc="http://purl.org/dc/elements/1.1/">
+                <title
+                id="title16">Codeberg logo</title>
+                <defs
+                 id="defs1462">
+                <linearGradient
+                 xlink:href="#linearGradient6924"
+                 id="linearGradient6918"
+                 x1="42519.285"
+                 y1="-7078.7891"
+                 x2="42575.336"
+                 y2="-6966.9307"
+                 gradientUnits="userSpaceOnUse" />
+                <linearGradient
+                 id="linearGradient6924">
+                <stop
+                 style="stop-color:#2185d0;stop-opacity:0"
+                 offset="0"
+                 id="stop6920" />
+                <stop
+                 id="stop6926"
+                 offset="0.49517274"
+                 style="stop-color:#2185d0;stop-opacity:0.48923996" />
+                <stop
+                 style="stop-color:#2185d0;stop-opacity:0.63279623"
+                 offset="1"
+                 id="stop6922" />
+              </linearGradient>
+                <linearGradient
+                 xlink:href="#linearGradient6924-6"
+                 id="linearGradient6918-3"
+                 x1="42519.285"
+                 y1="-7078.7891"
+                 x2="42575.336"
+                 y2="-6966.9307"
+                 gradientUnits="userSpaceOnUse" />
+                <linearGradient
+                 id="linearGradient6924-6">
+                <stop
+                 style="stop-color:#2185d0;stop-opacity:0;"
+                 offset="0"
+                 id="stop6920-7" />
+                <stop
+                 id="stop6926-5"
+                 offset="0.49517274"
+                 style="stop-color:#2185d0;stop-opacity:0.30000001;" />
+                <stop
+                 style="stop-color:#2185d0;stop-opacity:0.30000001;"
+                 offset="1"
+                 id="stop6922-3" />
+              </linearGradient>
+                </defs>
+                <sodipodi:namedview
+                 showborder="false"
+                 id="base"
+                 pagecolor="#ffffff"
+                 bordercolor="#666666"
+                 borderopacity="1.0"
+                 inkscape:pageopacity="0.0"
+                 inkscape:pageshadow="2"
+                 inkscape:zoom="22.627417"
+                 inkscape:cx="12.948893"
+                 inkscape:cy="12.661631"
+                 inkscape:document-units="px"
+                 inkscape:current-layer="svg1468"
+                 inkscape:document-rotation="0"
+                 showgrid="false"
+                 fit-margin-top="0"
+                 fit-margin-left="0"
+                 fit-margin-right="0"
+                 fit-margin-bottom="0"
+                 units="px"
+                 inkscape:snap-global="false"
+                 inkscape:snap-page="true"
+                 showguides="false"
+                 inkscape:window-width="1531"
+                 inkscape:window-height="873"
+                 inkscape:window-x="69"
+                 inkscape:window-y="27"
+                 inkscape:window-maximized="1"
+                 inkscape:pagecheckerboard="0"
+                 inkscape:deskcolor="#d1d1d1">
+                <inkscape:grid
+                 type="xygrid"
+                 id="grid2067" />
+              </sodipodi:namedview>
+                <metadata
+                 id="metadata1465">
+                <rdf:RDF>
+                <cc:Work
+                 rdf:about="">
+                <dc:format>image/svg+xml</dc:format>
+                <dc:type
+                 rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+                <dc:title>Codeberg logo</dc:title>
+                <cc:license
+                 rdf:resource="http://creativecommons.org/publicdomain/zero/1.0/" />
+                <dc:creator>
+                <cc:Agent>
+                <dc:title>Robert Martinez</dc:title>
+              </cc:Agent>
+              </dc:creator>
+                <dc:rights>
+                <cc:Agent>
+                <dc:title>Codeberg and the Codeberg Logo are trademarks of Codeberg e.V.</dc:title>
+              </cc:Agent>
+              </dc:rights>
+              <dc:date>2020-04-09</dc:date>
+                <dc:publisher>
+                <cc:Agent>
+                <dc:title>Codeberg e.V.</dc:title>
+              </cc:Agent>
+              </dc:publisher>
+              <dc:source>codeberg.org</dc:source>
+              </cc:Work>
+                <cc:License
+                 rdf:about="http://creativecommons.org/publicdomain/zero/1.0/">
+                <cc:permits
+                 rdf:resource="http://creativecommons.org/ns#Reproduction" />
+                <cc:permits
+                 rdf:resource="http://creativecommons.org/ns#Distribution" />
+                <cc:permits
+                 rdf:resource="http://creativecommons.org/ns#DerivativeWorks" />
+              </cc:License>
+              </rdf:RDF>
+                </metadata>
+                <g
+                 id="g370484"
+                 inkscape:label="logo"
+                 transform="matrix(0.06551432,0,0,0.06551432,-2.232417,-1.431776)">
+                <path
+                 id="path6733-5"
+                 style="font-variation-settings:normal;opacity:1;vector-effect:none;fill:url(#linearGradient6918-3);fill-opacity:1;stroke:none;stroke-width:3.67846;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:2;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:stroke markers fill;stop-color:#000000;stop-opacity:1"
+                 d="m 42519.285,-7078.7891 a 0.76086879,0.56791688 0 0 0 -0.738,0.6739 l 33.586,125.8886 a 87.182358,87.182358 0 0 0 39.381,-33.7636 l -71.565,-92.5196 a 0.76086879,0.56791688 0 0 0 -0.664,-0.2793 z"
+                 transform="matrix(0.37058478,0,0,0.37058478,-15690.065,2662.0533)"
+                 inkscape:label="berg" />
+                <path
+                 id="path360787"
+                 style="opacity:1;fill:#2185d0;fill-opacity:1;stroke-width:17.0055;paint-order:markers fill stroke;stop-color:#000000"
+                 d="m 11249.461,-1883.6961 c -12.74,0 -23.067,10.3275 -23.067,23.0671 0,4.3335 1.22,8.5795 3.522,12.2514 l 19.232,-24.8636 c 0.138,-0.1796 0.486,-0.1796 0.624,0 l 19.233,24.8646 c 2.302,-3.6721 3.523,-7.9185 3.523,-12.2524 0,-12.7396 -10.327,-23.0671 -23.067,-23.0671 z"
+                 sodipodi:nodetypes="sccccccs"
+                 inkscape:label="sky"
+                 transform="matrix(1.4006354,0,0,1.4006354,-15690.065,2662.0533)" />
+                </g>
+              </svg>
 
-    <!-- Delete Confirmation Modal -->
-    <div
-      id="delete-modal"
-      class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-    >
-      <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
-        <div class="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 class="text-xl font-bold text-gray-900" data-i18n="backup.confirmDelete">
-            Confirm Delete
-          </h2>
-          <span
-            class="text-gray-400 hover:text-gray-600 text-2xl cursor-pointer"
-            onclick="hideDeleteModal()"
-            >&times;</span
-          >
-        </div>
-        <div class="p-6">
-          <p class="text-gray-700 mb-4" data-i18n="backup.deleteWarning">
-            Are you sure you want to delete this backup? This action cannot be undone.
-          </p>
-          <div class="bg-gray-50 rounded p-3 text-sm" id="delete-backup-info"></div>
-        </div>
-        <div
-          class="flex items-center justify-end gap-2 p-6 border-t border-gray-200"
-        >
-          <button
-            class="px-4 py-2 text-sm font-medium bg-gray-200 text-gray-900 hover:bg-gray-300 rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
-            onclick="hideDeleteModal()"
-            data-i18n="actions.cancel"
-          >
-            Cancel
-          </button>
-          <button
-            id="confirm-delete-btn"
-            class="px-4 py-2 text-sm font-semibold bg-red-600 hover:bg-red-700 text-white rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
-            data-i18n="backup.deleteBtn"
-          >
-            Delete
-          </button>
-        </div>
-      </div>
-    </div>
+                 Source code on Codeberg
+              </a>
+              </div>
+              </div>
+              </footer>
+              </div>
 
-    {{ scripts.load_scripts('backup-management', true, 'backup_management', true) }}
-  </body>
-</html>
+                <!-- Restore Confirmation Modal -->
+                <div
+                 id="restore-modal"
+                 aria-modal="true"
+                 aria-labelledby="restore-modal-title"
+                 role="dialog"
+                 class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+                 >
+                <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+                <div class="flex items-center justify-between p-6 border-b border-gray-200">
+                <h2 id="restore-modal-title" class="text-xl font-bold text-gray-900" data-i18n="backup.confirmRestore">
+                 Confirm Restore
+              </h2>
+                <button
+                 type="button"
+                 class="text-gray-400 hover:text-gray-700 text-2xl cursor-pointer rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
+                 aria-label="Close modal"
+                 data-i18n="[aria-label]actions.close"
+                 onclick="hideRestoreModal()"
+                >&times;</button>
+              </div>
+                <div class="p-6">
+                <p class="text-gray-700 mb-4" data-i18n="backup.restoreWarning">
+                 Are you sure you want to restore from this backup? This will replace your current data.
+              </p>
+              <div class="bg-gray-50 rounded p-3 text-sm" id="restore-backup-info"></div>
+                <div
+                 class="hidden text-sm text-blue-600 mt-4"
+                 id="restore-status"
+                 data-i18n="backup.restoreInProgress"
+                 >
+                 Restoring backup...
+              </div>
+              </div>
+                <div
+                 class="flex items-center justify-end gap-2 p-6 border-t border-gray-200"
+                 >
+                <button
+                 type="button"
+                 class="px-4 py-2 text-sm font-medium bg-gray-200 text-gray-900 hover:bg-gray-300 rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
+                 onclick="hideRestoreModal()"
+                 data-i18n="actions.cancel"
+                 >
+                 Cancel
+              </button>
+                <button
+                 type="button"
+                 id="confirm-restore-btn"
+                 class="px-4 py-2 text-sm font-semibold bg-red-600 hover:bg-red-700 text-white rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
+                 data-i18n="backup.restoreBtn"
+                 >
+                 Restore
+              </button>
+              </div>
+              </div>
+              </div>
+
+                <!-- Delete Confirmation Modal -->
+                <div
+                 id="delete-modal"
+                 aria-modal="true"
+                 aria-labelledby="delete-modal-title"
+                 role="dialog"
+                 class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+                 >
+                <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+                <div class="flex items-center justify-between p-6 border-b border-gray-200">
+                <h2 id="delete-modal-title" class="text-xl font-bold text-gray-900" data-i18n="backup.confirmDelete">
+                 Confirm Delete
+              </h2>
+                <button
+                 type="button"
+                 class="text-gray-400 hover:text-gray-700 text-2xl cursor-pointer rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
+                 aria-label="Close modal"
+                 data-i18n="[aria-label]actions.close"
+                 onclick="hideDeleteModal()"
+                >&times;</button>
+              </div>
+                <div class="p-6">
+                <p class="text-gray-700 mb-4" data-i18n="backup.deleteWarning">
+                 Are you sure you want to delete this backup? This action cannot be undone.
+              </p>
+              <div class="bg-gray-50 rounded p-3 text-sm" id="delete-backup-info"></div>
+              </div>
+                <div
+                 class="flex items-center justify-end gap-2 p-6 border-t border-gray-200"
+                 >
+                <button
+                 type="button"
+                 class="px-4 py-2 text-sm font-medium bg-gray-200 text-gray-900 hover:bg-gray-300 rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
+                 onclick="hideDeleteModal()"
+                 data-i18n="actions.cancel"
+                 >
+                 Cancel
+              </button>
+                <button
+                 type="button"
+                 id="confirm-delete-btn"
+                 class="px-4 py-2 text-sm font-semibold bg-red-600 hover:bg-red-700 text-white rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
+                 data-i18n="backup.deleteBtn"
+                 >
+                 Delete
+              </button>
+              </div>
+              </div>
+              </div>
+
+                 {{ scripts.load_scripts('backup-management', true, 'backup_management', true) }}
+              </body>
+              </html>

@@ -76,3 +76,5 @@ node_modules/
 playwright-report/
 test-results/
 .nyc_output/
+accessibility-report/
+tests/accessibility/reports/

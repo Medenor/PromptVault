@@ -35,6 +35,8 @@ export default defineConfig({
         'manage-tags': resolve(__dirname, 'src/web/static/ts/manage-tags.ts'),
         // Shared telemetry (loaded on all pages)
         telemetry: resolve(__dirname, 'src/web/static/ts/telemetry.ts'),
+        // Global shortcuts/help (loaded on all pages)
+        globalShortcuts: resolve(__dirname, 'src/web/static/ts/global-shortcuts.ts'),
       },
       output: {
         entryFileNames: 'js/[name].[hash].js',

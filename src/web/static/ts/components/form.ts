@@ -23,10 +23,32 @@ export function createFormGroup(child: HTMLElement, props: FormGroupProps): HTML
   const group = document.createElement('div');
   group.className = `flex flex-col gap-1 ${props?.className || ''}`.trim();
 
+  const fieldId =
+    props.htmlFor ||
+    // If the caller passed an actual form control, we can infer the id for help/error associations.
+    ((child instanceof HTMLInputElement ||
+      child instanceof HTMLTextAreaElement ||
+      child instanceof HTMLSelectElement) &&
+    child.id
+      ? child.id
+      : '') ||
+    props.id ||
+    'field';
+
   if (props.label) {
     const label = document.createElement('label');
     label.className = 'font-medium text-gray-900 text-sm';
-    if (props.htmlFor) label.htmlFor = props.htmlFor;
+    if (props.htmlFor) {
+      label.htmlFor = props.htmlFor;
+    } else if (
+      (child instanceof HTMLInputElement ||
+        child instanceof HTMLTextAreaElement ||
+        child instanceof HTMLSelectElement) &&
+      child.id
+    ) {
+      // Reasonable default: if a form control id exists, associate label to it.
+      label.htmlFor = child.id;
+    }
 
     // Label text
     const labelText = document.createTextNode(props.label);
@@ -40,26 +62,52 @@ export function createFormGroup(child: HTMLElement, props: FormGroupProps): HTML
       label.appendChild(required);
     }
 
-    group.appendChild(label);
+  group.appendChild(label);
   }
 
   group.appendChild(child);
 
+  // Link help/error text to the form control via aria-describedby.
+  // This keeps screen reader users in-sync with inline help and validation messages.
+  const control =
+    props.htmlFor && group.querySelector<HTMLElement>(`#${props.htmlFor}`)
+      ? group.querySelector<HTMLElement>(`#${props.htmlFor}`)!
+      : child instanceof HTMLInputElement ||
+          child instanceof HTMLTextAreaElement ||
+          child instanceof HTMLSelectElement
+        ? child
+        : null;
+
+  const mergeDescribedBy = (el: HTMLElement, ids: string[]) => {
+    const existing =
+      el
+        .getAttribute('aria-describedby')
+        ?.split(/\s+/)
+        .map((s) => s.trim())
+        .filter(Boolean) ?? [];
+    const next = Array.from(new Set([...existing, ...ids.filter(Boolean)]));
+    if (next.length) el.setAttribute('aria-describedby', next.join(' '));
+  };
+
   // Error message (takes precedence over help text)
   if (props.error) {
-    const errorId = `${props.htmlFor || 'field'}-error`;
+    const errorId = `${fieldId}-error`;
     const error = document.createElement('p');
     error.id = errorId;
     error.textContent = props.error;
     error.className = 'text-sm text-red-500 mt-1';
     error.setAttribute('role', 'alert');
     group.appendChild(error);
+    if (control) mergeDescribedBy(control, [errorId]);
   } else if (props.helpText) {
     // Help text only shown if no error
+    const helpId = `${fieldId}-help`;
     const help = document.createElement('p');
+    help.id = helpId;
     help.textContent = props.helpText;
     help.className = 'text-sm text-gray-500 mt-1';
     group.appendChild(help);
+    if (control) mergeDescribedBy(control, [helpId]);
   }
 
   if (props.id) group.id = props.id;

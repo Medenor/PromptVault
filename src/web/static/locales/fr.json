@@ -2,6 +2,7 @@
   "nav": {
     "newPrompt": "Nouveau Prompt",
     "prompts": "Prompts",
+    "myPrompts": "Mes Prompts",
     "categories": "Catégories",
     "allCategories": "Toutes les catégories",
     "tags": "Étiquettes",
@@ -19,17 +20,23 @@
     "profile": "Profil",
     "admin": "Administration",
     "logout": "Déconnexion",
-    "backToMain": "Retour au menu principal"
+    "backToMain": "Retour au menu principal",
+    "skipToMainContent": "Aller au contenu principal",
+    "home": "Accueil"
   },
   "actions": {
     "add": "Ajouter",
+    "remove": "Retirer",
     "view": "Afficher",
     "edit": "Modifier",
     "delete": "Supprimer",
     "save": "Enregistrer",
     "cancel": "Annuler",
+    "confirm": "Confirmer",
     "copy": "Copier",
     "favorite": "Favori",
+    "addFavorite": "Ajouter aux favoris",
+    "removeFavorite": "Retirer des favoris",
     "export": "Exporter",
     "import": "Importer",
     "close": "Fermer",
@@ -83,9 +90,18 @@
     "missingCommitMessage": "Champ obligatoire manquant",
     "unknownError": "Erreur inconnue",
     "selectTwoVersions": "Veuillez sélectionner exactement 2 versions à comparer",
-    "selectPromptFirst": "Veuillez d'abord sélectionner une invite"
+    "selectPromptFirst": "Veuillez d'abord sélectionner une invite",
+    "suggestTagsMissingContent": "Ajoutez du contenu au prompt avant de demander des suggestions.",
+    "suggestTagsNoSuggestions": "Aucune suggestion trouvée.",
+    "suggestTagsFailed": "Échec de la récupération des suggestions de tags.",
+    "bulkTagProvideAtLeastOne": "Indiquez au moins un tag à ajouter ou à supprimer.",
+    "bulkTagUpdateSuccess": "Tags mis à jour pour les invites sélectionnées.",
+    "bulkTagUpdateFailed": "Échec de la mise à jour des tags."
   },
   "validation": {
+    "errorSummaryHeader": "Veuillez corriger les erreurs suivantes :",
+    "fieldValid": "Champ valide.",
+    "errorCleared": "Erreur corrigée.",
     "required": "Ce champ est obligatoire.",
     "titleRequired": "Le champ 'Titre du Prompt' ne peut pas être vide.",
     "titleTooLong": "Le titre ne peut pas dépasser 200 caractères.",
@@ -345,6 +361,8 @@
       "passwordMismatch": "Les mots de passe ne correspondent pas",
       "registerButton": "S'inscrire",
       "haveAccount": "Vous avez déjà un compte ? Se connecter",
+      "alreadyHaveAccount": "Vous avez déjà un compte?",
+      "login": "Connexion",
       "success": "Inscription réussie !",
       "strengthWeak": "Mot de passe faible",
       "strengthMedium": "Mot de passe moyen",
@@ -512,6 +530,7 @@
     "name": "Nom",
     "description": "Description",
     "color": "Couleur",
+    "pickColor": "Choisir une couleur",
     "order": "Ordre",
     "usage": "Utilisation",
     "actions": "Actions",
@@ -567,5 +586,41 @@
     "removeLabel": "Retirer des étiquettes",
     "placeholder": "Étiquettes séparées par des virgules",
     "note": "Les étiquettes ajoutées ou retirées seront appliquées à tous les prompts sélectionnés."
+  },
+  "accessibility": {
+    "navigateTo": "Navigation vers {{item}}",
+    "labels": {
+      "home": "Accueil PromptVault",
+      "pageNavigation": "Navigation de page",
+      "primaryActions": "Actions principales",
+      "primaryActionsMobile": "Actions principales (mobile)",
+      "openMenu": "Ouvrir le menu",
+      "promptFiltersNavigation": "Filtres et navigation des prompts",
+      "promptFiltersNavigationMobile": "Filtres et navigation des prompts (mobile)",
+      "closeSidebar": "Fermer la barre latérale",
+      "toggleSidebar": "Basculer la barre latérale",
+      "adminPageNavigation": "Navigation des pages d'administration",
+      "adminPageNavigationMobile": "Navigation des pages d'administration (mobile)",
+      "toggleMenu": "Basculer le menu",
+      "togglePasswordVisibility": "Afficher ou masquer le mot de passe"
+    },
+    "keyboardHelp": {
+      "title": "Raccourcis clavier et repères",
+      "ariaLabel": "Aide des raccourcis clavier et repères",
+      "shortcutsHeading": "Raccourcis clavier disponibles :",
+      "landmarksHeading": "Repères sur cette page :",
+      "noLandmarks": "Aucun repère détecté sur cette page.",
+      "shortcutHistory": "Ouvrir l’historique des versions du prompt sélectionné",
+      "shortcutNewPrompt": "Créer un nouveau prompt",
+      "shortcutEscape": "Fermer les dialogues et l’éditeur ouverts",
+      "shortcutQuestion": "Ouvrir cette aide des raccourcis clavier",
+      "shortcutArrows": "Déplacer le focus dans les listes de filtres catégories et étiquettes (et la liste d’historique des versions)",
+      "shortcutActivate": "Activer l’élément ciblé",
+      "shortcutHomeEnd": "Aller au premier et au dernier élément de la liste",
+      "shortcutCharacterKey": "Toute lettre ou caractère",
+      "shortcutCharacter": "Aller au prochain élément commençant par ce caractère (y compris les caractères CJK)",
+      "fallbackNoteHeading": "Note :",
+      "fallbackNoteBody": "Certains raccourcis ne sont disponibles que sur la page principale des prompts."
+    }
   }
 }

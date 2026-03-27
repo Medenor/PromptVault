@@ -7,6 +7,7 @@
     {% import "macros/scripts.html" as scripts %}
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="User Management - Manage user accounts, roles, and permissions for your PromptVault instance." />
     <title>PromptVault - User Management</title>
     <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon.png" />
     {{ scripts.load_css('admin-users', true) }}
@@ -15,23 +16,36 @@
     <script src="https://unpkg.com/i18next-http-backend@2.4.2/i18nextHttpBackend.min.js"></script>
   </head>
   <body class="bg-gray-50 min-h-screen">
+    <a href="#main-content" class="skip-link" tabindex="0" data-i18n="nav.skipToMainContent">Skip to main content</a>
     <div class="min-h-screen flex flex-col">
       <!-- Header -->
-      <header class="bg-blue-500 text-white shadow-sm">
+      <header class="bg-blue-700 text-white shadow-sm" role="banner" aria-label="Site header">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div class="flex items-center justify-between gap-2 h-16">
             <div class="flex items-center space-x-4 min-w-0">
-              <a href="/" class="inline-flex flex-shrink-0">
+              <a
+                href="/"
+                class="inline-flex flex-shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-700 rounded-lg"
+                aria-label="PromptVault home"
+                data-i18n="[aria-label]accessibility.labels.home"
+              >
                 <img
                   src="/static/images/promptvault_logo_frontend.webp"
-                  alt="PromptVault Logo"
+                  alt=""
+                  aria-hidden="true"
                   class="h-14 w-14 border-2 border-gray-400 rounded-lg shadow-lg flex-shrink-0"
                 />
               </a>
-              <h1 class="text-2xl font-bold truncate">PromptVault Admin</h1>
+              <div class="text-2xl font-bold truncate">PromptVault Admin</div>
             </div>
-            <div class="hidden md:flex items-center space-x-3 flex-shrink-0">
+            <nav
+              class="hidden md:flex items-center space-x-3 flex-shrink-0"
+              role="navigation"
+              aria-label="Admin page navigation"
+              data-i18n="[aria-label]accessibility.labels.adminPageNavigation"
+            >
               <button
+                type="button"
                 onclick="window.location.href = '/admin/sessions'"
                 class="px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all whitespace-nowrap"
                 data-i18n="admin.nav.sessions"
@@ -39,6 +53,7 @@
                 Sessions
               </button>
               <button
+                type="button"
                 onclick="window.location.href = '/auth/profile'"
                 class="px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all whitespace-nowrap"
                 data-i18n="admin.nav.profile"
@@ -46,32 +61,44 @@
                 Profile
               </button>
               <button
+                type="button"
                 onclick="window.location.href = '/'"
                 class="px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all whitespace-nowrap"
                 data-i18n="nav.backToMain"
               >
                 Back to Main
               </button>
-            </div>
+            </nav>
             <!-- Mobile menu button -->
-            <button
-              id="admin-menu-toggle"
-              class="md:hidden p-2 text-blue-100 hover:text-white flex-shrink-0"
-              aria-label="Toggle menu"
-            >
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
+	            <button
+	              type="button"
+	              id="admin-menu-toggle"
+	              class="md:hidden p-2 text-blue-100 hover:text-white flex-shrink-0"
+	              aria-label="Toggle menu"
+	              data-i18n="[aria-label]accessibility.labels.toggleMenu"
+	              aria-expanded="false"
+	              aria-controls="admin-menu-dropdown"
+	            >
+	              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+	                <path
+	                  stroke-linecap="round"
+	                  stroke-linejoin="round"
+	                  stroke-width="2"
                   d="M4 6h16M4 12h16M4 18h16"
                 ></path>
               </svg>
             </button>
           </div>
           <!-- Mobile menu dropdown -->
-          <div id="admin-menu-dropdown" class="hidden md:hidden mt-4 flex flex-col gap-2">
+          <nav
+            id="admin-menu-dropdown"
+            class="hidden md:hidden mt-4 flex flex-col gap-2"
+            role="navigation"
+            aria-label="Admin page navigation mobile"
+            data-i18n="[aria-label]accessibility.labels.adminPageNavigationMobile"
+          >
             <button
+              type="button"
               onclick="window.location.href = '/admin/sessions'"
               class="w-full px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all text-left"
               data-i18n="admin.nav.sessions"
@@ -79,6 +106,7 @@
               Sessions
             </button>
             <button
+              type="button"
               onclick="window.location.href = '/auth/profile'"
               class="w-full px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all text-left"
               data-i18n="admin.nav.profile"
@@ -86,26 +114,28 @@
               Profile
             </button>
             <button
+              type="button"
               onclick="window.location.href = '/'"
               class="w-full px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all text-left"
               data-i18n="nav.backToMain"
             >
               Back to Main
             </button>
-          </div>
+          </nav>
         </div>
       </header>
 
       <!-- Main Content -->
-      <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+      <main id="main-content" role="main" class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+        <h1 class="text-3xl font-bold text-gray-900 mb-4 md:mb-0" data-i18n="admin.users.title">
+          User Management
+        </h1>
         <!-- Page Header -->
         <div class="mb-6">
-          <h2 class="text-3xl font-bold text-gray-900 mb-4 md:mb-0" data-i18n="admin.users.title">
-            User Management
-          </h2>
           <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-0">
             <div class="flex flex-col sm:flex-row gap-3 md:space-x-3">
               <button
+                type="button"
                 id="add-user-btn"
                 class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition"
                 data-i18n="admin.users.addUser"
@@ -113,6 +143,7 @@
                 Add User
               </button>
               <button
+                type="button"
                 id="refresh-users-btn"
                 class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition"
                 data-i18n="actions.refresh"
@@ -130,17 +161,22 @@
               <input
                 type="text"
                 id="search-input"
+                name="search_input"
                 placeholder="Search users..."
+                aria-label="Search users"
+                data-i18n="[aria-label]admin.users.searchPlaceholder"
                 data-i18n="[placeholder]admin.users.searchPlaceholder"
-                class="w-full pl-3 pr-10 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
+                class="w-full pl-3 pr-10 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
               />
-              <svg class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none w-5 h-5 transition-colors"
-                   fill="none"
-                   stroke="currentColor"
-                   viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
+	              <svg class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none w-5 h-5 transition-colors"
+	                   fill="none"
+	                   stroke="currentColor"
+	                   viewBox="0 0 24 24"
+	                   aria-hidden="true"
+	                   focusable="false">
+	                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+	                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+	              </svg>
             </div>
             <div>
               <label
@@ -151,7 +187,8 @@
               >
               <select
                 id="role-filter"
-                class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
+                name="role_filter"
+                class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
               >
                 <option value="all" data-i18n="admin.users.allRoles">All Roles</option>
                 <option value="viewer" data-i18n="admin.users.roleViewer">Viewer</option>
@@ -168,7 +205,8 @@
               >
               <select
                 id="status-filter"
-                class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
+                name="status_filter"
+                class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
               >
                 <option value="all" data-i18n="admin.users.allStatuses">All Statuses</option>
                 <option value="active" data-i18n="admin.users.statusActive">Active</option>
@@ -183,72 +221,81 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
           <div class="bg-white rounded-lg shadow p-6">
             <div class="text-3xl font-bold text-gray-900" id="total-users">0</div>
-            <div class="text-sm text-gray-600 mt-1" data-i18n="admin.users.totalUsers">
+            <div class="text-sm text-gray-700 mt-1" data-i18n="admin.users.totalUsers">
               Total Users
             </div>
           </div>
           <div class="bg-white rounded-lg shadow p-6">
             <div class="text-3xl font-bold text-green-600" id="active-users">0</div>
-            <div class="text-sm text-gray-600 mt-1" data-i18n="admin.users.activeUsers">
+            <div class="text-sm text-gray-700 mt-1" data-i18n="admin.users.activeUsers">
               Active Users
             </div>
           </div>
           <div class="bg-white rounded-lg shadow p-6">
             <div class="text-3xl font-bold text-red-600" id="locked-users">0</div>
-            <div class="text-sm text-gray-600 mt-1" data-i18n="admin.users.lockedUsers">
+            <div class="text-sm text-gray-700 mt-1" data-i18n="admin.users.lockedUsers">
               Locked Users
             </div>
           </div>
           <div class="bg-white rounded-lg shadow p-6">
             <div class="text-3xl font-bold text-blue-600" id="admin-users">0</div>
-            <div class="text-sm text-gray-600 mt-1" data-i18n="admin.users.adminUsers">Admins</div>
+            <div class="text-sm text-gray-700 mt-1" data-i18n="admin.users.adminUsers">Admins</div>
           </div>
         </div>
 
         <!-- Users Table -->
         <div class="bg-white rounded-lg shadow overflow-hidden">
           <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
+            <table class="min-w-full divide-y divide-gray-200" aria-label="User Management">
+              <caption class="sr-only">User Management - Complete list of all system users with their email, role, status, last login, active sessions, and management options</caption>
               <thead class="bg-gray-50">
                 <tr>
                   <th
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    scope="col"
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
                     data-i18n="admin.users.username"
                   >
                     Username
                   </th>
                   <th
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    scope="col"
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
                     data-i18n="admin.users.email"
                   >
                     Email
                   </th>
                   <th
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    scope="col"
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
                     data-i18n="admin.users.role"
                   >
                     Role
                   </th>
                   <th
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    scope="col"
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
                     data-i18n="admin.users.status"
                   >
                     Status
                   </th>
                   <th
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    scope="col"
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
                     data-i18n="admin.users.lastLogin"
                   >
                     Last Login
                   </th>
                   <th
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    scope="col"
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
                     data-i18n="admin.users.sessions"
                   >
                     Sessions
                   </th>
                   <th
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    scope="col"
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
+                    aria-label="Actions"
                     data-i18n="admin.users.actions"
                   >
                     Actions
@@ -257,7 +304,7 @@
               </thead>
               <tbody id="users-table-body" class="bg-white divide-y divide-gray-200">
                 <tr>
-                  <td colspan="7" class="px-6 py-4 text-center text-gray-500">
+                  <td colspan="7" class="px-6 py-4 text-center text-gray-700">
                     <div data-i18n="messages.loading">Loading...</div>
                   </td>
                 </tr>
@@ -270,6 +317,7 @@
             class="bg-gray-50 px-6 py-4 flex items-center justify-between border-t border-gray-200"
           >
             <button
+              type="button"
               id="prev-page"
               class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
               disabled
@@ -279,6 +327,7 @@
             </button>
             <span id="page-info" class="text-sm text-gray-700">Page 1 of 1</span>
             <button
+              type="button"
               id="next-page"
               class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
               disabled
@@ -289,31 +338,214 @@
           </div>
         </div>
       </main>
+
+      <footer role="contentinfo" aria-label="Site footer" class="mt-auto border-t border-gray-200 bg-gray-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div class="flex flex-col gap-3 text-sm text-gray-600">
+            <p>
+              PromptVault is licensed under <a href="https://www.mozilla.org/en-US/MPL/2.0/" class="text-blue-600 hover:text-blue-800 underline" target="_blank" rel="noopener noreferrer">Mozilla Public License 2.0</a>.
+            </p>
+            <a href="https://codeberg.org/medenor/promptvault" class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 transition" target="_blank" rel="noopener noreferrer" aria-label="PromptVault on Codeberg">
+              <?xml version="1.0" encoding="UTF-8" standalone="no"?>
+              <svg
+                 width="16"
+                 height="16"
+                 viewBox="0 0 4.2333332 4.2333335"
+                 version="1.1"
+                 id="svg1468"
+                 sodipodi:docname="codeberg-logo_icon_blue.svg"
+                 inkscape:version="1.2-alpha1 (b6a15bb, 2022-02-23)"
+                 inkscape:export-filename="/home/mray/Projects/Codeberg/logo/icon/png/codeberg-logo_icon_blue.png"
+                 inkscape:export-xdpi="384"
+                 inkscape:export-ydpi="384"
+                 xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+                 xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+                 xmlns:xlink="http://www.w3.org/1999/xlink"
+                 xmlns="http://www.w3.org/2000/svg"
+                 xmlns:svg="http://www.w3.org/2000/svg"
+                 xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+                 xmlns:cc="http://creativecommons.org/ns#"
+                 xmlns:dc="http://purl.org/dc/elements/1.1/">
+                <title
+                   id="title16">Codeberg logo</title>
+                <defs
+                   id="defs1462">
+                  <linearGradient
+                     xlink:href="#linearGradient6924"
+                     id="linearGradient6918"
+                     x1="42519.285"
+                     y1="-7078.7891"
+                     x2="42575.336"
+                     y2="-6966.9307"
+                     gradientUnits="userSpaceOnUse" />
+                  <linearGradient
+                     id="linearGradient6924">
+                    <stop
+                       style="stop-color:#2185d0;stop-opacity:0"
+                       offset="0"
+                       id="stop6920" />
+                    <stop
+                       id="stop6926"
+                       offset="0.49517274"
+                       style="stop-color:#2185d0;stop-opacity:0.48923996" />
+                    <stop
+                       style="stop-color:#2185d0;stop-opacity:0.63279623"
+                       offset="1"
+                       id="stop6922" />
+                  </linearGradient>
+                  <linearGradient
+                     xlink:href="#linearGradient6924-6"
+                     id="linearGradient6918-3"
+                     x1="42519.285"
+                     y1="-7078.7891"
+                     x2="42575.336"
+                     y2="-6966.9307"
+                     gradientUnits="userSpaceOnUse" />
+                  <linearGradient
+                     id="linearGradient6924-6">
+                    <stop
+                       style="stop-color:#2185d0;stop-opacity:0;"
+                       offset="0"
+                       id="stop6920-7" />
+                    <stop
+                       id="stop6926-5"
+                       offset="0.49517274"
+                       style="stop-color:#2185d0;stop-opacity:0.30000001;" />
+                    <stop
+                       style="stop-color:#2185d0;stop-opacity:0.30000001;"
+                       offset="1"
+                       id="stop6922-3" />
+                  </linearGradient>
+                </defs>
+                <sodipodi:namedview
+                   showborder="false"
+                   id="base"
+                   pagecolor="#ffffff"
+                   bordercolor="#666666"
+                   borderopacity="1.0"
+                   inkscape:pageopacity="0.0"
+                   inkscape:pageshadow="2"
+                   inkscape:zoom="22.627417"
+                   inkscape:cx="12.948893"
+                   inkscape:cy="12.661631"
+                   inkscape:document-units="px"
+                   inkscape:current-layer="svg1468"
+                   inkscape:document-rotation="0"
+                   showgrid="false"
+                   fit-margin-top="0"
+                   fit-margin-left="0"
+                   fit-margin-right="0"
+                   fit-margin-bottom="0"
+                   units="px"
+                   inkscape:snap-global="false"
+                   inkscape:snap-page="true"
+                   showguides="false"
+                   inkscape:window-width="1531"
+                   inkscape:window-height="873"
+                   inkscape:window-x="69"
+                   inkscape:window-y="27"
+                   inkscape:window-maximized="1"
+                   inkscape:pagecheckerboard="0"
+                   inkscape:deskcolor="#d1d1d1">
+                  <inkscape:grid
+                     type="xygrid"
+                     id="grid2067" />
+                </sodipodi:namedview>
+                <metadata
+                   id="metadata1465">
+                  <rdf:RDF>
+                    <cc:Work
+                       rdf:about="">
+                      <dc:format>image/svg+xml</dc:format>
+                      <dc:type
+                         rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+                      <dc:title>Codeberg logo</dc:title>
+                      <cc:license
+                         rdf:resource="http://creativecommons.org/publicdomain/zero/1.0/" />
+                      <dc:creator>
+                        <cc:Agent>
+                          <dc:title>Robert Martinez</dc:title>
+                        </cc:Agent>
+                      </dc:creator>
+                      <dc:rights>
+                        <cc:Agent>
+                          <dc:title>Codeberg and the Codeberg Logo are trademarks of Codeberg e.V.</dc:title>
+                        </cc:Agent>
+                      </dc:rights>
+                      <dc:date>2020-04-09</dc:date>
+                      <dc:publisher>
+                        <cc:Agent>
+                          <dc:title>Codeberg e.V.</dc:title>
+                        </cc:Agent>
+                      </dc:publisher>
+                      <dc:source>codeberg.org</dc:source>
+                    </cc:Work>
+                    <cc:License
+                       rdf:about="http://creativecommons.org/publicdomain/zero/1.0/">
+                      <cc:permits
+                         rdf:resource="http://creativecommons.org/ns#Reproduction" />
+                      <cc:permits
+                         rdf:resource="http://creativecommons.org/ns#Distribution" />
+                      <cc:permits
+                         rdf:resource="http://creativecommons.org/ns#DerivativeWorks" />
+                    </cc:License>
+                  </rdf:RDF>
+                </metadata>
+                <g
+                   id="g370484"
+                   inkscape:label="logo"
+                   transform="matrix(0.06551432,0,0,0.06551432,-2.232417,-1.431776)">
+                  <path
+                     id="path6733-5"
+                     style="font-variation-settings:normal;opacity:1;vector-effect:none;fill:url(#linearGradient6918-3);fill-opacity:1;stroke:none;stroke-width:3.67846;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:2;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:stroke markers fill;stop-color:#000000;stop-opacity:1"
+                     d="m 42519.285,-7078.7891 a 0.76086879,0.56791688 0 0 0 -0.738,0.6739 l 33.586,125.8886 a 87.182358,87.182358 0 0 0 39.381,-33.7636 l -71.565,-92.5196 a 0.76086879,0.56791688 0 0 0 -0.664,-0.2793 z"
+                     transform="matrix(0.37058478,0,0,0.37058478,-15690.065,2662.0533)"
+                     inkscape:label="berg" />
+                  <path
+                     id="path360787"
+                     style="opacity:1;fill:#2185d0;fill-opacity:1;stroke-width:17.0055;paint-order:markers fill stroke;stop-color:#000000"
+                     d="m 11249.461,-1883.6961 c -12.74,0 -23.067,10.3275 -23.067,23.0671 0,4.3335 1.22,8.5795 3.522,12.2514 l 19.232,-24.8636 c 0.138,-0.1796 0.486,-0.1796 0.624,0 l 19.233,24.8646 c 2.302,-3.6721 3.523,-7.9185 3.523,-12.2524 0,-12.7396 -10.327,-23.0671 -23.067,-23.0671 z"
+                     sodipodi:nodetypes="sccccccs"
+                     inkscape:label="sky"
+                     transform="matrix(1.4006354,0,0,1.4006354,-15690.065,2662.0533)" />
+                </g>
+              </svg>
+              Source code on Codeberg
+            </a>
+          </div>
+        </div>
+      </footer>
     </div>
 
     <!-- User Detail Modal -->
     <div
       id="user-detail-modal"
+      aria-modal="true"
+      aria-labelledby="user-detail-title"
+      role="dialog"
       class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50"
     >
       <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div class="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 class="text-xl font-bold text-gray-900" data-i18n="admin.users.userDetails">
+          <h2 id="user-detail-title" class="text-xl font-bold text-gray-900" data-i18n="admin.users.userDetails">
             User Details
           </h2>
-          <span
-            class="text-gray-400 hover:text-gray-600 text-2xl cursor-pointer"
+          <button
+            type="button"
+            class="text-gray-400 hover:text-gray-700 text-2xl cursor-pointer rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
+            aria-label="Close modal"
+            data-i18n="[aria-label]actions.close"
             onclick="closeUserDetailModal()"
-            >&times;</span
-          >
+          >&times;</button>
         </div>
         <div class="p-6">
           <div id="user-detail-content">
-            <div class="text-gray-500" data-i18n="messages.loading">Loading...</div>
+            <div class="text-gray-700" data-i18n="messages.loading">Loading...</div>
           </div>
         </div>
         <div class="flex justify-end space-x-3 p-6 border-t border-gray-200">
           <button
+            type="button"
             id="close-user-detail-btn"
             class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition"
             data-i18n="actions.close"
@@ -327,43 +559,58 @@
     <!-- Edit User Modal -->
     <div
       id="edit-user-modal"
+      aria-modal="true"
+      aria-labelledby="edit-user-title"
+      role="dialog"
       class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50"
     >
       <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div class="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 class="text-xl font-bold text-gray-900" data-i18n="admin.users.editUser">
-            Edit User
-          </h2>
-          <span
-            class="text-gray-400 hover:text-gray-600 text-2xl cursor-pointer"
-            onclick="closeEditUserModal()"
-            >&times;</span
-          >
-        </div>
-        <div class="p-6">
-          <form id="edit-user-form" class="space-y-4" novalidate>
-            <input type="hidden" id="edit-user-id" name="user_id" />
+	        <div class="flex items-center justify-between p-6 border-b border-gray-200">
+	          <h2 id="edit-user-title" class="text-xl font-bold text-gray-900" data-i18n="admin.users.editUser">
+	            Edit User
+	          </h2>
+	          <button
+	            type="button"
+	            class="text-gray-400 hover:text-gray-700 text-2xl leading-none rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
+	            aria-label="Close modal"
+	            data-i18n="[aria-label]actions.close"
+	            onclick="closeEditUserModal()"
+	          >
+	            &times;
+	          </button>
+	        </div>
+	        <div class="p-6">
+	          <form id="edit-user-form" class="space-y-4" novalidate>
+	            <div
+	              id="edit-user-error-summary"
+	              class="validation-error-banner"
+	              role="alert"
+	              aria-live="polite"
+	              tabindex="-1"
+	            ></div>
+	            <input type="hidden" id="edit-user-id" name="user_id" />
 
-            <div>
-              <label
-                for="edit-role"
-                class="block text-sm font-medium text-gray-700 mb-2"
-                data-i18n="admin.users.role"
-                >Role</label
-              >
-              <select
-                id="edit-role"
-                name="role"
-                class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
-              >
+	            <div>
+	              <label
+	                for="edit-role"
+	                class="block text-sm font-medium text-gray-700 mb-2"
+	                data-i18n="admin.users.role"
+	                >Role</label
+	              >
+	              <select
+	                id="edit-role"
+	                name="role"
+	                aria-describedby="edit-form-error"
+	                class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
+	              >
                 <option value="viewer" data-i18n="admin.users.roleViewer">Viewer</option>
                 <option value="editor" data-i18n="admin.users.roleEditor">Editor</option>
                 <option value="admin" data-i18n="admin.users.roleAdmin">Admin</option>
-              </select>
-            </div>
+	              </select>
+	            </div>
 
             <div class="border-t pt-4 mt-4 space-y-2">
-              <label class="flex items-center gap-2">
+              <label for="edit-is-active" class="flex items-center gap-2">
                 <input
                   type="checkbox"
                   id="edit-is-active"
@@ -375,7 +622,7 @@
                 >
               </label>
 
-              <label class="flex items-center gap-2">
+              <label for="edit-email-verified" class="flex items-center gap-2">
                 <input
                   type="checkbox"
                   id="edit-email-verified"
@@ -385,12 +632,20 @@
                 <span class="text-sm text-gray-700" data-i18n="admin.users.emailVerified"
                   >Email Verified</span
                 >
-              </label>
-            </div>
-          </form>
-        </div>
+	              </label>
+	            </div>
+	
+	            <p
+	              class="text-red-600 text-xs hidden"
+	              id="edit-form-error"
+	              role="alert"
+	              aria-live="assertive"
+	            ></p>
+	          </form>
+	        </div>
         <div class="flex justify-end space-x-3 p-6 border-t border-gray-200">
           <button
+            type="button"
             id="save-user-btn"
             class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition"
             data-i18n="actions.save"
@@ -398,6 +653,7 @@
             Save
           </button>
           <button
+            type="button"
             id="cancel-edit-btn"
             class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition"
             data-i18n="actions.cancel"
@@ -411,18 +667,25 @@
     <!-- Confirm Delete Modal -->
     <div
       id="confirm-delete-modal"
+      aria-modal="true"
+      aria-labelledby="confirm-delete-title"
+      role="dialog"
       class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50"
     >
       <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
         <div class="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 class="text-xl font-bold text-gray-900" data-i18n="admin.users.confirmDelete">
+          <h2 id="confirm-delete-title" class="text-xl font-bold text-gray-900" data-i18n="admin.users.confirmDelete">
             Confirm Delete
           </h2>
-          <span
-            class="text-gray-400 hover:text-gray-600 text-2xl cursor-pointer"
+          <button
+            type="button"
+            class="text-gray-400 hover:text-gray-700 text-2xl leading-none rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
+            aria-label="Close modal"
+            data-i18n="[aria-label]actions.close"
             onclick="closeConfirmDeleteModal()"
-            >&times;</span
           >
+            &times;
+          </button>
         </div>
         <div class="p-6">
           <p class="text-gray-700 mb-4" data-i18n="admin.users.deleteWarning">
@@ -433,6 +696,7 @@
         </div>
         <div class="flex justify-end space-x-3 p-6 border-t border-gray-200">
           <button
+            type="button"
             id="confirm-delete-btn"
             class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded font-medium transition"
             data-i18n="actions.delete"
@@ -440,6 +704,7 @@
             Delete
           </button>
           <button
+            type="button"
             id="cancel-delete-btn"
             class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition"
             data-i18n="actions.cancel"
@@ -453,41 +718,61 @@
     <!-- Create User Modal -->
     <div
       id="create-user-modal"
+      aria-modal="true"
+      aria-labelledby="create-user-title"
+      role="dialog"
       class="hidden fixed inset-0 bg-black/25 flex items-center justify-center z-50"
     >
       <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div class="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 class="text-xl font-bold text-gray-900" data-i18n="admin.users.createUser">
+          <h2 id="create-user-title" class="text-xl font-bold text-gray-900" data-i18n="admin.users.createUser">
             Create New User
           </h2>
-          <span
-            class="text-gray-400 hover:text-gray-600 text-2xl cursor-pointer"
+          <button
+            type="button"
+            class="text-gray-400 hover:text-gray-700 text-2xl leading-none rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
+            aria-label="Close modal"
+            data-i18n="[aria-label]actions.close"
             onclick="closeCreateUserModal()"
-            >&times;</span
           >
+            &times;
+          </button>
         </div>
-        <div class="p-6">
-          <form id="create-user-form" class="space-y-4" novalidate>
-            <div>
-              <label
-                for="create-username"
+	        <div class="p-6">
+	          <form id="create-user-form" class="space-y-4" novalidate>
+	            <div
+	              id="create-user-error-summary"
+	              class="validation-error-banner"
+	              role="alert"
+	              aria-live="polite"
+	              tabindex="-1"
+	            ></div>
+	            <div>
+	              <label
+	                for="create-username"
                 class="block text-sm font-medium text-gray-700 mb-2"
                 data-i18n="admin.users.username"
                 >Username</label
               >
-              <input
-                type="text"
-                id="create-username"
-                name="username"
-                class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
-                minlength="3"
-                maxlength="32"
-                required
-                data-i18n="[placeholder]admin.users.usernamePlaceholder"
-                placeholder="3-32 characters, letters, numbers, underscores"
-              />
-              <p class="text-red-600 text-xs mt-1" id="create-username-error"></p>
-            </div>
+	              <input
+	                type="text"
+	                id="create-username"
+	                name="username"
+	                aria-describedby="create-username-error"
+	                class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
+	                minlength="3"
+	                maxlength="32"
+	                required
+	                data-i18n="[placeholder]admin.users.usernamePlaceholder"
+	                placeholder="3-32 characters, letters, numbers, underscores"
+	              />
+	              <p
+	                class="text-red-600 text-xs mt-1 hidden"
+	                id="create-username-error"
+	                role="alert"
+	                aria-live="assertive"
+	              ></p>
+	            </div>
 
             <div>
               <label
@@ -496,17 +781,23 @@
                 data-i18n="admin.users.email"
                 >Email</label
               >
-              <input
-                type="email"
-                id="create-email"
-                name="email"
-                class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
-                required
-                data-i18n="[placeholder]admin.users.emailPlaceholder"
-                placeholder="user@example.com"
-              />
-              <p class="text-red-600 text-xs mt-1" id="create-email-error"></p>
-            </div>
+	              <input
+	                type="email"
+	                id="create-email"
+	                name="email"
+	                aria-describedby="create-email-error"
+	                class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
+	                required
+	                data-i18n="[placeholder]admin.users.emailPlaceholder"
+	                placeholder="user@example.com"
+	              />
+	              <p
+	                class="text-red-600 text-xs mt-1 hidden"
+	                id="create-email-error"
+	                role="alert"
+	                aria-live="assertive"
+	              ></p>
+	            </div>
 
             <div>
               <label
@@ -520,7 +811,8 @@
                   type="password"
                   id="create-password"
                   name="password"
-                  class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
+                  aria-describedby="create-password-error create-strength-text create-password-policy"
+                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
                   minlength="12"
                   maxlength="128"
                   required
@@ -530,7 +822,9 @@
                 <button
                   type="button"
                   id="toggle-password-create"
-                  class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-700 hover:text-gray-700"
+                  aria-label="Toggle password visibility"
+                  data-i18n="[aria-label]accessibility.labels.togglePasswordVisibility"
                 >
                   ⊙
                 </button>
@@ -544,30 +838,35 @@
                 </div>
                 <p class="text-xs mt-1" id="create-strength-text"></p>
               </div>
-              <div class="mt-2 space-y-1">
-                <div id="req-length" class="text-xs text-gray-600 flex items-center gap-2">
+              <div id="create-password-policy" class="mt-2 space-y-1">
+                <div id="req-length" class="text-xs text-gray-700 flex items-center gap-2">
                   <span>○</span>
                   <span data-i18n="auth.register.reqLength">At least 12 characters</span>
                 </div>
-                <div id="req-uppercase" class="text-xs text-gray-600 flex items-center gap-2">
+                <div id="req-uppercase" class="text-xs text-gray-700 flex items-center gap-2">
                   <span>○</span>
                   <span data-i18n="auth.register.reqUppercase">One uppercase letter (A-Z)</span>
                 </div>
-                <div id="req-lowercase" class="text-xs text-gray-600 flex items-center gap-2">
+                <div id="req-lowercase" class="text-xs text-gray-700 flex items-center gap-2">
                   <span>○</span>
                   <span data-i18n="auth.register.reqLowercase">One lowercase letter (a-z)</span>
                 </div>
-                <div id="req-digit" class="text-xs text-gray-600 flex items-center gap-2">
+                <div id="req-digit" class="text-xs text-gray-700 flex items-center gap-2">
                   <span>○</span>
                   <span data-i18n="auth.register.reqDigit">One digit (0-9)</span>
                 </div>
-                <div id="req-special" class="text-xs text-gray-600 flex items-center gap-2">
+                <div id="req-special" class="text-xs text-gray-700 flex items-center gap-2">
                   <span>○</span>
                   <span data-i18n="auth.register.reqSpecial">One special character (!@#$%^&*)</span>
                 </div>
               </div>
-              <p class="text-red-600 text-xs mt-1" id="create-password-error"></p>
-            </div>
+	              <p
+	                class="text-red-600 text-xs mt-1 hidden"
+	                id="create-password-error"
+	                role="alert"
+	                aria-live="assertive"
+	              ></p>
+	            </div>
 
             <div>
               <label
@@ -581,7 +880,8 @@
                   type="password"
                   id="create-confirm-password"
                   name="confirm_password"
-                  class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
+                  aria-describedby="create-confirm-password-error"
+                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
                   minlength="12"
                   maxlength="128"
                   required
@@ -591,13 +891,20 @@
                 <button
                   type="button"
                   id="toggle-confirm-password-create"
-                  class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-700 hover:text-gray-700"
+                  aria-label="Toggle password visibility"
+                  data-i18n="[aria-label]accessibility.labels.togglePasswordVisibility"
                 >
                   ⊙
                 </button>
               </div>
-              <p class="text-red-600 text-xs mt-1" id="create-confirm-password-error"></p>
-            </div>
+	              <p
+	                class="text-red-600 text-xs mt-1 hidden"
+	                id="create-confirm-password-error"
+	                role="alert"
+	                aria-live="assertive"
+	              ></p>
+	            </div>
 
             <div class="border-t pt-4 mt-4">
               <label
@@ -609,7 +916,7 @@
               <select
                 id="create-role"
                 name="role"
-                class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
+                class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
               >
                 <option value="viewer" data-i18n="admin.users.roleViewer">Viewer</option>
                 <option value="editor" data-i18n="admin.users.roleEditor">Editor</option>
@@ -617,8 +924,8 @@
               </select>
             </div>
 
-            <div>
-              <label class="flex items-center gap-2">
+	            <div>
+	              <label for="create-email-verified" class="flex items-center gap-2">
                 <input
                   type="checkbox"
                   id="create-email-verified"
@@ -628,14 +935,20 @@
                 <span class="text-sm text-gray-700" data-i18n="admin.users.markEmailVerified"
                   >Mark email as verified</span
                 >
-              </label>
-            </div>
-
-            <p class="text-red-600 text-xs" id="create-form-error"></p>
-          </form>
-        </div>
+	              </label>
+	            </div>
+	
+	            <p
+	              class="text-red-600 text-xs hidden"
+	              id="create-form-error"
+	              role="alert"
+	              aria-live="assertive"
+	            ></p>
+	          </form>
+	        </div>
         <div class="flex justify-end space-x-3 p-6 border-t border-gray-200">
           <button
+            type="button"
             id="create-user-submit-btn"
             class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition"
             data-i18n="actions.create"
@@ -643,6 +956,7 @@
             Create User
           </button>
           <button
+            type="button"
             id="create-user-cancel-btn"
             class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition"
             data-i18n="actions.cancel"

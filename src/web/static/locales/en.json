@@ -2,6 +2,7 @@
   "nav": {
     "newPrompt": "New Prompt",
     "prompts": "Prompts",
+    "myPrompts": "My Prompts",
     "categories": "Categories",
     "allCategories": "All Categories",
     "tags": "Tags",
@@ -19,17 +20,23 @@
     "profile": "Profile",
     "admin": "Admin",
     "logout": "Logout",
-    "backToMain": "Back to Main"
+    "backToMain": "Back to Main",
+    "skipToMainContent": "Skip to main content",
+    "home": "Home"
   },
   "actions": {
     "add": "Add",
+    "remove": "Remove",
     "view": "View",
     "edit": "Edit",
     "delete": "Delete",
     "save": "Save",
     "cancel": "Cancel",
+    "confirm": "Confirm",
     "copy": "Copy",
     "favorite": "Favorite",
+    "addFavorite": "Add to favorites",
+    "removeFavorite": "Remove from favorites",
     "export": "Export",
     "import": "Import",
     "close": "Close",
@@ -83,9 +90,18 @@
     "missingCommitMessage": "Missing Required Field",
     "unknownError": "Unknown error",
     "selectTwoVersions": "Please select exactly 2 versions to compare",
-    "selectPromptFirst": "Please select a prompt first"
+    "selectPromptFirst": "Please select a prompt first",
+    "suggestTagsMissingContent": "Add prompt content before requesting suggestions.",
+    "suggestTagsNoSuggestions": "No suggestions found.",
+    "suggestTagsFailed": "Failed to get tag suggestions.",
+    "bulkTagProvideAtLeastOne": "Provide at least one tag to add or remove.",
+    "bulkTagUpdateSuccess": "Tags updated for selected prompts.",
+    "bulkTagUpdateFailed": "Failed to update tags."
   },
   "validation": {
+    "errorSummaryHeader": "Please correct the following errors:",
+    "fieldValid": "Field is valid.",
+    "errorCleared": "Error cleared.",
     "required": "This field is required.",
     "titleRequired": "The 'Prompt Title' field cannot be empty.",
     "titleTooLong": "Title cannot exceed 200 characters.",
@@ -180,6 +196,7 @@
     "name": "Name",
     "description": "Description",
     "color": "Color",
+    "pickColor": "Pick a color",
     "order": "Order",
     "parent": "Parent",
     "usage": "Usage",
@@ -464,6 +481,9 @@
       "passwordMismatch": "Passwords do not match",
       "registerButton": "Register",
       "haveAccount": "Already have an account? Login",
+      "alreadyHaveAccount": "Already have an account?",
+      "login": "Login",
+      "loginLink": "Login",
       "success": "Registration successful!",
       "strengthWeak": "Weak password",
       "strengthMedium": "Medium password",
@@ -600,6 +620,42 @@
       "currentBadge": "Current",
       "confirmRevokeAllForUser": "Are you sure you want to revoke ALL sessions for user \"{{username}}\"? They will be logged out of all devices.",
       "confirmRevokeAllForAllUsers": "Are you sure you want to revoke ALL sessions for ALL users? All users will be logged out of all devices."
+    }
+  },
+  "accessibility": {
+    "navigateTo": "Moved to {{item}}",
+    "labels": {
+      "home": "PromptVault home",
+      "pageNavigation": "Page navigation",
+      "primaryActions": "Primary actions",
+      "primaryActionsMobile": "Primary actions (mobile)",
+      "openMenu": "Open menu",
+      "promptFiltersNavigation": "Prompt filters and navigation",
+      "promptFiltersNavigationMobile": "Prompt filters and navigation (mobile)",
+      "closeSidebar": "Close sidebar",
+      "toggleSidebar": "Toggle sidebar",
+      "adminPageNavigation": "Admin page navigation",
+      "adminPageNavigationMobile": "Admin page navigation (mobile)",
+      "toggleMenu": "Toggle menu",
+      "togglePasswordVisibility": "Toggle password visibility"
+    },
+    "keyboardHelp": {
+      "title": "Keyboard Shortcuts and Landmarks",
+      "ariaLabel": "Keyboard shortcuts and landmarks help",
+      "shortcutsHeading": "Available keyboard shortcuts:",
+      "landmarksHeading": "Landmarks on this page:",
+      "noLandmarks": "No landmarks detected on this page.",
+      "shortcutHistory": "Open version history for selected prompt",
+      "shortcutNewPrompt": "Create a new prompt",
+      "shortcutEscape": "Close open dialogs and editor",
+      "shortcutQuestion": "Open this keyboard shortcuts help",
+      "shortcutArrows": "Move focus in category and tag filter lists (and version history list)",
+      "shortcutActivate": "Activate the focused item",
+      "shortcutHomeEnd": "Jump to first and last item in the list",
+      "shortcutCharacterKey": "Any letter or character",
+      "shortcutCharacter": "Jump to the next item starting with that character (including CJK characters)",
+      "fallbackNoteHeading": "Note:",
+      "fallbackNoteBody": "Some shortcuts are only available on the main prompts page."
     }
   }
 }

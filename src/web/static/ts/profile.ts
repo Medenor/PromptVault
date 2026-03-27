@@ -14,6 +14,7 @@ import { changeLanguage, initI18n, t, updateStaticTranslations } from '@/utils/i
 import { clearAllErrors, showError } from '@/utils/dom';
 import { showNotification } from '@/utils/notifications';
 import { apiGet, apiPost, apiDelete, APIRequestError } from '@/utils/api';
+import { announce } from '@/utils/a11y';
 
 const API_BASE = '/api/auth';
 
@@ -43,6 +44,58 @@ interface UserInfo {
   role: string;
   created_at?: string | null;
   last_login?: string | null;
+}
+
+interface FormValidationError {
+  inputId: string;
+  message: string;
+}
+
+const liveValidationState = new Map<string, boolean>();
+
+function setLiveError(inputId: string, errorId: string, message: string): void {
+  showError(document.getElementById(errorId), message);
+  const input = document.getElementById(inputId);
+  const hadError = liveValidationState.get(inputId) === true;
+  input?.setAttribute('aria-invalid', 'true');
+  liveValidationState.set(inputId, true);
+  if (!hadError) {
+    announce(message, { id: 'validation-announcer', politeness: 'polite' });
+  }
+}
+
+function clearLiveError(inputId: string, errorId: string): void {
+  showError(document.getElementById(errorId), '');
+  const input = document.getElementById(inputId);
+  const hadError = liveValidationState.get(inputId) === true;
+  input?.setAttribute('aria-invalid', 'false');
+  liveValidationState.set(inputId, false);
+  if (hadError) {
+    announce(t('validation.fieldValid') || 'Field is valid.', {
+      id: 'validation-announcer',
+      politeness: 'polite',
+    });
+  }
+}
+
+function attachRequiredLiveValidation(inputId: string, errorId: string, message: string): void {
+  const input = document.getElementById(inputId) as HTMLInputElement | null;
+  if (!input) return;
+
+  input.addEventListener('blur', () => {
+    if (!input.value.trim()) {
+      setLiveError(inputId, errorId, message);
+    } else {
+      clearLiveError(inputId, errorId);
+    }
+  });
+
+  input.addEventListener('input', () => {
+    if (liveValidationState.get(inputId) !== true) return;
+    if (input.value.trim()) {
+      clearLiveError(inputId, errorId);
+    }
+  });
 }
 
 function formatDate(dateString?: string | null): string {
@@ -158,6 +211,97 @@ function setupPasswordToggle(toggleButtonId: string, passwordInputId: string): v
   }
 }
 
+function resetFormAccessibilityState(
+  form: HTMLFormElement | null,
+  inputIds: string[],
+  summaryId: string
+): void {
+  if (form) {
+    inputIds.forEach((inputId) => {
+      const input = form.querySelector<HTMLElement>(`#${inputId}`);
+      if (input) {
+        input.setAttribute('aria-invalid', 'false');
+      }
+    });
+  }
+
+  const summary = document.getElementById(summaryId);
+  if (summary) {
+    summary.textContent = '';
+    summary.style.display = 'none';
+  }
+}
+
+function addFieldError(
+  errors: FormValidationError[],
+  inputId: string,
+  errorId: string,
+  message: string
+): void {
+  showError(document.getElementById(errorId), message);
+  const input = document.getElementById(inputId);
+  if (input) {
+    const existing =
+      input
+        .getAttribute('aria-describedby')
+        ?.split(/\s+/)
+        .map((s) => s.trim())
+        .filter(Boolean) ?? [];
+    const next = Array.from(new Set([...existing, errorId]));
+    input.setAttribute('aria-describedby', next.join(' '));
+  }
+  input?.setAttribute('aria-invalid', 'true');
+  errors.push({ inputId, message });
+}
+
+function renderErrorSummary(summaryId: string, errors: FormValidationError[]): void {
+  if (errors.length === 0) {
+    return;
+  }
+
+  const summary = document.getElementById(summaryId);
+  if (!summary) {
+    const firstInput = document.getElementById(errors[0]?.inputId ?? '');
+    firstInput?.focus();
+    return;
+  }
+
+  summary.textContent = '';
+
+  const header = document.createElement('p');
+  header.className = 'error-banner-header';
+  header.textContent = t('validation.errorSummaryHeader') || 'Please correct the following errors:';
+  summary.appendChild(header);
+
+  const list = document.createElement('ul');
+  list.className = 'error-banner-list';
+  errors.forEach((error) => {
+    const item = document.createElement('li');
+    const link = document.createElement('a');
+    link.href = `#${error.inputId}`;
+    link.className = 'underline';
+    link.textContent = error.message;
+    link.addEventListener('click', (event) => {
+      event.preventDefault();
+      const target = document.getElementById(error.inputId) as HTMLElement | null;
+      target?.focus();
+    });
+    item.appendChild(link);
+    list.appendChild(item);
+  });
+  summary.appendChild(list);
+
+  summary.style.display = 'block';
+
+  // Per plan T-ACC023: focus the first invalid field after rendering the summary.
+  const firstInput = document.getElementById(errors[0]?.inputId ?? '') as HTMLElement | null;
+  if (firstInput) {
+    firstInput.focus();
+  } else {
+    summary.focus();
+  }
+}
+
 async function loadSessions(): Promise<void> {
   const sessionsList = document.getElementById('sessions-list');
   if (!sessionsList) return;
@@ -201,7 +345,7 @@ async function loadSessions(): Promise<void> {
                 <div class="flex-1">
                   <div class="flex items-center gap-2 mb-2">
                     <div class="font-medium text-gray-900">${deviceDisplay}</div>
-                    ${session.is_current ? '<span class="px-2 py-1 text-xs bg-blue-500 text-white rounded">Current Session</span>' : ''}
+                    ${session.is_current ? '<span class="px-2 py-1 text-xs bg-blue-700 text-white rounded">Current Session</span>' : ''}
                   </div>
                   <div class="text-sm text-gray-600 mb-1">${browserDisplay} on ${osDisplay}</div>
                   <div class="text-xs text-gray-500">
@@ -215,7 +359,7 @@ async function loadSessions(): Promise<void> {
                   <button
                     onclick="window.revokeSession('${sessionId}')"
                     ${session.is_current ? 'disabled' : ''}
-                    class="px-3 py-1 text-sm ${session.is_current ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-red-500 hover:bg-red-600 text-white'} rounded-md font-medium"
+                    class="px-3 py-1 text-sm ${session.is_current ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-red-700 hover:bg-red-800 text-white'} rounded-md font-medium"
                   >
                     ${t('auth.profile.revokeSession') || 'Revoke'}
                   </button>
@@ -288,9 +432,55 @@ function setupChangePasswordForm(): void {
     });
   }
 
+  // Live validation (T-ACC025): required fields + confirmation match.
+  attachRequiredLiveValidation(
+    'current-password',
+    'current-password-error',
+    t('auth.profile.currentPasswordRequired') ||
+      (t('validation.required') || 'This field is required.')
+  );
+  attachRequiredLiveValidation(
+    'new-password',
+    'new-password-error',
+    t('validation.required') || 'This field is required.'
+  );
+  attachRequiredLiveValidation(
+    'confirm-new-password',
+    'confirm-new-password-error',
+    t('validation.required') || 'This field is required.'
+  );
+
+  const confirmPasswordInput = document.getElementById(
+    'confirm-new-password'
+  ) as HTMLInputElement | null;
+  const passwordConfirmCheck = () => {
+    const password = (document.getElementById('new-password') as HTMLInputElement | null)?.value ?? '';
+    const confirm = confirmPasswordInput?.value ?? '';
+    if (!confirm.trim()) {
+      return;
+    }
+    if (password && confirm && password !== confirm) {
+      setLiveError(
+        'confirm-new-password',
+        'confirm-new-password-error',
+        t('auth.register.passwordMismatch') || 'Passwords do not match'
+      );
+    } else if (password && confirm) {
+      clearLiveError('confirm-new-password', 'confirm-new-password-error');
+    }
+  };
+  confirmPasswordInput?.addEventListener('input', passwordConfirmCheck);
+  newPasswordInput?.addEventListener('input', passwordConfirmCheck);
+
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
     clearAllErrors();
+    resetFormAccessibilityState(
+      form,
+      ['current-password', 'new-password', 'confirm-new-password'],
+      'change-password-error-summary'
+    );
+    const validationErrors: FormValidationError[] = [];
 
     const currentPassword =
       (document.getElementById('current-password') as HTMLInputElement | null)?.value ?? '';
@@ -299,34 +489,38 @@ function setupChangePasswordForm(): void {
     const confirmNewPassword =
       (document.getElementById('confirm-new-password') as HTMLInputElement | null)?.value ?? '';
 
-    let hasErrors = false;
-
     if (!currentPassword) {
-      showError(
-        document.getElementById('current-password-error'),
+      addFieldError(
+        validationErrors,
+        'current-password',
+        'current-password-error',
         t('auth.profile.currentPasswordRequired') || 'Current password is required'
       );
-      hasErrors = true;
     }
 
     const { checks } = checkPasswordStrength(newPassword);
     if (!Object.values(checks).every((value) => value)) {
-      showError(
-        document.getElementById('new-password-error'),
+      addFieldError(
+        validationErrors,
+        'new-password',
+        'new-password-error',
         t('auth.register.passwordPolicy') || 'Password does not meet requirements'
       );
-      hasErrors = true;
     }
 
     if (newPassword !== confirmNewPassword) {
-      showError(
-        document.getElementById('confirm-new-password-error'),
+      addFieldError(
+        validationErrors,
+        'confirm-new-password',
+        'confirm-new-password-error',
         t('auth.register.passwordMismatch') || 'Passwords do not match'
       );
-      hasErrors = true;
     }
 
-    if (hasErrors) return;
+    if (validationErrors.length > 0) {
+      renderErrorSummary('change-password-error-summary', validationErrors);
+      return;
+    }
 
     const submitButton = form.querySelector('button[type="submit"]') as HTMLButtonElement | null;
     if (submitButton) {
@@ -350,10 +544,13 @@ function setupChangePasswordForm(): void {
     } catch (error) {
       if (error instanceof APIRequestError) {
         if (error.status === 401) {
-          showError(
-            document.getElementById('current-password-error'),
+          addFieldError(
+            validationErrors,
+            'current-password',
+            'current-password-error',
             error.message || t('auth.profile.incorrectPassword') || 'Incorrect current password'
           );
+          renderErrorSummary('change-password-error-summary', validationErrors);
         } else {
           showNotification(
             error.message || t('messages.error') || 'Failed to change password',
@@ -385,6 +582,19 @@ function initializeProfilePage(): void {
       });
     });
   }
+
+  // Button keyboard activation (Enter and Space keys)
+  // Enables keyboard accessibility for all buttons
+  document.addEventListener('keydown', (e) => {
+    if (document.activeElement instanceof HTMLButtonElement) {
+      const button = document.activeElement;
+      // Enter and Space keys should activate buttons (standard keyboard behavior)
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        button.click();
+      }
+    }
+  });
 
   void loadUserInfo();
   setupChangePasswordForm();

@@ -8,11 +8,14 @@
     "test": "tests"
   },
   "dependencies": {
+    "codex": "^0.2.3",
+    "dotenv": "^17.2.4",
     "i18next": "^23.7.6",
     "i18next-browser-languagedetector": "^7.2.0",
     "i18next-http-backend": "^2.4.2"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.11.1",
     "@playwright/test": "^1.56.1",
     "@tailwindcss/postcss": "^4.1.18",
     "@types/node": "^20.10.0",
@@ -38,6 +41,8 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
+    "typecheck:tests": "tsc -p tsconfig.tests.json --noEmit",
+    "typecheck:tests:specs": "tsc -p tsconfig.tests.specs.json --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
@@ -48,6 +53,14 @@
     "test:unit:watch": "vitest",
     "test:unit:ui": "vitest --ui",
     "test:ui": "playwright test scripts/playwright_auth_ui_tests.ts --ui",
+    "test:a11y": "playwright test tests/accessibility --grep-invert @diagnostic-a11y",
+    "test:a11y:canonical": "playwright test tests/accessibility --grep-invert @diagnostic-a11y",
+    "test:a11y:hygiene": "node tests/accessibility/scripts/check-spec-hygiene.mjs",
+    "test:ui:accessibility": "playwright test scripts/playwright_accessibility_tests.ts --project=chromium",
+    "test:ui:accessibility:all": "playwright test scripts/playwright_accessibility_tests.ts",
+    "test:ui:focus": "playwright test scripts/playwright_focus_indicators_tests.ts --project=chromium",
+    "test:ui:focus:all": "playwright test scripts/playwright_focus_indicators_tests.ts",
+    "test:ui:lighthouse": "npx -y @lhci/cli@0.15.1 autorun --config=./lighthouserc.json",
     "test:ui:headed": "HEADED=1 playwright test scripts/playwright_auth_ui_tests.ts",
     "test:ui:debug": "DEBUG=1 playwright test scripts/playwright_auth_ui_tests.ts --debug",
     "test:ui:all": "bash scripts/run_playwright_tests.sh",

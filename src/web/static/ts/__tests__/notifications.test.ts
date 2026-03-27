@@ -57,7 +57,7 @@ describe('notifications utils', () => {
 
     const toast = document.querySelector('.notification');
     expect(toast?.textContent).toBe('Hello');
-    expect(toast?.getAttribute('role')).toBe('alert');
+    expect(toast?.getAttribute('role')).toBe('status');
 
     vi.advanceTimersByTime(10);
     expect(document.querySelector('.notification')).toBeNull();
