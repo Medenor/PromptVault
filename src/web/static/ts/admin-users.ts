@@ -16,6 +16,7 @@ import { apiGet, apiPost, apiPut, apiDelete, APIRequestError } from '@/utils/api
 import { createTypeahead } from '@/utils/typeahead';
 import { announce } from '@/utils/a11y';
 import { announceToScreenReader } from '@/utils/focus-management';
+import { escapeHtml } from '@/utils/dom';
 
 const API_BASE = '/api/admin';
 const HIDDEN_CLASS = 'hidden';
@@ -247,7 +248,7 @@ function initializeUsersTableFirstCharNavigation(): void {
         continue;
       }
 
-      const viewButton = row.querySelector<HTMLButtonElement>('button[onclick^="window.viewUser"]');
+      const viewButton = row.querySelector<HTMLButtonElement>('button[data-action="view-user"]');
       if (!viewButton) {
         return;
       }
@@ -283,7 +284,7 @@ function initializeUsersTableFirstCharNavigation(): void {
       if (!username.toLocaleLowerCase().startsWith(query)) {
         continue;
       }
-      const viewButton = row.querySelector<HTMLButtonElement>('button[onclick^="window.viewUser"]');
+      const viewButton = row.querySelector<HTMLButtonElement>('button[data-action="view-user"]');
       if (!viewButton) return;
       viewButton.focus();
       announceKeyboardNavigation(t('accessibility.navigateTo', { item: username }));
@@ -347,23 +348,55 @@ async function loadUsers(): Promise<void> {
                 : 'bg-gray-100 text-gray-800';
           return `
               <tr class="hover:bg-gray-50">
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${user.username}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${user.email}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${escapeHtml(user.username)}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${escapeHtml(user.email)}</td>
                 <td class="px-6 py-4 whitespace-nowrap"><span class="inline-block px-3 py-1 rounded-full text-xs font-medium ${roleBadgeClass}">${getTranslatedRole(user.role)}</span></td>
                 <td class="px-6 py-4 whitespace-nowrap"><span class="inline-block px-3 py-1 rounded-full text-xs font-medium ${statusBadgeClass}">${getStatusText(user)}</span></td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${formatDate(user.last_login)}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${user.session_count || 0}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm">
                   <div class="flex space-x-2">
-                    <button class="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 text-xs font-medium focus:outline-2 focus:outline-blue-500 focus:outline-offset-1" onclick="window.viewUser('${user.id}')" aria-label="View user ${user.username}" data-i18n="actions.view">View</button>
-                    <button class="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 text-xs font-medium focus:outline-2 focus:outline-gray-500 focus:outline-offset-1" onclick="window.editUser('${user.id}')" aria-label="Edit user ${user.username}" data-i18n="actions.edit">Edit</button>
-                    <button class="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 text-xs font-medium focus:outline-2 focus:outline-red-500 focus:outline-offset-1" onclick="window.deleteUser('${user.id}', '${user.username}')" aria-label="Delete user ${user.username}" data-i18n="actions.delete">Delete</button>
+                    <button class="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 text-xs font-medium focus:outline-2 focus:outline-blue-500 focus:outline-offset-1" data-action="view-user" data-user-id="${escapeHtml(user.id)}" aria-label="View user ${escapeHtml(user.username)}" data-i18n="actions.view">View</button>
+                    <button class="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 text-xs font-medium focus:outline-2 focus:outline-gray-500 focus:outline-offset-1" data-action="edit-user" data-user-id="${escapeHtml(user.id)}" aria-label="Edit user ${escapeHtml(user.username)}" data-i18n="actions.edit">Edit</button>
+                    <button class="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 text-xs font-medium focus:outline-2 focus:outline-red-500 focus:outline-offset-1" data-action="delete-user" data-user-id="${escapeHtml(user.id)}" data-user-name="${escapeHtml(user.username)}" aria-label="Delete user ${escapeHtml(user.username)}" data-i18n="actions.delete">Delete</button>
                   </div>
                 </td>
               </tr>
             `;
         })
         .join('');
+
+      // Attach event listeners to action buttons
+      tableBody.querySelectorAll<HTMLButtonElement>('button[data-action="view-user"]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const userId = btn.getAttribute('data-user-id');
+          if (userId) {
+            userDetailModalTrigger = btn;
+            void viewUser(userId);
+          }
+        });
+      });
+
+      tableBody.querySelectorAll<HTMLButtonElement>('button[data-action="edit-user"]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const userId = btn.getAttribute('data-user-id');
+          if (userId) {
+            editUserModalTrigger = btn;
+            void editUser(userId);
+          }
+        });
+      });
+
+      tableBody.querySelectorAll<HTMLButtonElement>('button[data-action="delete-user"]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const userId = btn.getAttribute('data-user-id');
+          const username = btn.getAttribute('data-user-name');
+          if (userId && username) {
+            confirmDeleteModalTrigger = btn;
+            void deleteUser(userId, username);
+          }
+        });
+      });
     }
 
     updatePagination();
@@ -381,8 +414,6 @@ async function viewUser(userId: string): Promise<void> {
   if (content) {
     content.innerHTML = '<div class="text-gray-500">Loading...</div>';
   }
-  // Store trigger element for focus return
-  userDetailModalTrigger = (event as unknown as { target: HTMLElement }).target || null;
   showModal('user-detail-modal');
 
   try {
@@ -405,11 +436,11 @@ async function viewUser(userId: string): Promise<void> {
           <div class="space-y-4">
             <div class="flex justify-between py-3 border-b border-gray-200">
               <div class="text-sm font-medium text-gray-500">Username:</div>
-              <div class="text-sm text-gray-900">${user.username}</div>
+              <div class="text-sm text-gray-900">${escapeHtml(user.username)}</div>
             </div>
             <div class="flex justify-between py-3 border-b border-gray-200">
               <div class="text-sm font-medium text-gray-500">Email:</div>
-              <div class="text-sm text-gray-900">${user.email}</div>
+              <div class="text-sm text-gray-900">${escapeHtml(user.email)}</div>
             </div>
             <div class="flex justify-between py-3 border-b border-gray-200">
               <div class="text-sm font-medium text-gray-500">Role:</div>
@@ -471,8 +502,6 @@ async function editUser(userId: string): Promise<void> {
     (document.getElementById('edit-email-verified') as HTMLInputElement | null)!.checked =
       !!user.email_verified;
 
-    // Store trigger element for focus return
-    editUserModalTrigger = (event as unknown as { target: HTMLElement }).target || null;
     showModal('edit-user-modal');
   } catch (error) {
     reportError('admin-users', 'editUser', error);
@@ -552,8 +581,6 @@ async function deleteUser(userId: string, username: string): Promise<void> {
   if (deleteUsername) {
     deleteUsername.textContent = username;
   }
-  // Store trigger element for focus return
-  confirmDeleteModalTrigger = (event as unknown as { target: HTMLElement }).target || null;
   showModal('confirm-delete-modal');
 
   const confirmBtn = document.getElementById('confirm-delete-btn') as HTMLButtonElement | null;
