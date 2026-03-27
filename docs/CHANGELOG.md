@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.0] - 2026-03-27
+
+### ♿ Accessibility
+
+- **WCAG 2.1 AA Compliance**: Comprehensive accessibility improvements across all pages
+  - **Color Contrast**: Fixed text and UI element contrast ratios to meet WCAG AA minimums across all templates
+  - **Heading Hierarchy**: Corrected heading structure (h1→h2→h3) on all pages for proper document outline
+  - **ARIA Attributes**: Added `aria-label`, `aria-describedby`, `aria-expanded`, and `aria-haspopup` to landmarks, buttons, form elements, and tables
+  - **Focus Management**: Enhanced visible focus indicators for all interactive elements; focus trap in modals; focus fallback styles
+  - **Keyboard Navigation**: Full keyboard support with tab order, button activation, and modal keyboard handling
+  - **Skip Links**: Implemented skip-to-content link using clip-path technique for keyboard and screen reader users
+  - **Landmark Regions**: Added `<header>`, `<nav>`, `<main>`, `<footer>` ARIA landmarks throughout
+  - **Form Accessibility**: Inputs linked to help text via `aria-describedby`; explicit `type="button"` on all interactive elements
+  - **Table Accessibility**: Table captions and ARIA labels on headers for screen readers
+  - **i18n**: Added translation support for skip link navigation
+  - **Lighthouse Scores** (Desktop): all pages score 95–100 (auth/login 96, main 95, manage-categories 95, manage-tags 95, import-export 100, profile 96, admin/users 100, admin/sessions 100, forgot-password 100, register 96)
+
 ## [1.7.0] - 2026-02-05
 
 ### ✨ Added
