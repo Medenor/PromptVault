@@ -14,6 +14,13 @@
 
 import { createModal } from '@/components/modal';
 
+function makeMessageNode(message: string): HTMLParagraphElement {
+  const p = document.createElement('p');
+  p.className = 'text-sm text-gray-700';
+  p.textContent = message;
+  return p;
+}
+
 export async function confirmAsync(options: {
   title: string;
   message: string;
@@ -30,7 +37,7 @@ export async function confirmAsync(options: {
 
     const modal = createModal({
       title: options.title,
-      content: `<p class="text-sm text-gray-700">${options.message}</p>`,
+      content: makeMessageNode(options.message),
       size: 'sm',
       actions: [
         {
@@ -79,7 +86,7 @@ export async function alertAsync(options: {
 
     const modal = createModal({
       title: options.title,
-      content: `<p class="text-sm text-gray-700">${options.message}</p>`,
+      content: makeMessageNode(options.message),
       size: 'sm',
       actions: [
         {
