@@ -9,6 +9,7 @@ import type { FrontendLogger } from './index';
 declare global {
   interface Window {
     FrontendLogger: FrontendLogger;
+    __AUTH_ENABLED__: boolean;
   }
 }
 

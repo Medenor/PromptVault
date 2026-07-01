@@ -48,6 +48,7 @@ from src.db.repositories.version_repository import VersionRepository
 from src.web.dependencies.auth import (
     get_current_active_user,
     get_optional_user,
+    get_current_user_or_none,
     require_role,
 )
 from src.web.models.requests import PromptCreateRequest, PromptUpdateRequest, BulkDeleteRequest
@@ -487,7 +488,7 @@ async def create_prompt(
     category: str = Form(""),
     tags: str = Form(""),
     commit_message: str = Form("Initial commit"),
-    user: User = Depends(get_current_active_user),
+    user: Optional[User] = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
     """Create a new prompt (authenticated).
@@ -540,7 +541,7 @@ async def create_prompt(
         category_id=category_obj.id if category_obj else None,
         note="",
         favorite=False,
-        user_id=user.id,
+        user_id=user.id if user else None,
         created_at=datetime.now(timezone.utc),
     )
 
@@ -555,7 +556,7 @@ async def create_prompt(
     # Create initial version
     version = version_repo.create_version(
         prompt=new_prompt,
-        author=user.username,
+        author=user.username if user else "anonymous",
         message=commit_message,
         parent_version_id=None
     )
@@ -574,8 +575,8 @@ async def create_prompt(
     _log_prompt_action(
         "CREATE_PROMPT",
         new_prompt.id,
-        user.id,
-        user.username,
+        user.id if user else None,
+        user.username if user else "anonymous",
         f"title='{validated_data.title}', category='{validated_data.category}'",
     )
 
@@ -628,7 +629,7 @@ async def update_prompt(
     category: str = Form(""),
     tags: str = Form(""),
     commit_message: str = Form("Update"),
-    user: User = Depends(get_current_active_user),
+    user: Optional[User] = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
     """Update an existing prompt (owner or admin).
@@ -710,7 +711,7 @@ async def update_prompt(
     parent_version_id = main_branch.current_version_id if main_branch else None
 
     # Create new version with the updated prompt data
-    author_name = user.username
+    author_name = user.username if user else "anonymous"
     version = version_repo.create_version(
         prompt=existing_prompt,
         author=author_name,
@@ -736,8 +737,8 @@ async def update_prompt(
     _log_prompt_action(
         "UPDATE_PROMPT",
         prompt_id,
-        user.id,
-        user.username,
+        user.id if user else None,
+        user.username if user else "anonymous",
         f"title='{validated_data.title}', message='{validated_data.commit_message}'",
     )
 
@@ -772,7 +773,7 @@ async def update_prompt(
 )
 async def bulk_delete_prompts(
     body: BulkDeleteRequest,
-    admin: User = Depends(get_current_active_user),
+    admin: Optional[User] = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
     """Bulk delete prompts (admin only).
@@ -785,6 +786,12 @@ async def bulk_delete_prompts(
     Returns:
         dict: Statistics on deletion results
     """
+    if not admin:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication required",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     if admin.role != "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -800,7 +807,7 @@ async def bulk_delete_prompts(
         if backup_service:
             backup_id = backup_service.create_backup(
                 "bulk_delete",
-                created_by=admin.username,
+                created_by=admin.username if admin else "anonymous",
             )
     except Exception:
         backup_id = None
@@ -830,8 +837,8 @@ async def bulk_delete_prompts(
     _log_prompt_action(
         "BULK_DELETE_PROMPTS",
         0,  # No specific prompt ID
-        admin.id,
-        admin.username,
+        admin.id if admin else None,
+        admin.username if admin else "anonymous",
         f"deleted={deleted_count}, failed={failed_count}",
     )
 
@@ -871,7 +878,7 @@ async def bulk_delete_prompts(
 )
 async def delete_prompt(
     prompt_id: int,
-    user: User = Depends(get_current_active_user),
+    user: Optional[User] = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
     """Delete a prompt (owner or admin).
@@ -897,7 +904,12 @@ async def delete_prompt(
             detail=f"Prompt with ID {prompt_id} not found",
         )
 
-    # Check ownership
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication required",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     check_prompt_ownership(existing_prompt, user)
 
     # Delete prompt (cascade deletes versions, tags associations)
@@ -908,8 +920,8 @@ async def delete_prompt(
     _log_prompt_action(
         "DELETE_PROMPT",
         prompt_id,
-        user.id,
-        user.username,
+        user.id if user else None,
+        user.username if user else "anonymous",
         f"title='{existing_prompt.title}'",
     )
 

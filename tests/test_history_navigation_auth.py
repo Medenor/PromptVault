@@ -27,6 +27,16 @@ from typing import Dict, Any
 import pytest
 from fastapi.testclient import TestClient
 
+from src.config.auth_config import auth_settings
+
+
+# Skip tests that assume authentication is mandatory. When AUTH_ENABLED=false
+# the app runs in anonymous mode and these behaviors do not apply.
+require_auth = pytest.mark.skipif(
+    not auth_settings.auth_enabled,
+    reason="AUTH_ENABLED=false: authentication is disabled (anonymous mode)",
+)
+
 
 @pytest.fixture
 def registered_user_with_client(
@@ -72,6 +82,7 @@ class TestLoginPageCacheHeaders:
         assert response.headers.get("pragma") == "no-cache"
 
 
+@require_auth
 class TestLoginPageRedirectsAuthenticatedUsers:
     """Tests that the login page redirects users with a valid session."""
 
@@ -105,6 +116,7 @@ class TestLoginPageRedirectsAuthenticatedUsers:
         assert response.status_code == 200
 
 
+@require_auth
 class TestHomeRouteRedirectCacheHeaders:
     """Tests for cache-control headers on the home route redirect."""
 

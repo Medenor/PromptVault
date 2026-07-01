@@ -136,7 +136,7 @@ async def login_page(request: Request):
 
     response = templates.TemplateResponse(
         "auth/login.html",
-        {"request": request}
+        {"request": request, "auth_enabled": auth_settings.auth_enabled}
     )
     # Prevent the browser (and intermediate caches) from caching the login
     # page so that back/forward navigation always re-evaluates auth state.
@@ -164,7 +164,7 @@ async def register_page(request: Request):
     """
     return templates.TemplateResponse(
         "auth/register.html",
-        {"request": request}
+        {"request": request, "auth_enabled": auth_settings.auth_enabled}
     )
 
 
@@ -186,7 +186,7 @@ async def forgot_password_page(request: Request):
     """
     return templates.TemplateResponse(
         "auth/forgot_password.html",
-        {"request": request}
+        {"request": request, "auth_enabled": auth_settings.auth_enabled}
     )
 
 
@@ -211,7 +211,7 @@ async def reset_password_page(request: Request):
     """
     return templates.TemplateResponse(
         "auth/reset_password.html",
-        {"request": request}
+        {"request": request, "auth_enabled": auth_settings.auth_enabled}
     )
 
 
@@ -249,7 +249,7 @@ async def profile_page(
     """
     return templates.TemplateResponse(
         "auth/profile.html",
-        {"request": request, "user": user}
+        {"request": request, "user": user, "auth_enabled": auth_settings.auth_enabled}
     )
 
 
@@ -282,7 +282,7 @@ async def profile_page_alias(
     """
     return templates.TemplateResponse(
         "auth/profile.html",
-        {"request": request, "user": user}
+        {"request": request, "user": user, "auth_enabled": auth_settings.auth_enabled}
     )
 
 
@@ -299,7 +299,7 @@ async def manage_categories_page(
     """Serve the category management page (authenticated)."""
     return templates.TemplateResponse(
         "manage_categories.html",
-        {"request": request}
+        {"request": request, "auth_enabled": auth_settings.auth_enabled}
     )
 
 
@@ -311,7 +311,7 @@ async def manage_tags_page(
     """Serve the tag management page (authenticated)."""
     return templates.TemplateResponse(
         "manage_tags.html",
-        {"request": request}
+        {"request": request, "auth_enabled": auth_settings.auth_enabled}
     )
 
 
@@ -349,7 +349,7 @@ async def admin_users_page(
     """
     return templates.TemplateResponse(
         "admin/users.html",
-        {"request": request, "user": admin}
+        {"request": request, "user": admin, "auth_enabled": auth_settings.auth_enabled}
     )
 
 
@@ -382,5 +382,5 @@ async def admin_sessions_page(
     """
     return templates.TemplateResponse(
         "admin/sessions.html",
-        {"request": request, "user": admin}
+        {"request": request, "user": admin, "auth_enabled": auth_settings.auth_enabled}
     )

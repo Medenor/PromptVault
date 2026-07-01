@@ -24,6 +24,9 @@ Environment Variables:
         PASSWORD_REQUIRE_DIGIT: Require digits
         PASSWORD_REQUIRE_SPECIAL: Require special characters
 
+    Authentication Toggle:
+        AUTH_ENABLED: Enable authentication subsystem (default true; false = anonymous mode)
+
     Account Security:
         MAX_LOGIN_ATTEMPTS: Max failed login attempts before lockout
         ACCOUNT_LOCKOUT_DURATION_SECONDS: Lockout duration in seconds
@@ -129,6 +132,10 @@ class AuthConfig(BaseSettings):
     disable_rate_limiting: bool = Field(
         default=False,
         description="Disable rate limiting (dev/test only; never enable in production)"
+    )
+    auth_enabled: bool = Field(
+        default=True,
+        description="Enable authentication subsystem. Set to false for anonymous/local mode."
     )
 
     # JWT Configuration
