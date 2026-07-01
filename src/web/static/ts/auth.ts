@@ -610,7 +610,44 @@ function setupRegisterForm(): void {
   passwordInput?.addEventListener('input', passwordConfirmCheck);
 }
 
+/**
+ * Check whether the browser has a stored access token indicating an active
+ * session. Used to redirect already-authenticated users away from the login
+ * page when it is restored from the back/forward cache (bfcache).
+ *
+ * Tokens are stored in localStorage (remember me) or sessionStorage by the
+ * login/register flow.
+ */
+function hasStoredAccessToken(): boolean {
+  return Boolean(localStorage.getItem('access_token') || sessionStorage.getItem('access_token'));
+}
+
+/**
+ * Redirect already-authenticated users away from auth pages.
+ *
+ * When a user presses the browser "back" button after logging in, the login
+ * page may be restored from the bfcache (or from the HTTP cache) without
+ * hitting the server. Without this guard, the user would see the login form
+ * again even though their session is still valid. The server-side redirect
+ * handles fresh navigations; this complements it for client-side restoration.
+ */
+function redirectIfAuthenticated(): void {
+  if (hasStoredAccessToken()) {
+    window.location.replace('/');
+  }
+}
+
 function initializeAuthPage(): void {
+  // Guard against bfcache restoration showing the login page to an
+  // already-authenticated user (fixes "previous page" history navigation).
+  redirectIfAuthenticated();
+  window.addEventListener('pageshow', (event) => {
+    // event.persisted is true when the page is restored from the bfcache.
+    if (event.persisted) {
+      redirectIfAuthenticated();
+    }
+  });
+
   updateStaticTranslations();
 
   const languageSelector = document.getElementById('language-selector') as HTMLSelectElement | null;
