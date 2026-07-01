@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### 🐛 Fixed
+
+- **Filter State Preservation**: Fixed bug where filter state was lost after editing or deleting prompts
+  - **Root cause**: After saving/deleting, `loadPrompts()` was called instead of `performSearch()`, and sidebar lists were re-rendered without preserving active filter state
+  - **Fix**: Updated `handlePromptSubmit()` and `deletePrompt()` to preserve filter state by calling `performSearch()` when filters are active; Modified `renderCategories()` and `renderTags()` to restore active filter state from `searchState` after re-rendering
+  - **Impact**: Users can now edit/delete prompts while maintaining their current filtered view, improving workflow efficiency
+  - **Files Modified**: Frontend logic in `src/web/static/ts/app.ts`
+
 ## [1.8.0] - 2026-03-27
 
 ### ♿ Accessibility
