@@ -1604,6 +1604,33 @@ function renderCategories(categories: string[]): void {
 
   syncRovingTabindexForList(list);
   syncRovingTabindexForList(listMobile);
+
+  // Restore active filter state from searchState
+  if (searchState.category && searchState.category !== 'all') {
+    const desktopItem = list.querySelector(`[data-category="${searchState.category}"]`);
+    const mobileItem = listMobile?.querySelector(`[data-category="${searchState.category}"]`);
+    if (desktopItem) {
+      desktopItem.classList.add('active');
+      desktopItem.setAttribute('aria-selected', 'true');
+    }
+    if (mobileItem) {
+      mobileItem.classList.add('active');
+      mobileItem.setAttribute('aria-selected', 'true');
+    }
+  } else {
+    const desktopAllItem = list.querySelector('[data-category="all"]');
+    const mobileAllItem = listMobile?.querySelector('[data-category="all"]');
+    if (desktopAllItem) {
+      desktopAllItem.classList.add('active');
+      desktopAllItem.setAttribute('aria-selected', 'true');
+    }
+    if (mobileAllItem) {
+      mobileAllItem.classList.add('active');
+      mobileAllItem.setAttribute('aria-selected', 'true');
+    }
+  }
+  syncRovingTabindexForList(list);
+  syncRovingTabindexForList(listMobile);
 }
 
 function renderTags(tags: TagInfo[]): void {
@@ -1679,6 +1706,33 @@ function renderTags(tags: TagInfo[]): void {
     }
   });
 
+  syncRovingTabindexForList(list);
+  syncRovingTabindexForList(listMobile);
+
+  // Restore active filter state from searchState
+  if (searchState.tag && searchState.tag !== 'all') {
+    const desktopItem = list.querySelector(`[data-tag="${searchState.tag}"]`);
+    const mobileItem = listMobile?.querySelector(`[data-tag="${searchState.tag}"]`);
+    if (desktopItem) {
+      desktopItem.classList.add('active');
+      desktopItem.setAttribute('aria-selected', 'true');
+    }
+    if (mobileItem) {
+      mobileItem.classList.add('active');
+      mobileItem.setAttribute('aria-selected', 'true');
+    }
+  } else {
+    const desktopAllItem = list.querySelector('[data-tag="all"]');
+    const mobileAllItem = listMobile?.querySelector('[data-tag="all"]');
+    if (desktopAllItem) {
+      desktopAllItem.classList.add('active');
+      desktopAllItem.setAttribute('aria-selected', 'true');
+    }
+    if (mobileAllItem) {
+      mobileAllItem.classList.add('active');
+      mobileAllItem.setAttribute('aria-selected', 'true');
+    }
+  }
   syncRovingTabindexForList(list);
   syncRovingTabindexForList(listMobile);
 }
@@ -1774,7 +1828,12 @@ async function handlePromptSubmit(event: SubmitEvent): Promise<void> {
       hidePromptEditor();
       // Clear version cache for this prompt since a new version was created
       clearVersionCache(promptId);
-      void loadPrompts(); // Refresh the list
+      // Preserve filter state when refreshing the list
+      if (isAnyFilterActive()) {
+        void performSearch();
+      } else {
+        void loadPrompts();
+      }
       void loadAvailableTags(); // Refresh tag counts for autocomplete
       void loadTags(); // Refresh sidebar tag list
       // Reset form mode
@@ -1921,7 +1980,12 @@ async function deletePrompt(id: PromptId): Promise<void> {
   try {
     await apiFetch<void>(`/api/prompts/${id}`, { method: 'DELETE' });
     // If we get here, delete succeeded (apiFetch throws on error)
-    void loadPrompts(); // Refresh the list
+    // Preserve filter state when refreshing the list
+    if (isAnyFilterActive()) {
+      void performSearch();
+    } else {
+      void loadPrompts();
+    }
     void loadAvailableTags(); // Refresh tag counts for autocomplete
     void loadTags(); // Refresh sidebar tag list
   } catch (error) {
