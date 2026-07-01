@@ -37,11 +37,10 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "baseUrl": ".",
     "paths": {
-      "@/*": ["src/web/static/ts/*"],
-      "@types/*": ["src/web/static/ts/types/*"],
-      "@components": ["src/web/static/ts/components/index.ts"]
+      "@/*": ["./src/web/static/ts/*"],
+      "@types/*": ["./src/web/static/ts/types/*"],
+      "@components": ["./src/web/static/ts/components/index.ts"]
     }
   },
   "include": [
