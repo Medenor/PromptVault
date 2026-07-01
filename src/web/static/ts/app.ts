@@ -1114,7 +1114,7 @@ function setupEventListeners(): void {
     void handlePromptSubmit(event as SubmitEvent);
   });
   const cancelBtn = document.getElementById('cancel-btn-edit-modal');
-  cancelBtn?.addEventListener('click', hidePromptEditor);
+  cancelBtn?.addEventListener('click', () => history.back());
   const suggestTagsBtn = document.getElementById('suggest-tags-btn');
   suggestTagsBtn?.addEventListener('click', () => {
     void handleSuggestTags();
@@ -1197,8 +1197,21 @@ function setupEventListeners(): void {
   // Version history modal close
   const closeVersionHistoryBtn = document.getElementById('close-version-history-btn');
   if (closeVersionHistoryBtn) {
-    closeVersionHistoryBtn.addEventListener('click', hideVersionHistoryModal);
+    closeVersionHistoryBtn.addEventListener('click', () => history.back());
   }
+
+  // Back button closes modals/editor instead of leaving the app.
+  // When popstate fires we've already moved back in history, so event.state is
+  // the *previous* entry — not our pushed one. Check what's visible instead.
+  window.addEventListener('popstate', () => {
+    const versionHistoryModal = document.getElementById('version-history-modal');
+    const promptEditor = document.getElementById('prompt-editor');
+    if (versionHistoryModal && !versionHistoryModal.classList.contains('hidden')) {
+      hideVersionHistoryModal();
+    } else if (promptEditor && !promptEditor.classList.contains('hidden')) {
+      hidePromptEditor();
+    }
+  });
 
   // Diff modal close
   const closeDiffBtn = document.getElementById('close-diff-btn');
@@ -1687,6 +1700,7 @@ function showNewPromptForm() {
   const promptEditor = document.getElementById('prompt-editor');
   const promptsList = document.getElementById('prompts-list');
 
+  history.pushState({ modal: 'editor' }, '');
   showElement(promptEditor);
   const promptForm = document.getElementById('prompt-form') as HTMLFormElement | null;
   promptForm?.reset();
@@ -1771,7 +1785,7 @@ async function handlePromptSubmit(event: SubmitEvent): Promise<void> {
     const responseData = (await response.json()) as { error?: string };
 
     if (response.ok) {
-      hidePromptEditor();
+      history.back();
       // Clear version cache for this prompt since a new version was created
       clearVersionCache(promptId);
       void loadPrompts(); // Refresh the list
@@ -1884,6 +1898,7 @@ async function editPrompt(id: PromptId): Promise<void> {
     promptCache[id] = prompt;
 
     // Show editor without resetting form
+    history.pushState({ modal: 'editor' }, '');
     showElement(document.getElementById('prompt-editor'));
     hideElement(document.getElementById('prompts-list'));
 
@@ -2457,6 +2472,7 @@ function showVersionHistoryModal(promptId: number): void {
   selectedVersions.clear();
   // Store trigger element for focus return
   versionHistoryModalTrigger = (event as unknown as { target: HTMLElement }).target || null;
+  history.pushState({ modal: 'version-history' }, '');
   showElement(document.getElementById('version-history-modal'));
   // Move focus to first focusable element in modal
   const modal = document.getElementById('version-history-modal');
@@ -2994,12 +3010,20 @@ function handleKeyboardShortcuts(event: KeyboardEvent): void {
     showNewPromptForm();
   }
 
-  // Escape: Close modals
+  // Escape: Close modals.
+  // For views that pushed a history entry (editor, version-history), use
+  // history.back() so the entry is cleaned up; only do so when the view is
+  // actually visible to avoid spurious back-navigations.
   if (event.key === 'Escape') {
-    hideVersionHistoryModal();
+    const versionHistoryModal = document.getElementById('version-history-modal');
+    const promptEditor = document.getElementById('prompt-editor');
+    if (versionHistoryModal && !versionHistoryModal.classList.contains('hidden')) {
+      history.back();
+    } else if (promptEditor && !promptEditor.classList.contains('hidden')) {
+      history.back();
+    }
     hideDiffModal();
     hideRevertConfirmationModal();
-    hidePromptEditor();
   }
 }
 
