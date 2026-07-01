@@ -786,7 +786,13 @@ async def bulk_delete_prompts(
     Returns:
         dict: Statistics on deletion results
     """
-    if admin and admin.role != "admin":
+    if not admin:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication required",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    if admin.role != "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Admin role required",
@@ -898,9 +904,13 @@ async def delete_prompt(
             detail=f"Prompt with ID {prompt_id} not found",
         )
 
-    # Check ownership (skipped in anonymous mode when user is None)
-    if user:
-        check_prompt_ownership(existing_prompt, user)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication required",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    check_prompt_ownership(existing_prompt, user)
 
     # Delete prompt (cascade deletes versions, tags associations)
     prompt_repo.delete(prompt_id)

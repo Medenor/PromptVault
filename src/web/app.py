@@ -1249,6 +1249,12 @@ async def create_manual_backup(
     current_user: Optional[User] = Depends(get_current_user_or_none),
 ):
     """Create a manual backup with validation."""
+    if not current_user:
+        raise HTTPException(
+            status_code=401,
+            detail="Authentication required",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     try:
         validated_data = BackupCreateRequest(name=name)
 
@@ -1285,6 +1291,12 @@ async def restore_backup(
     current_user: Optional[User] = Depends(get_current_user_or_none),
 ):
     """Restore from a specific backup."""
+    if not current_user:
+        raise HTTPException(
+            status_code=401,
+            detail="Authentication required",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     success = False
     try:
         success = backup_service.restore_backup(
