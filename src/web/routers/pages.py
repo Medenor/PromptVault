@@ -42,16 +42,50 @@ Example Usage:
 """
 
 from fastapi import APIRouter, Request, Depends
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 import os
 
+from src.config.auth_config import auth_settings
 from src.db.models.user import User
 from src.web.dependencies.auth import (
     get_current_active_user,
     get_admin_user,
 )
 from src.web.utils.manifest import load_manifest, get_asset_path, is_production
+
+
+def _has_valid_auth_cookie(request: Request) -> bool:
+    """Best-effort check for a valid access token in the request cookie.
+
+    Document (browser) navigations such as the back/forward buttons send cookies
+    but not the ``Authorization`` header. When a logged-in user navigates back to
+    a public auth page (e.g. ``/auth/login``), the cached login page would
+    otherwise be shown even though the session is still valid.
+
+    This helper validates the ``access_token`` cookie signature/expiration without
+    performing a database lookup, so it is cheap and stateless. It is intentionally
+    optimistic: any failure (missing cookie, expired, invalid signature) simply
+    means "not authenticated" and the public page is served normally.
+
+    Args:
+        request: FastAPI request object
+
+    Returns:
+        bool: True if the access_token cookie contains a valid JWT
+    """
+    token = request.cookies.get("access_token")
+    if not token:
+        return False
+
+    try:
+        from src.services.auth.jwt_service import JWTService
+
+        jwt_service = JWTService(auth_settings)
+        jwt_service.validate_access_token(token)
+        return True
+    except Exception:
+        return False
 
 # ============================================================================
 # Router Configuration
@@ -81,19 +115,35 @@ async def login_page(request: Request):
     This is a public page accessible without authentication.
     Users can enter their credentials to log in.
 
+    If a user with a valid session navigates here (e.g. via the browser
+    back/forward buttons), they are redirected to the home page so that a
+    stale login entry in the history cannot trap them on the login screen.
+
     Args:
         request: FastAPI request object (injected)
 
     Returns:
-        HTMLResponse: Rendered login.html template
+        HTMLResponse or RedirectResponse: Rendered login.html template, or a
+        redirect to ``/`` when an authenticated session is detected
 
     Template:
         src/web/templates/auth/login.html
     """
-    return templates.TemplateResponse(
+    # Authenticated users should never get stuck on the login page when
+    # navigating through browser history. Redirect them back to the app.
+    if _has_valid_auth_cookie(request):
+        return RedirectResponse(url="/", status_code=302)
+
+    response = templates.TemplateResponse(
         "auth/login.html",
         {"request": request}
     )
+    # Prevent the browser (and intermediate caches) from caching the login
+    # page so that back/forward navigation always re-evaluates auth state.
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
 
 
 @router.get("/auth/register", response_class=HTMLResponse)

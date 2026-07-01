@@ -802,8 +802,15 @@ async def home(request: Request):
     auth_cookie = request.cookies.get("access_token")
 
     if not auth_header and not auth_cookie:
-        # No authentication provided, redirect to login
-        return RedirectResponse(url="/auth/login", status_code=302)
+        # No authentication provided, redirect to login.
+        # Mark the redirect as non-cacheable so that browser history
+        # navigation (back/forward) always re-evaluates auth state and
+        # does not replay a stale redirect to the login page.
+        redirect = RedirectResponse(url="/auth/login", status_code=302)
+        redirect.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        redirect.headers["Pragma"] = "no-cache"
+        redirect.headers["Expires"] = "0"
+        return redirect
 
     # User appears to be authenticated, show the main app
     # Note: The JavaScript will validate the token on the client side
