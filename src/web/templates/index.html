@@ -1456,6 +1456,7 @@
       </div>
     </div>
 
+    <script>window.__AUTH_ENABLED__ = {{ 'true' if auth_enabled else 'false' }};</script>
     {{ scripts.load_scripts('app', true, 'app', true) }}
   </body>
 </html>

@@ -840,3 +840,124 @@ def get_editor_or_admin_user(user: User = Depends(get_current_active_user)) -> U
             detail=f"Access denied. This operation requires 'admin' or 'editor' role. Your role: '{user.role}'",
         )
     return user
+
+
+# ============================================================================
+# Anonymous-Mode (AUTH_ENABLED=false) Bypass Dependencies
+# ============================================================================
+#
+# When authentication is disabled, these dependencies short-circuit to None so
+# that data endpoints remain publicly accessible. When auth is enabled they
+# enforce the normal requirements (active user / admin role). All callers must
+# guard ``user`` attribute accesses (``user.id``, ``user.username``) with
+# ``if user:`` or ``user.id if user else None`` fallbacks.
+
+
+async def get_current_user_or_none(
+    authorization: Optional[str] = Header(None, description="Optional Bearer token"),
+    access_token_cookie: Optional[str] = Cookie(None, alias="access_token"),
+    jwt_service: JWTService = Depends(get_jwt_service),
+    session: Session = Depends(get_db),
+) -> Optional[User]:
+    """Get the current active user, or None when auth is disabled/unauthenticated.
+
+    This is the bypass-friendly variant of :func:`get_current_active_user` used
+    on data endpoints that must remain accessible when ``AUTH_ENABLED=false``.
+
+    Behavior:
+        - ``AUTH_ENABLED=false``: returns ``None`` immediately (anonymous mode).
+        - ``AUTH_ENABLED=true`` with no token: returns ``None``.
+        - ``AUTH_ENABLED=true`` with a valid token: returns the active user.
+        - Invalid/expired tokens: returns ``None`` (never raises 401).
+
+    Returns:
+        Optional[User]: The authenticated user, or None.
+    """
+    if not auth_settings.auth_enabled:
+        return None
+
+    if not authorization and not access_token_cookie:
+        return None
+
+    try:
+        token = None
+        if authorization:
+            parts = authorization.split()
+            if len(parts) == 2 and parts[0].lower() == "bearer":
+                token = parts[1]
+        elif access_token_cookie:
+            token = access_token_cookie
+
+        if not token:
+            return None
+
+        claims = jwt_service.validate_access_token(token)
+        user_id = claims.get("sub")
+        if not user_id:
+            return None
+
+        user_repo = UserRepository(session)
+        user = user_repo.get_by_id(user_id)
+        if not user or not user.is_active:
+            return None
+
+        # Attach family_id from token for session identification
+        user.family_id = claims.get("family_id")
+        return user
+    except Exception:
+        return None
+
+
+async def get_admin_or_bypass(
+    user: Optional[User] = Depends(get_current_user_or_none),
+) -> Optional[User]:
+    """Require admin when auth is enabled; bypass (None) when disabled.
+
+    Replaces :func:`get_admin_user` on admin-only endpoints so they remain
+    functional in anonymous mode. When ``AUTH_ENABLED=false`` this returns
+    ``None`` without performing any role check.
+
+    Raises:
+        HTTPException: 401 if auth enabled but unauthenticated, 403 if not admin.
+    """
+    if not auth_settings.auth_enabled:
+        return None
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication required",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    if user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Access denied. This operation requires 'admin' role. Your role: '{user.role}'",
+        )
+    return user
+
+
+async def get_editor_or_admin_or_bypass(
+    user: Optional[User] = Depends(get_current_user_or_none),
+) -> Optional[User]:
+    """Require editor/admin when auth is enabled; bypass (None) when disabled.
+
+    Replaces :func:`get_editor_or_admin_user` on editor endpoints so they
+    remain functional in anonymous mode.
+
+    Raises:
+        HTTPException: 401 if auth enabled but unauthenticated, 403 if not editor/admin.
+    """
+    if not auth_settings.auth_enabled:
+        return None
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication required",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    if user.role not in ["admin", "editor"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Access denied. This operation requires 'admin' or 'editor' role. Your role: '{user.role}'",
+        )
+    return user

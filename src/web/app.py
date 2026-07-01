@@ -52,7 +52,8 @@ from src.utils.diff_utils import compute_character_diff
 from src.web.routers.scheduler import router as scheduler_router
 from src.web.middleware.rate_limit import limiter, rate_limit_exceeded_handler
 from src.web.middleware.security_headers import SecurityHeadersMiddleware
-from src.web.dependencies.auth import get_current_active_user
+from src.web.dependencies.auth import get_current_active_user, get_current_user_or_none
+from src.config.auth_config import auth_settings
 from slowapi.errors import RateLimitExceeded
 from src.web.utils.manifest import load_manifest, get_asset_path, is_production
 
@@ -206,11 +207,36 @@ except Exception as e:
 # - /api/admin - Admin endpoints (admin role required)
 # - /api/admin/scheduler - Scheduler management endpoints (admin role required)
 # - /api/prompts - Prompt CRUD with authentication
-app.include_router(auth_router, prefix="/api")
-app.include_router(admin_router, prefix="/api")
-app.include_router(scheduler_router, prefix="/api")
 app.include_router(prompts_router, prefix="/api")
 app.include_router(tag_category_router, prefix="/api")
+app.include_router(scheduler_router, prefix="/api")
+
+# Authentication and admin routers are only mounted when auth is enabled.
+# When AUTH_ENABLED=false the app runs in anonymous mode and these routes
+# are unmounted (return 404).
+def _warn_if_auth_disabled() -> None:
+    """Emit a loud startup warning when authentication is disabled.
+
+    Extracted as a helper so it can be exercised by the test suite.
+    """
+    if not auth_settings.auth_enabled:
+        logger.warning(
+            "AUTH_ENABLED=false — Authentication is DISABLED. All endpoints are "
+            "publicly accessible. Do NOT use this mode in a multi-user or "
+            "network-exposed deployment."
+        )
+
+
+if auth_settings.auth_enabled:
+    app.include_router(auth_router, prefix="/api")
+    app.include_router(admin_router, prefix="/api")
+    logger.info("Authentication enabled: /api/auth and /api/admin routes registered")
+else:
+    _warn_if_auth_disabled()
+    print(
+        "⚠ AUTH_ENABLED=false — Authentication is DISABLED. All endpoints are "
+        "publicly accessible."
+    )
 
 # Register HTML page routes (no /api prefix)
 # - /auth/* - Authentication pages (login, register, profile, etc.)
@@ -797,6 +823,23 @@ async def home(request: Request):
     """
     from fastapi.responses import RedirectResponse
 
+    # In anonymous mode, serve the app directly without requiring authentication.
+    if not auth_settings.auth_enabled:
+        prompts = data_service.load_prompts()
+        categories = data_service.get_categories()
+        tags = data_service.get_tags()
+
+        return templates.TemplateResponse(
+            "index.html",
+            {
+                "request": request,
+                "prompts": prompts,
+                "categories": categories,
+                "tags": tags,
+                "auth_enabled": False,
+            },
+        )
+
     # Check if user is authenticated (simple check for auth token)
     auth_header = request.headers.get("Authorization")
     auth_cookie = request.cookies.get("access_token")
@@ -826,6 +869,7 @@ async def home(request: Request):
             "prompts": prompts,
             "categories": categories,
             "tags": tags,
+            "auth_enabled": True,
         },
     )
 
@@ -892,6 +936,7 @@ async def import_export_page(request: Request):
             "favorite_prompts": favorite_prompts,
             "total_categories": unique_categories,
             "total_tags": unique_tags,
+            "auth_enabled": auth_settings.auth_enabled,
         },
     )
 
@@ -1182,7 +1227,12 @@ async def backup_management_page(request: Request):
     stats = backup_service.get_backup_stats()
 
     return templates.TemplateResponse(
-        "backup_management.html", {"request": request, "backup_stats": stats}
+        "backup_management.html",
+        {
+            "request": request,
+            "backup_stats": stats,
+            "auth_enabled": auth_settings.auth_enabled,
+        },
     )
 
 
@@ -1196,7 +1246,7 @@ async def get_backups():
 @app.post("/api/backups")
 async def create_manual_backup(
     name: str = Form(None),
-    current_user: User = Depends(get_current_active_user),
+    current_user: Optional[User] = Depends(get_current_user_or_none),
 ):
     """Create a manual backup with validation."""
     try:
@@ -1204,7 +1254,7 @@ async def create_manual_backup(
 
         backup_id = backup_service.create_backup(
             validated_data.name,
-            created_by=current_user.username,
+            created_by=current_user.username if current_user else "anonymous",
         )
         if backup_id:
             record_validation_event(
@@ -1232,14 +1282,14 @@ async def create_manual_backup(
 @app.post("/api/backups/{backup_id}/restore")
 async def restore_backup(
     backup_id: str,
-    current_user: User = Depends(get_current_active_user),
+    current_user: Optional[User] = Depends(get_current_user_or_none),
 ):
     """Restore from a specific backup."""
     success = False
     try:
         success = backup_service.restore_backup(
             backup_id,
-            created_by=current_user.username,
+            created_by=current_user.username if current_user else "anonymous",
         )
     except BackupError as exc:
         status_code = exc.http_status or 500

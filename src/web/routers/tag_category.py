@@ -5,7 +5,7 @@
 """Category and tag management routes."""
 
 import logging
-from typing import List
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 from src.db.session import get_db
 from src.db.repositories.category_repository import CategoryRepository
 from src.db.repositories.tag_repository import TagRepository
-from src.web.dependencies.auth import get_current_active_user
+from src.web.dependencies.auth import get_current_user_or_none
 from src.web.models.auth_responses import MessageResponse
 from src.web.models.tag_category_requests import (
     CategoryCreateRequest,
@@ -124,7 +124,7 @@ def _is_descendant(tag_repo: TagRepository, tag_id: int, potential_parent_id: in
     summary="List categories with metadata and usage counts",
 )
 async def list_categories_manage(
-    user: User = Depends(get_current_active_user),
+    user: Optional[User] = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
     category_repo = CategoryRepository(db)
@@ -141,7 +141,7 @@ async def list_categories_manage(
 )
 async def create_category(
     payload: CategoryCreateRequest,
-    user: User = Depends(get_current_active_user),
+    user: Optional[User] = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
     category_repo = CategoryRepository(db)
@@ -172,7 +172,7 @@ async def create_category(
 async def update_category(
     category_id: int,
     payload: CategoryUpdateRequest,
-    user: User = Depends(get_current_active_user),
+    user: Optional[User] = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
     undo_service: UndoService = Depends(get_undo_service),
 ):
@@ -196,7 +196,7 @@ async def update_category(
     db.refresh(category)
     usage_count = category_repo.count_usage(category_id)
     undo_service.push(
-        user_id=user.id,
+        user_id=user.id if user else None,
         entity_type="category",
         operation="update",
         payload={"id": category_id, "before": before},
@@ -214,7 +214,7 @@ async def delete_category(
     category_id: int,
     force: bool = False,
     confirm: bool = False,
-    user: User = Depends(get_current_active_user),
+    user: Optional[User] = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
     undo_service: UndoService = Depends(get_undo_service),
 ):
@@ -256,7 +256,7 @@ async def delete_category(
     category_repo.delete(category_id)
     db.commit()
     undo_service.push(
-        user_id=user.id,
+        user_id=user.id if user else None,
         entity_type="category",
         operation="delete",
         payload={"category": _category_snapshot(category), "prompt_ids": prompt_ids},
@@ -272,7 +272,7 @@ async def delete_category(
 )
 async def merge_categories(
     payload: MergeRequest,
-    user: User = Depends(get_current_active_user),
+    user: Optional[User] = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
     undo_service: UndoService = Depends(get_undo_service),
 ):
@@ -317,7 +317,7 @@ async def merge_categories(
     db.commit()
     if sources_payload:
         undo_service.push(
-            user_id=user.id,
+            user_id=user.id if user else None,
             entity_type="category",
             operation="merge",
             payload={"target_id": payload.target_id, "sources": sources_payload},
@@ -333,7 +333,7 @@ async def merge_categories(
 )
 async def bulk_delete_categories(
     payload: BulkDeleteRequest,
-    user: User = Depends(get_current_active_user),
+    user: Optional[User] = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
     undo_service: UndoService = Depends(get_undo_service),
 ):
@@ -383,7 +383,7 @@ async def bulk_delete_categories(
     db.commit()
     if delete_payloads:
         undo_service.push(
-            user_id=user.id,
+            user_id=user.id if user else None,
             entity_type="category",
             operation="bulk-delete",
             payload={"items": delete_payloads},
@@ -399,7 +399,7 @@ async def bulk_delete_categories(
 )
 async def find_replace_categories(
     payload: CategoryFindReplaceRequest,
-    user: User = Depends(get_current_active_user),
+    user: Optional[User] = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
     undo_service: UndoService = Depends(get_undo_service),
 ):
@@ -423,7 +423,7 @@ async def find_replace_categories(
         prompt_ids = [row[0] for row in db.query(Prompt.id).filter(Prompt.category_id == find_category.id).all()]
         category_repo.merge_categories([find_category.id], replace_category.id)
         undo_service.push(
-            user_id=user.id,
+            user_id=user.id if user else None,
             entity_type="category",
             operation="find-replace",
             payload={
@@ -445,7 +445,7 @@ async def find_replace_categories(
 )
 async def reorder_categories(
     payload: ReorderRequest,
-    user: User = Depends(get_current_active_user),
+    user: Optional[User] = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
     category_repo = CategoryRepository(db)
@@ -471,7 +471,7 @@ async def reorder_categories(
     summary="List prompts without categories",
 )
 async def category_orphans(
-    user: User = Depends(get_current_active_user),
+    user: Optional[User] = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
     from src.db.models import Prompt
@@ -487,7 +487,7 @@ async def category_orphans(
     summary="List prompts without categories (detailed)",
 )
 async def category_orphans_details(
-    user: User = Depends(get_current_active_user),
+    user: Optional[User] = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
     from src.db.models import Prompt
@@ -503,7 +503,7 @@ async def category_orphans_details(
     summary="List unused categories",
 )
 async def category_unused(
-    user: User = Depends(get_current_active_user),
+    user: Optional[User] = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
     category_repo = CategoryRepository(db)
@@ -523,7 +523,7 @@ async def category_unused(
 )
 async def assign_category_orphans(
     payload: CategoryAssignOrphansRequest,
-    user: User = Depends(get_current_active_user),
+    user: Optional[User] = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
     if not payload.confirm:
@@ -560,7 +560,7 @@ async def assign_category_orphans(
     summary="Category usage analytics",
 )
 async def category_analytics(
-    user: User = Depends(get_current_active_user),
+    user: Optional[User] = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
     category_repo = CategoryRepository(db)
@@ -596,7 +596,7 @@ async def category_analytics(
     summary="List tags with metadata and usage counts",
 )
 async def list_tags_manage(
-    user: User = Depends(get_current_active_user),
+    user: Optional[User] = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
     tag_repo = TagRepository(db)
@@ -613,7 +613,7 @@ async def list_tags_manage(
 )
 async def create_tag(
     payload: TagCreateRequest,
-    user: User = Depends(get_current_active_user),
+    user: Optional[User] = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
     tag_repo = TagRepository(db)
@@ -652,7 +652,7 @@ async def create_tag(
 async def update_tag(
     tag_id: int,
     payload: TagUpdateRequest,
-    user: User = Depends(get_current_active_user),
+    user: Optional[User] = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
     undo_service: UndoService = Depends(get_undo_service),
 ):
@@ -695,7 +695,7 @@ async def update_tag(
     db.refresh(tag)
     usage_count = tag_repo.count_usage(tag_id)
     undo_service.push(
-        user_id=user.id,
+        user_id=user.id if user else None,
         entity_type="tag",
         operation="update",
         payload={"id": tag_id, "before": before},
@@ -713,7 +713,7 @@ async def delete_tag(
     tag_id: int,
     force: bool = False,
     confirm: bool = False,
-    user: User = Depends(get_current_active_user),
+    user: Optional[User] = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
     undo_service: UndoService = Depends(get_undo_service),
 ):
@@ -741,7 +741,7 @@ async def delete_tag(
     tag_repo.delete(tag_id)
     db.commit()
     undo_service.push(
-        user_id=user.id,
+        user_id=user.id if user else None,
         entity_type="tag",
         operation="delete",
         payload={"tag": _tag_snapshot(tag), "prompt_ids": prompt_ids},
@@ -757,7 +757,7 @@ async def delete_tag(
 )
 async def merge_tags(
     payload: MergeRequest,
-    user: User = Depends(get_current_active_user),
+    user: Optional[User] = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
     undo_service: UndoService = Depends(get_undo_service),
 ):
@@ -802,7 +802,7 @@ async def merge_tags(
     db.commit()
     if sources_payload:
         undo_service.push(
-            user_id=user.id,
+            user_id=user.id if user else None,
             entity_type="tag",
             operation="merge",
             payload={"target_id": payload.target_id, "sources": sources_payload},
@@ -818,7 +818,7 @@ async def merge_tags(
 )
 async def bulk_delete_tags(
     payload: BulkDeleteRequest,
-    user: User = Depends(get_current_active_user),
+    user: Optional[User] = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
     undo_service: UndoService = Depends(get_undo_service),
 ):
@@ -866,7 +866,7 @@ async def bulk_delete_tags(
     db.commit()
     if delete_payloads:
         undo_service.push(
-            user_id=user.id,
+            user_id=user.id if user else None,
             entity_type="tag",
             operation="bulk-delete",
             payload={"items": delete_payloads},
@@ -882,7 +882,7 @@ async def bulk_delete_tags(
 )
 async def find_replace_tags(
     payload: TagFindReplaceRequest,
-    user: User = Depends(get_current_active_user),
+    user: Optional[User] = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
     undo_service: UndoService = Depends(get_undo_service),
 ):
@@ -908,7 +908,7 @@ async def find_replace_tags(
         prompts_gaining_target = [pid for pid in prompt_ids if pid not in replace_prompt_ids]
         tag_repo.merge_tags(find_tag.id, replace_tag.id)
         undo_service.push(
-            user_id=user.id,
+            user_id=user.id if user else None,
             entity_type="tag",
             operation="find-replace",
             payload={
@@ -933,7 +933,7 @@ async def find_replace_tags(
     summary="List unused tags",
 )
 async def tag_orphans(
-    user: User = Depends(get_current_active_user),
+    user: Optional[User] = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
     tag_repo = TagRepository(db)
@@ -952,7 +952,7 @@ async def tag_orphans(
     summary="List prompts without tags",
 )
 async def tag_orphan_prompts(
-    user: User = Depends(get_current_active_user),
+    user: Optional[User] = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
     from src.db.models import Prompt, prompt_tags
@@ -973,7 +973,7 @@ async def tag_orphan_prompts(
     summary="List prompts without tags (detailed)",
 )
 async def tag_orphan_prompts_details(
-    user: User = Depends(get_current_active_user),
+    user: Optional[User] = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
     from src.db.models import Prompt, prompt_tags
@@ -993,7 +993,7 @@ async def tag_orphan_prompts_details(
     summary="Tag usage analytics",
 )
 async def tag_analytics(
-    user: User = Depends(get_current_active_user),
+    user: Optional[User] = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
     tag_repo = TagRepository(db)
@@ -1042,11 +1042,11 @@ async def tag_analytics(
     summary="Undo last category management operation",
 )
 async def undo_category_operation(
-    user: User = Depends(get_current_active_user),
+    user: Optional[User] = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
     undo_service: UndoService = Depends(get_undo_service),
 ):
-    op = undo_service.pop(user.id, "category")
+    op = undo_service.pop(user.id if user else None, "category")
     if not op:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No undo operation available")
 
@@ -1108,11 +1108,11 @@ async def undo_category_operation(
     summary="Undo last tag management operation",
 )
 async def undo_tag_operation(
-    user: User = Depends(get_current_active_user),
+    user: Optional[User] = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
     undo_service: UndoService = Depends(get_undo_service),
 ):
-    op = undo_service.pop(user.id, "tag")
+    op = undo_service.pop(user.id if user else None, "tag")
     if not op:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No undo operation available")
 
@@ -1183,7 +1183,7 @@ async def undo_tag_operation(
 )
 async def bulk_update_tags(
     payload: BulkTagUpdateRequest,
-    user: User = Depends(get_current_active_user),
+    user: Optional[User] = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
     if not payload.confirm:
@@ -1232,7 +1232,7 @@ async def bulk_update_tags(
 )
 async def suggest_tags(
     payload: TagSuggestRequest,
-    user: User = Depends(get_current_active_user),
+    user: Optional[User] = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
     from src.db.models import Prompt
@@ -1257,7 +1257,7 @@ async def suggest_tags(
     summary="Export category definitions",
 )
 async def export_categories(
-    user: User = Depends(get_current_active_user),
+    user: Optional[User] = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
     category_repo = CategoryRepository(db)
@@ -1284,7 +1284,7 @@ async def export_categories(
 )
 async def import_categories(
     payload: CategoryImportRequest,
-    user: User = Depends(get_current_active_user),
+    user: Optional[User] = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
     category_repo = CategoryRepository(db)
@@ -1320,7 +1320,7 @@ async def import_categories(
     summary="Export tag definitions",
 )
 async def export_tags(
-    user: User = Depends(get_current_active_user),
+    user: Optional[User] = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
     tag_repo = TagRepository(db)
@@ -1346,7 +1346,7 @@ async def export_tags(
 )
 async def import_tags(
     payload: TagImportRequest,
-    user: User = Depends(get_current_active_user),
+    user: Optional[User] = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
     tag_repo = TagRepository(db)

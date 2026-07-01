@@ -18,6 +18,7 @@ from src.config.auth_config import AuthConfig
 from src.web.dependencies.auth import (
     get_current_active_user,
     get_admin_user,
+    get_admin_or_bypass,
     get_auth_config,
 )
 from src.db.models.user import User
@@ -106,7 +107,7 @@ class CleanupResultResponse(BaseModel):
     description="Get current status of session cleanup scheduler"
 )
 def get_scheduler_status(
-    current_user: User = Depends(get_admin_user),
+    current_user: Optional[User] = Depends(get_admin_or_bypass),
     scheduler: SessionCleanupScheduler = Depends(get_scheduler),
 ) -> SchedulerStatusResponse:
     """Get session cleanup scheduler status.
@@ -137,7 +138,7 @@ def get_scheduler_status(
     description="Start the session cleanup scheduler"
 )
 def start_scheduler(
-    current_user: User = Depends(get_admin_user),
+    current_user: Optional[User] = Depends(get_admin_or_bypass),
     scheduler: SessionCleanupScheduler = Depends(get_scheduler),
 ) -> SchedulerStatusResponse:
     """Start the session cleanup scheduler.
@@ -163,7 +164,7 @@ def start_scheduler(
     
     try:
         scheduler.start()
-        logger.info(f"Scheduler started by admin user: {current_user.username}")
+        logger.info(f"Scheduler started by admin user: {current_user.username if current_user else 'anonymous'}")
         
         job_info = scheduler.get_job_info()
         return SchedulerStatusResponse(
@@ -186,7 +187,7 @@ def start_scheduler(
     description="Stop the session cleanup scheduler"
 )
 def stop_scheduler(
-    current_user: User = Depends(get_admin_user),
+    current_user: Optional[User] = Depends(get_admin_or_bypass),
     scheduler: SessionCleanupScheduler = Depends(get_scheduler),
 ) -> SchedulerStatusResponse:
     """Stop the session cleanup scheduler.
@@ -212,7 +213,7 @@ def stop_scheduler(
     
     try:
         scheduler.stop()
-        logger.info(f"Scheduler stopped by admin user: {current_user.username}")
+        logger.info(f"Scheduler stopped by admin user: {current_user.username if current_user else 'anonymous'}")
         
         return SchedulerStatusResponse(
             is_running=scheduler.is_running,
@@ -234,7 +235,7 @@ def stop_scheduler(
     description="Run session cleanup immediately (bypasses schedule)"
 )
 def run_cleanup_now(
-    current_user: User = Depends(get_admin_user),
+    current_user: Optional[User] = Depends(get_admin_or_bypass),
     scheduler: SessionCleanupScheduler = Depends(get_scheduler),
 ) -> CleanupResultResponse:
     """Run session cleanup immediately.
@@ -255,7 +256,7 @@ def run_cleanup_now(
         result = scheduler.run_cleanup_now()
         
         logger.info(
-            f"Manual cleanup executed by admin user: {current_user.username}, "
+            f"Manual cleanup executed by admin user: {current_user.username if current_user else 'anonymous'}, "
             f"expired_found={result.get('expired_found')}"
         )
         

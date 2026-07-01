@@ -612,6 +612,7 @@
               </div>
               </div>
 
-                 {{ scripts.load_scripts('backup-management', true, 'backup_management', true) }}
+                  <script>window.__AUTH_ENABLED__ = {{ 'true' if auth_enabled else 'false' }};</script>
+                  {{ scripts.load_scripts('backup-management', true, 'backup_management', true) }}
               </body>
               </html>

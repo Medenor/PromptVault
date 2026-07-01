@@ -996,7 +996,35 @@ async function initializeApp(): Promise<void> {
   void loadTags();
 }
 
+function hideAuthOnlyElements(): void {
+  // Hide elements that only make sense when authentication is enabled.
+  const idsToHide = ['profile-btn', 'logout-btn', 'logout-btn-mobile'];
+  idsToHide.forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.style.display = 'none';
+    }
+  });
+  // Hide profile navigation links (desktop button + mobile dropdown entries).
+  document
+    .querySelectorAll<HTMLElement>('[onclick*="/auth/profile"]')
+    .forEach((el) => {
+      el.style.display = 'none';
+    });
+}
+
 async function checkAdminAccess(): Promise<void> {
+  // Anonymous mode (AUTH_ENABLED=false): show the app immediately without an
+  // auth check and hide auth-only UI elements (profile, logout, etc.).
+  if (window.__AUTH_ENABLED__ === false) {
+    const loadingOverlay = document.getElementById('auth-loading-overlay');
+    const appDiv = document.querySelector('.app') as HTMLElement | null;
+    if (loadingOverlay) loadingOverlay.style.display = 'none';
+    if (appDiv) appDiv.style.display = 'block';
+    hideAuthOnlyElements();
+    return;
+  }
+
   try {
     const data = await apiGet<{ role?: string }>('/api/auth/me');
 
@@ -4354,6 +4382,12 @@ initializeLazyLoading();
 
 // Logout function
 async function logout() {
+  // Anonymous mode: no session to revoke, just navigate home.
+  if (window.__AUTH_ENABLED__ === false) {
+    window.location.href = '/';
+    return;
+  }
+
   try {
     // Get refresh token from localStorage (if it exists from old implementation)
     const refreshToken =

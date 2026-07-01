@@ -819,6 +819,11 @@ function setRestoreInProgress(isRestoring: boolean, messageKey?: TranslationKey)
 }
 
 async function checkAdminAccess(): Promise<void> {
+  // Anonymous mode (AUTH_ENABLED=false): no auth check, no redirect.
+  if (window.__AUTH_ENABLED__ === false) {
+    return;
+  }
+
   try {
     const data = await apiGet<AuthResponse>('/api/auth/me');
     if (data.role === 'admin') {
