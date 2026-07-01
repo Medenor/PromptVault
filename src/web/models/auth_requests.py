@@ -327,6 +327,16 @@ class RefreshTokenRequest(BaseModel):
         return v
 
 
+class LogoutRequest(BaseModel):
+    """Request model for logout endpoint (all fields optional — token may come from cookie)."""
+
+    refresh_token: Optional[str] = Field(
+        None,
+        min_length=10,
+        description="JWT refresh token (optional if sent via cookie)",
+    )
+
+
 class ChangePasswordRequest(BaseModel):
     """Request model for changing user password.
 

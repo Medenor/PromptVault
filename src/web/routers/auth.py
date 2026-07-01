@@ -76,7 +76,8 @@ OpenAPI Documentation:
 import logging
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from src.config.auth_config import AuthConfig
@@ -98,6 +99,7 @@ from src.web.dependencies.auth import (
 from src.web.models.auth_requests import (
     RegisterRequest,
     LoginRequest,
+    LogoutRequest,
     RefreshTokenRequest,
     ChangePasswordRequest,
     PasswordResetRequestRequest,
@@ -724,7 +726,6 @@ def refresh(
 
 @router.post(
     "/logout",
-    response_model=MessageResponse,
     status_code=status.HTTP_200_OK,
     summary="Logout and revoke refresh token",
     description="""
@@ -761,14 +762,16 @@ def refresh(
     },
 )
 def logout(
-    request_data: RefreshTokenRequest,
+    request: Request,
+    request_data: LogoutRequest,
     ip_address: str = Depends(get_client_ip),
     auth_service: AuthService = Depends(get_auth_service),
-) -> MessageResponse:
+) -> Response:
     """Logout and revoke refresh token.
 
     Args:
-        request_data: Refresh token to revoke
+        request: HTTP request (for cookie fallback)
+        request_data: Optional refresh token in body
         ip_address: Client IP address (injected)
         auth_service: Authentication service instance (injected)
 
@@ -778,25 +781,18 @@ def logout(
     Raises:
         HTTPException: 401 if token invalid (treated as already logged out)
     """
+    # Prefer body token, fall back to cookie (cookie-only clients won't have it in body)
+    refresh_token = request_data.refresh_token or request.cookies.get("refresh_token")
+
     try:
-        # Call authentication service to logout
-        auth_service.logout(refresh_token=request_data.refresh_token)
+        if refresh_token:
+            auth_service.logout(refresh_token=refresh_token)
 
         logger.info(f"User logged out successfully from {ip_address}")
 
-        return MessageResponse(
-            message="Logged out successfully",
-            detail="Your session has been revoked. Please login again to continue.",
-        )
-
-    except (InvalidTokenError, SessionNotFoundError) as e:
+    except (InvalidTokenError, SessionNotFoundError):
         # Token invalid or session not found - treat as already logged out
         logger.info(f"Logout attempt with invalid/expired token from {ip_address}")
-        # Return success anyway (idempotent operation)
-        return MessageResponse(
-            message="Logged out successfully",
-            detail="Your session has been revoked. Please login again to continue.",
-        )
 
     except Exception as e:
         logger.error(f"Unexpected error during logout: {str(e)}", exc_info=True)
@@ -804,6 +800,13 @@ def logout(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred during logout. Please try again.",
         )
+
+    json_response = JSONResponse(
+        content={"message": "Logged out successfully", "detail": "Your session has been revoked. Please login again to continue."}
+    )
+    json_response.delete_cookie(key="access_token", path="/")
+    json_response.delete_cookie(key="refresh_token", path="/api/auth")
+    return json_response
 
 
 # ============================================================================
