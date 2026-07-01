@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### 🐛 Fixed
 
+- **Browser Back Navigation in Prompt Views**: Fixed bug where pressing the browser back button while editing a prompt or viewing version history navigated to a blank tab instead of returning to the prompt list
+  - **Root cause**: The prompt editor and version history modal are shown/hidden by toggling CSS classes on the same page — no URL is pushed, so the browser has no `/` history entry to return to
+  - **Fix**: `history.pushState()` is called when opening the editor or version history modal; a `popstate` listener closes the active view on back-navigation; close buttons and Escape key call `history.back()` so the pushed entry is always consumed
+  - **Impact**: Back navigation now closes the editor/modal and keeps the user in the app, consistent with the behaviour of import/export, backup, profile, and admin pages
+  - **Files Modified**: `src/web/static/ts/app.ts`, `src/web/templates/index.html`
+
 - **Filter State Preservation**: Fixed bug where filter state was lost after editing or deleting prompts
   - **Root cause**: After saving/deleting, `loadPrompts()` was called instead of `performSearch()`, and sidebar lists were re-rendered without preserving active filter state
   - **Fix**: Updated `handlePromptSubmit()` and `deletePrompt()` to preserve filter state by calling `performSearch()` when filters are active; Modified `renderCategories()` and `renderTags()` to restore active filter state from `searchState` after re-rendering
