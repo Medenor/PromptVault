@@ -107,6 +107,7 @@ export interface PromptResponse {
   user_id: string;
   created_at: string | null;
   updated_at: string | null;
+  semantic_version?: string | null;
 }
 
 /**

@@ -298,6 +298,7 @@ class PromptDataService:
                 "tags": [tag.name for tag in prompt.tags],
                 "note": prompt.note or "",
                 "favorite": prompt.favorite,
+                "semantic_version": prompt.semantic_version,
             },
             "versions": [
                 self._version_to_dict(v) for v in prompt.versions
@@ -339,6 +340,7 @@ class PromptDataService:
             "timestamp": timestamp,
             "author": version.author,
             "message": version.message,
+            "semantic_version": version.semantic_version,
             "data": {
                 "title": version.title,
                 "prompt": version.prompt,

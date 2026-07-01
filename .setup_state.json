@@ -1,0 +1,11 @@
+{
+  "completed_steps": [
+    "env",
+    "database",
+    "admin"
+  ],
+  "mode": null,
+  "profile": "production",
+  "config": {},
+  "last_updated": "2026-07-01T21:28:14.837600"
+}

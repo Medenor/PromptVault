@@ -47,6 +47,7 @@ class Prompt(Base):
     category_id = Column(Integer, ForeignKey("categories.id"))
     note = Column(Text)
     favorite = Column(Boolean, default=False, index=True)
+    semantic_version = Column(String(20), nullable=True)
     user_id = Column(String(36), ForeignKey("users.id"))
     created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())

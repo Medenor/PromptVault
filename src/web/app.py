@@ -1436,6 +1436,7 @@ async def get_version_history(prompt_id: str):
                 "author": version.get("author"),
                 "message": version.get("message"),
                 "parents": version.get("parents", []),
+                "semantic_version": version.get("semantic_version"),
             }
         )
 

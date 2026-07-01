@@ -90,7 +90,8 @@ class VersionRepository(BaseRepository[PromptVersion]):
         prompt: Prompt,
         author: str,
         message: str,
-        parent_version_id: Optional[str] = None
+        parent_version_id: Optional[str] = None,
+        semantic_version: Optional[str] = None
     ) -> PromptVersion:
         """Create a new version from current prompt state.
 
@@ -120,6 +121,7 @@ class VersionRepository(BaseRepository[PromptVersion]):
             note=prompt.note,
             tags=[tag.name for tag in prompt.tags],  # Denormalized as JSON
             favorite=prompt.favorite,
+            semantic_version=semantic_version if semantic_version is not None else prompt.semantic_version,
             author=author,
             message=message,
             created_at=datetime.utcnow(),

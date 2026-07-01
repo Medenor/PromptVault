@@ -61,6 +61,8 @@ class PromptVersion(Base):
     tags = Column(JSON)  # Stored as JSON array for historical accuracy
     favorite = Column(Boolean)
 
+    semantic_version = Column(String(20), nullable=True)
+
     # Version metadata
     author = Column(String(100))
     message = Column(String(500))
