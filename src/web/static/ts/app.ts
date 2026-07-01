@@ -1774,7 +1774,12 @@ async function handlePromptSubmit(event: SubmitEvent): Promise<void> {
       hidePromptEditor();
       // Clear version cache for this prompt since a new version was created
       clearVersionCache(promptId);
-      void loadPrompts(); // Refresh the list
+      // Preserve filter state when refreshing the list
+      if (isAnyFilterActive()) {
+        void performSearch();
+      } else {
+        void loadPrompts();
+      }
       void loadAvailableTags(); // Refresh tag counts for autocomplete
       void loadTags(); // Refresh sidebar tag list
       // Reset form mode
@@ -1921,7 +1926,12 @@ async function deletePrompt(id: PromptId): Promise<void> {
   try {
     await apiFetch<void>(`/api/prompts/${id}`, { method: 'DELETE' });
     // If we get here, delete succeeded (apiFetch throws on error)
-    void loadPrompts(); // Refresh the list
+    // Preserve filter state when refreshing the list
+    if (isAnyFilterActive()) {
+      void performSearch();
+    } else {
+      void loadPrompts();
+    }
     void loadAvailableTags(); // Refresh tag counts for autocomplete
     void loadTags(); // Refresh sidebar tag list
   } catch (error) {
