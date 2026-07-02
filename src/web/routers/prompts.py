@@ -690,9 +690,13 @@ async def update_prompt(
         )
 
     # Check ownership
-    # In test compatibility mode, allow unauthenticated updates
-    if user:
-        check_prompt_ownership(existing_prompt, user)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication required",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    check_prompt_ownership(existing_prompt, user)
 
     # Get or create category
     category_obj = None
@@ -1015,9 +1019,14 @@ async def toggle_favorite(
             detail=f"Prompt with ID {prompt_id} not found",
         )
 
-    # Check ownership (only owner can toggle favorite) when user present
-    if user:
-        check_prompt_ownership(existing_prompt, user)
+    # Check ownership (only owner can toggle favorite)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication required",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    check_prompt_ownership(existing_prompt, user)
 
     # Legacy failure injection support (tests may monkeypatch data_service.update_prompt)
     try:

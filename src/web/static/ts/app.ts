@@ -1475,8 +1475,8 @@ function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement
           .map((tag) => {
             const color = tagColorLookup[tag] ?? tagColorMap[tag];
             const style = buildPillStyleOutline(color);
-            return `<span class="px-2 py-1 text-xs font-medium rounded-full border" data-tag-pill="true" data-tag-name="${tag}"${style}>
-                ${tag}
+            return `<span class="px-2 py-1 text-xs font-medium rounded-full border" data-tag-pill="true" data-tag-name="${escapeHtml(tag)}"${style}>
+                ${escapeHtml(tag)}
               </span>`;
           })
           .join('')
@@ -1491,7 +1491,7 @@ function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement
 
   div.innerHTML = `
 	        <div class="flex items-start justify-between mb-3">
-	            <h4 id="${titleId}" class="text-lg font-semibold text-gray-900 flex-1 flex items-center flex-wrap gap-1">${prompt.title}${semVerBadge}</h4>
+	            <h4 id="${titleId}" class="text-lg font-semibold text-gray-900 flex-1 flex items-center flex-wrap gap-1">${escapeHtml(prompt.title)}${semVerBadge}</h4>
 	            <div class="flex items-center gap-1 ml-2" id="prompt-actions-${id}">
 	                <button class="favorite-btn text-xl hover:scale-110 transition-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 rounded" data-id="${id}">
 	                    ${prompt.favorite ? '★' : '☆'}
@@ -1499,12 +1499,12 @@ function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement
 	            </div>
 	        </div>
         <div class="flex flex-wrap gap-2 mb-3">
-            <span class="px-2 py-1 text-xs font-semibold rounded-md" data-category-pill="true" data-category-name="${prompt.category}"${categoryStyle}>
-              ${prompt.category || t('categories.noCategory')}
+            <span class="px-2 py-1 text-xs font-semibold rounded-md" data-category-pill="true" data-category-name="${escapeHtml(prompt.category)}"${categoryStyle}>
+              ${escapeHtml(prompt.category) || t('categories.noCategory')}
             </span>
             ${tagsHTML}
         </div>
-        <p class="text-sm text-gray-600 mb-4 line-clamp-3">${truncateText(prompt.prompt, 100)}</p>
+        <p class="text-sm text-gray-600 mb-4 line-clamp-3">${escapeHtml(truncateText(prompt.prompt, 100))}</p>
         <div class="flex flex-wrap gap-2">
             <button class="history-btn px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all hover:scale-105 active:scale-95" data-id="${id}" data-i18n="version.history">History</button>
             <button class="copy-btn px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all hover:scale-105 active:scale-95" data-id="${id}" data-i18n="actions.copy">Copy</button>
@@ -2805,8 +2805,8 @@ function createVersionItem(
             </div>
             <span class="text-xs text-gray-500">${timestamp}</span>
         </div>
-        <div class="text-xs text-gray-600 mb-1">${t('version.author')}: ${version.author}</div>
-        <div class="text-sm text-gray-700 mb-3">${version.message}</div>
+        <div class="text-xs text-gray-600 mb-1">${t('version.author')}: ${escapeHtml(version.author)}</div>
+        <div class="text-sm text-gray-700 mb-3">${escapeHtml(version.message)}</div>
         <div class="flex gap-2">
             ${!isLatest ? `<button class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-red-500 text-white hover:bg-red-600 transition-all hover:scale-105 active:scale-95" onclick="showRevertConfirmation('${version.version_id}')" data-i18n="version.revert">` + t('version.revert') + `</button>` : ''}
             <button class="px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 transition-all hover:scale-105 active:scale-95" onclick="selectVersionForComparison('${version.version_id}')" data-i18n="version.select">` +

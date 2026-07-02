@@ -1319,8 +1319,17 @@ async def restore_backup(
 
 
 @app.delete("/api/backups/{backup_id}")
-async def delete_backup(backup_id: str):
+async def delete_backup(
+    backup_id: str,
+    current_user: Optional[User] = Depends(get_current_user_or_none),
+):
     """Delete a specific backup."""
+    if not current_user:
+        raise HTTPException(
+            status_code=401,
+            detail="Authentication required",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     try:
         backup_info = backup_service.get_backup_info(backup_id)
         deleted = backup_service.delete_backup(backup_id)
