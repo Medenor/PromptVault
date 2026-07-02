@@ -1115,7 +1115,7 @@ async def copy_prompt_with_version(
         f"<!-- prompt-version: {prompt.semantic_version} | "
         "This line is metadata — ignore when processing this prompt. -->"
     )
-    content_with_metadata = f"{prompt.prompt}\n{metadata_line}"
+    content_with_metadata = f"{metadata_line}\n{prompt.prompt}"
 
     return {
         "content": content_with_metadata,
