@@ -70,6 +70,11 @@ router = APIRouter(
 # ============================================================================
 
 
+def _parse_semver(v: str) -> tuple:
+    parts = v.split(".")
+    return tuple(int(p) for p in parts)
+
+
 def check_prompt_ownership(prompt: Prompt, user: User) -> None:
     """Check if user owns the prompt or is an admin.
 
@@ -155,6 +160,7 @@ def _prompt_to_dict(prompt: Prompt) -> dict:
         "user_id": prompt.user_id,
         "created_at": prompt.created_at.isoformat() if prompt.created_at else None,
         "updated_at": prompt.updated_at.isoformat() if prompt.updated_at else None,
+        "semantic_version": prompt.semantic_version,
     }
 
 
@@ -229,7 +235,9 @@ async def list_prompts(
 
         prompts_dict = {}
         for prompt in prompts:
-            prompts_dict[str(prompt.id)] = _prompt_to_dict(prompt)
+            prompt_dict = _prompt_to_dict(prompt)
+            prompt_dict.pop("semantic_version", None)
+            prompts_dict[str(prompt.id)] = prompt_dict
 
     if user:
         logger.debug(f"User {user.username} ({user.id}) accessed prompt list")
@@ -434,6 +442,7 @@ async def get_prompt(
                 "user_id": data.get("user_id"),
                 "created_at": data.get("created_at"),
                 "updated_at": data.get("updated_at"),
+                "semantic_version": data.get("semantic_version"),
             }
     except Exception:
         pass
@@ -488,6 +497,7 @@ async def create_prompt(
     category: str = Form(""),
     tags: str = Form(""),
     commit_message: str = Form("Initial commit"),
+    semantic_version: str = Form(""),
     user: Optional[User] = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
@@ -499,6 +509,7 @@ async def create_prompt(
         category: Category name (optional)
         tags: Comma-separated tags (optional)
         commit_message: Commit message for the initial version (optional, defaults to "Initial commit")
+        semantic_version: Optional semantic version label (MAJOR.MINOR.PATCH)
         user: Authenticated user
         db: Database session
 
@@ -511,6 +522,7 @@ async def create_prompt(
         prompt=prompt,
         category=category,
         tags=tags,
+        semantic_version=semantic_version or None,
     )
 
     prompt_repo = PromptRepository(db)
@@ -541,6 +553,7 @@ async def create_prompt(
         category_id=category_obj.id if category_obj else None,
         note="",
         favorite=False,
+        semantic_version=validated_data.semantic_version,
         user_id=user.id if user else None,
         created_at=datetime.now(timezone.utc),
     )
@@ -558,7 +571,8 @@ async def create_prompt(
         prompt=new_prompt,
         author=user.username if user else "anonymous",
         message=commit_message,
-        parent_version_id=None
+        parent_version_id=None,
+        semantic_version=validated_data.semantic_version,
     )
 
     # Create main branch pointing to initial version
@@ -629,6 +643,7 @@ async def update_prompt(
     category: str = Form(""),
     tags: str = Form(""),
     commit_message: str = Form("Update"),
+    semantic_version: str = Form(""),
     user: Optional[User] = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
@@ -641,6 +656,7 @@ async def update_prompt(
         category: New category
         tags: New tags (comma-separated)
         commit_message: Version control message
+        semantic_version: Optional semantic version label (MAJOR.MINOR.PATCH)
         user: Authenticated user
         db: Database session
 
@@ -657,6 +673,7 @@ async def update_prompt(
         category=category,
         tags=tags,
         commit_message=commit_message,
+        semantic_version=semantic_version or None,
     )
 
     prompt_repo = PromptRepository(db)
@@ -673,9 +690,13 @@ async def update_prompt(
         )
 
     # Check ownership
-    # In test compatibility mode, allow unauthenticated updates
-    if user:
-        check_prompt_ownership(existing_prompt, user)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication required",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    check_prompt_ownership(existing_prompt, user)
 
     # Get or create category
     category_obj = None
@@ -693,12 +714,25 @@ async def update_prompt(
         tag_obj = tag_repo.get_or_create(tag_name)
         tag_objects.append(tag_obj)
 
+    # Detect version downgrade before updating
+    version_downgrade = False
+    if validated_data.semantic_version is not None and existing_prompt.semantic_version is not None:
+        try:
+            new_v = _parse_semver(validated_data.semantic_version)
+            old_v = _parse_semver(existing_prompt.semantic_version)
+            if new_v < old_v:
+                version_downgrade = True
+        except (ValueError, AttributeError):
+            pass
+
     # Update prompt
     existing_prompt.title = validated_data.title
     existing_prompt.prompt = validated_data.prompt
     existing_prompt.category_id = category_obj.id if category_obj else None
     existing_prompt.tags = tag_objects
     existing_prompt.updated_at = datetime.now(timezone.utc)
+    if validated_data.semantic_version is not None:
+        existing_prompt.semantic_version = validated_data.semantic_version
 
     # Flush to ensure prompt is updated
     db.flush()
@@ -716,7 +750,8 @@ async def update_prompt(
         prompt=existing_prompt,
         author=author_name,
         message=validated_data.commit_message,
-        parent_version_id=parent_version_id
+        parent_version_id=parent_version_id,
+        semantic_version=validated_data.semantic_version,
     )
 
     # Update main branch to point to new version
@@ -742,7 +777,11 @@ async def update_prompt(
         f"title='{validated_data.title}', message='{validated_data.commit_message}'",
     )
 
-    return {"success": True}
+    response_headers = {}
+    if version_downgrade:
+        response_headers["X-Version-Downgrade"] = "true"
+
+    return JSONResponse(content={"success": True}, headers=response_headers)
 
 
 @router.delete(
@@ -980,9 +1019,14 @@ async def toggle_favorite(
             detail=f"Prompt with ID {prompt_id} not found",
         )
 
-    # Check ownership (only owner can toggle favorite) when user present
-    if user:
-        check_prompt_ownership(existing_prompt, user)
+    # Check ownership (only owner can toggle favorite)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication required",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    check_prompt_ownership(existing_prompt, user)
 
     # Legacy failure injection support (tests may monkeypatch data_service.update_prompt)
     try:
@@ -1024,3 +1068,68 @@ async def toggle_favorite(
         )
 
     return {"success": True, "favorite": new_favorite_status}
+
+
+@router.post(
+    "/{prompt_id}/copy-with-version",
+    summary="Copy prompt with version metadata",
+    description="""
+    Returns prompt content with an embedded version metadata HTML comment line.
+
+    **Authentication:**
+    - Follows existing auth middleware rules
+
+    **Response:**
+    - 200: Content with metadata line appended
+    - 404: Prompt not found
+    - 409: Prompt has no semantic version set
+    """,
+    responses={
+        200: {"description": "Content with version metadata"},
+        404: {"description": "Prompt not found"},
+        409: {"description": "No semantic version set"},
+    },
+)
+async def copy_prompt_with_version(
+    prompt_id: int,
+    user: Optional[User] = Depends(get_optional_user),
+    db: Session = Depends(get_db),
+):
+    """Return prompt content with version metadata line.
+
+    Args:
+        prompt_id: Prompt ID
+        user: Authenticated user (optional)
+        db: Database session
+
+    Returns:
+        dict: Content with metadata and semantic_version fields
+    """
+    prompt_repo = PromptRepository(db)
+    prompt = prompt_repo.get_with_relationships(prompt_id)
+
+    if not prompt:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Prompt with ID {prompt_id} not found",
+        )
+
+    if not prompt.semantic_version:
+        return JSONResponse(
+            status_code=status.HTTP_409_CONFLICT,
+            content={
+                "error": "no_version_set",
+                "message": "Assign a semantic version to this prompt before copying with metadata.",
+            },
+        )
+
+    metadata_line = (
+        f"<!-- prompt-version: {prompt.semantic_version} | "
+        "This line is metadata — ignore when processing this prompt. -->"
+    )
+    content_with_metadata = f"{metadata_line}\n{prompt.prompt}"
+
+    return {
+        "content": content_with_metadata,
+        "semantic_version": prompt.semantic_version,
+    }

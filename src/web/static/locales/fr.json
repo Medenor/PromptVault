@@ -142,7 +142,8 @@
     "tagsRemaining": "{{count}} autorisées en plus",
     "errorCount": "{{count}} erreur de validation trouvée :",
     "errorsCount": "{{count}} erreurs de validation trouvées :",
-    "fixErrorsMessage": "Veuillez corriger les erreurs ci-dessus avant de soumettre."
+    "fixErrorsMessage": "Veuillez corriger les erreurs ci-dessus avant de soumettre.",
+    "semanticVersionFormat": "La version doit être au format MAJEUR.MINEUR.PATCH (ex. 1.0.0)"
   },
   "categories": {
     "manage": "Gérer les catégories",
@@ -257,7 +258,13 @@
     "version2": "Version 2",
     "noVersions": "Aucune version disponible",
     "revertSuccess": "Retour à la version précédente réussi",
-    "revertError": "Échec du retour à la version"
+    "revertError": "Échec du retour à la version",
+    "semanticVersion": "Version sémantique :",
+    "semanticVersionPlaceholder": "ex. 1.0.0",
+    "unversioned": "Sans version",
+    "copyWithMetadata": "Copier+Version",
+    "copiedWithMetadata": "Copié avec les métadonnées de version !",
+    "noVersionForCopy": "Assignez une version sémantique avant de copier avec les métadonnées."
   },
   "bulkDelete": {
     "confirmTitle": "Confirmer la suppression groupée",

@@ -44,6 +44,7 @@ class PromptResponse(BaseModel):
     )
     note: str = Field(..., description="Optional note")
     favorite: bool = Field(..., description="Favorite status")
+    semantic_version: Optional[str] = Field(None, description="Semantic version label (MAJOR.MINOR.PATCH)")
     user_id: str = Field(..., description="Owner's user ID")
     created_at: Optional[str] = Field(None, description="Creation timestamp (ISO format)")
     updated_at: Optional[str] = Field(None, description="Update timestamp (ISO format)")

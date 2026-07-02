@@ -45,6 +45,10 @@ class PromptCreateRequest(BaseModel):
         default="",
         description="Comma-separated tags",
     )
+    semantic_version: Optional[str] = Field(
+        default=None,
+        description="Semantic version label (MAJOR.MINOR.PATCH)",
+    )
 
     @field_validator("title", "category")
     @classmethod
@@ -95,6 +99,18 @@ class PromptCreateRequest(BaseModel):
         # Return as comma-separated string
         return ",".join(tag_list)
 
+    @field_validator("semantic_version")
+    @classmethod
+    def validate_semantic_version(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return None
+        v = v.strip()
+        if v == "":
+            return None
+        if not re.match(r'^\d+\.\d+\.\d+$', v):
+            raise ValueError("semantic_version must be in MAJOR.MINOR.PATCH format (e.g. 1.0.0)")
+        return v
+
 
 class PromptUpdateRequest(BaseModel):
     """Request model for updating an existing prompt.
@@ -128,6 +144,10 @@ class PromptUpdateRequest(BaseModel):
         min_length=1,
         max_length=500,
         description="Version control commit message",
+    )
+    semantic_version: Optional[str] = Field(
+        default=None,
+        description="Semantic version label (MAJOR.MINOR.PATCH)",
     )
 
     @field_validator("title", "category", "commit_message")
@@ -164,6 +184,18 @@ class PromptUpdateRequest(BaseModel):
                 raise ValueError(f"Tag '{tag}' exceeds maximum length of 50 characters")
 
         return ",".join(tag_list)
+
+    @field_validator("semantic_version")
+    @classmethod
+    def validate_semantic_version(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return None
+        v = v.strip()
+        if v == "":
+            return None
+        if not re.match(r'^\d+\.\d+\.\d+$', v):
+            raise ValueError("semantic_version must be in MAJOR.MINOR.PATCH format (e.g. 1.0.0)")
+        return v
 
 
 class ExportRequest(BaseModel):

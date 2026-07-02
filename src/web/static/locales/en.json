@@ -142,7 +142,8 @@
     "tagsRemaining": "{{count}} more allowed",
     "errorCount": "{{count}} validation error found:",
     "errorsCount": "{{count}} validation errors found:",
-    "fixErrorsMessage": "Please fix the errors above before submitting."
+    "fixErrorsMessage": "Please fix the errors above before submitting.",
+    "semanticVersionFormat": "Version must be in MAJOR.MINOR.PATCH format (e.g. 1.0.0)"
   },
   "categories": {
     "manage": "Manage Categories",
@@ -377,7 +378,13 @@
     "version2": "Version 2",
     "noVersions": "No versions available",
     "revertSuccess": "Successfully reverted to previous version",
-    "revertError": "Failed to revert version"
+    "revertError": "Failed to revert version",
+    "semanticVersion": "Semantic Version:",
+    "semanticVersionPlaceholder": "e.g. 1.0.0",
+    "unversioned": "Unversioned",
+    "copyWithMetadata": "Copy+Version",
+    "copiedWithMetadata": "Copied with version metadata!",
+    "noVersionForCopy": "Assign a semantic version before copying with metadata."
   },
   "bulkDelete": {
     "confirmTitle": "Confirm Bulk Deletion",

@@ -49,6 +49,7 @@ interface VersionSummary {
   author: string;
   message: string;
   parents: string[];
+  semantic_version: string | null;
 }
 
 interface VersionHistoryResponse {
@@ -104,13 +105,11 @@ let tagColorMap: Record<string, string> = {};
 let categoryColorMap: Record<string, string> = {};
 const colorTextCache = new Map<string, string>();
 let selectedTags: string[] = [];
-let keyboardHelpModal:
-  | {
-      element: HTMLDivElement;
-      open: () => void;
-      close: () => void;
-    }
-  | null = null;
+let keyboardHelpModal: {
+  element: HTMLDivElement;
+  open: () => void;
+  close: () => void;
+} | null = null;
 
 const HIDDEN_CLASS = 'hidden';
 const ERROR_VISIBLE_CLASS = 'validation-error-visible';
@@ -931,7 +930,9 @@ function showPromptErrorSummary(errors: PromptFieldError[]): void {
 
   // Per plan T-ACC023: focus the first invalid field after rendering the summary.
   const firstFieldId = errors[0]?.fieldId;
-  const firstField = firstFieldId ? (document.getElementById(firstFieldId) as HTMLElement | null) : null;
+  const firstField = firstFieldId
+    ? (document.getElementById(firstFieldId) as HTMLElement | null)
+    : null;
   if (firstField) {
     firstField.focus();
   } else {
@@ -939,7 +940,11 @@ function showPromptErrorSummary(errors: PromptFieldError[]): void {
   }
 }
 
-function clearPromptFieldError(fieldId: string, errorId: string, shouldAnnounce: boolean = false): void {
+function clearPromptFieldError(
+  fieldId: string,
+  errorId: string,
+  shouldAnnounce: boolean = false
+): void {
   const errorEl = document.getElementById(errorId);
   if (errorEl) {
     errorEl.textContent = '';
@@ -1006,11 +1011,9 @@ function hideAuthOnlyElements(): void {
     }
   });
   // Hide profile navigation links (desktop button + mobile dropdown entries).
-  document
-    .querySelectorAll<HTMLElement>('[onclick*="/auth/profile"]')
-    .forEach((el) => {
-      el.style.display = 'none';
-    });
+  document.querySelectorAll<HTMLElement>('[onclick*="/auth/profile"]').forEach((el) => {
+    el.style.display = 'none';
+  });
 }
 
 async function checkAdminAccess(): Promise<void> {
@@ -1153,7 +1156,13 @@ function setupEventListeners(): void {
   if (titleInput) {
     const validate = () => {
       if (!titleInput.value.trim()) {
-        showPromptFieldError('prompt-title', 'prompt-title-error', 'validation.titleRequired', false, true);
+        showPromptFieldError(
+          'prompt-title',
+          'prompt-title-error',
+          'validation.titleRequired',
+          false,
+          true
+        );
       } else {
         clearPromptFieldError('prompt-title', 'prompt-title-error', true);
       }
@@ -1222,11 +1231,11 @@ function setupEventListeners(): void {
     }
   });
 
-  // Version history modal close
-  const closeVersionHistoryBtn = document.getElementById('close-version-history-btn');
-  if (closeVersionHistoryBtn) {
-    closeVersionHistoryBtn.addEventListener('click', () => history.back());
-  }
+  // Version history modal close buttons
+  const closeVersionHistoryBtns = document.querySelectorAll('#close-version-history-btn');
+  closeVersionHistoryBtns.forEach((btn) => {
+    btn.addEventListener('click', hideVersionHistoryModal);
+  });
 
   // Back button closes modals/editor instead of leaving the app.
   // When popstate fires we've already moved back in history, so event.state is
@@ -1419,7 +1428,9 @@ function renderPrompts(prompts: Record<string, PromptResponse>): void {
 function isAnyFilterActive(): boolean {
   const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
   const favoritesFilter = document.getElementById('favorites-filter') as HTMLInputElement | null;
-  const selectedCategory = document.querySelector('#categories-list li.active')?.getAttribute('data-category');
+  const selectedCategory = document
+    .querySelector('#categories-list li.active')
+    ?.getAttribute('data-category');
   const selectedTag = document.querySelector('#tags-list li.active')?.getAttribute('data-tag');
 
   return !!(
@@ -1464,8 +1475,8 @@ function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement
           .map((tag) => {
             const color = tagColorLookup[tag] ?? tagColorMap[tag];
             const style = buildPillStyleOutline(color);
-            return `<span class="px-2 py-1 text-xs font-medium rounded-full border" data-tag-pill="true" data-tag-name="${tag}"${style}>
-                ${tag}
+            return `<span class="px-2 py-1 text-xs font-medium rounded-full border" data-tag-pill="true" data-tag-name="${escapeHtml(tag)}"${style}>
+                ${escapeHtml(tag)}
               </span>`;
           })
           .join('')
@@ -1474,9 +1485,13 @@ function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement
   const categoryColor = prompt.category_color ?? categoryColorMap[prompt.category];
   const categoryStyle = buildPillStyleFilled(categoryColor);
 
+  const semVerBadge = prompt.semantic_version
+    ? `<span class="version-badge px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-100 text-blue-700 ml-2">v${prompt.semantic_version}</span>`
+    : '';
+
   div.innerHTML = `
 	        <div class="flex items-start justify-between mb-3">
-	            <h4 id="${titleId}" class="text-lg font-semibold text-gray-900 flex-1">${prompt.title}</h4>
+	            <h4 id="${titleId}" class="text-lg font-semibold text-gray-900 flex-1 flex items-center flex-wrap gap-1">${escapeHtml(prompt.title)}${semVerBadge}</h4>
 	            <div class="flex items-center gap-1 ml-2" id="prompt-actions-${id}">
 	                <button class="favorite-btn text-xl hover:scale-110 transition-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 rounded" data-id="${id}">
 	                    ${prompt.favorite ? '★' : '☆'}
@@ -1484,15 +1499,16 @@ function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement
 	            </div>
 	        </div>
         <div class="flex flex-wrap gap-2 mb-3">
-            <span class="px-2 py-1 text-xs font-semibold rounded-md" data-category-pill="true" data-category-name="${prompt.category}"${categoryStyle}>
-              ${prompt.category || t('categories.noCategory')}
+            <span class="px-2 py-1 text-xs font-semibold rounded-md" data-category-pill="true" data-category-name="${escapeHtml(prompt.category)}"${categoryStyle}>
+              ${escapeHtml(prompt.category) || t('categories.noCategory')}
             </span>
             ${tagsHTML}
         </div>
-        <p class="text-sm text-gray-600 mb-4 line-clamp-3">${truncateText(prompt.prompt, 100)}</p>
+        <p class="text-sm text-gray-600 mb-4 line-clamp-3">${escapeHtml(truncateText(prompt.prompt, 100))}</p>
         <div class="flex flex-wrap gap-2">
             <button class="history-btn px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all hover:scale-105 active:scale-95" data-id="${id}" data-i18n="version.history">History</button>
             <button class="copy-btn px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all hover:scale-105 active:scale-95" data-id="${id}" data-i18n="actions.copy">Copy</button>
+            <button class="copy-with-version-btn px-3 py-1.5 text-xs font-medium rounded-lg bg-purple-100 text-purple-700 hover:bg-purple-200 transition-all hover:scale-105 active:scale-95" data-id="${id}" data-i18n="version.copyWithMetadata">Copy+Version</button>
             <button class="edit-btn px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 transition-all hover:scale-105 active:scale-95" data-id="${id}" data-i18n="actions.edit">Edit</button>
             <button class="delete-btn px-3 py-1.5 text-xs font-medium rounded-lg bg-red-100 text-red-700 hover:bg-red-200 transition-all hover:scale-105 active:scale-95" data-id="${id}" data-i18n="actions.delete">Delete</button>
         </div>
@@ -1540,14 +1556,14 @@ function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement
     deleteBtn.title = t('actions.delete');
   }
 
-	  const favoriteBtn = div.querySelector('.favorite-btn') as HTMLButtonElement | null;
-	  favoriteBtn?.addEventListener('click', () => {
-	    lastSelectedPromptId = parseInt(id, 10);
-	    void toggleFavorite(id);
-	  });
-	  if (favoriteBtn) {
-	    setFavoriteButtonA11y(favoriteBtn, Boolean(prompt.favorite));
-	  }
+  const favoriteBtn = div.querySelector('.favorite-btn') as HTMLButtonElement | null;
+  favoriteBtn?.addEventListener('click', () => {
+    lastSelectedPromptId = parseInt(id, 10);
+    void toggleFavorite(id);
+  });
+  if (favoriteBtn) {
+    setFavoriteButtonA11y(favoriteBtn, Boolean(prompt.favorite));
+  }
 
   const historyBtn = div.querySelector('.history-btn') as HTMLButtonElement | null;
   historyBtn?.addEventListener('click', () => {
@@ -1556,6 +1572,17 @@ function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement
   });
   if (historyBtn) {
     historyBtn.title = t('version.history');
+  }
+
+  const copyWithVersionBtn = div.querySelector(
+    '.copy-with-version-btn'
+  ) as HTMLButtonElement | null;
+  copyWithVersionBtn?.addEventListener('click', () => {
+    lastSelectedPromptId = parseInt(id, 10);
+    void copyPromptWithVersion(id);
+  });
+  if (copyWithVersionBtn) {
+    copyWithVersionBtn.title = t('version.copyWithMetadata');
   }
 
   // Track prompt selection on click and open editor
@@ -1568,8 +1595,8 @@ function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement
     void editPrompt(id);
   });
 
-	  return div;
-	}
+  return div;
+}
 
 function setFavoriteButtonA11y(button: HTMLButtonElement, isFavorite: boolean): void {
   button.setAttribute('aria-pressed', isFavorite ? 'true' : 'false');
@@ -1842,6 +1869,22 @@ async function handlePromptSubmit(event: SubmitEvent): Promise<void> {
     });
   }
 
+  // Validate semantic version format if provided
+  const semVerValue = formData.get('semantic_version');
+  const semVer = typeof semVerValue === 'string' ? semVerValue.trim() : '';
+  if (semVer && !/^\d+\.\d+\.\d+$/.test(semVer)) {
+    const semVerError = document.getElementById('semantic-version-error');
+    if (semVerError) {
+      semVerError.textContent = t('validation.semanticVersionFormat');
+    }
+    const semVerInput = document.getElementById('semantic-version') as HTMLInputElement | null;
+    semVerInput?.focus();
+    return;
+  } else {
+    const semVerError = document.getElementById('semantic-version-error');
+    if (semVerError) semVerError.textContent = '';
+  }
+
   if (errors.length > 0) {
     errors.forEach((err) => {
       showPromptFieldError(err.fieldId, err.errorId, err.messageKey, false);
@@ -1893,6 +1936,46 @@ async function handlePromptSubmit(event: SubmitEvent): Promise<void> {
       promptId: promptId || null,
     });
     showNotification(t('messages.error'), 'error');
+  }
+}
+
+async function copyPromptWithVersion(id: PromptId): Promise<void> {
+  try {
+    const response = await fetch(`/api/prompts/${id}/copy-with-version`, { method: 'POST' });
+
+    if (response.status === 409) {
+      showNotification(t('version.noVersionForCopy'), 'error');
+      return;
+    }
+
+    if (!response.ok) {
+      showNotification(t('messages.copyFailed'), 'error');
+      return;
+    }
+
+    const data = (await response.json()) as { content: string; semantic_version: string };
+
+    if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+      await navigator.clipboard.writeText(data.content);
+    } else {
+      const textArea = document.createElement('textarea');
+      textArea.value = data.content;
+      textArea.setAttribute('readonly', '');
+      textArea.className = 'clipboard-helper';
+      document.body.appendChild(textArea);
+      try {
+        textArea.focus();
+        textArea.select();
+        document.execCommand('copy');
+      } finally {
+        document.body.removeChild(textArea);
+      }
+    }
+
+    showNotification(t('version.copiedWithMetadata'), 'success');
+  } catch (error) {
+    reportAppIssue('copyPromptWithVersion', error, { promptId: id });
+    showNotification(t('messages.copyFailed'), 'error');
   }
 }
 
@@ -1999,6 +2082,8 @@ async function editPrompt(id: PromptId): Promise<void> {
     if (promptCategory) promptCategory.value = prompt.category || '';
     setSelectedTags(prompt.tags ? prompt.tags : []);
     if (commitMessage) commitMessage.value = ''; // Clear commit message for new edit
+    const semVerInput = document.getElementById('semantic-version') as HTMLInputElement | null;
+    if (semVerInput) semVerInput.value = prompt.semantic_version || '';
 
     // Change form to update mode
     const form = document.getElementById('prompt-form') as HTMLFormElement | null;
@@ -2570,7 +2655,9 @@ function showVersionHistoryModal(promptId: number): void {
   const modal = document.getElementById('version-history-modal');
   if (modal) {
     const focusableElements = Array.from(
-      modal.querySelectorAll<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')
+      modal.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      )
     ).filter((el) => {
       const style = window.getComputedStyle(el);
       return style.display !== 'none' && style.visibility !== 'hidden';
@@ -2705,14 +2792,21 @@ function createVersionItem(
   }
   const isLatest = index === 0;
 
+  const semVerBadge = version.semantic_version
+    ? `<span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-100 text-blue-700">${version.semantic_version}</span>`
+    : `<span class="px-2 py-0.5 text-xs font-medium rounded-full bg-gray-100 text-gray-500" data-i18n="version.unversioned">${t('version.unversioned')}</span>`;
+
   div.innerHTML =
     `
         <div class="flex items-center justify-between mb-2">
-            <span class="text-sm font-semibold text-gray-900">#${totalVersions - index} ${version.version_id.substring(0, 8)}...</span>
+            <div class="flex items-center gap-2">
+              <span class="text-sm font-semibold text-gray-900">#${totalVersions - index} ${version.version_id.substring(0, 8)}...</span>
+              ${semVerBadge}
+            </div>
             <span class="text-xs text-gray-500">${timestamp}</span>
         </div>
-        <div class="text-xs text-gray-600 mb-1">${t('version.author')}: ${version.author}</div>
-        <div class="text-sm text-gray-700 mb-3">${version.message}</div>
+        <div class="text-xs text-gray-600 mb-1">${t('version.author')}: ${escapeHtml(version.author)}</div>
+        <div class="text-sm text-gray-700 mb-3">${escapeHtml(version.message)}</div>
         <div class="flex gap-2">
             ${!isLatest ? `<button class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-red-500 text-white hover:bg-red-600 transition-all hover:scale-105 active:scale-95" onclick="showRevertConfirmation('${version.version_id}')" data-i18n="version.revert">` + t('version.revert') + `</button>` : ''}
             <button class="px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 transition-all hover:scale-105 active:scale-95" onclick="selectVersionForComparison('${version.version_id}')" data-i18n="version.select">` +
@@ -2767,7 +2861,9 @@ function showRevertConfirmation(versionId: string): void {
   const modal = document.getElementById('revert-confirmation-modal');
   if (modal) {
     const focusableElements = Array.from(
-      modal.querySelectorAll<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')
+      modal.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      )
     ).filter((el) => {
       const style = window.getComputedStyle(el);
       return style.display !== 'none' && style.visibility !== 'hidden';
@@ -2838,7 +2934,9 @@ async function showDiffModal(): Promise<void> {
   const modal = document.getElementById('diff-modal');
   if (modal) {
     const focusableElements = Array.from(
-      modal.querySelectorAll<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')
+      modal.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      )
     ).filter((el) => {
       const style = window.getComputedStyle(el);
       return style.display !== 'none' && style.visibility !== 'hidden';
@@ -3014,13 +3112,18 @@ function displayDiff(diff: VersionDiffResponse): void {
   const section = document.createElement('div');
   section.className = 'space-y-4';
 
+  const fieldDisplayNames: Record<string, string> = {
+    semantic_version: 'Semantic Version',
+  };
+
   Object.entries(diff.changes).forEach(([field, change]) => {
     const fieldDiv = document.createElement('div');
     fieldDiv.className = 'bg-white border border-gray-200 rounded-lg p-4';
 
     const fieldName = document.createElement('div');
     fieldName.className = 'text-sm font-semibold text-gray-900 mb-3';
-    fieldName.textContent = field.charAt(0).toUpperCase() + field.slice(1);
+    fieldName.textContent =
+      fieldDisplayNames[field] || field.charAt(0).toUpperCase() + field.slice(1);
     fieldDiv.appendChild(fieldName);
 
     // If character-level diff is available, render it
@@ -3215,7 +3318,8 @@ function addTooltips() {
   Object.entries(tooltips).forEach(([selector, title]) => {
     document.querySelectorAll(selector).forEach((element) => {
       const htmlElement = element as HTMLElement;
-      const derivedTitle = selector === '.favorite-btn' ? (htmlElement.getAttribute('aria-label') || title) : title;
+      const derivedTitle =
+        selector === '.favorite-btn' ? htmlElement.getAttribute('aria-label') || title : title;
       htmlElement.title = derivedTitle;
       htmlElement.setAttribute('data-tooltip', derivedTitle);
     });

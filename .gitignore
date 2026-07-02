@@ -51,6 +51,9 @@ venv.bak/
 .mcp.json
 .claude
 .codex
+.kilo
+.kilocode
+.opencode
 
 # OS
 .DS_Store

@@ -1319,8 +1319,17 @@ async def restore_backup(
 
 
 @app.delete("/api/backups/{backup_id}")
-async def delete_backup(backup_id: str):
+async def delete_backup(
+    backup_id: str,
+    current_user: Optional[User] = Depends(get_current_user_or_none),
+):
     """Delete a specific backup."""
+    if not current_user:
+        raise HTTPException(
+            status_code=401,
+            detail="Authentication required",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     try:
         backup_info = backup_service.get_backup_info(backup_id)
         deleted = backup_service.delete_backup(backup_id)
@@ -1436,6 +1445,7 @@ async def get_version_history(prompt_id: str):
                 "author": version.get("author"),
                 "message": version.get("message"),
                 "parents": version.get("parents", []),
+                "semantic_version": version.get("semantic_version"),
             }
         )
 
@@ -1484,6 +1494,8 @@ async def compare_versions(prompt_id: str, v1: str = None, v2: str = None):
     string_fields = ["title", "prompt", "note"]
     # Array/categorical fields that don't get diffs yet
     other_fields = ["category", "tags"]
+    # Top-level metadata fields (outside the "data" sub-dict)
+    metadata_fields = ["semantic_version"]
 
     # Process string fields with character-level diffs
     for field in string_fields:
@@ -1500,6 +1512,13 @@ async def compare_versions(prompt_id: str, v1: str = None, v2: str = None):
     for field in other_fields:
         val1 = data1.get(field)
         val2 = data2.get(field)
+        if val1 != val2:
+            diff["changes"][field] = {"old": val1, "new": val2}
+
+    # Process metadata fields (top-level version attributes)
+    for field in metadata_fields:
+        val1 = version1.get(field)
+        val2 = version2.get(field)
         if val1 != val2:
             diff["changes"][field] = {"old": val1, "new": val2}
 

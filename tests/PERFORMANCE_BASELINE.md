@@ -1,6 +1,6 @@
 # Performance Baseline Report
 
-Generated: 2026-07-01T16:51:40.665848+00:00
+Generated: 2026-07-01T19:27:20.622922+00:00
 Platform: darwin
 
 ## Summary
@@ -11,17 +11,17 @@ This report documents the performance characteristics of `list_all_with_counts()
 
 | Dataset | Categories | Prompts | Time (s) | Queries | Memory (MB) |
 |---------|-----------|---------|----------|---------|-------------|
-| Small | 10 | 100 | 0.0042 | 1 | 0.04 |
-| Medium | 100 | 1000 | 0.0047 | 1 | 0.14 |
-| Large | 1000 | 5000 | 0.0587 | 1 | 1.50 |
+| Small | 10 | 100 | 0.0028 | 1 | 0.05 |
+| Medium | 100 | 1000 | 0.0045 | 1 | 0.14 |
+| Large | 1000 | 5000 | 0.0356 | 1 | 1.50 |
 
 ## Tag Performance
 
 | Dataset | Tags | Prompts | Time (s) | Queries | Memory (MB) |
 |---------|------|---------|----------|---------|-------------|
-| Small | 100 | 500 | 0.0209 | 1 | 0.32 |
-| Medium | 500 | 2000 | 0.0588 | 1 | 1.04 |
-| Large | 1000 | 10000 | 0.0883 | 1 | 2.43 |
+| Small | 100 | 500 | 0.0163 | 1 | 0.32 |
+| Medium | 500 | 2000 | 0.0330 | 1 | 1.04 |
+| Large | 1000 | 10000 | 0.1227 | 1 | 2.44 |
 
 ## Analysis
 
