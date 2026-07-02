@@ -3112,13 +3112,18 @@ function displayDiff(diff: VersionDiffResponse): void {
   const section = document.createElement('div');
   section.className = 'space-y-4';
 
+  const fieldDisplayNames: Record<string, string> = {
+    semantic_version: 'Semantic Version',
+  };
+
   Object.entries(diff.changes).forEach(([field, change]) => {
     const fieldDiv = document.createElement('div');
     fieldDiv.className = 'bg-white border border-gray-200 rounded-lg p-4';
 
     const fieldName = document.createElement('div');
     fieldName.className = 'text-sm font-semibold text-gray-900 mb-3';
-    fieldName.textContent = field.charAt(0).toUpperCase() + field.slice(1);
+    fieldName.textContent =
+      fieldDisplayNames[field] || field.charAt(0).toUpperCase() + field.slice(1);
     fieldDiv.appendChild(fieldName);
 
     // If character-level diff is available, render it

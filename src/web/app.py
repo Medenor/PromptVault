@@ -1494,6 +1494,8 @@ async def compare_versions(prompt_id: str, v1: str = None, v2: str = None):
     string_fields = ["title", "prompt", "note"]
     # Array/categorical fields that don't get diffs yet
     other_fields = ["category", "tags"]
+    # Top-level metadata fields (outside the "data" sub-dict)
+    metadata_fields = ["semantic_version"]
 
     # Process string fields with character-level diffs
     for field in string_fields:
@@ -1510,6 +1512,13 @@ async def compare_versions(prompt_id: str, v1: str = None, v2: str = None):
     for field in other_fields:
         val1 = data1.get(field)
         val2 = data2.get(field)
+        if val1 != val2:
+            diff["changes"][field] = {"old": val1, "new": val2}
+
+    # Process metadata fields (top-level version attributes)
+    for field in metadata_fields:
+        val1 = version1.get(field)
+        val2 = version2.get(field)
         if val1 != val2:
             diff["changes"][field] = {"old": val1, "new": val2}
 
