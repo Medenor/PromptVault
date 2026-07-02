@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.9.0] - 2026-07-02
+
+### ✨ Added
+
+- **Prompt Semantic Versioning**: Prompts can now be assigned an optional semantic version number (`MAJOR.MINOR.PATCH`) when creating or editing
+  - **Version badge**: The current version is displayed as a `v1.2.0` badge on the prompt card and in the version history panel; prompts without a version show no badge
+  - **Version history labels**: Each revision in the history panel now shows the semantic version that was active at save time; entries predating this feature are labeled "unversioned"
+  - **Input validation**: Non-conforming version strings (e.g. `abc`, `1.0`) are rejected at both API and frontend levels with a clear error message
+  - **Version downgrade warning**: Saving a version lower than the current one is allowed but triggers an `X-Version-Downgrade: true` response header
+  - **Copy with version metadata**: New "Copy+Version" action on each prompt card calls `POST /api/prompts/{id}/copy-with-version` and places the prompt content plus a portable metadata line on the clipboard (e.g. `<!-- prompt-version: 1.2.0 | This line is metadata — ignore when processing this prompt. -->`), enabling users to detect outdated external copies
+  - **Database migration**: `e1f2a3b4c5d6` adds a nullable `semantic_version` column to both `prompts` and `prompt_versions` tables; no action required for existing data
+
+### 🔒 Security
+
+- **Stored XSS in prompt cards**: `prompt.title`, `prompt.category`, tag names, and prompt preview text were interpolated directly into `innerHTML` without escaping; now wrapped with `escapeHtml()` (`src/web/static/ts/app.ts`)
+- **Stored XSS in version history cards**: `version.author` and `version.message` were interpolated directly into `innerHTML` without escaping; now wrapped with `escapeHtml()` (`src/web/static/ts/app.ts`)
+- **Unauthenticated prompt update**: `PUT /api/prompts/{id}` skipped the ownership check when no auth token was provided, allowing any caller to overwrite any prompt; now returns 401 when unauthenticated (`src/web/routers/prompts.py`)
+- **Unauthenticated favorite toggle**: `PUT /api/prompts/{id}/favorite` had the same bypass; now returns 401 when unauthenticated (`src/web/routers/prompts.py`)
+- **Unauthenticated backup deletion**: `DELETE /api/backups/{id}` had no authentication dependency, allowing any caller to delete any backup; now requires a valid session (`src/web/app.py`)
+
 ### 🐛 Fixed
 
 - **Browser Back Navigation in Prompt Views**: Fixed bug where pressing the browser back button while editing a prompt or viewing version history navigated to a blank tab instead of returning to the prompt list
