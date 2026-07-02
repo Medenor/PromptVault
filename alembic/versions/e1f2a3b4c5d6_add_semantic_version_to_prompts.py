@@ -5,7 +5,7 @@
 """add_semantic_version_to_prompts
 
 Revision ID: e1f2a3b4c5d6
-Revises: da013146c222
+Revises: c8d9e0f1a2b3
 Create Date: 2026-07-01
 
 """

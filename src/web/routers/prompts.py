@@ -70,6 +70,11 @@ router = APIRouter(
 # ============================================================================
 
 
+def _parse_semver(v: str) -> tuple:
+    parts = v.split(".")
+    return tuple(int(p) for p in parts)
+
+
 def check_prompt_ownership(prompt: Prompt, user: User) -> None:
     """Check if user owns the prompt or is an admin.
 
@@ -230,7 +235,9 @@ async def list_prompts(
 
         prompts_dict = {}
         for prompt in prompts:
-            prompts_dict[str(prompt.id)] = _prompt_to_dict(prompt)
+            prompt_dict = _prompt_to_dict(prompt)
+            prompt_dict.pop("semantic_version", None)
+            prompts_dict[str(prompt.id)] = prompt_dict
 
     if user:
         logger.debug(f"User {user.username} ({user.id}) accessed prompt list")
@@ -706,9 +713,6 @@ async def update_prompt(
     # Detect version downgrade before updating
     version_downgrade = False
     if validated_data.semantic_version is not None and existing_prompt.semantic_version is not None:
-        def _parse_semver(v: str):
-            parts = v.split(".")
-            return tuple(int(p) for p in parts)
         try:
             new_v = _parse_semver(validated_data.semantic_version)
             old_v = _parse_semver(existing_prompt.semantic_version)
@@ -773,8 +777,7 @@ async def update_prompt(
     if version_downgrade:
         response_headers["X-Version-Downgrade"] = "true"
 
-    from fastapi.responses import JSONResponse as _JSONResponse
-    return _JSONResponse(content={"success": True}, headers=response_headers)
+    return JSONResponse(content={"success": True}, headers=response_headers)
 
 
 @router.delete(
