@@ -1231,11 +1231,11 @@ function setupEventListeners(): void {
     }
   });
 
-  // Version history modal close
-  const closeVersionHistoryBtn = document.getElementById('close-version-history-btn');
-  if (closeVersionHistoryBtn) {
-    closeVersionHistoryBtn.addEventListener('click', () => history.back());
-  }
+  // Version history modal close buttons
+  const closeVersionHistoryBtns = document.querySelectorAll('#close-version-history-btn');
+  closeVersionHistoryBtns.forEach((btn) => {
+    btn.addEventListener('click', hideVersionHistoryModal);
+  });
 
   // Back button closes modals/editor instead of leaving the app.
   // When popstate fires we've already moved back in history, so event.state is
