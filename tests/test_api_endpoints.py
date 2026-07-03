@@ -597,13 +597,13 @@ class TestApiErrorPaths:
 
 
     def test_toggle_favorite_failure_returns_500(
-        self, api_client, api_data_service, monkeypatch, seeded_prompt_id
+        self, api_client, api_data_service, api_auth_headers, monkeypatch, seeded_prompt_id
     ):
         monkeypatch.setattr(
             api_data_service, "update_prompt", lambda *args, **kwargs: False
         )
 
-        response = api_client.put(f"/api/prompts/{seeded_prompt_id}/favorite")
+        response = api_client.put(f"/api/prompts/{seeded_prompt_id}/favorite", headers=api_auth_headers)
         assert response.status_code == 500
         assert response.json()["error"] == "Failed to update favorite status"
 

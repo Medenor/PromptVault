@@ -36,7 +36,8 @@ from src.config.auth_config import AuthConfig, auth_settings
 def test_default_auth_enabled_is_true(monkeypatch):
     """``auth_enabled`` must default to ``True`` (backward compatible)."""
     monkeypatch.delenv("AUTH_ENABLED", raising=False)
-    config = AuthConfig()
+    # Pass _env_file=None to prevent .env from overriding the field default.
+    config = AuthConfig(_env_file=None)
     assert config.auth_enabled is True
 
 

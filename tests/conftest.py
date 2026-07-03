@@ -26,6 +26,10 @@ from pathlib import Path
 from typing import Generator, Callable, Dict, Any, List
 from datetime import datetime, timedelta, timezone
 
+# Ensure AUTH_ENABLED=true before any src.* imports so that auth routes
+# (including /api/admin/*) are mounted when the app module is loaded.
+os.environ.setdefault("AUTH_ENABLED", "true")
+
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session

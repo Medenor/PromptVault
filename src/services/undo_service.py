@@ -54,7 +54,7 @@ class UndoService:
 
     def push(
         self,
-        user_id: str,
+        user_id: Optional[str],
         entity_type: str,
         operation: str,
         payload: Dict[str, Any]
@@ -82,6 +82,10 @@ class UndoService:
             ...     payload={"category": {"name": "Test"}, "prompt_ids": [1, 2, 3]}
             ... )
         """
+        if user_id is None:
+            logger.debug("Skipping undo push for anonymous operation (no user_id)")
+            return
+
         try:
             # Serialize payload to JSON
             payload_json = json.dumps(payload)
