@@ -57,7 +57,7 @@ make build        # produce production artifacts (frontend + Docker image)
 |--------|-------------|
 | `dev` | Start backend (port 8003) + Vite frontend (port 5173) concurrently. Ctrl-C stops both cleanly. |
 
-Override ports: `PORT=9000 make dev` or `FRONTEND_PORT=3000 make dev`.
+Override ports: `BACKEND_PORT=9000 make dev` or `FRONTEND_PORT=3000 make dev`.
 
 **Access the app at `http://localhost:8003/`** — the Vite server at port 5173 is an asset dev server only (hot-reload for static files), not the application itself.
 

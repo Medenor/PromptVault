@@ -31,7 +31,6 @@ from sqlalchemy import text
 
 from src.db.session import SessionLocal
 from src.db.models.user_session import UserSession
-from src.db.repositories.session_repository import SessionRepository
 from src.config.auth_config import AuthConfig
 from src.services.logging_service import LoggingService
 
@@ -258,27 +257,11 @@ class SessionCleanupScheduler:
             >>> result = scheduler.run_cleanup_now()
             >>> print(f"Deleted {result['deleted']} sessions")
         """
-        session = None
         try:
-            session = self.session_factory()
-            repo = SessionRepository(session)
-
-            now = datetime.utcnow()
-
-            # Find expired sessions
-            expired_count = len(
-                session.execute(
-                    text("SELECT id FROM user_sessions WHERE expires_at < :now"),
-                    {"now": now},
-                ).fetchall()
-            )
-
-            # Perform cleanup
             self._cleanup_expired_sessions()
 
             return {
                 "success": True,
-                "expired_found": expired_count,
                 "timestamp": datetime.utcnow().isoformat(),
             }
 
@@ -289,7 +272,3 @@ class SessionCleanupScheduler:
                 "error": str(e),
                 "timestamp": datetime.utcnow().isoformat(),
             }
-
-        finally:
-            if session:
-                session.close()

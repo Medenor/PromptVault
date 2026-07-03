@@ -63,6 +63,9 @@ test = [
   "pytest-asyncio>=0.23.0",
   "freezegun>=1.4.0",
 ]
+dev = [
+  "black>=24.0.0",
+]
 setup = [
   "click>=8.1.0",
   "rich>=13.0.0",

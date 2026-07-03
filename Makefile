@@ -82,8 +82,7 @@ install-backend: ## Install backend dependencies (create .venv if needed)
 		echo "Creating virtual environment in $(VENV_DIR)/ ..."; \
 		python3 -m venv $(VENV_DIR); \
 	fi
-	$(PIP) install -e ".[test]"
-	$(PIP) install black
+	$(PIP) install -e ".[test,dev]"
 
 install-frontend: ## Install frontend dependencies (npm ci)
 	npm ci
@@ -93,32 +92,32 @@ install: install-backend install-frontend ## Install all dependencies (backend t
 dev: ## Start backend + frontend dev servers concurrently (Ctrl-C to stop)
 	@$(MAKE) --no-print-directory check-deps
 	@echo "Starting development servers..."
-	@_backend_ok=1; _frontend_ok=1; \
+	@_conflict=0; \
 	if command -v lsof >/dev/null 2>&1; then \
 		if lsof -i :$(BACKEND_PORT) -sTCP:LISTEN >/dev/null 2>&1; then \
-			echo "WARNING: Port $(BACKEND_PORT) is already in use."; \
-			echo "         Stop the other process or set PORT=<port> and retry."; \
-			_backend_ok=0; \
+			echo "ERROR: Port $(BACKEND_PORT) is already in use."; \
+			echo "       Stop the other process or run 'BACKEND_PORT=<port> make dev'."; \
+			_conflict=1; \
 		fi; \
 		if lsof -i :$(FRONTEND_PORT) -sTCP:LISTEN >/dev/null 2>&1; then \
-			echo "WARNING: Port $(FRONTEND_PORT) is already in use."; \
-			echo "         Stop the other process or set FRONTEND_PORT=<port> and retry."; \
-			_frontend_ok=0; \
+			echo "ERROR: Port $(FRONTEND_PORT) is already in use."; \
+			echo "       Stop the other process or run 'FRONTEND_PORT=<port> make dev'."; \
+			_conflict=1; \
 		fi; \
 	elif command -v nc >/dev/null 2>&1; then \
 		if nc -z localhost $(BACKEND_PORT) 2>/dev/null; then \
-			echo "WARNING: Port $(BACKEND_PORT) is already in use."; \
-			echo "         Stop the other process or set PORT=<port> and retry."; \
-			_backend_ok=0; \
+			echo "ERROR: Port $(BACKEND_PORT) is already in use."; \
+			echo "       Stop the other process or run 'BACKEND_PORT=<port> make dev'."; \
+			_conflict=1; \
 		fi; \
 		if nc -z localhost $(FRONTEND_PORT) 2>/dev/null; then \
-			echo "WARNING: Port $(FRONTEND_PORT) is already in use."; \
-			echo "         Stop the other process or set FRONTEND_PORT=<port> and retry."; \
-			_frontend_ok=0; \
+			echo "ERROR: Port $(FRONTEND_PORT) is already in use."; \
+			echo "       Stop the other process or run 'FRONTEND_PORT=<port> make dev'."; \
+			_conflict=1; \
 		fi; \
 	fi; \
-	if [ "$$_backend_ok" -eq 0 ] || [ "$$_frontend_ok" -eq 0 ]; then \
-		echo ""; \
+	if [ "$$_conflict" -eq 1 ]; then \
+		exit 1; \
 	fi
 	@_pids=""; \
 	cleanup() { \
