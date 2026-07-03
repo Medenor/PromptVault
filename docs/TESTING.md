@@ -36,6 +36,8 @@ npm run test:unit:coverage
 
 > **Important:** Always use `python3 -m pytest` instead of `pytest` directly to ensure the correct pytest version and dependencies are used. This avoids version conflicts with globally installed packages.
 
+> **Tip:** You can also use `make test` to run both backend and frontend suites with their coverage gates in one command. See [docs/DEVELOPMENT.md](DEVELOPMENT.md) for all available `make` targets.
+
 ## Test Suite Metrics
 
 | Metric             | Value       | Status                |

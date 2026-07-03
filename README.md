@@ -644,6 +644,8 @@ Together, we can make PromptVault **better**!
 
 First off, thanks for taking the time to contribute! Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make will benefit everybody else and are **greatly appreciated**.
 
+Run `make help` to discover all developer workflow commands, or see [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for the full reference.
+
 Please read our contribution guidelines, and thank you for being involved!
 
 ## Authors & contributors
