@@ -7,7 +7,7 @@
 import '../css/tailwind-globals.css';
 import { apiFetch, APIRequestError } from '@/utils/api';
 import { initI18n, t, tUnsafe, updateStaticTranslations } from '@/utils/i18n';
-import { initializeColorPicker, ColorPicker } from '@/utils/color-picker';
+import { initializeColorPicker } from '@/utils/color-picker';
 import { setupScrollIndicators } from '@/utils/dom';
 import { showNotification } from '@/utils/notifications';
 import { createTypeahead } from '@/utils/typeahead';
@@ -94,7 +94,6 @@ const elements = {
 };
 
 let cachedItems: TagItem[] = [];
-let _colorPickerInstance: ColorPicker | null = null;
 let tableKeyboardNavInitialized = false;
 let rovingTabindexInitialized = false;
 let currentTagFocusIndex = 0;
@@ -1405,7 +1404,7 @@ function handleError(error: unknown, fallback: string): void {
 function init(): void {
   // Initialize enhanced color picker
   try {
-    _colorPickerInstance = initializeColorPicker({
+    initializeColorPicker({
       containerId: 'tag-create-color-picker-container',
       colorInputId: 'tag-create-color',
       colorPickerId: 'tag-create-color-picker',

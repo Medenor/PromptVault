@@ -72,9 +72,9 @@ describe('announce', () => {
 
   it('clears text before setting new message', () => {
     // Use real requestAnimationFrame to check clearing behavior
-    let capturedCb: FrameRequestCallback | null = null;
+    const captured: { cb: FrameRequestCallback | null } = { cb: null };
     vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
-      capturedCb = cb;
+      captured.cb = cb;
       return 0;
     });
 
@@ -86,7 +86,7 @@ describe('announce', () => {
     announce('new text');
     expect(el.textContent).toBe('');
 
-    capturedCb?.(0);
+    captured.cb?.(0);
     expect(el.textContent).toBe('new text');
   });
 });

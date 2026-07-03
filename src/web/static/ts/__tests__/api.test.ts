@@ -21,7 +21,7 @@ describe('api utils', () => {
     vi.stubGlobal('fetch', vi.fn());
     // Mock window.location
     delete (window as unknown as Record<string, unknown>).location;
-    window.location = { href: '', pathname: '/app' } as unknown as Location;
+    (window as unknown as Record<string, unknown>).location = { href: '', pathname: '/app' };
 
     const createStorage = () => {
       const store = new Map<string, string>();
