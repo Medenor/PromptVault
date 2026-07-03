@@ -132,7 +132,8 @@ dev: ## Start backend + frontend dev servers concurrently (Ctrl-C to stop)
 	}; \
 	trap cleanup INT TERM EXIT; \
 	echo "  Backend:  http://localhost:$(BACKEND_PORT)"; \
-	echo "  Frontend: http://localhost:$(FRONTEND_PORT)"; \
+	echo "  Frontend: http://localhost:$(FRONTEND_PORT) (asset server only)"; \
+	echo "  App:      http://localhost:$(BACKEND_PORT)/"; \
 	echo ""; \
 	$(PYTHON) run_web.py & \
 	_pids="$$!"; \
