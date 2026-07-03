@@ -245,7 +245,10 @@ class TestBackupCreateRequest:
         with pytest.raises(ValidationError) as exc_info:
             BackupCreateRequest(name="backup@#$%")
         errors = exc_info.value.errors()
-        assert any("letters, numbers, underscores, and hyphens" in str(error["msg"]) for error in errors)
+        assert any(
+            "letters, numbers, underscores, and hyphens" in str(error["msg"])
+            for error in errors
+        )
 
     def test_backup_name_too_long(self):
         """Test that backup name exceeding max length is rejected."""

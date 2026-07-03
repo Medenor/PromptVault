@@ -8,7 +8,16 @@ This is the core model representing a prompt with its current state.
 Version history is stored separately in PromptVersion model.
 """
 
-from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, ForeignKey, Index
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    Text,
+    Boolean,
+    DateTime,
+    ForeignKey,
+    Index,
+)
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
@@ -38,6 +47,7 @@ class Prompt(Base):
         branches: One-to-many relationship to PromptBranch model
         user: Relationship to User model
     """
+
     __tablename__ = "prompts"
 
     # Integer IDs with autoincrement (migration can override with explicit IDs)
@@ -54,29 +64,23 @@ class Prompt(Base):
 
     # Relationships
     category = relationship("Category", back_populates="prompts")
-    tags = relationship(
-        "Tag",
-        secondary="prompt_tags",
-        back_populates="prompts"
-    )
+    tags = relationship("Tag", secondary="prompt_tags", back_populates="prompts")
     versions = relationship(
         "PromptVersion",
         back_populates="parent_prompt",
         cascade="all, delete-orphan",
-        order_by="PromptVersion.version_number"
+        order_by="PromptVersion.version_number",
     )
     branches = relationship(
-        "PromptBranch",
-        back_populates="prompt",
-        cascade="all, delete-orphan"
+        "PromptBranch", back_populates="prompt", cascade="all, delete-orphan"
     )
     user = relationship("User", back_populates="prompts")
 
     # Composite indices for common query patterns
     __table_args__ = (
-        Index('idx_prompts_title', 'title'),
-        Index('idx_prompts_category', 'category_id'),
-        Index('idx_prompts_user', 'user_id'),
+        Index("idx_prompts_title", "title"),
+        Index("idx_prompts_category", "category_id"),
+        Index("idx_prompts_user", "user_id"),
     )
 
     def __repr__(self):

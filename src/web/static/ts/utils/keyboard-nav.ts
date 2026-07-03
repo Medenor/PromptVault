@@ -71,7 +71,10 @@ export function getFocusableElements(
  * Create a focus trap for a modal or dialog
  * Ensures Tab/Shift+Tab cycles only within the element
  */
-export function createFocusTrap(element: HTMLElement, options?: { manageFocus?: boolean }): {
+export function createFocusTrap(
+  element: HTMLElement,
+  options?: { manageFocus?: boolean }
+): {
   activate: () => void;
   deactivate: () => void;
   moveFocusToFirst: () => void;
@@ -115,7 +118,9 @@ export function createFocusTrap(element: HTMLElement, options?: { manageFocus?: 
     activate: () => {
       // Store current focus to restore later (only if manageFocus is enabled)
       const previousFocus =
-        manageFocus && document.activeElement instanceof HTMLElement ? document.activeElement : null;
+        manageFocus && document.activeElement instanceof HTMLElement
+          ? document.activeElement
+          : null;
 
       // Get all focusable elements
       const focusables = getFocusableElements(element);
@@ -189,10 +194,7 @@ export function createFocusTrap(element: HTMLElement, options?: { manageFocus?: 
  * Handle Escape key to close modals
  * Returns true if event was handled
  */
-export function handleEscapeKey(
-  e: KeyboardEvent,
-  onEscape: () => void
-): boolean {
+export function handleEscapeKey(e: KeyboardEvent, onEscape: () => void): boolean {
   if (e.key === 'Escape') {
     e.preventDefault();
     onEscape();
@@ -225,8 +227,7 @@ export function manageModalFocus(
   };
 
   const show = () => {
-    previousFocus =
-      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
 
     // Show modal
     modal.classList.remove('hidden');

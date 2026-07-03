@@ -71,7 +71,9 @@ class ValidationMonitor:
 
     def _persist(self) -> None:
         """Persist metrics to disk."""
-        self.metrics["last_updated"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+        self.metrics["last_updated"] = time.strftime(
+            "%Y-%m-%dT%H:%M:%SZ", time.gmtime()
+        )
         try:
             with open(self.metrics_file, "w", encoding="utf-8") as f:
                 json.dump(self.metrics, f, indent=2)

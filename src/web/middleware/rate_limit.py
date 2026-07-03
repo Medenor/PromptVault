@@ -110,7 +110,13 @@ def is_rate_limiting_disabled() -> bool:
         pass
 
     env = os.getenv("ENVIRONMENT") or getattr(auth_settings, "environment", None)
-    if env and env.strip().lower() in ("development", "dev", "local", "testing", "test"):
+    if env and env.strip().lower() in (
+        "development",
+        "dev",
+        "local",
+        "testing",
+        "test",
+    ):
         return True
 
     return False
@@ -225,13 +231,15 @@ def create_limiter() -> Limiter:
         limiter = Limiter(
             key_func=get_rate_limit_key,
             storage_uri="memory://",
-            default_limits=["10000000/minute"],  # Very high limit effectively disables limiting
+            default_limits=[
+                "10000000/minute"
+            ],  # Very high limit effectively disables limiting
             headers_enabled=False,
             strategy="fixed-window",
             swallow_errors=True,
         )
         return limiter
-    
+
     redis_client = create_redis_client()
 
     if redis_client:
@@ -259,29 +267,30 @@ def create_limiter() -> Limiter:
 
 class DynamicLimiter:
     """Wrapper around Limiter that dynamically enables/disables rate limiting.
-    
+
     This class allows rate limiting to be disabled at runtime (e.g., for tests)
     while still supporting the decorator syntax @limiter.limit("X/minute").
     When DISABLE_RATE_LIMITING is true, decorators become no-ops.
     """
-    
+
     def __init__(self):
         """Initialize the dynamic limiter."""
         self._actual_limiter = create_limiter()
-    
+
     def _is_disabled(self) -> bool:
         """Check if rate limiting is disabled."""
         return is_rate_limiting_disabled()
-    
+
     def limit(self, limit_string: str):
         """Decorator for rate limiting that respects DISABLE_RATE_LIMITING.
-        
+
         Args:
             limit_string: Rate limit string (e.g., "5/minute")
-            
+
         Returns:
             Decorator function
         """
+
         def decorator(func):
             if self._is_disabled():
                 # If rate limiting is disabled, return the function unchanged
@@ -289,8 +298,9 @@ class DynamicLimiter:
             else:
                 # Apply the actual rate limit decorator
                 return self._actual_limiter.limit(limit_string)(func)
+
         return decorator
-    
+
     def __getattr__(self, name):
         """Proxy other attributes to the actual limiter."""
         return getattr(self._actual_limiter, name)
@@ -431,7 +441,9 @@ def admin_limit() -> str:
     return "200/minute"
 
 
-async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded) -> Response:
+async def rate_limit_exceeded_handler(
+    request: Request, exc: RateLimitExceeded
+) -> Response:
     """Custom exception handler for rate limit exceeded errors.
 
     Converts slowapi RateLimitExceeded to our custom RateLimitExceededError

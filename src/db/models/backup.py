@@ -37,10 +37,13 @@ class Backup(Base):
         succeeded: Whether backup completed successfully
         backup_metadata: Additional backup metadata as JSON
     """
+
     __tablename__ = "backups"
 
     id = Column(String(36), primary_key=True)
-    backup_type = Column(String(50), nullable=False)  # 'pg_dump', 'sqlite_copy', 'json_export'
+    backup_type = Column(
+        String(50), nullable=False
+    )  # 'pg_dump', 'sqlite_copy', 'json_export'
     filename = Column(String(255), nullable=False)
     storage_path = Column(Text, nullable=False)
     size_bytes = Column(BigInteger)
@@ -48,7 +51,9 @@ class Backup(Base):
     created_by = Column(String(100))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     succeeded = Column(Boolean, default=True)
-    backup_metadata = Column(JSON)  # Additional backup metadata (versions included, etc.)
+    backup_metadata = Column(
+        JSON
+    )  # Additional backup metadata (versions included, etc.)
 
     def __repr__(self):
         return f"<Backup(id='{self.id[:8]}...', type='{self.backup_type}', filename='{self.filename}')>"

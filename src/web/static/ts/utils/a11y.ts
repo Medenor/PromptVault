@@ -50,4 +50,3 @@ export function announce(
     el.textContent = message;
   });
 }
-

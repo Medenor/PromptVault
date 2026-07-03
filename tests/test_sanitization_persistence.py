@@ -176,9 +176,24 @@ class TestSanitizationPersistence:
 
         # Create multiple prompts with various sanitization needs
         prompts_data = [
-            {"title": "Test\x001", "prompt": "Content", "category": "A", "tags": ["a", "A"]},
-            {"title": "Test   2", "prompt": "Content", "category": "B", "tags": ["b", "b"]},
-            {"title": "Test3", "prompt": "Line1\nLine2", "category": "C", "tags": ["c"]},
+            {
+                "title": "Test\x001",
+                "prompt": "Content",
+                "category": "A",
+                "tags": ["a", "A"],
+            },
+            {
+                "title": "Test   2",
+                "prompt": "Content",
+                "category": "B",
+                "tags": ["b", "b"],
+            },
+            {
+                "title": "Test3",
+                "prompt": "Line1\nLine2",
+                "category": "C",
+                "tags": ["c"],
+            },
         ]
 
         for data in prompts_data:
@@ -264,20 +279,26 @@ class TestVersionHistoryPersistence:
         service, file_path = data_service_with_file
 
         # Create initial prompt with malicious data
-        prompt_id = service.add_new_prompt({
-            "title": "Test\x00Version",
-            "prompt": "Initial",
-            "category": "Test",
-            "tags": ["v1", "V1"],
-        })
+        prompt_id = service.add_new_prompt(
+            {
+                "title": "Test\x00Version",
+                "prompt": "Initial",
+                "category": "Test",
+                "tags": ["v1", "V1"],
+            }
+        )
 
         # Update prompt
-        service.update_prompt(prompt_id, {
-            "title": "Test   Version   Updated",
-            "prompt": "Updated",
-            "category": "Test",
-            "tags": ["v2", "V2", "v2"],
-        }, "Update version")
+        service.update_prompt(
+            prompt_id,
+            {
+                "title": "Test   Version   Updated",
+                "prompt": "Updated",
+                "category": "Test",
+                "tags": ["v2", "V2", "v2"],
+            },
+            "Update version",
+        )
 
         service.save_prompts()
 

@@ -81,7 +81,8 @@ export class ColorPicker {
 
     // Preview box
     this.previewBox = document.createElement('div');
-    this.previewBox.className = 'w-12 h-12 rounded border-2 border-gray-300 shadow-sm transition-colors';
+    this.previewBox.className =
+      'w-12 h-12 rounded border-2 border-gray-300 shadow-sm transition-colors';
     this.previewBox.style.backgroundColor = this.currentColor;
     previewRow.appendChild(this.previewBox);
 

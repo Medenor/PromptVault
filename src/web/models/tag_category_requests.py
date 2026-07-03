@@ -9,7 +9,6 @@ import re
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-
 _COLOR_TOKEN_PATTERN = re.compile(r"^[A-Za-z0-9_-]+$")
 _COLOR_HEX_PATTERN = re.compile(r"^#(?:[0-9a-fA-F]{3}){1,2}$")
 _NAME_PATTERN = re.compile(r"^[\w\s\-]+$", re.UNICODE)
@@ -37,7 +36,9 @@ class CategoryCreateRequest(BaseModel):
     """Request model for creating a category."""
 
     name: str = Field(..., min_length=1, max_length=100, description="Category name")
-    description: Optional[str] = Field(default=None, max_length=500, description="Category description")
+    description: Optional[str] = Field(
+        default=None, max_length=500, description="Category description"
+    )
     color: Optional[str] = Field(default=None, description="Color token or hex")
     sort_order: Optional[int] = Field(default=None, description="Custom sort order")
 
@@ -94,7 +95,9 @@ class TagCreateRequest(BaseModel):
     """Request model for creating a tag."""
 
     name: str = Field(..., min_length=1, max_length=50, description="Tag name")
-    description: Optional[str] = Field(default=None, max_length=500, description="Tag description")
+    description: Optional[str] = Field(
+        default=None, max_length=500, description="Tag description"
+    )
     color: Optional[str] = Field(default=None, description="Color token or hex")
     parent_tag_id: Optional[int] = Field(default=None, description="Parent tag ID")
 
@@ -137,7 +140,12 @@ class TagUpdateRequest(BaseModel):
 
     @model_validator(mode="after")
     def ensure_at_least_one_field(self):
-        if self.name is None and self.description is None and self.color is None and self.parent_tag_id is None:
+        if (
+            self.name is None
+            and self.description is None
+            and self.color is None
+            and self.parent_tag_id is None
+        ):
             raise ValueError("At least one field must be provided")
         return self
 
@@ -167,8 +175,12 @@ class BulkDeleteRequest(BaseModel):
 class CategoryFindReplaceRequest(BaseModel):
     """Request model for category find-and-replace operations."""
 
-    find: str = Field(..., min_length=1, max_length=100, description="Find category name")
-    replace: str = Field(..., min_length=1, max_length=100, description="Replace category name")
+    find: str = Field(
+        ..., min_length=1, max_length=100, description="Find category name"
+    )
+    replace: str = Field(
+        ..., min_length=1, max_length=100, description="Replace category name"
+    )
     confirm: bool = Field(default=False, description="Confirmation flag")
 
     @field_validator("find", "replace")
@@ -190,7 +202,9 @@ class TagFindReplaceRequest(BaseModel):
     """Request model for tag find-and-replace operations."""
 
     find: str = Field(..., min_length=1, max_length=50, description="Find tag name")
-    replace: str = Field(..., min_length=1, max_length=50, description="Replace tag name")
+    replace: str = Field(
+        ..., min_length=1, max_length=50, description="Replace tag name"
+    )
     confirm: bool = Field(default=False, description="Confirmation flag")
 
     @field_validator("find", "replace")
@@ -250,7 +264,9 @@ class TagSuggestRequest(BaseModel):
     """Request model for tag suggestion."""
 
     prompt_id: Optional[int] = Field(default=None, description="Prompt ID to analyze")
-    content: Optional[str] = Field(default=None, min_length=1, description="Prompt content")
+    content: Optional[str] = Field(
+        default=None, min_length=1, description="Prompt content"
+    )
     limit: int = Field(default=10, ge=1, le=50, description="Maximum suggestions")
 
     @model_validator(mode="after")
@@ -320,7 +336,9 @@ class CategoryAssignOrphansRequest(BaseModel):
     """Request model for assigning orphan prompts to a category."""
 
     prompt_ids: List[int] = Field(..., min_length=1, description="Prompt IDs to update")
-    category: str = Field(..., min_length=1, max_length=100, description="Category name to assign")
+    category: str = Field(
+        ..., min_length=1, max_length=100, description="Category name to assign"
+    )
     confirm: bool = Field(default=False, description="Confirmation flag")
 
     @field_validator("category")

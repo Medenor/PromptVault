@@ -26,7 +26,6 @@ import json
 
 from src.db.models import Prompt, PromptVersion, Category, Tag, User
 
-
 # ============================================================================
 # VERSION CREATION TESTS
 # ============================================================================
@@ -35,7 +34,9 @@ from src.db.models import Prompt, PromptVersion, Category, Tag, User
 class TestVersionCreation:
     """Tests for automatic version creation on prompt updates."""
 
-    def test_create_prompt_creates_initial_version(self, db_data_service, sample_prompt_data):
+    def test_create_prompt_creates_initial_version(
+        self, db_data_service, sample_prompt_data
+    ):
         """Test that creating a prompt creates an initial version (v1)."""
         prompt_id = db_data_service.add_new_prompt(sample_prompt_data(title="Initial"))
 
@@ -44,15 +45,15 @@ class TestVersionCreation:
         assert len(versions) == 1
         assert versions[0]["message"] == "Initial commit"
 
-    def test_update_prompt_creates_new_version(self, db_data_service, sample_prompt_data):
+    def test_update_prompt_creates_new_version(
+        self, db_data_service, sample_prompt_data
+    ):
         """Test that updating a prompt creates a new version."""
         prompt_id = db_data_service.add_new_prompt(sample_prompt_data(title="V1"))
 
         # Update the prompt
         db_data_service.update_prompt(
-            prompt_id,
-            sample_prompt_data(title="V2"),
-            "Updated to V2"
+            prompt_id, sample_prompt_data(title="V2"), "Updated to V2"
         )
 
         versions = db_data_service.get_prompt_versions(prompt_id)
@@ -91,9 +92,7 @@ class TestVersionCreation:
         # Create multiple versions
         for i in range(5):
             db_data_service.update_prompt(
-                prompt_id,
-                sample_prompt_data(title=f"V{i+2}"),
-                f"Update {i+1}"
+                prompt_id, sample_prompt_data(title=f"V{i+2}"), f"Update {i+1}"
             )
 
         versions = db_data_service.get_prompt_versions(prompt_id)
@@ -119,9 +118,7 @@ class TestVersionCreation:
 
         # Update to create V2
         db_data_service.update_prompt(
-            prompt_id,
-            sample_prompt_data(title="V2"),
-            "Create V2"
+            prompt_id, sample_prompt_data(title="V2"), "Create V2"
         )
 
         versions_v2 = db_data_service.get_prompt_versions(prompt_id)
@@ -139,7 +136,7 @@ class TestVersionCreation:
             category="Original Category",
             tags=["tag1", "tag2"],
             note="Original note",
-            favorite=True
+            favorite=True,
         )
 
         prompt_id = db_data_service.add_new_prompt(original_data)
@@ -163,7 +160,7 @@ class TestVersionCreation:
                 prompt=test_prompt,
                 author=test_user.username,
                 message=f"Version {i+1}",
-                parent_version_id=None
+                parent_version_id=None,
             )
 
         versions = version_repo.get_versions_for_prompt(test_prompt.id)
@@ -183,15 +180,11 @@ class TestVersionCreation:
             "Fixed typo in prompt",
             "Added examples section",
             "Improved clarity",
-            "Updated for new API"
+            "Updated for new API",
         ]
 
         for msg in custom_messages:
-            db_data_service.update_prompt(
-                prompt_id,
-                sample_prompt_data(),
-                msg
-            )
+            db_data_service.update_prompt(prompt_id, sample_prompt_data(), msg)
 
         versions = db_data_service.get_prompt_versions(prompt_id)
 
@@ -217,24 +210,22 @@ class TestVersionHistory:
         # Create 3 more versions
         for i in range(3):
             db_data_service.update_prompt(
-                prompt_id,
-                sample_prompt_data(title=f"V{i+2}"),
-                f"Update {i+1}"
+                prompt_id, sample_prompt_data(title=f"V{i+2}"), f"Update {i+1}"
             )
 
         versions = db_data_service.get_prompt_versions(prompt_id)
 
         assert len(versions) == 4  # Initial + 3 updates
 
-    def test_version_history_ordered_newest_first(self, db_data_service, sample_prompt_data):
+    def test_version_history_ordered_newest_first(
+        self, db_data_service, sample_prompt_data
+    ):
         """Test that version history is ordered with newest first."""
         prompt_id = db_data_service.add_new_prompt(sample_prompt_data(title="V1"))
 
         for i in range(4):
             db_data_service.update_prompt(
-                prompt_id,
-                sample_prompt_data(title=f"V{i+2}"),
-                f"Update {i+1}"
+                prompt_id, sample_prompt_data(title=f"V{i+2}"), f"Update {i+1}"
             )
 
         versions = db_data_service.get_prompt_versions(prompt_id)
@@ -248,9 +239,7 @@ class TestVersionHistory:
         # Create 10 versions
         for i in range(10):
             version_repo.create_version(
-                prompt=test_prompt,
-                author=test_user.username,
-                message=f"Version {i+1}"
+                prompt=test_prompt, author=test_user.username, message=f"Version {i+1}"
             )
 
         # Get limited results
@@ -266,9 +255,7 @@ class TestVersionHistory:
         # Create multiple versions
         for i in range(5):
             version_repo.create_version(
-                prompt=test_prompt,
-                author=test_user.username,
-                message=f"Version {i+1}"
+                prompt=test_prompt, author=test_user.username, message=f"Version {i+1}"
             )
 
         latest = version_repo.get_latest_version(test_prompt.id)
@@ -280,9 +267,7 @@ class TestVersionHistory:
     def test_get_version_by_id(self, version_repo, test_prompt, test_user):
         """Test retrieving specific version by version_id."""
         version = version_repo.create_version(
-            prompt=test_prompt,
-            author=test_user.username,
-            message="Test version"
+            prompt=test_prompt, author=test_user.username, message="Test version"
         )
 
         version_id = version.version_id
@@ -301,9 +286,7 @@ class TestVersionHistory:
         # Create 7 versions
         for i in range(7):
             version_repo.create_version(
-                prompt=test_prompt,
-                author=test_user.username,
-                message=f"V{i+1}"
+                prompt=test_prompt, author=test_user.username, message=f"V{i+1}"
             )
 
         count_after = version_repo.get_version_count(test_prompt.id)
@@ -317,21 +300,21 @@ class TestVersionHistory:
             prompt=test_prompt,
             author=test_user.username,
             message="V1",
-            parent_version_id=None
+            parent_version_id=None,
         )
 
         v2 = version_repo.create_version(
             prompt=test_prompt,
             author=test_user.username,
             message="V2",
-            parent_version_id=v1.version_id
+            parent_version_id=v1.version_id,
         )
 
         v3 = version_repo.create_version(
             prompt=test_prompt,
             author=test_user.username,
             message="V3",
-            parent_version_id=v2.version_id
+            parent_version_id=v2.version_id,
         )
 
         # Traverse from V3 to root
@@ -342,16 +325,26 @@ class TestVersionHistory:
         assert chain[1].version_id == v2.version_id
         assert chain[2].version_id == v1.version_id
 
-    def test_multiple_prompts_isolated_versions(self, db_data_service, sample_prompt_data):
+    def test_multiple_prompts_isolated_versions(
+        self, db_data_service, sample_prompt_data
+    ):
         """Test that each prompt has its own isolated version history."""
         # Create two prompts
-        prompt1_id = db_data_service.add_new_prompt(sample_prompt_data(title="Prompt 1"))
-        prompt2_id = db_data_service.add_new_prompt(sample_prompt_data(title="Prompt 2"))
+        prompt1_id = db_data_service.add_new_prompt(
+            sample_prompt_data(title="Prompt 1")
+        )
+        prompt2_id = db_data_service.add_new_prompt(
+            sample_prompt_data(title="Prompt 2")
+        )
 
         # Update each multiple times
         for i in range(3):
-            db_data_service.update_prompt(prompt1_id, sample_prompt_data(), f"P1 Update {i}")
-            db_data_service.update_prompt(prompt2_id, sample_prompt_data(), f"P2 Update {i}")
+            db_data_service.update_prompt(
+                prompt1_id, sample_prompt_data(), f"P1 Update {i}"
+            )
+            db_data_service.update_prompt(
+                prompt2_id, sample_prompt_data(), f"P2 Update {i}"
+            )
 
         versions1 = db_data_service.get_prompt_versions(prompt1_id)
         versions2 = db_data_service.get_prompt_versions(prompt2_id)
@@ -373,7 +366,9 @@ class TestVersionHistory:
 
         assert versions == []
 
-    def test_version_history_after_delete(self, db_data_service, sample_prompt_data, test_db_session):
+    def test_version_history_after_delete(
+        self, db_data_service, sample_prompt_data, test_db_session
+    ):
         """Test that deleting prompt also removes all versions."""
         from src.db.models import PromptVersion
 
@@ -381,7 +376,9 @@ class TestVersionHistory:
 
         # Create several versions
         for i in range(3):
-            db_data_service.update_prompt(prompt_id, sample_prompt_data(), f"Update {i}")
+            db_data_service.update_prompt(
+                prompt_id, sample_prompt_data(), f"Update {i}"
+            )
 
         # Verify versions exist
         versions_before = db_data_service.get_prompt_versions(prompt_id)
@@ -391,9 +388,11 @@ class TestVersionHistory:
         db_data_service.delete_prompt(prompt_id)
 
         # Verify versions are gone (cascade delete)
-        versions_after = test_db_session.query(PromptVersion).filter(
-            PromptVersion.prompt_id == prompt_id
-        ).all()
+        versions_after = (
+            test_db_session.query(PromptVersion)
+            .filter(PromptVersion.prompt_id == prompt_id)
+            .all()
+        )
 
         assert len(versions_after) == 0
 
@@ -409,18 +408,14 @@ class TestVersionComparison:
     def test_compare_two_versions(self, version_repo, test_prompt, test_user):
         """Test basic comparison of two versions."""
         v1 = version_repo.create_version(
-            prompt=test_prompt,
-            author=test_user.username,
-            message="V1"
+            prompt=test_prompt, author=test_user.username, message="V1"
         )
 
         # Modify prompt
         test_prompt.title = "Modified Title"
 
         v2 = version_repo.create_version(
-            prompt=test_prompt,
-            author=test_user.username,
-            message="V2"
+            prompt=test_prompt, author=test_user.username, message="V2"
         )
 
         result = version_repo.compare_versions(v1.version_id, v2.version_id)
@@ -442,7 +437,7 @@ class TestVersionComparison:
         db_data_service.update_prompt(
             prompt_id,
             sample_prompt_data(title="Changed", prompt="Original content"),
-            "Changed title"
+            "Changed title",
         )
 
         versions_v2 = db_data_service.get_prompt_versions(prompt_id)
@@ -454,18 +449,14 @@ class TestVersionComparison:
 
     def test_compare_shows_added_tags(self, db_data_service, sample_prompt_data):
         """Test identifying added tags between versions."""
-        prompt_id = db_data_service.add_new_prompt(
-            sample_prompt_data(tags=["tag1"])
-        )
+        prompt_id = db_data_service.add_new_prompt(sample_prompt_data(tags=["tag1"]))
 
         versions_v1 = db_data_service.get_prompt_versions(prompt_id)
         v1 = versions_v1[0]
 
         # Add tags
         db_data_service.update_prompt(
-            prompt_id,
-            sample_prompt_data(tags=["tag1", "tag2", "tag3"]),
-            "Added tags"
+            prompt_id, sample_prompt_data(tags=["tag1", "tag2", "tag3"]), "Added tags"
         )
 
         versions_v2 = db_data_service.get_prompt_versions(prompt_id)
@@ -489,9 +480,7 @@ class TestVersionComparison:
 
         # Remove tags
         db_data_service.update_prompt(
-            prompt_id,
-            sample_prompt_data(tags=["tag1"]),
-            "Removed tags"
+            prompt_id, sample_prompt_data(tags=["tag1"]), "Removed tags"
         )
 
         versions_v2 = db_data_service.get_prompt_versions(prompt_id)
@@ -515,9 +504,7 @@ class TestVersionComparison:
 
         # Change category
         db_data_service.update_prompt(
-            prompt_id,
-            sample_prompt_data(category="Category B"),
-            "Changed category"
+            prompt_id, sample_prompt_data(category="Category B"), "Changed category"
         )
 
         current_v2 = db_data_service.get_prompt_data(prompt_id)
@@ -535,9 +522,7 @@ class TestVersionComparison:
     def test_compare_same_version(self, version_repo, test_prompt, test_user):
         """Test comparing a version with itself shows no changes."""
         v1 = version_repo.create_version(
-            prompt=test_prompt,
-            author=test_user.username,
-            message="V1"
+            prompt=test_prompt, author=test_user.username, message="V1"
         )
 
         result = version_repo.compare_versions(v1.version_id, v1.version_id)
@@ -564,7 +549,7 @@ class TestVersionComparison:
             sample_prompt_data(
                 prompt="This is the modified content.\nIt has different lines."
             ),
-            "Modified content"
+            "Modified content",
         )
 
         versions_v2 = db_data_service.get_prompt_versions(prompt_id)
@@ -595,15 +580,11 @@ class TestVersionRevert:
         db_data_service.update_prompt(
             prompt_id,
             sample_prompt_data(title="V2", prompt="Content V2"),
-            "Update to V2"
+            "Update to V2",
         )
 
         # Revert to V1
-        db_data_service.revert_prompt_to_version(
-            prompt_id,
-            v1_data,
-            "Reverted to V1"
-        )
+        db_data_service.revert_prompt_to_version(prompt_id, v1_data, "Reverted to V1")
 
         # Check current state
         current = db_data_service.get_prompt_data(prompt_id)
@@ -616,9 +597,7 @@ class TestVersionRevert:
 
         # Create V2
         db_data_service.update_prompt(
-            prompt_id,
-            sample_prompt_data(title="V2"),
-            "Update to V2"
+            prompt_id, sample_prompt_data(title="V2"), "Update to V2"
         )
 
         # Get V1 data
@@ -626,11 +605,7 @@ class TestVersionRevert:
         v1_data = versions[1]["data"]  # Second item (oldest to newest reversed)
 
         # Revert
-        db_data_service.revert_prompt_to_version(
-            prompt_id,
-            v1_data,
-            "Revert to V1"
-        )
+        db_data_service.revert_prompt_to_version(prompt_id, v1_data, "Revert to V1")
 
         # Should have 3 versions: V1, V2, Revert
         final_versions = db_data_service.get_prompt_versions(prompt_id)
@@ -647,7 +622,7 @@ class TestVersionRevert:
             category="Cat A",
             tags=["tag1", "tag2"],
             note="Original note",
-            favorite=True
+            favorite=True,
         )
 
         prompt_id = db_data_service.add_new_prompt(original)
@@ -664,16 +639,14 @@ class TestVersionRevert:
                 category="Cat B",
                 tags=["tag3"],
                 note="Modified note",
-                favorite=False
+                favorite=False,
             ),
-            "Complete overhaul"
+            "Complete overhaul",
         )
 
         # Revert using original state
         db_data_service.revert_prompt_to_version(
-            prompt_id,
-            original_state,
-            "Revert to original"
+            prompt_id, original_state, "Revert to original"
         )
 
         # Verify all fields restored
@@ -698,14 +671,12 @@ class TestVersionRevert:
         db_data_service.update_prompt(
             prompt_id,
             sample_prompt_data(tags=["new", "different", "tags"]),
-            "Changed tags"
+            "Changed tags",
         )
 
         # Revert
         db_data_service.revert_prompt_to_version(
-            prompt_id,
-            original_data,
-            "Revert tags"
+            prompt_id, original_data, "Revert tags"
         )
 
         restored = db_data_service.get_prompt_data(prompt_id)
@@ -721,15 +692,11 @@ class TestVersionRevert:
         original_state = db_data_service.get_prompt_data(prompt_id)
 
         db_data_service.update_prompt(
-            prompt_id,
-            sample_prompt_data(category="New Category"),
-            "Changed category"
+            prompt_id, sample_prompt_data(category="New Category"), "Changed category"
         )
 
         db_data_service.revert_prompt_to_version(
-            prompt_id,
-            original_state,
-            "Revert category"
+            prompt_id, original_state, "Revert category"
         )
 
         restored = db_data_service.get_prompt_data(prompt_id)
@@ -743,17 +710,11 @@ class TestVersionRevert:
         v1_data = versions[0]["data"]
 
         db_data_service.update_prompt(
-            prompt_id,
-            sample_prompt_data(title="V2"),
-            "Update"
+            prompt_id, sample_prompt_data(title="V2"), "Update"
         )
 
         custom_message = "Reverting due to bug in V2"
-        db_data_service.revert_prompt_to_version(
-            prompt_id,
-            v1_data,
-            custom_message
-        )
+        db_data_service.revert_prompt_to_version(prompt_id, v1_data, custom_message)
 
         final_versions = db_data_service.get_prompt_versions(prompt_id)
         assert final_versions[0]["message"] == custom_message
@@ -761,32 +722,24 @@ class TestVersionRevert:
     def test_revert_to_nonexistent_version(self, version_repo, test_prompt, test_user):
         """Test that reverting to non-existent version fails gracefully."""
         result = version_repo.revert_to_version(
-            test_prompt,
-            "nonexistent-version-id",
-            test_user.username
+            test_prompt, "nonexistent-version-id", test_user.username
         )
 
         assert result is None
 
     def test_revert_updates_current_prompt(self, db_data_service, sample_prompt_data):
         """Test that revert actually updates the current prompt state."""
-        prompt_id = db_data_service.add_new_prompt(
-            sample_prompt_data(title="Original")
-        )
+        prompt_id = db_data_service.add_new_prompt(sample_prompt_data(title="Original"))
 
         versions = db_data_service.get_prompt_versions(prompt_id)
         original_data = versions[0]["data"]
 
         # Multiple updates
         db_data_service.update_prompt(
-            prompt_id,
-            sample_prompt_data(title="Update 1"),
-            "U1"
+            prompt_id, sample_prompt_data(title="Update 1"), "U1"
         )
         db_data_service.update_prompt(
-            prompt_id,
-            sample_prompt_data(title="Update 2"),
-            "U2"
+            prompt_id, sample_prompt_data(title="Update 2"), "U2"
         )
 
         # Current should be "Update 2"
@@ -794,11 +747,7 @@ class TestVersionRevert:
         assert before_revert["title"] == "Update 2"
 
         # Revert to original
-        db_data_service.revert_prompt_to_version(
-            prompt_id,
-            original_data,
-            "Revert"
-        )
+        db_data_service.revert_prompt_to_version(prompt_id, original_data, "Revert")
 
         # Current should now be "Original"
         after_revert = db_data_service.get_prompt_data(prompt_id)
@@ -811,9 +760,7 @@ class TestVersionRevert:
         # Create versions V2, V3, V4
         for i in range(2, 5):
             db_data_service.update_prompt(
-                prompt_id,
-                sample_prompt_data(title=f"V{i}"),
-                f"Update to V{i}"
+                prompt_id, sample_prompt_data(title=f"V{i}"), f"Update to V{i}"
             )
 
         # Get V1 and V2 data
@@ -843,16 +790,12 @@ class TestVersionRevert:
         # Create many versions
         for i in range(10):
             db_data_service.update_prompt(
-                prompt_id,
-                sample_prompt_data(title=f"Version {i+2}"),
-                f"Update {i+1}"
+                prompt_id, sample_prompt_data(title=f"Version {i+2}"), f"Update {i+1}"
             )
 
         # Revert to first
         db_data_service.revert_prompt_to_version(
-            prompt_id,
-            first_version_data,
-            "Back to the beginning"
+            prompt_id, first_version_data, "Back to the beginning"
         )
 
         current = db_data_service.get_prompt_data(prompt_id)
@@ -882,7 +825,7 @@ class TestVersionIntegration:
         db_data_service.update_prompt(
             prompt_id,
             sample_prompt_data(title="Updated", tags=["v1", "v2"]),
-            "Added features"
+            "Added features",
         )
 
         versions_v2 = db_data_service.get_prompt_versions(prompt_id)
@@ -895,9 +838,7 @@ class TestVersionIntegration:
 
         # Revert
         db_data_service.revert_prompt_to_version(
-            prompt_id,
-            v1_data,
-            "Reverting changes"
+            prompt_id, v1_data, "Reverting changes"
         )
 
         current = db_data_service.get_prompt_data(prompt_id)
@@ -911,21 +852,21 @@ class TestVersionIntegration:
             prompt=test_prompt,
             author=test_user.username,
             message="V1",
-            parent_version_id=None
+            parent_version_id=None,
         )
 
         v2 = version_repo.create_version(
             prompt=test_prompt,
             author=test_user.username,
             message="V2",
-            parent_version_id=v1.version_id
+            parent_version_id=v1.version_id,
         )
 
         v3 = version_repo.create_version(
             prompt=test_prompt,
             author=test_user.username,
             message="V3",
-            parent_version_id=v2.version_id
+            parent_version_id=v2.version_id,
         )
 
         # Each version has at most one parent
@@ -934,7 +875,9 @@ class TestVersionIntegration:
         assert v2.parent_version is not None  # Has parent
         assert v3.parent_version is not None  # Has parent
 
-    def test_version_immutability(self, db_data_service, sample_prompt_data, test_db_session):
+    def test_version_immutability(
+        self, db_data_service, sample_prompt_data, test_db_session
+    ):
         """Test that old versions never change."""
         from src.db.models import PromptVersion
 
@@ -949,29 +892,29 @@ class TestVersionIntegration:
         # Create more versions
         for i in range(5):
             db_data_service.update_prompt(
-                prompt_id,
-                sample_prompt_data(title=f"V{i+2}"),
-                f"Update {i+1}"
+                prompt_id, sample_prompt_data(title=f"V{i+2}"), f"Update {i+1}"
             )
 
         # Check that V1 is still unchanged
-        v1_from_db = test_db_session.query(PromptVersion).filter(
-            PromptVersion.version_id == v1_id
-        ).first()
+        v1_from_db = (
+            test_db_session.query(PromptVersion)
+            .filter(PromptVersion.version_id == v1_id)
+            .first()
+        )
 
         assert v1_from_db.title == v1_snapshot["title"]
         assert v1_from_db.prompt == v1_snapshot["prompt"]
 
-    def test_concurrent_updates_version_handling(self, db_data_service, sample_prompt_data):
+    def test_concurrent_updates_version_handling(
+        self, db_data_service, sample_prompt_data
+    ):
         """Test that sequential updates create proper version chain."""
         prompt_id = db_data_service.add_new_prompt(sample_prompt_data(title="V1"))
 
         # Simulate rapid sequential updates
         for i in range(10):
             db_data_service.update_prompt(
-                prompt_id,
-                sample_prompt_data(title=f"V{i+2}"),
-                f"Rapid update {i+1}"
+                prompt_id, sample_prompt_data(title=f"V{i+2}"), f"Rapid update {i+1}"
             )
 
         versions = db_data_service.get_prompt_versions(prompt_id)
@@ -980,7 +923,9 @@ class TestVersionIntegration:
         assert len(versions) == 11
 
         # Each should have incremental version numbers
-        version_numbers = [v.get("version_number", i) for i, v in enumerate(reversed(versions))]
+        version_numbers = [
+            v.get("version_number", i) for i, v in enumerate(reversed(versions))
+        ]
         # We can't verify version_number in dict format, so just check count
         assert len(versions) == 11
 
@@ -993,7 +938,7 @@ class TestVersionIntegration:
                 category="Old Cat",
                 tags=["old"],
                 note="Old note",
-                favorite=False
+                favorite=False,
             )
         )
 
@@ -1009,9 +954,9 @@ class TestVersionIntegration:
                 category="New Cat",
                 tags=["new"],
                 note="New note",
-                favorite=True
+                favorite=True,
             ),
-            "Complete rewrite"
+            "Complete rewrite",
         )
 
         # Get state after changes
@@ -1028,11 +973,7 @@ class TestVersionIntegration:
     def test_version_with_partial_updates(self, db_data_service, sample_prompt_data):
         """Test updating only some fields creates proper version."""
         prompt_id = db_data_service.add_new_prompt(
-            sample_prompt_data(
-                title="Title",
-                prompt="Content",
-                tags=["tag1"]
-            )
+            sample_prompt_data(title="Title", prompt="Content", tags=["tag1"])
         )
 
         versions_v1 = db_data_service.get_prompt_versions(prompt_id)
@@ -1042,11 +983,9 @@ class TestVersionIntegration:
         db_data_service.update_prompt(
             prompt_id,
             sample_prompt_data(
-                title="New Title",
-                prompt="Content",  # Same
-                tags=["tag1"]  # Same
+                title="New Title", prompt="Content", tags=["tag1"]  # Same  # Same
             ),
-            "Just title change"
+            "Just title change",
         )
 
         versions_v2 = db_data_service.get_prompt_versions(prompt_id)
@@ -1088,9 +1027,7 @@ class TestVersionIntegration:
 
         for author in authors:
             version_repo.create_version(
-                prompt=test_prompt,
-                author=author,
-                message=f"Commit by {author}"
+                prompt=test_prompt, author=author, message=f"Commit by {author}"
             )
 
         versions = version_repo.get_versions_for_prompt(test_prompt.id)
@@ -1108,7 +1045,7 @@ class TestVersionIntegration:
             "Added feature X",
             "Fixed bug Y",
             "Improved performance",
-            "Updated documentation"
+            "Updated documentation",
         ]
 
         for msg in messages:
@@ -1128,9 +1065,7 @@ class TestVersionIntegration:
 
         for i in range(5):
             db_data_service.update_prompt(
-                prompt_id,
-                sample_prompt_data(title=f"V{i+2}"),
-                f"Update {i+1}"
+                prompt_id, sample_prompt_data(title=f"V{i+2}"), f"Update {i+1}"
             )
 
         versions = db_data_service.get_prompt_versions(prompt_id)
@@ -1142,13 +1077,14 @@ class TestVersionIntegration:
                 "timestamp": v["timestamp"],
                 "author": v["author"],
                 "message": v["message"],
-                "title": v["data"]["title"]
+                "title": v["data"]["title"],
             }
             for v in versions
         ]
 
         # Should be JSON serializable
         import json
+
         json_str = json.dumps(export_data)
         assert json_str is not None
         assert len(export_data) == 6  # Initial + 5 updates
@@ -1160,9 +1096,7 @@ class TestVersionIntegration:
         # Create versions with different authors
         for i in range(10):
             db_data_service.update_prompt(
-                prompt_id,
-                sample_prompt_data(),
-                f"Update {i+1}"
+                prompt_id, sample_prompt_data(), f"Update {i+1}"
             )
 
         versions = db_data_service.get_prompt_versions(prompt_id)
@@ -1176,7 +1110,9 @@ class TestVersionIntegration:
         assert len(authors) > 0  # At least one author
         assert len(messages) == total_versions
 
-    def test_version_cleanup_on_prompt_delete(self, db_data_service, sample_prompt_data, test_db_session):
+    def test_version_cleanup_on_prompt_delete(
+        self, db_data_service, sample_prompt_data, test_db_session
+    ):
         """Test that versions are cascade deleted when prompt is deleted."""
         from src.db.models import PromptVersion
 
@@ -1195,7 +1131,9 @@ class TestVersionIntegration:
 
         # Verify all versions are gone
         for vid in version_ids:
-            version = test_db_session.query(PromptVersion).filter(
-                PromptVersion.version_id == vid
-            ).first()
+            version = (
+                test_db_session.query(PromptVersion)
+                .filter(PromptVersion.version_id == vid)
+                .first()
+            )
             assert version is None

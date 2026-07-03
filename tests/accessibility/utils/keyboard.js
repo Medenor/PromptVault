@@ -47,7 +47,11 @@ export async function extractTabOrder(page) {
 
         focusableElements.push({
           element: el,
-          selector: el.id ? `#${el.id}` : el.className ? `.${el.className.split(/\s+/)[0]}` : el.tagName,
+          selector: el.id
+            ? `#${el.id}`
+            : el.className
+              ? `.${el.className.split(/\s+/)[0]}`
+              : el.tagName,
           text: el.textContent?.trim().substring(0, 50) || '',
           tabIndex,
           isNaturallyFocusable,
@@ -321,52 +325,49 @@ export async function testBackwardNavigation(page) {
  * }>} Roving tabindex pattern validation
  */
 export async function validateRovingTabindex(page, containerSelector) {
-  return await page.evaluate(
-    (selector) => {
-      const container = document.querySelector(selector);
-      if (!container) {
-        return {
-          isRovingTabindex: false,
-          activeIndex: -1,
-          items: [],
-          violations: [`Container not found: ${selector}`],
-        };
-      }
-
-      const items = Array.from(container.querySelectorAll('[role="tab"], [role="menuitem"], li, [role="option"]'))
-        .map((item, index) => ({
-          selector: item.id || `item-${index}`,
-          tabIndex: parseInt(item.getAttribute('tabindex') || '-1'),
-          ariaSelected: item.getAttribute('aria-selected') === 'true',
-        }))
-        .filter((item) => item.tabIndex !== null);
-
-      const violations = [];
-      let activeCount = 0;
-
-      for (const item of items) {
-        if (item.tabIndex === 0) {
-          activeCount++;
-        } else if (item.tabIndex !== -1 && item.tabIndex !== 0) {
-          violations.push(`Invalid tabIndex ${item.tabIndex} on ${item.selector}`);
-        }
-      }
-
-      if (activeCount !== 1) {
-        violations.push(
-          `Expected exactly one item with tabindex="0", found ${activeCount}`
-        );
-      }
-
+  return await page.evaluate((selector) => {
+    const container = document.querySelector(selector);
+    if (!container) {
       return {
-        isRovingTabindex: violations.length === 0 && items.length > 0,
-        activeIndex: items.findIndex((item) => item.tabIndex === 0),
-        items,
-        violations,
+        isRovingTabindex: false,
+        activeIndex: -1,
+        items: [],
+        violations: [`Container not found: ${selector}`],
       };
-    },
-    containerSelector
-  );
+    }
+
+    const items = Array.from(
+      container.querySelectorAll('[role="tab"], [role="menuitem"], li, [role="option"]')
+    )
+      .map((item, index) => ({
+        selector: item.id || `item-${index}`,
+        tabIndex: parseInt(item.getAttribute('tabindex') || '-1'),
+        ariaSelected: item.getAttribute('aria-selected') === 'true',
+      }))
+      .filter((item) => item.tabIndex !== null);
+
+    const violations = [];
+    let activeCount = 0;
+
+    for (const item of items) {
+      if (item.tabIndex === 0) {
+        activeCount++;
+      } else if (item.tabIndex !== -1 && item.tabIndex !== 0) {
+        violations.push(`Invalid tabIndex ${item.tabIndex} on ${item.selector}`);
+      }
+    }
+
+    if (activeCount !== 1) {
+      violations.push(`Expected exactly one item with tabindex="0", found ${activeCount}`);
+    }
+
+    return {
+      isRovingTabindex: violations.length === 0 && items.length > 0,
+      activeIndex: items.findIndex((item) => item.tabIndex === 0),
+      items,
+      violations,
+    };
+  }, containerSelector);
 }
 
 /**
@@ -407,8 +408,7 @@ export async function testKeyActivation(page, selector, key = 'Enter') {
       attribute: el.getAttribute('aria-pressed'),
     }));
 
-    const triggered =
-      JSON.stringify(initialState) !== JSON.stringify(finalState);
+    const triggered = JSON.stringify(initialState) !== JSON.stringify(finalState);
 
     return {
       key,

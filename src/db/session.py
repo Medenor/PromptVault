@@ -40,10 +40,7 @@ logger = logging.getLogger(__name__)
 # Create SQLAlchemy engine with appropriate configuration
 engine_kwargs = db_settings.get_engine_kwargs()
 
-engine = create_engine(
-    db_settings.DATABASE_URL,
-    **engine_kwargs
-)
+engine = create_engine(db_settings.DATABASE_URL, **engine_kwargs)
 
 # Log database connection info
 logger.info(f"Database engine created: {db_settings.database_type}")
@@ -53,6 +50,7 @@ if db_settings.DB_ECHO:
 
 # SQLite-specific configuration
 if db_settings.is_sqlite:
+
     @event.listens_for(engine, "connect")
     def set_sqlite_pragma(dbapi_conn, connection_record):
         """Enable foreign key constraints for SQLite.
@@ -69,11 +67,7 @@ if db_settings.is_sqlite:
 # Create session factory
 # autocommit=False: Transactions must be explicitly committed
 # autoflush=False: Changes aren't automatically flushed to DB
-SessionLocal = sessionmaker(
-    autocommit=False,
-    autoflush=False,
-    bind=engine
-)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
 @contextmanager
@@ -144,8 +138,7 @@ def get_db() -> Generator[Session, None, None]:
             logger.debug("FastAPI database dependency session closed")
         except Exception as exc:
             logger.warning(
-                "FastAPI database dependency session close failed",
-                exc_info=exc
+                "FastAPI database dependency session close failed", exc_info=exc
             )
 
 
@@ -159,6 +152,7 @@ def create_all_tables():
         This does NOT drop existing tables. Use with caution.
     """
     from src.db.base import Base
+
     Base.metadata.create_all(bind=engine)
     logger.info("All database tables created")
 
@@ -178,5 +172,6 @@ def drop_all_tables():
         )
 
     from src.db.base import Base
+
     Base.metadata.drop_all(bind=engine)
     logger.warning("All database tables dropped")

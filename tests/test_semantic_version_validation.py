@@ -9,7 +9,6 @@ from pydantic import ValidationError
 
 from src.web.models.requests import PromptCreateRequest, PromptUpdateRequest
 
-
 # ============================================================================
 # PromptCreateRequest
 # ============================================================================

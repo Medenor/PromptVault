@@ -52,7 +52,6 @@ from src.db.models.user import User
 from src.db.models.user_session import UserSession
 from src.db.models.password_reset_token import PasswordResetToken
 
-
 # ============================================================================
 # FIXTURES
 # ============================================================================
@@ -77,8 +76,12 @@ def auth_client(test_db_engine, temp_data_dir: str):
     from sqlalchemy.orm import sessionmaker
 
     # Import auth router directly without going through __init__.py
-    auth_module_path = Path(__file__).parent.parent / "src" / "web" / "routers" / "auth.py"
-    spec = importlib.util.spec_from_file_location("auth_router_module", auth_module_path)
+    auth_module_path = (
+        Path(__file__).parent.parent / "src" / "web" / "routers" / "auth.py"
+    )
+    spec = importlib.util.spec_from_file_location(
+        "auth_router_module", auth_module_path
+    )
     auth_router_module = importlib.util.module_from_spec(spec)
     sys.modules["auth_router_module"] = auth_router_module
     spec.loader.exec_module(auth_router_module)
@@ -123,7 +126,9 @@ def test_user_credentials() -> Dict[str, str]:
 
 
 @pytest.fixture
-def registered_user(auth_client: TestClient, test_user_credentials: Dict[str, str]) -> Dict[str, Any]:
+def registered_user(
+    auth_client: TestClient, test_user_credentials: Dict[str, str]
+) -> Dict[str, Any]:
     """Create a registered user and return user data with tokens.
 
     Args:
@@ -198,7 +203,9 @@ class TestRegisterEndpoint:
         assert "id" in user
         assert "created_at" in user
 
-    def test_register_duplicate_username(self, auth_client: TestClient, registered_user: Dict[str, Any]):
+    def test_register_duplicate_username(
+        self, auth_client: TestClient, registered_user: Dict[str, Any]
+    ):
         """Test registration with duplicate username returns 409."""
         response = auth_client.post(
             "/api/auth/register",
@@ -213,7 +220,9 @@ class TestRegisterEndpoint:
         assert response.status_code == 409
         assert "username" in response.json()["detail"].lower()
 
-    def test_register_duplicate_email(self, auth_client: TestClient, registered_user: Dict[str, Any]):
+    def test_register_duplicate_email(
+        self, auth_client: TestClient, registered_user: Dict[str, Any]
+    ):
         """Test registration with duplicate email returns 409."""
         response = auth_client.post(
             "/api/auth/register",
@@ -303,7 +312,7 @@ class TestLoginEndpoint:
         self,
         auth_client: TestClient,
         test_user_credentials: Dict[str, str],
-        registered_user: Dict[str, Any]
+        registered_user: Dict[str, Any],
     ):
         """Test successful login with username."""
         response = auth_client.post(
@@ -327,7 +336,7 @@ class TestLoginEndpoint:
         self,
         auth_client: TestClient,
         test_user_credentials: Dict[str, str],
-        registered_user: Dict[str, Any]
+        registered_user: Dict[str, Any],
     ):
         """Test successful login with email."""
         response = auth_client.post(
@@ -342,7 +351,9 @@ class TestLoginEndpoint:
         data = response.json()
         assert "access_token" in data
 
-    def test_login_invalid_credentials(self, auth_client: TestClient, registered_user: Dict[str, Any]):
+    def test_login_invalid_credentials(
+        self, auth_client: TestClient, registered_user: Dict[str, Any]
+    ):
         """Test login with invalid password returns 401."""
         response = auth_client.post(
             "/api/auth/login",
@@ -371,7 +382,7 @@ class TestLoginEndpoint:
         self,
         auth_client: TestClient,
         registered_user: Dict[str, Any],
-        test_user_credentials: Dict[str, str]
+        test_user_credentials: Dict[str, str],
     ):
         """Test account locks after max failed login attempts."""
         # Attempt login with wrong password 5 times
@@ -406,7 +417,9 @@ class TestLoginEndpoint:
 class TestRefreshEndpoint:
     """Tests for POST /api/auth/refresh endpoint."""
 
-    def test_refresh_success(self, auth_client: TestClient, registered_user: Dict[str, Any]):
+    def test_refresh_success(
+        self, auth_client: TestClient, registered_user: Dict[str, Any]
+    ):
         """Test successful token refresh."""
         response = auth_client.post(
             "/api/auth/refresh",
@@ -426,7 +439,9 @@ class TestRefreshEndpoint:
         assert data["access_token"] != registered_user["access_token"]
         assert data["refresh_token"] != registered_user["refresh_token"]
 
-    def test_refresh_token_rotation(self, auth_client: TestClient, registered_user: Dict[str, Any]):
+    def test_refresh_token_rotation(
+        self, auth_client: TestClient, registered_user: Dict[str, Any]
+    ):
         """Test refresh tokens are rotated with same family."""
         # First refresh
         response1 = auth_client.post(
@@ -469,7 +484,9 @@ class TestRefreshEndpoint:
 
         assert response.status_code == 401
 
-    def test_refresh_token_reuse_detection(self, auth_client: TestClient, registered_user: Dict[str, Any]):
+    def test_refresh_token_reuse_detection(
+        self, auth_client: TestClient, registered_user: Dict[str, Any]
+    ):
         """Test token reuse is detected and family is revoked."""
         # Get new token
         response1 = auth_client.post(
@@ -505,7 +522,9 @@ class TestRefreshEndpoint:
 class TestLogoutEndpoint:
     """Tests for POST /api/auth/logout endpoint."""
 
-    def test_logout_success(self, auth_client: TestClient, registered_user: Dict[str, Any]):
+    def test_logout_success(
+        self, auth_client: TestClient, registered_user: Dict[str, Any]
+    ):
         """Test successful logout."""
         response = auth_client.post(
             "/api/auth/logout",
@@ -517,7 +536,9 @@ class TestLogoutEndpoint:
         assert "message" in data
         assert "logged out" in data["message"].lower()
 
-    def test_logout_session_revoked(self, auth_client: TestClient, registered_user: Dict[str, Any]):
+    def test_logout_session_revoked(
+        self, auth_client: TestClient, registered_user: Dict[str, Any]
+    ):
         """Test logout revokes session."""
         # Logout
         response = auth_client.post(
@@ -533,7 +554,9 @@ class TestLogoutEndpoint:
         )
         assert response.status_code == 401
 
-    def test_logout_idempotent(self, auth_client: TestClient, registered_user: Dict[str, Any]):
+    def test_logout_idempotent(
+        self, auth_client: TestClient, registered_user: Dict[str, Any]
+    ):
         """Test logout with invalid token doesn't error (idempotent)."""
         # First logout
         response1 = auth_client.post(
@@ -559,7 +582,12 @@ class TestLogoutEndpoint:
 class TestMeEndpoint:
     """Tests for GET /api/auth/me endpoint."""
 
-    def test_me_success(self, auth_client: TestClient, auth_headers: Dict[str, str], registered_user: Dict[str, Any]):
+    def test_me_success(
+        self,
+        auth_client: TestClient,
+        auth_headers: Dict[str, str],
+        registered_user: Dict[str, Any],
+    ):
         """Test getting current user with valid token."""
         response = auth_client.get("/api/auth/me", headers=auth_headers)
 
@@ -582,8 +610,7 @@ class TestMeEndpoint:
     def test_me_invalid_token(self, auth_client: TestClient):
         """Test /me with invalid token returns 401."""
         response = auth_client.get(
-            "/api/auth/me",
-            headers={"Authorization": "Bearer invalid.token.here"}
+            "/api/auth/me", headers={"Authorization": "Bearer invalid.token.here"}
         )
 
         assert response.status_code == 401
@@ -593,8 +620,7 @@ class TestMeEndpoint:
         expired_token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9.eyJzdWIiOiJ0ZXN0IiwiZXhwIjoxfQ.invalid"
 
         response = auth_client.get(
-            "/api/auth/me",
-            headers={"Authorization": f"Bearer {expired_token}"}
+            "/api/auth/me", headers={"Authorization": f"Bearer {expired_token}"}
         )
 
         assert response.status_code == 401
@@ -612,7 +638,7 @@ class TestChangePasswordEndpoint:
         self,
         auth_client: TestClient,
         auth_headers: Dict[str, str],
-        test_user_credentials: Dict[str, str]
+        test_user_credentials: Dict[str, str],
     ):
         """Test successful password change."""
         new_password = "NewSecureP@ssw0rd456"
@@ -643,9 +669,7 @@ class TestChangePasswordEndpoint:
         assert login_response.status_code == 200
 
     def test_change_password_incorrect_old(
-        self,
-        auth_client: TestClient,
-        auth_headers: Dict[str, str]
+        self, auth_client: TestClient, auth_headers: Dict[str, str]
     ):
         """Test change password with incorrect old password returns 401."""
         response = auth_client.post(
@@ -664,7 +688,7 @@ class TestChangePasswordEndpoint:
         self,
         auth_client: TestClient,
         auth_headers: Dict[str, str],
-        test_user_credentials: Dict[str, str]
+        test_user_credentials: Dict[str, str],
     ):
         """Test change password with weak new password returns 400."""
         response = auth_client.post(
@@ -683,7 +707,7 @@ class TestChangePasswordEndpoint:
         self,
         auth_client: TestClient,
         auth_headers: Dict[str, str],
-        test_user_credentials: Dict[str, str]
+        test_user_credentials: Dict[str, str],
     ):
         """Test change password with mismatched confirmation returns 422."""
         response = auth_client.post(
@@ -720,7 +744,9 @@ class TestChangePasswordEndpoint:
 class TestSessionsEndpoint:
     """Tests for GET /api/auth/sessions endpoint."""
 
-    def test_sessions_list_success(self, auth_client: TestClient, auth_headers: Dict[str, str]):
+    def test_sessions_list_success(
+        self, auth_client: TestClient, auth_headers: Dict[str, str]
+    ):
         """Test listing user sessions."""
         response = auth_client.get("/api/auth/sessions", headers=auth_headers)
 
@@ -742,7 +768,9 @@ class TestSessionsEndpoint:
             assert "user_agent" in session
             assert "is_revoked" in session
 
-    def test_sessions_empty_list(self, auth_client: TestClient, registered_user: Dict[str, Any]):
+    def test_sessions_empty_list(
+        self, auth_client: TestClient, registered_user: Dict[str, Any]
+    ):
         """Test listing sessions when all are revoked."""
         # Logout (revoke session)
         auth_client.post(
@@ -762,7 +790,7 @@ class TestSessionsEndpoint:
         # List sessions
         response = auth_client.get(
             "/api/auth/sessions",
-            headers={"Authorization": f"Bearer {new_login.json()['access_token']}"}
+            headers={"Authorization": f"Bearer {new_login.json()['access_token']}"},
         )
 
         assert response.status_code == 200
@@ -773,7 +801,7 @@ class TestSessionsEndpoint:
         self,
         auth_client: TestClient,
         test_user_credentials: Dict[str, str],
-        registered_user: Dict[str, Any]
+        registered_user: Dict[str, Any],
     ):
         """Test listing multiple sessions."""
         # Create second session by logging in again
@@ -789,7 +817,7 @@ class TestSessionsEndpoint:
         # List sessions from first session
         response = auth_client.get(
             "/api/auth/sessions",
-            headers={"Authorization": f"Bearer {registered_user['access_token']}"}
+            headers={"Authorization": f"Bearer {registered_user['access_token']}"},
         )
 
         assert response.status_code == 200
@@ -815,7 +843,7 @@ class TestRevokeSessionEndpoint:
         self,
         auth_client: TestClient,
         auth_headers: Dict[str, str],
-        test_user_credentials: Dict[str, str]
+        test_user_credentials: Dict[str, str],
     ):
         """Test revoking specific session."""
         # Create second session
@@ -835,8 +863,7 @@ class TestRevokeSessionEndpoint:
         # Revoke one session
         session_id = sessions[0]["id"]
         response = auth_client.delete(
-            f"/api/auth/sessions/{session_id}",
-            headers=auth_headers
+            f"/api/auth/sessions/{session_id}", headers=auth_headers
         )
 
         assert response.status_code == 200
@@ -844,13 +871,14 @@ class TestRevokeSessionEndpoint:
         assert "message" in data
         assert data["revoked_count"] == 1
 
-    def test_revoke_session_not_found(self, auth_client: TestClient, auth_headers: Dict[str, str]):
+    def test_revoke_session_not_found(
+        self, auth_client: TestClient, auth_headers: Dict[str, str]
+    ):
         """Test revoking non-existent session returns 404."""
         fake_session_id = "00000000-0000-0000-0000-000000000000"
 
         response = auth_client.delete(
-            f"/api/auth/sessions/{fake_session_id}",
-            headers=auth_headers
+            f"/api/auth/sessions/{fake_session_id}", headers=auth_headers
         )
 
         assert response.status_code == 404
@@ -876,7 +904,7 @@ class TestRevokeAllSessionsEndpoint:
         self,
         auth_client: TestClient,
         auth_headers: Dict[str, str],
-        test_user_credentials: Dict[str, str]
+        test_user_credentials: Dict[str, str],
     ):
         """Test revoking all sessions except current."""
         # Create multiple sessions
@@ -902,7 +930,7 @@ class TestRevokeAllSessionsEndpoint:
         self,
         auth_client: TestClient,
         test_user_credentials: Dict[str, str],
-        registered_user: Dict[str, Any]
+        registered_user: Dict[str, Any],
     ):
         """Test revoke all returns correct count."""
         # Create 2 additional sessions
@@ -924,7 +952,7 @@ class TestRevokeAllSessionsEndpoint:
         # Revoke all from original session
         response = auth_client.delete(
             "/api/auth/sessions",
-            headers={"Authorization": f"Bearer {registered_user['access_token']}"}
+            headers={"Authorization": f"Bearer {registered_user['access_token']}"},
         )
 
         assert response.status_code == 200
@@ -951,7 +979,7 @@ class TestPasswordResetRequestEndpoint:
         self,
         auth_client: TestClient,
         test_user_credentials: Dict[str, str],
-        registered_user: Dict[str, Any]
+        registered_user: Dict[str, Any],
     ):
         """Test successful password reset request."""
         response = auth_client.post(
@@ -1048,7 +1076,9 @@ class TestPasswordResetService:
         """Create PasswordResetService instance with test dependencies."""
         from src.services.auth.password_reset_service import PasswordResetService
         from src.services.auth.password_service import PasswordService
-        from src.db.repositories.password_reset_token_repository import PasswordResetTokenRepository
+        from src.db.repositories.password_reset_token_repository import (
+            PasswordResetTokenRepository,
+        )
         from src.db.repositories.user_repository import UserRepository
         from src.config.auth_config import auth_settings
 
@@ -1060,7 +1090,7 @@ class TestPasswordResetService:
             config=auth_settings,
             password_service=password_service,
             token_repository=token_repo,
-            user_repository=user_repo
+            user_repository=user_repo,
         )
 
     @pytest.fixture
@@ -1094,10 +1124,7 @@ class TestPasswordResetService:
     # ========================================================================
 
     def test_request_password_reset_rate_limit_exceeded(
-        self,
-        password_reset_service,
-        test_user_for_reset,
-        test_db_session: Session
+        self, password_reset_service, test_user_for_reset, test_db_session: Session
     ):
         """Test that rate limit is enforced after 3 requests in 1 hour."""
         from src.services.exceptions import RateLimitExceededError
@@ -1107,8 +1134,7 @@ class TestPasswordResetService:
         # Make 3 successful requests (should work)
         for i in range(3):
             token = password_reset_service.request_password_reset(
-                email=email,
-                ip_address="192.168.1.1"
+                email=email, ip_address="192.168.1.1"
             )
             assert token is not None
             test_db_session.commit()
@@ -1116,18 +1142,14 @@ class TestPasswordResetService:
         # 4th request should hit rate limit
         with pytest.raises(RateLimitExceededError) as exc_info:
             password_reset_service.request_password_reset(
-                email=email,
-                ip_address="192.168.1.1"
+                email=email, ip_address="192.168.1.1"
             )
 
         assert exc_info.value.http_status == 429
         assert exc_info.value.context.get("retry_after_seconds") is not None
 
     def test_request_password_reset_rate_limit_retry_after(
-        self,
-        password_reset_service,
-        test_user_for_reset,
-        test_db_session: Session
+        self, password_reset_service, test_user_for_reset, test_db_session: Session
     ):
         """Test that retry_after value is correctly calculated."""
         from src.services.exceptions import RateLimitExceededError
@@ -1136,12 +1158,16 @@ class TestPasswordResetService:
 
         # Exhaust rate limit
         for i in range(3):
-            password_reset_service.request_password_reset(email=email, ip_address="192.168.1.1")
+            password_reset_service.request_password_reset(
+                email=email, ip_address="192.168.1.1"
+            )
             test_db_session.commit()
 
         # Check retry_after in error
         with pytest.raises(RateLimitExceededError) as exc_info:
-            password_reset_service.request_password_reset(email=email, ip_address="192.168.1.1")
+            password_reset_service.request_password_reset(
+                email=email, ip_address="192.168.1.1"
+            )
 
         # Should have retry_after in context
         retry_after = exc_info.value.context.get("retry_after_seconds")
@@ -1149,19 +1175,20 @@ class TestPasswordResetService:
         assert retry_after > 0
 
     def test_request_password_reset_invalidates_old_tokens(
-        self,
-        password_reset_service,
-        test_user_for_reset,
-        test_db_session: Session
+        self, password_reset_service, test_user_for_reset, test_db_session: Session
     ):
         """Test that requesting new token invalidates existing tokens."""
-        from src.db.repositories.password_reset_token_repository import PasswordResetTokenRepository
+        from src.db.repositories.password_reset_token_repository import (
+            PasswordResetTokenRepository,
+        )
 
         email = test_user_for_reset.email
         token_repo = PasswordResetTokenRepository(test_db_session)
 
         # Create first token
-        token1 = password_reset_service.request_password_reset(email=email, ip_address="192.168.1.1")
+        token1 = password_reset_service.request_password_reset(
+            email=email, ip_address="192.168.1.1"
+        )
         test_db_session.commit()
 
         # Verify first token exists and is valid
@@ -1171,7 +1198,9 @@ class TestPasswordResetService:
         assert not token_record1.is_used
 
         # Create second token
-        token2 = password_reset_service.request_password_reset(email=email, ip_address="192.168.1.2")
+        token2 = password_reset_service.request_password_reset(
+            email=email, ip_address="192.168.1.2"
+        )
         test_db_session.commit()
 
         # Refresh token_record1 from database
@@ -1187,28 +1216,31 @@ class TestPasswordResetService:
     # ========================================================================
 
     def test_verify_token_expired(
-        self,
-        password_reset_service,
-        test_user_for_reset,
-        test_db_session: Session
+        self, password_reset_service, test_user_for_reset, test_db_session: Session
     ):
         """Test that expired token is rejected."""
-        from src.db.repositories.password_reset_token_repository import PasswordResetTokenRepository
+        from src.db.repositories.password_reset_token_repository import (
+            PasswordResetTokenRepository,
+        )
         from datetime import datetime, timezone, timedelta
 
         email = test_user_for_reset.email
         token_repo = PasswordResetTokenRepository(test_db_session)
 
         # Create a valid token using the service
-        token = password_reset_service.request_password_reset(email=email, ip_address="192.168.1.1")
+        token = password_reset_service.request_password_reset(
+            email=email, ip_address="192.168.1.1"
+        )
         test_db_session.commit()
 
         # Manually expire the token by updating its expires_at directly in DB using raw SQL
         # This avoids SQLite timezone issues
         hashed_token = password_reset_service._hash_token(token)
         test_db_session.execute(
-            text("UPDATE password_reset_tokens SET expires_at = datetime('now', '-2 hours') WHERE token = :token"),
-            {"token": hashed_token}
+            text(
+                "UPDATE password_reset_tokens SET expires_at = datetime('now', '-2 hours') WHERE token = :token"
+            ),
+            {"token": hashed_token},
         )
         test_db_session.commit()
 
@@ -1219,19 +1251,20 @@ class TestPasswordResetService:
         assert "expired" in result.lower()
 
     def test_verify_token_already_used(
-        self,
-        password_reset_service,
-        test_user_for_reset,
-        test_db_session: Session
+        self, password_reset_service, test_user_for_reset, test_db_session: Session
     ):
         """Test that already-used token is rejected."""
-        from src.db.repositories.password_reset_token_repository import PasswordResetTokenRepository
+        from src.db.repositories.password_reset_token_repository import (
+            PasswordResetTokenRepository,
+        )
 
         email = test_user_for_reset.email
         token_repo = PasswordResetTokenRepository(test_db_session)
 
         # Create token using the service
-        token = password_reset_service.request_password_reset(email=email, ip_address="192.168.1.1")
+        token = password_reset_service.request_password_reset(
+            email=email, ip_address="192.168.1.1"
+        )
         test_db_session.commit()
 
         # Mark token as used
@@ -1247,10 +1280,7 @@ class TestPasswordResetService:
         assert "used" in result.lower()
 
     def test_verify_token_user_not_found(
-        self,
-        password_reset_service,
-        test_user_for_reset,
-        test_db_session: Session
+        self, password_reset_service, test_user_for_reset, test_db_session: Session
     ):
         """Test that token for non-existent user is rejected."""
         from src.db.repositories.user_repository import UserRepository
@@ -1259,7 +1289,9 @@ class TestPasswordResetService:
         user_repo = UserRepository(test_db_session)
 
         # Create token using the service
-        token = password_reset_service.request_password_reset(email=email, ip_address="192.168.1.1")
+        token = password_reset_service.request_password_reset(
+            email=email, ip_address="192.168.1.1"
+        )
         test_db_session.commit()
 
         # Delete the user
@@ -1273,16 +1305,15 @@ class TestPasswordResetService:
         assert "invalid" in result.lower()
 
     def test_verify_token_user_inactive(
-        self,
-        password_reset_service,
-        test_user_for_reset,
-        test_db_session: Session
+        self, password_reset_service, test_user_for_reset, test_db_session: Session
     ):
         """Test that token for inactive user is rejected."""
         email = test_user_for_reset.email
 
         # Create token while user is active
-        token = password_reset_service.request_password_reset(email=email, ip_address="192.168.1.1")
+        token = password_reset_service.request_password_reset(
+            email=email, ip_address="192.168.1.1"
+        )
         test_db_session.commit()
 
         # Now deactivate the user
@@ -1296,16 +1327,15 @@ class TestPasswordResetService:
         assert "active" in result.lower()
 
     def test_verify_token_valid(
-        self,
-        password_reset_service,
-        test_user_for_reset,
-        test_db_session: Session
+        self, password_reset_service, test_user_for_reset, test_db_session: Session
     ):
         """Test that valid token is accepted."""
         email = test_user_for_reset.email
 
         # Request password reset
-        token = password_reset_service.request_password_reset(email=email, ip_address="192.168.1.1")
+        token = password_reset_service.request_password_reset(
+            email=email, ip_address="192.168.1.1"
+        )
         test_db_session.commit()
 
         # Verify token
@@ -1319,10 +1349,7 @@ class TestPasswordResetService:
     # ========================================================================
 
     def test_reset_password_success(
-        self,
-        password_reset_service,
-        test_user_for_reset,
-        test_db_session: Session
+        self, password_reset_service, test_user_for_reset, test_db_session: Session
     ):
         """Test successful password reset."""
         from src.services.auth.password_service import PasswordService
@@ -1332,7 +1359,9 @@ class TestPasswordResetService:
         new_password = "NewSecureP@ssw0rd456"
 
         # Request password reset
-        token = password_reset_service.request_password_reset(email=email, ip_address="192.168.1.1")
+        token = password_reset_service.request_password_reset(
+            email=email, ip_address="192.168.1.1"
+        )
         test_db_session.commit()
 
         # Reset password
@@ -1344,13 +1373,12 @@ class TestPasswordResetService:
         # Verify new password works
         test_db_session.refresh(test_user_for_reset)
         password_service = PasswordService(auth_settings)
-        assert password_service.verify_password(new_password, test_user_for_reset.password_hash)
+        assert password_service.verify_password(
+            new_password, test_user_for_reset.password_hash
+        )
 
     def test_reset_password_policy_violation(
-        self,
-        password_reset_service,
-        test_user_for_reset,
-        test_db_session: Session
+        self, password_reset_service, test_user_for_reset, test_db_session: Session
     ):
         """Test that weak password is rejected."""
         from src.services.exceptions import PasswordPolicyError
@@ -1359,7 +1387,9 @@ class TestPasswordResetService:
         weak_password = "weak"
 
         # Request password reset
-        token = password_reset_service.request_password_reset(email=email, ip_address="192.168.1.1")
+        token = password_reset_service.request_password_reset(
+            email=email, ip_address="192.168.1.1"
+        )
         test_db_session.commit()
 
         # Try to reset with weak password
@@ -1370,19 +1400,20 @@ class TestPasswordResetService:
         assert "policy_errors" in exc_info.value.context
 
     def test_reset_password_marks_token_used(
-        self,
-        password_reset_service,
-        test_user_for_reset,
-        test_db_session: Session
+        self, password_reset_service, test_user_for_reset, test_db_session: Session
     ):
         """Test that token is marked as used after password reset."""
-        from src.db.repositories.password_reset_token_repository import PasswordResetTokenRepository
+        from src.db.repositories.password_reset_token_repository import (
+            PasswordResetTokenRepository,
+        )
 
         email = test_user_for_reset.email
         new_password = "NewSecureP@ssw0rd456"
 
         # Request password reset
-        token = password_reset_service.request_password_reset(email=email, ip_address="192.168.1.1")
+        token = password_reset_service.request_password_reset(
+            email=email, ip_address="192.168.1.1"
+        )
         test_db_session.commit()
 
         # Get token record
@@ -1401,25 +1432,29 @@ class TestPasswordResetService:
         assert token_record.used_at is not None
 
     def test_reset_password_invalidates_other_tokens(
-        self,
-        password_reset_service,
-        test_user_for_reset,
-        test_db_session: Session
+        self, password_reset_service, test_user_for_reset, test_db_session: Session
     ):
         """Test that resetting password invalidates all other user tokens."""
-        from src.db.repositories.password_reset_token_repository import PasswordResetTokenRepository
+        from src.db.repositories.password_reset_token_repository import (
+            PasswordResetTokenRepository,
+        )
 
         email = test_user_for_reset.email
         new_password = "NewSecureP@ssw0rd456"
 
         # Request two password resets
-        token1 = password_reset_service.request_password_reset(email=email, ip_address="192.168.1.1")
+        token1 = password_reset_service.request_password_reset(
+            email=email, ip_address="192.168.1.1"
+        )
         test_db_session.commit()
 
         # Wait a bit and create another
         import time
+
         time.sleep(0.1)
-        token2 = password_reset_service.request_password_reset(email=email, ip_address="192.168.1.2")
+        token2 = password_reset_service.request_password_reset(
+            email=email, ip_address="192.168.1.2"
+        )
         test_db_session.commit()
 
         # Reset password with token2
@@ -1476,26 +1511,29 @@ class TestPasswordResetService:
     # ========================================================================
 
     def test_cleanup_expired_tokens_deletes_expired(
-        self,
-        password_reset_service,
-        test_user_for_reset,
-        test_db_session: Session
+        self, password_reset_service, test_user_for_reset, test_db_session: Session
     ):
         """Test that cleanup removes expired tokens."""
-        from src.db.repositories.password_reset_token_repository import PasswordResetTokenRepository
+        from src.db.repositories.password_reset_token_repository import (
+            PasswordResetTokenRepository,
+        )
 
         email = test_user_for_reset.email
         token_repo = PasswordResetTokenRepository(test_db_session)
 
         # Create token
-        token = password_reset_service.request_password_reset(email=email, ip_address="192.168.1.1")
+        token = password_reset_service.request_password_reset(
+            email=email, ip_address="192.168.1.1"
+        )
         test_db_session.commit()
 
         # Manually expire the token using raw SQL
         hashed_token = password_reset_service._hash_token(token)
         test_db_session.execute(
-            text("UPDATE password_reset_tokens SET expires_at = datetime('now', '-2 hours') WHERE token = :token"),
-            {"token": hashed_token}
+            text(
+                "UPDATE password_reset_tokens SET expires_at = datetime('now', '-2 hours') WHERE token = :token"
+            ),
+            {"token": hashed_token},
         )
         test_db_session.commit()
 
@@ -1510,18 +1548,19 @@ class TestPasswordResetService:
         assert token_record is None
 
     def test_cleanup_expired_tokens_keeps_valid(
-        self,
-        password_reset_service,
-        test_user_for_reset,
-        test_db_session: Session
+        self, password_reset_service, test_user_for_reset, test_db_session: Session
     ):
         """Test that cleanup doesn't remove valid tokens."""
-        from src.db.repositories.password_reset_token_repository import PasswordResetTokenRepository
+        from src.db.repositories.password_reset_token_repository import (
+            PasswordResetTokenRepository,
+        )
 
         email = test_user_for_reset.email
 
         # Create valid token
-        token = password_reset_service.request_password_reset(email=email, ip_address="192.168.1.1")
+        token = password_reset_service.request_password_reset(
+            email=email, ip_address="192.168.1.1"
+        )
         test_db_session.commit()
 
         # Run cleanup
@@ -1537,10 +1576,7 @@ class TestPasswordResetService:
         assert not token_record.is_used
 
     def test_cleanup_expired_tokens_returns_count(
-        self,
-        password_reset_service,
-        test_user_for_reset,
-        test_db_session: Session
+        self, password_reset_service, test_user_for_reset, test_db_session: Session
     ):
         """Test that cleanup returns correct count of deleted tokens."""
         email = test_user_for_reset.email
@@ -1548,14 +1584,18 @@ class TestPasswordResetService:
         # Create 3 tokens
         tokens = []
         for i in range(3):
-            token = password_reset_service.request_password_reset(email=email, ip_address="192.168.1.1")
+            token = password_reset_service.request_password_reset(
+                email=email, ip_address="192.168.1.1"
+            )
             tokens.append(token)
             test_db_session.commit()
 
         # Expire all tokens using raw SQL
         test_db_session.execute(
-            text("UPDATE password_reset_tokens SET expires_at = datetime('now', '-2 hours') WHERE user_id = :user_id"),
-            {"user_id": test_user_for_reset.id}
+            text(
+                "UPDATE password_reset_tokens SET expires_at = datetime('now', '-2 hours') WHERE user_id = :user_id"
+            ),
+            {"user_id": test_user_for_reset.id},
         )
         test_db_session.commit()
 
@@ -1569,17 +1609,13 @@ class TestPasswordResetService:
     # EDGE CASES
     # ========================================================================
 
-    def test_request_password_reset_nonexistent_email(
-        self,
-        password_reset_service
-    ):
+    def test_request_password_reset_nonexistent_email(self, password_reset_service):
         """Test that requesting reset for non-existent email raises UserNotFoundError."""
         from src.services.exceptions import UserNotFoundError
 
         with pytest.raises(UserNotFoundError):
             password_reset_service.request_password_reset(
-                email="nonexistent@example.com",
-                ip_address="192.168.1.1"
+                email="nonexistent@example.com", ip_address="192.168.1.1"
             )
 
     def test_verify_token_malformed_token(self, password_reset_service):
@@ -1592,10 +1628,7 @@ class TestPasswordResetService:
         assert "invalid" in result.lower() or "expired" in result.lower()
 
     def test_reset_password_empty_password(
-        self,
-        password_reset_service,
-        test_user_for_reset,
-        test_db_session: Session
+        self, password_reset_service, test_user_for_reset, test_db_session: Session
     ):
         """Test that empty password is rejected."""
         from src.services.exceptions import PasswordPolicyError
@@ -1603,17 +1636,16 @@ class TestPasswordResetService:
         email = test_user_for_reset.email
 
         # Request password reset
-        token = password_reset_service.request_password_reset(email=email, ip_address="192.168.1.1")
+        token = password_reset_service.request_password_reset(
+            email=email, ip_address="192.168.1.1"
+        )
         test_db_session.commit()
 
         # Try to reset with empty password
         with pytest.raises(PasswordPolicyError):
             password_reset_service.reset_password(token, "")
 
-    def test_reset_password_token_not_found(
-        self,
-        password_reset_service
-    ):
+    def test_reset_password_token_not_found(self, password_reset_service):
         """Test that resetting with non-existent token raises error."""
         from src.services.exceptions import TokenNotFoundError
 
@@ -1623,10 +1655,7 @@ class TestPasswordResetService:
             password_reset_service.reset_password(fake_token, "NewP@ssw0rd123")
 
     def test_reset_password_expired_token(
-        self,
-        password_reset_service,
-        test_user_for_reset,
-        test_db_session: Session
+        self, password_reset_service, test_user_for_reset, test_db_session: Session
     ):
         """Test that resetting with expired token raises error."""
         from src.services.exceptions import TokenExpiredError
@@ -1634,14 +1663,18 @@ class TestPasswordResetService:
         email = test_user_for_reset.email
 
         # Create token
-        token = password_reset_service.request_password_reset(email=email, ip_address="192.168.1.1")
+        token = password_reset_service.request_password_reset(
+            email=email, ip_address="192.168.1.1"
+        )
         test_db_session.commit()
 
         # Expire the token using raw SQL
         hashed_token = password_reset_service._hash_token(token)
         test_db_session.execute(
-            text("UPDATE password_reset_tokens SET expires_at = datetime('now', '-1 hours') WHERE token = :token"),
-            {"token": hashed_token}
+            text(
+                "UPDATE password_reset_tokens SET expires_at = datetime('now', '-1 hours') WHERE token = :token"
+            ),
+            {"token": hashed_token},
         )
         test_db_session.commit()
 
@@ -1650,10 +1683,7 @@ class TestPasswordResetService:
             password_reset_service.reset_password(token, "NewP@ssw0rd123")
 
     def test_reset_password_already_used_token(
-        self,
-        password_reset_service,
-        test_user_for_reset,
-        test_db_session: Session
+        self, password_reset_service, test_user_for_reset, test_db_session: Session
     ):
         """Test that resetting with already-used token raises error."""
         from src.services.exceptions import TokenAlreadyUsedError
@@ -1661,7 +1691,9 @@ class TestPasswordResetService:
         email = test_user_for_reset.email
 
         # Request password reset
-        token = password_reset_service.request_password_reset(email=email, ip_address="192.168.1.1")
+        token = password_reset_service.request_password_reset(
+            email=email, ip_address="192.168.1.1"
+        )
         test_db_session.commit()
 
         # Reset password once (should work)
@@ -1692,8 +1724,7 @@ class TestSecurityHeaders:
     def test_invalid_token_error_description(self, auth_client: TestClient):
         """Test invalid token returns proper error in WWW-Authenticate."""
         response = auth_client.get(
-            "/api/auth/me",
-            headers={"Authorization": "Bearer invalid.token.here"}
+            "/api/auth/me", headers={"Authorization": "Bearer invalid.token.here"}
         )
 
         assert response.status_code == 401
@@ -1794,12 +1825,16 @@ class TestAuthenticationFlow:
         # Access protected endpoint
         me_response = auth_client.get(
             "/api/auth/me",
-            headers={"Authorization": f"Bearer {login_response.json()['access_token']}"}
+            headers={
+                "Authorization": f"Bearer {login_response.json()['access_token']}"
+            },
         )
         assert me_response.status_code == 200
         assert me_response.json()["username"] == "flowtest"
 
-    def test_token_refresh_flow(self, auth_client: TestClient, registered_user: Dict[str, Any]):
+    def test_token_refresh_flow(
+        self, auth_client: TestClient, registered_user: Dict[str, Any]
+    ):
         """Test complete token refresh flow."""
         # Refresh token
         refresh_response = auth_client.post(
@@ -1811,11 +1846,15 @@ class TestAuthenticationFlow:
         # Use new access token
         me_response = auth_client.get(
             "/api/auth/me",
-            headers={"Authorization": f"Bearer {refresh_response.json()['access_token']}"}
+            headers={
+                "Authorization": f"Bearer {refresh_response.json()['access_token']}"
+            },
         )
         assert me_response.status_code == 200
 
-    def test_logout_flow(self, auth_client: TestClient, registered_user: Dict[str, Any]):
+    def test_logout_flow(
+        self, auth_client: TestClient, registered_user: Dict[str, Any]
+    ):
         """Test complete logout flow."""
         # Logout
         logout_response = auth_client.post(
@@ -1827,7 +1866,7 @@ class TestAuthenticationFlow:
         # Try to use tokens after logout
         me_response = auth_client.get(
             "/api/auth/me",
-            headers={"Authorization": f"Bearer {registered_user['access_token']}"}
+            headers={"Authorization": f"Bearer {registered_user['access_token']}"},
         )
         # Access token may still work briefly (short-lived)
         # But refresh should fail

@@ -62,7 +62,7 @@ export function createFormGroup(child: HTMLElement, props: FormGroupProps): HTML
       label.appendChild(required);
     }
 
-  group.appendChild(label);
+    group.appendChild(label);
   }
 
   group.appendChild(child);

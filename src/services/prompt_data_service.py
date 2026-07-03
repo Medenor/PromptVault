@@ -24,7 +24,6 @@ from src.web.validators import (
     MAX_TAG_LENGTH,
 )
 
-
 logger = logging_service.get_logger(__name__)
 
 
@@ -108,7 +107,9 @@ class PromptDataService:
         # Sanitize category
         if "category" in data and data["category"]:
             data["category"] = sanitize_text_field(
-                str(data["category"]), max_length=MAX_CATEGORY_LENGTH, allow_newlines=False
+                str(data["category"]),
+                max_length=MAX_CATEGORY_LENGTH,
+                allow_newlines=False,
             )
 
         # Sanitize note
@@ -120,7 +121,9 @@ class PromptDataService:
         # Sanitize and deduplicate tags
         tags = data.get("tags", [])
         if isinstance(tags, list):
-            data["tags"] = sanitize_tags(tags, max_count=MAX_TAG_COUNT, max_length_per_tag=MAX_TAG_LENGTH)
+            data["tags"] = sanitize_tags(
+                tags, max_count=MAX_TAG_COUNT, max_length_per_tag=MAX_TAG_LENGTH
+            )
         else:
             data["tags"] = []
 

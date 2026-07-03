@@ -30,8 +30,8 @@ from src.services.auth.auth_service import AuthService
 from src.services.auth.password_reset_service import PasswordResetService
 
 __all__ = [
-    'PasswordService',
-    'JWTService',
-    'AuthService',
-    'PasswordResetService',
+    "PasswordService",
+    "JWTService",
+    "AuthService",
+    "PasswordResetService",
 ]

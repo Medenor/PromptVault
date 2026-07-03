@@ -37,19 +37,16 @@ class User(Base):
         updated_at: Timestamp when user was last updated
         prompts: Relationship to user's prompts
     """
+
     __tablename__ = "users"
 
     # Use UUID for PostgreSQL, String for SQLite compatibility
-    id = Column(
-        String(36),
-        primary_key=True,
-        default=lambda: str(uuid.uuid4())
-    )
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     username = Column(String(100), unique=True, nullable=False, index=True)
     display_name = Column(String(200))
     email = Column(String(255), unique=True, nullable=False, index=True)
     password_hash = Column(String(255), nullable=False)
-    role = Column(String(50), default='viewer')
+    role = Column(String(50), default="viewer")
 
     # Authentication and security fields
     email_verified = Column(Boolean, default=False)
@@ -61,12 +58,18 @@ class User(Base):
 
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    updated_at = Column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
 
     # Relationships
     prompts = relationship("Prompt", back_populates="user")
-    sessions = relationship("UserSession", back_populates="user", cascade="all, delete-orphan")
-    password_reset_tokens = relationship("PasswordResetToken", back_populates="user", cascade="all, delete-orphan")
+    sessions = relationship(
+        "UserSession", back_populates="user", cascade="all, delete-orphan"
+    )
+    password_reset_tokens = relationship(
+        "PasswordResetToken", back_populates="user", cascade="all, delete-orphan"
+    )
 
     def __repr__(self):
         return f"<User(id={self.id}, username='{self.username}')>"

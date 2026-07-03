@@ -145,9 +145,7 @@ class JWTService:
                 f"Check file permissions (should be 0600): {e}"
             )
         except Exception as e:
-            raise ValueError(
-                f"Failed to load JWT private key from {key_path}: {e}"
-            )
+            raise ValueError(f"Failed to load JWT private key from {key_path}: {e}")
 
         if not self._private_key or len(self._private_key) < 50:
             raise ValueError(
@@ -186,9 +184,7 @@ class JWTService:
                 f"Check file permissions: {e}"
             )
         except Exception as e:
-            raise ValueError(
-                f"Failed to load JWT public key from {key_path}: {e}"
-            )
+            raise ValueError(f"Failed to load JWT public key from {key_path}: {e}")
 
         if not self._public_key or len(self._public_key) < 50:
             raise ValueError(
@@ -275,7 +271,7 @@ class JWTService:
             "email": email,
             "role": role,
         }
-        
+
         # Add family_id if provided (for identifying current session)
         if family_id:
             claims["family_id"] = family_id
@@ -425,9 +421,7 @@ class JWTService:
 
             # Additional validation: ensure it's not a refresh token
             if claims.get("type") == "refresh":
-                raise InvalidTokenError(
-                    "Refresh token cannot be used as access token"
-                )
+                raise InvalidTokenError("Refresh token cannot be used as access token")
 
             return claims
 

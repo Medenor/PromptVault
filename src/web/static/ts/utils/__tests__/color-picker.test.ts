@@ -29,11 +29,14 @@ describe('ColorPicker', () => {
 
   it('throws when required elements are missing', () => {
     document.body.innerHTML = '';
-    expect(() => new ColorPicker({
-      containerId: 'missing',
-      colorInputId: 'missing-input',
-      colorPickerId: 'missing-picker',
-    })).toThrow('Required color picker elements not found');
+    expect(
+      () =>
+        new ColorPicker({
+          containerId: 'missing',
+          colorInputId: 'missing-input',
+          colorPickerId: 'missing-picker',
+        })
+    ).toThrow('Required color picker elements not found');
   });
 
   it('initializes with provided color', () => {

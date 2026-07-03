@@ -141,4 +141,3 @@ def test_admin_update_user_rejects_invalid_role():
 def test_admin_user_list_params_trim_search():
     params = admin_requests.UserListParams(search="   ")
     assert params.search is None
-

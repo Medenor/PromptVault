@@ -127,7 +127,8 @@ export function createModal(props: ModalProps): {
 
   const open = () => {
     // Store reference to currently focused element before opening modal
-    previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    previouslyFocused =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
 
     // Show modal
     modal.classList.remove('hidden');

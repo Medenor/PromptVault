@@ -75,7 +75,7 @@ def get_database_info() -> Dict[str, Any]:
         "url": sanitized_url,
         "pool_size": db_settings.DB_POOL_SIZE if db_settings.is_postgresql else "N/A",
         "echo": db_settings.DB_ECHO,
-        "healthy": check_database_health()
+        "healthy": check_database_health(),
     }
 
     return info
@@ -103,7 +103,7 @@ def check_tables_exist() -> Dict[str, bool]:
         "prompt_versions",
         "prompt_branches",
         "prompt_tags",
-        "backups"
+        "backups",
     ]
 
     table_status = {}

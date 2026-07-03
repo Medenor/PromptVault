@@ -91,7 +91,10 @@ export function getNextFocusElementAfterItemDelete(
  * Stores the trigger element that opened a modal for focus restoration
  * Use this when opening a modal from a button click
  */
-export function storeFocusTrigger(event: Event | null, storageRef: { current: HTMLElement | null }): void {
+export function storeFocusTrigger(
+  event: Event | null,
+  storageRef: { current: HTMLElement | null }
+): void {
   if (!event) return;
   const target = (event as unknown as { target?: HTMLElement }).target;
   if (target && target instanceof HTMLElement) {
@@ -104,14 +107,20 @@ export function storeFocusTrigger(event: Event | null, storageRef: { current: HT
  * Safely handles cases where the element no longer exists
  */
 export function restoreFocusToTrigger(storageRef: { current: HTMLElement | null }): void {
-  if (storageRef.current && storageRef.current.isConnected && typeof storageRef.current.focus === 'function') {
+  if (
+    storageRef.current &&
+    storageRef.current.isConnected &&
+    typeof storageRef.current.focus === 'function'
+  ) {
     // Use setTimeout to ensure focus is applied after DOM updates
     setTimeout(() => {
       if (storageRef.current?.isConnected) {
         storageRef.current.focus();
         // Announce to screen readers
         if (storageRef.current.getAttribute('aria-label')) {
-          announceToScreenReader(`Returned focus to ${storageRef.current.getAttribute('aria-label')}`);
+          announceToScreenReader(
+            `Returned focus to ${storageRef.current.getAttribute('aria-label')}`
+          );
         }
       }
     }, 0);
@@ -156,7 +165,10 @@ export function focusFirstElement(container: HTMLElement | null): void {
 /**
  * Announces a message to screen readers using aria-live region
  */
-export function announceToScreenReader(message: string, politeness: 'polite' | 'assertive' = 'polite'): void {
+export function announceToScreenReader(
+  message: string,
+  politeness: 'polite' | 'assertive' = 'polite'
+): void {
   let announcer = document.getElementById('focus-announcer');
   if (!announcer) {
     announcer = document.createElement('div');

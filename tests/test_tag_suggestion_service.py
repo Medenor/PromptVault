@@ -253,7 +253,9 @@ class TestScoringLogic:
 
         # Find scores for python and testing
         python_score = next((score for tag, score in results if tag == "python"), None)
-        testing_score = next((score for tag, score in results if tag == "testing"), None)
+        testing_score = next(
+            (score for tag, score in results if tag == "testing"), None
+        )
 
         if python_score and testing_score:
             # Python should have higher score due to higher frequency
@@ -275,7 +277,9 @@ class TestScoringLogic:
         # For "machine" only: matched=1, required=2, so should NOT match
 
         # This test verifies the 50% threshold works
-        assert len(results) == 0 or "machine-learning-algorithm" not in [tag for tag, _ in results]
+        assert len(results) == 0 or "machine-learning-algorithm" not in [
+            tag for tag, _ in results
+        ]
 
     def test_suggest_tags_multi_token_tag_matching(self):
         """Test matching for multi-token tags."""
@@ -468,7 +472,9 @@ class TestRealWorldScenarios:
         tag_names = [tag for tag, _ in results]
 
         # Should include relevant matches
-        assert any(tag in tag_names for tag in ["python", "security-audit", "code-review"])
+        assert any(
+            tag in tag_names for tag in ["python", "security-audit", "code-review"]
+        )
 
     def test_suggest_tags_technical_content(self):
         """Test with technical jargon."""

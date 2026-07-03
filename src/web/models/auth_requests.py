@@ -686,6 +686,8 @@ class UpdateProfileRequest(BaseModel):
             ValueError: If both fields are None
         """
         if self.display_name is None and self.email is None:
-            raise ValueError("At least one field (display_name or email) must be provided")
+            raise ValueError(
+                "At least one field (display_name or email) must be provided"
+            )
 
         return self

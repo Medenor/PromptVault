@@ -31,6 +31,7 @@ logger = logging.getLogger(__name__)
 
 try:
     from user_agents import parse
+
     HAS_USER_AGENTS = True
 except ImportError:
     HAS_USER_AGENTS = False
@@ -39,18 +40,18 @@ except ImportError:
 
 class UserAgentParser:
     """Parser pour User-Agent strings.
-    
+
     Utilise la bibliothèque user-agents pour parser les User-Agent strings
     et extraire des informations structurées sur le device, browser et OS.
     """
-    
+
     @staticmethod
     def parse_user_agent(user_agent: Optional[str]) -> Dict[str, any]:
         """Parse User-Agent string et extrait les informations.
-        
+
         Args:
             user_agent: User-Agent string brut (ex: Mozilla/5.0...)
-            
+
         Returns:
             Dict avec les clés:
                 - device: Type de device (ex: "Desktop", "iPhone 12", "Samsung Galaxy")
@@ -59,7 +60,7 @@ class UserAgentParser:
                 - is_mobile: Boolean si mobile
                 - is_tablet: Boolean si tablet
                 - is_pc: Boolean si desktop
-                
+
         Example:
             >>> info = UserAgentParser.parse_user_agent("Mozilla/5.0...")
             >>> print(info['device'])
@@ -74,7 +75,7 @@ class UserAgentParser:
                 "is_tablet": False,
                 "is_pc": False,
             }
-        
+
         if not HAS_USER_AGENTS:
             return {
                 "device": "Unknown Device",
@@ -84,10 +85,10 @@ class UserAgentParser:
                 "is_tablet": False,
                 "is_pc": False,
             }
-        
+
         try:
             ua = parse(user_agent)
-            
+
             # Device type
             if ua.is_mobile:
                 device = f"{ua.device.brand or 'Mobile'} {ua.device.model or 'Device'}"
@@ -99,7 +100,7 @@ class UserAgentParser:
                 device = "Desktop"
             else:
                 device = "Unknown Device"
-            
+
             # Browser
             if ua.browser.family:
                 browser = f"{ua.browser.family}"
@@ -107,7 +108,7 @@ class UserAgentParser:
                     browser = f"{browser} {ua.browser.version_string}"
             else:
                 browser = "Unknown Browser"
-            
+
             # OS
             if ua.os.family:
                 os_name = f"{ua.os.family}"
@@ -115,7 +116,7 @@ class UserAgentParser:
                     os_name = f"{os_name} {ua.os.version_string}"
             else:
                 os_name = "Unknown OS"
-            
+
             return {
                 "device": device.strip(),
                 "browser": browser.strip(),
@@ -124,7 +125,7 @@ class UserAgentParser:
                 "is_tablet": ua.is_tablet,
                 "is_pc": ua.is_pc,
             }
-        
+
         except Exception as e:
             logger.warning(f"Error parsing User-Agent '{user_agent}': {e}")
             return {
@@ -135,19 +136,19 @@ class UserAgentParser:
                 "is_tablet": False,
                 "is_pc": False,
             }
-    
+
     @staticmethod
     def format_session_display(user_agent: Optional[str]) -> str:
         """Format User-Agent pour affichage UI simple.
-        
+
         Retourne une string formatée comme "Chrome 91.0 on Mac OS X 10.15"
-        
+
         Args:
             user_agent: User-Agent string brut
-            
+
         Returns:
             String formatée pour affichage UI
-            
+
         Example:
             >>> display = UserAgentParser.format_session_display("Mozilla/5.0...")
             >>> print(display)

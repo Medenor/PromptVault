@@ -34,7 +34,6 @@ from src.db.repositories import (
     TagRepository,
 )
 
-
 # ============================================================================
 # PROMPT REPOSITORY TESTS
 # ============================================================================
@@ -55,7 +54,7 @@ class TestPromptRepository:
             category_id=test_category.id,
             note="Test note",
             favorite=False,
-            user_id=test_user.id
+            user_id=test_user.id,
         )
 
         assert prompt.id is not None
@@ -88,7 +87,7 @@ class TestPromptRepository:
                 title=f"Prompt {i}",
                 prompt=f"Content {i}",
                 category_id=test_category.id,
-                user_id=test_user.id
+                user_id=test_user.id,
             )
 
         prompts = prompt_repo.get_all()
@@ -100,7 +99,7 @@ class TestPromptRepository:
             test_prompt.id,
             title="Updated Title",
             prompt="Updated content",
-            note="Updated note"
+            note="Updated note",
         )
 
         assert updated is not None
@@ -122,13 +121,13 @@ class TestPromptRepository:
             title="Python Best Practices",
             prompt="Content",
             category_id=test_category.id,
-            user_id=test_user.id
+            user_id=test_user.id,
         )
         prompt_repo.create(
             title="JavaScript Guide",
             prompt="Content",
             category_id=test_category.id,
-            user_id=test_user.id
+            user_id=test_user.id,
         )
 
         results = prompt_repo.search(query="Python")
@@ -141,13 +140,13 @@ class TestPromptRepository:
             title="Guide 1",
             prompt="This is about machine learning algorithms",
             category_id=test_category.id,
-            user_id=test_user.id
+            user_id=test_user.id,
         )
         prompt_repo.create(
             title="Guide 2",
             prompt="This is about web development",
             category_id=test_category.id,
-            user_id=test_user.id
+            user_id=test_user.id,
         )
 
         results = prompt_repo.search(query="machine learning")
@@ -161,14 +160,14 @@ class TestPromptRepository:
             prompt="Content",
             note="Important for database optimization",
             category_id=test_category.id,
-            user_id=test_user.id
+            user_id=test_user.id,
         )
         prompt_repo.create(
             title="Guide 2",
             prompt="Content",
             note="Used for frontend testing",
             category_id=test_category.id,
-            user_id=test_user.id
+            user_id=test_user.id,
         )
 
         results = prompt_repo.search(query="database")
@@ -186,20 +185,22 @@ class TestPromptRepository:
             title="Code Prompt",
             prompt="Content",
             category_id=cat1.id,
-            user_id=test_user.id
+            user_id=test_user.id,
         )
         prompt_repo.create(
             title="Write Prompt",
             prompt="Content",
             category_id=cat2.id,
-            user_id=test_user.id
+            user_id=test_user.id,
         )
 
         results = prompt_repo.search(category="Programming")
         assert len(results) == 1
         assert results[0].title == "Code Prompt"
 
-    def test_search_by_tags(self, prompt_repo, test_user, test_category, test_db_session):
+    def test_search_by_tags(
+        self, prompt_repo, test_user, test_category, test_db_session
+    ):
         """Test filtering by tags."""
         tag1 = Tag(name="python")
         tag2 = Tag(name="javascript")
@@ -210,7 +211,7 @@ class TestPromptRepository:
             title="Python Prompt",
             prompt="Content",
             category_id=test_category.id,
-            user_id=test_user.id
+            user_id=test_user.id,
         )
         prompt1.tags.append(tag1)
 
@@ -218,7 +219,7 @@ class TestPromptRepository:
             title="JS Prompt",
             prompt="Content",
             category_id=test_category.id,
-            user_id=test_user.id
+            user_id=test_user.id,
         )
         prompt2.tags.append(tag2)
 
@@ -228,7 +229,9 @@ class TestPromptRepository:
         assert len(results) == 1
         assert results[0].title == "Python Prompt"
 
-    def test_search_by_multiple_tags(self, prompt_repo, test_user, test_category, test_db_session):
+    def test_search_by_multiple_tags(
+        self, prompt_repo, test_user, test_category, test_db_session
+    ):
         """Test filtering by multiple tags (OR logic)."""
         tag1 = Tag(name="python")
         tag2 = Tag(name="tutorial")
@@ -239,7 +242,7 @@ class TestPromptRepository:
             title="Python Guide",
             prompt="Content",
             category_id=test_category.id,
-            user_id=test_user.id
+            user_id=test_user.id,
         )
         prompt1.tags.append(tag1)
 
@@ -247,7 +250,7 @@ class TestPromptRepository:
             title="Tutorial",
             prompt="Content",
             category_id=test_category.id,
-            user_id=test_user.id
+            user_id=test_user.id,
         )
         prompt2.tags.append(tag2)
 
@@ -264,14 +267,14 @@ class TestPromptRepository:
             prompt="Content",
             category_id=test_category.id,
             user_id=test_user.id,
-            favorite=True
+            favorite=True,
         )
         prompt_repo.create(
             title="Regular Prompt",
             prompt="Content",
             category_id=test_category.id,
             user_id=test_user.id,
-            favorite=False
+            favorite=False,
         )
 
         results = prompt_repo.search(favorite=True)
@@ -291,7 +294,7 @@ class TestPromptRepository:
             prompt="Write clean Python code",
             category_id=cat.id,
             user_id=test_user.id,
-            favorite=True
+            favorite=True,
         )
         prompt1.tags.append(tag)
 
@@ -305,17 +308,14 @@ class TestPromptRepository:
             prompt="Content",
             category_id=cat2.id,
             user_id=test_user.id,
-            favorite=True
+            favorite=True,
         )
         prompt2.tags.append(tag)
 
         test_db_session.flush()
 
         results = prompt_repo.search(
-            query="Python",
-            category="Programming",
-            tags=["python"],
-            favorite=True
+            query="Python", category="Programming", tags=["python"], favorite=True
         )
         assert len(results) == 1
         assert results[0].title == "Python Best Practices"
@@ -327,21 +327,21 @@ class TestPromptRepository:
             prompt="Content",
             category_id=test_category.id,
             user_id=test_user.id,
-            favorite=True
+            favorite=True,
         )
         prompt_repo.create(
             title="Fav 2",
             prompt="Content",
             category_id=test_category.id,
             user_id=test_user.id,
-            favorite=True
+            favorite=True,
         )
         prompt_repo.create(
             title="Regular",
             prompt="Content",
             category_id=test_category.id,
             user_id=test_user.id,
-            favorite=False
+            favorite=False,
         )
 
         favorites = prompt_repo.get_favorites()
@@ -355,7 +355,7 @@ class TestPromptRepository:
                 prompt="Content",
                 category_id=test_category.id,
                 user_id=test_user.id,
-                favorite=True
+                favorite=True,
             )
 
         favorites = prompt_repo.get_favorites(limit=3)
@@ -368,7 +368,7 @@ class TestPromptRepository:
                 title=f"Prompt {i}",
                 prompt="Content",
                 category_id=test_category.id,
-                user_id=test_user.id
+                user_id=test_user.id,
             )
 
         # Get page 2 with 3 items per page
@@ -383,7 +383,7 @@ class TestPromptRepository:
             prompt="Content",
             category_id=test_category.id,
             user_id=test_user.id,
-            favorite=True
+            favorite=True,
         )
         version_repo.create_version(p1, "test", "v1")
 
@@ -392,7 +392,7 @@ class TestPromptRepository:
             prompt="Content",
             category_id=test_category.id,
             user_id=test_user.id,
-            favorite=True
+            favorite=True,
         )
 
         p3 = prompt_repo.create(
@@ -400,7 +400,7 @@ class TestPromptRepository:
             prompt="Content",
             category_id=test_category.id,
             user_id=test_user.id,
-            favorite=False
+            favorite=False,
         )
         version_repo.create_version(p3, "test", "v1")
 
@@ -426,7 +426,9 @@ class TestPromptRepository:
         updated = prompt_repo.add_tag(test_prompt.id, new_tag)
         assert new_tag in updated.tags
 
-    def test_add_tag_duplicate(self, prompt_repo, test_user, test_category, test_db_session):
+    def test_add_tag_duplicate(
+        self, prompt_repo, test_user, test_category, test_db_session
+    ):
         """Test adding a tag that already exists on prompt."""
         # Create a fresh prompt and tag
         tag = Tag(name="duplicate-test")
@@ -437,7 +439,7 @@ class TestPromptRepository:
             title="Test",
             prompt="Content",
             category_id=test_category.id,
-            user_id=test_user.id
+            user_id=test_user.id,
         )
         prompt.tags.append(tag)
         test_db_session.flush()
@@ -458,7 +460,7 @@ class TestPromptRepository:
             title="Test",
             prompt="Content",
             category_id=test_category.id,
-            user_id=test_user.id
+            user_id=test_user.id,
         )
         prompt.tags.append(tag)
         test_db_session.flush()
@@ -484,16 +486,10 @@ class TestPromptRepository:
         test_db_session.flush()
 
         prompt_repo.create(
-            title="In Cat1",
-            prompt="Content",
-            category_id=cat1.id,
-            user_id=test_user.id
+            title="In Cat1", prompt="Content", category_id=cat1.id, user_id=test_user.id
         )
         prompt_repo.create(
-            title="In Cat2",
-            prompt="Content",
-            category_id=cat2.id,
-            user_id=test_user.id
+            title="In Cat2", prompt="Content", category_id=cat2.id, user_id=test_user.id
         )
 
         results = prompt_repo.get_by_category("Cat1")
@@ -511,7 +507,7 @@ class TestPromptRepository:
             title="Prompt1",
             prompt="Content",
             category_id=test_category.id,
-            user_id=test_user.id
+            user_id=test_user.id,
         )
         prompt1.tags.append(tag1)
 
@@ -519,7 +515,7 @@ class TestPromptRepository:
             title="Prompt2",
             prompt="Content",
             category_id=test_category.id,
-            user_id=test_user.id
+            user_id=test_user.id,
         )
         prompt2.tags.append(tag2)
 
@@ -552,7 +548,7 @@ class TestPromptRepository:
             title="Python Programming",
             prompt="Content",
             category_id=test_category.id,
-            user_id=test_user.id
+            user_id=test_user.id,
         )
 
         # Should find with different cases
@@ -585,9 +581,7 @@ class TestVersionRepository:
     def test_create_version(self, version_repo, test_prompt, test_user):
         """Test creating a version snapshot."""
         version = version_repo.create_version(
-            prompt=test_prompt,
-            author=test_user.username,
-            message="Initial version"
+            prompt=test_prompt, author=test_user.username, message="Initial version"
         )
 
         assert version.id is not None
@@ -603,10 +597,7 @@ class TestVersionRepository:
         """Test creating a version with parent linkage."""
         v1 = version_repo.create_version(test_prompt, test_user.username, "v1")
         v2 = version_repo.create_version(
-            test_prompt,
-            test_user.username,
-            "v2",
-            parent_version_id=v1.version_id
+            test_prompt, test_user.username, "v2", parent_version_id=v1.version_id
         )
 
         assert v2.parent_version_id == v1.version_id
@@ -621,7 +612,9 @@ class TestVersionRepository:
         versions = version_repo.get_versions_for_prompt(test_prompt.id)
         assert len(versions) == 3
 
-    def test_get_versions_ordered_newest_first(self, version_repo, test_prompt, test_user):
+    def test_get_versions_ordered_newest_first(
+        self, version_repo, test_prompt, test_user
+    ):
         """Test that versions are ordered by version number descending."""
         v1 = version_repo.create_version(test_prompt, test_user.username, "v1")
         v2 = version_repo.create_version(test_prompt, test_user.username, "v2")
@@ -682,7 +675,9 @@ class TestVersionRepository:
         assert chain[1].version_number == 2
         assert chain[2].version_number == 1
 
-    def test_version_snapshots_immutable(self, version_repo, prompt_repo, test_prompt, test_user):
+    def test_version_snapshots_immutable(
+        self, version_repo, prompt_repo, test_prompt, test_user
+    ):
         """Test that versions remain unchanged when prompt is updated."""
         # Create initial version
         v1 = version_repo.create_version(test_prompt, test_user.username, "v1")
@@ -691,9 +686,7 @@ class TestVersionRepository:
 
         # Update the prompt
         prompt_repo.update(
-            test_prompt.id,
-            title="Updated Title",
-            prompt="Updated Content"
+            test_prompt.id, title="Updated Title", prompt="Updated Content"
         )
 
         # Version should still have old data
@@ -701,19 +694,21 @@ class TestVersionRepository:
         assert v1_check.title == original_title
         assert v1_check.prompt == original_content
 
-    def test_multiple_prompts_versions(self, version_repo, prompt_repo, test_user, test_category):
+    def test_multiple_prompts_versions(
+        self, version_repo, prompt_repo, test_user, test_category
+    ):
         """Test that versions are properly isolated per prompt."""
         p1 = prompt_repo.create(
             title="Prompt 1",
             prompt="Content 1",
             category_id=test_category.id,
-            user_id=test_user.id
+            user_id=test_user.id,
         )
         p2 = prompt_repo.create(
             title="Prompt 2",
             prompt="Content 2",
             category_id=test_category.id,
-            user_id=test_user.id
+            user_id=test_user.id,
         )
 
         # Create versions for each
@@ -765,9 +760,7 @@ class TestVersionRepository:
 
         # Revert to v1
         revert_version = version_repo.revert_to_version(
-            test_prompt,
-            v1.version_id,
-            test_user.username
+            test_prompt, v1.version_id, test_user.username
         )
 
         assert revert_version is not None
@@ -781,16 +774,16 @@ class TestVersionRepository:
 
         # Revert should create new version
         revert_version = version_repo.revert_to_version(
-            test_prompt,
-            v1.version_id,
-            test_user.username
+            test_prompt, v1.version_id, test_user.username
         )
 
         # Should have 2 versions total
         versions = version_repo.get_versions_for_prompt(test_prompt.id)
         assert len(versions) == 2
 
-    def test_version_stores_denormalized_tags(self, version_repo, prompt_repo, test_user, test_category, test_db_session):
+    def test_version_stores_denormalized_tags(
+        self, version_repo, prompt_repo, test_user, test_category, test_db_session
+    ):
         """Test that version stores tags as denormalized JSON array."""
         # Create fresh prompt and tags
         tag1 = Tag(name="tag-a")
@@ -802,7 +795,7 @@ class TestVersionRepository:
             title="Test",
             prompt="Content",
             category_id=test_category.id,
-            user_id=test_user.id
+            user_id=test_user.id,
         )
         prompt.tags.extend([tag1, tag2])
         test_db_session.flush()
@@ -829,7 +822,9 @@ class TestCategoryRepository:
 
     def test_create_category(self, category_repo):
         """Test basic category creation."""
-        category = category_repo.create(name="Programming", description="Code-related prompts")
+        category = category_repo.create(
+            name="Programming", description="Code-related prompts"
+        )
 
         assert category.id is not None
         assert category.name == "Programming"
@@ -871,31 +866,24 @@ class TestCategoryRepository:
         categories = category_repo.get_all()
         assert len(categories) >= 3
 
-    def test_get_all_with_counts(self, category_repo, prompt_repo, test_user, test_db_session):
+    def test_get_all_with_counts(
+        self, category_repo, prompt_repo, test_user, test_db_session
+    ):
         """Test getting categories with usage counts."""
         cat1 = category_repo.create(name="Cat1")
         cat2 = category_repo.create(name="Cat2")
 
         # Create prompts in cat1
         prompt_repo.create(
-            title="P1",
-            prompt="Content",
-            category_id=cat1.id,
-            user_id=test_user.id
+            title="P1", prompt="Content", category_id=cat1.id, user_id=test_user.id
         )
         prompt_repo.create(
-            title="P2",
-            prompt="Content",
-            category_id=cat1.id,
-            user_id=test_user.id
+            title="P2", prompt="Content", category_id=cat1.id, user_id=test_user.id
         )
 
         # Create one prompt in cat2
         prompt_repo.create(
-            title="P3",
-            prompt="Content",
-            category_id=cat2.id,
-            user_id=test_user.id
+            title="P3", prompt="Content", category_id=cat2.id, user_id=test_user.id
         )
 
         results = category_repo.list_all_with_counts()
@@ -930,14 +918,16 @@ class TestCategoryRepository:
         # Verify deleted
         assert category_repo.get_by_id(test_category.id) is None
 
-    def test_delete_used_category_fails(self, category_repo, prompt_repo, test_user, test_category):
+    def test_delete_used_category_fails(
+        self, category_repo, prompt_repo, test_user, test_category
+    ):
         """Test that deleting category with prompts fails."""
         # Create a prompt using the category
         prompt_repo.create(
             title="Test",
             prompt="Content",
             category_id=test_category.id,
-            user_id=test_user.id
+            user_id=test_user.id,
         )
 
         result = category_repo.delete_if_unused(test_category.id)
@@ -1037,7 +1027,9 @@ class TestTagRepository:
         tags = tag_repo.get_all()
         assert len(tags) >= 3
 
-    def test_get_all_with_counts(self, tag_repo, prompt_repo, test_user, test_category, test_db_session):
+    def test_get_all_with_counts(
+        self, tag_repo, prompt_repo, test_user, test_category, test_db_session
+    ):
         """Test getting tags with usage counts."""
         tag1 = tag_repo.create(name="popular")
         tag2 = tag_repo.create(name="uncommon")
@@ -1047,7 +1039,7 @@ class TestTagRepository:
             title="P1",
             prompt="Content",
             category_id=test_category.id,
-            user_id=test_user.id
+            user_id=test_user.id,
         )
         p1.tags.append(tag1)
 
@@ -1055,7 +1047,7 @@ class TestTagRepository:
             title="P2",
             prompt="Content",
             category_id=test_category.id,
-            user_id=test_user.id
+            user_id=test_user.id,
         )
         p2.tags.append(tag1)
 
@@ -1064,7 +1056,7 @@ class TestTagRepository:
             title="P3",
             prompt="Content",
             category_id=test_category.id,
-            user_id=test_user.id
+            user_id=test_user.id,
         )
         p3.tags.append(tag2)
 
@@ -1094,7 +1086,9 @@ class TestTagRepository:
         result = tag_repo.rename(99999, "newname")
         assert result is None
 
-    def test_merge_tags(self, tag_repo, prompt_repo, test_user, test_category, test_db_session):
+    def test_merge_tags(
+        self, tag_repo, prompt_repo, test_user, test_category, test_db_session
+    ):
         """Test merging two tags."""
         source_tag = tag_repo.create(name="old-tag")
         target_tag = tag_repo.create(name="new-tag")
@@ -1104,7 +1098,7 @@ class TestTagRepository:
             title="P1",
             prompt="Content",
             category_id=test_category.id,
-            user_id=test_user.id
+            user_id=test_user.id,
         )
         p1.tags.append(source_tag)
 
@@ -1112,7 +1106,7 @@ class TestTagRepository:
             title="P2",
             prompt="Content",
             category_id=test_category.id,
-            user_id=test_user.id
+            user_id=test_user.id,
         )
         p2.tags.append(source_tag)
 
@@ -1149,7 +1143,9 @@ class TestTagRepository:
         # Verify deleted
         assert tag_repo.get_by_id(unused_tag.id) is None
 
-    def test_delete_used_tag_fails(self, tag_repo, prompt_repo, test_user, test_category, test_db_session):
+    def test_delete_used_tag_fails(
+        self, tag_repo, prompt_repo, test_user, test_category, test_db_session
+    ):
         """Test that deleting tag in use fails."""
         tag = tag_repo.create(name="used-tag")
 
@@ -1158,7 +1154,7 @@ class TestTagRepository:
             title="Test",
             prompt="Content",
             category_id=test_category.id,
-            user_id=test_user.id
+            user_id=test_user.id,
         )
         prompt.tags.append(tag)
         test_db_session.flush()
@@ -1176,7 +1172,9 @@ class TestTagRepository:
         with pytest.raises(IntegrityError):
             tag_repo.create(name="unique")
 
-    def test_get_popular_tags(self, tag_repo, prompt_repo, test_user, test_category, test_db_session):
+    def test_get_popular_tags(
+        self, tag_repo, prompt_repo, test_user, test_category, test_db_session
+    ):
         """Test getting most popular tags."""
         # Create tags with different usage counts
         tag1 = tag_repo.create(name="very-popular")
@@ -1189,7 +1187,7 @@ class TestTagRepository:
                 title=f"P{i}",
                 prompt="Content",
                 category_id=test_category.id,
-                user_id=test_user.id
+                user_id=test_user.id,
             )
             p.tags.append(tag1)
 
@@ -1199,7 +1197,7 @@ class TestTagRepository:
                 title=f"Q{i}",
                 prompt="Content",
                 category_id=test_category.id,
-                user_id=test_user.id
+                user_id=test_user.id,
             )
             p.tags.append(tag2)
 
@@ -1208,7 +1206,7 @@ class TestTagRepository:
             title="R",
             prompt="Content",
             category_id=test_category.id,
-            user_id=test_user.id
+            user_id=test_user.id,
         )
         p.tags.append(tag3)
 
@@ -1241,7 +1239,9 @@ class TestTagRepository:
         assert len(results) == 1
         assert results[0].name == test_tags[0].name
 
-    def test_list_with_counts_ordered_by_popularity(self, tag_repo, prompt_repo, test_user, test_category, test_db_session):
+    def test_list_with_counts_ordered_by_popularity(
+        self, tag_repo, prompt_repo, test_user, test_category, test_db_session
+    ):
         """Test that tags with counts are ordered by usage descending."""
         tag1 = tag_repo.create(name="least")
         tag2 = tag_repo.create(name="most")
@@ -1252,7 +1252,7 @@ class TestTagRepository:
                 title=f"P{i}",
                 prompt="Content",
                 category_id=test_category.id,
-                user_id=test_user.id
+                user_id=test_user.id,
             )
             p.tags.append(tag2)
 
@@ -1261,7 +1261,7 @@ class TestTagRepository:
             title="Q",
             prompt="Content",
             category_id=test_category.id,
-            user_id=test_user.id
+            user_id=test_user.id,
         )
         p.tags.append(tag1)
 
@@ -1381,7 +1381,9 @@ class TestTagRepository:
         results = tag_repo.list_all_with_counts()
         assert results == []
 
-    def test_list_all_with_counts_ordering(self, tag_repo, prompt_repo, test_user, test_category, test_db_session):
+    def test_list_all_with_counts_ordering(
+        self, tag_repo, prompt_repo, test_user, test_category, test_db_session
+    ):
         """Test list_all_with_counts returns tags ordered by usage count descending."""
         tag1 = tag_repo.create(name="one-use")
         tag2 = tag_repo.create(name="three-uses")
@@ -1393,7 +1395,7 @@ class TestTagRepository:
                 title=f"P{i}",
                 prompt="Content",
                 category_id=test_category.id,
-                user_id=test_user.id
+                user_id=test_user.id,
             )
             p.tags.append(tag2)
 
@@ -1403,7 +1405,7 @@ class TestTagRepository:
                 title=f"Q{i}",
                 prompt="Content",
                 category_id=test_category.id,
-                user_id=test_user.id
+                user_id=test_user.id,
             )
             p.tags.append(tag3)
 
@@ -1412,7 +1414,7 @@ class TestTagRepository:
             title="R",
             prompt="Content",
             category_id=test_category.id,
-            user_id=test_user.id
+            user_id=test_user.id,
         )
         p.tags.append(tag1)
 
@@ -1429,14 +1431,16 @@ class TestTagRepository:
         # Should be ordered: tag2 (3), tag3 (2), tag1 (1)
         assert tag2_idx < tag3_idx < tag1_idx
 
-    def test_get_popular_tags_limit_zero(self, tag_repo, prompt_repo, test_user, test_category, test_db_session):
+    def test_get_popular_tags_limit_zero(
+        self, tag_repo, prompt_repo, test_user, test_category, test_db_session
+    ):
         """Test get_popular_tags with limit=0."""
         tag = tag_repo.create(name="test")
         p = prompt_repo.create(
             title="P",
             prompt="Content",
             category_id=test_category.id,
-            user_id=test_user.id
+            user_id=test_user.id,
         )
         p.tags.append(tag)
         test_db_session.flush()
@@ -1444,7 +1448,9 @@ class TestTagRepository:
         results = tag_repo.get_popular_tags(limit=0)
         assert results == []
 
-    def test_get_popular_tags_limit_one(self, tag_repo, prompt_repo, test_user, test_category, test_db_session):
+    def test_get_popular_tags_limit_one(
+        self, tag_repo, prompt_repo, test_user, test_category, test_db_session
+    ):
         """Test get_popular_tags with limit=1."""
         tag1 = tag_repo.create(name="popular")
         tag2 = tag_repo.create(name="unpopular")
@@ -1455,7 +1461,7 @@ class TestTagRepository:
                 title=f"P{i}",
                 prompt="Content",
                 category_id=test_category.id,
-                user_id=test_user.id
+                user_id=test_user.id,
             )
             p.tags.append(tag1)
 
@@ -1464,7 +1470,7 @@ class TestTagRepository:
             title="Q",
             prompt="Content",
             category_id=test_category.id,
-            user_id=test_user.id
+            user_id=test_user.id,
         )
         p.tags.append(tag2)
 
@@ -1475,14 +1481,16 @@ class TestTagRepository:
         assert results[0][0].name == "popular"
         assert results[0][1] == 2
 
-    def test_get_popular_tags_limit_exceeds_count(self, tag_repo, prompt_repo, test_user, test_category, test_db_session):
+    def test_get_popular_tags_limit_exceeds_count(
+        self, tag_repo, prompt_repo, test_user, test_category, test_db_session
+    ):
         """Test get_popular_tags when limit exceeds available tags."""
         tag = tag_repo.create(name="test")
         p = prompt_repo.create(
             title="P",
             prompt="Content",
             category_id=test_category.id,
-            user_id=test_user.id
+            user_id=test_user.id,
         )
         p.tags.append(tag)
         test_db_session.flush()
@@ -1494,7 +1502,9 @@ class TestTagRepository:
     # USAGE COUNTING AND DELETION
     # ========================================================================
 
-    def test_count_usage_with_multiple_prompts(self, tag_repo, prompt_repo, test_user, test_category, test_db_session):
+    def test_count_usage_with_multiple_prompts(
+        self, tag_repo, prompt_repo, test_user, test_category, test_db_session
+    ):
         """Test counting usage when tag is used by many prompts."""
         tag = tag_repo.create(name="multiuse")
 
@@ -1504,7 +1514,7 @@ class TestTagRepository:
                 title=f"Prompt {i}",
                 prompt="Content",
                 category_id=test_category.id,
-                user_id=test_user.id
+                user_id=test_user.id,
             )
             p.tags.append(tag)
 
@@ -1521,14 +1531,16 @@ class TestTagRepository:
         count = tag_repo.count_usage(tag.id)
         assert count == 0
 
-    def test_delete_if_unused_used_tag_returns_false(self, tag_repo, prompt_repo, test_user, test_category, test_db_session):
+    def test_delete_if_unused_used_tag_returns_false(
+        self, tag_repo, prompt_repo, test_user, test_category, test_db_session
+    ):
         """Test delete_if_unused returns False when tag is in use."""
         tag = tag_repo.create(name="inuse")
         p = prompt_repo.create(
             title="Test",
             prompt="Content",
             category_id=test_category.id,
-            user_id=test_user.id
+            user_id=test_user.id,
         )
         p.tags.append(tag)
         test_db_session.flush()
@@ -1556,7 +1568,9 @@ class TestTagRepository:
         result = tag_repo.delete_if_unused(99999)
         assert result is False
 
-    def test_delete_if_unused_after_deletion(self, tag_repo, prompt_repo, test_user, test_category, test_db_session):
+    def test_delete_if_unused_after_deletion(
+        self, tag_repo, prompt_repo, test_user, test_category, test_db_session
+    ):
         """Test tag is actually removed from database after delete_if_unused."""
         tag = tag_repo.create(name="willdelete")
         test_db_session.flush()
@@ -1628,7 +1642,9 @@ class TestTagRepository:
         # Target should still exist
         assert tag_repo.get_by_id(target.id) is not None
 
-    def test_merge_tags_with_prompts(self, tag_repo, prompt_repo, test_user, test_category, test_db_session):
+    def test_merge_tags_with_prompts(
+        self, tag_repo, prompt_repo, test_user, test_category, test_db_session
+    ):
         """Test merging tags that have prompts."""
         source = tag_repo.create(name="source")
         target = tag_repo.create(name="target")
@@ -1638,7 +1654,7 @@ class TestTagRepository:
             title="P1",
             prompt="Content",
             category_id=test_category.id,
-            user_id=test_user.id
+            user_id=test_user.id,
         )
         p1.tags.append(source)
 
@@ -1646,7 +1662,7 @@ class TestTagRepository:
             title="P2",
             prompt="Content",
             category_id=test_category.id,
-            user_id=test_user.id
+            user_id=test_user.id,
         )
         p2.tags.append(source)
 
@@ -1666,7 +1682,9 @@ class TestTagRepository:
         # Source tag should be deleted
         assert tag_repo.get_by_id(source.id) is None
 
-    def test_merge_tags_overlapping_prompts(self, tag_repo, prompt_repo, test_user, test_category, test_db_session):
+    def test_merge_tags_overlapping_prompts(
+        self, tag_repo, prompt_repo, test_user, test_category, test_db_session
+    ):
         """Test merging tags when both are used by same prompts."""
         source = tag_repo.create(name="source")
         target = tag_repo.create(name="target")
@@ -1676,7 +1694,7 @@ class TestTagRepository:
             title="P",
             prompt="Content",
             category_id=test_category.id,
-            user_id=test_user.id
+            user_id=test_user.id,
         )
         p.tags.extend([source, target])
         test_db_session.flush()
@@ -1708,7 +1726,9 @@ class TestTagRepository:
         result = tag_repo.merge_tags(source.id, 99999)
         assert result is False
 
-    def test_merge_tags_source_equals_target_raises_error(self, tag_repo, test_db_session):
+    def test_merge_tags_source_equals_target_raises_error(
+        self, tag_repo, test_db_session
+    ):
         """Test merging tag with itself returns False."""
         tag = tag_repo.create(name="tag")
         test_db_session.flush()
@@ -1733,7 +1753,9 @@ class TestTagRepository:
         # Verify source no longer exists
         assert tag_repo.get_by_id(source_id) is None
 
-    def test_merge_tags_bulk_empty_source_list_raises_error(self, tag_repo, test_db_session):
+    def test_merge_tags_bulk_empty_source_list_raises_error(
+        self, tag_repo, test_db_session
+    ):
         """Test bulk merge with empty source list."""
         target = tag_repo.create(name="target")
         test_db_session.flush()
@@ -1741,7 +1763,9 @@ class TestTagRepository:
         result = tag_repo.merge_tags_bulk([], target.id)
         assert result == 0
 
-    def test_merge_tags_bulk_source_equals_target_skips(self, tag_repo, test_db_session):
+    def test_merge_tags_bulk_source_equals_target_skips(
+        self, tag_repo, test_db_session
+    ):
         """Test bulk merge skips when source equals target."""
         target = tag_repo.create(name="target")
         test_db_session.flush()
@@ -1750,7 +1774,9 @@ class TestTagRepository:
         # Should skip the merge (source == target)
         assert result == 0
 
-    def test_merge_tags_bulk_multiple_sources(self, tag_repo, prompt_repo, test_user, test_category, test_db_session):
+    def test_merge_tags_bulk_multiple_sources(
+        self, tag_repo, prompt_repo, test_user, test_category, test_db_session
+    ):
         """Test bulk merge of multiple sources into one target."""
         source1 = tag_repo.create(name="source1")
         source2 = tag_repo.create(name="source2")
@@ -1761,7 +1787,7 @@ class TestTagRepository:
             title="P1",
             prompt="Content",
             category_id=test_category.id,
-            user_id=test_user.id
+            user_id=test_user.id,
         )
         p1.tags.append(source1)
 
@@ -1769,7 +1795,7 @@ class TestTagRepository:
             title="P2",
             prompt="Content",
             category_id=test_category.id,
-            user_id=test_user.id
+            user_id=test_user.id,
         )
         p2.tags.append(source2)
 
@@ -1830,7 +1856,9 @@ class TestTagRepository:
     # TRANSACTION/CONCURRENCY
     # ========================================================================
 
-    def test_create_handles_integrity_error_on_conflict(self, tag_repo, test_db_session):
+    def test_create_handles_integrity_error_on_conflict(
+        self, tag_repo, test_db_session
+    ):
         """Test create raises IntegrityError on duplicate name."""
         tag_repo.create(name="duplicate")
         test_db_session.flush()

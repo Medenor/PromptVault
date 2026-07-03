@@ -88,7 +88,9 @@ from src.services.auth.password_service import PasswordService
 from src.services.auth.jwt_service import JWTService
 from src.db.repositories.user_repository import UserRepository
 from src.db.repositories.session_repository import SessionRepository
-from src.db.repositories.password_reset_token_repository import PasswordResetTokenRepository
+from src.db.repositories.password_reset_token_repository import (
+    PasswordResetTokenRepository,
+)
 from src.db.models.user import User
 from src.web.dependencies.auth import (
     get_auth_config,
@@ -309,7 +311,9 @@ def register(
 
         user_payload = result["user"]
         user_response = UserResponse.model_validate(user_payload)
-        username = getattr(user_payload, "username", None) or user_payload.get("username", "unknown")
+        username = getattr(user_payload, "username", None) or user_payload.get(
+            "username", "unknown"
+        )
         user_id = getattr(user_payload, "id", None) or user_payload.get("id", "unknown")
 
         # Log successful registration (without sensitive data)
@@ -329,7 +333,8 @@ def register(
 
         # Set HTTP-only cookies for web clients
         from fastapi.responses import JSONResponse
-        json_response = JSONResponse(content=response.model_dump(mode='json'))
+
+        json_response = JSONResponse(content=response.model_dump(mode="json"))
 
         # Use default refresh token lifetime for registration (7 days)
         register_cookie_max_age = auth_service.config.jwt_refresh_token_expire_seconds
@@ -344,7 +349,7 @@ def register(
             secure=False,  # Set to True in production with HTTPS
             samesite="lax",
             max_age=register_cookie_max_age,  # Match refresh token lifetime
-            path="/"
+            path="/",
         )
 
         # Set refresh token cookie (7 days)
@@ -355,7 +360,7 @@ def register(
             secure=False,  # Set to True in production with HTTPS
             samesite="lax",
             max_age=register_cookie_max_age,
-            path="/api/auth"
+            path="/api/auth",
         )
 
         # Set status code to 201 for successful registration
@@ -371,14 +376,18 @@ def register(
         )
 
     except UsernameAlreadyExistsError as e:
-        logger.warning(f"Registration failed - username exists: {request_data.username}")
+        logger.warning(
+            f"Registration failed - username exists: {request_data.username}"
+        )
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=e.user_message,
         )
 
     except PasswordPolicyError as e:
-        logger.warning(f"Registration failed - password policy violation for user: {request_data.username}")
+        logger.warning(
+            f"Registration failed - password policy violation for user: {request_data.username}"
+        )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=e.user_message,
@@ -489,7 +498,8 @@ def login(
 
         # Set HTTP-only cookies for web clients
         from fastapi.responses import JSONResponse
-        json_response = JSONResponse(content=response.model_dump(mode='json'))
+
+        json_response = JSONResponse(content=response.model_dump(mode="json"))
         refresh_max_age = (
             auth_service.config.jwt_refresh_token_remember_me_expire_seconds
             if request_data.remember_me
@@ -506,7 +516,7 @@ def login(
             secure=False,  # Set to True in production with HTTPS
             samesite="lax",
             max_age=refresh_max_age,  # Match refresh token lifetime for auto-refresh
-            path="/"
+            path="/",
         )
 
         # Set refresh token cookie (7 days or 30 days with remember_me)
@@ -517,7 +527,7 @@ def login(
             secure=False,  # Set to True in production with HTTPS
             samesite="lax",
             max_age=refresh_max_age,
-            path="/api/auth"
+            path="/api/auth",
         )
 
         return json_response
@@ -643,7 +653,9 @@ def refresh(
         # Convert User model to UserResponse
         user_payload = result["user"]
         user_response = UserResponse.model_validate(user_payload)
-        username = getattr(user_payload, "username", None) or user_payload.get("username", "unknown")
+        username = getattr(user_payload, "username", None) or user_payload.get(
+            "username", "unknown"
+        )
         user_id = getattr(user_payload, "id", None) or user_payload.get("id", "unknown")
 
         # Log token refresh
@@ -664,10 +676,13 @@ def refresh(
         # Set HTTP-only cookies with new tokens
         # Use the remaining session lifetime for cookie max_age
         from fastapi.responses import JSONResponse
-        json_response = JSONResponse(content=response.model_dump(mode='json'))
+
+        json_response = JSONResponse(content=response.model_dump(mode="json"))
 
         # Get remaining session lifetime (from the refresh token's remaining time)
-        remaining_seconds = result.get("remaining_seconds", auth_service.config.jwt_refresh_token_expire_seconds)
+        remaining_seconds = result.get(
+            "remaining_seconds", auth_service.config.jwt_refresh_token_expire_seconds
+        )
 
         # Set access token cookie with remaining session lifetime
         json_response.set_cookie(
@@ -677,7 +692,7 @@ def refresh(
             secure=False,  # Set to True in production with HTTPS
             samesite="lax",
             max_age=remaining_seconds,
-            path="/"
+            path="/",
         )
 
         # Set refresh token cookie with remaining session lifetime
@@ -688,7 +703,7 @@ def refresh(
             secure=False,  # Set to True in production with HTTPS
             samesite="lax",
             max_age=remaining_seconds,
-            path="/api/auth"
+            path="/api/auth",
         )
 
         return json_response
@@ -802,7 +817,10 @@ def logout(
         )
 
     json_response = JSONResponse(
-        content={"message": "Logged out successfully", "detail": "Your session has been revoked. Please login again to continue."}
+        content={
+            "message": "Logged out successfully",
+            "detail": "Your session has been revoked. Please login again to continue.",
+        }
     )
     json_response.delete_cookie(key="access_token", path="/")
     json_response.delete_cookie(key="refresh_token", path="/api/auth")
@@ -935,7 +953,9 @@ def change_password(
             new_password=request_data.new_password,
         )
 
-        logger.info(f"Password changed successfully for user: {current_user.username} (ID: {current_user.id})")
+        logger.info(
+            f"Password changed successfully for user: {current_user.username} (ID: {current_user.id})"
+        )
 
         return MessageResponse(
             message="Password changed successfully",
@@ -943,21 +963,27 @@ def change_password(
         )
 
     except InvalidCredentialsError as e:
-        logger.warning(f"Password change failed - incorrect old password for user: {current_user.username}")
+        logger.warning(
+            f"Password change failed - incorrect old password for user: {current_user.username}"
+        )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=e.user_message,
         )
 
     except PasswordPolicyError as e:
-        logger.warning(f"Password change failed - policy violation for user: {current_user.username}")
+        logger.warning(
+            f"Password change failed - policy violation for user: {current_user.username}"
+        )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=e.user_message,
         )
 
     except Exception as e:
-        logger.error(f"Unexpected error during password change: {str(e)}", exc_info=True)
+        logger.error(
+            f"Unexpected error during password change: {str(e)}", exc_info=True
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred while changing password. Please try again.",
@@ -1205,7 +1231,7 @@ def get_user_sessions(
         SessionListResponse: List of active sessions with parsed metadata
     """
     from src.services.user_agent_parser import UserAgentParser
-    
+
     try:
         # Extract current session's family_id from JWT token
         current_family_id = None
@@ -1221,8 +1247,7 @@ def get_user_sessions(
 
         # Get user's sessions from auth service
         sessions = auth_service.get_user_sessions(
-            user_id=current_user.id,
-            current_family_id=current_family_id
+            user_id=current_user.id, current_family_id=current_family_id
         )
 
         # Convert session models to response models with parsed metadata
@@ -1231,9 +1256,13 @@ def get_user_sessions(
         for session in sessions:
             # Parse user agent to extract device/browser/os
             # Handle both dict and object types
-            user_agent = session.get("user_agent") if isinstance(session, dict) else session.user_agent
+            user_agent = (
+                session.get("user_agent")
+                if isinstance(session, dict)
+                else session.user_agent
+            )
             ua_info = parser.parse_user_agent(user_agent)
-            
+
             # Create response model with parsed metadata
             response = SessionResponse.model_validate(session)
             response.device = ua_info.get("device", "Unknown Device")
@@ -1241,7 +1270,9 @@ def get_user_sessions(
             response.os = ua_info.get("os", "Unknown OS")
             session_responses.append(response)
 
-        logger.info(f"Retrieved {len(sessions)} sessions for user: {current_user.username}")
+        logger.info(
+            f"Retrieved {len(sessions)} sessions for user: {current_user.username}"
+        )
 
         return SessionListResponse(
             sessions=session_responses,
@@ -1249,7 +1280,9 @@ def get_user_sessions(
         )
 
     except Exception as e:
-        logger.error(f"Unexpected error while retrieving sessions: {str(e)}", exc_info=True)
+        logger.error(
+            f"Unexpected error while retrieving sessions: {str(e)}", exc_info=True
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred while retrieving sessions. Please try again.",
@@ -1325,7 +1358,9 @@ def revoke_session(
     """
     try:
         # Revoke specific session
-        revoked = auth_service.revoke_session(user_id=current_user.id, session_id=session_id)
+        revoked = auth_service.revoke_session(
+            user_id=current_user.id, session_id=session_id
+        )
 
         logger.info(
             f"Session {session_id} revoked successfully by user: {current_user.username}"
@@ -1364,7 +1399,9 @@ def revoke_session(
         )
 
     except Exception as e:
-        logger.error(f"Unexpected error during session revocation: {str(e)}", exc_info=True)
+        logger.error(
+            f"Unexpected error during session revocation: {str(e)}", exc_info=True
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred while revoking session. Please try again.",
@@ -1445,11 +1482,10 @@ def revoke_all_sessions(
                 logger.debug(f"Extracted current family_id: {current_family_id}")
             except Exception as e:
                 logger.warning(f"Failed to extract family_id from token: {e}")
-        
+
         # Revoke all sessions except current
         count = auth_service.revoke_all_sessions(
-            user_id=current_user.id,
-            except_family_id=current_family_id
+            user_id=current_user.id, except_family_id=current_family_id
         )
 
         logger.info(
@@ -1463,7 +1499,9 @@ def revoke_all_sessions(
         )
 
     except Exception as e:
-        logger.error(f"Unexpected error during bulk session revocation: {str(e)}", exc_info=True)
+        logger.error(
+            f"Unexpected error during bulk session revocation: {str(e)}", exc_info=True
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred while revoking sessions. Please try again.",
@@ -1569,7 +1607,9 @@ def request_password_reset(
         else:
             masked_email = "***@***"
 
-        logger.info(f"Password reset requested for email: {masked_email} from {ip_address}")
+        logger.info(
+            f"Password reset requested for email: {masked_email} from {ip_address}"
+        )
 
         # Commit the session to persist the password reset token
         session.commit()
@@ -1577,21 +1617,39 @@ def request_password_reset(
         return build_response(masked_email)
 
     except UserNotFoundError:
-        logger.info(f"Password reset requested for non-existent email: {request_data.email}")
+        logger.info(
+            f"Password reset requested for non-existent email: {request_data.email}"
+        )
         email_parts = request_data.email.split("@")
-        masked_email = f"{email_parts[0][0]}***@{email_parts[1]}" if len(email_parts) == 2 else "***@***"
+        masked_email = (
+            f"{email_parts[0][0]}***@{email_parts[1]}"
+            if len(email_parts) == 2
+            else "***@***"
+        )
         return build_response(masked_email)
 
     except RateLimitExceededError:
-        logger.warning(f"Password reset rate limit exceeded for: {request_data.email} from {ip_address}")
+        logger.warning(
+            f"Password reset rate limit exceeded for: {request_data.email} from {ip_address}"
+        )
         email_parts = request_data.email.split("@")
-        masked_email = f"{email_parts[0][0]}***@{email_parts[1]}" if len(email_parts) == 2 else "***@***"
+        masked_email = (
+            f"{email_parts[0][0]}***@{email_parts[1]}"
+            if len(email_parts) == 2
+            else "***@***"
+        )
         return build_response(masked_email)
 
     except Exception as e:
-        logger.error(f"Unexpected error during password reset request: {str(e)}", exc_info=True)
+        logger.error(
+            f"Unexpected error during password reset request: {str(e)}", exc_info=True
+        )
         email_parts = request_data.email.split("@")
-        masked_email = f"{email_parts[0][0]}***@{email_parts[1]}" if len(email_parts) == 2 else "***@***"
+        masked_email = (
+            f"{email_parts[0][0]}***@{email_parts[1]}"
+            if len(email_parts) == 2
+            else "***@***"
+        )
         return build_response(masked_email)
 
 

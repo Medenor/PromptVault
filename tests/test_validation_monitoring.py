@@ -17,6 +17,7 @@ def test_monitor_tracks_prompt_validation(api_client_context, tmp_path):
     # Create authentication headers
     from src.config.auth_config import auth_settings
     from src.services.auth.jwt_service import JWTService
+
     jwt_service = JWTService(auth_settings)
     access_token = jwt_service.generate_access_token(
         user_id="api-test-user-id",

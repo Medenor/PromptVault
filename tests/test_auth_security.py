@@ -45,7 +45,6 @@ from src.services.exceptions import (
     TokenAlreadyUsedError,
 )
 
-
 # ============================================================================
 # FIXTURES
 # ============================================================================
@@ -109,14 +108,14 @@ def mock_jwt_service():
     service = Mock()
     service.generate_access_token = Mock(return_value="mock_access_token")
     service.generate_refresh_token = Mock(return_value="mock_refresh_token")
-    service.validate_refresh_token = Mock(return_value={
-        "sub": "user_id_123",
-        "family_id": "family_id_123",
-        "jti": "jti_123"
-    })
-    service.decode_token_unsafe = Mock(return_value={
-        "family_id": "family_id_123"
-    })
+    service.validate_refresh_token = Mock(
+        return_value={
+            "sub": "user_id_123",
+            "family_id": "family_id_123",
+            "jti": "jti_123",
+        }
+    )
+    service.decode_token_unsafe = Mock(return_value={"family_id": "family_id_123"})
     return service
 
 
@@ -226,8 +225,14 @@ def sample_session():
 
 
 @pytest.fixture
-def auth_service(auth_config, mock_db_session, password_service,
-                 mock_jwt_service, mock_user_repository, mock_session_repository):
+def auth_service(
+    auth_config,
+    mock_db_session,
+    password_service,
+    mock_jwt_service,
+    mock_user_repository,
+    mock_session_repository,
+):
     """Create AuthService with mocked dependencies.
 
     Returns:
@@ -242,8 +247,9 @@ def auth_service(auth_config, mock_db_session, password_service,
 
 
 @pytest.fixture
-def password_reset_service(auth_config, password_service,
-                           mock_token_repository, mock_user_repository):
+def password_reset_service(
+    auth_config, password_service, mock_token_repository, mock_user_repository
+):
     """Create PasswordResetService with mocked dependencies.
 
     Returns:
@@ -253,7 +259,7 @@ def password_reset_service(auth_config, password_service,
         config=auth_config,
         password_service=password_service,
         token_repository=mock_token_repository,
-        user_repository=mock_user_repository
+        user_repository=mock_user_repository,
     )
 
 
@@ -265,9 +271,9 @@ def password_reset_service(auth_config, password_service,
 class TestAccountLockout:
     """Test suite for account lockout security feature."""
 
-    def test_account_locks_after_5_failed_attempts(self, auth_service,
-                                                    mock_user_repository,
-                                                    mock_db_session, sample_user):
+    def test_account_locks_after_5_failed_attempts(
+        self, auth_service, mock_user_repository, mock_db_session, sample_user
+    ):
         """Test account locks after exactly 5 failed login attempts."""
         # Arrange
         sample_user.failed_login_attempts = 4  # One more will trigger lockout
@@ -280,16 +286,16 @@ class TestAccountLockout:
                 username_or_email="testuser",
                 password="wrongpassword",
                 ip_address="192.168.1.1",
-                user_agent="Mozilla/5.0"
+                user_agent="Mozilla/5.0",
             )
 
         assert "locked after" in str(exc_info.value)
         mock_user_repository.lock_account.assert_called_once()
         mock_user_repository.increment_failed_login.assert_called_once()
 
-    def test_failed_attempts_increment_correctly(self, auth_service,
-                                                  mock_user_repository,
-                                                  mock_db_session, sample_user):
+    def test_failed_attempts_increment_correctly(
+        self, auth_service, mock_user_repository, mock_db_session, sample_user
+    ):
         """Test failed login attempts increment on each failed login."""
         # Arrange
         sample_user.failed_login_attempts = 2
@@ -302,13 +308,16 @@ class TestAccountLockout:
                 username_or_email="testuser",
                 password="wrongpassword",
                 ip_address="192.168.1.1",
-                user_agent="Mozilla/5.0"
+                user_agent="Mozilla/5.0",
             )
 
-        mock_user_repository.increment_failed_login.assert_called_once_with(sample_user.id)
+        mock_user_repository.increment_failed_login.assert_called_once_with(
+            sample_user.id
+        )
 
-    def test_lockout_duration_15_minutes(self, auth_service, mock_user_repository,
-                                        mock_db_session, sample_user):
+    def test_lockout_duration_15_minutes(
+        self, auth_service, mock_user_repository, mock_db_session, sample_user
+    ):
         """Test lockout duration is exactly 15 minutes (900 seconds)."""
         # Arrange
         sample_user.failed_login_attempts = 4
@@ -321,7 +330,7 @@ class TestAccountLockout:
                 username_or_email="testuser",
                 password="wrongpassword",
                 ip_address="192.168.1.1",
-                user_agent="Mozilla/5.0"
+                user_agent="Mozilla/5.0",
             )
 
         # Verify lockout duration
@@ -331,9 +340,9 @@ class TestAccountLockout:
         duration = (locked_until - now).total_seconds()
         assert 895 <= duration <= 905  # Allow 5 second tolerance
 
-    def test_successful_login_resets_failed_attempts(self, auth_service,
-                                                     mock_user_repository,
-                                                     mock_db_session, sample_user):
+    def test_successful_login_resets_failed_attempts(
+        self, auth_service, mock_user_repository, mock_db_session, sample_user
+    ):
         """Test successful login resets failed attempt counter."""
         # Arrange
         sample_user.failed_login_attempts = 3
@@ -345,15 +354,15 @@ class TestAccountLockout:
             username_or_email="testuser",
             password="correctpassword",
             ip_address="192.168.1.1",
-            user_agent="Mozilla/5.0"
+            user_agent="Mozilla/5.0",
         )
 
         # Assert
         mock_user_repository.reset_failed_login.assert_called_once_with(sample_user.id)
 
-    def test_locked_account_cannot_login_even_with_correct_password(self, auth_service,
-                                                                     mock_user_repository,
-                                                                     sample_user):
+    def test_locked_account_cannot_login_even_with_correct_password(
+        self, auth_service, mock_user_repository, sample_user
+    ):
         """Test locked account cannot login even with correct password."""
         # Arrange
         sample_user.locked_until = datetime.now(timezone.utc) + timedelta(minutes=10)
@@ -365,13 +374,14 @@ class TestAccountLockout:
                 username_or_email="testuser",
                 password="correctpassword",
                 ip_address="192.168.1.1",
-                user_agent="Mozilla/5.0"
+                user_agent="Mozilla/5.0",
             )
 
         assert "locked until" in str(exc_info.value)
 
-    def test_expired_lockout_auto_unlocks(self, auth_service, mock_user_repository,
-                                          mock_db_session, sample_user):
+    def test_expired_lockout_auto_unlocks(
+        self, auth_service, mock_user_repository, mock_db_session, sample_user
+    ):
         """Test account auto-unlocks after lockout period expires."""
         # Arrange
         sample_user.locked_until = datetime.now(timezone.utc) - timedelta(minutes=1)
@@ -383,7 +393,7 @@ class TestAccountLockout:
             username_or_email="testuser",
             password="correctpassword",
             ip_address="192.168.1.1",
-            user_agent="Mozilla/5.0"
+            user_agent="Mozilla/5.0",
         )
 
         # Assert
@@ -438,7 +448,9 @@ class TestPasswordPolicy:
     def test_require_special_character(self, password_service):
         """Test password must contain at least one special character."""
         # Act
-        is_valid, errors = password_service.validate_password_policy("NoSpecialChars123")
+        is_valid, errors = password_service.validate_password_policy(
+            "NoSpecialChars123"
+        )
 
         # Assert
         assert not is_valid
@@ -447,7 +459,9 @@ class TestPasswordPolicy:
     def test_valid_password_passes_all_checks(self, password_service):
         """Test valid password passes all policy requirements."""
         # Act
-        is_valid, errors = password_service.validate_password_policy("SecureP@ssw0rd123")
+        is_valid, errors = password_service.validate_password_policy(
+            "SecureP@ssw0rd123"
+        )
 
         # Assert
         assert is_valid
@@ -480,7 +494,7 @@ class TestPasswordPolicy:
                 email="newuser@example.com",
                 password="weak",
                 ip_address="192.168.1.1",
-                user_agent="Mozilla/5.0"
+                user_agent="Mozilla/5.0",
             )
 
         assert "policy requirements" in str(exc_info.value)
@@ -494,9 +508,14 @@ class TestPasswordPolicy:
 class TestTokenFamilyTracking:
     """Test suite for token refresh family tracking and reuse detection."""
 
-    def test_token_reuse_detection_revokes_family(self, auth_service, mock_jwt_service,
-                                                   mock_session_repository,
-                                                   mock_db_session, sample_session):
+    def test_token_reuse_detection_revokes_family(
+        self,
+        auth_service,
+        mock_jwt_service,
+        mock_session_repository,
+        mock_db_session,
+        sample_session,
+    ):
         """Test token reuse detection revokes entire token family."""
         # Arrange
         sample_session.refresh_token_jti = "current_jti"
@@ -504,7 +523,7 @@ class TestTokenFamilyTracking:
         mock_jwt_service.validate_refresh_token.return_value = {
             "sub": "user_id_123",
             "family_id": "family_id_123",
-            "jti": "old_jti"  # Different JTI = reuse detected!
+            "jti": "old_jti",  # Different JTI = reuse detected!
         }
 
         # Act & Assert
@@ -512,18 +531,24 @@ class TestTokenFamilyTracking:
             auth_service.refresh_tokens(
                 refresh_token="reused_token",
                 ip_address="192.168.1.1",
-                user_agent="Mozilla/5.0"
+                user_agent="Mozilla/5.0",
             )
 
         assert "reuse detected" in str(exc_info.value)
-        mock_session_repository.revoke_token_family.assert_called_once_with("family_id_123")
+        mock_session_repository.revoke_token_family.assert_called_once_with(
+            "family_id_123"
+        )
         mock_db_session.commit.assert_called()
 
-    def test_token_rotation_generates_new_jti_same_family(self, auth_service,
-                                                           mock_jwt_service,
-                                                           mock_session_repository,
-                                                           mock_user_repository,
-                                                           sample_user, sample_session):
+    def test_token_rotation_generates_new_jti_same_family(
+        self,
+        auth_service,
+        mock_jwt_service,
+        mock_session_repository,
+        mock_user_repository,
+        sample_user,
+        sample_session,
+    ):
         """Test token rotation generates new JTI but keeps same family ID."""
         # Arrange
         mock_session_repository.get_by_family_id.return_value = sample_session
@@ -533,7 +558,7 @@ class TestTokenFamilyTracking:
         auth_service.refresh_tokens(
             refresh_token="valid_token",
             ip_address="192.168.1.1",
-            user_agent="Mozilla/5.0"
+            user_agent="Mozilla/5.0",
         )
 
         # Assert
@@ -541,10 +566,14 @@ class TestTokenFamilyTracking:
         assert refresh_call.kwargs["family_id"] == "family_id_123"
         assert refresh_call.kwargs["jti"] != "jti_123"  # New JTI
 
-    def test_valid_token_refresh_updates_session_jti(self, auth_service,
-                                                      mock_session_repository,
-                                                      mock_user_repository,
-                                                      sample_user, sample_session):
+    def test_valid_token_refresh_updates_session_jti(
+        self,
+        auth_service,
+        mock_session_repository,
+        mock_user_repository,
+        sample_user,
+        sample_session,
+    ):
         """Test valid token refresh updates session with new JTI."""
         # Arrange
         mock_session_repository.get_by_family_id.return_value = sample_session
@@ -554,14 +583,15 @@ class TestTokenFamilyTracking:
         auth_service.refresh_tokens(
             refresh_token="valid_token",
             ip_address="192.168.1.1",
-            user_agent="Mozilla/5.0"
+            user_agent="Mozilla/5.0",
         )
 
         # Assert
         mock_session_repository.update_session_token.assert_called_once()
 
-    def test_revoked_session_cannot_refresh(self, auth_service,
-                                            mock_session_repository, sample_session):
+    def test_revoked_session_cannot_refresh(
+        self, auth_service, mock_session_repository, sample_session
+    ):
         """Test revoked session cannot refresh tokens."""
         # Arrange
         sample_session.is_revoked = True
@@ -572,7 +602,7 @@ class TestTokenFamilyTracking:
             auth_service.refresh_tokens(
                 refresh_token="revoked_token",
                 ip_address="192.168.1.1",
-                user_agent="Mozilla/5.0"
+                user_agent="Mozilla/5.0",
             )
 
 
@@ -584,10 +614,14 @@ class TestTokenFamilyTracking:
 class TestSessionLimits:
     """Test suite for session limit enforcement."""
 
-    def test_max_5_concurrent_sessions_enforced(self, auth_service,
-                                                 mock_session_repository,
-                                                 mock_user_repository,
-                                                 mock_db_session, sample_user):
+    def test_max_5_concurrent_sessions_enforced(
+        self,
+        auth_service,
+        mock_session_repository,
+        mock_user_repository,
+        mock_db_session,
+        sample_user,
+    ):
         """Test maximum 5 concurrent sessions per user is enforced."""
         # Arrange
         mock_user_repository.get_by_email_or_username.return_value = sample_user
@@ -602,16 +636,22 @@ class TestSessionLimits:
             username_or_email="testuser",
             password="password",
             ip_address="192.168.1.1",
-            user_agent="Mozilla/5.0"
+            user_agent="Mozilla/5.0",
         )
 
         # Assert
-        mock_session_repository.revoke_session.assert_called_once_with("oldest_family_id")
+        mock_session_repository.revoke_session.assert_called_once_with(
+            "oldest_family_id"
+        )
 
-    def test_oldest_session_removed_when_limit_exceeded(self, auth_service,
-                                                         mock_session_repository,
-                                                         mock_user_repository,
-                                                         mock_db_session, sample_user):
+    def test_oldest_session_removed_when_limit_exceeded(
+        self,
+        auth_service,
+        mock_session_repository,
+        mock_user_repository,
+        mock_db_session,
+        sample_user,
+    ):
         """Test oldest session is removed when session limit exceeded."""
         # Arrange
         mock_user_repository.get_by_email_or_username.return_value = sample_user
@@ -627,17 +667,21 @@ class TestSessionLimits:
             username_or_email="testuser",
             password="password",
             ip_address="192.168.1.1",
-            user_agent="Mozilla/5.0"
+            user_agent="Mozilla/5.0",
         )
 
         # Assert
         mock_session_repository.get_oldest_user_session.assert_called_once()
         mock_session_repository.revoke_session.assert_called_once()
 
-    def test_no_revocation_when_below_limit(self, auth_service,
-                                             mock_session_repository,
-                                             mock_user_repository,
-                                             mock_db_session, sample_user):
+    def test_no_revocation_when_below_limit(
+        self,
+        auth_service,
+        mock_session_repository,
+        mock_user_repository,
+        mock_db_session,
+        sample_user,
+    ):
         """Test no session revocation when below limit."""
         # Arrange
         mock_user_repository.get_by_email_or_username.return_value = sample_user
@@ -649,7 +693,7 @@ class TestSessionLimits:
             username_or_email="testuser",
             password="password",
             ip_address="192.168.1.1",
-            user_agent="Mozilla/5.0"
+            user_agent="Mozilla/5.0",
         )
 
         # Assert
@@ -664,9 +708,13 @@ class TestSessionLimits:
 class TestPasswordResetRateLimiting:
     """Test suite for password reset rate limiting."""
 
-    def test_rate_limit_3_requests_per_hour(self, password_reset_service,
-                                             mock_token_repository,
-                                             mock_user_repository, sample_user):
+    def test_rate_limit_3_requests_per_hour(
+        self,
+        password_reset_service,
+        mock_token_repository,
+        mock_user_repository,
+        sample_user,
+    ):
         """Test rate limit of 3 password reset requests per hour."""
         # Arrange
         mock_user_repository.get_by_email.return_value = sample_user
@@ -675,17 +723,20 @@ class TestPasswordResetRateLimiting:
         # Act & Assert
         with pytest.raises(RateLimitExceededError) as exc_info:
             password_reset_service.request_password_reset(
-                email="test@example.com",
-                ip_address="192.168.1.1"
+                email="test@example.com", ip_address="192.168.1.1"
             )
 
         assert "Too many" in str(exc_info.value)
         exc = exc_info.value
         assert exc.context["retry_after_seconds"] == 3600
 
-    def test_rate_limit_allows_request_below_threshold(self, password_reset_service,
-                                                        mock_token_repository,
-                                                        mock_user_repository, sample_user):
+    def test_rate_limit_allows_request_below_threshold(
+        self,
+        password_reset_service,
+        mock_token_repository,
+        mock_user_repository,
+        sample_user,
+    ):
         """Test rate limit allows requests below threshold."""
         # Arrange
         mock_user_repository.get_by_email.return_value = sample_user
@@ -694,22 +745,25 @@ class TestPasswordResetRateLimiting:
 
         # Act
         token = password_reset_service.request_password_reset(
-            email="test@example.com",
-            ip_address="192.168.1.1"
+            email="test@example.com", ip_address="192.168.1.1"
         )
 
         # Assert
         assert token is not None
         mock_token_repository.create_token.assert_called_once()
 
-    def test_rate_limit_window_1_hour(self, password_reset_service,
-                                       mock_token_repository):
+    def test_rate_limit_window_1_hour(
+        self, password_reset_service, mock_token_repository
+    ):
         """Test rate limit window is 1 hour (3600 seconds)."""
         # Act
         password_reset_service.config.rate_limit_password_reset_window_seconds
 
         # Assert
-        assert password_reset_service.config.rate_limit_password_reset_window_seconds == 3600
+        assert (
+            password_reset_service.config.rate_limit_password_reset_window_seconds
+            == 3600
+        )
 
 
 # ============================================================================
@@ -720,9 +774,13 @@ class TestPasswordResetRateLimiting:
 class TestPasswordResetTokenSingleUse:
     """Test suite for password reset token single-use enforcement."""
 
-    def test_token_marked_used_after_password_reset(self, password_reset_service,
-                                                     mock_token_repository,
-                                                     mock_user_repository, sample_user):
+    def test_token_marked_used_after_password_reset(
+        self,
+        password_reset_service,
+        mock_token_repository,
+        mock_user_repository,
+        sample_user,
+    ):
         """Test token is marked as used after successful password reset."""
         # Arrange
         token_record = Mock()
@@ -736,16 +794,16 @@ class TestPasswordResetTokenSingleUse:
 
         # Act
         success = password_reset_service.reset_password(
-            token="valid_token",
-            new_password="NewSecureP@ssw0rd123"
+            token="valid_token", new_password="NewSecureP@ssw0rd123"
         )
 
         # Assert
         assert success
         mock_token_repository.mark_token_used.assert_called_once_with(token_record.id)
 
-    def test_used_token_cannot_be_reused(self, password_reset_service,
-                                          mock_token_repository):
+    def test_used_token_cannot_be_reused(
+        self, password_reset_service, mock_token_repository
+    ):
         """Test used token cannot be used again."""
         # Arrange
         token_record = Mock()
@@ -758,12 +816,12 @@ class TestPasswordResetTokenSingleUse:
         # Act & Assert
         with pytest.raises(TokenAlreadyUsedError):
             password_reset_service.reset_password(
-                token="used_token",
-                new_password="NewSecureP@ssw0rd123"
+                token="used_token", new_password="NewSecureP@ssw0rd123"
             )
 
-    def test_expired_token_cannot_be_used(self, password_reset_service,
-                                           mock_token_repository):
+    def test_expired_token_cannot_be_used(
+        self, password_reset_service, mock_token_repository
+    ):
         """Test expired token cannot be used."""
         # Arrange
         token_record = Mock()
@@ -776,8 +834,7 @@ class TestPasswordResetTokenSingleUse:
         # Act & Assert
         with pytest.raises(TokenExpiredError):
             password_reset_service.reset_password(
-                token="expired_token",
-                new_password="NewSecureP@ssw0rd123"
+                token="expired_token", new_password="NewSecureP@ssw0rd123"
             )
 
 
@@ -876,8 +933,8 @@ class TestCommonPasswordRejection:
         common_passwords = [
             "password123",  # Exactly in the set
             "Password123",  # Case variant, will match on .lower()
-            "welcome",      # Exactly in the set
-            "admin123",     # Exactly in the set
+            "welcome",  # Exactly in the set
+            "admin123",  # Exactly in the set
         ]
 
         for password in common_passwords:
@@ -909,8 +966,9 @@ class TestCommonPasswordRejection:
 class TestTokenRevocation:
     """Test suite for token revocation functionality."""
 
-    def test_logout_revokes_session(self, auth_service, mock_session_repository,
-                                     mock_db_session):
+    def test_logout_revokes_session(
+        self, auth_service, mock_session_repository, mock_db_session
+    ):
         """Test logout revokes the session."""
         # Arrange
         mock_session_repository.revoke_session.return_value = True
@@ -923,8 +981,9 @@ class TestTokenRevocation:
         mock_session_repository.revoke_session.assert_called_once()
         mock_db_session.commit.assert_called_once()
 
-    def test_revoke_all_sessions_count(self, auth_service, mock_session_repository,
-                                        mock_db_session):
+    def test_revoke_all_sessions_count(
+        self, auth_service, mock_session_repository, mock_db_session
+    ):
         """Test revoke all sessions returns correct count."""
         # Arrange
         mock_session_repository.revoke_all_user_sessions.return_value = 4
@@ -937,9 +996,9 @@ class TestTokenRevocation:
         mock_session_repository.revoke_all_user_sessions.assert_called_once()
         mock_db_session.commit.assert_called_once()
 
-    def test_revoke_all_except_current_session(self, auth_service,
-                                                mock_session_repository,
-                                                mock_db_session):
+    def test_revoke_all_except_current_session(
+        self, auth_service, mock_session_repository, mock_db_session
+    ):
         """Test revoke all sessions except current one."""
         # Arrange
         session1 = Mock()
@@ -949,13 +1008,16 @@ class TestTokenRevocation:
         session3 = Mock()
         session3.family_id = "current_family"
 
-        mock_session_repository.get_user_sessions.return_value = [session1, session2, session3]
+        mock_session_repository.get_user_sessions.return_value = [
+            session1,
+            session2,
+            session3,
+        ]
         mock_session_repository.revoke_session.return_value = True
 
         # Act
         count = auth_service.revoke_all_sessions(
-            "user_id_123",
-            except_family_id="current_family"
+            "user_id_123", except_family_id="current_family"
         )
 
         # Assert
@@ -972,8 +1034,12 @@ class TestSecurityIntegrationScenarios:
     """Test suite for complex security integration scenarios."""
 
     def test_security_breach_scenario_token_reuse_revokes_all_family_tokens(
-        self, auth_service, mock_jwt_service, mock_session_repository,
-        mock_db_session, sample_session
+        self,
+        auth_service,
+        mock_jwt_service,
+        mock_session_repository,
+        mock_db_session,
+        sample_session,
     ):
         """Test security breach: token reuse revokes entire token family."""
         # Arrange - Simulate attacker using old token
@@ -982,7 +1048,7 @@ class TestSecurityIntegrationScenarios:
         mock_jwt_service.validate_refresh_token.return_value = {
             "sub": "user_id_123",
             "family_id": "family_id_123",
-            "jti": "stolen_old_jti"  # Attacker uses stolen old token
+            "jti": "stolen_old_jti",  # Attacker uses stolen old token
         }
 
         # Act & Assert
@@ -990,16 +1056,18 @@ class TestSecurityIntegrationScenarios:
             auth_service.refresh_tokens(
                 refresh_token="stolen_token",
                 ip_address="attacker_ip",
-                user_agent="attacker_agent"
+                user_agent="attacker_agent",
             )
 
         # Verify entire family revoked
-        mock_session_repository.revoke_token_family.assert_called_once_with("family_id_123")
+        mock_session_repository.revoke_token_family.assert_called_once_with(
+            "family_id_123"
+        )
         mock_db_session.commit.assert_called()
 
-    def test_account_lockout_then_unlock_after_expiry(self, auth_service,
-                                                       mock_user_repository,
-                                                       mock_db_session, sample_user):
+    def test_account_lockout_then_unlock_after_expiry(
+        self, auth_service, mock_user_repository, mock_db_session, sample_user
+    ):
         """Test account locks then auto-unlocks after expiry."""
         # Phase 1: Lock account
         sample_user.failed_login_attempts = 4
@@ -1031,7 +1099,7 @@ class TestSecurityIntegrationScenarios:
         result = auth_service.change_password(
             user_id=sample_user.id,
             old_password="OldP@ssw0rd123",
-            new_password="NewP@ssw0rd456"
+            new_password="NewP@ssw0rd456",
         )
 
         # Assert

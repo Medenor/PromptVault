@@ -138,12 +138,16 @@ class TokenResponse(BaseModel):
     access_token: str = Field(
         ...,
         description="JWT access token for API authentication",
-        examples=["eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9.eyJzdWIiOiI1NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU0NDAwMDAiLCJleHAiOjE3MDEzNDU2MDAsImlhdCI6MTcwMTM0NDcwMCwidXNlcm5hbWUiOiJhbGljZSIsImVtYWlsIjoiYWxpY2VAZXhhbXBsZS5jb20iLCJyb2xlIjoidmlld2VyIn0..."],
+        examples=[
+            "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9.eyJzdWIiOiI1NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU0NDAwMDAiLCJleHAiOjE3MDEzNDU2MDAsImlhdCI6MTcwMTM0NDcwMCwidXNlcm5hbWUiOiJhbGljZSIsImVtYWlsIjoiYWxpY2VAZXhhbXBsZS5jb20iLCJyb2xlIjoidmlld2VyIn0..."
+        ],
     )
     refresh_token: str = Field(
         ...,
         description="JWT refresh token for obtaining new access tokens",
-        examples=["eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9.eyJzdWIiOiI1NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU0NDAwMDAiLCJleHAiOjE3MDE5NDk1MDAsImlhdCI6MTcwMTM0NDcwMCwiZmFtaWx5X2lkIjoiNzUwZTg0MDAtZTI5Yi00MWQ0LWE3MTYtNDQ2NjU1NDQwMDAwIiwianRpIjoiODUwZTg0MDAtZTI5Yi00MWQ0LWE3MTYtNDQ2NjU1NDQwMDAwIn0..."],
+        examples=[
+            "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9.eyJzdWIiOiI1NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU0NDAwMDAiLCJleHAiOjE3MDE5NDk1MDAsImlhdCI6MTcwMTM0NDcwMCwiZmFtaWx5X2lkIjoiNzUwZTg0MDAtZTI5Yi00MWQ0LWE3MTYtNDQ2NjU1NDQwMDAwIiwianRpIjoiODUwZTg0MDAtZTI5Yi00MWQ0LWE3MTYtNDQ2NjU1NDQwMDAwIn0..."
+        ],
     )
     token_type: str = Field(
         default="Bearer",
@@ -176,7 +180,7 @@ class TokenResponse(BaseModel):
                     "email_verified": False,
                     "created_at": "2025-12-02T10:30:00Z",
                     "updated_at": "2025-12-02T10:30:00Z",
-                }
+                },
             }
         }
     )
@@ -304,7 +308,7 @@ class MessageResponse(BaseModel):
         json_schema_extra={
             "example": {
                 "message": "Operation completed successfully",
-                "detail": "Additional information about the operation"
+                "detail": "Additional information about the operation",
             }
         }
     )
@@ -343,7 +347,7 @@ class PasswordResetRequestResponse(BaseModel):
         json_schema_extra={
             "example": {
                 "message": "Password reset email sent",
-                "email": "a***@example.com"
+                "email": "a***@example.com",
             }
         }
     )
@@ -380,17 +384,16 @@ class PasswordStrengthResponse(BaseModel):
         description="List of improvement suggestions (empty if strong)",
         examples=[
             [],
-            ["Consider using a longer password (12+ characters)", "Add special characters for increased strength"]
+            [
+                "Consider using a longer password (12+ characters)",
+                "Add special characters for increased strength",
+            ],
         ],
     )
 
     model_config = ConfigDict(
         json_schema_extra={
-            "example": {
-                "level": "strong",
-                "entropy": 68.4,
-                "feedback": []
-            }
+            "example": {"level": "strong", "entropy": 68.4, "feedback": []}
         }
     )
 
@@ -431,10 +434,10 @@ class SessionListResponse(BaseModel):
                         "expires_at": "2025-12-09T10:30:00Z",
                         "ip_address": "192.168.1.1",
                         "user_agent": "Mozilla/5.0...",
-                        "is_revoked": False
+                        "is_revoked": False,
                     }
                 ],
-                "total": 1
+                "total": 1,
             }
         }
     )
@@ -467,10 +470,7 @@ class RevokeSessionResponse(BaseModel):
 
     model_config = ConfigDict(
         json_schema_extra={
-            "example": {
-                "message": "Session revoked successfully",
-                "revoked_count": 1
-            }
+            "example": {"message": "Session revoked successfully", "revoked_count": 1}
         }
     )
 
@@ -588,8 +588,7 @@ class UserStatsResponse(BaseModel):
                 "is_locked": False,
                 "locked_until": None,
                 "days_since_creation": 66,
-                "days_since_last_login": 2
+                "days_since_last_login": 2,
             }
-        }
+        },
     )
-

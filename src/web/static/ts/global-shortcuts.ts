@@ -46,11 +46,13 @@ function escapeHtml(text: string): string {
 
 function isTypingTarget(target: EventTarget | null): boolean {
   const el = target as HTMLElement | null;
-  return !!el &&
+  return (
+    !!el &&
     (el.tagName === 'INPUT' ||
       el.tagName === 'TEXTAREA' ||
       el.tagName === 'SELECT' ||
-      el.isContentEditable);
+      el.isContentEditable)
+  );
 }
 
 function isQuestionShortcut(event: KeyboardEvent): boolean {
@@ -133,7 +135,9 @@ document.addEventListener('keydown', (event: KeyboardEvent) => {
     },
   };
 
-  document.dispatchEvent(new CustomEvent<KeyboardHelpEventDetail>('promptvault:open-keyboard-help', { detail }));
+  document.dispatchEvent(
+    new CustomEvent<KeyboardHelpEventDetail>('promptvault:open-keyboard-help', { detail })
+  );
 
   if (!handled) {
     openFallbackKeyboardHelpModal();

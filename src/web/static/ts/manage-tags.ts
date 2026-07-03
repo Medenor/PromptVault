@@ -69,20 +69,28 @@ const elements = {
   exportButton: document.getElementById('tag-export-btn') as HTMLButtonElement | null,
   importFile: document.getElementById('tag-import-file') as HTMLInputElement | null,
   importButton: document.getElementById('tag-import-btn') as HTMLButtonElement | null,
-  selectionMergeButton: document.getElementById('tag-selection-merge-btn') as HTMLButtonElement | null,
-  selectionFindReplaceButton: document.getElementById('tag-selection-find-replace-btn') as HTMLButtonElement | null,
+  selectionMergeButton: document.getElementById(
+    'tag-selection-merge-btn'
+  ) as HTMLButtonElement | null,
+  selectionFindReplaceButton: document.getElementById(
+    'tag-selection-find-replace-btn'
+  ) as HTMLButtonElement | null,
   saveAllButton: document.getElementById('tag-save-all-btn') as HTMLButtonElement | null,
   undoButton: document.getElementById('tag-undo-btn') as HTMLButtonElement | null,
   analyticsTotal: document.getElementById('tag-analytics-total') as HTMLElement | null,
   analyticsUsed: document.getElementById('tag-analytics-used') as HTMLElement | null,
   analyticsUnused: document.getElementById('tag-analytics-unused') as HTMLElement | null,
   analyticsTop: document.getElementById('tag-analytics-top') as HTMLElement | null,
-  analyticsCooccurrence: document.getElementById('tag-analytics-cooccurrence') as HTMLElement | null,
+  analyticsCooccurrence: document.getElementById(
+    'tag-analytics-cooccurrence'
+  ) as HTMLElement | null,
   hierarchyTree: document.getElementById('tag-hierarchy-tree') as HTMLElement | null,
   orphansCount: document.getElementById('tag-orphans-count') as HTMLElement | null,
   orphansList: document.getElementById('tag-orphans-list') as HTMLElement | null,
   orphansPromptCount: document.getElementById('tag-orphans-prompts-count') as HTMLElement | null,
-  orphansPromptDetails: document.getElementById('tag-orphans-prompts-details') as HTMLElement | null,
+  orphansPromptDetails: document.getElementById(
+    'tag-orphans-prompts-details'
+  ) as HTMLElement | null,
 };
 
 let cachedItems: TagItem[] = [];
@@ -115,7 +123,12 @@ function announceKeyboardNavigation(message: string): void {
 function isTextEditingTarget(target: EventTarget | null): boolean {
   const el = target as HTMLElement | null;
   if (!el) return false;
-  return el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable;
+  return (
+    el.tagName === 'INPUT' ||
+    el.tagName === 'TEXTAREA' ||
+    el.tagName === 'SELECT' ||
+    el.isContentEditable
+  );
 }
 
 /**
@@ -136,7 +149,9 @@ function initializeRovingTabindex(): void {
 
   // Update roving tabindex attributes on all checkboxes in rows
   const updateTabindexAttributes = (): void => {
-    const checkboxes = Array.from(container.querySelectorAll<HTMLInputElement>('tbody input[type="checkbox"]'));
+    const checkboxes = Array.from(
+      container.querySelectorAll<HTMLInputElement>('tbody input[type="checkbox"]')
+    );
     checkboxes.forEach((checkbox, index) => {
       if (index === currentTagFocusIndex) {
         checkbox.setAttribute('tabindex', '0');
@@ -152,7 +167,9 @@ function initializeRovingTabindex(): void {
   // Handle arrow key navigation
   container.addEventListener('keydown', (event: Event) => {
     const keyEvent = event as KeyboardEvent;
-    const checkboxes = Array.from(container.querySelectorAll<HTMLInputElement>('tbody input[type="checkbox"]'));
+    const checkboxes = Array.from(
+      container.querySelectorAll<HTMLInputElement>('tbody input[type="checkbox"]')
+    );
 
     if (checkboxes.length === 0) {
       return;
@@ -210,7 +227,9 @@ function initializeRovingTabindex(): void {
     const target = event.target as HTMLElement | null;
     const checkbox = target?.closest('input[type="checkbox"]') as HTMLInputElement | null;
     if (checkbox) {
-      const checkboxes = Array.from(container.querySelectorAll<HTMLInputElement>('tbody input[type="checkbox"]'));
+      const checkboxes = Array.from(
+        container.querySelectorAll<HTMLInputElement>('tbody input[type="checkbox"]')
+      );
       const index = checkboxes.indexOf(checkbox);
       if (index !== -1) {
         currentTagFocusIndex = index;
@@ -220,18 +239,24 @@ function initializeRovingTabindex(): void {
   });
 
   // Update focus index when user tabs to a checkbox
-  container.addEventListener('focus', (event: Event) => {
-    const target = event.target as HTMLElement | null;
-    const checkbox = target?.closest('input[type="checkbox"]') as HTMLInputElement | null;
-    if (checkbox) {
-      const checkboxes = Array.from(container.querySelectorAll<HTMLInputElement>('tbody input[type="checkbox"]'));
-      const index = checkboxes.indexOf(checkbox);
-      if (index !== -1) {
-        currentTagFocusIndex = index;
-        updateTabindexAttributes();
+  container.addEventListener(
+    'focus',
+    (event: Event) => {
+      const target = event.target as HTMLElement | null;
+      const checkbox = target?.closest('input[type="checkbox"]') as HTMLInputElement | null;
+      if (checkbox) {
+        const checkboxes = Array.from(
+          container.querySelectorAll<HTMLInputElement>('tbody input[type="checkbox"]')
+        );
+        const index = checkboxes.indexOf(checkbox);
+        if (index !== -1) {
+          currentTagFocusIndex = index;
+          updateTabindexAttributes();
+        }
       }
-    }
-  }, true);
+    },
+    true
+  );
 }
 
 function initializeTableFirstCharNavigation(): void {
@@ -286,7 +311,9 @@ function initializeTableFirstCharNavigation(): void {
         continue;
       }
 
-      const checkbox = row.querySelector<HTMLInputElement>('input[type=\"checkbox\"][data-select-id]');
+      const checkbox = row.querySelector<HTMLInputElement>(
+        'input[type=\"checkbox\"][data-select-id]'
+      );
       if (!checkbox) {
         return;
       }
@@ -322,7 +349,9 @@ function initializeTableFirstCharNavigation(): void {
       if (!label.toLocaleLowerCase().startsWith(query)) {
         continue;
       }
-      const checkbox = row.querySelector<HTMLInputElement>('input[type="checkbox"][data-select-id]');
+      const checkbox = row.querySelector<HTMLInputElement>(
+        'input[type="checkbox"][data-select-id]'
+      );
       if (!checkbox) return;
       checkbox.focus();
       announceKeyboardNavigation(t('accessibility.navigateTo', { item: label }));
@@ -1181,9 +1210,7 @@ async function findReplaceSelected(): Promise<void> {
     showNotification(tUnsafe('management.replaceSelectedNotFound'), 'error');
     return;
   }
-  const replaceValue = window.prompt(
-    tUnsafe('management.replacePrompt', { name: selected.name })
-  );
+  const replaceValue = window.prompt(tUnsafe('management.replacePrompt', { name: selected.name }));
   if (!replaceValue) {
     return;
   }
@@ -1273,7 +1300,9 @@ async function loadOrphans(): Promise<void> {
   }
 
   try {
-    const data = await apiFetch<{ prompt_ids: number[]; count: number }>('/api/tags/orphan-prompts');
+    const data = await apiFetch<{ prompt_ids: number[]; count: number }>(
+      '/api/tags/orphan-prompts'
+    );
     if (elements.orphansPromptCount) {
       elements.orphansPromptCount.textContent = String(data.count ?? 0);
     }
@@ -1468,20 +1497,23 @@ function init(): void {
 
   // Apply focus styles to all form inputs and selects on the page
   // This ensures proper focus visibility for keyboard navigation users
-  document.querySelectorAll<HTMLInputElement | HTMLSelectElement>(
-    'input[type="text"], input[type="number"], input[type="color"], input[type="checkbox"], select'
-  ).forEach((el) => {
-    if (el.id !== 'tag-import-file' && el.id !== 'tag-create-color-picker') {
-      applyFocusStyles(el);
-    }
-  });
+  document
+    .querySelectorAll<
+      HTMLInputElement | HTMLSelectElement
+    >('input[type="text"], input[type="number"], input[type="color"], input[type="checkbox"], select')
+    .forEach((el) => {
+      if (el.id !== 'tag-import-file' && el.id !== 'tag-create-color-picker') {
+        applyFocusStyles(el);
+      }
+    });
 
   // Apply focus styles to all buttons on the page
   document.querySelectorAll<HTMLButtonElement>('button').forEach((btn) => {
     // Determine ring color based on button type
-    const ringColor = btn.classList.contains('bg-red-600') || btn.classList.contains('bg-red-700')
-      ? '#ef4444'
-      : '#3b82f6';
+    const ringColor =
+      btn.classList.contains('bg-red-600') || btn.classList.contains('bg-red-700')
+        ? '#ef4444'
+        : '#3b82f6';
     applyFocusStyles(btn, ringColor);
   });
 

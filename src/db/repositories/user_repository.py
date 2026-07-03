@@ -38,9 +38,7 @@ class UserRepository(BaseRepository[User]):
         Returns:
             User instance or None if not found
         """
-        return self.session.query(User).filter(
-            User.email == email
-        ).first()
+        return self.session.query(User).filter(User.email == email).first()
 
     def get_by_username(self, username: str) -> Optional[User]:
         """Find user by username.
@@ -51,9 +49,7 @@ class UserRepository(BaseRepository[User]):
         Returns:
             User instance or None if not found
         """
-        return self.session.query(User).filter(
-            User.username == username
-        ).first()
+        return self.session.query(User).filter(User.username == username).first()
 
     def get_by_email_or_username(self, identifier: str) -> Optional[User]:
         """Find user by either email or username.
@@ -64,12 +60,11 @@ class UserRepository(BaseRepository[User]):
         Returns:
             User instance or None if not found
         """
-        return self.session.query(User).filter(
-            or_(
-                User.email == identifier,
-                User.username == identifier
-            )
-        ).first()
+        return (
+            self.session.query(User)
+            .filter(or_(User.email == identifier, User.username == identifier))
+            .first()
+        )
 
     def email_exists(self, email: str) -> bool:
         """Check if email already exists.
@@ -80,9 +75,7 @@ class UserRepository(BaseRepository[User]):
         Returns:
             True if email exists, False otherwise
         """
-        return self.session.query(User).filter(
-            User.email == email
-        ).first() is not None
+        return self.session.query(User).filter(User.email == email).first() is not None
 
     def username_exists(self, username: str) -> bool:
         """Check if username already exists.
@@ -93,9 +86,10 @@ class UserRepository(BaseRepository[User]):
         Returns:
             True if username exists, False otherwise
         """
-        return self.session.query(User).filter(
-            User.username == username
-        ).first() is not None
+        return (
+            self.session.query(User).filter(User.username == username).first()
+            is not None
+        )
 
     def increment_failed_login(self, user_id: str) -> None:
         """Increment failed login attempts counter.
@@ -200,7 +194,9 @@ class UserRepository(BaseRepository[User]):
             user.password_changed_at = datetime.now(timezone.utc)
             self.session.flush()
 
-    def get_active_users(self, skip: int = 0, limit: Optional[int] = None) -> List[User]:
+    def get_active_users(
+        self, skip: int = 0, limit: Optional[int] = None
+    ) -> List[User]:
         """Get all active users with optional pagination.
 
         Args:
@@ -210,16 +206,16 @@ class UserRepository(BaseRepository[User]):
         Returns:
             List of active User instances
         """
-        query = self.session.query(User).filter(
-            User.is_active == True
-        ).offset(skip)
+        query = self.session.query(User).filter(User.is_active == True).offset(skip)
 
         if limit:
             query = query.limit(limit)
 
         return query.all()
 
-    def get_users_by_role(self, role: str, skip: int = 0, limit: Optional[int] = None) -> List[User]:
+    def get_users_by_role(
+        self, role: str, skip: int = 0, limit: Optional[int] = None
+    ) -> List[User]:
         """Get users by role with optional pagination.
 
         Args:
@@ -230,9 +226,7 @@ class UserRepository(BaseRepository[User]):
         Returns:
             List of User instances with specified role
         """
-        query = self.session.query(User).filter(
-            User.role == role
-        ).offset(skip)
+        query = self.session.query(User).filter(User.role == role).offset(skip)
 
         if limit:
             query = query.limit(limit)
@@ -248,6 +242,4 @@ class UserRepository(BaseRepository[User]):
         Returns:
             Number of users with specified role
         """
-        return self.session.query(User).filter(
-            User.role == role
-        ).count()
+        return self.session.query(User).filter(User.role == role).count()

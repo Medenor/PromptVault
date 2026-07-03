@@ -11,27 +11,29 @@ let mockOnClose: (() => void) | null = null;
 let mockModalElement: HTMLElement;
 
 vi.mock('@/components/modal', () => ({
-  createModal: vi.fn((props: {
-    title: string;
-    content: HTMLElement;
-    size: string;
-    actions: Array<{ label: string; variant: string; onClick: () => void }>;
-    onClose: () => void;
-  }) => {
-    mockModalElement = document.createElement('div');
-    mockModalClickHandlers = {};
-    mockOnClose = props.onClose;
+  createModal: vi.fn(
+    (props: {
+      title: string;
+      content: HTMLElement;
+      size: string;
+      actions: Array<{ label: string; variant: string; onClick: () => void }>;
+      onClose: () => void;
+    }) => {
+      mockModalElement = document.createElement('div');
+      mockModalClickHandlers = {};
+      mockOnClose = props.onClose;
 
-    for (const action of props.actions) {
-      mockModalClickHandlers[action.label] = action.onClick;
+      for (const action of props.actions) {
+        mockModalClickHandlers[action.label] = action.onClick;
+      }
+
+      return {
+        element: mockModalElement,
+        open: vi.fn(),
+        close: vi.fn(),
+      };
     }
-
-    return {
-      element: mockModalElement,
-      open: vi.fn(),
-      close: vi.fn(),
-    };
-  }),
+  ),
 }));
 
 import { alertAsync, confirmAsync } from '../dialogs';

@@ -36,21 +36,18 @@ class UserSession(Base):
         expires_at: Session expiration timestamp
         user: Relationship to User model
     """
+
     __tablename__ = "user_sessions"
 
     # Primary key
-    id = Column(
-        String(36),
-        primary_key=True,
-        default=lambda: str(uuid.uuid4())
-    )
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
 
     # Foreign key to users
     user_id = Column(
         String(36),
-        ForeignKey('users.id', ondelete='CASCADE'),
+        ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
-        index=True
+        index=True,
     )
 
     # Token family tracking
@@ -66,7 +63,9 @@ class UserSession(Base):
 
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    last_used_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    last_used_at = Column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
     expires_at = Column(DateTime(timezone=True), nullable=False, index=True)
 
     # Relationships
@@ -74,8 +73,8 @@ class UserSession(Base):
 
     # Composite indexes for efficient queries
     __table_args__ = (
-        Index('ix_user_sessions_user_active', 'user_id', 'is_revoked'),
-        Index('ix_user_sessions_expires', 'expires_at'),
+        Index("ix_user_sessions_user_active", "user_id", "is_revoked"),
+        Index("ix_user_sessions_expires", "expires_at"),
     )
 
     def __repr__(self):

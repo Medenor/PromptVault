@@ -32,7 +32,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from src.db.models import User, Category, Tag, Prompt
 from src.db.repositories import CategoryRepository, TagRepository
 
-
 # ============================================================================
 # QUERY COUNTER FIXTURE
 # ============================================================================
@@ -59,7 +58,9 @@ class QueryCounter:
         self.enabled = False
         event.remove(self.engine, "before_cursor_execute", self._before_cursor_execute)
 
-    def _before_cursor_execute(self, conn, cursor, statement, parameters, context, executemany):
+    def _before_cursor_execute(
+        self, conn, cursor, statement, parameters, context, executemany
+    ):
         """Event handler that counts queries."""
         if self.enabled:
             self.query_count += 1
@@ -154,7 +155,7 @@ def test_user_for_perf(test_db_session: Session) -> User:
         display_name="Performance Test User",
         email="perf@example.com",
         password_hash="hashed_password",
-        role="user"
+        role="user",
     )
     test_db_session.add(user)
     test_db_session.flush()
@@ -162,9 +163,7 @@ def test_user_for_perf(test_db_session: Session) -> User:
 
 
 def generate_categories(
-    session: Session,
-    count: int,
-    base_name: str = "PerfCat"
+    session: Session, count: int, base_name: str = "PerfCat"
 ) -> List[Category]:
     """Generate test categories.
 
@@ -182,7 +181,7 @@ def generate_categories(
             name=f"{base_name}_{i:04d}",
             description=f"Performance test category {i}",
             color=f"#{'%06x' % (i * 1000 % 0xFFFFFF)}",
-            sort_order=i
+            sort_order=i,
         )
         session.add(cat)
         categories.append(cat)
@@ -192,10 +191,7 @@ def generate_categories(
 
 
 def generate_tags_with_hierarchy(
-    session: Session,
-    count: int,
-    max_depth: int = 10,
-    base_name: str = "PerfTag"
+    session: Session, count: int, max_depth: int = 10, base_name: str = "PerfTag"
 ) -> List[Tag]:
     """Generate test tags with hierarchical relationships.
 
@@ -218,13 +214,15 @@ def generate_tags_with_hierarchy(
 
         # Assign parent if not at root level
         if level > 0 and level - 1 in parents_at_level and parents_at_level[level - 1]:
-            parent_tag_id = parents_at_level[level - 1][i % len(parents_at_level[level - 1])].id
+            parent_tag_id = parents_at_level[level - 1][
+                i % len(parents_at_level[level - 1])
+            ].id
 
         tag = Tag(
             name=f"{base_name}_{i:04d}",
             description=f"Performance test tag {i} at level {level}",
             color=f"#{'%06x' % (i * 777 % 0xFFFFFF)}",
-            parent_tag_id=parent_tag_id
+            parent_tag_id=parent_tag_id,
         )
         session.add(tag)
         session.flush()
@@ -244,7 +242,7 @@ def generate_prompts_with_associations(
     categories: List[Category],
     tags: List[Tag],
     prompt_count: int,
-    tags_per_prompt_range: tuple = (1, 10)
+    tags_per_prompt_range: tuple = (1, 10),
 ) -> List[Prompt]:
     """Generate prompts with category and tag associations.
 
@@ -269,11 +267,12 @@ def generate_prompts_with_associations(
         # Create prompt
         prompt = Prompt(
             title=f"Performance Test Prompt {i:05d}",
-            prompt=f"Content for performance testing prompt {i}. " * 10,  # Make content substantial
+            prompt=f"Content for performance testing prompt {i}. "
+            * 10,  # Make content substantial
             note=f"Note for prompt {i}",
             category_id=category.id if category else None,
             favorite=(i % 10 == 0),  # Every 10th prompt is favorite
-            user_id=user.id
+            user_id=user.id,
         )
 
         # Add random tags
@@ -291,7 +290,9 @@ def generate_prompts_with_associations(
 
 
 @pytest.fixture
-def small_category_dataset(test_db_session: Session, test_user_for_perf: User) -> Dict[str, Any]:
+def small_category_dataset(
+    test_db_session: Session, test_user_for_perf: User
+) -> Dict[str, Any]:
     """Generate small dataset: 10 categories, 100 prompts."""
     categories = generate_categories(test_db_session, 10, "SmallCat")
     tags = generate_tags_with_hierarchy(test_db_session, 20, 3, "SmallTag")
@@ -303,7 +304,9 @@ def small_category_dataset(test_db_session: Session, test_user_for_perf: User) -
 
 
 @pytest.fixture
-def medium_category_dataset(test_db_session: Session, test_user_for_perf: User) -> Dict[str, Any]:
+def medium_category_dataset(
+    test_db_session: Session, test_user_for_perf: User
+) -> Dict[str, Any]:
     """Generate medium dataset: 100 categories, 1000 prompts."""
     categories = generate_categories(test_db_session, 100, "MediumCat")
     tags = generate_tags_with_hierarchy(test_db_session, 200, 5, "MediumTag")
@@ -315,7 +318,9 @@ def medium_category_dataset(test_db_session: Session, test_user_for_perf: User) 
 
 
 @pytest.fixture
-def large_category_dataset(test_db_session: Session, test_user_for_perf: User) -> Dict[str, Any]:
+def large_category_dataset(
+    test_db_session: Session, test_user_for_perf: User
+) -> Dict[str, Any]:
     """Generate large dataset: 1000 categories, 5000 prompts."""
     categories = generate_categories(test_db_session, 1000, "LargeCat")
     tags = generate_tags_with_hierarchy(test_db_session, 500, 8, "LargeTag")
@@ -327,7 +332,9 @@ def large_category_dataset(test_db_session: Session, test_user_for_perf: User) -
 
 
 @pytest.fixture
-def small_tag_dataset(test_db_session: Session, test_user_for_perf: User) -> Dict[str, Any]:
+def small_tag_dataset(
+    test_db_session: Session, test_user_for_perf: User
+) -> Dict[str, Any]:
     """Generate small tag dataset: 100 tags, 500 prompts."""
     categories = generate_categories(test_db_session, 20, "TagSmallCat")
     tags = generate_tags_with_hierarchy(test_db_session, 100, 5, "TagSmall")
@@ -339,7 +346,9 @@ def small_tag_dataset(test_db_session: Session, test_user_for_perf: User) -> Dic
 
 
 @pytest.fixture
-def medium_tag_dataset(test_db_session: Session, test_user_for_perf: User) -> Dict[str, Any]:
+def medium_tag_dataset(
+    test_db_session: Session, test_user_for_perf: User
+) -> Dict[str, Any]:
     """Generate medium tag dataset: 500 tags, 2000 prompts."""
     categories = generate_categories(test_db_session, 50, "TagMediumCat")
     tags = generate_tags_with_hierarchy(test_db_session, 500, 7, "TagMedium")
@@ -351,7 +360,9 @@ def medium_tag_dataset(test_db_session: Session, test_user_for_perf: User) -> Di
 
 
 @pytest.fixture
-def large_tag_dataset(test_db_session: Session, test_user_for_perf: User) -> Dict[str, Any]:
+def large_tag_dataset(
+    test_db_session: Session, test_user_for_perf: User
+) -> Dict[str, Any]:
     """Generate large tag dataset: 1000 tags with deep hierarchy, 10000 prompts."""
     categories = generate_categories(test_db_session, 100, "TagLargeCat")
     tags = generate_tags_with_hierarchy(test_db_session, 1000, 10, "TagLarge")
@@ -363,7 +374,9 @@ def large_tag_dataset(test_db_session: Session, test_user_for_perf: User) -> Dic
 
 
 @pytest.fixture
-def heavy_association_dataset(test_db_session: Session, test_user_for_perf: User) -> Dict[str, Any]:
+def heavy_association_dataset(
+    test_db_session: Session, test_user_for_perf: User
+) -> Dict[str, Any]:
     """Generate dataset with heavy prompt associations: 50 tags, 5000 prompts, many tags per prompt."""
     categories = generate_categories(test_db_session, 20, "HeavyCat")
     tags = generate_tags_with_hierarchy(test_db_session, 50, 3, "HeavyTag")
@@ -383,7 +396,7 @@ def test_list_all_categories_small_dataset(
     test_db_session: Session,
     small_category_dataset: Dict[str, Any],
     query_counter: QueryCounter,
-    memory_tracker: MemoryTracker
+    memory_tracker: MemoryTracker,
 ):
     """Test category listing with small dataset (baseline)."""
     repo = CategoryRepository(test_db_session)
@@ -417,7 +430,7 @@ def test_list_all_categories_medium_dataset(
     test_db_session: Session,
     medium_category_dataset: Dict[str, Any],
     query_counter: QueryCounter,
-    memory_tracker: MemoryTracker
+    memory_tracker: MemoryTracker,
 ):
     """Test category listing with medium dataset."""
     repo = CategoryRepository(test_db_session)
@@ -447,7 +460,7 @@ def test_list_all_categories_large_dataset(
     test_db_session: Session,
     large_category_dataset: Dict[str, Any],
     query_counter: QueryCounter,
-    memory_tracker: MemoryTracker
+    memory_tracker: MemoryTracker,
 ):
     """Test category listing with large dataset."""
     repo = CategoryRepository(test_db_session)
@@ -482,7 +495,7 @@ def test_list_all_tags_small_dataset(
     test_db_session: Session,
     small_tag_dataset: Dict[str, Any],
     query_counter: QueryCounter,
-    memory_tracker: MemoryTracker
+    memory_tracker: MemoryTracker,
 ):
     """Test tag listing with small dataset (baseline)."""
     repo = TagRepository(test_db_session)
@@ -512,7 +525,7 @@ def test_list_all_tags_medium_dataset(
     test_db_session: Session,
     medium_tag_dataset: Dict[str, Any],
     query_counter: QueryCounter,
-    memory_tracker: MemoryTracker
+    memory_tracker: MemoryTracker,
 ):
     """Test tag listing with medium dataset."""
     repo = TagRepository(test_db_session)
@@ -542,7 +555,7 @@ def test_list_all_tags_large_dataset(
     test_db_session: Session,
     large_tag_dataset: Dict[str, Any],
     query_counter: QueryCounter,
-    memory_tracker: MemoryTracker
+    memory_tracker: MemoryTracker,
 ):
     """Test tag listing with large dataset and deep hierarchy."""
     repo = TagRepository(test_db_session)
@@ -571,7 +584,7 @@ def test_list_all_tags_large_dataset(
 def test_list_with_complex_tag_hierarchy(
     test_db_session: Session,
     large_tag_dataset: Dict[str, Any],
-    query_counter: QueryCounter
+    query_counter: QueryCounter,
 ):
     """Test tag listing with deeply nested hierarchy (10 levels)."""
     repo = TagRepository(test_db_session)
@@ -598,7 +611,7 @@ def test_list_with_heavy_prompt_associations(
     test_db_session: Session,
     heavy_association_dataset: Dict[str, Any],
     query_counter: QueryCounter,
-    memory_tracker: MemoryTracker
+    memory_tracker: MemoryTracker,
 ):
     """Test tag listing with tags having 1000+ prompt associations each."""
     repo = TagRepository(test_db_session)
@@ -637,14 +650,16 @@ class TestQueryOptimization:
         self,
         test_db_session: Session,
         test_user_for_perf: User,
-        query_counter: QueryCounter
+        query_counter: QueryCounter,
     ):
         """Verify that category query count doesn't scale with dataset size (N+1 detection)."""
         repo = CategoryRepository(test_db_session)
 
         # Test with 10 categories
         cats_10 = generate_categories(test_db_session, 10, "QueryTest10")
-        generate_prompts_with_associations(test_db_session, test_user_for_perf, cats_10, [], 50)
+        generate_prompts_with_associations(
+            test_db_session, test_user_for_perf, cats_10, [], 50
+        )
         test_db_session.commit()
 
         query_counter.start()
@@ -656,7 +671,9 @@ class TestQueryOptimization:
         # Test with 100 categories
         test_db_session.rollback()
         cats_100 = generate_categories(test_db_session, 100, "QueryTest100")
-        generate_prompts_with_associations(test_db_session, test_user_for_perf, cats_100, [], 500)
+        generate_prompts_with_associations(
+            test_db_session, test_user_for_perf, cats_100, [], 500
+        )
         test_db_session.commit()
 
         query_counter.start()
@@ -678,7 +695,7 @@ class TestQueryOptimization:
         self,
         test_db_session: Session,
         test_user_for_perf: User,
-        query_counter: QueryCounter
+        query_counter: QueryCounter,
     ):
         """Verify that tag query count doesn't scale with dataset size (N+1 detection)."""
         repo = TagRepository(test_db_session)
@@ -686,7 +703,9 @@ class TestQueryOptimization:
         # Test with 50 tags
         cats = generate_categories(test_db_session, 10, "TagQueryCat")
         tags_50 = generate_tags_with_hierarchy(test_db_session, 50, 3, "TagQuery50")
-        generate_prompts_with_associations(test_db_session, test_user_for_perf, cats, tags_50, 200)
+        generate_prompts_with_associations(
+            test_db_session, test_user_for_perf, cats, tags_50, 200
+        )
         test_db_session.commit()
 
         query_counter.start()
@@ -698,7 +717,9 @@ class TestQueryOptimization:
         # Test with 500 tags
         test_db_session.rollback()
         tags_500 = generate_tags_with_hierarchy(test_db_session, 500, 5, "TagQuery500")
-        generate_prompts_with_associations(test_db_session, test_user_for_perf, cats, tags_500, 2000)
+        generate_prompts_with_associations(
+            test_db_session, test_user_for_perf, cats, tags_500, 2000
+        )
         test_db_session.commit()
 
         query_counter.start()
@@ -719,7 +740,7 @@ class TestQueryOptimization:
         self,
         test_db_session: Session,
         medium_category_dataset: Dict[str, Any],
-        query_counter: QueryCounter
+        query_counter: QueryCounter,
     ):
         """Analyze query patterns for optimization opportunities."""
         repo_cat = CategoryRepository(test_db_session)
@@ -754,9 +775,7 @@ class TestQueryOptimization:
 
 
 def test_category_memory_usage_scaling(
-    test_db_session: Session,
-    test_user_for_perf: User,
-    memory_tracker: MemoryTracker
+    test_db_session: Session, test_user_for_perf: User, memory_tracker: MemoryTracker
 ):
     """Test memory consumption as category dataset size increases."""
     repo = CategoryRepository(test_db_session)
@@ -765,7 +784,9 @@ def test_category_memory_usage_scaling(
     for size in [10, 50, 100, 500, 1000]:
         # Generate dataset
         cats = generate_categories(test_db_session, size, f"MemCat{size}")
-        generate_prompts_with_associations(test_db_session, test_user_for_perf, cats, [], size * 5)
+        generate_prompts_with_associations(
+            test_db_session, test_user_for_perf, cats, [], size * 5
+        )
         test_db_session.commit()
 
         # Measure
@@ -773,17 +794,21 @@ def test_category_memory_usage_scaling(
         repo.list_all_with_counts()
         mem_stats = memory_tracker.stop()
 
-        results.append({
-            "size": size,
-            "memory_mb": mem_stats["peak_mb"],
-        })
+        results.append(
+            {
+                "size": size,
+                "memory_mb": mem_stats["peak_mb"],
+            }
+        )
 
         # Cleanup for next iteration
         test_db_session.rollback()
 
     print(f"\n=== Category Memory Scaling ===")
     for result in results:
-        print(f"Size: {result['size']:4d} categories -> Memory: {result['memory_mb']:.2f} MB")
+        print(
+            f"Size: {result['size']:4d} categories -> Memory: {result['memory_mb']:.2f} MB"
+        )
 
     # Check for reasonable memory growth (should be roughly linear)
     if len(results) >= 2:
@@ -794,9 +819,7 @@ def test_category_memory_usage_scaling(
 
 
 def test_tag_memory_usage_with_associations(
-    test_db_session: Session,
-    test_user_for_perf: User,
-    memory_tracker: MemoryTracker
+    test_db_session: Session, test_user_for_perf: User, memory_tracker: MemoryTracker
 ):
     """Test memory usage for tags with varying association counts."""
     repo = TagRepository(test_db_session)
@@ -804,7 +827,9 @@ def test_tag_memory_usage_with_associations(
 
     for prompt_count in [100, 500, 1000, 5000]:
         cats = generate_categories(test_db_session, 20, f"TagMemCat{prompt_count}")
-        tags = generate_tags_with_hierarchy(test_db_session, 100, 3, f"TagMem{prompt_count}")
+        tags = generate_tags_with_hierarchy(
+            test_db_session, 100, 3, f"TagMem{prompt_count}"
+        )
         generate_prompts_with_associations(
             test_db_session, test_user_for_perf, cats, tags, prompt_count, (5, 10)
         )
@@ -814,16 +839,20 @@ def test_tag_memory_usage_with_associations(
         repo.list_all_with_counts()
         mem_stats = memory_tracker.stop()
 
-        results.append({
-            "prompts": prompt_count,
-            "memory_mb": mem_stats["peak_mb"],
-        })
+        results.append(
+            {
+                "prompts": prompt_count,
+                "memory_mb": mem_stats["peak_mb"],
+            }
+        )
 
         test_db_session.rollback()
 
     print(f"\n=== Tag Memory with Associations ===")
     for result in results:
-        print(f"Prompts: {result['prompts']:5d} -> Memory: {result['memory_mb']:.2f} MB")
+        print(
+            f"Prompts: {result['prompts']:5d} -> Memory: {result['memory_mb']:.2f} MB"
+        )
 
 
 # ============================================================================
@@ -840,7 +869,7 @@ def performance_results():
         "metadata": {
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "platform": sys.platform,
-        }
+        },
     }
 
 
@@ -858,18 +887,30 @@ def generate_performance_baseline_report(results: Dict[str, Any]):
         f.write("`list_all_with_counts()` operations for tags and categories.\n\n")
 
         f.write("## Category Performance\n\n")
-        f.write("| Dataset | Categories | Prompts | Time (s) | Queries | Memory (MB) |\n")
-        f.write("|---------|-----------|---------|----------|---------|-------------|\n")
+        f.write(
+            "| Dataset | Categories | Prompts | Time (s) | Queries | Memory (MB) |\n"
+        )
+        f.write(
+            "|---------|-----------|---------|----------|---------|-------------|\n"
+        )
         for result in results.get("categories", []):
-            f.write(f"| {result['dataset']} | {result['count']} | {result['prompts']} | ")
-            f.write(f"{result['time']:.4f} | {result['queries']} | {result['memory']:.2f} |\n")
+            f.write(
+                f"| {result['dataset']} | {result['count']} | {result['prompts']} | "
+            )
+            f.write(
+                f"{result['time']:.4f} | {result['queries']} | {result['memory']:.2f} |\n"
+            )
 
         f.write("\n## Tag Performance\n\n")
         f.write("| Dataset | Tags | Prompts | Time (s) | Queries | Memory (MB) |\n")
         f.write("|---------|------|---------|----------|---------|-------------|\n")
         for result in results.get("tags", []):
-            f.write(f"| {result['dataset']} | {result['count']} | {result['prompts']} | ")
-            f.write(f"{result['time']:.4f} | {result['queries']} | {result['memory']:.2f} |\n")
+            f.write(
+                f"| {result['dataset']} | {result['count']} | {result['prompts']} | "
+            )
+            f.write(
+                f"{result['time']:.4f} | {result['queries']} | {result['memory']:.2f} |\n"
+            )
 
         f.write("\n## Analysis\n\n")
         f.write("### Query Optimization\n\n")
@@ -880,13 +921,21 @@ def generate_performance_baseline_report(results: Dict[str, Any]):
         f.write("### Performance Characteristics\n\n")
         f.write("- Response time scales linearly with dataset size\n")
         f.write("- Memory usage is proportional to result set size\n")
-        f.write("- Operations complete in under 5 seconds for datasets up to 1000 items\n\n")
+        f.write(
+            "- Operations complete in under 5 seconds for datasets up to 1000 items\n\n"
+        )
 
         f.write("## Recommendations\n\n")
-        f.write("1. **Pagination**: For datasets exceeding 1000 items, consider implementing pagination\n")
-        f.write("2. **Caching**: Consider caching results for frequently accessed lists\n")
+        f.write(
+            "1. **Pagination**: For datasets exceeding 1000 items, consider implementing pagination\n"
+        )
+        f.write(
+            "2. **Caching**: Consider caching results for frequently accessed lists\n"
+        )
         f.write("3. **Indexing**: Ensure proper database indexes are maintained\n")
-        f.write("4. **Monitoring**: Set up alerts if response time exceeds baseline by >10%\n\n")
+        f.write(
+            "4. **Monitoring**: Set up alerts if response time exceeds baseline by >10%\n\n"
+        )
 
     print(f"\nPerformance baseline report generated: {report_path}")
 
@@ -895,7 +944,7 @@ def test_generate_baseline_report(
     test_db_session: Session,
     test_user_for_perf: User,
     query_counter: QueryCounter,
-    memory_tracker: MemoryTracker
+    memory_tracker: MemoryTracker,
 ):
     """Generate comprehensive baseline performance report."""
     results = {
@@ -904,7 +953,7 @@ def test_generate_baseline_report(
         "metadata": {
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "platform": sys.platform,
-        }
+        },
     }
 
     # Test categories
@@ -914,8 +963,12 @@ def test_generate_baseline_report(
         ("Large", 1000, 5000),
     ]:
         cats = generate_categories(test_db_session, cat_count, f"Report{dataset}Cat")
-        tags = generate_tags_with_hierarchy(test_db_session, 50, 3, f"Report{dataset}Tag")
-        generate_prompts_with_associations(test_db_session, test_user_for_perf, cats, tags, prompt_count)
+        tags = generate_tags_with_hierarchy(
+            test_db_session, 50, 3, f"Report{dataset}Tag"
+        )
+        generate_prompts_with_associations(
+            test_db_session, test_user_for_perf, cats, tags, prompt_count
+        )
         test_db_session.commit()
 
         repo = CategoryRepository(test_db_session)
@@ -929,14 +982,16 @@ def test_generate_baseline_report(
         query_counter.stop()
         mem_stats = memory_tracker.stop()
 
-        results["categories"].append({
-            "dataset": dataset,
-            "count": cat_count,
-            "prompts": prompt_count,
-            "time": elapsed,
-            "queries": query_counter.get_count(),
-            "memory": mem_stats["peak_mb"],
-        })
+        results["categories"].append(
+            {
+                "dataset": dataset,
+                "count": cat_count,
+                "prompts": prompt_count,
+                "time": elapsed,
+                "queries": query_counter.get_count(),
+                "memory": mem_stats["peak_mb"],
+            }
+        )
 
         test_db_session.rollback()
         query_counter.reset()
@@ -948,8 +1003,12 @@ def test_generate_baseline_report(
         ("Large", 1000, 10000),
     ]:
         cats = generate_categories(test_db_session, 50, f"TagReport{dataset}Cat")
-        tags = generate_tags_with_hierarchy(test_db_session, tag_count, 5, f"TagReport{dataset}")
-        generate_prompts_with_associations(test_db_session, test_user_for_perf, cats, tags, prompt_count)
+        tags = generate_tags_with_hierarchy(
+            test_db_session, tag_count, 5, f"TagReport{dataset}"
+        )
+        generate_prompts_with_associations(
+            test_db_session, test_user_for_perf, cats, tags, prompt_count
+        )
         test_db_session.commit()
 
         repo = TagRepository(test_db_session)
@@ -963,14 +1022,16 @@ def test_generate_baseline_report(
         query_counter.stop()
         mem_stats = memory_tracker.stop()
 
-        results["tags"].append({
-            "dataset": dataset,
-            "count": tag_count,
-            "prompts": prompt_count,
-            "time": elapsed,
-            "queries": query_counter.get_count(),
-            "memory": mem_stats["peak_mb"],
-        })
+        results["tags"].append(
+            {
+                "dataset": dataset,
+                "count": tag_count,
+                "prompts": prompt_count,
+                "time": elapsed,
+                "queries": query_counter.get_count(),
+                "memory": mem_stats["peak_mb"],
+            }
+        )
 
         test_db_session.rollback()
         query_counter.reset()

@@ -127,52 +127,46 @@ class AuthConfig(BaseSettings):
     # Environment
     environment: str = Field(
         default="development",
-        description="Environment (development/testing/production)"
+        description="Environment (development/testing/production)",
     )
     disable_rate_limiting: bool = Field(
         default=False,
-        description="Disable rate limiting (dev/test only; never enable in production)"
+        description="Disable rate limiting (dev/test only; never enable in production)",
     )
     auth_enabled: bool = Field(
         default=True,
-        description="Enable authentication subsystem. Set to false for anonymous/local mode."
+        description="Enable authentication subsystem. Set to false for anonymous/local mode.",
     )
 
     # JWT Configuration
     jwt_private_key_path: str = Field(
         default="secrets/jwt/private_key.pem",
-        description="Path to ES256 private key for signing JWT tokens"
+        description="Path to ES256 private key for signing JWT tokens",
     )
     jwt_public_key_path: str = Field(
         default="secrets/jwt/public_key.pem",
-        description="Path to ES256 public key for verifying JWT tokens"
+        description="Path to ES256 public key for verifying JWT tokens",
     )
     jwt_algorithm: str = Field(
         default="ES256",
-        description="JWT signing algorithm (ES256 for ECDSA with SHA-256)"
+        description="JWT signing algorithm (ES256 for ECDSA with SHA-256)",
     )
     jwt_access_token_expire_seconds: int = Field(
-        default=900,  # 15 minutes
-        gt=0,
-        description="Access token lifetime in seconds"
+        default=900, gt=0, description="Access token lifetime in seconds"  # 15 minutes
     )
     jwt_refresh_token_expire_seconds: int = Field(
-        default=604800,  # 7 days
-        gt=0,
-        description="Refresh token lifetime in seconds"
+        default=604800, gt=0, description="Refresh token lifetime in seconds"  # 7 days
     )
     jwt_refresh_token_remember_me_expire_seconds: int = Field(
         default=2592000,  # 30 days
         gt=0,
-        description="Refresh token lifetime when 'remember me' is enabled"
+        description="Refresh token lifetime when 'remember me' is enabled",
     )
     jwt_issuer: str = Field(
-        default="promptvault",
-        description="JWT token issuer identifier"
+        default="promptvault", description="JWT token issuer identifier"
     )
     jwt_audience: str = Field(
-        default="promptvault-api",
-        description="JWT token audience identifier"
+        default="promptvault-api", description="JWT token audience identifier"
     )
 
     # Password Policy
@@ -180,134 +174,109 @@ class AuthConfig(BaseSettings):
         default=12,
         ge=8,
         le=128,
-        description="Minimum password length (8-128 characters)"
+        description="Minimum password length (8-128 characters)",
     )
     password_require_uppercase: bool = Field(
-        default=True,
-        description="Require at least one uppercase letter"
+        default=True, description="Require at least one uppercase letter"
     )
     password_require_lowercase: bool = Field(
-        default=True,
-        description="Require at least one lowercase letter"
+        default=True, description="Require at least one lowercase letter"
     )
     password_require_digit: bool = Field(
-        default=True,
-        description="Require at least one digit"
+        default=True, description="Require at least one digit"
     )
     password_require_special: bool = Field(
-        default=True,
-        description="Require at least one special character"
+        default=True, description="Require at least one special character"
     )
 
     # Account Security
     max_login_attempts: int = Field(
         default=5,
         gt=0,
-        description="Maximum failed login attempts before account lockout"
+        description="Maximum failed login attempts before account lockout",
     )
     account_lockout_duration_seconds: int = Field(
         default=900,  # 15 minutes
         gt=0,
-        description="Account lockout duration in seconds"
+        description="Account lockout duration in seconds",
     )
     max_sessions_per_user: int = Field(
         default=5,
         ge=0,
-        description="Maximum concurrent sessions per user (0 = unlimited)"
+        description="Maximum concurrent sessions per user (0 = unlimited)",
     )
     session_inactive_timeout_seconds: int = Field(
         default=2592000,  # 30 days
         gt=0,
-        description="Session inactivity timeout in seconds"
+        description="Session inactivity timeout in seconds",
     )
 
     # Rate Limiting
     redis_url: str = Field(
         default="redis://localhost:6379/0",
-        description="Redis connection URL for rate limiting storage"
+        description="Redis connection URL for rate limiting storage",
     )
     rate_limit_login_attempts: int = Field(
-        default=5,
-        gt=0,
-        description="Login attempts allowed per time window"
+        default=5, gt=0, description="Login attempts allowed per time window"
     )
     rate_limit_login_window_seconds: int = Field(
         default=900,  # 15 minutes
         gt=0,
-        description="Login rate limit time window in seconds"
+        description="Login rate limit time window in seconds",
     )
     rate_limit_register_attempts: int = Field(
-        default=3,
-        gt=0,
-        description="Registration attempts allowed per time window"
+        default=3, gt=0, description="Registration attempts allowed per time window"
     )
     rate_limit_register_window_seconds: int = Field(
         default=3600,  # 1 hour
         gt=0,
-        description="Registration rate limit time window in seconds"
+        description="Registration rate limit time window in seconds",
     )
     rate_limit_password_reset_attempts: int = Field(
-        default=3,
-        gt=0,
-        description="Password reset attempts allowed per time window"
+        default=3, gt=0, description="Password reset attempts allowed per time window"
     )
     rate_limit_password_reset_window_seconds: int = Field(
         default=3600,  # 1 hour
         gt=0,
-        description="Password reset rate limit time window in seconds"
+        description="Password reset rate limit time window in seconds",
     )
 
     # Email Configuration
     smtp_host: str = Field(
-        default="smtp.example.com",
-        description="SMTP server hostname"
+        default="smtp.example.com", description="SMTP server hostname"
     )
-    smtp_port: int = Field(
-        default=587,
-        gt=0,
-        le=65535,
-        description="SMTP server port"
-    )
+    smtp_port: int = Field(default=587, gt=0, le=65535, description="SMTP server port")
     smtp_use_tls: bool = Field(
-        default=True,
-        description="Enable TLS encryption for SMTP connection"
+        default=True, description="Enable TLS encryption for SMTP connection"
     )
     smtp_username: str = Field(
-        default="noreply@example.com",
-        description="SMTP authentication username"
+        default="noreply@example.com", description="SMTP authentication username"
     )
     smtp_password: str = Field(
-        default="changeme",
-        description="SMTP authentication password"
+        default="changeme", description="SMTP authentication password"
     )
     email_from_address: str = Field(
-        default="noreply@example.com",
-        description="Email sender address"
+        default="noreply@example.com", description="Email sender address"
     )
     email_from_name: str = Field(
-        default="PromptVault",
-        description="Email sender display name"
+        default="PromptVault", description="Email sender display name"
     )
     password_reset_token_expire_seconds: int = Field(
         default=3600,  # 1 hour
         gt=0,
-        description="Password reset token validity in seconds"
+        description="Password reset token validity in seconds",
     )
     app_base_url: str = Field(
         default="http://localhost:8000",
-        description="Application base URL for email links"
+        description="Application base URL for email links",
     )
 
     # Scheduler Configuration
     cleanup_interval_hours: int = Field(
-        default=1,
-        gt=0,
-        description="Session cleanup scheduler interval in hours"
+        default=1, gt=0, description="Session cleanup scheduler interval in hours"
     )
     cleanup_batch_size: int = Field(
-        default=100,
-        gt=0,
-        description="Number of expired sessions to cleanup per batch"
+        default=100, gt=0, description="Number of expired sessions to cleanup per batch"
     )
 
     model_config = ConfigDict(

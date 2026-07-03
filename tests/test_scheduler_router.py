@@ -35,7 +35,9 @@ class FakeScheduler:
         return {
             "success": True,
             "expired_found": 3,
-            "timestamp": datetime(2026, 1, 21, 12, 30, 0, tzinfo=timezone.utc).isoformat(),
+            "timestamp": datetime(
+                2026, 1, 21, 12, 30, 0, tzinfo=timezone.utc
+            ).isoformat(),
         }
 
 
@@ -118,7 +120,9 @@ def test_get_scheduler_raises_when_unset():
     assert exc.value.status_code == 503
 
 
-def test_scheduler_status_returns_job_info(api_client, admin_headers, scheduler_override):
+def test_scheduler_status_returns_job_info(
+    api_client, admin_headers, scheduler_override
+):
     scheduler_override.start()
     response = api_client.get("/api/admin/scheduler/status", headers=admin_headers)
     assert response.status_code == 200
@@ -129,7 +133,9 @@ def test_scheduler_status_returns_job_info(api_client, admin_headers, scheduler_
 
 
 def test_scheduler_start_and_stop_flow(api_client, admin_headers, scheduler_override):
-    start_response = api_client.post("/api/admin/scheduler/start", headers=admin_headers)
+    start_response = api_client.post(
+        "/api/admin/scheduler/start", headers=admin_headers
+    )
     assert start_response.status_code == 200
     assert start_response.json()["is_running"] is True
 
@@ -138,20 +144,26 @@ def test_scheduler_start_and_stop_flow(api_client, admin_headers, scheduler_over
     assert stop_response.json()["is_running"] is False
 
 
-def test_scheduler_start_conflict_when_running(api_client, admin_headers, scheduler_override):
+def test_scheduler_start_conflict_when_running(
+    api_client, admin_headers, scheduler_override
+):
     scheduler_override.start()
     response = api_client.post("/api/admin/scheduler/start", headers=admin_headers)
     assert response.status_code == 409
 
 
-def test_scheduler_stop_conflict_when_stopped(api_client, admin_headers, scheduler_override):
+def test_scheduler_stop_conflict_when_stopped(
+    api_client, admin_headers, scheduler_override
+):
     scheduler_override.stop()
     response = api_client.post("/api/admin/scheduler/stop", headers=admin_headers)
     assert response.status_code == 409
 
 
 def test_scheduler_cleanup_now_success(api_client, admin_headers, scheduler_override):
-    response = api_client.post("/api/admin/scheduler/cleanup-now", headers=admin_headers)
+    response = api_client.post(
+        "/api/admin/scheduler/cleanup-now", headers=admin_headers
+    )
     assert response.status_code == 200
     payload = response.json()
     assert payload["success"] is True
@@ -165,7 +177,9 @@ def test_scheduler_cleanup_now_error(api_client, admin_headers, scheduler_overri
         raise RuntimeError("boom")
 
     scheduler_override.run_cleanup_now = fail_cleanup
-    response = api_client.post("/api/admin/scheduler/cleanup-now", headers=admin_headers)
+    response = api_client.post(
+        "/api/admin/scheduler/cleanup-now", headers=admin_headers
+    )
     assert response.status_code == 200
     payload = response.json()
     assert payload["success"] is False

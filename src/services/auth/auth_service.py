@@ -541,10 +541,12 @@ class AuthService:
 
         # Update session with new JTI
         self.session_repo.update_session_token(family_id, new_jti)
-        
+
         # ENHANCED: Check and enforce maximum sessions limit
         if not self.config.unlimited_sessions:
-            active_sessions = self.session_repo.count_user_sessions(user.id, active_only=True)
+            active_sessions = self.session_repo.count_user_sessions(
+                user.id, active_only=True
+            )
             if active_sessions > self.config.max_sessions_per_user:
                 # Revoke oldest sessions to maintain limit
                 while active_sessions > self.config.max_sessions_per_user:
@@ -558,7 +560,7 @@ class AuthService:
                         active_sessions -= 1
                     else:
                         break  # Can't revoke more without affecting current session
-        
+
         self.db.commit()
 
         # Fixed: Include all required UserResponse fields to prevent Pydantic validation error
@@ -662,7 +664,9 @@ class AuthService:
             raise UserNotFoundError(f"User not found: {user_id}")
 
         # Count sessions
-        active_sessions = self.session_repo.count_user_sessions(user_id, active_only=True)
+        active_sessions = self.session_repo.count_user_sessions(
+            user_id, active_only=True
+        )
         all_sessions = self.session_repo.count_user_sessions(user_id, active_only=False)
 
         # Calculate days since account creation
@@ -808,7 +812,9 @@ class AuthService:
 
         return True
 
-    def get_user_sessions(self, user_id: str, current_family_id: Optional[str] = None) -> List[Dict[str, any]]:
+    def get_user_sessions(
+        self, user_id: str, current_family_id: Optional[str] = None
+    ) -> List[Dict[str, any]]:
         """Get all active sessions for a user.
 
         Args:
@@ -842,12 +848,16 @@ class AuthService:
                 "device_info": getattr(session, "device_info", None),
                 "ip_address": session.ip_address,
                 "created_at": session.created_at.isoformat(),
-                "last_used_at": session.last_used_at.isoformat()
-                if session.last_used_at
-                else None,
+                "last_used_at": (
+                    session.last_used_at.isoformat() if session.last_used_at else None
+                ),
                 "expires_at": session.expires_at.isoformat(),
                 "is_revoked": session.is_revoked,
-                "is_current": session.family_id == current_family_id if current_family_id else False,
+                "is_current": (
+                    session.family_id == current_family_id
+                    if current_family_id
+                    else False
+                ),
             }
             for session in sessions
         ]
@@ -893,7 +903,9 @@ class AuthService:
 
         return revoked
 
-    def revoke_all_sessions(self, user_id: str, except_family_id: Optional[str] = None) -> int:
+    def revoke_all_sessions(
+        self, user_id: str, except_family_id: Optional[str] = None
+    ) -> int:
         """Revoke all user sessions except optionally current one.
 
         Args:

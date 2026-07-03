@@ -87,7 +87,9 @@ class TestValidateDatabaseUrl:
 
     def test_postgresql_missing_database_name(self):
         """Test PostgreSQL URL missing database name."""
-        is_valid, error = validate_database_url("postgresql://user:pass@localhost:5432/")
+        is_valid, error = validate_database_url(
+            "postgresql://user:pass@localhost:5432/"
+        )
         assert is_valid is False
         assert "database name" in error.lower()
 
@@ -462,7 +464,9 @@ class TestValidatePath:
 
     def test_path_with_nonexistent_parent(self):
         """Test path with nonexistent parent directory."""
-        is_valid, error = validate_path("/nonexistent/parent/file.txt", must_exist=False)
+        is_valid, error = validate_path(
+            "/nonexistent/parent/file.txt", must_exist=False
+        )
         assert is_valid is False
         assert "parent" in error.lower()
 
@@ -472,9 +476,11 @@ class TestValidateJwtKey:
 
     def test_valid_ec_private_key(self):
         """Test valid EC private key."""
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.pem') as tmp:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".pem") as tmp:
             tmp.write("-----BEGIN EC PRIVATE KEY-----\n")
-            tmp.write("MHcCAQEEIIGlRHnRQUSMPxd5JPbN4Pt3VfxaJi75uyNf8qRpWNYGoAoGCCqGSM49\n")
+            tmp.write(
+                "MHcCAQEEIIGlRHnRQUSMPxd5JPbN4Pt3VfxaJi75uyNf8qRpWNYGoAoGCCqGSM49\n"
+            )
             tmp.write("-----END EC PRIVATE KEY-----\n")
             tmp_path = tmp.name
 
@@ -487,7 +493,7 @@ class TestValidateJwtKey:
 
     def test_valid_pkcs8_private_key(self):
         """Test valid PKCS#8 private key."""
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.pem') as tmp:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".pem") as tmp:
             tmp.write("-----BEGIN PRIVATE KEY-----\n")
             tmp.write("MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgabc123xyz\n")
             tmp.write("-----END PRIVATE KEY-----\n")
@@ -502,7 +508,7 @@ class TestValidateJwtKey:
 
     def test_valid_public_key(self):
         """Test valid public key."""
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.pem') as tmp:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".pem") as tmp:
             tmp.write("-----BEGIN PUBLIC KEY-----\n")
             tmp.write("MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE123abc\n")
             tmp.write("-----END PUBLIC KEY-----\n")
@@ -548,7 +554,7 @@ class TestValidateJwtKey:
 
     def test_empty_key_file(self):
         """Test empty key file."""
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.pem') as tmp:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".pem") as tmp:
             tmp_path = tmp.name
 
         try:
@@ -560,7 +566,7 @@ class TestValidateJwtKey:
 
     def test_invalid_pem_format_private(self):
         """Test invalid PEM format for private key."""
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.pem') as tmp:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".pem") as tmp:
             tmp.write("This is not a valid PEM file\n")
             tmp_path = tmp.name
 
@@ -573,7 +579,7 @@ class TestValidateJwtKey:
 
     def test_invalid_pem_format_public(self):
         """Test invalid PEM format for public key."""
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.pem') as tmp:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".pem") as tmp:
             tmp.write("Not a PEM file\n")
             tmp_path = tmp.name
 
@@ -590,7 +596,7 @@ class TestValidateEnvFile:
 
     def test_valid_env_file(self):
         """Test valid .env file."""
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.env') as tmp:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".env") as tmp:
             tmp.write("DATABASE_URL=postgresql://localhost/db\n")
             tmp.write("DEBUG=false\n")
             tmp.write("# Comment line\n")
@@ -607,7 +613,7 @@ class TestValidateEnvFile:
 
     def test_empty_env_file(self):
         """Test empty .env file."""
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.env') as tmp:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".env") as tmp:
             tmp_path = tmp.name
 
         try:
@@ -619,7 +625,7 @@ class TestValidateEnvFile:
 
     def test_env_file_missing_equals(self):
         """Test .env file with line missing equals sign."""
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.env') as tmp:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".env") as tmp:
             tmp.write("DATABASE_URL=postgresql://localhost/db\n")
             tmp.write("INVALID_LINE\n")
             tmp_path = tmp.name
@@ -633,7 +639,7 @@ class TestValidateEnvFile:
 
     def test_env_file_empty_variable_name(self):
         """Test .env file with empty variable name."""
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.env') as tmp:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".env") as tmp:
             tmp.write("=value\n")
             tmp_path = tmp.name
 
@@ -646,7 +652,7 @@ class TestValidateEnvFile:
 
     def test_env_file_invalid_variable_name(self):
         """Test .env file with invalid variable name."""
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.env') as tmp:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".env") as tmp:
             tmp.write("invalid-name=value\n")
             tmp_path = tmp.name
 

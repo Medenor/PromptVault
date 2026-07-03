@@ -437,7 +437,8 @@ function setupChangePasswordForm(): void {
     'current-password',
     'current-password-error',
     t('auth.profile.currentPasswordRequired') ||
-      (t('validation.required') || 'This field is required.')
+      t('validation.required') ||
+      'This field is required.'
   );
   attachRequiredLiveValidation(
     'new-password',
@@ -454,7 +455,8 @@ function setupChangePasswordForm(): void {
     'confirm-new-password'
   ) as HTMLInputElement | null;
   const passwordConfirmCheck = () => {
-    const password = (document.getElementById('new-password') as HTMLInputElement | null)?.value ?? '';
+    const password =
+      (document.getElementById('new-password') as HTMLInputElement | null)?.value ?? '';
     const confirm = confirmPasswordInput?.value ?? '';
     if (!confirm.trim()) {
       return;

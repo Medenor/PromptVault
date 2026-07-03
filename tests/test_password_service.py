@@ -30,7 +30,6 @@ from argon2.exceptions import VerifyMismatchError, VerificationError, InvalidHas
 from src.services.auth.password_service import PasswordService, COMMON_PASSWORDS
 from src.config.auth_config import AuthConfig
 
-
 # ============================================================================
 # FIXTURES
 # ============================================================================
@@ -53,13 +52,16 @@ def minimal_auth_config():
     Returns:
         AuthConfig: Configuration with relaxed password policy
     """
-    with patch.dict('os.environ', {
-        'PASSWORD_MIN_LENGTH': '4',
-        'PASSWORD_REQUIRE_UPPERCASE': 'false',
-        'PASSWORD_REQUIRE_LOWERCASE': 'false',
-        'PASSWORD_REQUIRE_DIGIT': 'false',
-        'PASSWORD_REQUIRE_SPECIAL': 'false'
-    }):
+    with patch.dict(
+        "os.environ",
+        {
+            "PASSWORD_MIN_LENGTH": "4",
+            "PASSWORD_REQUIRE_UPPERCASE": "false",
+            "PASSWORD_REQUIRE_LOWERCASE": "false",
+            "PASSWORD_REQUIRE_DIGIT": "false",
+            "PASSWORD_REQUIRE_SPECIAL": "false",
+        },
+    ):
         return AuthConfig()
 
 
@@ -84,28 +86,28 @@ def sample_passwords():
         dict: Dictionary of test passwords categorized by strength
     """
     return {
-        'weak': [
-            'abc',
-            '123',
-            'password',
-            'qwerty',
-            '111111',
+        "weak": [
+            "abc",
+            "123",
+            "password",
+            "qwerty",
+            "111111",
         ],
-        'medium': [
-            'Password1',
-            'Test1234',
-            'Hello123',
+        "medium": [
+            "Password1",
+            "Test1234",
+            "Hello123",
         ],
-        'strong': [
-            'MyP@ssw0rd123',
-            'Str0ng!Pass',
-            'C0mplex#Pwd2024',
+        "strong": [
+            "MyP@ssw0rd123",
+            "Str0ng!Pass",
+            "C0mplex#Pwd2024",
         ],
-        'very_strong': [
-            'V3ry!C0mpl3x#P@ssw0rd$2024',
-            'Ultra$ecure!P@ssphrase#123456',
-            'Extrem3ly!L0ng&C0mplex#P@ssw0rd$Today',
-        ]
+        "very_strong": [
+            "V3ry!C0mpl3x#P@ssw0rd$2024",
+            "Ultra$ecure!P@ssphrase#123456",
+            "Extrem3ly!L0ng&C0mplex#P@ssw0rd$Today",
+        ],
     }
 
 
@@ -132,11 +134,11 @@ class TestHashPassword:
         hash_result = password_service.hash_password(password)
 
         # Argon2id PHC format: $argon2id$v=19$m=102400,t=2,p=8$...
-        assert hash_result.startswith('$argon2id$')
-        assert 'v=19' in hash_result
-        assert 'm=102400' in hash_result
-        assert 't=2' in hash_result
-        assert 'p=8' in hash_result
+        assert hash_result.startswith("$argon2id$")
+        assert "v=19" in hash_result
+        assert "m=102400" in hash_result
+        assert "t=2" in hash_result
+        assert "p=8" in hash_result
 
     def test_hash_unique_salts(self, password_service):
         """Test that same password produces different hashes (unique salts)."""
@@ -167,7 +169,7 @@ class TestHashPassword:
         hash_result = password_service.hash_password(long_password)
 
         assert hash_result is not None
-        assert hash_result.startswith('$argon2id$')
+        assert hash_result.startswith("$argon2id$")
 
     def test_hash_unicode_characters(self, password_service):
         """Test hashing passwords with Unicode characters."""
@@ -181,13 +183,13 @@ class TestHashPassword:
         for password in unicode_passwords:
             hash_result = password_service.hash_password(password)
             assert hash_result is not None
-            assert hash_result.startswith('$argon2id$')
+            assert hash_result.startswith("$argon2id$")
 
     def test_hash_special_characters(self, password_service):
         """Test hashing passwords with various special characters."""
         special_passwords = [
             "P@ssw0rd!#$%",
-            "Test<>?:\"{}[]",
+            'Test<>?:"{}[]',
             "Pass`~^&*()_+-=",
             "Secure|\\;',./",
         ]
@@ -221,7 +223,9 @@ class TestHashPassword:
         tab_password = "Tab\tPassword123!"
         hash_result = password_service.hash_password(tab_password)
         assert password_service.verify_password(tab_password, hash_result)
-        assert not password_service.verify_password(tab_password.replace("\t", " "), hash_result)
+        assert not password_service.verify_password(
+            tab_password.replace("\t", " "), hash_result
+        )
 
 
 # ============================================================================
@@ -244,7 +248,10 @@ class TestVerifyPassword:
         password = "Correct!Password123"
         password_hash = password_service.hash_password(password)
 
-        assert password_service.verify_password("Wrong!Password123", password_hash) is False
+        assert (
+            password_service.verify_password("Wrong!Password123", password_hash)
+            is False
+        )
 
     def test_verify_case_sensitive(self, password_service):
         """Test verification is case-sensitive."""
@@ -252,8 +259,14 @@ class TestVerifyPassword:
         password_hash = password_service.hash_password(password)
 
         assert password_service.verify_password(password, password_hash) is True
-        assert password_service.verify_password("casesensitive123!", password_hash) is False
-        assert password_service.verify_password("CASESENSITIVE123!", password_hash) is False
+        assert (
+            password_service.verify_password("casesensitive123!", password_hash)
+            is False
+        )
+        assert (
+            password_service.verify_password("CASESENSITIVE123!", password_hash)
+            is False
+        )
 
     def test_verify_empty_password_returns_false(self, password_service):
         """Test verification with empty password returns False."""
@@ -287,7 +300,9 @@ class TestVerifyPassword:
         ]
 
         for invalid_hash in invalid_hashes:
-            assert password_service.verify_password("Password123!", invalid_hash) is False
+            assert (
+                password_service.verify_password("Password123!", invalid_hash) is False
+            )
 
     def test_verify_different_algorithm_hash(self, password_service):
         """Test verification fails with hash from different algorithm."""
@@ -319,7 +334,9 @@ class TestVerifyPassword:
         # This is a heuristic test; timing can vary with system load
         if len(times) > 1:
             time_variance = max(times) - min(times)
-            assert time_variance < 0.05, "Timing variance too high - possible timing attack vulnerability"
+            assert (
+                time_variance < 0.05
+            ), "Timing variance too high - possible timing attack vulnerability"
 
     def test_verify_unicode_password(self, password_service):
         """Test verification with Unicode passwords."""
@@ -327,20 +344,29 @@ class TestVerifyPassword:
         password_hash = password_service.hash_password(unicode_password)
 
         assert password_service.verify_password(unicode_password, password_hash) is True
-        assert password_service.verify_password("WrongPassword123!", password_hash) is False
+        assert (
+            password_service.verify_password("WrongPassword123!", password_hash)
+            is False
+        )
 
     def test_verify_handles_argon2_exceptions(self, password_service):
         """Test that Argon2 exceptions are handled gracefully."""
         # Test VerifyMismatchError - wrong password
         password = "Correct!Password123"
         password_hash = password_service.hash_password(password)
-        assert password_service.verify_password("Wrong!Password123", password_hash) is False
+        assert (
+            password_service.verify_password("Wrong!Password123", password_hash)
+            is False
+        )
 
         # Test InvalidHashError - invalid hash format
         assert password_service.verify_password("Password123!", "invalid_hash") is False
 
         # Test VerificationError - malformed hash
-        assert password_service.verify_password("Password123!", "$argon2id$incomplete") is False
+        assert (
+            password_service.verify_password("Password123!", "$argon2id$incomplete")
+            is False
+        )
 
         # Test Exception handling - None values
         assert password_service.verify_password(None, password_hash) is False
@@ -348,7 +374,7 @@ class TestVerifyPassword:
 
         # Test generic Exception handling by providing invalid types
         # This should trigger the catch-all Exception handler
-        with patch.object(password_service, '_hasher') as mock_hasher:
+        with patch.object(password_service, "_hasher") as mock_hasher:
             mock_hasher.verify.side_effect = RuntimeError("Unexpected error")
             assert password_service.verify_password("test", "hash") is False
 
@@ -453,14 +479,21 @@ class TestValidatePasswordPolicy:
     def test_validate_with_minimal_config(self):
         """Test validation with all requirements disabled."""
         import os
+
         # Save original env vars
         original_env = {}
         env_vars = [
-            'PASSWORD_MIN_LENGTH', 'PASSWORD_REQUIRE_UPPERCASE',
-            'PASSWORD_REQUIRE_LOWERCASE', 'PASSWORD_REQUIRE_DIGIT',
-            'PASSWORD_REQUIRE_SPECIAL', 'JWT_PRIVATE_KEY_PATH',
-            'JWT_PUBLIC_KEY_PATH', 'SMTP_HOST', 'SMTP_USERNAME',
-            'EMAIL_FROM_ADDRESS', 'APP_BASE_URL'
+            "PASSWORD_MIN_LENGTH",
+            "PASSWORD_REQUIRE_UPPERCASE",
+            "PASSWORD_REQUIRE_LOWERCASE",
+            "PASSWORD_REQUIRE_DIGIT",
+            "PASSWORD_REQUIRE_SPECIAL",
+            "JWT_PRIVATE_KEY_PATH",
+            "JWT_PUBLIC_KEY_PATH",
+            "SMTP_HOST",
+            "SMTP_USERNAME",
+            "EMAIL_FROM_ADDRESS",
+            "APP_BASE_URL",
         ]
 
         for var in env_vars:
@@ -469,19 +502,19 @@ class TestValidatePasswordPolicy:
 
         try:
             # Set minimal requirements (8 is minimum allowed by AuthConfig)
-            os.environ['PASSWORD_MIN_LENGTH'] = '8'
-            os.environ['PASSWORD_REQUIRE_UPPERCASE'] = 'false'
-            os.environ['PASSWORD_REQUIRE_LOWERCASE'] = 'false'
-            os.environ['PASSWORD_REQUIRE_DIGIT'] = 'false'
-            os.environ['PASSWORD_REQUIRE_SPECIAL'] = 'false'
+            os.environ["PASSWORD_MIN_LENGTH"] = "8"
+            os.environ["PASSWORD_REQUIRE_UPPERCASE"] = "false"
+            os.environ["PASSWORD_REQUIRE_LOWERCASE"] = "false"
+            os.environ["PASSWORD_REQUIRE_DIGIT"] = "false"
+            os.environ["PASSWORD_REQUIRE_SPECIAL"] = "false"
 
             # Ensure required env vars are set
-            os.environ.setdefault('JWT_PRIVATE_KEY_PATH', 'secrets/jwt/private_key.pem')
-            os.environ.setdefault('JWT_PUBLIC_KEY_PATH', 'secrets/jwt/public_key.pem')
-            os.environ.setdefault('SMTP_HOST', 'smtp.example.com')
-            os.environ.setdefault('SMTP_USERNAME', 'test@example.com')
-            os.environ.setdefault('EMAIL_FROM_ADDRESS', 'test@example.com')
-            os.environ.setdefault('APP_BASE_URL', 'http://localhost:8000')
+            os.environ.setdefault("JWT_PRIVATE_KEY_PATH", "secrets/jwt/private_key.pem")
+            os.environ.setdefault("JWT_PUBLIC_KEY_PATH", "secrets/jwt/public_key.pem")
+            os.environ.setdefault("SMTP_HOST", "smtp.example.com")
+            os.environ.setdefault("SMTP_USERNAME", "test@example.com")
+            os.environ.setdefault("EMAIL_FROM_ADDRESS", "test@example.com")
+            os.environ.setdefault("APP_BASE_URL", "http://localhost:8000")
 
             config = AuthConfig()
             service = PasswordService(config)
@@ -537,7 +570,9 @@ class TestValidatePasswordPolicy:
         for char in special_chars:
             password = f"UniqueXyz9X{char}"  # 12+ characters with non-common pattern
             is_valid, errors = password_service.validate_password_policy(password)
-            assert is_valid is True, f"Failed for special char: {char}, errors: {errors}"
+            assert (
+                is_valid is True
+            ), f"Failed for special char: {char}, errors: {errors}"
 
 
 # ============================================================================
@@ -550,72 +585,72 @@ class TestCheckPasswordStrength:
 
     def test_strength_weak_passwords(self, password_service, sample_passwords):
         """Test weak password detection."""
-        for weak_pwd in sample_passwords['weak']:
+        for weak_pwd in sample_passwords["weak"]:
             strength = password_service.check_password_strength(weak_pwd)
-            assert strength['level'] == 'weak'
-            assert strength['entropy'] < 40
+            assert strength["level"] == "weak"
+            assert strength["entropy"] < 40
 
     def test_strength_medium_passwords(self, password_service, sample_passwords):
         """Test medium password detection."""
-        for medium_pwd in sample_passwords['medium']:
+        for medium_pwd in sample_passwords["medium"]:
             strength = password_service.check_password_strength(medium_pwd)
             # Medium passwords have entropy between 40-60
-            assert strength['level'] in ['medium', 'weak']  # Some might be weak
-            assert strength['length'] >= 8
+            assert strength["level"] in ["medium", "weak"]  # Some might be weak
+            assert strength["length"] >= 8
 
     def test_strength_strong_passwords(self, password_service, sample_passwords):
         """Test strong password detection."""
-        for strong_pwd in sample_passwords['strong']:
+        for strong_pwd in sample_passwords["strong"]:
             strength = password_service.check_password_strength(strong_pwd)
             # Strong passwords should have good entropy
             # Level can be very_strong, strong, medium, or weak depending on patterns
-            assert strength['level'] in ['very_strong', 'strong', 'medium', 'weak']
-            assert strength['entropy'] >= 40
+            assert strength["level"] in ["very_strong", "strong", "medium", "weak"]
+            assert strength["entropy"] >= 40
 
     def test_strength_very_strong_passwords(self, password_service, sample_passwords):
         """Test very strong password detection."""
-        for very_strong_pwd in sample_passwords['very_strong']:
+        for very_strong_pwd in sample_passwords["very_strong"]:
             strength = password_service.check_password_strength(very_strong_pwd)
-            assert strength['level'] in ['very_strong', 'strong']
-            assert strength['entropy'] >= 60
+            assert strength["level"] in ["very_strong", "strong"]
+            assert strength["entropy"] >= 60
 
     def test_strength_empty_password(self, password_service):
         """Test strength analysis for empty password."""
         strength = password_service.check_password_strength("")
 
-        assert strength['level'] == 'weak'
-        assert strength['entropy'] == 0
-        assert strength['length'] == 0
-        assert strength['has_uppercase'] is False
-        assert strength['has_lowercase'] is False
-        assert strength['has_digits'] is False
-        assert strength['has_special'] is False
-        assert strength['char_diversity'] == 0
-        assert "cannot be empty" in strength['feedback'][0]
+        assert strength["level"] == "weak"
+        assert strength["entropy"] == 0
+        assert strength["length"] == 0
+        assert strength["has_uppercase"] is False
+        assert strength["has_lowercase"] is False
+        assert strength["has_digits"] is False
+        assert strength["has_special"] is False
+        assert strength["char_diversity"] == 0
+        assert "cannot be empty" in strength["feedback"][0]
 
     def test_strength_none_password(self, password_service):
         """Test strength analysis for None password."""
         strength = password_service.check_password_strength(None)
 
-        assert strength['level'] == 'weak'
-        assert strength['entropy'] == 0
+        assert strength["level"] == "weak"
+        assert strength["entropy"] == 0
 
     def test_strength_entropy_calculation(self, password_service):
         """Test entropy calculation is correct."""
         # Lowercase only: 8 chars * log2(26) ≈ 37.6 bits
         lowercase_only = "abcdefgh"
         strength = password_service.check_password_strength(lowercase_only)
-        assert 35 < strength['entropy'] < 40
+        assert 35 < strength["entropy"] < 40
 
         # Mixed case: 8 chars * log2(52) ≈ 45.6 bits
         mixed_case = "aBcDeFgH"
         strength = password_service.check_password_strength(mixed_case)
-        assert 44 < strength['entropy'] < 48
+        assert 44 < strength["entropy"] < 48
 
         # Mixed case + digits: 8 chars * log2(62) ≈ 47.6 bits
         with_digits = "aBc1eF2H"
         strength = password_service.check_password_strength(with_digits)
-        assert 46 < strength['entropy'] < 50
+        assert 46 < strength["entropy"] < 50
 
     def test_strength_character_flags(self, password_service):
         """Test character composition flags are accurate."""
@@ -629,93 +664,93 @@ class TestCheckPasswordStrength:
 
         for pwd, has_lower, has_upper, has_digit, has_special in test_cases:
             strength = password_service.check_password_strength(pwd)
-            assert strength['has_lowercase'] == has_lower
-            assert strength['has_uppercase'] == has_upper
-            assert strength['has_digits'] == has_digit
-            assert strength['has_special'] == has_special
+            assert strength["has_lowercase"] == has_lower
+            assert strength["has_uppercase"] == has_upper
+            assert strength["has_digits"] == has_digit
+            assert strength["has_special"] == has_special
 
     def test_strength_char_diversity(self, password_service):
         """Test character diversity calculation."""
         # All unique characters
         unique_chars = "abcdef12!@"
         strength = password_service.check_password_strength(unique_chars)
-        assert strength['char_diversity'] == 10
+        assert strength["char_diversity"] == 10
 
         # Repeated characters
         repeated = "aaabbbccc"
         strength = password_service.check_password_strength(repeated)
-        assert strength['char_diversity'] == 3
+        assert strength["char_diversity"] == 3
 
     def test_strength_feedback_short_password(self, password_service):
         """Test feedback for short passwords."""
         short_pwd = "Short1!"
         strength = password_service.check_password_strength(short_pwd)
 
-        assert any("longer password" in fb for fb in strength['feedback'])
+        assert any("longer password" in fb for fb in strength["feedback"])
 
     def test_strength_feedback_missing_uppercase(self, password_service):
         """Test feedback for passwords without uppercase."""
         no_upper = "nouppercase123!"
         strength = password_service.check_password_strength(no_upper)
 
-        assert any("uppercase" in fb for fb in strength['feedback'])
+        assert any("uppercase" in fb for fb in strength["feedback"])
 
     def test_strength_feedback_missing_lowercase(self, password_service):
         """Test feedback for passwords without lowercase."""
         no_lower = "NOLOWERCASE123!"
         strength = password_service.check_password_strength(no_lower)
 
-        assert any("lowercase" in fb for fb in strength['feedback'])
+        assert any("lowercase" in fb for fb in strength["feedback"])
 
     def test_strength_feedback_missing_digits(self, password_service):
         """Test feedback for passwords without digits."""
         no_digits = "NoDigitsHere!"
         strength = password_service.check_password_strength(no_digits)
 
-        assert any("numbers" in fb for fb in strength['feedback'])
+        assert any("numbers" in fb for fb in strength["feedback"])
 
     def test_strength_feedback_missing_special(self, password_service):
         """Test feedback for passwords without special characters."""
         no_special = "NoSpecialChars123"
         strength = password_service.check_password_strength(no_special)
 
-        assert any("special characters" in fb for fb in strength['feedback'])
+        assert any("special characters" in fb for fb in strength["feedback"])
 
     def test_strength_feedback_low_diversity(self, password_service):
         """Test feedback for passwords with low character diversity."""
         low_diversity = "aaaaaa1111!!!!!!"
         strength = password_service.check_password_strength(low_diversity)
 
-        assert any("unique characters" in fb for fb in strength['feedback'])
+        assert any("unique characters" in fb for fb in strength["feedback"])
 
     def test_strength_feedback_common_password(self, password_service):
         """Test feedback for common passwords."""
         common_pwd = "password"
         strength = password_service.check_password_strength(common_pwd)
 
-        assert strength['level'] == 'weak'
-        assert any("commonly used" in fb for fb in strength['feedback'])
+        assert strength["level"] == "weak"
+        assert any("commonly used" in fb for fb in strength["feedback"])
 
     def test_strength_feedback_sequential_numbers(self, password_service):
         """Test feedback for sequential number patterns."""
         sequential_nums = "Password123456!"
         strength = password_service.check_password_strength(sequential_nums)
 
-        assert any("sequential number" in fb for fb in strength['feedback'])
+        assert any("sequential number" in fb for fb in strength["feedback"])
 
     def test_strength_feedback_sequential_letters(self, password_service):
         """Test feedback for sequential letter patterns."""
         sequential_letters = "Abcdefgh123!"
         strength = password_service.check_password_strength(sequential_letters)
 
-        assert any("sequential letter" in fb for fb in strength['feedback'])
+        assert any("sequential letter" in fb for fb in strength["feedback"])
 
     def test_strength_feedback_repeated_chars(self, password_service):
         """Test feedback for repeated characters."""
         repeated = "Passsword111!!!"
         strength = password_service.check_password_strength(repeated)
 
-        assert any("repeating" in fb for fb in strength['feedback'])
+        assert any("repeating" in fb for fb in strength["feedback"])
 
     def test_strength_perfect_password_no_feedback(self, password_service):
         """Test strong password with no feedback."""
@@ -723,11 +758,11 @@ class TestCheckPasswordStrength:
         strength = password_service.check_password_strength(perfect_pwd)
 
         # Might have minimal feedback or none
-        assert strength['level'] in ['strong', 'very_strong']
-        assert strength['has_uppercase'] is True
-        assert strength['has_lowercase'] is True
-        assert strength['has_digits'] is True
-        assert strength['has_special'] is True
+        assert strength["level"] in ["strong", "very_strong"]
+        assert strength["has_uppercase"] is True
+        assert strength["has_lowercase"] is True
+        assert strength["has_digits"] is True
+        assert strength["has_special"] is True
 
 
 # ============================================================================
@@ -755,7 +790,7 @@ class TestNeedsRehash:
             parallelism=4,  # Different from default (8)
             hash_len=32,
             salt_len=16,
-            type=Type.ID
+            type=Type.ID,
         )
 
         password = "TestPassword123!"
@@ -902,9 +937,12 @@ class TestEdgeCases:
 
     def test_validate_policy_with_custom_min_length(self):
         """Test password policy with custom minimum length."""
-        with patch.dict('os.environ', {
-            'PASSWORD_MIN_LENGTH': '8',
-        }):
+        with patch.dict(
+            "os.environ",
+            {
+                "PASSWORD_MIN_LENGTH": "8",
+            },
+        ):
             config = AuthConfig()
             service = PasswordService(config)
 
@@ -919,20 +957,26 @@ class TestEdgeCases:
 
         # Verify all expected keys are present
         expected_keys = [
-            'level', 'entropy', 'length',
-            'has_uppercase', 'has_lowercase', 'has_digits', 'has_special',
-            'char_diversity', 'feedback'
+            "level",
+            "entropy",
+            "length",
+            "has_uppercase",
+            "has_lowercase",
+            "has_digits",
+            "has_special",
+            "char_diversity",
+            "feedback",
         ]
         for key in expected_keys:
             assert key in strength
 
         # Verify types
-        assert isinstance(strength['level'], str)
-        assert isinstance(strength['entropy'], (int, float))
-        assert isinstance(strength['length'], int)
-        assert isinstance(strength['has_uppercase'], bool)
-        assert isinstance(strength['has_lowercase'], bool)
-        assert isinstance(strength['has_digits'], bool)
-        assert isinstance(strength['has_special'], bool)
-        assert isinstance(strength['char_diversity'], int)
-        assert isinstance(strength['feedback'], list)
+        assert isinstance(strength["level"], str)
+        assert isinstance(strength["entropy"], (int, float))
+        assert isinstance(strength["length"], int)
+        assert isinstance(strength["has_uppercase"], bool)
+        assert isinstance(strength["has_lowercase"], bool)
+        assert isinstance(strength["has_digits"], bool)
+        assert isinstance(strength["has_special"], bool)
+        assert isinstance(strength["char_diversity"], int)
+        assert isinstance(strength["feedback"], list)

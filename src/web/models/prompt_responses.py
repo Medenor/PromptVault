@@ -44,9 +44,13 @@ class PromptResponse(BaseModel):
     )
     note: str = Field(..., description="Optional note")
     favorite: bool = Field(..., description="Favorite status")
-    semantic_version: Optional[str] = Field(None, description="Semantic version label (MAJOR.MINOR.PATCH)")
+    semantic_version: Optional[str] = Field(
+        None, description="Semantic version label (MAJOR.MINOR.PATCH)"
+    )
     user_id: str = Field(..., description="Owner's user ID")
-    created_at: Optional[str] = Field(None, description="Creation timestamp (ISO format)")
+    created_at: Optional[str] = Field(
+        None, description="Creation timestamp (ISO format)"
+    )
     updated_at: Optional[str] = Field(None, description="Update timestamp (ISO format)")
 
     model_config = {
@@ -112,9 +116,7 @@ class PromptCreateResponse(BaseModel):
     prompt_id: int = Field(..., description="Created prompt ID")
 
     model_config = {
-        "json_schema_extra": {
-            "example": {"success": True, "prompt_id": 42}
-        }
+        "json_schema_extra": {"example": {"success": True, "prompt_id": 42}}
     }
 
 
@@ -127,11 +129,7 @@ class PromptUpdateResponse(BaseModel):
 
     success: bool = Field(..., description="Operation success status")
 
-    model_config = {
-        "json_schema_extra": {
-            "example": {"success": True}
-        }
-    }
+    model_config = {"json_schema_extra": {"example": {"success": True}}}
 
 
 class PromptDeleteResponse(BaseModel):
@@ -143,11 +141,7 @@ class PromptDeleteResponse(BaseModel):
 
     success: bool = Field(..., description="Operation success status")
 
-    model_config = {
-        "json_schema_extra": {
-            "example": {"success": True}
-        }
-    }
+    model_config = {"json_schema_extra": {"example": {"success": True}}}
 
 
 class PromptFavoriteResponse(BaseModel):
@@ -162,9 +156,7 @@ class PromptFavoriteResponse(BaseModel):
     favorite: bool = Field(..., description="New favorite status")
 
     model_config = {
-        "json_schema_extra": {
-            "example": {"success": True, "favorite": True}
-        }
+        "json_schema_extra": {"example": {"success": True, "favorite": True}}
     }
 
 

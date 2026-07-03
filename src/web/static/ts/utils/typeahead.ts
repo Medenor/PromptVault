@@ -71,4 +71,3 @@ export function createTypeahead(timeoutMs: number = 700): Typeahead {
 
   return { pushKey, pushText, reset, getQuery };
 }
-

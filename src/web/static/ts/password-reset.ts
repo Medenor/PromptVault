@@ -476,7 +476,9 @@ function setupResetPasswordForm(): void {
     t('validation.required') || 'This field is required.'
   );
 
-  const confirmPasswordInput = document.getElementById('confirm-password') as HTMLInputElement | null;
+  const confirmPasswordInput = document.getElementById(
+    'confirm-password'
+  ) as HTMLInputElement | null;
   const passwordConfirmCheck = () => {
     const password = (document.getElementById('password') as HTMLInputElement | null)?.value ?? '';
     const confirm = confirmPasswordInput?.value ?? '';

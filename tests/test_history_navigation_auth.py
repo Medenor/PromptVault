@@ -29,7 +29,6 @@ from fastapi.testclient import TestClient
 
 from src.config.auth_config import auth_settings
 
-
 # Skip tests that assume authentication is mandatory. When AUTH_ENABLED=false
 # the app runs in anonymous mode and these behaviors do not apply.
 require_auth = pytest.mark.skipif(

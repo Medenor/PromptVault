@@ -201,7 +201,12 @@ function announceKeyboardNavigation(message: string): void {
 function isTextEditingTarget(target: EventTarget | null): boolean {
   const el = target as HTMLElement | null;
   if (!el) return false;
-  return el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable;
+  return (
+    el.tagName === 'INPUT' ||
+    el.tagName === 'TEXTAREA' ||
+    el.tagName === 'SELECT' ||
+    el.isContentEditable
+  );
 }
 
 function initializeSessionsTableFirstCharNavigation(): void {
@@ -255,7 +260,9 @@ function initializeSessionsTableFirstCharNavigation(): void {
         continue;
       }
 
-      const revokeButton = row.querySelector<HTMLButtonElement>('button[data-i18n="actions.revoke"]');
+      const revokeButton = row.querySelector<HTMLButtonElement>(
+        'button[data-i18n="actions.revoke"]'
+      );
       if (!revokeButton) {
         return;
       }
@@ -291,7 +298,9 @@ function initializeSessionsTableFirstCharNavigation(): void {
       if (!username.toLocaleLowerCase().startsWith(query)) {
         continue;
       }
-      const revokeButton = row.querySelector<HTMLButtonElement>('button[data-i18n=\"actions.revoke\"]');
+      const revokeButton = row.querySelector<HTMLButtonElement>(
+        'button[data-i18n=\"actions.revoke\"]'
+      );
       if (!revokeButton) return;
       revokeButton.focus();
       announceKeyboardNavigation(t('accessibility.navigateTo', { item: username }));
@@ -348,7 +357,10 @@ async function revokeSession(userId: string, sessionId: string, username: string
     hideModal('confirm-revoke-modal');
     await loadAllSessions();
     // Announce to screen reader that session was revoked
-    announceToScreenReader(`Session for ${username} has been revoked. Focus returned to revoke button.`, 'polite');
+    announceToScreenReader(
+      `Session for ${username} has been revoked. Focus returned to revoke button.`,
+      'polite'
+    );
   } catch (error) {
     if (error instanceof APIRequestError) {
       showNotification(error.message || 'Failed to revoke session', 'error');
@@ -489,13 +501,17 @@ function setupAdminMenuKeyboardNavigation(): void {
       return;
     }
 
-    const menuItems = Array.from(adminMenuDropdown.querySelectorAll('button')) as HTMLButtonElement[];
+    const menuItems = Array.from(
+      adminMenuDropdown.querySelectorAll('button')
+    ) as HTMLButtonElement[];
     if (menuItems.length === 0) {
       return;
     }
 
     const currentFocused = document.activeElement as HTMLElement | null;
-    const currentIndex = currentFocused ? menuItems.indexOf(currentFocused as HTMLButtonElement) : -1;
+    const currentIndex = currentFocused
+      ? menuItems.indexOf(currentFocused as HTMLButtonElement)
+      : -1;
 
     switch (event.key) {
       case 'Escape': {
@@ -508,14 +524,16 @@ function setupAdminMenuKeyboardNavigation(): void {
       }
       case 'ArrowDown': {
         // Move to next menu item or wrap around
-        const nextIndex = currentIndex === -1 || currentIndex >= menuItems.length - 1 ? 0 : currentIndex + 1;
+        const nextIndex =
+          currentIndex === -1 || currentIndex >= menuItems.length - 1 ? 0 : currentIndex + 1;
         menuItems[nextIndex]?.focus();
         event.preventDefault();
         break;
       }
       case 'ArrowUp': {
         // Move to previous menu item or wrap around
-        const prevIndex = currentIndex === -1 || currentIndex === 0 ? menuItems.length - 1 : currentIndex - 1;
+        const prevIndex =
+          currentIndex === -1 || currentIndex === 0 ? menuItems.length - 1 : currentIndex - 1;
         menuItems[prevIndex]?.focus();
         event.preventDefault();
         break;

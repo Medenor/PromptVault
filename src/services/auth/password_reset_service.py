@@ -68,7 +68,9 @@ from typing import Optional, Tuple
 
 from src.config.auth_config import AuthConfig
 from src.services.auth.password_service import PasswordService
-from src.db.repositories.password_reset_token_repository import PasswordResetTokenRepository
+from src.db.repositories.password_reset_token_repository import (
+    PasswordResetTokenRepository,
+)
 from src.db.repositories.user_repository import UserRepository
 from src.services.exceptions import (
     TokenExpiredError,
@@ -129,9 +131,7 @@ class PasswordResetService:
         self.user_repository = user_repository
 
     def request_password_reset(
-        self,
-        email: str,
-        ip_address: Optional[str] = None
+        self, email: str, ip_address: Optional[str] = None
     ) -> str:
         """Generate and send password reset token via email.
 
@@ -178,19 +178,19 @@ class PasswordResetService:
         if not user:
             logger.warning(
                 f"Password reset requested for non-existent email: {email}",
-                extra={"ip_address": ip_address}
+                extra={"ip_address": ip_address},
             )
             # Still raise exception for internal handling, but API should
             # return success message to prevent user enumeration
             raise UserNotFoundError(
                 f"No user found with email: {email}",
-                context={"email": email, "ip_address": ip_address}
+                context={"email": email, "ip_address": ip_address},
             )
 
         # Check rate limiting (max 3 requests per hour)
         recent_count = self.token_repository.count_recent_tokens(
             user_id=user.id,
-            minutes=self.config.rate_limit_password_reset_window_seconds // 60
+            minutes=self.config.rate_limit_password_reset_window_seconds // 60,
         )
 
         if recent_count >= self.config.rate_limit_password_reset_attempts:
@@ -200,8 +200,8 @@ class PasswordResetService:
                 extra={
                     "user_id": user.id,
                     "ip_address": ip_address,
-                    "recent_attempts": recent_count
-                }
+                    "recent_attempts": recent_count,
+                },
             )
             raise RateLimitExceededError(
                 f"Too many password reset requests for user {user.id}",
@@ -211,8 +211,8 @@ class PasswordResetService:
                     "user_id": user.id,
                     "email": email,
                     "attempts": recent_count,
-                    "max_attempts": self.config.rate_limit_password_reset_attempts
-                }
+                    "max_attempts": self.config.rate_limit_password_reset_attempts,
+                },
             )
 
         # Invalidate all existing unused tokens for this user
@@ -239,7 +239,7 @@ class PasswordResetService:
             user_id=user.id,
             token=hashed_token,
             expires_at=expires_at,
-            ip_address=ip_address
+            ip_address=ip_address,
         )
 
         logger.info(
@@ -248,16 +248,12 @@ class PasswordResetService:
                 "token_id": token_record.id,
                 "user_id": user.id,
                 "expires_at": expires_at.isoformat(),
-                "ip_address": ip_address
-            }
+                "ip_address": ip_address,
+            },
         )
 
         # Send reset email (currently stubbed)
-        self._send_reset_email(
-            email=email,
-            token=plain_token,
-            username=user.username
-        )
+        self._send_reset_email(email=email, token=plain_token, username=user.username)
 
         # Return plain token for testing purposes
         # In production API, this would not be returned - only sent via email
@@ -311,7 +307,7 @@ class PasswordResetService:
             if expires_at < now:
                 logger.warning(
                     f"Expired password reset token used",
-                    extra={"token_id": token_record.id}
+                    extra={"token_id": token_record.id},
                 )
                 return False, "Password reset token has expired"
 
@@ -319,7 +315,7 @@ class PasswordResetService:
             if token_record.is_used:
                 logger.warning(
                     f"Already-used password reset token attempted",
-                    extra={"token_id": token_record.id}
+                    extra={"token_id": token_record.id},
                 )
                 return False, "Password reset token has already been used"
 
@@ -328,28 +324,30 @@ class PasswordResetService:
             if not user:
                 logger.error(
                     f"Password reset token references non-existent user",
-                    extra={"token_id": token_record.id, "user_id": token_record.user_id}
+                    extra={
+                        "token_id": token_record.id,
+                        "user_id": token_record.user_id,
+                    },
                 )
                 return False, "Invalid password reset token"
 
             if not user.is_active:
                 logger.warning(
                     f"Password reset attempted for inactive user",
-                    extra={"token_id": token_record.id, "user_id": user.id}
+                    extra={"token_id": token_record.id, "user_id": user.id},
                 )
                 return False, "Account is not active"
 
             # Token is valid
             logger.info(
                 f"Password reset token verified successfully",
-                extra={"token_id": token_record.id, "user_id": user.id}
+                extra={"token_id": token_record.id, "user_id": user.id},
             )
             return True, user.id
 
         except Exception as e:
             logger.error(
-                f"Error verifying password reset token: {str(e)}",
-                exc_info=True
+                f"Error verifying password reset token: {str(e)}", exc_info=True
             )
             return False, "An error occurred while verifying the token"
 
@@ -406,32 +404,28 @@ class PasswordResetService:
         if expires_at < now:
             logger.warning(
                 f"Password reset attempted with expired token",
-                extra={"token_id": token_record.id}
+                extra={"token_id": token_record.id},
             )
-            raise TokenExpiredError(
-                context={"token_id": token_record.id}
-            )
+            raise TokenExpiredError(context={"token_id": token_record.id})
 
         # Check if already used
         if token_record.is_used:
             logger.warning(
                 f"Password reset attempted with already-used token",
-                extra={"token_id": token_record.id}
+                extra={"token_id": token_record.id},
             )
-            raise TokenAlreadyUsedError(
-                context={"token_id": token_record.id}
-            )
+            raise TokenAlreadyUsedError(context={"token_id": token_record.id})
 
         # Verify user exists
         user = self.user_repository.get_by_id(token_record.user_id)
         if not user:
             logger.error(
                 f"Password reset token references non-existent user",
-                extra={"token_id": token_record.id, "user_id": token_record.user_id}
+                extra={"token_id": token_record.id, "user_id": token_record.user_id},
             )
             raise UserNotFoundError(
                 f"User {token_record.user_id} not found",
-                context={"user_id": token_record.user_id}
+                context={"user_id": token_record.user_id},
             )
 
         # Validate new password against policy
@@ -439,15 +433,12 @@ class PasswordResetService:
         if not is_valid:
             logger.warning(
                 f"Password reset failed: password policy violation",
-                extra={
-                    "user_id": user.id,
-                    "errors": errors
-                }
+                extra={"user_id": user.id, "errors": errors},
             )
             raise PasswordPolicyError(
                 "Password does not meet policy requirements",
                 errors=errors,
-                context={"user_id": user.id}
+                context={"user_id": user.id},
             )
 
         # Hash the new password
@@ -455,8 +446,7 @@ class PasswordResetService:
 
         # Update user's password
         self.user_repository.update_password_hash(
-            user_id=user.id,
-            password_hash=password_hash
+            user_id=user.id, password_hash=password_hash
         )
 
         # Mark this token as used
@@ -470,8 +460,8 @@ class PasswordResetService:
             extra={
                 "user_id": user.id,
                 "token_id": token_record.id,
-                "invalidated_tokens": invalidated_count
-            }
+                "invalidated_tokens": invalidated_count,
+            },
         )
 
         return True
@@ -537,14 +527,9 @@ class PasswordResetService:
             - Tokens are cryptographically random, so no salt needed
             - Hash is constant-time verifiable
         """
-        return hashlib.sha256(token.encode('utf-8')).hexdigest()
+        return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
-    def _send_reset_email(
-        self,
-        email: str,
-        token: str,
-        username: str
-    ) -> None:
+    def _send_reset_email(self, email: str, token: str, username: str) -> None:
         """Send password reset email to user.
 
         TODO: Implement actual SMTP email sending
@@ -593,8 +578,8 @@ class PasswordResetService:
                 "recipient": email,
                 "username": username,
                 "reset_url": reset_url,
-                "expires_in_seconds": self.config.password_reset_token_expire_seconds
-            }
+                "expires_in_seconds": self.config.password_reset_token_expire_seconds,
+            },
         )
 
         # Log the email details in a human-readable format for testing

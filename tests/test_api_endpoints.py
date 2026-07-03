@@ -71,7 +71,9 @@ def api_admin_auth_headers(api_client_context) -> Dict[str, str]:
     test_session = SessionLocal()
     try:
         # Check if admin user already exists
-        admin_user = test_session.query(User).filter_by(id="api-admin-test-user-id").first()
+        admin_user = (
+            test_session.query(User).filter_by(id="api-admin-test-user-id").first()
+        )
         if not admin_user:
             admin_user = User(
                 id="api-admin-test-user-id",
@@ -120,7 +122,9 @@ def seeded_prompt_id(api_client):
     """Get the ID of the seeded 'API Prompt 1' prompt."""
     response = api_client.get("/api/prompts")
     if response.status_code != 200:
-        pytest.fail(f"Failed to get prompts: {response.status_code} - {response.content}")
+        pytest.fail(
+            f"Failed to get prompts: {response.status_code} - {response.content}"
+        )
     prompts = response.json()["prompts"]
     for prompt_id, payload in prompts.items():
         if payload["title"] == "API Prompt 1":
@@ -174,7 +178,9 @@ class TestPromptCrudEndpoints:
 
     def test_create_prompt_validation_error(self, api_client, api_auth_headers):
         # Missing required 'prompt' field
-        response = api_client.post("/api/prompts", headers=api_auth_headers, data={"title": "Invalid"})
+        response = api_client.post(
+            "/api/prompts", headers=api_auth_headers, data={"title": "Invalid"}
+        )
         assert response.status_code == 422
 
     def test_get_prompt_by_id(self, api_client, seeded_prompt_id):
@@ -191,7 +197,9 @@ class TestPromptCrudEndpoints:
         response = api_client.get("/api/prompts/abc")
         assert response.status_code == 422
 
-    def test_update_prompt_success(self, api_client, api_auth_headers, seeded_prompt_id):
+    def test_update_prompt_success(
+        self, api_client, api_auth_headers, seeded_prompt_id
+    ):
         response = api_client.put(
             f"/api/prompts/{seeded_prompt_id}",
             headers=api_auth_headers,
@@ -251,7 +259,9 @@ class TestPromptCrudEndpoints:
         )
         prompt_id = create.json()["prompt_id"]
 
-        response = api_client.delete(f"/api/prompts/{prompt_id}", headers=api_auth_headers)
+        response = api_client.delete(
+            f"/api/prompts/{prompt_id}", headers=api_auth_headers
+        )
         assert response.status_code == 200
         assert response.json()["success"] is True
 
@@ -260,11 +270,17 @@ class TestPromptCrudEndpoints:
         assert response.status_code == 404
 
     def test_delete_prompt_invalid_id(self, api_client, api_auth_headers):
-        response = api_client.delete("/api/prompts/not-a-number", headers=api_auth_headers)
+        response = api_client.delete(
+            "/api/prompts/not-a-number", headers=api_auth_headers
+        )
         assert response.status_code == 422
 
-    def test_toggle_favorite_success(self, api_client, api_auth_headers, seeded_prompt_id):
-        response = api_client.put(f"/api/prompts/{seeded_prompt_id}/favorite", headers=api_auth_headers)
+    def test_toggle_favorite_success(
+        self, api_client, api_auth_headers, seeded_prompt_id
+    ):
+        response = api_client.put(
+            f"/api/prompts/{seeded_prompt_id}/favorite", headers=api_auth_headers
+        )
         assert response.status_code == 200
         data = response.json()
         assert data["success"] is True
@@ -297,7 +313,9 @@ class TestSearchAndFilterEndpoints:
         assert len(results) >= 1
 
     def test_search_prompts_favorites_only(self, api_client, api_auth_headers):
-        response = api_client.get("/api/prompts/search", params={"favorites": True}, headers=api_auth_headers)
+        response = api_client.get(
+            "/api/prompts/search", params={"favorites": True}, headers=api_auth_headers
+        )
         assert response.status_code == 200
         results = response.json()["prompts"]
         assert all(prompt["favorite"] is True for prompt in results.values())
@@ -582,7 +600,7 @@ class TestApiErrorPaths:
         self, api_client, api_auth_headers, seeded_prompt_id
     ):
         """Test that update_prompt properly handles database errors.
-        
+
         Note: Since the router now uses repositories directly instead of
         data_service.update_prompt(), this test verifies that unhandled
         exceptions in the repository layer would result in 500 errors.
@@ -595,15 +613,21 @@ class TestApiErrorPaths:
         # repositories themselves, which is covered by repository tests.
         pass
 
-
     def test_toggle_favorite_failure_returns_500(
-        self, api_client, api_data_service, api_auth_headers, monkeypatch, seeded_prompt_id
+        self,
+        api_client,
+        api_data_service,
+        api_auth_headers,
+        monkeypatch,
+        seeded_prompt_id,
     ):
         monkeypatch.setattr(
             api_data_service, "update_prompt", lambda *args, **kwargs: False
         )
 
-        response = api_client.put(f"/api/prompts/{seeded_prompt_id}/favorite", headers=api_auth_headers)
+        response = api_client.put(
+            f"/api/prompts/{seeded_prompt_id}/favorite", headers=api_auth_headers
+        )
         assert response.status_code == 500
         assert response.json()["error"] == "Failed to update favorite status"
 
@@ -742,7 +766,9 @@ class TestBackupManagementEndpoints:
         page = api_client.get("/backup-management")
         assert page.status_code == 200
 
-        create = api_client.post("/api/backups", data={"name": "coverage-backup"}, headers=api_auth_headers)
+        create = api_client.post(
+            "/api/backups", data={"name": "coverage-backup"}, headers=api_auth_headers
+        )
         assert create.status_code == 200
         backup_id = create.json()["backup_id"]
 
@@ -754,25 +780,39 @@ class TestBackupManagementEndpoints:
         assert stats.status_code == 200
         assert "total_backups" in stats.json()
 
-        restore = api_client.post(f"/api/backups/{backup_id}/restore", headers=api_auth_headers)
+        restore = api_client.post(
+            f"/api/backups/{backup_id}/restore", headers=api_auth_headers
+        )
         assert restore.status_code == 200
         assert restore.json()["success"] is True
 
-        delete = api_client.delete(f"/api/backups/{backup_id}", headers=api_auth_headers)
+        delete = api_client.delete(
+            f"/api/backups/{backup_id}", headers=api_auth_headers
+        )
         assert delete.status_code == 200
         assert delete.json()["success"] is True
 
         # Use minimum valid values (validation requires >= 1)
-        cleanup = api_client.post("/api/backups/cleanup", data={"retention_days": 1}, headers=api_auth_headers)
+        cleanup = api_client.post(
+            "/api/backups/cleanup", data={"retention_days": 1}, headers=api_auth_headers
+        )
         assert cleanup.status_code == 200
         assert cleanup.json()["success"] is True
 
-        compress = api_client.post("/api/backups/compress", data={"days_threshold": 1}, headers=api_auth_headers)
+        compress = api_client.post(
+            "/api/backups/compress",
+            data={"days_threshold": 1},
+            headers=api_auth_headers,
+        )
         assert compress.status_code == 200
         assert compress.json()["success"] is True
 
-    def test_restore_invalid_backup_returns_structured_error(self, api_client, api_auth_headers):
-        response = api_client.post("/api/backups/unknown-id/restore", headers=api_auth_headers)
+    def test_restore_invalid_backup_returns_structured_error(
+        self, api_client, api_auth_headers
+    ):
+        response = api_client.post(
+            "/api/backups/unknown-id/restore", headers=api_auth_headers
+        )
         assert response.status_code == 404
         payload = response.json()
         assert "error" in payload
@@ -783,7 +823,9 @@ class TestBackupManagementEndpoints:
 class TestVersionEndpointCoverage:
     """Ensure version comparison and revert branches execute under test."""
 
-    def test_compare_and_revert_flow(self, api_client, api_auth_headers, seeded_prompt_id):
+    def test_compare_and_revert_flow(
+        self, api_client, api_auth_headers, seeded_prompt_id
+    ):
         update = api_client.put(
             f"/api/prompts/{seeded_prompt_id}",
             data={
@@ -797,9 +839,9 @@ class TestVersionEndpointCoverage:
         )
         assert update.status_code == 200
 
-        history = api_client.get(
-            f"/api/prompts/{seeded_prompt_id}/versions"
-        ).json()["versions"]
+        history = api_client.get(f"/api/prompts/{seeded_prompt_id}/versions").json()[
+            "versions"
+        ]
         assert len(history) >= 2
         latest_version = history[0]["version_id"]
         previous_version = history[1]["version_id"]
@@ -860,13 +902,16 @@ class TestFrontendLogging:
 
     def test_frontend_logging_rate_limit(self, api_client):
         for _ in range(10):
-            assert api_client.post("/api/logs/frontend", json=self._payload()).status_code == 200
+            assert (
+                api_client.post("/api/logs/frontend", json=self._payload()).status_code
+                == 200
+            )
         response = api_client.post("/api/logs/frontend", json=self._payload())
         assert response.status_code == 429
 
 
-
 # Bulk Deletion API Tests
+
 
 def test_bulk_delete_success(api_client_context, api_admin_auth_headers):
     """Test successful bulk deletion."""
@@ -876,12 +921,14 @@ def test_bulk_delete_success(api_client_context, api_admin_auth_headers):
     # Create test prompts
     ids = []
     for i in range(5):
-        prompt_id = data_service.add_new_prompt({
-            "title": f"Test Prompt {i}",
-            "prompt": f"Content {i}",
-            "category": "Test",
-            "tags": []
-        })
+        prompt_id = data_service.add_new_prompt(
+            {
+                "title": f"Test Prompt {i}",
+                "prompt": f"Content {i}",
+                "category": "Test",
+                "tags": [],
+            }
+        )
         ids.append(prompt_id)
 
     # Bulk delete
@@ -889,7 +936,7 @@ def test_bulk_delete_success(api_client_context, api_admin_auth_headers):
         "DELETE",
         "/api/prompts/bulk",
         json={"prompt_ids": ids[:3]},
-        headers=api_admin_auth_headers
+        headers=api_admin_auth_headers,
     )
 
     assert response.status_code == 200
@@ -910,19 +957,16 @@ def test_bulk_delete_partial_failure(api_client_context, api_admin_auth_headers)
     data_service = api_client_context["data_service"]
 
     # Create one prompt
-    prompt_id = data_service.add_new_prompt({
-        "title": "Test Prompt",
-        "prompt": "Content",
-        "category": "Test",
-        "tags": []
-    })
+    prompt_id = data_service.add_new_prompt(
+        {"title": "Test Prompt", "prompt": "Content", "category": "Test", "tags": []}
+    )
 
     # Try to delete existing + non-existent
     response = client.request(
         "DELETE",
         "/api/prompts/bulk",
         json={"prompt_ids": [prompt_id, 999, 1000]},
-        headers=api_admin_auth_headers
+        headers=api_admin_auth_headers,
     )
 
     assert response.status_code == 200
@@ -942,12 +986,14 @@ def test_bulk_delete_validation_empty_list(api_client_context, api_admin_auth_he
         "DELETE",
         "/api/prompts/bulk",
         json={"prompt_ids": []},
-        headers=api_admin_auth_headers
+        headers=api_admin_auth_headers,
     )
     assert response.status_code == 422
 
 
-def test_bulk_delete_validation_duplicate_ids(api_client_context, api_admin_auth_headers):
+def test_bulk_delete_validation_duplicate_ids(
+    api_client_context, api_admin_auth_headers
+):
     """Test bulk deletion validation with duplicate IDs."""
     client = api_client_context["client"]
 
@@ -956,12 +1002,14 @@ def test_bulk_delete_validation_duplicate_ids(api_client_context, api_admin_auth
         "DELETE",
         "/api/prompts/bulk",
         json={"prompt_ids": [1, 2, 1]},
-        headers=api_admin_auth_headers
+        headers=api_admin_auth_headers,
     )
     assert response.status_code == 422
 
 
-def test_bulk_delete_validation_too_many_ids(api_client_context, api_admin_auth_headers):
+def test_bulk_delete_validation_too_many_ids(
+    api_client_context, api_admin_auth_headers
+):
     """Test bulk deletion validation with too many IDs."""
     client = api_client_context["client"]
 
@@ -970,7 +1018,7 @@ def test_bulk_delete_validation_too_many_ids(api_client_context, api_admin_auth_
         "DELETE",
         "/api/prompts/bulk",
         json={"prompt_ids": list(range(1, 1002))},
-        headers=api_admin_auth_headers
+        headers=api_admin_auth_headers,
     )
     assert response.status_code == 422
 
@@ -983,12 +1031,14 @@ def test_bulk_delete_creates_backup(api_client_context, api_admin_auth_headers):
     # Create test prompts
     ids = []
     for i in range(3):
-        prompt_id = data_service.add_new_prompt({
-            "title": f"Test Prompt {i}",
-            "prompt": f"Content {i}",
-            "category": "Test",
-            "tags": []
-        })
+        prompt_id = data_service.add_new_prompt(
+            {
+                "title": f"Test Prompt {i}",
+                "prompt": f"Content {i}",
+                "category": "Test",
+                "tags": [],
+            }
+        )
         ids.append(prompt_id)
 
     # Bulk delete
@@ -996,7 +1046,7 @@ def test_bulk_delete_creates_backup(api_client_context, api_admin_auth_headers):
         "DELETE",
         "/api/prompts/bulk",
         json={"prompt_ids": ids},
-        headers=api_admin_auth_headers
+        headers=api_admin_auth_headers,
     )
 
     assert response.status_code == 200

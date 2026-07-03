@@ -33,7 +33,6 @@ from src.db.models import Backup
 from src.services.exceptions import BackupError
 from src.services.logging_service import logging_service
 
-
 logger = logging_service.get_logger(__name__)
 
 
@@ -77,10 +76,14 @@ class BackupService:
         """
         try:
             # Generate backup ID with microseconds for uniqueness
-            timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")[:21]  # Include microseconds, truncate to milliseconds
+            timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")[
+                :21
+            ]  # Include microseconds, truncate to milliseconds
             if custom_name:
                 safe_suffix = self._sanitize_backup_name(custom_name)
-                backup_id = f"backup_{safe_suffix}" if safe_suffix else f"backup_{timestamp}"
+                backup_id = (
+                    f"backup_{safe_suffix}" if safe_suffix else f"backup_{timestamp}"
+                )
             else:
                 backup_id = f"backup_{timestamp}"
 
@@ -92,7 +95,7 @@ class BackupService:
             else:
                 raise BackupError(
                     "Unsupported database type",
-                    context={"database_url": db_settings.DATABASE_URL}
+                    context={"database_url": db_settings.DATABASE_URL},
                 )
 
         except BackupError:
@@ -101,14 +104,13 @@ class BackupService:
             logger.error(
                 "Failed to create backup",
                 extra={"event": "backup.create.failure"},
-                exc_info=exc
+                exc_info=exc,
             )
-            raise BackupError(
-                "Failed to create backup.",
-                context={}
-            ) from exc
+            raise BackupError("Failed to create backup.", context={}) from exc
 
-    def _create_sqlite_backup(self, backup_id: str, created_by: Optional[str] = None) -> str:
+    def _create_sqlite_backup(
+        self, backup_id: str, created_by: Optional[str] = None
+    ) -> str:
         """Create SQLite backup using file copy.
 
         Args:
@@ -125,7 +127,7 @@ class BackupService:
             else:
                 raise BackupError(
                     "Invalid SQLite DATABASE_URL format",
-                    context={"database_url": db_url}
+                    context={"database_url": db_url},
                 )
 
             # Resolve relative paths
@@ -140,7 +142,7 @@ class BackupService:
                 raise BackupError(
                     "Database file does not exist",
                     context={"db_path": db_path},
-                    http_status=404
+                    http_status=404,
                 )
 
             # Create backup file path
@@ -179,8 +181,8 @@ class BackupService:
                 extra={
                     "event": "backup.create.success",
                     "resource_id": backup_id,
-                    "backup_type": "sqlite_copy"
-                }
+                    "backup_type": "sqlite_copy",
+                },
             )
 
             logging_service.log_audit_event(
@@ -197,14 +199,15 @@ class BackupService:
             logger.error(
                 "Failed to create SQLite backup",
                 extra={"event": "backup.create.failure", "backup_id": backup_id},
-                exc_info=exc
+                exc_info=exc,
             )
             raise BackupError(
-                "Failed to create SQLite backup.",
-                context={"backup_id": backup_id}
+                "Failed to create SQLite backup.", context={"backup_id": backup_id}
             ) from exc
 
-    def _create_pg_backup(self, backup_id: str, created_by: Optional[str] = None) -> str:
+    def _create_pg_backup(
+        self, backup_id: str, created_by: Optional[str] = None
+    ) -> str:
         """Create PostgreSQL backup using pg_dump.
 
         Args:
@@ -224,20 +227,16 @@ class BackupService:
 
             cmd = [
                 "pg_dump",
-                "--file", backup_path,
+                "--file",
+                backup_path,
                 "--format=plain",
                 "--clean",
                 "--if-exists",
-                db_url
+                db_url,
             ]
 
             # Execute pg_dump
-            result = subprocess.run(
-                cmd,
-                check=True,
-                capture_output=True,
-                text=True
-            )
+            result = subprocess.run(cmd, check=True, capture_output=True, text=True)
 
             # Get backup metadata
             backup_size = os.path.getsize(backup_path)
@@ -268,8 +267,8 @@ class BackupService:
                 extra={
                     "event": "backup.create.success",
                     "resource_id": backup_id,
-                    "backup_type": "pg_dump"
-                }
+                    "backup_type": "pg_dump",
+                },
             )
 
             logging_service.log_audit_event(
@@ -289,23 +288,21 @@ class BackupService:
                 extra={
                     "event": "backup.create.failure",
                     "backup_id": backup_id,
-                    "error": error_msg
+                    "error": error_msg,
                 },
-                exc_info=exc
+                exc_info=exc,
             )
             raise BackupError(
-                f"pg_dump failed: {error_msg}",
-                context={"backup_id": backup_id}
+                f"pg_dump failed: {error_msg}", context={"backup_id": backup_id}
             ) from exc
         except Exception as exc:
             logger.error(
                 "Failed to create PostgreSQL backup",
                 extra={"event": "backup.create.failure", "backup_id": backup_id},
-                exc_info=exc
+                exc_info=exc,
             )
             raise BackupError(
-                "Failed to create PostgreSQL backup.",
-                context={"backup_id": backup_id}
+                "Failed to create PostgreSQL backup.", context={"backup_id": backup_id}
             ) from exc
 
     def restore_backup(self, backup_id: str, created_by: Optional[str] = None) -> bool:
@@ -329,7 +326,7 @@ class BackupService:
                 raise BackupError(
                     "Backup not found",
                     context={"backup_id": backup_id},
-                    http_status=404
+                    http_status=404,
                 )
 
             backup_type = metadata.get("backup_type")
@@ -340,15 +337,18 @@ class BackupService:
                 raise BackupError(
                     "Backup file does not exist",
                     context={"backup_id": backup_id, "path": backup_path},
-                    http_status=404
+                    http_status=404,
                 )
 
             # Create pre-restore backup with unique timestamp
             from datetime import datetime, timezone
-            timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")[:21]  # Include microseconds for uniqueness
+
+            timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")[
+                :21
+            ]  # Include microseconds for uniqueness
             logger.info(
                 "Creating pre-restore backup",
-                extra={"event": "backup.restore.pre_backup"}
+                extra={"event": "backup.restore.pre_backup"},
             )
             pre_restore_backup = self.create_backup(
                 f"pre_restore_{timestamp}",
@@ -357,7 +357,7 @@ class BackupService:
             if not pre_restore_backup:
                 logger.warning(
                     "Could not create pre-restore backup",
-                    extra={"event": "backup.restore.warning"}
+                    extra={"event": "backup.restore.warning"},
                 )
 
             # Restore based on backup type
@@ -368,16 +368,13 @@ class BackupService:
             else:
                 raise BackupError(
                     f"Unsupported backup type: {backup_type}",
-                    context={"backup_id": backup_id, "backup_type": backup_type}
+                    context={"backup_id": backup_id, "backup_type": backup_type},
                 )
 
             if success:
                 logger.info(
                     "Backup restored successfully",
-                    extra={
-                        "event": "backup.restore.success",
-                        "resource_id": backup_id
-                    }
+                    extra={"event": "backup.restore.success", "resource_id": backup_id},
                 )
                 logging_service.log_audit_event(
                     action="backup.restore",
@@ -392,15 +389,11 @@ class BackupService:
         except Exception as exc:
             logger.error(
                 "Failed to restore backup",
-                extra={
-                    "event": "backup.restore.failure",
-                    "resource_id": backup_id
-                },
-                exc_info=exc
+                extra={"event": "backup.restore.failure", "resource_id": backup_id},
+                exc_info=exc,
             )
             raise BackupError(
-                "Failed to restore backup.",
-                context={"backup_id": backup_id}
+                "Failed to restore backup.", context={"backup_id": backup_id}
             ) from exc
 
     def _restore_sqlite_backup(self, backup_id: str, backup_path: str) -> bool:
@@ -421,7 +414,7 @@ class BackupService:
             else:
                 raise BackupError(
                     "Invalid SQLite DATABASE_URL format",
-                    context={"database_url": db_url}
+                    context={"database_url": db_url},
                 )
 
             # Resolve relative paths
@@ -436,10 +429,7 @@ class BackupService:
 
             logger.info(
                 "SQLite database restored from backup",
-                extra={
-                    "event": "backup.restore.success",
-                    "backup_id": backup_id
-                }
+                extra={"event": "backup.restore.success", "backup_id": backup_id},
             )
 
             return True
@@ -447,15 +437,11 @@ class BackupService:
         except Exception as exc:
             logger.error(
                 "Failed to restore SQLite backup",
-                extra={
-                    "event": "backup.restore.failure",
-                    "backup_id": backup_id
-                },
-                exc_info=exc
+                extra={"event": "backup.restore.failure", "backup_id": backup_id},
+                exc_info=exc,
             )
             raise BackupError(
-                "Failed to restore SQLite backup.",
-                context={"backup_id": backup_id}
+                "Failed to restore SQLite backup.", context={"backup_id": backup_id}
             ) from exc
 
     def _restore_pg_backup(self, backup_id: str, backup_path: str) -> bool:
@@ -472,26 +458,14 @@ class BackupService:
             # Build psql command to restore
             db_url = db_settings.DATABASE_URL
 
-            cmd = [
-                "psql",
-                "--file", backup_path,
-                db_url
-            ]
+            cmd = ["psql", "--file", backup_path, db_url]
 
             # Execute psql
-            result = subprocess.run(
-                cmd,
-                check=True,
-                capture_output=True,
-                text=True
-            )
+            result = subprocess.run(cmd, check=True, capture_output=True, text=True)
 
             logger.info(
                 "PostgreSQL database restored from backup",
-                extra={
-                    "event": "backup.restore.success",
-                    "backup_id": backup_id
-                }
+                extra={"event": "backup.restore.success", "backup_id": backup_id},
             )
 
             return True
@@ -503,26 +477,21 @@ class BackupService:
                 extra={
                     "event": "backup.restore.failure",
                     "backup_id": backup_id,
-                    "error": error_msg
+                    "error": error_msg,
                 },
-                exc_info=exc
+                exc_info=exc,
             )
             raise BackupError(
-                f"psql restore failed: {error_msg}",
-                context={"backup_id": backup_id}
+                f"psql restore failed: {error_msg}", context={"backup_id": backup_id}
             ) from exc
         except Exception as exc:
             logger.error(
                 "Failed to restore PostgreSQL backup",
-                extra={
-                    "event": "backup.restore.failure",
-                    "backup_id": backup_id
-                },
-                exc_info=exc
+                extra={"event": "backup.restore.failure", "backup_id": backup_id},
+                exc_info=exc,
             )
             raise BackupError(
-                "Failed to restore PostgreSQL backup.",
-                context={"backup_id": backup_id}
+                "Failed to restore PostgreSQL backup.", context={"backup_id": backup_id}
             ) from exc
 
     def list_backups(self) -> List[Dict[str, Any]]:
@@ -536,11 +505,7 @@ class BackupService:
             seen_ids = set()
 
             with get_db_session() as session:
-                backups = (
-                    session.query(Backup)
-                    .order_by(Backup.created_at.desc())
-                    .all()
-                )
+                backups = session.query(Backup).order_by(Backup.created_at.desc()).all()
 
                 for backup in backups:
                     metadata = backup.backup_metadata or {}
@@ -554,7 +519,9 @@ class BackupService:
                         "filename": backup.filename,
                         "storage_path": backup.storage_path,
                         "timestamp": timestamp,
-                        "size_bytes": metadata.get("size_bytes", backup.size_bytes or 0),
+                        "size_bytes": metadata.get(
+                            "size_bytes", backup.size_bytes or 0
+                        ),
                         "prompt_count": metadata.get("prompt_count", 0),
                         "database_type": metadata.get("database_type", "unknown"),
                         "created_by": metadata.get("created_by", "unknown"),
@@ -576,11 +543,10 @@ class BackupService:
             logger.error(
                 "Failed to list backups",
                 extra={"event": "backup.list.failure"},
-                exc_info=exc
+                exc_info=exc,
             )
             raise BackupError(
-                "Unable to list backups.",
-                context={"backups_dir": self.backups_dir}
+                "Unable to list backups.", context={"backups_dir": self.backups_dir}
             ) from exc
 
     def get_backup_info(self, backup_id: str) -> Optional[Dict[str, Any]]:
@@ -607,7 +573,9 @@ class BackupService:
                         "filename": backup.filename,
                         "storage_path": backup.storage_path,
                         "timestamp": timestamp,
-                        "size_bytes": metadata.get("size_bytes", backup.size_bytes or 0),
+                        "size_bytes": metadata.get(
+                            "size_bytes", backup.size_bytes or 0
+                        ),
                         "prompt_count": metadata.get("prompt_count", 0),
                         "database_type": metadata.get("database_type", "unknown"),
                         "created_by": metadata.get("created_by", "unknown"),
@@ -620,7 +588,7 @@ class BackupService:
             logger.error(
                 "Failed to get backup info",
                 extra={"event": "backup.info.failure", "resource_id": backup_id},
-                exc_info=exc
+                exc_info=exc,
             )
 
         # Fallback to metadata file
@@ -671,11 +639,10 @@ class BackupService:
             logger.error(
                 "Failed to delete backup",
                 extra={"event": "backup.delete.failure", "resource_id": backup_id},
-                exc_info=exc
+                exc_info=exc,
             )
             raise BackupError(
-                "Failed to delete backup.",
-                context={"backup_id": backup_id}
+                "Failed to delete backup.", context={"backup_id": backup_id}
             ) from exc
 
     def get_backup_stats(self) -> Dict[str, Any]:
@@ -713,7 +680,7 @@ class BackupService:
             logger.error(
                 "Failed to get backup stats",
                 extra={"event": "backup.stats.failure"},
-                exc_info=exc
+                exc_info=exc,
             )
             return {
                 "total_backups": 0,
@@ -751,8 +718,8 @@ class BackupService:
                             "Removed old backup during cleanup",
                             extra={
                                 "event": "backup.cleanup.removal",
-                                "resource_id": backup["backup_id"]
-                            }
+                                "resource_id": backup["backup_id"],
+                            },
                         )
 
             if removed_count > 0:
@@ -760,8 +727,8 @@ class BackupService:
                     "Cleanup completed",
                     extra={
                         "event": "backup.cleanup.success",
-                        "removed_count": removed_count
-                    }
+                        "removed_count": removed_count,
+                    },
                 )
                 logging_service.log_audit_event(
                     action="backup.cleanup",
@@ -774,11 +741,11 @@ class BackupService:
             logger.error(
                 "Failed to cleanup old backups",
                 extra={"event": "backup.cleanup.failure"},
-                exc_info=exc
+                exc_info=exc,
             )
             raise BackupError(
                 "Failed to cleanup old backups.",
-                context={"retention_days": retention_days}
+                context={"retention_days": retention_days},
             ) from exc
 
         return removed_count
@@ -857,7 +824,7 @@ class BackupService:
             )
             raise BackupError(
                 "Failed to compress backups.",
-                context={"days_threshold": days_threshold}
+                context={"days_threshold": days_threshold},
             ) from exc
 
         return compressed_count
@@ -885,7 +852,7 @@ class BackupService:
             logger.error(
                 "Failed to save backup metadata",
                 extra={"event": "backup.metadata.failure", "backup_id": backup_id},
-                exc_info=exc
+                exc_info=exc,
             )
             raise
 
@@ -909,7 +876,10 @@ class BackupService:
         except Exception as exc:
             logger.warning(
                 "Failed to update backup record",
-                extra={"event": "backup.metadata.update_failure", "backup_id": backup_id},
+                extra={
+                    "event": "backup.metadata.update_failure",
+                    "backup_id": backup_id,
+                },
                 exc_info=exc,
             )
 
@@ -940,7 +910,10 @@ class BackupService:
         except Exception as exc:
             logger.warning(
                 "Failed to persist backup metadata file",
-                extra={"event": "backup.metadata_file.warning", "resource_id": metadata.get("backup_id")},
+                extra={
+                    "event": "backup.metadata_file.warning",
+                    "resource_id": metadata.get("backup_id"),
+                },
                 exc_info=exc,
             )
 
@@ -956,7 +929,10 @@ class BackupService:
         except Exception as exc:
             logger.warning(
                 "Failed to read backup metadata file",
-                extra={"event": "backup.metadata_file.read_failure", "resource_id": backup_id},
+                extra={
+                    "event": "backup.metadata_file.read_failure",
+                    "resource_id": backup_id,
+                },
                 exc_info=exc,
             )
             return None
@@ -978,7 +954,10 @@ class BackupService:
                 except Exception as exc:
                     logger.warning(
                         "Failed to parse backup metadata file",
-                        extra={"event": "backup.metadata_file.parse_failure", "resource_id": filename},
+                        extra={
+                            "event": "backup.metadata_file.parse_failure",
+                            "resource_id": filename,
+                        },
                         exc_info=exc,
                     )
         except FileNotFoundError:
@@ -1000,7 +979,10 @@ class BackupService:
         except Exception as exc:
             logger.warning(
                 "Failed to remove backup metadata file",
-                extra={"event": "backup.metadata_file.remove_failure", "resource_id": backup_id},
+                extra={
+                    "event": "backup.metadata_file.remove_failure",
+                    "resource_id": backup_id,
+                },
                 exc_info=exc,
             )
 

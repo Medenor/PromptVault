@@ -23,7 +23,7 @@ from scripts.setup.utils.docker_utils import (
 class TestCheckDockerInstalled:
     """Test Docker installation check."""
 
-    @patch('scripts.setup.utils.docker_utils.subprocess.run')
+    @patch("scripts.setup.utils.docker_utils.subprocess.run")
     def test_docker_installed(self, mock_run):
         """Test when Docker is installed."""
         mock_result = Mock()
@@ -37,7 +37,7 @@ class TestCheckDockerInstalled:
         assert "Docker version" in version
         mock_run.assert_called_once()
 
-    @patch('scripts.setup.utils.docker_utils.subprocess.run')
+    @patch("scripts.setup.utils.docker_utils.subprocess.run")
     def test_docker_not_installed(self, mock_run):
         """Test when Docker is not installed."""
         mock_run.side_effect = FileNotFoundError()
@@ -47,7 +47,7 @@ class TestCheckDockerInstalled:
         assert is_installed is False
         assert "not installed" in error
 
-    @patch('scripts.setup.utils.docker_utils.subprocess.run')
+    @patch("scripts.setup.utils.docker_utils.subprocess.run")
     def test_docker_command_failed(self, mock_run):
         """Test when Docker command fails."""
         mock_result = Mock()
@@ -60,7 +60,7 @@ class TestCheckDockerInstalled:
         assert is_installed is False
         assert "failed" in error.lower()
 
-    @patch('scripts.setup.utils.docker_utils.subprocess.run')
+    @patch("scripts.setup.utils.docker_utils.subprocess.run")
     def test_docker_timeout(self, mock_run):
         """Test when Docker command times out."""
         mock_run.side_effect = TimeoutError()
@@ -74,7 +74,7 @@ class TestCheckDockerInstalled:
 class TestCheckDockerRunning:
     """Test Docker daemon running check."""
 
-    @patch('scripts.setup.utils.docker_utils.subprocess.run')
+    @patch("scripts.setup.utils.docker_utils.subprocess.run")
     def test_docker_running(self, mock_run):
         """Test when Docker daemon is running."""
         mock_result = Mock()
@@ -86,7 +86,7 @@ class TestCheckDockerRunning:
         assert is_running is True
         assert error is None
 
-    @patch('scripts.setup.utils.docker_utils.subprocess.run')
+    @patch("scripts.setup.utils.docker_utils.subprocess.run")
     def test_docker_not_running(self, mock_run):
         """Test when Docker daemon is not running."""
         mock_result = Mock()
@@ -99,7 +99,7 @@ class TestCheckDockerRunning:
         assert is_running is False
         assert "daemon" in error.lower()
 
-    @patch('scripts.setup.utils.docker_utils.subprocess.run')
+    @patch("scripts.setup.utils.docker_utils.subprocess.run")
     def test_docker_command_not_found(self, mock_run):
         """Test when Docker command not found."""
         mock_run.side_effect = FileNotFoundError()
@@ -109,7 +109,7 @@ class TestCheckDockerRunning:
         assert is_running is False
         assert "not installed" in error.lower()
 
-    @patch('scripts.setup.utils.docker_utils.subprocess.run')
+    @patch("scripts.setup.utils.docker_utils.subprocess.run")
     def test_docker_info_timeout(self, mock_run):
         """Test when docker info times out."""
         mock_run.side_effect = TimeoutError()
@@ -123,7 +123,7 @@ class TestCheckDockerRunning:
 class TestCheckDockerComposeInstalled:
     """Test Docker Compose installation check."""
 
-    @patch('scripts.setup.utils.docker_utils.subprocess.run')
+    @patch("scripts.setup.utils.docker_utils.subprocess.run")
     def test_docker_compose_v2_installed(self, mock_run):
         """Test when Docker Compose v2 is installed."""
         mock_result = Mock()
@@ -136,7 +136,7 @@ class TestCheckDockerComposeInstalled:
         assert is_installed is True
         assert "v2" in version or "version" in version.lower()
 
-    @patch('scripts.setup.utils.docker_utils.subprocess.run')
+    @patch("scripts.setup.utils.docker_utils.subprocess.run")
     def test_docker_compose_v1_installed(self, mock_run):
         """Test when Docker Compose v1 is installed."""
         # First call (v2) fails, second call (v1) succeeds
@@ -154,7 +154,7 @@ class TestCheckDockerComposeInstalled:
         assert is_installed is True
         assert "version" in version.lower()
 
-    @patch('scripts.setup.utils.docker_utils.subprocess.run')
+    @patch("scripts.setup.utils.docker_utils.subprocess.run")
     def test_docker_compose_not_installed(self, mock_run):
         """Test when Docker Compose is not installed."""
         mock_run.side_effect = FileNotFoundError()
@@ -214,7 +214,7 @@ class TestCheckPortAvailable:
 class TestRunDockerCompose:
     """Test running Docker Compose commands."""
 
-    @patch('scripts.setup.utils.docker_utils.subprocess.run')
+    @patch("scripts.setup.utils.docker_utils.subprocess.run")
     def test_run_docker_compose_v2(self, mock_run):
         """Test running Docker Compose v2 command."""
         # First call checks for v2 (succeeds)
@@ -235,7 +235,7 @@ class TestRunDockerCompose:
         assert success is True
         assert "Container started" in stdout
 
-    @patch('scripts.setup.utils.docker_utils.subprocess.run')
+    @patch("scripts.setup.utils.docker_utils.subprocess.run")
     def test_run_docker_compose_v1(self, mock_run):
         """Test running Docker Compose v1 command."""
         # First call checks for v2 (fails)
@@ -259,7 +259,7 @@ class TestRunDockerCompose:
 
         assert success is True
 
-    @patch('scripts.setup.utils.docker_utils.subprocess.run')
+    @patch("scripts.setup.utils.docker_utils.subprocess.run")
     def test_run_docker_compose_command_failed(self, mock_run):
         """Test when Docker Compose command fails."""
         # Version check succeeds
@@ -279,7 +279,7 @@ class TestRunDockerCompose:
         assert success is False
         assert "Error" in stderr or stderr == ""
 
-    @patch('scripts.setup.utils.docker_utils.subprocess.run')
+    @patch("scripts.setup.utils.docker_utils.subprocess.run")
     def test_run_docker_compose_not_installed(self, mock_run):
         """Test when Docker Compose is not installed."""
         mock_run.side_effect = Exception()
@@ -289,7 +289,7 @@ class TestRunDockerCompose:
         assert success is False
         assert "not installed" in stderr.lower() or "not available" in stderr.lower()
 
-    @patch('scripts.setup.utils.docker_utils.subprocess.run')
+    @patch("scripts.setup.utils.docker_utils.subprocess.run")
     def test_run_docker_compose_with_working_dir(self, mock_run):
         """Test running Docker Compose with working directory."""
         mock_version_check = Mock()
@@ -303,13 +303,12 @@ class TestRunDockerCompose:
         mock_run.side_effect = [mock_version_check, mock_command]
 
         success, stdout, stderr = run_docker_compose(
-            "ps",
-            working_dir="/path/to/project"
+            "ps", working_dir="/path/to/project"
         )
 
         assert success is True
 
-    @patch('scripts.setup.utils.docker_utils.subprocess.run')
+    @patch("scripts.setup.utils.docker_utils.subprocess.run")
     def test_run_docker_compose_with_args(self, mock_run):
         """Test running Docker Compose with additional arguments."""
         mock_version_check = Mock()
@@ -330,46 +329,46 @@ class TestRunDockerCompose:
 class TestGetContainerStatus:
     """Test getting container status."""
 
-    @patch('scripts.setup.utils.docker_utils.run_docker_compose')
+    @patch("scripts.setup.utils.docker_utils.run_docker_compose")
     def test_get_running_container_status(self, mock_compose):
         """Test getting status of running container."""
         mock_compose.return_value = (
             True,
             "NAME          SERVICE     STATUS\ndb_container  db          Up 5 minutes",
-            ""
+            "",
         )
 
         status = get_container_status("db")
 
         assert status == "running"
 
-    @patch('scripts.setup.utils.docker_utils.run_docker_compose')
+    @patch("scripts.setup.utils.docker_utils.run_docker_compose")
     def test_get_exited_container_status(self, mock_compose):
         """Test getting status of exited container."""
         mock_compose.return_value = (
             True,
             "NAME          SERVICE     STATUS\napp_container app         Exit 1",
-            ""
+            "",
         )
 
         status = get_container_status("app")
 
         assert status == "exited"
 
-    @patch('scripts.setup.utils.docker_utils.run_docker_compose')
+    @patch("scripts.setup.utils.docker_utils.run_docker_compose")
     def test_get_restarting_container_status(self, mock_compose):
         """Test getting status of restarting container."""
         mock_compose.return_value = (
             True,
             "NAME          SERVICE     STATUS\nweb_container web         Restarting",
-            ""
+            "",
         )
 
         status = get_container_status("web")
 
         assert status == "restarting"
 
-    @patch('scripts.setup.utils.docker_utils.run_docker_compose')
+    @patch("scripts.setup.utils.docker_utils.run_docker_compose")
     def test_get_nonexistent_container_status(self, mock_compose):
         """Test getting status of nonexistent container."""
         mock_compose.return_value = (True, "NAME  SERVICE  STATUS\n", "")
@@ -378,7 +377,7 @@ class TestGetContainerStatus:
 
         assert status is None
 
-    @patch('scripts.setup.utils.docker_utils.run_docker_compose')
+    @patch("scripts.setup.utils.docker_utils.run_docker_compose")
     def test_get_container_status_command_failed(self, mock_compose):
         """Test when docker-compose ps fails."""
         mock_compose.return_value = (False, "", "Error")
@@ -397,9 +396,9 @@ class TestGetContainerStatus:
 class TestWaitForHealthy:
     """Test waiting for container to become healthy."""
 
-    @patch('scripts.setup.utils.docker_utils.get_container_status')
-    @patch('scripts.setup.utils.docker_utils.run_docker_compose')
-    @patch('scripts.setup.utils.docker_utils.time.sleep')
+    @patch("scripts.setup.utils.docker_utils.get_container_status")
+    @patch("scripts.setup.utils.docker_utils.run_docker_compose")
+    @patch("scripts.setup.utils.docker_utils.time.sleep")
     def test_wait_for_healthy_success(self, mock_sleep, mock_compose, mock_status):
         """Test waiting for container that becomes healthy."""
         mock_status.return_value = "running"
@@ -409,8 +408,8 @@ class TestWaitForHealthy:
 
         assert result is True
 
-    @patch('scripts.setup.utils.docker_utils.get_container_status')
-    @patch('scripts.setup.utils.docker_utils.time.sleep')
+    @patch("scripts.setup.utils.docker_utils.get_container_status")
+    @patch("scripts.setup.utils.docker_utils.time.sleep")
     def test_wait_for_healthy_timeout(self, mock_sleep, mock_status):
         """Test waiting for container that times out."""
         mock_status.return_value = None
@@ -419,10 +418,12 @@ class TestWaitForHealthy:
 
         assert result is False
 
-    @patch('scripts.setup.utils.docker_utils.get_container_status')
-    @patch('scripts.setup.utils.docker_utils.run_docker_compose')
-    @patch('scripts.setup.utils.docker_utils.time.sleep')
-    def test_wait_for_healthy_no_healthcheck(self, mock_sleep, mock_compose, mock_status):
+    @patch("scripts.setup.utils.docker_utils.get_container_status")
+    @patch("scripts.setup.utils.docker_utils.run_docker_compose")
+    @patch("scripts.setup.utils.docker_utils.time.sleep")
+    def test_wait_for_healthy_no_healthcheck(
+        self, mock_sleep, mock_compose, mock_status
+    ):
         """Test waiting for container without healthcheck."""
         mock_status.return_value = "running"
         mock_compose.return_value = (True, '{"Status": "running"}', "")
@@ -432,8 +433,8 @@ class TestWaitForHealthy:
         # Container running without healthcheck should be considered healthy
         assert result is True
 
-    @patch('scripts.setup.utils.docker_utils.get_container_status')
-    @patch('scripts.setup.utils.docker_utils.time.sleep')
+    @patch("scripts.setup.utils.docker_utils.get_container_status")
+    @patch("scripts.setup.utils.docker_utils.time.sleep")
     def test_wait_for_healthy_not_running(self, mock_sleep, mock_status):
         """Test waiting for container that's not running."""
         mock_status.return_value = "exited"
@@ -442,10 +443,12 @@ class TestWaitForHealthy:
 
         assert result is False
 
-    @patch('scripts.setup.utils.docker_utils.get_container_health_status')
-    @patch('scripts.setup.utils.docker_utils.get_container_status')
-    @patch('scripts.setup.utils.docker_utils.time.sleep')
-    def test_wait_for_healthy_becomes_unhealthy(self, mock_sleep, mock_status, mock_health):
+    @patch("scripts.setup.utils.docker_utils.get_container_health_status")
+    @patch("scripts.setup.utils.docker_utils.get_container_status")
+    @patch("scripts.setup.utils.docker_utils.time.sleep")
+    def test_wait_for_healthy_becomes_unhealthy(
+        self, mock_sleep, mock_status, mock_health
+    ):
         """Test waiting for container that becomes unhealthy."""
         mock_status.return_value = "running"
         mock_health.return_value = "unhealthy"
@@ -456,14 +459,18 @@ class TestWaitForHealthy:
 
     def test_wait_for_healthy_invalid_timeout(self):
         """Test with invalid timeout value."""
-        with patch('scripts.setup.utils.docker_utils.get_container_status') as mock_status:
+        with patch(
+            "scripts.setup.utils.docker_utils.get_container_status"
+        ) as mock_status:
             mock_status.return_value = None
             result = wait_for_healthy("db", timeout=0, poll_interval=1)
             assert result is False
 
     def test_wait_for_healthy_invalid_poll_interval(self):
         """Test with invalid poll interval."""
-        with patch('scripts.setup.utils.docker_utils.get_container_status') as mock_status:
+        with patch(
+            "scripts.setup.utils.docker_utils.get_container_status"
+        ) as mock_status:
             mock_status.return_value = None
             result = wait_for_healthy("db", timeout=1, poll_interval=0)
             assert result is False
@@ -472,20 +479,20 @@ class TestWaitForHealthy:
 class TestGetContainerLogs:
     """Test getting container logs."""
 
-    @patch('scripts.setup.utils.docker_utils.run_docker_compose')
+    @patch("scripts.setup.utils.docker_utils.run_docker_compose")
     def test_get_container_logs_success(self, mock_compose):
         """Test getting logs successfully."""
         mock_compose.return_value = (
             True,
             "2024-01-01 12:00:00 [INFO] Database started\n",
-            ""
+            "",
         )
 
         logs = get_container_logs("db", tail=50)
 
         assert "Database started" in logs
 
-    @patch('scripts.setup.utils.docker_utils.run_docker_compose')
+    @patch("scripts.setup.utils.docker_utils.run_docker_compose")
     def test_get_container_logs_failed(self, mock_compose):
         """Test when getting logs fails."""
         mock_compose.return_value = (False, "", "Error: container not found")
@@ -494,7 +501,7 @@ class TestGetContainerLogs:
 
         assert "Error" in logs or logs == ""
 
-    @patch('scripts.setup.utils.docker_utils.run_docker_compose')
+    @patch("scripts.setup.utils.docker_utils.run_docker_compose")
     def test_get_container_logs_custom_tail(self, mock_compose):
         """Test getting logs with custom tail value."""
         mock_compose.return_value = (True, "Log line\n", "")
@@ -511,7 +518,9 @@ class TestGetContainerLogs:
 
     def test_get_container_logs_invalid_tail(self):
         """Test with invalid tail value."""
-        with patch('scripts.setup.utils.docker_utils.run_docker_compose') as mock_compose:
+        with patch(
+            "scripts.setup.utils.docker_utils.run_docker_compose"
+        ) as mock_compose:
             mock_compose.return_value = (True, "Logs\n", "")
             logs = get_container_logs("db", tail=0)
             # Should use default tail value
@@ -521,7 +530,7 @@ class TestGetContainerLogs:
 class TestCheckImageExists:
     """Test checking if Docker image exists."""
 
-    @patch('scripts.setup.utils.docker_utils.subprocess.run')
+    @patch("scripts.setup.utils.docker_utils.subprocess.run")
     def test_image_exists_exact_match(self, mock_run):
         """Test when image exists with exact name match."""
         mock_result = Mock()
@@ -533,7 +542,7 @@ class TestCheckImageExists:
 
         assert exists is True
 
-    @patch('scripts.setup.utils.docker_utils.subprocess.run')
+    @patch("scripts.setup.utils.docker_utils.subprocess.run")
     def test_image_exists_without_tag(self, mock_run):
         """Test when image exists without specifying tag."""
         mock_result = Mock()
@@ -545,7 +554,7 @@ class TestCheckImageExists:
 
         assert exists is True
 
-    @patch('scripts.setup.utils.docker_utils.subprocess.run')
+    @patch("scripts.setup.utils.docker_utils.subprocess.run")
     def test_image_not_exists(self, mock_run):
         """Test when image does not exist."""
         mock_result = Mock()
@@ -557,7 +566,7 @@ class TestCheckImageExists:
 
         assert exists is False
 
-    @patch('scripts.setup.utils.docker_utils.subprocess.run')
+    @patch("scripts.setup.utils.docker_utils.subprocess.run")
     def test_check_image_command_failed(self, mock_run):
         """Test when docker images command fails."""
         mock_result = Mock()
@@ -568,7 +577,7 @@ class TestCheckImageExists:
 
         assert exists is False
 
-    @patch('scripts.setup.utils.docker_utils.subprocess.run')
+    @patch("scripts.setup.utils.docker_utils.subprocess.run")
     def test_check_image_docker_not_found(self, mock_run):
         """Test when Docker is not installed."""
         mock_run.side_effect = FileNotFoundError()
@@ -583,7 +592,7 @@ class TestCheckImageExists:
 
         assert exists is False
 
-    @patch('scripts.setup.utils.docker_utils.subprocess.run')
+    @patch("scripts.setup.utils.docker_utils.subprocess.run")
     def test_check_image_timeout(self, mock_run):
         """Test when command times out."""
         mock_run.side_effect = TimeoutError()

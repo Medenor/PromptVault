@@ -27,7 +27,6 @@ from pydantic import ValidationError
 
 from src.config.auth_config import AuthConfig, auth_settings
 
-
 # ---------------------------------------------------------------------------
 # Configuration tests (run in every environment)
 # ---------------------------------------------------------------------------
@@ -106,9 +105,7 @@ class TestAnonymousMode:
         finally:
             pv_logger.removeHandler(caplog.handler)
 
-        assert any(
-            "AUTH_ENABLED=false" in record.message for record in caplog.records
-        )
+        assert any("AUTH_ENABLED=false" in record.message for record in caplog.records)
 
 
 # ---------------------------------------------------------------------------

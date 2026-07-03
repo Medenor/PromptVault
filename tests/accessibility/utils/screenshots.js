@@ -159,8 +159,14 @@ export async function compareFocusIndicators(normalPath, focusPath) {
     // This would require pixel comparison library like pixelmatch
     // For now, return basic info that files exist
     const fs = require('fs').promises;
-    const normalExists = await fs.access(normalPath).then(() => true).catch(() => false);
-    const focusExists = await fs.access(focusPath).then(() => true).catch(() => false);
+    const normalExists = await fs
+      .access(normalPath)
+      .then(() => true)
+      .catch(() => false);
+    const focusExists = await fs
+      .access(focusPath)
+      .then(() => true)
+      .catch(() => false);
 
     if (!normalExists || !focusExists) {
       return {
@@ -171,7 +177,8 @@ export async function compareFocusIndicators(normalPath, focusPath) {
 
     return {
       distinct: true,
-      message: 'Screenshots captured successfully. Manual review recommended for visual comparison.',
+      message:
+        'Screenshots captured successfully. Manual review recommended for visual comparison.',
     };
   } catch (error) {
     return {

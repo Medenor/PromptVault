@@ -15,9 +15,7 @@ describe('renderCharacterDiff', () => {
   });
 
   it('should render equal operations with correct styling', () => {
-    const operations: DiffOperation[] = [
-      { op: 'equal', text: 'Hello world' },
-    ];
+    const operations: DiffOperation[] = [{ op: 'equal', text: 'Hello world' }];
 
     const result = renderCharacterDiff(operations);
 
@@ -32,9 +30,7 @@ describe('renderCharacterDiff', () => {
   });
 
   it('should render delete operations with correct styling', () => {
-    const operations: DiffOperation[] = [
-      { op: 'delete', text: 'removed text' },
-    ];
+    const operations: DiffOperation[] = [{ op: 'delete', text: 'removed text' }];
 
     const result = renderCharacterDiff(operations);
     const spans = result.querySelectorAll('span');
@@ -45,9 +41,7 @@ describe('renderCharacterDiff', () => {
   });
 
   it('should render insert operations with correct styling', () => {
-    const operations: DiffOperation[] = [
-      { op: 'insert', text: 'added text' },
-    ];
+    const operations: DiffOperation[] = [{ op: 'insert', text: 'added text' }];
 
     const result = renderCharacterDiff(operations);
     const spans = result.querySelectorAll('span');
@@ -88,9 +82,7 @@ describe('renderCharacterDiff', () => {
   });
 
   it('should escape HTML special characters', () => {
-    const operations: DiffOperation[] = [
-      { op: 'equal', text: '<script>alert("xss")</script>' },
-    ];
+    const operations: DiffOperation[] = [{ op: 'equal', text: '<script>alert("xss")</script>' }];
 
     const result = renderCharacterDiff(operations);
     const spans = result.querySelectorAll('span');
@@ -134,9 +126,7 @@ describe('renderCharacterDiff', () => {
   });
 
   it('should handle multiline text with preserved line breaks', () => {
-    const operations: DiffOperation[] = [
-      { op: 'equal', text: 'Line 1\nLine 2\nLine 3' },
-    ];
+    const operations: DiffOperation[] = [{ op: 'equal', text: 'Line 1\nLine 2\nLine 3' }];
 
     const result = renderCharacterDiff(operations);
     const spans = result.querySelectorAll('span');
@@ -164,9 +154,7 @@ describe('renderCharacterDiff', () => {
   });
 
   it('should handle unknown operation types with fallback styling', () => {
-    const operations = [
-      { op: 'unknown' as 'equal', text: 'test' },
-    ];
+    const operations = [{ op: 'unknown' as 'equal', text: 'test' }];
 
     const result = renderCharacterDiff(operations);
     const spans = result.querySelectorAll('span');
@@ -178,7 +166,7 @@ describe('renderCharacterDiff', () => {
   it('should handle operations with special characters', () => {
     const operations: DiffOperation[] = [
       { op: 'equal', text: 'Test & "quotes" <tags>' },
-      { op: 'insert', text: '\' and \\ backslash' },
+      { op: 'insert', text: "' and \\ backslash" },
     ];
 
     const result = renderCharacterDiff(operations);
@@ -186,15 +174,13 @@ describe('renderCharacterDiff', () => {
 
     expect(spans.length).toBe(2);
     expect(spans[0]?.textContent).toBe('Test & "quotes" <tags>');
-    expect(spans[1]?.textContent).toBe('\' and \\ backslash');
+    expect(spans[1]?.textContent).toBe("' and \\ backslash");
     // Ensure no actual HTML tags were created
     expect(result.querySelector('tags')).toBeNull();
   });
 
   it('should maintain proper container structure', () => {
-    const operations: DiffOperation[] = [
-      { op: 'equal', text: 'test' },
-    ];
+    const operations: DiffOperation[] = [{ op: 'equal', text: 'test' }];
 
     const result = renderCharacterDiff(operations);
 
