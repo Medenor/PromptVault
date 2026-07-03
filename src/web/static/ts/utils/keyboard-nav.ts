@@ -58,7 +58,7 @@ export function getFocusableElements(
     }
 
     // Check if element is disabled
-    if (options?.excludeDisabled && (el as any).disabled) {
+    if (options?.excludeDisabled && (el as HTMLInputElement).disabled) {
       return false;
     }
 

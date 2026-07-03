@@ -8,8 +8,6 @@
  * PromptVault main app logic (TypeScript).
  */
 
-/* global document, window, fetch, localStorage, sessionStorage, setTimeout, clearTimeout, performance, console, alert, navigator, confirm */
-
 import '../css/tailwind-globals.css';
 import '@/form-validation';
 import type { PromptResponse, PromptListResponse } from '@/types';

@@ -94,8 +94,7 @@ const elements = {
 };
 
 let cachedItems: TagItem[] = [];
-// @ts-expect-error - Used for cleanup, but not referenced directly
-let colorPickerInstance: ColorPicker | null = null;
+let _colorPickerInstance: ColorPicker | null = null;
 let tableKeyboardNavInitialized = false;
 let rovingTabindexInitialized = false;
 let currentTagFocusIndex = 0;
@@ -312,7 +311,7 @@ function initializeTableFirstCharNavigation(): void {
       }
 
       const checkbox = row.querySelector<HTMLInputElement>(
-        'input[type=\"checkbox\"][data-select-id]'
+        'input[type="checkbox"][data-select-id]'
       );
       if (!checkbox) {
         return;
@@ -1406,7 +1405,7 @@ function handleError(error: unknown, fallback: string): void {
 function init(): void {
   // Initialize enhanced color picker
   try {
-    colorPickerInstance = initializeColorPicker({
+    _colorPickerInstance = initializeColorPicker({
       containerId: 'tag-create-color-picker-container',
       colorInputId: 'tag-create-color',
       colorPickerId: 'tag-create-color-picker',

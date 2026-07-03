@@ -544,7 +544,7 @@ function generateExportPreview(prompts: Record<string, unknown>, format: string)
       content += `---\n\n`;
       content += `... and ${promptCount - 2} more prompts`;
       break;
-    case 'json':
+    case 'json': {
       const sampleData = {
         export_timestamp: new Date().toISOString(),
         total_prompts: promptCount,
@@ -572,6 +572,7 @@ function generateExportPreview(prompts: Record<string, unknown>, format: string)
       content = JSON.stringify(sampleData, null, 2);
       content += `\n\n... and ${promptCount - 2} more prompts`;
       break;
+    }
     default:
       break;
   }

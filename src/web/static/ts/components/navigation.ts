@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import type { NavItemProps, TabsProps, BreadcrumbsProps } from './types';
+import type { NavItemProps, TabsProps, BreadcrumbsProps, BaseComponentProps } from './types';
 
 /**
  * Creates a navigation menu
@@ -12,7 +12,7 @@ import type { NavItemProps, TabsProps, BreadcrumbsProps } from './types';
  * @param props - Additional properties
  * @returns nav element with items
  */
-export function createNav(items: NavItemProps[], props?: any): HTMLElement {
+export function createNav(items: NavItemProps[], props?: BaseComponentProps): HTMLElement {
   const nav = document.createElement('nav');
 
   nav.className = `flex items-center gap-4 ${props?.className || ''}`.trim();

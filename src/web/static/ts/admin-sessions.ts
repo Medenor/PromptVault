@@ -8,8 +8,6 @@
  * Admin session management logic
  */
 
-/* global document, window */
-
 import '../css/tailwind-globals.css';
 import { reportError } from '@/telemetry';
 import { changeLanguage, initI18n, updateStaticTranslations, t } from '@/utils/i18n';
@@ -299,7 +297,7 @@ function initializeSessionsTableFirstCharNavigation(): void {
         continue;
       }
       const revokeButton = row.querySelector<HTMLButtonElement>(
-        'button[data-i18n=\"actions.revoke\"]'
+        'button[data-i18n="actions.revoke"]'
       );
       if (!revokeButton) return;
       revokeButton.focus();

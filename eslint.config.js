@@ -5,6 +5,7 @@ import prettierConfig from 'eslint-config-prettier';
 import prettierPlugin from 'eslint-plugin-prettier';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import globals from 'globals';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -18,6 +19,16 @@ export default [
       'src/web/static/vendor/**',
       '**/coverage/**',
       '**/*.min.*',
+      '.venv/**',
+      'venv/**',
+      'htmlcov/**',
+      'tests/htmlcov/**',
+      'data/**',
+      'tests/accessibility/**',
+      'tests/e2e/**',
+      'scripts/**',
+      'playwright.config.ts',
+      'tailwind.config.ts',
     ],
   },
   js.configs.recommended,
@@ -30,6 +41,7 @@ export default [
   },
   {
     files: ['**/*.{ts,tsx}'],
+    ignores: ['tailwind.config.ts', 'vitest.config.ts'],
     languageOptions: {
       parser: tsParser,
       parserOptions: {
@@ -38,10 +50,26 @@ export default [
         sourceType: 'module',
         ecmaVersion: 2022,
       },
+      globals: {
+        ...globals.browser,
+        ...globals.es2022,
+      },
     },
     plugins: { '@typescript-eslint': tsPlugin },
     rules: {
       ...tsPlugin.configs.recommended.rules,
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { varsIgnorePattern: '^_', argsIgnorePattern: '^_' },
+      ],
+    },
+  },
+  {
+    files: ['vite.config.ts', 'vitest.config.ts', 'tailwind.config.ts', 'postcss.config.js'],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+      },
     },
   },
   prettierConfig,

@@ -111,7 +111,7 @@ describe('ColorPicker', () => {
   });
 
   it('resets hex input to current color on blur if invalid', () => {
-    const picker = new ColorPicker({
+    const _picker = new ColorPicker({
       containerId: 'color-container',
       colorInputId: 'color-input',
       colorPickerId: 'color-picker-native',

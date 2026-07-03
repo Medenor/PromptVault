@@ -210,13 +210,14 @@ export class ColorPicker {
             nextIndex = Math.max(currentIndex - 5, 0);
             break;
           case 'Enter':
-          case ' ':
+          case ' ': {
             e.preventDefault();
             const color = target.dataset.color;
             if (color) {
               this.setColor(color);
             }
             return;
+          }
           case 'Escape':
             e.preventDefault();
             target.blur();

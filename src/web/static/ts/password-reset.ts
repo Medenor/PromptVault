@@ -87,7 +87,7 @@ function checkPasswordStrength(password: string): { strength: number; checks: Pa
     uppercase: /[A-Z]/.test(password),
     lowercase: /[a-z]/.test(password),
     digit: /[0-9]/.test(password),
-    special: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password),
+    special: /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password),
   };
 
   const strength = Object.values(checks).filter(Boolean).length;
