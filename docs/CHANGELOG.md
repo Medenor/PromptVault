@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### ✨ Added
+
+- **Developer Workflow Makefile**: Single `make` entry point for all common development tasks — no need to remember individual `npm`, `pytest`, or `pip` commands
+  - **`make install`**: Creates the Python 3.14+ virtualenv if absent (or recreates if the existing one is too old), installs backend and frontend dependencies in one step
+  - **`make dev`**: Starts the backend (FastAPI) and Vite frontend dev servers concurrently; Ctrl-C shuts both down cleanly; exits immediately with an error if either port is already in use
+  - **`make test`**: Runs the full backend and frontend test suites and exits non-zero if either fails
+  - **`make lint` / `make lint-fix`**: Runs Black, ESLint, TypeScript typecheck, and Prettier across both stacks; `lint-fix` applies auto-fixable issues in place
+  - **`make build`**: Builds frontend assets (TypeScript + Vite) and the production Docker image
+  - **`make help`**: Self-documenting target list (default when running bare `make`)
+  - See `docs/DEVELOPMENT.md` for full prerequisites, port overrides, and failure mode guidance
+
+- **Frontend Unit Tests**: Added unit test coverage for 7 previously untested TypeScript utility modules
+  - `utils/a11y.ts`, `utils/color-picker.ts`, `utils/dialogs.ts`, `utils/focus-management.ts`, `utils/keyboard-nav.ts`, `utils/typeahead.ts`, `utils/button-keyboard-activation.ts`
+
+### 🐛 Fixed
+
+- **`copy-with-version` metadata placement**: The portable metadata comment (`<!-- prompt-version: ... -->`) is now prepended to the copied content rather than appended, so consumers that detect it by reading the first line work correctly
+- **Session cleanup double-open**: `SessionCleanupScheduler.run_cleanup_now()` was opening a DB session then calling `_cleanup_expired_sessions()` which opened a second concurrent session; it now delegates directly, eliminating the redundant connection and a potential SQLite lock
+- **Session cleanup inflated count**: `run_cleanup_now` was counting expired sessions without the `is_revoked = false` filter used by the actual cleanup query, causing `expired_found` in the return value to be higher than sessions actually deleted
+
+### 🔧 Changed
+
+- **Black declared as a dev dependency**: `black` is now listed in `pyproject.toml` under `[project.optional-dependencies] dev` and installed via `pip install -e ".[test,dev]"`; it is no longer installed as a separate ad-hoc `pip install` step in the Makefile
+- **Codebase reformatted with Black**: All Python source files and tests normalised to double-quoted strings and Black line-wrapping style (no logic changes)
+- **ESLint config hardened**: Added `globals.browser` and `globals.es2022` to TypeScript file rules; excluded Python virtualenv, coverage, and accessibility test directories from linting; added `@typescript-eslint/no-unused-vars` rule with underscore-prefix ignore pattern
+
 ## [1.9.0] - 2026-07-02
 
 ### ✨ Added
