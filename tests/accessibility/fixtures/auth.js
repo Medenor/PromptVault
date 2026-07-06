@@ -84,7 +84,9 @@ export async function login(page, username, password, attempt = 1) {
 export async function logout(page) {
   try {
     // Try to find and click logout button
-    const logoutButton = page.locator('button:has-text("Logout"), a:has-text("Logout"), [aria-label*="Logout"]').first();
+    const logoutButton = page
+      .locator('button:has-text("Logout"), a:has-text("Logout"), [aria-label*="Logout"]')
+      .first();
     await logoutButton.click();
     await page.waitForURL(/\/auth\/login|\/$/);
   } catch (error) {
@@ -138,9 +140,7 @@ export const authenticatedUserTest = base.extend({
       return;
     }
 
-    const storageStatePath = stateDir
-      ? `${stateDir}/user-state.json`
-      : undefined;
+    const storageStatePath = stateDir ? `${stateDir}/user-state.json` : undefined;
 
     // Only use storageState if the file actually exists
     const hasStorageState = storageStatePath && existsSync(storageStatePath);
@@ -182,9 +182,7 @@ export const authenticatedAdminTest = base.extend({
       return;
     }
 
-    const storageStatePath = stateDir
-      ? `${stateDir}/admin-state.json`
-      : undefined;
+    const storageStatePath = stateDir ? `${stateDir}/admin-state.json` : undefined;
 
     // Only use storageState if the file actually exists
     const hasStorageState = storageStatePath && existsSync(storageStatePath);

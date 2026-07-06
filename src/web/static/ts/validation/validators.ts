@@ -45,6 +45,7 @@ export function stripControlCharacters(text: string, allowNewlines = true): stri
     return text.replace(CONTROL_CHARACTERS_REGEX, '');
   }
 
+  // eslint-disable-next-line no-control-regex
   return text.replace(/[\x00-\x1F\x7F]/g, '');
 }
 

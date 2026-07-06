@@ -95,7 +95,9 @@ class CreateUserRequest(BaseModel):
             ValueError: If username format is invalid
         """
         if not re.match(r"^[a-zA-Z0-9_]+$", v):
-            raise ValueError("Username must contain only letters, numbers, and underscores")
+            raise ValueError(
+                "Username must contain only letters, numbers, and underscores"
+            )
         return v
 
     @field_validator("email")

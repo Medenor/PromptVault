@@ -6,6 +6,7 @@
 Logging utilities providing structured JSON output, rotating file handlers, and
 request context propagation for PromptVault.
 """
+
 import json
 import logging
 import logging.config

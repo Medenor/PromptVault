@@ -53,24 +53,110 @@ from argon2.exceptions import VerifyMismatchError, VerificationError, InvalidHas
 
 from src.config.auth_config import AuthConfig
 
-
 # Top 100 most common passwords for basic security check
 # Source: Compiled from various password breach databases
 COMMON_PASSWORDS = {
-    "123456", "password", "123456789", "12345678", "12345", "1234567", "password1",
-    "123123", "1234567890", "000000", "abc123", "qwerty", "iloveyou", "monkey",
-    "dragon", "111111", "baseball", "letmein", "trustno1", "sunshine", "master",
-    "welcome", "shadow", "ashley", "football", "jesus", "michael", "ninja", "mustang",
-    "password123", "qwerty123", "admin", "administrator", "root", "toor", "pass",
-    "passw0rd", "passwd", "Password1", "Password123", "P@ssw0rd", "P@ssword",
-    "1q2w3e4r", "1qaz2wsx", "qwertyuiop", "azerty", "696969", "fuckyou", "666666",
-    "batman", "superman", "princess", "starwars", "qazwsx", "654321", "123qwe",
-    "zxcvbnm", "login", "admin123", "solo", "jordan", "harley", "ranger", "buster",
-    "thomas", "tigger", "robert", "soccer", "hockey", "freedom", "ginger", "cookie",
-    "secret", "summer", "matthew", "whatever", "william", "samsung", "bailey",
-    "121212", "charlie", "maggie", "computer", "jessica", "pepper", "1111", "222222",
-    "hunter", "joshua", "chelsea", "corvette", "angel", "midnight", "access", "yellow",
-    "thunder", "1234", "testing", "test", "temp", "changeme"
+    "123456",
+    "password",
+    "123456789",
+    "12345678",
+    "12345",
+    "1234567",
+    "password1",
+    "123123",
+    "1234567890",
+    "000000",
+    "abc123",
+    "qwerty",
+    "iloveyou",
+    "monkey",
+    "dragon",
+    "111111",
+    "baseball",
+    "letmein",
+    "trustno1",
+    "sunshine",
+    "master",
+    "welcome",
+    "shadow",
+    "ashley",
+    "football",
+    "jesus",
+    "michael",
+    "ninja",
+    "mustang",
+    "password123",
+    "qwerty123",
+    "admin",
+    "administrator",
+    "root",
+    "toor",
+    "pass",
+    "passw0rd",
+    "passwd",
+    "Password1",
+    "Password123",
+    "P@ssw0rd",
+    "P@ssword",
+    "1q2w3e4r",
+    "1qaz2wsx",
+    "qwertyuiop",
+    "azerty",
+    "696969",
+    "fuckyou",
+    "666666",
+    "batman",
+    "superman",
+    "princess",
+    "starwars",
+    "qazwsx",
+    "654321",
+    "123qwe",
+    "zxcvbnm",
+    "login",
+    "admin123",
+    "solo",
+    "jordan",
+    "harley",
+    "ranger",
+    "buster",
+    "thomas",
+    "tigger",
+    "robert",
+    "soccer",
+    "hockey",
+    "freedom",
+    "ginger",
+    "cookie",
+    "secret",
+    "summer",
+    "matthew",
+    "whatever",
+    "william",
+    "samsung",
+    "bailey",
+    "121212",
+    "charlie",
+    "maggie",
+    "computer",
+    "jessica",
+    "pepper",
+    "1111",
+    "222222",
+    "hunter",
+    "joshua",
+    "chelsea",
+    "corvette",
+    "angel",
+    "midnight",
+    "access",
+    "yellow",
+    "thunder",
+    "1234",
+    "testing",
+    "test",
+    "temp",
+    "changeme",
 }
 
 
@@ -116,13 +202,13 @@ class PasswordService:
         # Initialize Argon2id password hasher with OWASP recommended parameters
         # These parameters provide strong security while maintaining acceptable performance
         self._hasher = PasswordHasher(
-            time_cost=2,           # Number of iterations (OWASP minimum: 2)
-            memory_cost=102400,    # Memory in KiB (100 MB - OWASP recommended)
-            parallelism=8,         # Number of parallel threads
-            hash_len=32,           # Hash output length in bytes
-            salt_len=16,           # Salt length in bytes (cryptographically random)
-            encoding='utf-8',      # Character encoding for password strings
-            type=Type.ID           # Argon2id - hybrid of Argon2i and Argon2d
+            time_cost=2,  # Number of iterations (OWASP minimum: 2)
+            memory_cost=102400,  # Memory in KiB (100 MB - OWASP recommended)
+            parallelism=8,  # Number of parallel threads
+            hash_len=32,  # Hash output length in bytes
+            salt_len=16,  # Salt length in bytes (cryptographically random)
+            encoding="utf-8",  # Character encoding for password strings
+            type=Type.ID,  # Argon2id - hybrid of Argon2i and Argon2d
         )
 
     def _is_common_password_variation(self, password: str) -> bool:
@@ -163,23 +249,28 @@ class PasswordService:
             return True
 
         # Strategy 2: Strip trailing special characters (!, @, #, $, %, ^, &, *, etc.)
-        pwd_no_special = re.sub(r'[!@#$%^&*\-_.~()[\]{};:,.<>?/\\|`~]+$', '', pwd_lower)
+        pwd_no_special = re.sub(r"[!@#$%^&*\-_.~()[\]{};:,.<>?/\\|`~]+$", "", pwd_lower)
         if pwd_no_special != pwd_lower and pwd_no_special in COMMON_PASSWORDS:
             return True
 
         # Strategy 3: Strip trailing digits
-        pwd_no_digits = re.sub(r'\d+$', '', pwd_lower)
+        pwd_no_digits = re.sub(r"\d+$", "", pwd_lower)
         if pwd_no_digits != pwd_lower and pwd_no_digits in COMMON_PASSWORDS:
             return True
 
         # Strategy 4: Strip both trailing special chars and digits
-        pwd_no_special_digits = re.sub(r'[!@#$%^&*\-_.~()[\]{};:,.<>?/\\|`~\d]+$', '', pwd_lower)
-        if pwd_no_special_digits != pwd_lower and pwd_no_special_digits in COMMON_PASSWORDS:
+        pwd_no_special_digits = re.sub(
+            r"[!@#$%^&*\-_.~()[\]{};:,.<>?/\\|`~\d]+$", "", pwd_lower
+        )
+        if (
+            pwd_no_special_digits != pwd_lower
+            and pwd_no_special_digits in COMMON_PASSWORDS
+        ):
             return True
 
         # Strategy 5: Remove ALL special characters (not just trailing)
         # This catches patterns like "P@ssw0rd" -> "Password"
-        pwd_alphanumeric = re.sub(r'[^a-z0-9]', '', pwd_lower)
+        pwd_alphanumeric = re.sub(r"[^a-z0-9]", "", pwd_lower)
         if pwd_alphanumeric != pwd_lower and pwd_alphanumeric in COMMON_PASSWORDS:
             return True
 
@@ -328,23 +419,23 @@ class PasswordService:
 
         # Check uppercase requirement
         if self.config.password_require_uppercase:
-            if not re.search(r'[A-Z]', password):
+            if not re.search(r"[A-Z]", password):
                 errors.append("Password must contain at least one uppercase letter")
 
         # Check lowercase requirement
         if self.config.password_require_lowercase:
-            if not re.search(r'[a-z]', password):
+            if not re.search(r"[a-z]", password):
                 errors.append("Password must contain at least one lowercase letter")
 
         # Check digit requirement
         if self.config.password_require_digit:
-            if not re.search(r'\d', password):
+            if not re.search(r"\d", password):
                 errors.append("Password must contain at least one digit")
 
         # Check special character requirement
         if self.config.password_require_special:
             # Special characters: anything that's not alphanumeric
-            if not re.search(r'[^a-zA-Z0-9]', password):
+            if not re.search(r"[^a-zA-Z0-9]", password):
                 errors.append(
                     "Password must contain at least one special character "
                     "(e.g., !@#$%^&*)"
@@ -414,22 +505,22 @@ class PasswordService:
         """
         if not password:
             return {
-                'level': 'weak',
-                'entropy': 0,
-                'length': 0,
-                'has_uppercase': False,
-                'has_lowercase': False,
-                'has_digits': False,
-                'has_special': False,
-                'char_diversity': 0,
-                'feedback': ['Password cannot be empty']
+                "level": "weak",
+                "entropy": 0,
+                "length": 0,
+                "has_uppercase": False,
+                "has_lowercase": False,
+                "has_digits": False,
+                "has_special": False,
+                "char_diversity": 0,
+                "feedback": ["Password cannot be empty"],
             }
 
         # Analyze character composition
-        has_lowercase = bool(re.search(r'[a-z]', password))
-        has_uppercase = bool(re.search(r'[A-Z]', password))
-        has_digits = bool(re.search(r'\d', password))
-        has_special = bool(re.search(r'[^a-zA-Z0-9]', password))
+        has_lowercase = bool(re.search(r"[a-z]", password))
+        has_uppercase = bool(re.search(r"[A-Z]", password))
+        has_digits = bool(re.search(r"\d", password))
+        has_special = bool(re.search(r"[^a-zA-Z0-9]", password))
 
         # Calculate character pool size
         pool_size = 0
@@ -453,13 +544,13 @@ class PasswordService:
 
         # Determine strength level based on entropy
         if entropy < 40:
-            level = 'weak'
+            level = "weak"
         elif entropy < 60:
-            level = 'medium'
+            level = "medium"
         elif entropy < 80:
-            level = 'strong'
+            level = "strong"
         else:
-            level = 'very_strong'
+            level = "very_strong"
 
         # Generate feedback for improvement
         feedback = []
@@ -483,30 +574,35 @@ class PasswordService:
             feedback.append("Use more unique characters (avoid repetition)")
 
         if self._is_common_password_variation(password):
-            feedback.append("This is a commonly used password - choose something unique")
-            level = 'weak'  # Override level for common passwords
+            feedback.append(
+                "This is a commonly used password - choose something unique"
+            )
+            level = "weak"  # Override level for common passwords
 
         # Check for sequential patterns
-        if re.search(r'(012|123|234|345|456|567|678|789|890)', password):
+        if re.search(r"(012|123|234|345|456|567|678|789|890)", password):
             feedback.append("Avoid sequential number patterns")
 
-        if re.search(r'(abc|bcd|cde|def|efg|fgh|ghi|hij|ijk|jkl|klm|lmn|mno|nop|opq|pqr|qrs|rst|stu|tuv|uvw|vwx|wxy|xyz)', password.lower()):
+        if re.search(
+            r"(abc|bcd|cde|def|efg|fgh|ghi|hij|ijk|jkl|klm|lmn|mno|nop|opq|pqr|qrs|rst|stu|tuv|uvw|vwx|wxy|xyz)",
+            password.lower(),
+        ):
             feedback.append("Avoid sequential letter patterns")
 
         # Check for repeated characters
-        if re.search(r'(.)\1{2,}', password):
+        if re.search(r"(.)\1{2,}", password):
             feedback.append("Avoid repeating the same character multiple times")
 
         return {
-            'level': level,
-            'entropy': round(entropy, 1),
-            'length': len(password),
-            'has_uppercase': has_uppercase,
-            'has_lowercase': has_lowercase,
-            'has_digits': has_digits,
-            'has_special': has_special,
-            'char_diversity': char_diversity,
-            'feedback': feedback
+            "level": level,
+            "entropy": round(entropy, 1),
+            "length": len(password),
+            "has_uppercase": has_uppercase,
+            "has_lowercase": has_lowercase,
+            "has_digits": has_digits,
+            "has_special": has_special,
+            "char_diversity": char_diversity,
+            "feedback": feedback,
         }
 
     def needs_rehash(self, password_hash: str) -> bool:

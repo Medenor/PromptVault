@@ -87,6 +87,7 @@ def _has_valid_auth_cookie(request: Request) -> bool:
     except Exception:
         return False
 
+
 # ============================================================================
 # Router Configuration
 # ============================================================================
@@ -98,7 +99,9 @@ templates = Jinja2Templates(directory="src/web/templates")
 templates.env.globals["load_manifest"] = load_manifest
 templates.env.globals["get_asset_path"] = get_asset_path
 templates.env.globals["is_production"] = is_production
-templates.env.globals["is_dev"] = lambda: os.getenv("ENV", "production") == "development"
+templates.env.globals["is_dev"] = (
+    lambda: os.getenv("ENV", "production") == "development"
+)
 templates.env.globals["use_vite_assets"] = (
     lambda: os.getenv("USE_VITE_ASSETS", "false").lower() == "true"
 )
@@ -136,7 +139,7 @@ async def login_page(request: Request):
 
     response = templates.TemplateResponse(
         "auth/login.html",
-        {"request": request, "auth_enabled": auth_settings.auth_enabled}
+        {"request": request, "auth_enabled": auth_settings.auth_enabled},
     )
     # Prevent the browser (and intermediate caches) from caching the login
     # page so that back/forward navigation always re-evaluates auth state.
@@ -164,7 +167,7 @@ async def register_page(request: Request):
     """
     return templates.TemplateResponse(
         "auth/register.html",
-        {"request": request, "auth_enabled": auth_settings.auth_enabled}
+        {"request": request, "auth_enabled": auth_settings.auth_enabled},
     )
 
 
@@ -186,7 +189,7 @@ async def forgot_password_page(request: Request):
     """
     return templates.TemplateResponse(
         "auth/forgot_password.html",
-        {"request": request, "auth_enabled": auth_settings.auth_enabled}
+        {"request": request, "auth_enabled": auth_settings.auth_enabled},
     )
 
 
@@ -211,7 +214,7 @@ async def reset_password_page(request: Request):
     """
     return templates.TemplateResponse(
         "auth/reset_password.html",
-        {"request": request, "auth_enabled": auth_settings.auth_enabled}
+        {"request": request, "auth_enabled": auth_settings.auth_enabled},
     )
 
 
@@ -221,10 +224,7 @@ async def reset_password_page(request: Request):
 
 
 @router.get("/auth/profile", response_class=HTMLResponse)
-async def profile_page(
-    request: Request,
-    user: User = Depends(get_current_active_user)
-):
+async def profile_page(request: Request, user: User = Depends(get_current_active_user)):
     """Serve the user profile page.
 
     This page is protected and requires authentication.
@@ -249,14 +249,13 @@ async def profile_page(
     """
     return templates.TemplateResponse(
         "auth/profile.html",
-        {"request": request, "user": user, "auth_enabled": auth_settings.auth_enabled}
+        {"request": request, "user": user, "auth_enabled": auth_settings.auth_enabled},
     )
 
 
 @router.get("/profile", response_class=HTMLResponse)
 async def profile_page_alias(
-    request: Request,
-    user: User = Depends(get_current_active_user)
+    request: Request, user: User = Depends(get_current_active_user)
 ):
     """Alias route for user profile page.
 
@@ -282,7 +281,7 @@ async def profile_page_alias(
     """
     return templates.TemplateResponse(
         "auth/profile.html",
-        {"request": request, "user": user, "auth_enabled": auth_settings.auth_enabled}
+        {"request": request, "user": user, "auth_enabled": auth_settings.auth_enabled},
     )
 
 
@@ -293,25 +292,23 @@ async def profile_page_alias(
 
 @router.get("/manage-categories", response_class=HTMLResponse)
 async def manage_categories_page(
-    request: Request,
-    user: User = Depends(get_current_active_user)
+    request: Request, user: User = Depends(get_current_active_user)
 ):
     """Serve the category management page (authenticated)."""
     return templates.TemplateResponse(
         "manage_categories.html",
-        {"request": request, "auth_enabled": auth_settings.auth_enabled}
+        {"request": request, "auth_enabled": auth_settings.auth_enabled},
     )
 
 
 @router.get("/manage-tags", response_class=HTMLResponse)
 async def manage_tags_page(
-    request: Request,
-    user: User = Depends(get_current_active_user)
+    request: Request, user: User = Depends(get_current_active_user)
 ):
     """Serve the tag management page (authenticated)."""
     return templates.TemplateResponse(
         "manage_tags.html",
-        {"request": request, "auth_enabled": auth_settings.auth_enabled}
+        {"request": request, "auth_enabled": auth_settings.auth_enabled},
     )
 
 
@@ -321,10 +318,7 @@ async def manage_tags_page(
 
 
 @router.get("/admin/users", response_class=HTMLResponse)
-async def admin_users_page(
-    request: Request,
-    admin: User = Depends(get_admin_user)
-):
+async def admin_users_page(request: Request, admin: User = Depends(get_admin_user)):
     """Serve the user management page.
 
     This page is protected and requires admin role.
@@ -349,15 +343,12 @@ async def admin_users_page(
     """
     return templates.TemplateResponse(
         "admin/users.html",
-        {"request": request, "user": admin, "auth_enabled": auth_settings.auth_enabled}
+        {"request": request, "user": admin, "auth_enabled": auth_settings.auth_enabled},
     )
 
 
 @router.get("/admin/sessions", response_class=HTMLResponse)
-async def admin_sessions_page(
-    request: Request,
-    admin: User = Depends(get_admin_user)
-):
+async def admin_sessions_page(request: Request, admin: User = Depends(get_admin_user)):
     """Serve the session management page.
 
     This page is protected and requires admin role.
@@ -382,5 +373,5 @@ async def admin_sessions_page(
     """
     return templates.TemplateResponse(
         "admin/sessions.html",
-        {"request": request, "user": admin, "auth_enabled": auth_settings.auth_enabled}
+        {"request": request, "user": admin, "auth_enabled": auth_settings.auth_enabled},
     )

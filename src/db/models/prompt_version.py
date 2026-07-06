@@ -8,7 +8,17 @@ This model implements Git-like version control for prompts. Each version
 is an immutable snapshot with complete prompt data at that point in time.
 """
 
-from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, ForeignKey, Index, UniqueConstraint
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    Text,
+    Boolean,
+    DateTime,
+    ForeignKey,
+    Index,
+    UniqueConstraint,
+)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.types import JSON
 from sqlalchemy.orm import relationship
@@ -46,10 +56,13 @@ class PromptVersion(Base):
         parent_version: Self-referential relationship to parent version
         child_versions: Self-referential relationship to child versions
     """
+
     __tablename__ = "prompt_versions"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    prompt_id = Column(Integer, ForeignKey("prompts.id", ondelete="CASCADE"), nullable=False)
+    prompt_id = Column(
+        Integer, ForeignKey("prompts.id", ondelete="CASCADE"), nullable=False
+    )
     version_id = Column(String(36), unique=True, nullable=False, index=True)
     version_number = Column(Integer, nullable=False)
 
@@ -77,15 +90,17 @@ class PromptVersion(Base):
         "PromptVersion",
         remote_side=[version_id],
         foreign_keys=[parent_version_id],
-        backref="child_versions"
+        backref="child_versions",
     )
 
     # Constraints and indices
     __table_args__ = (
-        UniqueConstraint('prompt_id', 'version_number', name='uq_prompt_version_number'),
-        Index('idx_versions_prompt', 'prompt_id'),
-        Index('idx_versions_created', 'created_at'),
-        Index('idx_versions_parent', 'parent_version_id'),
+        UniqueConstraint(
+            "prompt_id", "version_number", name="uq_prompt_version_number"
+        ),
+        Index("idx_versions_prompt", "prompt_id"),
+        Index("idx_versions_created", "created_at"),
+        Index("idx_versions_parent", "parent_version_id"),
     )
 
     def __repr__(self):

@@ -107,8 +107,10 @@ class PromptCreateRequest(BaseModel):
         v = v.strip()
         if v == "":
             return None
-        if not re.match(r'^\d+\.\d+\.\d+$', v):
-            raise ValueError("semantic_version must be in MAJOR.MINOR.PATCH format (e.g. 1.0.0)")
+        if not re.match(r"^\d+\.\d+\.\d+$", v):
+            raise ValueError(
+                "semantic_version must be in MAJOR.MINOR.PATCH format (e.g. 1.0.0)"
+            )
         return v
 
 
@@ -193,8 +195,10 @@ class PromptUpdateRequest(BaseModel):
         v = v.strip()
         if v == "":
             return None
-        if not re.match(r'^\d+\.\d+\.\d+$', v):
-            raise ValueError("semantic_version must be in MAJOR.MINOR.PATCH format (e.g. 1.0.0)")
+        if not re.match(r"^\d+\.\d+\.\d+$", v):
+            raise ValueError(
+                "semantic_version must be in MAJOR.MINOR.PATCH format (e.g. 1.0.0)"
+            )
         return v
 
 

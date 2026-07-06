@@ -16,7 +16,7 @@ class TestComputeCharacterDiff:
         result = compute_character_diff("Hello world", "Hello world.")
         assert result == [
             {"op": "equal", "text": "Hello world"},
-            {"op": "insert", "text": "."}
+            {"op": "insert", "text": "."},
         ]
 
     def test_character_addition_single_char(self):
@@ -30,7 +30,7 @@ class TestComputeCharacterDiff:
         result = compute_character_diff("Hello world!", "Hello world")
         assert result == [
             {"op": "equal", "text": "Hello world"},
-            {"op": "delete", "text": "!"}
+            {"op": "delete", "text": "!"},
         ]
 
     def test_character_deletion_multiple(self):
@@ -118,7 +118,7 @@ class TestComputeCharacterDiff:
     def test_whitespace_changes(self):
         """Test changes in whitespace."""
         old_text = "Hello  world"  # Two spaces
-        new_text = "Hello world"   # One space
+        new_text = "Hello world"  # One space
         result = compute_character_diff(old_text, new_text)
 
         # Should detect the difference in spacing
@@ -178,7 +178,7 @@ class TestComputeCharacterDiff:
 
         assert result == [
             {"op": "equal", "text": "Hello world"},
-            {"op": "insert", "text": " "}
+            {"op": "insert", "text": " "},
         ]
 
     def test_leading_whitespace(self):

@@ -194,7 +194,12 @@ function announceKeyboardNavigation(message: string): void {
 function isTextEditingTarget(target: EventTarget | null): boolean {
   const el = target as HTMLElement | null;
   if (!el) return false;
-  return el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable;
+  return (
+    el.tagName === 'INPUT' ||
+    el.tagName === 'TEXTAREA' ||
+    el.tagName === 'SELECT' ||
+    el.isContentEditable
+  );
 }
 
 function initializeUsersTableFirstCharNavigation(): void {
@@ -367,36 +372,42 @@ async function loadUsers(): Promise<void> {
         .join('');
 
       // Attach event listeners to action buttons
-      tableBody.querySelectorAll<HTMLButtonElement>('button[data-action="view-user"]').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          const userId = btn.getAttribute('data-user-id');
-          if (userId) {
-            userDetailModalTrigger = btn;
-            void viewUser(userId);
-          }
+      tableBody
+        .querySelectorAll<HTMLButtonElement>('button[data-action="view-user"]')
+        .forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const userId = btn.getAttribute('data-user-id');
+            if (userId) {
+              userDetailModalTrigger = btn;
+              void viewUser(userId);
+            }
+          });
         });
-      });
 
-      tableBody.querySelectorAll<HTMLButtonElement>('button[data-action="edit-user"]').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          const userId = btn.getAttribute('data-user-id');
-          if (userId) {
-            editUserModalTrigger = btn;
-            void editUser(userId);
-          }
+      tableBody
+        .querySelectorAll<HTMLButtonElement>('button[data-action="edit-user"]')
+        .forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const userId = btn.getAttribute('data-user-id');
+            if (userId) {
+              editUserModalTrigger = btn;
+              void editUser(userId);
+            }
+          });
         });
-      });
 
-      tableBody.querySelectorAll<HTMLButtonElement>('button[data-action="delete-user"]').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          const userId = btn.getAttribute('data-user-id');
-          const username = btn.getAttribute('data-user-name');
-          if (userId && username) {
-            confirmDeleteModalTrigger = btn;
-            void deleteUser(userId, username);
-          }
+      tableBody
+        .querySelectorAll<HTMLButtonElement>('button[data-action="delete-user"]')
+        .forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const userId = btn.getAttribute('data-user-id');
+            const username = btn.getAttribute('data-user-name');
+            if (userId && username) {
+              confirmDeleteModalTrigger = btn;
+              void deleteUser(userId, username);
+            }
+          });
         });
-      });
     }
 
     updatePagination();
@@ -592,7 +603,10 @@ async function deleteUser(userId: string, username: string): Promise<void> {
         hideModal('confirm-delete-modal');
         await loadUsers();
         // Announce to screen reader that user was deleted
-        announceToScreenReader(`User ${username} has been deleted. Focus returned to delete button.`, 'polite');
+        announceToScreenReader(
+          `User ${username} has been deleted. Focus returned to delete button.`,
+          'polite'
+        );
       } catch (error) {
         if (error instanceof APIRequestError) {
           showNotification(error.message || 'Failed to delete user', 'error');
@@ -695,7 +709,9 @@ function setupCreateUserForm(): void {
   const usernameInput = document.getElementById('create-username') as HTMLInputElement | null;
   const emailInput = document.getElementById('create-email') as HTMLInputElement | null;
   const createPasswordInput = document.getElementById('create-password') as HTMLInputElement | null;
-  const confirmInput = document.getElementById('create-confirm-password') as HTMLInputElement | null;
+  const confirmInput = document.getElementById(
+    'create-confirm-password'
+  ) as HTMLInputElement | null;
 
   const requiredMessage = t('validation.required') || 'This field is required.';
 
@@ -965,7 +981,7 @@ function checkPasswordStrength(password: string): { strength: number; checks: Pa
     uppercase: /[A-Z]/.test(password),
     lowercase: /[a-z]/.test(password),
     digit: /[0-9]/.test(password),
-    special: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password),
+    special: /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password),
   };
 
   Object.values(checks).forEach((check) => {
@@ -1218,13 +1234,17 @@ function setupAdminMenuKeyboardNavigation(): void {
       return;
     }
 
-    const menuItems = Array.from(adminMenuDropdown.querySelectorAll('button')) as HTMLButtonElement[];
+    const menuItems = Array.from(
+      adminMenuDropdown.querySelectorAll('button')
+    ) as HTMLButtonElement[];
     if (menuItems.length === 0) {
       return;
     }
 
     const currentFocused = document.activeElement as HTMLElement | null;
-    const currentIndex = currentFocused ? menuItems.indexOf(currentFocused as HTMLButtonElement) : -1;
+    const currentIndex = currentFocused
+      ? menuItems.indexOf(currentFocused as HTMLButtonElement)
+      : -1;
 
     switch (event.key) {
       case 'Escape': {
@@ -1237,14 +1257,16 @@ function setupAdminMenuKeyboardNavigation(): void {
       }
       case 'ArrowDown': {
         // Move to next menu item or wrap around
-        const nextIndex = currentIndex === -1 || currentIndex >= menuItems.length - 1 ? 0 : currentIndex + 1;
+        const nextIndex =
+          currentIndex === -1 || currentIndex >= menuItems.length - 1 ? 0 : currentIndex + 1;
         menuItems[nextIndex]?.focus();
         event.preventDefault();
         break;
       }
       case 'ArrowUp': {
         // Move to previous menu item or wrap around
-        const prevIndex = currentIndex === -1 || currentIndex === 0 ? menuItems.length - 1 : currentIndex - 1;
+        const prevIndex =
+          currentIndex === -1 || currentIndex === 0 ? menuItems.length - 1 : currentIndex - 1;
         menuItems[prevIndex]?.focus();
         event.preventDefault();
         break;

@@ -177,12 +177,14 @@ class TestServiceLayerSanitization:
     def test_update_prompt_also_sanitizes(self, data_service):
         """Test that updating a prompt also applies sanitization."""
         # Create initial prompt
-        prompt_id = data_service.add_new_prompt({
-            "title": "Original",
-            "prompt": "Content",
-            "category": "Test",
-            "tags": ["test"],
-        })
+        prompt_id = data_service.add_new_prompt(
+            {
+                "title": "Original",
+                "prompt": "Content",
+                "category": "Test",
+                "tags": ["test"],
+            }
+        )
 
         # Update with malicious data
         malicious_update = {
@@ -192,7 +194,9 @@ class TestServiceLayerSanitization:
             "tags": ["python", "PYTHON", "Python"],  # Duplicates
         }
 
-        data_service.update_prompt(prompt_id, malicious_update, "Update with sanitization")
+        data_service.update_prompt(
+            prompt_id, malicious_update, "Update with sanitization"
+        )
         updated_prompt = data_service.prompts[prompt_id]["data"]
 
         # Control characters should be removed

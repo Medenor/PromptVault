@@ -135,7 +135,7 @@ function checkPasswordStrength(password: string): { strength: number; checks: Pa
     uppercase: /[A-Z]/.test(password),
     lowercase: /[a-z]/.test(password),
     digit: /[0-9]/.test(password),
-    special: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password),
+    special: /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password),
   };
 
   const strength = Object.values(checks).filter(Boolean).length;
@@ -437,7 +437,8 @@ function setupChangePasswordForm(): void {
     'current-password',
     'current-password-error',
     t('auth.profile.currentPasswordRequired') ||
-      (t('validation.required') || 'This field is required.')
+      t('validation.required') ||
+      'This field is required.'
   );
   attachRequiredLiveValidation(
     'new-password',
@@ -454,7 +455,8 @@ function setupChangePasswordForm(): void {
     'confirm-new-password'
   ) as HTMLInputElement | null;
   const passwordConfirmCheck = () => {
-    const password = (document.getElementById('new-password') as HTMLInputElement | null)?.value ?? '';
+    const password =
+      (document.getElementById('new-password') as HTMLInputElement | null)?.value ?? '';
     const confirm = confirmPasswordInput?.value ?? '';
     if (!confirm.trim()) {
       return;

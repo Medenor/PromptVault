@@ -25,7 +25,7 @@ class TestParseEnvFile:
 
     def test_parse_simple_env_file(self):
         """Test parsing simple .env file."""
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.env') as tmp:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".env") as tmp:
             tmp.write("KEY1=value1\n")
             tmp.write("KEY2=value2\n")
             tmp_path = tmp.name
@@ -39,7 +39,7 @@ class TestParseEnvFile:
 
     def test_parse_env_file_with_comments(self):
         """Test parsing .env file with comments."""
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.env') as tmp:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".env") as tmp:
             tmp.write("# This is a comment\n")
             tmp.write("KEY1=value1\n")
             tmp.write("# Another comment\n")
@@ -55,7 +55,7 @@ class TestParseEnvFile:
 
     def test_parse_env_file_with_empty_lines(self):
         """Test parsing .env file with empty lines."""
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.env') as tmp:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".env") as tmp:
             tmp.write("KEY1=value1\n")
             tmp.write("\n")
             tmp.write("\n")
@@ -70,10 +70,10 @@ class TestParseEnvFile:
 
     def test_parse_env_file_with_quoted_values(self):
         """Test parsing .env file with quoted values."""
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.env') as tmp:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".env") as tmp:
             tmp.write('KEY1="double quoted"\n')
             tmp.write("KEY2='single quoted'\n")
-            tmp.write('KEY3=unquoted\n')
+            tmp.write("KEY3=unquoted\n")
             tmp_path = tmp.name
 
         try:
@@ -86,7 +86,7 @@ class TestParseEnvFile:
 
     def test_parse_env_file_with_equals_in_value(self):
         """Test parsing .env file with equals sign in value."""
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.env') as tmp:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".env") as tmp:
             tmp.write("DATABASE_URL=postgresql://user:pass@host/db?param=value\n")
             tmp_path = tmp.name
 
@@ -98,7 +98,7 @@ class TestParseEnvFile:
 
     def test_parse_env_file_with_whitespace(self):
         """Test parsing .env file with whitespace."""
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.env') as tmp:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".env") as tmp:
             tmp.write("  KEY1  =  value1  \n")
             tmp.write("KEY2=value2\n")
             tmp_path = tmp.name
@@ -112,7 +112,7 @@ class TestParseEnvFile:
 
     def test_parse_env_file_empty_value(self):
         """Test parsing .env file with empty value."""
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.env') as tmp:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".env") as tmp:
             tmp.write("KEY1=\n")
             tmp.write("KEY2=value2\n")
             tmp_path = tmp.name
@@ -137,7 +137,7 @@ class TestParseEnvFile:
 
     def test_parse_invalid_format_missing_equals(self):
         """Test parsing file with invalid format raises ValueError."""
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.env') as tmp:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".env") as tmp:
             tmp.write("INVALID_LINE\n")
             tmp_path = tmp.name
 
@@ -149,7 +149,7 @@ class TestParseEnvFile:
 
     def test_parse_invalid_variable_name(self):
         """Test parsing file with invalid variable name raises ValueError."""
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.env') as tmp:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".env") as tmp:
             tmp.write("123INVALID=value\n")
             tmp_path = tmp.name
 
@@ -161,7 +161,7 @@ class TestParseEnvFile:
 
     def test_parse_empty_variable_name(self):
         """Test parsing file with empty variable name raises ValueError."""
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.env') as tmp:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".env") as tmp:
             tmp.write("=value\n")
             tmp_path = tmp.name
 
@@ -177,7 +177,7 @@ class TestParseYamlConfig:
 
     def test_parse_simple_yaml(self):
         """Test parsing simple YAML file."""
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.yml') as tmp:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".yml") as tmp:
             tmp.write("database:\n")
             tmp.write("  host: localhost\n")
             tmp.write("  port: 5432\n")
@@ -194,7 +194,7 @@ class TestParseYamlConfig:
 
     def test_parse_empty_yaml(self):
         """Test parsing empty YAML file returns empty dict."""
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.yml') as tmp:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".yml") as tmp:
             tmp_path = tmp.name
 
         try:
@@ -205,7 +205,7 @@ class TestParseYamlConfig:
 
     def test_parse_yaml_with_nested_structures(self):
         """Test parsing YAML with nested structures."""
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.yml') as tmp:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".yml") as tmp:
             tmp.write("server:\n")
             tmp.write("  database:\n")
             tmp.write("    primary:\n")
@@ -221,7 +221,7 @@ class TestParseYamlConfig:
 
     def test_parse_yaml_with_list(self):
         """Test parsing YAML with lists."""
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.yml') as tmp:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".yml") as tmp:
             tmp.write("servers:\n")
             tmp.write("  - host: server1\n")
             tmp.write("  - host: server2\n")
@@ -247,7 +247,7 @@ class TestParseYamlConfig:
 
     def test_parse_invalid_yaml(self):
         """Test parsing invalid YAML raises ValueError."""
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.yml') as tmp:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".yml") as tmp:
             tmp.write("invalid: yaml: syntax:\n")
             tmp.write("  - wrong\n")
             tmp.write("- indentation\n")
@@ -261,7 +261,7 @@ class TestParseYamlConfig:
 
     def test_parse_yaml_non_dict_root(self):
         """Test parsing YAML with non-dict root raises ValueError."""
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.yml') as tmp:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".yml") as tmp:
             tmp.write("- item1\n")
             tmp.write("- item2\n")
             tmp_path = tmp.name
@@ -272,7 +272,7 @@ class TestParseYamlConfig:
         finally:
             os.unlink(tmp_path)
 
-    @patch('scripts.setup.utils.config_parser.yaml', None)
+    @patch("scripts.setup.utils.config_parser.yaml", None)
     def test_parse_yaml_without_pyyaml(self):
         """Test parsing YAML without PyYAML installed raises ImportError."""
         with pytest.raises(ImportError, match="PyYAML is required"):
@@ -296,20 +296,10 @@ class TestMergeConfigs:
     def test_merge_nested_configs(self):
         """Test merging nested configurations."""
         base = {
-            "database": {
-                "host": "localhost",
-                "port": 5432,
-                "name": "mydb"
-            },
-            "debug": False
+            "database": {"host": "localhost", "port": 5432, "name": "mydb"},
+            "debug": False,
         }
-        override = {
-            "database": {
-                "port": 3306,
-                "user": "admin"
-            },
-            "debug": True
-        }
+        override = {"database": {"port": 3306, "user": "admin"}, "debug": True}
 
         result = merge_configs(base, override)
 
@@ -349,25 +339,9 @@ class TestMergeConfigs:
 
     def test_merge_deeply_nested(self):
         """Test merging deeply nested configurations."""
-        base = {
-            "level1": {
-                "level2": {
-                    "level3": {
-                        "key1": "value1",
-                        "key2": "value2"
-                    }
-                }
-            }
-        }
+        base = {"level1": {"level2": {"level3": {"key1": "value1", "key2": "value2"}}}}
         override = {
-            "level1": {
-                "level2": {
-                    "level3": {
-                        "key2": "new_value2",
-                        "key3": "value3"
-                    }
-                }
-            }
+            "level1": {"level2": {"level3": {"key2": "new_value2", "key3": "value3"}}}
         }
 
         result = merge_configs(base, override)
@@ -464,11 +438,7 @@ class TestSubstituteEnvVars:
     def test_substitute_complex_template(self):
         """Test substituting in complex template."""
         template = "postgresql://${DB_USER}:${DB_PASS}@${DB_HOST:-localhost}:${DB_PORT:-5432}/${DB_NAME}"
-        values = {
-            "DB_USER": "admin",
-            "DB_PASS": "secret",
-            "DB_NAME": "mydb"
-        }
+        values = {"DB_USER": "admin", "DB_PASS": "secret", "DB_NAME": "mydb"}
 
         result = substitute_env_vars(template, values)
 
@@ -484,7 +454,9 @@ class TestLoadEnvTemplate:
             env_example = Path(tmpdir) / ".env.example"
             env_example.write_text("KEY1=value1\nKEY2=value2\n")
 
-            with patch('scripts.setup.utils.config_parser.Path.cwd', return_value=Path(tmpdir)):
+            with patch(
+                "scripts.setup.utils.config_parser.Path.cwd", return_value=Path(tmpdir)
+            ):
                 config = load_env_template()
                 assert config["KEY1"] == "value1"
                 assert config["KEY2"] == "value2"
@@ -498,14 +470,18 @@ class TestLoadEnvTemplate:
             subdir = Path(tmpdir) / "subdir"
             subdir.mkdir()
 
-            with patch('scripts.setup.utils.config_parser.Path.cwd', return_value=subdir):
+            with patch(
+                "scripts.setup.utils.config_parser.Path.cwd", return_value=subdir
+            ):
                 config = load_env_template()
                 assert config["KEY1"] == "value1"
 
     def test_load_env_template_not_found(self):
         """Test loading when .env.example not found raises FileNotFoundError."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            with patch('scripts.setup.utils.config_parser.Path.cwd', return_value=Path(tmpdir)):
+            with patch(
+                "scripts.setup.utils.config_parser.Path.cwd", return_value=Path(tmpdir)
+            ):
                 with pytest.raises(FileNotFoundError, match=".env.example"):
                     load_env_template()
 
@@ -517,10 +493,7 @@ class TestWriteEnvFile:
         """Test writing simple configuration."""
         with tempfile.TemporaryDirectory() as tmpdir:
             env_path = os.path.join(tmpdir, ".env")
-            config = {
-                "KEY1": "value1",
-                "KEY2": "value2"
-            }
+            config = {"KEY1": "value1", "KEY2": "value2"}
 
             write_env_file(env_path, config)
 
@@ -545,16 +518,12 @@ class TestWriteEnvFile:
         """Test that keys are sorted alphabetically."""
         with tempfile.TemporaryDirectory() as tmpdir:
             env_path = os.path.join(tmpdir, ".env")
-            config = {
-                "ZEBRA": "value",
-                "APPLE": "value",
-                "MIDDLE": "value"
-            }
+            config = {"ZEBRA": "value", "APPLE": "value", "MIDDLE": "value"}
 
             write_env_file(env_path, config)
 
             content = Path(env_path).read_text()
-            lines = [line for line in content.split('\n') if '=' in line]
+            lines = [line for line in content.split("\n") if "=" in line]
             assert lines[0].startswith("APPLE")
             assert lines[1].startswith("MIDDLE")
             assert lines[2].startswith("ZEBRA")
@@ -566,7 +535,7 @@ class TestWriteEnvFile:
             config = {
                 "URL": "http://example.com/path?param=value",
                 "MESSAGE": "Hello World",
-                "COMMENT": "This has # in it"
+                "COMMENT": "This has # in it",
             }
 
             write_env_file(env_path, config)
@@ -619,10 +588,7 @@ class TestWriteEnvFile:
         """Test writing config with empty value."""
         with tempfile.TemporaryDirectory() as tmpdir:
             env_path = os.path.join(tmpdir, ".env")
-            config = {
-                "KEY1": "",
-                "KEY2": "value"
-            }
+            config = {"KEY1": "", "KEY2": "value"}
 
             write_env_file(env_path, config)
 

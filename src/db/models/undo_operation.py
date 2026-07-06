@@ -29,14 +29,21 @@ class UndoOperation(Base):
         expires_at: Timestamp when operation expires (created_at + 30 days)
         user: Relationship to User who owns this operation
     """
+
     __tablename__ = "undo_operations"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(
+        String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
     entity_type = Column(String(20), nullable=False)  # 'tag' or 'category'
     operation = Column(String(20), nullable=False)  # 'create', 'update', 'delete'
-    payload = Column(Text, nullable=False)  # JSON stored as text for SQLite compatibility
-    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    payload = Column(
+        Text, nullable=False
+    )  # JSON stored as text for SQLite compatibility
+    created_at = Column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
     expires_at = Column(DateTime(timezone=True), nullable=False)
 
     # Relationships

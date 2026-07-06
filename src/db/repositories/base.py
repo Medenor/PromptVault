@@ -51,9 +51,7 @@ class BaseRepository(Generic[ModelType]):
         Returns:
             Model instance or None if not found
         """
-        return self.session.query(self.model).filter(
-            self.model.id == id
-        ).first()
+        return self.session.query(self.model).filter(self.model.id == id).first()
 
     def get_all(self, skip: int = 0, limit: Optional[int] = None) -> List[ModelType]:
         """Get all records with optional pagination.
@@ -130,9 +128,11 @@ class BaseRepository(Generic[ModelType]):
         Returns:
             Number of records deleted
         """
-        count = self.session.query(self.model).filter(
-            self.model.id.in_(ids)
-        ).delete(synchronize_session=False)
+        count = (
+            self.session.query(self.model)
+            .filter(self.model.id.in_(ids))
+            .delete(synchronize_session=False)
+        )
         self.session.flush()
         return count
 
@@ -153,6 +153,7 @@ class BaseRepository(Generic[ModelType]):
         Returns:
             True if exists, False otherwise
         """
-        return self.session.query(self.model).filter(
-            self.model.id == id
-        ).first() is not None
+        return (
+            self.session.query(self.model).filter(self.model.id == id).first()
+            is not None
+        )

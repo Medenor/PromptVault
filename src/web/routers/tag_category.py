@@ -99,7 +99,9 @@ def _tag_snapshot(tag) -> dict:
     }
 
 
-def _is_descendant(tag_repo: TagRepository, tag_id: int, potential_parent_id: int) -> bool:
+def _is_descendant(
+    tag_repo: TagRepository, tag_id: int, potential_parent_id: int
+) -> bool:
     """Return True if potential_parent_id is a descendant of tag_id."""
     seen = set()
     current_id = potential_parent_id
@@ -112,6 +114,7 @@ def _is_descendant(tag_repo: TagRepository, tag_id: int, potential_parent_id: in
             return False
         current_id = current.parent_tag_id
     return False
+
 
 # ============================================================================
 # Category Management
@@ -179,7 +182,9 @@ async def update_category(
     category_repo = CategoryRepository(db)
     category = category_repo.get_by_id(category_id)
     if not category:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Category not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Category not found"
+        )
 
     if payload.name:
         existing = category_repo.get_by_name_case_insensitive(payload.name)
@@ -226,13 +231,21 @@ async def delete_category(
     category_repo = CategoryRepository(db)
     category = category_repo.get_by_id(category_id)
     if not category:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Category not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Category not found"
+        )
 
     usage_count = category_repo.count_usage(category_id)
     prompt_ids = []
     if usage_count > 0:
         from src.db.models import Prompt
-        prompt_ids = [row[0] for row in db.query(Prompt.id).filter(Prompt.category_id == category_id).all()]
+
+        prompt_ids = [
+            row[0]
+            for row in db.query(Prompt.id)
+            .filter(Prompt.category_id == category_id)
+            .all()
+        ]
     if usage_count > 0 and not force:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -284,7 +297,9 @@ async def merge_categories(
     category_repo = CategoryRepository(db)
     target = category_repo.get_by_id(payload.target_id)
     if not target:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Target category not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Target category not found"
+        )
 
     if payload.target_id in payload.source_ids:
         raise HTTPException(
@@ -293,7 +308,8 @@ async def merge_categories(
         )
 
     missing = [
-        source_id for source_id in payload.source_ids
+        source_id
+        for source_id in payload.source_ids
         if category_repo.get_by_id(source_id) is None
     ]
     if missing:
@@ -309,7 +325,11 @@ async def merge_categories(
             continue
         prompt_ids = []
         from src.db.models import Prompt
-        prompt_ids = [row[0] for row in db.query(Prompt.id).filter(Prompt.category_id == source_id).all()]
+
+        prompt_ids = [
+            row[0]
+            for row in db.query(Prompt.id).filter(Prompt.category_id == source_id).all()
+        ]
         sources_payload.append(
             {"category": _category_snapshot(source), "prompt_ids": prompt_ids}
         )
@@ -358,15 +378,24 @@ async def bulk_delete_categories(
 
     # Collect prompt_ids BEFORE clearing category assignments
     from src.db.models import Prompt
+
     delete_payloads = []
     for category_id in payload.ids:
         category = category_repo.get_by_id(category_id)
         if category:
-            prompt_ids = [row[0] for row in db.query(Prompt.id).filter(Prompt.category_id == category_id).all()]
-            delete_payloads.append({"category": _category_snapshot(category), "prompt_ids": prompt_ids})
+            prompt_ids = [
+                row[0]
+                for row in db.query(Prompt.id)
+                .filter(Prompt.category_id == category_id)
+                .all()
+            ]
+            delete_payloads.append(
+                {"category": _category_snapshot(category), "prompt_ids": prompt_ids}
+            )
 
     # Clear historical references to avoid FK violations on delete.
     from src.db.models import PromptVersion
+
     db.query(PromptVersion).filter(PromptVersion.category_id.in_(payload.ids)).update(
         {PromptVersion.category_id: None},
         synchronize_session=False,
@@ -412,7 +441,9 @@ async def find_replace_categories(
     category_repo = CategoryRepository(db)
     find_category = category_repo.get_by_name_case_insensitive(payload.find)
     if not find_category:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Category not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Category not found"
+        )
 
     replace_category = category_repo.get_by_name_case_insensitive(payload.replace)
     if not replace_category:
@@ -420,7 +451,13 @@ async def find_replace_categories(
 
     if find_category.id != replace_category.id:
         from src.db.models import Prompt
-        prompt_ids = [row[0] for row in db.query(Prompt.id).filter(Prompt.category_id == find_category.id).all()]
+
+        prompt_ids = [
+            row[0]
+            for row in db.query(Prompt.id)
+            .filter(Prompt.category_id == find_category.id)
+            .all()
+        ]
         category_repo.merge_categories([find_category.id], replace_category.id)
         undo_service.push(
             user_id=user.id if user else None,
@@ -429,7 +466,10 @@ async def find_replace_categories(
             payload={
                 "target_id": replace_category.id,
                 "sources": [
-                    {"category": _category_snapshot(find_category), "prompt_ids": prompt_ids}
+                    {
+                        "category": _category_snapshot(find_category),
+                        "prompt_ids": prompt_ids,
+                    }
                 ],
             },
         )
@@ -451,7 +491,11 @@ async def reorder_categories(
     category_repo = CategoryRepository(db)
     categories = category_repo.get_all()
     category_ids = {category.id for category in categories}
-    missing = [category_id for category_id in payload.ordered_ids if category_id not in category_ids]
+    missing = [
+        category_id
+        for category_id in payload.ordered_ids
+        if category_id not in category_ids
+    ]
     if missing:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -492,7 +536,9 @@ async def category_orphans_details(
 ):
     from src.db.models import Prompt
 
-    prompts = db.query(Prompt.id, Prompt.title).filter(Prompt.category_id.is_(None)).all()
+    prompts = (
+        db.query(Prompt.id, Prompt.title).filter(Prompt.category_id.is_(None)).all()
+    )
     items = [OrphanPromptItem(id=row[0], title=row[1] or "") for row in prompts]
     return OrphanPromptDetailsResponse(items=items, count=len(items))
 
@@ -541,7 +587,9 @@ async def assign_category_orphans(
 
     prompts = db.query(Prompt).filter(Prompt.id.in_(payload.prompt_ids)).all()
     found_ids = {prompt.id for prompt in prompts}
-    missing = [prompt_id for prompt_id in payload.prompt_ids if prompt_id not in found_ids]
+    missing = [
+        prompt_id for prompt_id in payload.prompt_ids if prompt_id not in found_ids
+    ]
     if missing:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -570,7 +618,9 @@ async def category_analytics(
     unused = total - used
     top = [
         {"id": category.id, "name": category.name, "count": count or 0}
-        for category, count in sorted(results, key=lambda item: (item[1] or 0), reverse=True)[:10]
+        for category, count in sorted(
+            results, key=lambda item: (item[1] or 0), reverse=True
+        )[:10]
     ]
     bottom = [
         {"id": category.id, "name": category.name, "count": count or 0}
@@ -659,7 +709,9 @@ async def update_tag(
     tag_repo = TagRepository(db)
     tag = tag_repo.get_by_id(tag_id)
     if not tag:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tag not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Tag not found"
+        )
 
     if payload.name:
         existing = tag_repo.get_by_name_case_insensitive(payload.name)
@@ -725,7 +777,9 @@ async def delete_tag(
     tag_repo = TagRepository(db)
     tag = tag_repo.get_by_id(tag_id)
     if not tag:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tag not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Tag not found"
+        )
 
     usage_count = tag_repo.count_usage(tag_id)
     prompt_ids = [prompt.id for prompt in tag.prompts] if tag.prompts else []
@@ -769,10 +823,13 @@ async def merge_tags(
     tag_repo = TagRepository(db)
     target = tag_repo.get_by_id(payload.target_id)
     if not target:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Target tag not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Target tag not found"
+        )
 
     missing = [
-        source_id for source_id in payload.source_ids
+        source_id
+        for source_id in payload.source_ids
         if tag_repo.get_by_id(source_id) is None
     ]
     if missing:
@@ -791,12 +848,16 @@ async def merge_tags(
             continue
         prompt_ids = [prompt.id for prompt in source.prompts]
         # Track which prompts will gain the target tag (didn't have it before)
-        prompts_gaining_target = [pid for pid in prompt_ids if pid not in target_prompt_ids]
-        sources_payload.append({
-            "tag": _tag_snapshot(source),
-            "prompt_ids": prompt_ids,
-            "prompts_gaining_target": prompts_gaining_target
-        })
+        prompts_gaining_target = [
+            pid for pid in prompt_ids if pid not in target_prompt_ids
+        ]
+        sources_payload.append(
+            {
+                "tag": _tag_snapshot(source),
+                "prompt_ids": prompt_ids,
+                "prompts_gaining_target": prompts_gaining_target,
+            }
+        )
 
     merged = tag_repo.merge_tags_bulk(payload.source_ids, payload.target_id)
     db.commit()
@@ -850,17 +911,20 @@ async def bulk_delete_tags(
         tag = tag_repo.get_by_id(tag_id)
         if tag:
             prompt_ids = [
-                row[0] for row in db.execute(
-                    select(prompt_tags.c.prompt_id).where(prompt_tags.c.tag_id == tag_id)
+                row[0]
+                for row in db.execute(
+                    select(prompt_tags.c.prompt_id).where(
+                        prompt_tags.c.tag_id == tag_id
+                    )
                 ).all()
             ]
-            delete_payloads.append({"tag": _tag_snapshot(tag), "prompt_ids": prompt_ids})
+            delete_payloads.append(
+                {"tag": _tag_snapshot(tag), "prompt_ids": prompt_ids}
+            )
 
     # THEN clear tag-prompt associations if force=true
     if payload.force:
-        db.execute(
-            delete(prompt_tags).where(prompt_tags.c.tag_id.in_(payload.ids))
-        )
+        db.execute(delete(prompt_tags).where(prompt_tags.c.tag_id.in_(payload.ids)))
 
     deleted = tag_repo.delete_many(payload.ids)
     db.commit()
@@ -895,7 +959,9 @@ async def find_replace_tags(
     tag_repo = TagRepository(db)
     find_tag = tag_repo.get_by_name_case_insensitive(payload.find)
     if not find_tag:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tag not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Tag not found"
+        )
 
     replace_tag = tag_repo.get_by_name_case_insensitive(payload.replace)
     if not replace_tag:
@@ -905,7 +971,9 @@ async def find_replace_tags(
         prompt_ids = [prompt.id for prompt in find_tag.prompts]
         # Track which prompts already have the replace tag before merge
         replace_prompt_ids = {prompt.id for prompt in replace_tag.prompts}
-        prompts_gaining_target = [pid for pid in prompt_ids if pid not in replace_prompt_ids]
+        prompts_gaining_target = [
+            pid for pid in prompt_ids if pid not in replace_prompt_ids
+        ]
         tag_repo.merge_tags(find_tag.id, replace_tag.id)
         undo_service.push(
             user_id=user.id if user else None,
@@ -917,7 +985,7 @@ async def find_replace_tags(
                     {
                         "tag": _tag_snapshot(find_tag),
                         "prompt_ids": prompt_ids,
-                        "prompts_gaining_target": prompts_gaining_target
+                        "prompts_gaining_target": prompts_gaining_target,
                     }
                 ],
             },
@@ -938,11 +1006,7 @@ async def tag_orphans(
 ):
     tag_repo = TagRepository(db)
     results = tag_repo.list_all_with_counts()
-    items = [
-        _tag_response(tag, count)
-        for tag, count in results
-        if (count or 0) == 0
-    ]
+    items = [_tag_response(tag, count) for tag, count in results if (count or 0) == 0]
     return TagListResponse(items=items)
 
 
@@ -1003,7 +1067,9 @@ async def tag_analytics(
     unused = total - used
     top = [
         {"id": tag.id, "name": tag.name, "count": count or 0}
-        for tag, count in sorted(results, key=lambda item: (item[1] or 0), reverse=True)[:10]
+        for tag, count in sorted(
+            results, key=lambda item: (item[1] or 0), reverse=True
+        )[:10]
     ]
     bottom = [
         {"id": tag.id, "name": tag.name, "count": count or 0}
@@ -1022,7 +1088,9 @@ async def tag_analytics(
                 for tag_b in tag_names[i + 1 :]:
                     key = (tag_a, tag_b)
                     pair_counts[key] = pair_counts.get(key, 0) + 1
-        for (tag_a, tag_b), count in sorted(pair_counts.items(), key=lambda item: item[1], reverse=True)[:50]:
+        for (tag_a, tag_b), count in sorted(
+            pair_counts.items(), key=lambda item: item[1], reverse=True
+        )[:50]:
             co_occurrence.append({"tag_a": tag_a, "tag_b": tag_b, "count": count})
     except Exception:
         logger.warning("Failed to compute tag co-occurrence", exc_info=True)
@@ -1048,7 +1116,9 @@ async def undo_category_operation(
 ):
     op = undo_service.pop(user.id if user else None, "category")
     if not op:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No undo operation available")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="No undo operation available"
+        )
 
     category_repo = CategoryRepository(db)
     from src.db.models import Prompt
@@ -1099,7 +1169,10 @@ async def undo_category_operation(
         db.commit()
         return BulkActionResponse(success=True, affected=affected)
 
-    raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Undo operation not supported")
+    raise HTTPException(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        detail="Undo operation not supported",
+    )
 
 
 @router.post(
@@ -1114,7 +1187,9 @@ async def undo_tag_operation(
 ):
     op = undo_service.pop(user.id if user else None, "tag")
     if not op:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No undo operation available")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="No undo operation available"
+        )
 
     tag_repo = TagRepository(db)
     from src.db.models import Prompt
@@ -1148,7 +1223,11 @@ async def undo_tag_operation(
                     if tag not in prompt.tags:
                         prompt.tags.append(tag)
                     # Only remove target tag from prompts that gained it during merge
-                    if target_tag and target_tag in prompt.tags and prompt.id in prompts_gaining_target_set:
+                    if (
+                        target_tag
+                        and target_tag in prompt.tags
+                        and prompt.id in prompts_gaining_target_set
+                    ):
                         prompt.tags.remove(target_tag)
             affected += 1
         db.commit()
@@ -1173,7 +1252,10 @@ async def undo_tag_operation(
         db.commit()
         return BulkActionResponse(success=True, affected=affected)
 
-    raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Undo operation not supported")
+    raise HTTPException(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        detail="Undo operation not supported",
+    )
 
 
 @router.post(
@@ -1196,7 +1278,9 @@ async def bulk_update_tags(
 
     prompts = db.query(Prompt).filter(Prompt.id.in_(payload.prompt_ids)).all()
     found_ids = {prompt.id for prompt in prompts}
-    missing = [prompt_id for prompt_id in payload.prompt_ids if prompt_id not in found_ids]
+    missing = [
+        prompt_id for prompt_id in payload.prompt_ids if prompt_id not in found_ids
+    ]
     if missing:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -1242,12 +1326,16 @@ async def suggest_tags(
     if payload.prompt_id is not None and not content:
         prompt = db.query(Prompt).filter(Prompt.id == payload.prompt_id).first()
         if not prompt:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Prompt not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Prompt not found"
+            )
         content = prompt.prompt or ""
 
     tag_repo = TagRepository(db)
     existing_tags = [tag.name for tag in tag_repo.get_all()]
-    suggestions = suggest_tags_service(content or "", existing_tags, limit=payload.limit)
+    suggestions = suggest_tags_service(
+        content or "", existing_tags, limit=payload.limit
+    )
     items = [TagSuggestionItem(name=name, score=score) for name, score in suggestions]
     return TagSuggestionResponse(suggestions=items)
 

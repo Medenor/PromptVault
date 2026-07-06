@@ -16,7 +16,6 @@ import pytest
 from src.services.backup_service import BackupService
 from src.services.exceptions import BackupError
 
-
 SAMPLE_DATA = {
     "next_id": 2,
     "prompts": {

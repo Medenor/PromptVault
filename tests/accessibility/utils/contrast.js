@@ -40,7 +40,7 @@ function oklchToRgb(L, C, H) {
   // Convert linear RGB to sRGB
   let r = 4.0767416621 * l - 3.3077363322 * m + 0.2309101289 * s;
   let g = -1.2684380046 * l + 2.6097574011 * m - 0.3413193761 * s;
-  let b = -0.0041960771 * l - 0.7034186147 * m + 1.7076147010 * s;
+  let b = -0.0041960771 * l - 0.7034186147 * m + 1.707614701 * s;
 
   // Apply gamma correction (sRGB)
   const gammaCorrect = (c) => {
@@ -264,7 +264,9 @@ export async function testTextContrast(page, element, wcagLevel = 'AA') {
       foreground: colors.foreground,
       background,
       required,
-      violation: passes ? null : `Contrast ratio ${ratio.toFixed(2)}:1 below required ${required}:1 for WCAG ${wcagLevel}`,
+      violation: passes
+        ? null
+        : `Contrast ratio ${ratio.toFixed(2)}:1 below required ${required}:1 for WCAG ${wcagLevel}`,
     };
   } catch (error) {
     return {
@@ -312,7 +314,9 @@ export async function testUIContrast(page, element, wcagLevel = 'AA') {
       foreground: colors.foreground,
       background,
       required,
-      violation: passes ? null : `Contrast ratio ${ratio.toFixed(2)}:1 below required ${required}:1 for WCAG ${wcagLevel} UI`,
+      violation: passes
+        ? null
+        : `Contrast ratio ${ratio.toFixed(2)}:1 below required ${required}:1 for WCAG ${wcagLevel} UI`,
     };
   } catch (error) {
     return {

@@ -16,7 +16,7 @@ class TestSetupConsoleInit:
         """Test that SetupConsole initializes with a Rich Console instance."""
         console = SetupConsole()
         assert console.console is not None
-        assert hasattr(console.console, 'print')
+        assert hasattr(console.console, "print")
 
 
 class TestSetupConsoleHeader:
@@ -35,7 +35,7 @@ class TestSetupConsoleHeader:
         # First call should be the panel
         first_call = console.console.print.call_args_list[0]
         panel_arg = first_call[0][0]
-        assert hasattr(panel_arg, 'renderable')
+        assert hasattr(panel_arg, "renderable")
 
     def test_header_without_subtitle(self):
         """Test header with title only."""
@@ -63,7 +63,7 @@ class TestSetupConsoleStep:
 
         # Check that Text object is passed
         call_args = console.console.print.call_args[0][0]
-        assert hasattr(call_args, 'append')
+        assert hasattr(call_args, "append")
 
     def test_step_formatting(self):
         """Test step number formatting."""
@@ -130,7 +130,7 @@ class TestSetupConsoleMessages:
 class TestSetupConsolePrompts:
     """Test prompt methods."""
 
-    @patch('scripts.setup.utils.console.Prompt')
+    @patch("scripts.setup.utils.console.Prompt")
     def test_prompt_with_default(self, mock_prompt):
         """Test prompt with default value."""
         mock_prompt.ask.return_value = "user_input"
@@ -140,13 +140,10 @@ class TestSetupConsolePrompts:
 
         assert result == "user_input"
         mock_prompt.ask.assert_called_once_with(
-            "Enter name",
-            default="admin",
-            password=False,
-            console=console.console
+            "Enter name", default="admin", password=False, console=console.console
         )
 
-    @patch('scripts.setup.utils.console.Prompt')
+    @patch("scripts.setup.utils.console.Prompt")
     def test_prompt_without_default(self, mock_prompt):
         """Test prompt without default value."""
         mock_prompt.ask.return_value = "user_input"
@@ -156,13 +153,10 @@ class TestSetupConsolePrompts:
 
         assert result == "user_input"
         mock_prompt.ask.assert_called_once_with(
-            "Enter value",
-            default=None,
-            password=False,
-            console=console.console
+            "Enter value", default=None, password=False, console=console.console
         )
 
-    @patch('scripts.setup.utils.console.Prompt')
+    @patch("scripts.setup.utils.console.Prompt")
     def test_prompt_password_mode(self, mock_prompt):
         """Test prompt in password mode."""
         mock_prompt.ask.return_value = "secret"
@@ -172,13 +166,10 @@ class TestSetupConsolePrompts:
 
         assert result == "secret"
         mock_prompt.ask.assert_called_once_with(
-            "Enter password",
-            default=None,
-            password=True,
-            console=console.console
+            "Enter password", default=None, password=True, console=console.console
         )
 
-    @patch('scripts.setup.utils.console.Confirm')
+    @patch("scripts.setup.utils.console.Confirm")
     def test_confirm_default_false(self, mock_confirm):
         """Test confirm with default False."""
         mock_confirm.ask.return_value = True
@@ -188,12 +179,10 @@ class TestSetupConsolePrompts:
 
         assert result is True
         mock_confirm.ask.assert_called_once_with(
-            "Continue?",
-            default=False,
-            console=console.console
+            "Continue?", default=False, console=console.console
         )
 
-    @patch('scripts.setup.utils.console.Confirm')
+    @patch("scripts.setup.utils.console.Confirm")
     def test_confirm_default_true(self, mock_confirm):
         """Test confirm with default True."""
         mock_confirm.ask.return_value = False
@@ -203,16 +192,14 @@ class TestSetupConsolePrompts:
 
         assert result is False
         mock_confirm.ask.assert_called_once_with(
-            "Delete?",
-            default=True,
-            console=console.console
+            "Delete?", default=True, console=console.console
         )
 
 
 class TestSetupConsoleSelect:
     """Test select method."""
 
-    @patch('scripts.setup.utils.console.Prompt')
+    @patch("scripts.setup.utils.console.Prompt")
     def test_select_from_choices(self, mock_prompt):
         """Test selecting from a list of choices."""
         mock_prompt.ask.return_value = "postgresql"
@@ -225,7 +212,7 @@ class TestSetupConsoleSelect:
         # Should print the message and choices
         assert console.console.print.call_count >= 3  # Message + 2 choices + newline
 
-    @patch('scripts.setup.utils.console.Prompt')
+    @patch("scripts.setup.utils.console.Prompt")
     def test_select_displays_numbered_choices(self, mock_prompt):
         """Test that choices are displayed with numbers."""
         mock_prompt.ask.return_value = "option2"
@@ -293,7 +280,7 @@ class TestSetupConsoleSpinner:
         """Test spinner context manager starts and stops."""
         console = SetupConsole()
 
-        with patch('scripts.setup.utils.console.Status') as mock_status:
+        with patch("scripts.setup.utils.console.Status") as mock_status:
             mock_status_instance = MagicMock()
             mock_status.return_value = mock_status_instance
 
@@ -307,7 +294,7 @@ class TestSetupConsoleSpinner:
         """Test spinner stops even if exception occurs."""
         console = SetupConsole()
 
-        with patch('scripts.setup.utils.console.Status') as mock_status:
+        with patch("scripts.setup.utils.console.Status") as mock_status:
             mock_status_instance = MagicMock()
             mock_status.return_value = mock_status_instance
 
@@ -324,7 +311,7 @@ class TestSetupConsoleSpinner:
         """Test spinner displays correct message."""
         console = SetupConsole()
 
-        with patch('scripts.setup.utils.console.Status') as mock_status:
+        with patch("scripts.setup.utils.console.Status") as mock_status:
             mock_status_instance = MagicMock()
             mock_status.return_value = mock_status_instance
 
@@ -343,7 +330,7 @@ class TestSetupConsoleProgress:
         """Test progress context manager starts and stops."""
         console = SetupConsole()
 
-        with patch('scripts.setup.utils.console.Progress') as mock_progress:
+        with patch("scripts.setup.utils.console.Progress") as mock_progress:
             mock_progress_instance = MagicMock()
             mock_progress.return_value = mock_progress_instance
             mock_progress_instance.add_task.return_value = "task_id"
@@ -358,7 +345,7 @@ class TestSetupConsoleProgress:
         """Test progress bar adds task with description and total."""
         console = SetupConsole()
 
-        with patch('scripts.setup.utils.console.Progress') as mock_progress:
+        with patch("scripts.setup.utils.console.Progress") as mock_progress:
             mock_progress_instance = MagicMock()
             mock_progress.return_value = mock_progress_instance
             mock_progress_instance.add_task.return_value = "task_id"
@@ -367,15 +354,14 @@ class TestSetupConsoleProgress:
                 assert task == "task_id"
 
             mock_progress_instance.add_task.assert_called_once_with(
-                "Processing files",
-                total=50
+                "Processing files", total=50
             )
 
     def test_progress_returns_objects(self):
         """Test progress context manager returns progress and task objects."""
         console = SetupConsole()
 
-        with patch('scripts.setup.utils.console.Progress') as mock_progress:
+        with patch("scripts.setup.utils.console.Progress") as mock_progress:
             mock_progress_instance = MagicMock()
             mock_progress.return_value = mock_progress_instance
             mock_progress_instance.add_task.return_value = "task_id"
@@ -388,7 +374,7 @@ class TestSetupConsoleProgress:
         """Test progress stops even if exception occurs."""
         console = SetupConsole()
 
-        with patch('scripts.setup.utils.console.Progress') as mock_progress:
+        with patch("scripts.setup.utils.console.Progress") as mock_progress:
             mock_progress_instance = MagicMock()
             mock_progress.return_value = mock_progress_instance
             mock_progress_instance.add_task.return_value = "task_id"

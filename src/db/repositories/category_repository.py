@@ -43,15 +43,15 @@ class CategoryRepository(BaseRepository[Category]):
         Returns:
             Category or None if not found
         """
-        return self.session.query(Category).filter(
-            Category.name == name
-        ).first()
+        return self.session.query(Category).filter(Category.name == name).first()
 
     def get_by_name_case_insensitive(self, name: str) -> Optional[Category]:
         """Get category by name (case-insensitive)."""
-        return self.session.query(Category).filter(
-            func.lower(Category.name) == name.lower()
-        ).first()
+        return (
+            self.session.query(Category)
+            .filter(func.lower(Category.name) == name.lower())
+            .first()
+        )
 
     def get_or_create(self, name: str) -> Category:
         """Get existing category or create new one.
@@ -87,25 +87,23 @@ class CategoryRepository(BaseRepository[Category]):
         from src.db.models import Prompt
         from sqlalchemy import func
 
-        results = self.session.query(
-            Category,
-            func.count(Prompt.id).label('prompt_count')
-        ).outerjoin(
-            Prompt, Prompt.category_id == Category.id
-        ).group_by(
-            Category.id
-        ).order_by(
-            Category.name
-        ).all()
+        results = (
+            self.session.query(Category, func.count(Prompt.id).label("prompt_count"))
+            .outerjoin(Prompt, Prompt.category_id == Category.id)
+            .group_by(Category.id)
+            .order_by(Category.name)
+            .all()
+        )
 
         return results
 
     def count_usage(self, category_id: int) -> int:
         """Return number of prompts assigned to the category."""
         from src.db.models import Prompt
-        return self.session.query(Prompt).filter(
-            Prompt.category_id == category_id
-        ).count()
+
+        return (
+            self.session.query(Prompt).filter(Prompt.category_id == category_id).count()
+        )
 
     def delete_if_unused(self, category_id: int) -> bool:
         """Delete category only if it has no prompts.
@@ -145,7 +143,9 @@ class CategoryRepository(BaseRepository[Category]):
         """
         return self.update(category_id, name=new_name)
 
-    def merge_categories(self, source_category_ids: List[int], target_category_id: int) -> int:
+    def merge_categories(
+        self, source_category_ids: List[int], target_category_id: int
+    ) -> int:
         """Merge source categories into target category.
 
         Args:
@@ -160,7 +160,9 @@ class CategoryRepository(BaseRepository[Category]):
         if not source_category_ids:
             return 0
 
-        filtered_sources = [cid for cid in source_category_ids if cid != target_category_id]
+        filtered_sources = [
+            cid for cid in source_category_ids if cid != target_category_id
+        ]
         if not filtered_sources:
             return 0
 
@@ -179,8 +181,10 @@ class CategoryRepository(BaseRepository[Category]):
             synchronize_session=False,
         )
 
-        deleted = self.session.query(Category).filter(
-            Category.id.in_(filtered_sources)
-        ).delete(synchronize_session=False)
+        deleted = (
+            self.session.query(Category)
+            .filter(Category.id.in_(filtered_sources))
+            .delete(synchronize_session=False)
+        )
         self.session.flush()
         return deleted

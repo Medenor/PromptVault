@@ -28,7 +28,6 @@ from src.db.models.user import User
 from src.db.models.user_session import UserSession
 from src.db.repositories.session_repository import SessionRepository
 
-
 # ============================================================================
 # FIXTURES
 # ============================================================================
@@ -62,7 +61,7 @@ def test_user(test_db_session: Session) -> User:
         role="viewer",
         email_verified=False,
         is_active=True,
-        failed_login_attempts=0
+        failed_login_attempts=0,
     )
     test_db_session.add(user)
     test_db_session.flush()
@@ -70,10 +69,7 @@ def test_user(test_db_session: Session) -> User:
 
 
 @pytest.fixture
-def sample_session(
-    test_db_session: Session,
-    test_user: User
-) -> UserSession:
+def sample_session(test_db_session: Session, test_user: User) -> UserSession:
     """Create a sample session for testing.
 
     Args:
@@ -90,7 +86,7 @@ def sample_session(
         device_info="Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
         ip_address="192.168.1.100",
         expires_at=datetime.now(timezone.utc) + timedelta(days=7),
-        is_revoked=False
+        is_revoked=False,
     )
     test_db_session.add(session)
     test_db_session.flush()
@@ -98,10 +94,7 @@ def sample_session(
 
 
 @pytest.fixture
-def multiple_sessions(
-    test_db_session: Session,
-    test_user: User
-) -> list[UserSession]:
+def multiple_sessions(test_db_session: Session, test_user: User) -> list[UserSession]:
     """Create multiple sessions for testing.
 
     Creates 4 sessions with different states (each family is unique):
@@ -124,7 +117,7 @@ def multiple_sessions(
             device_info="Device 1",
             ip_address="192.168.1.1",
             expires_at=now + timedelta(days=7),
-            is_revoked=False
+            is_revoked=False,
         ),
         UserSession(
             user_id=test_user.id,
@@ -133,7 +126,7 @@ def multiple_sessions(
             device_info="Device 2",
             ip_address="192.168.1.2",
             expires_at=now + timedelta(days=6),
-            is_revoked=False
+            is_revoked=False,
         ),
         UserSession(
             user_id=test_user.id,
@@ -142,7 +135,7 @@ def multiple_sessions(
             device_info="Device 3",
             ip_address="192.168.1.3",
             expires_at=now + timedelta(days=5),
-            is_revoked=False
+            is_revoked=False,
         ),
         UserSession(
             user_id=test_user.id,
@@ -151,7 +144,7 @@ def multiple_sessions(
             device_info="Device Revoked",
             ip_address="192.168.1.99",
             expires_at=now + timedelta(days=7),
-            is_revoked=True
+            is_revoked=True,
         ),
     ]
     test_db_session.add_all(sessions)
@@ -168,9 +161,7 @@ class TestSessionCreation:
     """Tests for session creation operations."""
 
     def test_create_session_basic(
-        self,
-        session_repository: SessionRepository,
-        test_user: User
+        self, session_repository: SessionRepository, test_user: User
     ):
         """Test basic session creation with required fields."""
         expires_at = datetime.now(timezone.utc) + timedelta(days=7)
@@ -179,7 +170,7 @@ class TestSessionCreation:
             user_id=test_user.id,
             family_id="family-test",
             refresh_token_jti="jti-test",
-            expires_at=expires_at
+            expires_at=expires_at,
         )
 
         assert session.id is not None
@@ -189,9 +180,7 @@ class TestSessionCreation:
         assert session.expires_at is not None
 
     def test_create_session_all_fields(
-        self,
-        session_repository: SessionRepository,
-        test_user: User
+        self, session_repository: SessionRepository, test_user: User
     ):
         """Test session creation with all optional fields."""
         expires_at = datetime.now(timezone.utc) + timedelta(days=7)
@@ -202,7 +191,7 @@ class TestSessionCreation:
             refresh_token_jti="jti-full",
             expires_at=expires_at,
             device_info="Mozilla/5.0 (Macintosh; Intel Mac OS X)",
-            ip_address="10.0.0.1"
+            ip_address="10.0.0.1",
         )
 
         assert session.user_id == test_user.id
@@ -213,9 +202,7 @@ class TestSessionCreation:
         assert session.expires_at is not None
 
     def test_create_session_default_values(
-        self,
-        session_repository: SessionRepository,
-        test_user: User
+        self, session_repository: SessionRepository, test_user: User
     ):
         """Test that default values are applied correctly."""
         expires_at = datetime.now(timezone.utc) + timedelta(days=7)
@@ -224,7 +211,7 @@ class TestSessionCreation:
             user_id=test_user.id,
             family_id="family-defaults",
             refresh_token_jti="jti-defaults",
-            expires_at=expires_at
+            expires_at=expires_at,
         )
 
         # Check defaults from model
@@ -233,9 +220,7 @@ class TestSessionCreation:
         assert session.ip_address is None
 
     def test_create_session_timestamps(
-        self,
-        session_repository: SessionRepository,
-        test_user: User
+        self, session_repository: SessionRepository, test_user: User
     ):
         """Test that timestamps are automatically set."""
         before_create = datetime.now(timezone.utc)
@@ -245,7 +230,7 @@ class TestSessionCreation:
             user_id=test_user.id,
             family_id="family-time",
             refresh_token_jti="jti-time",
-            expires_at=expires_at
+            expires_at=expires_at,
         )
 
         after_create = datetime.now(timezone.utc)
@@ -254,17 +239,23 @@ class TestSessionCreation:
         assert session.last_used_at is not None
 
         # Handle timezone-naive timestamps from SQLite
-        created_with_tz = session.created_at.replace(tzinfo=timezone.utc) if session.created_at.tzinfo is None else session.created_at
-        last_used_with_tz = session.last_used_at.replace(tzinfo=timezone.utc) if session.last_used_at.tzinfo is None else session.last_used_at
+        created_with_tz = (
+            session.created_at.replace(tzinfo=timezone.utc)
+            if session.created_at.tzinfo is None
+            else session.created_at
+        )
+        last_used_with_tz = (
+            session.last_used_at.replace(tzinfo=timezone.utc)
+            if session.last_used_at.tzinfo is None
+            else session.last_used_at
+        )
 
         # Allow 2 second tolerance for timestamp comparison
         assert abs((created_with_tz - before_create).total_seconds()) < 2
         assert abs((last_used_with_tz - before_create).total_seconds()) < 2
 
     def test_create_session_generates_uuid(
-        self,
-        session_repository: SessionRepository,
-        test_user: User
+        self, session_repository: SessionRepository, test_user: User
     ):
         """Test that session ID is automatically generated as UUID."""
         expires_at = datetime.now(timezone.utc) + timedelta(days=7)
@@ -273,13 +264,13 @@ class TestSessionCreation:
             user_id=test_user.id,
             family_id="family-uuid-1",
             refresh_token_jti="jti-uuid-1",
-            expires_at=expires_at
+            expires_at=expires_at,
         )
         session2 = session_repository.create_session(
             user_id=test_user.id,
             family_id="family-uuid-2",
             refresh_token_jti="jti-uuid-2",
-            expires_at=expires_at
+            expires_at=expires_at,
         )
 
         assert session1.id != session2.id
@@ -287,9 +278,7 @@ class TestSessionCreation:
         assert len(session2.id) == 36
 
     def test_create_session_stores_ipv4(
-        self,
-        session_repository: SessionRepository,
-        test_user: User
+        self, session_repository: SessionRepository, test_user: User
     ):
         """Test storing IPv4 address."""
         expires_at = datetime.now(timezone.utc) + timedelta(days=7)
@@ -299,15 +288,13 @@ class TestSessionCreation:
             family_id="family-ipv4",
             refresh_token_jti="jti-ipv4",
             expires_at=expires_at,
-            ip_address="192.168.0.1"
+            ip_address="192.168.0.1",
         )
 
         assert session.ip_address == "192.168.0.1"
 
     def test_create_session_stores_ipv6(
-        self,
-        session_repository: SessionRepository,
-        test_user: User
+        self, session_repository: SessionRepository, test_user: User
     ):
         """Test storing IPv6 address."""
         expires_at = datetime.now(timezone.utc) + timedelta(days=7)
@@ -317,7 +304,7 @@ class TestSessionCreation:
             family_id="family-ipv6",
             refresh_token_jti="jti-ipv6",
             expires_at=expires_at,
-            ip_address="2001:0db8:85a3:0000:0000:8a2e:0370:7334"
+            ip_address="2001:0db8:85a3:0000:0000:8a2e:0370:7334",
         )
 
         assert session.ip_address == "2001:0db8:85a3:0000:0000:8a2e:0370:7334"
@@ -332,9 +319,7 @@ class TestSessionRetrieval:
     """Tests for session retrieval operations."""
 
     def test_get_by_family_id(
-        self,
-        session_repository: SessionRepository,
-        sample_session: UserSession
+        self, session_repository: SessionRepository, sample_session: UserSession
     ):
         """Test retrieving session by family_id."""
         retrieved = session_repository.get_by_family_id(sample_session.family_id)
@@ -343,10 +328,7 @@ class TestSessionRetrieval:
         assert retrieved.id == sample_session.id
         assert retrieved.family_id == sample_session.family_id
 
-    def test_get_by_family_id_not_found(
-        self,
-        session_repository: SessionRepository
-    ):
+    def test_get_by_family_id_not_found(self, session_repository: SessionRepository):
         """Test that non-existent family_id returns None."""
         result = session_repository.get_by_family_id("non-existent-family")
         assert result is None
@@ -354,7 +336,7 @@ class TestSessionRetrieval:
     def test_get_by_family_id_unique_constraint(
         self,
         session_repository: SessionRepository,
-        multiple_sessions: list[UserSession]
+        multiple_sessions: list[UserSession],
     ):
         """Test get_by_family_id with unique family_id constraint."""
         # Each family_id is unique, so get_by_family_id should return exactly one session
@@ -364,9 +346,7 @@ class TestSessionRetrieval:
         assert result.refresh_token_jti == "jti-1"
 
     def test_get_by_jti(
-        self,
-        session_repository: SessionRepository,
-        sample_session: UserSession
+        self, session_repository: SessionRepository, sample_session: UserSession
     ):
         """Test retrieving session by refresh token JTI."""
         retrieved = session_repository.get_by_jti(sample_session.refresh_token_jti)
@@ -375,10 +355,7 @@ class TestSessionRetrieval:
         assert retrieved.id == sample_session.id
         assert retrieved.refresh_token_jti == sample_session.refresh_token_jti
 
-    def test_get_by_jti_not_found(
-        self,
-        session_repository: SessionRepository
-    ):
+    def test_get_by_jti_not_found(self, session_repository: SessionRepository):
         """Test that non-existent JTI returns None."""
         result = session_repository.get_by_jti("non-existent-jti")
         assert result is None
@@ -386,7 +363,7 @@ class TestSessionRetrieval:
     def test_get_by_jti_with_revoked_session(
         self,
         session_repository: SessionRepository,
-        multiple_sessions: list[UserSession]
+        multiple_sessions: list[UserSession],
     ):
         """Test retrieving revoked session by JTI still works."""
         # Last session is revoked
@@ -410,13 +387,10 @@ class TestGetUserSessions:
         self,
         session_repository: SessionRepository,
         test_user: User,
-        multiple_sessions: list[UserSession]
+        multiple_sessions: list[UserSession],
     ):
         """Test retrieving all sessions for a user (active_only=False)."""
-        sessions = session_repository.get_user_sessions(
-            test_user.id,
-            active_only=False
-        )
+        sessions = session_repository.get_user_sessions(test_user.id, active_only=False)
 
         assert len(sessions) == 4  # All sessions including revoked
 
@@ -424,25 +398,18 @@ class TestGetUserSessions:
         self,
         session_repository: SessionRepository,
         test_user: User,
-        multiple_sessions: list[UserSession]
+        multiple_sessions: list[UserSession],
     ):
         """Test retrieving only active sessions (active_only=True)."""
-        sessions = session_repository.get_user_sessions(
-            test_user.id,
-            active_only=True
-        )
+        sessions = session_repository.get_user_sessions(test_user.id, active_only=True)
 
         assert len(sessions) == 3  # 3 active sessions
         assert all(not s.is_revoked for s in sessions)
 
-    def test_get_user_sessions_empty(
-        self,
-        session_repository: SessionRepository
-    ):
+    def test_get_user_sessions_empty(self, session_repository: SessionRepository):
         """Test retrieving sessions for user with no sessions."""
         sessions = session_repository.get_user_sessions(
-            "non-existent-user",
-            active_only=True
+            "non-existent-user", active_only=True
         )
 
         assert sessions == []
@@ -451,7 +418,7 @@ class TestGetUserSessions:
         self,
         session_repository: SessionRepository,
         test_user: User,
-        multiple_sessions: list[UserSession]
+        multiple_sessions: list[UserSession],
     ):
         """Test that active_only defaults to True."""
         sessions = session_repository.get_user_sessions(test_user.id)
@@ -472,13 +439,10 @@ class TestCountUserSessions:
         self,
         session_repository: SessionRepository,
         test_user: User,
-        multiple_sessions: list[UserSession]
+        multiple_sessions: list[UserSession],
     ):
         """Test counting all sessions including revoked."""
-        count = session_repository.count_user_sessions(
-            test_user.id,
-            active_only=False
-        )
+        count = session_repository.count_user_sessions(test_user.id, active_only=False)
 
         assert count == 4
 
@@ -486,24 +450,17 @@ class TestCountUserSessions:
         self,
         session_repository: SessionRepository,
         test_user: User,
-        multiple_sessions: list[UserSession]
+        multiple_sessions: list[UserSession],
     ):
         """Test counting only active sessions."""
-        count = session_repository.count_user_sessions(
-            test_user.id,
-            active_only=True
-        )
+        count = session_repository.count_user_sessions(test_user.id, active_only=True)
 
         assert count == 3
 
-    def test_count_user_sessions_zero(
-        self,
-        session_repository: SessionRepository
-    ):
+    def test_count_user_sessions_zero(self, session_repository: SessionRepository):
         """Test counting sessions for user with no sessions."""
         count = session_repository.count_user_sessions(
-            "non-existent-user",
-            active_only=True
+            "non-existent-user", active_only=True
         )
 
         assert count == 0
@@ -512,7 +469,7 @@ class TestCountUserSessions:
         self,
         session_repository: SessionRepository,
         test_user: User,
-        multiple_sessions: list[UserSession]
+        multiple_sessions: list[UserSession],
     ):
         """Test that active_only defaults to True for count."""
         count = session_repository.count_user_sessions(test_user.id)
@@ -529,9 +486,7 @@ class TestTokenRotation:
     """Tests for token rotation (update_session_token)."""
 
     def test_update_session_token_success(
-        self,
-        session_repository: SessionRepository,
-        sample_session: UserSession
+        self, session_repository: SessionRepository, sample_session: UserSession
     ):
         """Test successful token rotation updates JTI and last_used_at."""
         old_jti = sample_session.refresh_token_jti
@@ -539,11 +494,11 @@ class TestTokenRotation:
 
         # Small delay to ensure timestamp difference
         import time
+
         time.sleep(0.01)
 
         updated = session_repository.update_session_token(
-            sample_session.family_id,
-            "new-jti-123"
+            sample_session.family_id, "new-jti-123"
         )
 
         assert updated is not None
@@ -554,33 +509,36 @@ class TestTokenRotation:
         assert updated.last_used_at is not None
         # SQLite might not have microsecond precision, so check it's >= old value
         if old_last_used is not None:
-            old_with_tz = old_last_used.replace(tzinfo=timezone.utc) if old_last_used.tzinfo is None else old_last_used
-            new_with_tz = updated.last_used_at.replace(tzinfo=timezone.utc) if updated.last_used_at.tzinfo is None else updated.last_used_at
+            old_with_tz = (
+                old_last_used.replace(tzinfo=timezone.utc)
+                if old_last_used.tzinfo is None
+                else old_last_used
+            )
+            new_with_tz = (
+                updated.last_used_at.replace(tzinfo=timezone.utc)
+                if updated.last_used_at.tzinfo is None
+                else updated.last_used_at
+            )
             assert new_with_tz >= old_with_tz
 
     def test_update_session_token_not_found(
-        self,
-        session_repository: SessionRepository
+        self, session_repository: SessionRepository
     ):
         """Test token rotation on non-existent family_id returns None."""
         result = session_repository.update_session_token(
-            "non-existent-family",
-            "new-jti"
+            "non-existent-family", "new-jti"
         )
 
         assert result is None
 
     def test_update_session_token_updates_last_used_at(
-        self,
-        session_repository: SessionRepository,
-        sample_session: UserSession
+        self, session_repository: SessionRepository, sample_session: UserSession
     ):
         """Test that update_session_token updates last_used_at timestamp."""
         before_update = datetime.now(timezone.utc)
 
         updated = session_repository.update_session_token(
-            sample_session.family_id,
-            "rotated-jti"
+            sample_session.family_id, "rotated-jti"
         )
 
         after_update = datetime.now(timezone.utc)
@@ -588,7 +546,11 @@ class TestTokenRotation:
         assert updated is not None
         assert updated.last_used_at is not None
 
-        last_used_with_tz = updated.last_used_at.replace(tzinfo=timezone.utc) if updated.last_used_at.tzinfo is None else updated.last_used_at
+        last_used_with_tz = (
+            updated.last_used_at.replace(tzinfo=timezone.utc)
+            if updated.last_used_at.tzinfo is None
+            else updated.last_used_at
+        )
 
         # Check timestamp is within expected range (allow 2s tolerance)
         assert abs((last_used_with_tz - before_update).total_seconds()) < 2
@@ -603,9 +565,7 @@ class TestRevokeSession:
     """Tests for session revocation."""
 
     def test_revoke_session_success(
-        self,
-        session_repository: SessionRepository,
-        sample_session: UserSession
+        self, session_repository: SessionRepository, sample_session: UserSession
     ):
         """Test successful session revocation."""
         assert sample_session.is_revoked is False
@@ -615,18 +575,13 @@ class TestRevokeSession:
         assert result is True
         assert sample_session.is_revoked is True
 
-    def test_revoke_session_not_found(
-        self,
-        session_repository: SessionRepository
-    ):
+    def test_revoke_session_not_found(self, session_repository: SessionRepository):
         """Test revoking non-existent session returns False."""
         result = session_repository.revoke_session("non-existent-family")
         assert result is False
 
     def test_revoke_session_idempotent(
-        self,
-        session_repository: SessionRepository,
-        sample_session: UserSession
+        self, session_repository: SessionRepository, sample_session: UserSession
     ):
         """Test that revoking an already revoked session is idempotent."""
         # Revoke first time
@@ -653,7 +608,7 @@ class TestRevokeAllUserSessions:
         session_repository: SessionRepository,
         test_user: User,
         multiple_sessions: list[UserSession],
-        test_db_session: Session
+        test_db_session: Session,
     ):
         """Test revoking all active sessions for a user."""
         count = session_repository.revoke_all_user_sessions(test_user.id)
@@ -664,15 +619,11 @@ class TestRevokeAllUserSessions:
         test_db_session.expire_all()
 
         # Verify all sessions are now revoked
-        sessions = session_repository.get_user_sessions(
-            test_user.id,
-            active_only=False
-        )
+        sessions = session_repository.get_user_sessions(test_user.id, active_only=False)
         assert all(s.is_revoked for s in sessions)
 
     def test_revoke_all_user_sessions_no_sessions(
-        self,
-        session_repository: SessionRepository
+        self, session_repository: SessionRepository
     ):
         """Test revoking sessions for user with no sessions."""
         count = session_repository.revoke_all_user_sessions("non-existent-user")
@@ -682,7 +633,7 @@ class TestRevokeAllUserSessions:
         self,
         session_repository: SessionRepository,
         test_user: User,
-        multiple_sessions: list[UserSession]
+        multiple_sessions: list[UserSession],
     ):
         """Test revoking when all sessions already revoked."""
         # Revoke all first time
@@ -706,7 +657,7 @@ class TestRevokeTokenFamily:
         self,
         session_repository: SessionRepository,
         multiple_sessions: list[UserSession],
-        test_db_session: Session
+        test_db_session: Session,
     ):
         """Test revoking a token family (one session per family due to UNIQUE constraint)."""
         # Each family_id is unique, so family-1 has exactly 1 session
@@ -721,10 +672,7 @@ class TestRevokeTokenFamily:
         session1 = session_repository.get_by_jti("jti-1")
         assert session1.is_revoked is True
 
-    def test_revoke_token_family_not_found(
-        self,
-        session_repository: SessionRepository
-    ):
+    def test_revoke_token_family_not_found(self, session_repository: SessionRepository):
         """Test revoking non-existent family returns 0."""
         count = session_repository.revoke_token_family("non-existent-family")
         assert count == 0
@@ -733,7 +681,7 @@ class TestRevokeTokenFamily:
         self,
         session_repository: SessionRepository,
         multiple_sessions: list[UserSession],
-        test_db_session: Session
+        test_db_session: Session,
     ):
         """Test revoking another family."""
         count = session_repository.revoke_token_family("family-2")
@@ -749,7 +697,7 @@ class TestRevokeTokenFamily:
     def test_revoke_token_family_already_revoked(
         self,
         session_repository: SessionRepository,
-        multiple_sessions: list[UserSession]
+        multiple_sessions: list[UserSession],
     ):
         """Test revoking already revoked family."""
         count = session_repository.revoke_token_family("family-revoked")
@@ -758,7 +706,7 @@ class TestRevokeTokenFamily:
     def test_revoke_token_family_idempotent(
         self,
         session_repository: SessionRepository,
-        multiple_sessions: list[UserSession]
+        multiple_sessions: list[UserSession],
     ):
         """Test that family revocation is idempotent."""
         # Revoke first time
@@ -782,7 +730,7 @@ class TestExpiredSessions:
         self,
         session_repository: SessionRepository,
         test_user: User,
-        test_db_session: Session
+        test_db_session: Session,
     ):
         """Test retrieving expired sessions."""
         now = datetime.now(timezone.utc)
@@ -793,14 +741,14 @@ class TestExpiredSessions:
             family_id="family-exp-1",
             refresh_token_jti="jti-exp-1",
             expires_at=now - timedelta(days=1),
-            is_revoked=False
+            is_revoked=False,
         )
         expired2 = UserSession(
             user_id=test_user.id,
             family_id="family-exp-2",
             refresh_token_jti="jti-exp-2",
             expires_at=now - timedelta(hours=1),
-            is_revoked=False
+            is_revoked=False,
         )
         # Create active session
         active = UserSession(
@@ -808,7 +756,7 @@ class TestExpiredSessions:
             family_id="family-active",
             refresh_token_jti="jti-active",
             expires_at=now + timedelta(days=7),
-            is_revoked=False
+            is_revoked=False,
         )
         test_db_session.add_all([expired1, expired2, active])
         test_db_session.flush()
@@ -824,7 +772,7 @@ class TestExpiredSessions:
         self,
         session_repository: SessionRepository,
         test_user: User,
-        test_db_session: Session
+        test_db_session: Session,
     ):
         """Test retrieving expired sessions with limit."""
         now = datetime.now(timezone.utc)
@@ -835,8 +783,8 @@ class TestExpiredSessions:
                 user_id=test_user.id,
                 family_id=f"family-exp-{i}",
                 refresh_token_jti=f"jti-exp-{i}",
-                expires_at=now - timedelta(days=i+1),
-                is_revoked=False
+                expires_at=now - timedelta(days=i + 1),
+                is_revoked=False,
             )
             test_db_session.add(session)
         test_db_session.flush()
@@ -849,7 +797,7 @@ class TestExpiredSessions:
         self,
         session_repository: SessionRepository,
         test_user: User,
-        test_db_session: Session
+        test_db_session: Session,
     ):
         """Test cleanup_expired_sessions (alias for delete_expired_sessions)."""
         now = datetime.now(timezone.utc)
@@ -860,14 +808,14 @@ class TestExpiredSessions:
             family_id="family-cleanup",
             refresh_token_jti="jti-cleanup",
             expires_at=now - timedelta(days=1),
-            is_revoked=False
+            is_revoked=False,
         )
         active = UserSession(
             user_id=test_user.id,
             family_id="family-keep",
             refresh_token_jti="jti-keep",
             expires_at=now + timedelta(days=7),
-            is_revoked=False
+            is_revoked=False,
         )
         test_db_session.add_all([expired, active])
         test_db_session.flush()
@@ -888,7 +836,7 @@ class TestExpiredSessions:
         self,
         session_repository: SessionRepository,
         test_user: User,
-        test_db_session: Session
+        test_db_session: Session,
     ):
         """Test deleting all expired sessions."""
         now = datetime.now(timezone.utc)
@@ -899,8 +847,8 @@ class TestExpiredSessions:
                 user_id=test_user.id,
                 family_id=f"family-del-{i}",
                 refresh_token_jti=f"jti-del-{i}",
-                expires_at=now - timedelta(days=i+1),
-                is_revoked=False
+                expires_at=now - timedelta(days=i + 1),
+                is_revoked=False,
             )
             test_db_session.add(session)
         test_db_session.flush()
@@ -922,7 +870,7 @@ class TestGetOldestSession:
         self,
         session_repository: SessionRepository,
         test_user: User,
-        test_db_session: Session
+        test_db_session: Session,
     ):
         """Test retrieving oldest active session by created_at."""
         now = datetime.now(timezone.utc)
@@ -935,13 +883,14 @@ class TestGetOldestSession:
             family_id="family-old-1",
             refresh_token_jti="jti-old-1",
             expires_at=now + timedelta(days=7),
-            is_revoked=False
+            is_revoked=False,
         )
         test_db_session.add(session1)
         test_db_session.flush()
 
         # Small delay to ensure different timestamps
         import time
+
         time.sleep(0.01)
 
         session2 = UserSession(
@@ -949,7 +898,7 @@ class TestGetOldestSession:
             family_id="family-old-2",
             refresh_token_jti="jti-old-2",
             expires_at=now + timedelta(days=7),
-            is_revoked=False
+            is_revoked=False,
         )
         test_db_session.add(session2)
         test_db_session.flush()
@@ -963,7 +912,7 @@ class TestGetOldestSession:
         self,
         session_repository: SessionRepository,
         test_user: User,
-        test_db_session: Session
+        test_db_session: Session,
     ):
         """Test that oldest session excludes revoked sessions."""
         now = datetime.now(timezone.utc)
@@ -974,13 +923,14 @@ class TestGetOldestSession:
             family_id="family-old-revoked",
             refresh_token_jti="jti-old-revoked",
             expires_at=now + timedelta(days=7),
-            is_revoked=True
+            is_revoked=True,
         )
         test_db_session.add(revoked)
         test_db_session.flush()
 
         # Small delay
         import time
+
         time.sleep(0.01)
 
         # Create newer but active session
@@ -989,7 +939,7 @@ class TestGetOldestSession:
             family_id="family-old-active",
             refresh_token_jti="jti-old-active",
             expires_at=now + timedelta(days=7),
-            is_revoked=False
+            is_revoked=False,
         )
         test_db_session.add(active)
         test_db_session.flush()
@@ -1001,8 +951,7 @@ class TestGetOldestSession:
         assert oldest.is_revoked is False
 
     def test_get_oldest_user_session_no_sessions(
-        self,
-        session_repository: SessionRepository
+        self, session_repository: SessionRepository
     ):
         """Test retrieving oldest session for user with no sessions."""
         result = session_repository.get_oldest_user_session("non-existent-user")
@@ -1018,9 +967,7 @@ class TestRelationshipLoading:
     """Tests for relationship loading."""
 
     def test_session_user_relationship(
-        self,
-        session_repository: SessionRepository,
-        sample_session: UserSession
+        self, session_repository: SessionRepository, sample_session: UserSession
     ):
         """Test loading user relationship from session."""
         # Access user relationship
@@ -1040,8 +987,7 @@ class TestEdgeCases:
     """Tests for edge cases and error handling."""
 
     def test_operations_on_non_existent_session(
-        self,
-        session_repository: SessionRepository
+        self, session_repository: SessionRepository
     ):
         """Test that operations on non-existent session handle gracefully."""
         fake_family = "non-existent-family"
@@ -1057,25 +1003,21 @@ class TestEdgeCases:
     def test_count_method(
         self,
         session_repository: SessionRepository,
-        multiple_sessions: list[UserSession]
+        multiple_sessions: list[UserSession],
     ):
         """Test count method from base repository."""
         count = session_repository.count()
         assert count >= len(multiple_sessions)
 
     def test_exists_method(
-        self,
-        session_repository: SessionRepository,
-        sample_session: UserSession
+        self, session_repository: SessionRepository, sample_session: UserSession
     ):
         """Test exists method from base repository."""
         assert session_repository.exists(sample_session.id) is True
         assert session_repository.exists("non-existent-id") is False
 
     def test_get_by_id_from_base(
-        self,
-        session_repository: SessionRepository,
-        sample_session: UserSession
+        self, session_repository: SessionRepository, sample_session: UserSession
     ):
         """Test get_by_id method inherited from base repository."""
         retrieved = session_repository.get_by_id(sample_session.id)
@@ -1084,9 +1026,7 @@ class TestEdgeCases:
         assert retrieved.id == sample_session.id
 
     def test_delete_session(
-        self,
-        session_repository: SessionRepository,
-        sample_session: UserSession
+        self, session_repository: SessionRepository, sample_session: UserSession
     ):
         """Test deleting session using base repository delete method."""
         session_id = sample_session.id
@@ -1096,9 +1036,7 @@ class TestEdgeCases:
         assert session_repository.get_by_id(session_id) is None
 
     def test_long_device_info(
-        self,
-        session_repository: SessionRepository,
-        test_user: User
+        self, session_repository: SessionRepository, test_user: User
     ):
         """Test creating session with maximum length device info."""
         expires_at = datetime.now(timezone.utc) + timedelta(days=7)
@@ -1109,15 +1047,13 @@ class TestEdgeCases:
             family_id="family-long",
             refresh_token_jti="jti-long",
             expires_at=expires_at,
-            device_info=long_device_info
+            device_info=long_device_info,
         )
 
         assert session.device_info == long_device_info
 
     def test_session_with_far_future_expiration(
-        self,
-        session_repository: SessionRepository,
-        test_user: User
+        self, session_repository: SessionRepository, test_user: User
     ):
         """Test creating session with far future expiration."""
         far_future = datetime.now(timezone.utc) + timedelta(days=365)
@@ -1126,18 +1062,20 @@ class TestEdgeCases:
             user_id=test_user.id,
             family_id="family-future",
             refresh_token_jti="jti-future",
-            expires_at=far_future
+            expires_at=far_future,
         )
 
         assert session.expires_at is not None
-        expires_with_tz = session.expires_at.replace(tzinfo=timezone.utc) if session.expires_at.tzinfo is None else session.expires_at
+        expires_with_tz = (
+            session.expires_at.replace(tzinfo=timezone.utc)
+            if session.expires_at.tzinfo is None
+            else session.expires_at
+        )
         # Allow some tolerance for timestamp storage
         assert abs((expires_with_tz - far_future).total_seconds()) < 2
 
     def test_multiple_users_different_sessions(
-        self,
-        session_repository: SessionRepository,
-        test_db_session: Session
+        self, session_repository: SessionRepository, test_db_session: Session
     ):
         """Test that sessions are properly isolated between users."""
         # Create two users
@@ -1145,13 +1083,13 @@ class TestEdgeCases:
             username="user1",
             email="user1@example.com",
             password_hash="hash1",
-            role="viewer"
+            role="viewer",
         )
         user2 = User(
             username="user2",
             email="user2@example.com",
             password_hash="hash2",
-            role="viewer"
+            role="viewer",
         )
         test_db_session.add_all([user1, user2])
         test_db_session.flush()
@@ -1162,13 +1100,13 @@ class TestEdgeCases:
             user_id=user1.id,
             family_id="family-user1",
             refresh_token_jti="jti-user1",
-            expires_at=expires_at
+            expires_at=expires_at,
         )
         session2 = session_repository.create_session(
             user_id=user2.id,
             family_id="family-user2",
             refresh_token_jti="jti-user2",
-            expires_at=expires_at
+            expires_at=expires_at,
         )
 
         # Verify isolation

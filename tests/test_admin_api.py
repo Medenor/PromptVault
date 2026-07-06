@@ -44,7 +44,6 @@ from sqlalchemy.orm import Session
 from src.db.models.user import User
 from src.db.models.user_session import UserSession
 
-
 # ============================================================================
 # FIXTURES
 # ============================================================================
@@ -96,6 +95,7 @@ def test_db_session_admin(test_db_engine):
     """
     from sqlalchemy.orm import sessionmaker
     from sqlalchemy.exc import ProgrammingError
+
     SessionLocal = sessionmaker(bind=test_db_engine)
     session = SessionLocal()
     try:
@@ -407,13 +407,15 @@ def multiple_test_users(test_db_session_admin: Session) -> list[Dict[str, Any]]:
             updated_at=datetime.now(timezone.utc),
         )
         test_db_session_admin.add(user)
-        users_data.append({
-            "id": user.id,
-            "username": user.username,
-            "email": user.email,
-            "role": user.role,
-            "is_active": user.is_active,
-        })
+        users_data.append(
+            {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email,
+                "role": user.role,
+                "is_active": user.is_active,
+            }
+        )
 
     test_db_session_admin.commit()
     return users_data
@@ -1273,11 +1275,15 @@ class TestRBACCoverage:
             if method == "GET":
                 response = admin_client.get(endpoint, headers=viewer_auth_headers)
             elif method == "PUT":
-                response = admin_client.put(endpoint, headers=viewer_auth_headers, json=body[0])
+                response = admin_client.put(
+                    endpoint, headers=viewer_auth_headers, json=body[0]
+                )
             elif method == "DELETE":
                 response = admin_client.delete(endpoint, headers=viewer_auth_headers)
 
-            assert response.status_code == 403, f"{method} {endpoint} should return 403 for viewer"
+            assert (
+                response.status_code == 403
+            ), f"{method} {endpoint} should return 403 for viewer"
 
     def test_editor_cannot_access_admin_endpoints(
         self,
@@ -1301,11 +1307,15 @@ class TestRBACCoverage:
             if method == "GET":
                 response = admin_client.get(endpoint, headers=editor_auth_headers)
             elif method == "PUT":
-                response = admin_client.put(endpoint, headers=editor_auth_headers, json=body[0])
+                response = admin_client.put(
+                    endpoint, headers=editor_auth_headers, json=body[0]
+                )
             elif method == "DELETE":
                 response = admin_client.delete(endpoint, headers=editor_auth_headers)
 
-            assert response.status_code == 403, f"{method} {endpoint} should return 403 for editor"
+            assert (
+                response.status_code == 403
+            ), f"{method} {endpoint} should return 403 for editor"
 
     def test_all_endpoints_require_authentication(
         self,
@@ -1331,7 +1341,9 @@ class TestRBACCoverage:
             elif method == "DELETE":
                 response = admin_client.delete(endpoint)
 
-            assert response.status_code == 401, f"{method} {endpoint} should return 401 without token"
+            assert (
+                response.status_code == 401
+            ), f"{method} {endpoint} should return 401 without token"
 
 
 # ============================================================================

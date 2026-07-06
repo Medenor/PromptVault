@@ -88,27 +88,24 @@ export async function checkAccessibleName(element) {
  * @returns {Promise<{valid: boolean, missing: string[], present: string[]}>} Validation results
  */
 export async function validateAriaAttributes(element, requiredAttrs) {
-  return await element.evaluate(
-    (el, attrs) => {
-      const present = [];
-      const missing = [];
+  return await element.evaluate((el, attrs) => {
+    const present = [];
+    const missing = [];
 
-      for (const attr of attrs) {
-        if (el.hasAttribute(attr)) {
-          present.push(attr);
-        } else {
-          missing.push(attr);
-        }
+    for (const attr of attrs) {
+      if (el.hasAttribute(attr)) {
+        present.push(attr);
+      } else {
+        missing.push(attr);
       }
+    }
 
-      return {
-        valid: missing.length === 0,
-        missing,
-        present,
-      };
-    },
-    requiredAttrs
-  );
+    return {
+      valid: missing.length === 0,
+      missing,
+      present,
+    };
+  }, requiredAttrs);
 }
 
 /**
@@ -288,7 +285,11 @@ export async function validateButtonLabels(page) {
       }
 
       // Unlabeled - generate selector for identification
-      const selector = button.id ? `#${button.id}` : button.className ? `.${button.className.split(/\s+/)[0]}` : 'button';
+      const selector = button.id
+        ? `#${button.id}`
+        : button.className
+          ? `.${button.className.split(/\s+/)[0]}`
+          : 'button';
       unlabeledSelectors.push(selector);
     }
 

@@ -70,7 +70,7 @@ class PromptRepository(BaseRepository[Prompt]):
             comparator = or_(
                 Prompt.title.ilike(search_pattern),
                 Prompt.prompt.ilike(search_pattern),
-                Prompt.note.ilike(search_pattern)
+                Prompt.note.ilike(search_pattern),
             )
             q = q.filter(comparator)
 
@@ -122,15 +122,18 @@ class PromptRepository(BaseRepository[Prompt]):
         Returns:
             Prompt with all relationships loaded, or None if not found
         """
-        return self.session.query(Prompt).filter(
-            Prompt.id == prompt_id
-        ).options(
-            joinedload(Prompt.category),
-            joinedload(Prompt.tags),
-            joinedload(Prompt.versions),
-            joinedload(Prompt.branches),
-            joinedload(Prompt.user)
-        ).first()
+        return (
+            self.session.query(Prompt)
+            .filter(Prompt.id == prompt_id)
+            .options(
+                joinedload(Prompt.category),
+                joinedload(Prompt.tags),
+                joinedload(Prompt.versions),
+                joinedload(Prompt.branches),
+                joinedload(Prompt.user),
+            )
+            .first()
+        )
 
     def get_by_category(self, category_name: str) -> List[Prompt]:
         """Get all prompts in a specific category.
@@ -141,9 +144,12 @@ class PromptRepository(BaseRepository[Prompt]):
         Returns:
             List of prompts in the category
         """
-        return self.session.query(Prompt).join(Category).filter(
-            Category.name == category_name
-        ).all()
+        return (
+            self.session.query(Prompt)
+            .join(Category)
+            .filter(Category.name == category_name)
+            .all()
+        )
 
     def get_by_tag(self, tag_name: str) -> List[Prompt]:
         """Get all prompts with a specific tag.
@@ -154,9 +160,12 @@ class PromptRepository(BaseRepository[Prompt]):
         Returns:
             List of prompts with the tag
         """
-        return self.session.query(Prompt).join(Prompt.tags).filter(
-            Tag.name == tag_name
-        ).all()
+        return (
+            self.session.query(Prompt)
+            .join(Prompt.tags)
+            .filter(Tag.name == tag_name)
+            .all()
+        )
 
     def get_favorites(self, limit: Optional[int] = None) -> List[Prompt]:
         """Get all favorited prompts.
@@ -229,12 +238,6 @@ class PromptRepository(BaseRepository[Prompt]):
         favorites = self.session.query(Prompt).filter(Prompt.favorite == True).count()
 
         # Count prompts that have at least one version
-        with_versions = self.session.query(Prompt).filter(
-            Prompt.versions.any()
-        ).count()
+        with_versions = self.session.query(Prompt).filter(Prompt.versions.any()).count()
 
-        return {
-            "total": total,
-            "favorites": favorites,
-            "with_versions": with_versions
-        }
+        return {"total": total, "favorites": favorites, "with_versions": with_versions}

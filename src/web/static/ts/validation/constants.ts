@@ -52,6 +52,7 @@ export const SAFE_BACKUP_NAME_PATTERN = /^[A-Za-z0-9_-]+$/;
 
 // Control characters (ASCII 0-31 except newline, carriage return, tab)
 // Used for stripping control characters from input
+// eslint-disable-next-line no-control-regex
 export const CONTROL_CHARACTERS_REGEX = /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g;
 
 // Character count warning thresholds (show warning when approaching limit)

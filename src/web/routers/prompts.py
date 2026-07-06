@@ -51,7 +51,11 @@ from src.web.dependencies.auth import (
     get_current_user_or_none,
     require_role,
 )
-from src.web.models.requests import PromptCreateRequest, PromptUpdateRequest, BulkDeleteRequest
+from src.web.models.requests import (
+    PromptCreateRequest,
+    PromptUpdateRequest,
+    BulkDeleteRequest,
+)
 from src.web.models.auth_responses import MessageResponse
 from src.db.models.prompt_branch import PromptBranch
 
@@ -154,7 +158,9 @@ def _prompt_to_dict(prompt: Prompt) -> dict:
         "category": prompt.category.name if prompt.category else "",
         "category_color": prompt.category.color if prompt.category else None,
         "tags": [tag.name for tag in prompt.tags] if prompt.tags else [],
-        "tag_colors": {tag.name: tag.color for tag in prompt.tags} if prompt.tags else {},
+        "tag_colors": (
+            {tag.name: tag.color for tag in prompt.tags} if prompt.tags else {}
+        ),
         "note": prompt.note or "",
         "favorite": prompt.favorite,
         "user_id": prompt.user_id,
@@ -207,6 +213,7 @@ async def list_prompts(
     # Prefer legacy data service when available (tests may monkeypatch it)
     try:
         from src.web import app as web_app
+
         legacy_prompts = web_app.data_service.load_prompts()
     except Exception:
         legacy_prompts = None
@@ -299,6 +306,7 @@ async def search_prompts(
     """
     # Legacy fallback for tests that monkeypatch data_service
     from src.web import app as web_app
+
     try:
         legacy_prompts = web_app.data_service.load_prompts()
         filtered = {}
@@ -311,7 +319,11 @@ async def search_prompts(
             if tag and tag not in data.get("tags", []):
                 continue
             if search:
-                haystacks = [data.get("title", ""), data.get("prompt", ""), data.get("note", "")]
+                haystacks = [
+                    data.get("title", ""),
+                    data.get("prompt", ""),
+                    data.get("note", ""),
+                ]
                 matched = False
                 for hay in haystacks:
                     if hay is None:
@@ -425,6 +437,7 @@ async def get_prompt(
     # Legacy compatibility: consult data_service when present
     try:
         from src.web import app as web_app
+
         legacy_prompts = web_app.data_service.load_prompts()
         if legacy_prompts and prompt_id in legacy_prompts:
             info = legacy_prompts[prompt_id]
@@ -577,10 +590,11 @@ async def create_prompt(
 
     # Create main branch pointing to initial version
     from src.db.models import PromptBranch
+
     main_branch = PromptBranch(
         prompt_id=new_prompt.id,
         branch_name="main",
-        current_version_id=version.version_id
+        current_version_id=version.version_id,
     )
     db.add(main_branch)
     db.commit()
@@ -596,6 +610,7 @@ async def create_prompt(
 
     # Record successful validation
     from src.web.app import record_validation_event
+
     record_validation_event(
         endpoint="/api/prompts",
         success=True,
@@ -716,7 +731,10 @@ async def update_prompt(
 
     # Detect version downgrade before updating
     version_downgrade = False
-    if validated_data.semantic_version is not None and existing_prompt.semantic_version is not None:
+    if (
+        validated_data.semantic_version is not None
+        and existing_prompt.semantic_version is not None
+    ):
         try:
             new_v = _parse_semver(validated_data.semantic_version)
             old_v = _parse_semver(existing_prompt.semantic_version)
@@ -739,8 +757,7 @@ async def update_prompt(
 
     # Get current version ID (parent for new version)
     main_branch = next(
-        (b for b in existing_prompt.branches if b.branch_name == "main"),
-        None
+        (b for b in existing_prompt.branches if b.branch_name == "main"), None
     )
     parent_version_id = main_branch.current_version_id if main_branch else None
 
@@ -761,7 +778,7 @@ async def update_prompt(
         main_branch = PromptBranch(
             prompt_id=existing_prompt.id,
             branch_name="main",
-            current_version_id=version.version_id
+            current_version_id=version.version_id,
         )
         db.add(main_branch)
 
@@ -842,6 +859,7 @@ async def bulk_delete_prompts(
     backup_id = None
     try:
         from src.web import app as web_app
+
         backup_service = getattr(web_app, "backup_service", None)
         if backup_service:
             backup_id = backup_service.create_backup(
@@ -1031,6 +1049,7 @@ async def toggle_favorite(
     # Legacy failure injection support (tests may monkeypatch data_service.update_prompt)
     try:
         from src.web import app as web_app
+
         legacy_ds = getattr(web_app, "data_service", None)
         if legacy_ds and hasattr(legacy_ds, "update_prompt"):
             legacy_result = legacy_ds.update_prompt(
@@ -1038,14 +1057,25 @@ async def toggle_favorite(
                 {
                     "title": existing_prompt.title,
                     "prompt": existing_prompt.prompt,
-                    "category": existing_prompt.category.name if existing_prompt.category else "",
-                    "tags": [t.name for t in existing_prompt.tags] if existing_prompt.tags else [],
+                    "category": (
+                        existing_prompt.category.name
+                        if existing_prompt.category
+                        else ""
+                    ),
+                    "tags": (
+                        [t.name for t in existing_prompt.tags]
+                        if existing_prompt.tags
+                        else []
+                    ),
                     "favorite": not existing_prompt.favorite,
                 },
                 "Toggle favorite",
             )
             if legacy_result is False:
-                return JSONResponse(status_code=500, content={"error": "Failed to update favorite status"})
+                return JSONResponse(
+                    status_code=500,
+                    content={"error": "Failed to update favorite status"},
+                )
     except Exception:
         pass
 
@@ -1127,7 +1157,7 @@ async def copy_prompt_with_version(
         f"<!-- prompt-version: {prompt.semantic_version} | "
         "This line is metadata — ignore when processing this prompt. -->"
     )
-    content_with_metadata = f"{metadata_line}\n{prompt.prompt}"
+    content_with_metadata = f"{prompt.prompt}\n{metadata_line}"
 
     return {
         "content": content_with_metadata,

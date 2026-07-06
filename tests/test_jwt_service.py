@@ -50,7 +50,6 @@ from cryptography.hazmat.backends import default_backend
 from src.services.auth.jwt_service import JWTService
 from src.config.auth_config import AuthConfig
 
-
 # ============================================================================
 # FIXTURES
 # ============================================================================
@@ -112,7 +111,7 @@ def temp_jwt_keys():
     private_pem = private_key.private_bytes(
         encoding=serialization.Encoding.PEM,
         format=serialization.PrivateFormat.PKCS8,
-        encryption_algorithm=serialization.NoEncryption()
+        encryption_algorithm=serialization.NoEncryption(),
     )
     private_key_path = temp_path / "private_key.pem"
     private_key_path.write_bytes(private_pem)
@@ -120,7 +119,7 @@ def temp_jwt_keys():
     # Write public key
     public_pem = public_key.public_bytes(
         encoding=serialization.Encoding.PEM,
-        format=serialization.PublicFormat.SubjectPublicKeyInfo
+        format=serialization.PublicFormat.SubjectPublicKeyInfo,
     )
     public_key_path = temp_path / "public_key.pem"
     public_key_path.write_bytes(public_pem)
@@ -143,10 +142,13 @@ def jwt_service_with_temp_keys(temp_jwt_keys):
     """
     temp_path, private_key_path, public_key_path = temp_jwt_keys
 
-    with patch.dict('os.environ', {
-        'JWT_PRIVATE_KEY_PATH': str(private_key_path),
-        'JWT_PUBLIC_KEY_PATH': str(public_key_path),
-    }):
+    with patch.dict(
+        "os.environ",
+        {
+            "JWT_PRIVATE_KEY_PATH": str(private_key_path),
+            "JWT_PUBLIC_KEY_PATH": str(public_key_path),
+        },
+    ):
         config = AuthConfig()
         return JWTService(config)
 
@@ -166,20 +168,23 @@ class TestJWTServiceInitialization:
         assert service.config == auth_config
         assert service.algorithm == "ES256"
         assert service._private_key is None  # Lazy loading
-        assert service._public_key is None   # Lazy loading
+        assert service._public_key is None  # Lazy loading
 
     def test_initialization_with_custom_config(self):
         """Test initialization with custom configuration."""
-        with patch.dict('os.environ', {
-            'JWT_ISSUER': 'custom-issuer',
-            'JWT_AUDIENCE': 'custom-audience',
-            'JWT_ACCESS_TOKEN_EXPIRE_SECONDS': '600',
-        }):
+        with patch.dict(
+            "os.environ",
+            {
+                "JWT_ISSUER": "custom-issuer",
+                "JWT_AUDIENCE": "custom-audience",
+                "JWT_ACCESS_TOKEN_EXPIRE_SECONDS": "600",
+            },
+        ):
             config = AuthConfig()
             service = JWTService(config)
 
-            assert service.config.jwt_issuer == 'custom-issuer'
-            assert service.config.jwt_audience == 'custom-audience'
+            assert service.config.jwt_issuer == "custom-issuer"
+            assert service.config.jwt_audience == "custom-audience"
             assert service.config.jwt_access_token_expire_seconds == 600
 
 
@@ -227,9 +232,12 @@ class TestKeyLoading:
 
     def test_load_private_key_missing_file(self, auth_config):
         """Test error handling when private key file doesn't exist."""
-        with patch.dict('os.environ', {
-            'JWT_PRIVATE_KEY_PATH': '/nonexistent/private_key.pem',
-        }):
+        with patch.dict(
+            "os.environ",
+            {
+                "JWT_PRIVATE_KEY_PATH": "/nonexistent/private_key.pem",
+            },
+        ):
             config = AuthConfig()
             service = JWTService(config)
 
@@ -241,9 +249,12 @@ class TestKeyLoading:
 
     def test_load_public_key_missing_file(self, auth_config):
         """Test error handling when public key file doesn't exist."""
-        with patch.dict('os.environ', {
-            'JWT_PUBLIC_KEY_PATH': '/nonexistent/public_key.pem',
-        }):
+        with patch.dict(
+            "os.environ",
+            {
+                "JWT_PUBLIC_KEY_PATH": "/nonexistent/public_key.pem",
+            },
+        ):
             config = AuthConfig()
             service = JWTService(config)
 
@@ -264,7 +275,9 @@ class TestKeyLoading:
         service = JWTService(mock_config)
 
         # Mock the key_path.read_bytes() to raise PermissionError
-        with patch.object(Path, 'read_bytes', side_effect=PermissionError("Access denied")):
+        with patch.object(
+            Path, "read_bytes", side_effect=PermissionError("Access denied")
+        ):
             with pytest.raises(PermissionError) as exc_info:
                 service._load_private_key()
 
@@ -282,7 +295,9 @@ class TestKeyLoading:
         service = JWTService(mock_config)
 
         # Mock the key_path.read_bytes() to raise PermissionError
-        with patch.object(Path, 'read_bytes', side_effect=PermissionError("Access denied")):
+        with patch.object(
+            Path, "read_bytes", side_effect=PermissionError("Access denied")
+        ):
             with pytest.raises(PermissionError) as exc_info:
                 service._load_public_key()
 
@@ -295,9 +310,12 @@ class TestKeyLoading:
         # Write invalid content
         private_key_path.write_text("invalid key content")
 
-        with patch.dict('os.environ', {
-            'JWT_PRIVATE_KEY_PATH': str(private_key_path),
-        }):
+        with patch.dict(
+            "os.environ",
+            {
+                "JWT_PRIVATE_KEY_PATH": str(private_key_path),
+            },
+        ):
             config = AuthConfig()
             service = JWTService(config)
 
@@ -313,9 +331,12 @@ class TestKeyLoading:
         # Write invalid content
         public_key_path.write_text("invalid")
 
-        with patch.dict('os.environ', {
-            'JWT_PUBLIC_KEY_PATH': str(public_key_path),
-        }):
+        with patch.dict(
+            "os.environ",
+            {
+                "JWT_PUBLIC_KEY_PATH": str(public_key_path),
+            },
+        ):
             config = AuthConfig()
             service = JWTService(config)
 
@@ -331,9 +352,12 @@ class TestKeyLoading:
         # Write empty content
         private_key_path.write_bytes(b"")
 
-        with patch.dict('os.environ', {
-            'JWT_PRIVATE_KEY_PATH': str(private_key_path),
-        }):
+        with patch.dict(
+            "os.environ",
+            {
+                "JWT_PRIVATE_KEY_PATH": str(private_key_path),
+            },
+        ):
             config = AuthConfig()
             service = JWTService(config)
 
@@ -349,9 +373,12 @@ class TestKeyLoading:
         # Write empty content
         public_key_path.write_bytes(b"")
 
-        with patch.dict('os.environ', {
-            'JWT_PUBLIC_KEY_PATH': str(public_key_path),
-        }):
+        with patch.dict(
+            "os.environ",
+            {
+                "JWT_PUBLIC_KEY_PATH": str(public_key_path),
+            },
+        ):
             config = AuthConfig()
             service = JWTService(config)
 
@@ -371,7 +398,7 @@ class TestKeyLoading:
         service = JWTService(mock_config)
 
         # Mock to raise a generic exception
-        with patch.object(Path, 'read_bytes', side_effect=IOError("Disk error")):
+        with patch.object(Path, "read_bytes", side_effect=IOError("Disk error")):
             with pytest.raises(ValueError) as exc_info:
                 service._load_private_key()
 
@@ -388,7 +415,7 @@ class TestKeyLoading:
         service = JWTService(mock_config)
 
         # Mock to raise a generic exception
-        with patch.object(Path, 'read_bytes', side_effect=IOError("Disk error")):
+        with patch.object(Path, "read_bytes", side_effect=IOError("Disk error")):
             with pytest.raises(ValueError) as exc_info:
                 service._load_public_key()
 
@@ -450,20 +477,20 @@ class TestAccessTokenGeneration:
         assert isinstance(token, str)
         assert len(token) > 0
         # JWT tokens have 3 parts separated by dots
-        assert token.count('.') == 2
+        assert token.count(".") == 2
 
     def test_access_token_structure(self, jwt_service, sample_user_data):
         """Test access token has correct structure (header, payload, signature)."""
         token = jwt_service.generate_access_token(**sample_user_data)
 
-        parts = token.split('.')
+        parts = token.split(".")
         assert len(parts) == 3
 
         # Each part should be base64url-encoded (alphanumeric + - and _)
         for part in parts:
             assert len(part) > 0
             # Base64url uses alphanumeric, -, and _ characters
-            assert all(c.isalnum() or c in '-_' for c in part)
+            assert all(c.isalnum() or c in "-_" for c in part)
 
     def test_access_token_contains_all_claims(self, jwt_service, sample_user_data):
         """Test that access token contains all required claims."""
@@ -606,7 +633,7 @@ class TestRefreshTokenGeneration:
 
         assert isinstance(token, str)
         assert len(token) > 0
-        assert token.count('.') == 2
+        assert token.count(".") == 2
 
     def test_refresh_token_contains_required_claims(self, jwt_service):
         """Test that refresh token contains all required claims."""
@@ -720,7 +747,9 @@ class TestAccessTokenValidation:
         assert claims["email"] == sample_user_data["email"]
         assert claims["role"] == sample_user_data["role"]
 
-    def test_validate_access_token_all_claims_extracted(self, jwt_service, sample_user_data):
+    def test_validate_access_token_all_claims_extracted(
+        self, jwt_service, sample_user_data
+    ):
         """Test that all claims are correctly extracted during validation."""
         token = jwt_service.generate_access_token(**sample_user_data)
         claims = jwt_service.validate_access_token(token)
@@ -736,12 +765,17 @@ class TestAccessTokenValidation:
         assert "iss" in claims
         assert "aud" in claims
 
-    def test_validate_expired_access_token(self, jwt_service_with_temp_keys, sample_user_data):
+    def test_validate_expired_access_token(
+        self, jwt_service_with_temp_keys, sample_user_data
+    ):
         """Test that expired access token is rejected."""
         # Create service with very short expiration
-        with patch.dict('os.environ', {
-            'JWT_ACCESS_TOKEN_EXPIRE_SECONDS': '1',
-        }):
+        with patch.dict(
+            "os.environ",
+            {
+                "JWT_ACCESS_TOKEN_EXPIRE_SECONDS": "1",
+            },
+        ):
             config = AuthConfig()
             service = JWTService(config)
             # Copy keys from temp service
@@ -756,7 +790,9 @@ class TestAccessTokenValidation:
             with pytest.raises(ExpiredSignatureError):
                 service.validate_access_token(token)
 
-    def test_validate_access_token_invalid_signature(self, jwt_service, jwt_service_with_temp_keys, sample_user_data):
+    def test_validate_access_token_invalid_signature(
+        self, jwt_service, jwt_service_with_temp_keys, sample_user_data
+    ):
         """Test that token with invalid signature is rejected."""
         # Generate token with one service
         token = jwt_service.generate_access_token(**sample_user_data)
@@ -770,10 +806,10 @@ class TestAccessTokenValidation:
         token = jwt_service.generate_access_token(**sample_user_data)
 
         # Tamper with token by modifying payload
-        parts = token.split('.')
+        parts = token.split(".")
         # Modify the payload part slightly
-        parts[1] = parts[1][:-1] + ('a' if parts[1][-1] != 'a' else 'b')
-        tampered_token = '.'.join(parts)
+        parts[1] = parts[1][:-1] + ("a" if parts[1][-1] != "a" else "b")
+        tampered_token = ".".join(parts)
 
         with pytest.raises((InvalidSignatureError, DecodeError, InvalidTokenError)):
             jwt_service.validate_access_token(tampered_token)
@@ -830,7 +866,9 @@ class TestAccessTokenValidation:
         with pytest.raises(InvalidIssuerError):
             jwt_service.validate_access_token(token)
 
-    def test_validate_access_token_invalid_audience(self, jwt_service, sample_user_data):
+    def test_validate_access_token_invalid_audience(
+        self, jwt_service, sample_user_data
+    ):
         """Test validation fails with invalid audience."""
         # Create token with wrong audience
         private_key = jwt_service._load_private_key()
@@ -853,7 +891,9 @@ class TestAccessTokenValidation:
         with pytest.raises(InvalidAudienceError):
             jwt_service.validate_access_token(token)
 
-    def test_validate_access_token_algorithm_confusion_hs256(self, jwt_service, sample_user_data):
+    def test_validate_access_token_algorithm_confusion_hs256(
+        self, jwt_service, sample_user_data
+    ):
         """Test that HS256 token is rejected (algorithm confusion attack)."""
         # Try to create token with HS256 (symmetric) algorithm
         now = datetime.now(timezone.utc)
@@ -873,7 +913,9 @@ class TestAccessTokenValidation:
         hs256_token = jwt.encode(claims, "secret", algorithm="HS256")
 
         # Should be rejected
-        with pytest.raises((InvalidAlgorithmError, InvalidSignatureError, InvalidTokenError)):
+        with pytest.raises(
+            (InvalidAlgorithmError, InvalidSignatureError, InvalidTokenError)
+        ):
             jwt_service.validate_access_token(hs256_token)
 
     def test_validate_access_token_none_algorithm(self, jwt_service, sample_user_data):
@@ -951,7 +993,9 @@ class TestRefreshTokenValidation:
 
         assert claims.get("type") == "refresh"
 
-    def test_validate_access_token_as_refresh_token(self, jwt_service, sample_user_data):
+    def test_validate_access_token_as_refresh_token(
+        self, jwt_service, sample_user_data
+    ):
         """Test that access token cannot be used as refresh token."""
         access_token = jwt_service.generate_access_token(**sample_user_data)
 
@@ -965,9 +1009,12 @@ class TestRefreshTokenValidation:
     def test_validate_expired_refresh_token(self, jwt_service_with_temp_keys):
         """Test that expired refresh token is rejected."""
         # Create service with very short expiration
-        with patch.dict('os.environ', {
-            'JWT_REFRESH_TOKEN_EXPIRE_SECONDS': '1',
-        }):
+        with patch.dict(
+            "os.environ",
+            {
+                "JWT_REFRESH_TOKEN_EXPIRE_SECONDS": "1",
+            },
+        ):
             config = AuthConfig()
             service = JWTService(config)
             service._private_key = jwt_service_with_temp_keys._load_private_key()
@@ -1017,14 +1064,16 @@ class TestRefreshTokenValidation:
         token = jwt_service.generate_refresh_token(user_id, family_id, jti)
 
         # Tamper with token
-        parts = token.split('.')
-        parts[1] = parts[1][:-1] + ('a' if parts[1][-1] != 'a' else 'b')
-        tampered_token = '.'.join(parts)
+        parts = token.split(".")
+        parts[1] = parts[1][:-1] + ("a" if parts[1][-1] != "a" else "b")
+        tampered_token = ".".join(parts)
 
         with pytest.raises((InvalidSignatureError, DecodeError, InvalidTokenError)):
             jwt_service.validate_refresh_token(tampered_token)
 
-    def test_validate_refresh_token_invalid_signature(self, jwt_service, jwt_service_with_temp_keys):
+    def test_validate_refresh_token_invalid_signature(
+        self, jwt_service, jwt_service_with_temp_keys
+    ):
         """Test that refresh token with invalid signature is rejected."""
         user_id = "user_123"
         family_id = str(uuid.uuid4())
@@ -1074,7 +1123,9 @@ class TestRefreshTokenValidation:
 
         hs256_token = jwt.encode(claims, "secret", algorithm="HS256")
 
-        with pytest.raises((InvalidAlgorithmError, InvalidSignatureError, InvalidTokenError)):
+        with pytest.raises(
+            (InvalidAlgorithmError, InvalidSignatureError, InvalidTokenError)
+        ):
             jwt_service.validate_refresh_token(hs256_token)
 
     def test_validate_refresh_token_invalid_audience(self, jwt_service):
@@ -1136,12 +1187,17 @@ class TestDecodeTokenUnsafe:
         assert claims["sub"] == sample_user_data["user_id"]
         assert claims["username"] == sample_user_data["username"]
 
-    def test_decode_expired_token_unsafe(self, jwt_service_with_temp_keys, sample_user_data):
+    def test_decode_expired_token_unsafe(
+        self, jwt_service_with_temp_keys, sample_user_data
+    ):
         """Test that expired token can be decoded unsafely."""
         # Create service with very short expiration
-        with patch.dict('os.environ', {
-            'JWT_ACCESS_TOKEN_EXPIRE_SECONDS': '1',
-        }):
+        with patch.dict(
+            "os.environ",
+            {
+                "JWT_ACCESS_TOKEN_EXPIRE_SECONDS": "1",
+            },
+        ):
             config = AuthConfig()
             service = JWTService(config)
             service._private_key = jwt_service_with_temp_keys._load_private_key()
@@ -1156,7 +1212,9 @@ class TestDecodeTokenUnsafe:
             claims = service.decode_token_unsafe(token)
             assert claims["sub"] == sample_user_data["user_id"]
 
-    def test_decode_token_unsafe_invalid_signature(self, jwt_service, jwt_service_with_temp_keys, sample_user_data):
+    def test_decode_token_unsafe_invalid_signature(
+        self, jwt_service, jwt_service_with_temp_keys, sample_user_data
+    ):
         """Test that token with invalid signature can still be decoded unsafely."""
         # Generate with one service
         token = jwt_service.generate_access_token(**sample_user_data)
@@ -1212,7 +1270,9 @@ class TestGetTokenExpiry:
         assert expiry.tzinfo == timezone.utc
 
         # Should be approximately 15 minutes from now
-        expected_expiry = before + timedelta(seconds=jwt_service.config.jwt_access_token_expire_seconds)
+        expected_expiry = before + timedelta(
+            seconds=jwt_service.config.jwt_access_token_expire_seconds
+        )
         time_diff = abs((expiry - expected_expiry).total_seconds())
         assert time_diff < 2  # Allow 2 seconds tolerance
 
@@ -1278,12 +1338,17 @@ class TestIsTokenExpired:
 
         assert jwt_service.is_token_expired(token) is False
 
-    def test_is_token_expired_expired(self, jwt_service_with_temp_keys, sample_user_data):
+    def test_is_token_expired_expired(
+        self, jwt_service_with_temp_keys, sample_user_data
+    ):
         """Test that expired token returns True."""
         # Create service with very short expiration
-        with patch.dict('os.environ', {
-            'JWT_ACCESS_TOKEN_EXPIRE_SECONDS': '1',
-        }):
+        with patch.dict(
+            "os.environ",
+            {
+                "JWT_ACCESS_TOKEN_EXPIRE_SECONDS": "1",
+            },
+        ):
             config = AuthConfig()
             service = JWTService(config)
             service._private_key = jwt_service_with_temp_keys._load_private_key()
@@ -1300,12 +1365,17 @@ class TestIsTokenExpired:
             # Token should now be expired
             assert service.is_token_expired(token) is True
 
-    def test_is_token_expired_about_to_expire(self, jwt_service_with_temp_keys, sample_user_data):
+    def test_is_token_expired_about_to_expire(
+        self, jwt_service_with_temp_keys, sample_user_data
+    ):
         """Test token that's about to expire but hasn't yet."""
         # Create service with 3 second expiration
-        with patch.dict('os.environ', {
-            'JWT_ACCESS_TOKEN_EXPIRE_SECONDS': '3',
-        }):
+        with patch.dict(
+            "os.environ",
+            {
+                "JWT_ACCESS_TOKEN_EXPIRE_SECONDS": "3",
+            },
+        ):
             config = AuthConfig()
             service = JWTService(config)
             service._private_key = jwt_service_with_temp_keys._load_private_key()
@@ -1357,25 +1427,29 @@ class TestSecurityFeatures:
         # Decode header to verify algorithm
         import base64
         import json
-        header = json.loads(base64.urlsafe_b64decode(token.split('.')[0] + '=='))
+
+        header = json.loads(base64.urlsafe_b64decode(token.split(".")[0] + "=="))
 
         assert header["alg"] == "ES256"
 
-    def test_signature_verification_cannot_be_bypassed(self, jwt_service, sample_user_data):
+    def test_signature_verification_cannot_be_bypassed(
+        self, jwt_service, sample_user_data
+    ):
         """Test that signature verification cannot be bypassed."""
         token = jwt_service.generate_access_token(**sample_user_data)
 
         # Try to modify payload and keep signature
-        parts = token.split('.')
+        parts = token.split(".")
 
         # Decode payload, modify it, encode it back
         import base64
         import json
-        payload = json.loads(base64.urlsafe_b64decode(parts[1] + '=='))
-        payload['role'] = 'admin'  # Try to escalate privileges
-        modified_payload = base64.urlsafe_b64encode(
-            json.dumps(payload).encode()
-        ).decode().rstrip('=')
+
+        payload = json.loads(base64.urlsafe_b64decode(parts[1] + "=="))
+        payload["role"] = "admin"  # Try to escalate privileges
+        modified_payload = (
+            base64.urlsafe_b64encode(json.dumps(payload).encode()).decode().rstrip("=")
+        )
 
         # Create tampered token
         tampered_token = f"{parts[0]}.{modified_payload}.{parts[2]}"
@@ -1389,7 +1463,7 @@ class TestSecurityFeatures:
         token = jwt_service.generate_access_token(**sample_user_data)
 
         # Try various tampering attempts
-        parts = token.split('.')
+        parts = token.split(".")
 
         # Tamper with each part
         tampering_attempts = [
@@ -1422,7 +1496,9 @@ class TestSecurityFeatures:
             claims = jwt_service.validate_access_token(token)
             assert claims["jti"] == expected_jti
 
-    def test_key_confusion_prevention(self, jwt_service, jwt_service_with_temp_keys, sample_user_data):
+    def test_key_confusion_prevention(
+        self, jwt_service, jwt_service_with_temp_keys, sample_user_data
+    ):
         """Test that tokens signed with different keys are rejected."""
         # Generate token with service 1
         token1 = jwt_service.generate_access_token(**sample_user_data)
@@ -1506,12 +1582,17 @@ class TestEdgeCases:
         assert claims["email"] == data["email"]
         assert claims["role"] == data["role"]
 
-    def test_token_near_expiration_boundary(self, jwt_service_with_temp_keys, sample_user_data):
+    def test_token_near_expiration_boundary(
+        self, jwt_service_with_temp_keys, sample_user_data
+    ):
         """Test token behavior at exact expiration moment."""
         # Create service with 3 second expiration
-        with patch.dict('os.environ', {
-            'JWT_ACCESS_TOKEN_EXPIRE_SECONDS': '3',
-        }):
+        with patch.dict(
+            "os.environ",
+            {
+                "JWT_ACCESS_TOKEN_EXPIRE_SECONDS": "3",
+            },
+        ):
             config = AuthConfig()
             service = JWTService(config)
             service._private_key = jwt_service_with_temp_keys._load_private_key()

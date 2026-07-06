@@ -36,7 +36,9 @@ for (const file of specFiles) {
       hasFailure = true;
       console.error(`\n[${check.name}] ${file}`);
       console.error(`  ${check.message}`);
-      console.error(`  Matches: ${matches.slice(0, 5).join(', ')}${matches.length > 5 ? ' ...' : ''}`);
+      console.error(
+        `  Matches: ${matches.slice(0, 5).join(', ')}${matches.length > 5 ? ' ...' : ''}`
+      );
     }
   }
 

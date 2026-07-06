@@ -34,7 +34,7 @@ class PasswordResetTokenRepository(BaseRepository[PasswordResetToken]):
         user_id: str,
         token: str,
         expires_at: datetime,
-        ip_address: Optional[str] = None
+        ip_address: Optional[str] = None,
     ) -> PasswordResetToken:
         """Create a new password reset token.
 
@@ -48,10 +48,7 @@ class PasswordResetTokenRepository(BaseRepository[PasswordResetToken]):
             Created PasswordResetToken instance
         """
         return self.create(
-            user_id=user_id,
-            token=token,
-            expires_at=expires_at,
-            ip_address=ip_address
+            user_id=user_id, token=token, expires_at=expires_at, ip_address=ip_address
         )
 
     def get_by_token(self, token: str) -> Optional[PasswordResetToken]:
@@ -63,9 +60,11 @@ class PasswordResetTokenRepository(BaseRepository[PasswordResetToken]):
         Returns:
             PasswordResetToken instance or None if not found
         """
-        return self.session.query(PasswordResetToken).filter(
-            PasswordResetToken.token == token
-        ).first()
+        return (
+            self.session.query(PasswordResetToken)
+            .filter(PasswordResetToken.token == token)
+            .first()
+        )
 
     def get_valid_token(self, token: str) -> Optional[PasswordResetToken]:
         """Get token if valid (unused and not expired).
@@ -77,13 +76,17 @@ class PasswordResetTokenRepository(BaseRepository[PasswordResetToken]):
             PasswordResetToken instance if valid, None otherwise
         """
         now = datetime.now(timezone.utc)
-        return self.session.query(PasswordResetToken).filter(
-            and_(
-                PasswordResetToken.token == token,
-                PasswordResetToken.is_used == False,
-                PasswordResetToken.expires_at > now
+        return (
+            self.session.query(PasswordResetToken)
+            .filter(
+                and_(
+                    PasswordResetToken.token == token,
+                    PasswordResetToken.is_used == False,
+                    PasswordResetToken.expires_at > now,
+                )
             )
-        ).first()
+            .first()
+        )
 
     def mark_token_used(self, token_id: str) -> bool:
         """Mark token as used and set used_at timestamp.
@@ -103,9 +106,7 @@ class PasswordResetTokenRepository(BaseRepository[PasswordResetToken]):
         return False
 
     def get_user_tokens(
-        self,
-        user_id: str,
-        unused_only: bool = False
+        self, user_id: str, unused_only: bool = False
     ) -> List[PasswordResetToken]:
         """Get all tokens for a user.
 
@@ -134,17 +135,18 @@ class PasswordResetTokenRepository(BaseRepository[PasswordResetToken]):
         Returns:
             Number of tokens invalidated
         """
-        count = self.session.query(PasswordResetToken).filter(
-            and_(
-                PasswordResetToken.user_id == user_id,
-                PasswordResetToken.is_used == False
+        count = (
+            self.session.query(PasswordResetToken)
+            .filter(
+                and_(
+                    PasswordResetToken.user_id == user_id,
+                    PasswordResetToken.is_used == False,
+                )
             )
-        ).update(
-            {
-                'is_used': True,
-                'used_at': datetime.now(timezone.utc)
-            },
-            synchronize_session=False
+            .update(
+                {"is_used": True, "used_at": datetime.now(timezone.utc)},
+                synchronize_session=False,
+            )
         )
         self.session.flush()
         return count
@@ -156,9 +158,11 @@ class PasswordResetTokenRepository(BaseRepository[PasswordResetToken]):
             Number of tokens deleted
         """
         now = datetime.now(timezone.utc)
-        count = self.session.query(PasswordResetToken).filter(
-            PasswordResetToken.expires_at < now
-        ).delete(synchronize_session=False)
+        count = (
+            self.session.query(PasswordResetToken)
+            .filter(PasswordResetToken.expires_at < now)
+            .delete(synchronize_session=False)
+        )
         self.session.flush()
         return count
 
@@ -172,9 +176,12 @@ class PasswordResetTokenRepository(BaseRepository[PasswordResetToken]):
             List of expired PasswordResetToken instances
         """
         now = datetime.now(timezone.utc)
-        return self.session.query(PasswordResetToken).filter(
-            PasswordResetToken.expires_at < now
-        ).limit(limit).all()
+        return (
+            self.session.query(PasswordResetToken)
+            .filter(PasswordResetToken.expires_at < now)
+            .limit(limit)
+            .all()
+        )
 
     def count_recent_tokens(self, user_id: str, minutes: int = 60) -> int:
         """Count tokens created in last N minutes (for rate limiting).
@@ -189,9 +196,13 @@ class PasswordResetTokenRepository(BaseRepository[PasswordResetToken]):
         now = datetime.now(timezone.utc)
         time_threshold = now - timedelta(minutes=minutes)
 
-        return self.session.query(PasswordResetToken).filter(
-            and_(
-                PasswordResetToken.user_id == user_id,
-                PasswordResetToken.created_at > time_threshold
+        return (
+            self.session.query(PasswordResetToken)
+            .filter(
+                and_(
+                    PasswordResetToken.user_id == user_id,
+                    PasswordResetToken.created_at > time_threshold,
+                )
             )
-        ).count()
+            .count()
+        )

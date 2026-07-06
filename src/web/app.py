@@ -47,7 +47,13 @@ from src.web.validators import (
     get_file_extension_from_format,
 )
 from src.web.monitoring import ValidationMonitor
-from src.web.routers import auth_router, admin_router, prompts_router, tag_category_router, pages_router
+from src.web.routers import (
+    auth_router,
+    admin_router,
+    prompts_router,
+    tag_category_router,
+    pages_router,
+)
 from src.utils.diff_utils import compute_character_diff
 from src.web.routers.scheduler import router as scheduler_router
 from src.web.middleware.rate_limit import limiter, rate_limit_exceeded_handler
@@ -189,12 +195,14 @@ jwt_service_for_logging = None
 try:
     from src.services.auth.jwt_service import JWTService
     from src.config.auth_config import auth_settings
+
     jwt_service_for_logging = JWTService(auth_settings)
     print(f"✓ JWT service initialized for logging middleware")
     logger.info("JWT service initialized for logging middleware")
 except Exception as e:
     print(f"✗ JWT service initialization failed: {e}")
     import traceback
+
     traceback.print_exc()
     logger.warning(f"JWT service initialization failed for logging: {e}")
     jwt_service_for_logging = None
@@ -210,6 +218,7 @@ except Exception as e:
 app.include_router(prompts_router, prefix="/api")
 app.include_router(tag_category_router, prefix="/api")
 app.include_router(scheduler_router, prefix="/api")
+
 
 # Authentication and admin routers are only mounted when auth is enabled.
 # When AUTH_ENABLED=false the app runs in anonymous mode and these routes
@@ -243,7 +252,9 @@ else:
 # - /admin/* - Admin pages (users, sessions)
 app.include_router(pages_router)
 
-logger.info("API routers registered: /api/auth, /api/admin, /api/prompts, /api/categories, /api/tags")
+logger.info(
+    "API routers registered: /api/auth, /api/admin, /api/prompts, /api/categories, /api/tags"
+)
 logger.info("HTML page routes registered: /auth/*, /admin/*")
 
 # ============================================================================
@@ -252,17 +263,18 @@ logger.info("HTML page routes registered: /auth/*, /admin/*")
 # Initialize session cleanup scheduler for background maintenance tasks
 session_cleanup_scheduler = None
 
+
 @app.on_event("startup")
 async def startup_scheduler():
     """Initialize and start the session cleanup scheduler on app startup."""
     global session_cleanup_scheduler
-    
+
     try:
         from src.db.session import SessionLocal
         from src.config.auth_config import auth_settings
         from src.scheduler.session_cleanup import SessionCleanupScheduler
         from src.web.routers.scheduler import set_scheduler
-        
+
         # Create scheduler instance
         session_cleanup_scheduler = SessionCleanupScheduler(
             session_factory=SessionLocal,
@@ -270,20 +282,20 @@ async def startup_scheduler():
             cleanup_interval_hours=auth_settings.cleanup_interval_hours,
             batch_size=auth_settings.cleanup_batch_size,
         )
-        
+
         # Register with router for dependency injection
         set_scheduler(session_cleanup_scheduler)
-        
+
         # Start the scheduler
         session_cleanup_scheduler.start()
-        
+
         logger.info(
             "✓ Session cleanup scheduler initialized and started "
             f"(interval: {auth_settings.cleanup_interval_hours}h, "
             f"batch_size: {auth_settings.cleanup_batch_size})"
         )
         print(f"✓ Session cleanup scheduler started")
-        
+
     except ImportError as e:
         logger.warning(f"Scheduler imports not available: {e}")
         print(f"⚠ Scheduler imports not available: {e}")
@@ -296,7 +308,7 @@ async def startup_scheduler():
 async def shutdown_scheduler():
     """Gracefully shutdown the session cleanup scheduler on app shutdown."""
     global session_cleanup_scheduler
-    
+
     if session_cleanup_scheduler is not None:
         try:
             session_cleanup_scheduler.stop()
@@ -310,10 +322,12 @@ async def shutdown_scheduler():
 # Register scheduler router if scheduler is available
 try:
     from src.web.routers import scheduler as scheduler_router
+
     app.include_router(scheduler_router.router, prefix="/api")
     logger.info("Scheduler management endpoints registered: /api/admin/scheduler")
 except ImportError:
     logger.debug("Scheduler router not available")
+
 
 # ============================================================================
 # HEALTH CHECK ENDPOINT
@@ -328,7 +342,7 @@ async def health_check():
     return {
         "status": "healthy",
         "timestamp": datetime.utcnow().isoformat(),
-        "service": "PromptVault API"
+        "service": "PromptVault API",
     }
 
 
@@ -362,6 +376,7 @@ frontend_log_rate: Dict[str, Deque[float]] = defaultdict(deque)
 # Mount static files
 # Mount built assets first (higher priority for production builds)
 import os
+
 if os.path.exists("dist/static"):
     app.mount("/static/dist", StaticFiles(directory="dist/static"), name="dist")
 app.mount("/static", StaticFiles(directory="src/web/static"), name="static")
@@ -371,10 +386,13 @@ templates = Jinja2Templates(directory="src/web/templates")
 templates.env.globals["load_manifest"] = load_manifest
 templates.env.globals["get_asset_path"] = get_asset_path
 templates.env.globals["is_production"] = is_production
-templates.env.globals["is_dev"] = lambda: os.getenv("ENV", "production") == "development"
+templates.env.globals["is_dev"] = (
+    lambda: os.getenv("ENV", "production") == "development"
+)
 templates.env.globals["use_vite_assets"] = (
     lambda: os.getenv("USE_VITE_ASSETS", "false").lower() == "true"
 )
+
 
 def _resolve_data_locations(
     override_file: Optional[str] = None, override_dir: Optional[str] = None
@@ -425,7 +443,7 @@ def configure_services(
     # Initialize data service without data_file_path (database uses DATABASE_URL env var)
     data_service = PromptDataService()
     # Handle database service which may not have a data_file attribute
-    if hasattr(data_service, 'data_file') and data_service.data_file:
+    if hasattr(data_service, "data_file") and data_service.data_file:
         data_dir_base = resolved_dir or os.path.dirname(data_service.data_file)
     else:
         # For database service, use resolved_dir or default to "data"
@@ -589,7 +607,9 @@ async def log_frontend_error(entry: FrontendLogEntry, request: Request):
 @app.middleware("http")
 async def request_logging_middleware(request: Request, call_next):
     """Attach request IDs and emit structured request logs."""
-    request_id = request.headers.get("X-Request-ID") or logging_service.generate_request_id()
+    request_id = (
+        request.headers.get("X-Request-ID") or logging_service.generate_request_id()
+    )
 
     # Try to extract actor from JWT token
     actor = "anonymous"
@@ -613,7 +633,9 @@ async def request_logging_middleware(request: Request, call_next):
             access_token_cookie = request.cookies.get("access_token")
             if access_token_cookie:
                 try:
-                    payload = jwt_service_for_logging.validate_access_token(access_token_cookie)
+                    payload = jwt_service_for_logging.validate_access_token(
+                        access_token_cookie
+                    )
                     actor = payload.get("username", "anonymous")
                     logger.debug(f"Extracted actor from cookie: {actor}")
                 except Exception as e:
@@ -662,7 +684,9 @@ async def request_logging_middleware(request: Request, call_next):
         if os.getenv("ENV", "production") == "development":
             content_type = response.headers.get("content-type", "")
             if content_type.startswith("text/html"):
-                response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+                response.headers["Cache-Control"] = (
+                    "no-store, no-cache, must-revalidate, max-age=0"
+                )
                 response.headers["Pragma"] = "no-cache"
                 response.headers["Expires"] = "0"
         response.headers["X-Request-ID"] = request_id
@@ -850,7 +874,9 @@ async def home(request: Request):
         # navigation (back/forward) always re-evaluates auth state and
         # does not replay a stale redirect to the login page.
         redirect = RedirectResponse(url="/auth/login", status_code=302)
-        redirect.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        redirect.headers["Cache-Control"] = (
+            "no-store, no-cache, must-revalidate, max-age=0"
+        )
         redirect.headers["Pragma"] = "no-cache"
         redirect.headers["Expires"] = "0"
         return redirect
@@ -899,8 +925,7 @@ async def get_tags():
             tag_repo = TagRepository(session)
             results = tag_repo.list_all_with_counts()
             tags_with_counts = [
-                {"name": tag.name, "count": count or 0}
-                for tag, count in results
+                {"name": tag.name, "count": count or 0} for tag, count in results
             ]
             return {"tags": tags_with_counts}
     except Exception:
@@ -963,7 +988,9 @@ async def export_prompts(
                 status_code=422,
                 content={
                     "error": "Validation failed",
-                    "details": [f"Invalid format '{format}'. Must be one of: csv, markdown, json"],
+                    "details": [
+                        f"Invalid format '{format}'. Must be one of: csv, markdown, json"
+                    ],
                 },
             )
 
@@ -1017,14 +1044,18 @@ async def export_prompts(
             )
             record_validation_event(endpoint="/api/export", success=True)
             return FileResponse(
-                temp_file, media_type="application/octet-stream", filename=final_filename
+                temp_file,
+                media_type="application/octet-stream",
+                filename=final_filename,
             )
 
         if temp_file and os.path.exists(temp_file):
             os.remove(temp_file)
         return JSONResponse(
             status_code=400,
-            content={"error": f"Failed to export in {validated_data.format.value} format"},
+            content={
+                "error": f"Failed to export in {validated_data.format.value} format"
+            },
         )
 
     except ValidationError as e:
@@ -1083,7 +1114,9 @@ async def import_prompts(
         if filename.endswith(".csv"):
             imported_prompts = import_export_service.import_from_csv(temp_file_path)
         elif filename.endswith((".md", ".markdown")):
-            imported_prompts = import_export_service.import_from_markdown(temp_file_path)
+            imported_prompts = import_export_service.import_from_markdown(
+                temp_file_path
+            )
         elif filename.endswith(".json"):
             with open(temp_file_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
@@ -1096,7 +1129,9 @@ async def import_prompts(
                     elif isinstance(data, dict):
                         imported_prompts = [data]
                     else:
-                        raise ValueError("Invalid JSON format: expected array or object")
+                        raise ValueError(
+                            "Invalid JSON format: expected array or object"
+                        )
 
         if validated_params.validate_data:
             valid_prompts = []
@@ -1313,9 +1348,7 @@ async def restore_backup(
         )
     if success:
         return {"success": True}
-    return JSONResponse(
-        status_code=500, content={"error": "Failed to restore backup"}
-    )
+    return JSONResponse(status_code=500, content={"error": "Failed to restore backup"})
 
 
 @app.delete("/api/backups/{backup_id}")
@@ -1354,7 +1387,9 @@ async def cleanup_backups(retention_days: int = Form(30)):
     try:
         validated_data = BackupCleanupRequest(retention_days=retention_days)
 
-        removed_count = backup_service.cleanup_old_backups(validated_data.retention_days)
+        removed_count = backup_service.cleanup_old_backups(
+            validated_data.retention_days
+        )
         record_validation_event(
             endpoint="/api/backups/cleanup",
             success=True,
@@ -1379,7 +1414,9 @@ async def compress_backups(days_threshold: int = Form(7)):
     try:
         validated_data = BackupCompressRequest(days_threshold=days_threshold)
 
-        compressed_count = backup_service.compress_old_backups(validated_data.days_threshold)
+        compressed_count = backup_service.compress_old_backups(
+            validated_data.days_threshold
+        )
         record_validation_event(
             endpoint="/api/backups/compress",
             success=True,
@@ -1505,7 +1542,7 @@ async def compare_versions(prompt_id: str, v1: str = None, v2: str = None):
             diff["changes"][field] = {
                 "old": val1,
                 "new": val2,
-                "diff": compute_character_diff(val1, val2)
+                "diff": compute_character_diff(val1, val2),
             }
 
     # Process other fields without diffs (backward compatibility)
@@ -1523,13 +1560,16 @@ async def compare_versions(prompt_id: str, v1: str = None, v2: str = None):
             diff["changes"][field] = {"old": val1, "new": val2}
 
     # Ensure prompt key appears when comparing different versions
-    if version1.get("version_id") != version2.get("version_id") and "prompt" not in diff["changes"]:
+    if (
+        version1.get("version_id") != version2.get("version_id")
+        and "prompt" not in diff["changes"]
+    ):
         val1 = data1.get("prompt")
         val2 = data2.get("prompt")
         diff["changes"]["prompt"] = {
             "old": val1,
             "new": val2,
-            "diff": compute_character_diff(val1, val2)
+            "diff": compute_character_diff(val1, val2),
         }
 
     return JSONResponse(content=diff)

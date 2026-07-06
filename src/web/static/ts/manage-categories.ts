@@ -7,7 +7,7 @@
 import '../css/tailwind-globals.css';
 import { apiFetch, APIRequestError } from '@/utils/api';
 import { initI18n, t, tUnsafe, updateStaticTranslations } from '@/utils/i18n';
-import { initializeColorPicker, ColorPicker } from '@/utils/color-picker';
+import { initializeColorPicker } from '@/utils/color-picker';
 import { setupScrollIndicators } from '@/utils/dom';
 import { showNotification } from '@/utils/notifications';
 import { createTypeahead } from '@/utils/typeahead';
@@ -38,23 +38,33 @@ const elements = {
   searchInput: document.getElementById('category-search') as HTMLInputElement | null,
   createForm: document.getElementById('category-create-form') as HTMLFormElement | null,
   createName: document.getElementById('category-create-name') as HTMLInputElement | null,
-  createDescription: document.getElementById('category-create-description') as HTMLInputElement | null,
+  createDescription: document.getElementById(
+    'category-create-description'
+  ) as HTMLInputElement | null,
   createColor: document.getElementById('category-create-color') as HTMLInputElement | null,
-  createColorPicker: document.getElementById('category-create-color-picker') as HTMLInputElement | null,
+  createColorPicker: document.getElementById(
+    'category-create-color-picker'
+  ) as HTMLInputElement | null,
   mergeTarget: document.getElementById('category-merge-target') as HTMLInputElement | null,
   mergeSources: document.getElementById('category-merge-sources') as HTMLInputElement | null,
   mergeButton: document.getElementById('category-merge-btn') as HTMLButtonElement | null,
   findInput: document.getElementById('category-find') as HTMLInputElement | null,
   replaceInput: document.getElementById('category-replace') as HTMLInputElement | null,
-  findReplaceButton: document.getElementById('category-find-replace-btn') as HTMLButtonElement | null,
+  findReplaceButton: document.getElementById(
+    'category-find-replace-btn'
+  ) as HTMLButtonElement | null,
   bulkDeleteIds: document.getElementById('category-bulk-delete-ids') as HTMLInputElement | null,
   bulkDeleteForce: document.getElementById('category-bulk-delete-force') as HTMLInputElement | null,
   bulkDeleteButton: document.getElementById('category-bulk-delete-btn') as HTMLButtonElement | null,
   exportButton: document.getElementById('category-export-btn') as HTMLButtonElement | null,
   importFile: document.getElementById('category-import-file') as HTMLInputElement | null,
   importButton: document.getElementById('category-import-btn') as HTMLButtonElement | null,
-  selectionMergeButton: document.getElementById('category-selection-merge-btn') as HTMLButtonElement | null,
-  selectionFindReplaceButton: document.getElementById('category-selection-find-replace-btn') as HTMLButtonElement | null,
+  selectionMergeButton: document.getElementById(
+    'category-selection-merge-btn'
+  ) as HTMLButtonElement | null,
+  selectionFindReplaceButton: document.getElementById(
+    'category-selection-find-replace-btn'
+  ) as HTMLButtonElement | null,
   saveAllButton: document.getElementById('category-save-all-btn') as HTMLButtonElement | null,
   undoButton: document.getElementById('category-undo-btn') as HTMLButtonElement | null,
   analyticsTotal: document.getElementById('category-analytics-total') as HTMLElement | null,
@@ -68,8 +78,6 @@ const elements = {
 };
 
 let cachedItems: CategoryItem[] = [];
-// @ts-expect-error - Used for cleanup, but not referenced directly
-let colorPickerInstance: ColorPicker | null = null;
 let tableKeyboardNavInitialized = false;
 let rovingTabindexInitialized = false;
 let currentCategoryFocusIndex = 0;
@@ -97,7 +105,12 @@ function announceKeyboardNavigation(message: string): void {
 function isTextEditingTarget(target: EventTarget | null): boolean {
   const el = target as HTMLElement | null;
   if (!el) return false;
-  return el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable;
+  return (
+    el.tagName === 'INPUT' ||
+    el.tagName === 'TEXTAREA' ||
+    el.tagName === 'SELECT' ||
+    el.isContentEditable
+  );
 }
 
 /**
@@ -118,7 +131,9 @@ function initializeRovingTabindex(): void {
 
   // Update roving tabindex attributes on all checkboxes in rows
   const updateTabindexAttributes = (): void => {
-    const checkboxes = Array.from(container.querySelectorAll<HTMLInputElement>('tbody input[type="checkbox"]'));
+    const checkboxes = Array.from(
+      container.querySelectorAll<HTMLInputElement>('tbody input[type="checkbox"]')
+    );
     checkboxes.forEach((checkbox, index) => {
       if (index === currentCategoryFocusIndex) {
         checkbox.setAttribute('tabindex', '0');
@@ -134,7 +149,9 @@ function initializeRovingTabindex(): void {
   // Handle arrow key navigation
   container.addEventListener('keydown', (event: Event) => {
     const keyEvent = event as KeyboardEvent;
-    const checkboxes = Array.from(container.querySelectorAll<HTMLInputElement>('tbody input[type="checkbox"]'));
+    const checkboxes = Array.from(
+      container.querySelectorAll<HTMLInputElement>('tbody input[type="checkbox"]')
+    );
 
     if (checkboxes.length === 0) {
       return;
@@ -192,7 +209,9 @@ function initializeRovingTabindex(): void {
     const target = event.target as HTMLElement | null;
     const checkbox = target?.closest('input[type="checkbox"]') as HTMLInputElement | null;
     if (checkbox) {
-      const checkboxes = Array.from(container.querySelectorAll<HTMLInputElement>('tbody input[type="checkbox"]'));
+      const checkboxes = Array.from(
+        container.querySelectorAll<HTMLInputElement>('tbody input[type="checkbox"]')
+      );
       const index = checkboxes.indexOf(checkbox);
       if (index !== -1) {
         currentCategoryFocusIndex = index;
@@ -202,18 +221,24 @@ function initializeRovingTabindex(): void {
   });
 
   // Update focus index when user tabs to a checkbox
-  container.addEventListener('focus', (event: Event) => {
-    const target = event.target as HTMLElement | null;
-    const checkbox = target?.closest('input[type="checkbox"]') as HTMLInputElement | null;
-    if (checkbox) {
-      const checkboxes = Array.from(container.querySelectorAll<HTMLInputElement>('tbody input[type="checkbox"]'));
-      const index = checkboxes.indexOf(checkbox);
-      if (index !== -1) {
-        currentCategoryFocusIndex = index;
-        updateTabindexAttributes();
+  container.addEventListener(
+    'focus',
+    (event: Event) => {
+      const target = event.target as HTMLElement | null;
+      const checkbox = target?.closest('input[type="checkbox"]') as HTMLInputElement | null;
+      if (checkbox) {
+        const checkboxes = Array.from(
+          container.querySelectorAll<HTMLInputElement>('tbody input[type="checkbox"]')
+        );
+        const index = checkboxes.indexOf(checkbox);
+        if (index !== -1) {
+          currentCategoryFocusIndex = index;
+          updateTabindexAttributes();
+        }
       }
-    }
-  }, true);
+    },
+    true
+  );
 }
 
 function initializeTableFirstCharNavigation(): void {
@@ -268,7 +293,9 @@ function initializeTableFirstCharNavigation(): void {
         continue;
       }
 
-      const checkbox = row.querySelector<HTMLInputElement>('input[type=\"checkbox\"][data-select-id]');
+      const checkbox = row.querySelector<HTMLInputElement>(
+        'input[type="checkbox"][data-select-id]'
+      );
       if (!checkbox) {
         return;
       }
@@ -304,7 +331,9 @@ function initializeTableFirstCharNavigation(): void {
       if (!label.toLocaleLowerCase().startsWith(query)) {
         continue;
       }
-      const checkbox = row.querySelector<HTMLInputElement>('input[type="checkbox"][data-select-id]');
+      const checkbox = row.querySelector<HTMLInputElement>(
+        'input[type="checkbox"][data-select-id]'
+      );
       if (!checkbox) return;
       checkbox.focus();
       announceKeyboardNavigation(t('accessibility.navigateTo', { item: label }));
@@ -953,7 +982,6 @@ async function importCategories(): Promise<void> {
   }
 }
 
-
 function getSelectedIds(): number[] {
   if (!elements.tableBody) {
     return [];
@@ -1042,9 +1070,7 @@ async function findReplaceSelected(): Promise<void> {
     showNotification(tUnsafe('management.replaceSelectedNotFound'), 'error');
     return;
   }
-  const replaceValue = window.prompt(
-    tUnsafe('management.replacePrompt', { name: selected.name })
-  );
+  const replaceValue = window.prompt(tUnsafe('management.replacePrompt', { name: selected.name }));
   if (!replaceValue) {
     return;
   }
@@ -1228,7 +1254,7 @@ function handleError(error: unknown, fallback: string): void {
 function init(): void {
   // Initialize enhanced color picker
   try {
-    colorPickerInstance = initializeColorPicker({
+    initializeColorPicker({
       containerId: 'category-create-color-picker-container',
       colorInputId: 'category-create-color',
       colorPickerId: 'category-create-color-picker',

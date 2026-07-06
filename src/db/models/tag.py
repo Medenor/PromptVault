@@ -30,12 +30,15 @@ class Tag(Base):
         children: Child tag relationship
         prompts: Relationship to prompts with this tag (many-to-many)
     """
+
     __tablename__ = "tags"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(50), unique=True, nullable=False, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    updated_at = Column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
     description = Column(Text)
     color = Column(String(20))
     parent_tag_id = Column(Integer, ForeignKey("tags.id", ondelete="SET NULL"))
@@ -43,15 +46,9 @@ class Tag(Base):
     # Relationships - many-to-many with prompts via prompt_tags association table
     parent = relationship("Tag", remote_side=[id], back_populates="children")
     children = relationship("Tag", back_populates="parent")
-    prompts = relationship(
-        "Prompt",
-        secondary="prompt_tags",
-        back_populates="tags"
-    )
+    prompts = relationship("Prompt", secondary="prompt_tags", back_populates="tags")
 
-    __table_args__ = (
-        Index("ix_tags_name_lower", func.lower(name), unique=True),
-    )
+    __table_args__ = (Index("ix_tags_name_lower", func.lower(name), unique=True),)
 
     def __repr__(self):
         return f"<Tag(id={self.id}, name='{self.name}')>"

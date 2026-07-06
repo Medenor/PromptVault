@@ -35,21 +35,18 @@ class PasswordResetToken(Base):
         ip_address: IP address that requested the reset
         user: Relationship to User model
     """
+
     __tablename__ = "password_reset_tokens"
 
     # Primary key
-    id = Column(
-        String(36),
-        primary_key=True,
-        default=lambda: str(uuid.uuid4())
-    )
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
 
     # Foreign key to users
     user_id = Column(
         String(36),
-        ForeignKey('users.id', ondelete='CASCADE'),
+        ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
-        index=True
+        index=True,
     )
 
     # Token data
@@ -69,8 +66,8 @@ class PasswordResetToken(Base):
 
     # Composite indexes
     __table_args__ = (
-        Index('ix_password_reset_tokens_user_used', 'user_id', 'is_used'),
-        Index('ix_password_reset_tokens_expires', 'expires_at'),
+        Index("ix_password_reset_tokens_user_used", "user_id", "is_used"),
+        Index("ix_password_reset_tokens_expires", "expires_at"),
     )
 
     def __repr__(self):

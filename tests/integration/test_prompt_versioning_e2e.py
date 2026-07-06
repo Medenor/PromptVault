@@ -54,7 +54,9 @@ def client(api_client_context):
 
 
 class TestSemanticVersionInGetPrompt:
-    def test_get_prompt_includes_semantic_version_when_set(self, client, test_db_engine):
+    def test_get_prompt_includes_semantic_version_when_set(
+        self, client, test_db_engine
+    ):
         pid = _insert_prompt(test_db_engine, semantic_version="3.2.1")
 
         resp = client.get(f"/api/prompts/{pid}")

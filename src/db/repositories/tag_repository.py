@@ -44,15 +44,13 @@ class TagRepository(BaseRepository[Tag]):
         Returns:
             Tag or None if not found
         """
-        return self.session.query(Tag).filter(
-            Tag.name == name
-        ).first()
+        return self.session.query(Tag).filter(Tag.name == name).first()
 
     def get_by_name_case_insensitive(self, name: str) -> Optional[Tag]:
         """Get tag by name (case-insensitive)."""
-        return self.session.query(Tag).filter(
-            func.lower(Tag.name) == name.lower()
-        ).first()
+        return (
+            self.session.query(Tag).filter(func.lower(Tag.name) == name.lower()).first()
+        )
 
     def get_or_create(self, name: str) -> Tag:
         """Get existing tag or create new one.
@@ -88,9 +86,7 @@ class TagRepository(BaseRepository[Tag]):
         Returns:
             List of found tags (may be fewer than requested names)
         """
-        return self.session.query(Tag).filter(
-            Tag.name.in_(names)
-        ).all()
+        return self.session.query(Tag).filter(Tag.name.in_(names)).all()
 
     def get_or_create_many(self, names: List[str]) -> List[Tag]:
         """Get or create multiple tags.
@@ -115,17 +111,15 @@ class TagRepository(BaseRepository[Tag]):
         """
         from src.db.models.associations import prompt_tags
 
-        results = self.session.query(
-            Tag,
-            func.count(prompt_tags.c.prompt_id).label('usage_count')
-        ).outerjoin(
-            prompt_tags, prompt_tags.c.tag_id == Tag.id
-        ).group_by(
-            Tag.id
-        ).order_by(
-            func.count(prompt_tags.c.prompt_id).desc(),
-            Tag.name
-        ).all()
+        results = (
+            self.session.query(
+                Tag, func.count(prompt_tags.c.prompt_id).label("usage_count")
+            )
+            .outerjoin(prompt_tags, prompt_tags.c.tag_id == Tag.id)
+            .group_by(Tag.id)
+            .order_by(func.count(prompt_tags.c.prompt_id).desc(), Tag.name)
+            .all()
+        )
 
         return results
 
@@ -168,9 +162,11 @@ class TagRepository(BaseRepository[Tag]):
         """Return number of prompts using the tag."""
         from src.db.models.associations import prompt_tags
 
-        return self.session.query(prompt_tags).filter(
-            prompt_tags.c.tag_id == tag_id
-        ).count()
+        return (
+            self.session.query(prompt_tags)
+            .filter(prompt_tags.c.tag_id == tag_id)
+            .count()
+        )
 
     def rename(self, tag_id: int, new_name: str) -> Optional[Tag]:
         """Rename a tag.

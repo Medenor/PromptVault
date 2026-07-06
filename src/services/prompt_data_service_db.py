@@ -39,7 +39,6 @@ from src.web.validators import (
     MAX_TAG_LENGTH,
 )
 
-
 logger = logging_service.get_logger(__name__)
 
 
@@ -70,7 +69,7 @@ class PromptDataService:
                 "data_file_path parameter is deprecated and ignored. "
                 "Use DATABASE_URL environment variable instead.",
                 DeprecationWarning,
-                stacklevel=2
+                stacklevel=2,
             )
         self.data_file = data_file_path
 
@@ -86,7 +85,11 @@ class PromptDataService:
         """Ensure default 'system' user exists."""
         try:
             with get_db_session() as session:
-                user = session.query(User).filter_by(email="system@promptvault.local").first()
+                user = (
+                    session.query(User)
+                    .filter_by(email="system@promptvault.local")
+                    .first()
+                )
                 if not user:
                     user = User(
                         id=str(uuid.uuid4()),
@@ -94,7 +97,7 @@ class PromptDataService:
                         display_name="System User",
                         email="system@promptvault.local",
                         password_hash="system",  # Not used for system user
-                        role="system"
+                        role="system",
                     )
                     session.add(user)
                     session.flush()
@@ -103,7 +106,7 @@ class PromptDataService:
             logger.error(
                 "Failed to ensure default user exists",
                 extra={"event": "user.create.failure"},
-                exc_info=e
+                exc_info=e,
             )
             # Create minimal user object for backward compatibility
             return User(id=str(uuid.uuid4()), username="system")
@@ -171,7 +174,9 @@ class PromptDataService:
         # Sanitize category
         if "category" in data and data["category"]:
             data["category"] = sanitize_text_field(
-                str(data["category"]), max_length=MAX_CATEGORY_LENGTH, allow_newlines=False
+                str(data["category"]),
+                max_length=MAX_CATEGORY_LENGTH,
+                allow_newlines=False,
             )
 
         # Sanitize note
@@ -183,7 +188,9 @@ class PromptDataService:
         # Sanitize and deduplicate tags
         tags = data.get("tags", [])
         if isinstance(tags, list):
-            data["tags"] = sanitize_tags(tags, max_count=MAX_TAG_COUNT, max_length_per_tag=MAX_TAG_LENGTH)
+            data["tags"] = sanitize_tags(
+                tags, max_count=MAX_TAG_COUNT, max_length_per_tag=MAX_TAG_LENGTH
+            )
         else:
             data["tags"] = []
 
@@ -202,11 +209,11 @@ class PromptDataService:
             "save_prompts() is deprecated with database backend. "
             "Changes are automatically persisted via transactions.",
             DeprecationWarning,
-            stacklevel=2
+            stacklevel=2,
         )
         logger.debug(
             "save_prompts() called (no-op with database backend)",
-            extra={"event": "prompts.save.noop"}
+            extra={"event": "prompts.save.noop"},
         )
         if not self.data_file:
             return True
@@ -265,10 +272,7 @@ class PromptDataService:
 
                 logger.debug(
                     "Loaded prompts from database",
-                    extra={
-                        "event": "prompts.load.success",
-                        "count": len(result)
-                    }
+                    extra={"event": "prompts.load.success", "count": len(result)},
                 )
 
                 return result
@@ -277,7 +281,7 @@ class PromptDataService:
             logger.error(
                 "Failed to load prompts from database",
                 extra={"event": "prompts.load.failure"},
-                exc_info=exc
+                exc_info=exc,
             )
             return {}
 
@@ -300,13 +304,11 @@ class PromptDataService:
                 "favorite": prompt.favorite,
                 "semantic_version": prompt.semantic_version,
             },
-            "versions": [
-                self._version_to_dict(v) for v in prompt.versions
-            ],
+            "versions": [self._version_to_dict(v) for v in prompt.versions],
             "branches": {
                 branch.branch_name: branch.current_version_id
                 for branch in prompt.branches
-            }
+            },
         }
 
     def _version_to_dict(self, version: PromptVersion) -> Dict[str, Any]:
@@ -321,7 +323,11 @@ class PromptDataService:
         # Convert to UTC and format as ISO 8601 with Z suffix
         if version.created_at.tzinfo is not None:
             # Timezone-aware (PostgreSQL): convert to UTC
-            timestamp = version.created_at.astimezone(timezone.utc).isoformat().replace('+00:00', 'Z')
+            timestamp = (
+                version.created_at.astimezone(timezone.utc)
+                .isoformat()
+                .replace("+00:00", "Z")
+            )
         else:
             # Naive datetime (SQLite): assume UTC
             timestamp = version.created_at.isoformat() + "Z"
@@ -330,7 +336,9 @@ class PromptDataService:
         category_name = ""
         if version.category_id:
             with get_db_session() as session:
-                category = session.query(Category).filter_by(id=version.category_id).first()
+                category = (
+                    session.query(Category).filter_by(id=version.category_id).first()
+                )
                 if category:
                     category_name = category.name
 
@@ -349,7 +357,7 @@ class PromptDataService:
                 "note": version.note or "",
                 "favorite": version.favorite,
             },
-            "parents": [version.parent_version_id] if version.parent_version_id else []
+            "parents": [version.parent_version_id] if version.parent_version_id else [],
         }
 
     @property
@@ -389,7 +397,9 @@ class PromptDataService:
         """Get all tags as a set."""
         return set(self.get_tags())
 
-    def add_new_prompt(self, data: Dict[str, Any], user_id: Optional[str] = None) -> int:
+    def add_new_prompt(
+        self, data: Dict[str, Any], user_id: Optional[str] = None
+    ) -> int:
         """Add a new prompt with initial version.
 
         Args:
@@ -430,7 +440,7 @@ class PromptDataService:
                     category_id=category.id,
                     note=data.get("note", ""),
                     favorite=data.get("favorite", False),
-                    user_id=user.id if user else None
+                    user_id=user.id if user else None,
                 )
 
                 # Add tags
@@ -442,15 +452,16 @@ class PromptDataService:
                     prompt=prompt,
                     author=user.username if user else "system",
                     message=commit_message,
-                    parent_version_id=None
+                    parent_version_id=None,
                 )
 
                 # Create main branch
                 from src.db.models import PromptBranch
+
                 main_branch = PromptBranch(
                     prompt_id=prompt.id,
                     branch_name="main",
-                    current_version_id=version.version_id
+                    current_version_id=version.version_id,
                 )
                 session.add(main_branch)
                 session.flush()
@@ -473,16 +484,18 @@ class PromptDataService:
             logger.error(
                 "Failed to create prompt",
                 extra={"event": "prompt.create.failure"},
-                exc_info=exc
+                exc_info=exc,
             )
             raise DataPersistenceError(
-                "Could not create prompt in database.",
-                context={"data": data}
+                "Could not create prompt in database.", context={"data": data}
             ) from exc
 
     def update_prompt(
-        self, prompt_id: int, data: Dict[str, Any], commit_message: str = "Update",
-        author: Optional[str] = None
+        self,
+        prompt_id: int,
+        data: Dict[str, Any],
+        commit_message: str = "Update",
+        author: Optional[str] = None,
     ) -> bool:
         """Update an existing prompt with a new version.
 
@@ -519,10 +532,11 @@ class PromptDataService:
 
                 # Get current version ID (parent for new version)
                 main_branch = next(
-                    (b for b in prompt.branches if b.branch_name == "main"),
-                    None
+                    (b for b in prompt.branches if b.branch_name == "main"), None
                 )
-                parent_version_id = main_branch.current_version_id if main_branch else None
+                parent_version_id = (
+                    main_branch.current_version_id if main_branch else None
+                )
 
                 # Update prompt
                 prompt.title = data["title"]
@@ -542,17 +556,18 @@ class PromptDataService:
                     prompt=prompt,
                     author=author_name,
                     message=commit_message,
-                    parent_version_id=parent_version_id
+                    parent_version_id=parent_version_id,
                 )
                 # Update main branch
                 if main_branch:
                     main_branch.current_version_id = version.version_id
                 else:
                     from src.db.models import PromptBranch
+
                     main_branch = PromptBranch(
                         prompt_id=prompt.id,
                         branch_name="main",
-                        current_version_id=version.version_id
+                        current_version_id=version.version_id,
                     )
                     session.add(main_branch)
                 session.flush()
@@ -574,7 +589,7 @@ class PromptDataService:
             logger.error(
                 "Failed to update prompt",
                 extra={"event": "prompt.update.failure", "resource_id": str(prompt_id)},
-                exc_info=exc
+                exc_info=exc,
             )
             return False
 
@@ -607,7 +622,7 @@ class PromptDataService:
             logger.error(
                 "Failed to delete prompt",
                 extra={"event": "prompt.delete.failure", "resource_id": str(prompt_id)},
-                exc_info=exc
+                exc_info=exc,
             )
             return False
 
@@ -659,7 +674,7 @@ class PromptDataService:
             logger.error(
                 "Failed to delete prompts in bulk",
                 extra={"event": "prompt.delete_bulk.failure"},
-                exc_info=exc
+                exc_info=exc,
             )
 
         return {
@@ -700,11 +715,10 @@ class PromptDataService:
             logger.error(
                 "Failed to clear all prompts",
                 extra={"event": "prompts.clear.failure"},
-                exc_info=exc
+                exc_info=exc,
             )
             raise DataPersistenceError(
-                "Unable to clear prompt storage.",
-                context={}
+                "Unable to clear prompt storage.", context={}
             ) from exc
 
     def get_prompt_data(self, prompt_id: int) -> Dict[str, Any]:
@@ -725,7 +739,9 @@ class PromptDataService:
                     return {
                         "title": prompt.title,
                         "prompt": prompt.prompt,
-                        "category": prompt.category.name if prompt.category else "No category",
+                        "category": (
+                            prompt.category.name if prompt.category else "No category"
+                        ),
                         "tags": [tag.name for tag in prompt.tags],
                         "note": prompt.note or "",
                         "favorite": prompt.favorite,
@@ -737,7 +753,7 @@ class PromptDataService:
             logger.error(
                 "Failed to get prompt data",
                 extra={"event": "prompt.get.failure", "resource_id": str(prompt_id)},
-                exc_info=exc
+                exc_info=exc,
             )
             return {}
 
@@ -760,8 +776,11 @@ class PromptDataService:
         except Exception as exc:
             logger.error(
                 "Failed to get prompt versions",
-                extra={"event": "prompt.versions.get.failure", "resource_id": str(prompt_id)},
-                exc_info=exc
+                extra={
+                    "event": "prompt.versions.get.failure",
+                    "resource_id": str(prompt_id),
+                },
+                exc_info=exc,
             )
             return []
 
@@ -809,7 +828,7 @@ class PromptDataService:
             logger.error(
                 "Failed to get categories",
                 extra={"event": "categories.get.failure"},
-                exc_info=exc
+                exc_info=exc,
             )
             return []
 
@@ -827,9 +846,7 @@ class PromptDataService:
 
         except Exception as exc:
             logger.error(
-                "Failed to get tags",
-                extra={"event": "tags.get.failure"},
-                exc_info=exc
+                "Failed to get tags", extra={"event": "tags.get.failure"}, exc_info=exc
             )
             return []
 
@@ -840,8 +857,7 @@ class PromptDataService:
                 tag_repo = TagRepository(session)
                 results = tag_repo.list_all_with_counts()
                 return [
-                    {"name": tag.name, "count": count or 0}
-                    for tag, count in results
+                    {"name": tag.name, "count": count or 0} for tag, count in results
                 ]
         except Exception as exc:
             logger.error(
@@ -863,16 +879,13 @@ class PromptDataService:
                 tag_repo = TagRepository(session)
                 results = tag_repo.list_all_with_counts()
 
-                return [
-                    {"name": tag.name, "count": count}
-                    for tag, count in results
-                ]
+                return [{"name": tag.name, "count": count} for tag, count in results]
 
         except Exception as exc:
             logger.error(
                 "Failed to get tags with counts",
                 extra={"event": "tags.get_counts.failure"},
-                exc_info=exc
+                exc_info=exc,
             )
             return []
 

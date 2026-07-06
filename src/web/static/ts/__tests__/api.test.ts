@@ -20,8 +20,8 @@ describe('api utils', () => {
   beforeEach(() => {
     vi.stubGlobal('fetch', vi.fn());
     // Mock window.location
-    delete (window as any).location;
-    window.location = { href: '', pathname: '/app' } as any;
+    delete (window as unknown as Record<string, unknown>).location;
+    (window as unknown as Record<string, unknown>).location = { href: '', pathname: '/app' };
 
     const createStorage = () => {
       const store = new Map<string, string>();

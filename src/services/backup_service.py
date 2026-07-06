@@ -14,7 +14,6 @@ import getpass
 from src.services.exceptions import BackupError
 from src.services.logging_service import logging_service
 
-
 logger = logging_service.get_logger(__name__)
 
 
@@ -621,10 +620,14 @@ class BackupService:
         except (OSError, json.JSONDecodeError) as exc:
             logger.warning(
                 "Backup validation error",
-                extra={"event": "backup.validation.failure", "resource_id": backup_path},
+                extra={
+                    "event": "backup.validation.failure",
+                    "resource_id": backup_path,
+                },
                 exc_info=exc,
             )
             return False
+
     @staticmethod
     def _parse_backup_timestamp(raw: str) -> datetime:
         """Return timezone-aware datetime for backup metadata."""

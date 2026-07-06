@@ -64,7 +64,11 @@ class TestTokenExtraction:
     def test_get_current_user_token_missing_header(self):
         """Test error when Authorization header is missing."""
         with pytest.raises(HTTPException) as exc_info:
-            get_current_user_token(authorization=None, access_token_cookie=None, jwt_service=self.jwt_service)
+            get_current_user_token(
+                authorization=None,
+                access_token_cookie=None,
+                jwt_service=self.jwt_service,
+            )
 
         assert exc_info.value.status_code == 401
         assert "Missing authentication token" in exc_info.value.detail
@@ -73,7 +77,9 @@ class TestTokenExtraction:
     def test_get_current_user_token_invalid_scheme(self):
         """Test error when Bearer scheme is not used."""
         with pytest.raises(HTTPException) as exc_info:
-            get_current_user_token(authorization="Basic dXNlcjpwYXNz", jwt_service=self.jwt_service)
+            get_current_user_token(
+                authorization="Basic dXNlcjpwYXNz", jwt_service=self.jwt_service
+            )
 
         assert exc_info.value.status_code == 401
         assert "Invalid authentication scheme" in exc_info.value.detail
@@ -97,7 +103,9 @@ class TestTokenExtraction:
 
         self.jwt_service.validate_access_token.return_value = claims
 
-        result = get_current_user_token(authorization=f"Bearer {token}", jwt_service=self.jwt_service)
+        result = get_current_user_token(
+            authorization=f"Bearer {token}", jwt_service=self.jwt_service
+        )
 
         assert result == claims
         self.jwt_service.validate_access_token.assert_called_once_with(token)
@@ -110,7 +118,9 @@ class TestTokenExtraction:
         self.jwt_service.validate_access_token.side_effect = ExpiredSignatureError()
 
         with pytest.raises(HTTPException) as exc_info:
-            get_current_user_token(authorization=f"Bearer {token}", jwt_service=self.jwt_service)
+            get_current_user_token(
+                authorization=f"Bearer {token}", jwt_service=self.jwt_service
+            )
 
         assert exc_info.value.status_code == 401
         assert "expired" in exc_info.value.detail.lower()
@@ -123,7 +133,9 @@ class TestTokenExtraction:
         self.jwt_service.validate_access_token.side_effect = InvalidSignatureError()
 
         with pytest.raises(HTTPException) as exc_info:
-            get_current_user_token(authorization=f"Bearer {token}", jwt_service=self.jwt_service)
+            get_current_user_token(
+                authorization=f"Bearer {token}", jwt_service=self.jwt_service
+            )
 
         assert exc_info.value.status_code == 401
         assert "signature" in exc_info.value.detail.lower()
@@ -362,7 +374,9 @@ class TestRequestMetadata:
     def test_get_user_agent_unknown(self):
         """Test User-Agent fallback when header is missing."""
         request = Mock(spec=Request)
-        request.headers.get.side_effect = lambda key, default=None: default if key == "User-Agent" else None
+        request.headers.get.side_effect = lambda key, default=None: (
+            default if key == "User-Agent" else None
+        )
 
         user_agent = get_user_agent(request)
         assert user_agent == "unknown"

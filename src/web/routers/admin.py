@@ -50,7 +50,11 @@ from src.db.models.user_session import UserSession
 from src.db.repositories.user_repository import UserRepository
 from src.db.repositories.session_repository import SessionRepository
 from src.web.dependencies.auth import require_role
-from src.web.models.admin_requests import CreateUserRequest, UpdateUserRequest, UserListParams
+from src.web.models.admin_requests import (
+    CreateUserRequest,
+    UpdateUserRequest,
+    UserListParams,
+)
 from src.web.models.admin_responses import (
     UserDetailResponse,
     UserListResponse,
@@ -62,7 +66,6 @@ from src.web.models.auth_responses import (
     SessionListResponse,
     RevokeSessionResponse,
 )
-
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -163,7 +166,9 @@ def _log_admin_action(
     },
 )
 async def list_users(
-    params: Annotated[UserListParams, Depends()],  # Fixed: Changed Query() to Depends() for Pydantic model
+    params: Annotated[
+        UserListParams, Depends()
+    ],  # Fixed: Changed Query() to Depends() for Pydantic model
     admin: User = Depends(require_role(["admin"])),
     db: Session = Depends(get_db),
 ) -> UserListResponse:
@@ -520,7 +525,9 @@ async def update_user(
     if update_data.email_verified is not None:
         old_verified = user.email_verified
         user.email_verified = update_data.email_verified
-        changes.append(f"email_verified: {old_verified} -> {update_data.email_verified}")
+        changes.append(
+            f"email_verified: {old_verified} -> {update_data.email_verified}"
+        )
 
     # Update timestamp
     user.updated_at = datetime.now(timezone.utc)
@@ -728,7 +735,7 @@ async def get_user_sessions(
     sessions = session_repo.get_user_sessions(user_id, active_only=False)
 
     # Get admin's current session family_id from the token (if available)
-    admin_family_id = getattr(admin, 'family_id', None)
+    admin_family_id = getattr(admin, "family_id", None)
 
     # Convert ORM objects to response models
     session_responses = []

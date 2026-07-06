@@ -192,7 +192,9 @@ def normalize_whitespace(text: str) -> str:
     return "\n".join(normalized_lines)
 
 
-def sanitize_text_field(text: str, max_length: Optional[int] = None, allow_newlines: bool = True) -> str:
+def sanitize_text_field(
+    text: str, max_length: Optional[int] = None, allow_newlines: bool = True
+) -> str:
     """Comprehensive sanitization for text fields.
 
     Applies multiple sanitization steps:
@@ -257,17 +259,23 @@ def deduplicate_tags(tags: list) -> list:
 
     for tag in tags:
         # Normalize: strip whitespace and convert to lowercase for comparison
-        normalized = tag.strip().lower() if isinstance(tag, str) else str(tag).strip().lower()
+        normalized = (
+            tag.strip().lower() if isinstance(tag, str) else str(tag).strip().lower()
+        )
 
         if normalized and normalized not in seen:
             seen.add(normalized)
             # Keep original case for the first occurrence
-            unique_tags.append(tag.strip() if isinstance(tag, str) else str(tag).strip())
+            unique_tags.append(
+                tag.strip() if isinstance(tag, str) else str(tag).strip()
+            )
 
     return unique_tags
 
 
-def sanitize_tags(tags: list, max_count: int = 50, max_length_per_tag: int = 50) -> list:
+def sanitize_tags(
+    tags: list, max_count: int = 50, max_length_per_tag: int = 50
+) -> list:
     """Sanitize a list of tags.
 
     Applies:
@@ -302,7 +310,9 @@ def sanitize_tags(tags: list, max_count: int = 50, max_length_per_tag: int = 50)
     for tag in unique_tags[:max_count]:  # Limit to max_count
         if isinstance(tag, str):
             # Remove control characters and normalize
-            clean_tag = sanitize_text_field(tag, max_length=max_length_per_tag, allow_newlines=False)
+            clean_tag = sanitize_text_field(
+                tag, max_length=max_length_per_tag, allow_newlines=False
+            )
             if clean_tag:  # Only add non-empty tags
                 sanitized.append(clean_tag)
 

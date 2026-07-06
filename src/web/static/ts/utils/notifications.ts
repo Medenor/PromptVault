@@ -37,10 +37,7 @@ function createNotificationIcon(type: NotificationType): SVGSVGElement {
       break;
     case 'warning':
       // Exclamation triangle
-      path.setAttribute(
-        'd',
-        'M1 21h22L12 2 1 21Zm12-3h-2v-2h2v2Zm0-4h-2v-4h2v4Z'
-      );
+      path.setAttribute('d', 'M1 21h22L12 2 1 21Zm12-3h-2v-2h2v2Zm0-4h-2v-4h2v4Z');
       break;
     case 'error':
       // X in a circle

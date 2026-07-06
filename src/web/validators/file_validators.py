@@ -26,7 +26,9 @@ from .constraints import (
 )
 
 
-def validate_file_extension(filename: str, allowed_extensions: set = None) -> Tuple[bool, str]:
+def validate_file_extension(
+    filename: str, allowed_extensions: set = None
+) -> Tuple[bool, str]:
     """Validate that file has an allowed extension.
 
     Args:
@@ -57,7 +59,9 @@ def validate_file_extension(filename: str, allowed_extensions: set = None) -> Tu
         return False, ext
 
 
-def validate_file_size(file_size: int, max_size: int = MAX_FILE_SIZE_BYTES) -> Tuple[bool, str]:
+def validate_file_size(
+    file_size: int, max_size: int = MAX_FILE_SIZE_BYTES
+) -> Tuple[bool, str]:
     """Validate that file size is within allowed limits.
 
     Args:
@@ -79,7 +83,10 @@ def validate_file_size(file_size: int, max_size: int = MAX_FILE_SIZE_BYTES) -> T
     if file_size > max_size:
         max_size_mb = max_size / (1024 * 1024)
         actual_size_mb = file_size / (1024 * 1024)
-        return False, f"File size ({actual_size_mb:.2f} MB) exceeds maximum allowed size of {max_size_mb:.0f} MB"
+        return (
+            False,
+            f"File size ({actual_size_mb:.2f} MB) exceeds maximum allowed size of {max_size_mb:.0f} MB",
+        )
 
     return True, ""
 
@@ -158,13 +165,19 @@ async def validate_upload_file(
     ext_valid, ext = validate_file_extension(file.filename, allowed_extensions)
     if not ext_valid:
         allowed_str = ", ".join(sorted(allowed_extensions))
-        return False, f"Invalid file extension '{ext}'. Allowed extensions: {allowed_str}"
+        return (
+            False,
+            f"Invalid file extension '{ext}'. Allowed extensions: {allowed_str}",
+        )
 
     # Validate MIME type
     mime_valid, mime_type = validate_mime_type(file.content_type, file.filename)
     if not mime_valid:
         allowed_types_str = ", ".join(sorted(ALLOWED_MIME_TYPES))
-        return False, f"Invalid file type '{mime_type}'. Allowed types: {allowed_types_str}"
+        return (
+            False,
+            f"Invalid file type '{mime_type}'. Allowed types: {allowed_types_str}",
+        )
 
     # Validate file size by reading the file
     # Note: This reads the entire file into memory, which is okay for our size limits

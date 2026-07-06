@@ -28,11 +28,14 @@ class PromptBranch(Base):
         prompt: Relationship to parent Prompt model
         current_version: Relationship to the version this branch points to
     """
+
     __tablename__ = "prompt_branches"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    prompt_id = Column(Integer, ForeignKey("prompts.id", ondelete="CASCADE"), nullable=False)
-    branch_name = Column(String(50), nullable=False, default='main')
+    prompt_id = Column(
+        Integer, ForeignKey("prompts.id", ondelete="CASCADE"), nullable=False
+    )
+    branch_name = Column(String(50), nullable=False, default="main")
     current_version_id = Column(String(36), ForeignKey("prompt_versions.version_id"))
 
     # Relationships
@@ -41,7 +44,7 @@ class PromptBranch(Base):
 
     # Unique constraint: one branch name per prompt
     __table_args__ = (
-        UniqueConstraint('prompt_id', 'branch_name', name='uq_prompt_branch_name'),
+        UniqueConstraint("prompt_id", "branch_name", name="uq_prompt_branch_name"),
     )
 
     def __repr__(self):

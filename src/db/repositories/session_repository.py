@@ -36,7 +36,7 @@ class SessionRepository(BaseRepository[UserSession]):
         refresh_token_jti: str,
         expires_at: datetime,
         device_info: Optional[str] = None,
-        ip_address: Optional[str] = None
+        ip_address: Optional[str] = None,
     ) -> UserSession:
         """Create a new user session.
 
@@ -57,7 +57,7 @@ class SessionRepository(BaseRepository[UserSession]):
             refresh_token_jti=refresh_token_jti,
             expires_at=expires_at,
             device_info=device_info,
-            ip_address=ip_address
+            ip_address=ip_address,
         )
 
     def get_by_family_id(self, family_id: str) -> Optional[UserSession]:
@@ -69,9 +69,11 @@ class SessionRepository(BaseRepository[UserSession]):
         Returns:
             UserSession instance or None if not found
         """
-        return self.session.query(UserSession).filter(
-            UserSession.family_id == family_id
-        ).first()
+        return (
+            self.session.query(UserSession)
+            .filter(UserSession.family_id == family_id)
+            .first()
+        )
 
     def get_by_jti(self, refresh_token_jti: str) -> Optional[UserSession]:
         """Find session by current JTI.
@@ -82,9 +84,11 @@ class SessionRepository(BaseRepository[UserSession]):
         Returns:
             UserSession instance or None if not found
         """
-        return self.session.query(UserSession).filter(
-            UserSession.refresh_token_jti == refresh_token_jti
-        ).first()
+        return (
+            self.session.query(UserSession)
+            .filter(UserSession.refresh_token_jti == refresh_token_jti)
+            .first()
+        )
 
     def get_by_id(self, session_id: str) -> Optional[UserSession]:
         """Find session by session ID.
@@ -95,14 +99,12 @@ class SessionRepository(BaseRepository[UserSession]):
         Returns:
             UserSession instance or None if not found
         """
-        return self.session.query(UserSession).filter(
-            UserSession.id == session_id
-        ).first()
+        return (
+            self.session.query(UserSession).filter(UserSession.id == session_id).first()
+        )
 
     def get_user_sessions(
-        self,
-        user_id: str,
-        active_only: bool = True
+        self, user_id: str, active_only: bool = True
     ) -> List[UserSession]:
         """Get all sessions for a user.
 
@@ -113,20 +115,14 @@ class SessionRepository(BaseRepository[UserSession]):
         Returns:
             List of UserSession instances
         """
-        query = self.session.query(UserSession).filter(
-            UserSession.user_id == user_id
-        )
+        query = self.session.query(UserSession).filter(UserSession.user_id == user_id)
 
         if active_only:
             query = query.filter(UserSession.is_revoked == False)
 
         return query.all()
 
-    def count_user_sessions(
-        self,
-        user_id: str,
-        active_only: bool = True
-    ) -> int:
+    def count_user_sessions(self, user_id: str, active_only: bool = True) -> int:
         """Count user's sessions.
 
         Args:
@@ -136,9 +132,7 @@ class SessionRepository(BaseRepository[UserSession]):
         Returns:
             Number of sessions
         """
-        query = self.session.query(UserSession).filter(
-            UserSession.user_id == user_id
-        )
+        query = self.session.query(UserSession).filter(UserSession.user_id == user_id)
 
         if active_only:
             query = query.filter(UserSession.is_revoked == False)
@@ -146,9 +140,7 @@ class SessionRepository(BaseRepository[UserSession]):
         return query.count()
 
     def update_session_token(
-        self,
-        family_id: str,
-        new_jti: str
+        self, family_id: str, new_jti: str
     ) -> Optional[UserSession]:
         """Rotate token (update JTI and last_used_at).
 
@@ -207,14 +199,12 @@ class SessionRepository(BaseRepository[UserSession]):
         Returns:
             Number of sessions revoked
         """
-        count = self.session.query(UserSession).filter(
-            and_(
-                UserSession.user_id == user_id,
-                UserSession.is_revoked == False
+        count = (
+            self.session.query(UserSession)
+            .filter(
+                and_(UserSession.user_id == user_id, UserSession.is_revoked == False)
             )
-        ).update(
-            {UserSession.is_revoked: True},
-            synchronize_session=False
+            .update({UserSession.is_revoked: True}, synchronize_session=False)
         )
         self.session.flush()
         return count
@@ -225,11 +215,10 @@ class SessionRepository(BaseRepository[UserSession]):
         Returns:
             Number of sessions revoked
         """
-        count = self.session.query(UserSession).filter(
-            UserSession.is_revoked == False
-        ).update(
-            {UserSession.is_revoked: True},
-            synchronize_session=False
+        count = (
+            self.session.query(UserSession)
+            .filter(UserSession.is_revoked == False)
+            .update({UserSession.is_revoked: True}, synchronize_session=False)
         )
         self.session.flush()
         return count
@@ -246,14 +235,14 @@ class SessionRepository(BaseRepository[UserSession]):
         Returns:
             Number of sessions revoked
         """
-        count = self.session.query(UserSession).filter(
-            and_(
-                UserSession.family_id == family_id,
-                UserSession.is_revoked == False
+        count = (
+            self.session.query(UserSession)
+            .filter(
+                and_(
+                    UserSession.family_id == family_id, UserSession.is_revoked == False
+                )
             )
-        ).update(
-            {UserSession.is_revoked: True},
-            synchronize_session=False
+            .update({UserSession.is_revoked: True}, synchronize_session=False)
         )
         self.session.flush()
         return count
@@ -264,9 +253,11 @@ class SessionRepository(BaseRepository[UserSession]):
         Returns:
             Number of sessions deleted
         """
-        count = self.session.query(UserSession).filter(
-            UserSession.expires_at < func.now()
-        ).delete(synchronize_session=False)
+        count = (
+            self.session.query(UserSession)
+            .filter(UserSession.expires_at < func.now())
+            .delete(synchronize_session=False)
+        )
         self.session.flush()
         return count
 
@@ -279,9 +270,12 @@ class SessionRepository(BaseRepository[UserSession]):
         Returns:
             List of expired UserSession instances
         """
-        return self.session.query(UserSession).filter(
-            UserSession.expires_at < func.now()
-        ).limit(limit).all()
+        return (
+            self.session.query(UserSession)
+            .filter(UserSession.expires_at < func.now())
+            .limit(limit)
+            .all()
+        )
 
     def delete_expired_sessions(self) -> int:
         """Delete all expired sessions.
@@ -289,9 +283,11 @@ class SessionRepository(BaseRepository[UserSession]):
         Returns:
             Number of sessions deleted
         """
-        count = self.session.query(UserSession).filter(
-            UserSession.expires_at < func.now()
-        ).delete(synchronize_session=False)
+        count = (
+            self.session.query(UserSession)
+            .filter(UserSession.expires_at < func.now())
+            .delete(synchronize_session=False)
+        )
         self.session.flush()
         return count
 
@@ -304,9 +300,11 @@ class SessionRepository(BaseRepository[UserSession]):
         Returns:
             Oldest active UserSession instance or None
         """
-        return self.session.query(UserSession).filter(
-            and_(
-                UserSession.user_id == user_id,
-                UserSession.is_revoked == False
+        return (
+            self.session.query(UserSession)
+            .filter(
+                and_(UserSession.user_id == user_id, UserSession.is_revoked == False)
             )
-        ).order_by(UserSession.created_at.asc()).first()
+            .order_by(UserSession.created_at.asc())
+            .first()
+        )

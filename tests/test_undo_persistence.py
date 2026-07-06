@@ -23,7 +23,6 @@ from sqlalchemy.orm import Session
 from src.db.models.undo_operation import UndoOperation
 from src.services.undo_service import UndoService
 
-
 # ============================================================================
 # FIXTURES
 # ============================================================================
@@ -146,7 +145,9 @@ def setup_test_users(test_db_session: Session):
     return users
 
 
-def _create_prompt(api_client, auth_headers, title: str, category: str = "", tags: str = "") -> int:
+def _create_prompt(
+    api_client, auth_headers, title: str, category: str = "", tags: str = ""
+) -> int:
     """Helper to create a prompt via API."""
     response = api_client.post(
         "/api/prompts",
@@ -171,7 +172,9 @@ def _create_prompt(api_client, auth_headers, title: str, category: str = "", tag
 class TestUndoPersistence:
     """Test that undo operations persist across sessions."""
 
-    def test_category_delete_persists_across_restart(self, api_client, api_auth_headers):
+    def test_category_delete_persists_across_restart(
+        self, api_client, api_auth_headers
+    ):
         """Test category delete -> restart -> undo works."""
         # Create category
         create_resp = api_client.post(
@@ -194,7 +197,9 @@ class TestUndoPersistence:
         assert undo_resp.status_code == 200
 
         # Category should be restored
-        listing = api_client.get("/api/categories/manage", headers=api_auth_headers).json()
+        listing = api_client.get(
+            "/api/categories/manage", headers=api_auth_headers
+        ).json()
         names = [item["name"] for item in listing["items"]]
         assert "PersistCat" in names
 
@@ -246,7 +251,11 @@ class TestUndoPersistence:
         merge_resp = api_client.post(
             "/api/tags/merge",
             headers=api_auth_headers,
-            json={"target_id": tag_b["id"], "source_ids": [tag_a["id"]], "confirm": True},
+            json={
+                "target_id": tag_b["id"],
+                "source_ids": [tag_a["id"]],
+                "confirm": True,
+            },
         )
         assert merge_resp.status_code == 200
 
@@ -291,7 +300,9 @@ class TestUserScopedUndo:
         assert history[0]["operation"] == "update"
 
         # Different user should have no undo history
-        other_user_history = undo_service.get_history("different-user-id", entity_type="category")
+        other_user_history = undo_service.get_history(
+            "different-user-id", entity_type="category"
+        )
         assert len(other_user_history) == 0
 
     def test_multiple_users_isolated_undo_stacks(
@@ -316,22 +327,24 @@ class TestUserScopedUndo:
             user_id="other-user-id",
             entity_type="category",
             operation="delete",
-            payload={"category": {"name": "OtherCat"}, "prompt_ids": []}
+            payload={"category": {"name": "OtherCat"}, "prompt_ids": []},
         )
         test_db_session.commit()
 
         # First user's history should not include other user's operations
-        user_history = undo_service.get_history("api-test-user-id", entity_type="category")
+        user_history = undo_service.get_history(
+            "api-test-user-id", entity_type="category"
+        )
         assert all(op["operation"] == "update" for op in user_history)
 
         # Other user's history should only have their operation
-        other_history = undo_service.get_history("other-user-id", entity_type="category")
+        other_history = undo_service.get_history(
+            "other-user-id", entity_type="category"
+        )
         assert len(other_history) == 1
         assert other_history[0]["operation"] == "delete"
 
-    def test_user_cannot_pop_other_users_undo_operations(
-        self, test_db_session
-    ):
+    def test_user_cannot_pop_other_users_undo_operations(self, test_db_session):
         """Test that popping undo operations respects user isolation."""
         undo_service = UndoService(test_db_session)
 
@@ -340,13 +353,13 @@ class TestUserScopedUndo:
             user_id="user-a",
             entity_type="category",
             operation="delete",
-            payload={"category": {"name": "UserACat"}}
+            payload={"category": {"name": "UserACat"}},
         )
         undo_service.push(
             user_id="user-b",
             entity_type="category",
             operation="delete",
-            payload={"category": {"name": "UserBCat"}}
+            payload={"category": {"name": "UserBCat"}},
         )
         test_db_session.commit()
 
@@ -396,13 +409,21 @@ class TestUserScopedUndo:
         assert undo_tag.status_code == 200
 
         # Verify tag was reverted
-        tag_listing = api_client.get("/api/tags/manage", headers=api_auth_headers).json()
-        tag_item = next(item for item in tag_listing["items"] if item["id"] == tag["id"])
+        tag_listing = api_client.get(
+            "/api/tags/manage", headers=api_auth_headers
+        ).json()
+        tag_item = next(
+            item for item in tag_listing["items"] if item["id"] == tag["id"]
+        )
         assert tag_item["description"] == "Before"
 
         # Verify category was not affected
-        cat_listing = api_client.get("/api/categories/manage", headers=api_auth_headers).json()
-        cat_item = next(item for item in cat_listing["items"] if item["id"] == cat["id"])
+        cat_listing = api_client.get(
+            "/api/categories/manage", headers=api_auth_headers
+        ).json()
+        cat_item = next(
+            item for item in cat_listing["items"] if item["id"] == cat["id"]
+        )
         assert cat_item["description"] == "After Cat"
 
 
@@ -414,7 +435,9 @@ class TestUserScopedUndo:
 class TestRelationshipAwareUndo:
     """Test undo operations that involve entity relationships."""
 
-    def test_undo_category_deletion_restores_prompts(self, api_client, api_auth_headers):
+    def test_undo_category_deletion_restores_prompts(
+        self, api_client, api_auth_headers
+    ):
         """Test undo of category deletion that affects tagged prompts."""
         # Create category
         cat = api_client.post(
@@ -424,7 +447,9 @@ class TestRelationshipAwareUndo:
         ).json()
 
         # Create prompts with this category
-        prompt_id = _create_prompt(api_client, api_auth_headers, title="Test", category="WithPrompts")
+        prompt_id = _create_prompt(
+            api_client, api_auth_headers, title="Test", category="WithPrompts"
+        )
 
         # Delete category with force
         delete_resp = api_client.delete(
@@ -434,7 +459,9 @@ class TestRelationshipAwareUndo:
         assert delete_resp.status_code == 200
 
         # Verify prompt's category was cleared
-        prompt = api_client.get(f"/api/prompts/{prompt_id}", headers=api_auth_headers).json()
+        prompt = api_client.get(
+            f"/api/prompts/{prompt_id}", headers=api_auth_headers
+        ).json()
         assert prompt["category"] == "No category"
 
         # Undo deletion
@@ -442,12 +469,16 @@ class TestRelationshipAwareUndo:
         assert undo_resp.status_code == 200
 
         # Verify category is restored
-        listing = api_client.get("/api/categories/manage", headers=api_auth_headers).json()
+        listing = api_client.get(
+            "/api/categories/manage", headers=api_auth_headers
+        ).json()
         names = [item["name"] for item in listing["items"]]
         assert "WithPrompts" in names
 
         # Verify prompt's category is restored
-        prompt_after = api_client.get(f"/api/prompts/{prompt_id}", headers=api_auth_headers).json()
+        prompt_after = api_client.get(
+            f"/api/prompts/{prompt_id}", headers=api_auth_headers
+        ).json()
         assert prompt_after["category"] == "WithPrompts"
 
     def test_undo_tag_deletion_with_children(self, api_client, api_auth_headers):
@@ -502,14 +533,22 @@ class TestRelationshipAwareUndo:
         ).json()
 
         # Create prompts with source tags
-        prompt_a = _create_prompt(api_client, api_auth_headers, title="With A", tags="MergeSourceA")
-        prompt_b = _create_prompt(api_client, api_auth_headers, title="With B", tags="MergeSourceB")
+        prompt_a = _create_prompt(
+            api_client, api_auth_headers, title="With A", tags="MergeSourceA"
+        )
+        prompt_b = _create_prompt(
+            api_client, api_auth_headers, title="With B", tags="MergeSourceB"
+        )
 
         # Merge both sources into target
         merge_resp = api_client.post(
             "/api/tags/merge",
             headers=api_auth_headers,
-            json={"target_id": tag_target["id"], "source_ids": [tag_a["id"], tag_b["id"]], "confirm": True},
+            json={
+                "target_id": tag_target["id"],
+                "source_ids": [tag_a["id"], tag_b["id"]],
+                "confirm": True,
+            },
         )
         assert merge_resp.status_code == 200
 
@@ -524,7 +563,9 @@ class TestRelationshipAwareUndo:
         assert undo_resp.status_code == 200
 
         # Verify both sources are restored
-        listing_after = api_client.get("/api/tags/manage", headers=api_auth_headers).json()
+        listing_after = api_client.get(
+            "/api/tags/manage", headers=api_auth_headers
+        ).json()
         names_after = [item["name"] for item in listing_after["items"]]
         assert "MergeSourceA" in names_after
         assert "MergeSourceB" in names_after
@@ -557,7 +598,9 @@ class TestRelationshipAwareUndo:
 
         # Verify parent still has correct parent_tag_id after undo
         listing = api_client.get("/api/tags/manage", headers=api_auth_headers).json()
-        parent_item = next((item for item in listing["items"] if item["name"] == "Parent"), None)
+        parent_item = next(
+            (item for item in listing["items"] if item["name"] == "Parent"), None
+        )
         assert parent_item is not None
         # Note: parent_tag_id should be preserved through update/undo cycle
         assert parent_item["parent_tag_id"] == grandparent["id"]
@@ -571,7 +614,9 @@ class TestRelationshipAwareUndo:
 class TestUndoEdgeCases:
     """Test edge cases and error scenarios."""
 
-    def test_undo_after_entity_manually_deleted(self, api_client, api_auth_headers, test_db_session):
+    def test_undo_after_entity_manually_deleted(
+        self, api_client, api_auth_headers, test_db_session
+    ):
         """Test undo after entity is manually deleted from DB."""
         # Create category
         cat = api_client.post(
@@ -589,6 +634,7 @@ class TestUndoEdgeCases:
 
         # Manually delete category from database
         from src.db.models import Category
+
         test_db_session.query(Category).filter_by(id=cat["id"]).delete()
         test_db_session.commit()
 
@@ -606,7 +652,7 @@ class TestUndoEdgeCases:
             operation="update",
             payload="{ invalid json !!!",
             created_at=datetime.now(timezone.utc),
-            expires_at=datetime.now(timezone.utc) + timedelta(days=30)
+            expires_at=datetime.now(timezone.utc) + timedelta(days=30),
         )
         test_db_session.add(corrupted_op)
         test_db_session.commit()
@@ -619,7 +665,11 @@ class TestUndoEdgeCases:
         assert result is None
 
         # Verify corrupted operation was removed
-        count = test_db_session.query(UndoOperation).filter_by(user_id="api-test-user-id").count()
+        count = (
+            test_db_session.query(UndoOperation)
+            .filter_by(user_id="api-test-user-id")
+            .count()
+        )
         assert count == 0
 
     def test_undo_on_nonexistent_entity_type(self, api_client, api_auth_headers):
@@ -629,7 +679,9 @@ class TestUndoEdgeCases:
         undo_resp = api_client.post("/api/categories/undo", headers=api_auth_headers)
         assert undo_resp.status_code == 404  # No operations available
 
-    def test_undo_with_missing_parent_references(self, api_client, api_auth_headers, test_db_session):
+    def test_undo_with_missing_parent_references(
+        self, api_client, api_auth_headers, test_db_session
+    ):
         """Test undo with missing parent references."""
         # Create parent tag
         parent = api_client.post(
@@ -654,6 +706,7 @@ class TestUndoEdgeCases:
 
         # Manually delete parent from database
         from src.db.models import Tag
+
         test_db_session.query(Tag).filter_by(id=parent["id"]).delete()
         test_db_session.commit()
 
@@ -671,14 +724,18 @@ class TestUndoEdgeCases:
 class TestTransactionSafety:
     """Test that undo operations maintain transaction safety."""
 
-    def test_failed_undo_does_not_leave_partial_data(self, api_client, api_auth_headers):
+    def test_failed_undo_does_not_leave_partial_data(
+        self, api_client, api_auth_headers
+    ):
         """Test that failed undo doesn't leave partial data."""
         # This test ensures atomicity - currently the implementation
         # doesn't have explicit rollback on undo failure, but we can verify
         # the state remains consistent
 
         # Get initial category count
-        initial_listing = api_client.get("/api/categories/manage", headers=api_auth_headers).json()
+        initial_listing = api_client.get(
+            "/api/categories/manage", headers=api_auth_headers
+        ).json()
         initial_count = len(initial_listing["items"])
 
         # Create and delete category
@@ -696,7 +753,9 @@ class TestTransactionSafety:
         assert delete_resp.status_code == 200
 
         # Verify category is deleted
-        listing_after_delete = api_client.get("/api/categories/manage", headers=api_auth_headers).json()
+        listing_after_delete = api_client.get(
+            "/api/categories/manage", headers=api_auth_headers
+        ).json()
         assert len(listing_after_delete["items"]) == initial_count
 
         # Undo (should succeed and restore category)
@@ -704,7 +763,9 @@ class TestTransactionSafety:
         assert undo_resp.status_code == 200
 
         # Verify category is restored
-        final_listing = api_client.get("/api/categories/manage", headers=api_auth_headers).json()
+        final_listing = api_client.get(
+            "/api/categories/manage", headers=api_auth_headers
+        ).json()
         assert len(final_listing["items"]) == initial_count + 1
         names = [item["name"] for item in final_listing["items"]]
         assert "TransactionTest" in names
@@ -718,7 +779,9 @@ class TestTransactionSafety:
 class TestUndoStackDepth:
     """Test undo stack depth management."""
 
-    def test_50_operation_limit_per_user_per_entity(self, api_client, api_auth_headers, test_db_session):
+    def test_50_operation_limit_per_user_per_entity(
+        self, api_client, api_auth_headers, test_db_session
+    ):
         """Verify 50-operation limit per user per entity."""
         # Create 51 categories and delete them (each delete creates an undo operation)
         for i in range(51):
@@ -734,12 +797,16 @@ class TestUndoStackDepth:
 
         # Check database for operation count
         undo_service = UndoService(test_db_session)
-        history = undo_service.get_history("api-test-user-id", entity_type="category", limit=100)
+        history = undo_service.get_history(
+            "api-test-user-id", entity_type="category", limit=100
+        )
 
         # Should have exactly 50 operations
         assert len(history) == 50
 
-    def test_oldest_operations_removed_first(self, api_client, api_auth_headers, test_db_session):
+    def test_oldest_operations_removed_first(
+        self, api_client, api_auth_headers, test_db_session
+    ):
         """Test that oldest operations are removed when limit exceeded."""
         # Create and delete 51 categories with identifiable names
         for i in range(51):
@@ -755,7 +822,9 @@ class TestUndoStackDepth:
 
         # Get history
         undo_service = UndoService(test_db_session)
-        history = undo_service.get_history("api-test-user-id", entity_type="category", limit=100)
+        history = undo_service.get_history(
+            "api-test-user-id", entity_type="category", limit=100
+        )
 
         # Most recent operation should be FIFO050
         most_recent = history[0]
@@ -765,7 +834,9 @@ class TestUndoStackDepth:
         oldest = history[-1]
         assert "FIFO001" in str(oldest["payload"])
 
-    def test_separate_limits_for_tags_and_categories(self, api_client, api_auth_headers, test_db_session):
+    def test_separate_limits_for_tags_and_categories(
+        self, api_client, api_auth_headers, test_db_session
+    ):
         """Test separate limits for tags vs categories."""
         # Create and delete 30 categories
         for i in range(30):
@@ -793,8 +864,12 @@ class TestUndoStackDepth:
 
         # Verify counts
         undo_service = UndoService(test_db_session)
-        cat_history = undo_service.get_history("api-test-user-id", entity_type="category", limit=100)
-        tag_history = undo_service.get_history("api-test-user-id", entity_type="tag", limit=100)
+        cat_history = undo_service.get_history(
+            "api-test-user-id", entity_type="category", limit=100
+        )
+        tag_history = undo_service.get_history(
+            "api-test-user-id", entity_type="tag", limit=100
+        )
 
         assert len(cat_history) == 30
         assert len(tag_history) == 40
@@ -816,7 +891,7 @@ class TestUndoPerformance:
         large_payload = {
             "category": {"name": "LargeTest", "description": "Test"},
             "prompt_ids": list(range(10000)),  # 10,000 prompt IDs
-            "metadata": {f"key_{i}": f"value_{i}" * 10 for i in range(1000)}
+            "metadata": {f"key_{i}": f"value_{i}" * 10 for i in range(1000)},
         }
 
         # Push operation
@@ -824,7 +899,7 @@ class TestUndoPerformance:
             user_id="api-test-user-id",
             entity_type="category",
             operation="delete",
-            payload=large_payload
+            payload=large_payload,
         )
         test_db_session.commit()
 
@@ -835,7 +910,9 @@ class TestUndoPerformance:
         assert result["operation"] == "delete"
         assert len(result["payload"]["prompt_ids"]) == 10000
 
-    def test_undo_history_retrieval_with_50_operations(self, api_client, api_auth_headers, test_db_session):
+    def test_undo_history_retrieval_with_50_operations(
+        self, api_client, api_auth_headers, test_db_session
+    ):
         """Test undo_history retrieval with 50 operations."""
         # Create and delete 50 categories
         for i in range(50):
@@ -851,7 +928,9 @@ class TestUndoPerformance:
 
         # Retrieve history
         undo_service = UndoService(test_db_session)
-        history = undo_service.get_history("api-test-user-id", entity_type="category", limit=100)
+        history = undo_service.get_history(
+            "api-test-user-id", entity_type="category", limit=100
+        )
 
         # Should retrieve all 50 efficiently
         assert len(history) == 50
@@ -868,15 +947,18 @@ class TestUndoPerformance:
                 user_id="api-test-user-id",
                 entity_type="category",
                 operation="delete",
-                payload={"name": f"IndexTest{i}"}
+                payload={"name": f"IndexTest{i}"},
             )
         test_db_session.commit()
 
         # Query should be efficient (we can't directly test index usage in SQLite,
         # but we can verify the query works correctly)
-        result = test_db_session.query(UndoOperation).filter(
-            UndoOperation.user_id == "api-test-user-id"
-        ).order_by(UndoOperation.created_at.desc()).first()
+        result = (
+            test_db_session.query(UndoOperation)
+            .filter(UndoOperation.user_id == "api-test-user-id")
+            .order_by(UndoOperation.created_at.desc())
+            .first()
+        )
 
         assert result is not None
         assert result.user_id == "api-test-user-id"
@@ -899,7 +981,7 @@ class TestUndoCleanup:
             operation="delete",
             payload=json.dumps({"category": {"name": "Expired"}}),
             created_at=datetime.now(timezone.utc) - timedelta(days=31),
-            expires_at=datetime.now(timezone.utc) - timedelta(days=1)
+            expires_at=datetime.now(timezone.utc) - timedelta(days=1),
         )
         test_db_session.add(expired_op)
 
@@ -910,7 +992,7 @@ class TestUndoCleanup:
             operation="delete",
             payload=json.dumps({"category": {"name": "Valid"}}),
             created_at=datetime.now(timezone.utc),
-            expires_at=datetime.now(timezone.utc) + timedelta(days=30)
+            expires_at=datetime.now(timezone.utc) + timedelta(days=30),
         )
         test_db_session.add(valid_op)
         test_db_session.commit()

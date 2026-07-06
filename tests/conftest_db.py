@@ -23,7 +23,15 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 
 from src.db.base import Base
-from src.db.models import User, Category, Tag, Prompt, PromptVersion, PromptBranch, Backup
+from src.db.models import (
+    User,
+    Category,
+    Tag,
+    Prompt,
+    PromptVersion,
+    PromptBranch,
+    Backup,
+)
 from src.db.repositories import (
     PromptRepository,
     VersionRepository,
@@ -72,7 +80,7 @@ def test_user(test_db_session) -> User:
         username="test_user",
         display_name="Test User",
         email="test@example.com",
-        role="user"
+        role="user",
     )
     test_db_session.add(user)
     test_db_session.flush()
@@ -110,7 +118,7 @@ def test_prompt(test_db_session, test_user, test_category, test_tags) -> Prompt:
         category_id=test_category.id,
         note="Test note",
         favorite=False,
-        user_id=test_user.id
+        user_id=test_user.id,
     )
     prompt.tags.extend(test_tags[:2])  # Add first two tags
     test_db_session.add(prompt)
@@ -119,7 +127,9 @@ def test_prompt(test_db_session, test_user, test_category, test_tags) -> Prompt:
 
 
 @pytest.fixture
-def test_prompt_with_versions(test_db_session, test_prompt, test_user) -> tuple[Prompt, list[PromptVersion]]:
+def test_prompt_with_versions(
+    test_db_session, test_prompt, test_user
+) -> tuple[Prompt, list[PromptVersion]]:
     """Create a prompt with multiple versions."""
     versions = []
 
@@ -136,7 +146,7 @@ def test_prompt_with_versions(test_db_session, test_prompt, test_user) -> tuple[
             favorite=False,
             author=test_user.username,
             message=f"Version {i+1}",
-            parent_version_id=versions[-1].version_id if versions else None
+            parent_version_id=versions[-1].version_id if versions else None,
         )
         test_db_session.add(version)
         test_db_session.flush()
@@ -221,11 +231,13 @@ def db_data_service(temp_data_dir, monkeypatch):
 
     # Reload the config to pick up the new DATABASE_URL
     from importlib import reload
+
     reload(db_config_module)
 
     # Create engine and tables
     from src.db.session import engine
     from src.db.base import Base
+
     Base.metadata.create_all(bind=engine)
 
     # Create service
@@ -291,6 +303,7 @@ def db_backup_service(temp_data_dir):
 
 
 # Sample data fixtures (compatible with both JSON and DB backends)
+
 
 @pytest.fixture
 def sample_version_data():

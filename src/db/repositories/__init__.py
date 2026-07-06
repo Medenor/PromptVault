@@ -29,7 +29,9 @@ Usage:
 from src.db.repositories.base import BaseRepository
 from src.db.repositories.user_repository import UserRepository
 from src.db.repositories.session_repository import SessionRepository
-from src.db.repositories.password_reset_token_repository import PasswordResetTokenRepository
+from src.db.repositories.password_reset_token_repository import (
+    PasswordResetTokenRepository,
+)
 from src.db.repositories.prompt_repository import PromptRepository
 from src.db.repositories.version_repository import VersionRepository
 from src.db.repositories.category_repository import CategoryRepository

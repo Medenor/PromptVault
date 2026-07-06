@@ -31,7 +31,9 @@ def api_auth_headers(api_client_context) -> Dict[str, str]:
     return {"Authorization": f"Bearer {access_token}"}
 
 
-def _create_prompt(api_client, api_auth_headers, title: str, category: str = "", tags: str = "") -> int:
+def _create_prompt(
+    api_client, api_auth_headers, title: str, category: str = "", tags: str = ""
+) -> int:
     response = api_client.post(
         "/api/prompts",
         headers=api_auth_headers,
@@ -97,7 +99,9 @@ def test_category_delete_force_clears_prompts(api_client, api_auth_headers):
         headers=api_auth_headers,
         json={"name": "NeedsCleanup"},
     ).json()
-    prompt_id = _create_prompt(api_client, api_auth_headers, title="Needs cleanup", category="NeedsCleanup")
+    prompt_id = _create_prompt(
+        api_client, api_auth_headers, title="Needs cleanup", category="NeedsCleanup"
+    )
 
     blocked = api_client.delete(
         f"/api/categories/{category['id']}?confirm=true",
@@ -111,12 +115,16 @@ def test_category_delete_force_clears_prompts(api_client, api_auth_headers):
     )
     assert forced.status_code == 200
 
-    prompt = api_client.get(f"/api/prompts/{prompt_id}", headers=api_auth_headers).json()
+    prompt = api_client.get(
+        f"/api/prompts/{prompt_id}", headers=api_auth_headers
+    ).json()
     assert prompt["category"] == "No category"
 
 
 def test_category_find_replace_updates_prompts(api_client, api_auth_headers):
-    _create_prompt(api_client, api_auth_headers, title="Old category", category="Legacy")
+    _create_prompt(
+        api_client, api_auth_headers, title="Old category", category="Legacy"
+    )
 
     replace = api_client.post(
         "/api/categories/find-replace",
@@ -125,7 +133,9 @@ def test_category_find_replace_updates_prompts(api_client, api_auth_headers):
     )
     assert replace.status_code == 200
 
-    categories = api_client.get("/api/categories/manage", headers=api_auth_headers).json()["items"]
+    categories = api_client.get(
+        "/api/categories/manage", headers=api_auth_headers
+    ).json()["items"]
     names = [item["name"] for item in categories]
     assert "Modern" in names
     assert "Legacy" not in names
@@ -159,7 +169,9 @@ def test_category_orphan_assign(api_client, api_auth_headers):
     )
     assert assign.status_code == 200
 
-    prompt = api_client.get(f"/api/prompts/{prompt_id}", headers=api_auth_headers).json()
+    prompt = api_client.get(
+        f"/api/prompts/{prompt_id}", headers=api_auth_headers
+    ).json()
     assert prompt["category"] == "Assigned"
 
 
@@ -182,7 +194,9 @@ def test_category_reorder_updates_sort_order(api_client, api_auth_headers):
     )
     assert reorder.status_code == 200
 
-    listing = api_client.get("/api/categories/manage", headers=api_auth_headers).json()["items"]
+    listing = api_client.get("/api/categories/manage", headers=api_auth_headers).json()[
+        "items"
+    ]
     by_id = {item["id"]: item for item in listing}
     assert by_id[cat_b["id"]]["sort_order"] == 1
     assert by_id[cat_a["id"]]["sort_order"] == 2
@@ -360,7 +374,9 @@ def test_category_undo_update(api_client, api_auth_headers):
     undo = api_client.post("/api/categories/undo", headers=api_auth_headers)
     assert undo.status_code == 200
 
-    listing = api_client.get("/api/categories/manage", headers=api_auth_headers).json()["items"]
+    listing = api_client.get("/api/categories/manage", headers=api_auth_headers).json()[
+        "items"
+    ]
     by_id = {item["id"]: item for item in listing}
     assert by_id[category_id]["description"] == "Before"
 
@@ -382,7 +398,9 @@ def test_tag_undo_delete(api_client, api_auth_headers):
     undo = api_client.post("/api/tags/undo", headers=api_auth_headers)
     assert undo.status_code == 200
 
-    listing = api_client.get("/api/tags/manage", headers=api_auth_headers).json()["items"]
+    listing = api_client.get("/api/tags/manage", headers=api_auth_headers).json()[
+        "items"
+    ]
     names = [item["name"] for item in listing]
     assert "UndoTag" in names
 
@@ -401,7 +419,9 @@ def test_tag_hierarchy_parent_assignment(api_client, api_auth_headers):
     )
     assert child.status_code == 201
 
-    listing = api_client.get("/api/tags/manage", headers=api_auth_headers).json()["items"]
+    listing = api_client.get("/api/tags/manage", headers=api_auth_headers).json()[
+        "items"
+    ]
     child_item = next(item for item in listing if item["name"] == "ChildTag")
     assert child_item["parent_tag_id"] == parent["id"]
 
@@ -628,7 +648,9 @@ def test_undo_category_delete(api_client, api_auth_headers):
     undo = api_client.post("/api/categories/undo", headers=api_auth_headers)
     assert undo.status_code == 200
 
-    listing = api_client.get("/api/categories/manage", headers=api_auth_headers).json()["items"]
+    listing = api_client.get("/api/categories/manage", headers=api_auth_headers).json()[
+        "items"
+    ]
     names = [item["name"] for item in listing]
     assert "UndoDelete" in names
 
@@ -657,7 +679,9 @@ def test_undo_category_merge(api_client, api_auth_headers):
     undo = api_client.post("/api/categories/undo", headers=api_auth_headers)
     assert undo.status_code == 200
 
-    listing = api_client.get("/api/categories/manage", headers=api_auth_headers).json()["items"]
+    listing = api_client.get("/api/categories/manage", headers=api_auth_headers).json()[
+        "items"
+    ]
     names = [item["name"] for item in listing]
     assert "MergeA" in names
 
@@ -680,7 +704,9 @@ def test_undo_tag_update(api_client, api_auth_headers):
     undo = api_client.post("/api/tags/undo", headers=api_auth_headers)
     assert undo.status_code == 200
 
-    listing = api_client.get("/api/tags/manage", headers=api_auth_headers).json()["items"]
+    listing = api_client.get("/api/tags/manage", headers=api_auth_headers).json()[
+        "items"
+    ]
     by_id = {item["id"]: item for item in listing}
     assert by_id[tag_id]["description"] == "Before"
 
@@ -697,7 +723,9 @@ def test_undo_tag_merge(api_client, api_auth_headers):
         json={"name": "MergeTagB"},
     ).json()
 
-    _create_prompt(api_client, api_auth_headers, title="Tag merge test", tags="MergeTagA")
+    _create_prompt(
+        api_client, api_auth_headers, title="Tag merge test", tags="MergeTagA"
+    )
 
     merge = api_client.post(
         "/api/tags/merge",
@@ -709,7 +737,9 @@ def test_undo_tag_merge(api_client, api_auth_headers):
     undo = api_client.post("/api/tags/undo", headers=api_auth_headers)
     assert undo.status_code == 200
 
-    listing = api_client.get("/api/tags/manage", headers=api_auth_headers).json()["items"]
+    listing = api_client.get("/api/tags/manage", headers=api_auth_headers).json()[
+        "items"
+    ]
     names = [item["name"] for item in listing]
     assert "MergeTagA" in names
 
@@ -745,7 +775,9 @@ def test_multiple_undos_sequential(api_client, api_auth_headers):
     undo2 = api_client.post("/api/categories/undo", headers=api_auth_headers)
     assert undo2.status_code == 200
 
-    listing = api_client.get("/api/categories/manage", headers=api_auth_headers).json()["items"]
+    listing = api_client.get("/api/categories/manage", headers=api_auth_headers).json()[
+        "items"
+    ]
     names = [item["name"] for item in listing]
     assert "Undo1" in names
     assert "Undo2" in names
@@ -783,7 +815,9 @@ def test_category_analytics_calculation(api_client, api_auth_headers):
         headers=api_auth_headers,
         json={"name": "Analytics2"},
     )
-    _create_prompt(api_client, api_auth_headers, title="Analytics test", category="Analytics1")
+    _create_prompt(
+        api_client, api_auth_headers, title="Analytics test", category="Analytics1"
+    )
 
     response = api_client.get("/api/categories/analytics", headers=api_auth_headers)
     assert response.status_code == 200
@@ -845,7 +879,9 @@ def test_category_orphan_details_pagination(api_client, api_auth_headers):
     _create_prompt(api_client, api_auth_headers, title="Orphan 1")
     _create_prompt(api_client, api_auth_headers, title="Orphan 2")
 
-    response = api_client.get("/api/categories/orphans/details", headers=api_auth_headers)
+    response = api_client.get(
+        "/api/categories/orphans/details", headers=api_auth_headers
+    )
     assert response.status_code == 200
     data = response.json()
     assert "items" in data
@@ -858,7 +894,9 @@ def test_tag_orphan_details_pagination(api_client, api_auth_headers):
     _create_prompt(api_client, api_auth_headers, title="Tag orphan 1", tags="")
     _create_prompt(api_client, api_auth_headers, title="Tag orphan 2", tags="")
 
-    response = api_client.get("/api/tags/orphan-prompts/details", headers=api_auth_headers)
+    response = api_client.get(
+        "/api/tags/orphan-prompts/details", headers=api_auth_headers
+    )
     assert response.status_code == 200
     data = response.json()
     assert "items" in data
@@ -882,7 +920,9 @@ def test_bulk_delete_categories_mixed_scenarios(api_client, api_auth_headers):
         headers=api_auth_headers,
         json={"name": "BulkDel2"},
     ).json()
-    _create_prompt(api_client, api_auth_headers, title="Bulk del test", category="BulkDel1")
+    _create_prompt(
+        api_client, api_auth_headers, title="Bulk del test", category="BulkDel1"
+    )
 
     response = api_client.post(
         "/api/categories/bulk-delete",
@@ -903,7 +943,9 @@ def test_bulk_delete_tags_mixed_scenarios(api_client, api_auth_headers):
         headers=api_auth_headers,
         json={"name": "BulkDelTag2"},
     ).json()
-    _create_prompt(api_client, api_auth_headers, title="Bulk del tag test", tags="BulkDelTag1")
+    _create_prompt(
+        api_client, api_auth_headers, title="Bulk del tag test", tags="BulkDelTag1"
+    )
 
     response = api_client.post(
         "/api/tags/bulk-delete",
@@ -924,7 +966,9 @@ def test_bulk_delete_categories_with_force(api_client, api_auth_headers):
         headers=api_auth_headers,
         json={"name": "ForceDel2"},
     ).json()
-    _create_prompt(api_client, api_auth_headers, title="Force del test", category="ForceDel1")
+    _create_prompt(
+        api_client, api_auth_headers, title="Force del test", category="ForceDel1"
+    )
 
     response = api_client.post(
         "/api/categories/bulk-delete",
@@ -945,7 +989,9 @@ def test_bulk_delete_tags_with_force(api_client, api_auth_headers):
         headers=api_auth_headers,
         json={"name": "ForceDelTag2"},
     ).json()
-    _create_prompt(api_client, api_auth_headers, title="Force del tag test", tags="ForceDelTag1")
+    _create_prompt(
+        api_client, api_auth_headers, title="Force del tag test", tags="ForceDelTag1"
+    )
 
     response = api_client.post(
         "/api/tags/bulk-delete",
@@ -966,7 +1012,9 @@ def test_merge_categories_with_prompts(api_client, api_auth_headers):
         headers=api_auth_headers,
         json={"name": "MergePromptB"},
     ).json()
-    _create_prompt(api_client, api_auth_headers, title="Merge cat test", category="MergePromptA")
+    _create_prompt(
+        api_client, api_auth_headers, title="Merge cat test", category="MergePromptA"
+    )
 
     response = api_client.post(
         "/api/categories/merge",
@@ -988,7 +1036,9 @@ def test_merge_tags_with_prompts(api_client, api_auth_headers):
         headers=api_auth_headers,
         json={"name": "MergePromptTagB"},
     ).json()
-    _create_prompt(api_client, api_auth_headers, title="Merge tag test", tags="MergePromptTagA")
+    _create_prompt(
+        api_client, api_auth_headers, title="Merge tag test", tags="MergePromptTagA"
+    )
 
     response = api_client.post(
         "/api/tags/merge",
@@ -1019,7 +1069,11 @@ def test_merge_tags_bulk_multiple_sources(api_client, api_auth_headers):
     response = api_client.post(
         "/api/tags/merge",
         headers=api_auth_headers,
-        json={"target_id": target["id"], "source_ids": [source1["id"], source2["id"]], "confirm": True},
+        json={
+            "target_id": target["id"],
+            "source_ids": [source1["id"], source2["id"]],
+            "confirm": True,
+        },
     )
     assert response.status_code == 200
 
@@ -1099,7 +1153,9 @@ def test_import_categories_creates_missing(api_client, api_auth_headers):
     )
     assert response.status_code == 200
 
-    listing = api_client.get("/api/categories/manage", headers=api_auth_headers).json()["items"]
+    listing = api_client.get("/api/categories/manage", headers=api_auth_headers).json()[
+        "items"
+    ]
     names = [item["name"] for item in listing]
     assert "NewImportCat" in names
 
@@ -1112,7 +1168,9 @@ def test_import_tags_creates_missing(api_client, api_auth_headers):
     )
     assert response.status_code == 200
 
-    listing = api_client.get("/api/tags/manage", headers=api_auth_headers).json()["items"]
+    listing = api_client.get("/api/tags/manage", headers=api_auth_headers).json()[
+        "items"
+    ]
     names = [item["name"] for item in listing]
     assert "NewImportTag" in names
 
@@ -1131,7 +1189,9 @@ def test_import_categories_update_existing(api_client, api_auth_headers):
     )
     assert response.status_code == 200
 
-    listing = api_client.get("/api/categories/manage", headers=api_auth_headers).json()["items"]
+    listing = api_client.get("/api/categories/manage", headers=api_auth_headers).json()[
+        "items"
+    ]
     by_name = {item["name"]: item for item in listing}
     assert by_name["UpdateImport"]["description"] == "Updated"
 
@@ -1150,7 +1210,9 @@ def test_import_tags_update_existing(api_client, api_auth_headers):
     )
     assert response.status_code == 200
 
-    listing = api_client.get("/api/tags/manage", headers=api_auth_headers).json()["items"]
+    listing = api_client.get("/api/tags/manage", headers=api_auth_headers).json()[
+        "items"
+    ]
     by_name = {item["name"]: item for item in listing}
     assert by_name["UpdateTagImport"]["description"] == "Updated"
 
@@ -1365,7 +1427,9 @@ def test_find_replace_creates_missing_target(api_client, api_auth_headers):
     )
     assert response.status_code == 200
 
-    listing = api_client.get("/api/categories/manage", headers=api_auth_headers).json()["items"]
+    listing = api_client.get("/api/categories/manage", headers=api_auth_headers).json()[
+        "items"
+    ]
     names = [item["name"] for item in listing]
     assert "FindNew" in names
 
@@ -1436,7 +1500,11 @@ def test_assign_orphans_partial_success(api_client, api_auth_headers):
     response = api_client.post(
         "/api/categories/assign-orphans",
         headers=api_auth_headers,
-        json={"prompt_ids": [prompt_id, 999999], "category": "PartialAssign", "confirm": True},
+        json={
+            "prompt_ids": [prompt_id, 999999],
+            "category": "PartialAssign",
+            "confirm": True,
+        },
     )
     assert response.status_code == 404
 
@@ -1447,11 +1515,17 @@ def test_assign_orphans_creates_category_if_missing(api_client, api_auth_headers
     response = api_client.post(
         "/api/categories/assign-orphans",
         headers=api_auth_headers,
-        json={"prompt_ids": [prompt_id], "category": "CreatedCategory", "confirm": True},
+        json={
+            "prompt_ids": [prompt_id],
+            "category": "CreatedCategory",
+            "confirm": True,
+        },
     )
     assert response.status_code == 200
 
-    listing = api_client.get("/api/categories/manage", headers=api_auth_headers).json()["items"]
+    listing = api_client.get("/api/categories/manage", headers=api_auth_headers).json()[
+        "items"
+    ]
     names = [item["name"] for item in listing]
     assert "CreatedCategory" in names
 
@@ -1473,7 +1547,9 @@ def test_suggest_tags_with_content(api_client, api_auth_headers):
 
 
 def test_suggest_tags_with_prompt_id(api_client, api_auth_headers):
-    prompt_id = _create_prompt(api_client, api_auth_headers, title="Suggest test", tags="")
+    prompt_id = _create_prompt(
+        api_client, api_auth_headers, title="Suggest test", tags=""
+    )
 
     response = api_client.post(
         "/api/tags/suggest",
@@ -1581,7 +1657,9 @@ def test_bulk_tag_update_without_confirm_412(api_client, api_auth_headers):
 
 
 def test_bulk_tag_update_removes_tags(api_client, api_auth_headers):
-    prompt_id = _create_prompt(api_client, api_auth_headers, title="Remove tags", tags="remove-me")
+    prompt_id = _create_prompt(
+        api_client, api_auth_headers, title="Remove tags", tags="remove-me"
+    )
 
     response = api_client.post(
         "/api/tags/bulk-update",
@@ -1590,7 +1668,9 @@ def test_bulk_tag_update_removes_tags(api_client, api_auth_headers):
     )
     assert response.status_code == 200
 
-    prompt = api_client.get(f"/api/prompts/{prompt_id}", headers=api_auth_headers).json()
+    prompt = api_client.get(
+        f"/api/prompts/{prompt_id}", headers=api_auth_headers
+    ).json()
     assert "remove-me" not in prompt["tags"]
 
 

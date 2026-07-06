@@ -31,7 +31,6 @@ from src.services.backup_service_db import BackupService
 from src.services.exceptions import DataPersistenceError, BackupError
 from src.db.models import Prompt, PromptVersion, Category, Tag, User, Backup
 
-
 # ============================================================================
 # TEST PROMPT DATA SERVICE
 # ============================================================================
@@ -50,7 +49,7 @@ class TestPromptDataService:
             title="New Prompt",
             prompt="Test content",
             category="Development",
-            tags=["python", "testing"]
+            tags=["python", "testing"],
         )
 
         prompt_id = db_data_service.add_new_prompt(prompt_data)
@@ -65,7 +64,9 @@ class TestPromptDataService:
         assert data["category"] == "Development"
         assert set(data["tags"]) == {"python", "testing"}
 
-    def test_add_prompt_creates_initial_version(self, db_data_service, sample_prompt_data):
+    def test_add_prompt_creates_initial_version(
+        self, db_data_service, sample_prompt_data
+    ):
         """Test that first version is created when adding a prompt."""
         prompt_data = sample_prompt_data(title="Versioned Prompt")
         prompt_id = db_data_service.add_new_prompt(prompt_data)
@@ -76,7 +77,9 @@ class TestPromptDataService:
         assert versions[-1]["message"] == "Initial commit"
         assert versions[-1]["data"]["title"] == "Versioned Prompt"
 
-    def test_add_prompt_with_custom_commit_message(self, db_data_service, sample_prompt_data):
+    def test_add_prompt_with_custom_commit_message(
+        self, db_data_service, sample_prompt_data
+    ):
         """Test adding a prompt with custom commit message."""
         prompt_data = sample_prompt_data(title="Custom Message")
         prompt_data["commit_message"] = "Custom initial commit"
@@ -115,9 +118,7 @@ class TestPromptDataService:
 
         # Update it
         update_data = sample_prompt_data(
-            title="Updated",
-            prompt="Updated content",
-            tags=["updated"]
+            title="Updated", prompt="Updated content", tags=["updated"]
         )
         success = db_data_service.update_prompt(prompt_id, update_data, "Update test")
 
@@ -129,13 +130,17 @@ class TestPromptDataService:
         assert data["prompt"] == "Updated content"
         assert "updated" in data["tags"]
 
-    def test_update_prompt_with_commit_message(self, db_data_service, sample_prompt_data):
+    def test_update_prompt_with_commit_message(
+        self, db_data_service, sample_prompt_data
+    ):
         """Test that update creates version with proper message."""
         prompt_data = sample_prompt_data(title="Test")
         prompt_id = db_data_service.add_new_prompt(prompt_data)
 
         update_data = sample_prompt_data(title="Updated")
-        db_data_service.update_prompt(prompt_id, update_data, "My custom update message")
+        db_data_service.update_prompt(
+            prompt_id, update_data, "My custom update message"
+        )
 
         versions = db_data_service.get_prompt_versions(prompt_id)
         assert versions[0]["message"] == "My custom update message"
@@ -395,9 +400,7 @@ class TestPromptDataService:
         # Now revert to V1
         revert_data = sample_prompt_data(title="V1", prompt="Content 1")
         success = db_data_service.revert_prompt_to_version(
-            prompt_id,
-            revert_data,
-            "Revert to V1"
+            prompt_id, revert_data, "Revert to V1"
         )
 
         assert success is True
@@ -431,7 +434,9 @@ class TestPromptDataService:
         data = db_data_service.get_prompt_data(prompt_id)
         assert set(data["tags"]) == {"tag1", "tag2", "tag3"}
 
-    def test_normalize_tags_handles_non_strings(self, db_data_service, sample_prompt_data):
+    def test_normalize_tags_handles_non_strings(
+        self, db_data_service, sample_prompt_data
+    ):
         """Test that non-string tags are filtered out."""
         # Note: Tags are converted to strings by sanitize_tags before reaching the service
         # This test verifies the current behavior
@@ -451,7 +456,7 @@ class TestPromptDataService:
             "category": "  Category  ",
             "tags": ["  tag1  ", "", "tag2"],
             "note": "Note with\nnewlines",
-            "favorite": False
+            "favorite": False,
         }
 
         prompt_id = db_data_service.add_new_prompt(prompt_data)
@@ -554,7 +559,9 @@ class TestPromptDataService:
 
     def test_load_prompts_handles_error_gracefully(self, db_data_service):
         """Test that load_prompts handles errors gracefully."""
-        with patch('src.services.prompt_data_service_db.get_db_session') as mock_session:
+        with patch(
+            "src.services.prompt_data_service_db.get_db_session"
+        ) as mock_session:
             mock_session.side_effect = Exception("Database error")
 
             # Should return empty dict, not crash
@@ -712,7 +719,9 @@ class TestBackupService:
 
         # Monkeypatch BOTH the session module AND the backup_service module
         monkeypatch.setattr(session_module, "get_db_session", mock_get_db_session)
-        monkeypatch.setattr(backup_service_module, "get_db_session", mock_get_db_session)
+        monkeypatch.setattr(
+            backup_service_module, "get_db_session", mock_get_db_session
+        )
 
         fresh_service = BackupService(temp_data_dir)
         backups = fresh_service.list_backups()
@@ -763,7 +772,9 @@ class TestBackupService:
     def test_restore_backup(self, db_backup_service, temp_data_dir):
         """Test basic backup restoration."""
         # Create a backup with unique ID
-        backup_id = db_backup_service.create_backup(f"test_restore_{uuid.uuid4().hex[:8]}")
+        backup_id = db_backup_service.create_backup(
+            f"test_restore_{uuid.uuid4().hex[:8]}"
+        )
 
         # Restore it
         success = db_backup_service.restore_backup(backup_id)
@@ -944,7 +955,9 @@ class TestBackupService:
 
         # Monkeypatch BOTH the session module AND the backup_service module
         monkeypatch.setattr(session_module, "get_db_session", mock_get_db_session)
-        monkeypatch.setattr(backup_service_module, "get_db_session", mock_get_db_session)
+        monkeypatch.setattr(
+            backup_service_module, "get_db_session", mock_get_db_session
+        )
 
         fresh_service = BackupService(temp_data_dir)
         stats = fresh_service.get_backup_stats()
@@ -961,7 +974,9 @@ class TestBackupService:
     def test_compress_old_backups(self, db_backup_service):
         """Test compression of old backups."""
         # Create a backup with unique ID
-        backup_id = db_backup_service.create_backup(f"to_compress_{uuid.uuid4().hex[:8]}")
+        backup_id = db_backup_service.create_backup(
+            f"to_compress_{uuid.uuid4().hex[:8]}"
+        )
 
         # Compress backups older than 0 days (compress all)
         compressed = db_backup_service.compress_old_backups(days_threshold=0)
@@ -1031,7 +1046,7 @@ class TestBackupService:
 
     def test_get_current_user_fallback(self, db_backup_service):
         """Test user fallback when getpass fails."""
-        with patch('getpass.getuser', side_effect=Exception("No user")):
+        with patch("getpass.getuser", side_effect=Exception("No user")):
             user = db_backup_service._get_current_user()
 
             assert user == "unknown"
@@ -1055,7 +1070,7 @@ class TestBackupService:
         assert os.path.exists(metadata_path)
 
         # Verify metadata content
-        with open(metadata_path, 'r') as f:
+        with open(metadata_path, "r") as f:
             metadata = json.load(f)
 
         assert metadata["backup_id"] == backup_id
@@ -1109,7 +1124,7 @@ class TestBackupService:
         """Test that restore warns if pre-restore backup fails."""
         backup_id = db_backup_service.create_backup(f"test_{uuid.uuid4().hex[:8]}")
 
-        with patch.object(db_backup_service, 'create_backup', return_value=None):
+        with patch.object(db_backup_service, "create_backup", return_value=None):
             # Should still succeed but log warning
             success = db_backup_service.restore_backup(backup_id)
             assert success is True
@@ -1128,7 +1143,7 @@ class TestBackupService:
             "database_type": "sqlite",
             "created_by": "test",
             "compressed": True,
-            "timestamp": datetime.now(timezone.utc).isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
 
         db_backup_service._update_backup_record(backup_id, new_metadata)
@@ -1176,7 +1191,7 @@ class TestBackupService:
             "size_bytes": 1024,
             "database_type": "sqlite",
             "created_by": "test",
-            "compressed": False
+            "compressed": False,
         }
 
         db_backup_service._write_metadata_file(metadata)
@@ -1186,7 +1201,7 @@ class TestBackupService:
         assert os.path.exists(metadata_path)
 
         # Verify content
-        with open(metadata_path, 'r') as f:
+        with open(metadata_path, "r") as f:
             loaded = json.load(f)
 
         assert loaded["backup_id"] == "test_write"

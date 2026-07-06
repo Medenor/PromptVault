@@ -39,7 +39,7 @@ class UndoService:
         self,
         db: Session,
         max_operations_per_entity: int = 50,
-        expiration_days: int = 30
+        expiration_days: int = 30,
     ):
         """Initialize the UndoService.
 
@@ -54,10 +54,10 @@ class UndoService:
 
     def push(
         self,
-        user_id: str,
+        user_id: Optional[str],
         entity_type: str,
         operation: str,
-        payload: Dict[str, Any]
+        payload: Dict[str, Any],
     ) -> None:
         """Store an undo operation in the database.
 
@@ -82,6 +82,10 @@ class UndoService:
             ...     payload={"category": {"name": "Test"}, "prompt_ids": [1, 2, 3]}
             ... )
         """
+        if user_id is None:
+            logger.debug("Skipping undo push for anonymous operation (no user_id)")
+            return
+
         try:
             # Serialize payload to JSON
             payload_json = json.dumps(payload)
@@ -100,19 +104,23 @@ class UndoService:
             operation=operation,
             payload=payload_json,
             created_at=created_at,
-            expires_at=expires_at
+            expires_at=expires_at,
         )
 
         self.db.add(undo_op)
         self.db.flush()  # Flush to get the ID without committing
 
         # Check if we've exceeded the limit for this user/entity_type
-        count = self.db.query(func.count(UndoOperation.id)).filter(
-            and_(
-                UndoOperation.user_id == user_id,
-                UndoOperation.entity_type == entity_type
+        count = (
+            self.db.query(func.count(UndoOperation.id))
+            .filter(
+                and_(
+                    UndoOperation.user_id == user_id,
+                    UndoOperation.entity_type == entity_type,
+                )
             )
-        ).scalar()
+            .scalar()
+        )
 
         if count > self.max_operations_per_entity:
             # Delete oldest operations to maintain limit
@@ -122,7 +130,7 @@ class UndoService:
                 .filter(
                     and_(
                         UndoOperation.user_id == user_id,
-                        UndoOperation.entity_type == entity_type
+                        UndoOperation.entity_type == entity_type,
                     )
                 )
                 .order_by(UndoOperation.created_at.asc())
@@ -142,11 +150,7 @@ class UndoService:
             f"Pushed undo operation for user {user_id}: {entity_type}.{operation}"
         )
 
-    def pop(
-        self,
-        user_id: str,
-        entity_type: str
-    ) -> Optional[Dict[str, Any]]:
+    def pop(self, user_id: str, entity_type: str) -> Optional[Dict[str, Any]]:
         """Retrieve and remove the most recent undo operation.
 
         This method returns the most recent undo operation for the specified
@@ -171,7 +175,7 @@ class UndoService:
             .filter(
                 and_(
                     UndoOperation.user_id == user_id,
-                    UndoOperation.entity_type == entity_type
+                    UndoOperation.entity_type == entity_type,
                 )
             )
             .order_by(desc(UndoOperation.created_at))
@@ -199,7 +203,7 @@ class UndoService:
             "entity_type": undo_op.entity_type,
             "operation": undo_op.operation,
             "payload": payload,
-            "created_at": undo_op.created_at
+            "created_at": undo_op.created_at,
         }
 
         # Remove the operation from the database
@@ -214,10 +218,7 @@ class UndoService:
         return result
 
     def get_history(
-        self,
-        user_id: str,
-        entity_type: Optional[str] = None,
-        limit: int = 10
+        self, user_id: str, entity_type: Optional[str] = None, limit: int = 10
     ) -> List[Dict[str, Any]]:
         """Retrieve undo history for a user.
 
@@ -242,25 +243,22 @@ class UndoService:
         if entity_type is not None:
             query = query.filter(UndoOperation.entity_type == entity_type)
 
-        operations = (
-            query
-            .order_by(desc(UndoOperation.created_at))
-            .limit(limit)
-            .all()
-        )
+        operations = query.order_by(desc(UndoOperation.created_at)).limit(limit).all()
 
         result = []
         for op in operations:
             try:
                 payload = json.loads(op.payload)
-                result.append({
-                    "id": op.id,
-                    "entity_type": op.entity_type,
-                    "operation": op.operation,
-                    "payload": payload,
-                    "created_at": op.created_at,
-                    "expires_at": op.expires_at
-                })
+                result.append(
+                    {
+                        "id": op.id,
+                        "entity_type": op.entity_type,
+                        "operation": op.operation,
+                        "payload": payload,
+                        "created_at": op.created_at,
+                        "expires_at": op.expires_at,
+                    }
+                )
             except (json.JSONDecodeError, ValueError) as e:
                 logger.warning(f"Skipping corrupted undo operation {op.id}: {e}")
                 continue

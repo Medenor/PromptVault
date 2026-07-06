@@ -36,6 +36,7 @@ class DatabaseSettings(BaseSettings):
         DB_POOL_RECYCLE: Time to recycle connections in seconds
         DB_ECHO: Enable SQLAlchemy query logging for debugging
     """
+
     DATABASE_URL: str = "sqlite:///./data/promptvault.db"
     DB_POOL_SIZE: int = 20
     DB_POOL_TIMEOUT: int = 30
@@ -43,10 +44,7 @@ class DatabaseSettings(BaseSettings):
     DB_ECHO: bool = False
 
     model_config = ConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        case_sensitive=True,
-        extra="allow"
+        env_file=".env", env_file_encoding="utf-8", case_sensitive=True, extra="allow"
     )
 
     @property
@@ -104,11 +102,13 @@ class DatabaseSettings(BaseSettings):
                 base_kwargs["connect_args"] = {"check_same_thread": False}
         else:
             # PostgreSQL-specific configuration
-            base_kwargs.update({
-                "pool_size": self.DB_POOL_SIZE,
-                "pool_recycle": self.DB_POOL_RECYCLE,
-                "pool_timeout": self.DB_POOL_TIMEOUT,
-            })
+            base_kwargs.update(
+                {
+                    "pool_size": self.DB_POOL_SIZE,
+                    "pool_recycle": self.DB_POOL_RECYCLE,
+                    "pool_timeout": self.DB_POOL_TIMEOUT,
+                }
+            )
 
         return base_kwargs
 

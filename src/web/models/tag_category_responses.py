@@ -22,7 +22,9 @@ class CategoryResponse(BaseModel):
     sort_order: Optional[int] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
-    usage_count: int = Field(default=0, description="Number of prompts using this category")
+    usage_count: int = Field(
+        default=0, description="Number of prompts using this category"
+    )
 
 
 class TagResponse(BaseModel):

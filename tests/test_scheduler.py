@@ -41,8 +41,9 @@ class TestSessionCleanupScheduler:
         engine = create_engine("sqlite:///:memory:")
         # Create all tables
         from src.db.base import Base
+
         Base.metadata.create_all(engine)
-        
+
         SessionLocal = sessionmaker(bind=engine)
         return SessionLocal
 
@@ -66,12 +67,12 @@ class TestSessionCleanupScheduler:
     def test_scheduler_start(self, scheduler):
         """Test scheduler starts successfully."""
         assert scheduler.is_running is False
-        
+
         scheduler.start()
-        
+
         assert scheduler.is_running is True
         assert scheduler.scheduler is not None
-        
+
         # Cleanup
         scheduler.stop()
 
@@ -79,55 +80,55 @@ class TestSessionCleanupScheduler:
         """Test scheduler stops successfully."""
         scheduler.start()
         assert scheduler.is_running is True
-        
+
         scheduler.stop()
-        
+
         assert scheduler.is_running is False
 
     def test_scheduler_cannot_start_twice(self, scheduler):
         """Test scheduler cannot be started twice."""
         scheduler.start()
-        
+
         # Starting again logs a warning but doesn't raise
         scheduler.start()
-        
+
         # Verify it's still running (not started twice)
         assert scheduler.is_running is True
-        
+
         scheduler.stop()
 
     def test_scheduler_cannot_stop_when_not_running(self, scheduler):
         """Test scheduler cannot be stopped when not running."""
         # Stopping when not running logs a warning but doesn't raise
         scheduler.stop()
-        
+
         # Verify it's still not running
         assert scheduler.is_running is False
 
     def test_get_job_info_when_running(self, scheduler):
         """Test getting job info when scheduler is running."""
         scheduler.start()
-        
+
         job_info = scheduler.get_job_info()
-        
+
         assert job_info is not None
         assert "id" in job_info  # Changed from 'job_id' to 'id'
         assert "next_run_time" in job_info
         assert "trigger" in job_info
-        
+
         scheduler.stop()
 
     def test_get_job_info_when_not_running(self, scheduler):
         """Test getting job info when scheduler is not running."""
         job_info = scheduler.get_job_info()
-        
+
         assert job_info is None
 
     def test_run_cleanup_now(self, scheduler, mock_session_factory):
         """Test manual cleanup trigger."""
         # Add test data to database
         session = mock_session_factory()
-        
+
         # Create test user
         user = User(
             username="testuser",
@@ -136,7 +137,7 @@ class TestSessionCleanupScheduler:
         )
         session.add(user)
         session.commit()
-        
+
         # Create expired session
         expired_session = UserSession(
             user_id=user.id,
@@ -147,7 +148,7 @@ class TestSessionCleanupScheduler:
             expires_at=datetime.utcnow() - timedelta(days=1),  # Expired
         )
         session.add(expired_session)
-        
+
         # Create valid session
         valid_session = UserSession(
             user_id=user.id,
@@ -158,17 +159,17 @@ class TestSessionCleanupScheduler:
             expires_at=datetime.utcnow() + timedelta(days=1),  # Valid
         )
         session.add(valid_session)
-        
+
         session.commit()
         session.close()
-        
+
         # Run cleanup
         result = scheduler.run_cleanup_now()
-        
+
         assert result is not None
         assert result.get("success") is True
         assert result.get("expired_found", 0) >= 1
-        
+
         # Verify expired session was deleted
         session = mock_session_factory()
         remaining = session.query(UserSession).all()
@@ -180,7 +181,7 @@ class TestSessionCleanupScheduler:
         """Test cleanup when there are no expired sessions."""
         # Add test user and valid session
         session = mock_session_factory()
-        
+
         user = User(
             username="testuser",
             email="test@example.com",
@@ -188,7 +189,7 @@ class TestSessionCleanupScheduler:
         )
         session.add(user)
         session.commit()
-        
+
         valid_session = UserSession(
             user_id=user.id,
             refresh_token_jti="jti1",
@@ -200,19 +201,19 @@ class TestSessionCleanupScheduler:
         session.add(valid_session)
         session.commit()
         session.close()
-        
+
         # Run cleanup
         result = scheduler.run_cleanup_now()
-        
+
         assert result.get("success") is True
         assert result.get("expired_found") == 0
 
     def test_cleanup_respects_batch_size(self, scheduler, mock_session_factory):
         """Test cleanup respects batch size limit."""
         scheduler.batch_size = 5  # Small batch size
-        
+
         session = mock_session_factory()
-        
+
         # Create test user
         user = User(
             username="testuser",
@@ -221,7 +222,7 @@ class TestSessionCleanupScheduler:
         )
         session.add(user)
         session.commit()
-        
+
         # Create 10 expired sessions
         for i in range(10):
             expired_session = UserSession(
@@ -233,27 +234,28 @@ class TestSessionCleanupScheduler:
                 expires_at=datetime.utcnow() - timedelta(days=1),
             )
             session.add(expired_session)
-        
+
         session.commit()
         session.close()
-        
+
         # Run cleanup with batch size of 5
         result = scheduler.run_cleanup_now()
-        
+
         # Should have found 10 but limited to batch size
         assert result.get("success") is True
         assert result.get("expired_found") == 10
 
     def test_scheduler_handles_database_errors(self, scheduler):
         """Test scheduler handles database errors gracefully."""
+
         # Mock session factory to raise error
         def error_factory():
             raise RuntimeError("Database connection failed")
-        
+
         scheduler.session_factory = error_factory
-        
+
         result = scheduler.run_cleanup_now()
-        
+
         assert result.get("success") is False
         assert result.get("error") is not None
 
@@ -261,13 +263,13 @@ class TestSessionCleanupScheduler:
         """Test scheduler can be restarted after stopping."""
         scheduler.start()
         assert scheduler.is_running is True
-        
+
         scheduler.stop()
         assert scheduler.is_running is False
-        
+
         scheduler.start()
         assert scheduler.is_running is True
-        
+
         scheduler.stop()
 
 
@@ -279,8 +281,9 @@ class TestSchedulerIntegration:
         """Create mock session factory."""
         engine = create_engine("sqlite:///:memory:")
         from src.db.base import Base
+
         Base.metadata.create_all(engine)
-        
+
         SessionLocal = sessionmaker(bind=engine)
         return SessionLocal
 
@@ -290,7 +293,7 @@ class TestSchedulerIntegration:
         config = Mock(spec=AuthConfig)
         config.cleanup_interval_hours = 1
         config.cleanup_batch_size = 50
-        
+
         return SessionCleanupScheduler(
             session_factory=mock_session_factory,
             config=config,
@@ -301,7 +304,7 @@ class TestSchedulerIntegration:
     def test_scheduler_with_multiple_users(self, scheduler, mock_session_factory):
         """Test cleanup with multiple users and sessions."""
         session = mock_session_factory()
-        
+
         # Create multiple users
         users = []
         for i in range(3):
@@ -312,9 +315,9 @@ class TestSchedulerIntegration:
             )
             session.add(user)
             users.append(user)
-        
+
         session.commit()
-        
+
         # Add sessions for each user (mix of expired and valid)
         for i, user in enumerate(users):
             # Expired session
@@ -327,7 +330,7 @@ class TestSchedulerIntegration:
                 expires_at=datetime.utcnow() - timedelta(days=1),
             )
             session.add(expired_session)
-            
+
             # Valid session
             valid_session = UserSession(
                 user_id=user.id,
@@ -338,16 +341,16 @@ class TestSchedulerIntegration:
                 expires_at=datetime.utcnow() + timedelta(days=1),
             )
             session.add(valid_session)
-        
+
         session.commit()
         session.close()
-        
+
         # Run cleanup
         result = scheduler.run_cleanup_now()
-        
+
         assert result.get("success") is True
         assert result.get("expired_found") == 3  # 3 expired sessions
-        
+
         # Verify only valid sessions remain
         session = mock_session_factory()
         remaining = session.query(UserSession).all()
@@ -357,14 +360,15 @@ class TestSchedulerIntegration:
 
     def test_scheduler_logs_errors(self, scheduler, caplog):
         """Test scheduler logs errors appropriately."""
+
         # Mock session factory to raise error
         def error_factory():
             raise Exception("Test error")
-        
+
         scheduler.session_factory = error_factory
-        
+
         result = scheduler.run_cleanup_now()
-        
+
         assert result.get("success") is False
         # Error should be captured in result
         assert result.get("error") is not None

@@ -56,10 +56,10 @@ class TestGenerateKeyPair:
         """Test that generated keys are in PEM format."""
         private_pem, public_pem = generate_key_pair()
 
-        assert b'-----BEGIN PRIVATE KEY-----' in private_pem
-        assert b'-----END PRIVATE KEY-----' in private_pem
-        assert b'-----BEGIN PUBLIC KEY-----' in public_pem
-        assert b'-----END PUBLIC KEY-----' in public_pem
+        assert b"-----BEGIN PRIVATE KEY-----" in private_pem
+        assert b"-----END PRIVATE KEY-----" in private_pem
+        assert b"-----BEGIN PUBLIC KEY-----" in public_pem
+        assert b"-----END PUBLIC KEY-----" in public_pem
 
     def test_generated_keys_are_valid_es256(self):
         """Test that generated keys are valid ES256 keys."""
@@ -67,31 +67,37 @@ class TestGenerateKeyPair:
 
         # Load and verify the private key
         from cryptography.hazmat.primitives.serialization import load_pem_private_key
-        private_key = load_pem_private_key(private_pem, password=None, backend=default_backend())
+
+        private_key = load_pem_private_key(
+            private_pem, password=None, backend=default_backend()
+        )
 
         # Verify it's an EC key with P-256 curve
         assert isinstance(private_key, ec.EllipticCurvePrivateKey)
-        assert private_key.curve.name == 'secp256r1'
+        assert private_key.curve.name == "secp256r1"
 
     def test_generated_keys_can_sign_and_verify(self):
         """Test that generated keys can successfully sign and verify JWT tokens."""
         private_pem, public_pem = generate_key_pair()
 
         # Create a test payload
-        payload = {'test': True, 'data': 'sample'}
+        payload = {"test": True, "data": "sample"}
 
         # Load keys for PyJWT
         from cryptography.hazmat.primitives.serialization import load_pem_private_key
-        private_key = load_pem_private_key(private_pem, password=None, backend=default_backend())
+
+        private_key = load_pem_private_key(
+            private_pem, password=None, backend=default_backend()
+        )
 
         # Sign a token
-        token = jwt.encode(payload, private_key, algorithm='ES256')
+        token = jwt.encode(payload, private_key, algorithm="ES256")
 
         # Verify the token
-        decoded = jwt.decode(token, public_pem, algorithms=['ES256'])
+        decoded = jwt.decode(token, public_pem, algorithms=["ES256"])
 
-        assert decoded['test'] is True
-        assert decoded['data'] == 'sample'
+        assert decoded["test"] is True
+        assert decoded["data"] == "sample"
 
     def test_generated_keys_are_unique(self):
         """Test that each call generates different keys."""
@@ -106,7 +112,7 @@ class TestGenerateKeyPair:
         private_pem, _ = generate_key_pair()
 
         # PKCS8 format uses "BEGIN PRIVATE KEY" (not "BEGIN EC PRIVATE KEY")
-        assert b'-----BEGIN PRIVATE KEY-----' in private_pem
+        assert b"-----BEGIN PRIVATE KEY-----" in private_pem
 
 
 class TestValidateKeyPair:
@@ -209,20 +215,18 @@ class TestValidateKeyPair:
 
         # Generate RSA key pair
         rsa_private = rsa.generate_private_key(
-            public_exponent=65537,
-            key_size=2048,
-            backend=default_backend()
+            public_exponent=65537, key_size=2048, backend=default_backend()
         )
 
         rsa_private_pem = rsa_private.private_bytes(
             encoding=serialization.Encoding.PEM,
             format=serialization.PrivateFormat.PKCS8,
-            encryption_algorithm=serialization.NoEncryption()
+            encryption_algorithm=serialization.NoEncryption(),
         )
 
         rsa_public_pem = rsa_private.public_key().public_bytes(
             encoding=serialization.Encoding.PEM,
-            format=serialization.PublicFormat.SubjectPublicKeyInfo
+            format=serialization.PublicFormat.SubjectPublicKeyInfo,
         )
 
         self.private_path.write_bytes(rsa_private_pem)
@@ -329,8 +333,10 @@ class TestBackupKeys:
         private_path.write_bytes(private_pem)
 
         # Mock datetime to control timestamp
-        with patch('scripts.setup.setup_jwt.datetime') as mock_dt:
-            mock_dt.datetime.now.return_value = datetime.datetime(2024, 1, 15, 14, 30, 45)
+        with patch("scripts.setup.setup_jwt.datetime") as mock_dt:
+            mock_dt.datetime.now.return_value = datetime.datetime(
+                2024, 1, 15, 14, 30, 45
+            )
             mock_dt.datetime.strftime = datetime.datetime.strftime
 
             backup_dir = backup_keys(self.temp_dir, self.console)
@@ -348,6 +354,7 @@ class TestBackupKeys:
 
         # Wait a moment and create second backup
         import time
+
         time.sleep(1)
         backup_dir2 = backup_keys(self.temp_dir, self.console)
 
@@ -408,7 +415,7 @@ class TestEnsureGitignore:
     def test_gitignore_read_error(self):
         """Test handling of .gitignore read error."""
         # Create .gitignore with no read permissions (Unix only)
-        if sys.platform != 'win32':
+        if sys.platform != "win32":
             self.gitignore_path.write_text("secrets/\n")
             os.chmod(self.gitignore_path, 0o000)
 
@@ -452,7 +459,9 @@ class TestSetFilePermissions:
         if self.temp_dir.exists():
             shutil.rmtree(self.temp_dir)
 
-    @pytest.mark.skipif(sys.platform == 'win32', reason="Unix permissions not applicable on Windows")
+    @pytest.mark.skipif(
+        sys.platform == "win32", reason="Unix permissions not applicable on Windows"
+    )
     def test_set_correct_permissions(self):
         """Test setting correct permissions on key files."""
         # Create key files
@@ -560,10 +569,9 @@ class TestMainCLI:
             self.temp_dir = temp_dir
             output_dir = Path(temp_dir) / "secrets" / "jwt"
 
-            result = self.runner.invoke(main, [
-                '--output-dir', str(output_dir),
-                '--non-interactive'
-            ])
+            result = self.runner.invoke(
+                main, ["--output-dir", str(output_dir), "--non-interactive"]
+            )
 
             assert result.exit_code == 0
             assert (output_dir / "private_key.pem").exists()
@@ -581,10 +589,9 @@ class TestMainCLI:
             (output_dir / "private_key.pem").write_bytes(private_pem)
             (output_dir / "public_key.pem").write_bytes(public_pem)
 
-            result = self.runner.invoke(main, [
-                '--output-dir', str(output_dir),
-                '--validate-only'
-            ])
+            result = self.runner.invoke(
+                main, ["--output-dir", str(output_dir), "--validate-only"]
+            )
 
             assert result.exit_code == 0
             assert "validation successful" in result.output.lower()
@@ -596,10 +603,9 @@ class TestMainCLI:
             output_dir = Path(temp_dir) / "secrets" / "jwt"
             output_dir.mkdir(parents=True)
 
-            result = self.runner.invoke(main, [
-                '--output-dir', str(output_dir),
-                '--validate-only'
-            ])
+            result = self.runner.invoke(
+                main, ["--output-dir", str(output_dir), "--validate-only"]
+            )
 
             assert result.exit_code == 1
             assert "validation failed" in result.output.lower()
@@ -617,11 +623,9 @@ class TestMainCLI:
             (output_dir / "public_key.pem").write_bytes(public_pem1)
 
             # Force regenerate
-            result = self.runner.invoke(main, [
-                '--output-dir', str(output_dir),
-                '--force',
-                '--non-interactive'
-            ])
+            result = self.runner.invoke(
+                main, ["--output-dir", str(output_dir), "--force", "--non-interactive"]
+            )
 
             assert result.exit_code == 0
 
@@ -644,12 +648,16 @@ class TestMainCLI:
             (output_dir / "public_key.pem").write_bytes(public_pem)
 
             # Regenerate with backup
-            result = self.runner.invoke(main, [
-                '--output-dir', str(output_dir),
-                '--force',
-                '--backup',
-                '--non-interactive'
-            ])
+            result = self.runner.invoke(
+                main,
+                [
+                    "--output-dir",
+                    str(output_dir),
+                    "--force",
+                    "--backup",
+                    "--non-interactive",
+                ],
+            )
 
             assert result.exit_code == 0
 
@@ -666,20 +674,18 @@ class TestMainCLI:
             output_dir = Path(temp_dir) / "secrets" / "jwt"
 
             # First run
-            result1 = self.runner.invoke(main, [
-                '--output-dir', str(output_dir),
-                '--non-interactive'
-            ])
+            result1 = self.runner.invoke(
+                main, ["--output-dir", str(output_dir), "--non-interactive"]
+            )
             assert result1.exit_code == 0
 
             original_private = (output_dir / "private_key.pem").read_bytes()
             original_public = (output_dir / "public_key.pem").read_bytes()
 
             # Second run without force
-            result2 = self.runner.invoke(main, [
-                '--output-dir', str(output_dir),
-                '--non-interactive'
-            ])
+            result2 = self.runner.invoke(
+                main, ["--output-dir", str(output_dir), "--non-interactive"]
+            )
             assert result2.exit_code == 0
 
             # Keys should be unchanged
@@ -692,10 +698,9 @@ class TestMainCLI:
             self.temp_dir = temp_dir
             custom_dir = Path(temp_dir) / "custom" / "keys"
 
-            result = self.runner.invoke(main, [
-                '--output-dir', str(custom_dir),
-                '--non-interactive'
-            ])
+            result = self.runner.invoke(
+                main, ["--output-dir", str(custom_dir), "--non-interactive"]
+            )
 
             assert result.exit_code == 0
             assert (custom_dir / "private_key.pem").exists()
@@ -713,10 +718,9 @@ class TestMainCLI:
             (output_dir / "public_key.pem").write_text("invalid")
 
             # Should regenerate without prompting
-            result = self.runner.invoke(main, [
-                '--output-dir', str(output_dir),
-                '--non-interactive'
-            ])
+            result = self.runner.invoke(
+                main, ["--output-dir", str(output_dir), "--non-interactive"]
+            )
 
             assert result.exit_code == 0
             # Should have regenerated without asking
@@ -730,10 +734,9 @@ class TestMainCLI:
             file_path = Path(temp_dir) / "file.txt"
             file_path.write_text("content")
 
-            result = self.runner.invoke(main, [
-                '--output-dir', str(file_path),
-                '--non-interactive'
-            ])
+            result = self.runner.invoke(
+                main, ["--output-dir", str(file_path), "--non-interactive"]
+            )
 
             # Should fail because can't create directory
             assert result.exit_code == 1
@@ -763,7 +766,10 @@ class TestErrorHandling:
         public_path.write_text("dummy")
 
         # Mock cryptography to raise ImportError
-        with patch('scripts.setup.setup_jwt.load_pem_private_key', side_effect=ImportError("No module")):
+        with patch(
+            "scripts.setup.setup_jwt.load_pem_private_key",
+            side_effect=ImportError("No module"),
+        ):
             result = validate_key_pair(private_path, public_path, self.console)
 
         assert result is False
@@ -772,7 +778,7 @@ class TestErrorHandling:
     def test_write_keys_handles_permission_error(self):
         """Test write_keys handles permission errors."""
         # Create read-only directory (Unix only)
-        if sys.platform != 'win32':
+        if sys.platform != "win32":
             read_only_dir = self.temp_dir / "readonly"
             read_only_dir.mkdir()
             os.chmod(read_only_dir, 0o444)
@@ -792,7 +798,9 @@ class TestErrorHandling:
         private_path.write_text("content")
 
         # Mock shutil.copy2 to raise IOError
-        with patch('scripts.setup.setup_jwt.shutil.copy2', side_effect=IOError("Disk full")):
+        with patch(
+            "scripts.setup.setup_jwt.shutil.copy2", side_effect=IOError("Disk full")
+        ):
             with pytest.raises(IOError):
                 backup_keys(self.temp_dir, self.console)
 
@@ -823,11 +831,9 @@ class TestJWTKeyRegeneration:
             (output_dir / "public_key.pem").write_bytes(public_pem1)
 
             # Regenerate with --force
-            result = self.runner.invoke(main, [
-                '--output-dir', str(output_dir),
-                '--force',
-                '--non-interactive'
-            ])
+            result = self.runner.invoke(
+                main, ["--output-dir", str(output_dir), "--force", "--non-interactive"]
+            )
 
             assert result.exit_code == 0
             # Keys should be different
@@ -854,11 +860,10 @@ class TestJWTKeyRegeneration:
 
             # Regenerate multiple times
             for i in range(3):
-                result = self.runner.invoke(main, [
-                    '--output-dir', str(output_dir),
-                    '--force',
-                    '--non-interactive'
-                ])
+                result = self.runner.invoke(
+                    main,
+                    ["--output-dir", str(output_dir), "--force", "--non-interactive"],
+                )
                 assert result.exit_code == 0
 
                 new_private = (output_dir / "private_key.pem").read_bytes()
@@ -881,12 +886,16 @@ class TestJWTKeyRegeneration:
             (output_dir / "public_key.pem").write_bytes(public_pem)
 
             # Regenerate with --backup
-            result = self.runner.invoke(main, [
-                '--output-dir', str(output_dir),
-                '--force',
-                '--backup',
-                '--non-interactive'
-            ])
+            result = self.runner.invoke(
+                main,
+                [
+                    "--output-dir",
+                    str(output_dir),
+                    "--force",
+                    "--backup",
+                    "--non-interactive",
+                ],
+            )
 
             assert result.exit_code == 0
 
@@ -913,12 +922,16 @@ class TestJWTKeyRegeneration:
             (output_dir / "public_key.pem").write_bytes(original_public)
 
             # Regenerate with --backup
-            result = self.runner.invoke(main, [
-                '--output-dir', str(output_dir),
-                '--force',
-                '--backup',
-                '--non-interactive'
-            ])
+            result = self.runner.invoke(
+                main,
+                [
+                    "--output-dir",
+                    str(output_dir),
+                    "--force",
+                    "--backup",
+                    "--non-interactive",
+                ],
+            )
 
             assert result.exit_code == 0
 
@@ -949,11 +962,9 @@ class TestJWTKeyRegeneration:
             (output_dir / "public_key.pem").write_bytes(public_pem)
 
             # Regenerate WITHOUT --backup
-            result = self.runner.invoke(main, [
-                '--output-dir', str(output_dir),
-                '--force',
-                '--non-interactive'
-            ])
+            result = self.runner.invoke(
+                main, ["--output-dir", str(output_dir), "--force", "--non-interactive"]
+            )
 
             assert result.exit_code == 0
 
@@ -974,44 +985,43 @@ class TestJWTKeyRegeneration:
             (output_dir / "public_key.pem").write_bytes(public_pem1)
 
             # Regenerate keys
-            result = self.runner.invoke(main, [
-                '--output-dir', str(output_dir),
-                '--force',
-                '--non-interactive'
-            ])
+            result = self.runner.invoke(
+                main, ["--output-dir", str(output_dir), "--force", "--non-interactive"]
+            )
             assert result.exit_code == 0
 
             # Load the new keys
-            from cryptography.hazmat.primitives.serialization import load_pem_private_key
+            from cryptography.hazmat.primitives.serialization import (
+                load_pem_private_key,
+            )
+
             new_private_pem = (output_dir / "private_key.pem").read_bytes()
             new_public_pem = (output_dir / "public_key.pem").read_bytes()
 
             private_key = load_pem_private_key(
-                new_private_pem,
-                password=None,
-                backend=default_backend()
+                new_private_pem, password=None, backend=default_backend()
             )
 
             # Create a test payload
             payload = {
-                'user_id': 456,
-                'username': 'testuser2',
-                'iat': int(datetime.datetime.utcnow().timestamp())
+                "user_id": 456,
+                "username": "testuser2",
+                "iat": int(datetime.datetime.utcnow().timestamp()),
             }
 
             # Sign with new private key
-            token = jwt.encode(payload, private_key, algorithm='ES256')
+            token = jwt.encode(payload, private_key, algorithm="ES256")
 
             # Verify with new public key
             decoded = jwt.decode(
                 token,
                 new_public_pem,
-                algorithms=['ES256'],
-                options={"verify_exp": False}
+                algorithms=["ES256"],
+                options={"verify_exp": False},
             )
 
-            assert decoded['user_id'] == 456
-            assert decoded['username'] == 'testuser2'
+            assert decoded["user_id"] == 456
+            assert decoded["username"] == "testuser2"
 
     def test_backup_directory_structure_is_correct(self):
         """Test that backup directory structure matches expected format."""
@@ -1026,12 +1036,16 @@ class TestJWTKeyRegeneration:
             (output_dir / "public_key.pem").write_bytes(public_pem)
 
             # Regenerate with --backup
-            result = self.runner.invoke(main, [
-                '--output-dir', str(output_dir),
-                '--force',
-                '--backup',
-                '--non-interactive'
-            ])
+            result = self.runner.invoke(
+                main,
+                [
+                    "--output-dir",
+                    str(output_dir),
+                    "--force",
+                    "--backup",
+                    "--non-interactive",
+                ],
+            )
 
             assert result.exit_code == 0
 
@@ -1051,7 +1065,9 @@ class TestJWTKeyRegeneration:
             for item in contents:
                 assert item.is_file()
 
-    @pytest.mark.skipif(sys.platform == 'win32', reason="Unix permissions not applicable on Windows")
+    @pytest.mark.skipif(
+        sys.platform == "win32", reason="Unix permissions not applicable on Windows"
+    )
     def test_file_permissions_maintained_after_regeneration(self):
         """Test that file permissions are maintained after regeneration."""
         with self.runner.isolated_filesystem() as temp_dir:
@@ -1065,11 +1081,9 @@ class TestJWTKeyRegeneration:
             (output_dir / "public_key.pem").write_bytes(public_pem)
 
             # Regenerate keys
-            result = self.runner.invoke(main, [
-                '--output-dir', str(output_dir),
-                '--force',
-                '--non-interactive'
-            ])
+            result = self.runner.invoke(
+                main, ["--output-dir", str(output_dir), "--force", "--non-interactive"]
+            )
             assert result.exit_code == 0
 
             # Check file permissions
@@ -1096,10 +1110,9 @@ class TestJWTKeyRegeneration:
             (output_dir / "public_key.pem").write_bytes(public_pem1)
 
             # Try to regenerate WITHOUT --force (should skip)
-            result = self.runner.invoke(main, [
-                '--output-dir', str(output_dir),
-                '--non-interactive'
-            ])
+            result = self.runner.invoke(
+                main, ["--output-dir", str(output_dir), "--non-interactive"]
+            )
 
             assert result.exit_code == 0
 
@@ -1112,6 +1125,7 @@ class TestJWTKeyRegeneration:
     def test_multiple_backups_create_unique_directories(self):
         """Test that multiple regenerations with delays create unique backup directories."""
         import time
+
         with self.runner.isolated_filesystem() as temp_dir:
             self.temp_dir = temp_dir
             output_dir = Path(temp_dir) / "secrets" / "jwt"
@@ -1127,12 +1141,16 @@ class TestJWTKeyRegeneration:
 
             # Regenerate multiple times with backup
             for i in range(3):
-                result = self.runner.invoke(main, [
-                    '--output-dir', str(output_dir),
-                    '--force',
-                    '--backup',
-                    '--non-interactive'
-                ])
+                result = self.runner.invoke(
+                    main,
+                    [
+                        "--output-dir",
+                        str(output_dir),
+                        "--force",
+                        "--backup",
+                        "--non-interactive",
+                    ],
+                )
                 assert result.exit_code == 0
 
                 # Get the count of backup directories
@@ -1178,12 +1196,16 @@ class TestJWTKeyRegeneration:
             original_private = (output_dir / "private_key.pem").read_bytes()
 
             # Regenerate with both --force and --backup
-            result = self.runner.invoke(main, [
-                '--output-dir', str(output_dir),
-                '--force',
-                '--backup',
-                '--non-interactive'
-            ])
+            result = self.runner.invoke(
+                main,
+                [
+                    "--output-dir",
+                    str(output_dir),
+                    "--force",
+                    "--backup",
+                    "--non-interactive",
+                ],
+            )
 
             assert result.exit_code == 0
 
@@ -1212,18 +1234,15 @@ class TestJWTKeyRegeneration:
             (output_dir / "public_key.pem").write_bytes(public_pem)
 
             # Regenerate keys
-            result = self.runner.invoke(main, [
-                '--output-dir', str(output_dir),
-                '--force',
-                '--non-interactive'
-            ])
+            result = self.runner.invoke(
+                main, ["--output-dir", str(output_dir), "--force", "--non-interactive"]
+            )
             assert result.exit_code == 0
 
             # Validate the regenerated keys
-            result = self.runner.invoke(main, [
-                '--output-dir', str(output_dir),
-                '--validate-only'
-            ])
+            result = self.runner.invoke(
+                main, ["--output-dir", str(output_dir), "--validate-only"]
+            )
 
             assert result.exit_code == 0
             assert "validation successful" in result.output.lower()
@@ -1247,12 +1266,16 @@ class TestJWTKeyRegeneration:
             orig_public_size = public_path.stat().st_size
 
             # Regenerate with backup
-            result = self.runner.invoke(main, [
-                '--output-dir', str(output_dir),
-                '--force',
-                '--backup',
-                '--non-interactive'
-            ])
+            result = self.runner.invoke(
+                main,
+                [
+                    "--output-dir",
+                    str(output_dir),
+                    "--force",
+                    "--backup",
+                    "--non-interactive",
+                ],
+            )
             assert result.exit_code == 0
 
             # Verify backup has same content and similar size
@@ -1281,26 +1304,28 @@ class TestIntegration:
             output_dir = Path(temp_dir) / "secrets" / "jwt"
 
             # Step 1: Generate initial keys
-            result = self.runner.invoke(main, [
-                '--output-dir', str(output_dir),
-                '--non-interactive'
-            ])
+            result = self.runner.invoke(
+                main, ["--output-dir", str(output_dir), "--non-interactive"]
+            )
             assert result.exit_code == 0
 
             # Step 2: Validate keys
-            result = self.runner.invoke(main, [
-                '--output-dir', str(output_dir),
-                '--validate-only'
-            ])
+            result = self.runner.invoke(
+                main, ["--output-dir", str(output_dir), "--validate-only"]
+            )
             assert result.exit_code == 0
 
             # Step 3: Regenerate with backup
-            result = self.runner.invoke(main, [
-                '--output-dir', str(output_dir),
-                '--force',
-                '--backup',
-                '--non-interactive'
-            ])
+            result = self.runner.invoke(
+                main,
+                [
+                    "--output-dir",
+                    str(output_dir),
+                    "--force",
+                    "--backup",
+                    "--non-interactive",
+                ],
+            )
             assert result.exit_code == 0
 
             # Verify backup exists
@@ -1308,10 +1333,9 @@ class TestIntegration:
             assert len(backup_dirs) == 1
 
             # Step 4: Validate new keys
-            result = self.runner.invoke(main, [
-                '--output-dir', str(output_dir),
-                '--validate-only'
-            ])
+            result = self.runner.invoke(
+                main, ["--output-dir", str(output_dir), "--validate-only"]
+            )
             assert result.exit_code == 0
 
     def test_keys_work_with_real_jwt_operations(self):
@@ -1327,29 +1351,30 @@ class TestIntegration:
             )
 
             # Load keys for JWT operations
-            from cryptography.hazmat.primitives.serialization import load_pem_private_key
+            from cryptography.hazmat.primitives.serialization import (
+                load_pem_private_key,
+            )
+
             private_key = load_pem_private_key(
-                private_path.read_bytes(),
-                password=None,
-                backend=default_backend()
+                private_path.read_bytes(), password=None, backend=default_backend()
             )
             public_key_pem = public_path.read_bytes()
 
             # Create and sign a token (without expiration for testing)
             payload = {
-                'user_id': 123,
-                'username': 'testuser',
-                'iat': int(datetime.datetime.utcnow().timestamp())
+                "user_id": 123,
+                "username": "testuser",
+                "iat": int(datetime.datetime.utcnow().timestamp()),
             }
-            token = jwt.encode(payload, private_key, algorithm='ES256')
+            token = jwt.encode(payload, private_key, algorithm="ES256")
 
             # Verify the token (disable expiration validation for testing)
             decoded = jwt.decode(
                 token,
                 public_key_pem,
-                algorithms=['ES256'],
-                options={"verify_exp": False}
+                algorithms=["ES256"],
+                options={"verify_exp": False},
             )
 
-            assert decoded['user_id'] == 123
-            assert decoded['username'] == 'testuser'
+            assert decoded["user_id"] == 123
+            assert decoded["username"] == "testuser"

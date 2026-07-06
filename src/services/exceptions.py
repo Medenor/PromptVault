@@ -5,6 +5,7 @@
 """
 Custom exception hierarchy for PromptVault services.
 """
+
 from typing import Any, Dict, Optional
 
 
@@ -123,6 +124,7 @@ class ValidationMonitorError(PromptVaultException):
 
 # Authentication Exceptions
 
+
 class AuthenticationError(PromptVaultException):
     """Base exception for authentication failures."""
 
@@ -168,7 +170,9 @@ class AccountLockedError(AuthenticationError):
         locked_until: Optional[str] = None,
         context: Optional[Dict[str, Any]] = None,
     ) -> None:
-        user_message = "Account is temporarily locked due to multiple failed login attempts."
+        user_message = (
+            "Account is temporarily locked due to multiple failed login attempts."
+        )
         if locked_until:
             user_message += f" Try again after {locked_until}."
 
@@ -352,7 +356,8 @@ class UnauthorizedError(PromptVaultException):
     ) -> None:
         super().__init__(
             message,
-            user_message=user_message or "You do not have permission to perform this operation.",
+            user_message=user_message
+            or "You do not have permission to perform this operation.",
             http_status=403,
             log_level="warning",
             context=context,
@@ -360,6 +365,7 @@ class UnauthorizedError(PromptVaultException):
 
 
 # Password Reset Exceptions
+
 
 class TokenExpiredError(AuthenticationError):
     """Raised when password reset token has expired."""

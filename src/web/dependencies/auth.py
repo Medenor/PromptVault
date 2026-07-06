@@ -97,7 +97,6 @@ from src.services.exceptions import (
     UserNotFoundError,
 )
 
-
 # ============================================================================
 # Configuration Dependencies
 # ============================================================================
@@ -122,12 +121,15 @@ def get_auth_config() -> AuthConfig:
     """
     # Import fresh auth_settings to handle test environment reloading
     from src.config.auth_config import auth_settings
+
     if isinstance(auth_settings, AuthConfig):
         return auth_settings
 
     def _export_settings():
         # Prefer Pydantic v2 export, fall back to v1
-        exporter = getattr(auth_settings, "model_dump", None) or getattr(auth_settings, "dict", None)
+        exporter = getattr(auth_settings, "model_dump", None) or getattr(
+            auth_settings, "dict", None
+        )
         if callable(exporter):
             return exporter()
         return {}
@@ -171,7 +173,9 @@ def get_jwt_service(config: AuthConfig = Depends(get_auth_config)) -> JWTService
 
 
 def get_current_user_token(
-    authorization: Optional[str] = Header(None, description="Bearer token in format: Bearer <token>"),
+    authorization: Optional[str] = Header(
+        None, description="Bearer token in format: Bearer <token>"
+    ),
     access_token_cookie: Optional[str] = Cookie(None, alias="access_token"),
     jwt_service: JWTService = Depends(get_jwt_service),
 ) -> dict:
@@ -249,14 +253,18 @@ def get_current_user_token(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Authentication token has expired",
-            headers={"WWW-Authenticate": 'Bearer error="invalid_token", error_description="Token expired"'},
+            headers={
+                "WWW-Authenticate": 'Bearer error="invalid_token", error_description="Token expired"'
+            },
         )
 
     except InvalidSignatureError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid token signature",
-            headers={"WWW-Authenticate": 'Bearer error="invalid_token", error_description="Invalid signature"'},
+            headers={
+                "WWW-Authenticate": 'Bearer error="invalid_token", error_description="Invalid signature"'
+            },
         )
 
     except InvalidTokenError as e:
@@ -333,12 +341,15 @@ def get_current_user(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found",
-            headers={"WWW-Authenticate": 'Bearer error="invalid_token", error_description="User not found"'},
+            headers={
+                "WWW-Authenticate": 'Bearer error="invalid_token", error_description="User not found"'
+            },
         )
 
     # Check if user has at least one active (non-revoked) session
     # This ensures revoked sessions invalidate access tokens
     from src.db.repositories.session_repository import SessionRepository
+
     session_repo = SessionRepository(session)
     active_session_count = session_repo.count_user_sessions(user_id, active_only=True)
 
@@ -346,7 +357,9 @@ def get_current_user(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="All sessions have been revoked. Please log in again.",
-            headers={"WWW-Authenticate": 'Bearer error="invalid_token", error_description="Session revoked"'},
+            headers={
+                "WWW-Authenticate": 'Bearer error="invalid_token", error_description="Session revoked"'
+            },
         )
 
     # Attach family_id from token for session identification
@@ -393,7 +406,9 @@ def get_current_active_user(user: User = Depends(get_current_user)) -> User:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Account has been deactivated. Please contact support.",
-            headers={"WWW-Authenticate": 'Bearer error="invalid_token", error_description="Account inactive"'},
+            headers={
+                "WWW-Authenticate": 'Bearer error="invalid_token", error_description="Account inactive"'
+            },
         )
 
     # Check if account is locked
@@ -406,7 +421,9 @@ def get_current_active_user(user: User = Depends(get_current_user)) -> User:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail=f"Account is temporarily locked due to multiple failed login attempts. Try again in {minutes} minutes.",
-                headers={"WWW-Authenticate": 'Bearer error="invalid_token", error_description="Account locked"'},
+                headers={
+                    "WWW-Authenticate": 'Bearer error="invalid_token", error_description="Account locked"'
+                },
             )
         # Lock has expired, but we don't clear it here (that's the auth service's job)
         # Still allow access since the lock period has passed
@@ -492,20 +509,27 @@ def get_optional_user(
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="User not found",
-                headers={"WWW-Authenticate": 'Bearer error="invalid_token", error_description="User not found"'},
+                headers={
+                    "WWW-Authenticate": 'Bearer error="invalid_token", error_description="User not found"'
+                },
             )
 
         # Check if user has at least one active (non-revoked) session
         # This ensures revoked sessions invalidate access tokens
         from src.db.repositories.session_repository import SessionRepository
+
         session_repo = SessionRepository(session)
-        active_session_count = session_repo.count_user_sessions(user_id, active_only=True)
+        active_session_count = session_repo.count_user_sessions(
+            user_id, active_only=True
+        )
 
         if active_session_count == 0:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="All sessions have been revoked. Please log in again.",
-                headers={"WWW-Authenticate": 'Bearer error="invalid_token", error_description="Session revoked"'},
+                headers={
+                    "WWW-Authenticate": 'Bearer error="invalid_token", error_description="Session revoked"'
+                },
             )
 
         # Optionally check if user is active (recommended)
@@ -580,6 +604,7 @@ def require_role(allowed_roles: list[str]) -> Callable:
         - Provides clear error message listing allowed roles
         - Case-sensitive role matching
     """
+
     def check_user_role(user: User = Depends(get_current_active_user)) -> User:
         """Validate that user has one of the required roles.
 

@@ -37,9 +37,7 @@ class VersionRepository(BaseRepository[PromptVersion]):
         super().__init__(PromptVersion, session)
 
     def get_versions_for_prompt(
-        self,
-        prompt_id: int,
-        limit: Optional[int] = None
+        self, prompt_id: int, limit: Optional[int] = None
     ) -> List[PromptVersion]:
         """Get all versions for a specific prompt.
 
@@ -50,9 +48,11 @@ class VersionRepository(BaseRepository[PromptVersion]):
         Returns:
             List of versions ordered by version_number descending (newest first)
         """
-        q = self.session.query(PromptVersion).filter(
-            PromptVersion.prompt_id == prompt_id
-        ).order_by(desc(PromptVersion.version_number))
+        q = (
+            self.session.query(PromptVersion)
+            .filter(PromptVersion.prompt_id == prompt_id)
+            .order_by(desc(PromptVersion.version_number))
+        )
 
         if limit:
             q = q.limit(limit)
@@ -68,9 +68,11 @@ class VersionRepository(BaseRepository[PromptVersion]):
         Returns:
             PromptVersion or None if not found
         """
-        return self.session.query(PromptVersion).filter(
-            PromptVersion.version_id == version_id
-        ).first()
+        return (
+            self.session.query(PromptVersion)
+            .filter(PromptVersion.version_id == version_id)
+            .first()
+        )
 
     def get_latest_version(self, prompt_id: int) -> Optional[PromptVersion]:
         """Get the latest version for a prompt.
@@ -81,9 +83,12 @@ class VersionRepository(BaseRepository[PromptVersion]):
         Returns:
             Latest PromptVersion or None if no versions exist
         """
-        return self.session.query(PromptVersion).filter(
-            PromptVersion.prompt_id == prompt_id
-        ).order_by(desc(PromptVersion.version_number)).first()
+        return (
+            self.session.query(PromptVersion)
+            .filter(PromptVersion.prompt_id == prompt_id)
+            .order_by(desc(PromptVersion.version_number))
+            .first()
+        )
 
     def create_version(
         self,
@@ -91,7 +96,7 @@ class VersionRepository(BaseRepository[PromptVersion]):
         author: str,
         message: str,
         parent_version_id: Optional[str] = None,
-        semantic_version: Optional[str] = None
+        semantic_version: Optional[str] = None,
     ) -> PromptVersion:
         """Create a new version from current prompt state.
 
@@ -121,11 +126,15 @@ class VersionRepository(BaseRepository[PromptVersion]):
             note=prompt.note,
             tags=[tag.name for tag in prompt.tags],  # Denormalized as JSON
             favorite=prompt.favorite,
-            semantic_version=semantic_version if semantic_version is not None else prompt.semantic_version,
+            semantic_version=(
+                semantic_version
+                if semantic_version is not None
+                else prompt.semantic_version
+            ),
             author=author,
             message=message,
             created_at=datetime.utcnow(),
-            parent_version_id=parent_version_id
+            parent_version_id=parent_version_id,
         )
 
         self.session.add(version)
@@ -133,9 +142,7 @@ class VersionRepository(BaseRepository[PromptVersion]):
         return version
 
     def compare_versions(
-        self,
-        version_id_a: str,
-        version_id_b: str
+        self, version_id_a: str, version_id_b: str
     ) -> Optional[Tuple[PromptVersion, PromptVersion]]:
         """Get two versions for comparison.
 
@@ -154,9 +161,7 @@ class VersionRepository(BaseRepository[PromptVersion]):
         return None
 
     def get_version_chain(
-        self,
-        version_id: str,
-        max_depth: int = 100
+        self, version_id: str, max_depth: int = 100
     ) -> List[PromptVersion]:
         """Get the parent chain for a version (Git-like history).
 
@@ -191,7 +196,7 @@ class VersionRepository(BaseRepository[PromptVersion]):
         prompt: Prompt,
         version_id: str,
         author: str,
-        message: Optional[str] = None
+        message: Optional[str] = None,
     ) -> Optional[PromptVersion]:
         """Revert prompt to a previous version (creates new version).
 
@@ -234,10 +239,7 @@ class VersionRepository(BaseRepository[PromptVersion]):
         parent_id = current_latest.version_id if current_latest else None
 
         new_version = self.create_version(
-            prompt=prompt,
-            author=author,
-            message=message,
-            parent_version_id=parent_id
+            prompt=prompt, author=author, message=message, parent_version_id=parent_id
         )
 
         return new_version
@@ -251,6 +253,8 @@ class VersionRepository(BaseRepository[PromptVersion]):
         Returns:
             Version count
         """
-        return self.session.query(PromptVersion).filter(
-            PromptVersion.prompt_id == prompt_id
-        ).count()
+        return (
+            self.session.query(PromptVersion)
+            .filter(PromptVersion.prompt_id == prompt_id)
+            .count()
+        )

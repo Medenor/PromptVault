@@ -26,6 +26,10 @@ from pathlib import Path
 from typing import Generator, Callable, Dict, Any, List
 from datetime import datetime, timedelta, timezone
 
+# Ensure AUTH_ENABLED=true before any src.* imports so that auth routes
+# (including /api/admin/*) are mounted when the app module is loaded.
+os.environ.setdefault("AUTH_ENABLED", "true")
+
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
@@ -63,7 +67,6 @@ from src.services.version_compression_service import VersionCompressionService
 from src.services.version_tagging_service import VersionTaggingService
 from src.services.version_export_service import VersionExportService
 
-
 # ============================================================================
 # ENVIRONMENT SETUP FOR TESTS
 # ============================================================================
@@ -72,7 +75,7 @@ from src.services.version_export_service import VersionExportService
 @pytest.fixture(scope="session", autouse=True)
 def setup_test_environment():
     """Set up environment variables for all tests.
-    
+
     This fixture runs once per test session and ensures that rate limiting
     is disabled for tests to prevent 429 responses during test execution.
     """
@@ -151,12 +154,13 @@ def test_db_engine(request):
     # This allows the in-memory DB to be shared across threads within one test
     # but isolated between different tests
     import uuid
+
     db_name = f"test_db_{uuid.uuid4().hex}"
 
     engine = create_engine(
         f"sqlite:///file:{db_name}?mode=memory&cache=shared&uri=true",
         echo=False,
-        connect_args={"check_same_thread": False}
+        connect_args={"check_same_thread": False},
     )
     Base.metadata.create_all(engine)
     yield engine
@@ -203,7 +207,7 @@ def test_user(test_db_session: Session) -> User:
         display_name="Test User",
         email="test@example.com",
         password_hash="hashed_password_placeholder",  # Required field
-        role="user"
+        role="user",
     )
     test_db_session.add(user)
     test_db_session.flush()
@@ -241,7 +245,12 @@ def test_tags(test_db_session: Session) -> List[Tag]:
 
 
 @pytest.fixture
-def test_prompt(test_db_session: Session, test_user: User, test_category: Category, test_tags: List[Tag]) -> Prompt:
+def test_prompt(
+    test_db_session: Session,
+    test_user: User,
+    test_category: Category,
+    test_tags: List[Tag],
+) -> Prompt:
     """Create a test prompt with relationships.
 
     Args:
@@ -259,7 +268,7 @@ def test_prompt(test_db_session: Session, test_user: User, test_category: Catego
         category_id=test_category.id,
         note="Test note",
         favorite=False,
-        user_id=test_user.id
+        user_id=test_user.id,
     )
     # Add first two tags to the prompt
     prompt.tags.extend(test_tags[:2])
@@ -270,9 +279,7 @@ def test_prompt(test_db_session: Session, test_user: User, test_category: Catego
 
 @pytest.fixture
 def test_prompt_with_versions(
-    test_db_session: Session,
-    test_prompt: Prompt,
-    test_user: User
+    test_db_session: Session, test_prompt: Prompt, test_user: User
 ) -> tuple[Prompt, List[PromptVersion]]:
     """Create a prompt with multiple versions for version control testing.
 
@@ -299,7 +306,7 @@ def test_prompt_with_versions(
             favorite=False,
             author=test_user.username,
             message=f"Version {i+1}",
-            parent_version_id=versions[-1].version_id if versions else None
+            parent_version_id=versions[-1].version_id if versions else None,
         )
         test_db_session.add(version)
         test_db_session.flush()
@@ -435,16 +442,19 @@ def db_backup_service(temp_data_dir: str, test_db_engine, monkeypatch) -> Backup
     """
     # Create a test database file in temp directory
     import os
+
     test_db_path = os.path.join(temp_data_dir, "test.db")
     test_db_url = f"sqlite:///{test_db_path}"
 
     # Patch DATABASE_URL to use test database
     from src.db import config as config_module
+
     monkeypatch.setattr(config_module.db_settings, "DATABASE_URL", test_db_url)
 
     # Create the test database file
     from sqlalchemy import create_engine
     from src.db.base import Base
+
     engine = create_engine(test_db_url)
     Base.metadata.create_all(engine)
     engine.dispose()
@@ -554,6 +564,7 @@ def sample_prompt_data() -> Callable[..., Dict[str, Any]]:
         >>> prompt_data = sample_prompt_data(title="My Prompt")
         >>> service.add_new_prompt(prompt_data)
     """
+
     def _create_prompt(
         title: str = "Test Prompt",
         prompt: str = "This is a test prompt content",
@@ -584,6 +595,7 @@ def sample_version_data() -> Callable[..., Dict[str, Any]]:
     Returns:
         Callable: Function that returns version data dict
     """
+
     def _create_version(
         version_id: str = "test-version-id",
         timestamp: str = "2024-01-01T12:00:00Z",
@@ -673,7 +685,7 @@ Test note 2
 @pytest.fixture
 def populated_db_service(
     db_data_service: PromptDataService,
-    sample_prompt_data: Callable[..., Dict[str, Any]]
+    sample_prompt_data: Callable[..., Dict[str, Any]],
 ) -> PromptDataService:
     """Create a database-backed service with pre-populated test data.
 
@@ -761,12 +773,12 @@ def api_client(test_db_engine, temp_data_dir: str) -> Generator[TestClient, None
     """
     # Ensure DISABLE_RATE_LIMITING is set (redundant but safe)
     os.environ["DISABLE_RATE_LIMITING"] = "true"
-    
+
     # Import here to avoid circular imports
     from src.web import app as web_app
     from src.db import session as session_module
     from src.web.middleware import rate_limit
-    
+
     # Reinitialize the limiter with rate limiting disabled
     rate_limit.limiter = rate_limit.create_limiter()
     web_app.app.state.limiter = rate_limit.limiter
@@ -795,7 +807,11 @@ def api_client(test_db_engine, temp_data_dir: str) -> Generator[TestClient, None
 
 
 @pytest.fixture
-def api_client_context(test_db_engine, temp_data_dir: str, sample_prompt_data: Callable[..., Dict[str, Any]]) -> Generator[Dict[str, Any], None, None]:
+def api_client_context(
+    test_db_engine,
+    temp_data_dir: str,
+    sample_prompt_data: Callable[..., Dict[str, Any]],
+) -> Generator[Dict[str, Any], None, None]:
     """FastAPI TestClient with database backend and data service access (backward compatibility).
 
     This fixture provides the same interface as the old api_client_context fixture
@@ -835,14 +851,14 @@ def api_client_context(test_db_engine, temp_data_dir: str, sample_prompt_data: C
     private_pem = private_key.private_bytes(
         encoding=serialization.Encoding.PEM,
         format=serialization.PrivateFormat.PKCS8,
-        encryption_algorithm=serialization.NoEncryption()
+        encryption_algorithm=serialization.NoEncryption(),
     )
 
     # Generate test public key
     public_key = private_key.public_key()
     public_pem = public_key.public_bytes(
         encoding=serialization.Encoding.PEM,
-        format=serialization.PublicFormat.SubjectPublicKeyInfo
+        format=serialization.PublicFormat.SubjectPublicKeyInfo,
     )
 
     # Write test keys to temp directory
@@ -896,6 +912,7 @@ def api_client_context(test_db_engine, temp_data_dir: str, sample_prompt_data: C
     # Force reload of auth config before configuring services
     from src.config import auth_config
     import importlib
+
     importlib.reload(auth_config)
 
     # Configure services with test data directory
@@ -955,7 +972,7 @@ def api_client_context(test_db_engine, temp_data_dir: str, sample_prompt_data: C
             tags=["api", "test"],
             favorite=True,
         ),
-        user_id="api-test-user-id"  # Set the owner
+        user_id="api-test-user-id",  # Set the owner
     )
     data_service.add_new_prompt(
         sample_prompt_data(
@@ -965,7 +982,7 @@ def api_client_context(test_db_engine, temp_data_dir: str, sample_prompt_data: C
             tags=["docs"],
             favorite=False,
         ),
-        user_id="api-test-user-id"  # Set the owner
+        user_id="api-test-user-id",  # Set the owner
     )
 
     # Create test client
@@ -1003,7 +1020,7 @@ def api_client_with_data(
     test_db_session: Session,
     test_user: User,
     test_category: Category,
-    test_tags: List[Tag]
+    test_tags: List[Tag],
 ) -> Dict[str, Any]:
     """FastAPI TestClient with pre-populated test data.
 
