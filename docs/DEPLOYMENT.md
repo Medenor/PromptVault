@@ -327,12 +327,12 @@ docker-compose rm web
 docker-compose up -d db redis
 sleep 15  # CRITICAL: Give database time to initialize
 
-# 6. Run pending database migrations
-# NOTE: This MUST happen before starting the web service
-docker-compose exec web alembic upgrade head
-
-# 7. Start updated web service
+# 6. Start updated web service
 docker-compose up -d web
+
+# 7. Run pending database migrations
+# NOTE: This MUST happen after starting the web service
+docker-compose exec web alembic upgrade head
 
 # 8. Verify update was successful
 docker-compose logs web | head -50
