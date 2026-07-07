@@ -574,11 +574,18 @@ async def cleanup_backups_retention(
     from src.db.session import get_db_session
     from src.db.repositories.backup_schedule_repository import BackupScheduleRepository
 
+    retention_daily = None
+    retention_weekly = None
+    retention_monthly = None
     with get_db_session() as session:
         repo = BackupScheduleRepository(session)
         schedule = repo.get_active()
+        if schedule:
+            retention_daily = schedule.retention_daily_count
+            retention_weekly = schedule.retention_weekly_count
+            retention_monthly = schedule.retention_monthly_count
 
-    if not schedule:
+    if retention_daily is None:
         return {"dry_run": dry_run, "would_delete": [], "deleted": []}
 
     backups = service.list_backups()
@@ -589,9 +596,9 @@ async def cleanup_backups_retention(
         return [b["backup_id"] for b in subset[keep:]]
 
     would_delete = (
-        _evict("daily", schedule.retention_daily_count)
-        + _evict("weekly", schedule.retention_weekly_count)
-        + _evict("monthly", schedule.retention_monthly_count)
+        _evict("daily", retention_daily)
+        + _evict("weekly", retention_weekly)
+        + _evict("monthly", retention_monthly)
     )
 
     if dry_run:

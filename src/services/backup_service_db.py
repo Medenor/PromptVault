@@ -68,6 +68,7 @@ class BackupService:
         created_by: Optional[str] = None,
         encrypt: bool = False,
         passphrase: Optional[str] = None,
+        backup_kind: str = "full",
     ) -> Optional[str]:
         """Create a backup of the database.
 
@@ -88,16 +89,16 @@ class BackupService:
             if custom_name:
                 safe_suffix = self._sanitize_backup_name(custom_name)
                 backup_id = (
-                    f"backup_{safe_suffix}" if safe_suffix else f"backup_{timestamp}"
+                    f"backup_{safe_suffix}_{timestamp}" if safe_suffix else f"backup_{timestamp}"
                 )
             else:
                 backup_id = f"backup_{timestamp}"
 
             # Create backup based on database type
             if db_settings.is_sqlite:
-                return self._create_sqlite_backup(backup_id, created_by, encrypt=encrypt, passphrase=passphrase)
+                return self._create_sqlite_backup(backup_id, created_by, encrypt=encrypt, passphrase=passphrase, backup_kind=backup_kind)
             elif db_settings.is_postgresql:
-                return self._create_pg_backup(backup_id, created_by, encrypt=encrypt, passphrase=passphrase)
+                return self._create_pg_backup(backup_id, created_by, encrypt=encrypt, passphrase=passphrase, backup_kind=backup_kind)
             else:
                 raise BackupError(
                     "Unsupported database type",
@@ -117,6 +118,7 @@ class BackupService:
     def _create_sqlite_backup(
         self, backup_id: str, created_by: Optional[str] = None,
         encrypt: bool = False, passphrase: Optional[str] = None,
+        backup_kind: str = "full",
     ) -> str:
         """Create SQLite backup using file copy.
 
@@ -173,6 +175,7 @@ class BackupService:
             metadata = {
                 "backup_id": backup_id,
                 "backup_type": "sqlite_copy",
+                "backup_kind": backup_kind,
                 "filename": backup_filename,
                 "storage_path": backup_path,
                 "size_bytes": backup_size,
@@ -186,7 +189,7 @@ class BackupService:
                 "encryption_nonce": None,
             }
 
-            self._save_metadata_to_db(backup_id, metadata)
+            self._save_metadata_to_db(backup_id, metadata, backup_kind=backup_kind)
             self._write_metadata_file(metadata)
 
             if encrypt:
@@ -237,6 +240,7 @@ class BackupService:
     def _create_pg_backup(
         self, backup_id: str, created_by: Optional[str] = None,
         encrypt: bool = False, passphrase: Optional[str] = None,
+        backup_kind: str = "full",
     ) -> str:
         """Create PostgreSQL backup using pg_dump.
 
@@ -280,6 +284,7 @@ class BackupService:
             metadata = {
                 "backup_id": backup_id,
                 "backup_type": "pg_dump",
+                "backup_kind": backup_kind,
                 "filename": backup_filename,
                 "storage_path": backup_path,
                 "size_bytes": backup_size,
@@ -293,7 +298,7 @@ class BackupService:
                 "encryption_nonce": None,
             }
 
-            self._save_metadata_to_db(backup_id, metadata)
+            self._save_metadata_to_db(backup_id, metadata, backup_kind=backup_kind)
             self._write_metadata_file(metadata)
 
             if encrypt:
@@ -525,8 +530,21 @@ class BackupService:
                 )
                 db_path = os.path.join(script_dir, db_path)
 
-            # Copy backup to database location
-            shutil.copy2(backup_path, db_path)
+            # Use SQLite's online backup API to safely replace the live database.
+            # This avoids the corruption risk of a raw file copy while connections
+            # are open and properly handles WAL/SHM state.
+            import sqlite3
+            from src.db.session import engine
+
+            engine.dispose()
+
+            src_conn = sqlite3.connect(backup_path)
+            dst_conn = sqlite3.connect(db_path)
+            try:
+                src_conn.backup(dst_conn)
+            finally:
+                dst_conn.close()
+                src_conn.close()
 
             logger.info(
                 "SQLite database restored from backup",
@@ -617,6 +635,7 @@ class BackupService:
                     serialized = {
                         "backup_id": backup.id,
                         "backup_type": backup.backup_type,
+                        "backup_kind": backup.backup_kind or "full",
                         "filename": backup.filename,
                         "storage_path": backup.storage_path,
                         "timestamp": timestamp,
@@ -672,6 +691,7 @@ class BackupService:
                     info = {
                         "backup_id": backup.id,
                         "backup_type": backup.backup_type,
+                        "backup_kind": backup.backup_kind or "full",
                         "filename": backup.filename,
                         "storage_path": backup.storage_path,
                         "timestamp": timestamp,
@@ -938,7 +958,8 @@ class BackupService:
     def _save_metadata_to_db(self, backup_id: str, metadata: Dict[str, Any],
                               is_encrypted: bool = False,
                               encryption_salt: Optional[str] = None,
-                              encryption_nonce: Optional[str] = None) -> None:
+                              encryption_nonce: Optional[str] = None,
+                              backup_kind: str = "full") -> None:
         """Save backup metadata to database.
 
         Args:
@@ -953,6 +974,7 @@ class BackupService:
                 backup = Backup(
                     id=backup_id,
                     backup_type=metadata["backup_type"],
+                    backup_kind=backup_kind,
                     filename=metadata["filename"],
                     storage_path=metadata["storage_path"],
                     backup_metadata=metadata,
@@ -1001,22 +1023,18 @@ class BackupService:
     def _update_backup_encryption(
         self, backup_id: str, encryption_salt: str, encryption_nonce: str
     ) -> None:
-        """Persist encryption salt/nonce to an existing backup record."""
-        try:
-            with get_db_session() as session:
-                backup = session.query(Backup).filter_by(id=backup_id).first()
-                if not backup:
-                    return
-                backup.is_encrypted = True
-                backup.encryption_salt = encryption_salt
-                backup.encryption_nonce = encryption_nonce
-                session.flush()
-        except Exception as exc:
-            logger.warning(
-                "Failed to update backup encryption metadata",
-                extra={"event": "backup.metadata.encryption_update_failure", "backup_id": backup_id},
-                exc_info=exc,
-            )
+        """Persist encryption salt/nonce to an existing backup record.
+
+        Raises so the caller can handle DB inconsistency (file already encrypted
+        but DB record would be left with is_encrypted=False if this is swallowed).
+        """
+        with get_db_session() as session:
+            backup = session.query(Backup).filter_by(id=backup_id).first()
+            if not backup:
+                return
+            backup.is_encrypted = True
+            backup.encryption_salt = encryption_salt
+            backup.encryption_nonce = encryption_nonce
 
     def _get_prompt_count(self) -> int:
         """Return the current count of prompts for backup metadata."""
@@ -1322,6 +1340,11 @@ class BackupService:
                 backup_record = session.query(Backup).filter_by(id=backup_id).first()
                 salt = backup_record.encryption_salt if backup_record else metadata.get("encryption_salt")
                 nonce = backup_record.encryption_nonce if backup_record else metadata.get("encryption_nonce")
+            if not salt or not nonce:
+                raise BackupError(
+                    "Encrypted backup missing salt/nonce",
+                    context={"backup_id": backup_id},
+                )
             working_path = backup_path + ".selective_decrypted"
             shutil.copy2(backup_path, working_path)
             try:

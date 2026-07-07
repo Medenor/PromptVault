@@ -33,10 +33,14 @@ class BackupSchedulerService:
     Uses APScheduler with SQLAlchemyJobStore for persistent job storage.
     Supports daily/weekly/monthly schedules with configurable retention.
 
-    Attributes:
-        scheduler: APScheduler BackgroundScheduler instance
-        _lock: Threading lock to prevent concurrent backup execution
+    The APScheduler instance and the concurrency lock are class-level so that
+    multiple service instances (created per HTTP request) share a single
+    background scheduler thread and the same lock.
     """
+
+    _class_scheduler: Optional[BackgroundScheduler] = None
+    _class_lock: threading.Lock = threading.Lock()
+    _scheduler_lock: threading.Lock = threading.Lock()
 
     def __init__(self, backup_service=None):
         """Initialize the backup scheduler service.
@@ -45,8 +49,10 @@ class BackupSchedulerService:
             backup_service: BackupService instance for creating backups
         """
         self._backup_service = backup_service
-        self._lock = threading.Lock()
-        self._scheduler: Optional[BackgroundScheduler] = None
+
+    @property
+    def _lock(self) -> threading.Lock:
+        return BackupSchedulerService._class_lock
 
     @property
     def backup_service(self):
@@ -57,17 +63,19 @@ class BackupSchedulerService:
         return self._backup_service
 
     def _get_scheduler(self) -> BackgroundScheduler:
-        """Get or create the APScheduler instance."""
-        if self._scheduler is None:
-            jobstores = {
-                "default": SQLAlchemyJobStore(url=db_settings.DATABASE_URL),
-            }
-            self._scheduler = BackgroundScheduler(
-                jobstores=jobstores,
-                job_defaults={"coalesce": True, "max_instances": 1},
-                daemon=True,
-            )
-        return self._scheduler
+        """Get or create the shared APScheduler instance."""
+        if BackupSchedulerService._class_scheduler is None:
+            with BackupSchedulerService._scheduler_lock:
+                if BackupSchedulerService._class_scheduler is None:
+                    jobstores = {
+                        "default": SQLAlchemyJobStore(url=db_settings.DATABASE_URL),
+                    }
+                    BackupSchedulerService._class_scheduler = BackgroundScheduler(
+                        jobstores=jobstores,
+                        job_defaults={"coalesce": True, "max_instances": 1},
+                        daemon=True,
+                    )
+        return BackupSchedulerService._class_scheduler
 
     def get_schedule(self) -> Optional[Dict[str, Any]]:
         """Get the current backup schedule configuration.
@@ -168,10 +176,28 @@ class BackupSchedulerService:
                 if active:
                     encrypt = bool(active.encrypt_scheduled_backups)
 
+            # Scheduled backups cannot prompt for a passphrase, so encryption
+            # is not supported for scheduler-triggered runs. Log and skip.
+            if encrypt:
+                logger.warning(
+                    "Scheduled backup has encrypt_scheduled_backups=True but no "
+                    "passphrase is available to the scheduler; running unencrypted.",
+                    extra={"event": "backup.scheduled.encryption_skipped"},
+                )
+                encrypt = False
+
+            frequency = "daily"
+            with get_db_session() as session:
+                repo = BackupScheduleRepository(session)
+                active = repo.get_active()
+                if active:
+                    frequency = active.frequency or "daily"
+
             backup_id = self.backup_service.create_backup(
                 custom_name="scheduled",
                 created_by="scheduler",
                 encrypt=encrypt,
+                backup_kind=frequency,
             )
 
             with get_db_session() as session:

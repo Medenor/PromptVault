@@ -34,8 +34,8 @@ def register_backup_jobs(scheduler: Any) -> None:
             if schedule and schedule.enabled:
                 from src.services.backup_scheduler_service import BackupSchedulerService
 
+                BackupSchedulerService._class_scheduler = scheduler
                 service = BackupSchedulerService()
-                service._scheduler = scheduler
                 service._register_job(
                     {
                         "frequency": schedule.frequency,
