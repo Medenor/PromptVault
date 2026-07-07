@@ -159,24 +159,17 @@ class BackupService:
             # Copy database file
             shutil.copy2(db_path, backup_path)
 
+            backup_size = os.path.getsize(backup_path)
+            prompt_count = self._get_prompt_count()
+            created_by_name = created_by or self._get_current_user()
+            timestamp = datetime.now(timezone.utc).isoformat()
+
             is_encrypted = False
             encryption_salt = None
             encryption_nonce = None
 
-            if encrypt and passphrase:
-                from src.services.backup_encryption_service import BackupEncryptionService
-                enc_service = BackupEncryptionService()
-                encryption_salt, encryption_nonce = enc_service.encrypt_file(backup_path, passphrase)
-                is_encrypted = True
-
-            # Get backup metadata
-            backup_size = os.path.getsize(backup_path)
-
-            prompt_count = self._get_prompt_count()
-            created_by_name = created_by or self._get_current_user()
-
-            # Save metadata to database
-            timestamp = datetime.now(timezone.utc).isoformat()
+            # Save metadata before encrypting so the salt/nonce are always
+            # recorded even if the process dies mid-encrypt.
             metadata = {
                 "backup_id": backup_id,
                 "backup_type": "sqlite_copy",
@@ -188,14 +181,24 @@ class BackupService:
                 "created_by": created_by_name,
                 "compressed": False,
                 "timestamp": timestamp,
-                "is_encrypted": is_encrypted,
-                "encryption_salt": encryption_salt,
-                "encryption_nonce": encryption_nonce,
+                "is_encrypted": False,
+                "encryption_salt": None,
+                "encryption_nonce": None,
             }
 
-            self._save_metadata_to_db(backup_id, metadata, is_encrypted=is_encrypted,
-                                       encryption_salt=encryption_salt, encryption_nonce=encryption_nonce)
+            self._save_metadata_to_db(backup_id, metadata)
             self._write_metadata_file(metadata)
+
+            if encrypt and passphrase:
+                from src.services.backup_encryption_service import BackupEncryptionService
+                enc_service = BackupEncryptionService()
+                encryption_salt, encryption_nonce = enc_service.encrypt_file(backup_path, passphrase)
+                is_encrypted = True
+                metadata["is_encrypted"] = True
+                metadata["encryption_salt"] = encryption_salt
+                metadata["encryption_nonce"] = encryption_nonce
+                self._update_backup_encryption(backup_id, encryption_salt, encryption_nonce)
+                self._write_metadata_file(metadata)
 
             logger.info(
                 "SQLite backup created successfully",
@@ -260,24 +263,15 @@ class BackupService:
             # Execute pg_dump
             result = subprocess.run(cmd, check=True, capture_output=True, text=True)
 
+            backup_size = os.path.getsize(backup_path)
+            prompt_count = self._get_prompt_count()
+            created_by_name = created_by or self._get_current_user()
+            timestamp = datetime.now(timezone.utc).isoformat()
+
             is_encrypted = False
             encryption_salt = None
             encryption_nonce = None
 
-            if encrypt and passphrase:
-                from src.services.backup_encryption_service import BackupEncryptionService
-                enc_service = BackupEncryptionService()
-                encryption_salt, encryption_nonce = enc_service.encrypt_file(backup_path, passphrase)
-                is_encrypted = True
-
-            # Get backup metadata
-            backup_size = os.path.getsize(backup_path)
-
-            prompt_count = self._get_prompt_count()
-            created_by_name = created_by or self._get_current_user()
-
-            # Save metadata to database
-            timestamp = datetime.now(timezone.utc).isoformat()
             metadata = {
                 "backup_id": backup_id,
                 "backup_type": "pg_dump",
@@ -289,14 +283,24 @@ class BackupService:
                 "created_by": created_by_name,
                 "compressed": False,
                 "timestamp": timestamp,
-                "is_encrypted": is_encrypted,
-                "encryption_salt": encryption_salt,
-                "encryption_nonce": encryption_nonce,
+                "is_encrypted": False,
+                "encryption_salt": None,
+                "encryption_nonce": None,
             }
 
-            self._save_metadata_to_db(backup_id, metadata, is_encrypted=is_encrypted,
-                                       encryption_salt=encryption_salt, encryption_nonce=encryption_nonce)
+            self._save_metadata_to_db(backup_id, metadata)
             self._write_metadata_file(metadata)
+
+            if encrypt and passphrase:
+                from src.services.backup_encryption_service import BackupEncryptionService
+                enc_service = BackupEncryptionService()
+                encryption_salt, encryption_nonce = enc_service.encrypt_file(backup_path, passphrase)
+                is_encrypted = True
+                metadata["is_encrypted"] = True
+                metadata["encryption_salt"] = encryption_salt
+                metadata["encryption_nonce"] = encryption_nonce
+                self._update_backup_encryption(backup_id, encryption_salt, encryption_nonce)
+                self._write_metadata_file(metadata)
 
             logger.info(
                 "PostgreSQL backup created successfully",
@@ -971,6 +975,26 @@ class BackupService:
                     "event": "backup.metadata.update_failure",
                     "backup_id": backup_id,
                 },
+                exc_info=exc,
+            )
+
+    def _update_backup_encryption(
+        self, backup_id: str, encryption_salt: str, encryption_nonce: str
+    ) -> None:
+        """Persist encryption salt/nonce to an existing backup record."""
+        try:
+            with get_db_session() as session:
+                backup = session.query(Backup).filter_by(id=backup_id).first()
+                if not backup:
+                    return
+                backup.is_encrypted = True
+                backup.encryption_salt = encryption_salt
+                backup.encryption_nonce = encryption_nonce
+                session.flush()
+        except Exception as exc:
+            logger.warning(
+                "Failed to update backup encryption metadata",
+                extra={"event": "backup.metadata.encryption_update_failure", "backup_id": backup_id},
                 exc_info=exc,
             )
 

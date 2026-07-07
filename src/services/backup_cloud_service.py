@@ -9,24 +9,46 @@ using boto3. Supports AWS S3, MinIO, Backblaze B2, and other
 S3-compatible providers.
 """
 
+import base64
 import json
 import logging
+import os
 import uuid
 from typing import Optional, Dict, Any
 
 import boto3
 from botocore.exceptions import ClientError, EndpointConnectionError
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+from argon2.low_level import hash_secret_raw, Type
 
 from src.db.session import get_db_session
 from src.db.models.backup_storage_provider import BackupStorageProvider
 from src.db.repositories.backup_storage_provider_repository import (
     BackupStorageProviderRepository,
 )
-from src.services.backup_encryption_service import BackupEncryptionService
+from src.services.backup_encryption_service import (
+    BackupEncryptionService,
+    ARGON2_TIME_COST,
+    ARGON2_MEMORY_COST,
+    ARGON2_PARALLELISM,
+    ARGON2_HASH_LEN,
+)
 
 logger = logging.getLogger(__name__)
 
-CREDENTIALS_PASSPHRASE = "promptvault-cloud-creds"
+def _get_credentials_passphrase() -> str:
+    """Return the passphrase for cloud credential encryption.
+
+    Raises:
+        RuntimeError: If PROMPTVAULT_CLOUD_CREDS_PASSPHRASE is not set.
+    """
+    passphrase = os.environ.get("PROMPTVAULT_CLOUD_CREDS_PASSPHRASE")
+    if not passphrase:
+        raise RuntimeError(
+            "PROMPTVAULT_CLOUD_CREDS_PASSPHRASE environment variable is not set. "
+            "Set it to a long random secret before using cloud backup storage."
+        )
+    return passphrase
 
 
 class BackupCloudService:
@@ -134,31 +156,18 @@ class BackupCloudService:
         Returns:
             Provider dict (without credentials)
         """
-        passphrase = credentials_passphrase or CREDENTIALS_PASSPHRASE
-        enc_service = BackupEncryptionService()
+        supported = {"s3"}
+        if provider_type not in supported:
+            raise ValueError(
+                f"Unsupported provider_type '{provider_type}'. "
+                "Currently supported: s3 (AWS S3, MinIO, Backblaze B2, Cloudflare R2, etc.). "
+                "Google Drive and Dropbox support is planned for a future release."
+            )
+
+        passphrase = credentials_passphrase or _get_credentials_passphrase()
 
         creds_json = json.dumps({"access_key": access_key, "secret_key": secret_key})
-
-        import os
-        from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-        from argon2.low_level import hash_secret_raw, Type
-
-        salt = os.urandom(16)
-        nonce = os.urandom(12)
-        key = hash_secret_raw(
-            secret=passphrase.encode("utf-8"),
-            salt=salt,
-            time_cost=3,
-            memory_cost=65536,
-            parallelism=1,
-            hash_len=32,
-            type=Type.ID,
-        )
-        aesgcm = AESGCM(key)
-        ciphertext = aesgcm.encrypt(nonce, creds_json.encode("utf-8"), None)
-
-        import base64
-        encrypted_creds = base64.b64encode(ciphertext).decode("utf-8")
+        salt, nonce, encrypted_creds = self._encrypt_credentials(creds_json, passphrase)
 
         with get_db_session() as session:
             repo = BackupStorageProviderRepository(session)
@@ -171,8 +180,8 @@ class BackupCloudService:
                 prefix=prefix,
                 region=region,
                 credentials_encrypted=encrypted_creds,
-                credentials_salt=salt.hex(),
-                credentials_nonce=nonce.hex(),
+                credentials_salt=salt,
+                credentials_nonce=nonce,
                 enabled=True,
             )
             session.commit()
@@ -223,11 +232,7 @@ class BackupCloudService:
         Returns:
             Dict with 'access_key' and 'secret_key'
         """
-        import base64
-        from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-        from argon2.low_level import hash_secret_raw, Type
-
-        passphrase = CREDENTIALS_PASSPHRASE
+        passphrase = _get_credentials_passphrase()
         salt = bytes.fromhex(provider.credentials_salt)
         nonce = bytes.fromhex(provider.credentials_nonce)
         ciphertext = base64.b64decode(provider.credentials_encrypted)
@@ -235,15 +240,37 @@ class BackupCloudService:
         key = hash_secret_raw(
             secret=passphrase.encode("utf-8"),
             salt=salt,
-            time_cost=3,
-            memory_cost=65536,
-            parallelism=1,
-            hash_len=32,
+            time_cost=ARGON2_TIME_COST,
+            memory_cost=ARGON2_MEMORY_COST,
+            parallelism=ARGON2_PARALLELISM,
+            hash_len=ARGON2_HASH_LEN,
             type=Type.ID,
         )
         aesgcm = AESGCM(key)
         plaintext = aesgcm.decrypt(nonce, ciphertext, None)
         return json.loads(plaintext.decode("utf-8"))
+
+    @staticmethod
+    def _encrypt_credentials(creds_json: str, passphrase: str) -> tuple:
+        """Encrypt credentials JSON with Argon2id + AES-256-GCM.
+
+        Returns:
+            Tuple of (salt_hex, nonce_hex, base64_ciphertext)
+        """
+        salt = os.urandom(16)
+        nonce = os.urandom(12)
+        key = hash_secret_raw(
+            secret=passphrase.encode("utf-8"),
+            salt=salt,
+            time_cost=ARGON2_TIME_COST,
+            memory_cost=ARGON2_MEMORY_COST,
+            parallelism=ARGON2_PARALLELISM,
+            hash_len=ARGON2_HASH_LEN,
+            type=Type.ID,
+        )
+        aesgcm = AESGCM(key)
+        ciphertext = aesgcm.encrypt(nonce, creds_json.encode("utf-8"), None)
+        return salt.hex(), nonce.hex(), base64.b64encode(ciphertext).decode("utf-8")
 
     @staticmethod
     def _get_client(provider: BackupStorageProvider, creds: Dict[str, str]):

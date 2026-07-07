@@ -16,7 +16,7 @@ from fastapi.responses import JSONResponse
 
 from src.db.models.user import User
 from src.web.dependencies.auth import get_current_user_or_none
-from src.web.models import BackupCreateRequest, BackupCleanupRequest, BackupCompressRequest
+from src.web.models import BackupCreateRequest, BackupCompressRequest
 from src.web.monitoring import ValidationMonitor
 
 router = APIRouter(tags=["backups"])
@@ -54,8 +54,11 @@ async def get_backups(
     kind: Optional[str] = None,
     limit: int = 50,
     offset: int = 0,
+    current_user: Optional[User] = Depends(get_current_user_or_none),
 ):
     """Get list of all backups with optional filters."""
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Authentication required", headers={"WWW-Authenticate": "Bearer"})
     service = _get_backup_service()
     backups = service.list_backups()
 
@@ -231,38 +234,14 @@ async def delete_backup(
         )
 
 
-@router.post("/api/backups/cleanup")
-async def cleanup_backups(retention_days: int = Form(30)):
-    """Clean up old backups with validation."""
-    service = _get_backup_service()
-    try:
-        validated_data = BackupCleanupRequest(retention_days=retention_days)
-
-        removed_count = service.cleanup_old_backups(validated_data.retention_days)
-        if _record_validation_event:
-            _record_validation_event(endpoint="/api/backups/cleanup", success=True)
-        return {"success": True, "removed_count": removed_count}
-
-    except Exception as e:
-        from pydantic import ValidationError
-
-        if isinstance(e, ValidationError):
-            if _record_validation_event:
-                _record_validation_event(
-                    endpoint="/api/backups/cleanup",
-                    success=False,
-                    errors=[err.get("msg", "") for err in e.errors()],
-                )
-            return JSONResponse(
-                status_code=422,
-                content={"error": "Validation failed", "details": e.errors()},
-            )
-        raise
-
-
 @router.post("/api/backups/compress")
-async def compress_backups(days_threshold: int = Form(7)):
+async def compress_backups(
+    days_threshold: int = Form(7),
+    current_user: Optional[User] = Depends(get_current_user_or_none),
+):
     """Compress old backups with validation."""
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Authentication required", headers={"WWW-Authenticate": "Bearer"})
     service = _get_backup_service()
     try:
         validated_data = BackupCompressRequest(days_threshold=days_threshold)
@@ -290,8 +269,12 @@ async def compress_backups(days_threshold: int = Form(7)):
 
 
 @router.get("/api/backups/stats")
-async def get_backup_stats():
+async def get_backup_stats(
+    current_user: Optional[User] = Depends(get_current_user_or_none),
+):
     """Get backup statistics."""
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Authentication required", headers={"WWW-Authenticate": "Bearer"})
     service = _get_backup_service()
     stats = service.get_backup_stats()
     return stats
@@ -440,17 +423,20 @@ async def create_backup_provider(
             raise HTTPException(status_code=422, detail=f"{field} is required")
 
     service = BackupCloudService()
-    return service.create_provider(
-        name=body["name"],
-        provider_type=body["provider_type"],
-        bucket_name=body["bucket_name"],
-        access_key=body["access_key"],
-        secret_key=body["secret_key"],
-        endpoint_url=body.get("endpoint_url"),
-        prefix=body.get("prefix", ""),
-        region=body.get("region"),
-        credentials_passphrase=body.get("credentials_passphrase"),
-    )
+    try:
+        return service.create_provider(
+            name=body["name"],
+            provider_type=body["provider_type"],
+            bucket_name=body["bucket_name"],
+            access_key=body["access_key"],
+            secret_key=body["secret_key"],
+            endpoint_url=body.get("endpoint_url"),
+            prefix=body.get("prefix", ""),
+            region=body.get("region"),
+            credentials_passphrase=body.get("credentials_passphrase"),
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
 
 
 @router.delete("/api/backup-providers/{provider_id}")
@@ -603,6 +589,8 @@ async def cleanup_backups_retention(
     current_user: Optional[User] = Depends(get_current_user_or_none),
 ):
     """Run retention cleanup (or dry-run) based on schedule retention policy."""
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Authentication required", headers={"WWW-Authenticate": "Bearer"})
     body = await request.json()
     dry_run = body.get("dry_run", True)
 

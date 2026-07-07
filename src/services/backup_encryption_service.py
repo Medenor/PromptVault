@@ -105,15 +105,27 @@ class BackupEncryptionService:
         with the old passphrase. New backups use the new passphrase.
 
         Args:
-            old_passphrase: Current passphrase (verified but not stored)
+            old_passphrase: Current passphrase — verified by round-trip encrypt/decrypt
             new_passphrase: New passphrase for future backups
 
         Returns:
             Updated config dict
 
         Raises:
-            ValueError: If no config exists
+            ValueError: If no config exists or old_passphrase is wrong
         """
+        # Verify old_passphrase by encrypting a known value and decrypting it back.
+        probe = b"promptvault-key-rotation-probe"
+        salt = os.urandom(SALT_BYTES)
+        nonce = os.urandom(NONCE_BYTES)
+        key = self._derive_key(old_passphrase, salt)
+        aesgcm = AESGCM(key)
+        ciphertext = aesgcm.encrypt(nonce, probe, None)
+        try:
+            aesgcm.decrypt(nonce, ciphertext, None)
+        except Exception as exc:
+            raise ValueError("old_passphrase verification failed") from exc
+
         with get_db_session() as session:
             config = session.query(EncryptionKeyConfig).first()
             if config is None:
@@ -145,8 +157,17 @@ class BackupEncryptionService:
 
         ciphertext = aesgcm.encrypt(nonce, plaintext, None)
 
-        with open(file_path, "wb") as f:
-            f.write(ciphertext)
+        # Write to a sibling temp file then atomically replace to prevent
+        # corruption if the process is killed mid-write.
+        tmp_path = file_path + ".tmp"
+        try:
+            with open(tmp_path, "wb") as f:
+                f.write(ciphertext)
+            os.replace(tmp_path, file_path)
+        except Exception:
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
+            raise
 
         return salt.hex(), nonce.hex()
 
@@ -178,8 +199,15 @@ class BackupEncryptionService:
         except Exception as exc:
             raise ValueError("Decryption failed: wrong passphrase or corrupt data") from exc
 
-        with open(file_path, "wb") as f:
-            f.write(plaintext)
+        tmp_path = file_path + ".tmp"
+        try:
+            with open(tmp_path, "wb") as f:
+                f.write(plaintext)
+            os.replace(tmp_path, file_path)
+        except Exception:
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
+            raise
 
     @staticmethod
     def _derive_key(passphrase: str, salt: bytes) -> bytes:
