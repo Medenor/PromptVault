@@ -15,7 +15,7 @@ from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import JSONResponse
 
 from src.db.models.user import User
-from src.web.dependencies.auth import get_current_user_or_none
+from src.web.dependencies.auth import get_current_user_or_none, require_role
 from src.web.models import BackupCreateRequest, BackupCompressRequest
 from src.web.monitoring import ValidationMonitor
 
@@ -80,15 +80,9 @@ async def get_backups(
 @router.post("/api/backups")
 async def create_manual_backup(
     name: str = Form(None),
-    current_user: Optional[User] = Depends(get_current_user_or_none),
+    current_user: User = Depends(require_role(["admin"])),
 ):
     """Create a manual backup with validation."""
-    if not current_user:
-        raise HTTPException(
-            status_code=401,
-            detail="Authentication required",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
     service = _get_backup_service()
     try:
         validated_data = BackupCreateRequest(name=name)
@@ -127,11 +121,9 @@ async def create_manual_backup(
 async def restore_preview(
     backup_id: str,
     request: Request,
-    current_user: Optional[User] = Depends(get_current_user_or_none),
+    current_user: User = Depends(require_role(["admin"])),
 ):
     """Preview what would change if this backup were restored."""
-    if not current_user:
-        raise HTTPException(status_code=401, detail="Authentication required", headers={"WWW-Authenticate": "Bearer"})
 
     service = _get_backup_service()
     body = await request.json()
@@ -149,15 +141,9 @@ async def restore_preview(
 async def restore_backup(
     backup_id: str,
     request: Request,
-    current_user: Optional[User] = Depends(get_current_user_or_none),
+    current_user: User = Depends(require_role(["admin"])),
 ):
     """Restore from a specific backup. Supports selective restore via prompt_ids."""
-    if not current_user:
-        raise HTTPException(
-            status_code=401,
-            detail="Authentication required",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
     service = _get_backup_service()
     from src.services.exceptions import BackupError
 
@@ -206,15 +192,9 @@ async def restore_backup(
 @router.delete("/api/backups/{backup_id}")
 async def delete_backup(
     backup_id: str,
-    current_user: Optional[User] = Depends(get_current_user_or_none),
+    current_user: User = Depends(require_role(["admin"])),
 ):
     """Delete a specific backup."""
-    if not current_user:
-        raise HTTPException(
-            status_code=401,
-            detail="Authentication required",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
     service = _get_backup_service()
     try:
         backup_info = service.get_backup_info(backup_id)
@@ -237,11 +217,9 @@ async def delete_backup(
 @router.post("/api/backups/compress")
 async def compress_backups(
     days_threshold: int = Form(7),
-    current_user: Optional[User] = Depends(get_current_user_or_none),
+    current_user: User = Depends(require_role(["admin"])),
 ):
     """Compress old backups with validation."""
-    if not current_user:
-        raise HTTPException(status_code=401, detail="Authentication required", headers={"WWW-Authenticate": "Bearer"})
     service = _get_backup_service()
     try:
         validated_data = BackupCompressRequest(days_threshold=days_threshold)
@@ -299,15 +277,9 @@ async def get_backup_schedule(
 @router.put("/api/backup-schedule")
 async def update_backup_schedule(
     request: Request,
-    current_user: Optional[User] = Depends(get_current_user_or_none),
+    current_user: User = Depends(require_role(["admin"])),
 ):
     """Create or update the backup schedule."""
-    if not current_user:
-        raise HTTPException(
-            status_code=401,
-            detail="Authentication required",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
 
     from src.services.backup_scheduler_service import BackupSchedulerService
 
@@ -373,11 +345,9 @@ async def get_encryption_config(
 @router.put("/api/backup-encryption")
 async def update_encryption_config(
     request: Request,
-    current_user: Optional[User] = Depends(get_current_user_or_none),
+    current_user: User = Depends(require_role(["admin"])),
 ):
     """Enable/disable encryption or rotate key."""
-    if not current_user:
-        raise HTTPException(status_code=401, detail="Authentication required", headers={"WWW-Authenticate": "Bearer"})
 
     from src.services.backup_encryption_service import BackupEncryptionService
 
@@ -420,11 +390,9 @@ async def list_backup_providers(
 @router.post("/api/backup-providers", status_code=201)
 async def create_backup_provider(
     request: Request,
-    current_user: Optional[User] = Depends(get_current_user_or_none),
+    current_user: User = Depends(require_role(["admin"])),
 ):
     """Configure a new cloud storage provider."""
-    if not current_user:
-        raise HTTPException(status_code=401, detail="Authentication required", headers={"WWW-Authenticate": "Bearer"})
 
     from src.services.backup_cloud_service import BackupCloudService
     body = await request.json()
@@ -453,11 +421,9 @@ async def create_backup_provider(
 @router.delete("/api/backup-providers/{provider_id}")
 async def delete_backup_provider(
     provider_id: str,
-    current_user: Optional[User] = Depends(get_current_user_or_none),
+    current_user: User = Depends(require_role(["admin"])),
 ):
     """Remove a cloud storage provider."""
-    if not current_user:
-        raise HTTPException(status_code=401, detail="Authentication required", headers={"WWW-Authenticate": "Bearer"})
 
     from src.services.backup_cloud_service import BackupCloudService
     service = BackupCloudService()
@@ -473,11 +439,9 @@ async def delete_backup_provider(
 @router.post("/api/backup-providers/{provider_id}/test")
 async def test_backup_provider(
     provider_id: str,
-    current_user: Optional[User] = Depends(get_current_user_or_none),
+    current_user: User = Depends(require_role(["admin"])),
 ):
     """Test connectivity to a cloud storage provider."""
-    if not current_user:
-        raise HTTPException(status_code=401, detail="Authentication required", headers={"WWW-Authenticate": "Bearer"})
 
     from src.services.backup_cloud_service import BackupCloudService
     from src.db.session import get_db_session
@@ -523,11 +487,9 @@ async def get_backup_audit_log(
 @router.post("/api/backups/{backup_id}/verify")
 async def verify_backup(
     backup_id: str,
-    current_user: Optional[User] = Depends(get_current_user_or_none),
+    current_user: User = Depends(require_role(["admin"])),
 ):
     """Verify backup integrity by recomputing SHA-256 checksum."""
-    if not current_user:
-        raise HTTPException(status_code=401, detail="Authentication required", headers={"WWW-Authenticate": "Bearer"})
 
     import hashlib
     from datetime import datetime, timezone
@@ -572,11 +534,9 @@ async def verify_backup(
 async def update_backup_tags(
     backup_id: str,
     request: Request,
-    current_user: Optional[User] = Depends(get_current_user_or_none),
+    current_user: User = Depends(require_role(["admin"])),
 ):
     """Add or replace tags on a backup."""
-    if not current_user:
-        raise HTTPException(status_code=401, detail="Authentication required", headers={"WWW-Authenticate": "Bearer"})
 
     from src.db.session import get_db_session
     from src.db.models import Backup
@@ -604,11 +564,9 @@ async def update_backup_tags(
 @router.post("/api/backups/cleanup")
 async def cleanup_backups_retention(
     request: Request,
-    current_user: Optional[User] = Depends(get_current_user_or_none),
+    current_user: User = Depends(require_role(["admin"])),
 ):
     """Run retention cleanup (or dry-run) based on schedule retention policy."""
-    if not current_user:
-        raise HTTPException(status_code=401, detail="Authentication required", headers={"WWW-Authenticate": "Bearer"})
     body = await request.json()
     dry_run = body.get("dry_run", True)
 

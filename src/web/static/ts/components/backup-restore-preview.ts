@@ -7,6 +7,15 @@
 import { apiFetch, apiPost } from '@/utils/api';
 import { reportError } from '@/telemetry';
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 const COMPONENT = 'backupRestorePreview';
 
 interface RestoreDiff {
@@ -73,26 +82,26 @@ function renderDiff(diff: RestoreDiff, backupId: string): void {
 
   for (const item of changes.added) {
     html += `<div class="flex items-start gap-2 p-2 bg-green-50 rounded border border-green-200">
-      <input type="checkbox" class="restore-select mt-1" data-id="${item.id}" checked />
+      <input type="checkbox" class="restore-select mt-1" data-id="${escapeHtml(item.id)}" checked />
       <div><span class="text-green-700 font-medium text-xs">ADDED</span>
-      <div class="text-sm text-gray-900">${item.title}</div></div>
+      <div class="text-sm text-gray-900">${escapeHtml(item.title)}</div></div>
     </div>`;
   }
 
   for (const item of changes.updated) {
     html += `<div class="flex items-start gap-2 p-2 bg-yellow-50 rounded border border-yellow-200">
-      <input type="checkbox" class="restore-select mt-1" data-id="${item.id}" checked />
+      <input type="checkbox" class="restore-select mt-1" data-id="${escapeHtml(item.id)}" checked />
       <div><span class="text-yellow-700 font-medium text-xs">UPDATED</span>
-      <div class="text-sm text-gray-900">${item.title}</div>
-      <div class="text-xs text-gray-500">"${item.before.title}" → "${item.after.title}"</div></div>
+      <div class="text-sm text-gray-900">${escapeHtml(item.title)}</div>
+      <div class="text-xs text-gray-500">"${escapeHtml(item.before.title)}" → "${escapeHtml(item.after.title)}"</div></div>
     </div>`;
   }
 
   for (const item of changes.deleted) {
     html += `<div class="flex items-start gap-2 p-2 bg-red-50 rounded border border-red-200">
-      <input type="checkbox" class="restore-select mt-1" data-id="${item.id}" checked />
+      <input type="checkbox" class="restore-select mt-1" data-id="${escapeHtml(item.id)}" checked />
       <div><span class="text-red-700 font-medium text-xs">DELETED</span>
-      <div class="text-sm text-gray-900">${item.title}</div></div>
+      <div class="text-sm text-gray-900">${escapeHtml(item.title)}</div></div>
     </div>`;
   }
 
