@@ -174,6 +174,9 @@ def upgrade() -> None:
                 nullable=False,
                 server_default=sa.func.now(),
             ),
+            sa.Column("verification_salt", sa.String(32), nullable=True),
+            sa.Column("verification_nonce", sa.String(24), nullable=True),
+            sa.Column("verification_ciphertext", sa.Text(), nullable=True),
         )
 
 

@@ -161,9 +161,17 @@ class BackupSchedulerService:
             return
 
         try:
+            encrypt = False
+            with get_db_session() as session:
+                repo = BackupScheduleRepository(session)
+                active = repo.get_active()
+                if active:
+                    encrypt = bool(active.encrypt_scheduled_backups)
+
             backup_id = self.backup_service.create_backup(
                 custom_name="scheduled",
                 created_by="scheduler",
+                encrypt=encrypt,
             )
 
             with get_db_session() as session:

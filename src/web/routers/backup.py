@@ -582,14 +582,17 @@ async def cleanup_backups_retention(
         return {"dry_run": dry_run, "would_delete": [], "deleted": []}
 
     backups = service.list_backups()
-    would_delete = []
 
-    daily_backups = [b for b in backups if b.get("timestamp")]
-    daily_backups.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
+    def _evict(kind: str, keep: int) -> list:
+        subset = [b for b in backups if b.get("backup_kind", "full") == kind and b.get("timestamp")]
+        subset.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
+        return [b["backup_id"] for b in subset[keep:]]
 
-    keep_count = schedule.retention_daily_count + schedule.retention_weekly_count + schedule.retention_monthly_count
-    to_delete = daily_backups[keep_count:] if len(daily_backups) > keep_count else []
-    would_delete = [b["backup_id"] for b in to_delete]
+    would_delete = (
+        _evict("daily", schedule.retention_daily_count)
+        + _evict("weekly", schedule.retention_weekly_count)
+        + _evict("monthly", schedule.retention_monthly_count)
+    )
 
     if dry_run:
         return {"dry_run": True, "would_delete": would_delete, "deleted": []}

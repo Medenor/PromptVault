@@ -8,6 +8,7 @@ Provides AES-256-GCM encryption with Argon2id key derivation for backup files.
 The passphrase is never stored — only per-backup salt and nonce are persisted.
 """
 
+import base64
 import os
 import uuid
 import logging
@@ -57,6 +58,7 @@ class BackupEncryptionService:
         """Enable encryption with the given passphrase.
 
         Creates or updates the EncryptionKeyConfig. The passphrase is not stored.
+        A verification sentinel is stored so rotate_key can authenticate the old passphrase.
 
         Args:
             passphrase: Admin passphrase for key derivation
@@ -64,6 +66,8 @@ class BackupEncryptionService:
         Returns:
             Updated config dict
         """
+        v_salt, v_nonce, v_ciphertext = self._make_verification_sentinel(passphrase)
+
         with get_db_session() as session:
             config = session.query(EncryptionKeyConfig).first()
             if config is None:
@@ -80,6 +84,10 @@ class BackupEncryptionService:
                 session.add(config)
             else:
                 config.is_enabled = True
+
+            config.verification_salt = v_salt
+            config.verification_nonce = v_nonce
+            config.verification_ciphertext = v_ciphertext
 
             session.commit()
             return self._serialize_config(config)
@@ -114,25 +122,27 @@ class BackupEncryptionService:
         Raises:
             ValueError: If no config exists or old_passphrase is wrong
         """
-        # Verify old_passphrase by encrypting a known value and decrypting it back.
-        probe = b"promptvault-key-rotation-probe"
-        salt = os.urandom(SALT_BYTES)
-        nonce = os.urandom(NONCE_BYTES)
-        key = self._derive_key(old_passphrase, salt)
-        aesgcm = AESGCM(key)
-        ciphertext = aesgcm.encrypt(nonce, probe, None)
-        try:
-            aesgcm.decrypt(nonce, ciphertext, None)
-        except Exception as exc:
-            raise ValueError("old_passphrase verification failed") from exc
-
         with get_db_session() as session:
             config = session.query(EncryptionKeyConfig).first()
             if config is None:
                 raise ValueError("Encryption not configured")
 
+            if not config.verification_salt or not config.verification_nonce or not config.verification_ciphertext:
+                raise ValueError("No verification sentinel stored — call enable() before rotating the key")
+
+            self._verify_passphrase(
+                old_passphrase,
+                config.verification_salt,
+                config.verification_nonce,
+                config.verification_ciphertext,
+            )
+
+            v_salt, v_nonce, v_ciphertext = self._make_verification_sentinel(new_passphrase)
             config.key_version += 1
             config.rotated_at = datetime.now(timezone.utc)
+            config.verification_salt = v_salt
+            config.verification_nonce = v_nonce
+            config.verification_ciphertext = v_ciphertext
             session.commit()
             return self._serialize_config(config)
 
@@ -229,6 +239,30 @@ class BackupEncryptionService:
             hash_len=ARGON2_HASH_LEN,
             type=Type.ID,
         )
+
+    @staticmethod
+    def _make_verification_sentinel(passphrase: str) -> Tuple[str, str, str]:
+        """Encrypt a fixed probe under passphrase; returns (salt_hex, nonce_hex, b64_ciphertext).
+
+        Used to verify the passphrase during key rotation without storing the passphrase itself.
+        """
+        salt = os.urandom(SALT_BYTES)
+        nonce = os.urandom(NONCE_BYTES)
+        key = BackupEncryptionService._derive_key(passphrase, salt)
+        ciphertext = AESGCM(key).encrypt(nonce, b"promptvault-verification-sentinel", None)
+        return salt.hex(), nonce.hex(), base64.b64encode(ciphertext).decode("utf-8")
+
+    @staticmethod
+    def _verify_passphrase(passphrase: str, salt_hex: str, nonce_hex: str, ciphertext_b64: str) -> None:
+        """Raise ValueError if passphrase does not decrypt the stored sentinel."""
+        salt = bytes.fromhex(salt_hex)
+        nonce = bytes.fromhex(nonce_hex)
+        ciphertext = base64.b64decode(ciphertext_b64)
+        key = BackupEncryptionService._derive_key(passphrase, salt)
+        try:
+            AESGCM(key).decrypt(nonce, ciphertext, None)
+        except Exception as exc:
+            raise ValueError("old_passphrase verification failed") from exc
 
     @staticmethod
     def _serialize_config(config: EncryptionKeyConfig) -> Dict[str, Any]:

@@ -7,7 +7,7 @@
 Stores per-system encryption configuration metadata. Never stores the passphrase.
 """
 
-from sqlalchemy import Column, String, Integer, Boolean, DateTime
+from sqlalchemy import Column, String, Integer, Boolean, DateTime, Text
 from sqlalchemy.sql import func
 
 from src.db.base import Base
@@ -44,6 +44,11 @@ class EncryptionKeyConfig(Base):
     key_version = Column(Integer, nullable=False, default=1)
     rotated_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    # Stored sentinel for passphrase verification during key rotation.
+    # Encrypted with the active passphrase; never contains the passphrase itself.
+    verification_salt = Column(String(32), nullable=True)
+    verification_nonce = Column(String(24), nullable=True)
+    verification_ciphertext = Column(Text, nullable=True)
 
     def __repr__(self):
         return f"<EncryptionKeyConfig(id='{self.id[:8]}...', enabled={self.is_enabled}, version={self.key_version})>"

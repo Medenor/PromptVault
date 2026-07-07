@@ -189,7 +189,12 @@ class BackupService:
             self._save_metadata_to_db(backup_id, metadata)
             self._write_metadata_file(metadata)
 
-            if encrypt and passphrase:
+            if encrypt:
+                if not passphrase:
+                    raise BackupError(
+                        "passphrase required when encrypt=True",
+                        context={"backup_id": backup_id},
+                    )
                 from src.services.backup_encryption_service import BackupEncryptionService
                 enc_service = BackupEncryptionService()
                 encryption_salt, encryption_nonce = enc_service.encrypt_file(backup_path, passphrase)
@@ -291,7 +296,12 @@ class BackupService:
             self._save_metadata_to_db(backup_id, metadata)
             self._write_metadata_file(metadata)
 
-            if encrypt and passphrase:
+            if encrypt:
+                if not passphrase:
+                    raise BackupError(
+                        "passphrase required when encrypt=True",
+                        context={"backup_id": backup_id},
+                    )
                 from src.services.backup_encryption_service import BackupEncryptionService
                 enc_service = BackupEncryptionService()
                 encryption_salt, encryption_nonce = enc_service.encrypt_file(backup_path, passphrase)
@@ -411,7 +421,6 @@ class BackupService:
                         context={"backup_id": backup_id},
                     )
 
-                import tempfile
                 decrypted_path = backup_path + ".decrypted"
                 shutil.copy2(backup_path, decrypted_path)
                 try:
@@ -425,37 +434,43 @@ class BackupService:
                         context={"backup_id": backup_id},
                         http_status=400,
                     ) from exc
-
-            # Create pre-restore backup with unique timestamp
-            from datetime import datetime, timezone
-
-            timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")[
-                :21
-            ]  # Include microseconds for uniqueness
-            logger.info(
-                "Creating pre-restore backup",
-                extra={"event": "backup.restore.pre_backup"},
-            )
-            pre_restore_backup = self.create_backup(
-                f"pre_restore_{timestamp}",
-                created_by=created_by,
-            )
-            if not pre_restore_backup:
-                logger.warning(
-                    "Could not create pre-restore backup",
-                    extra={"event": "backup.restore.warning"},
-                )
-
-            # Restore based on backup type
-            if backup_type == "pg_dump":
-                success = self._restore_pg_backup(backup_id, backup_path)
-            elif backup_type == "sqlite_copy":
-                success = self._restore_sqlite_backup(backup_id, backup_path)
             else:
-                raise BackupError(
-                    f"Unsupported backup type: {backup_type}",
-                    context={"backup_id": backup_id, "backup_type": backup_type},
+                decrypted_path = None
+
+            try:
+                # Create pre-restore backup with unique timestamp
+                from datetime import datetime, timezone
+
+                timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")[
+                    :21
+                ]  # Include microseconds for uniqueness
+                logger.info(
+                    "Creating pre-restore backup",
+                    extra={"event": "backup.restore.pre_backup"},
                 )
+                pre_restore_backup = self.create_backup(
+                    f"pre_restore_{timestamp}",
+                    created_by=created_by,
+                )
+                if not pre_restore_backup:
+                    logger.warning(
+                        "Could not create pre-restore backup",
+                        extra={"event": "backup.restore.warning"},
+                    )
+
+                # Restore based on backup type
+                if backup_type == "pg_dump":
+                    success = self._restore_pg_backup(backup_id, backup_path)
+                elif backup_type == "sqlite_copy":
+                    success = self._restore_sqlite_backup(backup_id, backup_path)
+                else:
+                    raise BackupError(
+                        f"Unsupported backup type: {backup_type}",
+                        context={"backup_id": backup_id, "backup_type": backup_type},
+                    )
+            finally:
+                if decrypted_path and os.path.exists(decrypted_path):
+                    os.remove(decrypted_path)
 
             if success:
                 logger.info(
@@ -667,6 +682,9 @@ class BackupService:
                         "database_type": metadata.get("database_type", "unknown"),
                         "created_by": metadata.get("created_by", "unknown"),
                         "compressed": metadata.get("compressed", False),
+                        "is_encrypted": backup.is_encrypted or False,
+                        "encryption_salt": backup.encryption_salt,
+                        "encryption_nonce": backup.encryption_nonce,
                     }
                     self._ensure_metadata_file(info)
                     return info
