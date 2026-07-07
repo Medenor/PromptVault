@@ -762,39 +762,39 @@ class TestImportMarkdownAndJson:
 class TestBackupManagementEndpoints:
     """Exercise backup and restore API coverage."""
 
-    def test_backup_endpoints_flow(self, api_client, api_auth_headers):
+    def test_backup_endpoints_flow(self, api_client, api_admin_auth_headers):
         page = api_client.get("/backup-management")
         assert page.status_code == 200
 
         create = api_client.post(
-            "/api/backups", data={"name": "coverage-backup"}, headers=api_auth_headers
+            "/api/backups", data={"name": "coverage-backup"}, headers=api_admin_auth_headers
         )
         assert create.status_code == 200
         backup_id = create.json()["backup_id"]
 
-        listing = api_client.get("/api/backups", headers=api_auth_headers)
+        listing = api_client.get("/api/backups", headers=api_admin_auth_headers)
         assert listing.status_code == 200
         assert any(item["backup_id"] == backup_id for item in listing.json()["backups"])
 
-        stats = api_client.get("/api/backups/stats", headers=api_auth_headers)
+        stats = api_client.get("/api/backups/stats", headers=api_admin_auth_headers)
         assert stats.status_code == 200
         assert "total_backups" in stats.json()
 
         restore = api_client.post(
-            f"/api/backups/{backup_id}/restore", headers=api_auth_headers
+            f"/api/backups/{backup_id}/restore", headers=api_admin_auth_headers
         )
         assert restore.status_code == 200
         assert restore.json()["success"] is True
 
         delete = api_client.delete(
-            f"/api/backups/{backup_id}", headers=api_auth_headers
+            f"/api/backups/{backup_id}", headers=api_admin_auth_headers
         )
         assert delete.status_code == 200
         assert delete.json()["success"] is True
 
         # Use minimum valid values (validation requires >= 1)
         cleanup = api_client.post(
-            "/api/backups/cleanup", data={"retention_days": 1}, headers=api_auth_headers
+            "/api/backups/cleanup", data={"retention_days": 1}, headers=api_admin_auth_headers
         )
         assert cleanup.status_code == 200
         assert cleanup.json()["success"] is True
@@ -802,7 +802,7 @@ class TestBackupManagementEndpoints:
         compress = api_client.post(
             "/api/backups/compress",
             data={"days_threshold": 1},
-            headers=api_auth_headers,
+            headers=api_admin_auth_headers,
         )
         assert compress.status_code == 200
         assert compress.json()["success"] is True

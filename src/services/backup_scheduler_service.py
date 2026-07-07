@@ -285,8 +285,9 @@ class BackupSchedulerService:
     def _unregister_job(self) -> None:
         """Remove the backup job from APScheduler."""
         try:
-            if self._scheduler and self._scheduler.running:
-                self._scheduler.remove_job("scheduled-backup")
+            scheduler = BackupSchedulerService._class_scheduler
+            if scheduler and scheduler.running:
+                scheduler.remove_job("scheduled-backup")
                 logger.info(
                     "Backup schedule unregistered",
                     extra={"event": "backup.schedule.unregistered"},

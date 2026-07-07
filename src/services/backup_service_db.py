@@ -646,6 +646,7 @@ class BackupService:
                         "database_type": metadata.get("database_type", "unknown"),
                         "created_by": metadata.get("created_by", "unknown"),
                         "compressed": metadata.get("compressed", False),
+                        "tags": backup.tags or [],
                     }
                     result.append(serialized)
                     seen_ids.add(backup.id)
@@ -1238,7 +1239,7 @@ class BackupService:
 
         with get_db_session() as session:
             current_prompts = session.query(Prompt).all()
-            current_map = {p.id: p for p in current_prompts}
+            current_map = {p.id: {"title": p.title, "prompt": p.prompt} for p in current_prompts}
 
         backup_map = {p["id"]: p for p in backup_prompts if "id" in p}
 
@@ -1248,20 +1249,20 @@ class BackupService:
 
         for pid, bp in backup_map.items():
             if pid not in current_map:
-                added.append({"id": pid, "title": bp.get("title", ""), "content": bp.get("content", "")[:200]})
+                added.append({"id": pid, "title": bp.get("title", ""), "prompt": bp.get("prompt", "")[:200]})
             else:
                 cp = current_map[pid]
-                if cp.title != bp.get("title") or cp.content != bp.get("content"):
+                if cp["title"] != bp.get("title") or cp["prompt"] != bp.get("prompt"):
                     updated.append({
                         "id": pid,
                         "title": bp.get("title", ""),
-                        "before": {"title": cp.title, "content": cp.content[:200]},
-                        "after": {"title": bp.get("title", ""), "content": bp.get("content", "")[:200]},
+                        "before": {"title": cp["title"], "prompt": cp["prompt"][:200]},
+                        "after": {"title": bp.get("title", ""), "prompt": bp.get("prompt", "")[:200]},
                     })
 
         for pid, cp in current_map.items():
             if pid not in backup_map:
-                deleted.append({"id": pid, "title": cp.title})
+                deleted.append({"id": pid, "title": cp["title"]})
 
         return {
             "backup_id": backup_id,
@@ -1283,11 +1284,11 @@ class BackupService:
             import sqlite3
             try:
                 conn = sqlite3.connect(backup_path)
-                cursor = conn.execute("SELECT id, title, content, note, favorite, category_id, semantic_version FROM prompts")
+                cursor = conn.execute("SELECT id, title, prompt, note, favorite, category_id, semantic_version FROM prompts")
                 prompts = []
                 for row in cursor:
                     prompts.append({
-                        "id": row[0], "title": row[1], "content": row[2],
+                        "id": row[0], "title": row[1], "prompt": row[2],
                         "note": row[3], "favorite": bool(row[4]),
                         "category_id": row[5], "semantic_version": row[6],
                     })
@@ -1371,7 +1372,7 @@ class BackupService:
                 existing = session.query(Prompt).filter_by(id=pid).first()
                 if existing:
                     existing.title = bp.get("title", existing.title)
-                    existing.content = bp.get("content", existing.content)
+                    existing.prompt = bp.get("prompt", existing.prompt)
                     existing.note = bp.get("note", existing.note)
                     if bp.get("favorite") is not None:
                         existing.favorite = bp["favorite"]
@@ -1380,7 +1381,7 @@ class BackupService:
                     new_prompt = Prompt(
                         id=pid,
                         title=bp.get("title", ""),
-                        content=bp.get("content", ""),
+                        prompt=bp.get("prompt", ""),
                         note=bp.get("note"),
                         favorite=bp.get("favorite", False),
                     )
