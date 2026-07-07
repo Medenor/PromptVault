@@ -56,6 +56,7 @@ from src.web.routers import (
 )
 from src.utils.diff_utils import compute_character_diff
 from src.web.routers.scheduler import router as scheduler_router
+from src.web.routers.backup import router as backup_router, init_backup_router
 from src.web.middleware.rate_limit import limiter, rate_limit_exceeded_handler
 from src.web.middleware.security_headers import SecurityHeadersMiddleware
 from src.web.dependencies.auth import get_current_active_user, get_current_user_or_none
@@ -218,6 +219,7 @@ except Exception as e:
 app.include_router(prompts_router, prefix="/api")
 app.include_router(tag_category_router, prefix="/api")
 app.include_router(scheduler_router, prefix="/api")
+app.include_router(backup_router)
 
 
 # Authentication and admin routers are only mounted when auth is enabled.
@@ -511,6 +513,9 @@ def record_validation_event(
             },
             exc_info=exc,
         )
+
+
+init_backup_router(backup_service, validation_monitor, record_validation_event)
 
 
 @app.exception_handler(PromptVaultException)
@@ -1269,177 +1274,6 @@ async def backup_management_page(request: Request):
             "auth_enabled": auth_settings.auth_enabled,
         },
     )
-
-
-@app.get("/api/backups")
-async def get_backups():
-    """Get list of all backups"""
-    backups = backup_service.list_backups()
-    return {"backups": backups}
-
-
-@app.post("/api/backups")
-async def create_manual_backup(
-    name: str = Form(None),
-    current_user: Optional[User] = Depends(get_current_user_or_none),
-):
-    """Create a manual backup with validation."""
-    if not current_user:
-        raise HTTPException(
-            status_code=401,
-            detail="Authentication required",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    try:
-        validated_data = BackupCreateRequest(name=name)
-
-        backup_id = backup_service.create_backup(
-            validated_data.name,
-            created_by=current_user.username if current_user else "anonymous",
-        )
-        if backup_id:
-            record_validation_event(
-                endpoint="/api/backups",
-                success=True,
-            )
-            return {"success": True, "backup_id": backup_id}
-        else:
-            return JSONResponse(
-                status_code=500, content={"error": "Failed to create backup"}
-            )
-
-    except ValidationError as e:
-        record_validation_event(
-            endpoint="/api/backups",
-            success=False,
-            errors=[err.get("msg", "") for err in e.errors()],
-        )
-        return JSONResponse(
-            status_code=422,
-            content={"error": "Validation failed", "details": e.errors()},
-        )
-
-
-@app.post("/api/backups/{backup_id}/restore")
-async def restore_backup(
-    backup_id: str,
-    current_user: Optional[User] = Depends(get_current_user_or_none),
-):
-    """Restore from a specific backup."""
-    if not current_user:
-        raise HTTPException(
-            status_code=401,
-            detail="Authentication required",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    success = False
-    try:
-        success = backup_service.restore_backup(
-            backup_id,
-            created_by=current_user.username if current_user else "anonymous",
-        )
-    except BackupError as exc:
-        status_code = exc.http_status or 500
-        request_id = str(uuid.uuid4())
-        return JSONResponse(
-            status_code=status_code,
-            content={"error": str(exc), "request_id": request_id},
-            headers={"x-request-id": request_id},
-        )
-    if success:
-        return {"success": True}
-    return JSONResponse(status_code=500, content={"error": "Failed to restore backup"})
-
-
-@app.delete("/api/backups/{backup_id}")
-async def delete_backup(
-    backup_id: str,
-    current_user: Optional[User] = Depends(get_current_user_or_none),
-):
-    """Delete a specific backup."""
-    if not current_user:
-        raise HTTPException(
-            status_code=401,
-            detail="Authentication required",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    try:
-        backup_info = backup_service.get_backup_info(backup_id)
-        deleted = backup_service.delete_backup(backup_id)
-        if deleted:
-            return {"success": True}
-
-        if backup_info:
-            return JSONResponse(
-                status_code=500, content={"error": "Failed to delete backup"}
-            )
-        return JSONResponse(status_code=404, content={"error": "Backup not found"})
-
-    except Exception as e:
-        return JSONResponse(
-            status_code=500, content={"error": f"Failed to delete backup: {str(e)}"}
-        )
-
-
-@app.post("/api/backups/cleanup")
-async def cleanup_backups(retention_days: int = Form(30)):
-    """Clean up old backups with validation."""
-    try:
-        validated_data = BackupCleanupRequest(retention_days=retention_days)
-
-        removed_count = backup_service.cleanup_old_backups(
-            validated_data.retention_days
-        )
-        record_validation_event(
-            endpoint="/api/backups/cleanup",
-            success=True,
-        )
-        return {"success": True, "removed_count": removed_count}
-
-    except ValidationError as e:
-        record_validation_event(
-            endpoint="/api/backups/cleanup",
-            success=False,
-            errors=[err.get("msg", "") for err in e.errors()],
-        )
-        return JSONResponse(
-            status_code=422,
-            content={"error": "Validation failed", "details": e.errors()},
-        )
-
-
-@app.post("/api/backups/compress")
-async def compress_backups(days_threshold: int = Form(7)):
-    """Compress old backups with validation."""
-    try:
-        validated_data = BackupCompressRequest(days_threshold=days_threshold)
-
-        compressed_count = backup_service.compress_old_backups(
-            validated_data.days_threshold
-        )
-        record_validation_event(
-            endpoint="/api/backups/compress",
-            success=True,
-        )
-        return {"success": True, "compressed_count": compressed_count}
-
-    except ValidationError as e:
-        record_validation_event(
-            endpoint="/api/backups/compress",
-            success=False,
-            errors=[err.get("msg", "") for err in e.errors()],
-        )
-        return JSONResponse(
-            status_code=422,
-            content={"error": "Validation failed", "details": e.errors()},
-        )
-
-
-@app.get("/api/backups/stats")
-async def get_backup_stats():
-    """Get backup statistics"""
-    stats = backup_service.get_backup_stats()
-    return stats
 
 
 @app.get("/api/validation/stats")

@@ -24,8 +24,8 @@ manifest %}
 {% elif include_telemetry %}
 <script src="/static/js/telemetry.js" defer></script>
 {% endif %} {% if (use_vite_assets() or is_production()) and use_vite and 'ts/' + entry_name + '.ts'
-in manifest %}
-{% if (use_vite_assets() or is_production()) and use_vite and 'ts/global-shortcuts.ts' in manifest %}
+in manifest %} {% if (use_vite_assets() or is_production()) and use_vite and
+'ts/global-shortcuts.ts' in manifest %}
 <script type="module" src="/static/dist/{{ manifest['ts/global-shortcuts.ts']['file'] }}"></script>
 {% endif %}
 <script

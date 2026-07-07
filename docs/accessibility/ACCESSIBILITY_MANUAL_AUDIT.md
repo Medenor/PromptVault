@@ -6,6 +6,7 @@
 ## Vue d'ensemble
 
 Ce document fournit des checklists détaillées pour tester manuellement:
+
 - **T-ACC006:** Navigation clavier (Tab, Shift+Tab, Entrée, Échap, Flèches)
 - **T-ACC007:** Compatibilité lecteurs d'écran (NVDA, VoiceOver)
 
@@ -221,7 +222,7 @@ Ce document fournit des checklists détaillées pour tester manuellement:
 
 Pour chaque problème trouvé, noter:
 
-- [ ] **URL/Page:** _______________
+- [ ] **URL/Page:** ******\_\_\_******
 - [ ] **Élément affecté:** (ex: "Bouton sauvegarder dans modal création prompt")
 - [ ] **Problème:**
   - [ ] Élément pas focusable (devrait l'être)
@@ -236,7 +237,7 @@ Pour chaque problème trouvé, noter:
   - [ ] Haute (rend difficile la navigation)
   - [ ] Moyenne (affecte expérience)
   - [ ] Basse (amélioration mineure)
-- [ ] **Notes:** _______________
+- [ ] **Notes:** ******\_\_\_******
 
 ---
 
@@ -249,7 +250,7 @@ Pour chaque problème trouvé, noter:
 - [ ] Télécharger NVDA gratuit (nvaccess.org)
 - [ ] Installer version stable
 - [ ] Lancer avec navigateur Firefox ou Chrome
-- [ ] Mode de navigation: *Activer mode parcours* (par défaut)
+- [ ] Mode de navigation: _Activer mode parcours_ (par défaut)
 - [ ] Mode focus: Activer au Tab
 - [ ] Commandes clés:
   - `Insert + H` = Aller au titre suivant
@@ -512,7 +513,7 @@ Pour chaque problème trouvé, noter:
 
 Pour chaque problème trouvé, noter:
 
-- [ ] **URL/Page:** _______________
+- [ ] **URL/Page:** ******\_\_\_******
 - [ ] **Lecteur d'écran:** NVDA / VoiceOver
 - [ ] **Élément affecté:** (ex: "Bouton suppression dans modal confirmation")
 - [ ] **Problème:**
@@ -530,24 +531,24 @@ Pour chaque problème trouvé, noter:
   - [ ] Haute (rend incompréhensible)
   - [ ] Moyenne (affecte compréhension)
   - [ ] Basse (amélioration)
-- [ ] **Notes:** _______________
+- [ ] **Notes:** ******\_\_\_******
 
 ---
 
 ## Matrice de Test Résumée
 
-| Page | Clavier | VoiceOver | NVDA | Statut |
-|------|---------|-----------|------|--------|
-| `/` | [ ] | [ ] | [ ] | |
-| `/auth/login` | [ ] | [ ] | [ ] | |
-| `/auth/register` | [ ] | [ ] | [ ] | |
-| `/backup-management` | [ ] | [ ] | [ ] | |
-| `/import-export` | [ ] | [ ] | [ ] | |
-| `/manage-categories` | [ ] | [ ] | [ ] | |
-| `/manage-tags` | [ ] | [ ] | [ ] | |
-| `/admin/users` | [ ] | [ ] | [ ] | |
-| `/admin/sessions` | [ ] | [ ] | [ ] | |
-| `/profile` | [ ] | [ ] | [ ] | |
+| Page                 | Clavier | VoiceOver | NVDA | Statut |
+| -------------------- | ------- | --------- | ---- | ------ |
+| `/`                  | [ ]     | [ ]       | [ ]  |        |
+| `/auth/login`        | [ ]     | [ ]       | [ ]  |        |
+| `/auth/register`     | [ ]     | [ ]       | [ ]  |        |
+| `/backup-management` | [ ]     | [ ]       | [ ]  |        |
+| `/import-export`     | [ ]     | [ ]       | [ ]  |        |
+| `/manage-categories` | [ ]     | [ ]       | [ ]  |        |
+| `/manage-tags`       | [ ]     | [ ]       | [ ]  |        |
+| `/admin/users`       | [ ]     | [ ]       | [ ]  |        |
+| `/admin/sessions`    | [ ]     | [ ]       | [ ]  |        |
+| `/profile`           | [ ]     | [ ]       | [ ]  |        |
 
 ---
 

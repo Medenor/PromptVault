@@ -4,9 +4,11 @@
 
 """Scheduler module for background tasks.
 
-Contains schedulers for periodic maintenance tasks like session cleanup.
+Contains schedulers for periodic maintenance tasks like session cleanup
+and automated backups.
 """
 
 from src.scheduler.session_cleanup import SessionCleanupScheduler
+from src.scheduler.backup_scheduler import register_backup_jobs
 
-__all__ = ["SessionCleanupScheduler"]
+__all__ = ["SessionCleanupScheduler", "register_backup_jobs"]

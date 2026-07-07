@@ -34,6 +34,7 @@ python scripts/setup/setup.py
 ```
 
 The wizard will guide you through:
+
 - Choosing setup mode (Quick/Advanced/Component)
 - Generating JWT keys
 - Configuring environment
@@ -63,6 +64,7 @@ Choose your setup mode: quick
 ### 5. Follow the Prompts
 
 Quick setup will:
+
 - ✓ Generate JWT keys automatically
 - ✓ Create `.env` with development defaults
 - ✓ Setup SQLite database
@@ -78,6 +80,7 @@ http://localhost:8001
 ```
 
 API Documentation:
+
 ```
 http://localhost:8001/docs
 ```
@@ -138,12 +141,13 @@ If port 8001 is already in use, edit `docker-compose.yml`:
 services:
   web:
     ports:
-      - "8002:8000"  # Changed from 8001 to 8002
+      - '8002:8000' # Changed from 8001 to 8002
 ```
 
 ### Docker Not Running
 
 Start Docker:
+
 - **macOS/Windows**: Start Docker Desktop
 - **Linux**: `sudo systemctl start docker`
 
@@ -184,6 +188,7 @@ python scripts/setup/setup.py --advanced
 ```
 
 This provides:
+
 - PostgreSQL database (recommended)
 - Strict security settings
 - Production-optimized configuration

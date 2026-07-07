@@ -24,7 +24,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.14"
+          python-version: '3.14'
           cache: pip
 
       - name: Install Python deps
@@ -51,7 +51,7 @@ jobs:
 
       - name: Axe scans (public routes)
         env:
-          ACCESSIBILITY_EXTERNAL_SERVER: "1"
+          ACCESSIBILITY_EXTERNAL_SERVER: '1'
           ACCESSIBILITY_BASE_URL: http://127.0.0.1:8003
         run: |
           python3 scripts/accessibility_test.py --workers 1 --verbose \
@@ -82,7 +82,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.14"
+          python-version: '3.14'
           cache: pip
 
       - name: Install Python deps
@@ -109,4 +109,3 @@ jobs:
 
       - name: Lighthouse CI (accessibility >= 95)
         run: npm run test:ui:lighthouse
-

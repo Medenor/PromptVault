@@ -300,6 +300,7 @@ python scripts/setup/setup.py
 ```
 
 The setup wizard will guide you through:
+
 - JWT key generation
 - Environment configuration
 - Database setup (SQLite or PostgreSQL)
@@ -313,9 +314,11 @@ For a detailed walkthrough, see the **[Turnkey Deployment Guide](docs/DEPLOYMENT
 PromptVault includes a comprehensive setup wizard that automates the entire deployment process. The wizard provides three modes:
 
 **Quick Setup** (5 minutes, recommended for development):
+
 ```bash
 python scripts/setup/setup.py --quick
 ```
+
 - Uses SQLite database
 - Generates JWT keys automatically
 - Creates development configuration
@@ -323,15 +326,18 @@ python scripts/setup/setup.py --quick
 - Starts the application
 
 **Advanced Setup** (customizable, recommended for production):
+
 ```bash
 python scripts/setup/setup.py --advanced
 ```
+
 - Choose PostgreSQL or SQLite
 - Customize all configuration options
 - Full control over security settings
 - Production-ready deployment
 
 **Component Setup** (run individual components):
+
 ```bash
 # JWT keys only
 python scripts/setup/setup.py --component jwt
@@ -347,6 +353,7 @@ python scripts/setup/setup.py --component deploy
 ```
 
 For complete documentation on the automated setup system, see:
+
 - **[Turnkey Deployment Guide](docs/DEPLOYMENT.md)** - Automated deployment with rollback
 - **[Troubleshooting Guide](docs/TROUBLESHOOTING.md)** - Common issues and solutions
 - **[Deployment Guide](docs/DEPLOYMENT.md)** - Detailed deployment documentation
@@ -396,15 +403,18 @@ Then open your browser to `http://localhost:8001` and login with your admin cred
 For detailed instructions and guides:
 
 **Setup and Deployment:**
+
 - **[Turnkey Deployment Guide](docs/DEPLOYMENT.md)** - Automated deployment with pre-flight checks and rollback
 - **[Troubleshooting Guide](docs/TROUBLESHOOTING.md)** - Common issues and solutions
 - **[Deployment Guide](docs/DEPLOYMENT.md)** - Complete deployment instructions for Docker, Docker Compose, and manual deployment
 - **[Authentication Deployment Guide](docs/AUTHENTICATION_DEPLOYMENT.md)** - Authentication setup with JWT key generation
 
 **Data Migration:**
+
 - **[Migration Guide from JSON to database](docs/MIGRATION_GUIDE_JSON_TO_DB.md)** - Step-by-step guide for migrating from JSON to database storage
 
 **Technical Specifications:**
+
 - **[Database Specification](docs/SPECS/SPEC_DATABASE.md)** - Technical specification and architecture details
 
 ## Authentication
@@ -667,7 +677,7 @@ See [LICENSE](LICENSE) for more information.
 
 ## Disclaimer – Spec Driven Development & AI collaboration
 
-This repository was developed using a *Spec Driven Development* approach, with extensive AI collaboration throughout the process.
+This repository was developed using a _Spec Driven Development_ approach, with extensive AI collaboration throughout the process.
 
 AI is used to build and brainstorm detailed specifications before delegating coding tasks. The development follows a collaborative process where AI handles implementation, while human oversight ensures quality through review, testing, and debugging.
 

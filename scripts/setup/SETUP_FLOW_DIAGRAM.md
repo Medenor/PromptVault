@@ -399,14 +399,14 @@ Steps      Steps
 ```json
 {
   "completed_steps": [
-    "jwt",      // JWT keys generated
-    "env",      // Environment configured
+    "jwt", // JWT keys generated
+    "env", // Environment configured
     "database", // Database setup complete
-    "admin",    // Admin user prompted
-    "deploy"    // Application deployed
+    "admin", // Admin user prompted
+    "deploy" // Application deployed
   ],
-  "mode": "quick",           // or "advanced", "component"
-  "profile": "development",  // or "production"
+  "mode": "quick", // or "advanced", "component"
+  "profile": "development", // or "production"
   "config": {
     // User choices
   },

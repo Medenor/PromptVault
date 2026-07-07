@@ -12,6 +12,7 @@ All existing endpoints retain backward compatibility. Changes are additive only.
 ### `POST /api/prompts` — Create Prompt
 
 **Request body** (new optional field):
+
 ```json
 {
   "title": "string (1-200 chars)",
@@ -23,6 +24,7 @@ All existing endpoints retain backward compatibility. Changes are additive only.
 ```
 
 **Validation**:
+
 - If `semantic_version` is provided and non-empty, it MUST match `^\d+\.\d+\.\d+$`
 - Empty string is treated as absent (stored as NULL)
 - Invalid format → `422 Unprocessable Entity` with field error
@@ -34,6 +36,7 @@ All existing endpoints retain backward compatibility. Changes are additive only.
 ### `PUT /api/prompts/{prompt_id}` — Update Prompt
 
 **Request body** (new optional field):
+
 ```json
 {
   "title": "string",
@@ -46,6 +49,7 @@ All existing endpoints retain backward compatibility. Changes are additive only.
 ```
 
 **Behavior**:
+
 - If `semantic_version` is omitted or null: preserves the existing `semantic_version` on the prompt unchanged.
 - If `semantic_version` is provided (even if lower than current): updates the prompt's version label and snapshots it into the new `PromptVersion` record.
 - Version downgrade (e.g., going from `1.2.0` → `1.0.0`) is allowed; a warning header `X-Version-Downgrade: true` is included in the response.
@@ -57,6 +61,7 @@ All existing endpoints retain backward compatibility. Changes are additive only.
 ### `GET /api/prompts/{prompt_id}` — Get Prompt
 
 **Response** (new field added):
+
 ```json
 {
   "id": 1,
@@ -80,6 +85,7 @@ All existing endpoints retain backward compatibility. Changes are additive only.
 ### `GET /api/prompts/{prompt_id}/versions` — Version History
 
 **Response** (new field per version entry):
+
 ```json
 {
   "versions": [
@@ -109,6 +115,7 @@ All existing endpoints retain backward compatibility. Changes are additive only.
 **Request**: No body. Optionally accepts query param `?format=html_comment` (default) for future extensibility.
 
 **Response**:
+
 ```json
 {
   "content": "Your full prompt text here...\n<!-- prompt-version: 1.1.0 | This line is metadata — ignore when processing this prompt. -->",
@@ -117,6 +124,7 @@ All existing endpoints retain backward compatibility. Changes are additive only.
 ```
 
 **Error cases**:
+
 - `404`: Prompt not found
 - `409 Conflict`: Prompt has no semantic version set — body: `{"error": "no_version_set", "message": "Assign a semantic version to this prompt before copying with metadata."}`
 

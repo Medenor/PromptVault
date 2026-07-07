@@ -38,7 +38,7 @@ test.describe('Landmark Regions & ARIA Labels Verification', () => {
       // Find all nav elements
       const navs = page.locator('nav[aria-label]');
       const count = await navs.count();
-      
+
       if (count > 0) {
         for (let i = 0; i < count; i++) {
           const nav = navs.nth(i);

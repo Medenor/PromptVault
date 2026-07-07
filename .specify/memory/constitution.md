@@ -120,6 +120,7 @@ in this document following semantic versioning, and (3) a propagation check acro
 `.specify/templates/` files.
 
 **Versioning policy**:
+
 - MAJOR: Principle removal, redefinition of a non-negotiable rule.
 - MINOR: New principle, new mandatory section.
 - PATCH: Clarifications, wording fixes, date updates.

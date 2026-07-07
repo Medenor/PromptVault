@@ -3,11 +3,13 @@
 ## 5-Minute Setup
 
 ### 1. Install Dependencies (Already Done)
+
 ```bash
 npm install  # Playwright is already installed
 ```
 
 ### 2. Run Existing Tests
+
 ```bash
 # Run accessibility tests on chromium
 npm run test:ui:accessibility
@@ -22,6 +24,7 @@ HEADED=1 npm run test:ui:accessibility
 ## Writing Your First Test
 
 ### Simple Page Test
+
 ```javascript
 import { test, expect } from '@playwright/test';
 import { validateFormLabels, testTextContrast } from '../accessibility/utils/index.js';
@@ -41,6 +44,7 @@ test('home page is accessible', async ({ page }) => {
 ```
 
 ### Authenticated Page Test
+
 ```javascript
 import { authenticatedUserTest } from '../accessibility/fixtures/index.js';
 import { validateFormLabels } from '../accessibility/utils/index.js';
@@ -54,6 +58,7 @@ authenticatedUserTest('profile page is accessible', async ({ authenticatedPage }
 ```
 
 ### Keyboard Navigation Test
+
 ```javascript
 import { testKeyboardNavigation, verifyFocusIndicators } from '../accessibility/utils/index.js';
 
@@ -73,6 +78,7 @@ test('form is keyboard accessible', async ({ page }) => {
 ## Common Utility Functions
 
 ### Contrast Testing
+
 ```javascript
 import { testTextContrast, testUIContrast } from '../accessibility/utils/index.js';
 
@@ -85,6 +91,7 @@ const btnResult = await testUIContrast(page, page.locator('button'), 'AA');
 ```
 
 ### Form & Button Validation
+
 ```javascript
 import { validateFormLabels, validateButtonLabels } from '../accessibility/utils/index.js';
 
@@ -98,11 +105,9 @@ console.log(buttons.allButtonsLabeled);
 ```
 
 ### Structure & Semantics
+
 ```javascript
-import {
-  checkLandmarkRegions,
-  validateHeadingHierarchy
-} from '../accessibility/utils/index.js';
+import { checkLandmarkRegions, validateHeadingHierarchy } from '../accessibility/utils/index.js';
 
 // Check for header, main, footer, nav
 const landmarks = await checkLandmarkRegions(page);
@@ -114,6 +119,7 @@ console.log(hierarchy.validHierarchy, hierarchy.issues);
 ```
 
 ### Keyboard Navigation
+
 ```javascript
 import { extractTabOrder, verifyFocusIndicators } from '../accessibility/utils/index.js';
 
@@ -127,6 +133,7 @@ console.log(focus.elementsWithoutFocus); // Should be 0
 ```
 
 ### Screenshots
+
 ```javascript
 import { captureElementStates } from '../accessibility/utils/index.js';
 
@@ -138,6 +145,7 @@ const states = await captureElementStates(page, page.locator('button'), '/tmp/bt
 ## Environment Variables
 
 ### For Local Testing
+
 ```bash
 # Use default local server
 npm run test:ui:accessibility
@@ -150,6 +158,7 @@ HEADED=1 npm run test:ui:accessibility
 ```
 
 ### For Testing Protected Pages
+
 ```bash
 # With credentials (will login)
 ACCESSIBILITY_USER_USERNAME=test@example.com \
@@ -162,6 +171,7 @@ npm run test:ui:accessibility
 ```
 
 ### For CI/CD
+
 ```bash
 # Run on single browser, use cached state
 ACCESSIBILITY_AUTH_STATE_DIR=/tmp/auth \
@@ -172,21 +182,25 @@ npm run test:ui:accessibility
 ## Debugging
 
 ### See Browser Window
+
 ```bash
 HEADED=1 npm run test:ui:accessibility
 ```
 
 ### Debug Mode (Pause on Test)
+
 ```bash
 DEBUG=1 npm run test:ui:accessibility
 ```
 
 ### Run Specific Test
+
 ```bash
 npx playwright test --grep "specific test name"
 ```
 
 ### Check What Was Tested
+
 ```bash
 # View HTML report
 open playwright-report/index.html
@@ -196,11 +210,11 @@ open playwright-report/index.html
 
 ### Contrast Ratios Required (WCAG 2.1)
 
-| Type | AA | AAA |
-|------|----|----|
-| Regular text | 4.5:1 | 7:1 |
-| Large text (18pt+) | 3:1 | 4.5:1 |
-| UI components | 3:1 | 4.5:1 |
+| Type               | AA    | AAA   |
+| ------------------ | ----- | ----- |
+| Regular text       | 4.5:1 | 7:1   |
+| Large text (18pt+) | 3:1   | 4.5:1 |
+| UI components      | 3:1   | 4.5:1 |
 
 ### Key WCAG Success Criteria
 
@@ -213,6 +227,7 @@ open playwright-report/index.html
 ## Troubleshooting
 
 ### "Login failed" when running tests
+
 ```bash
 # Set credentials
 ACCESSIBILITY_USER_USERNAME=user@example.com \
@@ -227,15 +242,18 @@ npm run test:ui:accessibility
 ```
 
 ### "Element not found"
+
 - Check selector is correct: `await page.locator('selector').count()`
 - Make sure page loaded: `await page.waitForLoadState('networkidle')`
 
 ### "Focus indicator not visible"
+
 - Make sure you're testing correct element
 - Some elements have focus on child (e.g., input inside label)
 - CSS might hide focus: check `:focus { outline: none }`
 
 ### Tests timing out
+
 - Default is 60 seconds (see `playwright.config.ts`)
 - Increase if needed: `test.setTimeout(120000)`
 - Check if server is running: `http://localhost:8003`
@@ -270,15 +288,18 @@ tests/accessibility/
 ## Support
 
 For detailed documentation:
+
 - **Full guide**: See `README.md`
 - **Function reference**: See `README.md#utilities`
 - **Examples**: See `sample-test.example.ts`
 - **Implementation details**: See `IMPLEMENTATION.md`
 
 For Playwright help:
+
 - [Playwright Documentation](https://playwright.dev)
 - [Playwright Inspector](https://playwright.dev/docs/inspector)
 
 For WCAG guidelines:
+
 - [WCAG 2.1 Quick Reference](https://www.w3.org/WAI/WCAG21/quickref/)
 - [ARIA Authoring Practices](https://www.w3.org/WAI/ARIA/apg/)

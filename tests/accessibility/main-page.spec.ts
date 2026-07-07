@@ -59,7 +59,9 @@ test.describe('@regression-a11y Main Page Accessibility Tests', () => {
 
       // Tab to the first element and verify it's a skip link
       await page.keyboard.press('Tab');
-      const activeElement = await page.evaluate(() => document.activeElement?.getAttribute('href') || '');
+      const activeElement = await page.evaluate(
+        () => document.activeElement?.getAttribute('href') || ''
+      );
       expect(activeElement).toMatch(/^#/i);
     });
 
@@ -76,7 +78,12 @@ test.describe('@regression-a11y Main Page Accessibility Tests', () => {
         const style = window.getComputedStyle(skipLink);
         const clipPath = style.clipPath || '';
         // Hidden if: visibility hidden, display none, opacity 0, OR clip-path inset(100%)
-        return style.visibility === 'hidden' || style.display === 'none' || style.opacity === '0' || clipPath.includes('inset(100%)');
+        return (
+          style.visibility === 'hidden' ||
+          style.display === 'none' ||
+          style.opacity === '0' ||
+          clipPath.includes('inset(100%)')
+        );
       });
       expect(isHidden).toBe(true);
     });
@@ -96,7 +103,11 @@ test.describe('@regression-a11y Main Page Accessibility Tests', () => {
 
       // Take screenshot of skip link in focus state
       const skipLinkElement = page.locator('a[href^="#"]').first();
-      await captureFocusState(page, skipLinkElement, 'tests/accessibility/reports/skip-link-focused.png');
+      await captureFocusState(
+        page,
+        skipLinkElement,
+        'tests/accessibility/reports/skip-link-focused.png'
+      );
     });
 
     test('pressing Enter on skip link should move focus to main content', async ({ page }) => {
@@ -113,7 +124,7 @@ test.describe('@regression-a11y Main Page Accessibility Tests', () => {
       await page.keyboard.press('Enter');
 
       // Wait a moment for focus to move
-      await page.waitForLoadState("networkidle").catch(() => {});
+      await page.waitForLoadState('networkidle').catch(() => {});
 
       // Verify focus moved to the target element
       const focusedElement = await page.evaluate(() => {
@@ -193,9 +204,11 @@ test.describe('@regression-a11y Main Page Accessibility Tests', () => {
 
     test('logo should have accessible name', async ({ page }) => {
       // Find logo element (usually in header)
-      const logo = page.locator('header a[href="/"], header img[alt*="logo" i], [aria-label*="logo" i]').first();
+      const logo = page
+        .locator('header a[href="/"], header img[alt*="logo" i], [aria-label*="logo" i]')
+        .first();
 
-      if (await logo.count() > 0) {
+      if ((await logo.count()) > 0) {
         const nameInfo = await checkAccessibleName(logo);
         expect(nameInfo.hasAccessibleName).toBe(true);
       }
@@ -261,9 +274,11 @@ test.describe('@regression-a11y Main Page Accessibility Tests', () => {
   test.describe('@regression-a11y Main Content - Category/Tag Filters', () => {
     test('filter list should be keyboard navigable', async ({ page }) => {
       // Find filter/category elements
-      const filterList = page.locator('[role="listbox"], [role="list"] [role="option"], .filters li, .categories li').first();
+      const filterList = page
+        .locator('[role="listbox"], [role="list"] [role="option"], .filters li, .categories li')
+        .first();
 
-      if (await filterList.count() > 0) {
+      if ((await filterList.count()) > 0) {
         // Focus on filter list
         await filterList.focus();
 
@@ -284,7 +299,7 @@ test.describe('@regression-a11y Main Page Accessibility Tests', () => {
       // Find filter container
       const filterContainer = page.locator('[role="listbox"], .filters, .categories').first();
 
-      if (await filterContainer.count() > 0) {
+      if ((await filterContainer.count()) > 0) {
         const selector = await filterContainer.evaluate((el) => {
           return el.className
             ? `.${el.className.split(/\s+/)[0]}`
@@ -314,9 +329,14 @@ test.describe('@regression-a11y Main Page Accessibility Tests', () => {
       if (filterItems.length > 0) {
         // Check first few items
         for (let i = 0; i < Math.min(3, filterItems.length); i++) {
-          const nameInfo = await checkAccessibleName(filterItems[Math.min(i, filterItems.length - 1)]!);
+          const nameInfo = await checkAccessibleName(
+            filterItems[Math.min(i, filterItems.length - 1)]!
+          );
           // Filter items should have text content or aria labels
-          expect(nameInfo.hasAccessibleName || (await filterItems[Math.min(i, filterItems.length - 1)]!.textContent())).toBeTruthy();
+          expect(
+            nameInfo.hasAccessibleName ||
+              (await filterItems[Math.min(i, filterItems.length - 1)]!.textContent())
+          ).toBeTruthy();
         }
       }
     });
@@ -325,7 +345,7 @@ test.describe('@regression-a11y Main Page Accessibility Tests', () => {
       // Find first filter item
       const firstFilter = page.locator('[role="option"], .filters li, .categories li').first();
 
-      if (await firstFilter.count() > 0) {
+      if ((await firstFilter.count()) > 0) {
         // Focus first filter
         await firstFilter.focus();
 
@@ -347,7 +367,8 @@ test.describe('@regression-a11y Main Page Accessibility Tests', () => {
 
       if (filterItems.length > 1) {
         // Get text of second item
-        const secondItemText = await filterItems[Math.min(1, filterItems.length - 1)]!.textContent();
+        const secondItemText =
+          await filterItems[Math.min(1, filterItems.length - 1)]!.textContent();
         const firstChar = secondItemText?.charAt(0).toLowerCase() || '';
 
         if (firstChar) {
@@ -358,7 +379,7 @@ test.describe('@regression-a11y Main Page Accessibility Tests', () => {
           await page.keyboard.type(firstChar);
 
           // Wait for typeahead
-          await page.waitForLoadState("networkidle").catch(() => {});
+          await page.waitForLoadState('networkidle').catch(() => {});
 
           // Check if focus moved (typeahead may not always be implemented)
           const focusedText = await page.evaluate(() => {
@@ -377,18 +398,22 @@ test.describe('@regression-a11y Main Page Accessibility Tests', () => {
   // ============================================================================
   test.describe('@regression-a11y Search Functionality', () => {
     test('search input should have accessible label', async ({ page }) => {
-      const searchInput = page.locator('input[type="search"], input[placeholder*="search" i], [role="searchbox"]').first();
+      const searchInput = page
+        .locator('input[type="search"], input[placeholder*="search" i], [role="searchbox"]')
+        .first();
 
-      if (await searchInput.count() > 0) {
+      if ((await searchInput.count()) > 0) {
         const nameInfo = await checkAccessibleName(searchInput);
         expect(nameInfo.hasAccessibleName).toBe(true);
       }
     });
 
     test('search input should have descriptive placeholder', async ({ page }) => {
-      const searchInput = page.locator('input[type="search"], input[placeholder*="search" i]').first();
+      const searchInput = page
+        .locator('input[type="search"], input[placeholder*="search" i]')
+        .first();
 
-      if (await searchInput.count() > 0) {
+      if ((await searchInput.count()) > 0) {
         const placeholder = await searchInput.getAttribute('placeholder');
         expect(placeholder).toBeTruthy();
         expect(placeholder).toMatch(/search|find|query/i);
@@ -396,9 +421,11 @@ test.describe('@regression-a11y Main Page Accessibility Tests', () => {
     });
 
     test('search should be submittable with Enter key', async ({ page }) => {
-      const searchInput = page.locator('input[type="search"], input[placeholder*="search" i]').first();
+      const searchInput = page
+        .locator('input[type="search"], input[placeholder*="search" i]')
+        .first();
 
-      if (await searchInput.count() > 0) {
+      if ((await searchInput.count()) > 0) {
         // Type in search
         await searchInput.fill('test');
 
@@ -414,9 +441,11 @@ test.describe('@regression-a11y Main Page Accessibility Tests', () => {
     });
 
     test('search input should support Escape key to clear', async ({ page }) => {
-      const searchInput = page.locator('input[type="search"], input[placeholder*="search" i]').first();
+      const searchInput = page
+        .locator('input[type="search"], input[placeholder*="search" i]')
+        .first();
 
-      if (await searchInput.count() > 0) {
+      if ((await searchInput.count()) > 0) {
         // Fill search
         await searchInput.fill('test');
         expect(await searchInput.inputValue()).toBe('test');
@@ -431,9 +460,11 @@ test.describe('@regression-a11y Main Page Accessibility Tests', () => {
     });
 
     test('search input should have sufficient color contrast', async ({ page }) => {
-      const searchInput = page.locator('input[type="search"], input[placeholder*="search" i]').first();
+      const searchInput = page
+        .locator('input[type="search"], input[placeholder*="search" i]')
+        .first();
 
-      if (await searchInput.count() > 0) {
+      if ((await searchInput.count()) > 0) {
         // Test placeholder contrast
         const contrastResult = await testUIContrast(page, searchInput, 'AA');
         expect(contrastResult.passes).toBe(true);
@@ -483,10 +514,7 @@ test.describe('@regression-a11y Main Page Accessibility Tests', () => {
         const isDisabled = await page.evaluate((selector) => {
           const el = document.querySelector(selector);
           if (!el) return false;
-          return (
-            el.hasAttribute('disabled') ||
-            el.getAttribute('aria-disabled') === 'true'
-          );
+          return el.hasAttribute('disabled') || el.getAttribute('aria-disabled') === 'true';
         }, element.selector);
 
         expect(isDisabled).toBe(false);
@@ -494,12 +522,15 @@ test.describe('@regression-a11y Main Page Accessibility Tests', () => {
     });
 
     test('aria-pressed buttons should have initial state', async ({ page }) => {
-      const buttons = await page.locator('button[aria-pressed], [role="button"][aria-pressed]').all();
+      const buttons = await page
+        .locator('button[aria-pressed], [role="button"][aria-pressed]')
+        .all();
 
       if (buttons.length > 0) {
         // Check first few buttons
         for (let i = 0; i < Math.min(3, buttons.length); i++) {
-          const ariaPressed = await buttons[Math.min(i, buttons.length - 1)]!.getAttribute('aria-pressed');
+          const ariaPressed =
+            await buttons[Math.min(i, buttons.length - 1)]!.getAttribute('aria-pressed');
           expect(ariaPressed === 'true' || ariaPressed === 'false').toBe(true);
         }
       }
@@ -513,7 +544,7 @@ test.describe('@regression-a11y Main Page Accessibility Tests', () => {
     test('primary body text should have sufficient contrast', async ({ page }) => {
       const bodyText = page.locator('body p, body li, body span').first();
 
-      if (await bodyText.count() > 0) {
+      if ((await bodyText.count()) > 0) {
         const contrast = await testTextContrast(page, bodyText, 'AA');
         expect(contrast.passes).toBe(true);
         if (!contrast.passes) {
@@ -528,7 +559,11 @@ test.describe('@regression-a11y Main Page Accessibility Tests', () => {
       if (labels.length > 0) {
         // Test first few labels
         for (let i = 0; i < Math.min(3, labels.length); i++) {
-          const contrast = await testTextContrast(page, labels[Math.min(i, labels.length - 1)]!, 'AA');
+          const contrast = await testTextContrast(
+            page,
+            labels[Math.min(i, labels.length - 1)]!,
+            'AA'
+          );
           expect(contrast.passes).toBe(true);
         }
       }
@@ -540,7 +575,11 @@ test.describe('@regression-a11y Main Page Accessibility Tests', () => {
       if (buttons.length > 0) {
         // Test first few buttons
         for (let i = 0; i < Math.min(3, buttons.length); i++) {
-          const contrast = await testUIContrast(page, buttons[Math.min(i, buttons.length - 1)]!, 'AA');
+          const contrast = await testUIContrast(
+            page,
+            buttons[Math.min(i, buttons.length - 1)]!,
+            'AA'
+          );
           expect(contrast.passes).toBe(true);
         }
       }
@@ -552,7 +591,11 @@ test.describe('@regression-a11y Main Page Accessibility Tests', () => {
       if (links.length > 0) {
         // Test first few links
         for (let i = 0; i < Math.min(3, links.length); i++) {
-          const contrast = await testTextContrast(page, links[Math.min(i, links.length - 1)]!, 'AA');
+          const contrast = await testTextContrast(
+            page,
+            links[Math.min(i, links.length - 1)]!,
+            'AA'
+          );
           expect(contrast.passes).toBe(true);
         }
       }
@@ -564,14 +607,20 @@ test.describe('@regression-a11y Main Page Accessibility Tests', () => {
       if (inputs.length > 0) {
         // Test first few inputs
         for (let i = 0; i < Math.min(3, inputs.length); i++) {
-          const contrast = await testUIContrast(page, inputs[Math.min(i, inputs.length - 1)]!, 'AA');
+          const contrast = await testUIContrast(
+            page,
+            inputs[Math.min(i, inputs.length - 1)]!,
+            'AA'
+          );
           expect(contrast.passes).toBe(true);
         }
       }
     });
 
     test('focus indicators should have sufficient contrast', async ({ page }) => {
-      const focusableElements = await page.locator('a[href], button, input, select, textarea').all();
+      const focusableElements = await page
+        .locator('a[href], button, input, select, textarea')
+        .all();
 
       if (focusableElements.length > 0) {
         // Focus first element and check contrast
@@ -595,7 +644,11 @@ test.describe('@regression-a11y Main Page Accessibility Tests', () => {
       if (navItems.length > 0) {
         // Test first few nav items
         for (let i = 0; i < Math.min(3, navItems.length); i++) {
-          const contrast = await testTextContrast(page, navItems[Math.min(i, navItems.length - 1)]!, 'AA');
+          const contrast = await testTextContrast(
+            page,
+            navItems[Math.min(i, navItems.length - 1)]!,
+            'AA'
+          );
           expect(contrast.passes).toBe(true);
         }
       }
@@ -607,7 +660,11 @@ test.describe('@regression-a11y Main Page Accessibility Tests', () => {
       if (alerts.length > 0) {
         // Test first few alerts
         for (let i = 0; i < Math.min(3, alerts.length); i++) {
-          const contrast = await testTextContrast(page, alerts[Math.min(i, alerts.length - 1)]!, 'AA');
+          const contrast = await testTextContrast(
+            page,
+            alerts[Math.min(i, alerts.length - 1)]!,
+            'AA'
+          );
           expect(contrast.passes).toBe(true);
         }
       }
@@ -619,7 +676,11 @@ test.describe('@regression-a11y Main Page Accessibility Tests', () => {
       if (disabledElements.length > 0) {
         // Test first few disabled elements
         for (let i = 0; i < Math.min(2, disabledElements.length); i++) {
-          const contrast = await testUIContrast(page, disabledElements[Math.min(i, disabledElements.length - 1)]!, 'AA');
+          const contrast = await testUIContrast(
+            page,
+            disabledElements[Math.min(i, disabledElements.length - 1)]!,
+            'AA'
+          );
           // Disabled elements have different contrast requirements but should still be visible
           expect(contrast.ratio).toBeGreaterThan(0);
         }
@@ -638,13 +699,17 @@ test.describe('@regression-a11y Main Page Accessibility Tests', () => {
     });
 
     test('notification areas should have aria-live attribute', async ({ page }) => {
-      const notifications = await page.locator('[role="alert"], [role="status"], .notification').all();
+      const notifications = await page
+        .locator('[role="alert"], [role="status"], .notification')
+        .all();
 
       if (notifications.length > 0) {
         // Check first notification
-        const hasAriaLive = await notifications[Math.min(0, notifications.length - 1)]!.evaluate((el) => {
-          return el.hasAttribute('aria-live') || el.hasAttribute('role');
-        });
+        const hasAriaLive = await notifications[Math.min(0, notifications.length - 1)]!.evaluate(
+          (el) => {
+            return el.hasAttribute('aria-live') || el.hasAttribute('role');
+          }
+        );
         expect(hasAriaLive).toBe(true);
       }
     });
@@ -720,7 +785,9 @@ test.describe('@regression-a11y Main Page Accessibility Tests', () => {
 
     test('icon buttons should have aria-label', async ({ page }) => {
       // Find buttons that might be icon-only
-      const iconButtons = await page.locator('button:has(svg), button:has(img), [role="button"]:has(svg)').all();
+      const iconButtons = await page
+        .locator('button:has(svg), button:has(img), [role="button"]:has(svg)')
+        .all();
 
       if (iconButtons.length > 0) {
         for (let i = 0; i < Math.min(3, iconButtons.length); i++) {
@@ -730,7 +797,9 @@ test.describe('@regression-a11y Main Page Accessibility Tests', () => {
 
           if (!hasText) {
             // If no text, should have aria-label
-            const nameInfo = await checkAccessibleName(iconButtons[Math.min(i, iconButtons.length - 1)]!);
+            const nameInfo = await checkAccessibleName(
+              iconButtons[Math.min(i, iconButtons.length - 1)]!
+            );
             expect(nameInfo.hasAccessibleName).toBe(true);
           }
         }
@@ -751,7 +820,9 @@ test.describe('@regression-a11y Main Page Accessibility Tests', () => {
         const hasAriaLabel = await loaders[Math.min(0, loaders.length - 1)]!.evaluate((el) => {
           return el.hasAttribute('aria-label') || el.hasAttribute('aria-labelledby');
         });
-        expect(hasAriaLabel || (await loaders[Math.min(0, loaders.length - 1)]!.textContent())).toBeTruthy();
+        expect(
+          hasAriaLabel || (await loaders[Math.min(0, loaders.length - 1)]!.textContent())
+        ).toBeTruthy();
       }
     });
 
@@ -822,10 +893,14 @@ test.describe('@regression-a11y Main Page Accessibility Tests', () => {
       const focusResult = await verifyFocusIndicators(page);
 
       // Most elements should have focus indicators
-      const ratio = focusResult.elementsWithFocus / (focusResult.elementsWithFocus + focusResult.elementsWithoutFocus);
+      const ratio =
+        focusResult.elementsWithFocus /
+        (focusResult.elementsWithFocus + focusResult.elementsWithoutFocus);
       expect(ratio).toBeGreaterThan(0.8);
 
-      console.log(`Focus indicators: ${focusResult.elementsWithFocus} with, ${focusResult.elementsWithoutFocus} without`);
+      console.log(
+        `Focus indicators: ${focusResult.elementsWithFocus} with, ${focusResult.elementsWithoutFocus} without`
+      );
     });
 
     test('should capture main page state for visual review', async ({ page }) => {
@@ -834,9 +909,17 @@ test.describe('@regression-a11y Main Page Accessibility Tests', () => {
 
       // Find and capture first interactive element
       const firstButton = page.locator('button').first();
-      if (await firstButton.count() > 0) {
-        await captureNormalState(page, firstButton, 'tests/accessibility/reports/button-normal.png');
-        await captureFocusState(page, firstButton, 'tests/accessibility/reports/button-focused.png');
+      if ((await firstButton.count()) > 0) {
+        await captureNormalState(
+          page,
+          firstButton,
+          'tests/accessibility/reports/button-normal.png'
+        );
+        await captureFocusState(
+          page,
+          firstButton,
+          'tests/accessibility/reports/button-focused.png'
+        );
       }
     });
   });
@@ -902,9 +985,11 @@ test.describe('@regression-a11y Main Page Accessibility - Authenticated User', (
 
   test('authenticated user menu should be accessible', async ({ page }) => {
     // Find user menu or profile button
-    const userMenu = page.locator('[aria-label*="user" i], [aria-label*="account" i], button:has-text("Profile")').first();
+    const userMenu = page
+      .locator('[aria-label*="user" i], [aria-label*="account" i], button:has-text("Profile")')
+      .first();
 
-    if (await userMenu.count() > 0) {
+    if ((await userMenu.count()) > 0) {
       // Verify accessible name
       const nameInfo = await checkAccessibleName(userMenu);
       expect(nameInfo.hasAccessibleName).toBe(true);

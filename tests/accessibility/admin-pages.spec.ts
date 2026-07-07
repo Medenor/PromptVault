@@ -49,7 +49,11 @@ async function hasVisibleDialog(page) {
     return dialogs.some((dialog) => {
       const element = dialog;
       const style = window.getComputedStyle(element);
-      return !element.classList.contains('hidden') && style.display !== 'none' && style.visibility !== 'hidden';
+      return (
+        !element.classList.contains('hidden') &&
+        style.display !== 'none' &&
+        style.visibility !== 'hidden'
+      );
     });
   });
 }
@@ -60,7 +64,11 @@ async function focusIsInsideVisibleDialog(page) {
     const visibleDialog = dialogs.find((dialog) => {
       const element = dialog;
       const style = window.getComputedStyle(element);
-      return !element.classList.contains('hidden') && style.display !== 'none' && style.visibility !== 'hidden';
+      return (
+        !element.classList.contains('hidden') &&
+        style.display !== 'none' &&
+        style.visibility !== 'hidden'
+      );
     });
 
     if (!visibleDialog) {
@@ -126,7 +134,12 @@ test.describe('@regression-a11y Admin Users Page Accessibility', () => {
         const style = window.getComputedStyle(skipLink);
         const clipPath = style.clipPath || '';
         // Hidden if: visibility hidden, display none, opacity 0, OR clip-path inset(100%)
-        return style.visibility === 'hidden' || style.display === 'none' || style.opacity === '0' || clipPath.includes('inset(100%)');
+        return (
+          style.visibility === 'hidden' ||
+          style.display === 'none' ||
+          style.opacity === '0' ||
+          clipPath.includes('inset(100%)')
+        );
       });
       expect(isHidden).toBe(true);
     });
@@ -216,18 +229,23 @@ test.describe('@regression-a11y Admin Users Page Accessibility', () => {
       expect(headerCount).toBeGreaterThan(0);
     });
 
-    test('focus indicators should be visible on table elements', async ({ authenticatedPage: page }) => {
+    test('focus indicators should be visible on table elements', async ({
+      authenticatedPage: page,
+    }) => {
       const table = page.locator('table').first();
 
       // Focus on first cell
       await table.locator('th, td').first().focus();
 
-      const hasVisibleFocus = await table.locator('th, td').first().evaluate((el) => {
-        const style = window.getComputedStyle(el);
-        const focused = el.matches(':focus');
-        const hasOutline = style.outline !== 'none' && style.outline !== '';
-        return focused || hasOutline;
-      });
+      const hasVisibleFocus = await table
+        .locator('th, td')
+        .first()
+        .evaluate((el) => {
+          const style = window.getComputedStyle(el);
+          const focused = el.matches(':focus');
+          const hasOutline = style.outline !== 'none' && style.outline !== '';
+          return focused || hasOutline;
+        });
 
       expect(table.locator('th, td').count()).toBeGreaterThan(0);
     });
@@ -244,7 +262,9 @@ test.describe('@regression-a11y Admin Users Page Accessibility', () => {
       expect(page.url()).toBe(initialUrl);
     });
 
-    test('should be able to navigate backward with Shift+Tab', async ({ authenticatedPage: page }) => {
+    test('should be able to navigate backward with Shift+Tab', async ({
+      authenticatedPage: page,
+    }) => {
       const tabOrder = await extractTabOrder(page);
       expect(tabOrder.length).toBeGreaterThan(0);
 
@@ -264,8 +284,12 @@ test.describe('@regression-a11y Admin Users Page Accessibility', () => {
   // ROW ACTIONS TESTS
   // ============================================================================
   test.describe('@regression-a11y Row Action Buttons', () => {
-    test('action buttons should have clear accessible names', async ({ authenticatedPage: page }) => {
-      const actionButtons = page.locator('button[aria-label*="user"], button[aria-label*="edit"], button[aria-label*="delete"]');
+    test('action buttons should have clear accessible names', async ({
+      authenticatedPage: page,
+    }) => {
+      const actionButtons = page.locator(
+        'button[aria-label*="user"], button[aria-label*="edit"], button[aria-label*="delete"]'
+      );
       const count = await actionButtons.count();
 
       if (count > 0) {
@@ -283,8 +307,8 @@ test.describe('@regression-a11y Admin Users Page Accessibility', () => {
     test('action buttons should be keyboard accessible', async ({ authenticatedPage: page }) => {
       const tabOrder = await extractTabOrder(page);
 
-      const hasActionButtons = tabOrder.some((item) =>
-        item.selector?.includes('button') || item.text?.includes('Edit')
+      const hasActionButtons = tabOrder.some(
+        (item) => item.selector?.includes('button') || item.text?.includes('Edit')
       );
 
       expect(tabOrder.length).toBeGreaterThan(0);
@@ -301,9 +325,11 @@ test.describe('@regression-a11y Admin Users Page Accessibility', () => {
   // ============================================================================
   test.describe('@regression-a11y Filter and Search', () => {
     test('search input should have label', async ({ authenticatedPage: page }) => {
-      const searchInput = page.locator('input[type="search"], input[placeholder*="search" i]').first();
+      const searchInput = page
+        .locator('input[type="search"], input[placeholder*="search" i]')
+        .first();
 
-      if (await searchInput.count() > 0) {
+      if ((await searchInput.count()) > 0) {
         const nameInfo = await checkAccessibleName(searchInput);
         expect(nameInfo.hasAccessibleName).toBe(true);
       }
@@ -312,7 +338,7 @@ test.describe('@regression-a11y Admin Users Page Accessibility', () => {
     test('filter controls should be keyboard accessible', async ({ authenticatedPage: page }) => {
       const filterInputs = page.locator('input[type="text"], input[type="search"], select').first();
 
-      if (await filterInputs.count() > 0) {
+      if ((await filterInputs.count()) > 0) {
         await filterInputs.focus();
 
         const focused = await page.evaluate(() => {
@@ -325,9 +351,11 @@ test.describe('@regression-a11y Admin Users Page Accessibility', () => {
     });
 
     test('clear filter button should be accessible', async ({ authenticatedPage: page }) => {
-      const clearButton = page.locator('button:has-text("Clear"), button[aria-label*="Clear"]').first();
+      const clearButton = page
+        .locator('button:has-text("Clear"), button[aria-label*="Clear"]')
+        .first();
 
-      if (await clearButton.count() > 0) {
+      if ((await clearButton.count()) > 0) {
         const nameInfo = await checkAccessibleName(clearButton);
         expect(nameInfo.hasAccessibleName).toBe(true);
       }
@@ -338,19 +366,27 @@ test.describe('@regression-a11y Admin Users Page Accessibility', () => {
   // PAGINATION TESTS
   // ============================================================================
   test.describe('@regression-a11y Pagination Accessibility', () => {
-    test('pagination controls should be keyboard accessible', async ({ authenticatedPage: page }) => {
-      const pagination = page.locator('[role="navigation"][aria-label*="pagination" i], nav[aria-label*="pagination" i]').first();
+    test('pagination controls should be keyboard accessible', async ({
+      authenticatedPage: page,
+    }) => {
+      const pagination = page
+        .locator('[role="navigation"][aria-label*="pagination" i], nav[aria-label*="pagination" i]')
+        .first();
 
-      if (await pagination.count() > 0) {
+      if ((await pagination.count()) > 0) {
         expect(await pagination.count()).toBeGreaterThan(0);
       }
     });
 
     test('pagination buttons should have clear labels', async ({ authenticatedPage: page }) => {
-      const prevButton = page.locator('button[aria-label*="Previous"], button:has-text("Previous")').first();
-      const nextButton = page.locator('button[aria-label*="Next"], button:has-text("Next")').first();
+      const prevButton = page
+        .locator('button[aria-label*="Previous"], button:has-text("Previous")')
+        .first();
+      const nextButton = page
+        .locator('button[aria-label*="Next"], button:has-text("Next")')
+        .first();
 
-      if (await prevButton.count() > 0) {
+      if ((await prevButton.count()) > 0) {
         const nameInfo = await checkAccessibleName(prevButton);
         expect(nameInfo.hasAccessibleName).toBe(true);
       }
@@ -359,13 +395,15 @@ test.describe('@regression-a11y Admin Users Page Accessibility', () => {
     test('current page should be indicated', async ({ authenticatedPage: page }) => {
       const pageButtons = page.locator('button[aria-current="page"], span[aria-current="page"]');
 
-      if (await pageButtons.count() > 0) {
+      if ((await pageButtons.count()) > 0) {
         const ariaCurrentValue = await pageButtons.first().getAttribute('aria-current');
         expect(ariaCurrentValue).toBe('page');
       }
     });
 
-    test('disabled pagination buttons should not be in tab order', async ({ authenticatedPage: page }) => {
+    test('disabled pagination buttons should not be in tab order', async ({
+      authenticatedPage: page,
+    }) => {
       const disabledButtons = page.locator('button[disabled]');
       const count = await disabledButtons.count();
 
@@ -384,26 +422,34 @@ test.describe('@regression-a11y Admin Users Page Accessibility', () => {
   // ============================================================================
   test.describe('@regression-a11y Sort Functionality', () => {
     test('sortable column headers should be accessible', async ({ authenticatedPage: page }) => {
-      const sortableHeaders = page.locator('th[role="button"], button.sort-button, th:has-text("^") th');
+      const sortableHeaders = page.locator(
+        'th[role="button"], button.sort-button, th:has-text("^") th'
+      );
 
-      if (await sortableHeaders.count() > 0) {
+      if ((await sortableHeaders.count()) > 0) {
         expect(await sortableHeaders.count()).toBeGreaterThan(0);
       }
     });
 
-    test('sort direction should be communicated via aria-sort', async ({ authenticatedPage: page }) => {
+    test('sort direction should be communicated via aria-sort', async ({
+      authenticatedPage: page,
+    }) => {
       const headers = page.locator('th[aria-sort]');
 
-      if (await headers.count() > 0) {
+      if ((await headers.count()) > 0) {
         const ariaSortValue = await headers.first().getAttribute('aria-sort');
         expect(['ascending', 'descending', 'none', 'other']).toContain(ariaSortValue);
       }
     });
 
-    test('sort state should be visually and textually indicated', async ({ authenticatedPage: page }) => {
-      const sortedHeader = page.locator('th[aria-sort="ascending"], th[aria-sort="descending"]').first();
+    test('sort state should be visually and textually indicated', async ({
+      authenticatedPage: page,
+    }) => {
+      const sortedHeader = page
+        .locator('th[aria-sort="ascending"], th[aria-sort="descending"]')
+        .first();
 
-      if (await sortedHeader.count() > 0) {
+      if ((await sortedHeader.count()) > 0) {
         const text = await sortedHeader.textContent();
         expect(text).toBeTruthy();
       }
@@ -414,10 +460,12 @@ test.describe('@regression-a11y Admin Users Page Accessibility', () => {
   // COLOR CONTRAST TESTS
   // ============================================================================
   test.describe('@regression-a11y Color Contrast', () => {
-    test('table header text should have sufficient contrast', async ({ authenticatedPage: page }) => {
+    test('table header text should have sufficient contrast', async ({
+      authenticatedPage: page,
+    }) => {
       const headers = page.locator('table thead th');
 
-      if (await headers.count() > 0) {
+      if ((await headers.count()) > 0) {
         // Test contrast on first few headers
         for (let i = 0; i < Math.min(await headers.count(), 3); i++) {
           const header = headers.nth(i);
@@ -430,16 +478,18 @@ test.describe('@regression-a11y Admin Users Page Accessibility', () => {
     test('table cell text should have sufficient contrast', async ({ authenticatedPage: page }) => {
       const cells = page.locator('table tbody td').first();
 
-      if (await cells.count() > 0) {
+      if ((await cells.count()) > 0) {
         const contrast = await testUIContrast(cells);
         expect(contrast).toBeDefined();
       }
     });
 
-    test('action button text should have sufficient contrast', async ({ authenticatedPage: page }) => {
+    test('action button text should have sufficient contrast', async ({
+      authenticatedPage: page,
+    }) => {
       const buttons = page.locator('button[class*="btn"], button[class*="button"]').first();
 
-      if (await buttons.count() > 0) {
+      if ((await buttons.count()) > 0) {
         const contrast = await testUIContrast(buttons);
         expect(contrast).toBeDefined();
       }
@@ -448,16 +498,20 @@ test.describe('@regression-a11y Admin Users Page Accessibility', () => {
     test('link text should have sufficient contrast', async ({ authenticatedPage: page }) => {
       const links = page.locator('a[href]').first();
 
-      if (await links.count() > 0) {
+      if ((await links.count()) > 0) {
         const contrast = await testUIContrast(links);
         expect(contrast).toBeDefined();
       }
     });
 
-    test('status indicators should have sufficient contrast', async ({ authenticatedPage: page }) => {
-      const badges = page.locator('span[class*="badge"], span[class*="status"], span[class*="indicator"]').first();
+    test('status indicators should have sufficient contrast', async ({
+      authenticatedPage: page,
+    }) => {
+      const badges = page
+        .locator('span[class*="badge"], span[class*="status"], span[class*="indicator"]')
+        .first();
 
-      if (await badges.count() > 0) {
+      if ((await badges.count()) > 0) {
         const contrast = await testUIContrast(badges);
         expect(contrast).toBeDefined();
       }
@@ -474,9 +528,11 @@ test.describe('@regression-a11y Admin Users Page Accessibility', () => {
     });
 
     test('should search for user with keyboard', async ({ authenticatedPage: page }) => {
-      const searchInput = page.locator('input[type="search"], input[placeholder*="search" i]').first();
+      const searchInput = page
+        .locator('input[type="search"], input[placeholder*="search" i]')
+        .first();
 
-      if (await searchInput.count() > 0) {
+      if ((await searchInput.count()) > 0) {
         await searchInput.focus();
         await searchInput.type('test');
 
@@ -485,10 +541,12 @@ test.describe('@regression-a11y Admin Users Page Accessibility', () => {
       }
     });
 
-    test('should be able to complete workflow without mouse', async ({ authenticatedPage: page }) => {
+    test('should be able to complete workflow without mouse', async ({
+      authenticatedPage: page,
+    }) => {
       const buttons = page.locator('button').first();
 
-      if (await buttons.count() > 0) {
+      if ((await buttons.count()) > 0) {
         await buttons.focus();
 
         const focused = await page.evaluate(() => {
@@ -518,7 +576,7 @@ test.describe('@regression-a11y Admin Users Page Accessibility', () => {
     test('table should have proper ARIA role structure', async ({ authenticatedPage: page }) => {
       const table = page.locator('table').first();
 
-      if (await table.count() > 0) {
+      if ((await table.count()) > 0) {
         const role = await table.getAttribute('role');
         expect(role === null || role === 'table').toBe(true);
       }
@@ -547,12 +605,18 @@ test.describe('@regression-a11y Admin Users Page Accessibility', () => {
       expect(duplicateIds.length).toBe(0);
     });
 
-    test('action buttons should have descriptive aria-labels when needed', async ({ authenticatedPage: page }) => {
+    test('action buttons should have descriptive aria-labels when needed', async ({
+      authenticatedPage: page,
+    }) => {
       const actionButtons = page.locator('button[aria-label], button[title]').first();
 
-      if (await actionButtons.count() > 0) {
+      if ((await actionButtons.count()) > 0) {
         const hasLabel = await actionButtons.evaluate((el) => {
-          return !!el.getAttribute('aria-label') || !!el.getAttribute('title') || !!el.textContent?.trim();
+          return (
+            !!el.getAttribute('aria-label') ||
+            !!el.getAttribute('title') ||
+            !!el.textContent?.trim()
+          );
         });
 
         expect(hasLabel).toBe(true);
@@ -567,15 +631,13 @@ test.describe('@regression-a11y Admin Users Page Accessibility', () => {
     test('focus should be visible on interactive elements', async ({ authenticatedPage: page }) => {
       const buttons = page.locator('button').first();
 
-      if (await buttons.count() > 0) {
+      if ((await buttons.count()) > 0) {
         await buttons.focus();
 
         const hasFocusStyle = await buttons.evaluate((el) => {
           const style = window.getComputedStyle(el);
           return (
-            el.matches(':focus-visible') ||
-            style.outline !== 'none' ||
-            style.boxShadow !== 'none'
+            el.matches(':focus-visible') || style.outline !== 'none' || style.boxShadow !== 'none'
           );
         });
 
@@ -588,26 +650,26 @@ test.describe('@regression-a11y Admin Users Page Accessibility', () => {
       expect(hasFocus).toBe(true);
     });
 
-    test('modal should move focus inside and close on Escape', async ({ authenticatedPage: page }) => {
-      const trigger = page.locator(
-        'button:has-text("Create"), button:has-text("Add"), button[aria-label*="create" i], button[aria-label*="add" i]'
-      ).first();
+    test('modal should move focus inside and close on Escape', async ({
+      authenticatedPage: page,
+    }) => {
+      const trigger = page
+        .locator(
+          'button:has-text("Create"), button:has-text("Add"), button[aria-label*="create" i], button[aria-label*="add" i]'
+        )
+        .first();
 
-      if (await trigger.count() > 0) {
+      if ((await trigger.count()) > 0) {
         await trigger.focus();
         await trigger.click();
 
-        await expect
-          .poll(async () => await hasVisibleDialog(page), { timeout: 5000 })
-          .toBe(true);
+        await expect.poll(async () => await hasVisibleDialog(page), { timeout: 5000 }).toBe(true);
         await expect
           .poll(async () => await focusIsInsideVisibleDialog(page), { timeout: 5000 })
           .toBe(true);
 
         await page.keyboard.press('Escape');
-        await expect
-          .poll(async () => await hasVisibleDialog(page), { timeout: 5000 })
-          .toBe(false);
+        await expect.poll(async () => await hasVisibleDialog(page), { timeout: 5000 }).toBe(false);
 
         const focusRecovered = await page.evaluate(() => {
           const activeElement = document.activeElement;
@@ -615,7 +677,7 @@ test.describe('@regression-a11y Admin Users Page Accessibility', () => {
             activeElement &&
             activeElement.tagName !== 'BODY' &&
             activeElement.tagName !== 'HTML' &&
-            ((activeElement).matches('button, a, input, select, textarea, [tabindex]'))
+            activeElement.matches('button, a, input, select, textarea, [tabindex]')
           );
         });
 
@@ -636,9 +698,13 @@ test.describe('@regression-a11y Admin Users Page Accessibility', () => {
     test('should capture table with focus state', async ({ authenticatedPage: page }) => {
       const table = page.locator('table').first();
 
-      if (await table.count() > 0) {
+      if ((await table.count()) > 0) {
         await table.focus();
-        await captureFocusState(page, table, 'tests/accessibility/reports/admin-users-table-focused.png');
+        await captureFocusState(
+          page,
+          table,
+          'tests/accessibility/reports/admin-users-table-focused.png'
+        );
         await expect(table).toBeVisible();
       }
     });
@@ -702,7 +768,9 @@ test.describe('@regression-a11y Admin Sessions Page Accessibility', () => {
       expect(await tbody.count()).toBeGreaterThan(0);
     });
 
-    test('table headers should have proper scope attributes', async ({ authenticatedPage: page }) => {
+    test('table headers should have proper scope attributes', async ({
+      authenticatedPage: page,
+    }) => {
       const headers = page.locator('table thead th');
       const count = await headers.count();
       expect(count).toBeGreaterThan(0);
@@ -716,16 +784,18 @@ test.describe('@regression-a11y Admin Sessions Page Accessibility', () => {
     test('session ID should be accessible', async ({ authenticatedPage: page }) => {
       const sessionCells = page.locator('table tbody td').first();
 
-      if (await sessionCells.count() > 0) {
+      if ((await sessionCells.count()) > 0) {
         const text = await sessionCells.textContent();
         expect(text?.trim().length).toBeGreaterThan(0);
       }
     });
 
     test('session status should be accessible', async ({ authenticatedPage: page }) => {
-      const statusCells = page.locator('table tbody td[class*="status"], table tbody td[aria-label*="status" i]').first();
+      const statusCells = page
+        .locator('table tbody td[class*="status"], table tbody td[aria-label*="status" i]')
+        .first();
 
-      if (await statusCells.count() > 0) {
+      if ((await statusCells.count()) > 0) {
         const nameInfo = await checkAccessibleName(statusCells);
         expect(nameInfo.hasAccessibleName || statusCells.textContent).toBeTruthy();
       }
@@ -736,19 +806,29 @@ test.describe('@regression-a11y Admin Sessions Page Accessibility', () => {
   // SESSION ACTIONS TESTS
   // ============================================================================
   test.describe('@regression-a11y Session Actions', () => {
-    test('view session button should have accessible label', async ({ authenticatedPage: page }) => {
-      const viewButton = page.locator('button[aria-label*="view"], button:has-text("View")').first();
+    test('view session button should have accessible label', async ({
+      authenticatedPage: page,
+    }) => {
+      const viewButton = page
+        .locator('button[aria-label*="view"], button:has-text("View")')
+        .first();
 
-      if (await viewButton.count() > 0) {
+      if ((await viewButton.count()) > 0) {
         const nameInfo = await checkAccessibleName(viewButton);
         expect(nameInfo.hasAccessibleName).toBe(true);
       }
     });
 
-    test('terminate session button should have clear context', async ({ authenticatedPage: page }) => {
-      const terminateButton = page.locator('button[aria-label*="terminate"], button[aria-label*="delete"], button:has-text("Terminate")').first();
+    test('terminate session button should have clear context', async ({
+      authenticatedPage: page,
+    }) => {
+      const terminateButton = page
+        .locator(
+          'button[aria-label*="terminate"], button[aria-label*="delete"], button:has-text("Terminate")'
+        )
+        .first();
 
-      if (await terminateButton.count() > 0) {
+      if ((await terminateButton.count()) > 0) {
         const nameInfo = await checkAccessibleName(terminateButton);
         expect(nameInfo.hasAccessibleName).toBe(true);
       }
@@ -767,16 +847,18 @@ test.describe('@regression-a11y Admin Sessions Page Accessibility', () => {
     test('should navigate sessions table with keyboard', async ({ authenticatedPage: page }) => {
       const table = page.locator('table').first();
 
-      if (await table.count() > 0) {
+      if ((await table.count()) > 0) {
         await table.focus();
         await expect(table).toBeFocused();
       }
     });
 
     test('should search sessions with keyboard', async ({ authenticatedPage: page }) => {
-      const searchInput = page.locator('input[type="search"], input[placeholder*="search" i]').first();
+      const searchInput = page
+        .locator('input[type="search"], input[placeholder*="search" i]')
+        .first();
 
-      if (await searchInput.count() > 0) {
+      if ((await searchInput.count()) > 0) {
         await searchInput.focus();
         await searchInput.type('test');
 
@@ -800,10 +882,12 @@ test.describe('@regression-a11y Admin Sessions Page Accessibility', () => {
   // COLOR CONTRAST TESTS
   // ============================================================================
   test.describe('@regression-a11y Color Contrast', () => {
-    test('table header text should have sufficient contrast', async ({ authenticatedPage: page }) => {
+    test('table header text should have sufficient contrast', async ({
+      authenticatedPage: page,
+    }) => {
       const headers = page.locator('table thead th');
 
-      if (await headers.count() > 0) {
+      if ((await headers.count()) > 0) {
         for (let i = 0; i < Math.min(await headers.count(), 3); i++) {
           const header = headers.nth(i);
           const contrast = await testUIContrast(header);
@@ -812,10 +896,12 @@ test.describe('@regression-a11y Admin Sessions Page Accessibility', () => {
       }
     });
 
-    test('action button text should have sufficient contrast', async ({ authenticatedPage: page }) => {
+    test('action button text should have sufficient contrast', async ({
+      authenticatedPage: page,
+    }) => {
       const buttons = page.locator('button').first();
 
-      if (await buttons.count() > 0) {
+      if ((await buttons.count()) > 0) {
         const contrast = await testUIContrast(buttons);
         expect(contrast).toBeDefined();
       }
@@ -824,7 +910,7 @@ test.describe('@regression-a11y Admin Sessions Page Accessibility', () => {
     test('status text should have sufficient contrast', async ({ authenticatedPage: page }) => {
       const status = page.locator('[class*="status"], [class*="badge"]').first();
 
-      if (await status.count() > 0) {
+      if ((await status.count()) > 0) {
         const contrast = await testUIContrast(status);
         expect(contrast).toBeDefined();
       }
@@ -838,15 +924,13 @@ test.describe('@regression-a11y Admin Sessions Page Accessibility', () => {
     test('focus indicators should be visible', async ({ authenticatedPage: page }) => {
       const buttons = page.locator('button').first();
 
-      if (await buttons.count() > 0) {
+      if ((await buttons.count()) > 0) {
         await buttons.focus();
 
         const hasFocusStyle = await buttons.evaluate((el) => {
           const style = window.getComputedStyle(el);
           return (
-            el.matches(':focus-visible') ||
-            style.outline !== 'none' ||
-            style.boxShadow !== 'none'
+            el.matches(':focus-visible') || style.outline !== 'none' || style.boxShadow !== 'none'
           );
         });
 
@@ -854,26 +938,26 @@ test.describe('@regression-a11y Admin Sessions Page Accessibility', () => {
       }
     });
 
-    test('session dialog should move focus inside and close on Escape', async ({ authenticatedPage: page }) => {
-      const trigger = page.locator(
-        'button:has-text("View"), button:has-text("Details"), button[aria-label*="view" i], button[aria-label*="details" i]'
-      ).first();
+    test('session dialog should move focus inside and close on Escape', async ({
+      authenticatedPage: page,
+    }) => {
+      const trigger = page
+        .locator(
+          'button:has-text("View"), button:has-text("Details"), button[aria-label*="view" i], button[aria-label*="details" i]'
+        )
+        .first();
 
-      if (await trigger.count() > 0) {
+      if ((await trigger.count()) > 0) {
         await trigger.focus();
         await trigger.click();
 
-        await expect
-          .poll(async () => await hasVisibleDialog(page), { timeout: 5000 })
-          .toBe(true);
+        await expect.poll(async () => await hasVisibleDialog(page), { timeout: 5000 }).toBe(true);
         await expect
           .poll(async () => await focusIsInsideVisibleDialog(page), { timeout: 5000 })
           .toBe(true);
 
         await page.keyboard.press('Escape');
-        await expect
-          .poll(async () => await hasVisibleDialog(page), { timeout: 5000 })
-          .toBe(false);
+        await expect.poll(async () => await hasVisibleDialog(page), { timeout: 5000 }).toBe(false);
       }
     });
   });
@@ -890,9 +974,13 @@ test.describe('@regression-a11y Admin Sessions Page Accessibility', () => {
     test('should capture table with focus state', async ({ authenticatedPage: page }) => {
       const table = page.locator('table').first();
 
-      if (await table.count() > 0) {
+      if ((await table.count()) > 0) {
         await table.focus();
-        await captureFocusState(page, table, 'tests/accessibility/reports/admin-sessions-table-focused.png');
+        await captureFocusState(
+          page,
+          table,
+          'tests/accessibility/reports/admin-sessions-table-focused.png'
+        );
         await expect(table).toBeVisible();
       }
     });
@@ -912,9 +1000,11 @@ test.describe('@regression-a11y Admin Pages Cross-Page Accessibility', () => {
       await page.waitForLoadState('domcontentloaded');
 
       // Click to sessions if available
-      const sessionsButton = page.locator('button:has-text("Sessions"), a:has-text("Sessions")').first();
+      const sessionsButton = page
+        .locator('button:has-text("Sessions"), a:has-text("Sessions")')
+        .first();
 
-      if (await sessionsButton.count() > 0) {
+      if ((await sessionsButton.count()) > 0) {
         await sessionsButton.click();
         await page.waitForLoadState('domcontentloaded');
 
@@ -937,7 +1027,7 @@ test.describe('@regression-a11y Admin Pages Cross-Page Accessibility', () => {
 
       // Check for aria-current or active class
       const activeIndicator = page.locator('[aria-current], [class*="active"]').first();
-      expect(await activeIndicator.count() >= 0).toBe(true);
+      expect((await activeIndicator.count()) >= 0).toBe(true);
     });
   });
 
@@ -975,7 +1065,9 @@ test.describe('@regression-a11y Admin Pages Cross-Page Accessibility', () => {
       expect(hierarchySessions.validHierarchy).toBe(true);
     });
 
-    test('both pages should have tables with proper structure', async ({ authenticatedPage: page }) => {
+    test('both pages should have tables with proper structure', async ({
+      authenticatedPage: page,
+    }) => {
       await navigateToProtectedRoute(page, '/admin/users');
       const usersTable = page.locator('table');
       expect(await usersTable.count()).toBeGreaterThan(0);
@@ -990,14 +1082,18 @@ test.describe('@regression-a11y Admin Pages Cross-Page Accessibility', () => {
   // COMPREHENSIVE KEYBOARD WORKFLOW
   // ============================================================================
   test.describe('@regression-a11y Complete Keyboard Workflow', () => {
-    test('should complete full admin workflow with keyboard only', async ({ authenticatedPage: page }) => {
+    test('should complete full admin workflow with keyboard only', async ({
+      authenticatedPage: page,
+    }) => {
       // Navigate to users page
       await navigateToProtectedRoute(page, '/admin/users');
       await page.waitForLoadState('domcontentloaded');
 
       // Focus on search input
-      const searchInput = page.locator('input[type="search"], input[placeholder*="search" i]').first();
-      if (await searchInput.count() > 0) {
+      const searchInput = page
+        .locator('input[type="search"], input[placeholder*="search" i]')
+        .first();
+      if ((await searchInput.count()) > 0) {
         await searchInput.focus();
         await searchInput.type('test');
       }
@@ -1008,7 +1104,7 @@ test.describe('@regression-a11y Admin Pages Cross-Page Accessibility', () => {
 
       // Navigate to sessions page
       const sessionsButton = page.locator('button:has-text("Sessions")').first();
-      if (await sessionsButton.count() > 0) {
+      if ((await sessionsButton.count()) > 0) {
         await sessionsButton.focus();
         await sessionsButton.press('Enter');
         await page.waitForLoadState('domcontentloaded');

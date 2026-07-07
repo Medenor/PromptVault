@@ -1,0 +1,290 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+"""Backup scheduler service for PromptVault.
+
+Manages scheduled automatic backups using APScheduler with SQLAlchemyJobStore
+for crash recovery. Supports daily/weekly/monthly schedules with configurable
+retention policies.
+"""
+
+import uuid
+import logging
+import threading
+from datetime import datetime, timezone
+from typing import Optional, Dict, Any
+
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.cron import CronTrigger
+from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
+
+from src.db.config import db_settings
+from src.db.session import get_db_session
+from src.db.repositories.backup_schedule_repository import BackupScheduleRepository
+from src.db.models.backup_schedule import BackupSchedule
+
+logger = logging.getLogger(__name__)
+
+
+class BackupSchedulerService:
+    """Service for managing scheduled automatic backups.
+
+    Uses APScheduler with SQLAlchemyJobStore for persistent job storage.
+    Supports daily/weekly/monthly schedules with configurable retention.
+
+    Attributes:
+        scheduler: APScheduler BackgroundScheduler instance
+        _lock: Threading lock to prevent concurrent backup execution
+    """
+
+    def __init__(self, backup_service=None):
+        """Initialize the backup scheduler service.
+
+        Args:
+            backup_service: BackupService instance for creating backups
+        """
+        self._backup_service = backup_service
+        self._lock = threading.Lock()
+        self._scheduler: Optional[BackgroundScheduler] = None
+
+    @property
+    def backup_service(self):
+        """Lazy-load backup service to avoid circular imports."""
+        if self._backup_service is None:
+            from src.services.backup_service_db import BackupService
+            self._backup_service = BackupService()
+        return self._backup_service
+
+    def _get_scheduler(self) -> BackgroundScheduler:
+        """Get or create the APScheduler instance."""
+        if self._scheduler is None:
+            jobstores = {
+                "default": SQLAlchemyJobStore(url=db_settings.DATABASE_URL),
+            }
+            self._scheduler = BackgroundScheduler(
+                jobstores=jobstores,
+                job_defaults={"coalesce": True, "max_instances": 1},
+                daemon=True,
+            )
+        return self._scheduler
+
+    def get_schedule(self) -> Optional[Dict[str, Any]]:
+        """Get the current backup schedule configuration.
+
+        Returns:
+            Schedule dict or None if no schedule configured
+        """
+        with get_db_session() as session:
+            repo = BackupScheduleRepository(session)
+            schedule = repo.get_active()
+            if schedule is None:
+                return None
+            return self._serialize_schedule(schedule)
+
+    def upsert_schedule(self, **kwargs) -> Dict[str, Any]:
+        """Create or update the backup schedule.
+
+        Args:
+            **kwargs: Schedule attributes (frequency, hour, minute, etc.)
+
+        Returns:
+            Updated schedule dict
+        """
+        with get_db_session() as session:
+            repo = BackupScheduleRepository(session)
+            existing = repo.get_active()
+
+            if existing:
+                schedule = repo.upsert(**kwargs)
+            else:
+                schedule_id = str(uuid.uuid4())
+                schedule = repo.upsert(id=schedule_id, **kwargs)
+
+            session.commit()
+            result = self._serialize_schedule(schedule)
+
+        if result.get("enabled"):
+            self._register_job(result)
+        else:
+            self._unregister_job()
+
+        return result
+
+    def enable(self) -> Optional[Dict[str, Any]]:
+        """Enable the backup schedule.
+
+        Returns:
+            Updated schedule dict or None
+        """
+        with get_db_session() as session:
+            repo = BackupScheduleRepository(session)
+            schedule = repo.get_active()
+            if schedule is None:
+                return None
+            schedule.enabled = True
+            schedule.updated_at = datetime.now(timezone.utc)
+            session.commit()
+            result = self._serialize_schedule(schedule)
+
+        self._register_job(result)
+        return result
+
+    def disable(self) -> Optional[Dict[str, Any]]:
+        """Disable the backup schedule.
+
+        Returns:
+            Updated schedule dict or None
+        """
+        with get_db_session() as session:
+            repo = BackupScheduleRepository(session)
+            schedule = repo.get_active()
+            if schedule is None:
+                return None
+            schedule.enabled = False
+            schedule.updated_at = datetime.now(timezone.utc)
+            session.commit()
+            result = self._serialize_schedule(schedule)
+
+        self._unregister_job()
+        return result
+
+    def _run_scheduled_backup(self) -> None:
+        """Execute a scheduled backup.
+
+        Called by APScheduler when the cron trigger fires.
+        Prevents concurrent execution via threading lock.
+        Updates last_run_at and last_run_status on the schedule.
+        """
+        if not self._lock.acquire(blocking=False):
+            logger.warning("Scheduled backup skipped: another backup is in progress")
+            return
+
+        try:
+            backup_id = self.backup_service.create_backup(
+                custom_name="scheduled",
+                created_by="scheduler",
+            )
+
+            with get_db_session() as session:
+                repo = BackupScheduleRepository(session)
+                schedule = repo.get_active()
+                if schedule:
+                    schedule.last_run_at = datetime.now(timezone.utc)
+                    schedule.last_run_status = "success" if backup_id else "failure"
+                    session.commit()
+
+            logger.info(
+                "Scheduled backup completed",
+                extra={"event": "backup.scheduled.success", "backup_id": backup_id},
+            )
+
+        except Exception as exc:
+            logger.error(
+                "Scheduled backup failed",
+                extra={"event": "backup.scheduled.failure"},
+                exc_info=exc,
+            )
+
+            with get_db_session() as session:
+                repo = BackupScheduleRepository(session)
+                schedule = repo.get_active()
+                if schedule:
+                    schedule.last_run_at = datetime.now(timezone.utc)
+                    schedule.last_run_status = "failure"
+                    session.commit()
+        finally:
+            self._lock.release()
+
+    def _register_job(self, schedule: Dict[str, Any]) -> None:
+        """Register the backup job with APScheduler.
+
+        Args:
+            schedule: Schedule configuration dict
+        """
+        try:
+            scheduler = self._get_scheduler()
+            frequency = schedule.get("frequency", "daily")
+            hour = schedule.get("hour", 2)
+            minute = schedule.get("minute", 0)
+
+            trigger_kwargs: Dict[str, Any] = {
+                "hour": hour,
+                "minute": minute,
+            }
+
+            if frequency == "weekly":
+                trigger_kwargs["day_of_week"] = schedule.get("day_of_week", 0)
+            elif frequency == "monthly":
+                trigger_kwargs["day"] = schedule.get("day_of_month", 1)
+
+            trigger = CronTrigger(**trigger_kwargs)
+
+            if not scheduler.running:
+                scheduler.start()
+
+            scheduler.add_job(
+                self._run_scheduled_backup,
+                trigger=trigger,
+                id="scheduled-backup",
+                name="Scheduled database backup",
+                replace_existing=True,
+            )
+
+            logger.info(
+                "Backup schedule registered",
+                extra={
+                    "event": "backup.schedule.registered",
+                    "frequency": frequency,
+                    "hour": hour,
+                    "minute": minute,
+                },
+            )
+
+        except Exception as exc:
+            logger.error(
+                "Failed to register backup schedule",
+                extra={"event": "backup.schedule.register_failure"},
+                exc_info=exc,
+            )
+
+    def _unregister_job(self) -> None:
+        """Remove the backup job from APScheduler."""
+        try:
+            if self._scheduler and self._scheduler.running:
+                self._scheduler.remove_job("scheduled-backup")
+                logger.info(
+                    "Backup schedule unregistered",
+                    extra={"event": "backup.schedule.unregistered"},
+                )
+        except Exception:
+            pass
+
+    @staticmethod
+    def _serialize_schedule(schedule: BackupSchedule) -> Dict[str, Any]:
+        """Serialize a BackupSchedule ORM object to a dict.
+
+        Args:
+            schedule: BackupSchedule ORM instance
+
+        Returns:
+            Dict representation of the schedule
+        """
+        return {
+            "id": schedule.id,
+            "enabled": schedule.enabled,
+            "frequency": schedule.frequency,
+            "hour": schedule.hour,
+            "minute": schedule.minute,
+            "day_of_week": schedule.day_of_week,
+            "day_of_month": schedule.day_of_month,
+            "retention_daily_count": schedule.retention_daily_count,
+            "retention_weekly_count": schedule.retention_weekly_count,
+            "retention_monthly_count": schedule.retention_monthly_count,
+            "encrypt_scheduled_backups": schedule.encrypt_scheduled_backups,
+            "cloud_provider_id": schedule.cloud_provider_id,
+            "last_run_at": (
+                schedule.last_run_at.isoformat() if schedule.last_run_at else None
+            ),
+            "last_run_status": schedule.last_run_status,
+        }

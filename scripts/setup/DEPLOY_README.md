@@ -47,42 +47,47 @@ python scripts/setup/deploy.py --rollback
 
 ## Command-Line Options
 
-| Option | Description |
-|--------|-------------|
-| `--dry-run` | Show what would happen without executing any changes |
-| `--skip-backup` | Skip database backup phase (not recommended) |
-| `--skip-migrations` | Skip Alembic migration phase |
-| `--rollback` | Rollback to previous deployment state |
-| `--rebuild` | Force rebuild of Docker images instead of pulling |
+| Option              | Description                                           |
+| ------------------- | ----------------------------------------------------- |
+| `--dry-run`         | Show what would happen without executing any changes  |
+| `--skip-backup`     | Skip database backup phase (not recommended)          |
+| `--skip-migrations` | Skip Alembic migration phase                          |
+| `--rollback`        | Rollback to previous deployment state                 |
+| `--rebuild`         | Force rebuild of Docker images instead of pulling     |
 | `--non-interactive` | Run without prompts (use defaults, perfect for CI/CD) |
-| `--help` | Show help message and available options |
+| `--help`            | Show help message and available options               |
 
 ## Deployment Phases
 
 The deployment process consists of five distinct phases:
 
 ### Phase 1: Preparation
+
 - Creates database backup (unless `--skip-backup` is used)
 - Saves current container states for rollback
 - Pulls or builds Docker images (based on `--rebuild` flag)
 
 ### Phase 2: Infrastructure
+
 - Starts PostgreSQL database container
 - Waits for database to become healthy (up to 2 minutes)
 - Starts Redis cache container
 - Waits for Redis to become healthy (up to 1 minute)
 
 ### Phase 3: Migrations
+
 - Runs Alembic database migrations (`alembic upgrade head`)
 - Can be skipped with `--skip-migrations` flag
 - Verifies database connectivity before running migrations
 
 ### Phase 4: Application
+
 - Starts PromptVault web service container
 - Waits for application to become healthy (up to 3 minutes)
 - Monitors health check endpoint
 
 ### Phase 5: Verification
+
 - Runs smoke tests:
   - Health endpoint check (`/api/health`)
   - Database connectivity test
@@ -124,11 +129,13 @@ python scripts/setup/deploy.py --rollback
 ### Automatic Backups
 
 Backups are automatically created in Phase 1 and stored in:
+
 ```
 data/backups/promptvault-deploy-YYYYMMDD_HHMMSS.sql.gz
 ```
 
 Each backup is:
+
 - Timestamped for easy identification
 - Compressed with gzip for space efficiency
 - Automatically verified after creation
@@ -155,6 +162,7 @@ python scripts/setup/deploy.py --dry-run
 ```
 
 Dry run mode:
+
 - Shows exactly what would happen
 - Performs all checks except actual execution
 - Perfect for testing deployment in CI/CD pipelines
@@ -201,6 +209,7 @@ deploy:
 ### Pre-flight Checks Fail
 
 **Docker not running:**
+
 ```bash
 # macOS/Windows
 # Start Docker Desktop
@@ -210,6 +219,7 @@ sudo systemctl start docker
 ```
 
 **Port already in use:**
+
 ```bash
 # Check what's using the port
 lsof -i :8001
@@ -218,6 +228,7 @@ lsof -i :8001
 ```
 
 **Insufficient disk space:**
+
 ```bash
 # Clean up Docker resources
 docker system prune -a
@@ -229,16 +240,19 @@ rm data/backups/promptvault-deploy-*.sql.gz
 ### Migrations Fail
 
 1. Check database connectivity:
+
    ```bash
    docker-compose exec db psql -U promptvault -d promptvault -c "SELECT 1"
    ```
 
 2. Review Alembic migration files:
+
    ```bash
    ls -la alembic/versions/
    ```
 
 3. Check current migration version:
+
    ```bash
    alembic current
    ```
@@ -251,11 +265,13 @@ rm data/backups/promptvault-deploy-*.sql.gz
 ### Application Won't Start
 
 1. View application logs:
+
    ```bash
    docker-compose logs -f web
    ```
 
 2. Check health endpoint:
+
    ```bash
    curl http://localhost:8001/api/health
    ```
@@ -297,11 +313,11 @@ Rich-formatted console output is provided by `scripts/setup/utils/console.py` fo
 
 ## Exit Codes
 
-| Code | Meaning |
-|------|---------|
-| 0 | Deployment completed successfully |
-| 1 | Deployment failed (rollback may have been performed) |
-| 2 | Deployment and rollback both failed (manual intervention required) |
+| Code | Meaning                                                            |
+| ---- | ------------------------------------------------------------------ |
+| 0    | Deployment completed successfully                                  |
+| 1    | Deployment failed (rollback may have been performed)               |
+| 2    | Deployment and rollback both failed (manual intervention required) |
 
 ## Examples
 

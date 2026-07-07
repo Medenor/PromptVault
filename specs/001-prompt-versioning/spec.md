@@ -8,7 +8,7 @@
 
 **Input**: User description: "Add numbered versioning for prompts, ideally using a semantic version format such as MAJOR.MINOR.PATCH. The prompt detail view should clearly display the current version number. Version history should also show previous numbered versions. It should be possible to compare the current PromptVault version with versions stored or referenced elsewhere, making it easy to identify outdated external copies."
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Assign and Display Version Number (Priority: P1)
 
@@ -65,7 +65,7 @@ A user copies the current prompt content with an embedded version identifier (e.
 - What happens when the user enters a version lower than the current one (e.g., saving `1.0.0` on a prompt currently at `1.2.0`)? (System warns that the version is lower than the current version but allows the save — no strict enforcement of monotonic versioning.)
 - How are prompts without any version history displayed in listings? (No version badge or badge shows "—".)
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -84,7 +84,7 @@ A user copies the current prompt content with an embedded version identifier (e.
 - **Prompt**: An existing entity; gains an optional `version` field storing the current semantic version string. Historical versions retain the version string at the time of save.
 - **PromptRevision**: An existing entity representing a saved snapshot of a prompt; gains an optional `version` field recording the semantic version at the time of that save.
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 

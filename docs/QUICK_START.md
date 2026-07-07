@@ -3,6 +3,7 @@
 **This document has been deprecated and replaced by the new Turnkey Deployment System.**
 
 👉 **Please use the new deployment guide instead:**
+
 - [Turnkey Deployment Guide](DEPLOYMENT.md)
 - [Deployment Orchestration](scripts/setup/DEPLOY_README.md)
 

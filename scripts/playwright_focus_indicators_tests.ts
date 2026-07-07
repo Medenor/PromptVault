@@ -9,22 +9,20 @@ import { isAbsolute, join, resolve } from 'node:path';
 
 const BASE_URL = process.env.ACCESSIBILITY_BASE_URL ?? 'http://127.0.0.1:8003';
 
-const ROUTES =
-  process.env.ACCESSIBILITY_PAGES
-    ?.split(',')
-    .map((route) => route.trim())
-    .filter(Boolean) ?? [
-      '/',
-      '/import-export',
-      '/backup-management',
-      '/auth/login',
-      '/auth/register',
-      '/auth/profile',
-      '/manage-categories',
-      '/manage-tags',
-      '/admin/users',
-      '/admin/sessions',
-    ];
+const ROUTES = process.env.ACCESSIBILITY_PAGES?.split(',')
+  .map((route) => route.trim())
+  .filter(Boolean) ?? [
+  '/',
+  '/import-export',
+  '/backup-management',
+  '/auth/login',
+  '/auth/register',
+  '/auth/profile',
+  '/manage-categories',
+  '/manage-tags',
+  '/admin/users',
+  '/admin/sessions',
+];
 
 const ACCESSIBILITY_USER_USERNAME = process.env.ACCESSIBILITY_USER_USERNAME;
 const ACCESSIBILITY_USER_PASSWORD = process.env.ACCESSIBILITY_USER_PASSWORD;
@@ -295,15 +293,11 @@ test('FOCUS: Verify 3px outline with 2px offset on buttons', async ({ browser })
     expect(buttonStyles?.outlineStyle).toBe('solid');
 
     // Parse outline width (typically "3px" format)
-    const widthValue = buttonStyles?.outlineWidth
-      ? parseInt(buttonStyles.outlineWidth, 10)
-      : 0;
+    const widthValue = buttonStyles?.outlineWidth ? parseInt(buttonStyles.outlineWidth, 10) : 0;
     expect(widthValue).toBe(3);
 
     // Parse outline offset
-    const offsetValue = buttonStyles?.outlineOffset
-      ? parseInt(buttonStyles.outlineOffset, 10)
-      : 0;
+    const offsetValue = buttonStyles?.outlineOffset ? parseInt(buttonStyles.outlineOffset, 10) : 0;
     expect(offsetValue).toBe(2);
 
     // Check outline color - should be a dark blue (#1e40af or similar)

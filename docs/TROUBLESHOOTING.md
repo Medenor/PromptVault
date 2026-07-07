@@ -27,6 +27,7 @@ This guide provides solutions to common issues encountered during PromptVault se
 **Symptom:** `python: can't open file 'scripts/setup/setup.py': [Errno 2] No such file or directory`
 
 **Causes:**
+
 - Running script from wrong directory
 - Script file missing or deleted
 
@@ -53,6 +54,7 @@ python scripts/setup/setup.py
 **Symptom:** `command not found: python` or `python: command not found`
 
 **Causes:**
+
 - Python not installed
 - Python not in PATH
 - Wrong Python version
@@ -83,6 +85,7 @@ python3 scripts/setup/setup.py
 **Symptom:** `ModuleNotFoundError: No module named 'rich'` or `No module named 'click'`
 
 **Causes:**
+
 - Required dependencies not installed
 - Wrong Python environment
 - Virtual environment not activated
@@ -110,6 +113,7 @@ pip install -e .
 **Symptom:** `PermissionError: [Errno 13] Permission denied`
 
 **Causes:**
+
 - Insufficient permissions to create directories
 - File ownership issues
 - Protected system directories
@@ -143,6 +147,7 @@ python scripts/setup/setup.py
 **Symptom:** `Docker is not installed or not in PATH` or `E001` error code
 
 **Causes:**
+
 - Docker not installed on system
 - Docker not in system PATH
 
@@ -176,6 +181,7 @@ docker run hello-world
 **Symptom:** `Cannot connect to the Docker daemon` or `E002` error code
 
 **Causes:**
+
 - Docker service stopped
 - Docker Desktop not started
 - Permission issues with Docker socket
@@ -208,6 +214,7 @@ sudo usermod -aG docker $USER
 **Symptom:** `Docker Compose is not installed` or command not recognized
 
 **Causes:**
+
 - Docker Compose plugin not installed
 - Standalone docker-compose not installed
 - Wrong command syntax
@@ -240,6 +247,7 @@ docker-compose --version
 **Symptom:** `permission denied while trying to connect to the Docker daemon socket`
 
 **Causes:**
+
 - User not in docker group
 - Docker socket has wrong permissions
 
@@ -269,6 +277,7 @@ sudo chown root:docker /var/run/docker.sock
 **Symptom:** `no space left on device` or `E010` error code
 
 **Causes:**
+
 - Docker images consuming disk space
 - Container logs filling disk
 - Old volumes not cleaned up
@@ -308,6 +317,7 @@ docker ps -a --format "{{.Size}}\t{{.Names}}" | sort -hr | head -10
 **Symptom:** `bind: address already in use` or `E003` error code for port 8001
 
 **Causes:**
+
 - Another PromptVault instance running
 - Another web application using port 8001
 - Previous container not stopped properly
@@ -342,6 +352,7 @@ PORT=8002 docker-compose up -d
 **Symptom:** `bind: address already in use` for port 5432
 
 **Causes:**
+
 - System PostgreSQL already running
 - Another PostgreSQL container running
 - Port conflict with other service
@@ -371,6 +382,7 @@ db:
 **Symptom:** `bind: address already in use` for port 6379
 
 **Causes:**
+
 - System Redis already running
 - Another Redis container running
 
@@ -416,6 +428,7 @@ nc -zv localhost 6379
 **Symptom:** `could not connect to server: Connection refused` or `E004` error code
 
 **Causes:**
+
 - PostgreSQL container not running
 - Wrong DATABASE_URL
 - Network connectivity issues
@@ -453,6 +466,7 @@ docker inspect promptvault-db --format='{{.State.Health.Status}}'
 **Symptom:** `database "promptvault" does not exist`
 
 **Causes:**
+
 - Database not created during initialization
 - Wrong database name in DATABASE_URL
 - PostgreSQL initialization failed
@@ -479,6 +493,7 @@ docker-compose exec db psql -U promptvault postgres -c "\l"
 **Symptom:** `password authentication failed for user "promptvault"`
 
 **Causes:**
+
 - Wrong POSTGRES_PASSWORD in .env
 - Password mismatch between .env and DATABASE_URL
 - PostgreSQL authentication configuration issue
@@ -512,6 +527,7 @@ docker-compose exec db psql -U postgres -c "ALTER USER promptvault WITH PASSWORD
 **Symptom:** `alembic.util.exc.CommandError` or `E005` error code during migrations
 
 **Causes:**
+
 - Database schema out of sync
 - Migration revision not found
 - Concurrent migration attempts
@@ -549,6 +565,7 @@ docker-compose exec web alembic upgrade head
 **Symptom:** `attempt to write a readonly database` (SQLite)
 
 **Causes:**
+
 - Database file has wrong permissions
 - Database directory not writable
 - File owned by different user
@@ -576,6 +593,7 @@ test -w data && echo "Writable" || echo "Not writable"
 **Symptom:** `database is locked` (SQLite)
 
 **Causes:**
+
 - Multiple processes accessing SQLite database
 - Long-running transaction
 - File system issues
@@ -607,6 +625,7 @@ rm -f data/promptvault.db-wal
 **Symptom:** `JWT key file does not exist` or `E006` error code
 
 **Causes:**
+
 - JWT keys not generated
 - Keys deleted or moved
 - Wrong path in configuration
@@ -643,6 +662,7 @@ docker-compose restart web
 **Symptom:** `Invalid private key format` or `Invalid public key format`
 
 **Causes:**
+
 - Corrupted key file
 - Wrong key algorithm (not EC P-256)
 - File encoding issues
@@ -677,6 +697,7 @@ file secrets/jwt/private_key.pem
 **Symptom:** `Key file is not readable` or `PermissionError` when accessing keys
 
 **Causes:**
+
 - Wrong file permissions
 - Keys owned by wrong user
 - SELinux or AppArmor blocking access
@@ -708,6 +729,7 @@ sudo chcon -R -t container_file_t secrets/jwt/
 **Symptom:** JWT tokens not working, `Invalid signature` errors
 
 **Causes:**
+
 - Public/private key mismatch
 - Keys regenerated but old tokens still in use
 - Wrong key loaded by application
@@ -741,6 +763,7 @@ docker-compose restart web
 **Symptom:** `File does not exist: .env` or environment variables not loaded
 
 **Causes:**
+
 - .env file not created
 - Running from wrong directory
 - File named incorrectly
@@ -774,6 +797,7 @@ cat .env
 **Symptom:** `Invalid URL format` or `E007` configuration error
 
 **Causes:**
+
 - Wrong URL scheme
 - Missing components (host, port, database name)
 - Special characters not escaped
@@ -809,6 +833,7 @@ DATABASE_URL=postgresql://promptvault:mypassword@db:5432/promptvault
 **Symptom:** Application fails to start, environment validation errors
 
 **Causes:**
+
 - Required variables not set in .env
 - Typos in variable names
 - Wrong variable format
@@ -847,6 +872,7 @@ python scripts/setup/utils/validators.py .env  # If validator script exists
 **Symptom:** `Configuration validation failed` or `E007` error code
 
 **Causes:**
+
 - Invalid configuration values
 - Type mismatch (string instead of number)
 - Out of range values
@@ -885,6 +911,7 @@ cat .env
 **Symptom:** Container exits immediately, `docker-compose ps` shows exited status
 
 **Causes:**
+
 - Configuration errors
 - Missing dependencies
 - Port conflicts
@@ -925,6 +952,7 @@ docker stats
 **Symptom:** Service marked as unhealthy, `E008` error code
 
 **Causes:**
+
 - Service taking too long to start
 - Healthcheck endpoint not responding
 - Network issues
@@ -961,6 +989,7 @@ docker-compose up -d
 **Symptom:** Containers start but never reach healthy status
 
 **Causes:**
+
 - Application errors preventing startup
 - Database migrations not running
 - Missing environment variables
@@ -1000,6 +1029,7 @@ docker-compose up -d web
 **Symptom:** Container in restart loop, `Restarting (1)` status
 
 **Causes:**
+
 - Application crashes on startup
 - Healthcheck failures
 - Configuration errors
@@ -1045,6 +1075,7 @@ LOG_LEVEL=DEBUG docker-compose up web
 **Symptom:** `Can't locate revision identified by 'xxxx'`
 
 **Causes:**
+
 - Migration files missing
 - Database alembic_version table out of sync
 - Git conflicts in migration files
@@ -1083,6 +1114,7 @@ docker-compose exec web alembic upgrade head
 **Symptom:** `column "categories.updated_at" does not exist`
 
 **Causes:**
+
 - Migrations not applied
 - Migrations failed silently
 - Database schema mismatch
@@ -1118,6 +1150,7 @@ docker-compose logs web | grep alembic
 **Symptom:** Application errors due to schema differences
 
 **Causes:**
+
 - Partial migration application
 - Manual database changes
 - Migration rollback issues
@@ -1152,6 +1185,7 @@ docker-compose exec web alembic upgrade head
 **Symptom:** Migration hangs or times out during execution
 
 **Causes:**
+
 - Large dataset migration
 - Database locks
 - Network issues
@@ -1188,6 +1222,7 @@ docker-compose logs -f web
 **Symptom:** `permission denied` after upgrading, `attempt to write a readonly database`
 
 **Causes:**
+
 - Upgrading from containers that ran as root
 - Volume files owned by wrong user
 - Non-root container can't access root-owned files
@@ -1228,6 +1263,7 @@ docker-compose up -d
 **Symptom:** `Permission denied` when accessing specific files
 
 **Causes:**
+
 - Wrong file ownership
 - Incorrect file permissions
 - SELinux/AppArmor restrictions
@@ -1261,6 +1297,7 @@ sudo chcon -t container_file_t /path/to/file
 **Symptom:** `Cannot create directory` or `mkdir: Permission denied`
 
 **Causes:**
+
 - Parent directory not writable
 - Insufficient permissions
 - Disk full
@@ -1293,18 +1330,18 @@ chown $USER:$USER /path/to/directory
 
 Comprehensive error codes used by PromptVault setup and deployment tools:
 
-| Code | Description | Common Causes | Resolution |
-|------|-------------|---------------|------------|
-| **E001** | Docker not installed | Docker not in PATH, not installed | Install Docker from docker.com, verify with `docker --version` |
-| **E002** | Docker daemon not running | Service stopped, Docker Desktop closed | Start Docker daemon: `sudo systemctl start docker` or open Docker Desktop |
-| **E003** | Port already in use | Another service using port 8001/5432/6379 | Check with `lsof -i :PORT`, stop conflicting service or change port |
-| **E004** | Database connection failed | PostgreSQL not ready, wrong credentials, network issue | Verify DATABASE_URL, check PostgreSQL logs, wait for initialization |
-| **E005** | Migration failed | Database not initialized, migration conflict, schema mismatch | Check Alembic logs, run `alembic stamp head` then `alembic upgrade head` |
-| **E006** | JWT key generation failed | No write permissions, disk full, OpenSSL missing | Check `secrets/jwt/` permissions, verify disk space, install OpenSSL |
-| **E007** | Invalid configuration | Wrong .env values, invalid DATABASE_URL, missing variables | Validate .env file format, check DATABASE_URL syntax, verify all required vars set |
-| **E008** | Health check timeout | Service slow to start, healthcheck endpoint down | Increase healthcheck timeout, check application logs, verify endpoint responds |
-| **E009** | Insufficient permissions | User not in docker group, file permissions wrong | Add user to docker group: `sudo usermod -aG docker $USER`, fix file permissions |
-| **E010** | Disk space insufficient | Docker images/volumes consuming space | Run `docker system prune -a`, free up disk space, check with `df -h` |
+| Code     | Description                | Common Causes                                                 | Resolution                                                                         |
+| -------- | -------------------------- | ------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| **E001** | Docker not installed       | Docker not in PATH, not installed                             | Install Docker from docker.com, verify with `docker --version`                     |
+| **E002** | Docker daemon not running  | Service stopped, Docker Desktop closed                        | Start Docker daemon: `sudo systemctl start docker` or open Docker Desktop          |
+| **E003** | Port already in use        | Another service using port 8001/5432/6379                     | Check with `lsof -i :PORT`, stop conflicting service or change port                |
+| **E004** | Database connection failed | PostgreSQL not ready, wrong credentials, network issue        | Verify DATABASE_URL, check PostgreSQL logs, wait for initialization                |
+| **E005** | Migration failed           | Database not initialized, migration conflict, schema mismatch | Check Alembic logs, run `alembic stamp head` then `alembic upgrade head`           |
+| **E006** | JWT key generation failed  | No write permissions, disk full, OpenSSL missing              | Check `secrets/jwt/` permissions, verify disk space, install OpenSSL               |
+| **E007** | Invalid configuration      | Wrong .env values, invalid DATABASE_URL, missing variables    | Validate .env file format, check DATABASE_URL syntax, verify all required vars set |
+| **E008** | Health check timeout       | Service slow to start, healthcheck endpoint down              | Increase healthcheck timeout, check application logs, verify endpoint responds     |
+| **E009** | Insufficient permissions   | User not in docker group, file permissions wrong              | Add user to docker group: `sudo usermod -aG docker $USER`, fix file permissions    |
+| **E010** | Disk space insufficient    | Docker images/volumes consuming space                         | Run `docker system prune -a`, free up disk space, check with `df -h`               |
 
 ### Error Code Details
 
@@ -1313,12 +1350,14 @@ Comprehensive error codes used by PromptVault setup and deployment tools:
 **Full Description:** Docker is not installed on the system or not accessible in the system PATH.
 
 **How to Diagnose:**
+
 ```bash
 docker --version
 # If returns: command not found
 ```
 
 **Resolution Steps:**
+
 1. Download Docker from https://docker.com
 2. Install for your platform (Linux/macOS/Windows)
 3. Verify installation: `docker --version`
@@ -1330,12 +1369,14 @@ docker --version
 **Full Description:** Docker is installed but the daemon is not running or not accessible.
 
 **How to Diagnose:**
+
 ```bash
 docker info
 # If returns: Cannot connect to the Docker daemon
 ```
 
 **Resolution Steps:**
+
 1. Linux: `sudo systemctl start docker`
 2. macOS/Windows: Start Docker Desktop application
 3. Verify: `docker info`
@@ -1347,6 +1388,7 @@ docker info
 **Full Description:** Required port (8001, 5432, or 6379) is already bound by another process.
 
 **How to Diagnose:**
+
 ```bash
 sudo lsof -i :8001
 sudo lsof -i :5432
@@ -1354,6 +1396,7 @@ sudo lsof -i :6379
 ```
 
 **Resolution Steps:**
+
 1. Identify process using port
 2. Stop the conflicting process
 3. Or change PromptVault port in docker-compose.yml
@@ -1364,12 +1407,14 @@ sudo lsof -i :6379
 **Full Description:** Unable to establish connection to PostgreSQL database.
 
 **How to Diagnose:**
+
 ```bash
 docker-compose logs db
 docker-compose exec web pg_isready -h db -p 5432
 ```
 
 **Resolution Steps:**
+
 1. Ensure database container is running
 2. Wait 15+ seconds for initialization
 3. Verify DATABASE_URL in .env
@@ -1381,6 +1426,7 @@ docker-compose exec web pg_isready -h db -p 5432
 **Full Description:** Alembic database migration failed to complete successfully.
 
 **How to Diagnose:**
+
 ```bash
 docker-compose exec web alembic current
 docker-compose exec web alembic history
@@ -1388,6 +1434,7 @@ docker-compose logs web | grep alembic
 ```
 
 **Resolution Steps:**
+
 1. Ensure database is fully initialized (wait 15s)
 2. Check Alembic version: `alembic current`
 3. Reset state: `alembic stamp head`
@@ -1399,12 +1446,14 @@ docker-compose logs web | grep alembic
 **Full Description:** Unable to generate or validate JWT cryptographic keys.
 
 **How to Diagnose:**
+
 ```bash
 ls -la secrets/jwt/
 openssl version
 ```
 
 **Resolution Steps:**
+
 1. Verify OpenSSL installed: `openssl version`
 2. Check directory permissions: `ls -la secrets/`
 3. Generate manually: See JWT Key Issues section
@@ -1416,11 +1465,13 @@ openssl version
 **Full Description:** Configuration validation failed due to invalid or missing values.
 
 **How to Diagnose:**
+
 ```bash
 cat .env | grep -E "DATABASE_URL|POSTGRES_PASSWORD|PORT"
 ```
 
 **Resolution Steps:**
+
 1. Validate .env file exists and is readable
 2. Check DATABASE_URL format
 3. Verify POSTGRES_PASSWORD meets requirements (16+ chars)
@@ -1432,12 +1483,14 @@ cat .env | grep -E "DATABASE_URL|POSTGRES_PASSWORD|PORT"
 **Full Description:** Service container failed to become healthy within timeout period.
 
 **How to Diagnose:**
+
 ```bash
 docker inspect promptvault-web --format='{{.State.Health.Status}}'
 docker-compose logs web --tail=100
 ```
 
 **Resolution Steps:**
+
 1. Check application logs for errors
 2. Verify healthcheck endpoint: `curl http://localhost:8001/api/health`
 3. Increase timeout in docker-compose.yml
@@ -1449,12 +1502,14 @@ docker-compose logs web --tail=100
 **Full Description:** User lacks necessary permissions to perform operation.
 
 **How to Diagnose:**
+
 ```bash
 groups  # Check if 'docker' is listed
 ls -la /var/run/docker.sock
 ```
 
 **Resolution Steps:**
+
 1. Add user to docker group: `sudo usermod -aG docker $USER`
 2. Log out and back in
 3. Verify: `groups` should include 'docker'
@@ -1466,12 +1521,14 @@ ls -la /var/run/docker.sock
 **Full Description:** Not enough disk space to complete operation.
 
 **How to Diagnose:**
+
 ```bash
 df -h
 docker system df
 ```
 
 **Resolution Steps:**
+
 1. Check disk usage: `df -h`
 2. Check Docker usage: `docker system df`
 3. Remove unused images: `docker image prune -a`
@@ -1682,6 +1739,7 @@ docker-compose exec -T db psql -U promptvault -d promptvault -c \
 ### Application Logs
 
 **Docker Compose:**
+
 ```bash
 # Real-time logs
 docker-compose logs -f web
@@ -1694,6 +1752,7 @@ docker-compose exec web ls -la /app/logs/  # If configured
 ```
 
 **Manual Deployment:**
+
 ```bash
 # Standard output (if running in foreground)
 python run_web.py
@@ -1708,6 +1767,7 @@ tail -f /var/log/promptvault/app.log
 ### Docker Logs
 
 **Container logs:**
+
 ```bash
 # Docker Compose
 docker-compose logs web
@@ -1724,6 +1784,7 @@ sudo ls -la /var/lib/docker/containers/*/
 ```
 
 **Docker daemon logs:**
+
 ```bash
 # Linux (systemd)
 journalctl -u docker -f
@@ -1738,6 +1799,7 @@ tail -f ~/Library/Containers/com.docker.docker/Data/log/vm/dockerd.log
 ### Database Logs
 
 **PostgreSQL logs (Docker):**
+
 ```bash
 # Via docker-compose
 docker-compose logs db
@@ -1750,6 +1812,7 @@ docker-compose exec -T db psql -U promptvault -d promptvault -c "SHOW log_destin
 ```
 
 **PostgreSQL logs (Manual):**
+
 ```bash
 # Default location (Ubuntu/Debian)
 tail -f /var/log/postgresql/postgresql-15-main.log
@@ -1762,6 +1825,7 @@ tail -f /usr/local/var/log/postgres.log  # macOS Homebrew
 ### Audit Logs
 
 **Application audit logs:**
+
 ```bash
 # Location defined in configuration
 docker-compose exec web ls -la /app/data/audit/
@@ -1775,6 +1839,7 @@ docker-compose exec web grep "failed" /app/data/audit/audit.log
 ```
 
 **Database audit logs:**
+
 ```bash
 # User activity
 docker-compose exec -T db psql -U promptvault -d promptvault -c \
@@ -1787,6 +1852,7 @@ docker-compose exec db grep "connection" /var/lib/postgresql/data/log/postgresql
 ### Access Logs
 
 **Web server access logs:**
+
 ```bash
 # If using nginx reverse proxy
 tail -f /var/log/nginx/promptvault-access.log
@@ -1801,6 +1867,7 @@ docker-compose logs web | grep "GET\|POST\|PUT\|DELETE"
 ### Log Rotation
 
 **Configure log rotation:**
+
 ```bash
 # Create logrotate configuration
 sudo nano /etc/logrotate.d/promptvault
@@ -1821,6 +1888,7 @@ sudo logrotate -d /etc/logrotate.d/promptvault
 ```
 
 **Docker log rotation:**
+
 ```json
 // /etc/docker/daemon.json
 {
@@ -1914,6 +1982,7 @@ less debug-report.txt
 ### What to Include in Bug Reports
 
 **Required:**
+
 - Clear description of the problem
 - Steps to reproduce
 - Expected behavior
@@ -1921,6 +1990,7 @@ less debug-report.txt
 - Error messages (full text)
 
 **Helpful:**
+
 - PromptVault version
 - Docker version
 - Operating system
@@ -1929,6 +1999,7 @@ less debug-report.txt
 - Screenshots (if UI issue)
 
 **Security:**
+
 - NEVER include passwords
 - NEVER include JWT keys
 - NEVER include personal data
@@ -1938,21 +2009,27 @@ less debug-report.txt
 
 ```markdown
 ## Description
+
 Database migration fails when upgrading from v1.4.0 to v1.5.0
 
 ## Steps to Reproduce
+
 1. Running PromptVault v1.4.0 with PostgreSQL
 2. Pull latest code: `git pull origin main`
 3. Rebuild containers: `docker-compose build --no-cache`
 4. Run migrations: `docker-compose exec web alembic upgrade head`
 
 ## Expected Behavior
+
 Migrations should apply cleanly and upgrade database schema to v1.5.0
 
 ## Actual Behavior
+
 Migration fails with error:
 ```
+
 alembic.util.exc.CommandError: Can't locate revision identified by 'abc123'
+
 ```
 
 ## Environment
@@ -1963,27 +2040,35 @@ alembic.util.exc.CommandError: Can't locate revision identified by 'abc123'
 
 ## Logs
 ```
+
 [logs here]
+
 ```
 
 ## Configuration
 ```
+
 DATABASE_URL=postgresql://promptvault:REDACTED@db:5432/promptvault
+
 ```
+
 ```
 
 ### Community Support
 
 **Resources:**
+
 - Documentation: https://codeberg.org/medenor/promptvault/src/branch/main/docs
 
 **Before asking:**
+
 1. Search existing discussions
 2. Read relevant documentation
 3. Try basic troubleshooting steps
 4. Prepare clear question with context
 
 **When asking for help:**
+
 1. Be specific about the problem
 2. Show what you've tried
 3. Include relevant details

@@ -11,9 +11,9 @@
 
 **New column**:
 
-| Column | Type | Nullable | Default | Constraint |
-|--------|------|----------|---------|------------|
-| `semantic_version` | `VARCHAR(20)` | Yes | `NULL` | Regex `^\d+\.\d+\.\d+$` enforced at application layer |
+| Column             | Type          | Nullable | Default | Constraint                                            |
+| ------------------ | ------------- | -------- | ------- | ----------------------------------------------------- |
+| `semantic_version` | `VARCHAR(20)` | Yes      | `NULL`  | Regex `^\d+\.\d+\.\d+$` enforced at application layer |
 
 **No other changes** to the `Prompt` model; existing indices and relationships are unaffected.
 
@@ -25,9 +25,9 @@
 
 **New column**:
 
-| Column | Type | Nullable | Default | Notes |
-|--------|------|----------|---------|-------|
-| `semantic_version` | `VARCHAR(20)` | Yes | `NULL` | Snapshot of `Prompt.semantic_version` at save time |
+| Column             | Type          | Nullable | Default | Notes                                              |
+| ------------------ | ------------- | -------- | ------- | -------------------------------------------------- |
+| `semantic_version` | `VARCHAR(20)` | Yes      | `NULL`  | Snapshot of `Prompt.semantic_version` at save time |
 
 **Denormalization pattern** (existing, extended): `PromptVersion` already stores snapshots of `title`, `note`, `tags`, `favorite`. `semantic_version` follows the same pattern — it records the label that was on the prompt when this revision was created.
 
@@ -55,6 +55,7 @@ Prompt (1.1.0) → user edits content, leaves version unchanged → save
 **Migration file**: `alembic/versions/<hash>_add_semantic_version_to_prompts.py`
 
 Operations:
+
 1. `op.add_column('prompts', sa.Column('semantic_version', sa.String(20), nullable=True))`
 2. `op.add_column('prompt_versions', sa.Column('semantic_version', sa.String(20), nullable=True))`
 
@@ -69,6 +70,7 @@ No data backfill — NULL is the correct initial value for pre-existing records.
 ### `PromptResponse` (extended)
 
 Add optional field:
+
 ```
 semantic_version: Optional[str] = None
 ```
@@ -76,6 +78,7 @@ semantic_version: Optional[str] = None
 ### `PromptCreateRequest` (extended)
 
 Add optional field with Pydantic validator:
+
 ```
 semantic_version: Optional[str] = None
 # field_validator: strip whitespace, normalize "" → None, validate regex if non-null
@@ -95,7 +98,7 @@ interface VersionSummary {
   author: string;
   message: string;
   parents: string[];
-  semantic_version: string | null;  // NEW
+  semantic_version: string | null; // NEW
 }
 ```
 

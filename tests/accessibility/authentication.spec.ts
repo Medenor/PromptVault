@@ -67,7 +67,9 @@ test.describe('@regression-a11y Login Page Accessibility Tests', () => {
 
   test.describe('@regression-a11y Form Accessibility', () => {
     test('email input should have associated label', async ({ page }) => {
-      const emailInput = page.locator('input[type="email"], input#email, input[name="email"]').first();
+      const emailInput = page
+        .locator('input[type="email"], input#email, input[name="email"]')
+        .first();
 
       const accessibleName = await checkAccessibleName(emailInput);
       expect(accessibleName.hasAccessibleName).toBe(true); // Email input must have an accessible name (label, aria-label, or aria-labelledby);
@@ -75,11 +77,13 @@ test.describe('@regression-a11y Login Page Accessibility Tests', () => {
       // Verify label is visible and associated
       const label = page.locator(`label[for="${await emailInput.getAttribute('id')}"]`);
       const labelCount = await label.count();
-      expect(labelCount).toBeGreaterThan(0) // Email input should have an associated <label> element;
+      expect(labelCount).toBeGreaterThan(0); // Email input should have an associated <label> element;
     });
 
     test('password input should have associated label', async ({ page }) => {
-      const passwordInput = page.locator('input[type="password"], input#password, input[name="password"]').first();
+      const passwordInput = page
+        .locator('input[type="password"], input#password, input[name="password"]')
+        .first();
 
       const accessibleName = await checkAccessibleName(passwordInput);
       expect(accessibleName.hasAccessibleName).toBe(true); // Password input must have an accessible name;
@@ -100,7 +104,9 @@ test.describe('@regression-a11y Login Page Accessibility Tests', () => {
     });
 
     test('show password toggle button should have clear accessible name', async ({ page }) => {
-      const toggleButton = page.locator('button[aria-label*="password"], button[title*="password"]').first();
+      const toggleButton = page
+        .locator('button[aria-label*="password"], button[title*="password"]')
+        .first();
 
       const toggleCount = await toggleButton.count();
       if (toggleCount === 0) {
@@ -114,7 +120,7 @@ test.describe('@regression-a11y Login Page Accessibility Tests', () => {
       // Verify aria-pressed is used if it's a toggle button
       const ariaPressed = await toggleButton.getAttribute('aria-pressed');
       if (ariaPressed) {
-        expect(['true', 'false']).toContain(ariaPressed) // aria-pressed should be true or false;
+        expect(['true', 'false']).toContain(ariaPressed); // aria-pressed should be true or false;
       }
     });
 
@@ -161,7 +167,7 @@ test.describe('@regression-a11y Login Page Accessibility Tests', () => {
     test('should extract logical tab order', async ({ page }) => {
       const tabOrder = await extractTabOrder(page);
 
-      expect(tabOrder.length).toBeGreaterThan(0) // Login page should have focusable elements;
+      expect(tabOrder.length).toBeGreaterThan(0); // Login page should have focusable elements;
 
       // Verify expected elements are in tab order (email, password, remember me, show password, submit)
       const tabOrderText = tabOrder.map((e) => e.text.toLowerCase()).join(' ');
@@ -177,7 +183,9 @@ test.describe('@regression-a11y Login Page Accessibility Tests', () => {
 
     test('enter key should submit form', async ({ page }) => {
       // Focus first input
-      const emailInput = page.locator('input[type="email"], input#email, input[name="email"]').first();
+      const emailInput = page
+        .locator('input[type="email"], input#email, input[name="email"]')
+        .first();
       await emailInput.focus();
 
       // Fill with dummy data
@@ -198,7 +206,7 @@ test.describe('@regression-a11y Login Page Accessibility Tests', () => {
       await emailInput.press('Enter');
 
       // Give it a moment to attempt submission
-      await page.waitForLoadState("networkidle").catch(() => {});
+      await page.waitForLoadState('networkidle').catch(() => {});
 
       // The form should have attempted submission or navigated away
       // We're just verifying Enter doesn't cause unexpected behavior
@@ -207,7 +215,9 @@ test.describe('@regression-a11y Login Page Accessibility Tests', () => {
     });
 
     test('password visibility toggle should work with keyboard', async ({ page }) => {
-      const toggleButton = page.locator('button[aria-label*="password"], button[title*="password"]').first();
+      const toggleButton = page
+        .locator('button[aria-label*="password"], button[title*="password"]')
+        .first();
 
       const toggleCount = await toggleButton.count();
       if (toggleCount === 0) {
@@ -222,7 +232,7 @@ test.describe('@regression-a11y Login Page Accessibility Tests', () => {
 
       // Press Space to activate
       await toggleButton.press('Space');
-      await page.waitForLoadState("networkidle").catch(() => {});
+      await page.waitForLoadState('networkidle').catch(() => {});
 
       const finalPressed = await toggleButton.getAttribute('aria-pressed');
 
@@ -245,7 +255,7 @@ test.describe('@regression-a11y Login Page Accessibility Tests', () => {
 
       const initialChecked = await checkbox.isChecked();
       await checkbox.press('Space');
-      await page.waitForLoadState("networkidle").catch(() => {});
+      await page.waitForLoadState('networkidle').catch(() => {});
 
       const finalChecked = await checkbox.isChecked();
 
@@ -270,7 +280,7 @@ test.describe('@regression-a11y Login Page Accessibility Tests', () => {
       await submitButton.click();
 
       // Wait for validation
-      await page.waitForLoadState("networkidle").catch(() => {});
+      await page.waitForLoadState('networkidle').catch(() => {});
 
       // Check if there are error messages
       const errorMessages = page.locator('[role="alert"], .error, [class*="error"]').all();
@@ -284,7 +294,7 @@ test.describe('@regression-a11y Login Page Accessibility Tests', () => {
           if (ariaDescribedBy) {
             const errorElement = page.locator(`#${ariaDescribedBy.split(' ')[0]}`);
             const errorCount = await errorElement.count();
-            expect(errorCount).toBeGreaterThan(0) // aria-describedby should reference an existing error element;
+            expect(errorCount).toBeGreaterThan(0); // aria-describedby should reference an existing error element;
           }
         }
       }
@@ -296,7 +306,7 @@ test.describe('@regression-a11y Login Page Accessibility Tests', () => {
       await submitButton.click();
 
       // Wait for validation
-      await page.waitForLoadState("networkidle").catch(() => {});
+      await page.waitForLoadState('networkidle').catch(() => {});
 
       // Test contrast on error messages
       const errorElements = page.locator('[role="alert"], .error, [class*="error"]').all();
@@ -317,7 +327,7 @@ test.describe('@regression-a11y Login Page Accessibility Tests', () => {
       await submitButton.click();
 
       // Wait for validation to complete
-      await page.waitForLoadState("networkidle").catch(() => {});
+      await page.waitForLoadState('networkidle').catch(() => {});
 
       // Get the focused element
       const focusedElement = await page.locator(':focus').first();
@@ -339,7 +349,7 @@ test.describe('@regression-a11y Login Page Accessibility Tests', () => {
       await submitButton.click();
 
       // Wait for validation
-      await page.waitForLoadState("networkidle").catch(() => {});
+      await page.waitForLoadState('networkidle').catch(() => {});
 
       // Check for live regions
       const liveRegions = await checkLiveRegions(page);
@@ -429,7 +439,9 @@ test.describe('@regression-a11y Login Page Accessibility Tests', () => {
     });
 
     test('focus should be visible when tabbing to form fields', async ({ page }) => {
-      const emailInput = page.locator('input[type="email"], input#email, input[name="email"]').first();
+      const emailInput = page
+        .locator('input[type="email"], input#email, input[name="email"]')
+        .first();
 
       // Tab to the first element
       await page.keyboard.press('Tab');
@@ -444,15 +456,14 @@ test.describe('@regression-a11y Login Page Accessibility Tests', () => {
   test.describe('@regression-a11y Page Structure', () => {
     test('page should have appropriate title', async ({ page }) => {
       const title = await page.title();
-      expect(title.length).toBeGreaterThan(0) // Page should have a title;
-      expect(title.toLowerCase()).toMatch(
-        /login|sign in|auth/i); // Page title should reflect login page purpose;
+      expect(title.length).toBeGreaterThan(0); // Page should have a title;
+      expect(title.toLowerCase()).toMatch(/login|sign in|auth/i); // Page title should reflect login page purpose;
     });
 
     test('page should have landmark regions', async ({ page }) => {
       const landmarks = await checkLandmarkRegions(page);
 
-      expect(landmarks.hasLandmarks).toBe(true) // Page should have landmark regions (main, navigation, etc.);
+      expect(landmarks.hasLandmarks).toBe(true); // Page should have landmark regions (main, navigation, etc.);
     });
 
     test('heading hierarchy should be valid', async ({ page }) => {
@@ -469,7 +480,7 @@ test.describe('@regression-a11y Login Page Accessibility Tests', () => {
 
       // Skip links are optional on login page but good to have
       if (skipLinks.skipLinks.length > 0) {
-        expect(skipLinks.hasSkipLink).toBe(true) // Skip link should be functional;
+        expect(skipLinks.hasSkipLink).toBe(true); // Skip link should be functional;
       }
     });
   });
@@ -533,7 +544,7 @@ test.describe('@regression-a11y Login Page Accessibility Tests', () => {
       for (const input of requiredInputs) {
         const ariaRequired = await input.getAttribute('aria-required');
         if (ariaRequired !== null) {
-          expect(ariaRequired).toBe('true') // aria-required should be true for required fields;
+          expect(ariaRequired).toBe('true'); // aria-required should be true for required fields;
         }
       }
     });
@@ -548,11 +559,11 @@ test.describe('@regression-a11y Login Page Accessibility Tests', () => {
 
       // Test form is still accessible
       const labels = await validateFormLabels(page);
-      expect(labels.allLabeled).toBe(true) // Form labels should still be accessible on mobile;
+      expect(labels.allLabeled).toBe(true); // Form labels should still be accessible on mobile;
 
       // Test keyboard navigation still works
       const navResult = await testKeyboardNavigation(page);
-      expect(navResult.focusableElements).toBeGreaterThan(0) // Should have focusable elements on mobile;
+      expect(navResult.focusableElements).toBeGreaterThan(0); // Should have focusable elements on mobile;
 
       await context.close();
     });
@@ -594,7 +605,11 @@ test.describe('@regression-a11y Register Page Accessibility Tests', () => {
     });
 
     test('password requirements should be accessible', async ({ page }) => {
-      const requirementsList = page.locator('ul:has-text("requirement"), ol:has-text("requirement"), [role="list"]:has-text("requirement")').first();
+      const requirementsList = page
+        .locator(
+          'ul:has-text("requirement"), ol:has-text("requirement"), [role="list"]:has-text("requirement")'
+        )
+        .first();
 
       const requirementCount = await requirementsList.count();
       if (requirementCount > 0) {
@@ -605,7 +620,9 @@ test.describe('@regression-a11y Register Page Accessibility Tests', () => {
     });
 
     test('password strength indicator should be accessible', async ({ page }) => {
-      const strengthIndicator = page.locator('[role="progressbar"], [aria-label*="strength"], [class*="strength"]').first();
+      const strengthIndicator = page
+        .locator('[role="progressbar"], [aria-label*="strength"], [class*="strength"]')
+        .first();
 
       const strengthCount = await strengthIndicator.count();
       if (strengthCount > 0) {
@@ -636,12 +653,15 @@ test.describe('@regression-a11y Register Page Accessibility Tests', () => {
     test('should have complete tab order for all fields', async ({ page }) => {
       const tabOrder = await extractTabOrder(page);
 
-      expect(tabOrder.length).toBeGreaterThan(0) // Register page should have focusable elements;
+      expect(tabOrder.length).toBeGreaterThan(0); // Register page should have focusable elements;
 
       // Should include at least email, password, confirm password, and submit
       const hasEmailField = tabOrder.some((e) => e.text.toLowerCase().includes('email'));
-      const hasPasswordFields = tabOrder.filter((e) => e.text.toLowerCase().includes('password')).length >= 2;
-      const hasSubmit = tabOrder.some((e) => e.text.toLowerCase().includes('register') || e.text.toLowerCase().includes('sign'));
+      const hasPasswordFields =
+        tabOrder.filter((e) => e.text.toLowerCase().includes('password')).length >= 2;
+      const hasSubmit = tabOrder.some(
+        (e) => e.text.toLowerCase().includes('register') || e.text.toLowerCase().includes('sign')
+      );
 
       expect(hasEmailField || hasPasswordFields || hasSubmit).toBe(true); // Tab order should include key form fields;
     });
@@ -669,12 +689,16 @@ test.describe('@regression-a11y Register Page Accessibility Tests', () => {
 
   test.describe('@regression-a11y Password Requirements', () => {
     test('password requirements should be visible and accessible', async ({ page }) => {
-      const requirements = page.locator('ul:has-text("requirement"), ol:has-text("requirement"), [role="list"]:has-text("requirement")').first();
+      const requirements = page
+        .locator(
+          'ul:has-text("requirement"), ol:has-text("requirement"), [role="list"]:has-text("requirement")'
+        )
+        .first();
 
       const requirementsCount = await requirements.count();
       if (requirementsCount > 0) {
         const isVisible = await requirements.isVisible();
-        expect(isVisible).toBe(true) // Password requirements should be visible;
+        expect(isVisible).toBe(true); // Password requirements should be visible;
 
         // Test contrast
         const contrast = await testTextContrast(page, requirements, 'AA');
@@ -686,7 +710,9 @@ test.describe('@regression-a11y Register Page Accessibility Tests', () => {
     });
 
     test('requirement checklist should use proper ARIA markup', async ({ page }) => {
-      const checklist = page.locator('[role="list"]:has-text("requirement"), [class*="requirement"]').first();
+      const checklist = page
+        .locator('[role="list"]:has-text("requirement"), [class*="requirement"]')
+        .first();
 
       const checklistCount = await checklist.count();
       if (checklistCount > 0) {
@@ -705,7 +731,7 @@ test.describe('@regression-a11y Register Page Accessibility Tests', () => {
 
       // Fill password to trigger validation
       await passwordInput.fill('Test123!');
-      await page.waitForLoadState("networkidle").catch(() => {});
+      await page.waitForLoadState('networkidle').catch(() => {});
 
       // Check for live regions announcing validation
       const liveRegions = await checkLiveRegions(page);
@@ -736,7 +762,7 @@ test.describe('@regression-a11y Register Page Accessibility Tests', () => {
       // Trigger validation
       const submitButton = page.locator('button[type="submit"]').first();
       await submitButton.click();
-      await page.waitForLoadState("networkidle").catch(() => {});
+      await page.waitForLoadState('networkidle').catch(() => {});
 
       // Check for error announcement
       const errorMessages = await page.locator('[role="alert"], .error, [class*="error"]').all();
@@ -754,7 +780,7 @@ test.describe('@regression-a11y Register Page Accessibility Tests', () => {
     test('field validation errors should be associated with inputs', async ({ page }) => {
       const submitButton = page.locator('button[type="submit"]').first();
       await submitButton.click();
-      await page.waitForLoadState("networkidle").catch(() => {});
+      await page.waitForLoadState('networkidle').catch(() => {});
 
       const inputs = await page.locator('input[type="email"], input[type="password"]').all();
 
@@ -765,7 +791,7 @@ test.describe('@regression-a11y Register Page Accessibility Tests', () => {
           const errorCount = await errorElement.count();
 
           if (errorCount > 0) {
-            expect(errorCount).toBeGreaterThan(0) // aria-describedby should reference valid error element;
+            expect(errorCount).toBeGreaterThan(0); // aria-describedby should reference valid error element;
           }
         }
       }
@@ -774,7 +800,7 @@ test.describe('@regression-a11y Register Page Accessibility Tests', () => {
     test('error messages should have sufficient contrast', async ({ page }) => {
       const submitButton = page.locator('button[type="submit"]').first();
       await submitButton.click();
-      await page.waitForLoadState("networkidle").catch(() => {});
+      await page.waitForLoadState('networkidle').catch(() => {});
 
       const errors = await page.locator('[role="alert"], .error, [class*="error"]').all();
 
@@ -793,7 +819,7 @@ test.describe('@regression-a11y Register Page Accessibility Tests', () => {
       // If there are form errors, they should be in live regions
       const errorElements = await page.locator('[role="alert"]').all();
       if (errorElements.length > 0) {
-        expect(liveRegions.regions.length).toBeGreaterThan(0) // Errors should be announced via aria-live;
+        expect(liveRegions.regions.length).toBeGreaterThan(0); // Errors should be announced via aria-live;
       }
     });
   });
@@ -811,7 +837,7 @@ test.describe('@regression-a11y Register Page Accessibility Tests', () => {
     test('page should have landmark regions', async ({ page }) => {
       const landmarks = await checkLandmarkRegions(page);
 
-      expect(landmarks.hasLandmarks).toBe(true) // Page should have landmark regions;
+      expect(landmarks.hasLandmarks).toBe(true); // Page should have landmark regions;
     });
   });
 
@@ -855,14 +881,16 @@ test.describe('@regression-a11y Forgot Password Page Accessibility Tests', () =>
 
   test.describe('@regression-a11y Form Accessibility', () => {
     test('email input should have label', async ({ page }) => {
-      const emailInput = page.locator('input[type="email"], input#email, input[name="email"]').first();
+      const emailInput = page
+        .locator('input[type="email"], input#email, input[name="email"]')
+        .first();
 
       const emailCount = await emailInput.count();
-      expect(emailCount).toBeGreaterThan(0) // Forgot password page should have email input;
+      expect(emailCount).toBeGreaterThan(0); // Forgot password page should have email input;
 
       if (emailCount > 0) {
         const accessibleName = await checkAccessibleName(emailInput);
-        expect(accessibleName.hasAccessibleName).toBe(true) // Email input should have accessible name;
+        expect(accessibleName.hasAccessibleName).toBe(true); // Email input should have accessible name;
       }
     });
 
@@ -871,7 +899,7 @@ test.describe('@regression-a11y Forgot Password Page Accessibility Tests', () =>
       expect(await submitButton.count()).toBeGreaterThan(0); // Should have submit button
 
       const accessibleName = await checkAccessibleName(submitButton);
-      expect(accessibleName.hasAccessibleName).toBe(true) // Submit button should have accessible name;
+      expect(accessibleName.hasAccessibleName).toBe(true); // Submit button should have accessible name;
 
       // Button text should indicate purpose
       const buttonText = await submitButton.textContent();
@@ -884,7 +912,7 @@ test.describe('@regression-a11y Forgot Password Page Accessibility Tests', () =>
       const instructionsCount = await instructions.count();
       if (instructionsCount > 0) {
         const isVisible = await instructions.isVisible();
-        expect(isVisible).toBe(true) // Instructions should be visible;
+        expect(isVisible).toBe(true); // Instructions should be visible;
 
         const contrast = await testTextContrast(page, instructions, 'AA');
         expect(contrast.passes).toBe(
@@ -899,16 +927,18 @@ test.describe('@regression-a11y Forgot Password Page Accessibility Tests', () =>
     test('tab order should include email and submit', async ({ page }) => {
       const tabOrder = await extractTabOrder(page);
 
-      expect(tabOrder.length).toBeGreaterThan(0) // Should have focusable elements;
+      expect(tabOrder.length).toBeGreaterThan(0); // Should have focusable elements;
 
       const hasEmail = tabOrder.some((e) => e.text.toLowerCase().includes('email'));
       const hasSubmit = tabOrder.length >= 2;
 
-      expect(hasEmail || hasSubmit).toBe(true) // Tab order should include email and submit;
+      expect(hasEmail || hasSubmit).toBe(true); // Tab order should include email and submit;
     });
 
     test('enter key should submit form', async ({ page }) => {
-      const emailInput = page.locator('input[type="email"], input#email, input[name="email"]').first();
+      const emailInput = page
+        .locator('input[type="email"], input#email, input[name="email"]')
+        .first();
 
       const emailCount = await emailInput.count();
       if (emailCount === 0) {
@@ -926,19 +956,23 @@ test.describe('@regression-a11y Forgot Password Page Accessibility Tests', () =>
     test('success message should be accessible', async ({ page }) => {
       // This test demonstrates how success messages should be tested
       // Actual submission would require valid email and backend interaction
-      const successElements = await page.locator('[role="status"], .success, [class*="success"]').all();
+      const successElements = await page
+        .locator('[role="status"], .success, [class*="success"]')
+        .all();
 
       for (const element of successElements) {
         const accessibleName = await checkAccessibleName(element);
         if (accessibleName.hasAccessibleName) {
-          expect(accessibleName.hasAccessibleName).toBe(true) // Success message should have accessible text;
+          expect(accessibleName.hasAccessibleName).toBe(true); // Success message should have accessible text;
         }
       }
     });
 
     test('error messages should be accessible', async ({ page }) => {
       // Submit with invalid email to trigger error
-      const emailInput = page.locator('input[type="email"], input#email, input[name="email"]').first();
+      const emailInput = page
+        .locator('input[type="email"], input#email, input[name="email"]')
+        .first();
 
       const emailCount = await emailInput.count();
       if (emailCount === 0) {
@@ -950,7 +984,7 @@ test.describe('@regression-a11y Forgot Password Page Accessibility Tests', () =>
 
       const submitButton = page.locator('button[type="submit"]').first();
       await submitButton.click();
-      await page.waitForLoadState("networkidle").catch(() => {});
+      await page.waitForLoadState('networkidle').catch(() => {});
 
       const errorMessages = await page.locator('[role="alert"], .error, [class*="error"]').all();
 
@@ -968,7 +1002,7 @@ test.describe('@regression-a11y Forgot Password Page Accessibility Tests', () =>
 
       // Live regions are best practice for feedback messages
       if (liveRegions.regions.length > 0) {
-        expect(liveRegions.hasLiveRegions).toBe(true) // Should use aria-live for announcements;
+        expect(liveRegions.hasLiveRegions).toBe(true); // Should use aria-live for announcements;
       }
     });
   });
@@ -986,7 +1020,7 @@ test.describe('@regression-a11y Forgot Password Page Accessibility Tests', () =>
     test('page should have landmark regions', async ({ page }) => {
       const landmarks = await checkLandmarkRegions(page);
 
-      expect(landmarks.hasLandmarks).toBe(true) // Page should have landmark regions;
+      expect(landmarks.hasLandmarks).toBe(true); // Page should have landmark regions;
     });
   });
 
@@ -1025,10 +1059,12 @@ test.describe('@regression-a11y Reset Password Page Accessibility Tests', () => 
   test.beforeEach(async ({ page }) => {
     // Navigate to reset password page (usually requires token in URL)
     // This test will skip if the page doesn't exist
-    const response = await page.goto(`${baseURL}/auth/reset-password?token=test`, {
-      waitUntil: 'networkidle',
-      timeout: 5000,
-    }).catch(() => null);
+    const response = await page
+      .goto(`${baseURL}/auth/reset-password?token=test`, {
+        waitUntil: 'networkidle',
+        timeout: 5000,
+      })
+      .catch(() => null);
 
     if (!response || !response.ok()) {
       test.skip();
@@ -1037,7 +1073,9 @@ test.describe('@regression-a11y Reset Password Page Accessibility Tests', () => 
 
   test.describe('@regression-a11y Form Accessibility', () => {
     test('new password input should have label', async ({ page }) => {
-      const passwordInput = page.locator('input[type="password"], input#password, input[name="password"]').first();
+      const passwordInput = page
+        .locator('input[type="password"], input#password, input[name="password"]')
+        .first();
 
       const passwordCount = await passwordInput.count();
       if (passwordCount === 0) {
@@ -1046,7 +1084,7 @@ test.describe('@regression-a11y Reset Password Page Accessibility Tests', () => 
       }
 
       const accessibleName = await checkAccessibleName(passwordInput);
-      expect(accessibleName.hasAccessibleName).toBe(true) // Password input should have accessible name;
+      expect(accessibleName.hasAccessibleName).toBe(true); // Password input should have accessible name;
     });
 
     test('confirm password input should have label', async ({ page }) => {
@@ -1059,11 +1097,13 @@ test.describe('@regression-a11y Reset Password Page Accessibility Tests', () => 
       }
 
       const accessibleName = await checkAccessibleName(confirmInput);
-      expect(accessibleName.hasAccessibleName).toBe(true) // Confirm password input should have accessible name;
+      expect(accessibleName.hasAccessibleName).toBe(true); // Confirm password input should have accessible name;
     });
 
     test('password requirements should be accessible', async ({ page }) => {
-      const requirementsList = page.locator('[role="list"]:has-text("requirement"), ul:has-text("requirement")').first();
+      const requirementsList = page
+        .locator('[role="list"]:has-text("requirement"), ul:has-text("requirement")')
+        .first();
 
       const requirementCount = await requirementsList.count();
       if (requirementCount > 0) {
@@ -1073,11 +1113,13 @@ test.describe('@regression-a11y Reset Password Page Accessibility Tests', () => 
     });
 
     test('show password toggles should be accessible', async ({ page }) => {
-      const toggles = await page.locator('button[aria-label*="password"], button[title*="password"]').all();
+      const toggles = await page
+        .locator('button[aria-label*="password"], button[title*="password"]')
+        .all();
 
       for (const toggle of toggles) {
         const accessibleName = await checkAccessibleName(toggle);
-        expect(accessibleName.hasAccessibleName).toBe(true) // Toggle should have accessible name;
+        expect(accessibleName.hasAccessibleName).toBe(true); // Toggle should have accessible name;
       }
     });
   });
@@ -1086,14 +1128,18 @@ test.describe('@regression-a11y Reset Password Page Accessibility Tests', () => 
     test('tab order should include all password fields', async ({ page }) => {
       const tabOrder = await extractTabOrder(page);
 
-      expect(tabOrder.length).toBeGreaterThan(0) // Should have focusable elements;
+      expect(tabOrder.length).toBeGreaterThan(0); // Should have focusable elements;
 
-      const passwordCount = tabOrder.filter((e) => e.text.toLowerCase().includes('password')).length;
-      expect(passwordCount).toBeGreaterThanOrEqual(2) // Should have at least 2 password-related focusable elements;
+      const passwordCount = tabOrder.filter((e) =>
+        e.text.toLowerCase().includes('password')
+      ).length;
+      expect(passwordCount).toBeGreaterThanOrEqual(2); // Should have at least 2 password-related focusable elements;
     });
 
     test('password visibility toggles should work with keyboard', async ({ page }) => {
-      const toggle = page.locator('button[aria-label*="password"], button[title*="password"]').first();
+      const toggle = page
+        .locator('button[aria-label*="password"], button[title*="password"]')
+        .first();
 
       const toggleCount = await toggle.count();
       if (toggleCount === 0) {
@@ -1103,7 +1149,7 @@ test.describe('@regression-a11y Reset Password Page Accessibility Tests', () => 
 
       await toggle.focus();
       await toggle.press('Space');
-      await page.waitForLoadState("networkidle").catch(() => {});
+      await page.waitForLoadState('networkidle').catch(() => {});
 
       // Verify toggle changed state
       const ariaPressed = await toggle.getAttribute('aria-pressed');
@@ -1136,13 +1182,13 @@ test.describe('@regression-a11y Reset Password Page Accessibility Tests', () => 
       }
 
       await passwordInput.fill('Test123!');
-      await page.waitForLoadState("networkidle").catch(() => {});
+      await page.waitForLoadState('networkidle').catch(() => {});
 
       const strengthIndicator = page.locator('[role="progressbar"], [class*="strength"]').first();
 
       if ((await strengthIndicator.count()) > 0) {
         const accessibleName = await checkAccessibleName(strengthIndicator);
-        expect(accessibleName.hasAccessibleName).toBe(true) // Strength indicator should be accessible;
+        expect(accessibleName.hasAccessibleName).toBe(true); // Strength indicator should be accessible;
       }
     });
 
@@ -1159,14 +1205,14 @@ test.describe('@regression-a11y Reset Password Page Accessibility Tests', () => 
 
       const submitButton = page.locator('button[type="submit"]').first();
       await submitButton.click();
-      await page.waitForLoadState("networkidle").catch(() => {});
+      await page.waitForLoadState('networkidle').catch(() => {});
 
       // Check for error message or aria-invalid
       const secondInput = passwordInputs[1];
       const ariaInvalid = await secondInput.getAttribute('aria-invalid');
 
       if (ariaInvalid) {
-        expect(ariaInvalid).toBe('true') // Mismatched password should have aria-invalid="true";
+        expect(ariaInvalid).toBe('true'); // Mismatched password should have aria-invalid="true";
       }
     });
 
@@ -1231,226 +1277,277 @@ authenticatedUserTest.describe('Profile Page Accessibility Tests', () => {
   });
 
   authenticatedUserTest.describe('Form Accessibility', () => {
-    authenticatedUserTest('all profile fields should have labels', async ({ authenticatedPage }) => {
-      const labels = await validateFormLabels(authenticatedPage);
+    authenticatedUserTest(
+      'all profile fields should have labels',
+      async ({ authenticatedPage }) => {
+        const labels = await validateFormLabels(authenticatedPage);
 
-      expect(labels.allLabeled).toBe(
-        true,
-        `All profile fields should have labels. Unlabeled: ${JSON.stringify(labels.unlabeledElements)}`
-      );
-    });
-
-    authenticatedUserTest('file upload input should be accessible', async ({ authenticatedPage }) => {
-      const fileInput = authenticatedPage.locator('input[type="file"]').first();
-
-      const fileCount = await fileInput.count();
-      if (fileCount > 0) {
-        const accessibleName = await checkAccessibleName(fileInput);
-        expect(accessibleName.hasAccessibleName).toBe(true) // File input should have accessible name;
+        expect(labels.allLabeled).toBe(
+          true,
+          `All profile fields should have labels. Unlabeled: ${JSON.stringify(labels.unlabeledElements)}`
+        );
       }
-    });
+    );
 
-    authenticatedUserTest('save button should be accessible', async ({ authenticatedPage }) => {
-      const saveButton = authenticatedPage.locator('button:has-text("Save"), button[type="submit"]').first();
+    authenticatedUserTest(
+      'file upload input should be accessible',
+      async ({ authenticatedPage }) => {
+        const fileInput = authenticatedPage.locator('input[type="file"]').first();
 
-      const saveCount = await saveButton.count();
-      expect(saveCount).toBeGreaterThan(0) // Profile should have save button;
-
-      const accessibleName = await checkAccessibleName(saveButton);
-      expect(accessibleName.hasAccessibleName).toBe(true) // Save button should have accessible name;
-    });
-
-    authenticatedUserTest('cancel and reset buttons should be accessible', async ({ authenticatedPage }) => {
-      const buttons = await authenticatedPage.locator('button').all();
-
-      let hasCancel = false;
-      for (const button of buttons) {
-        const text = await button.textContent();
-        if (text?.toLowerCase().includes('cancel') || text?.toLowerCase().includes('reset')) {
-          hasCancel = true;
-          const accessibleName = await checkAccessibleName(button);
-          expect(accessibleName.hasAccessibleName).toBe(true) // Button should have accessible name;
+        const fileCount = await fileInput.count();
+        if (fileCount > 0) {
+          const accessibleName = await checkAccessibleName(fileInput);
+          expect(accessibleName.hasAccessibleName).toBe(true); // File input should have accessible name;
         }
       }
+    );
+
+    authenticatedUserTest('save button should be accessible', async ({ authenticatedPage }) => {
+      const saveButton = authenticatedPage
+        .locator('button:has-text("Save"), button[type="submit"]')
+        .first();
+
+      const saveCount = await saveButton.count();
+      expect(saveCount).toBeGreaterThan(0); // Profile should have save button;
+
+      const accessibleName = await checkAccessibleName(saveButton);
+      expect(accessibleName.hasAccessibleName).toBe(true); // Save button should have accessible name;
     });
+
+    authenticatedUserTest(
+      'cancel and reset buttons should be accessible',
+      async ({ authenticatedPage }) => {
+        const buttons = await authenticatedPage.locator('button').all();
+
+        let hasCancel = false;
+        for (const button of buttons) {
+          const text = await button.textContent();
+          if (text?.toLowerCase().includes('cancel') || text?.toLowerCase().includes('reset')) {
+            hasCancel = true;
+            const accessibleName = await checkAccessibleName(button);
+            expect(accessibleName.hasAccessibleName).toBe(true); // Button should have accessible name;
+          }
+        }
+      }
+    );
   });
 
   authenticatedUserTest.describe('Keyboard Navigation', () => {
-    authenticatedUserTest('tab order should include all form fields', async ({ authenticatedPage }) => {
-      const tabOrder = await extractTabOrder(authenticatedPage);
+    authenticatedUserTest(
+      'tab order should include all form fields',
+      async ({ authenticatedPage }) => {
+        const tabOrder = await extractTabOrder(authenticatedPage);
 
-      expect(tabOrder.length).toBeGreaterThan(0) // Profile form should have focusable elements;
+        expect(tabOrder.length).toBeGreaterThan(0); // Profile form should have focusable elements;
 
-      // Should include multiple inputs and buttons
-      expect(tabOrder.length).toBeGreaterThanOrEqual(3) // Should have multiple form fields;
-    });
+        // Should include multiple inputs and buttons
+        expect(tabOrder.length).toBeGreaterThanOrEqual(3); // Should have multiple form fields;
+      }
+    );
 
-    authenticatedUserTest('file input should be keyboard accessible', async ({ authenticatedPage }) => {
-      const fileInput = authenticatedPage.locator('input[type="file"]').first();
+    authenticatedUserTest(
+      'file input should be keyboard accessible',
+      async ({ authenticatedPage }) => {
+        const fileInput = authenticatedPage.locator('input[type="file"]').first();
 
-      const fileCount = await fileInput.count();
-      if (fileCount > 0) {
-        // Test if label is associated (makes it keyboard accessible)
-        const id = await fileInput.getAttribute('id');
-        if (id) {
-          const label = authenticatedPage.locator(`label[for="${id}"]`);
-          const labelCount = await label.count();
-          expect(labelCount).toBeGreaterThan(0) // File input should have associated label for keyboard accessibility;
+        const fileCount = await fileInput.count();
+        if (fileCount > 0) {
+          // Test if label is associated (makes it keyboard accessible)
+          const id = await fileInput.getAttribute('id');
+          if (id) {
+            const label = authenticatedPage.locator(`label[for="${id}"]`);
+            const labelCount = await label.count();
+            expect(labelCount).toBeGreaterThan(0); // File input should have associated label for keyboard accessibility;
+          }
         }
       }
-    });
+    );
 
-    authenticatedUserTest('form submission should work with enter key', async ({ authenticatedPage }) => {
-      const firstInput = authenticatedPage.locator('input[type="text"], input[type="email"]').first();
+    authenticatedUserTest(
+      'form submission should work with enter key',
+      async ({ authenticatedPage }) => {
+        const firstInput = authenticatedPage
+          .locator('input[type="text"], input[type="email"]')
+          .first();
 
-      const inputCount = await firstInput.count();
-      if (inputCount > 0) {
-        await firstInput.focus();
-        // Verify focus works - don't actually submit
-        await expect(firstInput).toBeFocused();
+        const inputCount = await firstInput.count();
+        if (inputCount > 0) {
+          await firstInput.focus();
+          // Verify focus works - don't actually submit
+          await expect(firstInput).toBeFocused();
+        }
       }
-    });
+    );
   });
 
   authenticatedUserTest.describe('Form Validation', () => {
-    authenticatedUserTest('email format validation should be accessible', async ({ authenticatedPage }) => {
-      const emailInput = authenticatedPage.locator('input[type="email"]').first();
+    authenticatedUserTest(
+      'email format validation should be accessible',
+      async ({ authenticatedPage }) => {
+        const emailInput = authenticatedPage.locator('input[type="email"]').first();
 
-      const emailCount = await emailInput.count();
-      if (emailCount > 0) {
-        await emailInput.focus();
-        await emailInput.clear();
-        await emailInput.fill('invalid-email');
-        await emailInput.blur();
+        const emailCount = await emailInput.count();
+        if (emailCount > 0) {
+          await emailInput.focus();
+          await emailInput.clear();
+          await emailInput.fill('invalid-email');
+          await emailInput.blur();
 
-        await authenticatedPage.waitForLoadState("networkidle").catch(() => {});
+          await authenticatedPage.waitForLoadState('networkidle').catch(() => {});
 
-        // Check for error message
-        const ariaDescribedBy = await emailInput.getAttribute('aria-describedby');
-        const ariaInvalid = await emailInput.getAttribute('aria-invalid');
+          // Check for error message
+          const ariaDescribedBy = await emailInput.getAttribute('aria-describedby');
+          const ariaInvalid = await emailInput.getAttribute('aria-invalid');
 
-        if (ariaDescribedBy || ariaInvalid) {
-          expect(ariaInvalid === 'true' || !!ariaDescribedBy).toBe(true); // Invalid email should be indicated;
+          if (ariaDescribedBy || ariaInvalid) {
+            expect(ariaInvalid === 'true' || !!ariaDescribedBy).toBe(true); // Invalid email should be indicated;
+          }
         }
       }
-    });
+    );
 
-    authenticatedUserTest('required field validation should be accessible', async ({ authenticatedPage }) => {
-      const requiredInputs = await authenticatedPage.locator('input[required]').all();
+    authenticatedUserTest(
+      'required field validation should be accessible',
+      async ({ authenticatedPage }) => {
+        const requiredInputs = await authenticatedPage.locator('input[required]').all();
 
-      for (const input of requiredInputs) {
-        const ariaRequired = await input.getAttribute('aria-required');
-        if (ariaRequired) {
-          expect(ariaRequired).toBe('true') // Required fields should have aria-required="true";
-        }
+        for (const input of requiredInputs) {
+          const ariaRequired = await input.getAttribute('aria-required');
+          if (ariaRequired) {
+            expect(ariaRequired).toBe('true'); // Required fields should have aria-required="true";
+          }
 
-        // Alternatively, check for aria-label indicating required
-        const ariaLabel = await input.getAttribute('aria-label');
-        if (ariaLabel) {
-          expect(ariaLabel).toMatch(/required/i); // aria-label should indicate field is required;
-        }
-      }
-    });
-
-    authenticatedUserTest('success message on save should be accessible', async ({ authenticatedPage }) => {
-      const successElements = await authenticatedPage.locator('[role="status"], .success, [class*="success"]').all();
-
-      for (const element of successElements) {
-        if (await element.isVisible()) {
-          const accessibleName = await checkAccessibleName(element);
-          const hasLiveRegion = await element.getAttribute('aria-live');
-
-          expect(accessibleName.hasAccessibleName || hasLiveRegion).toBe(true); // Success message should be accessible;
+          // Alternatively, check for aria-label indicating required
+          const ariaLabel = await input.getAttribute('aria-label');
+          if (ariaLabel) {
+            expect(ariaLabel).toMatch(/required/i); // aria-label should indicate field is required;
+          }
         }
       }
-    });
+    );
+
+    authenticatedUserTest(
+      'success message on save should be accessible',
+      async ({ authenticatedPage }) => {
+        const successElements = await authenticatedPage
+          .locator('[role="status"], .success, [class*="success"]')
+          .all();
+
+        for (const element of successElements) {
+          if (await element.isVisible()) {
+            const accessibleName = await checkAccessibleName(element);
+            const hasLiveRegion = await element.getAttribute('aria-live');
+
+            expect(accessibleName.hasAccessibleName || hasLiveRegion).toBe(true); // Success message should be accessible;
+          }
+        }
+      }
+    );
   });
 
   authenticatedUserTest.describe('Page Structure', () => {
-    authenticatedUserTest('page should have valid heading hierarchy', async ({ authenticatedPage }) => {
-      const hierarchy = await validateHeadingHierarchy(authenticatedPage);
+    authenticatedUserTest(
+      'page should have valid heading hierarchy',
+      async ({ authenticatedPage }) => {
+        const hierarchy = await validateHeadingHierarchy(authenticatedPage);
 
-      expect(hierarchy.validHierarchy).toBe(
-        true,
-        `Heading hierarchy should be valid: ${hierarchy.issues.join(', ')}`
-      );
-    });
+        expect(hierarchy.validHierarchy).toBe(
+          true,
+          `Heading hierarchy should be valid: ${hierarchy.issues.join(', ')}`
+        );
+      }
+    );
 
     authenticatedUserTest('page should have landmark regions', async ({ authenticatedPage }) => {
       const landmarks = await checkLandmarkRegions(authenticatedPage);
 
-      expect(landmarks.hasLandmarks).toBe(true) // Page should have landmark regions;
+      expect(landmarks.hasLandmarks).toBe(true); // Page should have landmark regions;
     });
   });
 
   authenticatedUserTest.describe('Color Contrast', () => {
-    authenticatedUserTest('all labels and text should have sufficient contrast', async ({ authenticatedPage }) => {
-      const textElements = await authenticatedPage.locator('label, p, span').all();
+    authenticatedUserTest(
+      'all labels and text should have sufficient contrast',
+      async ({ authenticatedPage }) => {
+        const textElements = await authenticatedPage.locator('label, p, span').all();
 
-      let failedCount = 0;
-      for (const element of textElements) {
-        const text = await element.textContent();
-        if (text?.trim().length && (await element.isVisible())) {
-          const contrast = await testTextContrast(authenticatedPage, element, 'AA');
-          if (!contrast.passes) {
-            failedCount++;
+        let failedCount = 0;
+        for (const element of textElements) {
+          const text = await element.textContent();
+          if (text?.trim().length && (await element.isVisible())) {
+            const contrast = await testTextContrast(authenticatedPage, element, 'AA');
+            if (!contrast.passes) {
+              failedCount++;
+            }
           }
         }
+
+        expect(failedCount).toBe(0); // All text should have 4.5:1 contrast, found ${failedCount} violations
       }
+    );
 
-      expect(failedCount).toBe(0); // All text should have 4.5:1 contrast, found ${failedCount} violations
-    });
+    authenticatedUserTest(
+      'buttons should have sufficient contrast',
+      async ({ authenticatedPage }) => {
+        const buttons = await authenticatedPage.locator('button').all();
 
-    authenticatedUserTest('buttons should have sufficient contrast', async ({ authenticatedPage }) => {
-      const buttons = await authenticatedPage.locator('button').all();
-
-      for (const button of buttons) {
-        const contrast = await testUIContrast(authenticatedPage, button, 'AA');
-        expect(contrast.passes).toBe(
-          true,
-          `Button should have 3:1 contrast, got ${contrast.ratio}:1`
-        );
+        for (const button of buttons) {
+          const contrast = await testUIContrast(authenticatedPage, button, 'AA');
+          expect(contrast.passes).toBe(
+            true,
+            `Button should have 3:1 contrast, got ${contrast.ratio}:1`
+          );
+        }
       }
-    });
+    );
 
-    authenticatedUserTest('form elements should have visible focus indicators', async ({ authenticatedPage }) => {
-      const focusResult = await verifyFocusIndicators(authenticatedPage);
+    authenticatedUserTest(
+      'form elements should have visible focus indicators',
+      async ({ authenticatedPage }) => {
+        const focusResult = await verifyFocusIndicators(authenticatedPage);
 
-      expect(focusResult.elementsWithFocus).toBeGreaterThan(0); // Should have visible focus indicators;
-    });
+        expect(focusResult.elementsWithFocus).toBeGreaterThan(0); // Should have visible focus indicators;
+      }
+    );
   });
 
   authenticatedUserTest.describe('Mobile Accessibility', () => {
-    authenticatedUserTest('profile form should be accessible at mobile viewport', async ({ browser }) => {
-      const context = await browser.newContext({ viewport: { width: 375, height: 667 } });
-      const page = await context.newPage();
+    authenticatedUserTest(
+      'profile form should be accessible at mobile viewport',
+      async ({ browser }) => {
+        const context = await browser.newContext({ viewport: { width: 375, height: 667 } });
+        const page = await context.newPage();
 
-      // Navigate to profile page (this will skip if not authenticated)
-      await page.goto(`${baseURL}/auth/profile`, { waitUntil: 'networkidle' });
+        // Navigate to profile page (this will skip if not authenticated)
+        await page.goto(`${baseURL}/auth/profile`, { waitUntil: 'networkidle' });
 
-      // Test form is still accessible
-      const labels = await validateFormLabels(page);
-      expect(labels.allLabeled).toBe(true) // Form labels should be accessible on mobile;
+        // Test form is still accessible
+        const labels = await validateFormLabels(page);
+        expect(labels.allLabeled).toBe(true); // Form labels should be accessible on mobile;
 
-      await context.close();
-    });
-
-    authenticatedUserTest('touch targets should be at least 44x44 pixels', async ({ authenticatedPage }) => {
-      const buttons = await authenticatedPage.locator('button').all();
-      const inputs = await authenticatedPage.locator('input').all();
-
-      const allInteractiveElements = [...buttons, ...inputs];
-
-      let undersized = 0;
-      for (const element of allInteractiveElements) {
-        const size = await element.boundingBox();
-        if (size && (size.width < 44 || size.height < 44)) {
-          undersized++;
-        }
+        await context.close();
       }
+    );
 
-      expect(undersized).toBe(0); // All touch targets should be at least 44x44px, found ${undersized} undersized
-    });
+    authenticatedUserTest(
+      'touch targets should be at least 44x44 pixels',
+      async ({ authenticatedPage }) => {
+        const buttons = await authenticatedPage.locator('button').all();
+        const inputs = await authenticatedPage.locator('input').all();
+
+        const allInteractiveElements = [...buttons, ...inputs];
+
+        let undersized = 0;
+        for (const element of allInteractiveElements) {
+          const size = await element.boundingBox();
+          if (size && (size.width < 44 || size.height < 44)) {
+            undersized++;
+          }
+        }
+
+        expect(undersized).toBe(0); // All touch targets should be at least 44x44px, found ${undersized} undersized
+      }
+    );
   });
 });
 
@@ -1473,12 +1570,12 @@ test.describe('@regression-a11y Cross-Page Authentication Accessibility Tests', 
 
       test('page should have appropriate title', async ({ page: testPage }) => {
         const title = await testPage.title();
-        expect(title.length).toBeGreaterThan(0) // Page should have a title;
+        expect(title.length).toBeGreaterThan(0); // Page should have a title;
       });
 
       test('should have landmark regions', async ({ page: testPage }) => {
         const landmarks = await checkLandmarkRegions(testPage);
-        expect(landmarks.hasLandmarks).toBe(true) // Page should have landmark regions;
+        expect(landmarks.hasLandmarks).toBe(true); // Page should have landmark regions;
       });
 
       test('heading hierarchy should be valid', async ({ page: testPage }) => {
@@ -1553,7 +1650,9 @@ test.describe('@regression-a11y Cross-Page Authentication Accessibility Tests', 
       });
 
       test('help text should have 4.5:1 contrast', async ({ page: testPage }) => {
-        const helpText = await testPage.locator('.help-text, .hint, [class*="help"], [class*="hint"]').all();
+        const helpText = await testPage
+          .locator('.help-text, .hint, [class*="help"], [class*="hint"]')
+          .all();
 
         for (const text of helpText) {
           if (await text.isVisible()) {
@@ -1567,7 +1666,9 @@ test.describe('@regression-a11y Cross-Page Authentication Accessibility Tests', 
       });
 
       test('focus indicators should have 3:1 contrast', async ({ page: testPage }) => {
-        const focusableElements = await testPage.locator('input, button, a, textarea, select').all();
+        const focusableElements = await testPage
+          .locator('input, button, a, textarea, select')
+          .all();
 
         // Get first focusable element
         if (focusableElements.length > 0) {
@@ -1577,9 +1678,7 @@ test.describe('@regression-a11y Cross-Page Authentication Accessibility Tests', 
           const hasVisibleFocus = await firstElement.evaluate((el) => {
             const style = window.getComputedStyle(el);
             return (
-              el.matches(':focus-visible') ||
-              style.outline !== 'none' ||
-              style.boxShadow !== 'none'
+              el.matches(':focus-visible') || style.outline !== 'none' || style.boxShadow !== 'none'
             );
           });
           expect(hasVisibleFocus).toBe(true);
@@ -1622,7 +1721,7 @@ test.describe('@regression-a11y Cross-Page Authentication Accessibility Tests', 
             .map(([id, count]) => ({ id, count }));
         });
 
-      expect(duplicates.length).toBe(0); // Should have no duplicate IDs: ${JSON.stringify(duplicates)}
+        expect(duplicates.length).toBe(0); // Should have no duplicate IDs: ${JSON.stringify(duplicates)}
       });
 
       test('aria-labelledby references should be valid', async ({ page: testPage }) => {
@@ -1639,7 +1738,7 @@ test.describe('@regression-a11y Cross-Page Authentication Accessibility Tests', 
           return invalid;
         });
 
-      expect(invalidRefs.length).toBe(0); // All aria-labelledby references should exist: ${JSON.stringify(invalidRefs)}
+        expect(invalidRefs.length).toBe(0); // All aria-labelledby references should exist: ${JSON.stringify(invalidRefs)}
       });
 
       test('aria-describedby references should be valid', async ({ page: testPage }) => {
@@ -1656,7 +1755,7 @@ test.describe('@regression-a11y Cross-Page Authentication Accessibility Tests', 
           return invalid;
         });
 
-      expect(invalidRefs.length).toBe(0); // All aria-describedby references should exist: ${JSON.stringify(invalidRefs)}
+        expect(invalidRefs.length).toBe(0); // All aria-describedby references should exist: ${JSON.stringify(invalidRefs)}
       });
     });
 

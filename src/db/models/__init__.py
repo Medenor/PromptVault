@@ -33,6 +33,10 @@ from src.db.models.prompt import Prompt
 from src.db.models.prompt_version import PromptVersion
 from src.db.models.prompt_branch import PromptBranch
 from src.db.models.backup import Backup
+from src.db.models.backup_schedule import BackupSchedule
+from src.db.models.backup_storage_provider import BackupStorageProvider
+from src.db.models.backup_audit_log import AuditLogEntry
+from src.db.models.encryption_key_config import EncryptionKeyConfig
 from src.db.models.undo_operation import UndoOperation
 from src.db.models.associations import prompt_tags
 
@@ -46,6 +50,10 @@ __all__ = [
     "PromptVersion",
     "PromptBranch",
     "Backup",
+    "BackupSchedule",
+    "BackupStorageProvider",
+    "AuditLogEntry",
+    "EncryptionKeyConfig",
     "UndoOperation",
     "prompt_tags",
 ]

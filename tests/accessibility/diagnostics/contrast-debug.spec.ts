@@ -40,8 +40,8 @@ test.skip('Contrast Ratio Diagnostics', () => {
     const inputs = await page.locator('input').all();
     for (let i = 0; i < inputs.length; i++) {
       const input = inputs[i];
-      const selector = await input.getAttribute('id') || `input[${i}]`;
-      const type = await input.getAttribute('type') || 'text';
+      const selector = (await input.getAttribute('id')) || `input[${i}]`;
+      const type = (await input.getAttribute('type')) || 'text';
 
       console.log(`\n  Input ${i + 1} (${type}): #${selector}`);
 
@@ -279,13 +279,15 @@ test.skip('Contrast Ratio Diagnostics', () => {
     const inputs = await page.locator('input').all();
     for (let i = 0; i < inputs.length; i++) {
       const input = inputs[i];
-      const type = await input.getAttribute('type') || 'text';
+      const type = (await input.getAttribute('type')) || 'text';
       const result = await testTextContrast(page, input, 'AA');
 
       console.log(`\n  Input ${i + 1} (${type}):`);
       console.log(`    Foreground: ${result.foreground}`);
       console.log(`    Background: ${result.background}`);
-      console.log(`    Ratio: ${result.ratio}:1 (required: ${result.required}:1) - ${result.passes ? 'PASS' : 'FAIL'}`);
+      console.log(
+        `    Ratio: ${result.ratio}:1 (required: ${result.required}:1) - ${result.passes ? 'PASS' : 'FAIL'}`
+      );
     }
 
     // Test all buttons
@@ -300,7 +302,9 @@ test.skip('Contrast Ratio Diagnostics', () => {
       console.log(`\n  Button ${i + 1}: "${text?.trim().substring(0, 30)}"`);
       console.log(`    Foreground: ${result.foreground}`);
       console.log(`    Background: ${result.background}`);
-      console.log(`    Ratio: ${result.ratio}:1 (required: ${result.required}:1) - ${result.passes ? 'PASS' : 'FAIL'}`);
+      console.log(
+        `    Ratio: ${result.ratio}:1 (required: ${result.required}:1) - ${result.passes ? 'PASS' : 'FAIL'}`
+      );
     }
 
     console.log('\n========================================');

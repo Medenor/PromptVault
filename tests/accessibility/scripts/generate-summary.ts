@@ -249,15 +249,13 @@ function updateReadme(testDir: string, stats: SummaryStats): void {
 
   // Replace or insert statistics
   if (content.includes('## Test Statistics')) {
-    content = content.replace(
-      /## Test Statistics[\s\S]*?(?=##|\Z)/,
-      statsSection + '\n'
-    );
+    content = content.replace(/## Test Statistics[\s\S]*?(?=##|\Z)/, statsSection + '\n');
   } else {
     // Insert after first section
     const firstSectionEnd = content.indexOf('\n## ', 10);
     if (firstSectionEnd > 0) {
-      content = content.slice(0, firstSectionEnd) + '\n' + statsSection + content.slice(firstSectionEnd);
+      content =
+        content.slice(0, firstSectionEnd) + '\n' + statsSection + content.slice(firstSectionEnd);
     }
   }
 
@@ -306,9 +304,7 @@ function main(): void {
   // Print file breakdown
   console.log('\nBREAKDOWN BY FILE:');
   stats.fileStats.forEach((f) => {
-    console.log(
-      `  ${f.name}: ${f.testCount} tests in ${f.describeCount} suites`
-    );
+    console.log(`  ${f.name}: ${f.testCount} tests in ${f.describeCount} suites`);
   });
 
   console.log('\nSummary files generated successfully!');

@@ -32,15 +32,15 @@ The approach is purely additive: two nullable `semantic_version` columns (one on
 
 ## Constitution Check
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+_GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
-| Principle | Status | Notes |
-|-----------|--------|-------|
-| **I. Layered Service Architecture** | PASS | New `semantic_version` field flows: Route → Service → Repository → DB. No route handler touches the DB directly. |
-| **II. Test Coverage Gate (≥ 85%)** | PASS | New service logic, validators, and endpoint will have unit tests. Frontend component has Vitest coverage. Gate enforced pre-merge. |
-| **III. Security-First Authentication** | PASS | The new `POST /api/prompts/{id}/copy-with-version` endpoint is read-only (no mutation) but must still be protected from unauthenticated access when `AUTH_ENABLED=true`, consistent with all prompt-read endpoints. |
-| **IV. TypeScript-Only Frontend** | PASS | Version field UI, badge, and copy action all written in `src/web/static/ts/`. No edits to legacy `src/web/static/js/`. |
-| **V. Database-Backed Persistence** | PASS | `semantic_version` stored in PostgreSQL/SQLite via SQLAlchemy ORM columns. No JSON-file storage. Alembic migration required. |
+| Principle                              | Status | Notes                                                                                                                                                                                                               |
+| -------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **I. Layered Service Architecture**    | PASS   | New `semantic_version` field flows: Route → Service → Repository → DB. No route handler touches the DB directly.                                                                                                    |
+| **II. Test Coverage Gate (≥ 85%)**     | PASS   | New service logic, validators, and endpoint will have unit tests. Frontend component has Vitest coverage. Gate enforced pre-merge.                                                                                  |
+| **III. Security-First Authentication** | PASS   | The new `POST /api/prompts/{id}/copy-with-version` endpoint is read-only (no mutation) but must still be protected from unauthenticated access when `AUTH_ENABLED=true`, consistent with all prompt-read endpoints. |
+| **IV. TypeScript-Only Frontend**       | PASS   | Version field UI, badge, and copy action all written in `src/web/static/ts/`. No edits to legacy `src/web/static/js/`.                                                                                              |
+| **V. Database-Backed Persistence**     | PASS   | `semantic_version` stored in PostgreSQL/SQLite via SQLAlchemy ORM columns. No JSON-file storage. Alembic migration required.                                                                                        |
 
 **Constitution Check Result**: PASS — no violations.
 

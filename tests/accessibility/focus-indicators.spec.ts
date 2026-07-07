@@ -12,7 +12,13 @@ if (!baseURL) {
 }
 
 const PUBLIC_ROUTES = ['/', '/auth/login', '/auth/register'];
-const USER_ROUTES = ['/auth/profile', '/import-export', '/backup-management', '/manage-categories', '/manage-tags'];
+const USER_ROUTES = [
+  '/auth/profile',
+  '/import-export',
+  '/backup-management',
+  '/manage-categories',
+  '/manage-tags',
+];
 const ADMIN_ROUTES = ['/admin/users', '/admin/sessions'];
 
 async function assertVisibleFocusIndicator(page) {
@@ -60,16 +66,22 @@ test.describe('@smoke-a11y Focus Indicators Public Routes', () => {
 
 authenticatedUserTest.describe('@smoke-a11y Focus Indicators User Routes', () => {
   for (const route of USER_ROUTES) {
-    authenticatedUserTest(`focus indicator is visible on ${route}`, async ({ authenticatedPage }) => {
-      await runFocusSmoke(authenticatedPage, route);
-    });
+    authenticatedUserTest(
+      `focus indicator is visible on ${route}`,
+      async ({ authenticatedPage }) => {
+        await runFocusSmoke(authenticatedPage, route);
+      }
+    );
   }
 });
 
 authenticatedAdminTest.describe('@smoke-a11y Focus Indicators Admin Routes', () => {
   for (const route of ADMIN_ROUTES) {
-    authenticatedAdminTest(`focus indicator is visible on ${route}`, async ({ authenticatedPage }) => {
-      await runFocusSmoke(authenticatedPage, route);
-    });
+    authenticatedAdminTest(
+      `focus indicator is visible on ${route}`,
+      async ({ authenticatedPage }) => {
+        await runFocusSmoke(authenticatedPage, route);
+      }
+    );
   }
 });

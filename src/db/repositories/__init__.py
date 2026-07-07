@@ -36,6 +36,12 @@ from src.db.repositories.prompt_repository import PromptRepository
 from src.db.repositories.version_repository import VersionRepository
 from src.db.repositories.category_repository import CategoryRepository
 from src.db.repositories.tag_repository import TagRepository
+from src.db.repositories.backup_repository import BackupRepository
+from src.db.repositories.backup_schedule_repository import BackupScheduleRepository
+from src.db.repositories.backup_storage_provider_repository import (
+    BackupStorageProviderRepository,
+)
+from src.db.repositories.backup_audit_log_repository import BackupAuditLogRepository
 
 __all__ = [
     "BaseRepository",
@@ -46,4 +52,8 @@ __all__ = [
     "VersionRepository",
     "CategoryRepository",
     "TagRepository",
+    "BackupRepository",
+    "BackupScheduleRepository",
+    "BackupStorageProviderRepository",
+    "BackupAuditLogRepository",
 ]

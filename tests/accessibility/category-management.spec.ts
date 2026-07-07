@@ -48,7 +48,11 @@ async function hasVisibleDialog(page) {
     const dialogs = Array.from(document.querySelectorAll('[role="dialog"]'));
     return dialogs.some((dialog) => {
       const style = window.getComputedStyle(dialog);
-      return !dialog.classList.contains('hidden') && style.display !== 'none' && style.visibility !== 'hidden';
+      return (
+        !dialog.classList.contains('hidden') &&
+        style.display !== 'none' &&
+        style.visibility !== 'hidden'
+      );
     });
   });
 }
@@ -58,7 +62,11 @@ async function focusInsideVisibleDialog(page) {
     const dialogs = Array.from(document.querySelectorAll('[role="dialog"]'));
     const visibleDialog = dialogs.find((dialog) => {
       const style = window.getComputedStyle(dialog);
-      return !dialog.classList.contains('hidden') && style.display !== 'none' && style.visibility !== 'hidden';
+      return (
+        !dialog.classList.contains('hidden') &&
+        style.display !== 'none' &&
+        style.visibility !== 'hidden'
+      );
     });
     if (!visibleDialog) {
       return false;
@@ -120,7 +128,9 @@ test.describe('@regression-a11y Category Management Page Accessibility Tests', (
       expect(mainLink).toBeDefined();
     });
 
-    test('skip link should focus main content when activated', async ({ authenticatedPage: page }) => {
+    test('skip link should focus main content when activated', async ({
+      authenticatedPage: page,
+    }) => {
       // Tab to skip link
       await page.keyboard.press('Tab');
 
@@ -128,7 +138,7 @@ test.describe('@regression-a11y Category Management Page Accessibility Tests', (
       await page.keyboard.press('Enter');
 
       // Wait for focus to move
-      await page.waitForLoadState("networkidle").catch(() => {});
+      await page.waitForLoadState('networkidle').catch(() => {});
 
       // Verify focus is on main content or within it
       const focusedId = await page.evaluate(() => {
@@ -162,13 +172,17 @@ test.describe('@regression-a11y Category Management Page Accessibility Tests', (
       expect(nameInfo.name).toMatch(/name/i);
     });
 
-    test('category description input should have accessible name', async ({ authenticatedPage: page }) => {
+    test('category description input should have accessible name', async ({
+      authenticatedPage: page,
+    }) => {
       const descInput = page.locator('#category-create-description');
       const nameInfo = await checkAccessibleName(descInput);
       expect(nameInfo.hasAccessibleName).toBe(true);
     });
 
-    test('category color input should have accessible name', async ({ authenticatedPage: page }) => {
+    test('category color input should have accessible name', async ({
+      authenticatedPage: page,
+    }) => {
       const colorInput = page.locator('#category-create-color');
       const nameInfo = await checkAccessibleName(colorInput);
       expect(nameInfo.hasAccessibleName).toBe(true);
@@ -180,13 +194,15 @@ test.describe('@regression-a11y Category Management Page Accessibility Tests', (
       expect(nameInfo.hasAccessibleName).toBe(true);
     });
 
-    test('error messages should be associated with form inputs', async ({ authenticatedPage: page }) => {
+    test('error messages should be associated with form inputs', async ({
+      authenticatedPage: page,
+    }) => {
       // Try to submit empty form
       const submitBtn = page.locator('#category-create-form button[type="submit"]');
       await submitBtn.click();
 
       // Wait for potential validation
-      await page.waitForLoadState("networkidle").catch(() => {});
+      await page.waitForLoadState('networkidle').catch(() => {});
 
       // Check that error elements exist and are associated
       const nameErrorEl = page.locator('#category-create-name-error');
@@ -236,13 +252,13 @@ test.describe('@regression-a11y Category Management Page Accessibility Tests', (
       expect(headers.length).toBeGreaterThan(0);
 
       // At least 'Name', 'Description', 'Actions' headers expected
-      const headerTexts = await Promise.all(
-        headers.map((h) => h.textContent())
-      );
+      const headerTexts = await Promise.all(headers.map((h) => h.textContent()));
       expect(headerTexts.some((t) => t?.toLowerCase().includes('name'))).toBe(true);
     });
 
-    test('each category row should have accessible checkbox for selection', async ({ authenticatedPage: page }) => {
+    test('each category row should have accessible checkbox for selection', async ({
+      authenticatedPage: page,
+    }) => {
       // If there are category rows, check for checkboxes
       const checkboxes = await page.locator('tbody tr input[type="checkbox"]').all();
 
@@ -257,7 +273,9 @@ test.describe('@regression-a11y Category Management Page Accessibility Tests', (
       }
     });
 
-    test('category items should have category name accessible in each row', async ({ authenticatedPage: page }) => {
+    test('category items should have category name accessible in each row', async ({
+      authenticatedPage: page,
+    }) => {
       // Get first category row if any
       const firstRow = page.locator('tbody tr').first();
       const exists = await firstRow.count();
@@ -274,7 +292,9 @@ test.describe('@regression-a11y Category Management Page Accessibility Tests', (
   // 4. CATEGORY LIST KEYBOARD NAVIGATION TESTS
   // ============================================================================
   test.describe('@regression-a11y Category List Keyboard Navigation', () => {
-    test('category list should support keyboard navigation', async ({ authenticatedPage: page }) => {
+    test('category list should support keyboard navigation', async ({
+      authenticatedPage: page,
+    }) => {
       // Get categories table container
       const tableContainer = page.locator('#categories-table-container');
       const exists = await tableContainer.count();
@@ -296,7 +316,9 @@ test.describe('@regression-a11y Category Management Page Accessibility Tests', (
       }
     });
 
-    test('keyboard navigation should support typeahead search by first letter', async ({ authenticatedPage: page }) => {
+    test('keyboard navigation should support typeahead search by first letter', async ({
+      authenticatedPage: page,
+    }) => {
       // This tests the typeahead functionality mentioned in manage-categories.ts
       const tableContainer = page.locator('#categories-table-container');
       await tableContainer.focus();
@@ -311,13 +333,15 @@ test.describe('@regression-a11y Category Management Page Accessibility Tests', (
         await page.keyboard.type(firstLetter);
 
         // Should navigate to matching item (focus may move)
-        await page.waitForLoadState("networkidle").catch(() => {});
+        await page.waitForLoadState('networkidle').catch(() => {});
         const activeElement = await page.evaluate(() => document.activeElement?.id || '');
         expect(activeElement).toBeDefined();
       }
     });
 
-    test('focus should remain visible during list navigation', async ({ authenticatedPage: page }) => {
+    test('focus should remain visible during list navigation', async ({
+      authenticatedPage: page,
+    }) => {
       // Check for focus indicators
       const focusIndicators = await verifyFocusIndicators(page);
       // Note: Some elements might not have visible focus initially
@@ -361,7 +385,9 @@ test.describe('@regression-a11y Category Management Page Accessibility Tests', (
       }
     });
 
-    test('merge help text should be associated with inputs', async ({ authenticatedPage: page }) => {
+    test('merge help text should be associated with inputs', async ({
+      authenticatedPage: page,
+    }) => {
       // Help text should be associated via aria-describedby
       const targetInput = page.locator('#category-merge-target');
       const hasDescribedBy = await targetInput.evaluate((el) => {
@@ -385,7 +411,9 @@ test.describe('@regression-a11y Category Management Page Accessibility Tests', (
       expect(hasAlertRole).toBe(true);
     });
 
-    test('merge operation should be completable via keyboard', async ({ authenticatedPage: page }) => {
+    test('merge operation should be completable via keyboard', async ({
+      authenticatedPage: page,
+    }) => {
       // Get target input and enter valid ID
       const targetInput = page.locator('#category-merge-target');
       const exists = await targetInput.count();
@@ -434,7 +462,9 @@ test.describe('@regression-a11y Category Management Page Accessibility Tests', (
       }
     });
 
-    test('find/replace button should have accessible label', async ({ authenticatedPage: page }) => {
+    test('find/replace button should have accessible label', async ({
+      authenticatedPage: page,
+    }) => {
       const replaceBtn = page.locator('#category-find-replace-btn');
       const exists = await replaceBtn.count();
 
@@ -444,7 +474,9 @@ test.describe('@regression-a11y Category Management Page Accessibility Tests', (
       }
     });
 
-    test('find/replace section should have error announcements', async ({ authenticatedPage: page }) => {
+    test('find/replace section should have error announcements', async ({
+      authenticatedPage: page,
+    }) => {
       const errorBanner = page.locator('#category-find-replace-error-summary');
       const exists = await errorBanner.count();
       expect(exists).toBeGreaterThan(0);
@@ -456,7 +488,9 @@ test.describe('@regression-a11y Category Management Page Accessibility Tests', (
       expect(hasAlertRole).toBe(true);
     });
 
-    test('find/replace operation should be completable via keyboard', async ({ authenticatedPage: page }) => {
+    test('find/replace operation should be completable via keyboard', async ({
+      authenticatedPage: page,
+    }) => {
       const findInput = page.locator('#category-find');
       const exists = await findInput.count();
 
@@ -510,7 +544,9 @@ test.describe('@regression-a11y Category Management Page Accessibility Tests', (
       }
     });
 
-    test('bulk delete section should have error announcements', async ({ authenticatedPage: page }) => {
+    test('bulk delete section should have error announcements', async ({
+      authenticatedPage: page,
+    }) => {
       const errorBanner = page.locator('#category-bulk-delete-error-summary');
       const exists = await errorBanner.count();
       expect(exists).toBeGreaterThan(0);
@@ -524,10 +560,14 @@ test.describe('@regression-a11y Category Management Page Accessibility Tests', (
   });
 
   test.describe('@regression-a11y Category Modal Focus Management', () => {
-    test('delete confirmation dialog should receive focus and close on Escape', async ({ authenticatedPage: page }) => {
-      const deleteTrigger = page.locator(
-        'button:has-text("Delete"), button[aria-label*="delete" i], button[aria-label*="remove" i]'
-      ).first();
+    test('delete confirmation dialog should receive focus and close on Escape', async ({
+      authenticatedPage: page,
+    }) => {
+      const deleteTrigger = page
+        .locator(
+          'button:has-text("Delete"), button[aria-label*="delete" i], button[aria-label*="remove" i]'
+        )
+        .first();
 
       if ((await deleteTrigger.count()) === 0) {
         test.skip();
@@ -537,17 +577,13 @@ test.describe('@regression-a11y Category Management Page Accessibility Tests', (
       await deleteTrigger.focus();
       await deleteTrigger.click();
 
-      await expect
-        .poll(async () => await hasVisibleDialog(page), { timeout: 5000 })
-        .toBe(true);
+      await expect.poll(async () => await hasVisibleDialog(page), { timeout: 5000 }).toBe(true);
       await expect
         .poll(async () => await focusInsideVisibleDialog(page), { timeout: 5000 })
         .toBe(true);
 
       await page.keyboard.press('Escape');
-      await expect
-        .poll(async () => await hasVisibleDialog(page), { timeout: 5000 })
-        .toBe(false);
+      await expect.poll(async () => await hasVisibleDialog(page), { timeout: 5000 }).toBe(false);
 
       const focusRecovered = await page.evaluate(() => {
         const active = document.activeElement;
@@ -615,7 +651,7 @@ test.describe('@regression-a11y Category Management Page Accessibility Tests', (
         await searchInput.fill('test');
 
         // Wait for potential filtering
-        await page.waitForLoadState("networkidle").catch(() => {});
+        await page.waitForLoadState('networkidle').catch(() => {});
 
         // Verify page is still functional
         const tableBody = page.locator('#categories-table-body');
@@ -694,7 +730,9 @@ test.describe('@regression-a11y Category Management Page Accessibility Tests', (
       }
     });
 
-    test('merge selected button should have accessible label', async ({ authenticatedPage: page }) => {
+    test('merge selected button should have accessible label', async ({
+      authenticatedPage: page,
+    }) => {
       const mergeSelectedBtn = page.locator('#category-selection-merge-btn');
       const exists = await mergeSelectedBtn.count();
 
@@ -704,7 +742,9 @@ test.describe('@regression-a11y Category Management Page Accessibility Tests', (
       }
     });
 
-    test('find/replace selected button should have accessible label', async ({ authenticatedPage: page }) => {
+    test('find/replace selected button should have accessible label', async ({
+      authenticatedPage: page,
+    }) => {
       const findReplaceSelectedBtn = page.locator('#category-selection-find-replace-btn');
       const exists = await findReplaceSelectedBtn.count();
 
@@ -730,7 +770,9 @@ test.describe('@regression-a11y Category Management Page Accessibility Tests', (
       expect(tabOrder.length).toBeGreaterThan(0);
 
       // Should have buttons in tab order
-      const buttonCount = tabOrder.filter((item) => item.text.toLowerCase().includes('button')).length;
+      const buttonCount = tabOrder.filter((item) =>
+        item.text.toLowerCase().includes('button')
+      ).length;
       // At least some buttons should be in tab order (not all might have visible text)
       expect(tabOrder.length).toBeGreaterThan(0);
     });
@@ -835,7 +877,9 @@ test.describe('@regression-a11y Category Management Page Accessibility Tests', (
       }
     });
 
-    test('input fields should have sufficient contrast on border', async ({ authenticatedPage: page }) => {
+    test('input fields should have sufficient contrast on border', async ({
+      authenticatedPage: page,
+    }) => {
       const inputs = await page.locator('input[type="text"], input[type="number"]').all();
 
       if (inputs.length > 0) {
@@ -850,7 +894,9 @@ test.describe('@regression-a11y Category Management Page Accessibility Tests', (
       }
     });
 
-    test('focus indicators should have sufficient contrast', async ({ authenticatedPage: page }) => {
+    test('focus indicators should have sufficient contrast', async ({
+      authenticatedPage: page,
+    }) => {
       // Tab to first element to show focus
       await page.keyboard.press('Tab');
 
@@ -865,7 +911,9 @@ test.describe('@regression-a11y Category Management Page Accessibility Tests', (
       }
     });
 
-    test('error message text should have sufficient contrast', async ({ authenticatedPage: page }) => {
+    test('error message text should have sufficient contrast', async ({
+      authenticatedPage: page,
+    }) => {
       const errorMessages = await page.locator('[id*="-error"]').all();
 
       if (errorMessages.length > 0) {
@@ -884,7 +932,9 @@ test.describe('@regression-a11y Category Management Page Accessibility Tests', (
   // 13. FOCUS MANAGEMENT AND KEYBOARD WORKFLOW TESTS
   // ============================================================================
   test.describe('@regression-a11y Focus Management and Keyboard-Only Workflow', () => {
-    test('focus should be visible when tabbing through page', async ({ authenticatedPage: page }) => {
+    test('focus should be visible when tabbing through page', async ({
+      authenticatedPage: page,
+    }) => {
       // Tab through several elements
       for (let i = 0; i < 5; i++) {
         await page.keyboard.press('Tab');
@@ -942,7 +992,9 @@ test.describe('@regression-a11y Category Management Page Accessibility Tests', (
       expect(backFocus).toBeTruthy();
     });
 
-    test('create category workflow should be completable via keyboard only', async ({ authenticatedPage: page }) => {
+    test('create category workflow should be completable via keyboard only', async ({
+      authenticatedPage: page,
+    }) => {
       // Skip link
       await page.keyboard.press('Tab');
 
@@ -952,7 +1004,7 @@ test.describe('@regression-a11y Category Management Page Accessibility Tests', (
       }
 
       // Should be at or near the name input
-      await page.waitForLoadState("networkidle").catch(() => {});
+      await page.waitForLoadState('networkidle').catch(() => {});
 
       // Try to reach the name input
       const nameInput = page.locator('#category-create-name');
@@ -987,7 +1039,9 @@ test.describe('@regression-a11y Category Management Page Accessibility Tests', (
   // 14. RESPONSIVE DESIGN AND MOBILE ACCESSIBILITY
   // ============================================================================
   test.describe('@regression-a11y Responsive Design', () => {
-    test('page elements should be accessible at different screen sizes', async ({ authenticatedPage: page }) => {
+    test('page elements should be accessible at different screen sizes', async ({
+      authenticatedPage: page,
+    }) => {
       // Set viewport to mobile size
       await page.setViewportSize({ width: 375, height: 812 });
 
@@ -1064,7 +1118,9 @@ test.describe('@regression-a11y Category Management Page Accessibility Tests', (
       }
     });
 
-    test('should demonstrate accessible button focus states', async ({ authenticatedPage: page }) => {
+    test('should demonstrate accessible button focus states', async ({
+      authenticatedPage: page,
+    }) => {
       // Get merge button
       const mergeBtn = page.locator('#category-merge-btn');
       const exists = await mergeBtn.count();
@@ -1089,7 +1145,9 @@ test.describe('@regression-a11y Category Management Page Accessibility Tests', (
   // 16. EDGE CASES AND ERROR HANDLING
   // ============================================================================
   test.describe('@regression-a11y Edge Cases and Error Handling', () => {
-    test('page should remain accessible with empty category list', async ({ authenticatedPage: page }) => {
+    test('page should remain accessible with empty category list', async ({
+      authenticatedPage: page,
+    }) => {
       // Page should still have proper structure
       const landmarks = await checkLandmarkRegions(page);
       expect(landmarks.hasLandmarks).toBe(true);
@@ -1099,7 +1157,9 @@ test.describe('@regression-a11y Category Management Page Accessibility Tests', (
       expect(await createForm.count()).toBeGreaterThan(0);
     });
 
-    test('search input should remain accessible when clearing text', async ({ authenticatedPage: page }) => {
+    test('search input should remain accessible when clearing text', async ({
+      authenticatedPage: page,
+    }) => {
       const searchInput = page.locator('#category-search');
       const exists = await searchInput.count();
 
@@ -1120,7 +1180,9 @@ test.describe('@regression-a11y Category Management Page Accessibility Tests', (
       }
     });
 
-    test('form elements should be accessible even with validation errors', async ({ authenticatedPage: page }) => {
+    test('form elements should be accessible even with validation errors', async ({
+      authenticatedPage: page,
+    }) => {
       const nameInput = page.locator('#category-create-name');
       const exists = await nameInput.count();
 

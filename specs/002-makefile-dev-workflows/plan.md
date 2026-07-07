@@ -37,7 +37,7 @@ migration impact.
 
 **Testing**: Validation is manual smoke-testing of targets (see `quickstart.md`)
 plus optional `shellcheck` on the Makefile recipes. The suites the Makefile
-*runs* (`python3 -m pytest`, `npm run test:unit:coverage`) are not part of this
+_runs_ (`python3 -m pytest`, `npm run test:unit:coverage`) are not part of this
 feature's deliverable.
 
 **Target Platform**: POSIX-compatible systems (macOS / Linux) with `make`
@@ -62,22 +62,22 @@ Estimated effort: small.
 
 ## Constitution Check
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+_GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
-| Principle | Status | Notes |
-|-----------|--------|-------|
-| **I. Layered Service Architecture** | ✅ PASS | No source layer touched. The Makefile calls the approved entry script and npm scripts; it introduces no web/service/data code and bypasses no layer. |
+| Principle                                   | Status                | Notes                                                                                                                                                                                                                                                                                                             |
+| ------------------------------------------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **I. Layered Service Architecture**         | ✅ PASS               | No source layer touched. The Makefile calls the approved entry script and npm scripts; it introduces no web/service/data code and bypasses no layer.                                                                                                                                                              |
 | **II. Test Coverage Gate (NON-NEGOTIABLE)** | ✅ PASS (strengthens) | `make test` runs `python3 -m pytest`, which enforces `--cov-fail-under=85` (pytest.ini). The frontend gate is enforced by `vitest.config.ts`. The Makefile surfaces each gate as a hard pass/fail — directly serving this principle. See `research.md` for the backend(85)/frontend(configured) discrepancy note. |
-| **III. Security-First Authentication** | ✅ PASS | No endpoint, auth, or rate-limiting code is added or changed. The dev server is started via the existing approved script. |
-| **IV. TypeScript-Only Frontend** | ✅ PASS | The Makefile does not edit `src/web/static/ts/` or `js/`. It only invokes the existing `npm` scripts (`typecheck`, `lint`, `build`, `test:unit:coverage`). |
-| **V. Database-Backed Persistence** | ✅ PASS | No storage, ORM, or migration impact. Pure orchestration. |
+| **III. Security-First Authentication**      | ✅ PASS               | No endpoint, auth, or rate-limiting code is added or changed. The dev server is started via the existing approved script.                                                                                                                                                                                         |
+| **IV. TypeScript-Only Frontend**            | ✅ PASS               | The Makefile does not edit `src/web/static/ts/` or `js/`. It only invokes the existing `npm` scripts (`typecheck`, `lint`, `build`, `test:unit:coverage`).                                                                                                                                                        |
+| **V. Database-Backed Persistence**          | ✅ PASS               | No storage, ORM, or migration impact. Pure orchestration.                                                                                                                                                                                                                                                         |
 
 **Result**: No violations. No complexity-tracking entries required.
 
-**Post-Design Re-check (after Phase 1)**: The design — a `Makefile` that *only*
+**Post-Design Re-check (after Phase 1)**: The design — a `Makefile` that _only_
 invokes existing approved commands plus one additive doc page — touches no
 service/data/auth/TS layer and changes no tracked config. All five principles
-remain **PASS**. The feature *strengthens* Principle II by making the 85% backend
+remain **PASS**. The feature _strengthens_ Principle II by making the 85% backend
 coverage gate one command away (`make test`). The frontend coverage-gap note
 (research.md §4) is a documented follow-up, not a violation introduced by this
 feature.
@@ -112,7 +112,7 @@ root (standard Make convention, discoverable by `make help` as the default
 target) plus a dedicated documentation page under `docs/` to satisfy FR-012
 without bloating the README. No `src/`, `backend/`, or `frontend/` tree changes
 are in scope — the existing `src/` (Python) and `src/web/static/` (TypeScript)
-layouts are merely *invoked* by the recipes.
+layouts are merely _invoked_ by the recipes.
 
 ## Complexity Tracking
 

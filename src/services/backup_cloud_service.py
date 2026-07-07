@@ -1,0 +1,282 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+"""Backup cloud storage service for PromptVault.
+
+Provides S3-compatible cloud storage upload/download for backup files
+using boto3. Supports AWS S3, MinIO, Backblaze B2, and other
+S3-compatible providers.
+"""
+
+import json
+import logging
+import uuid
+from typing import Optional, Dict, Any
+
+import boto3
+from botocore.exceptions import ClientError, EndpointConnectionError
+
+from src.db.session import get_db_session
+from src.db.models.backup_storage_provider import BackupStorageProvider
+from src.db.repositories.backup_storage_provider_repository import (
+    BackupStorageProviderRepository,
+)
+from src.services.backup_encryption_service import BackupEncryptionService
+
+logger = logging.getLogger(__name__)
+
+CREDENTIALS_PASSPHRASE = "promptvault-cloud-creds"
+
+
+class BackupCloudService:
+    """Service for cloud storage operations on backup files.
+
+    Uses boto3 to interact with S3-compatible storage providers.
+    Credentials are encrypted at rest using AES-256-GCM.
+    """
+
+    def upload(
+        self,
+        backup_path: str,
+        provider: BackupStorageProvider,
+        remote_key: str,
+    ) -> str:
+        """Upload a backup file to cloud storage.
+
+        Args:
+            backup_path: Local path to the backup file
+            provider: Storage provider configuration
+            remote_key: Remote object key in the bucket
+
+        Returns:
+            The remote path/key string
+        """
+        creds = self._decrypt_credentials(provider)
+        client = self._get_client(provider, creds)
+
+        full_key = f"{provider.prefix}{remote_key}" if provider.prefix else remote_key
+
+        with open(backup_path, "rb") as f:
+            client.upload_fileobj(f, provider.bucket_name, full_key)
+
+        return full_key
+
+    def download(
+        self,
+        provider: BackupStorageProvider,
+        remote_key: str,
+        dest_path: str,
+    ) -> None:
+        """Download a backup file from cloud storage.
+
+        Args:
+            provider: Storage provider configuration
+            remote_key: Remote object key in the bucket
+            dest_path: Local destination path
+        """
+        creds = self._decrypt_credentials(provider)
+        client = self._get_client(provider, creds)
+
+        with open(dest_path, "wb") as f:
+            client.download_fileobj(provider.bucket_name, remote_key, f)
+
+    def test_connectivity(self, provider: BackupStorageProvider) -> Dict[str, Any]:
+        """Test connectivity to the cloud storage provider.
+
+        Args:
+            provider: Storage provider configuration
+
+        Returns:
+            Dict with 'success' and 'message' keys
+        """
+        try:
+            creds = self._decrypt_credentials(provider)
+            client = self._get_client(provider, creds)
+            client.head_bucket(Bucket=provider.bucket_name)
+            return {
+                "success": True,
+                "message": f"Connected to bucket '{provider.bucket_name}'",
+            }
+        except ClientError as exc:
+            error_code = exc.response.get("Error", {}).get("Code", "Unknown")
+            return {"success": False, "message": f"S3 error: {error_code}"}
+        except EndpointConnectionError:
+            return {"success": False, "message": "Cannot reach endpoint"}
+        except Exception as exc:
+            return {"success": False, "message": str(exc)}
+
+    def create_provider(
+        self,
+        name: str,
+        provider_type: str,
+        bucket_name: str,
+        access_key: str,
+        secret_key: str,
+        endpoint_url: Optional[str] = None,
+        prefix: str = "",
+        region: Optional[str] = None,
+        credentials_passphrase: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Create a new storage provider with encrypted credentials.
+
+        Args:
+            name: Display name
+            provider_type: 's3'
+            bucket_name: S3 bucket name
+            access_key: AWS access key ID
+            secret_key: AWS secret access key
+            endpoint_url: Custom endpoint for S3-compatible providers
+            prefix: Key prefix within bucket
+            region: AWS region
+            credentials_passphrase: Passphrase for encrypting credentials
+
+        Returns:
+            Provider dict (without credentials)
+        """
+        passphrase = credentials_passphrase or CREDENTIALS_PASSPHRASE
+        enc_service = BackupEncryptionService()
+
+        creds_json = json.dumps({"access_key": access_key, "secret_key": secret_key})
+
+        import os
+        from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+        from argon2.low_level import hash_secret_raw, Type
+
+        salt = os.urandom(16)
+        nonce = os.urandom(12)
+        key = hash_secret_raw(
+            secret=passphrase.encode("utf-8"),
+            salt=salt,
+            time_cost=3,
+            memory_cost=65536,
+            parallelism=1,
+            hash_len=32,
+            type=Type.ID,
+        )
+        aesgcm = AESGCM(key)
+        ciphertext = aesgcm.encrypt(nonce, creds_json.encode("utf-8"), None)
+
+        import base64
+        encrypted_creds = base64.b64encode(ciphertext).decode("utf-8")
+
+        with get_db_session() as session:
+            repo = BackupStorageProviderRepository(session)
+            provider = repo.create(
+                id=str(uuid.uuid4()),
+                name=name,
+                provider_type=provider_type,
+                endpoint_url=endpoint_url,
+                bucket_name=bucket_name,
+                prefix=prefix,
+                region=region,
+                credentials_encrypted=encrypted_creds,
+                credentials_salt=salt.hex(),
+                credentials_nonce=nonce.hex(),
+                enabled=True,
+            )
+            session.commit()
+            return self._serialize_provider(provider)
+
+    def list_providers(self) -> list:
+        """List all configured storage providers.
+
+        Returns:
+            List of provider dicts (without credentials)
+        """
+        with get_db_session() as session:
+            repo = BackupStorageProviderRepository(session)
+            providers = repo.list_all()
+            return [self._serialize_provider(p) for p in providers]
+
+    def delete_provider(self, provider_id: str) -> bool:
+        """Delete a storage provider.
+
+        Args:
+            provider_id: Provider ID to delete
+
+        Returns:
+            True if deleted, False if not found
+
+        Raises:
+            ValueError: If provider is referenced by backups
+        """
+        with get_db_session() as session:
+            from src.db.models import Backup
+            ref_count = session.query(Backup).filter_by(cloud_provider_id=provider_id).count()
+            if ref_count > 0:
+                raise ValueError(
+                    f"Cannot delete provider: {ref_count} backup(s) reference it"
+                )
+
+            repo = BackupStorageProviderRepository(session)
+            deleted = repo.delete(provider_id)
+            session.commit()
+            return deleted
+
+    def _decrypt_credentials(self, provider: BackupStorageProvider) -> Dict[str, str]:
+        """Decrypt stored credentials for a provider.
+
+        Args:
+            provider: Storage provider with encrypted credentials
+
+        Returns:
+            Dict with 'access_key' and 'secret_key'
+        """
+        import base64
+        from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+        from argon2.low_level import hash_secret_raw, Type
+
+        passphrase = CREDENTIALS_PASSPHRASE
+        salt = bytes.fromhex(provider.credentials_salt)
+        nonce = bytes.fromhex(provider.credentials_nonce)
+        ciphertext = base64.b64decode(provider.credentials_encrypted)
+
+        key = hash_secret_raw(
+            secret=passphrase.encode("utf-8"),
+            salt=salt,
+            time_cost=3,
+            memory_cost=65536,
+            parallelism=1,
+            hash_len=32,
+            type=Type.ID,
+        )
+        aesgcm = AESGCM(key)
+        plaintext = aesgcm.decrypt(nonce, ciphertext, None)
+        return json.loads(plaintext.decode("utf-8"))
+
+    @staticmethod
+    def _get_client(provider: BackupStorageProvider, creds: Dict[str, str]):
+        """Create a boto3 S3 client for the provider.
+
+        Args:
+            provider: Storage provider configuration
+            creds: Decrypted credentials dict
+
+        Returns:
+            boto3 S3 client
+        """
+        kwargs: Dict[str, Any] = {
+            "aws_access_key_id": creds["access_key"],
+            "aws_secret_access_key": creds["secret_key"],
+        }
+        if provider.endpoint_url:
+            kwargs["endpoint_url"] = provider.endpoint_url
+        if provider.region:
+            kwargs["region_name"] = provider.region
+
+        return boto3.client("s3", **kwargs)
+
+    @staticmethod
+    def _serialize_provider(provider: BackupStorageProvider) -> Dict[str, Any]:
+        """Serialize a provider to dict (never includes credentials)."""
+        return {
+            "id": provider.id,
+            "name": provider.name,
+            "provider_type": provider.provider_type,
+            "endpoint_url": provider.endpoint_url,
+            "bucket_name": provider.bucket_name,
+            "prefix": provider.prefix,
+            "region": provider.region,
+            "enabled": provider.enabled,
+        }

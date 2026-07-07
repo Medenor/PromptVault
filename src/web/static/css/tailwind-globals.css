@@ -174,14 +174,14 @@
   [tabindex]:focus-visible,
   th:focus-visible,
   tr:focus-visible,
-  [role="button"]:focus-visible,
-  [role="link"]:focus-visible,
-  [role="menuitem"]:focus-visible,
-  [role="tab"]:focus-visible,
-  [role="checkbox"]:focus-visible,
-  [role="radio"]:focus-visible,
-  [role="option"]:focus-visible {
-    outline: 3px solid #4A90E2;
+  [role='button']:focus-visible,
+  [role='link']:focus-visible,
+  [role='menuitem']:focus-visible,
+  [role='tab']:focus-visible,
+  [role='checkbox']:focus-visible,
+  [role='radio']:focus-visible,
+  [role='option']:focus-visible {
+    outline: 3px solid #4a90e2;
     outline-offset: 2px;
   }
 
@@ -192,7 +192,7 @@
   select:focus,
   textarea:focus,
   [tabindex]:focus {
-    outline: 3px solid #4A90E2;
+    outline: 3px solid #4a90e2;
     outline-offset: 2px;
   }
 
@@ -253,7 +253,7 @@
   .skip-link:focus,
   .skip-link:focus-visible {
     clip-path: unset;
-    outline: 3px solid #4A90E2;
+    outline: 3px solid #4a90e2;
     outline-offset: 2px;
   }
 
@@ -754,7 +754,7 @@
   /* Custom Scrollbar Styling */
   /* Webkit browsers (Chrome, Safari, Edge) */
   .custom-scrollbar::-webkit-scrollbar {
-    width: 8px;  /* width of vertical scrollbar */
+    width: 8px; /* width of vertical scrollbar */
     height: 8px; /* height of horizontal scrollbar */
   }
 

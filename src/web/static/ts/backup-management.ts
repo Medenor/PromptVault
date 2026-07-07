@@ -17,6 +17,40 @@ import { hideElement, showElement } from '@/utils/dom';
 import { apiFetch, apiGet, apiPost, APIRequestError } from '@/utils/api';
 import { announce } from '@/utils/a11y';
 
+interface CloudProvider {
+  id: string;
+  name: string;
+  provider_type: string;
+  endpoint_url: string | null;
+  bucket_name: string;
+  prefix: string;
+  region: string | null;
+  enabled: boolean;
+}
+
+interface EncryptionConfig {
+  is_enabled: boolean;
+  algorithm: string;
+  kdf: string;
+  key_version: number;
+  rotated_at: string | null;
+}
+
+interface BackupSchedule {
+  id: string;
+  enabled: boolean;
+  frequency: string;
+  hour: number;
+  minute: number;
+  day_of_week: number | null;
+  day_of_month: number | null;
+  retention_daily_count: number;
+  retention_weekly_count: number;
+  retention_monthly_count: number;
+  last_run_at: string | null;
+  last_run_status: string | null;
+}
+
 interface BackupItem {
   backup_id: string;
   timestamp: string;
@@ -199,6 +233,9 @@ function initializeBackupManagement(): void {
   void checkAdminAccess();
   void loadBackups();
   void loadBackupStats();
+  void loadSchedule();
+  void loadEncryptionConfig();
+  void loadCloudProviders();
 }
 
 function setupEventListeners(): void {
@@ -322,6 +359,11 @@ function setupEventListeners(): void {
 
   const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
   confirmDeleteBtn?.addEventListener('click', confirmDelete);
+
+  const frequencySelect = document.getElementById('schedule-frequency') as HTMLSelectElement | null;
+  frequencySelect?.addEventListener('change', () => {
+    updateDayFieldVisibility(frequencySelect.value);
+  });
 
   // Button keyboard activation (Enter and Space keys)
   // Enables keyboard accessibility for all buttons
@@ -842,6 +884,372 @@ async function checkAdminAccess(): Promise<void> {
   }
 }
 
+async function loadCloudProviders(): Promise<void> {
+  try {
+    const data = await apiGet<{ providers: CloudProvider[] }>('/api/backup-providers');
+    renderCloudProviders(data.providers || []);
+  } catch {
+    const list = document.getElementById('cloud-providers-list');
+    if (list) list.innerHTML = '<div class="text-gray-500 text-sm">No providers configured</div>';
+  }
+}
+
+function renderCloudProviders(providers: CloudProvider[]): void {
+  const list = document.getElementById('cloud-providers-list');
+  if (!list) return;
+
+  if (providers.length === 0) {
+    list.innerHTML = '<div class="text-gray-500 text-sm">No providers configured</div>';
+    return;
+  }
+
+  list.innerHTML = providers
+    .map(
+      (p) => `
+    <div class="flex items-center justify-between bg-gray-50 rounded-lg p-3 border border-gray-200">
+      <div>
+        <div class="font-medium text-gray-900">${p.name}</div>
+        <div class="text-xs text-gray-500">${p.provider_type} — ${p.bucket_name}${p.endpoint_url ? ` (${p.endpoint_url})` : ''}</div>
+      </div>
+      <div class="flex gap-2">
+        <button class="px-2 py-1 text-xs bg-green-600 hover:bg-green-700 text-white rounded" onclick="testCloudProvider('${p.id}')">Test</button>
+        <button class="px-2 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded" onclick="deleteCloudProvider('${p.id}')">Delete</button>
+      </div>
+    </div>`
+    )
+    .join('');
+}
+
+async function addCloudProvider(): Promise<void> {
+  const name = (document.getElementById('provider-name') as HTMLInputElement)?.value ?? '';
+  const endpoint = (document.getElementById('provider-endpoint') as HTMLInputElement)?.value ?? '';
+  const bucket = (document.getElementById('provider-bucket') as HTMLInputElement)?.value ?? '';
+  const region = (document.getElementById('provider-region') as HTMLInputElement)?.value ?? '';
+  const accessKey =
+    (document.getElementById('provider-access-key') as HTMLInputElement)?.value ?? '';
+  const secretKey =
+    (document.getElementById('provider-secret-key') as HTMLInputElement)?.value ?? '';
+  const statusEl = document.getElementById('cloud-status');
+
+  if (!name || !bucket || !accessKey || !secretKey) {
+    if (statusEl) {
+      statusEl.textContent = 'Name, bucket, access key, and secret key are required';
+      statusEl.className = 'text-sm text-red-600 mt-2';
+    }
+    return;
+  }
+
+  try {
+    await apiFetch('/api/backup-providers', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name,
+        provider_type: 's3',
+        endpoint_url: endpoint || null,
+        bucket_name: bucket,
+        region: region || null,
+        access_key: accessKey,
+        secret_key: secretKey,
+      }),
+    });
+    if (statusEl) {
+      statusEl.textContent = 'Provider added successfully';
+      statusEl.className = 'text-sm text-green-600 mt-2';
+    }
+    void loadCloudProviders();
+  } catch (error) {
+    reportError(BACKUP_COMPONENT, 'addCloudProvider', error);
+    if (statusEl) {
+      statusEl.textContent = 'Failed to add provider';
+      statusEl.className = 'text-sm text-red-600 mt-2';
+    }
+  }
+}
+
+async function testCloudProvider(providerId: string): Promise<void> {
+  const statusEl = document.getElementById('cloud-status');
+  try {
+    const result = await apiPost<{ success: boolean; message: string }>(
+      `/api/backup-providers/${providerId}/test`
+    );
+    if (statusEl) {
+      statusEl.textContent = result.success ? `✓ ${result.message}` : `✗ ${result.message}`;
+      statusEl.className = `text-sm mt-2 ${result.success ? 'text-green-600' : 'text-red-600'}`;
+    }
+  } catch (error) {
+    reportError(BACKUP_COMPONENT, 'testCloudProvider', error, { providerId });
+    if (statusEl) {
+      statusEl.textContent = 'Connection test failed';
+      statusEl.className = 'text-sm text-red-600 mt-2';
+    }
+  }
+}
+
+async function deleteCloudProvider(providerId: string): Promise<void> {
+  const statusEl = document.getElementById('cloud-status');
+  try {
+    await apiFetch(`/api/backup-providers/${providerId}`, { method: 'DELETE' });
+    if (statusEl) {
+      statusEl.textContent = 'Provider deleted';
+      statusEl.className = 'text-sm text-green-600 mt-2';
+    }
+    void loadCloudProviders();
+  } catch (error) {
+    reportError(BACKUP_COMPONENT, 'deleteCloudProvider', error, { providerId });
+    if (statusEl) {
+      statusEl.textContent = 'Failed to delete provider';
+      statusEl.className = 'text-sm text-red-600 mt-2';
+    }
+  }
+}
+
+async function loadEncryptionConfig(): Promise<void> {
+  try {
+    const config = await apiGet<EncryptionConfig>('/api/backup-encryption');
+    const enabledEl = document.getElementById('encryption-enabled') as HTMLInputElement | null;
+    const infoEl = document.getElementById('encryption-info');
+    const rotationEl = document.getElementById('encryption-key-rotation');
+
+    if (enabledEl) enabledEl.checked = config.is_enabled;
+    if (infoEl) {
+      infoEl.textContent = `Algorithm: ${config.algorithm} | KDF: ${config.kdf} | Key version: ${config.key_version}${config.rotated_at ? ` | Rotated: ${new Date(config.rotated_at).toLocaleString()}` : ''}`;
+    }
+    if (rotationEl) {
+      if (config.is_enabled) {
+        rotationEl.classList.remove('hidden');
+      } else {
+        rotationEl.classList.add('hidden');
+      }
+    }
+  } catch {
+    // Encryption not configured
+  }
+}
+
+async function saveEncryptionConfig(): Promise<void> {
+  const enabledEl = document.getElementById('encryption-enabled') as HTMLInputElement | null;
+  const passphraseEl = document.getElementById('encryption-passphrase') as HTMLInputElement | null;
+  const statusEl = document.getElementById('encryption-status');
+
+  const isEnabled = enabledEl?.checked ?? false;
+  const body: Record<string, unknown> = { is_enabled: isEnabled };
+
+  if (isEnabled) {
+    const passphrase = passphraseEl?.value ?? '';
+    if (!passphrase) {
+      if (statusEl) {
+        statusEl.textContent = 'Passphrase required to enable encryption';
+        statusEl.className = 'text-sm text-red-600 mt-2';
+      }
+      return;
+    }
+    body.passphrase = passphrase;
+  }
+
+  try {
+    await apiFetch<EncryptionConfig>('/api/backup-encryption', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (statusEl) {
+      statusEl.textContent = isEnabled ? 'Encryption enabled' : 'Encryption disabled';
+      statusEl.className = 'text-sm text-green-600 mt-2';
+    }
+    if (passphraseEl) passphraseEl.value = '';
+    void loadEncryptionConfig();
+  } catch (error) {
+    reportError(BACKUP_COMPONENT, 'saveEncryptionConfig', error);
+    if (statusEl) {
+      statusEl.textContent = 'Failed to save encryption config';
+      statusEl.className = 'text-sm text-red-600 mt-2';
+    }
+  }
+}
+
+async function rotateEncryptionKey(): Promise<void> {
+  const oldPassphraseEl = document.getElementById(
+    'encryption-old-passphrase'
+  ) as HTMLInputElement | null;
+  const newPassphraseEl = document.getElementById(
+    'encryption-new-passphrase'
+  ) as HTMLInputElement | null;
+  const statusEl = document.getElementById('encryption-status');
+
+  const oldPassphrase = oldPassphraseEl?.value ?? '';
+  const newPassphrase = newPassphraseEl?.value ?? '';
+
+  if (!oldPassphrase || !newPassphrase) {
+    if (statusEl) {
+      statusEl.textContent = 'Both old and new passphrases required for key rotation';
+      statusEl.className = 'text-sm text-red-600 mt-2';
+    }
+    return;
+  }
+
+  try {
+    await apiFetch<EncryptionConfig>('/api/backup-encryption', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        rotate_key: true,
+        old_passphrase: oldPassphrase,
+        new_passphrase: newPassphrase,
+      }),
+    });
+    if (statusEl) {
+      statusEl.textContent = 'Key rotated successfully';
+      statusEl.className = 'text-sm text-green-600 mt-2';
+    }
+    if (oldPassphraseEl) oldPassphraseEl.value = '';
+    if (newPassphraseEl) newPassphraseEl.value = '';
+    void loadEncryptionConfig();
+  } catch (error) {
+    reportError(BACKUP_COMPONENT, 'rotateEncryptionKey', error);
+    if (statusEl) {
+      statusEl.textContent = 'Key rotation failed';
+      statusEl.className = 'text-sm text-red-600 mt-2';
+    }
+  }
+}
+
+async function loadSchedule(): Promise<void> {
+  try {
+    const schedule = await apiGet<BackupSchedule>('/api/backup-schedule');
+    populateScheduleForm(schedule);
+  } catch {
+    // No schedule configured yet — that's fine
+  }
+}
+
+function populateScheduleForm(schedule: BackupSchedule): void {
+  const enabledEl = document.getElementById('schedule-enabled') as HTMLInputElement | null;
+  const frequencyEl = document.getElementById('schedule-frequency') as HTMLSelectElement | null;
+  const hourEl = document.getElementById('schedule-hour') as HTMLInputElement | null;
+  const minuteEl = document.getElementById('schedule-minute') as HTMLInputElement | null;
+  const dayEl = document.getElementById('schedule-day') as HTMLInputElement | null;
+  const dayLabel = document.getElementById('schedule-day-label');
+  const retentionDaily = document.getElementById(
+    'retention-daily-count'
+  ) as HTMLInputElement | null;
+  const retentionWeekly = document.getElementById(
+    'retention-weekly-count'
+  ) as HTMLInputElement | null;
+  const retentionMonthly = document.getElementById(
+    'retention-monthly-count'
+  ) as HTMLInputElement | null;
+  const lastRun = document.getElementById('schedule-last-run');
+
+  if (enabledEl) enabledEl.checked = schedule.enabled;
+  if (frequencyEl) frequencyEl.value = schedule.frequency;
+  if (hourEl) hourEl.value = String(schedule.hour);
+  if (minuteEl) minuteEl.value = String(schedule.minute);
+  if (retentionDaily) retentionDaily.value = String(schedule.retention_daily_count);
+  if (retentionWeekly) retentionWeekly.value = String(schedule.retention_weekly_count);
+  if (retentionMonthly) retentionMonthly.value = String(schedule.retention_monthly_count);
+
+  updateDayFieldVisibility(schedule.frequency);
+
+  if (schedule.frequency === 'weekly' && dayEl) {
+    dayEl.value = String(schedule.day_of_week ?? 0);
+    if (dayLabel) dayLabel.textContent = 'Day of week (0=Mon)';
+    if (dayEl) dayEl.max = '6';
+  } else if (schedule.frequency === 'monthly' && dayEl) {
+    dayEl.value = String(schedule.day_of_month ?? 1);
+    if (dayLabel) dayLabel.textContent = 'Day of month';
+    if (dayEl) {
+      dayEl.min = '1';
+      dayEl.max = '31';
+    }
+  }
+
+  if (lastRun && schedule.last_run_at) {
+    lastRun.classList.remove('hidden');
+    const status = schedule.last_run_status === 'success' ? '✓' : '✗';
+    lastRun.textContent = `Last run: ${new Date(schedule.last_run_at).toLocaleString()} (${status} ${schedule.last_run_status})`;
+  }
+}
+
+function updateDayFieldVisibility(frequency: string): void {
+  const dayContainer = document.getElementById('schedule-day-container');
+  const dayLabel = document.getElementById('schedule-day-label');
+  const dayEl = document.getElementById('schedule-day') as HTMLInputElement | null;
+
+  if (!dayContainer || !dayEl) return;
+
+  if (frequency === 'daily') {
+    dayContainer.classList.add('hidden');
+  } else {
+    dayContainer.classList.remove('hidden');
+    if (frequency === 'weekly') {
+      if (dayLabel) dayLabel.textContent = 'Day of week (0=Mon)';
+      dayEl.min = '0';
+      dayEl.max = '6';
+      dayEl.value = '0';
+    } else if (frequency === 'monthly') {
+      if (dayLabel) dayLabel.textContent = 'Day of month';
+      dayEl.min = '1';
+      dayEl.max = '31';
+      dayEl.value = '1';
+    }
+  }
+}
+
+async function saveSchedule(): Promise<void> {
+  const enabledEl = document.getElementById('schedule-enabled') as HTMLInputElement | null;
+  const frequencyEl = document.getElementById('schedule-frequency') as HTMLSelectElement | null;
+  const hourEl = document.getElementById('schedule-hour') as HTMLInputElement | null;
+  const minuteEl = document.getElementById('schedule-minute') as HTMLInputElement | null;
+  const dayEl = document.getElementById('schedule-day') as HTMLInputElement | null;
+  const retentionDaily = document.getElementById(
+    'retention-daily-count'
+  ) as HTMLInputElement | null;
+  const retentionWeekly = document.getElementById(
+    'retention-weekly-count'
+  ) as HTMLInputElement | null;
+  const retentionMonthly = document.getElementById(
+    'retention-monthly-count'
+  ) as HTMLInputElement | null;
+  const statusEl = document.getElementById('schedule-status');
+
+  const frequency = frequencyEl?.value ?? 'daily';
+  const body: Record<string, unknown> = {
+    enabled: enabledEl?.checked ?? false,
+    frequency,
+    hour: Number(hourEl?.value ?? 2),
+    minute: Number(minuteEl?.value ?? 0),
+    retention_daily_count: Number(retentionDaily?.value ?? 7),
+    retention_weekly_count: Number(retentionWeekly?.value ?? 4),
+    retention_monthly_count: Number(retentionMonthly?.value ?? 12),
+  };
+
+  if (frequency === 'weekly') {
+    body.day_of_week = Number(dayEl?.value ?? 0);
+  } else if (frequency === 'monthly') {
+    body.day_of_month = Number(dayEl?.value ?? 1);
+  }
+
+  try {
+    const result = await apiFetch<BackupSchedule>('/api/backup-schedule', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (statusEl) {
+      statusEl.textContent = 'Schedule saved successfully';
+      statusEl.className = 'text-sm text-green-600 mt-2';
+    }
+    populateScheduleForm(result);
+  } catch (error) {
+    reportError(BACKUP_COMPONENT, 'saveSchedule', error);
+    if (statusEl) {
+      statusEl.textContent = 'Failed to save schedule';
+      statusEl.className = 'text-sm text-red-600 mt-2';
+    }
+  }
+}
+
 function exposeGlobalHandlers(): void {
   const backupWindow = window as Window & {
     createBackup?: () => Promise<void>;
@@ -855,6 +1263,12 @@ function exposeGlobalHandlers(): void {
     showDeleteModal?: (backupId: string) => void;
     hideDeleteModal?: () => void;
     confirmDelete?: () => Promise<void>;
+    saveSchedule?: () => Promise<void>;
+    saveEncryptionConfig?: () => Promise<void>;
+    rotateEncryptionKey?: () => Promise<void>;
+    addCloudProvider?: () => Promise<void>;
+    testCloudProvider?: (id: string) => Promise<void>;
+    deleteCloudProvider?: (id: string) => Promise<void>;
   };
 
   backupWindow.createBackup = createBackup;
@@ -868,6 +1282,12 @@ function exposeGlobalHandlers(): void {
   backupWindow.showDeleteModal = showDeleteModal;
   backupWindow.hideDeleteModal = hideDeleteModal;
   backupWindow.confirmDelete = confirmDelete;
+  backupWindow.saveSchedule = saveSchedule;
+  backupWindow.saveEncryptionConfig = saveEncryptionConfig;
+  backupWindow.rotateEncryptionKey = rotateEncryptionKey;
+  backupWindow.addCloudProvider = addCloudProvider;
+  backupWindow.testCloudProvider = testCloudProvider;
+  backupWindow.deleteCloudProvider = deleteCloudProvider;
 }
 
 initI18n(() => {
