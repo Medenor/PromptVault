@@ -644,6 +644,7 @@ class BackupService:
         Returns:
             Optional[Dict[str, Any]]: Backup metadata if found, None otherwise
         """
+        self._validate_backup_id(backup_id)
         try:
             with get_db_session() as session:
                 backup = session.query(Backup).filter_by(id=backup_id).first()
@@ -689,6 +690,7 @@ class BackupService:
         Returns:
             bool: True if successful
         """
+        self._validate_backup_id(backup_id)
         try:
             with get_db_session() as session:
                 backup = session.query(Backup).filter_by(id=backup_id).first()
@@ -1011,10 +1013,29 @@ class BackupService:
             )
             return 0
 
+    _BACKUP_ID_RE = re.compile(r'^[A-Za-z0-9_-]{1,128}$')
+
+    def _validate_backup_id(self, backup_id: str) -> None:
+        """Reject backup_id values that could cause path traversal."""
+        if not self._BACKUP_ID_RE.match(backup_id):
+            raise BackupError(
+                "Invalid backup ID",
+                context={"backup_id": backup_id},
+                http_status=400,
+            )
+
     def _metadata_file_path(self, backup_id: str) -> str:
         """Return on-disk path for backup metadata file."""
         filename = f"{backup_id}_metadata.json"
-        return os.path.join(self.backups_dir, filename)
+        resolved = os.path.realpath(os.path.join(self.backups_dir, filename))
+        backups_dir_real = os.path.realpath(self.backups_dir)
+        if not resolved.startswith(backups_dir_real + os.sep):
+            raise BackupError(
+                "Invalid backup ID",
+                context={"backup_id": backup_id},
+                http_status=400,
+            )
+        return resolved
 
     def _write_metadata_file(self, metadata: Dict[str, Any]) -> None:
         """Persist metadata alongside backup for DB-restore resilience."""

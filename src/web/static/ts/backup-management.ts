@@ -446,26 +446,36 @@ function renderBackupList(backups: BackupItem[]): void {
   container.innerHTML = backupItems;
 }
 
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function createBackupItem(backup: BackupItem): string {
   const timestamp = new Date(backup.timestamp).toLocaleString();
   const size = formatBytes(backup.size_bytes);
   const isCompressed = backup.compressed ? ' (compressed)' : '';
   const compressionIcon = backup.compressed ? '🗜️' : '📄';
-  const createdBy = backup.created_by || 'unknown';
+  const createdBy = escapeHtml(backup.created_by || 'unknown');
+  const backupId = escapeHtml(backup.backup_id);
 
   return `
-        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200 hover:border-blue-300 transition" data-id="${backup.backup_id}">
+        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200 hover:border-blue-300 transition" data-id="${backupId}">
             <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-3 md:gap-0 mb-3">
-                <h4 class="font-semibold text-gray-900 md:min-w-0">${backup.backup_id}${isCompressed}</h4>
+                <h4 class="font-semibold text-gray-900 md:min-w-0">${backupId}${isCompressed}</h4>
                 <div class="flex gap-2 flex-shrink-0">
-                    <button class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-medium transition whitespace-nowrap" onclick="showRestoreModal('${backup.backup_id}')">Restore</button>
-                    <button class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-medium transition whitespace-nowrap" onclick="showDeleteModal('${backup.backup_id}')">Delete</button>
+                    <button class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-medium transition whitespace-nowrap" data-backup-id="${backupId}" onclick="showRestoreModal(this.dataset.backupId)">Restore</button>
+                    <button class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-medium transition whitespace-nowrap" data-backup-id="${backupId}" onclick="showDeleteModal(this.dataset.backupId)">Delete</button>
                 </div>
             </div>
             <div class="space-y-1">
                 <div class="flex items-center justify-between text-sm text-gray-600">
-                    <span>${timestamp}</span>
-                    <span>${compressionIcon} ${size}</span>
+                    <span>${escapeHtml(timestamp)}</span>
+                    <span>${compressionIcon} ${escapeHtml(size)}</span>
                 </div>
                 <div class="text-sm text-gray-600">${backup.prompt_count} prompts</div>
                 <div class="text-xs text-gray-500">Created by: ${createdBy}</div>
@@ -904,19 +914,21 @@ function renderCloudProviders(providers: CloudProvider[]): void {
   }
 
   list.innerHTML = providers
-    .map(
-      (p) => `
+    .map((p) => {
+      const pid = escapeHtml(p.id);
+      const endpointPart = p.endpoint_url ? ` (${escapeHtml(p.endpoint_url)})` : '';
+      return `
     <div class="flex items-center justify-between bg-gray-50 rounded-lg p-3 border border-gray-200">
       <div>
-        <div class="font-medium text-gray-900">${p.name}</div>
-        <div class="text-xs text-gray-500">${p.provider_type} — ${p.bucket_name}${p.endpoint_url ? ` (${p.endpoint_url})` : ''}</div>
+        <div class="font-medium text-gray-900">${escapeHtml(p.name)}</div>
+        <div class="text-xs text-gray-500">${escapeHtml(p.provider_type)} — ${escapeHtml(p.bucket_name)}${endpointPart}</div>
       </div>
       <div class="flex gap-2">
-        <button class="px-2 py-1 text-xs bg-green-600 hover:bg-green-700 text-white rounded" onclick="testCloudProvider('${p.id}')">Test</button>
-        <button class="px-2 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded" onclick="deleteCloudProvider('${p.id}')">Delete</button>
+        <button class="px-2 py-1 text-xs bg-green-600 hover:bg-green-700 text-white rounded" data-provider-id="${pid}" onclick="testCloudProvider(this.dataset.providerId)">Test</button>
+        <button class="px-2 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded" data-provider-id="${pid}" onclick="deleteCloudProvider(this.dataset.providerId)">Delete</button>
       </div>
-    </div>`
-    )
+    </div>`;
+    })
     .join('');
 }
 

@@ -281,8 +281,12 @@ async def get_backup_stats(
 
 
 @router.get("/api/backup-schedule")
-async def get_backup_schedule():
+async def get_backup_schedule(
+    current_user: Optional[User] = Depends(get_current_user_or_none),
+):
     """Get current backup schedule configuration."""
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Authentication required", headers={"WWW-Authenticate": "Bearer"})
     from src.services.backup_scheduler_service import BackupSchedulerService
 
     service = BackupSchedulerService(backup_service=_backup_service)
@@ -351,8 +355,12 @@ async def update_backup_schedule(
 
 
 @router.get("/api/backup-encryption")
-async def get_encryption_config():
+async def get_encryption_config(
+    current_user: Optional[User] = Depends(get_current_user_or_none),
+):
     """Get encryption configuration (never returns passphrase)."""
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Authentication required", headers={"WWW-Authenticate": "Bearer"})
     from src.services.backup_encryption_service import BackupEncryptionService
 
     service = BackupEncryptionService()
@@ -397,8 +405,12 @@ async def update_encryption_config(
 
 
 @router.get("/api/backup-providers")
-async def list_backup_providers():
+async def list_backup_providers(
+    current_user: Optional[User] = Depends(get_current_user_or_none),
+):
     """List configured cloud storage providers."""
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Authentication required", headers={"WWW-Authenticate": "Bearer"})
     from src.services.backup_cloud_service import BackupCloudService
     service = BackupCloudService()
     providers = service.list_providers()
@@ -433,7 +445,6 @@ async def create_backup_provider(
             endpoint_url=body.get("endpoint_url"),
             prefix=body.get("prefix", ""),
             region=body.get("region"),
-            credentials_passphrase=body.get("credentials_passphrase"),
         )
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
@@ -482,8 +493,12 @@ async def test_backup_provider(
 
 
 @router.get("/api/backup-monitoring")
-async def get_backup_monitoring():
+async def get_backup_monitoring(
+    current_user: Optional[User] = Depends(get_current_user_or_none),
+):
     """Get backup monitoring dashboard statistics."""
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Authentication required", headers={"WWW-Authenticate": "Bearer"})
     from src.services.backup_audit_service import BackupAuditService
     service = BackupAuditService()
     return service.get_dashboard_stats()
@@ -495,8 +510,11 @@ async def get_backup_audit_log(
     outcome: Optional[str] = None,
     limit: int = 50,
     offset: int = 0,
+    current_user: Optional[User] = Depends(get_current_user_or_none),
 ):
     """Get paginated backup audit log entries."""
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Authentication required", headers={"WWW-Authenticate": "Bearer"})
     from src.services.backup_audit_service import BackupAuditService
     service = BackupAuditService()
     return service.get_log(operation=operation, outcome=outcome, limit=limit, offset=offset)

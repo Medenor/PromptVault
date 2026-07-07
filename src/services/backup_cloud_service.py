@@ -138,7 +138,6 @@ class BackupCloudService:
         endpoint_url: Optional[str] = None,
         prefix: str = "",
         region: Optional[str] = None,
-        credentials_passphrase: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Create a new storage provider with encrypted credentials.
 
@@ -151,7 +150,6 @@ class BackupCloudService:
             endpoint_url: Custom endpoint for S3-compatible providers
             prefix: Key prefix within bucket
             region: AWS region
-            credentials_passphrase: Passphrase for encrypting credentials
 
         Returns:
             Provider dict (without credentials)
@@ -164,7 +162,7 @@ class BackupCloudService:
                 "Google Drive and Dropbox support is planned for a future release."
             )
 
-        passphrase = credentials_passphrase or _get_credentials_passphrase()
+        passphrase = _get_credentials_passphrase()
 
         creds_json = json.dumps({"access_key": access_key, "secret_key": secret_key})
         salt, nonce, encrypted_creds = self._encrypt_credentials(creds_json, passphrase)
