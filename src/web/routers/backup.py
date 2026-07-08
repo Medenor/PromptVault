@@ -54,7 +54,7 @@ async def get_backups(
     kind: Optional[str] = None,
     limit: int = 50,
     offset: int = 0,
-    current_user: Optional[User] = Depends(get_current_user_or_none),
+    _auth: Optional[User] = Depends(get_current_user_or_none),
 ):
     """Get list of all backups with optional filters."""
     service = _get_backup_service()
@@ -119,7 +119,7 @@ async def create_manual_backup(
 async def restore_preview(
     backup_id: str,
     request: Request,
-    current_user: Optional[User] = Depends(get_admin_or_bypass),
+    _auth: Optional[User] = Depends(get_admin_or_bypass),
 ):
     """Preview what would change if this backup were restored."""
 
@@ -190,7 +190,7 @@ async def restore_backup(
 @router.delete("/api/backups/{backup_id}")
 async def delete_backup(
     backup_id: str,
-    current_user: Optional[User] = Depends(get_admin_or_bypass),
+    _auth: Optional[User] = Depends(get_admin_or_bypass),
 ):
     """Delete a specific backup."""
     service = _get_backup_service()
@@ -212,10 +212,33 @@ async def delete_backup(
         )
 
 
+@router.delete("/api/backups")
+async def delete_all_backups(
+    _auth: Optional[User] = Depends(get_admin_or_bypass),
+):
+    """Delete all backups."""
+    service = _get_backup_service()
+    backups = service.list_backups()
+    deleted = []
+    failed = []
+    for b in backups:
+        backup_id = b.get("backup_id")
+        if not backup_id:
+            continue
+        try:
+            if service.delete_backup(backup_id):
+                deleted.append(backup_id)
+            else:
+                failed.append(backup_id)
+        except Exception:
+            failed.append(backup_id)
+    return {"deleted": deleted, "failed": failed}
+
+
 @router.post("/api/backups/compress")
 async def compress_backups(
     days_threshold: int = Form(7),
-    current_user: Optional[User] = Depends(get_admin_or_bypass),
+    _auth: Optional[User] = Depends(get_admin_or_bypass),
 ):
     """Compress old backups with validation."""
     service = _get_backup_service()
@@ -246,7 +269,7 @@ async def compress_backups(
 
 @router.get("/api/backups/stats")
 async def get_backup_stats(
-    current_user: Optional[User] = Depends(get_current_user_or_none),
+    _auth: Optional[User] = Depends(get_current_user_or_none),
 ):
     """Get backup statistics."""
     service = _get_backup_service()
@@ -256,7 +279,7 @@ async def get_backup_stats(
 
 @router.get("/api/backup-schedule")
 async def get_backup_schedule(
-    current_user: Optional[User] = Depends(get_current_user_or_none),
+    _auth: Optional[User] = Depends(get_current_user_or_none),
 ):
     """Get current backup schedule configuration."""
     from src.services.backup_scheduler_service import BackupSchedulerService
@@ -271,7 +294,7 @@ async def get_backup_schedule(
 @router.put("/api/backup-schedule")
 async def update_backup_schedule(
     request: Request,
-    current_user: Optional[User] = Depends(get_admin_or_bypass),
+    _auth: Optional[User] = Depends(get_admin_or_bypass),
 ):
     """Create or update the backup schedule."""
 
@@ -322,7 +345,7 @@ async def update_backup_schedule(
 
 @router.get("/api/backup-encryption")
 async def get_encryption_config(
-    current_user: Optional[User] = Depends(get_current_user_or_none),
+    _auth: Optional[User] = Depends(get_current_user_or_none),
 ):
     """Get encryption configuration (never returns passphrase)."""
     from src.services.backup_encryption_service import BackupEncryptionService
@@ -337,7 +360,7 @@ async def get_encryption_config(
 @router.put("/api/backup-encryption")
 async def update_encryption_config(
     request: Request,
-    current_user: Optional[User] = Depends(get_admin_or_bypass),
+    _auth: Optional[User] = Depends(get_admin_or_bypass),
 ):
     """Enable/disable encryption or rotate key."""
 
@@ -368,7 +391,7 @@ async def update_encryption_config(
 
 @router.get("/api/backup-providers")
 async def list_backup_providers(
-    current_user: Optional[User] = Depends(get_current_user_or_none),
+    _auth: Optional[User] = Depends(get_current_user_or_none),
 ):
     """List configured cloud storage providers."""
     from src.services.backup_cloud_service import BackupCloudService
@@ -380,7 +403,7 @@ async def list_backup_providers(
 @router.post("/api/backup-providers", status_code=201)
 async def create_backup_provider(
     request: Request,
-    current_user: Optional[User] = Depends(get_admin_or_bypass),
+    _auth: Optional[User] = Depends(get_admin_or_bypass),
 ):
     """Configure a new cloud storage provider."""
 
@@ -411,7 +434,7 @@ async def create_backup_provider(
 @router.delete("/api/backup-providers/{provider_id}")
 async def delete_backup_provider(
     provider_id: str,
-    current_user: Optional[User] = Depends(get_admin_or_bypass),
+    _auth: Optional[User] = Depends(get_admin_or_bypass),
 ):
     """Remove a cloud storage provider."""
 
@@ -429,7 +452,7 @@ async def delete_backup_provider(
 @router.post("/api/backup-providers/{provider_id}/test")
 async def test_backup_provider(
     provider_id: str,
-    current_user: Optional[User] = Depends(get_admin_or_bypass),
+    _auth: Optional[User] = Depends(get_admin_or_bypass),
 ):
     """Test connectivity to a cloud storage provider."""
 
@@ -448,7 +471,7 @@ async def test_backup_provider(
 
 @router.get("/api/backup-monitoring")
 async def get_backup_monitoring(
-    current_user: Optional[User] = Depends(get_current_user_or_none),
+    _auth: Optional[User] = Depends(get_current_user_or_none),
 ):
     """Get backup monitoring dashboard statistics."""
     from src.services.backup_audit_service import BackupAuditService
@@ -462,7 +485,7 @@ async def get_backup_audit_log(
     outcome: Optional[str] = None,
     limit: int = 50,
     offset: int = 0,
-    current_user: Optional[User] = Depends(get_current_user_or_none),
+    _auth: Optional[User] = Depends(get_current_user_or_none),
 ):
     """Get paginated backup audit log entries."""
     from src.services.backup_audit_service import BackupAuditService
@@ -473,7 +496,7 @@ async def get_backup_audit_log(
 @router.post("/api/backups/{backup_id}/verify")
 async def verify_backup(
     backup_id: str,
-    current_user: Optional[User] = Depends(get_admin_or_bypass),
+    _auth: Optional[User] = Depends(get_admin_or_bypass),
 ):
     """Verify backup integrity by recomputing SHA-256 checksum."""
 
@@ -520,7 +543,7 @@ async def verify_backup(
 async def update_backup_tags(
     backup_id: str,
     request: Request,
-    current_user: Optional[User] = Depends(get_admin_or_bypass),
+    _auth: Optional[User] = Depends(get_admin_or_bypass),
 ):
     """Add or replace tags on a backup."""
 
@@ -550,7 +573,7 @@ async def update_backup_tags(
 @router.post("/api/backups/cleanup")
 async def cleanup_backups_retention(
     request: Request,
-    current_user: Optional[User] = Depends(get_admin_or_bypass),
+    _auth: Optional[User] = Depends(get_admin_or_bypass),
 ):
     """Run retention cleanup (or dry-run) based on schedule retention policy."""
     body = await request.json()
