@@ -178,6 +178,15 @@ def upgrade() -> None:
             sa.Column("verification_nonce", sa.String(24), nullable=True),
             sa.Column("verification_ciphertext", sa.Text(), nullable=True),
         )
+    else:
+        encryption_columns = [
+            ("verification_salt", "ALTER TABLE encryption_key_configs ADD COLUMN verification_salt VARCHAR(32)"),
+            ("verification_nonce", "ALTER TABLE encryption_key_configs ADD COLUMN verification_nonce VARCHAR(24)"),
+            ("verification_ciphertext", "ALTER TABLE encryption_key_configs ADD COLUMN verification_ciphertext TEXT"),
+        ]
+        for col_name, ddl in encryption_columns:
+            if not _column_exists(conn, "encryption_key_configs", col_name):
+                conn.execute(sa.text(ddl))
 
 
 def downgrade() -> None:
