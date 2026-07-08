@@ -272,7 +272,22 @@ async def get_backup_schedule():
     service = BackupSchedulerService(backup_service=_backup_service)
     schedule = service.get_schedule()
     if schedule is None:
-        return JSONResponse(status_code=404, content={"error": "No schedule configured"})
+        return {
+            "id": None,
+            "enabled": False,
+            "frequency": "daily",
+            "hour": 2,
+            "minute": 0,
+            "day_of_week": None,
+            "day_of_month": None,
+            "retention_daily_count": 7,
+            "retention_weekly_count": 4,
+            "retention_monthly_count": 12,
+            "encrypt_scheduled_backups": False,
+            "cloud_provider_id": None,
+            "last_run_at": None,
+            "last_run_status": None,
+        }
     return schedule
 
 
