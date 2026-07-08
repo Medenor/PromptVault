@@ -662,6 +662,43 @@ async function confirmDelete(): Promise<void> {
   }
 }
 
+function showDeleteAllModal(): void {
+  const modal = document.getElementById('delete-all-modal') as HTMLElement | null;
+  showElement(modal);
+  const firstFocusable = modal?.querySelector('h2, button') as HTMLElement | null;
+  firstFocusable?.focus();
+}
+
+function hideDeleteAllModal(): void {
+  hideElement(document.getElementById('delete-all-modal') as HTMLElement | null);
+}
+
+async function confirmDeleteAll(): Promise<void> {
+  hideDeleteAllModal();
+  showProgress('backup-progress', 'Deleting all backups...');
+
+  try {
+    const result = await apiFetch<{ deleted: string[]; failed: string[] }>('/api/backups', {
+      method: 'DELETE',
+    });
+
+    const count = result.deleted?.length ?? 0;
+    const failCount = result.failed?.length ?? 0;
+    if (failCount > 0) {
+      showStatus('backup-status', `Deleted ${count} backup(s), ${failCount} failed.`, 'error');
+    } else {
+      showStatus('backup-status', `Deleted ${count} backup(s).`, 'success');
+    }
+    void loadBackups();
+    void loadBackupStats();
+  } catch (error) {
+    reportError(BACKUP_COMPONENT, 'deleteAllBackups', error, {});
+    showStatus('backup-status', t('backup.deleteError'), 'error');
+  } finally {
+    hideProgress('backup-progress');
+  }
+}
+
 async function cleanupBackups(): Promise<void> {
   const retentionInput = document.getElementById('retention-days') as HTMLInputElement | null;
   const retentionDays = retentionInput?.value ?? '';
@@ -1275,6 +1312,9 @@ function exposeGlobalHandlers(): void {
     showDeleteModal?: (backupId: string) => void;
     hideDeleteModal?: () => void;
     confirmDelete?: () => Promise<void>;
+    showDeleteAllModal?: () => void;
+    hideDeleteAllModal?: () => void;
+    confirmDeleteAll?: () => Promise<void>;
     saveSchedule?: () => Promise<void>;
     saveEncryptionConfig?: () => Promise<void>;
     rotateEncryptionKey?: () => Promise<void>;
@@ -1294,6 +1334,9 @@ function exposeGlobalHandlers(): void {
   backupWindow.showDeleteModal = showDeleteModal;
   backupWindow.hideDeleteModal = hideDeleteModal;
   backupWindow.confirmDelete = confirmDelete;
+  backupWindow.showDeleteAllModal = showDeleteAllModal;
+  backupWindow.hideDeleteAllModal = hideDeleteAllModal;
+  backupWindow.confirmDeleteAll = confirmDeleteAll;
   backupWindow.saveSchedule = saveSchedule;
   backupWindow.saveEncryptionConfig = saveEncryptionConfig;
   backupWindow.rotateEncryptionKey = rotateEncryptionKey;
