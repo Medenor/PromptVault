@@ -14,7 +14,7 @@ import '@/form-validation';
 import { changeLanguage, initI18n, t, updateStaticTranslations } from '@/utils/i18n';
 import type { TranslationKey } from '@/types/i18n';
 import { hideElement, showElement } from '@/utils/dom';
-import { apiFetch, apiGet, apiPost, APIRequestError } from '@/utils/api';
+import { apiFetch, apiGet, apiPost, apiPostForm, APIRequestError } from '@/utils/api';
 import { announce } from '@/utils/a11y';
 
 interface CloudProvider {
@@ -511,10 +511,7 @@ async function createBackup(): Promise<void> {
     const formData = new FormData();
     formData.append('name', backupName);
 
-    const result = await apiFetch<BackupResponse>('/api/backups', {
-      method: 'POST',
-      body: formData,
-    });
+    const result = await apiPostForm<BackupResponse>('/api/backups', formData);
 
     if (result.success) {
       showStatus('backup-status', `Backup created successfully: ${result.backup_id}`, 'success');
@@ -729,10 +726,7 @@ async function cleanupBackups(): Promise<void> {
     const formData = new FormData();
     formData.append('retention_days', retentionDays);
 
-    const result = await apiFetch<CleanupResponse>('/api/backups/cleanup', {
-      method: 'POST',
-      body: formData,
-    });
+    const result = await apiPostForm<CleanupResponse>('/api/backups/cleanup', formData);
 
     if (result.success) {
       showStatus(
@@ -783,10 +777,7 @@ async function compressBackups(): Promise<void> {
     const formData = new FormData();
     formData.append('days_threshold', compressDays);
 
-    const result = await apiFetch<CompressResponse>('/api/backups/compress', {
-      method: 'POST',
-      body: formData,
-    });
+    const result = await apiPostForm<CompressResponse>('/api/backups/compress', formData);
 
     if (result.success) {
       showStatus(
