@@ -9,6 +9,7 @@ for crash recovery. Supports daily/weekly/monthly schedules with configurable
 retention policies.
 """
 
+import os
 import uuid
 import logging
 import threading
@@ -56,10 +57,16 @@ class BackupSchedulerService:
 
     @property
     def backup_service(self):
-        """Lazy-load backup service to avoid circular imports."""
+        """Lazy-load backup service to avoid circular imports.
+
+        Reads PROMPTVAULT_DATA_DIR explicitly rather than relying on
+        BackupService's own default, since APScheduler's SQLAlchemyJobStore
+        pickles jobs for crash recovery and reloads them in a fresh instance
+        that never went through app.py's configure_services() injection.
+        """
         if self._backup_service is None:
             from src.services.backup_service_db import BackupService
-            self._backup_service = BackupService()
+            self._backup_service = BackupService(os.getenv("PROMPTVAULT_DATA_DIR"))
         return self._backup_service
 
     def _get_scheduler(self) -> BackgroundScheduler:

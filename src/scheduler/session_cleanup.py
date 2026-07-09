@@ -177,7 +177,7 @@ class SessionCleanupScheduler:
             now = datetime.utcnow()
             expired_sessions = session.execute(
                 text(
-                    "SELECT id FROM user_sessions WHERE expires_at < :now AND is_revoked = false"
+                    "SELECT id FROM user_sessions WHERE expires_at < :now"
                 ),
                 {"now": now},
             ).fetchall()
