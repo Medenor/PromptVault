@@ -49,6 +49,8 @@ from src.web.dependencies.auth import (
     get_current_active_user,
     get_optional_user,
     get_current_user_or_none,
+    get_current_user_or_default,
+    get_admin_or_bypass,
     require_role,
 )
 from src.web.models.requests import (
@@ -659,7 +661,7 @@ async def update_prompt(
     tags: str = Form(""),
     commit_message: str = Form("Update"),
     semantic_version: str = Form(""),
-    user: Optional[User] = Depends(get_current_user_or_none),
+    user: User = Depends(get_current_user_or_default),
     db: Session = Depends(get_db),
 ):
     """Update an existing prompt (owner or admin).
@@ -705,12 +707,6 @@ async def update_prompt(
         )
 
     # Check ownership
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication required",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
     check_prompt_ownership(existing_prompt, user)
 
     # Get or create category
@@ -762,7 +758,7 @@ async def update_prompt(
     parent_version_id = main_branch.current_version_id if main_branch else None
 
     # Create new version with the updated prompt data
-    author_name = user.username if user else "anonymous"
+    author_name = user.username
     version = version_repo.create_version(
         prompt=existing_prompt,
         author=author_name,
@@ -789,8 +785,8 @@ async def update_prompt(
     _log_prompt_action(
         "UPDATE_PROMPT",
         prompt_id,
-        user.id if user else None,
-        user.username if user else "anonymous",
+        user.id,
+        user.username,
         f"title='{validated_data.title}', message='{validated_data.commit_message}'",
     )
 
@@ -829,31 +825,19 @@ async def update_prompt(
 )
 async def bulk_delete_prompts(
     body: BulkDeleteRequest,
-    admin: Optional[User] = Depends(get_current_user_or_none),
+    admin: Optional[User] = Depends(get_admin_or_bypass),
     db: Session = Depends(get_db),
 ):
     """Bulk delete prompts (admin only).
 
     Args:
         body: Request body with prompt IDs
-        admin: Authenticated admin user
+        admin: Authenticated admin user (None in anonymous mode)
         db: Database session
 
     Returns:
         dict: Statistics on deletion results
     """
-    if not admin:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication required",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    if admin.role != "admin":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin role required",
-        )
-
     prompt_repo = PromptRepository(db)
 
     backup_id = None
@@ -935,7 +919,7 @@ async def bulk_delete_prompts(
 )
 async def delete_prompt(
     prompt_id: int,
-    user: Optional[User] = Depends(get_current_user_or_none),
+    user: User = Depends(get_current_user_or_default),
     db: Session = Depends(get_db),
 ):
     """Delete a prompt (owner or admin).
@@ -961,12 +945,6 @@ async def delete_prompt(
             detail=f"Prompt with ID {prompt_id} not found",
         )
 
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication required",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
     check_prompt_ownership(existing_prompt, user)
 
     # Delete prompt (cascade deletes versions, tags associations)
@@ -977,8 +955,8 @@ async def delete_prompt(
     _log_prompt_action(
         "DELETE_PROMPT",
         prompt_id,
-        user.id if user else None,
-        user.username if user else "anonymous",
+        user.id,
+        user.username,
         f"title='{existing_prompt.title}'",
     )
 
@@ -1011,7 +989,7 @@ async def delete_prompt(
 )
 async def toggle_favorite(
     prompt_id: int,
-    user: Optional[User] = Depends(get_optional_user),
+    user: User = Depends(get_current_user_or_default),
     db: Session = Depends(get_db),
 ):
     """Toggle favorite status (owner only).
@@ -1038,12 +1016,6 @@ async def toggle_favorite(
         )
 
     # Check ownership (only owner can toggle favorite)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication required",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
     check_prompt_ownership(existing_prompt, user)
 
     # Legacy failure injection support (tests may monkeypatch data_service.update_prompt)
@@ -1088,14 +1060,13 @@ async def toggle_favorite(
     db.commit()
 
     # Log action
-    if user:
-        _log_prompt_action(
-            "TOGGLE_FAVORITE",
-            prompt_id,
-            user.id,
-            user.username,
-            f"favorite={new_favorite_status}",
-        )
+    _log_prompt_action(
+        "TOGGLE_FAVORITE",
+        prompt_id,
+        user.id,
+        user.username,
+        f"favorite={new_favorite_status}",
+    )
 
     return {"success": True, "favorite": new_favorite_status}
 
