@@ -4,6 +4,7 @@
 
 """UserRepository for authentication-related user operations."""
 
+import uuid
 from datetime import datetime, timezone
 from typing import Optional, List
 from sqlalchemy.orm import Session
@@ -12,6 +13,9 @@ from sqlalchemy.sql import func
 
 from src.db.models.user import User
 from src.db.repositories.base import BaseRepository
+
+DEFAULT_USER_EMAIL = "system@promptvault.local"
+DEFAULT_USER_USERNAME = "system"
 
 
 class UserRepository(BaseRepository[User]):
@@ -76,6 +80,44 @@ class UserRepository(BaseRepository[User]):
             True if email exists, False otherwise
         """
         return self.session.query(User).filter(User.email == email).first() is not None
+
+    def get_or_create_default_user(self) -> User:
+        """Get or create the shared 'system' user for anonymous-mode writes.
+
+        Used when ``AUTH_ENABLED=false`` so that mutation endpoints have an
+        owner to attribute changes to instead of leaving ``user_id`` null or
+        rejecting the request outright. Role is set to ``admin`` so ownership
+        checks (:func:`check_prompt_ownership`) never block this user.
+
+        The same row may already exist with the legacy ``role="system"``
+        (created by ``PromptDataService._ensure_default_user``, which runs
+        unconditionally at startup regardless of auth mode). That role has no
+        RBAC meaning anywhere in the codebase, so it's safe to promote it to
+        ``admin`` here rather than create a second user for the same email.
+
+        Returns:
+            User: The existing or newly created system user, with admin role.
+        """
+        user = self.get_by_email(DEFAULT_USER_EMAIL)
+        if user:
+            if user.role != "admin":
+                user.role = "admin"
+                self.session.flush()
+            return user
+
+        user = User(
+            id=str(uuid.uuid4()),
+            username=DEFAULT_USER_USERNAME,
+            display_name="System User",
+            email=DEFAULT_USER_EMAIL,
+            password_hash="system",
+            role="admin",
+            email_verified=True,
+            is_active=True,
+        )
+        self.session.add(user)
+        self.session.flush()
+        return user
 
     def username_exists(self, username: str) -> bool:
         """Check if username already exists.

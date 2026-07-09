@@ -73,6 +73,64 @@ class TestAnonymousMode:
         response = api_client.get("/api/prompts")
         assert response.status_code == 200
 
+    def test_create_prompt_without_credentials(self, api_client: TestClient):
+        """``POST /api/prompts`` succeeds with no credentials (anonymous mode)."""
+        response = api_client.post(
+            "/api/prompts",
+            data={"title": "Anon prompt", "prompt": "Do the thing"},
+        )
+        assert response.status_code == 201
+        assert response.json()["success"] is True
+
+    def test_update_prompt_without_credentials(self, api_client: TestClient):
+        """``PUT /api/prompts/{id}`` succeeds with no credentials (anonymous mode).
+
+        Regression test: mutation endpoints must fall back to the shared
+        system user instead of 401ing when AUTH_ENABLED=false, per
+        constitution principle III (destructive endpoints stay guarded by
+        configuration, not by disabling writes outright).
+        """
+        create_response = api_client.post(
+            "/api/prompts",
+            data={"title": "Original", "prompt": "Original content"},
+        )
+        assert create_response.status_code == 201
+        prompt_id = create_response.json()["prompt_id"]
+
+        update_response = api_client.put(
+            f"/api/prompts/{prompt_id}",
+            data={"title": "Updated", "prompt": "Updated content"},
+        )
+        assert update_response.status_code == 200
+        assert update_response.json()["success"] is True
+
+    def test_toggle_favorite_without_credentials(self, api_client: TestClient):
+        """``PUT /api/prompts/{id}/favorite`` succeeds with no credentials."""
+        create_response = api_client.post(
+            "/api/prompts",
+            data={"title": "Fav me", "prompt": "Content"},
+        )
+        prompt_id = create_response.json()["prompt_id"]
+
+        response = api_client.put(f"/api/prompts/{prompt_id}/favorite")
+        assert response.status_code == 200
+        assert response.json()["favorite"] is True
+
+    def test_delete_prompt_without_credentials(self, api_client: TestClient):
+        """``DELETE /api/prompts/{id}`` succeeds with no credentials."""
+        create_response = api_client.post(
+            "/api/prompts",
+            data={"title": "Delete me", "prompt": "Content"},
+        )
+        prompt_id = create_response.json()["prompt_id"]
+
+        response = api_client.delete(f"/api/prompts/{prompt_id}")
+        assert response.status_code == 200
+        assert response.json()["success"] is True
+
+        get_response = api_client.get(f"/api/prompts/{prompt_id}")
+        assert get_response.status_code == 404
+
     def test_auth_login_returns_404_when_disabled(self, api_client: TestClient):
         """``POST /api/auth/login`` is unmounted (404) in anonymous mode."""
         response = api_client.post(

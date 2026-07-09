@@ -933,6 +933,38 @@ async def get_current_user_or_none(
         return None
 
 
+async def get_current_user_or_default(
+    user: Optional[User] = Depends(get_current_user_or_none),
+    session: Session = Depends(get_db),
+) -> User:
+    """Get the current user, falling back to the shared system user.
+
+    Mutation endpoints (create/update/delete) need an owner to run under.
+    When auth is enabled this simply requires a valid authenticated user
+    (401 otherwise). When ``AUTH_ENABLED=false`` there is no logged-in user
+    by design, so this resolves to the shared 'system' user instead of
+    rejecting the request — anonymous/single-user deployments remain fully
+    functional while still recording an owner for ownership checks and undo
+    history. See constitution principle III: destructive endpoints must stay
+    guarded by configuration (network exposure), not by disabling writes.
+
+    Raises:
+        HTTPException: 401 if auth is enabled but no user is authenticated.
+    """
+    if user:
+        return user
+
+    if auth_settings.auth_enabled:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication required",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    user_repo = UserRepository(session)
+    return user_repo.get_or_create_default_user()
+
+
 async def get_admin_or_bypass(
     user: Optional[User] = Depends(get_current_user_or_none),
 ) -> Optional[User]:
