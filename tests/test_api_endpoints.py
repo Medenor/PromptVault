@@ -341,6 +341,161 @@ class TestSearchAndFilterEndpoints:
         assert response.status_code == 422
 
 
+class TestPaginationListPrompts:
+    """Pagination coverage for GET /api/prompts (US1)."""
+
+    def _seed_many(self, api_data_service, sample_prompt_data, count: int) -> None:
+        for i in range(count):
+            api_data_service.add_new_prompt(
+                sample_prompt_data(title=f"Bulk Prompt {i}", prompt=f"Content {i}"),
+                user_id="api-test-user-id",
+            )
+
+    def test_default_pagination_envelope(
+        self, api_client, api_data_service, sample_prompt_data
+    ):
+        self._seed_many(api_data_service, sample_prompt_data, 60)
+
+        response = api_client.get("/api/prompts")
+        assert response.status_code == 200
+        payload = response.json()
+
+        assert len(payload["prompts"]) <= 50
+        assert payload["page"] == 1
+        assert payload["limit"] == 50
+        assert payload["total_count"] == 62  # 60 bulk + 2 seeded
+        assert payload["total_pages"] == 2
+        assert payload["has_next"] is True
+        assert payload["has_previous"] is False
+
+    def test_second_page_returns_different_prompts(
+        self, api_client, api_data_service, sample_prompt_data
+    ):
+        self._seed_many(api_data_service, sample_prompt_data, 60)
+
+        page1 = api_client.get("/api/prompts", params={"page": 1, "limit": 50}).json()
+        page2 = api_client.get("/api/prompts", params={"page": 2, "limit": 50}).json()
+
+        ids_page1 = set(page1["prompts"].keys())
+        ids_page2 = set(page2["prompts"].keys())
+
+        assert ids_page1.isdisjoint(ids_page2)
+        assert page2["has_previous"] is True
+
+    def test_limit_clamped_when_above_max(self, api_client, api_data_service, sample_prompt_data):
+        self._seed_many(api_data_service, sample_prompt_data, 110)
+
+        response = api_client.get("/api/prompts", params={"limit": 9999})
+        payload = response.json()
+
+        assert response.status_code == 200
+        assert payload["limit"] == 100
+        assert len(payload["prompts"]) <= 100
+
+    def test_invalid_page_normalizes_to_one(self, api_client):
+        response = api_client.get("/api/prompts", params={"page": -5})
+        assert response.status_code == 200
+        assert response.json()["page"] == 1
+
+    def test_out_of_range_page_returns_empty_not_error(self, api_client):
+        response = api_client.get("/api/prompts", params={"page": 9999, "limit": 50})
+        assert response.status_code == 200
+        payload = response.json()
+        assert payload["prompts"] == {}
+        assert payload["has_next"] is False
+
+    def test_empty_library_returns_zero_total_count(
+        self, api_client, api_data_service
+    ):
+        # Delete the two default seeded prompts
+        for pid in list(api_data_service.load_prompts().keys()):
+            api_data_service.delete_prompt(pid)
+
+        response = api_client.get("/api/prompts")
+        assert response.status_code == 200
+        payload = response.json()
+        assert payload["prompts"] == {}
+        assert payload["total_count"] == 0
+        assert payload["total_pages"] == 0
+        assert payload["has_next"] is False
+
+
+class TestPaginationSearchPrompts:
+    """Pagination coverage for GET /api/prompts/search (US2)."""
+
+    def _seed_matching(
+        self, api_data_service, sample_prompt_data, count: int, matching: int
+    ) -> None:
+        for i in range(matching):
+            api_data_service.add_new_prompt(
+                sample_prompt_data(title=f"Marketing Email {i}", prompt="promo copy"),
+                user_id="api-test-user-id",
+            )
+        for i in range(count - matching):
+            api_data_service.add_new_prompt(
+                sample_prompt_data(title=f"Unrelated {i}", prompt="other content"),
+                user_id="api-test-user-id",
+            )
+
+    def test_total_count_reflects_filtered_set_not_full_library(
+        self, api_client, api_data_service, sample_prompt_data
+    ):
+        self._seed_matching(api_data_service, sample_prompt_data, count=50, matching=30)
+
+        response = api_client.get(
+            "/api/prompts/search", params={"search": "Marketing"}
+        )
+        payload = response.json()
+
+        assert response.status_code == 200
+        assert payload["total_count"] == 30
+        assert len(payload["prompts"]) <= payload["limit"]
+
+    def test_pagination_combines_with_category_filter(
+        self, api_client, api_data_service, sample_prompt_data
+    ):
+        for i in range(10):
+            api_data_service.add_new_prompt(
+                sample_prompt_data(title=f"Cat Prompt {i}", category="SpecialCat"),
+                user_id="api-test-user-id",
+            )
+
+        response = api_client.get(
+            "/api/prompts/search",
+            params={"category": "SpecialCat", "page": 1, "limit": 5},
+        )
+        payload = response.json()
+
+        assert response.status_code == 200
+        assert payload["total_count"] == 10
+        assert payload["total_pages"] == 2
+        assert len(payload["prompts"]) == 5
+        assert payload["has_next"] is True
+
+    def test_favorites_without_auth_still_401_with_pagination_params(
+        self, api_client
+    ):
+        response = api_client.get(
+            "/api/prompts/search",
+            params={"favorites": True, "page": 1, "limit": 25},
+        )
+        assert response.status_code == 401
+
+    def test_search_limit_clamped_when_above_max(
+        self, api_client, api_data_service, sample_prompt_data
+    ):
+        self._seed_matching(api_data_service, sample_prompt_data, count=110, matching=110)
+
+        response = api_client.get(
+            "/api/prompts/search", params={"search": "Marketing", "limit": 500}
+        )
+        payload = response.json()
+
+        assert response.status_code == 200
+        assert payload["limit"] == 100
+        assert len(payload["prompts"]) <= 100
+
+
 class TestCategoryAndTagEndpoints:
     """Category and tag endpoint validation."""
 
@@ -538,7 +693,7 @@ class TestLegacyDataFallbacks:
     """Ensure endpoints gracefully handle legacy prompt structures without a 'data' wrapper."""
 
     def test_legacy_prompt_structure_fallbacks(
-        self, api_client, api_data_service, monkeypatch
+        self, api_client, api_data_service, api_auth_headers, monkeypatch
     ):
         legacy_prompt = {
             "title": "Legacy Title",
@@ -562,7 +717,9 @@ class TestLegacyDataFallbacks:
         assert prompts_payload["0"]["title"] == "Legacy Title"
 
         search_response = api_client.get(
-            "/api/prompts/search", params={"favorites": True}
+            "/api/prompts/search",
+            params={"favorites": True},
+            headers=api_auth_headers,
         )
         assert search_response.status_code == 200
         search_results = search_response.json()["prompts"]

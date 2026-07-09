@@ -566,6 +566,122 @@ class TestPromptRepository:
         results = prompt_repo.search(query="nonexistent")
         assert results == []
 
+    def test_get_all_skip_limit_pagination(self, prompt_repo, test_user, test_category):
+        """Test BaseRepository.get_all(skip, limit) slices correctly and count() is independent of it."""
+        for i in range(10):
+            prompt_repo.create(
+                title=f"Prompt {i}",
+                prompt=f"Content {i}",
+                category_id=test_category.id,
+                user_id=test_user.id,
+            )
+
+        page1 = prompt_repo.get_all(skip=0, limit=4)
+        page2 = prompt_repo.get_all(skip=4, limit=4)
+        page3 = prompt_repo.get_all(skip=8, limit=4)
+
+        assert len(page1) == 4
+        assert len(page2) == 4
+        assert len(page3) == 2
+
+        ids_page1 = {p.id for p in page1}
+        ids_page2 = {p.id for p in page2}
+        assert ids_page1.isdisjoint(ids_page2)
+
+        # count() reflects the whole table, independent of skip/limit
+        assert prompt_repo.count() == 10
+
+    def test_count_matches_search_len_without_limit(
+        self, prompt_repo, test_user, test_category, test_db_session
+    ):
+        """count() must mirror search()'s filter predicates exactly (data-model.md Relationships)."""
+        for i in range(5):
+            prompt_repo.create(
+                title=f"Marketing Prompt {i}",
+                prompt="promo content",
+                category_id=test_category.id,
+                favorite=(i % 2 == 0),
+                user_id=test_user.id,
+            )
+        for i in range(3):
+            prompt_repo.create(
+                title=f"Other Prompt {i}",
+                prompt="other content",
+                category_id=test_category.id,
+                user_id=test_user.id,
+            )
+
+        # Text search filter
+        assert prompt_repo.count(query="Marketing") == len(
+            prompt_repo.search(query="Marketing")
+        )
+
+        # Category filter
+        assert prompt_repo.count(category=test_category.name) == len(
+            prompt_repo.search(category=test_category.name)
+        )
+
+        # Favorite filter
+        assert prompt_repo.count(favorite=True) == len(prompt_repo.search(favorite=True))
+
+        # Combined filters
+        assert prompt_repo.count(query="Marketing", favorite=True) == len(
+            prompt_repo.search(query="Marketing", favorite=True)
+        )
+
+    def test_count_matches_search_len_with_tags(
+        self, prompt_repo, test_user, test_category, test_db_session
+    ):
+        """count() with tag filters must match search() length, including multi-tag distinct-count."""
+        tag1 = Tag(name="python")
+        tag2 = Tag(name="tutorial")
+        test_db_session.add_all([tag1, tag2])
+        test_db_session.flush()
+
+        # One prompt matches both tags (must not be double-counted)
+        both = prompt_repo.create(
+            title="Both Tags",
+            prompt="content",
+            category_id=test_category.id,
+            user_id=test_user.id,
+        )
+        both.tags.append(tag1)
+        both.tags.append(tag2)
+
+        only_one = prompt_repo.create(
+            title="One Tag",
+            prompt="content",
+            category_id=test_category.id,
+            user_id=test_user.id,
+        )
+        only_one.tags.append(tag1)
+        test_db_session.flush()
+
+        results = prompt_repo.search(tags=["python", "tutorial"])
+        assert len(results) == 2
+        assert prompt_repo.count(tags=["python", "tutorial"]) == 2
+
+    def test_count_matches_search_len_case_sensitive(
+        self, prompt_repo, test_user, test_category
+    ):
+        """count() with case_sensitive=True must match search()'s Python-side filtered length."""
+        prompt_repo.create(
+            title="Hello World",
+            prompt="content",
+            category_id=test_category.id,
+            user_id=test_user.id,
+        )
+        prompt_repo.create(
+            title="hello world lowercase",
+            prompt="content",
+            category_id=test_category.id,
+            user_id=test_user.id,
+        )
+
+        results = prompt_repo.search(query="Hello", case_sensitive=True)
+        assert len(results) == 1
+        assert prompt_repo.count(query="Hello", case_sensitive=True) == 1
+
 
 # ============================================================================
 # VERSION REPOSITORY TESTS

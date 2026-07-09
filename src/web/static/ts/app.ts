@@ -21,6 +21,13 @@ import { createModal } from '@components';
 import { announce } from '@/utils/a11y';
 import { confirmAsync } from '@/utils/dialogs';
 import { focusFirstElement, announceToScreenReader } from '@/utils/focus-management';
+import {
+  createInitialPaginationState,
+  mergePrompts,
+  canLoadMore,
+  type PaginationState,
+  type PageSize,
+} from '@/utils/pagination';
 
 interface TagInfo {
   name: string;
@@ -1073,6 +1080,36 @@ let searchState: {
   isLoading: false,
 };
 
+// Global pagination state for the "Load More" prompt list flow
+let paginationState: PaginationState = createInitialPaginationState({
+  searchTerm: '',
+  category: 'all',
+  tag: 'all',
+  favorites: false,
+  caseSensitive: false,
+});
+
+function currentFilters() {
+  return {
+    searchTerm: searchState.searchTerm,
+    category: searchState.category,
+    tag: searchState.tag,
+    favorites: searchState.favorites,
+    caseSensitive: searchState.caseSensitive,
+  };
+}
+
+function updateLoadMoreControl(): void {
+  const loadMoreBtn = document.getElementById('load-more-btn') as HTMLButtonElement | null;
+  const loadMoreContainer = document.getElementById('load-more-container');
+  if (!loadMoreBtn || !loadMoreContainer) {
+    return;
+  }
+  toggleElement(loadMoreContainer, paginationState.hasNext);
+  loadMoreBtn.disabled = paginationState.isLoadingMore;
+  loadMoreBtn.textContent = paginationState.isLoadingMore ? 'Loading...' : 'Load More';
+}
+
 function setupEventListeners(): void {
   // Mobile sidebar toggle
   const sidebarToggle = document.getElementById('sidebar-toggle');
@@ -1305,6 +1342,25 @@ function setupEventListeners(): void {
   const emptyStateClearFiltersBtn = document.getElementById('empty-state-clear-filters-btn');
   emptyStateClearFiltersBtn?.addEventListener('click', clearAllFilters);
 
+  // Load More button (pagination)
+  const loadMoreBtn = document.getElementById('load-more-btn');
+  loadMoreBtn?.addEventListener('click', () => {
+    void loadMorePrompts();
+  });
+
+  // Page size selector (pagination)
+  const pageSizeSelect = document.getElementById('page-size-select') as HTMLSelectElement | null;
+  pageSizeSelect?.addEventListener('change', (event) => {
+    const target = event.target as HTMLSelectElement | null;
+    const value = Number(target?.value) as PageSize;
+    paginationState.pageSize = value;
+    if (isAnyFilterActive()) {
+      void performSearch();
+    } else {
+      void loadPrompts();
+    }
+  });
+
   // Setup scroll indicators for scrollable containers
   setupScrollIndicators(document.getElementById('categories-list'));
   setupScrollIndicators(document.getElementById('tags-list'));
@@ -1315,8 +1371,13 @@ function setupEventListeners(): void {
 }
 
 async function loadPrompts(): Promise<void> {
+  // Fresh load always resets to page 1 and replaces the current list.
+  paginationState = createInitialPaginationState(currentFilters(), paginationState.pageSize);
+
   try {
-    const data = await apiGet<PromptListResponse>('/api/prompts');
+    const data = await apiGet<PromptListResponse>(
+      `/api/prompts?page=1&limit=${paginationState.pageSize}`
+    );
 
     // Hide search results info when loading all prompts initially
     const searchResultsInfo = document.getElementById('search-results-info');
@@ -1324,10 +1385,54 @@ async function loadPrompts(): Promise<void> {
       hideElement(searchResultsInfo);
     }
 
-    renderPrompts(data.prompts || {});
+    paginationState.hasNext = data.has_next;
+    promptCache = mergePrompts({}, data.prompts || {}, 'replace');
+    renderPrompts(promptCache);
+    updateLoadMoreControl();
   } catch (error) {
     reportAppIssue('loadPrompts', error);
   }
+}
+
+async function loadMorePrompts(): Promise<void> {
+  if (!canLoadMore(paginationState)) {
+    return;
+  }
+
+  paginationState.isLoadingMore = true;
+  updateLoadMoreControl();
+
+  try {
+    const nextPage = paginationState.currentPage + 1;
+    const isFiltered = isAnyFilterActive();
+    const endpoint = isFiltered
+      ? buildSearchUrl(nextPage)
+      : `/api/prompts?page=${nextPage}&limit=${paginationState.pageSize}`;
+    const data = await apiGet<PromptListResponse>(endpoint);
+
+    paginationState.currentPage = nextPage;
+    paginationState.hasNext = data.has_next;
+    promptCache = mergePrompts(promptCache, data.prompts || {}, 'append');
+    renderPrompts(promptCache);
+  } catch (error) {
+    reportAppIssue('loadMorePrompts', error);
+  } finally {
+    paginationState.isLoadingMore = false;
+    updateLoadMoreControl();
+  }
+}
+
+function buildSearchUrl(page: number): string {
+  const params = new URLSearchParams();
+  if (searchState.searchTerm) params.append('search', searchState.searchTerm);
+  if (searchState.category && searchState.category !== 'all')
+    params.append('category', searchState.category);
+  if (searchState.tag && searchState.tag !== 'all') params.append('tag', searchState.tag);
+  if (searchState.favorites) params.append('favorites', 'true');
+  if (searchState.caseSensitive) params.append('case_sensitive', 'true');
+  params.append('page', String(page));
+  params.append('limit', String(paginationState.pageSize));
+  return `/api/prompts/search?${params.toString()}`;
 }
 
 async function loadCategories(): Promise<void> {
@@ -2372,6 +2477,10 @@ async function performSearch(): Promise<void> {
 
   searchState.isLoading = true;
 
+  // Any filter change (this is only called on filter change or initial
+  // search) resets pagination to page 1 and replaces the current list.
+  paginationState = createInitialPaginationState(currentFilters(), paginationState.pageSize);
+
   try {
     // Show loading state
     const promptsList = document.getElementById('prompts-list');
@@ -2380,37 +2489,18 @@ async function performSearch(): Promise<void> {
       promptsList.style.pointerEvents = 'none';
     }
 
-    // Build query parameters
-    const params = new URLSearchParams();
-
-    if (searchState.searchTerm) {
-      params.append('search', searchState.searchTerm);
-    }
-
-    if (searchState.category && searchState.category !== 'all') {
-      params.append('category', searchState.category);
-    }
-
-    if (searchState.tag && searchState.tag !== 'all') {
-      params.append('tag', searchState.tag);
-    }
-
-    if (searchState.favorites) {
-      params.append('favorites', 'true');
-    }
-
-    if (searchState.caseSensitive) {
-      params.append('case_sensitive', 'true');
-    }
-
     // Make API call with automatic token refresh
-    const data = await apiGet<PromptListResponse>(`/api/prompts/search?${params.toString()}`);
+    const data = await apiGet<PromptListResponse>(buildSearchUrl(1));
+
+    paginationState.hasNext = data.has_next;
+    promptCache = mergePrompts({}, data.prompts || {}, 'replace');
 
     // Update prompts list
-    renderPrompts(data.prompts || {});
+    renderPrompts(promptCache);
+    updateLoadMoreControl();
 
     // Update result count and handle empty results
-    updateSearchResultsInfo(data.prompts || {});
+    updateSearchResultsInfo(promptCache);
   } catch (error) {
     reportAppIssue('searchPrompts', error, {
       filters: {
