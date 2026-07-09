@@ -34,9 +34,7 @@ class TestUpsertSchedule:
         assert result["frequency"] == "daily"
         assert result["hour"] == 2
         assert result["minute"] == 0
-        assert result["retention_daily_count"] == 7
-        assert result["retention_weekly_count"] == 4
-        assert result["retention_monthly_count"] == 12
+        assert result["retention_days"] == 30
 
     def test_update_existing_schedule(self, scheduler_service):
         scheduler_service.upsert_schedule(
@@ -63,12 +61,9 @@ class TestUpsertSchedule:
     def test_upsert_with_custom_retention(self, scheduler_service):
         result = scheduler_service.upsert_schedule(
             enabled=False, frequency="daily", hour=2, minute=0,
-            retention_daily_count=14, retention_weekly_count=8,
-            retention_monthly_count=24,
+            retention_days=60,
         )
-        assert result["retention_daily_count"] == 14
-        assert result["retention_weekly_count"] == 8
-        assert result["retention_monthly_count"] == 24
+        assert result["retention_days"] == 60
 
     def test_upsert_disabled_unregisters_job(self, scheduler_service):
         scheduler_service.upsert_schedule(
@@ -164,8 +159,7 @@ class TestSerializeSchedule:
         scheduler_service.upsert_schedule(
             enabled=True, frequency="weekly", hour=3, minute=30,
             day_of_week=5, day_of_month=None,
-            retention_daily_count=10, retention_weekly_count=6,
-            retention_monthly_count=18,
+            retention_days=45,
             encrypt_scheduled_backups=True,
             cloud_provider_id="provider-123",
         )
@@ -176,9 +170,7 @@ class TestSerializeSchedule:
         assert result["minute"] == 30
         assert result["day_of_week"] == 5
         assert result["day_of_month"] is None
-        assert result["retention_daily_count"] == 10
-        assert result["retention_weekly_count"] == 6
-        assert result["retention_monthly_count"] == 18
+        assert result["retention_days"] == 45
         assert result["encrypt_scheduled_backups"] is True
         assert result["cloud_provider_id"] == "provider-123"
         assert result["last_run_at"] is None

@@ -144,7 +144,7 @@ An administrator views a monitoring dashboard showing backup history, success/fa
 
 **Retention & Cleanup**
 
-- **FR-019**: System MUST support configurable retention policies (e.g., keep daily for 7 days, weekly for 4 weeks, monthly for 12 months).
+- **FR-019**: System MUST support a configurable retention period (in days); backups older than the configured period are eligible for cleanup.
 - **FR-020**: System MUST provide a dry-run mode for cleanup that previews which backups would be deleted before executing.
 
 **Tagging & Search**
@@ -162,7 +162,7 @@ An administrator views a monitoring dashboard showing backup history, success/fa
 **Export & Versioning**
 
 - **FR-027**: System MUST allow administrators to download any backup file directly from the UI.
-- **FR-028**: System MUST support backup versioning, retaining multiple backup points per time period according to the retention policy.
+- **FR-028**: System MUST support backup versioning, retaining all backup points within the configured retention period.
 
 **Access Control**
 

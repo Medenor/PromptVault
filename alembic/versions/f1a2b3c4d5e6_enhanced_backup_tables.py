@@ -92,13 +92,7 @@ def upgrade() -> None:
             sa.Column("day_of_week", sa.Integer(), nullable=True),
             sa.Column("day_of_month", sa.Integer(), nullable=True),
             sa.Column(
-                "retention_daily_count", sa.Integer(), nullable=False, server_default=sa.text("7")
-            ),
-            sa.Column(
-                "retention_weekly_count", sa.Integer(), nullable=False, server_default=sa.text("4")
-            ),
-            sa.Column(
-                "retention_monthly_count", sa.Integer(), nullable=False, server_default=sa.text("12")
+                "retention_days", sa.Integer(), nullable=False, server_default=sa.text("30")
             ),
             sa.Column(
                 "encrypt_scheduled_backups",

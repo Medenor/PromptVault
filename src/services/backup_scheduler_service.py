@@ -320,9 +320,7 @@ class BackupSchedulerService:
             "minute": schedule.minute,
             "day_of_week": schedule.day_of_week,
             "day_of_month": schedule.day_of_month,
-            "retention_daily_count": schedule.retention_daily_count,
-            "retention_weekly_count": schedule.retention_weekly_count,
-            "retention_monthly_count": schedule.retention_monthly_count,
+            "retention_days": schedule.retention_days,
             "encrypt_scheduled_backups": schedule.encrypt_scheduled_backups,
             "cloud_provider_id": schedule.cloud_provider_id,
             "last_run_at": (

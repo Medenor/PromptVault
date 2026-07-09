@@ -629,7 +629,7 @@ class TestCleanupBackupsRetention:
         resp = api_client.post(
             "/api/backups/cleanup",
             headers=api_admin_auth_headers,
-            json={"dry_run": True},
+            data={"dry_run": "true"},
         )
         assert resp.status_code == 200
         data = resp.json()
@@ -640,15 +640,26 @@ class TestCleanupBackupsRetention:
         api_client.put(
             "/api/backup-schedule",
             headers=api_admin_auth_headers,
-            json={"frequency": "daily", "hour": 2, "minute": 0, "retention_daily_count": 2},
+            json={"frequency": "daily", "hour": 2, "minute": 0, "retention_days": 2},
         )
         resp = api_client.post(
             "/api/backups/cleanup",
             headers=api_admin_auth_headers,
-            json={"dry_run": True},
+            data={"dry_run": "true"},
         )
         assert resp.status_code == 200
         data = resp.json()
+        assert "would_delete" in data
+
+    def test_cleanup_with_explicit_retention_days(self, api_client, api_admin_auth_headers):
+        resp = api_client.post(
+            "/api/backups/cleanup",
+            headers=api_admin_auth_headers,
+            data={"dry_run": "true", "retention_days": "1"},
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["dry_run"] is True
         assert "would_delete" in data
 
 

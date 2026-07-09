@@ -9,6 +9,7 @@ cloud storage, restore preview, monitoring, and audit operations.
 """
 
 import uuid
+from datetime import datetime, timedelta
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
@@ -280,9 +281,7 @@ async def get_backup_schedule():
             "minute": 0,
             "day_of_week": None,
             "day_of_month": None,
-            "retention_daily_count": 7,
-            "retention_weekly_count": 4,
-            "retention_monthly_count": 12,
+            "retention_days": 30,
             "encrypt_scheduled_backups": False,
             "cloud_provider_id": None,
             "last_run_at": None,
@@ -328,9 +327,7 @@ async def update_backup_schedule(request: Request):
         "minute": minute,
         "day_of_week": body.get("day_of_week"),
         "day_of_month": body.get("day_of_month"),
-        "retention_daily_count": body.get("retention_daily_count", 7),
-        "retention_weekly_count": body.get("retention_weekly_count", 4),
-        "retention_monthly_count": body.get("retention_monthly_count", 12),
+        "retention_days": body.get("retention_days", 30),
         "encrypt_scheduled_backups": body.get("encrypt_scheduled_backups", False),
         "cloud_provider_id": body.get("cloud_provider_id"),
     }
@@ -542,44 +539,41 @@ async def update_backup_tags(backup_id: str, request: Request):
 
 
 @router.post("/api/backups/cleanup", dependencies=[Depends(get_admin_or_bypass)])
-async def cleanup_backups_retention(request: Request):
-    """Run retention cleanup (or dry-run) based on schedule retention policy."""
-    body = await request.json()
-    dry_run = body.get("dry_run", True)
-
+async def cleanup_backups_retention(
+    retention_days: Optional[int] = Form(None),
+    dry_run: bool = Form(True),
+):
+    """Delete backups older than the retention period (or dry-run)."""
     service = _get_backup_service()
-    from src.db.session import get_db_session
-    from src.db.repositories.backup_schedule_repository import BackupScheduleRepository
 
-    retention_daily = None
-    retention_weekly = None
-    retention_monthly = None
-    with get_db_session() as session:
-        repo = BackupScheduleRepository(session)
-        schedule = repo.get_active()
-        if schedule:
-            retention_daily = schedule.retention_daily_count
-            retention_weekly = schedule.retention_weekly_count
-            retention_monthly = schedule.retention_monthly_count
+    if retention_days is None:
+        from src.db.session import get_db_session
+        from src.db.repositories.backup_schedule_repository import BackupScheduleRepository
 
-    if retention_daily is None:
-        return {"dry_run": dry_run, "would_delete": [], "deleted": []}
+        with get_db_session() as session:
+            repo = BackupScheduleRepository(session)
+            schedule = repo.get_active()
+            retention_days = schedule.retention_days if schedule else None
 
+    if retention_days is None:
+        return {"success": True, "dry_run": dry_run, "removed_count": 0, "would_delete": [], "deleted": []}
+
+    cutoff = (datetime.utcnow() - timedelta(days=retention_days)).isoformat()
     backups = service.list_backups()
-
-    def _evict(kind: str, keep: int) -> list:
-        subset = [b for b in backups if b.get("backup_kind", "full") == kind and b.get("timestamp")]
-        subset.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
-        return [b["backup_id"] for b in subset[keep:]]
-
-    would_delete = (
-        _evict("daily", retention_daily)
-        + _evict("weekly", retention_weekly)
-        + _evict("monthly", retention_monthly)
-    )
+    would_delete = [
+        b["backup_id"]
+        for b in backups
+        if b.get("timestamp") and b["timestamp"] < cutoff
+    ]
 
     if dry_run:
-        return {"dry_run": True, "would_delete": would_delete, "deleted": []}
+        return {
+            "success": True,
+            "dry_run": True,
+            "removed_count": len(would_delete),
+            "would_delete": would_delete,
+            "deleted": [],
+        }
 
     deleted = []
     for backup_id in would_delete:
@@ -589,4 +583,10 @@ async def cleanup_backups_retention(request: Request):
         except Exception:
             pass
 
-    return {"dry_run": False, "would_delete": would_delete, "deleted": deleted}
+    return {
+        "success": True,
+        "dry_run": False,
+        "removed_count": len(deleted),
+        "would_delete": would_delete,
+        "deleted": deleted,
+    }

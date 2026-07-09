@@ -49,7 +49,7 @@ curl -s -X PUT http://localhost:8080/api/backup-schedule \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"enabled": true, "frequency": "daily", "hour": 2, "minute": 0,
-       "retention_daily_count": 7, "retention_weekly_count": 4, "retention_monthly_count": 12,
+       "retention_days": 30,
        "encrypt_scheduled_backups": false}' | jq .
 # Expected: schedule object with enabled=true
 
@@ -215,18 +215,17 @@ curl -s "http://localhost:8080/api/backup-audit-log" \
 **Validates**: FR-019, FR-020
 
 ```bash
-# Dry-run cleanup (preview which would be deleted)
+# Dry-run cleanup (preview which would be deleted, using the active schedule's retention_days)
 curl -s -X POST http://localhost:8080/api/backups/cleanup \
   -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"dry_run": true}' | jq .
-# Expected: {"dry_run": true, "would_delete": [...], "deleted": []}
+  -d 'dry_run=true' | jq .
+# Expected: {"success": true, "dry_run": true, "removed_count": N, "would_delete": [...], "deleted": []}
 
-# Execute cleanup
+# Execute cleanup with an explicit retention period
 curl -s -X POST http://localhost:8080/api/backups/cleanup \
   -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"dry_run": false}' | jq '.deleted | length'
+  -d 'dry_run=false' \
+  -d 'retention_days=30' | jq '.deleted | length'
 # Expected: same count as would_delete above
 ```
 

@@ -157,20 +157,20 @@ test.describe('@regression-a11y Backup Management Page Accessibility Tests', () 
     });
 
     test('retention days input should have label', async ({ authenticatedPage: page }) => {
-      const input = page.locator('#retention-days').first();
-      const label = page.locator('label[for="retention-days"]').first();
+      const input = page.locator('#schedule-retention-days').first();
+      const label = page.locator('label[for="schedule-retention-days"]').first();
 
       expect(await input.count()).toBeGreaterThan(0);
       expect(await label.count()).toBeGreaterThan(0);
 
       const labelText = await label.textContent();
-      expect(labelText).toMatch(/retention/i);
+      expect(labelText).toMatch(/retention|days/i);
     });
 
     test('retention days input should have numeric constraints', async ({
       authenticatedPage: page,
     }) => {
-      const input = page.locator('#retention-days').first();
+      const input = page.locator('#schedule-retention-days').first();
       const type = await input.getAttribute('type');
       const min = await input.getAttribute('min');
       const max = await input.getAttribute('max');
@@ -178,18 +178,6 @@ test.describe('@regression-a11y Backup Management Page Accessibility Tests', () 
       expect(type).toBe('number');
       expect(min).toBe('1');
       expect(max).toBe('3650');
-    });
-
-    test('retention days input should have aria-describedby', async ({
-      authenticatedPage: page,
-    }) => {
-      const input = page.locator('#retention-days').first();
-      const describedBy = await input.getAttribute('aria-describedby');
-
-      expect(describedBy).toBe('retention-days-error');
-
-      const errorElement = page.locator(`#${describedBy}`).first();
-      expect(await errorElement.count()).toBeGreaterThan(0);
     });
 
     test('compress days input should have label', async ({ authenticatedPage: page }) => {

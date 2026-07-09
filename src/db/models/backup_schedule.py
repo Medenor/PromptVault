@@ -26,9 +26,7 @@ class BackupSchedule(Base):
         minute: Minute of hour (0-59, UTC)
         day_of_week: Day of week (0=Mon-6=Sun), required for weekly
         day_of_month: Day of month (1-31), required for monthly
-        retention_daily_count: How many daily backups to keep
-        retention_weekly_count: How many weekly backups to keep
-        retention_monthly_count: How many monthly backups to keep
+        retention_days: How many days of backups to keep
         encrypt_scheduled_backups: Whether scheduled backups are encrypted
         cloud_provider_id: Auto-upload destination provider
         created_at: When schedule was created
@@ -46,9 +44,7 @@ class BackupSchedule(Base):
     minute = Column(Integer, nullable=False, default=0)
     day_of_week = Column(Integer, nullable=True)
     day_of_month = Column(Integer, nullable=True)
-    retention_daily_count = Column(Integer, nullable=False, default=7)
-    retention_weekly_count = Column(Integer, nullable=False, default=4)
-    retention_monthly_count = Column(Integer, nullable=False, default=12)
+    retention_days = Column(Integer, nullable=False, default=30)
     encrypt_scheduled_backups = Column(Boolean, nullable=False, default=False)
     cloud_provider_id = Column(
         String(36), ForeignKey("backup_storage_providers.id"), nullable=True

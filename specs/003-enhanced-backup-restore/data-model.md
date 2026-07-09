@@ -76,9 +76,7 @@ Singleton-style: at most one active schedule per system (enforced at service lay
 | `minute`                    | `Integer`                                       | No       | `0`     | 0–59, UTC                               |
 | `day_of_week`               | `Integer`                                       | Yes      | NULL    | 0=Mon–6=Sun; required for `weekly`      |
 | `day_of_month`              | `Integer`                                       | Yes      | NULL    | 1–31; required for `monthly`            |
-| `retention_daily_count`     | `Integer`                                       | No       | `7`     | How many daily backups to keep          |
-| `retention_weekly_count`    | `Integer`                                       | No       | `4`     | How many weekly backups to keep         |
-| `retention_monthly_count`   | `Integer`                                       | No       | `12`    | How many monthly backups to keep        |
+| `retention_days`            | `Integer`                                       | No       | `30`    | How many days of backups to keep        |
 | `encrypt_scheduled_backups` | `Boolean`                                       | No       | `False` | Whether scheduled backups are encrypted |
 | `cloud_provider_id`         | `String(36)` FK → `backup_storage_providers.id` | Yes      | NULL    | Auto-upload destination                 |
 | `created_at`                | `DateTime(tz=True)`                             | No       | `now()` |                                         |

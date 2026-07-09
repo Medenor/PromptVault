@@ -44,9 +44,7 @@ interface BackupSchedule {
   minute: number;
   day_of_week: number | null;
   day_of_month: number | null;
-  retention_daily_count: number;
-  retention_weekly_count: number;
-  retention_monthly_count: number;
+  retention_days: number;
   last_run_at: string | null;
   last_run_status: string | null;
 }
@@ -83,6 +81,7 @@ interface DeleteResponse {
 
 interface CleanupResponse {
   success: boolean;
+  dry_run?: boolean;
   removed_count?: number;
 }
 
@@ -268,18 +267,18 @@ function setupEventListeners(): void {
     });
   }
 
-  const retentionInput = document.getElementById('retention-days') as HTMLInputElement | null;
+  const retentionInput = document.getElementById('cleanup-retention-days') as HTMLInputElement | null;
   if (retentionInput) {
     const validateRetention = () => {
       const raw = retentionInput.value.trim();
       const value = Number(raw);
       if (!raw) {
-        clearLiveFieldError('retention-days', 'retention-days-error');
+        clearLiveFieldError('cleanup-retention-days', 'retention-days-error');
         return;
       }
       if (!Number.isFinite(value)) {
         setLiveFieldError(
-          'retention-days',
+          'cleanup-retention-days',
           'retention-days-error',
           t('validation.retentionDaysInvalid') || 'Retention days must be a valid number.'
         );
@@ -287,7 +286,7 @@ function setupEventListeners(): void {
       }
       if (value < 1) {
         setLiveFieldError(
-          'retention-days',
+          'cleanup-retention-days',
           'retention-days-error',
           t('validation.retentionDaysTooLow') || 'Retention days is too low.'
         );
@@ -295,17 +294,17 @@ function setupEventListeners(): void {
       }
       if (value > 3650) {
         setLiveFieldError(
-          'retention-days',
+          'cleanup-retention-days',
           'retention-days-error',
           t('validation.retentionDaysTooHigh') || 'Retention days is too high.'
         );
         return;
       }
-      clearLiveFieldError('retention-days', 'retention-days-error');
+      clearLiveFieldError('cleanup-retention-days', 'retention-days-error');
     };
     retentionInput.addEventListener('blur', validateRetention);
     retentionInput.addEventListener('input', () => {
-      if (liveValidationState.get('retention-days') === true) {
+      if (liveValidationState.get('cleanup-retention-days') === true) {
         validateRetention();
       }
     });
@@ -697,16 +696,16 @@ async function confirmDeleteAll(): Promise<void> {
 }
 
 async function cleanupBackups(): Promise<void> {
-  const retentionInput = document.getElementById('retention-days') as HTMLInputElement | null;
+  const retentionInput = document.getElementById('cleanup-retention-days') as HTMLInputElement | null;
   const retentionDays = retentionInput?.value ?? '';
-  resetFieldError('retention-days', 'retention-days-error');
+  resetFieldError('cleanup-retention-days', 'retention-days-error');
   resetErrorSummary('cleanup-error-summary');
   const validationErrors: FormValidationError[] = [];
   const retentionValue = Number(retentionDays);
   if (!Number.isFinite(retentionValue) || retentionValue < 1 || retentionValue > 3650) {
     addFieldError(
       validationErrors,
-      'retention-days',
+      'cleanup-retention-days',
       'retention-days-error',
       !Number.isFinite(retentionValue)
         ? t('validation.retentionDaysInvalid') || 'Retention days must be a valid number.'
@@ -725,6 +724,7 @@ async function cleanupBackups(): Promise<void> {
   try {
     const formData = new FormData();
     formData.append('retention_days', retentionDays);
+    formData.append('dry_run', 'false');
 
     const result = await apiPostForm<CleanupResponse>('/api/backups/cleanup', formData);
 
@@ -740,7 +740,7 @@ async function cleanupBackups(): Promise<void> {
       showStatus('maintenance-status', t('backup.cleanupFailed'), 'error');
     }
   } catch (error) {
-    reportError(BACKUP_COMPONENT, 'cleanupBackups', error, { retentionDays });
+    reportError(BACKUP_COMPONENT, 'cleanupBackups', error, {});
     showStatus('maintenance-status', t('backup.cleanupError'), 'error');
   } finally {
     hideProgress('maintenance-progress');
@@ -1170,34 +1170,26 @@ function populateScheduleForm(schedule: BackupSchedule): void {
   const minuteEl = document.getElementById('schedule-minute') as HTMLInputElement | null;
   const dayEl = document.getElementById('schedule-day') as HTMLInputElement | null;
   const dayLabel = document.getElementById('schedule-day-label');
-  const retentionDaily = document.getElementById(
-    'retention-daily-count'
-  ) as HTMLInputElement | null;
-  const retentionWeekly = document.getElementById(
-    'retention-weekly-count'
-  ) as HTMLInputElement | null;
-  const retentionMonthly = document.getElementById(
-    'retention-monthly-count'
-  ) as HTMLInputElement | null;
   const lastRun = document.getElementById('schedule-last-run');
+  const cleanupRetentionDays = document.getElementById(
+    'cleanup-retention-days'
+  ) as HTMLInputElement | null;
 
   if (enabledEl) enabledEl.checked = schedule.enabled;
   if (frequencyEl) frequencyEl.value = schedule.frequency;
   if (hourEl) hourEl.value = String(schedule.hour);
   if (minuteEl) minuteEl.value = String(schedule.minute);
-  if (retentionDaily) retentionDaily.value = String(schedule.retention_daily_count);
-  if (retentionWeekly) retentionWeekly.value = String(schedule.retention_weekly_count);
-  if (retentionMonthly) retentionMonthly.value = String(schedule.retention_monthly_count);
+  if (cleanupRetentionDays) cleanupRetentionDays.value = String(schedule.retention_days);
 
   updateDayFieldVisibility(schedule.frequency);
 
   if (schedule.frequency === 'weekly' && dayEl) {
     dayEl.value = String(schedule.day_of_week ?? 0);
-    if (dayLabel) dayLabel.textContent = 'Day of week (0=Mon)';
+    if (dayLabel) dayLabel.textContent = t('backup.scheduleDayOfWeek') || 'Day of week (0=Mon)';
     if (dayEl) dayEl.max = '6';
   } else if (schedule.frequency === 'monthly' && dayEl) {
     dayEl.value = String(schedule.day_of_month ?? 1);
-    if (dayLabel) dayLabel.textContent = 'Day of month';
+    if (dayLabel) dayLabel.textContent = t('backup.scheduleDayOfMonth') || 'Day of month';
     if (dayEl) {
       dayEl.min = '1';
       dayEl.max = '31';
@@ -1223,12 +1215,12 @@ function updateDayFieldVisibility(frequency: string): void {
   } else {
     dayContainer.classList.remove('hidden');
     if (frequency === 'weekly') {
-      if (dayLabel) dayLabel.textContent = 'Day of week (0=Mon)';
+      if (dayLabel) dayLabel.textContent = t('backup.scheduleDayOfWeek') || 'Day of week (0=Mon)';
       dayEl.min = '0';
       dayEl.max = '6';
       dayEl.value = '0';
     } else if (frequency === 'monthly') {
-      if (dayLabel) dayLabel.textContent = 'Day of month';
+      if (dayLabel) dayLabel.textContent = t('backup.scheduleDayOfMonth') || 'Day of month';
       dayEl.min = '1';
       dayEl.max = '31';
       dayEl.value = '1';
@@ -1242,14 +1234,8 @@ async function saveSchedule(): Promise<void> {
   const hourEl = document.getElementById('schedule-hour') as HTMLInputElement | null;
   const minuteEl = document.getElementById('schedule-minute') as HTMLInputElement | null;
   const dayEl = document.getElementById('schedule-day') as HTMLInputElement | null;
-  const retentionDaily = document.getElementById(
-    'retention-daily-count'
-  ) as HTMLInputElement | null;
-  const retentionWeekly = document.getElementById(
-    'retention-weekly-count'
-  ) as HTMLInputElement | null;
-  const retentionMonthly = document.getElementById(
-    'retention-monthly-count'
+  const cleanupRetentionDays = document.getElementById(
+    'cleanup-retention-days'
   ) as HTMLInputElement | null;
   const statusEl = document.getElementById('schedule-status');
 
@@ -1259,9 +1245,7 @@ async function saveSchedule(): Promise<void> {
     frequency,
     hour: Number(hourEl?.value ?? 2),
     minute: Number(minuteEl?.value ?? 0),
-    retention_daily_count: Number(retentionDaily?.value ?? 7),
-    retention_weekly_count: Number(retentionWeekly?.value ?? 4),
-    retention_monthly_count: Number(retentionMonthly?.value ?? 12),
+    retention_days: Number(cleanupRetentionDays?.value ?? 30),
   };
 
   if (frequency === 'weekly') {

@@ -194,9 +194,7 @@ Get current schedule configuration.
   "minute": 0,
   "day_of_week": null,
   "day_of_month": null,
-  "retention_daily_count": 7,
-  "retention_weekly_count": 4,
-  "retention_monthly_count": 12,
+  "retention_days": 30,
   "encrypt_scheduled_backups": false,
   "cloud_provider_id": null,
   "last_run_at": "2026-07-06T02:00:00Z",
@@ -350,18 +348,20 @@ Paginated audit log.
 
 ### `POST /api/backups/cleanup`
 
-Run retention cleanup (or dry-run).
+Delete backups older than the retention period (or dry-run).
 
-**Request body**: `{ "dry_run": true }`
+**Request body** (form-encoded): `retention_days` (optional — defaults to the active schedule's `retention_days` if omitted), `dry_run` (default `true`)
 
 **Response 200**:
 
 ```json
 {
+  "success": true,
   "dry_run": true,
+  "removed_count": 2,
   "would_delete": ["backup_id_1", "backup_id_2"],
   "deleted": []
 }
 ```
 
-When `dry_run: false`, `deleted` contains the actually-removed IDs.
+When `dry_run=false`, `deleted` contains the actually-removed IDs.
