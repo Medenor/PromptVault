@@ -119,6 +119,8 @@ dev: ## Start backend + frontend dev servers concurrently (Ctrl-C to stop)
 	if [ "$$_conflict" -eq 1 ]; then \
 		exit 1; \
 	fi
+	@echo "Building frontend..."
+	@npm run build
 	@_pids=""; \
 	cleanup() { \
 		echo ""; \

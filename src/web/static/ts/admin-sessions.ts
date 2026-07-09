@@ -10,7 +10,7 @@
 
 import '../css/tailwind-globals.css';
 import { reportError } from '@/telemetry';
-import { changeLanguage, initI18n, updateStaticTranslations, t } from '@/utils/i18n';
+import { initI18n, updateStaticTranslations, t } from '@/utils/i18n';
 import { showNotification } from '@/utils/notifications';
 import { apiGet, apiDelete, APIRequestError } from '@/utils/api';
 import { createTypeahead } from '@/utils/typeahead';
@@ -571,16 +571,6 @@ function initializeAdminSessionsPage(): void {
 
   // Setup keyboard navigation for menu (WCAG 2.1 AA)
   setupAdminMenuKeyboardNavigation();
-
-  const languageSelector = document.getElementById('language-selector') as HTMLSelectElement | null;
-  if (languageSelector) {
-    languageSelector.addEventListener('change', (event) => {
-      const target = event.target as HTMLSelectElement;
-      changeLanguage(target.value).catch((error) => {
-        reportError('admin-sessions', 'changeLanguage', error);
-      });
-    });
-  }
 
   const refreshBtn = document.getElementById('refresh-sessions-btn');
   if (refreshBtn) {

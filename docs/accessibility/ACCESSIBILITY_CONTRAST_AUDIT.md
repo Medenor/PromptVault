@@ -51,53 +51,53 @@ Ce document fournit des checklists détaillées pour tester manuellement:
 
 - [ ] Logo text (si présent): `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] Nav links (Accueil, Catégories, Tags): `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] Nav links hover: `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 **Search bar**
 
 - [ ] Input placeholder text: `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] Input entered text: `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 **Prompt Cards**
 
 - [ ] Prompt title: `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] Prompt description: `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] Category tag: `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] Category tag hover: `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 **Footer**
 
 - [ ] Footer text: `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] Footer links: `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 #### Pages d'Authentification (`/auth/login`, `/auth/register`, `/auth/forgot-password`)
 
@@ -105,51 +105,51 @@ Ce document fournit des checklists détaillées pour tester manuellement:
 
 - [ ] Label text: `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 **Form Inputs**
 
 - [ ] Input text (normal): `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] Input placeholder: `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] Input focus outline: `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 3:1, voir Section 2)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 **Form Buttons**
 
 - [ ] Button text: `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] Button hover text: `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 **Error Messages**
 
 - [ ] Error text (if any): `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] Error background (if colored): Voir Section 2
   - Ratio: \_\_\_\_ ✓ (> 3:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 **Links (Login / Register / Forgot Password)**
 
 - [ ] Link text: `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] Link hover: `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 #### Pages de Gestion (`/backup-management`, `/import-export`, etc.)
 
@@ -157,87 +157,87 @@ Ce document fournit des checklists détaillées pour tester manuellement:
 
 - [ ] Title text: `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 **Section Headings (H2, H3)**
 
 - [ ] H2 text: `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] H3 text: `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 **Form Labels & Inputs**
 
 - [ ] Input label: `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] Input text: `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] Input placeholder: `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] Select dropdown text: `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 **Help Text & Instructions**
 
 - [ ] Help text (aria-describedby): `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] Error message text: `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 **Buttons**
 
 - [ ] Primary button text: `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] Secondary button text: `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] Danger/Delete button text: `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 **Tables (si présentes)**
 
 - [ ] Table header text: `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] Table cell text: `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] Table row hover text: `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 **Notifications/Alerts**
 
 - [ ] Success message text: `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] Warning message text: `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] Error message text: `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 #### Pages Admin (`/admin/users`, `/admin/sessions`)
 
@@ -245,35 +245,35 @@ Ce document fournit des checklists détaillées pour tester manuellement:
 
 - [ ] Admin menu text: `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] Active menu item text: `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 **Tables**
 
 - [ ] Table header: `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] Table cell: `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] Status badge (active/inactive): `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 **Buttons**
 
 - [ ] Edit button text: `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] Delete button text: `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 #### Page Profil (`/profile`)
 
@@ -281,21 +281,21 @@ Ce document fournit des checklists détaillées pour tester manuellement:
 
 - [ ] Label text: `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] Input text: `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 **Change Password**
 
 - [ ] Instruction text: `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] Validation message: `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 ---
 
@@ -311,23 +311,23 @@ Ce document fournit des checklists détaillées pour tester manuellement:
   - Ratio: \_\_\_\_ ✓ (> 3:1)
   - Visible: ✓
   - Offset: ✓ (> 2px)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] **Input focus outline:** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 3:1)
   - Visible: ✓
   - Offset: ✓ (> 2px)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] **Link focus outline:** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 3:1)
   - Visible: ✓
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] **Checkbox focus outline:** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 3:1)
   - Visible: ✓
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 **Pages à tester:**
 
@@ -344,50 +344,50 @@ Ce document fournit des checklists détaillées pour tester manuellement:
 
 - [ ] **Button primary text:** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] **Button primary background:** Pas d'exigence seule couleur
   - Mais: Texte sur fond ✓ (voir ci-dessus)
 
 - [ ] **Button primary border/outline au focus:** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 3:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] **Button primary hover:** Texte contraste maintenu
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] **Button primary disabled:** Text grisé
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 #### Boutons Secondaires
 
 - [ ] **Button secondary text:** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] **Button secondary border:** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 3:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] **Button secondary focus:** Outline visible
   - Ratio: \_\_\_\_ ✓ (> 3:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 #### Boutons Danger
 
 - [ ] **Delete button text:** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] **Delete button background:** Non-obligatoire seul, mais
   - Texte sur fond: Ratio > 4.5:1
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] **Delete button border au focus:** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 3:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 ### 2.2 Entrées de Formulaire
 
@@ -395,43 +395,43 @@ Ce document fournit des checklists détaillées pour tester manuellement:
 
 - [ ] **Input border (normal):** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 3:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] **Input border (focus):** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 3:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] **Input border (error):** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 3:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] **Input border (disabled):** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 3:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 #### Input Placeholders
 
 - [ ] **Placeholder text:** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 #### Input Labels
 
 - [ ] **Label for text input:** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] **Label for password input:** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] **Label for checkbox:** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] **Label for select:** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 ### 2.3 Checkboxes et Radios
 
@@ -439,34 +439,34 @@ Ce document fournit des checklists détaillées pour tester manuellement:
 
 - [ ] **Checkbox border (unchecked):** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 3:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] **Checkbox checkmark (checked):** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 3:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] **Checkbox focus outline:** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 3:1)
   - Visible: ✓
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] **Checkbox disabled:** Texte + border grisé
   - Ratio: \_\_\_\_ ✓ (> 3:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 #### Radio Button States
 
 - [ ] **Radio border (unchecked):** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 3:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] **Radio dot (checked):** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 3:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] **Radio focus outline:** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 3:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 ### 2.4 Icônes Informatives
 
@@ -474,31 +474,31 @@ Ce document fournit des checklists détaillées pour tester manuellement:
 
 - [ ] **Edit icon:** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 3:1 si informative)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] **Delete/Trash icon:** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 3:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] **Star/Favorite icon (unfilled):** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 3:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] **Star/Favorite icon (filled):** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 3:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] **Warning/Alert icon:** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 3:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] **Success icon:** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 3:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] **Error icon:** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 3:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 ### 2.5 Badges et Tags
 
@@ -506,32 +506,32 @@ Ce document fournit des checklists détaillées pour tester manuellement:
 
 - [ ] **Category badge text:** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] **Category badge background:** Texte on fond ratio ✓ (see above)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] **Category badge border (if any):** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 3:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] **Category badge hover:** Contraste maintenu
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 #### Status Badges
 
 - [ ] **Active status badge:** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] **Inactive status badge:** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] **Warning status badge:** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 ### 2.6 Messages et Alertes
 
@@ -539,43 +539,43 @@ Ce document fournit des checklists détaillées pour tester manuellement:
 
 - [ ] **Error text color:** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] **Error icon:** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 3:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] **Error background (if colored):** Texte on fond ratio ✓
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] **Error border:** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 3:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 #### Success Messages
 
 - [ ] **Success text color:** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] **Success icon:** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 3:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] **Success background (if colored):** Texte on fond ratio ✓
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 #### Warning Messages
 
 - [ ] **Warning text color:** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] **Warning icon:** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 3:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 ### 2.7 Tables
 
@@ -583,39 +583,39 @@ Ce document fournit des checklists détaillées pour tester manuellement:
 
 - [ ] **Header text:** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] **Header background:** Texte on fond ratio ✓
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] **Header border:** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 3:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 #### Table Cells
 
 - [ ] **Cell text:** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] **Cell border:** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 3:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] **Row hover (background):** Texte on hover bg ratio ✓
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 #### Table Sorting
 
 - [ ] **Sort indicator (arrow):** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 3:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] **Sortable header text (visual indicator):** Texte + sort indicator
   - Ratio: \_\_\_\_ ✓ (> 3:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 ### 2.8 Liens
 
@@ -623,58 +623,58 @@ Ce document fournit des checklists détaillées pour tester manuellement:
 
 - [ ] **Link text (in paragraph):** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] **Link underline (if present):** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 3:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] **Link hover text:** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] **Link focus outline:** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 3:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 #### Link States
 
 - [ ] **Unvisited link:** Contraste ✓
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] **Visited link (if different):** Contraste ✓
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] **Link disabled:** Grisé, contraste ✓
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 ### 2.9 Modales et Dialogs
 
 #### Modal Overlay
 
 - [ ] **Modal overlay (backdrop):** Contraste texte/backdrop OK
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 #### Modal Content
 
 - [ ] **Modal title:** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] **Modal button text:** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] **Modal close button (X icon):** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 3:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] **Modal focus outline:** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 3:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 ### 2.10 Dropdowns et Selects
 
@@ -682,27 +682,27 @@ Ce document fournit des checklists détaillées pour tester manuellement:
 
 - [ ] **Select label:** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] **Select border (closed):** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 3:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] **Select text:** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] **Dropdown option text:** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] **Dropdown option hover:** `rgb(?, ?, ?) on rgb(?, ?, ?)`
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 - [ ] **Dropdown option selected:** Texte + background ratio ✓
   - Ratio: \_\_\_\_ ✓ (> 4.5:1)
-  - Notes: ****\_\_\_****
+  - Notes: \***\*\_\_\_\*\***
 
 ---
 
@@ -710,7 +710,7 @@ Ce document fournit des checklists détaillées pour tester manuellement:
 
 Pour chaque problème trouvé, noter:
 
-- [ ] **URL/Page:** ******\_\_\_******
+- [ ] **URL/Page:** **\*\***\_\_\_**\*\***
 - [ ] **Élément affecté:** (ex: "Bouton sauvegarder", "Texte label")
 - [ ] **Couleurs actuelles:** `rgb(?, ?, ?) on rgb(?, ?, ?)`
 - [ ] **Ratio actuel:** \_\_\_\_ (cible: ≥ 4.5:1 ou ≥ 3:1)
@@ -731,7 +731,7 @@ Pour chaque problème trouvé, noter:
   - [ ] Ajouter border/outline
   - [ ] Augmenter épaisseur
 - [ ] **Outil utilisé:** WAVE / WebAIM / Axe / DevTools Lighthouse
-- [ ] **Notes:** ******\_\_\_******
+- [ ] **Notes:** **\*\***\_\_\_**\*\***
 
 ---
 

@@ -1,9 +1,5 @@
 {
-  "completed_steps": [
-    "env",
-    "database",
-    "admin"
-  ],
+  "completed_steps": ["env", "database", "admin"],
   "mode": null,
   "profile": "production",
   "config": {},

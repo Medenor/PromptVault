@@ -8,7 +8,7 @@
 
 **Input**: User description: "Mobile-Responsive UI Enhancements (Codeberg #20): Improve mobile user experience with touch-optimized controls, responsive layouts for small screens, mobile-specific navigation (hamburger menu, bottom nav), offline support via Service Workers, and mobile-friendly gestures (swipe actions, pull-to-refresh)."
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Navigate and manage prompts on a phone (Priority: P1)
 
@@ -70,7 +70,7 @@ A frequent mobile user wants faster interactions than desktop-style menus allow:
 - What happens on tablets in landscape mode — should the layout use the mobile drawer/bottom-nav pattern or the desktop sidebar? Landscape tablets above the 768px breakpoint use the desktop-style layout.
 - What happens when a user with a screen reader navigates the mobile drawer or swipe-gesture controls? All gesture-based actions must have an equivalent accessible control (e.g., a visible button) reachable without performing the gesture.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -96,14 +96,14 @@ A frequent mobile user wants faster interactions than desktop-style menus allow:
 - **FR-020**: System MUST provide mobile-specific accessibility support (e.g., ARIA roles/labels for the drawer, FAB, swipe actions, and search overlay) so the mobile experience remains usable with screen readers.
 - **FR-021**: System MUST adapt tablet layouts based on orientation: landscape tablets at or above 768px width use the existing desktop-style layout, while portrait/narrower tablet views use the mobile layout patterns.
 
-*Out of scope for this feature* (explicitly deferred, tracked separately if pursued): haptic feedback, voice input for prompt creation, biometric authentication, native share-sheet integrations (SMS/WhatsApp/email), camera-based file upload, mobile-specific analytics tracking, a dedicated mobile QA test checklist artifact, and any native app wrapper (React Native/Capacitor).
+_Out of scope for this feature_ (explicitly deferred, tracked separately if pursued): haptic feedback, voice input for prompt creation, biometric authentication, native share-sheet integrations (SMS/WhatsApp/email), camera-based file upload, mobile-specific analytics tracking, a dedicated mobile QA test checklist artifact, and any native app wrapper (React Native/Capacitor).
 
 ### Key Entities
 
 - **Offline Change Queue Entry**: Represents a pending create/edit action made while offline; includes the target prompt, the change payload, a timestamp, and a sync status (pending, synced, failed/conflict).
 - **App Manifest**: Represents the installable app's metadata — name, icons at various resolutions, theme color, and start URL — used for "Add to Home Screen."
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 

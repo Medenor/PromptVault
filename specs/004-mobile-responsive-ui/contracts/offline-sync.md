@@ -6,11 +6,12 @@ This feature does not introduce a new sync API. It extends the existing prompt u
 
 Existing endpoint (`src/web/routers/prompts.py:622`, form-encoded body) gains one optional field:
 
-| Field | Type | Required | Notes |
-|---|---|---|---|
+| Field              | Type             | Required                 | Notes                                                                                                                                                                           |
+| ------------------ | ---------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `expected_version` | int (form field) | No (backward compatible) | The prompt's version the client last saw before queuing the offline edit. When present, the server compares it against the prompt's current version before applying the update. |
 
 **Behavior**:
+
 - If `expected_version` is omitted: existing behavior, unchanged (no regression for non-offline clients).
 - If `expected_version` is present and matches the current server-side version: update proceeds normally, creating a new version as today.
 - If `expected_version` is present and does NOT match (server has moved on): respond `409 Conflict` with a JSON body `{"error": "version_conflict", "current_version": <int>, "current_prompt": {...}}` instead of applying the write.

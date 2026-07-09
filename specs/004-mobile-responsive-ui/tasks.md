@@ -1,6 +1,5 @@
 ---
-
-description: "Task list for Mobile-Responsive UI Enhancements"
+description: 'Task list for Mobile-Responsive UI Enhancements'
 ---
 
 # Tasks: Mobile-Responsive UI Enhancements

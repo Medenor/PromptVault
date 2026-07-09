@@ -11,7 +11,7 @@
 import '../css/tailwind-globals.css';
 import { reportError } from '@/telemetry';
 import '@/form-validation';
-import { changeLanguage, initI18n, t, updateStaticTranslations } from '@/utils/i18n';
+import { initI18n, t, updateStaticTranslations } from '@/utils/i18n';
 import type { TranslationKey } from '@/types/i18n';
 import { hideElement, showElement } from '@/utils/dom';
 import { apiFetch, apiGet, apiPost, apiPostForm, APIRequestError } from '@/utils/api';
@@ -238,9 +238,6 @@ function initializeBackupManagement(): void {
 }
 
 function setupEventListeners(): void {
-  const languageSelector = document.getElementById('language-selector');
-  languageSelector?.addEventListener('change', handleLanguageChange);
-
   const backupNameInput = document.getElementById('backup-name') as HTMLInputElement | null;
   if (backupNameInput) {
     const validateBackupName = () => {
@@ -267,7 +264,9 @@ function setupEventListeners(): void {
     });
   }
 
-  const retentionInput = document.getElementById('cleanup-retention-days') as HTMLInputElement | null;
+  const retentionInput = document.getElementById(
+    'cleanup-retention-days'
+  ) as HTMLInputElement | null;
   if (retentionInput) {
     const validateRetention = () => {
       const raw = retentionInput.value.trim();
@@ -375,16 +374,6 @@ function setupEventListeners(): void {
         button.click();
       }
     }
-  });
-}
-
-function handleLanguageChange(event: Event): void {
-  const target = event.target as HTMLSelectElement | null;
-  const selectedLanguage = target?.value;
-  if (!selectedLanguage) return;
-
-  changeLanguage(selectedLanguage).catch((err) => {
-    reportError(BACKUP_COMPONENT, 'changeLanguage', err, { language: selectedLanguage });
   });
 }
 
@@ -696,7 +685,9 @@ async function confirmDeleteAll(): Promise<void> {
 }
 
 async function cleanupBackups(): Promise<void> {
-  const retentionInput = document.getElementById('cleanup-retention-days') as HTMLInputElement | null;
+  const retentionInput = document.getElementById(
+    'cleanup-retention-days'
+  ) as HTMLInputElement | null;
   const retentionDays = retentionInput?.value ?? '';
   resetFieldError('cleanup-retention-days', 'retention-days-error');
   resetErrorSummary('cleanup-error-summary');

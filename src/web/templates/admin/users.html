@@ -49,6 +49,7 @@
               aria-label="Admin page navigation"
               data-i18n="[aria-label]accessibility.labels.adminPageNavigation"
             >
+              {% include 'macros/language_selector.html' %}
               <button
                 type="button"
                 onclick="window.location.href = '/admin/sessions'"
@@ -109,6 +110,12 @@
             aria-label="Admin page navigation mobile"
             data-i18n="[aria-label]accessibility.labels.adminPageNavigationMobile"
           >
+            <div class="px-2 py-2">
+              <label class="block text-xs text-gray-500 mb-1" data-i18n="nav.language"
+                >Language</label
+              >
+              {% include 'macros/language_selector.html' %}
+            </div>
             <button
               type="button"
               onclick="window.location.href = '/admin/sessions'"

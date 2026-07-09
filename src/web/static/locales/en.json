@@ -22,7 +22,8 @@
     "logout": "Logout",
     "backToMain": "Back to Main",
     "skipToMainContent": "Skip to main content",
-    "home": "Home"
+    "home": "Home",
+    "language": "Language"
   },
   "actions": {
     "add": "Add",

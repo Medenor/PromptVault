@@ -32,15 +32,15 @@ Deliver a mobile-first navigation and interaction layer (slide-out drawer, 44px 
 
 ## Constitution Check
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+_GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
-| Principle | Check | Status |
-|---|---|---|
-| I. Layered Service Architecture | Any backend change (conflict-check on prompt update) stays in the existing router → service → repository layering; no new layer bypass | PASS |
-| II. Test Coverage Gate | Plan requires pytest coverage for backend touch points, Vitest coverage for new TS modules, both against the existing ≥85% gate; tests written alongside implementation (Phase 2 tasks) | PASS |
-| III. Security-First Authentication | Offline sync reuses existing authenticated prompt endpoints; no new unauthenticated mutation path introduced | PASS |
-| IV. TypeScript-Only Frontend | All new client logic written under `src/web/static/ts/`; legacy `src/web/static/js/app.js` is not edited | PASS |
-| V. Database-Backed Persistence | No new JSON/file storage; offline queue lives client-side in IndexedDB (a client cache, not a persistence-of-record concern) and syncs through existing SQLAlchemy-backed endpoints | PASS |
+| Principle                          | Check                                                                                                                                                                                   | Status |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| I. Layered Service Architecture    | Any backend change (conflict-check on prompt update) stays in the existing router → service → repository layering; no new layer bypass                                                  | PASS   |
+| II. Test Coverage Gate             | Plan requires pytest coverage for backend touch points, Vitest coverage for new TS modules, both against the existing ≥85% gate; tests written alongside implementation (Phase 2 tasks) | PASS   |
+| III. Security-First Authentication | Offline sync reuses existing authenticated prompt endpoints; no new unauthenticated mutation path introduced                                                                            | PASS   |
+| IV. TypeScript-Only Frontend       | All new client logic written under `src/web/static/ts/`; legacy `src/web/static/js/app.js` is not edited                                                                                | PASS   |
+| V. Database-Backed Persistence     | No new JSON/file storage; offline queue lives client-side in IndexedDB (a client cache, not a persistence-of-record concern) and syncs through existing SQLAlchemy-backed endpoints     | PASS   |
 
 No violations requiring Complexity Tracking justification.
 
@@ -94,4 +94,4 @@ playwright tests (existing e2e location, e.g. tests/e2e/ or root-level per playw
 
 ## Complexity Tracking
 
-*No Constitution Check violations — table intentionally omitted.*
+_No Constitution Check violations — table intentionally omitted._

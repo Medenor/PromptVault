@@ -163,6 +163,7 @@
               >
                 Backup
               </button>
+              {% include 'macros/language_selector.html' %}
               <button
                 type="button"
                 id="profile-btn"
@@ -228,6 +229,12 @@
                   >
                     Backup
                   </button>
+                  <div class="border-t border-gray-200 my-2"></div>
+                  <div class="px-4 py-2">
+                    <label class="block text-xs text-gray-500 mb-1" data-i18n="nav.language">Language</label>
+                    {% include 'macros/language_selector.html' %}
+                  </div>
+                  <div class="border-t border-gray-200 my-2"></div>
                   <button
                     type="button"
                     onclick="window.location.href = '/auth/profile'"

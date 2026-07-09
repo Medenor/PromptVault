@@ -55,10 +55,11 @@ export function updateStaticTranslations(): void {
     }
   });
 
-  const languageSelector = document.getElementById('language-selector');
-  if (languageSelector instanceof HTMLSelectElement) {
-    languageSelector.value = i18next.language;
-  }
+  document.querySelectorAll('.language-selector').forEach((element) => {
+    if (element instanceof HTMLSelectElement) {
+      element.value = i18next.language;
+    }
+  });
 }
 
 /**
@@ -86,9 +87,26 @@ export function initI18n(callback: InitCallback): void {
           // Error is already logged by i18next, just proceed with callback
         }
 
+        const initLanguageSelectors = () => {
+          document.querySelectorAll('.language-selector').forEach((el) => {
+            if (el instanceof HTMLSelectElement) {
+              el.value = i18next.language;
+              el.addEventListener('change', () => {
+                void changeLanguage(el.value).catch((err) => {
+                  console.error('Failed to change language:', err);
+                });
+              });
+            }
+          });
+        };
+
         if (document.readyState === 'loading') {
-          document.addEventListener('DOMContentLoaded', callback);
+          document.addEventListener('DOMContentLoaded', () => {
+            initLanguageSelectors();
+            callback();
+          });
         } else {
+          initLanguageSelectors();
           callback();
         }
       }

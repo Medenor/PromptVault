@@ -47,6 +47,7 @@
             aria-label="Page navigation"
             data-i18n="[aria-label]accessibility.labels.pageNavigation"
           >
+            {% include 'macros/language_selector.html' %}
             <button
               type="button"
               onclick="window.location.href = '/'"
@@ -132,39 +133,6 @@
               <span id="user-last-login" class="text-gray-900"></span>
             </div>
           </div>
-        </div>
-      </section>
-
-      <!-- Preferences Section -->
-      <section
-        aria-labelledby="preferences-heading"
-        class="mb-8 bg-white border border-gray-200 rounded-lg p-6"
-      >
-        <h2
-          id="preferences-heading"
-          class="text-xl font-bold text-gray-900 mb-6"
-          data-i18n="auth.profile.preferences"
-        >
-          Preferences
-        </h2>
-
-        <!-- Language Selection -->
-        <div>
-          <label
-            for="language-selector"
-            class="block text-sm font-medium text-gray-900 mb-2"
-            data-i18n="auth.profile.language"
-            >Language</label
-          >
-          <select
-            id="language-selector"
-            class="px-3 py-2 text-sm text-gray-900 border border-gray-600 rounded-md disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
-          >
-            <option value="en">English</option>
-            <option value="fr">Français</option>
-            <option value="es">Español</option>
-            <option value="de">Deutsch</option>
-          </select>
         </div>
       </section>
 

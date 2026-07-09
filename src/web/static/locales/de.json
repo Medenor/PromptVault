@@ -22,7 +22,8 @@
     "logout": "Abmelden",
     "backToMain": "Zurück zum Hauptmenü",
     "skipToMainContent": "Zum Hauptinhalten springen",
-    "home": "Startseite"
+    "home": "Startseite",
+    "language": "Sprache"
   },
   "actions": {
     "add": "Hinzufügen",

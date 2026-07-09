@@ -222,7 +222,7 @@ Ce document fournit des checklists détaillées pour tester manuellement:
 
 Pour chaque problème trouvé, noter:
 
-- [ ] **URL/Page:** ******\_\_\_******
+- [ ] **URL/Page:** **\*\***\_\_\_**\*\***
 - [ ] **Élément affecté:** (ex: "Bouton sauvegarder dans modal création prompt")
 - [ ] **Problème:**
   - [ ] Élément pas focusable (devrait l'être)
@@ -237,7 +237,7 @@ Pour chaque problème trouvé, noter:
   - [ ] Haute (rend difficile la navigation)
   - [ ] Moyenne (affecte expérience)
   - [ ] Basse (amélioration mineure)
-- [ ] **Notes:** ******\_\_\_******
+- [ ] **Notes:** **\*\***\_\_\_**\*\***
 
 ---
 
@@ -513,7 +513,7 @@ Pour chaque problème trouvé, noter:
 
 Pour chaque problème trouvé, noter:
 
-- [ ] **URL/Page:** ******\_\_\_******
+- [ ] **URL/Page:** **\*\***\_\_\_**\*\***
 - [ ] **Lecteur d'écran:** NVDA / VoiceOver
 - [ ] **Élément affecté:** (ex: "Bouton suppression dans modal confirmation")
 - [ ] **Problème:**
@@ -531,7 +531,7 @@ Pour chaque problème trouvé, noter:
   - [ ] Haute (rend incompréhensible)
   - [ ] Moyenne (affecte compréhension)
   - [ ] Basse (amélioration)
-- [ ] **Notes:** ******\_\_\_******
+- [ ] **Notes:** **\*\***\_\_\_**\*\***
 
 ---
 

@@ -22,7 +22,8 @@
     "logout": "Cerrar sesión",
     "backToMain": "Volver al menú principal",
     "skipToMainContent": "Saltar al contenido principal",
-    "home": "Inicio"
+    "home": "Inicio",
+    "language": "Idioma"
   },
   "actions": {
     "add": "Añadir",

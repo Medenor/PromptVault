@@ -147,15 +147,15 @@
 
 **Purpose**: Integrity verification, incremental backups, retention cleanup, tagging/search, and edge-case hardening across all stories
 
-- [X] T045 Implement backup integrity check in `src/services/backup_service_db.py`: `verify_backup(backup_id) -> dict` — read file, compute SHA-256 (on ciphertext for encrypted backups), compare to `Backup.checksum`, update `integrity_verified_at` if valid, log to audit; implement `POST /api/backups/{backup_id}/verify` in `src/web/routers/backup.py`
-- [X] T046 [P] Implement incremental backup creation in `src/services/backup_service_db.py`: on `backup_kind='incremental'`, snapshot current prompts as JSON, diff against parent full backup, store only delta in `Backup.delta_payload`; enforce `parent_backup_id IS NOT NULL`; fall back to full backup when no valid prior backup exists (FR-006)
-- [X] T047 [P] Implement retention cleanup directly in `POST /api/backups/cleanup` (`src/web/routers/backup.py`): deletes backups older than `retention_days` (explicit form field, falling back to the active `BackupSchedule.retention_days`); returns `{success, dry_run, removed_count, would_delete, deleted}`
-- [X] T048 [P] Implement tagging API in `src/web/routers/backup.py`: `POST /api/backups/{backup_id}/tags` validates tag count (max 20) and length (max 64 chars) before persisting to `Backup.tags`
-- [X] T049 [P] Extend `GET /api/backups` to support `tag`, `start_date`, `end_date`, `kind` query params via `BackupRepository.list_backups` filters; extend backup list UI in `src/web/static/ts/backup-management.ts` with filter controls
-- [X] T050 [P] Add concurrent-backup guard to `src/services/backup_service_db.py`: return `409 Conflict` if a backup is already in progress when `POST /api/backups` or a scheduled trigger fires (FR-004); add disk-space check pre-creation and log failure to audit if insufficient
-- [X] T051 [P] Add in-app notification on backup success/failure (FR-026): emit notification via existing notification system (or create a simple `flash` mechanism) after each scheduled backup completes; surface in monitoring dashboard
-- [X] T052 Run full quickstart.md validation scenarios (Scenarios 1–7) against local stack to confirm all acceptance criteria pass
-- [X] T053 [P] Run `python -m pytest tests/ --cov=src --cov-report=term-missing` and confirm coverage ≥ 85%; run `npm run typecheck && npm run lint && npm run test:unit:coverage` and confirm frontend coverage ≥ 85%
+- [x] T045 Implement backup integrity check in `src/services/backup_service_db.py`: `verify_backup(backup_id) -> dict` — read file, compute SHA-256 (on ciphertext for encrypted backups), compare to `Backup.checksum`, update `integrity_verified_at` if valid, log to audit; implement `POST /api/backups/{backup_id}/verify` in `src/web/routers/backup.py`
+- [x] T046 [P] Implement incremental backup creation in `src/services/backup_service_db.py`: on `backup_kind='incremental'`, snapshot current prompts as JSON, diff against parent full backup, store only delta in `Backup.delta_payload`; enforce `parent_backup_id IS NOT NULL`; fall back to full backup when no valid prior backup exists (FR-006)
+- [x] T047 [P] Implement retention cleanup directly in `POST /api/backups/cleanup` (`src/web/routers/backup.py`): deletes backups older than `retention_days` (explicit form field, falling back to the active `BackupSchedule.retention_days`); returns `{success, dry_run, removed_count, would_delete, deleted}`
+- [x] T048 [P] Implement tagging API in `src/web/routers/backup.py`: `POST /api/backups/{backup_id}/tags` validates tag count (max 20) and length (max 64 chars) before persisting to `Backup.tags`
+- [x] T049 [P] Extend `GET /api/backups` to support `tag`, `start_date`, `end_date`, `kind` query params via `BackupRepository.list_backups` filters; extend backup list UI in `src/web/static/ts/backup-management.ts` with filter controls
+- [x] T050 [P] Add concurrent-backup guard to `src/services/backup_service_db.py`: return `409 Conflict` if a backup is already in progress when `POST /api/backups` or a scheduled trigger fires (FR-004); add disk-space check pre-creation and log failure to audit if insufficient
+- [x] T051 [P] Add in-app notification on backup success/failure (FR-026): emit notification via existing notification system (or create a simple `flash` mechanism) after each scheduled backup completes; surface in monitoring dashboard
+- [x] T052 Run full quickstart.md validation scenarios (Scenarios 1–7) against local stack to confirm all acceptance criteria pass
+- [x] T053 [P] Run `python -m pytest tests/ --cov=src --cov-report=term-missing` and confirm coverage ≥ 85%; run `npm run typecheck && npm run lint && npm run test:unit:coverage` and confirm frontend coverage ≥ 85%
 
 ---
 
