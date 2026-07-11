@@ -89,7 +89,9 @@ class BackupService:
             if custom_name:
                 safe_suffix = self._sanitize_backup_name(custom_name)
                 backup_id = (
-                    f"backup_{safe_suffix}" if safe_suffix else f"backup_{timestamp}"
+                    f"backup_{safe_suffix}_{timestamp}"
+                    if safe_suffix
+                    else f"backup_{timestamp}"
                 )
             else:
                 backup_id = f"backup_{timestamp}"
