@@ -578,9 +578,21 @@ PORT=8001 python3 run_web.py
 - **Import/Export**: Support for CSV, Markdown, and JSON formats with preview functionality
 - **Data Backup System**: Comprehensive backup and restoration with automatic pre-operation backups, manual backups, cleanup, and compression
 - **Security**: Argon2id password hashing, ES256 JWT tokens, rate limiting, account lockout, password reset flow
-- **Responsive Design**: Modern, mobile-friendly interface that works on all devices
+- **Mobile-Responsive UI & PWA**: Installable Progressive Web App with offline support, touch gestures, and a mobile-first navigation drawer (see below)
 - **Multi-language Support**: Internationalization with English, French, Spanish, and German (authentication UI in English)
 - **Validation & Monitoring**: End-to-end validation/sanitization across API, server, and client with `/api/validation/stats` metrics (see below)
+
+### Mobile-Responsive UI & PWA
+
+PromptVault is a fully installable Progressive Web App with a mobile-first UI, tested at 320px–768px+ viewport widths (tablet-landscape at 768px+ uses the existing desktop layout):
+
+- **Navigation**: A unified slide-out drawer (hamburger menu) replaces the desktop sidebar below 768px, combining navigation links and filters with focus-trapped keyboard access.
+- **Touch targets & layout**: All interactive controls meet a 44×44px minimum tap size; modals are full-screen on mobile and centered on desktop; the on-screen keyboard no longer obscures focused form fields.
+- **Search**: A dedicated full-screen search overlay on mobile, separate from the desktop inline search bar.
+- **Gestures**: Swipe left/right on a prompt card to reveal delete (with confirmation) or edit actions; pull-to-refresh on the prompt list. Every gesture has a visible, tappable equivalent for accessibility.
+- **Offline support**: A Service Worker (root-scoped at `/sw.js`) caches static assets and API/navigation responses. Edits made while offline are queued in IndexedDB and synced automatically on reconnect, with 409 conflict detection if the prompt changed on the server in the meantime.
+- **Installable**: A Web App Manifest (`/static/manifest.json`) lets the app be added to a device home screen and launched standalone.
+- **Dark mode**: Automatic light/dark theme based on the OS `prefers-color-scheme` setting.
 
 ### Internationalization
 

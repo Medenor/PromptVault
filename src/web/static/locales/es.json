@@ -7,6 +7,7 @@
     "allCategories": "Todas las categorías",
     "tags": "Etiquetas",
     "allTags": "Todas las etiquetas",
+    "menu": "Menú",
     "categoriesAndTags": "Categorías & Etiquetas",
     "filters": "Filtros",
     "showFavorites": "Mostrar favoritos",
@@ -58,7 +59,9 @@
     "replace": "Reemplazar",
     "saveOrder": "Guardar orden",
     "saveAll": "Guardar todo",
-    "undo": "Deshacer"
+    "undo": "Deshacer",
+    "refreshPrompts": "Actualizar lista de prompts",
+    "newPromptFab": "Crear nuevo prompt"
   },
   "form": {
     "title": "Título del Prompt:",
@@ -97,7 +100,8 @@
     "suggestTagsFailed": "No se pudieron obtener sugerencias de etiquetas.",
     "bulkTagProvideAtLeastOne": "Proporcione al menos una etiqueta para agregar o eliminar.",
     "bulkTagUpdateSuccess": "Etiquetas actualizadas para los prompts seleccionados.",
-    "bulkTagUpdateFailed": "No se pudieron actualizar las etiquetas."
+    "bulkTagUpdateFailed": "No se pudieron actualizar las etiquetas.",
+    "refreshing": "Actualizando…"
   },
   "validation": {
     "errorSummaryHeader": "Corrija los siguientes errores:",
@@ -240,7 +244,9 @@
     }
   },
   "prompt": {
-    "editorTitle": "Crear/Editar prompt"
+    "editorTitle": "Crear/Editar prompt",
+    "readMore": "Leer más",
+    "readLess": "Leer menos"
   },
   "version": {
     "history": "Historial",
@@ -259,7 +265,9 @@
     "version2": "Versión 2",
     "noVersions": "No hay versiones disponibles",
     "revertSuccess": "Reversión a versión anterior exitosa",
-    "revertError": "Error al revertir versión"
+    "revertError": "Error al revertir versión",
+    "previousVersion": "Versión anterior",
+    "nextVersion": "Versión siguiente"
   },
   "bulkDelete": {
     "confirmTitle": "Confirmar eliminación masiva",
@@ -728,5 +736,12 @@
       "fallbackNoteHeading": "Nota:",
       "fallbackNoteBody": "Algunos atajos solo están disponibles en la página principal de prompts."
     }
+  },
+  "offline": {
+    "indicator": "Estás sin conexión. Mostrando prompts en caché — los cambios se sincronizarán cuando vuelvas a estar en línea.",
+    "changeQueued": "Sin conexión — tu cambio se guardó y se sincronizará automáticamente cuando vuelvas a estar en línea.",
+    "syncConflict": "No se pudo sincronizar un cambio pendiente porque este prompt cambió en otro lugar. Revisa la versión actual antes de reintentarlo.",
+    "unavailableOffline": "Este contenido no está disponible sin conexión. Vuelve a conectarte para verlo.",
+    "synced": "Tus cambios sin conexión se han sincronizado."
   }
 }

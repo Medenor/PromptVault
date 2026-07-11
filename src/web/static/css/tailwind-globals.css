@@ -274,6 +274,16 @@
     @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2;
   }
 
+  /* Fluid typography for prompt card title/body text (mobile-readability requirement).
+     Scales between a mobile-first floor and the existing desktop fixed sizes. */
+  .text-prompt-title {
+    font-size: clamp(1.0625rem, 0.98rem + 0.4vw, 1.125rem); /* ~17px -> 18px (text-lg) */
+  }
+
+  .text-prompt-body {
+    font-size: clamp(0.9375rem, 0.9rem + 0.2vw, 0.875rem); /* ~15px -> 14px (text-sm) */
+  }
+
   /* Field validation states */
   /* Using darker colors for 3:1+ contrast on all backgrounds (WCAG 2.1 AA) */
   .field-valid {
@@ -686,11 +696,6 @@
 
   #sidebar-backdrop {
     will-change: opacity;
-  }
-
-  /* Mobile menu dropdown animations */
-  #mobile-menu-dropdown {
-    animation: slideDown 0.2s ease-out;
   }
 
   /* Prevent body scroll when mobile sidebar is open */

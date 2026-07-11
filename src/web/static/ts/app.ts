@@ -28,6 +28,12 @@ import {
   type PaginationState,
   type PageSize,
 } from '@/utils/pagination';
+import { closeMobileDrawer, initKeyboardSafeScroll, initMobileNav } from '@/mobile-nav';
+import { initSearchOverlay } from '@/search-overlay';
+import { initOfflineIndicator, registerServiceWorker } from '@/sw-register';
+import { syncOfflineQueue } from '@/offline-sync';
+import { addQueueEntry } from '@/utils/offline-queue';
+import { attachPullToRefresh, attachSwipeReveal } from '@/gestures';
 
 interface TagInfo {
   name: string;
@@ -1053,12 +1059,21 @@ async function checkAdminAccess(): Promise<void> {
       }
     }
   } catch (error) {
-    if (error instanceof APIRequestError) {
-      reportAppIssue('checkAdminAccess', error);
-    } else {
-      reportAppIssue('checkAdminAccess', error);
+    reportAppIssue('checkAdminAccess', error);
+
+    // Offline (network failure, not a real auth rejection): show the cached
+    // app shell instead of redirecting to login, so previously-viewed content
+    // remains accessible per FR-009. apiFetch already handles a genuine 401
+    // (server reachable, session invalid) with its own redirect.
+    if (!navigator.onLine || !(error instanceof APIRequestError)) {
+      const loadingOverlay = document.getElementById('auth-loading-overlay');
+      const appDiv = document.querySelector('.app') as HTMLElement | null;
+      if (loadingOverlay) loadingOverlay.style.display = 'none';
+      if (appDiv) appDiv.style.display = 'block';
+      return;
     }
-    // On error, redirect to login for security (apiFetch already handles 401 with redirect)
+
+    // On a genuine auth error while online, redirect to login for security.
     window.location.href = '/auth/login';
   }
 }
@@ -1111,34 +1126,59 @@ function updateLoadMoreControl(): void {
 }
 
 function setupEventListeners(): void {
-  // Mobile sidebar toggle
-  const sidebarToggle = document.getElementById('sidebar-toggle');
-  sidebarToggle?.addEventListener('click', toggleMobileSidebar);
+  // Unified mobile navigation drawer (hamburger triggers, close button,
+  // backdrop, outside-tap/Escape close, focus trap) — see mobile-nav.ts
+  initMobileNav();
 
-  // Mobile sidebar close button
-  const sidebarClose = document.getElementById('sidebar-close');
-  sidebarClose?.addEventListener('click', closeMobileSidebar);
+  // Full-screen mobile search overlay (FR-016) — see search-overlay.ts
+  initSearchOverlay();
 
-  // Mobile sidebar backdrop
-  const sidebarBackdrop = document.getElementById('sidebar-backdrop');
-  sidebarBackdrop?.addEventListener('click', closeMobileSidebar);
+  // Keep the prompt editor's fields visible above the on-screen keyboard (FR-005)
+  initKeyboardSafeScroll(['#prompt-title', '#prompt-content']);
 
-  // Mobile menu dropdown toggle
-  const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
-  mobileMenuToggle?.addEventListener('click', toggleMobileMenu);
+  // Offline resilience: Service Worker caching, persistent offline indicator,
+  // and automatic queue sync on reconnect (FR-009, FR-010, FR-011)
+  registerServiceWorker();
+  initOfflineIndicator(() => {
+    void syncOfflineQueue();
+  });
+  if (navigator.onLine) {
+    void syncOfflineQueue();
+  }
 
-  // Close mobile menu when clicking outside
-  document.addEventListener('click', (event) => {
-    const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
-    const mobileMenuDropdown = document.getElementById('mobile-menu-dropdown');
-    if (
-      mobileMenuToggle &&
-      mobileMenuDropdown &&
-      !mobileMenuToggle.contains(event.target as Node) &&
-      !mobileMenuDropdown.contains(event.target as Node)
-    ) {
-      closeMobileMenu();
+  // Pull-to-refresh on the prompt list (FR-008), with an accessible refresh
+  // button as the always-visible equivalent control.
+  const promptsList = document.getElementById('prompts-list');
+  const pullRefreshIndicator = document.getElementById('pull-refresh-indicator');
+  const refreshPromptsBtn = document.getElementById('refresh-prompts-btn');
+
+  const showRefreshLoading = (): void => {
+    pullRefreshIndicator?.classList.remove('hidden');
+    pullRefreshIndicator?.classList.add('flex');
+  };
+  const hideRefreshLoading = (): void => {
+    pullRefreshIndicator?.classList.add('hidden');
+    pullRefreshIndicator?.classList.remove('flex');
+  };
+  const refreshPrompts = async (): Promise<void> => {
+    if (isAnyFilterActive()) {
+      await performSearch();
+    } else {
+      await loadPrompts();
     }
+  };
+
+  if (promptsList) {
+    attachPullToRefresh(promptsList, {
+      onRefresh: refreshPrompts,
+      showLoading: showRefreshLoading,
+      hideLoading: hideRefreshLoading,
+    });
+  }
+
+  refreshPromptsBtn?.addEventListener('click', () => {
+    showRefreshLoading();
+    void refreshPrompts().finally(hideRefreshLoading);
   });
 
   // New prompt button
@@ -1149,8 +1189,12 @@ function setupEventListeners(): void {
   const newPromptBtnMobile = document.getElementById('new-prompt-btn-mobile');
   newPromptBtnMobile?.addEventListener('click', () => {
     showNewPromptForm();
-    closeMobileMenu();
+    closeMobileDrawer();
   });
+
+  // New prompt floating action button (mobile, FR-006)
+  const newPromptFab = document.getElementById('new-prompt-fab');
+  newPromptFab?.addEventListener('click', showNewPromptForm);
 
   // Import/Export button (navigates to import/export page)
   const importExportBtn = document.getElementById('import-export-btn');
@@ -1239,7 +1283,7 @@ function setupEventListeners(): void {
   const categoriesListMobile = document.getElementById('categories-list-mobile');
   categoriesListMobile?.addEventListener('click', (event) => {
     handleCategoryFilter(event);
-    closeMobileSidebar();
+    closeMobileDrawer();
   });
 
   const tagsList = document.getElementById('tags-list');
@@ -1247,7 +1291,7 @@ function setupEventListeners(): void {
   const tagsListMobile = document.getElementById('tags-list-mobile');
   tagsListMobile?.addEventListener('click', (event) => {
     handleTagFilter(event);
-    closeMobileSidebar();
+    closeMobileDrawer();
   });
   initializeFilterListKeyboardNavigation();
 
@@ -1546,7 +1590,7 @@ function isAnyFilterActive(): boolean {
 function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement {
   const div = document.createElement('div');
   div.className =
-    'prompt-item bg-white rounded-lg border border-gray-200 p-4 transition-all hover:scale-[1.02] cursor-pointer';
+    'prompt-item bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 transition-all hover:scale-[1.02] cursor-pointer';
   div.dataset.id = id;
   div.dataset.navLabel = prompt.title || '';
 
@@ -1559,7 +1603,8 @@ function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement
   const titleId = `prompt-title-${id}`;
   const checkbox = document.createElement('input');
   checkbox.type = 'checkbox';
-  checkbox.className = 'prompt-checkbox rounded text-blue-500 focus:ring-blue-500';
+  checkbox.className =
+    'prompt-checkbox w-5 h-5 md:w-4 md:h-4 rounded text-blue-500 focus:ring-blue-500';
   checkbox.dataset.promptId = id;
   checkbox.setAttribute('aria-labelledby', titleId);
   checkbox.checked = selectedPromptIds.has(parseInt(id));
@@ -1593,9 +1638,9 @@ function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement
 
   div.innerHTML = `
 	        <div class="flex items-start justify-between mb-3">
-	            <h4 id="${titleId}" class="text-lg font-semibold text-gray-900 flex-1 flex items-center flex-wrap gap-1">${escapeHtml(prompt.title)}${semVerBadge}</h4>
+	            <h4 id="${titleId}" class="text-prompt-title font-semibold text-gray-900 flex-1 flex items-center flex-wrap gap-1">${escapeHtml(prompt.title)}${semVerBadge}</h4>
 	            <div class="flex items-center gap-1 ml-2" id="prompt-actions-${id}">
-	                <button class="favorite-btn text-xl hover:scale-110 transition-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 rounded" data-id="${id}">
+	                <button class="favorite-btn flex items-center justify-center min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 text-xl hover:scale-110 transition-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 rounded" data-id="${id}">
 	                    ${prompt.favorite ? '★' : '☆'}
 	                </button>
 	            </div>
@@ -1606,13 +1651,14 @@ function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement
             </span>
             ${tagsHTML}
         </div>
-        <p class="text-sm text-gray-600 mb-4 line-clamp-3">${escapeHtml(truncateText(prompt.prompt, 100))}</p>
+        <p class="prompt-body-text text-prompt-body text-gray-600 mb-1 line-clamp-3">${escapeHtml(prompt.prompt)}</p>
+        <button type="button" class="read-more-btn hidden min-h-[44px] md:min-h-0 -ml-2 px-2 mb-3 text-xs font-medium text-blue-700 hover:text-blue-800 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 rounded" data-i18n="prompt.readMore">Read More</button>
         <div class="flex flex-wrap gap-2">
-            <button class="history-btn px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all hover:scale-105 active:scale-95" data-id="${id}" data-i18n="version.history">History</button>
-            <button class="copy-btn px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all hover:scale-105 active:scale-95" data-id="${id}" data-i18n="actions.copy">Copy</button>
-            <button class="copy-with-version-btn px-3 py-1.5 text-xs font-medium rounded-lg bg-purple-100 text-purple-700 hover:bg-purple-200 transition-all hover:scale-105 active:scale-95" data-id="${id}" data-i18n="version.copyWithMetadata">Copy+Version</button>
-            <button class="edit-btn px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 transition-all hover:scale-105 active:scale-95" data-id="${id}" data-i18n="actions.edit">Edit</button>
-            <button class="delete-btn px-3 py-1.5 text-xs font-medium rounded-lg bg-red-100 text-red-700 hover:bg-red-200 transition-all hover:scale-105 active:scale-95" data-id="${id}" data-i18n="actions.delete">Delete</button>
+            <button class="history-btn min-h-[44px] md:min-h-0 px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all hover:scale-105 active:scale-95" data-id="${id}" data-i18n="version.history">History</button>
+            <button class="copy-btn min-h-[44px] md:min-h-0 px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all hover:scale-105 active:scale-95" data-id="${id}" data-i18n="actions.copy">Copy</button>
+            <button class="copy-with-version-btn min-h-[44px] md:min-h-0 px-3 py-1.5 text-xs font-medium rounded-lg bg-purple-100 text-purple-700 hover:bg-purple-200 transition-all hover:scale-105 active:scale-95" data-id="${id}" data-i18n="version.copyWithMetadata">Copy+Version</button>
+            <button class="edit-btn min-h-[44px] md:min-h-0 px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 transition-all hover:scale-105 active:scale-95" data-id="${id}" data-i18n="actions.edit">Edit</button>
+            <button class="delete-btn min-h-[44px] md:min-h-0 px-3 py-1.5 text-xs font-medium rounded-lg bg-red-100 text-red-700 hover:bg-red-200 transition-all hover:scale-105 active:scale-95" data-id="${id}" data-i18n="actions.delete">Delete</button>
         </div>
     `;
 
@@ -1695,6 +1741,36 @@ function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement
     }
     lastSelectedPromptId = parseInt(id, 10);
     void editPrompt(id);
+  });
+
+  // "Read More" — reveal the full prompt body when the clamped text overflows.
+  const bodyText = div.querySelector('.prompt-body-text') as HTMLElement | null;
+  const readMoreBtn = div.querySelector('.read-more-btn') as HTMLButtonElement | null;
+  if (bodyText && readMoreBtn) {
+    requestAnimationFrame(() => {
+      if (bodyText.scrollHeight > bodyText.clientHeight + 1) {
+        readMoreBtn.classList.remove('hidden');
+      }
+    });
+    readMoreBtn.addEventListener('click', (event) => {
+      event.stopPropagation();
+      const isNowClamped = bodyText.classList.toggle('line-clamp-3');
+      readMoreBtn.textContent = isNowClamped ? t('prompt.readMore') : t('prompt.readLess');
+    });
+  }
+
+  // Swipe gestures (FR-007): left reveals delete (with confirmation, same as
+  // the visible Delete button), right opens the editor (same as tapping the
+  // card). Both are shortcuts for the existing, always-visible controls above.
+  attachSwipeReveal(div, {
+    onSwipeLeft: () => {
+      lastSelectedPromptId = parseInt(id, 10);
+      void deletePrompt(id);
+    },
+    onSwipeRight: () => {
+      lastSelectedPromptId = parseInt(id, 10);
+      void editPrompt(id);
+    },
   });
 
   return div;
@@ -2047,12 +2123,48 @@ async function handlePromptSubmit(event: SubmitEvent): Promise<void> {
       );
     }
   } catch (error) {
+    if (!navigator.onLine) {
+      await queueOfflinePromptSave(form, formData, isEditMode, promptId);
+      return;
+    }
     reportAppIssue('savePrompt', error, {
       mode: isEditMode ? 'edit' : 'create',
       promptId: promptId || null,
     });
     showNotification(t('messages.error'), 'error');
   }
+}
+
+/**
+ * Queues a prompt create/edit made while offline (FR-011). The queued change
+ * syncs automatically via syncOfflineQueue() on the next `online` event.
+ */
+async function queueOfflinePromptSave(
+  form: HTMLFormElement,
+  formData: FormData,
+  isEditMode: boolean,
+  promptId: PromptId | undefined
+): Promise<void> {
+  const payload: Record<string, unknown> = {};
+  formData.forEach((value, key) => {
+    payload[key] = value;
+  });
+
+  if (isEditMode && promptId) {
+    const baseVersionRaw = form.dataset.baseVersion;
+    const baseVersion = baseVersionRaw ? Number(baseVersionRaw) : null;
+    await addQueueEntry({
+      operation: 'update',
+      promptId: String(promptId),
+      baseVersion,
+      payload,
+    });
+  } else {
+    await addQueueEntry({ operation: 'create', payload });
+  }
+
+  history.back();
+  showNotification(t('offline.changeQueued'), 'info');
 }
 
 async function copyPromptWithVersion(id: PromptId): Promise<void> {
@@ -2207,6 +2319,19 @@ async function editPrompt(id: PromptId): Promise<void> {
     if (form) {
       form.dataset.mode = 'edit';
       form.dataset.id = id;
+    }
+
+    // Track the current version for offline-sync conflict detection (FR-012):
+    // best-effort — if this fails (e.g. offline), the form simply has no
+    // baseVersion and the offline queue omits expected_version on sync.
+    try {
+      const history_ = await apiGet<{ versions: VersionSummary[] }>(`/api/prompts/${id}/versions`);
+      const latest = history_.versions[0];
+      if (form && latest) {
+        form.dataset.baseVersion = String(latest.version_number);
+      }
+    } catch {
+      // Non-fatal: offline-sync conflict detection degrades to "no check requested".
     }
   } catch (error) {
     reportAppIssue('loadPromptForEdit', error, { promptId: id });
@@ -2373,12 +2498,6 @@ function hideModal() {
   hideElement(document.getElementById('prompt-modal'));
 }
 
-function truncateText(text: string, maxLength: number): string {
-  if (!text) return '';
-  if (text.length <= maxLength) return text;
-  return text.substring(0, maxLength) + '...';
-}
-
 // Search and Filter Functions
 let searchTimeout: ReturnType<typeof setTimeout> | null = null;
 
@@ -2395,7 +2514,7 @@ function setupSearchEventListeners() {
     });
   }
 
-  // Search input (mobile)
+  // Search input (mobile drawer)
   const searchInputMobile = document.getElementById(
     'search-input-mobile'
   ) as HTMLInputElement | null;
@@ -2407,6 +2526,14 @@ function setupSearchEventListeners() {
         clearAllFilters();
       }
     });
+  }
+
+  // Search input (full-screen mobile overlay, FR-016)
+  const searchInputOverlay = document.getElementById(
+    'search-input-overlay'
+  ) as HTMLInputElement | null;
+  if (searchInputOverlay) {
+    searchInputOverlay.addEventListener('input', handleSearchInput);
   }
 
   // Case sensitive toggle (desktop)
@@ -2464,14 +2591,19 @@ function handleSearchInput(event: Event): void {
   const searchTerm = target.value;
   searchState.searchTerm = searchTerm;
 
-  // Sync both search inputs (desktop and mobile)
+  // Sync all search inputs (desktop, mobile drawer, mobile overlay)
   const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
   const searchInputMobile = document.getElementById(
     'search-input-mobile'
   ) as HTMLInputElement | null;
+  const searchInputOverlay = document.getElementById(
+    'search-input-overlay'
+  ) as HTMLInputElement | null;
   if (searchInput && target.id !== 'search-input') searchInput.value = searchTerm;
   if (searchInputMobile && target.id !== 'search-input-mobile')
     searchInputMobile.value = searchTerm;
+  if (searchInputOverlay && target.id !== 'search-input-overlay')
+    searchInputOverlay.value = searchTerm;
 
   // Clear previous timeout
   if (searchTimeout) {
@@ -2854,6 +2986,7 @@ function renderVersionHistory(versions: VersionSummary[]): void {
   if (versions.length === 0) {
     versionList.innerHTML =
       '<div class="text-center text-gray-500 py-8">' + t('version.noVersions') + '</div>';
+    hideVersionCarouselNav();
     return;
   }
 
@@ -2864,6 +2997,78 @@ function renderVersionHistory(versions: VersionSummary[]): void {
   });
 
   initializeVersionListKeyboardNavigation(versionList);
+  initVersionCarousel(versionList, versions.length);
+}
+
+// Mobile swipeable version-history carousel (FR-018): pages through one
+// version at a time via swipe or the visible prev/next buttons.
+let versionCarouselIndex = 0;
+let detachVersionCarouselSwipe: (() => void) | null = null;
+
+function hideVersionCarouselNav(): void {
+  document.getElementById('version-carousel-nav')?.classList.add('hidden');
+  document.getElementById('version-list')?.classList.remove('carousel-mode');
+}
+
+function updateVersionCarouselPosition(total: number): void {
+  const position = document.getElementById('version-carousel-position');
+  const prevBtn = document.getElementById('version-carousel-prev') as HTMLButtonElement | null;
+  const nextBtn = document.getElementById('version-carousel-next') as HTMLButtonElement | null;
+  if (position) {
+    position.textContent = `${versionCarouselIndex + 1} / ${total}`;
+  }
+  if (prevBtn) prevBtn.disabled = versionCarouselIndex === 0;
+  if (nextBtn) nextBtn.disabled = versionCarouselIndex === total - 1;
+}
+
+function showVersionCarouselItem(versionList: HTMLElement, index: number): void {
+  const items = versionList.querySelectorAll<HTMLElement>('.version-item');
+  items.forEach((item, i) => {
+    item.classList.toggle('carousel-active', i === index);
+  });
+}
+
+function initVersionCarousel(versionList: HTMLElement, total: number): void {
+  const nav = document.getElementById('version-carousel-nav');
+  if (!nav || total === 0) return;
+
+  // Only enabled on mobile viewports; desktop keeps the vertical list (md:hidden on nav).
+  if (window.matchMedia('(min-width: 768px)').matches) {
+    hideVersionCarouselNav();
+    return;
+  }
+
+  nav.classList.remove('hidden');
+  nav.classList.add('flex');
+  versionList.classList.add('carousel-mode');
+  versionCarouselIndex = 0;
+  showVersionCarouselItem(versionList, versionCarouselIndex);
+  updateVersionCarouselPosition(total);
+
+  const prevBtn = document.getElementById('version-carousel-prev');
+  const nextBtn = document.getElementById('version-carousel-next');
+
+  const goToPrev = (): void => {
+    if (versionCarouselIndex === 0) return;
+    versionCarouselIndex -= 1;
+    showVersionCarouselItem(versionList, versionCarouselIndex);
+    updateVersionCarouselPosition(total);
+  };
+  const goToNext = (): void => {
+    if (versionCarouselIndex === total - 1) return;
+    versionCarouselIndex += 1;
+    showVersionCarouselItem(versionList, versionCarouselIndex);
+    updateVersionCarouselPosition(total);
+  };
+
+  prevBtn?.addEventListener('click', goToPrev);
+  nextBtn?.addEventListener('click', goToNext);
+
+  detachVersionCarouselSwipe?.();
+  detachVersionCarouselSwipe = attachSwipeReveal(versionList, {
+    onSwipeLeft: goToNext,
+    onSwipeRight: goToPrev,
+  });
 }
 
 function createVersionItem(
@@ -2873,7 +3078,7 @@ function createVersionItem(
 ): HTMLDivElement {
   const div = document.createElement('div');
   div.className =
-    'version-item bg-white border border-gray-200 rounded-lg p-4 cursor-pointer hover:bg-gray-50 transition-colors';
+    'version-item bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors';
   div.dataset.versionId = version.version_id;
   div.dataset.navLabel = version.message;
   div.setAttribute('role', 'button');
@@ -2904,13 +3109,13 @@ function createVersionItem(
     `
         <div class="flex items-center justify-between mb-2">
             <div class="flex items-center gap-2">
-              <span class="text-sm font-semibold text-gray-900">#${totalVersions - index} ${version.version_id.substring(0, 8)}...</span>
+              <span class="text-sm font-semibold text-gray-900 dark:text-gray-100">#${totalVersions - index} ${version.version_id.substring(0, 8)}...</span>
               ${semVerBadge}
             </div>
-            <span class="text-xs text-gray-500">${timestamp}</span>
+            <span class="text-xs text-gray-500 dark:text-gray-400">${timestamp}</span>
         </div>
-        <div class="text-xs text-gray-600 mb-1">${t('version.author')}: ${escapeHtml(version.author)}</div>
-        <div class="text-sm text-gray-700 mb-3">${escapeHtml(version.message)}</div>
+        <div class="text-xs text-gray-600 dark:text-gray-400 mb-1">${t('version.author')}: ${escapeHtml(version.author)}</div>
+        <div class="text-sm text-gray-700 dark:text-gray-300 mb-3">${escapeHtml(version.message)}</div>
         <div class="flex gap-2">
             ${!isLatest ? `<button class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-red-500 text-white hover:bg-red-600 transition-all hover:scale-105 active:scale-95" onclick="showRevertConfirmation('${version.version_id}')" data-i18n="version.revert">` + t('version.revert') + `</button>` : ''}
             <button class="px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 transition-all hover:scale-105 active:scale-95" onclick="selectVersionForComparison('${version.version_id}')" data-i18n="version.select">` +
@@ -3222,10 +3427,11 @@ function displayDiff(diff: VersionDiffResponse): void {
 
   Object.entries(diff.changes).forEach(([field, change]) => {
     const fieldDiv = document.createElement('div');
-    fieldDiv.className = 'bg-white border border-gray-200 rounded-lg p-4';
+    fieldDiv.className =
+      'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4';
 
     const fieldName = document.createElement('div');
-    fieldName.className = 'text-sm font-semibold text-gray-900 mb-3';
+    fieldName.className = 'text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3';
     fieldName.textContent =
       fieldDisplayNames[field] || field.charAt(0).toUpperCase() + field.slice(1);
     fieldDiv.appendChild(fieldName);
@@ -3234,7 +3440,8 @@ function displayDiff(diff: VersionDiffResponse): void {
     if (change.diff && change.diff.length > 0) {
       const diffContainer = renderCharacterDiff(change.diff);
       diffContainer.className =
-        'p-3 bg-gray-50 border border-gray-200 rounded-lg ' + diffContainer.className;
+        'p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg ' +
+        diffContainer.className;
       fieldDiv.appendChild(diffContainer);
     } else {
       // Fallback to old/new display for backward compatibility
@@ -4088,12 +4295,12 @@ function showTagAutocomplete(filteredTags: TagInfo[]) {
 
       const item = document.createElement('div');
       item.className =
-        'tag-autocomplete-item px-4 py-2 cursor-pointer hover:bg-gray-50 transition-colors flex items-center justify-between';
+        'tag-autocomplete-item px-4 py-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center justify-between';
       item.dataset.index = String(index);
       item.dataset.tagName = tagName;
 
       const nameSpan = document.createElement('span');
-      nameSpan.className = 'text-sm text-gray-900';
+      nameSpan.className = 'text-sm text-gray-900 dark:text-gray-100';
       nameSpan.textContent = tagName;
       item.appendChild(nameSpan);
 
@@ -4527,54 +4734,8 @@ async function performBulkTagUpdate(): Promise<void> {
   }
 }
 
-// ============================================
-// Mobile Sidebar & Menu Functions
-// ============================================
-
-function toggleMobileSidebar(): void {
-  const mobileSidebar = document.getElementById('mobile-sidebar');
-  const backdrop = document.getElementById('sidebar-backdrop');
-
-  if (mobileSidebar && backdrop) {
-    const isOpen = !mobileSidebar.classList.contains('-translate-x-full');
-
-    if (isOpen) {
-      closeMobileSidebar();
-    } else {
-      // Open sidebar
-      mobileSidebar.classList.remove('-translate-x-full');
-      backdrop.classList.remove('hidden');
-      // Prevent body scroll when sidebar is open
-      document.body.style.overflow = 'hidden';
-    }
-  }
-}
-
-function closeMobileSidebar(): void {
-  const mobileSidebar = document.getElementById('mobile-sidebar');
-  const backdrop = document.getElementById('sidebar-backdrop');
-
-  if (mobileSidebar && backdrop) {
-    mobileSidebar.classList.add('-translate-x-full');
-    backdrop.classList.add('hidden');
-    // Restore body scroll
-    document.body.style.overflow = '';
-  }
-}
-
-function toggleMobileMenu(): void {
-  const dropdown = document.getElementById('mobile-menu-dropdown');
-  if (dropdown) {
-    dropdown.classList.toggle('hidden');
-  }
-}
-
-function closeMobileMenu(): void {
-  const dropdown = document.getElementById('mobile-menu-dropdown');
-  if (dropdown) {
-    dropdown.classList.add('hidden');
-  }
-}
+// Mobile navigation drawer (hamburger, close, backdrop, focus trap) lives in
+// mobile-nav.ts — see initMobileNav() wired in setupEventListeners() above.
 
 initI18n(() => {
   try {

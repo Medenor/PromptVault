@@ -7,6 +7,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   announceToScreenReader,
+  createFocusTrap,
   focusFirstElement,
   getNextFocusElementAfterItemDelete,
   getNextFocusElementAfterRowDelete,
@@ -280,5 +281,101 @@ describe('manageModalFocus', () => {
     document.body.innerHTML = '<div id="modal"></div>';
     const modal = document.getElementById('modal') as HTMLElement;
     expect(() => manageModalFocus(modal, false)).not.toThrow();
+  });
+});
+
+describe('createFocusTrap', () => {
+  let container: HTMLElement;
+  let first: HTMLElement;
+  let last: HTMLElement;
+
+  beforeEach(() => {
+    document.body.innerHTML = `
+      <div id="container">
+        <button id="first">First</button>
+        <button id="middle">Middle</button>
+        <button id="last">Last</button>
+      </div>
+      <button id="outside">Outside</button>
+    `;
+    container = document.getElementById('container') as HTMLElement;
+    first = document.getElementById('first') as HTMLElement;
+    last = document.getElementById('last') as HTMLElement;
+  });
+
+  function fireTab(shiftKey: boolean): void {
+    const event = new KeyboardEvent('keydown', {
+      key: 'Tab',
+      shiftKey,
+      bubbles: true,
+      cancelable: true,
+    });
+    container.dispatchEvent(event);
+  }
+
+  it('wraps focus from last to first on Tab', () => {
+    last.focus();
+    createFocusTrap(container);
+    const focusSpy = vi.spyOn(first, 'focus');
+
+    fireTab(false);
+
+    expect(focusSpy).toHaveBeenCalled();
+  });
+
+  it('wraps focus from first to last on Shift+Tab', () => {
+    first.focus();
+    createFocusTrap(container);
+    const focusSpy = vi.spyOn(last, 'focus');
+
+    fireTab(true);
+
+    expect(focusSpy).toHaveBeenCalled();
+  });
+
+  it('does not interfere with Tab between inner elements', () => {
+    const middle = document.getElementById('middle') as HTMLElement;
+    middle.focus();
+    createFocusTrap(container);
+    const event = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true });
+    const preventDefaultSpy = vi.spyOn(event, 'preventDefault');
+
+    container.dispatchEvent(event);
+
+    expect(preventDefaultSpy).not.toHaveBeenCalled();
+  });
+
+  it('ignores non-Tab keys', () => {
+    first.focus();
+    createFocusTrap(container);
+    const event = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true });
+    const preventDefaultSpy = vi.spyOn(event, 'preventDefault');
+
+    container.dispatchEvent(event);
+
+    expect(preventDefaultSpy).not.toHaveBeenCalled();
+  });
+
+  it('prevents default and stays put when no focusable elements exist', () => {
+    document.body.innerHTML = '<div id="empty-container"><p>No buttons</p></div>';
+    const emptyContainer = document.getElementById('empty-container') as HTMLElement;
+    createFocusTrap(emptyContainer);
+    const event = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true });
+    const preventDefaultSpy = vi.spyOn(event, 'preventDefault');
+
+    emptyContainer.dispatchEvent(event);
+
+    expect(preventDefaultSpy).toHaveBeenCalled();
+  });
+
+  it('removes the keydown listener when cleanup is called', () => {
+    last.focus();
+    const cleanup = createFocusTrap(container);
+    cleanup();
+    const focusSpy = vi.spyOn(first, 'focus');
+
+    fireTab(false);
+
+    expect(focusSpy).not.toHaveBeenCalled();
   });
 });

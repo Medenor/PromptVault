@@ -7,6 +7,7 @@
     "allCategories": "All Categories",
     "tags": "Tags",
     "allTags": "All Tags",
+    "menu": "Menu",
     "categoriesAndTags": "Categories & Tags",
     "filters": "Filters",
     "showFavorites": "Show Favorites",
@@ -58,7 +59,9 @@
     "replace": "Replace",
     "saveOrder": "Save Order",
     "saveAll": "Save All",
-    "undo": "Undo"
+    "undo": "Undo",
+    "refreshPrompts": "Refresh prompt list",
+    "newPromptFab": "Create new prompt"
   },
   "form": {
     "title": "Prompt Title:",
@@ -97,7 +100,8 @@
     "suggestTagsFailed": "Failed to get tag suggestions.",
     "bulkTagProvideAtLeastOne": "Provide at least one tag to add or remove.",
     "bulkTagUpdateSuccess": "Tags updated for selected prompts.",
-    "bulkTagUpdateFailed": "Failed to update tags."
+    "bulkTagUpdateFailed": "Failed to update tags.",
+    "refreshing": "Refreshing…"
   },
   "validation": {
     "errorSummaryHeader": "Please correct the following errors:",
@@ -361,7 +365,9 @@
     }
   },
   "prompt": {
-    "editorTitle": "Create/Edit Prompt"
+    "editorTitle": "Create/Edit Prompt",
+    "readMore": "Read More",
+    "readLess": "Read Less"
   },
   "version": {
     "history": "History",
@@ -386,7 +392,9 @@
     "unversioned": "Unversioned",
     "copyWithMetadata": "Copy+Version",
     "copiedWithMetadata": "Copied with version metadata!",
-    "noVersionForCopy": "Assign a semantic version before copying with metadata."
+    "noVersionForCopy": "Assign a semantic version before copying with metadata.",
+    "previousVersion": "Previous version",
+    "nextVersion": "Next version"
   },
   "bulkDelete": {
     "confirmTitle": "Confirm Bulk Deletion",
@@ -769,5 +777,12 @@
       "fallbackNoteHeading": "Note:",
       "fallbackNoteBody": "Some shortcuts are only available on the main prompts page."
     }
+  },
+  "offline": {
+    "indicator": "You're offline. Viewing cached prompts — changes will sync when you're back online.",
+    "changeQueued": "Offline — your change was saved and will sync automatically once you're back online.",
+    "syncConflict": "A queued change could not be synced because this prompt changed elsewhere. Review the current version before retrying.",
+    "unavailableOffline": "This content isn't available offline. Reconnect to view it.",
+    "synced": "Your offline changes have synced."
   }
 }

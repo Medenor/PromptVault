@@ -6,10 +6,22 @@
   <head>
     {% import "macros/scripts.html" as scripts %}
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      // Dark mode bootstrap (FR-017): runs synchronously before first paint to
+      // avoid a flash of the wrong theme. Follows the OS prefers-color-scheme;
+      // no manual toggle is provided in this feature (see spec Assumptions).
+      (function () {
+        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content" />
     <meta name="description" content="Import/Export - Transfer prompts between PromptVault instances and external systems with flexible format support." />
     <title>PromptVault - Import/Export</title>
     <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon.png" />
+    <link rel="manifest" href="/static/manifest.json" />
+    <meta name="theme-color" content="#3B82F6" />
     {{ scripts.load_css('import-export', true) }}
     <script src="https://unpkg.com/i18next@23.7.6/i18next.min.js"></script>
     <script src="https://unpkg.com/i18next-browser-languagedetector@7.2.0/i18nextBrowserLanguageDetector.min.js"></script>

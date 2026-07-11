@@ -7,6 +7,7 @@
     "allCategories": "Toutes les catégories",
     "tags": "Étiquettes",
     "allTags": "Toutes les étiquettes",
+    "menu": "Menu",
     "categoriesAndTags": "Catégories & Étiquettes",
     "filters": "Filtres",
     "showFavorites": "Afficher les favoris",
@@ -58,7 +59,9 @@
     "replace": "Remplacer",
     "saveOrder": "Enregistrer l'ordre",
     "saveAll": "Tout enregistrer",
-    "undo": "Annuler"
+    "undo": "Annuler",
+    "refreshPrompts": "Actualiser la liste des prompts",
+    "newPromptFab": "Créer un nouveau prompt"
   },
   "form": {
     "title": "Titre du Prompt:",
@@ -97,7 +100,8 @@
     "suggestTagsFailed": "Échec de la récupération des suggestions de tags.",
     "bulkTagProvideAtLeastOne": "Indiquez au moins un tag à ajouter ou à supprimer.",
     "bulkTagUpdateSuccess": "Tags mis à jour pour les invites sélectionnées.",
-    "bulkTagUpdateFailed": "Échec de la mise à jour des tags."
+    "bulkTagUpdateFailed": "Échec de la mise à jour des tags.",
+    "refreshing": "Actualisation…"
   },
   "validation": {
     "errorSummaryHeader": "Veuillez corriger les erreurs suivantes :",
@@ -241,7 +245,9 @@
     }
   },
   "prompt": {
-    "editorTitle": "Créer/Modifier le prompt"
+    "editorTitle": "Créer/Modifier le prompt",
+    "readMore": "Lire la suite",
+    "readLess": "Réduire"
   },
   "version": {
     "history": "Historique",
@@ -266,7 +272,9 @@
     "unversioned": "Sans version",
     "copyWithMetadata": "Copier+Version",
     "copiedWithMetadata": "Copié avec les métadonnées de version !",
-    "noVersionForCopy": "Assignez une version sémantique avant de copier avec les métadonnées."
+    "noVersionForCopy": "Assignez une version sémantique avant de copier avec les métadonnées.",
+    "previousVersion": "Version précédente",
+    "nextVersion": "Version suivante"
   },
   "bulkDelete": {
     "confirmTitle": "Confirmer la suppression groupée",
@@ -734,5 +742,12 @@
       "fallbackNoteHeading": "Note :",
       "fallbackNoteBody": "Certains raccourcis ne sont disponibles que sur la page principale des prompts."
     }
+  },
+  "offline": {
+    "indicator": "Vous êtes hors ligne. Affichage des prompts en cache — les modifications seront synchronisées une fois de retour en ligne.",
+    "changeQueued": "Hors ligne — votre modification a été enregistrée et sera synchronisée automatiquement une fois de retour en ligne.",
+    "syncConflict": "Une modification en attente n'a pas pu être synchronisée car ce prompt a été modifié ailleurs. Vérifiez la version actuelle avant de réessayer.",
+    "unavailableOffline": "Ce contenu n'est pas disponible hors ligne. Reconnectez-vous pour le consulter.",
+    "synced": "Vos modifications hors ligne ont été synchronisées."
   }
 }

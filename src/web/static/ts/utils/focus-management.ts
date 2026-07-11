@@ -205,3 +205,57 @@ export function manageModalFocus(
     }
   }
 }
+
+const FOCUS_TRAP_SELECTORS = [
+  'button:not([disabled])',
+  '[href]',
+  'input:not([disabled])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  '[tabindex]:not([tabindex="-1"])',
+].join(',');
+
+function getFocusableElements(container: HTMLElement): HTMLElement[] {
+  return Array.from(container.querySelectorAll<HTMLElement>(FOCUS_TRAP_SELECTORS)).filter((el) => {
+    const style = window.getComputedStyle(el);
+    return style.display !== 'none' && style.visibility !== 'hidden';
+  });
+}
+
+/**
+ * Traps Tab/Shift+Tab focus cycling within a container (drawer, full-screen modal,
+ * search overlay). Returns a cleanup function that removes the trap's keydown listener.
+ *
+ * Does not move initial focus or restore focus on release — pair with
+ * `focusFirstElement` / `restoreFocusToTrigger` for full open/close focus management.
+ */
+export function createFocusTrap(container: HTMLElement): () => void {
+  const handleKeydown = (event: KeyboardEvent): void => {
+    if (event.key !== 'Tab') return;
+
+    const focusable = getFocusableElements(container);
+    if (focusable.length === 0) {
+      event.preventDefault();
+      return;
+    }
+
+    const first = focusable[0] as HTMLElement;
+    const last = focusable[focusable.length - 1] as HTMLElement;
+    const active = document.activeElement;
+
+    if (event.shiftKey) {
+      if (active === first || !container.contains(active)) {
+        event.preventDefault();
+        last.focus();
+      }
+    } else {
+      if (active === last || !container.contains(active)) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+  };
+
+  container.addEventListener('keydown', handleKeydown);
+  return () => container.removeEventListener('keydown', handleKeydown);
+}

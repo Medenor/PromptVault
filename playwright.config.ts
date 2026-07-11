@@ -19,7 +19,7 @@ dotenv.config();
  * and manual UI/authentication testing.
  */
 export default defineConfig({
-  testDir: './tests/accessibility',
+  testDir: './tests',
   testMatch: '**/*.spec.ts',
 
   /* Run tests in files in parallel */
@@ -64,28 +64,52 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
+      testDir: './tests/accessibility',
       use: { ...devices['Desktop Chrome'] },
     },
 
     {
       name: 'firefox',
+      testDir: './tests/accessibility',
       use: { ...devices['Desktop Firefox'] },
     },
 
     {
       name: 'webkit',
+      testDir: './tests/accessibility',
       use: { ...devices['Desktop Safari'] },
     },
 
     /* Test against mobile viewports */
     {
       name: 'Mobile Chrome',
+      testDir: './tests/accessibility',
       use: { ...devices['Pixel 5'] },
     },
 
     {
       name: 'Mobile Safari',
+      testDir: './tests/accessibility',
       use: { ...devices['iPhone 12'] },
+    },
+
+    /* Mobile-responsive UI feature (004-mobile-responsive-ui) E2E suites */
+    {
+      name: 'mobile',
+      testDir: './tests/e2e',
+      use: { ...devices['iPhone 14'] },
+    },
+
+    {
+      name: 'iPhone 14',
+      testDir: './tests/e2e',
+      use: { ...devices['iPhone 14'] },
+    },
+
+    {
+      name: 'Pixel 7',
+      testDir: './tests/e2e',
+      use: { ...devices['Pixel 7'] },
     },
   ],
 

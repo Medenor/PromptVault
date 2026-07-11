@@ -4,8 +4,51 @@
 
 import uuid
 import getpass
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional
+
+from src.db.repositories.version_repository import VersionRepository
+
+
+@dataclass
+class VersionConflictResult:
+    """Result of checking a client's expected prompt version against the server's current version."""
+
+    has_conflict: bool
+    current_version: int
+
+
+def check_version_conflict(
+    version_repo: VersionRepository, prompt_id: int, expected_version: Optional[int]
+) -> VersionConflictResult:
+    """Compare a client-supplied `expected_version` against the prompt's current version.
+
+    Used by the offline-sync conflict-detection contract (specs/004-mobile-responsive-ui):
+    when a queued offline edit is replayed, the client sends the version it last saw
+    (`expected_version`). If the server's current version has since advanced, this
+    surfaces as a conflict instead of silently overwriting the newer server-side write.
+
+    Args:
+        version_repo: VersionRepository bound to the active DB session
+        prompt_id: Prompt being updated
+        expected_version: The version the client last saw, or None if not supplied
+            (backward-compatible — non-offline clients never send this)
+
+    Returns:
+        VersionConflictResult with has_conflict=False when expected_version is None
+        (no check requested) or matches the current version.
+    """
+    latest = version_repo.get_latest_version(prompt_id)
+    current_version = latest.version_number if latest else 0
+
+    if expected_version is None:
+        return VersionConflictResult(has_conflict=False, current_version=current_version)
+
+    return VersionConflictResult(
+        has_conflict=expected_version != current_version,
+        current_version=current_version,
+    )
 
 
 def _utc_now_iso_z() -> str:

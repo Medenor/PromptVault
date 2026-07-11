@@ -7,6 +7,7 @@
     "allCategories": "Alle Kategorien",
     "tags": "Tags",
     "allTags": "Alle Tags",
+    "menu": "Menü",
     "categoriesAndTags": "Kategorien & Tags",
     "filters": "Filter",
     "showFavorites": "Favoriten anzeigen",
@@ -58,7 +59,9 @@
     "replace": "Ersetzen",
     "saveOrder": "Reihenfolge speichern",
     "saveAll": "Alle speichern",
-    "undo": "Rückgängig"
+    "undo": "Rückgängig",
+    "refreshPrompts": "Prompt-Liste aktualisieren",
+    "newPromptFab": "Neuen Prompt erstellen"
   },
   "form": {
     "title": "Prompt-Titel:",
@@ -97,7 +100,8 @@
     "suggestTagsFailed": "Tag-Vorschläge konnten nicht abgerufen werden.",
     "bulkTagProvideAtLeastOne": "Geben Sie mindestens einen Tag zum Hinzufügen oder Entfernen an.",
     "bulkTagUpdateSuccess": "Tags für die ausgewählten Prompts aktualisiert.",
-    "bulkTagUpdateFailed": "Tags konnten nicht aktualisiert werden."
+    "bulkTagUpdateFailed": "Tags konnten nicht aktualisiert werden.",
+    "refreshing": "Wird aktualisiert…"
   },
   "validation": {
     "errorSummaryHeader": "Bitte korrigieren Sie die folgenden Fehler:",
@@ -240,7 +244,9 @@
     }
   },
   "prompt": {
-    "editorTitle": "Prompt erstellen/bearbeiten"
+    "editorTitle": "Prompt erstellen/bearbeiten",
+    "readMore": "Mehr lesen",
+    "readLess": "Weniger anzeigen"
   },
   "version": {
     "history": "Verlauf",
@@ -259,7 +265,9 @@
     "version2": "Version 2",
     "noVersions": "Keine Versionen verfügbar",
     "revertSuccess": "Erfolgreich zur vorherigen Version zurückgekehrt",
-    "revertError": "Fehler beim Zurücksetzen der Version"
+    "revertError": "Fehler beim Zurücksetzen der Version",
+    "previousVersion": "Vorherige Version",
+    "nextVersion": "Nächste Version"
   },
   "bulkDelete": {
     "confirmTitle": "Massenlöschung bestätigen",
@@ -728,5 +736,12 @@
       "fallbackNoteHeading": "Hinweis:",
       "fallbackNoteBody": "Einige Kurzbefehle sind nur auf der Hauptseite der Prompts verfügbar."
     }
+  },
+  "offline": {
+    "indicator": "Du bist offline. Zwischengespeicherte Prompts werden angezeigt — Änderungen werden synchronisiert, sobald du wieder online bist.",
+    "changeQueued": "Offline — deine Änderung wurde gespeichert und wird automatisch synchronisiert, sobald du wieder online bist.",
+    "syncConflict": "Eine wartende Änderung konnte nicht synchronisiert werden, da sich dieser Prompt anderswo geändert hat. Überprüfe die aktuelle Version, bevor du es erneut versuchst.",
+    "unavailableOffline": "Dieser Inhalt ist offline nicht verfügbar. Stelle die Verbindung wieder her, um ihn anzuzeigen.",
+    "synced": "Deine Offline-Änderungen wurden synchronisiert."
   }
 }

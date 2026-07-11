@@ -401,6 +401,20 @@ if os.path.exists("dist/static"):
     app.mount("/static/dist", StaticFiles(directory="dist/static"), name="dist")
 app.mount("/static", StaticFiles(directory="src/web/static"), name="static")
 
+
+@app.get("/sw.js", include_in_schema=False)
+async def service_worker():
+    """Serve the compiled Service Worker at the site root.
+
+    A Service Worker's default scope is limited to its own path and below;
+    serving it from the root (rather than /static/dist/sw.js) lets it control
+    the whole app without requiring a Service-Worker-Allowed header.
+    """
+    sw_path = "dist/static/sw.js"
+    if not os.path.exists(sw_path):
+        raise HTTPException(status_code=404, detail="Service Worker not built")
+    return FileResponse(sw_path, media_type="application/javascript")
+
 # Templates
 templates = Jinja2Templates(directory="src/web/templates")
 templates.env.globals["load_manifest"] = load_manifest
