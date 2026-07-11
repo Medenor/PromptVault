@@ -457,8 +457,8 @@ function createBackupItem(backup: BackupItem): string {
             <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-3 md:gap-0 mb-3">
                 <h4 class="font-semibold text-gray-900 min-w-0 truncate" title="${backupId}${isCompressed}">${backupId}${isCompressed}</h4>
                 <div class="flex gap-2 flex-shrink-0">
-                    <button class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-medium transition whitespace-nowrap" data-backup-id="${backupId}" onclick="showRestoreModal(this.dataset.backupId)">${escapeHtml(t('backup.restoreBtn'))}</button>
-                    <button class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-medium transition whitespace-nowrap" data-backup-id="${backupId}" onclick="showDeleteModal(this.dataset.backupId)">${escapeHtml(t('backup.deleteBtn'))}</button>
+                    <button class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-medium transition whitespace-nowrap" data-backup-id="${backupId}" data-i18n="backup.restoreBtn" onclick="showRestoreModal(this.dataset.backupId)">${escapeHtml(t('backup.restoreBtn'))}</button>
+                    <button class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-medium transition whitespace-nowrap" data-backup-id="${backupId}" data-i18n="backup.deleteBtn" onclick="showDeleteModal(this.dataset.backupId)">${escapeHtml(t('backup.deleteBtn'))}</button>
                 </div>
             </div>
             <div class="space-y-1">
@@ -466,8 +466,8 @@ function createBackupItem(backup: BackupItem): string {
                     <span>${escapeHtml(timestamp)}</span>
                     <span>${compressionIcon} ${escapeHtml(size)}</span>
                 </div>
-                <div class="text-sm text-gray-600">${backup.prompt_count} ${escapeHtml(t('backup.promptsCount'))}</div>
-                <div class="text-xs text-gray-500">${escapeHtml(t('backup.createdByLabel'))} ${createdBy}</div>
+                <div class="text-sm text-gray-600">${backup.prompt_count} <span data-i18n="backup.promptsCount">${escapeHtml(t('backup.promptsCount'))}</span></div>
+                <div class="text-xs text-gray-500"><span data-i18n="backup.createdByLabel">${escapeHtml(t('backup.createdByLabel'))}</span> ${createdBy}</div>
             </div>
         </div>
     `;
@@ -476,7 +476,9 @@ function createBackupItem(backup: BackupItem): string {
 async function createBackup(): Promise<void> {
   const backupNameInput = document.getElementById('backup-name') as HTMLInputElement | null;
   const backupName = backupNameInput?.value.trim() ?? '';
-  const passphraseInput = document.getElementById('backup-create-passphrase') as HTMLInputElement | null;
+  const passphraseInput = document.getElementById(
+    'backup-create-passphrase'
+  ) as HTMLInputElement | null;
   const passphrase = passphraseInput?.value ?? '';
   resetFieldError('backup-name', 'backup-name-error');
   resetFieldError('backup-create-passphrase', 'backup-create-passphrase-error');
@@ -815,7 +817,9 @@ function refreshBackups(): void {
 function clearBackupForm(): void {
   const backupNameInput = document.getElementById('backup-name') as HTMLInputElement | null;
   if (backupNameInput) backupNameInput.value = '';
-  const passphraseInput = document.getElementById('backup-create-passphrase') as HTMLInputElement | null;
+  const passphraseInput = document.getElementById(
+    'backup-create-passphrase'
+  ) as HTMLInputElement | null;
   if (passphraseInput) passphraseInput.value = '';
   resetFieldError('backup-name', 'backup-name-error');
   resetFieldError('backup-create-passphrase', 'backup-create-passphrase-error');
@@ -940,7 +944,8 @@ async function loadCloudProviders(): Promise<void> {
     renderCloudProviders(data.providers || []);
   } catch {
     const list = document.getElementById('cloud-providers-list');
-    if (list) list.innerHTML = `<div class="text-gray-500 text-sm">${escapeHtml(t('backup.noProvidersConfigured'))}</div>`;
+    if (list)
+      list.innerHTML = `<div class="text-gray-500 text-sm">${escapeHtml(t('backup.noProvidersConfigured'))}</div>`;
   }
 }
 
@@ -964,8 +969,8 @@ function renderCloudProviders(providers: CloudProvider[]): void {
         <div class="text-xs text-gray-500">${escapeHtml(p.provider_type)} — ${escapeHtml(p.bucket_name)}${endpointPart}</div>
       </div>
       <div class="flex gap-2">
-        <button class="px-2 py-1 text-xs bg-green-600 hover:bg-green-700 text-white rounded" data-provider-id="${pid}" onclick="testCloudProvider(this.dataset.providerId)">${escapeHtml(t('backup.testBtn'))}</button>
-        <button class="px-2 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded" data-provider-id="${pid}" onclick="deleteCloudProvider(this.dataset.providerId)">${escapeHtml(t('backup.deleteBtn'))}</button>
+        <button class="px-2 py-1 text-xs bg-green-600 hover:bg-green-700 text-white rounded" data-provider-id="${pid}" data-i18n="backup.testBtn" onclick="testCloudProvider(this.dataset.providerId)">${escapeHtml(t('backup.testBtn'))}</button>
+        <button class="px-2 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded" data-provider-id="${pid}" data-i18n="backup.deleteBtn" onclick="deleteCloudProvider(this.dataset.providerId)">${escapeHtml(t('backup.deleteBtn'))}</button>
       </div>
     </div>`;
     })
