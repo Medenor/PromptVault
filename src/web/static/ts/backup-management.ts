@@ -413,12 +413,12 @@ function updateStatsDisplay(stats: BackupStats): void {
   if (newestBackup) {
     newestBackup.textContent = stats.newest_backup
       ? new Date(stats.newest_backup).toLocaleString()
-      : 'None';
+      : t('backup.noneValue');
   }
   if (oldestBackup) {
     oldestBackup.textContent = stats.oldest_backup
       ? new Date(stats.oldest_backup).toLocaleString()
-      : 'None';
+      : t('backup.noneValue');
   }
 }
 
@@ -427,7 +427,7 @@ function renderBackupList(backups: BackupItem[]): void {
   if (!container) return;
 
   if (backups.length === 0) {
-    container.innerHTML = '<div class="text-gray-500 text-sm">No backups found</div>';
+    container.innerHTML = `<div class="text-gray-500 text-sm">${escapeHtml(t('backup.noBackupsFound'))}</div>`;
     return;
   }
 
@@ -457,8 +457,8 @@ function createBackupItem(backup: BackupItem): string {
             <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-3 md:gap-0 mb-3">
                 <h4 class="font-semibold text-gray-900 md:min-w-0">${backupId}${isCompressed}</h4>
                 <div class="flex gap-2 flex-shrink-0">
-                    <button class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-medium transition whitespace-nowrap" data-backup-id="${backupId}" onclick="showRestoreModal(this.dataset.backupId)">Restore</button>
-                    <button class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-medium transition whitespace-nowrap" data-backup-id="${backupId}" onclick="showDeleteModal(this.dataset.backupId)">Delete</button>
+                    <button class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-medium transition whitespace-nowrap" data-backup-id="${backupId}" onclick="showRestoreModal(this.dataset.backupId)">${escapeHtml(t('backup.restoreBtn'))}</button>
+                    <button class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-medium transition whitespace-nowrap" data-backup-id="${backupId}" onclick="showDeleteModal(this.dataset.backupId)">${escapeHtml(t('backup.deleteBtn'))}</button>
                 </div>
             </div>
             <div class="space-y-1">
@@ -466,8 +466,8 @@ function createBackupItem(backup: BackupItem): string {
                     <span>${escapeHtml(timestamp)}</span>
                     <span>${compressionIcon} ${escapeHtml(size)}</span>
                 </div>
-                <div class="text-sm text-gray-600">${backup.prompt_count} prompts</div>
-                <div class="text-xs text-gray-500">Created by: ${createdBy}</div>
+                <div class="text-sm text-gray-600">${backup.prompt_count} ${escapeHtml(t('backup.promptsCount'))}</div>
+                <div class="text-xs text-gray-500">${escapeHtml(t('backup.createdByLabel'))} ${createdBy}</div>
             </div>
         </div>
     `;
@@ -506,7 +506,7 @@ async function createBackup(): Promise<void> {
     return;
   }
 
-  showProgress('backup-progress', 'Creating backup...');
+  showProgress('backup-progress', t('backup.creatingBackupProgress'));
 
   try {
     const formData = new FormData();
@@ -545,10 +545,10 @@ function showRestoreModal(backupId: string): void {
   const infoDiv = document.getElementById('restore-backup-info');
   if (infoDiv) {
     infoDiv.innerHTML = `
-        <strong>Backup:</strong> ${backup.backup_id}<br>
-        <strong>Created:</strong> ${new Date(backup.timestamp).toLocaleString()}<br>
-        <strong>Size:</strong> ${formatBytes(backup.size_bytes)}<br>
-        <strong>Prompts:</strong> ${backup.prompt_count}
+        <strong>${escapeHtml(t('backup.backupLabel'))}</strong> ${escapeHtml(backup.backup_id)}<br>
+        <strong>${escapeHtml(t('backup.createdLabel'))}</strong> ${escapeHtml(new Date(backup.timestamp).toLocaleString())}<br>
+        <strong>${escapeHtml(t('backup.sizeLabel'))}</strong> ${escapeHtml(formatBytes(backup.size_bytes))}<br>
+        <strong>${escapeHtml(t('backup.promptsLabel'))}</strong> ${backup.prompt_count}
     `;
   }
 
@@ -578,7 +578,7 @@ async function confirmRestore(): Promise<void> {
 
   const backupIdToRestore = selectedBackupId;
   setRestoreInProgress(true, 'backup.restoreInProgress');
-  showProgress('backup-progress', 'Restoring backup...');
+  showProgress('backup-progress', t('backup.restoringBackupProgress'));
 
   try {
     const result = await apiPost<RestoreResponse>(`/api/backups/${backupIdToRestore}/restore`);
@@ -612,9 +612,9 @@ function showDeleteModal(backupId: string): void {
   const infoDiv = document.getElementById('delete-backup-info');
   if (infoDiv) {
     infoDiv.innerHTML = `
-        <strong>Backup:</strong> ${backup.backup_id}<br>
-        <strong>Created:</strong> ${new Date(backup.timestamp).toLocaleString()}<br>
-        <strong>Size:</strong> ${formatBytes(backup.size_bytes)}
+        <strong>${escapeHtml(t('backup.backupLabel'))}</strong> ${escapeHtml(backup.backup_id)}<br>
+        <strong>${escapeHtml(t('backup.createdLabel'))}</strong> ${escapeHtml(new Date(backup.timestamp).toLocaleString())}<br>
+        <strong>${escapeHtml(t('backup.sizeLabel'))}</strong> ${escapeHtml(formatBytes(backup.size_bytes))}
     `;
   }
 
@@ -643,7 +643,7 @@ async function confirmDelete(): Promise<void> {
 
   const backupIdToDelete = selectedBackupId;
   hideDeleteModal();
-  showProgress('backup-progress', 'Deleting backup...');
+  showProgress('backup-progress', t('backup.deletingBackupProgress'));
 
   try {
     const result = await apiFetch<DeleteResponse>(`/api/backups/${backupIdToDelete}`, {
@@ -678,7 +678,7 @@ function hideDeleteAllModal(): void {
 
 async function confirmDeleteAll(): Promise<void> {
   hideDeleteAllModal();
-  showProgress('backup-progress', 'Deleting all backups...');
+  showProgress('backup-progress', t('backup.deletingAllBackupsProgress'));
 
   try {
     const result = await apiFetch<{ deleted: string[]; failed: string[] }>('/api/backups', {
@@ -728,7 +728,7 @@ async function cleanupBackups(): Promise<void> {
     return;
   }
 
-  showProgress('maintenance-progress', 'Cleaning up old backups...');
+  showProgress('maintenance-progress', t('backup.cleaningUpBackupsProgress'));
 
   try {
     const formData = new FormData();
@@ -780,7 +780,7 @@ async function compressBackups(): Promise<void> {
     return;
   }
 
-  showProgress('maintenance-progress', 'Compressing old backups...');
+  showProgress('maintenance-progress', t('backup.compressingBackupsProgress'));
 
   try {
     const formData = new FormData();
@@ -940,7 +940,7 @@ async function loadCloudProviders(): Promise<void> {
     renderCloudProviders(data.providers || []);
   } catch {
     const list = document.getElementById('cloud-providers-list');
-    if (list) list.innerHTML = '<div class="text-gray-500 text-sm">No providers configured</div>';
+    if (list) list.innerHTML = `<div class="text-gray-500 text-sm">${escapeHtml(t('backup.noProvidersConfigured'))}</div>`;
   }
 }
 
@@ -949,7 +949,7 @@ function renderCloudProviders(providers: CloudProvider[]): void {
   if (!list) return;
 
   if (providers.length === 0) {
-    list.innerHTML = '<div class="text-gray-500 text-sm">No providers configured</div>';
+    list.innerHTML = `<div class="text-gray-500 text-sm">${escapeHtml(t('backup.noProvidersConfigured'))}</div>`;
     return;
   }
 
@@ -964,8 +964,8 @@ function renderCloudProviders(providers: CloudProvider[]): void {
         <div class="text-xs text-gray-500">${escapeHtml(p.provider_type)} — ${escapeHtml(p.bucket_name)}${endpointPart}</div>
       </div>
       <div class="flex gap-2">
-        <button class="px-2 py-1 text-xs bg-green-600 hover:bg-green-700 text-white rounded" data-provider-id="${pid}" onclick="testCloudProvider(this.dataset.providerId)">Test</button>
-        <button class="px-2 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded" data-provider-id="${pid}" onclick="deleteCloudProvider(this.dataset.providerId)">Delete</button>
+        <button class="px-2 py-1 text-xs bg-green-600 hover:bg-green-700 text-white rounded" data-provider-id="${pid}" onclick="testCloudProvider(this.dataset.providerId)">${escapeHtml(t('backup.testBtn'))}</button>
+        <button class="px-2 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded" data-provider-id="${pid}" onclick="deleteCloudProvider(this.dataset.providerId)">${escapeHtml(t('backup.deleteBtn'))}</button>
       </div>
     </div>`;
     })
@@ -985,7 +985,7 @@ async function addCloudProvider(): Promise<void> {
 
   if (!name || !bucket || !accessKey || !secretKey) {
     if (statusEl) {
-      statusEl.textContent = 'Name, bucket, access key, and secret key are required';
+      statusEl.textContent = t('backup.cloudProviderFieldsRequired');
       statusEl.className = 'text-sm text-red-600 mt-2';
     }
     return;
@@ -1006,14 +1006,14 @@ async function addCloudProvider(): Promise<void> {
       }),
     });
     if (statusEl) {
-      statusEl.textContent = 'Provider added successfully';
+      statusEl.textContent = t('backup.cloudProviderAdded');
       statusEl.className = 'text-sm text-green-600 mt-2';
     }
     void loadCloudProviders();
   } catch (error) {
     reportError(BACKUP_COMPONENT, 'addCloudProvider', error);
     if (statusEl) {
-      statusEl.textContent = 'Failed to add provider';
+      statusEl.textContent = t('backup.cloudProviderAddFailed');
       statusEl.className = 'text-sm text-red-600 mt-2';
     }
   }
@@ -1032,7 +1032,7 @@ async function testCloudProvider(providerId: string): Promise<void> {
   } catch (error) {
     reportError(BACKUP_COMPONENT, 'testCloudProvider', error, { providerId });
     if (statusEl) {
-      statusEl.textContent = 'Connection test failed';
+      statusEl.textContent = t('backup.cloudProviderTestFailed');
       statusEl.className = 'text-sm text-red-600 mt-2';
     }
   }
@@ -1043,14 +1043,14 @@ async function deleteCloudProvider(providerId: string): Promise<void> {
   try {
     await apiFetch(`/api/backup-providers/${providerId}`, { method: 'DELETE' });
     if (statusEl) {
-      statusEl.textContent = 'Provider deleted';
+      statusEl.textContent = t('backup.cloudProviderDeleted');
       statusEl.className = 'text-sm text-green-600 mt-2';
     }
     void loadCloudProviders();
   } catch (error) {
     reportError(BACKUP_COMPONENT, 'deleteCloudProvider', error, { providerId });
     if (statusEl) {
-      statusEl.textContent = 'Failed to delete provider';
+      statusEl.textContent = t('backup.cloudProviderDeleteFailed');
       statusEl.className = 'text-sm text-red-600 mt-2';
     }
   }
@@ -1098,7 +1098,7 @@ async function saveEncryptionConfig(): Promise<void> {
     const passphrase = passphraseEl?.value ?? '';
     if (!passphrase) {
       if (statusEl) {
-        statusEl.textContent = 'Passphrase required to enable encryption';
+        statusEl.textContent = t('backup.encryptionPassphraseRequiredToEnable');
         statusEl.className = 'text-sm text-red-600 mt-2';
       }
       return;
@@ -1113,7 +1113,9 @@ async function saveEncryptionConfig(): Promise<void> {
       body: JSON.stringify(body),
     });
     if (statusEl) {
-      statusEl.textContent = isEnabled ? 'Encryption enabled' : 'Encryption disabled';
+      statusEl.textContent = isEnabled
+        ? t('backup.encryptionEnabledStatus')
+        : t('backup.encryptionDisabledStatus');
       statusEl.className = 'text-sm text-green-600 mt-2';
     }
     if (passphraseEl) passphraseEl.value = '';
@@ -1121,7 +1123,7 @@ async function saveEncryptionConfig(): Promise<void> {
   } catch (error) {
     reportError(BACKUP_COMPONENT, 'saveEncryptionConfig', error);
     if (statusEl) {
-      statusEl.textContent = 'Failed to save encryption config';
+      statusEl.textContent = t('backup.encryptionSaveFailed');
       statusEl.className = 'text-sm text-red-600 mt-2';
     }
   }
@@ -1141,7 +1143,7 @@ async function rotateEncryptionKey(): Promise<void> {
 
   if (!oldPassphrase || !newPassphrase) {
     if (statusEl) {
-      statusEl.textContent = 'Both old and new passphrases required for key rotation';
+      statusEl.textContent = t('backup.encryptionRotationPassphrasesRequired');
       statusEl.className = 'text-sm text-red-600 mt-2';
     }
     return;
@@ -1158,7 +1160,7 @@ async function rotateEncryptionKey(): Promise<void> {
       }),
     });
     if (statusEl) {
-      statusEl.textContent = 'Key rotated successfully';
+      statusEl.textContent = t('backup.encryptionRotationSuccess');
       statusEl.className = 'text-sm text-green-600 mt-2';
     }
     if (oldPassphraseEl) oldPassphraseEl.value = '';
@@ -1167,7 +1169,7 @@ async function rotateEncryptionKey(): Promise<void> {
   } catch (error) {
     reportError(BACKUP_COMPONENT, 'rotateEncryptionKey', error);
     if (statusEl) {
-      statusEl.textContent = 'Key rotation failed';
+      statusEl.textContent = t('backup.encryptionRotationFailed');
       statusEl.className = 'text-sm text-red-600 mt-2';
     }
   }
@@ -1280,14 +1282,14 @@ async function saveSchedule(): Promise<void> {
       body: JSON.stringify(body),
     });
     if (statusEl) {
-      statusEl.textContent = 'Schedule saved successfully';
+      statusEl.textContent = t('backup.scheduleSaved');
       statusEl.className = 'text-sm text-green-600 mt-2';
     }
     populateScheduleForm(result);
   } catch (error) {
     reportError(BACKUP_COMPONENT, 'saveSchedule', error);
     if (statusEl) {
-      statusEl.textContent = 'Failed to save schedule';
+      statusEl.textContent = t('backup.scheduleSaveFailed');
       statusEl.className = 'text-sm text-red-600 mt-2';
     }
   }
