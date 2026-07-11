@@ -373,7 +373,10 @@ async def update_encryption_config(request: Request):
         new_passphrase = body.get("new_passphrase", "")
         if not old_passphrase or not new_passphrase:
             raise HTTPException(status_code=422, detail="old_passphrase and new_passphrase required for key rotation")
-        return service.rotate_key(old_passphrase, new_passphrase)
+        try:
+            return service.rotate_key(old_passphrase, new_passphrase)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
 
     is_enabled = body.get("is_enabled", False)
     if is_enabled:
