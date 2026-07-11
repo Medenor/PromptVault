@@ -104,6 +104,7 @@ const liveValidationState = new Map<string, boolean>();
 
 let currentBackups: BackupItem[] = [];
 let selectedBackupId: string | null = null;
+let encryptionEnabled = false;
 
 // Focus management for modals
 let restoreConfirmationModalTrigger: HTMLElement | null = null;
@@ -475,7 +476,10 @@ function createBackupItem(backup: BackupItem): string {
 async function createBackup(): Promise<void> {
   const backupNameInput = document.getElementById('backup-name') as HTMLInputElement | null;
   const backupName = backupNameInput?.value.trim() ?? '';
+  const passphraseInput = document.getElementById('backup-create-passphrase') as HTMLInputElement | null;
+  const passphrase = passphraseInput?.value ?? '';
   resetFieldError('backup-name', 'backup-name-error');
+  resetFieldError('backup-create-passphrase', 'backup-create-passphrase-error');
   resetErrorSummary('backup-create-error-summary');
   const validationErrors: FormValidationError[] = [];
 
@@ -485,6 +489,15 @@ async function createBackup(): Promise<void> {
       'backup-name',
       'backup-name-error',
       t('validation.backupNameInvalid') || 'Backup name is invalid.'
+    );
+  }
+
+  if (encryptionEnabled && !passphrase) {
+    addFieldError(
+      validationErrors,
+      'backup-create-passphrase',
+      'backup-create-passphrase-error',
+      t('validation.passphraseRequired') || 'Encryption passphrase is required.'
     );
   }
 
@@ -498,12 +511,17 @@ async function createBackup(): Promise<void> {
   try {
     const formData = new FormData();
     formData.append('name', backupName);
+    if (encryptionEnabled) {
+      formData.append('encrypt', 'true');
+      formData.append('passphrase', passphrase);
+    }
 
     const result = await apiPostForm<BackupResponse>('/api/backups', formData);
 
     if (result.success) {
       showStatus('backup-status', `Backup created successfully: ${result.backup_id}`, 'success');
       if (backupNameInput) backupNameInput.value = '';
+      if (passphraseInput) passphraseInput.value = '';
       void loadBackups();
       void loadBackupStats();
     } else {
@@ -797,7 +815,10 @@ function refreshBackups(): void {
 function clearBackupForm(): void {
   const backupNameInput = document.getElementById('backup-name') as HTMLInputElement | null;
   if (backupNameInput) backupNameInput.value = '';
+  const passphraseInput = document.getElementById('backup-create-passphrase') as HTMLInputElement | null;
+  if (passphraseInput) passphraseInput.value = '';
   resetFieldError('backup-name', 'backup-name-error');
+  resetFieldError('backup-create-passphrase', 'backup-create-passphrase-error');
   resetErrorSummary('backup-create-error-summary');
 }
 
@@ -1053,8 +1074,15 @@ async function loadEncryptionConfig(): Promise<void> {
         rotationEl.classList.add('hidden');
       }
     }
+    encryptionEnabled = config.is_enabled;
   } catch {
     // Encryption not configured
+    encryptionEnabled = false;
+  }
+
+  const createPassphraseContainer = document.getElementById('backup-create-passphrase-container');
+  if (createPassphraseContainer) {
+    createPassphraseContainer.classList.toggle('hidden', !encryptionEnabled);
   }
 }
 

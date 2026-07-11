@@ -77,6 +77,8 @@ async def get_backups(
 @router.post("/api/backups")
 async def create_manual_backup(
     name: str = Form(None),
+    encrypt: bool = Form(False),
+    passphrase: str = Form(None),
     current_user: Optional[User] = Depends(get_admin_or_bypass),
 ):
     """Create a manual backup with validation."""
@@ -84,9 +86,17 @@ async def create_manual_backup(
     try:
         validated_data = BackupCreateRequest(name=name)
 
+        if encrypt and not passphrase:
+            return JSONResponse(
+                status_code=422,
+                content={"error": "passphrase is required when encrypt is true"},
+            )
+
         backup_id = service.create_backup(
             validated_data.name,
             created_by=current_user.username if current_user else "anonymous",
+            encrypt=encrypt,
+            passphrase=passphrase,
         )
         if backup_id:
             if _record_validation_event:
