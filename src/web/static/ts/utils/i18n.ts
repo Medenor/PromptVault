@@ -55,6 +55,13 @@ export function updateStaticTranslations(): void {
     }
   });
 
+  document.querySelectorAll('[data-i18n-aria-label]').forEach((element) => {
+    const key = element.getAttribute('data-i18n-aria-label');
+    if (key && element instanceof HTMLElement) {
+      element.setAttribute('aria-label', tUnsafe(key));
+    }
+  });
+
   document.querySelectorAll('.language-selector').forEach((element) => {
     if (element instanceof HTMLSelectElement) {
       element.value = i18next.language;
