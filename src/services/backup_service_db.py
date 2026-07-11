@@ -362,6 +362,21 @@ class BackupService:
                 "Failed to create PostgreSQL backup.", context={"backup_id": backup_id}
             ) from exc
 
+    @staticmethod
+    def _maybe_decompress(path: str) -> str:
+        """If path is gzip-compressed, decompress it to a sibling temp file.
+
+        Returns the path to a readable, uncompressed file. Callers are
+        responsible for removing the returned path if it differs from the
+        input path.
+        """
+        if not path.endswith(".gz"):
+            return path
+        decompressed_path = path[: -len(".gz")] + ".decompressed"
+        with gzip.open(path, "rb") as src, open(decompressed_path, "wb") as dst:
+            shutil.copyfileobj(src, dst)
+        return decompressed_path
+
     def restore_backup(
         self, backup_id: str, created_by: Optional[str] = None,
         passphrase: Optional[str] = None,
@@ -402,6 +417,10 @@ class BackupService:
                     http_status=404,
                 )
 
+            decompressed_path = self._maybe_decompress(backup_path)
+            if decompressed_path != backup_path:
+                backup_path = decompressed_path
+
             is_encrypted = metadata.get("is_encrypted", False)
             if is_encrypted:
                 if not passphrase:
@@ -436,6 +455,8 @@ class BackupService:
                 except ValueError as exc:
                     if os.path.exists(decrypted_path):
                         os.remove(decrypted_path)
+                    if decompressed_path != metadata.get("storage_path") and os.path.exists(decompressed_path):
+                        os.remove(decompressed_path)
                     raise BackupError(
                         "Decryption failed: wrong passphrase or corrupt data",
                         context={"backup_id": backup_id},
@@ -478,6 +499,8 @@ class BackupService:
             finally:
                 if decrypted_path and os.path.exists(decrypted_path):
                     os.remove(decrypted_path)
+                if decompressed_path != metadata.get("storage_path") and os.path.exists(decompressed_path):
+                    os.remove(decompressed_path)
 
             if success:
                 logger.info(
@@ -1210,8 +1233,10 @@ class BackupService:
         if not backup_path or not os.path.exists(backup_path):
             raise BackupError("Backup file not found", context={"backup_id": backup_id}, http_status=404)
 
+        working_path = self._maybe_decompress(backup_path)
+        decompressed = working_path != backup_path
+
         is_encrypted = metadata.get("is_encrypted", False)
-        working_path = backup_path
 
         if is_encrypted:
             if not passphrase:
@@ -1224,19 +1249,25 @@ class BackupService:
                 nonce = backup_record.encryption_nonce if backup_record else metadata.get("encryption_nonce")
             if not salt or not nonce:
                 raise BackupError("Encrypted backup missing salt/nonce")
-            working_path = backup_path + ".preview_decrypted"
-            shutil.copy2(backup_path, working_path)
+            decrypted_path = working_path + ".preview_decrypted"
+            shutil.copy2(working_path, decrypted_path)
             try:
-                enc_service.decrypt_file(working_path, passphrase, salt, nonce)
+                enc_service.decrypt_file(decrypted_path, passphrase, salt, nonce)
             except ValueError:
-                if os.path.exists(working_path):
+                if os.path.exists(decrypted_path):
+                    os.remove(decrypted_path)
+                if decompressed and os.path.exists(working_path):
                     os.remove(working_path)
                 raise BackupError("Decryption failed", http_status=400)
+            if decompressed and os.path.exists(working_path):
+                os.remove(working_path)
+            working_path = decrypted_path
+            decompressed = True  # ensure cleanup below removes this temp file too
 
         try:
             backup_prompts = self._extract_prompts_from_backup(working_path, metadata.get("backup_type", "sqlite_copy"))
         finally:
-            if is_encrypted and os.path.exists(working_path) and working_path != backup_path:
+            if decompressed and os.path.exists(working_path) and working_path != backup_path:
                 os.remove(working_path)
 
         with get_db_session() as session:
@@ -1296,8 +1327,16 @@ class BackupService:
                     })
                 conn.close()
                 return prompts
-            except Exception:
-                return []
+            except Exception as exc:
+                logger.error(
+                    "Failed to read prompts from backup file",
+                    extra={"event": "backup.extract_prompts.failure", "resource_id": backup_path},
+                    exc_info=exc,
+                )
+                raise BackupError(
+                    "Backup file is unreadable or corrupt",
+                    context={"backup_path": backup_path},
+                ) from exc
         return []
 
     def selective_restore(
@@ -1332,7 +1371,8 @@ class BackupService:
 
         backup_path = metadata.get("storage_path")
         is_encrypted = metadata.get("is_encrypted", False)
-        working_path = backup_path
+        working_path = self._maybe_decompress(backup_path)
+        decompressed = working_path != backup_path
 
         if is_encrypted:
             if not passphrase:
@@ -1348,19 +1388,25 @@ class BackupService:
                     "Encrypted backup missing salt/nonce",
                     context={"backup_id": backup_id},
                 )
-            working_path = backup_path + ".selective_decrypted"
-            shutil.copy2(backup_path, working_path)
+            decrypted_path = working_path + ".selective_decrypted"
+            shutil.copy2(working_path, decrypted_path)
             try:
-                enc_service.decrypt_file(working_path, passphrase, salt, nonce)
+                enc_service.decrypt_file(decrypted_path, passphrase, salt, nonce)
             except ValueError:
-                if os.path.exists(working_path):
+                if os.path.exists(decrypted_path):
+                    os.remove(decrypted_path)
+                if decompressed and os.path.exists(working_path):
                     os.remove(working_path)
                 raise BackupError("Decryption failed", http_status=400)
+            if decompressed and os.path.exists(working_path):
+                os.remove(working_path)
+            working_path = decrypted_path
+            decompressed = True
 
         try:
             backup_prompts = self._extract_prompts_from_backup(working_path, metadata.get("backup_type", "sqlite_copy"))
         finally:
-            if is_encrypted and os.path.exists(working_path) and working_path != backup_path:
+            if decompressed and os.path.exists(working_path) and working_path != backup_path:
                 os.remove(working_path)
 
         backup_map = {p["id"]: p for p in backup_prompts}
