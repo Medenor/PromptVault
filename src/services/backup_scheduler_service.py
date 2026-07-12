@@ -79,7 +79,14 @@ class BackupSchedulerService:
                     }
                     BackupSchedulerService._class_scheduler = BackgroundScheduler(
                         jobstores=jobstores,
-                        job_defaults={"coalesce": True, "max_instances": 1},
+                        job_defaults={
+                            "coalesce": True,
+                            "max_instances": 1,
+                            # Default grace window is 1 second, so a machine asleep
+                            # through the trigger time (e.g. laptop/Mac Mini) would
+                            # otherwise have its backup silently skipped on wake.
+                            "misfire_grace_time": 6 * 3600,
+                        },
                         daemon=True,
                     )
         return BackupSchedulerService._class_scheduler
