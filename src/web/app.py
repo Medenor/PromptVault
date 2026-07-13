@@ -291,6 +291,15 @@ async def startup_scheduler():
         # Start the scheduler
         session_cleanup_scheduler.start()
 
+        # Run an immediate sweep so expired sessions don't accumulate when the
+        # process restarts before the first scheduled interval elapses (common
+        # in dev, where the app rarely stays up for a full cleanup_interval_hours).
+        startup_cleanup_result = session_cleanup_scheduler.run_cleanup_now()
+        logger.info(
+            "✓ Startup session cleanup sweep completed "
+            f"(deleted: {startup_cleanup_result.get('deleted', 0)})"
+        )
+
         logger.info(
             "✓ Session cleanup scheduler initialized and started "
             f"(interval: {auth_settings.cleanup_interval_hours}h, "
@@ -437,6 +446,44 @@ def _resolve_data_locations(
     return data_file, data_dir
 
 
+def _warn_if_backup_dir_database_mismatch(backups_dir: str) -> None:
+    """Warn when PROMPTVAULT_DATA_DIR and DATABASE_URL point at unrelated trees.
+
+    Backup files (under PROMPTVAULT_DATA_DIR/backups) and backup metadata rows
+    (in the DATABASE_URL database) are written to independently-configured
+    locations. If they drift apart across restarts (e.g. DATABASE_URL changed
+    to point at a different SQLite file while PROMPTVAULT_DATA_DIR stayed the
+    same), existing backups' files survive on disk but their DB rows vanish,
+    causing restores to fail with a spurious "backup file not found" error.
+    This is a best-effort sanity check, not a hard failure, since the two
+    settings are legitimately independent for non-SQLite databases.
+    """
+    from src.db.config import db_settings
+
+    if not db_settings.is_sqlite:
+        return
+
+    db_url = db_settings.DATABASE_URL
+    if not db_url.startswith("sqlite:///") or ":memory:" in db_url:
+        return
+
+    db_path = db_url.replace("sqlite:///", "")
+    if not os.path.isabs(db_path):
+        db_path = os.path.abspath(db_path)
+
+    data_dir = os.path.dirname(os.path.abspath(backups_dir))
+    db_dir = os.path.dirname(db_path)
+
+    if os.path.abspath(db_dir) != os.path.abspath(data_dir):
+        logger.warning(
+            "PROMPTVAULT_DATA_DIR and DATABASE_URL point at different "
+            f"directories (backups dir: {data_dir}, database dir: {db_dir}). "
+            "Backup files and their database records may drift out of sync "
+            "across restarts, causing restores to fail with 'backup file not "
+            "found'. Ensure both settings are derived from the same source."
+        )
+
+
 def configure_services(
     data_file: Optional[str] = None, data_dir: Optional[str] = None
 ) -> None:
@@ -465,6 +512,7 @@ def configure_services(
     versioning_service = PromptVersioningService()
     import_export_service = PromptImportExportService()
     backup_service = BackupService(resolved_dir)
+    _warn_if_backup_dir_database_mismatch(backup_service.backups_dir)
 
     # Initialize validation monitor using the data directory for persistence
     logs_base = resolved_dir or "data"

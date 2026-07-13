@@ -8,6 +8,7 @@ Provides REST API routes for backup CRUD, scheduling, encryption,
 cloud storage, restore preview, monitoring, and audit operations.
 """
 
+import json
 import uuid
 from datetime import datetime, timedelta
 from typing import Optional
@@ -139,7 +140,8 @@ async def restore_preview(
     """Preview what would change if this backup were restored."""
 
     service = _get_backup_service()
-    body = await request.json()
+    raw_body = await request.body()
+    body = json.loads(raw_body) if raw_body else {}
     passphrase = body.get("passphrase")
 
     from src.services.exceptions import BackupError
@@ -160,7 +162,8 @@ async def restore_backup(
     service = _get_backup_service()
     from src.services.exceptions import BackupError
 
-    body = await request.json()
+    raw_body = await request.body()
+    body = json.loads(raw_body) if raw_body else {}
     prompt_ids = body.get("prompt_ids", [])
     passphrase = body.get("passphrase")
 

@@ -186,6 +186,73 @@ class TestSelectiveRestore:
         assert resp.status_code in (404, 500)
 
 
+class TestEncryptedRestore:
+    """Regression coverage: restoring an encrypted backup via the API must
+    accept a passphrase in the JSON body and fail clearly without one."""
+
+    def _make_encrypted_backup(self, temp_dir, backup_id):
+        from src.services.backup_encryption_service import BackupEncryptionService
+
+        backup_db_path = os.path.join(temp_dir, "backups", f"{backup_id}.db")
+        conn = sqlite3.connect(backup_db_path)
+        conn.execute("""
+            CREATE TABLE prompts (
+                id INTEGER PRIMARY KEY, title TEXT, prompt TEXT,
+                note TEXT, favorite INTEGER, category_id INTEGER, semantic_version TEXT
+            )
+        """)
+        conn.execute("INSERT INTO prompts VALUES (1, 'Secret', 'Encrypted Content', NULL, 0, NULL, '1.0')")
+        conn.commit()
+        conn.close()
+
+        salt, nonce = BackupEncryptionService().encrypt_file(backup_db_path, "correct-horse-battery-staple")
+
+        from src.db.session import SessionLocal
+        session = SessionLocal()
+        try:
+            backup = Backup(
+                id=backup_id, backup_type="sqlite_copy",
+                filename=f"{backup_id}.db", storage_path=backup_db_path,
+                succeeded=True, is_encrypted=True,
+                encryption_salt=salt, encryption_nonce=nonce,
+            )
+            session.add(backup)
+            session.commit()
+        finally:
+            session.close()
+
+    def test_restore_without_passphrase_returns_400(self, api_client, api_admin_auth_headers, api_client_context):
+        self._make_encrypted_backup(api_client_context["temp_dir"], "backup-enc-no-pass")
+
+        resp = api_client.post(
+            "/api/backups/backup-enc-no-pass/restore",
+            headers=api_admin_auth_headers,
+        )
+        assert resp.status_code == 400
+        assert "assphrase" in resp.json()["error"]
+
+    def test_restore_with_correct_passphrase_succeeds(self, api_client, api_admin_auth_headers, api_client_context):
+        self._make_encrypted_backup(api_client_context["temp_dir"], "backup-enc-ok")
+
+        resp = api_client.post(
+            "/api/backups/backup-enc-ok/restore",
+            headers=api_admin_auth_headers,
+            json={"passphrase": "correct-horse-battery-staple"},
+        )
+        assert resp.status_code == 200
+        assert resp.json()["success"] is True
+
+    def test_restore_with_wrong_passphrase_returns_400(self, api_client, api_admin_auth_headers, api_client_context):
+        self._make_encrypted_backup(api_client_context["temp_dir"], "backup-enc-wrong")
+
+        resp = api_client.post(
+            "/api/backups/backup-enc-wrong/restore",
+            headers=api_admin_auth_headers,
+            json={"passphrase": "wrong-passphrase"},
+        )
+        assert resp.status_code == 400
+
+
 class TestBackupSchedule:
     def test_get_schedule_not_found(self, api_client, api_auth_headers):
         resp = api_client.get("/api/backup-schedule", headers=api_auth_headers)

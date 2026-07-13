@@ -57,6 +57,9 @@ interface BackupItem {
   compressed: boolean;
   prompt_count: number;
   created_by?: string | null;
+  cloud_provider_id?: string | null;
+  cloud_path?: string | null;
+  is_encrypted?: boolean;
 }
 
 interface BackupStats {
@@ -104,6 +107,7 @@ const BACKUP_COMPONENT = 'backupManagement';
 const liveValidationState = new Map<string, boolean>();
 
 let currentBackups: BackupItem[] = [];
+const cloudProviderNames = new Map<string, string>();
 let selectedBackupId: string | null = null;
 let encryptionEnabled = false;
 
@@ -452,9 +456,18 @@ function createBackupItem(backup: BackupItem): string {
   const compressionIcon = backup.compressed ? '🗜️' : '📄';
   const createdBy = escapeHtml(backup.created_by || 'unknown');
   const backupId = escapeHtml(backup.backup_id);
+  const cloudProviderName = backup.cloud_provider_id
+    ? cloudProviderNames.get(backup.cloud_provider_id) || backup.cloud_provider_id
+    : '';
+  const storageBadge = backup.cloud_provider_id
+    ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-medium" title="${escapeHtml(cloudProviderName)}">☁️ ${escapeHtml(t('backup.cloudBadge'))}</span>`
+    : `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-200 text-gray-700 text-xs font-medium">💻 ${escapeHtml(t('backup.localBadge'))}</span>`;
+  const encryptedBadge = backup.is_encrypted
+    ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-xs font-medium" title="${escapeHtml(t('backup.encryptedTooltip'))}">🔒 ${escapeHtml(t('backup.encryptedBadge'))}</span>`
+    : '';
 
   return `
-        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200 hover:border-blue-300 transition" data-id="${backupId}">
+        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200 hover:border-blue-300 transition" data-id="${backupId}" data-encrypted="${backup.is_encrypted ? 'true' : 'false'}">
             <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-3 md:gap-0 mb-3">
                 <h4 class="font-semibold text-gray-900 min-w-0 truncate" title="${backupId}${isCompressed}">${backupId}${isCompressed}</h4>
                 <div class="flex gap-2 flex-shrink-0">
@@ -462,6 +475,7 @@ function createBackupItem(backup: BackupItem): string {
                     <button class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-medium transition whitespace-nowrap" data-backup-id="${backupId}" data-i18n="backup.deleteBtn" onclick="showDeleteModal(this.dataset.backupId)">${escapeHtml(t('backup.deleteBtn'))}</button>
                 </div>
             </div>
+            <div class="flex items-center gap-2 mb-2">${storageBadge}${encryptedBadge}</div>
             <div class="space-y-1">
                 <div class="flex items-center justify-between text-sm text-gray-600">
                     <span>${escapeHtml(timestamp)}</span>
@@ -562,6 +576,16 @@ function showRestoreModal(backupId: string): void {
     `;
   }
 
+  const passphraseContainer = document.getElementById('restore-passphrase-container');
+  const passphraseInput = document.getElementById('restore-passphrase') as HTMLInputElement | null;
+  if (backup.is_encrypted) {
+    showElement(passphraseContainer);
+  } else {
+    hideElement(passphraseContainer);
+  }
+  if (passphraseInput) passphraseInput.value = '';
+  resetFieldError('restore-passphrase', 'restore-passphrase-error');
+
   const modal = document.getElementById('restore-modal') as HTMLElement | null;
   showElement(modal);
   // Move focus to first focusable element in modal
@@ -587,11 +611,28 @@ async function confirmRestore(): Promise<void> {
   if (!selectedBackupId) return;
 
   const backupIdToRestore = selectedBackupId;
+  const backup = currentBackups.find((item) => item.backup_id === backupIdToRestore);
+  const passphraseInput = document.getElementById('restore-passphrase') as HTMLInputElement | null;
+  const passphrase = passphraseInput?.value ?? '';
+
+  resetFieldError('restore-passphrase', 'restore-passphrase-error');
+  if (backup?.is_encrypted && !passphrase) {
+    setLiveFieldError(
+      'restore-passphrase',
+      'restore-passphrase-error',
+      t('validation.passphraseRequired') || 'Encryption passphrase is required.'
+    );
+    passphraseInput?.focus();
+    return;
+  }
+
   setRestoreInProgress(true, 'backup.restoreInProgress');
   showProgress('backup-progress', t('backup.restoringBackupProgress'));
 
   try {
-    const result = await apiPost<RestoreResponse>(`/api/backups/${backupIdToRestore}/restore`);
+    const result = await apiPost<RestoreResponse>(`/api/backups/${backupIdToRestore}/restore`, {
+      passphrase: passphrase || undefined,
+    });
 
     if (result.success) {
       showStatus('backup-status', t('backup.restoreSuccess'), 'success');
@@ -605,8 +646,10 @@ async function confirmRestore(): Promise<void> {
     }
   } catch (error) {
     reportError(BACKUP_COMPONENT, 'restoreBackup', error, { backupId: backupIdToRestore });
-    showStatus('backup-status', t('backup.restoreError'), 'error');
+    const message = error instanceof APIRequestError ? error.message : t('backup.restoreError');
     setRestoreInProgress(false);
+    showStatus('restore-status', message, 'error');
+    showElement(document.getElementById('restore-status'));
   } finally {
     hideProgress('backup-progress');
   }
@@ -955,6 +998,11 @@ async function loadCloudProviders(): Promise<void> {
     renderCloudProviders(data.providers || []);
     populateCloudProviderSelect('schedule-cloud-provider', data.providers || []);
     populateCloudProviderSelect('backup-create-cloud-provider', data.providers || []);
+    cloudProviderNames.clear();
+    for (const provider of data.providers || []) {
+      cloudProviderNames.set(provider.id, provider.name);
+    }
+    renderBackupList(currentBackups);
   } catch {
     const list = document.getElementById('cloud-providers-list');
     if (list)
@@ -1096,18 +1144,14 @@ async function loadEncryptionConfig(): Promise<void> {
     const enabledEl = document.getElementById('encryption-enabled') as HTMLInputElement | null;
     const infoEl = document.getElementById('encryption-info');
     const rotationEl = document.getElementById('encryption-key-rotation');
+    const rotateBtnEl = document.getElementById('encryption-rotate-btn');
 
     if (enabledEl) enabledEl.checked = config.is_enabled;
     if (infoEl) {
       infoEl.textContent = `Algorithm: ${config.algorithm} | KDF: ${config.kdf} | Key version: ${config.key_version}${config.rotated_at ? ` | Rotated: ${new Date(config.rotated_at).toLocaleString()}` : ''}`;
     }
-    if (rotationEl) {
-      if (config.is_enabled) {
-        rotationEl.classList.remove('hidden');
-      } else {
-        rotationEl.classList.add('hidden');
-      }
-    }
+    rotationEl?.classList.toggle('hidden', !config.is_enabled);
+    rotateBtnEl?.classList.toggle('hidden', !config.is_enabled);
     encryptionEnabled = config.is_enabled;
   } catch {
     // Encryption not configured

@@ -81,6 +81,37 @@ def upgrade() -> None:
         if not _column_exists(conn, "backups", col_name):
             conn.execute(sa.text(ddl))
 
+    if _table_exists(conn, "backup_schedules") and not _column_exists(
+        conn, "backup_schedules", "retention_days"
+    ):
+        # An earlier, pre-migration schema created this table with three
+        # separate daily/weekly/monthly retention counters instead of a
+        # single retention_days column. Reconcile existing rows onto the
+        # column the current model expects, using the daily count (closest
+        # equivalent) as the source value, defaulting to 30 when absent.
+        has_daily_count = _column_exists(conn, "backup_schedules", "retention_daily_count")
+        with op.batch_alter_table("backup_schedules") as batch_op:
+            batch_op.add_column(
+                sa.Column(
+                    "retention_days", sa.Integer(), nullable=False, server_default=sa.text("30")
+                )
+            )
+        if has_daily_count:
+            conn.execute(
+                sa.text(
+                    "UPDATE backup_schedules SET retention_days = retention_daily_count "
+                    "WHERE retention_daily_count IS NOT NULL"
+                )
+            )
+        with op.batch_alter_table("backup_schedules") as batch_op:
+            for stale_col in (
+                "retention_daily_count",
+                "retention_weekly_count",
+                "retention_monthly_count",
+            ):
+                if _column_exists(conn, "backup_schedules", stale_col):
+                    batch_op.drop_column(stale_col)
+
     if not _table_exists(conn, "backup_schedules"):
         op.create_table(
             "backup_schedules",

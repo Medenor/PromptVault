@@ -840,7 +840,7 @@ def temp_data_dir() -> Generator[str, None, None]:
 
 
 @pytest.fixture
-def api_client(test_db_engine, temp_data_dir: str) -> Generator[TestClient, None, None]:
+def api_client(test_db_engine, temp_data_dir: str, monkeypatch) -> Generator[TestClient, None, None]:
     """FastAPI TestClient with database backend.
 
     This fixture configures the FastAPI app to use an in-memory test database
@@ -849,6 +849,7 @@ def api_client(test_db_engine, temp_data_dir: str) -> Generator[TestClient, None
     Args:
         test_db_engine: Test database engine
         temp_data_dir: Temporary directory for file operations
+        monkeypatch: Pytest monkeypatch fixture
 
     Yields:
         TestClient: FastAPI test client
@@ -859,6 +860,7 @@ def api_client(test_db_engine, temp_data_dir: str) -> Generator[TestClient, None
     # Import here to avoid circular imports
     from src.web import app as web_app
     from src.db import session as session_module
+    from src.db import config as config_module
     from src.web.middleware import rate_limit
 
     # Reinitialize the limiter with rate limiting disabled
@@ -873,6 +875,18 @@ def api_client(test_db_engine, temp_data_dir: str) -> Generator[TestClient, None
 
     # Patch the session factory
     session_module.SessionLocal = TestSessionLocal
+
+    # Backup restore reads DATABASE_URL directly (bypassing SessionLocal) to
+    # open the raw sqlite file, so it must also point at a throwaway path —
+    # otherwise a restore-path test would overwrite the developer's real DB.
+    from sqlalchemy import create_engine as _create_engine
+    from src.db.base import Base as _Base
+
+    test_db_path = os.path.join(temp_data_dir, "api_client_test.db")
+    monkeypatch.setattr(config_module.db_settings, "DATABASE_URL", f"sqlite:///{test_db_path}")
+    _file_engine = _create_engine(f"sqlite:///{test_db_path}")
+    _Base.metadata.create_all(_file_engine)
+    _file_engine.dispose()
 
     # Configure services with test data directory
     web_app.configure_services(data_dir=temp_data_dir)
@@ -893,6 +907,7 @@ def api_client_context(
     test_db_engine,
     temp_data_dir: str,
     sample_prompt_data: Callable[..., Dict[str, Any]],
+    monkeypatch,
 ) -> Generator[Dict[str, Any], None, None]:
     """FastAPI TestClient with database backend and data service access (backward compatibility).
 
@@ -903,6 +918,7 @@ def api_client_context(
         test_db_engine: Test database engine
         temp_data_dir: Temporary directory for file operations
         sample_prompt_data: Factory for creating prompt data
+        monkeypatch: Pytest monkeypatch fixture
 
     Yields:
         dict: Dictionary with 'client', 'data_service', and 'temp_dir' keys
@@ -910,7 +926,20 @@ def api_client_context(
     # Import here to avoid circular imports
     from src.web import app as web_app
     from src.db import session as session_module
+    from src.db import config as config_module
     from contextlib import contextmanager
+
+    # Backup restore reads DATABASE_URL directly (bypassing SessionLocal) to
+    # open the raw sqlite file, so it must also point at a throwaway path —
+    # otherwise a restore-path test would overwrite the developer's real DB.
+    from sqlalchemy import create_engine as _create_engine
+    from src.db.base import Base as _Base
+
+    test_db_path = os.path.join(temp_data_dir, "api_client_context_test.db")
+    monkeypatch.setattr(config_module.db_settings, "DATABASE_URL", f"sqlite:///{test_db_path}")
+    _file_engine = _create_engine(f"sqlite:///{test_db_path}")
+    _Base.metadata.create_all(_file_engine)
+    _file_engine.dispose()
 
     # Store original session factory and services
     original_session_local = session_module.SessionLocal
@@ -926,7 +955,6 @@ def api_client_context(
     from cryptography.hazmat.primitives.asymmetric import ec
     from cryptography.hazmat.primitives import serialization
     from cryptography.hazmat.backends import default_backend
-    import os
 
     # Generate test private key
     private_key = ec.generate_private_key(ec.SECP256R1(), default_backend())

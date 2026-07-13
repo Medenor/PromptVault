@@ -160,8 +160,17 @@ class BackupService:
             backup_filename = f"{backup_id}.db"
             backup_path = os.path.join(self.backups_dir, backup_filename)
 
-            # Copy database file
-            shutil.copy2(db_path, backup_path)
+            # Use VACUUM INTO rather than a raw file copy so the backup
+            # excludes free/unused pages left behind by deletes (e.g. after
+            # session cleanup sweeps). A plain shutil.copy2 would faithfully
+            # copy the live file's high-water-mark size, including pages
+            # SQLite has freed but not reclaimed.
+            import sqlite3
+            source_conn = sqlite3.connect(db_path)
+            try:
+                source_conn.execute("VACUUM INTO ?", (backup_path,))
+            finally:
+                source_conn.close()
 
             backup_size = os.path.getsize(backup_path)
             prompt_count = self._get_prompt_count()
@@ -408,14 +417,8 @@ class BackupService:
 
             backup_type = metadata.get("backup_type")
 
-            # Verify backup file exists
-            backup_path = metadata.get("storage_path")
-            if not os.path.exists(backup_path):
-                raise BackupError(
-                    "Backup file does not exist",
-                    context={"backup_id": backup_id, "path": backup_path},
-                    http_status=404,
-                )
+            # Verify backup file exists locally, downloading from cloud if needed
+            backup_path = self._ensure_local_backup_file(backup_id, metadata)
 
             decompressed_path = self._maybe_decompress(backup_path)
             if decompressed_path != backup_path:
@@ -672,6 +675,10 @@ class BackupService:
                         "created_by": metadata.get("created_by", "unknown"),
                         "compressed": metadata.get("compressed", False),
                         "tags": backup.tags or [],
+                        "cloud_provider_id": backup.cloud_provider_id,
+                        "cloud_path": backup.cloud_path,
+                        "cloud_uploaded_at": backup.cloud_uploaded_at.isoformat() if backup.cloud_uploaded_at else None,
+                        "is_encrypted": backup.is_encrypted or False,
                     }
                     result.append(serialized)
                     seen_ids.add(backup.id)
@@ -731,6 +738,9 @@ class BackupService:
                         "is_encrypted": backup.is_encrypted or False,
                         "encryption_salt": backup.encryption_salt,
                         "encryption_nonce": backup.encryption_nonce,
+                        "cloud_provider_id": backup.cloud_provider_id,
+                        "cloud_path": backup.cloud_path,
+                        "cloud_uploaded_at": backup.cloud_uploaded_at.isoformat() if backup.cloud_uploaded_at else None,
                     }
                     self._ensure_metadata_file(info)
                     return info
@@ -744,6 +754,76 @@ class BackupService:
 
         # Fallback to metadata file
         return self._load_metadata_from_file(backup_id)
+
+    def _ensure_local_backup_file(self, backup_id: str, metadata: Dict[str, Any]) -> str:
+        """Ensure the backup file exists locally, downloading from cloud if needed.
+
+        If the local storage_path is missing (e.g. removed by cleanup, or this
+        backup was only ever uploaded from another machine), fall back to the
+        cloud copy referenced by cloud_provider_id/cloud_path.
+
+        Args:
+            backup_id: Backup identifier
+            metadata: Backup metadata dict from get_backup_info()
+
+        Returns:
+            str: Local path to the backup file (existing or freshly downloaded)
+
+        Raises:
+            BackupError: If the file is missing locally and no cloud copy is available
+        """
+        backup_path = metadata.get("storage_path")
+        if backup_path and os.path.exists(backup_path):
+            return backup_path
+
+        cloud_provider_id = metadata.get("cloud_provider_id")
+        cloud_path = metadata.get("cloud_path")
+        if not cloud_provider_id or not cloud_path:
+            raise BackupError(
+                "Backup file not found",
+                context={"backup_id": backup_id, "path": backup_path},
+                http_status=404,
+            )
+
+        from src.services.backup_cloud_service import BackupCloudService
+        from src.db.models.backup_storage_provider import BackupStorageProvider
+
+        with get_db_session() as session:
+            provider = session.query(BackupStorageProvider).filter_by(id=cloud_provider_id).first()
+            if not provider or not provider.enabled:
+                raise BackupError(
+                    "Cloud storage provider not found or disabled",
+                    context={"backup_id": backup_id, "provider_id": cloud_provider_id},
+                    http_status=404,
+                )
+
+            dest_path = backup_path or os.path.join(self.backups_dir, metadata.get("filename", f"{backup_id}.db"))
+            try:
+                BackupCloudService().download(provider, cloud_path, dest_path)
+            except Exception as exc:
+                logger.error(
+                    "Failed to download backup from cloud storage",
+                    extra={
+                        "event": "backup.restore.cloud_download_failure",
+                        "backup_id": backup_id,
+                        "provider_id": cloud_provider_id,
+                    },
+                    exc_info=exc,
+                )
+                raise BackupError(
+                    "Failed to download backup from cloud storage.",
+                    context={"backup_id": backup_id, "provider_id": cloud_provider_id},
+                ) from exc
+
+        logger.info(
+            "Backup downloaded from cloud storage for restore",
+            extra={"event": "backup.restore.cloud_download_success", "backup_id": backup_id},
+        )
+
+        if not metadata.get("storage_path"):
+            self._update_backup_record(backup_id, {**metadata, "storage_path": dest_path})
+
+        return dest_path
 
     def delete_backup(self, backup_id: str) -> bool:
         """Delete a backup and its files.
@@ -1233,9 +1313,7 @@ class BackupService:
         if not metadata:
             raise BackupError("Backup not found", context={"backup_id": backup_id}, http_status=404)
 
-        backup_path = metadata.get("storage_path")
-        if not backup_path or not os.path.exists(backup_path):
-            raise BackupError("Backup file not found", context={"backup_id": backup_id}, http_status=404)
+        backup_path = self._ensure_local_backup_file(backup_id, metadata)
 
         working_path = self._maybe_decompress(backup_path)
         decompressed = working_path != backup_path
@@ -1373,7 +1451,7 @@ class BackupService:
             created_by=created_by,
         )
 
-        backup_path = metadata.get("storage_path")
+        backup_path = self._ensure_local_backup_file(backup_id, metadata)
         is_encrypted = metadata.get("is_encrypted", False)
         working_path = self._maybe_decompress(backup_path)
         decompressed = working_path != backup_path

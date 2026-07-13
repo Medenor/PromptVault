@@ -820,7 +820,7 @@ class TestBackupService:
         with pytest.raises(BackupError) as exc_info:
             db_backup_service.restore_backup(backup_id)
 
-        assert "does not exist" in str(exc_info.value).lower()
+        assert "not found" in str(exc_info.value).lower()
 
     # ------------------------------------------------------------------------
     # Backup Management

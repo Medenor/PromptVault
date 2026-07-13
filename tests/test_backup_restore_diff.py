@@ -267,3 +267,89 @@ class TestExtractPromptsFromBackup:
     def test_extract_unknown_type_returns_empty(self, db_backup_service):
         prompts = db_backup_service._extract_prompts_from_backup("/any/path", "unknown_type")
         assert prompts == []
+
+
+class TestEnsureLocalBackupFile:
+    """Tests for cloud-fallback download when a backup's local file is missing."""
+
+    def _make_provider(self, session):
+        from src.db.models.backup_storage_provider import BackupStorageProvider
+
+        provider = BackupStorageProvider(
+            id="provider-1",
+            name="Test Provider",
+            provider_type="s3",
+            bucket_name="test-bucket",
+            prefix="",
+            credentials_encrypted="enc",
+            credentials_salt="salt",
+            credentials_nonce="nonce",
+            enabled=True,
+        )
+        session.add(provider)
+        return provider
+
+    def test_downloads_from_cloud_when_local_file_missing(
+        self, db_backup_service, patched_db_session, temp_data_dir, monkeypatch
+    ):
+        missing_path = os.path.join(temp_data_dir, "backups", "cloud_only.db")
+
+        def fake_download(self, provider, remote_key, dest_path):
+            conn = sqlite3.connect(dest_path)
+            conn.execute("""
+                CREATE TABLE prompts (
+                    id INTEGER PRIMARY KEY, title TEXT, prompt TEXT,
+                    note TEXT, favorite INTEGER, category_id INTEGER, semantic_version TEXT
+                )
+            """)
+            conn.execute("INSERT INTO prompts VALUES (1, 'Cloud Prompt', 'Cloud Content', NULL, 0, NULL, '1.0')")
+            conn.commit()
+            conn.close()
+
+        from src.services.backup_cloud_service import BackupCloudService
+        monkeypatch.setattr(BackupCloudService, "download", fake_download)
+
+        with patched_db_session() as session:
+            self._make_provider(session)
+            session.add(Backup(
+                id="backup-cloud-only", backup_type="sqlite_copy",
+                filename="cloud_only.db", storage_path=missing_path,
+                cloud_provider_id="provider-1", cloud_path="backups/cloud_only.db",
+                succeeded=True,
+            ))
+            session.commit()
+
+        diff = db_backup_service.compute_restore_diff("backup-cloud-only")
+        assert diff["summary"]["added"] == 1
+        assert os.path.exists(missing_path)
+
+    def test_raises_when_no_local_file_and_no_cloud_reference(
+        self, db_backup_service, patched_db_session
+    ):
+        with patched_db_session() as session:
+            session.add(Backup(
+                id="backup-orphan", backup_type="sqlite_copy",
+                filename="orphan.db", storage_path="/nonexistent/orphan.db",
+                succeeded=True,
+            ))
+            session.commit()
+
+        with pytest.raises(BackupError, match="Backup file not found"):
+            db_backup_service.compute_restore_diff("backup-orphan")
+
+    def test_raises_when_cloud_provider_disabled(
+        self, db_backup_service, patched_db_session
+    ):
+        with patched_db_session() as session:
+            provider = self._make_provider(session)
+            provider.enabled = False
+            session.add(Backup(
+                id="backup-disabled-provider", backup_type="sqlite_copy",
+                filename="disabled.db", storage_path="/nonexistent/disabled.db",
+                cloud_provider_id="provider-1", cloud_path="backups/disabled.db",
+                succeeded=True,
+            ))
+            session.commit()
+
+        with pytest.raises(BackupError, match="Cloud storage provider not found or disabled"):
+            db_backup_service.compute_restore_diff("backup-disabled-provider")

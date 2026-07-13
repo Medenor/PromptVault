@@ -148,6 +148,18 @@ curl -s http://localhost:8080/api/backups/$BACKUP_ID \
 curl -s http://localhost:8080/api/backups/$BACKUP_ID \
   -H "Authorization: Bearer $TOKEN" | jq '.storage_path'
 # Expected: non-null local path
+
+# Restore from cloud when the local file is missing (e.g. a fresh machine that
+# only has the backup registry row, or a backup removed by cleanup/compress).
+# Simulate this by deleting the local file, then restoring — the service
+# transparently re-downloads it from the configured provider first.
+rm "$(curl -s http://localhost:8080/api/backups/$BACKUP_ID \
+  -H "Authorization: Bearer $TOKEN" | jq -r '.storage_path')"
+
+curl -s -X POST http://localhost:8080/api/backups/$BACKUP_ID/restore \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" -d '{}' | jq .
+# Expected: {"success": true} — local file re-downloaded from cloud before restore
 ```
 
 ---
