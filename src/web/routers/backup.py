@@ -79,6 +79,7 @@ async def create_manual_backup(
     name: str = Form(None),
     encrypt: bool = Form(False),
     passphrase: str = Form(None),
+    cloud_provider_id: str = Form(None),
     current_user: Optional[User] = Depends(get_admin_or_bypass),
 ):
     """Create a manual backup with validation."""
@@ -99,6 +100,12 @@ async def create_manual_backup(
             passphrase=passphrase,
         )
         if backup_id:
+            if cloud_provider_id:
+                from src.services.backup_cloud_service import BackupCloudService
+
+                BackupCloudService().upload_backup_by_id(
+                    service, backup_id, cloud_provider_id, log_prefix="backup.manual"
+                )
             if _record_validation_event:
                 _record_validation_event(endpoint="/api/backups", success=True)
             return {"success": True, "backup_id": backup_id}

@@ -45,6 +45,7 @@ interface BackupSchedule {
   day_of_week: number | null;
   day_of_month: number | null;
   retention_days: number;
+  cloud_provider_id: string | null;
   last_run_at: string | null;
   last_run_status: string | null;
 }
@@ -480,6 +481,10 @@ async function createBackup(): Promise<void> {
     'backup-create-passphrase'
   ) as HTMLInputElement | null;
   const passphrase = passphraseInput?.value ?? '';
+  const cloudProviderInput = document.getElementById(
+    'backup-create-cloud-provider'
+  ) as HTMLSelectElement | null;
+  const cloudProviderId = cloudProviderInput?.value ?? '';
   resetFieldError('backup-name', 'backup-name-error');
   resetFieldError('backup-create-passphrase', 'backup-create-passphrase-error');
   resetErrorSummary('backup-create-error-summary');
@@ -516,6 +521,9 @@ async function createBackup(): Promise<void> {
     if (encryptionEnabled) {
       formData.append('encrypt', 'true');
       formData.append('passphrase', passphrase);
+    }
+    if (cloudProviderId) {
+      formData.append('cloud_provider_id', cloudProviderId);
     }
 
     const result = await apiPostForm<BackupResponse>('/api/backups', formData);
@@ -945,10 +953,28 @@ async function loadCloudProviders(): Promise<void> {
   try {
     const data = await apiGet<{ providers: CloudProvider[] }>('/api/backup-providers');
     renderCloudProviders(data.providers || []);
+    populateCloudProviderSelect('schedule-cloud-provider', data.providers || []);
+    populateCloudProviderSelect('backup-create-cloud-provider', data.providers || []);
   } catch {
     const list = document.getElementById('cloud-providers-list');
     if (list)
       list.innerHTML = `<div class="text-gray-500 text-sm">${escapeHtml(t('backup.noProvidersConfigured'))}</div>`;
+  }
+}
+
+function populateCloudProviderSelect(selectId: string, providers: CloudProvider[]): void {
+  const select = document.getElementById(selectId) as HTMLSelectElement | null;
+  if (!select) return;
+
+  const previousValue = select.value;
+  const noneLabel = escapeHtml(t('backup.scheduleCloudProviderNone') || 'Local only');
+  const optionsHtml = providers
+    .map((p) => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)}</option>`)
+    .join('');
+  select.innerHTML = `<option value="">${noneLabel}</option>${optionsHtml}`;
+
+  if (providers.some((p) => p.id === previousValue)) {
+    select.value = previousValue;
   }
 }
 
@@ -1200,6 +1226,9 @@ function populateScheduleForm(schedule: BackupSchedule): void {
   const dayEl = document.getElementById('schedule-day') as HTMLInputElement | null;
   const dayLabel = document.getElementById('schedule-day-label');
   const lastRun = document.getElementById('schedule-last-run');
+  const cloudProviderEl = document.getElementById(
+    'schedule-cloud-provider'
+  ) as HTMLSelectElement | null;
   const cleanupRetentionDays = document.getElementById(
     'cleanup-retention-days'
   ) as HTMLInputElement | null;
@@ -1209,6 +1238,7 @@ function populateScheduleForm(schedule: BackupSchedule): void {
   if (hourEl) hourEl.value = String(schedule.hour);
   if (minuteEl) minuteEl.value = String(schedule.minute);
   if (cleanupRetentionDays) cleanupRetentionDays.value = String(schedule.retention_days);
+  if (cloudProviderEl) cloudProviderEl.value = schedule.cloud_provider_id ?? '';
 
   updateDayFieldVisibility(schedule.frequency);
 
@@ -1263,6 +1293,9 @@ async function saveSchedule(): Promise<void> {
   const hourEl = document.getElementById('schedule-hour') as HTMLInputElement | null;
   const minuteEl = document.getElementById('schedule-minute') as HTMLInputElement | null;
   const dayEl = document.getElementById('schedule-day') as HTMLInputElement | null;
+  const cloudProviderEl = document.getElementById(
+    'schedule-cloud-provider'
+  ) as HTMLSelectElement | null;
   const cleanupRetentionDays = document.getElementById(
     'cleanup-retention-days'
   ) as HTMLInputElement | null;
@@ -1275,6 +1308,7 @@ async function saveSchedule(): Promise<void> {
     hour: Number(hourEl?.value ?? 2),
     minute: Number(minuteEl?.value ?? 0),
     retention_days: Number(cleanupRetentionDays?.value ?? 30),
+    cloud_provider_id: cloudProviderEl?.value || null,
   };
 
   if (frequency === 'weekly') {

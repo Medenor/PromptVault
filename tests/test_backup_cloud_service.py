@@ -368,6 +368,85 @@ class TestGetClient:
             )
 
 
+class TestUploadBackupById:
+    def test_uploads_and_records_cloud_metadata(self, cloud_service, db_backup_service):
+        from src.db.models.backup import Backup
+        from src.db import session as session_module
+
+        provider = cloud_service.create_provider(
+            name="Target",
+            provider_type="s3",
+            bucket_name="my-bucket",
+            access_key="AK",
+            secret_key="SK",
+        )
+
+        backup_id = db_backup_service.create_backup("upload-test", created_by="tester")
+        assert backup_id
+
+        with patch.object(BackupCloudService, "upload", return_value="remote/key.db") as mock_upload:
+            result = cloud_service.upload_backup_by_id(
+                db_backup_service, backup_id, provider["id"], log_prefix="backup.manual"
+            )
+
+        assert result is True
+        mock_upload.assert_called_once()
+
+        with session_module.get_db_session() as session:
+            backup = session.query(Backup).filter_by(id=backup_id).first()
+            assert backup.cloud_provider_id == provider["id"]
+            assert backup.cloud_path == "remote/key.db"
+            assert backup.cloud_uploaded_at is not None
+
+    def test_returns_false_when_backup_info_missing(self, cloud_service, db_backup_service):
+        result = cloud_service.upload_backup_by_id(
+            db_backup_service, "nonexistent-backup-id", "some-provider-id"
+        )
+        assert result is False
+
+    def test_returns_false_when_provider_missing(self, cloud_service, db_backup_service):
+        backup_id = db_backup_service.create_backup("upload-test-2", created_by="tester")
+        result = cloud_service.upload_backup_by_id(
+            db_backup_service, backup_id, "nonexistent-provider-id"
+        )
+        assert result is False
+
+    def test_returns_false_when_provider_disabled(self, cloud_service, db_backup_service):
+        from src.db.models.backup_storage_provider import BackupStorageProvider
+        from src.db import session as session_module
+
+        provider = cloud_service.create_provider(
+            name="Disabled Target",
+            provider_type="s3",
+            bucket_name="my-bucket",
+            access_key="AK",
+            secret_key="SK",
+        )
+        with session_module.get_db_session() as session:
+            row = session.query(BackupStorageProvider).filter_by(id=provider["id"]).first()
+            row.enabled = False
+            session.commit()
+
+        backup_id = db_backup_service.create_backup("upload-test-3", created_by="tester")
+        result = cloud_service.upload_backup_by_id(db_backup_service, backup_id, provider["id"])
+        assert result is False
+
+    def test_returns_false_on_upload_exception(self, cloud_service, db_backup_service):
+        provider = cloud_service.create_provider(
+            name="Erroring Target",
+            provider_type="s3",
+            bucket_name="my-bucket",
+            access_key="AK",
+            secret_key="SK",
+        )
+        backup_id = db_backup_service.create_backup("upload-test-4", created_by="tester")
+
+        with patch.object(BackupCloudService, "upload", side_effect=RuntimeError("boom")):
+            result = cloud_service.upload_backup_by_id(db_backup_service, backup_id, provider["id"])
+
+        assert result is False
+
+
 class TestSerializeProvider:
     def test_serialize_never_includes_credentials(self):
         provider = MagicMock()

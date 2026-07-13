@@ -15,6 +15,7 @@ import json
 import logging
 import os
 import uuid
+from datetime import datetime, timezone
 from typing import Optional, Dict, Any
 from urllib.parse import urlparse
 
@@ -146,6 +147,86 @@ class BackupCloudService:
 
         with open(dest_path, "wb") as f:
             client.download_fileobj(provider.bucket_name, remote_key, f)
+
+    def upload_backup_by_id(
+        self,
+        backup_service,
+        backup_id: str,
+        provider_id: str,
+        log_prefix: str = "backup",
+    ) -> bool:
+        """Upload an existing local backup to a configured cloud provider.
+
+        Looks up the backup's local storage path via `backup_service`,
+        uploads it, and records the cloud location on the Backup row.
+        Failures are logged but not raised — the local backup already
+        exists and callers should not fail the overall operation because
+        of a cloud upload issue.
+
+        Args:
+            backup_service: BackupService instance used to resolve backup metadata
+            backup_id: ID of the already-created local backup
+            provider_id: Storage provider ID to upload to
+            log_prefix: Event name prefix for log messages (e.g. "backup.scheduled")
+
+        Returns:
+            True if the upload succeeded, False otherwise
+        """
+        try:
+            from src.db.models.backup import Backup
+
+            info = backup_service.get_backup_info(backup_id)
+            if not info or not info.get("storage_path"):
+                logger.warning(
+                    "Cannot upload backup: metadata or storage_path missing",
+                    extra={"event": f"{log_prefix}.upload_skipped", "backup_id": backup_id},
+                )
+                return False
+
+            with get_db_session() as session:
+                provider_repo = BackupStorageProviderRepository(session)
+                provider = provider_repo.get_by_id(provider_id)
+                if not provider or not provider.enabled:
+                    logger.warning(
+                        "Cannot upload backup: cloud provider not found or disabled",
+                        extra={
+                            "event": f"{log_prefix}.upload_skipped",
+                            "backup_id": backup_id,
+                            "provider_id": provider_id,
+                        },
+                    )
+                    return False
+
+                remote_key = self.upload(info["storage_path"], provider, info["filename"])
+
+                backup = session.query(Backup).filter_by(id=backup_id).first()
+                if backup:
+                    backup.cloud_provider_id = provider_id
+                    backup.cloud_path = remote_key
+                    backup.cloud_uploaded_at = datetime.now(timezone.utc)
+                    session.commit()
+
+            logger.info(
+                "Backup uploaded to cloud storage",
+                extra={
+                    "event": f"{log_prefix}.upload_success",
+                    "backup_id": backup_id,
+                    "provider_id": provider_id,
+                },
+            )
+            return True
+
+        except Exception as exc:
+            logger.error(
+                "Failed to upload backup to cloud storage",
+                extra={
+                    "event": f"{log_prefix}.upload_failure",
+                    "backup_id": backup_id,
+                    "provider_id": provider_id,
+                },
+                exc_info=exc,
+            )
+            return False
 
     def test_connectivity(self, provider: BackupStorageProvider) -> Dict[str, Any]:
         """Test connectivity to the cloud storage provider.

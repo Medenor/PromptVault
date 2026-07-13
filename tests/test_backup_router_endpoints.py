@@ -442,6 +442,104 @@ class TestBackupProviders:
         assert resp.status_code == 401
 
 
+class TestManualBackupCloudUpload:
+    def test_create_backup_with_cloud_provider_uploads(
+        self, api_client, api_admin_auth_headers, monkeypatch
+    ):
+        monkeypatch.setenv("PROMPTVAULT_CLOUD_CREDS_PASSPHRASE", "test-creds-pass")
+        create_provider_resp = api_client.post(
+            "/api/backup-providers",
+            headers=api_admin_auth_headers,
+            json={
+                "name": "Manual Upload Target",
+                "provider_type": "s3",
+                "bucket_name": "b",
+                "access_key": "ak",
+                "secret_key": "sk",
+            },
+        )
+        provider_id = create_provider_resp.json()["id"]
+
+        from src.services.backup_cloud_service import BackupCloudService
+
+        called = {}
+
+        def fake_upload_backup_by_id(self, backup_service, backup_id, provider_id_arg, log_prefix="backup"):
+            called["backup_id"] = backup_id
+            called["provider_id"] = provider_id_arg
+            called["log_prefix"] = log_prefix
+            return True
+
+        monkeypatch.setattr(
+            BackupCloudService, "upload_backup_by_id", fake_upload_backup_by_id
+        )
+
+        resp = api_client.post(
+            "/api/backups",
+            data={"name": "cloud-upload-backup", "cloud_provider_id": provider_id},
+            headers=api_admin_auth_headers,
+        )
+        assert resp.status_code == 200
+        assert resp.json()["success"] is True
+        assert called["backup_id"] == resp.json()["backup_id"]
+        assert called["provider_id"] == provider_id
+        assert called["log_prefix"] == "backup.manual"
+
+    def test_create_backup_without_cloud_provider_skips_upload(
+        self, api_client, api_admin_auth_headers, monkeypatch
+    ):
+        from src.services.backup_cloud_service import BackupCloudService
+
+        def fail_if_called(self, *args, **kwargs):
+            raise AssertionError("upload_backup_by_id should not be called")
+
+        monkeypatch.setattr(
+            BackupCloudService, "upload_backup_by_id", fail_if_called
+        )
+
+        resp = api_client.post(
+            "/api/backups",
+            data={"name": "no-cloud-backup"},
+            headers=api_admin_auth_headers,
+        )
+        assert resp.status_code == 200
+        assert resp.json()["success"] is True
+
+    def test_create_backup_cloud_upload_failure_does_not_fail_request(
+        self, api_client, api_admin_auth_headers, monkeypatch
+    ):
+        monkeypatch.setenv("PROMPTVAULT_CLOUD_CREDS_PASSPHRASE", "test-creds-pass")
+        create_provider_resp = api_client.post(
+            "/api/backup-providers",
+            headers=api_admin_auth_headers,
+            json={
+                "name": "Broken Target",
+                "provider_type": "s3",
+                "bucket_name": "b",
+                "access_key": "ak",
+                "secret_key": "sk",
+            },
+        )
+        provider_id = create_provider_resp.json()["id"]
+
+        from src.services.backup_cloud_service import BackupCloudService
+
+        def fake_upload_returns_false(self, backup_service, backup_id, provider_id_arg, log_prefix="backup"):
+            return False
+
+        monkeypatch.setattr(
+            BackupCloudService, "upload_backup_by_id", fake_upload_returns_false
+        )
+
+        resp = api_client.post(
+            "/api/backups",
+            data={"name": "cloud-failure-backup", "cloud_provider_id": provider_id},
+            headers=api_admin_auth_headers,
+        )
+        assert resp.status_code == 200
+        assert resp.json()["success"] is True
+
+
 class TestTestBackupProvider:
     def test_test_provider_not_found(self, api_client, api_admin_auth_headers):
         resp = api_client.post(
