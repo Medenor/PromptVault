@@ -16,6 +16,7 @@ import type { TranslationKey } from '@/types/i18n';
 import { hideElement, showElement } from '@/utils/dom';
 import { apiFetch, apiGet, apiPost, apiPostForm, APIRequestError } from '@/utils/api';
 import { announce } from '@/utils/a11y';
+import { loadMonitoringDashboard, loadAuditLog } from './components/backup-monitoring-dashboard';
 
 interface CloudProvider {
   id: string;
@@ -238,6 +239,8 @@ function initializeBackupManagement(): void {
   void checkAdminAccess();
   void loadBackups();
   void loadBackupStats();
+  void loadMonitoringDashboard();
+  void loadAuditLog();
   void loadSchedule();
   void loadEncryptionConfig();
   void loadCloudProviders();
@@ -405,14 +408,10 @@ async function loadBackupStats(): Promise<void> {
 }
 
 function updateStatsDisplay(stats: BackupStats): void {
-  const totalBackups = document.getElementById('total-backups');
-  const totalSize = document.getElementById('total-size');
   const compressedCount = document.getElementById('compressed-count');
   const newestBackup = document.getElementById('newest-backup');
   const oldestBackup = document.getElementById('oldest-backup');
 
-  if (totalBackups) totalBackups.textContent = String(stats.total_backups || 0);
-  if (totalSize) totalSize.textContent = formatBytes(stats.total_size || 0);
   if (compressedCount) compressedCount.textContent = String(stats.compressed_count || 0);
 
   if (newestBackup) {
@@ -548,6 +547,8 @@ async function createBackup(): Promise<void> {
       if (passphraseInput) passphraseInput.value = '';
       void loadBackups();
       void loadBackupStats();
+      void loadMonitoringDashboard();
+      void loadAuditLog();
     } else {
       showStatus('backup-status', t('backup.createFailed'), 'error');
     }
@@ -707,6 +708,8 @@ async function confirmDelete(): Promise<void> {
       showStatus('backup-status', t('backup.deleteSuccess'), 'success');
       void loadBackups();
       void loadBackupStats();
+      void loadMonitoringDashboard();
+      void loadAuditLog();
     } else {
       showStatus('backup-status', t('backup.deleteFailed'), 'error');
     }
@@ -750,6 +753,8 @@ async function confirmDeleteAll(): Promise<void> {
     }
     void loadBackups();
     void loadBackupStats();
+    void loadMonitoringDashboard();
+    void loadAuditLog();
   } catch (error) {
     reportError(BACKUP_COMPONENT, 'deleteAllBackups', error, {});
     showStatus('backup-status', t('backup.deleteError'), 'error');
@@ -801,6 +806,8 @@ async function cleanupBackups(): Promise<void> {
       );
       void loadBackups();
       void loadBackupStats();
+      void loadMonitoringDashboard();
+      void loadAuditLog();
     } else {
       showStatus('maintenance-status', t('backup.cleanupFailed'), 'error');
     }
@@ -852,6 +859,8 @@ async function compressBackups(): Promise<void> {
       );
       void loadBackups();
       void loadBackupStats();
+      void loadMonitoringDashboard();
+      void loadAuditLog();
     } else {
       showStatus('maintenance-status', t('backup.compressionFailed'), 'error');
     }
@@ -866,6 +875,8 @@ async function compressBackups(): Promise<void> {
 function refreshBackups(): void {
   void loadBackups();
   void loadBackupStats();
+  void loadMonitoringDashboard();
+  void loadAuditLog();
 }
 
 function clearBackupForm(): void {

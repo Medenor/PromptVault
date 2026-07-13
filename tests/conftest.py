@@ -440,6 +440,11 @@ def db_data_service(test_db_engine, monkeypatch) -> PromptDataService:
 
     # Patch get_db_session
     monkeypatch.setattr(session_module, "get_db_session", mock_get_db_session)
+    # PromptDataService imports get_db_session directly
+    # (`from src.db.session import get_db_session`), so patching the
+    # attribute on src.db.session alone doesn't affect its already-bound
+    # module-level reference — patch it explicitly too.
+    monkeypatch.setattr("src.services.prompt_data_service_db.get_db_session", mock_get_db_session)
 
     service = PromptDataService()
     return service
@@ -501,6 +506,14 @@ def db_backup_service(temp_data_dir: str, test_db_engine, monkeypatch) -> Backup
             session.close()
 
     monkeypatch.setattr(session_module, "get_db_session", mock_get_db_session)
+    # BackupService and BackupAuditService import get_db_session directly
+    # (`from src.db.session import get_db_session`), binding their own
+    # module-level name at import time. Patching the attribute on
+    # src.db.session alone does not affect those already-bound references,
+    # so they must be patched individually or they silently fall through to
+    # the real, unpatched engine (and the real on-disk database).
+    monkeypatch.setattr("src.services.backup_service_db.get_db_session", mock_get_db_session)
+    monkeypatch.setattr("src.services.backup_audit_service.get_db_session", mock_get_db_session)
 
     return BackupService(temp_data_dir)
 

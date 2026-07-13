@@ -81,6 +81,9 @@ class BackupService:
         Returns:
             Optional[str]: Backup ID if successful, None otherwise
         """
+        from src.services.backup_audit_service import BackupAuditService
+        audit_service = BackupAuditService()
+
         try:
             # Generate backup ID with microseconds for uniqueness
             timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")[
@@ -98,22 +101,42 @@ class BackupService:
 
             # Create backup based on database type
             if db_settings.is_sqlite:
-                return self._create_sqlite_backup(backup_id, created_by, encrypt=encrypt, passphrase=passphrase, backup_kind=backup_kind)
+                result = self._create_sqlite_backup(backup_id, created_by, encrypt=encrypt, passphrase=passphrase, backup_kind=backup_kind)
             elif db_settings.is_postgresql:
-                return self._create_pg_backup(backup_id, created_by, encrypt=encrypt, passphrase=passphrase, backup_kind=backup_kind)
+                result = self._create_pg_backup(backup_id, created_by, encrypt=encrypt, passphrase=passphrase, backup_kind=backup_kind)
             else:
                 raise BackupError(
                     "Unsupported database type",
                     context={"database_url": db_settings.DATABASE_URL},
                 )
 
-        except BackupError:
+            audit_service.log(
+                operation="backup.create",
+                outcome="success",
+                backup_id=result,
+                performed_by=created_by or self._get_current_user(),
+            )
+            return result
+
+        except BackupError as exc:
+            audit_service.log(
+                operation="backup.create",
+                outcome="failure",
+                performed_by=created_by or self._get_current_user(),
+                detail={"error": str(exc)},
+            )
             raise
         except Exception as exc:
             logger.error(
                 "Failed to create backup",
                 extra={"event": "backup.create.failure"},
                 exc_info=exc,
+            )
+            audit_service.log(
+                operation="backup.create",
+                outcome="failure",
+                performed_by=created_by or self._get_current_user(),
+                detail={"error": str(exc)},
             )
             raise BackupError("Failed to create backup.", context={}) from exc
 
@@ -505,6 +528,9 @@ class BackupService:
                 if decompressed_path != metadata.get("storage_path") and os.path.exists(decompressed_path):
                     os.remove(decompressed_path)
 
+            from src.services.backup_audit_service import BackupAuditService
+            audit_service = BackupAuditService()
+
             if success:
                 logger.info(
                     "Backup restored successfully",
@@ -515,16 +541,45 @@ class BackupService:
                     resource_type="backup",
                     resource_id=backup_id,
                 )
+                audit_service.log(
+                    operation="backup.restore",
+                    outcome="success",
+                    backup_id=backup_id,
+                    performed_by=created_by or self._get_current_user(),
+                )
+            else:
+                audit_service.log(
+                    operation="backup.restore",
+                    outcome="failure",
+                    backup_id=backup_id,
+                    performed_by=created_by or self._get_current_user(),
+                )
 
             return success
 
-        except BackupError:
+        except BackupError as exc:
+            from src.services.backup_audit_service import BackupAuditService
+            BackupAuditService().log(
+                operation="backup.restore",
+                outcome="failure",
+                backup_id=backup_id,
+                performed_by=created_by or self._get_current_user(),
+                detail={"error": str(exc)},
+            )
             raise
         except Exception as exc:
             logger.error(
                 "Failed to restore backup",
                 extra={"event": "backup.restore.failure", "resource_id": backup_id},
                 exc_info=exc,
+            )
+            from src.services.backup_audit_service import BackupAuditService
+            BackupAuditService().log(
+                operation="backup.restore",
+                outcome="failure",
+                backup_id=backup_id,
+                performed_by=created_by or self._get_current_user(),
+                detail={"error": str(exc)},
             )
             raise BackupError(
                 "Failed to restore backup.", context={"backup_id": backup_id}
@@ -854,6 +909,11 @@ class BackupService:
                     os.remove(storage_path)
 
                 if backup:
+                    from src.db.models.backup_audit_log import AuditLogEntry
+
+                    session.query(AuditLogEntry).filter_by(backup_id=backup_id).update(
+                        {"backup_id": None}
+                    )
                     session.delete(backup)
                     session.flush()
 
@@ -865,6 +925,14 @@ class BackupService:
                     resource_id=backup_id,
                 )
 
+                from src.services.backup_audit_service import BackupAuditService
+                BackupAuditService().log(
+                    operation="backup.delete",
+                    outcome="success",
+                    performed_by=self._get_current_user(),
+                    detail={"backup_id": backup_id},
+                )
+
                 return True
 
         except Exception as exc:
@@ -872,6 +940,13 @@ class BackupService:
                 "Failed to delete backup",
                 extra={"event": "backup.delete.failure", "resource_id": backup_id},
                 exc_info=exc,
+            )
+            from src.services.backup_audit_service import BackupAuditService
+            BackupAuditService().log(
+                operation="backup.delete",
+                outcome="failure",
+                performed_by=self._get_current_user(),
+                detail={"backup_id": backup_id, "error": str(exc)},
             )
             raise BackupError(
                 "Failed to delete backup.", context={"backup_id": backup_id}
@@ -1083,6 +1158,9 @@ class BackupService:
                     backup_kind=backup_kind,
                     filename=metadata["filename"],
                     storage_path=metadata["storage_path"],
+                    size_bytes=metadata.get("size_bytes"),
+                    prompt_count=metadata.get("prompt_count"),
+                    created_by=metadata.get("created_by"),
                     backup_metadata=metadata,
                     is_encrypted=is_encrypted,
                     encryption_salt=encryption_salt,

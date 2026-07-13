@@ -476,10 +476,10 @@
           </div>
         </div>
 
-        <!-- Monitoring & Audit Section -->
-        <div class="bg-white rounded-lg shadow p-6 mb-8">
-          <h2 class="text-xl font-bold text-gray-900 mb-6" data-i18n="backup.monitoringTitle">
-            Monitoring & Audit
+        <!-- Statistics Panel (merged Backup Statistics + Monitoring & Audit) -->
+        <div class="bg-white rounded-lg shadow p-6">
+          <h2 class="text-xl font-bold text-gray-900 mb-6" data-i18n="backup.statisticsTitle">
+            Backup Statistics
           </h2>
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <div class="text-center p-3 bg-gray-50 rounded-lg">
@@ -487,16 +487,30 @@
               <div class="text-xs text-gray-600" data-i18n="backup.totalBackups">Total Backups</div>
             </div>
             <div class="text-center p-3 bg-gray-50 rounded-lg">
-              <div class="text-2xl font-bold text-green-600" id="monitoring-success-rate">-</div>
-              <div class="text-xs text-gray-600" data-i18n="backup.monitoringSuccessRate">Success Rate (30d)</div>
-            </div>
-            <div class="text-center p-3 bg-gray-50 rounded-lg">
               <div class="text-2xl font-bold text-blue-600" id="monitoring-total-size">-</div>
               <div class="text-xs text-gray-600" data-i18n="backup.totalSize">Total Size</div>
             </div>
             <div class="text-center p-3 bg-gray-50 rounded-lg">
+              <div class="text-2xl font-bold text-green-600" id="compressed-count">-</div>
+              <div class="text-xs text-gray-600" data-i18n="backup.compressedCount">Compressed</div>
+            </div>
+            <div class="text-center p-3 bg-gray-50 rounded-lg">
+              <div class="text-2xl font-bold text-green-600" id="monitoring-success-rate">-</div>
+              <div class="text-xs text-gray-600" data-i18n="backup.monitoringSuccessRate">Success Rate (30d)</div>
+            </div>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+            <div class="text-center p-3 bg-gray-50 rounded-lg">
               <div class="text-sm font-medium text-gray-900" id="monitoring-last-backup">-</div>
               <div class="text-xs text-gray-600" data-i18n="backup.monitoringLastBackup">Last Backup</div>
+            </div>
+            <div class="text-center p-3 bg-gray-50 rounded-lg">
+              <div class="text-sm font-medium text-gray-900" id="newest-backup">-</div>
+              <div class="text-xs text-gray-600" data-i18n="backup.newestBackup">Newest Backup</div>
+            </div>
+            <div class="text-center p-3 bg-gray-50 rounded-lg">
+              <div class="text-sm font-medium text-gray-900" id="oldest-backup">-</div>
+              <div class="text-xs text-gray-600" data-i18n="backup.oldestBackup">Oldest Backup</div>
             </div>
           </div>
           <div id="monitoring-quota-warning" class="mb-4"></div>
@@ -504,43 +518,6 @@
           <div id="monitoring-history" class="mb-6"></div>
           <h3 class="font-semibold text-gray-900 mb-3" data-i18n="backup.monitoringAuditLog">Audit Log</h3>
           <div id="audit-log-table"></div>
-        </div>
-
-        <!-- Statistics Panel -->
-        <div class="bg-white rounded-lg shadow p-6">
-          <h2 class="text-xl font-bold text-gray-900 mb-6" data-i18n="backup.statisticsTitle">
-            Backup Statistics
-          </h2>
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-            <div class="text-center">
-              <div class="text-sm text-gray-700 mb-1" data-i18n="backup.totalBackups">
-                Total Backups
-              </div>
-              <div class="text-3xl font-bold text-gray-900" id="total-backups">-</div>
-            </div>
-            <div class="text-center">
-              <div class="text-sm text-gray-700 mb-1" data-i18n="backup.totalSize">Total Size</div>
-              <div class="text-3xl font-bold text-blue-600" id="total-size">-</div>
-            </div>
-            <div class="text-center">
-              <div class="text-sm text-gray-700 mb-1" data-i18n="backup.compressedCount">
-                Compressed
-              </div>
-              <div class="text-3xl font-bold text-green-600" id="compressed-count">-</div>
-            </div>
-            <div class="text-center">
-              <div class="text-xs text-gray-700 mb-1" data-i18n="backup.newestBackup">
-                Newest Backup
-              </div>
-              <div class="text-sm font-medium text-gray-900" id="newest-backup">-</div>
-            </div>
-            <div class="text-center">
-              <div class="text-xs text-gray-700 mb-1" data-i18n="backup.oldestBackup">
-                Oldest Backup
-              </div>
-              <div class="text-sm font-medium text-gray-900" id="oldest-backup">-</div>
-            </div>
-          </div>
         </div>
       </main>
 
