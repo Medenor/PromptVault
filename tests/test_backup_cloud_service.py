@@ -72,6 +72,41 @@ class TestCreateProvider:
         assert result["region"] is None
         assert result["prefix"] == ""
 
+    @pytest.mark.parametrize(
+        "endpoint_url",
+        [
+            "http://s3.example.com",
+            "http://169.254.169.254/latest/meta-data/",
+            "https://169.254.169.254/",
+            "https://127.0.0.1:9000",
+            "https://localhost",
+            "https://10.0.0.5",
+            "https://192.168.1.1",
+            "https://[::1]",
+        ],
+    )
+    def test_create_provider_rejects_ssrf_endpoint(self, cloud_service, endpoint_url):
+        with pytest.raises(ValueError):
+            cloud_service.create_provider(
+                name="Malicious",
+                provider_type="s3",
+                bucket_name="bucket",
+                access_key="AK",
+                secret_key="SK",
+                endpoint_url=endpoint_url,
+            )
+
+    def test_create_provider_allows_public_https_endpoint(self, cloud_service):
+        result = cloud_service.create_provider(
+            name="Public",
+            provider_type="s3",
+            bucket_name="bucket",
+            access_key="AK",
+            secret_key="SK",
+            endpoint_url="https://s3.example.com",
+        )
+        assert result["endpoint_url"] == "https://s3.example.com"
+
 
 class TestListProviders:
     def test_list_empty(self, cloud_service):

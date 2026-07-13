@@ -10,11 +10,13 @@ S3-compatible providers.
 """
 
 import base64
+import ipaddress
 import json
 import logging
 import os
 import uuid
 from typing import Optional, Dict, Any
+from urllib.parse import urlparse
 
 import boto3
 from botocore.exceptions import ClientError, EndpointConnectionError
@@ -49,6 +51,48 @@ def _get_credentials_passphrase() -> str:
             "Set it to a long random secret before using cloud backup storage."
         )
     return passphrase
+
+
+def _validate_endpoint_url(endpoint_url: str) -> None:
+    """Validate a user-supplied S3 endpoint URL to prevent SSRF.
+
+    Rejects non-https schemes and hosts that are IP literals resolving
+    to loopback, link-local (incl. cloud metadata services), private,
+    or otherwise non-public IP ranges. Hostnames are not DNS-resolved
+    here (to keep validation fast and avoid a TOCTOU/DNS-rebinding
+    false sense of safety); botocore will still fail closed if a
+    resolved address becomes unreachable at request time.
+
+    Raises:
+        ValueError: If the endpoint URL is invalid or targets a
+            disallowed network range.
+    """
+    parsed = urlparse(endpoint_url)
+    if parsed.scheme != "https":
+        raise ValueError("endpoint_url must use https://")
+    hostname = parsed.hostname
+    if not hostname:
+        raise ValueError("endpoint_url must include a valid host")
+
+    if hostname == "localhost":
+        raise ValueError("endpoint_url must not target localhost")
+
+    try:
+        ip = ipaddress.ip_address(hostname)
+    except ValueError:
+        return
+
+    if (
+        ip.is_loopback
+        or ip.is_link_local
+        or ip.is_private
+        or ip.is_multicast
+        or ip.is_reserved
+        or ip.is_unspecified
+    ):
+        raise ValueError(
+            f"endpoint_url targets a disallowed address ({ip}); public hosts only"
+        )
 
 
 class BackupCloudService:
@@ -161,6 +205,9 @@ class BackupCloudService:
                 "Currently supported: s3 (AWS S3, MinIO, Backblaze B2, Cloudflare R2, etc.). "
                 "Google Drive and Dropbox support is planned for a future release."
             )
+
+        if endpoint_url:
+            _validate_endpoint_url(endpoint_url)
 
         passphrase = _get_credentials_passphrase()
 
