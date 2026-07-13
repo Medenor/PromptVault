@@ -1057,7 +1057,11 @@ class BackupService:
         with get_db_session() as session:
             backup = session.query(Backup).filter_by(id=backup_id).first()
             if not backup:
-                return
+                raise BackupError(
+                    "Backup record not found while persisting encryption state; "
+                    "file on disk is encrypted but DB metadata was not updated.",
+                    context={"backup_id": backup_id},
+                )
             backup.is_encrypted = True
             backup.encryption_salt = encryption_salt
             backup.encryption_nonce = encryption_nonce

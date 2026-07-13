@@ -184,11 +184,13 @@ class BackupSchedulerService:
 
         try:
             encrypt = False
+            cloud_provider_id = None
             with get_db_session() as session:
                 repo = BackupScheduleRepository(session)
                 active = repo.get_active()
                 if active:
                     encrypt = bool(active.encrypt_scheduled_backups)
+                    cloud_provider_id = active.cloud_provider_id
 
             # Scheduled backups cannot prompt for a passphrase, so encryption
             # is not supported for scheduler-triggered runs. Log and skip.
@@ -213,6 +215,9 @@ class BackupSchedulerService:
                 encrypt=encrypt,
                 backup_kind=frequency,
             )
+
+            if backup_id and cloud_provider_id:
+                self._upload_to_cloud(backup_id, cloud_provider_id)
 
             with get_db_session() as session:
                 repo = BackupScheduleRepository(session)
@@ -243,6 +248,74 @@ class BackupSchedulerService:
                     session.commit()
         finally:
             self._lock.release()
+
+    def _upload_to_cloud(self, backup_id: str, provider_id: str) -> None:
+        """Upload a completed backup to its configured cloud storage provider.
+
+        Failures are logged but do not fail the scheduled run; the local
+        backup has already succeeded by the time this is called.
+        """
+        try:
+            from src.db.models.backup import Backup
+            from src.db.models.backup_storage_provider import BackupStorageProvider
+            from src.db.repositories.backup_storage_provider_repository import (
+                BackupStorageProviderRepository,
+            )
+            from src.services.backup_cloud_service import BackupCloudService
+
+            info = self.backup_service.get_backup_info(backup_id)
+            if not info or not info.get("storage_path"):
+                logger.warning(
+                    "Cannot upload scheduled backup: metadata or storage_path missing",
+                    extra={"event": "backup.scheduled.upload_skipped", "backup_id": backup_id},
+                )
+                return
+
+            with get_db_session() as session:
+                provider_repo = BackupStorageProviderRepository(session)
+                provider = provider_repo.get_by_id(provider_id)
+                if not provider or not provider.enabled:
+                    logger.warning(
+                        "Cannot upload scheduled backup: cloud provider not found or disabled",
+                        extra={
+                            "event": "backup.scheduled.upload_skipped",
+                            "backup_id": backup_id,
+                            "provider_id": provider_id,
+                        },
+                    )
+                    return
+
+                cloud_service = BackupCloudService()
+                remote_key = cloud_service.upload(
+                    info["storage_path"], provider, info["filename"]
+                )
+
+                backup = session.query(Backup).filter_by(id=backup_id).first()
+                if backup:
+                    backup.cloud_provider_id = provider_id
+                    backup.cloud_path = remote_key
+                    backup.cloud_uploaded_at = datetime.now(timezone.utc)
+                    session.commit()
+
+            logger.info(
+                "Scheduled backup uploaded to cloud storage",
+                extra={
+                    "event": "backup.scheduled.upload_success",
+                    "backup_id": backup_id,
+                    "provider_id": provider_id,
+                },
+            )
+
+        except Exception as exc:
+            logger.error(
+                "Failed to upload scheduled backup to cloud storage",
+                extra={
+                    "event": "backup.scheduled.upload_failure",
+                    "backup_id": backup_id,
+                    "provider_id": provider_id,
+                },
+                exc_info=exc,
+            )
 
     def _register_job(self, schedule: Dict[str, Any]) -> None:
         """Register the backup job with APScheduler.

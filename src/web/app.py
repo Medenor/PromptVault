@@ -305,6 +305,15 @@ async def startup_scheduler():
         logger.error(f"Failed to initialize scheduler: {e}", exc_info=True)
         print(f"✗ Failed to initialize scheduler: {e}")
 
+    try:
+        from src.scheduler.backup_scheduler import register_backup_jobs
+
+        register_backup_jobs()
+        logger.info("✓ Backup schedule loaded and registered from database")
+    except Exception as e:
+        logger.error(f"Failed to register backup jobs: {e}", exc_info=True)
+        print(f"✗ Failed to register backup jobs: {e}")
+
 
 @app.on_event("shutdown")
 async def shutdown_scheduler():

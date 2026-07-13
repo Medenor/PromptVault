@@ -218,8 +218,18 @@ async def delete_backup(backup_id: str):
 
 
 @router.delete("/api/backups", dependencies=[Depends(get_admin_or_bypass)])
-async def delete_all_backups():
-    """Delete all backups."""
+async def delete_all_backups(confirm: str = ""):
+    """Delete all backups.
+
+    Requires ?confirm=DELETE_ALL to guard against accidental/scripted calls
+    that bypass the frontend's confirmation modal.
+    """
+    if confirm != "DELETE_ALL":
+        return JSONResponse(
+            status_code=400,
+            content={"error": "Missing or invalid confirmation. Pass ?confirm=DELETE_ALL."},
+        )
+
     service = _get_backup_service()
     backups = service.list_backups()
     deleted = []

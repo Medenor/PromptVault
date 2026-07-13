@@ -683,9 +683,12 @@ async function confirmDeleteAll(): Promise<void> {
   showProgress('backup-progress', t('backup.deletingAllBackupsProgress'));
 
   try {
-    const result = await apiFetch<{ deleted: string[]; failed: string[] }>('/api/backups', {
-      method: 'DELETE',
-    });
+    const result = await apiFetch<{ deleted: string[]; failed: string[] }>(
+      '/api/backups?confirm=DELETE_ALL',
+      {
+        method: 'DELETE',
+      }
+    );
 
     const count = result.deleted?.length ?? 0;
     const failCount = result.failed?.length ?? 0;

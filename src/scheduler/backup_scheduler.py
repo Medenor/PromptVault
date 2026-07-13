@@ -9,7 +9,6 @@ Reads enabled BackupSchedule rows and registers CronTrigger jobs.
 """
 
 import logging
-from typing import Any
 
 from src.db.session import get_db_session
 from src.db.repositories.backup_schedule_repository import BackupScheduleRepository
@@ -17,14 +16,12 @@ from src.db.repositories.backup_schedule_repository import BackupScheduleReposit
 logger = logging.getLogger(__name__)
 
 
-def register_backup_jobs(scheduler: Any) -> None:
-    """Register backup-related scheduled jobs with the APScheduler instance.
+def register_backup_jobs() -> None:
+    """Register backup-related scheduled jobs with APScheduler.
 
     Reads enabled BackupSchedule rows from the database and registers
-    corresponding CronTrigger jobs for automated backups.
-
-    Args:
-        scheduler: APScheduler BackgroundScheduler instance
+    corresponding CronTrigger jobs for automated backups. BackupSchedulerService
+    manages its own shared APScheduler instance internally.
     """
     try:
         with get_db_session() as session:
@@ -34,7 +31,6 @@ def register_backup_jobs(scheduler: Any) -> None:
             if schedule and schedule.enabled:
                 from src.services.backup_scheduler_service import BackupSchedulerService
 
-                BackupSchedulerService._class_scheduler = scheduler
                 service = BackupSchedulerService()
                 service._register_job(
                     {
