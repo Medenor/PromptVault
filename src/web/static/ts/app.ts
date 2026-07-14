@@ -2505,6 +2505,13 @@ function hideModal() {
 
 // Search and Filter Functions
 let searchTimeout: ReturnType<typeof setTimeout> | null = null;
+let overlayCloseTimeout: ReturnType<typeof setTimeout> | null = null;
+
+// How long the search overlay stays open, with no typing, after results load
+// before auto-closing (FR-016). Kept well above the search debounce so the
+// overlay doesn't feel like it's snapping shut while results are still being
+// read.
+const SEARCH_OVERLAY_AUTO_CLOSE_MS = 1200;
 
 function setupSearchEventListeners() {
   // Search input with debouncing (desktop)
@@ -2666,19 +2673,26 @@ function handleSearchInput(event: Event): void {
 
   updateSearchClearButtons();
 
-  // Clear previous timeout
+  // Clear previous timeouts
   if (searchTimeout) {
     clearTimeout(searchTimeout);
+  }
+  if (overlayCloseTimeout) {
+    clearTimeout(overlayCloseTimeout);
+    overlayCloseTimeout = null;
   }
 
   // Debounce search
   const isOverlayInput = target.id === 'search-input-overlay';
   searchTimeout = setTimeout(() => {
     void performSearch().then(() => {
-      // Close the full-screen overlay once results are ready so the user
-      // can see the filtered list without an extra manual dismiss (FR-016).
+      // Auto-close the full-screen overlay after results have been visible
+      // and idle for a bit, so the user can see the filtered list without an
+      // extra manual dismiss (FR-016) but isn't rushed off it while reading.
       if (isOverlayInput && isSearchOverlayOpen()) {
-        closeSearchOverlay();
+        overlayCloseTimeout = setTimeout(() => {
+          closeSearchOverlay();
+        }, SEARCH_OVERLAY_AUTO_CLOSE_MS);
       }
     });
   }, 300);
