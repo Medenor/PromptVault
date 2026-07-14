@@ -186,7 +186,9 @@
               >
                 Backup
               </button>
-              {% include 'macros/language_selector.html' %}
+              <div class="hidden md:block">
+                {% include 'macros/language_selector.html' %}
+              </div>
               <button
                 type="button"
                 id="profile-btn"
@@ -384,7 +386,7 @@
 
             <!-- Management Links -->
             <div class="mt-6 border-t border-gray-200 dark:border-gray-700 pt-4">
-              <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3" data-i18n="management.manage">
+              <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4" data-i18n="management.manage">
                 Manage
               </h3>
               <div class="space-y-2">
@@ -609,7 +611,7 @@
 
             <!-- Management Links -->
             <div class="mt-6 border-t border-gray-200 dark:border-gray-700 pt-4">
-              <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3" data-i18n="management.manage">
+              <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4" data-i18n="management.manage">
                 Manage
               </h3>
               <div class="space-y-2">
@@ -630,6 +632,16 @@
                   Manage Tags
                 </button>
               </div>
+            </div>
+
+            <!-- Language Selector -->
+            <div class="mt-6 border-t border-gray-200 dark:border-gray-700 pt-4">
+              <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3" data-i18n="nav.language">
+                Language
+              </h3>
+              {% with variant = 'block' %}
+                {% include 'macros/language_selector.html' %}
+              {% endwith %}
             </div>
           </div>
         </aside>

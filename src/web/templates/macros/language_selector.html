@@ -1,7 +1,7 @@
 {# This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0. If a copy of
 the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/. #}
 <select
-  class="language-selector px-1.5 py-1 text-xs md:px-3 md:py-2 md:text-sm rounded-md border border-gray-400 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+  class="language-selector {{ 'w-full px-4 py-2 text-sm' if variant == 'block' else 'px-3 py-2 text-sm' }} rounded-md border border-gray-400 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
   aria-label="{{ 'nav.language' }}"
   data-i18n="[aria-label]nav.language"
 >
