@@ -711,12 +711,6 @@
       padding-right: 0.75rem;
     }
 
-    /* Adjust logo size on mobile */
-    header img {
-      height: 2.5rem;
-      width: 2.5rem;
-    }
-
     /* Adjust title size on mobile */
     header h1 {
       font-size: 1.25rem;
