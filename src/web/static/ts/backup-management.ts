@@ -1074,12 +1074,12 @@ function renderCloudProviders(providers: CloudProvider[]): void {
       const pid = escapeHtml(p.id);
       const endpointPart = p.endpoint_url ? ` (${escapeHtml(p.endpoint_url)})` : '';
       return `
-    <div class="flex items-center justify-between bg-gray-50 rounded-lg p-3 border border-gray-200">
-      <div>
-        <div class="font-medium text-gray-900">${escapeHtml(p.name)}</div>
-        <div class="text-xs text-gray-500">${escapeHtml(p.provider_type)} — ${escapeHtml(p.bucket_name)}${endpointPart}</div>
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-gray-50 rounded-lg p-3 border border-gray-200">
+      <div class="min-w-0">
+        <div class="font-medium text-gray-900 break-words">${escapeHtml(p.name)}</div>
+        <div class="text-xs text-gray-500 break-words">${escapeHtml(p.provider_type)} — ${escapeHtml(p.bucket_name)}${endpointPart}</div>
       </div>
-      <div class="flex gap-2">
+      <div class="flex gap-2 shrink-0">
         <button class="px-2 py-1 text-xs bg-green-600 hover:bg-green-700 text-white rounded" data-provider-id="${pid}" data-i18n="backup.testBtn" onclick="testCloudProvider(this.dataset.providerId)">${escapeHtml(t('backup.testBtn'))}</button>
         <button class="px-2 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded" data-provider-id="${pid}" data-i18n="backup.deleteBtn" onclick="deleteCloudProvider(this.dataset.providerId)">${escapeHtml(t('backup.deleteBtn'))}</button>
       </div>
