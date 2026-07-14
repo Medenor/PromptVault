@@ -2541,6 +2541,18 @@ function setupSearchEventListeners() {
     searchInputOverlay.addEventListener('input', handleSearchInput);
   }
 
+  // Inline clear (×) buttons: clear just the search term, not other filters.
+  updateSearchClearButtons();
+  const searchInputClearPairs: Array<[string, string]> = [
+    ['search-input-clear', 'search-input'],
+    ['search-input-mobile-clear', 'search-input-mobile'],
+    ['search-input-overlay-clear', 'search-input-overlay'],
+  ];
+  for (const [clearBtnId, inputId] of searchInputClearPairs) {
+    const clearBtn = document.getElementById(clearBtnId);
+    clearBtn?.addEventListener('click', () => clearSearchTerm(inputId));
+  }
+
   // Case sensitive toggle (desktop)
   const caseSensitiveToggle = document.getElementById(
     'case-sensitive-toggle'
@@ -2588,6 +2600,48 @@ function setupSearchEventListeners() {
   }
 }
 
+/** Show each search input's inline × button only while it has text. */
+function updateSearchClearButtons(): void {
+  const pairs: Array<[string, string]> = [
+    ['search-input', 'search-input-clear'],
+    ['search-input-mobile', 'search-input-mobile-clear'],
+    ['search-input-overlay', 'search-input-overlay-clear'],
+  ];
+  for (const [inputId, clearBtnId] of pairs) {
+    const input = document.getElementById(inputId) as HTMLInputElement | null;
+    const clearBtn = document.getElementById(clearBtnId);
+    const icon = input?.parentElement?.querySelector('.search-input-icon');
+    const hasValue = !!input?.value;
+    toggleElement(clearBtn, hasValue);
+    if (icon instanceof SVGElement || icon instanceof HTMLElement) {
+      icon.classList.toggle('hidden', hasValue);
+    }
+  }
+}
+
+/** Clear only the search term (all synced inputs), preserving other active filters. */
+function clearSearchTerm(sourceInputId: string): void {
+  searchState.searchTerm = '';
+
+  const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
+  const searchInputMobile = document.getElementById(
+    'search-input-mobile'
+  ) as HTMLInputElement | null;
+  const searchInputOverlay = document.getElementById(
+    'search-input-overlay'
+  ) as HTMLInputElement | null;
+  if (searchInput) searchInput.value = '';
+  if (searchInputMobile) searchInputMobile.value = '';
+  if (searchInputOverlay) searchInputOverlay.value = '';
+
+  updateSearchClearButtons();
+
+  const sourceInput = document.getElementById(sourceInputId) as HTMLInputElement | null;
+  sourceInput?.focus();
+
+  void performSearch();
+}
+
 function handleSearchInput(event: Event): void {
   const target = event.target as HTMLInputElement | null;
   if (!target) {
@@ -2609,6 +2663,8 @@ function handleSearchInput(event: Event): void {
     searchInputMobile.value = searchTerm;
   if (searchInputOverlay && target.id !== 'search-input-overlay')
     searchInputOverlay.value = searchTerm;
+
+  updateSearchClearButtons();
 
   // Clear previous timeout
   if (searchTimeout) {
@@ -2809,6 +2865,15 @@ function clearAllFilters(): void {
   if (searchInput) {
     searchInput.value = '';
   }
+
+  const searchInputOverlay = document.getElementById(
+    'search-input-overlay'
+  ) as HTMLInputElement | null;
+  if (searchInputOverlay) {
+    searchInputOverlay.value = '';
+  }
+
+  updateSearchClearButtons();
 
   const caseSensitiveToggle = document.getElementById(
     'case-sensitive-toggle'

@@ -42,6 +42,7 @@
     "export": "Exportar",
     "import": "Importar",
     "close": "Cerrar",
+    "clearSearch": "Borrar búsqueda",
     "refresh": "Actualizar",
     "create": "Crear",
     "revoke": "Revocar",
