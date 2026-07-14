@@ -4,6 +4,7 @@
 
 """UserRepository for authentication-related user operations."""
 
+import logging
 import uuid
 from datetime import datetime, timezone
 from typing import Optional, List
@@ -13,6 +14,8 @@ from sqlalchemy.sql import func
 
 from src.db.models.user import User
 from src.db.repositories.base import BaseRepository
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_USER_EMAIL = "system@promptvault.local"
 DEFAULT_USER_USERNAME = "system"
@@ -101,8 +104,18 @@ class UserRepository(BaseRepository[User]):
         user = self.get_by_email(DEFAULT_USER_EMAIL)
         if user:
             if user.role != "admin":
+                previous_role = user.role
                 user.role = "admin"
                 self.session.flush()
+                logger.warning(
+                    "Promoted default user to admin role for anonymous-mode writes",
+                    extra={
+                        "event": "user.default_user.role_promoted",
+                        "user_id": user.id,
+                        "previous_role": previous_role,
+                        "new_role": "admin",
+                    },
+                )
             return user
 
         user = User(

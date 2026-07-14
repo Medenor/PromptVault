@@ -10,7 +10,7 @@ cloud storage, restore preview, monitoring, and audit operations.
 
 import json
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
@@ -350,6 +350,21 @@ async def update_backup_schedule(request: Request):
         if day_of_month is None or not (1 <= day_of_month <= 31):
             raise HTTPException(status_code=422, detail="day_of_month must be 1-31 for monthly")
 
+    retention_days = body.get("retention_days", 30)
+    if not isinstance(retention_days, int) or retention_days < 1:
+        raise HTTPException(status_code=422, detail="retention_days must be a positive integer")
+
+    encrypt_scheduled_backups = body.get("encrypt_scheduled_backups", False)
+    if encrypt_scheduled_backups:
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                "encrypt_scheduled_backups is not supported: the encryption "
+                "passphrase is never stored, so scheduled runs have no way to "
+                "supply it. Create encrypted backups manually instead."
+            ),
+        )
+
     kwargs = {
         "enabled": body.get("enabled", False),
         "frequency": frequency,
@@ -357,7 +372,7 @@ async def update_backup_schedule(request: Request):
         "minute": minute,
         "day_of_week": body.get("day_of_week"),
         "day_of_month": body.get("day_of_month"),
-        "retention_days": body.get("retention_days", 30),
+        "retention_days": retention_days,
         "encrypt_scheduled_backups": body.get("encrypt_scheduled_backups", False),
         "cloud_provider_id": body.get("cloud_provider_id"),
     }
@@ -591,12 +606,15 @@ async def cleanup_backups_retention(
     if retention_days is None:
         return {"success": True, "dry_run": dry_run, "removed_count": 0, "would_delete": [], "deleted": []}
 
-    cutoff = (datetime.utcnow() - timedelta(days=retention_days)).isoformat()
+    if retention_days < 1:
+        raise HTTPException(status_code=422, detail="retention_days must be a positive integer")
+
+    cutoff = datetime.now(timezone.utc) - timedelta(days=retention_days)
     backups = service.list_backups()
     would_delete = [
         b["backup_id"]
         for b in backups
-        if b.get("timestamp") and b["timestamp"] < cutoff
+        if b.get("timestamp") and datetime.fromisoformat(b["timestamp"]) < cutoff
     ]
 
     if dry_run:

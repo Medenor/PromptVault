@@ -1520,81 +1520,119 @@ class BackupService:
         import tempfile
         import json as json_lib
 
-        metadata = self.get_backup_info(backup_id)
-        if not metadata:
-            raise BackupError("Backup not found", context={"backup_id": backup_id}, http_status=404)
-
-        pre_restore_id = self.create_backup(
-            custom_name=f"pre_selective_restore_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}",
-            created_by=created_by,
-        )
-
-        backup_path = self._ensure_local_backup_file(backup_id, metadata)
-        is_encrypted = metadata.get("is_encrypted", False)
-        working_path = self._maybe_decompress(backup_path)
-        decompressed = working_path != backup_path
-
-        if is_encrypted:
-            if not passphrase:
-                raise BackupError("Passphrase required for encrypted backup", http_status=400)
-            from src.services.backup_encryption_service import BackupEncryptionService
-            enc_service = BackupEncryptionService()
-            with get_db_session() as session:
-                backup_record = session.query(Backup).filter_by(id=backup_id).first()
-                salt = backup_record.encryption_salt if backup_record else metadata.get("encryption_salt")
-                nonce = backup_record.encryption_nonce if backup_record else metadata.get("encryption_nonce")
-            if not salt or not nonce:
-                raise BackupError(
-                    "Encrypted backup missing salt/nonce",
-                    context={"backup_id": backup_id},
-                )
-            decrypted_path = working_path + ".selective_decrypted"
-            shutil.copy2(working_path, decrypted_path)
-            try:
-                enc_service.decrypt_file(decrypted_path, passphrase, salt, nonce)
-            except ValueError:
-                if os.path.exists(decrypted_path):
-                    os.remove(decrypted_path)
-                if decompressed and os.path.exists(working_path):
-                    os.remove(working_path)
-                raise BackupError("Decryption failed", http_status=400)
-            if decompressed and os.path.exists(working_path):
-                os.remove(working_path)
-            working_path = decrypted_path
-            decompressed = True
+        from src.services.backup_audit_service import BackupAuditService
+        audit_service = BackupAuditService()
 
         try:
-            backup_prompts = self._extract_prompts_from_backup(working_path, metadata.get("backup_type", "sqlite_copy"))
-        finally:
-            if decompressed and os.path.exists(working_path) and working_path != backup_path:
-                os.remove(working_path)
+            metadata = self.get_backup_info(backup_id)
+            if not metadata:
+                raise BackupError("Backup not found", context={"backup_id": backup_id}, http_status=404)
 
-        backup_map = {p["id"]: p for p in backup_prompts}
-        restored_count = 0
+            pre_restore_id = self.create_backup(
+                custom_name=f"pre_selective_restore_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}",
+                created_by=created_by,
+            )
 
-        with get_db_session() as session:
-            for pid in prompt_ids:
-                if pid not in backup_map:
-                    continue
-                bp = backup_map[pid]
-                existing = session.query(Prompt).filter_by(id=pid).first()
-                if existing:
-                    existing.title = bp.get("title", existing.title)
-                    existing.prompt = bp.get("prompt", existing.prompt)
-                    existing.note = bp.get("note", existing.note)
-                    if bp.get("favorite") is not None:
-                        existing.favorite = bp["favorite"]
-                    restored_count += 1
-                else:
-                    new_prompt = Prompt(
-                        id=pid,
-                        title=bp.get("title", ""),
-                        prompt=bp.get("prompt", ""),
-                        note=bp.get("note"),
-                        favorite=bp.get("favorite", False),
+            backup_path = self._ensure_local_backup_file(backup_id, metadata)
+            is_encrypted = metadata.get("is_encrypted", False)
+            working_path = self._maybe_decompress(backup_path)
+            decompressed = working_path != backup_path
+
+            if is_encrypted:
+                if not passphrase:
+                    raise BackupError("Passphrase required for encrypted backup", http_status=400)
+                from src.services.backup_encryption_service import BackupEncryptionService
+                enc_service = BackupEncryptionService()
+                with get_db_session() as session:
+                    backup_record = session.query(Backup).filter_by(id=backup_id).first()
+                    salt = backup_record.encryption_salt if backup_record else metadata.get("encryption_salt")
+                    nonce = backup_record.encryption_nonce if backup_record else metadata.get("encryption_nonce")
+                if not salt or not nonce:
+                    raise BackupError(
+                        "Encrypted backup missing salt/nonce",
+                        context={"backup_id": backup_id},
                     )
-                    session.add(new_prompt)
-                    restored_count += 1
-            session.commit()
+                decrypted_path = working_path + ".selective_decrypted"
+                shutil.copy2(working_path, decrypted_path)
+                try:
+                    enc_service.decrypt_file(decrypted_path, passphrase, salt, nonce)
+                except ValueError:
+                    if os.path.exists(decrypted_path):
+                        os.remove(decrypted_path)
+                    if decompressed and os.path.exists(working_path):
+                        os.remove(working_path)
+                    raise BackupError("Decryption failed", http_status=400)
+                if decompressed and os.path.exists(working_path):
+                    os.remove(working_path)
+                working_path = decrypted_path
+                decompressed = True
 
-        return {"restored": True, "pre_restore_backup_id": pre_restore_id, "count": restored_count}
+            try:
+                backup_prompts = self._extract_prompts_from_backup(working_path, metadata.get("backup_type", "sqlite_copy"))
+            finally:
+                if decompressed and os.path.exists(working_path) and working_path != backup_path:
+                    os.remove(working_path)
+
+            backup_map = {p["id"]: p for p in backup_prompts}
+            restored_count = 0
+
+            with get_db_session() as session:
+                for pid in prompt_ids:
+                    if pid not in backup_map:
+                        continue
+                    bp = backup_map[pid]
+                    existing = session.query(Prompt).filter_by(id=pid).first()
+                    if existing:
+                        existing.title = bp.get("title", existing.title)
+                        existing.prompt = bp.get("prompt", existing.prompt)
+                        existing.note = bp.get("note", existing.note)
+                        if bp.get("favorite") is not None:
+                            existing.favorite = bp["favorite"]
+                        restored_count += 1
+                    else:
+                        new_prompt = Prompt(
+                            id=pid,
+                            title=bp.get("title", ""),
+                            prompt=bp.get("prompt", ""),
+                            note=bp.get("note"),
+                            favorite=bp.get("favorite", False),
+                        )
+                        session.add(new_prompt)
+                        restored_count += 1
+                session.commit()
+
+            audit_service.log(
+                operation="backup.selective_restore",
+                outcome="success",
+                backup_id=backup_id,
+                performed_by=created_by or self._get_current_user(),
+                detail={"prompt_ids": prompt_ids, "restored_count": restored_count},
+            )
+
+            return {"restored": True, "pre_restore_backup_id": pre_restore_id, "count": restored_count}
+
+        except BackupError as exc:
+            audit_service.log(
+                operation="backup.selective_restore",
+                outcome="failure",
+                backup_id=backup_id,
+                performed_by=created_by or self._get_current_user(),
+                detail={"error": str(exc)},
+            )
+            raise
+        except Exception as exc:
+            logger.error(
+                "Failed to selectively restore backup",
+                extra={"event": "backup.selective_restore.failure", "resource_id": backup_id},
+                exc_info=exc,
+            )
+            audit_service.log(
+                operation="backup.selective_restore",
+                outcome="failure",
+                backup_id=backup_id,
+                performed_by=created_by or self._get_current_user(),
+                detail={"error": str(exc)},
+            )
+            raise BackupError(
+                "Failed to selectively restore backup.", context={"backup_id": backup_id}
+            ) from exc
