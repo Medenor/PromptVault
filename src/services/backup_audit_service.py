@@ -23,6 +23,21 @@ from src.db.repositories.backup_audit_log_repository import BackupAuditLogReposi
 logger = logging.getLogger(__name__)
 
 
+def _isoformat_utc(dt: Optional[datetime]) -> Optional[str]:
+    """Serialize a datetime as ISO-8601 with explicit UTC offset.
+
+    SQLite's func.now() (and DateTime(timezone=True) columns generally on
+    SQLite) yield naive datetimes that are actually UTC but carry no tzinfo,
+    so a plain isoformat() omits the offset and browsers misinterpret it as
+    local time.
+    """
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.isoformat()
+
+
 class BackupAuditService:
     """Service for backup audit logging and monitoring.
 
@@ -136,7 +151,7 @@ class BackupAuditService:
                 "storage_quota_bytes": storage_quota,
                 "quota_warning": quota_warning,
                 "last_backup_at": (
-                    last_backup.created_at.isoformat() if last_backup else None
+                    _isoformat_utc(last_backup.created_at) if last_backup else None
                 ),
                 "last_backup_status": (
                     "success" if last_backup and last_backup.succeeded else "failure"
@@ -176,7 +191,7 @@ class BackupAuditService:
         """Serialize an audit log entry to dict."""
         return {
             "id": entry.id,
-            "occurred_at": entry.occurred_at.isoformat() if entry.occurred_at else None,
+            "occurred_at": _isoformat_utc(entry.occurred_at),
             "operation": entry.operation,
             "outcome": entry.outcome,
             "backup_id": entry.backup_id,
