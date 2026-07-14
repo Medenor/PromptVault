@@ -11,7 +11,7 @@
 import '../css/tailwind-globals.css';
 import { reportError } from '@/telemetry';
 import '@/form-validation';
-import { initI18n, t, updateStaticTranslations } from '@/utils/i18n';
+import { initI18n, t, updateStaticTranslations, changeLanguage } from '@/utils/i18n';
 import type { TranslationKey } from '@/types/i18n';
 import { hideElement, showElement } from '@/utils/dom';
 import { apiFetch, apiGet, apiPost, apiPostForm, APIRequestError } from '@/utils/api';
@@ -245,6 +245,24 @@ function initializeBackupManagement(): void {
   void loadSchedule();
   void loadEncryptionConfig();
   void loadCloudProviders();
+
+  // Monitoring/audit tables are rendered with translated headers at fetch
+  // time, so a language switch needs to re-fetch them to pick up the new
+  // strings (updateStaticTranslations() only covers data-i18n elements).
+  // initI18n() also binds its own 'change' listener that calls
+  // changeLanguage() to swap the active i18next language; that call is
+  // idempotent, so awaiting our own changeLanguage() here (rather than
+  // racing a plain synchronous reload) guarantees the dashboard is
+  // re-fetched only after the new language is actually active.
+  document.querySelectorAll('.language-selector').forEach((el) => {
+    el.addEventListener('change', () => {
+      if (!(el instanceof HTMLSelectElement)) return;
+      void changeLanguage(el.value).then(() => {
+        void loadMonitoringDashboard();
+        void loadAuditLog();
+      });
+    });
+  });
 }
 
 function setupEventListeners(): void {

@@ -6,6 +6,7 @@
 
 import { apiGet } from '@/utils/api';
 import { reportError } from '@/telemetry';
+import { t } from '@/utils/i18n';
 
 const COMPONENT = 'backupMonitoringDashboard';
 
@@ -59,11 +60,11 @@ function renderDashboard(stats: MonitoringStats): void {
   if (lastEl) {
     lastEl.textContent = stats.last_backup_at
       ? `${new Date(stats.last_backup_at).toLocaleString()} (${stats.last_backup_status})`
-      : 'Never';
+      : t('backup.neverValue');
   }
   if (quotaEl) {
     if (stats.quota_warning) {
-      quotaEl.textContent = '⚠ Storage quota warning: usage above 90%';
+      quotaEl.textContent = t('backup.quotaWarningMessage');
       quotaEl.className = 'text-sm text-red-600 font-medium';
     } else {
       quotaEl.textContent = '';
@@ -73,12 +74,12 @@ function renderDashboard(stats: MonitoringStats): void {
   if (historyEl && stats.history.length > 0) {
     historyEl.innerHTML = `
       <table class="w-full text-sm">
-        <thead><tr class="border-b"><th class="text-left py-1">Date</th><th class="text-right py-1">Count</th><th class="text-right py-1">Success</th><th class="text-right py-1">Size</th></tr></thead>
+        <thead><tr class="border-b"><th class="text-left py-1">${t('backup.columnDate')}</th><th class="text-right py-1">${t('backup.columnCount')}</th><th class="text-right py-1">${t('backup.columnSuccess')}</th><th class="text-right py-1">${t('backup.columnSize')}</th></tr></thead>
         <tbody>${stats.history.map((h) => `<tr class="border-b border-gray-100"><td class="py-1">${h.date}</td><td class="text-right py-1">${h.count}</td><td class="text-right py-1">${h.success}</td><td class="text-right py-1">${formatBytes(h.total_size_bytes)}</td></tr>`).join('')}</tbody>
       </table>`;
   } else if (historyEl) {
     historyEl.innerHTML =
-      '<div class="text-gray-500 text-sm">No backup history in last 30 days</div>';
+      `<div class="text-gray-500 text-sm">${t('backup.noHistoryData')}</div>`;
   }
 }
 
@@ -98,13 +99,13 @@ function renderAuditLog(entries: AuditEntry[]): void {
   if (!el) return;
 
   if (entries.length === 0) {
-    el.innerHTML = '<div class="text-gray-500 text-sm">No audit entries</div>';
+    el.innerHTML = `<div class="text-gray-500 text-sm">${t('backup.noAuditEntries')}</div>`;
     return;
   }
 
   el.innerHTML = `
     <table class="w-full text-sm">
-      <thead><tr class="border-b"><th class="text-left py-1">Time</th><th class="text-left py-1">Operation</th><th class="text-left py-1">Outcome</th><th class="text-left py-1">By</th></tr></thead>
+      <thead><tr class="border-b"><th class="text-left py-1">${t('backup.columnTime')}</th><th class="text-left py-1">${t('backup.columnOperation')}</th><th class="text-left py-1">${t('backup.columnOutcome')}</th><th class="text-left py-1">${t('backup.columnPerformedBy')}</th></tr></thead>
       <tbody>${entries.map((e) => `<tr class="border-b border-gray-100"><td class="py-1">${new Date(e.occurred_at).toLocaleString()}</td><td class="py-1">${e.operation}</td><td class="py-1"><span class="${e.outcome === 'success' ? 'text-green-600' : 'text-red-600'}">${e.outcome}</span></td><td class="py-1">${e.performed_by || '-'}</td></tr>`).join('')}</tbody>
     </table>`;
 }
