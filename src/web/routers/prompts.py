@@ -45,6 +45,7 @@ from src.db.repositories.prompt_repository import PromptRepository
 from src.db.repositories.category_repository import CategoryRepository
 from src.db.repositories.tag_repository import TagRepository
 from src.db.repositories.version_repository import VersionRepository
+from src.config.auth_config import auth_settings
 from src.web.dependencies.auth import (
     get_current_active_user,
     get_optional_user,
@@ -382,7 +383,7 @@ async def search_prompts(
     case_sensitive: bool = False,
     page: int = 1,
     limit: int = DEFAULT_PAGE_SIZE,
-    user: Optional[User] = Depends(get_optional_user),
+    user: Optional[User] = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
     """Search and filter prompts with offset pagination.
@@ -404,8 +405,9 @@ async def search_prompts(
     Raises:
         HTTPException: 401 if favorites filter used without authentication
     """
-    # Favorites filter requires authentication
-    if favorites and not user:
+    # Favorites filter requires authentication (only enforced when auth is enabled;
+    # anonymous-mode deployments have no logged-in user by design)
+    if favorites and not user and auth_settings.auth_enabled:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Authentication required to filter by favorites",

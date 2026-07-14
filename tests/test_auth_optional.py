@@ -131,6 +131,21 @@ class TestAnonymousMode:
         get_response = api_client.get(f"/api/prompts/{prompt_id}")
         assert get_response.status_code == 404
 
+    def test_favorites_filter_without_credentials(self, api_client: TestClient):
+        """``GET /api/prompts/search?favorites=true`` succeeds with no
+        credentials (anonymous mode).
+
+        Regression test: the favorites filter previously 401'd unconditionally
+        whenever no user was authenticated, even with AUTH_ENABLED=false,
+        which broke the favorites checkbox in anonymous-mode deployments and
+        sent the client into apiFetch's login-redirect flow.
+        """
+        response = api_client.get(
+            "/api/prompts/search",
+            params={"favorites": True, "page": 1, "limit": 25},
+        )
+        assert response.status_code == 200
+
     def test_auth_login_returns_404_when_disabled(self, api_client: TestClient):
         """``POST /api/auth/login`` is unmounted (404) in anonymous mode."""
         response = api_client.post(

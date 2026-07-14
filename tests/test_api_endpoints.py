@@ -16,6 +16,7 @@ import pytest
 from sqlalchemy.orm import Session
 
 from src.web import app as web_app
+from src.config.auth_config import auth_settings
 from src.db.models.user import User
 from src.db.models.user_session import UserSession
 
@@ -472,6 +473,10 @@ class TestPaginationSearchPrompts:
         assert len(payload["prompts"]) == 5
         assert payload["has_next"] is True
 
+    @pytest.mark.skipif(
+        not auth_settings.auth_enabled,
+        reason="Requires AUTH_ENABLED=true (default); see test_auth_optional.py for the anonymous-mode counterpart",
+    )
     def test_favorites_without_auth_still_401_with_pagination_params(
         self, api_client
     ):
