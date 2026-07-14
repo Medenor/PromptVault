@@ -9,9 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### ✨ Added
 
+- **Enhanced Backup & Restore System** (spec 003): Encryption, cloud storage, scheduling, and audit logging for database backups
+  - **Encryption**: Backups can be encrypted at creation with a user-supplied passphrase (AES-GCM); key rotation verifies the old passphrase via a stored sentinel before re-encrypting; scheduled backups fall back to unencrypted with a warning since no passphrase can be prompted for in a background job
+  - **Cloud storage**: New S3-compatible provider configuration (with SSRF-safe endpoint URL validation) lets manual and scheduled backups upload to cloud storage; restore automatically falls back to downloading from cloud when the local backup file is missing
+  - **Scheduling**: Configurable backup schedules with a single `retention_days` policy (replacing the earlier daily/weekly/monthly count design), persisted across restarts via `register_backup_jobs` at app startup, with misfire grace time to tolerate brief downtime
+  - **Monitoring & audit**: New dashboard panel shows backup statistics (size, prompt count, creator) and a full audit log (create/restore/delete) backed by `BackupAuditService`
+  - **Delete all backups**: New bulk-delete action with explicit confirmation modal
+  - **Restore UX**: Restore modal prompts for a passphrase when the selected backup is encrypted and surfaces the specific restore error inline; backup list items show local/cloud/encrypted status badges independently (a backup can be both local and cloud)
+  - **Storage efficiency**: SQLite backups now use `VACUUM INTO` instead of a raw file copy, excluding free/unused pages left behind by deletes (shrinks backups from ~11MB to ~320KB on a lightly-used dev DB)
+  - **Access control**: All backup endpoints now require the admin role when auth is enabled (bypassed when `AUTH_ENABLED=false`, e.g. single-user/dev deployments)
+  - **Database migration**: New tables `backup_audit_logs`, `backup_schedules`, `backup_storage_providers`, `encryption_key_configs`
+  - **Test coverage**: 159 new tests across encryption, cloud, scheduler, audit, and restore-diff services
+
+- **Global language selector**: Added to the header of every page (previously only reachable from the profile page, which is hidden when auth is disabled); language change is now centralized in `i18n.ts`
+
 - **Developer Workflow Makefile**: Single `make` entry point for all common development tasks — no need to remember individual `npm`, `pytest`, or `pip` commands
   - **`make install`**: Creates the Python 3.14+ virtualenv if absent (or recreates if the existing one is too old), installs backend and frontend dependencies in one step
-  - **`make dev`**: Starts the backend (FastAPI) and Vite frontend dev servers concurrently; Ctrl-C shuts both down cleanly; exits immediately with an error if either port is already in use
+  - **`make dev`**: Starts the backend (FastAPI) and Vite frontend dev servers concurrently; loads local secrets/config from `.env`; Ctrl-C shuts both down cleanly; exits immediately with an error if either port is already in use
   - **`make test`**: Runs the full backend and frontend test suites and exits non-zero if either fails
   - **`make lint` / `make lint-fix`**: Runs Black, ESLint, TypeScript typecheck, and Prettier across both stacks; `lint-fix` applies auto-fixable issues in place
   - **`make build`**: Builds frontend assets (TypeScript + Vite) and the production Docker image
@@ -21,14 +35,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Frontend Unit Tests**: Added unit test coverage for 7 previously untested TypeScript utility modules
   - `utils/a11y.ts`, `utils/color-picker.ts`, `utils/dialogs.ts`, `utils/focus-management.ts`, `utils/keyboard-nav.ts`, `utils/typeahead.ts`, `utils/button-keyboard-activation.ts`
 
+- **Mobile-Responsive UI Enhancements** (spec, plan, and tasks only — not yet implemented): Planning artifacts for mobile navigation, touch targets, gestures, offline support via Service Worker, and PWA installability (Codeberg #20)
+
+### 🔒 Security
+
+- **Backup system path traversal**: `backup_id` is now format-validated and metadata file paths are confined within `backups_dir` via a realpath check
+- **Backup system stored XSS**: All server-supplied values (backup list, cloud provider rows) are escaped before `innerHTML` assignment; IDs moved out of inline `onclick` strings into `data-` attributes
+- **Backup system SSRF**: S3 endpoint URLs are validated before use
+- **Backup system unauthenticated endpoints**: Schedule, encryption config, providers, monitoring, audit log, stats, and compress endpoints now require authentication; all backup operations now require the admin role when auth is enabled (bypassed when `AUTH_ENABLED=false`, e.g. single-user/dev deployments)
+- **Cloud credentials passphrase**: No longer accepted from the client; sourced solely from the server-side `PROMPTVAULT_CLOUD_CREDS_PASSPHRASE` environment variable (documented in `.env.example`)
+
 ### 🐛 Fixed
 
+- **Backup restore on compressed backups**: `restore_backup`, `compute_restore_diff`, and `selective_restore` failed silently on gzip-compressed backups (read errors were swallowed, making restore-preview falsely report every prompt as "to be deleted" and selective restore silently restore nothing); backups are now decompressed before decryption in all three paths, and genuinely corrupt backups now fail loudly
+- **Backup schedule schema drift**: A pre-existing `backup_schedules` table from an earlier prototype (with `retention_daily_count/weekly/monthly` columns) could slip past the migration's "if not exists" guard, breaking schedule saves with a missing-column error; the migration now reconciles existing tables into the new `retention_days` column
+- **Backup ID collisions**: Scheduled and custom-named backups reused a fixed ID, colliding on the `backups.id` unique constraint after the first run; timestamps are now always appended
+- **Backup live-database restore corruption**: SQLite restore used `shutil.copy2`, which could corrupt a live database with open connections; replaced with the `sqlite3.backup()` API
+- **Backup encryption state desync**: A failed `_update_backup_encryption` call was previously swallowed, allowing a backup file to be encrypted on disk while the database recorded it as unencrypted; errors now propagate, and DB metadata is saved before encryption so salt/nonce are always recorded even if encryption fails partway
+- **Backup key rotation error handling**: A wrong passphrase during key rotation surfaced as a generic 500; now returns 422 with the actual error message
+- **Backup retention pooling**: Cleanup previously pooled all backups together when enforcing retention; now enforces per-kind quotas correctly
+- **Dev/prod backup data dir isolation**: `BackupSchedulerService`'s lazily-loaded `BackupService` ignored `PROMPTVAULT_DATA_DIR`, causing scheduled backups to collide when dev and prod share a host; app startup now warns if `PROMPTVAULT_DATA_DIR` and `DATABASE_URL` point at different directories
+- **Session cleanup undercounting**: Expired-but-revoked sessions were excluded from cleanup, letting 17k+ stale rows accumulate; cleanup now runs once synchronously at scheduler startup instead of waiting for the first hourly tick
+- **Anonymous-mode prompt mutations**: Earlier 401 guards on `get_current_user_or_none` regressed single-user/anonymous deployments (`AUTH_ENABLED=false`) to read-only; a new `get_current_user_or_default` dependency falls back to a shared system user so update/delete/favorite/bulk-delete keep working when auth is disabled
+- **Anonymous-mode category/tag pages**: `manage-categories` and `manage-tags` required a logged-in user unconditionally, unlike other data-facing routes; now bypass auth when disabled like the rest
+- **Backup page i18n**: Backup list rows, cloud provider rows, status/progress messages, buttons, and audit/history table headers were hardcoded in English (in several cases due to duplicate `data-i18n` attributes silently dropping the second one); fully wired through `t()` across all locales, including a fix so the monitoring panel re-fetches after `changeLanguage()` completes instead of racing it
+- **Backup page layout**: Long backup IDs overlapped the Restore/Delete buttons; titles are now truncated with an ellipsis and full ID shown via tooltip
 - **`copy-with-version` metadata placement**: The portable metadata comment (`<!-- prompt-version: ... -->`) is now prepended to the copied content rather than appended, so consumers that detect it by reading the first line work correctly
 - **Session cleanup double-open**: `SessionCleanupScheduler.run_cleanup_now()` was opening a DB session then calling `_cleanup_expired_sessions()` which opened a second concurrent session; it now delegates directly, eliminating the redundant connection and a potential SQLite lock
 - **Session cleanup inflated count**: `run_cleanup_now` was counting expired sessions without the `is_revoked = false` filter used by the actual cleanup query, causing `expired_found` in the return value to be higher than sessions actually deleted
 
 ### 🔧 Changed
 
+- **Backup retention policy simplified**: Replaced separate daily/weekly/monthly retention counts with a single `retention_days` field, moved into the Cleanup UI as a maintenance concern rather than a scheduling one
+- **Backup datetime serialization**: Standardized datetime handling across backup audit/history logs
 - **Black declared as a dev dependency**: `black` is now listed in `pyproject.toml` under `[project.optional-dependencies] dev` and installed via `pip install -e ".[test,dev]"`; it is no longer installed as a separate ad-hoc `pip install` step in the Makefile
 - **Codebase reformatted with Black**: All Python source files and tests normalised to double-quoted strings and Black line-wrapping style (no logic changes)
 - **ESLint config hardened**: Added `globals.browser` and `globals.es2022` to TypeScript file rules; excluded Python virtualenv, coverage, and accessibility test directories from linting; added `@typescript-eslint/no-unused-vars` rule with underscore-prefix ignore pattern
