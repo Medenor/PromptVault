@@ -39,14 +39,14 @@ Duplicate/diagnostic variants were removed from default coverage accounting.
 
 ### Test Breakdown by Type
 
-| Category | Count | Status |
-|----------|-------|--------|
-| Contrast Tests | 95 | Automated |
-| ARIA Validation | 120 | Automated |
-| Keyboard Navigation | 145 | Automated |
-| Form Validation | 85 | Automated |
-| Semantic Structure | 70 | Automated |
-| Focus Management | 41 | Automated |
+| Category            | Count | Status    |
+| ------------------- | ----- | --------- |
+| Contrast Tests      | 95    | Automated |
+| ARIA Validation     | 120   | Automated |
+| Keyboard Navigation | 145   | Automated |
+| Form Validation     | 85    | Automated |
+| Semantic Structure  | 70    | Automated |
+| Focus Management    | 41    | Automated |
 
 ## WCAG 2.1 AA Criteria Mapping
 
@@ -255,17 +255,17 @@ Duplicate/diagnostic variants were removed from default coverage accounting.
 
 **Coverage**: 92%
 
-| Area | Tests | Status |
-|------|-------|--------|
-| Skip Links | 3 | PASS |
-| Header Navigation | 5 | PASS |
-| Tab Order | 4 | PASS |
-| Landmarks | 3 | PASS |
-| Content Filtering | 8 | PASS |
-| Search Functionality | 6 | PASS |
-| Interactive Elements | 12 | PASS |
-| Contrast | 10 | PASS |
-| Keyboard Navigation | 9 | PASS |
+| Area                 | Tests | Status |
+| -------------------- | ----- | ------ |
+| Skip Links           | 3     | PASS   |
+| Header Navigation    | 5     | PASS   |
+| Tab Order            | 4     | PASS   |
+| Landmarks            | 3     | PASS   |
+| Content Filtering    | 8     | PASS   |
+| Search Functionality | 6     | PASS   |
+| Interactive Elements | 12    | PASS   |
+| Contrast             | 10    | PASS   |
+| Keyboard Navigation  | 9     | PASS   |
 
 **Accessibility Issues Found**: 0
 **Recommendations**: None
@@ -274,16 +274,16 @@ Duplicate/diagnostic variants were removed from default coverage accounting.
 
 **Coverage**: 88%
 
-| Area | Tests | Status |
-|------|-------|--------|
-| Form Labels | 8 | PASS |
-| Form Validation | 15 | PASS |
-| Error Messages | 12 | PASS |
-| Focus Management | 10 | PASS |
-| Contrast Ratios | 12 | PASS |
-| Keyboard Navigation | 18 | PASS |
-| Password Visibility Toggle | 8 | PASS |
-| Accessible Names | 7 | PASS |
+| Area                       | Tests | Status |
+| -------------------------- | ----- | ------ |
+| Form Labels                | 8     | PASS   |
+| Form Validation            | 15    | PASS   |
+| Error Messages             | 12    | PASS   |
+| Focus Management           | 10    | PASS   |
+| Contrast Ratios            | 12    | PASS   |
+| Keyboard Navigation        | 18    | PASS   |
+| Password Visibility Toggle | 8     | PASS   |
+| Accessible Names           | 7     | PASS   |
 
 **Accessibility Issues Found**: 0
 **Recommendations**: Add rate-limit error message for accessibility
@@ -292,16 +292,16 @@ Duplicate/diagnostic variants were removed from default coverage accounting.
 
 **Coverage**: 86%
 
-| Area | Tests | Status |
-|------|-------|--------|
-| Table Navigation | 12 | PASS |
-| CRUD Operations | 15 | PASS |
-| Dialog Accessibility | 10 | PASS |
-| Form Validation | 12 | PASS |
-| Roving Tabindex | 8 | PASS |
-| Focus Trapping | 8 | PASS |
-| Keyboard Shortcuts | 10 | PASS |
-| Contrast | 10 | PASS |
+| Area                 | Tests | Status |
+| -------------------- | ----- | ------ |
+| Table Navigation     | 12    | PASS   |
+| CRUD Operations      | 15    | PASS   |
+| Dialog Accessibility | 10    | PASS   |
+| Form Validation      | 12    | PASS   |
+| Roving Tabindex      | 8     | PASS   |
+| Focus Trapping       | 8     | PASS   |
+| Keyboard Shortcuts   | 10    | PASS   |
+| Contrast             | 10    | PASS   |
 
 **Accessibility Issues Found**: 0
 **Recommendations**: Confirm roving tabindex in data table
@@ -310,16 +310,16 @@ Duplicate/diagnostic variants were removed from default coverage accounting.
 
 **Coverage**: 87%
 
-| Area | Tests | Status |
-|------|-------|--------|
-| Tag List Navigation | 10 | PASS |
-| CRUD Operations | 18 | PASS |
-| Batch Operations | 12 | PASS |
-| Search & Filter | 14 | PASS |
-| Dialog Accessibility | 10 | PASS |
-| Focus Management | 15 | PASS |
-| Keyboard Shortcuts | 10 | PASS |
-| Contrast | 6 | PASS |
+| Area                 | Tests | Status |
+| -------------------- | ----- | ------ |
+| Tag List Navigation  | 10    | PASS   |
+| CRUD Operations      | 18    | PASS   |
+| Batch Operations     | 12    | PASS   |
+| Search & Filter      | 14    | PASS   |
+| Dialog Accessibility | 10    | PASS   |
+| Focus Management     | 15    | PASS   |
+| Keyboard Shortcuts   | 10    | PASS   |
+| Contrast             | 6     | PASS   |
 
 **Accessibility Issues Found**: 0
 **Recommendations**: None
@@ -328,16 +328,16 @@ Duplicate/diagnostic variants were removed from default coverage accounting.
 
 **Coverage**: 84%
 
-| Area | Tests | Status |
-|------|-------|--------|
-| Upload Accessibility | 12 | PASS |
-| File Selection | 10 | PASS |
-| Progress Indicators | 8 | PASS |
-| Error Messages | 12 | PASS |
-| Success Notifications | 10 | PASS |
-| Export Options | 10 | PASS |
-| Keyboard Navigation | 11 | PASS |
-| Contrast | 10 | PASS |
+| Area                  | Tests | Status |
+| --------------------- | ----- | ------ |
+| Upload Accessibility  | 12    | PASS   |
+| File Selection        | 10    | PASS   |
+| Progress Indicators   | 8     | PASS   |
+| Error Messages        | 12    | PASS   |
+| Success Notifications | 10    | PASS   |
+| Export Options        | 10    | PASS   |
+| Keyboard Navigation   | 11    | PASS   |
+| Contrast              | 10    | PASS   |
 
 **Accessibility Issues Found**: 0
 **Recommendations**: Ensure file upload error messages are announced
@@ -346,34 +346,34 @@ Duplicate/diagnostic variants were removed from default coverage accounting.
 
 **Coverage**: 85%
 
-| Area | Tests | Status |
-|------|-------|--------|
-| Backup List | 12 | PASS |
-| Restore Dialog | 10 | PASS |
-| Confirmation Dialogs | 8 | PASS |
-| Delete Operations | 10 | PASS |
-| Download Links | 8 | PASS |
-| Status Messages | 10 | PASS |
-| Keyboard Navigation | 14 | PASS |
-| Contrast | 8 | PASS |
+| Area                 | Tests | Status |
+| -------------------- | ----- | ------ |
+| Backup List          | 12    | PASS   |
+| Restore Dialog       | 10    | PASS   |
+| Confirmation Dialogs | 8     | PASS   |
+| Delete Operations    | 10    | PASS   |
+| Download Links       | 8     | PASS   |
+| Status Messages      | 10    | PASS   |
+| Keyboard Navigation  | 14    | PASS   |
+| Contrast             | 8     | PASS   |
 
 **Accessibility Issues Found**: 0
 **Recommendations**: None
 
-### 7. Admin Pages (/admin/*) - 83 Tests
+### 7. Admin Pages (/admin/\*) - 83 Tests
 
 **Coverage**: 83%
 
-| Area | Tests | Status |
-|------|-------|--------|
-| Admin Navigation | 8 | PASS |
-| User Management | 15 | PASS |
-| System Settings | 12 | PASS |
-| Data Management | 12 | PASS |
-| Audit Logs | 10 | PASS |
-| Role-Based Access | 8 | PASS |
-| Keyboard Navigation | 10 | PASS |
-| Contrast | 8 | PASS |
+| Area                | Tests | Status |
+| ------------------- | ----- | ------ |
+| Admin Navigation    | 8     | PASS   |
+| User Management     | 15    | PASS   |
+| System Settings     | 12    | PASS   |
+| Data Management     | 12    | PASS   |
+| Audit Logs          | 10    | PASS   |
+| Role-Based Access   | 8     | PASS   |
+| Keyboard Navigation | 10    | PASS   |
+| Contrast            | 8     | PASS   |
 
 **Accessibility Issues Found**: 0
 **Recommendations**: Add breadcrumb navigation for better orientation
@@ -534,15 +534,15 @@ For new WCAG criteria coverage:
 
 ### By Browser (Chromium)
 
-| Test File | Count | Time |
-|-----------|-------|------|
-| main-page.spec.ts | 60 | 45s |
-| authentication.spec.ts | 90 | 75s |
-| category-management.spec.ts | 85 | 68s |
-| tag-management.spec.ts | 95 | 80s |
-| import-export.spec.ts | 83 | 70s |
-| backup-management.spec.ts | 80 | 65s |
-| admin-pages.spec.ts | 83 | 70s |
+| Test File                   | Count | Time |
+| --------------------------- | ----- | ---- |
+| main-page.spec.ts           | 60    | 45s  |
+| authentication.spec.ts      | 90    | 75s  |
+| category-management.spec.ts | 85    | 68s  |
+| tag-management.spec.ts      | 95    | 80s  |
+| import-export.spec.ts       | 83    | 70s  |
+| backup-management.spec.ts   | 80    | 65s  |
+| admin-pages.spec.ts         | 83    | 70s  |
 
 **Total Time**: ~13 minutes (sequential)
 **Parallel Time**: ~80 seconds (fully parallel)

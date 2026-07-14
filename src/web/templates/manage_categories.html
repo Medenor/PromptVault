@@ -7,7 +7,10 @@
     {% import "macros/scripts.html" as scripts %}
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Manage Categories - Create and organize categories to structure your prompt library." />
+    <meta
+      name="description"
+      content="Manage Categories - Create and organize categories to structure your prompt library."
+    />
     <title>PromptVault - Manage Categories</title>
     <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon.png" />
     {{ scripts.load_css('app', true) }}
@@ -16,7 +19,9 @@
     <script src="https://unpkg.com/i18next-http-backend@2.4.2/i18nextHttpBackend.min.js"></script>
   </head>
   <body class="bg-gray-50 min-h-screen">
-    <a href="#main-content" class="skip-link" tabindex="0" data-i18n="nav.skipToMainContent">Skip to main content</a>
+    <a href="#main-content" class="skip-link" tabindex="0" data-i18n="nav.skipToMainContent"
+      >Skip to main content</a
+    >
     <div class="min-h-screen flex flex-col">
       <header class="bg-blue-700 text-white shadow-sm" role="banner" aria-label="Site header">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -37,7 +42,12 @@
               </a>
               <div class="text-2xl font-bold">PromptVault</div>
             </div>
-            <nav role="navigation" aria-label="Page navigation" data-i18n="[aria-label]accessibility.labels.pageNavigation">
+            <nav
+              role="navigation"
+              aria-label="Page navigation"
+              data-i18n="[aria-label]accessibility.labels.pageNavigation"
+            >
+              {% include 'macros/language_selector.html' %}
               <button
                 type="button"
                 onclick="window.location.href = '/'"
@@ -51,14 +61,24 @@
         </div>
       </header>
 
-      <main id="main-content" role="main" class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
-        <h1 class="text-3xl font-bold text-gray-900 mb-2" data-i18n="categories.manage">Manage Categories</h1>
+      <main
+        id="main-content"
+        role="main"
+        class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full"
+      >
+        <h1 class="text-3xl font-bold text-gray-900 mb-2" data-i18n="categories.manage">
+          Manage Categories
+        </h1>
         <div class="mb-6">
-          <p class="text-gray-700" data-i18n="categories.manageDesc">Create, edit, and remove categories across all prompts.</p>
+          <p class="text-gray-700" data-i18n="categories.manageDesc">
+            Create, edit, and remove categories across all prompts.
+          </p>
         </div>
 
         <section class="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 class="text-lg font-semibold text-gray-900 mb-4" data-i18n="categories.createTitle">Create Category</h2>
+          <h2 class="text-lg font-semibold text-gray-900 mb-4" data-i18n="categories.createTitle">
+            Create Category
+          </h2>
           <form id="category-create-form" class="space-y-4">
             <div
               id="category-create-error-summary"
@@ -69,7 +89,11 @@
             ></div>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
-                <label for="category-create-name" class="block text-sm font-medium text-gray-700 mb-2">Name</label>
+                <label
+                  for="category-create-name"
+                  class="block text-sm font-medium text-gray-700 mb-2"
+                  >Name</label
+                >
                 <input
                   id="category-create-name"
                   name="category_name"
@@ -80,10 +104,19 @@
                   class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
                   required
                 />
-                <p id="category-create-name-error" class="text-red-600 text-xs mt-1" role="alert" aria-live="assertive"></p>
+                <p
+                  id="category-create-name-error"
+                  class="text-red-600 text-xs mt-1"
+                  role="alert"
+                  aria-live="assertive"
+                ></p>
               </div>
               <div>
-                <label for="category-create-description" class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                <label
+                  for="category-create-description"
+                  class="block text-sm font-medium text-gray-700 mb-2"
+                  >Description</label
+                >
                 <input
                   id="category-create-description"
                   name="category_description"
@@ -93,10 +126,19 @@
                   aria-describedby="category-create-description-error"
                   class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
                 />
-                <p id="category-create-description-error" class="text-red-600 text-xs mt-1" role="alert" aria-live="assertive"></p>
+                <p
+                  id="category-create-description-error"
+                  class="text-red-600 text-xs mt-1"
+                  role="alert"
+                  aria-live="assertive"
+                ></p>
               </div>
               <div>
-                <label for="category-create-color" class="block text-sm font-medium text-gray-700 mb-2">Color</label>
+                <label
+                  for="category-create-color"
+                  class="block text-sm font-medium text-gray-700 mb-2"
+                  >Color</label
+                >
                 <div id="category-create-color-picker-container">
                   <!-- Enhanced color picker will be inserted here -->
                   <input
@@ -108,7 +150,12 @@
                     aria-describedby="category-create-color-error"
                     class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
                   />
-                  <p id="category-create-color-error" class="text-red-600 text-xs mt-1" role="alert" aria-live="assertive"></p>
+                  <p
+                    id="category-create-color-error"
+                    class="text-red-600 text-xs mt-1"
+                    role="alert"
+                    aria-live="assertive"
+                  ></p>
                   <input
                     id="category-create-color-picker"
                     type="color"
@@ -135,7 +182,9 @@
 
         <section class="bg-white rounded-lg shadow p-6 mb-6">
           <div class="flex items-center justify-between mb-4">
-            <h2 class="text-lg font-semibold text-gray-900" data-i18n="categories.listTitle">Categories</h2>
+            <h2 class="text-lg font-semibold text-gray-900" data-i18n="categories.listTitle">
+              Categories
+            </h2>
             <div class="relative w-full md:w-64">
               <label for="category-search" class="sr-only">Search categories</label>
               <input
@@ -148,24 +197,40 @@
                 data-i18n="[aria-label]management.searchCategoriesPlaceholder"
                 class="w-full pl-3 pr-10 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
               />
-              <svg class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none w-5 h-5 transition-colors"
-                   fill="none"
-                   stroke="currentColor"
-                   viewBox="0 0 24 24"
-                   aria-hidden="true"
-                   focusable="false">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              <svg
+                class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none w-5 h-5 transition-colors"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
               </svg>
             </div>
           </div>
 
           <!-- Empty State -->
-          <div id="categories-empty-state" class="hidden text-center p-12 bg-gray-50 rounded-lg border border-gray-200">
+          <div
+            id="categories-empty-state"
+            class="hidden text-center p-12 bg-gray-50 rounded-lg border border-gray-200"
+          >
             <div class="text-4xl text-gray-400 mb-4">📁</div>
             <h3 class="sr-only">No categories available</h3>
-            <p class="text-lg font-semibold text-gray-700 mb-2" data-i18n="emptyStates.noCategories.title">No categories yet</p>
-            <p class="text-sm text-gray-700 mb-4" data-i18n="emptyStates.noCategories.description">Create your first category to organize your prompts</p>
+            <p
+              class="text-lg font-semibold text-gray-700 mb-2"
+              data-i18n="emptyStates.noCategories.title"
+            >
+              No categories yet
+            </p>
+            <p class="text-sm text-gray-700 mb-4" data-i18n="emptyStates.noCategories.description">
+              Create your first category to organize your prompts
+            </p>
             <button
               type="button"
               onclick="document.getElementById('category-create-name').focus()"
@@ -178,16 +243,28 @@
 
           <div id="categories-table-container" class="overflow-x-auto max-h-96">
             <table class="min-w-full text-sm">
-              <caption class="sr-only">Categories Management - Complete category inventory showing ID, name, description, color coding, usage count across prompts, and edit/delete actions for each category</caption>
+              <caption class="sr-only">
+                Categories Management - Complete category inventory showing ID, name, description,
+                color coding, usage count across prompts, and edit/delete actions for each category
+              </caption>
               <thead>
                 <tr class="text-left text-gray-700 border-b">
                   <th scope="col" class="py-2 pr-4" data-i18n="management.select">Select</th>
                   <th scope="col" class="py-2 pr-4" data-i18n="management.id">ID</th>
                   <th scope="col" class="py-2 pr-4" data-i18n="management.name">Name</th>
-                  <th scope="col" class="py-2 pr-4" data-i18n="management.description">Description</th>
+                  <th scope="col" class="py-2 pr-4" data-i18n="management.description">
+                    Description
+                  </th>
                   <th scope="col" class="py-2 pr-4" data-i18n="management.color">Color</th>
                   <th scope="col" class="py-2 pr-4" data-i18n="management.usage">Usage</th>
-                  <th scope="col" class="py-2 pr-4" aria-label="Actions" data-i18n="management.actions">Actions</th>
+                  <th
+                    scope="col"
+                    class="py-2 pr-4"
+                    aria-label="Actions"
+                    data-i18n="management.actions"
+                  >
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody id="categories-table-body"></tbody>
@@ -225,7 +302,9 @@
         </section>
 
         <section class="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 class="text-lg font-semibold text-gray-900 mb-4" data-i18n="management.bulkActions">Bulk Actions</h2>
+          <h2 class="text-lg font-semibold text-gray-900 mb-4" data-i18n="management.bulkActions">
+            Bulk Actions
+          </h2>
           <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div class="border border-gray-200 rounded-lg p-4">
               <h3 class="font-semibold text-gray-800 mb-3" data-i18n="actions.merge">Merge</h3>
@@ -237,30 +316,52 @@
                 tabindex="-1"
               ></div>
               <div class="space-y-3">
-            <input
-              id="category-merge-target"
-              type="number"
-              aria-label="Merge target category ID"
-              aria-describedby="category-merge-target-help category-merge-target-error"
-              placeholder="Target ID"
-              data-i18n-placeholder="management.targetIdPlaceholder"
-              data-i18n="[aria-label]management.targetIdPlaceholder"
-              class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
-            />
-                <p id="category-merge-target-error" class="text-red-600 text-xs mt-1" role="alert" aria-live="assertive"></p>
-                <p id="category-merge-target-help" class="text-xs text-gray-700" data-i18n="management.mergeTargetHelp">Target is the category that remains after merge.</p>
-            <input
-              id="category-merge-sources"
-              type="text"
-              aria-label="Source category IDs for merge"
-              aria-describedby="category-merge-sources-help category-merge-sources-error"
-              placeholder="Source IDs (comma-separated)"
-              data-i18n-placeholder="management.sourceIdsPlaceholder"
-              data-i18n="[aria-label]management.sourceIdsPlaceholder"
-              class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
-            />
-                <p id="category-merge-sources-error" class="text-red-600 text-xs mt-1" role="alert" aria-live="assertive"></p>
-                <p id="category-merge-sources-help" class="text-xs text-gray-700" data-i18n="management.mergeSourcesHelp">Sources will be merged into the target and removed.</p>
+                <input
+                  id="category-merge-target"
+                  type="number"
+                  aria-label="Merge target category ID"
+                  aria-describedby="category-merge-target-help category-merge-target-error"
+                  placeholder="Target ID"
+                  data-i18n-placeholder="management.targetIdPlaceholder"
+                  data-i18n="[aria-label]management.targetIdPlaceholder"
+                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
+                />
+                <p
+                  id="category-merge-target-error"
+                  class="text-red-600 text-xs mt-1"
+                  role="alert"
+                  aria-live="assertive"
+                ></p>
+                <p
+                  id="category-merge-target-help"
+                  class="text-xs text-gray-700"
+                  data-i18n="management.mergeTargetHelp"
+                >
+                  Target is the category that remains after merge.
+                </p>
+                <input
+                  id="category-merge-sources"
+                  type="text"
+                  aria-label="Source category IDs for merge"
+                  aria-describedby="category-merge-sources-help category-merge-sources-error"
+                  placeholder="Source IDs (comma-separated)"
+                  data-i18n-placeholder="management.sourceIdsPlaceholder"
+                  data-i18n="[aria-label]management.sourceIdsPlaceholder"
+                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
+                />
+                <p
+                  id="category-merge-sources-error"
+                  class="text-red-600 text-xs mt-1"
+                  role="alert"
+                  aria-live="assertive"
+                ></p>
+                <p
+                  id="category-merge-sources-help"
+                  class="text-xs text-gray-700"
+                  data-i18n="management.mergeSourcesHelp"
+                >
+                  Sources will be merged into the target and removed.
+                </p>
                 <button
                   type="button"
                   id="category-merge-btn"
@@ -274,7 +375,9 @@
             </div>
 
             <div class="border border-gray-200 rounded-lg p-4">
-              <h3 class="font-semibold text-gray-800 mb-3" data-i18n="actions.findReplace">Find & Replace</h3>
+              <h3 class="font-semibold text-gray-800 mb-3" data-i18n="actions.findReplace">
+                Find & Replace
+              </h3>
               <div
                 id="category-find-replace-error-summary"
                 class="validation-error-banner"
@@ -283,28 +386,38 @@
                 tabindex="-1"
               ></div>
               <div class="space-y-3">
-            <input
-              id="category-find"
-              type="text"
-              aria-label="Find category name"
-              aria-describedby="category-find-error"
-              placeholder="Find name"
-              data-i18n-placeholder="management.findPlaceholder"
-              data-i18n="[aria-label]management.findPlaceholder"
-              class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
-            />
-                <p id="category-find-error" class="text-red-600 text-xs mt-1" role="alert" aria-live="assertive"></p>
-            <input
-              id="category-replace"
-              type="text"
-              aria-label="Replacement category name"
-              aria-describedby="category-replace-error"
-              placeholder="Replace name"
-              data-i18n-placeholder="management.replacePlaceholder"
-              data-i18n="[aria-label]management.replacePlaceholder"
-              class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
-            />
-                <p id="category-replace-error" class="text-red-600 text-xs mt-1" role="alert" aria-live="assertive"></p>
+                <input
+                  id="category-find"
+                  type="text"
+                  aria-label="Find category name"
+                  aria-describedby="category-find-error"
+                  placeholder="Find name"
+                  data-i18n-placeholder="management.findPlaceholder"
+                  data-i18n="[aria-label]management.findPlaceholder"
+                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
+                />
+                <p
+                  id="category-find-error"
+                  class="text-red-600 text-xs mt-1"
+                  role="alert"
+                  aria-live="assertive"
+                ></p>
+                <input
+                  id="category-replace"
+                  type="text"
+                  aria-label="Replacement category name"
+                  aria-describedby="category-replace-error"
+                  placeholder="Replace name"
+                  data-i18n-placeholder="management.replacePlaceholder"
+                  data-i18n="[aria-label]management.replacePlaceholder"
+                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
+                />
+                <p
+                  id="category-replace-error"
+                  class="text-red-600 text-xs mt-1"
+                  role="alert"
+                  aria-live="assertive"
+                ></p>
                 <button
                   type="button"
                   id="category-find-replace-btn"
@@ -318,7 +431,9 @@
             </div>
 
             <div class="border border-gray-200 rounded-lg p-4">
-              <h3 class="font-semibold text-gray-800 mb-3" data-i18n="actions.bulkDelete">Bulk Delete</h3>
+              <h3 class="font-semibold text-gray-800 mb-3" data-i18n="actions.bulkDelete">
+                Bulk Delete
+              </h3>
               <div
                 id="category-bulk-delete-error-summary"
                 class="validation-error-banner"
@@ -327,21 +442,34 @@
                 tabindex="-1"
               ></div>
               <div class="space-y-3">
-            <input
-              id="category-bulk-delete-ids"
-              type="text"
-              aria-label="Category IDs to delete"
-              aria-describedby="category-bulk-delete-ids-error"
-              placeholder="IDs (comma-separated)"
-              data-i18n-placeholder="management.idsPlaceholder"
-              data-i18n="[aria-label]management.idsPlaceholder"
-              class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
-            />
-            <p id="category-bulk-delete-ids-error" class="text-red-600 text-xs mt-1" role="alert" aria-live="assertive"></p>
-            <label for="category-bulk-delete-force" class="flex items-center gap-2 text-sm text-gray-700">
-              <input id="category-bulk-delete-force" type="checkbox" name="bulk_delete_force" class="rounded text-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" />
-              <span data-i18n="management.forceDelete">Force delete (remove from prompts)</span>
-            </label>
+                <input
+                  id="category-bulk-delete-ids"
+                  type="text"
+                  aria-label="Category IDs to delete"
+                  aria-describedby="category-bulk-delete-ids-error"
+                  placeholder="IDs (comma-separated)"
+                  data-i18n-placeholder="management.idsPlaceholder"
+                  data-i18n="[aria-label]management.idsPlaceholder"
+                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
+                />
+                <p
+                  id="category-bulk-delete-ids-error"
+                  class="text-red-600 text-xs mt-1"
+                  role="alert"
+                  aria-live="assertive"
+                ></p>
+                <label
+                  for="category-bulk-delete-force"
+                  class="flex items-center gap-2 text-sm text-gray-700"
+                >
+                  <input
+                    id="category-bulk-delete-force"
+                    type="checkbox"
+                    name="bulk_delete_force"
+                    class="rounded text-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  />
+                  <span data-i18n="management.forceDelete">Force delete (remove from prompts)</span>
+                </label>
                 <button
                   type="button"
                   id="category-bulk-delete-btn"
@@ -369,13 +497,19 @@
 
         <section class="bg-white rounded-lg shadow p-6 mb-6">
           <div class="flex items-center justify-between mb-4">
-            <h2 class="text-lg font-semibold text-gray-900" data-i18n="management.importExport">Import & Export</h2>
-            <span class="text-xs text-gray-700" data-i18n="management.importExportHint">JSON only</span>
+            <h2 class="text-lg font-semibold text-gray-900" data-i18n="management.importExport">
+              Import & Export
+            </h2>
+            <span class="text-xs text-gray-700" data-i18n="management.importExportHint"
+              >JSON only</span
+            >
           </div>
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div class="rounded-lg border border-gray-200 bg-gray-50 p-4">
               <div class="flex items-center justify-between mb-2">
-                <h3 class="text-sm font-semibold text-gray-800" data-i18n="management.exportTitle">Export</h3>
+                <h3 class="text-sm font-semibold text-gray-800" data-i18n="management.exportTitle">
+                  Export
+                </h3>
                 <span class="text-xs text-gray-700">.json</span>
               </div>
               <p class="text-sm text-gray-700 mb-4" data-i18n="management.exportDesc">
@@ -393,7 +527,9 @@
             </div>
             <div class="rounded-lg border border-gray-200 bg-gray-50 p-4">
               <div class="flex items-center justify-between mb-2">
-                <h3 class="text-sm font-semibold text-gray-800" data-i18n="management.importTitle">Import</h3>
+                <h3 class="text-sm font-semibold text-gray-800" data-i18n="management.importTitle">
+                  Import
+                </h3>
                 <span class="text-xs text-gray-700">.json</span>
               </div>
               <div
@@ -410,7 +546,10 @@
                 <div id="category-import-file-help" class="text-xs text-gray-700">
                   <p>Supported format: JSON (.json)</p>
                 </div>
-                <label for="category-import-file" class="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-gray-300 bg-white px-3 py-4 text-sm text-gray-700">
+                <label
+                  for="category-import-file"
+                  class="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-gray-300 bg-white px-3 py-4 text-sm text-gray-700"
+                >
                   <span data-i18n="management.importDrop">Choose a JSON file</span>
                   <input
                     id="category-import-file"
@@ -421,7 +560,12 @@
                     class="text-xs text-gray-700"
                   />
                 </label>
-                <p id="category-import-file-error" class="text-red-600 text-xs mt-1" role="alert" aria-live="assertive"></p>
+                <p
+                  id="category-import-file-error"
+                  class="text-red-600 text-xs mt-1"
+                  role="alert"
+                  aria-live="assertive"
+                ></p>
                 <button
                   type="button"
                   id="category-import-btn"
@@ -437,29 +581,41 @@
         </section>
 
         <section class="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 class="text-lg font-semibold text-gray-900 mb-4" data-i18n="management.analytics">Analytics</h2>
+          <h2 class="text-lg font-semibold text-gray-900 mb-4" data-i18n="management.analytics">
+            Analytics
+          </h2>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div class="p-4 rounded-lg bg-blue-50">
               <div class="text-sm text-blue-800" data-i18n="management.total">Total Categories</div>
-              <div id="category-analytics-total" class="text-2xl font-semibold text-blue-900">0</div>
+              <div id="category-analytics-total" class="text-2xl font-semibold text-blue-900">
+                0
+              </div>
             </div>
             <div class="p-4 rounded-lg bg-emerald-50">
               <div class="text-sm text-emerald-800" data-i18n="management.used">Used</div>
-              <div id="category-analytics-used" class="text-2xl font-semibold text-emerald-900">0</div>
+              <div id="category-analytics-used" class="text-2xl font-semibold text-emerald-900">
+                0
+              </div>
             </div>
             <div class="p-4 rounded-lg bg-amber-50">
               <div class="text-sm text-amber-800" data-i18n="management.unused">Unused</div>
-              <div id="category-analytics-unused" class="text-2xl font-semibold text-amber-900">0</div>
+              <div id="category-analytics-unused" class="text-2xl font-semibold text-amber-900">
+                0
+              </div>
             </div>
           </div>
           <div>
-            <h3 class="text-sm font-semibold text-gray-700 mb-2" data-i18n="management.top">Top Categories</h3>
+            <h3 class="text-sm font-semibold text-gray-700 mb-2" data-i18n="management.top">
+              Top Categories
+            </h3>
             <ul id="category-analytics-top" class="text-sm text-gray-700 space-y-1"></ul>
           </div>
         </section>
 
         <section class="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 class="text-lg font-semibold text-gray-900 mb-4" data-i18n="management.orphans">Orphans</h2>
+          <h2 class="text-lg font-semibold text-gray-900 mb-4" data-i18n="management.orphans">
+            Orphans
+          </h2>
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div class="border border-gray-200 rounded-lg p-4">
               <h3 class="font-semibold text-gray-800 mb-3" data-i18n="categories.unusedTitle">
@@ -469,10 +625,16 @@
                 <span data-i18n="categories.unusedLabel">Unused categories:</span>
                 <strong id="category-unused-count">0</strong>
               </p>
-              <ul id="category-unused-list" class="text-sm text-gray-700 space-y-1 max-h-48 overflow-y-auto"></ul>
+              <ul
+                id="category-unused-list"
+                class="text-sm text-gray-700 space-y-1 max-h-48 overflow-y-auto"
+              ></ul>
             </div>
             <div class="border border-gray-200 rounded-lg p-4">
-              <h3 class="font-semibold text-gray-800 mb-3" data-i18n="categories.orphanPromptsTitle">
+              <h3
+                class="font-semibold text-gray-800 mb-3"
+                data-i18n="categories.orphanPromptsTitle"
+              >
                 Prompts without a category
               </h3>
               <p class="text-sm text-gray-700 mb-3">
@@ -480,195 +642,238 @@
                 <strong id="category-orphans-count">0</strong>
               </p>
               <div class="mt-3">
-                <h4 class="text-sm font-semibold text-gray-700 mb-2" data-i18n="management.promptDetails">
+                <h4
+                  class="text-sm font-semibold text-gray-700 mb-2"
+                  data-i18n="management.promptDetails"
+                >
                   Prompt details
                 </h4>
-                <ul id="category-orphans-details" class="text-sm text-gray-700 space-y-1 max-h-48 overflow-y-auto"></ul>
+                <ul
+                  id="category-orphans-details"
+                  class="text-sm text-gray-700 space-y-1 max-h-48 overflow-y-auto"
+                ></ul>
               </div>
             </div>
           </div>
         </section>
       </main>
 
-      <footer role="contentinfo" aria-label="Site footer" class="mt-auto border-t border-gray-200 bg-gray-50">
+      <footer
+        role="contentinfo"
+        aria-label="Site footer"
+        class="mt-auto border-t border-gray-200 bg-gray-50"
+      >
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div class="flex flex-col gap-3 text-sm text-gray-600">
             <p>
-              PromptVault is licensed under <a href="https://www.mozilla.org/en-US/MPL/2.0/" class="text-blue-600 hover:text-blue-800 underline" target="_blank" rel="noopener noreferrer">Mozilla Public License 2.0</a>.
+              PromptVault is licensed under
+              <a
+                href="https://www.mozilla.org/en-US/MPL/2.0/"
+                class="text-blue-600 hover:text-blue-800 underline"
+                target="_blank"
+                rel="noopener noreferrer"
+                >Mozilla Public License 2.0</a
+              >.
             </p>
-            <a href="https://codeberg.org/medenor/promptvault" class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 transition" target="_blank" rel="noopener noreferrer" aria-label="PromptVault on Codeberg">
+            <a
+              href="https://codeberg.org/medenor/promptvault"
+              class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 transition"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="PromptVault on Codeberg"
+            >
               <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-                <svg
-                 width="16"
-                 height="16"
-                 viewBox="0 0 4.2333332 4.2333335"
-                 version="1.1"
-                 id="svg1468"
-                 sodipodi:docname="codeberg-logo_icon_blue.svg"
-                 inkscape:version="1.2-alpha1 (b6a15bb, 2022-02-23)"
-                 inkscape:export-filename="/home/mray/Projects/Codeberg/logo/icon/png/codeberg-logo_icon_blue.png"
-                 inkscape:export-xdpi="384"
-                 inkscape:export-ydpi="384"
-                 xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-                 xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
-                 xmlns:xlink="http://www.w3.org/1999/xlink"
-                 xmlns="http://www.w3.org/2000/svg"
-                 xmlns:svg="http://www.w3.org/2000/svg"
-                 xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-                 xmlns:cc="http://creativecommons.org/ns#"
-                 xmlns:dc="http://purl.org/dc/elements/1.1/">
-                <title
-                id="title16">Codeberg logo</title>
-                <defs
-                 id="defs1462">
-                <linearGradient
-                 xlink:href="#linearGradient6924"
-                 id="linearGradient6918"
-                 x1="42519.285"
-                 y1="-7078.7891"
-                 x2="42575.336"
-                 y2="-6966.9307"
-                 gradientUnits="userSpaceOnUse" />
-                <linearGradient
-                 id="linearGradient6924">
-                <stop
-                 style="stop-color:#2185d0;stop-opacity:0"
-                 offset="0"
-                 id="stop6920" />
-                <stop
-                 id="stop6926"
-                 offset="0.49517274"
-                 style="stop-color:#2185d0;stop-opacity:0.48923996" />
-                <stop
-                 style="stop-color:#2185d0;stop-opacity:0.63279623"
-                 offset="1"
-                 id="stop6922" />
-              </linearGradient>
-                <linearGradient
-                 xlink:href="#linearGradient6924-6"
-                 id="linearGradient6918-3"
-                 x1="42519.285"
-                 y1="-7078.7891"
-                 x2="42575.336"
-                 y2="-6966.9307"
-                 gradientUnits="userSpaceOnUse" />
-                <linearGradient
-                 id="linearGradient6924-6">
-                <stop
-                 style="stop-color:#2185d0;stop-opacity:0;"
-                 offset="0"
-                 id="stop6920-7" />
-                <stop
-                 id="stop6926-5"
-                 offset="0.49517274"
-                 style="stop-color:#2185d0;stop-opacity:0.30000001;" />
-                <stop
-                 style="stop-color:#2185d0;stop-opacity:0.30000001;"
-                 offset="1"
-                 id="stop6922-3" />
-              </linearGradient>
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 4.2333332 4.2333335"
+                version="1.1"
+                id="svg1468"
+                sodipodi:docname="codeberg-logo_icon_blue.svg"
+                inkscape:version="1.2-alpha1 (b6a15bb, 2022-02-23)"
+                inkscape:export-filename="/home/mray/Projects/Codeberg/logo/icon/png/codeberg-logo_icon_blue.png"
+                inkscape:export-xdpi="384"
+                inkscape:export-ydpi="384"
+                xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+                xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+                xmlns:xlink="http://www.w3.org/1999/xlink"
+                xmlns="http://www.w3.org/2000/svg"
+                xmlns:svg="http://www.w3.org/2000/svg"
+                xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+                xmlns:cc="http://creativecommons.org/ns#"
+                xmlns:dc="http://purl.org/dc/elements/1.1/"
+              >
+                <title id="title16">Codeberg logo</title>
+                <defs id="defs1462">
+                  <linearGradient
+                    xlink:href="#linearGradient6924"
+                    id="linearGradient6918"
+                    x1="42519.285"
+                    y1="-7078.7891"
+                    x2="42575.336"
+                    y2="-6966.9307"
+                    gradientUnits="userSpaceOnUse"
+                  />
+                  <linearGradient id="linearGradient6924">
+                    <stop style="stop-color: #2185d0; stop-opacity: 0" offset="0" id="stop6920" />
+                    <stop
+                      id="stop6926"
+                      offset="0.49517274"
+                      style="stop-color: #2185d0; stop-opacity: 0.48923996"
+                    />
+                    <stop
+                      style="stop-color: #2185d0; stop-opacity: 0.63279623"
+                      offset="1"
+                      id="stop6922"
+                    />
+                  </linearGradient>
+                  <linearGradient
+                    xlink:href="#linearGradient6924-6"
+                    id="linearGradient6918-3"
+                    x1="42519.285"
+                    y1="-7078.7891"
+                    x2="42575.336"
+                    y2="-6966.9307"
+                    gradientUnits="userSpaceOnUse"
+                  />
+                  <linearGradient id="linearGradient6924-6">
+                    <stop style="stop-color: #2185d0; stop-opacity: 0" offset="0" id="stop6920-7" />
+                    <stop
+                      id="stop6926-5"
+                      offset="0.49517274"
+                      style="stop-color: #2185d0; stop-opacity: 0.30000001"
+                    />
+                    <stop
+                      style="stop-color: #2185d0; stop-opacity: 0.30000001"
+                      offset="1"
+                      id="stop6922-3"
+                    />
+                  </linearGradient>
                 </defs>
                 <sodipodi:namedview
-                 showborder="false"
-                 id="base"
-                 pagecolor="#ffffff"
-                 bordercolor="#666666"
-                 borderopacity="1.0"
-                 inkscape:pageopacity="0.0"
-                 inkscape:pageshadow="2"
-                 inkscape:zoom="22.627417"
-                 inkscape:cx="12.948893"
-                 inkscape:cy="12.661631"
-                 inkscape:document-units="px"
-                 inkscape:current-layer="svg1468"
-                 inkscape:document-rotation="0"
-                 showgrid="false"
-                 fit-margin-top="0"
-                 fit-margin-left="0"
-                 fit-margin-right="0"
-                 fit-margin-bottom="0"
-                 units="px"
-                 inkscape:snap-global="false"
-                 inkscape:snap-page="true"
-                 showguides="false"
-                 inkscape:window-width="1531"
-                 inkscape:window-height="873"
-                 inkscape:window-x="69"
-                 inkscape:window-y="27"
-                 inkscape:window-maximized="1"
-                 inkscape:pagecheckerboard="0"
-                 inkscape:deskcolor="#d1d1d1">
-                <inkscape:grid
-                 type="xygrid"
-                 id="grid2067" />
-              </sodipodi:namedview>
-                <metadata
-                 id="metadata1465">
-                <rdf:RDF>
-                <cc:Work
-                 rdf:about="">
-                <dc:format>image/svg+xml</dc:format>
-                <dc:type
-                 rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-                <dc:title>Codeberg logo</dc:title>
-                <cc:license
-                 rdf:resource="http://creativecommons.org/publicdomain/zero/1.0/" />
-                <dc:creator>
-                <cc:Agent>
-                <dc:title>Robert Martinez</dc:title>
-              </cc:Agent>
-              </dc:creator>
-                <dc:rights>
-                <cc:Agent>
-                <dc:title>Codeberg and the Codeberg Logo are trademarks of Codeberg e.V.</dc:title>
-              </cc:Agent>
-              </dc:rights>
-              <dc:date>2020-04-09</dc:date>
-                <dc:publisher>
-                <cc:Agent>
-                <dc:title>Codeberg e.V.</dc:title>
-              </cc:Agent>
-              </dc:publisher>
-              <dc:source>codeberg.org</dc:source>
-              </cc:Work>
-                <cc:License
-                 rdf:about="http://creativecommons.org/publicdomain/zero/1.0/">
-                <cc:permits
-                 rdf:resource="http://creativecommons.org/ns#Reproduction" />
-                <cc:permits
-                 rdf:resource="http://creativecommons.org/ns#Distribution" />
-                <cc:permits
-                 rdf:resource="http://creativecommons.org/ns#DerivativeWorks" />
-              </cc:License>
-              </rdf:RDF>
+                  showborder="false"
+                  id="base"
+                  pagecolor="#ffffff"
+                  bordercolor="#666666"
+                  borderopacity="1.0"
+                  inkscape:pageopacity="0.0"
+                  inkscape:pageshadow="2"
+                  inkscape:zoom="22.627417"
+                  inkscape:cx="12.948893"
+                  inkscape:cy="12.661631"
+                  inkscape:document-units="px"
+                  inkscape:current-layer="svg1468"
+                  inkscape:document-rotation="0"
+                  showgrid="false"
+                  fit-margin-top="0"
+                  fit-margin-left="0"
+                  fit-margin-right="0"
+                  fit-margin-bottom="0"
+                  units="px"
+                  inkscape:snap-global="false"
+                  inkscape:snap-page="true"
+                  showguides="false"
+                  inkscape:window-width="1531"
+                  inkscape:window-height="873"
+                  inkscape:window-x="69"
+                  inkscape:window-y="27"
+                  inkscape:window-maximized="1"
+                  inkscape:pagecheckerboard="0"
+                  inkscape:deskcolor="#d1d1d1"
+                >
+                  <inkscape:grid type="xygrid" id="grid2067" />
+                </sodipodi:namedview>
+                <metadata id="metadata1465">
+                  <rdf:RDF>
+                    <cc:Work rdf:about="">
+                      <dc:format>image/svg+xml</dc:format>
+                      <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+                      <dc:title>Codeberg logo</dc:title>
+                      <cc:license
+                        rdf:resource="http://creativecommons.org/publicdomain/zero/1.0/"
+                      />
+                      <dc:creator>
+                        <cc:Agent>
+                          <dc:title>Robert Martinez</dc:title>
+                        </cc:Agent>
+                      </dc:creator>
+                      <dc:rights>
+                        <cc:Agent>
+                          <dc:title
+                            >Codeberg and the Codeberg Logo are trademarks of Codeberg
+                            e.V.</dc:title
+                          >
+                        </cc:Agent>
+                      </dc:rights>
+                      <dc:date>2020-04-09</dc:date>
+                      <dc:publisher>
+                        <cc:Agent>
+                          <dc:title>Codeberg e.V.</dc:title>
+                        </cc:Agent>
+                      </dc:publisher>
+                      <dc:source>codeberg.org</dc:source>
+                    </cc:Work>
+                    <cc:License rdf:about="http://creativecommons.org/publicdomain/zero/1.0/">
+                      <cc:permits rdf:resource="http://creativecommons.org/ns#Reproduction" />
+                      <cc:permits rdf:resource="http://creativecommons.org/ns#Distribution" />
+                      <cc:permits rdf:resource="http://creativecommons.org/ns#DerivativeWorks" />
+                    </cc:License>
+                  </rdf:RDF>
                 </metadata>
                 <g
-                 id="g370484"
-                 inkscape:label="logo"
-                 transform="matrix(0.06551432,0,0,0.06551432,-2.232417,-1.431776)">
-                <path
-                 id="path6733-5"
-                 style="font-variation-settings:normal;opacity:1;vector-effect:none;fill:url(#linearGradient6918-3);fill-opacity:1;stroke:none;stroke-width:3.67846;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:2;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:stroke markers fill;stop-color:#000000;stop-opacity:1"
-                 d="m 42519.285,-7078.7891 a 0.76086879,0.56791688 0 0 0 -0.738,0.6739 l 33.586,125.8886 a 87.182358,87.182358 0 0 0 39.381,-33.7636 l -71.565,-92.5196 a 0.76086879,0.56791688 0 0 0 -0.664,-0.2793 z"
-                 transform="matrix(0.37058478,0,0,0.37058478,-15690.065,2662.0533)"
-                 inkscape:label="berg" />
-                <path
-                 id="path360787"
-                 style="opacity:1;fill:#2185d0;fill-opacity:1;stroke-width:17.0055;paint-order:markers fill stroke;stop-color:#000000"
-                 d="m 11249.461,-1883.6961 c -12.74,0 -23.067,10.3275 -23.067,23.0671 0,4.3335 1.22,8.5795 3.522,12.2514 l 19.232,-24.8636 c 0.138,-0.1796 0.486,-0.1796 0.624,0 l 19.233,24.8646 c 2.302,-3.6721 3.523,-7.9185 3.523,-12.2524 0,-12.7396 -10.327,-23.0671 -23.067,-23.0671 z"
-                 sodipodi:nodetypes="sccccccs"
-                 inkscape:label="sky"
-                 transform="matrix(1.4006354,0,0,1.4006354,-15690.065,2662.0533)" />
+                  id="g370484"
+                  inkscape:label="logo"
+                  transform="matrix(0.06551432,0,0,0.06551432,-2.232417,-1.431776)"
+                >
+                  <path
+                    id="path6733-5"
+                    style="
+                      font-variation-settings: normal;
+                      opacity: 1;
+                      vector-effect: none;
+                      fill: url(#linearGradient6918-3);
+                      fill-opacity: 1;
+                      stroke: none;
+                      stroke-width: 3.67846;
+                      stroke-linecap: butt;
+                      stroke-linejoin: miter;
+                      stroke-miterlimit: 2;
+                      stroke-dasharray: none;
+                      stroke-dashoffset: 0;
+                      stroke-opacity: 1;
+                      paint-order: stroke markers fill;
+                      stop-color: #000000;
+                      stop-opacity: 1;
+                    "
+                    d="m 42519.285,-7078.7891 a 0.76086879,0.56791688 0 0 0 -0.738,0.6739 l 33.586,125.8886 a 87.182358,87.182358 0 0 0 39.381,-33.7636 l -71.565,-92.5196 a 0.76086879,0.56791688 0 0 0 -0.664,-0.2793 z"
+                    transform="matrix(0.37058478,0,0,0.37058478,-15690.065,2662.0533)"
+                    inkscape:label="berg"
+                  />
+                  <path
+                    id="path360787"
+                    style="
+                      opacity: 1;
+                      fill: #2185d0;
+                      fill-opacity: 1;
+                      stroke-width: 17.0055;
+                      paint-order: markers fill stroke;
+                      stop-color: #000000;
+                    "
+                    d="m 11249.461,-1883.6961 c -12.74,0 -23.067,10.3275 -23.067,23.0671 0,4.3335 1.22,8.5795 3.522,12.2514 l 19.232,-24.8636 c 0.138,-0.1796 0.486,-0.1796 0.624,0 l 19.233,24.8646 c 2.302,-3.6721 3.523,-7.9185 3.523,-12.2524 0,-12.7396 -10.327,-23.0671 -23.067,-23.0671 z"
+                    sodipodi:nodetypes="sccccccs"
+                    inkscape:label="sky"
+                    transform="matrix(1.4006354,0,0,1.4006354,-15690.065,2662.0533)"
+                  />
                 </g>
               </svg>
 
-                 Source code on Codeberg
-              </a>
-              </div>
-              </div>
-              </footer>
-              </div>
+              Source code on Codeberg
+            </a>
+          </div>
+        </div>
+      </footer>
+    </div>
 
-                 {{ scripts.load_scripts('manage-categories', true) }}
-              </body>
-              </html>
+    {{ scripts.load_scripts('manage-categories', true) }}
+  </body>
+</html>

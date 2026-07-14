@@ -1,9 +1,9 @@
 ---
 id: spec-security-authentication
 title: PromptVault Authentication & Authorization Specification
-version: 1.0.1
+version: 1.1.0
 date_created: 2025-11-29
-last_updated: 2025-12-10
+last_updated: 2026-07-11
 owner: medenor
 tags: [security, authentication, authorization, jwt, rbac, app]
 status: published
@@ -48,6 +48,7 @@ The purpose of this specification is to define:
 - Ownership-based authorization on application data
 - Password reset mechanism
 - Admin-level user lifecycle actions (create, update, activate/deactivate, delete)
+- Optional authentication ("anonymous mode") for trusted, single-user deployments
 - Minimal API contracts relevant to authentication
 - Minimal JSON schemas for tokens
 - High-level database entities (not full model definitions)
@@ -73,6 +74,8 @@ The purpose of this specification is to define:
 - **Password Reset Token**: Time-limited secret issued for resetting account credentials.
 - **Ownership Rule**: Non-admin users may only modify data they created.
 - **RBAC**: Role-based access control. Permissions depend on assigned user role.
+- **Anonymous Mode**: Deployment mode (`AUTH_ENABLED=false`) in which authentication is disabled entirely; all endpoints are publicly accessible and data operations run under a shared system user.
+- **System User**: A default, shared user record that owns data created in anonymous mode, used to satisfy ownership bookkeeping when no authenticated user exists.
 
 ---
 
@@ -91,6 +94,7 @@ The purpose of this specification is to define:
 - **REQ-AUTH-009**: The system must allow user account deletion and revoke all sessions.
 - **REQ-AUTH-010**: Admins must be able to list, create, edit, activate/deactivate, and delete user accounts.
 - **REQ-AUTH-011**: Admins must be able to transfer resource ownership when deleting users.
+- **REQ-AUTH-012**: The system must support a global `AUTH_ENABLED` configuration toggle. When `AUTH_ENABLED=false`, the system must run in anonymous mode: authentication and admin routes are unmounted (not merely bypassed), all remaining endpoints become publicly accessible without a token, and mutation endpoints must attribute writes to a shared system user rather than rejecting the request.
 
 ### 3.2 Security Requirements
 
@@ -106,6 +110,7 @@ The purpose of this specification is to define:
 - **SEC-AUTH-008**: Maximum concurrent sessions per user must be limited.
 - **SEC-AUTH-009**: Sensitive information (passwords, hashes, reset tokens) must never appear in logs or API responses.
 - **SEC-AUTH-010**: The system must protect against user enumeration in authentication and reset flows.
+- **SEC-AUTH-011**: Anonymous mode (`AUTH_ENABLED=false`) must emit a loud, unambiguous startup warning (log and console) stating that authentication is disabled and that this mode must not be used in multi-user or network-exposed deployments.
 
 ### 3.3 Constraints
 
@@ -113,6 +118,7 @@ The purpose of this specification is to define:
 - **CON-AUTH-002**: Cryptographic keys must not be embedded in source code.
 - **CON-AUTH-003**: Rate limiting storage must be durable and isolated per deployment.
 - **CON-AUTH-004**: Authentication design must remain compatible with the PromptVault architecture (SPEC_APP).
+- **CON-AUTH-005**: Anonymous mode is intended only for trusted, single-user, non-network-exposed deployments; it must never be the default (`AUTH_ENABLED` defaults to `true`).
 
 ### 3.4 Guidelines
 
@@ -195,7 +201,22 @@ The purpose of this specification is to define:
 
 ---
 
-### 4.3 RBAC Matrix (Minimal)
+### 4.3 Anonymous Mode (`AUTH_ENABLED=false`)
+
+When the `AUTH_ENABLED` configuration flag is `false`:
+
+- The `/api/auth/*` and `/api/admin/*` routers are **not mounted**; requests to them return `404`, not `401`/`403`.
+- All other endpoints (prompts, tags, categories, scheduler, backups) become publicly accessible without a bearer token.
+- Data-mutating endpoints resolve the acting user via a bypass dependency chain (`get_current_user_or_none` → `get_current_user_or_default`) that falls back to a shared **system user** so ownership and undo-history bookkeeping still function.
+- Some endpoints (e.g. manual backup creation/restore) opt out of the system-user fallback and continue to require a valid authenticated user even in anonymous mode; those return `401` if unauthenticated regardless of `AUTH_ENABLED`.
+- The server emits a startup warning (log + console) when this mode is active (see SEC-AUTH-011).
+- Templates receive an `auth_enabled` flag so the UI can hide login/account affordances.
+
+This mode does not alter RBAC or ownership semantics for `AUTH_ENABLED=true` deployments.
+
+---
+
+### 4.4 RBAC Matrix (Minimal)
 
 | Action                 | viewer | editor | admin |
 | ---------------------- | ------ | ------ | ----- |
@@ -223,6 +244,7 @@ The purpose of this specification is to define:
 - **AC-AUTH-010**: Password reset flow successfully generates, validates, and expires tokens.
 - **AC-AUTH-011**: Authentication attempts beyond rate limits return appropriate errors.
 - **AC-AUTH-012**: Locked accounts cannot authenticate until lockout expires.
+- **AC-AUTH-013**: With `AUTH_ENABLED=false`, `/api/auth/*` and `/api/admin/*` return 404, other endpoints are reachable without a token, and a startup warning is emitted.
 
 ---
 
@@ -271,6 +293,7 @@ Aligned with SPEC_APP.
 - Expired refresh token cannot be used to issue new tokens.
 - Locked accounts return a consistent message without revealing lockout details.
 - Admin user deletion may require ownership transfer of resources.
+- In anonymous mode, requests to `/api/auth/*` or `/api/admin/*` return 404 (route not mounted) rather than a 401/403 authentication error.
 
 ---
 

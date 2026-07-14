@@ -243,6 +243,7 @@ npx playwright test main-page.spec.ts --headed
 #### Capture Screenshots
 
 Tests automatically capture screenshots on failure. View in:
+
 ```
 test-results/
 ├── main-page-spec-skip-link-[browser].png
@@ -252,6 +253,7 @@ test-results/
 #### Use page.pause()
 
 Add to test code to pause execution:
+
 ```javascript
 test('example', async ({ page }) => {
   await page.goto('/');
@@ -407,6 +409,7 @@ Success! All tests passed.
 ```
 
 Check:
+
 1. Screenshot in `test-results/` directory
 2. HTML report: `playwright-report/index.html`
 3. Trace file for detailed debugging
@@ -511,6 +514,7 @@ DEBUG=1 npx playwright test --grep "specific test"
 **Problem**: "Focus indicator not found"
 
 Solution:
+
 1. Verify CSS `:focus { outline: ... }` is set
 2. Check element is actually focusable (tabindex, button, input, etc.)
 3. Take screenshot to inspect visually
@@ -535,6 +539,7 @@ npx playwright test --trace=on
 **Problem**: Test passes in Chrome but fails in Firefox
 
 Solution:
+
 1. Run both browsers separately to identify differences
 2. Check browser-specific CSS or JavaScript
 3. File browser-specific issues

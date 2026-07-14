@@ -21,7 +21,7 @@ see [data-model.md](./data-model.md).
   the build-image scenario.
 
 > If a prerequisite is missing, `make` targets must fail fast with a clear,
-  named message (covers the "Missing runtime" edge case).
+> named message (covers the "Missing runtime" edge case).
 
 ---
 
@@ -45,6 +45,7 @@ make install
 ```
 
 **Expected**:
+
 - A `.venv` directory created with Python 3.14+ (`./.venv/bin/python --version`
   prints ≥ 3.14).
 - Backend deps installed via `pip install -e ".[test]"`; `black` available.
@@ -63,6 +64,7 @@ make dev
 ```
 
 **Expected**:
+
 - Backend available at `http://localhost:8003` (or `$PORT`).
 - Vite dev server at `http://localhost:5173` proxying `/api`, `/auth`, and
   `/static/locales` to the backend — the app loads in a browser.
@@ -82,6 +84,7 @@ make test
 ```
 
 **Expected**:
+
 - Backend `pytest` runs with coverage; the `--cov-fail-under=85` gate
   (from `pytest.ini`) is reported.
 - Frontend `vitest` runs with coverage; `vitest.config.ts` thresholds are
@@ -125,6 +128,7 @@ make build
 ```
 
 **Expected**:
+
 - `dist/static/` contains compiled assets (manifest + hashed JS/CSS).
 - The production `web` image is built (`docker compose build web`).
 
@@ -143,12 +147,12 @@ only their own artifact (FR-009).
 
 ## Edge-case spot checks
 
-| Edge case | How to validate |
-|-----------|-----------------|
-| Missing runtime | Unset/disable `python3` or `node` in a subshell; run a target; expect a **named** fail-fast message. |
-| Missing deps | Delete `.venv`/`node_modules` (in a throwaway clone); run `make dev`; expect guidance to run `make install`. |
-| Port in use | Start something on 8003, then `make dev`; expect a clear port-conflict message. |
-| Clean interrupt | Scenario 3's `pgrep` check. |
+| Edge case       | How to validate                                                                                              |
+| --------------- | ------------------------------------------------------------------------------------------------------------ |
+| Missing runtime | Unset/disable `python3` or `node` in a subshell; run a target; expect a **named** fail-fast message.         |
+| Missing deps    | Delete `.venv`/`node_modules` (in a throwaway clone); run `make dev`; expect guidance to run `make install`. |
+| Port in use     | Start something on 8003, then `make dev`; expect a clear port-conflict message.                              |
+| Clean interrupt | Scenario 3's `pgrep` check.                                                                                  |
 
 ---
 

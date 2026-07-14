@@ -12,24 +12,22 @@ import { isAbsolute, join, resolve } from 'node:path';
 const BASE_URL = process.env.ACCESSIBILITY_BASE_URL ?? 'http://127.0.0.1:8003';
 const AXE_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 
-const ROUTES =
-  process.env.ACCESSIBILITY_PAGES
-    ?.split(',')
-    .map((route) => route.trim())
-    .filter(Boolean) ?? [
-      '/',
-      '/import-export',
-      '/backup-management',
-      '/auth/login',
-      '/auth/register',
-      '/auth/forgot-password',
-      '/auth/reset-password?token=test',
-      '/auth/profile',
-      '/manage-categories',
-      '/manage-tags',
-      '/admin/users',
-      '/admin/sessions',
-    ];
+const ROUTES = process.env.ACCESSIBILITY_PAGES?.split(',')
+  .map((route) => route.trim())
+  .filter(Boolean) ?? [
+  '/',
+  '/import-export',
+  '/backup-management',
+  '/auth/login',
+  '/auth/register',
+  '/auth/forgot-password',
+  '/auth/reset-password?token=test',
+  '/auth/profile',
+  '/manage-categories',
+  '/manage-tags',
+  '/admin/users',
+  '/admin/sessions',
+];
 const ACCESSIBILITY_USER_USERNAME = process.env.ACCESSIBILITY_USER_USERNAME;
 const ACCESSIBILITY_USER_PASSWORD = process.env.ACCESSIBILITY_USER_PASSWORD;
 const ACCESSIBILITY_ADMIN_USERNAME =
@@ -179,7 +177,9 @@ test.afterAll(() => {
 });
 
 for (const route of ROUTES) {
-  test(`ACC-AXE: ${route} has no critical/serious accessibility violations`, async ({ browser }) => {
+  test(`ACC-AXE: ${route} has no critical/serious accessibility violations`, async ({
+    browser,
+  }) => {
     const accessLevel = getRouteAccessLevel(route);
     const hasReusableUserState = USING_EXTERNAL_STATE_DIR && existsSync(USER_STATE_PATH);
     const hasReusableAdminState = USING_EXTERNAL_STATE_DIR && existsSync(ADMIN_STATE_PATH);

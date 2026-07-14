@@ -57,19 +57,19 @@ bulk operations, analytics, orphan detection, and suggestions derived from promp
 
 ## 3. Definitions & Terminology
 
-| Term | Definition |
-|------|------------|
-| Tag | A label that can be attached to a prompt; multiple Tags MAY be attached to a prompt. |
-| Category | A single classification value assigned to a prompt; at most one Category is assigned per prompt. |
-| Prompt | A content item that can be labeled with Tags and a Category. |
-| Orphan | A Tag with zero associated prompts, a prompt with no Category assigned, or a prompt with no Tags assigned. |
-| Unused Category | A Category with zero associated prompts. |
-| Unused Tag | A Tag with zero associated prompts. |
-| Merge | The act of consolidating multiple Tags/Categories into a single target. |
-| Compatibility Endpoint | An interface whose response shape MUST remain unchanged for existing clients. |
-| CRUD | Create, Read, Update, Delete. |
-| NLP | Natural Language Processing. |
-| Suggestion | A candidate Tag derived from prompt content analysis. |
+| Term                   | Definition                                                                                                 |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Tag                    | A label that can be attached to a prompt; multiple Tags MAY be attached to a prompt.                       |
+| Category               | A single classification value assigned to a prompt; at most one Category is assigned per prompt.           |
+| Prompt                 | A content item that can be labeled with Tags and a Category.                                               |
+| Orphan                 | A Tag with zero associated prompts, a prompt with no Category assigned, or a prompt with no Tags assigned. |
+| Unused Category        | A Category with zero associated prompts.                                                                   |
+| Unused Tag             | A Tag with zero associated prompts.                                                                        |
+| Merge                  | The act of consolidating multiple Tags/Categories into a single target.                                    |
+| Compatibility Endpoint | An interface whose response shape MUST remain unchanged for existing clients.                              |
+| CRUD                   | Create, Read, Update, Delete.                                                                              |
+| NLP                    | Natural Language Processing.                                                                               |
+| Suggestion             | A candidate Tag derived from prompt content analysis.                                                      |
 
 ---
 
@@ -101,7 +101,7 @@ Not applicable. Any transition not listed MUST be considered invalid.
 
 ## 5. Functional Requirements
 
-### 5.1 Functional Requirements (REQ-***)
+### 5.1 Functional Requirements (REQ-\*\*\*)
 
 - **REQ-001 — Compatibility List Interfaces**  
   The system **MUST** preserve the existing Compatibility Endpoints for listing Categories
@@ -149,10 +149,10 @@ Not applicable. Any transition not listed MUST be considered invalid.
   The system **MUST** provide Tag suggestions derived from prompt content and existing taxonomy.- **REQ-014 — Undo Support**
 
 - **REQ-013a — Live Tag Autocomplete**  
-  The system **MUST** provide a live autocomplete dropdown for Tags during prompt creation and editing.  
-  - As the user types, the dropdown **MUST** filter existing Tags by the current partial term (case-insensitive).  
-  - Selecting a suggestion **MUST** add the Tag to the prompt and remove it from the dropdown list.  
-  - The dropdown **MUST** support keyboard navigation (Up/Down, Enter, Escape).  
+  The system **MUST** provide a live autocomplete dropdown for Tags during prompt creation and editing.
+  - As the user types, the dropdown **MUST** filter existing Tags by the current partial term (case-insensitive).
+  - Selecting a suggestion **MUST** add the Tag to the prompt and remove it from the dropdown list.
+  - The dropdown **MUST** support keyboard navigation (Up/Down, Enter, Escape).
   - If no Tags match, the dropdown **MUST** indicate that no matches were found.
 
 - **REQ-014 — Undo Support**
@@ -173,7 +173,7 @@ Not applicable. Any transition not listed MUST be considered invalid.
 - **REQ-016 — History Integrity**  
   The system **MUST** preserve referential integrity in prompt history when Tags or Categories are merged or deleted by updating historical references as needed.
 
-### 5.2 Security Requirements (SEC-***)
+### 5.2 Security Requirements (SEC-\*\*\*)
 
 - **SEC-001 — Authentication Required**  
   The system **MUST** require authenticated access for all management operations.
@@ -186,7 +186,7 @@ Not applicable. Any transition not listed MUST be considered invalid.
   The system **MUST** record audit events for create, update, delete, merge, bulk, and undo
   operations.
 
-### 5.3 Non-Functional Requirements (NFR-***)
+### 5.3 Non-Functional Requirements (NFR-\*\*\*)
 
 - **NFR-001 — Backward Compatibility**  
   The system **MUST NOT** change Compatibility Endpoints or their response shapes.
@@ -204,7 +204,7 @@ Not applicable. Any transition not listed MUST be considered invalid.
 - **NFR-005 — Undo Performance**
   Undo operations **MUST** scale linearly with the number of items in the system. The system **MUST** use efficient database queries (no N+1 query patterns) for all undo-related operations. Response times **MUST** remain sub-100ms for typical operations with 1000+ items.
 
-### 5.4 Error-Handling Requirements (ERR-***)
+### 5.4 Error-Handling Requirements (ERR-\*\*\*)
 
 - **ERR-001 — Validation Errors**  
   The system **MUST** return a structured validation error when input constraints are violated.
@@ -225,7 +225,7 @@ Not applicable. Any transition not listed MUST be considered invalid.
 
 ---
 
-## 6. Invariants (INV-***)
+## 6. Invariants (INV-\*\*\*)
 
 - **INV-001 — Unique Names**  
   Tag and Category names **MUST** be unique in a case-insensitive manner.
@@ -250,251 +250,251 @@ Not applicable. Any transition not listed MUST be considered invalid.
 
 #### Operation: List Categories (Compatibility)
 
-| Field | Description |
-|-------|-------------|
-| Identifier | GET /api/categories |
-| Auth Required | no |
-| Description | Returns list of Category names for legacy clients. |
+| Field         | Description                                        |
+| ------------- | -------------------------------------------------- |
+| Identifier    | GET /api/categories                                |
+| Auth Required | no                                                 |
+| Description   | Returns list of Category names for legacy clients. |
 
 #### Operation: List Tags (Compatibility)
 
-| Field | Description |
-|-------|-------------|
-| Identifier | GET /api/tags |
-| Auth Required | no |
-| Description | Returns list of Tag names with usage counts for legacy clients. |
+| Field         | Description                                                     |
+| ------------- | --------------------------------------------------------------- |
+| Identifier    | GET /api/tags                                                   |
+| Auth Required | no                                                              |
+| Description   | Returns list of Tag names with usage counts for legacy clients. |
 
 #### Operation: List Categories (Management)
 
-| Field | Description |
-|-------|-------------|
-| Identifier | GET /api/categories/manage |
-| Auth Required | yes |
-| Description | Returns Category metadata with usage counts. |
+| Field         | Description                                  |
+| ------------- | -------------------------------------------- |
+| Identifier    | GET /api/categories/manage                   |
+| Auth Required | yes                                          |
+| Description   | Returns Category metadata with usage counts. |
 
 #### Operation: Create Category
 
-| Field | Description |
-|-------|-------------|
-| Identifier | POST /api/categories |
-| Auth Required | yes |
-| Description | Creates a Category. |
+| Field         | Description          |
+| ------------- | -------------------- |
+| Identifier    | POST /api/categories |
+| Auth Required | yes                  |
+| Description   | Creates a Category.  |
 
 #### Operation: Update Category
 
-| Field | Description |
-|-------|-------------|
-| Identifier | PUT /api/categories/{id} |
-| Auth Required | yes |
-| Description | Updates Category name/metadata. |
+| Field         | Description                     |
+| ------------- | ------------------------------- |
+| Identifier    | PUT /api/categories/{id}        |
+| Auth Required | yes                             |
+| Description   | Updates Category name/metadata. |
 
 #### Operation: Delete Category
 
-| Field | Description |
-|-------|-------------|
-| Identifier | DELETE /api/categories/{id} |
-| Auth Required | yes |
-| Description | Deletes Category with confirmation. |
+| Field         | Description                         |
+| ------------- | ----------------------------------- |
+| Identifier    | DELETE /api/categories/{id}         |
+| Auth Required | yes                                 |
+| Description   | Deletes Category with confirmation. |
 
 #### Operation: Merge Categories
 
-| Field | Description |
-|-------|-------------|
-| Identifier | POST /api/categories/merge |
-| Auth Required | yes |
-| Description | Merges multiple Categories into a target. |
+| Field         | Description                               |
+| ------------- | ----------------------------------------- |
+| Identifier    | POST /api/categories/merge                |
+| Auth Required | yes                                       |
+| Description   | Merges multiple Categories into a target. |
 
 #### Operation: Bulk Delete Categories
 
-| Field | Description |
-|-------|-------------|
-| Identifier | POST /api/categories/bulk-delete |
-| Auth Required | yes |
-| Description | Deletes multiple Categories with confirmation. |
+| Field         | Description                                    |
+| ------------- | ---------------------------------------------- |
+| Identifier    | POST /api/categories/bulk-delete               |
+| Auth Required | yes                                            |
+| Description   | Deletes multiple Categories with confirmation. |
 
 #### Operation: Find & Replace Category
 
-| Field | Description |
-|-------|-------------|
-| Identifier | POST /api/categories/find-replace |
-| Auth Required | yes |
-| Description | Replaces a Category name across prompts. |
+| Field         | Description                              |
+| ------------- | ---------------------------------------- |
+| Identifier    | POST /api/categories/find-replace        |
+| Auth Required | yes                                      |
+| Description   | Replaces a Category name across prompts. |
 
 #### Operation: Reorder Categories
 
-| Field | Description |
-|-------|-------------|
-| Identifier | POST /api/categories/reorder |
-| Auth Required | yes |
-| Description | **Deferred** (not implemented in current UI). |
+| Field         | Description                                   |
+| ------------- | --------------------------------------------- |
+| Identifier    | POST /api/categories/reorder                  |
+| Auth Required | yes                                           |
+| Description   | **Deferred** (not implemented in current UI). |
 
 #### Operation: Category Orphans
 
-| Field | Description |
-|-------|-------------|
-| Identifier | GET /api/categories/orphans |
-| Auth Required | yes |
-| Description | Returns prompts without Categories. |
+| Field         | Description                         |
+| ------------- | ----------------------------------- |
+| Identifier    | GET /api/categories/orphans         |
+| Auth Required | yes                                 |
+| Description   | Returns prompts without Categories. |
 
 #### Operation: Category Orphan Details
 
-| Field | Description |
-|-------|-------------|
-| Identifier | GET /api/categories/orphans/details |
-| Auth Required | yes |
-| Description | Returns prompt IDs and titles for prompts without Categories. |
+| Field         | Description                                                   |
+| ------------- | ------------------------------------------------------------- |
+| Identifier    | GET /api/categories/orphans/details                           |
+| Auth Required | yes                                                           |
+| Description   | Returns prompt IDs and titles for prompts without Categories. |
 
 #### Operation: Category Unused
 
-| Field | Description |
-|-------|-------------|
-| Identifier | GET /api/categories/unused |
-| Auth Required | yes |
-| Description | Returns Categories with zero associated prompts. |
+| Field         | Description                                      |
+| ------------- | ------------------------------------------------ |
+| Identifier    | GET /api/categories/unused                       |
+| Auth Required | yes                                              |
+| Description   | Returns Categories with zero associated prompts. |
 
 #### Operation: Category Analytics
 
-| Field | Description |
-|-------|-------------|
-| Identifier | GET /api/categories/analytics |
-| Auth Required | yes |
-| Description | Returns usage summaries. |
+| Field         | Description                   |
+| ------------- | ----------------------------- |
+| Identifier    | GET /api/categories/analytics |
+| Auth Required | yes                           |
+| Description   | Returns usage summaries.      |
 
 #### Operation: Category Import/Export
 
-| Field | Description |
-|-------|-------------|
-| Identifier | POST /api/categories/import; GET /api/categories/export |
-| Auth Required | yes |
-| Description | Imports or exports Category definitions. |
+| Field         | Description                                             |
+| ------------- | ------------------------------------------------------- |
+| Identifier    | POST /api/categories/import; GET /api/categories/export |
+| Auth Required | yes                                                     |
+| Description   | Imports or exports Category definitions.                |
 
 #### Operation: Category Undo
 
-| Field | Description |
-|-------|-------------|
-| Identifier | POST /api/categories/undo |
-| Auth Required | yes |
-| Description | Undoes recent Category management operation. |
+| Field         | Description                                  |
+| ------------- | -------------------------------------------- |
+| Identifier    | POST /api/categories/undo                    |
+| Auth Required | yes                                          |
+| Description   | Undoes recent Category management operation. |
 
 #### Operation: List Tags (Management)
 
-| Field | Description |
-|-------|-------------|
-| Identifier | GET /api/tags/manage |
-| Auth Required | yes |
-| Description | Returns Tag metadata with usage counts. |
+| Field         | Description                             |
+| ------------- | --------------------------------------- |
+| Identifier    | GET /api/tags/manage                    |
+| Auth Required | yes                                     |
+| Description   | Returns Tag metadata with usage counts. |
 
 #### Operation: Create Tag
 
-| Field | Description |
-|-------|-------------|
-| Identifier | POST /api/tags |
-| Auth Required | yes |
-| Description | Creates a Tag. |
+| Field         | Description    |
+| ------------- | -------------- |
+| Identifier    | POST /api/tags |
+| Auth Required | yes            |
+| Description   | Creates a Tag. |
 
 #### Operation: Update Tag
 
-| Field | Description |
-|-------|-------------|
-| Identifier | PUT /api/tags/{id} |
-| Auth Required | yes |
-| Description | Updates Tag name/metadata. |
+| Field         | Description                |
+| ------------- | -------------------------- |
+| Identifier    | PUT /api/tags/{id}         |
+| Auth Required | yes                        |
+| Description   | Updates Tag name/metadata. |
 
 #### Operation: Delete Tag
 
-| Field | Description |
-|-------|-------------|
-| Identifier | DELETE /api/tags/{id} |
-| Auth Required | yes |
-| Description | Deletes Tag with confirmation. |
+| Field         | Description                    |
+| ------------- | ------------------------------ |
+| Identifier    | DELETE /api/tags/{id}          |
+| Auth Required | yes                            |
+| Description   | Deletes Tag with confirmation. |
 
 #### Operation: Merge Tags
 
-| Field | Description |
-|-------|-------------|
-| Identifier | POST /api/tags/merge |
-| Auth Required | yes |
-| Description | Merges multiple Tags into a target. |
+| Field         | Description                         |
+| ------------- | ----------------------------------- |
+| Identifier    | POST /api/tags/merge                |
+| Auth Required | yes                                 |
+| Description   | Merges multiple Tags into a target. |
 
 #### Operation: Bulk Delete Tags
 
-| Field | Description |
-|-------|-------------|
-| Identifier | POST /api/tags/bulk-delete |
-| Auth Required | yes |
-| Description | Deletes multiple Tags with confirmation. |
+| Field         | Description                              |
+| ------------- | ---------------------------------------- |
+| Identifier    | POST /api/tags/bulk-delete               |
+| Auth Required | yes                                      |
+| Description   | Deletes multiple Tags with confirmation. |
 
 #### Operation: Find & Replace Tag
 
-| Field | Description |
-|-------|-------------|
-| Identifier | POST /api/tags/find-replace |
-| Auth Required | yes |
-| Description | Replaces a Tag name across prompts. |
+| Field         | Description                         |
+| ------------- | ----------------------------------- |
+| Identifier    | POST /api/tags/find-replace         |
+| Auth Required | yes                                 |
+| Description   | Replaces a Tag name across prompts. |
 
 #### Operation: Tag Orphans
 
-| Field | Description |
-|-------|-------------|
-| Identifier | GET /api/tags/orphans |
-| Auth Required | yes |
-| Description | Returns unused Tags. |
+| Field         | Description           |
+| ------------- | --------------------- |
+| Identifier    | GET /api/tags/orphans |
+| Auth Required | yes                   |
+| Description   | Returns unused Tags.  |
 
 #### Operation: Tag Orphan Prompts
 
-| Field | Description |
-|-------|-------------|
-| Identifier | GET /api/tags/orphan-prompts |
-| Auth Required | yes |
-| Description | Returns prompts without Tags. |
+| Field         | Description                   |
+| ------------- | ----------------------------- |
+| Identifier    | GET /api/tags/orphan-prompts  |
+| Auth Required | yes                           |
+| Description   | Returns prompts without Tags. |
 
 #### Operation: Tag Orphan Prompt Details
 
-| Field | Description |
-|-------|-------------|
-| Identifier | GET /api/tags/orphan-prompts/details |
-| Auth Required | yes |
-| Description | Returns prompt IDs and titles for prompts without Tags. |
+| Field         | Description                                             |
+| ------------- | ------------------------------------------------------- |
+| Identifier    | GET /api/tags/orphan-prompts/details                    |
+| Auth Required | yes                                                     |
+| Description   | Returns prompt IDs and titles for prompts without Tags. |
 
 #### Operation: Tag Analytics
 
-| Field | Description |
-|-------|-------------|
-| Identifier | GET /api/tags/analytics |
-| Auth Required | yes |
-| Description | Returns usage summaries and co-occurrence. |
+| Field         | Description                                |
+| ------------- | ------------------------------------------ |
+| Identifier    | GET /api/tags/analytics                    |
+| Auth Required | yes                                        |
+| Description   | Returns usage summaries and co-occurrence. |
 
 #### Operation: Tag Suggestions
 
-| Field | Description |
-|-------|-------------|
-| Identifier | POST /api/tags/suggest |
-| Auth Required | yes |
-| Description | Suggests Tags based on prompt content. |
+| Field         | Description                            |
+| ------------- | -------------------------------------- |
+| Identifier    | POST /api/tags/suggest                 |
+| Auth Required | yes                                    |
+| Description   | Suggests Tags based on prompt content. |
 
 #### Operation: Tag Import/Export
 
-| Field | Description |
-|-------|-------------|
-| Identifier | POST /api/tags/import; GET /api/tags/export |
-| Auth Required | yes |
-| Description | Imports or exports Tag definitions. |
+| Field         | Description                                 |
+| ------------- | ------------------------------------------- |
+| Identifier    | POST /api/tags/import; GET /api/tags/export |
+| Auth Required | yes                                         |
+| Description   | Imports or exports Tag definitions.         |
 
 #### Operation: Tag Undo
 
-| Field | Description |
-|-------|-------------|
-| Identifier | POST /api/tags/undo |
-| Auth Required | yes |
-| Description | Undoes recent Tag management operation. |
+| Field         | Description                             |
+| ------------- | --------------------------------------- |
+| Identifier    | POST /api/tags/undo                     |
+| Auth Required | yes                                     |
+| Description   | Undoes recent Tag management operation. |
 
 #### Operation: Bulk Tag Update
 
-| Field | Description |
-|-------|-------------|
-| Identifier | POST /api/tags/bulk-update |
-| Auth Required | yes |
-| Description | Adds/removes Tags across multiple prompts. |
+| Field         | Description                                |
+| ------------- | ------------------------------------------ |
+| Identifier    | POST /api/tags/bulk-update                 |
+| Auth Required | yes                                        |
+| Description   | Adds/removes Tags across multiple prompts. |
 
 ### 7.2 Input Schema
 
@@ -509,12 +509,12 @@ Not applicable. Any transition not listed MUST be considered invalid.
 }
 ```
 
-| Field | Type | Required | Constraints | Description |
-|-------|------|----------|-------------|-------------|
-| name | string | yes | non-empty, max length, unique (case-insensitive) | Category name |
-| description | string | no | max length | Category description |
-| color | string | no | valid color token or hex | Category color |
-| sort_order | integer | no | non-negative | Custom order value |
+| Field       | Type    | Required | Constraints                                      | Description          |
+| ----------- | ------- | -------- | ------------------------------------------------ | -------------------- |
+| name        | string  | yes      | non-empty, max length, unique (case-insensitive) | Category name        |
+| description | string  | no       | max length                                       | Category description |
+| color       | string  | no       | valid color token or hex                         | Category color       |
+| sort_order  | integer | no       | non-negative                                     | Custom order value   |
 
 #### CategoryUpdateRequest
 
@@ -539,11 +539,11 @@ Constraints identical to CategoryCreateRequest.
 }
 ```
 
-| Field | Type | Required | Constraints | Description |
-|-------|------|----------|-------------|-------------|
-| target_id | integer | yes | must exist | Target Category identifier |
-| source_ids | array[integer] | yes | all must exist; cannot include target_id | Categories to merge |
-| confirm | boolean | yes | must be true | Confirmation flag |
+| Field      | Type           | Required | Constraints                              | Description                |
+| ---------- | -------------- | -------- | ---------------------------------------- | -------------------------- |
+| target_id  | integer        | yes      | must exist                               | Target Category identifier |
+| source_ids | array[integer] | yes      | all must exist; cannot include target_id | Categories to merge        |
+| confirm    | boolean        | yes      | must be true                             | Confirmation flag          |
 
 #### CategoryBulkDeleteRequest
 
@@ -571,6 +571,7 @@ Constraints identical to CategoryCreateRequest.
   "ordered_ids": ["string"]
 }
 ```
+
 **Note:** Reordering is deferred and not currently exposed in the UI.
 
 #### TagCreateRequest
@@ -636,11 +637,11 @@ Constraints mirror CategoryCreateRequest except `sort_order`.
 }
 ```
 
-| Field | Type | Required | Constraints | Description |
-|-------|------|----------|-------------|-------------|
-| prompt_id | integer | no | must exist if provided | Prompt identifier |
-| content | string | no | non-empty if prompt_id missing | Prompt content |
-| limit | integer | no | positive, max 50 | Max suggestions |
+| Field     | Type    | Required | Constraints                    | Description       |
+| --------- | ------- | -------- | ------------------------------ | ----------------- |
+| prompt_id | integer | no       | must exist if provided         | Prompt identifier |
+| content   | string  | no       | non-empty if prompt_id missing | Prompt content    |
+| limit     | integer | no       | positive, max 50               | Max suggestions   |
 
 #### BulkTagUpdateRequest
 
@@ -729,42 +730,42 @@ Constraints mirror CategoryCreateRequest except `sort_order`.
 
 ### 7.4 Error Model
 
-| Status | Code | Condition | Description |
-|--------|------|-----------|-------------|
-| 400 | ERR-VALIDATION | Invalid input fields or constraints violated | Input rejected |
-| 401 | ERR-AUTH | Authentication missing or invalid | Access denied |
-| 403 | ERR-FORBIDDEN | Insufficient privileges | Access denied |
-| 404 | ERR-NOT-FOUND | Tag/Category/Prompt not found | Resource missing |
-| 409 | ERR-CONFLICT | Name uniqueness conflict or merge conflict | Conflict detected |
-| 412 | ERR-PRECONDITION | Confirmation flag missing or false | Precondition not met |
-| 422 | ERR-UNPROCESSABLE | Operation cannot be completed (e.g., orphaning prompts without override) | Operation blocked |
+| Status | Code              | Condition                                                                | Description          |
+| ------ | ----------------- | ------------------------------------------------------------------------ | -------------------- |
+| 400    | ERR-VALIDATION    | Invalid input fields or constraints violated                             | Input rejected       |
+| 401    | ERR-AUTH          | Authentication missing or invalid                                        | Access denied        |
+| 403    | ERR-FORBIDDEN     | Insufficient privileges                                                  | Access denied        |
+| 404    | ERR-NOT-FOUND     | Tag/Category/Prompt not found                                            | Resource missing     |
+| 409    | ERR-CONFLICT      | Name uniqueness conflict or merge conflict                               | Conflict detected    |
+| 412    | ERR-PRECONDITION  | Confirmation flag missing or false                                       | Precondition not met |
+| 422    | ERR-UNPROCESSABLE | Operation cannot be completed (e.g., orphaning prompts without override) | Operation blocked    |
 
 ---
 
-## 8. Acceptance Criteria (AC-***)
+## 8. Acceptance Criteria (AC-\*\*\*)
 
 ### 8.1 Acceptance Criteria & Requirements Mapping
 
-| ID | Criterion (summary) | Requirement IDs | Test Cases |
-|----|----------------------|-----------------|-----------|
-| AC-TCM-001 | Compatibility endpoints unchanged | REQ-001, NFR-001, INV-005 | TEST-REQ-001 |
-| AC-TCM-002 | CRUD operations for Tags and Categories | REQ-002, REQ-003 | TEST-REQ-001 |
-| AC-TCM-003 | Rename/merge update all prompts atomically | REQ-004, REQ-005, NFR-002 | TEST-REQ-001 |
-| AC-TCM-004 | Bulk delete requires confirmation | REQ-006, ERR-005 | TEST-REQ-002 |
-| AC-TCM-005 | Orphan detection available | REQ-007 | TEST-REQ-001 |
-| AC-TCM-006 | Usage analytics available | REQ-008, REQ-009 | TEST-REQ-001 |
-| AC-TCM-007 | Find-and-replace applied system-wide | REQ-010 | TEST-REQ-001 |
-| AC-TCM-008 | Bulk tag update works across prompts | REQ-011 | TEST-REQ-001 |
-| AC-TCM-009 | Import/export validates and persists definitions | REQ-012 | TEST-REQ-001 |
-| AC-TCM-010 | Suggestions returned for content | REQ-013 | TEST-REQ-001 |
-| AC-TCM-011 | Undo restores prior state | REQ-014 | TEST-REQ-001 |
-| AC-TCM-012 | Search and filter supported | REQ-015 | TEST-REQ-001 |
-| AC-TCM-013 | Category ordering preserved | REQ-016 | TEST-REQ-001 |
-| AC-TCM-014 | Auth and authorization enforced | SEC-001, SEC-002 | TEST-REQ-002 |
+| ID         | Criterion (summary)                              | Requirement IDs           | Test Cases   |
+| ---------- | ------------------------------------------------ | ------------------------- | ------------ |
+| AC-TCM-001 | Compatibility endpoints unchanged                | REQ-001, NFR-001, INV-005 | TEST-REQ-001 |
+| AC-TCM-002 | CRUD operations for Tags and Categories          | REQ-002, REQ-003          | TEST-REQ-001 |
+| AC-TCM-003 | Rename/merge update all prompts atomically       | REQ-004, REQ-005, NFR-002 | TEST-REQ-001 |
+| AC-TCM-004 | Bulk delete requires confirmation                | REQ-006, ERR-005          | TEST-REQ-002 |
+| AC-TCM-005 | Orphan detection available                       | REQ-007                   | TEST-REQ-001 |
+| AC-TCM-006 | Usage analytics available                        | REQ-008, REQ-009          | TEST-REQ-001 |
+| AC-TCM-007 | Find-and-replace applied system-wide             | REQ-010                   | TEST-REQ-001 |
+| AC-TCM-008 | Bulk tag update works across prompts             | REQ-011                   | TEST-REQ-001 |
+| AC-TCM-009 | Import/export validates and persists definitions | REQ-012                   | TEST-REQ-001 |
+| AC-TCM-010 | Suggestions returned for content                 | REQ-013                   | TEST-REQ-001 |
+| AC-TCM-011 | Undo restores prior state                        | REQ-014                   | TEST-REQ-001 |
+| AC-TCM-012 | Search and filter supported                      | REQ-015                   | TEST-REQ-001 |
+| AC-TCM-013 | Category ordering preserved                      | REQ-016                   | TEST-REQ-001 |
+| AC-TCM-014 | Auth and authorization enforced                  | SEC-001, SEC-002          | TEST-REQ-002 |
 
 ---
 
-## 9. Test Requirements (TEST-REQ-***)
+## 9. Test Requirements (TEST-REQ-\*\*\*)
 
 - **TEST-REQ-001**: All functional requirements and invariants MUST have automated tests.
 - **TEST-REQ-002**: All error conditions in section 7.4 MUST be tested.
@@ -805,33 +806,33 @@ NOTE: Examples are illustrative only.
 
 ## 13. Traceability Matrix
 
-| Requirement ID | AC IDs | TEST-REQ IDs | Interfaces |
-|----------------|--------|--------------|------------|
-| REQ-001 | AC-TCM-001 | TEST-REQ-004 | GET /api/categories, GET /api/tags |
-| REQ-002 | AC-TCM-002 | TEST-REQ-001 | POST/PUT/DELETE /api/categories |
-| REQ-003 | AC-TCM-002 | TEST-REQ-001 | POST/PUT/DELETE /api/tags |
-| REQ-004 | AC-TCM-003 | TEST-REQ-003 | PUT /api/categories/{id}, PUT /api/tags/{id} |
-| REQ-005 | AC-TCM-003 | TEST-REQ-003 | POST /api/categories/merge, POST /api/tags/merge |
-| REQ-006 | AC-TCM-004 | TEST-REQ-002 | POST /api/*/bulk-delete |
-| REQ-007 | AC-TCM-005 | TEST-REQ-001 | GET /api/categories/orphans, GET /api/categories/unused, GET /api/tags/orphans, GET /api/tags/orphan-prompts |
-| REQ-008 | AC-TCM-006 | TEST-REQ-001 | GET /api/*/analytics |
-| REQ-009 | AC-TCM-006 | TEST-REQ-001 | GET /api/tags/analytics |
-| REQ-010 | AC-TCM-007 | TEST-REQ-001 | POST /api/*/find-replace |
-| REQ-011 | AC-TCM-008 | TEST-REQ-001 | POST /api/tags/bulk-update |
-| REQ-012 | AC-TCM-009 | TEST-REQ-001 | POST /api/*/import, GET /api/*/export |
-| REQ-013 | AC-TCM-010 | TEST-REQ-001 | POST /api/tags/suggest |
-| REQ-014 | AC-TCM-011 | TEST-REQ-001 | POST /api/*/undo |
-| REQ-014a | AC-TCM-011 | TEST-REQ-001 | POST /api/*/undo |
-| REQ-014b | AC-TCM-011 | TEST-REQ-002 | POST /api/*/undo (user isolation) |
-| REQ-014c | AC-TCM-011 | TEST-REQ-001 | POST /api/*/undo (depth limit) |
-| REQ-015 | AC-TCM-012 | TEST-REQ-001 | GET /api/*/manage |
-| REQ-016 | AC-TCM-013 | TEST-REQ-001 | Merge/delete operations |
-| SEC-001 | AC-TCM-014 | TEST-REQ-002 | All management interfaces |
-| SEC-002 | AC-TCM-014 | TEST-REQ-002 | All destructive interfaces |
-| NFR-001 | AC-TCM-001 | TEST-REQ-004 | Compatibility interfaces |
-| NFR-005 | AC-TCM-011 | TEST-REQ-001 | POST /api/*/undo (performance) |
-| INV-001 | AC-TCM-002 | TEST-REQ-001 | Create/rename interfaces |
-| INV-004 | AC-TCM-003 | TEST-REQ-003 | Merge/delete interfaces |
+| Requirement ID | AC IDs     | TEST-REQ IDs | Interfaces                                                                                                   |
+| -------------- | ---------- | ------------ | ------------------------------------------------------------------------------------------------------------ |
+| REQ-001        | AC-TCM-001 | TEST-REQ-004 | GET /api/categories, GET /api/tags                                                                           |
+| REQ-002        | AC-TCM-002 | TEST-REQ-001 | POST/PUT/DELETE /api/categories                                                                              |
+| REQ-003        | AC-TCM-002 | TEST-REQ-001 | POST/PUT/DELETE /api/tags                                                                                    |
+| REQ-004        | AC-TCM-003 | TEST-REQ-003 | PUT /api/categories/{id}, PUT /api/tags/{id}                                                                 |
+| REQ-005        | AC-TCM-003 | TEST-REQ-003 | POST /api/categories/merge, POST /api/tags/merge                                                             |
+| REQ-006        | AC-TCM-004 | TEST-REQ-002 | POST /api/\*/bulk-delete                                                                                     |
+| REQ-007        | AC-TCM-005 | TEST-REQ-001 | GET /api/categories/orphans, GET /api/categories/unused, GET /api/tags/orphans, GET /api/tags/orphan-prompts |
+| REQ-008        | AC-TCM-006 | TEST-REQ-001 | GET /api/\*/analytics                                                                                        |
+| REQ-009        | AC-TCM-006 | TEST-REQ-001 | GET /api/tags/analytics                                                                                      |
+| REQ-010        | AC-TCM-007 | TEST-REQ-001 | POST /api/\*/find-replace                                                                                    |
+| REQ-011        | AC-TCM-008 | TEST-REQ-001 | POST /api/tags/bulk-update                                                                                   |
+| REQ-012        | AC-TCM-009 | TEST-REQ-001 | POST /api/_/import, GET /api/_/export                                                                        |
+| REQ-013        | AC-TCM-010 | TEST-REQ-001 | POST /api/tags/suggest                                                                                       |
+| REQ-014        | AC-TCM-011 | TEST-REQ-001 | POST /api/\*/undo                                                                                            |
+| REQ-014a       | AC-TCM-011 | TEST-REQ-001 | POST /api/\*/undo                                                                                            |
+| REQ-014b       | AC-TCM-011 | TEST-REQ-002 | POST /api/\*/undo (user isolation)                                                                           |
+| REQ-014c       | AC-TCM-011 | TEST-REQ-001 | POST /api/\*/undo (depth limit)                                                                              |
+| REQ-015        | AC-TCM-012 | TEST-REQ-001 | GET /api/\*/manage                                                                                           |
+| REQ-016        | AC-TCM-013 | TEST-REQ-001 | Merge/delete operations                                                                                      |
+| SEC-001        | AC-TCM-014 | TEST-REQ-002 | All management interfaces                                                                                    |
+| SEC-002        | AC-TCM-014 | TEST-REQ-002 | All destructive interfaces                                                                                   |
+| NFR-001        | AC-TCM-001 | TEST-REQ-004 | Compatibility interfaces                                                                                     |
+| NFR-005        | AC-TCM-011 | TEST-REQ-001 | POST /api/\*/undo (performance)                                                                              |
+| INV-001        | AC-TCM-002 | TEST-REQ-001 | Create/rename interfaces                                                                                     |
+| INV-004        | AC-TCM-003 | TEST-REQ-003 | Merge/delete interfaces                                                                                      |
 
 ---
 

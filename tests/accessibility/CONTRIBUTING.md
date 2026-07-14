@@ -167,10 +167,9 @@ test.describe('[Feature Name] Accessibility Tests', () => {
   // Tests grouped by feature
 });
 
-Examples:
-- 'Main Page Accessibility Tests'
-- 'Authentication Accessibility Tests'
-- 'Form Accessibility Tests'
+Examples: -'Main Page Accessibility Tests' -
+  'Authentication Accessibility Tests' -
+  'Form Accessibility Tests';
 ```
 
 ### Test Group Naming
@@ -180,11 +179,10 @@ test.describe('[Specific Area] Tests', () => {
   // Related tests grouped together
 });
 
-Examples:
-- 'Skip Link Functionality Tests'
-- 'Keyboard Navigation Tests'
-- 'Color Contrast Tests'
-- 'Form Label Tests'
+Examples: -'Skip Link Functionality Tests' -
+  'Keyboard Navigation Tests' -
+  'Color Contrast Tests' -
+  'Form Label Tests';
 ```
 
 ### Individual Test Naming
@@ -192,16 +190,17 @@ Examples:
 Use clear, descriptive names:
 
 ```typescript
-test('should have visible skip link', async ({ page }) => { });
-test('should navigate to main content with skip link', async ({ page }) => { });
-test('should have 4.5:1 contrast ratio on labels', async ({ page }) => { });
+test('should have visible skip link', async ({ page }) => {});
+test('should navigate to main content with skip link', async ({ page }) => {});
+test('should have 4.5:1 contrast ratio on labels', async ({ page }) => {});
 ```
 
 **Bad naming** ❌
+
 ```typescript
-test('test 1', async ({ page }) => { });
-test('it works', async ({ page }) => { });
-test('check labels', async ({ page }) => { });
+test('test 1', async ({ page }) => {});
+test('it works', async ({ page }) => {});
+test('check labels', async ({ page }) => {});
 ```
 
 ## Using Utility Functions
@@ -209,6 +208,7 @@ test('check labels', async ({ page }) => { });
 ### Available Utilities
 
 #### Contrast Testing
+
 ```typescript
 import { testTextContrast, testUIContrast, testContrastBatch } from './utils/index.js';
 
@@ -221,6 +221,7 @@ const results = await testContrastBatch(page, 'button', 'AA', 'ui');
 ```
 
 #### ARIA & Labeling
+
 ```typescript
 import {
   validateFormLabels,
@@ -239,6 +240,7 @@ expect(name.hasAccessibleName).toBe(true);
 ```
 
 #### Structure & Semantics
+
 ```typescript
 import {
   checkLandmarkRegions,
@@ -257,6 +259,7 @@ expect(hierarchy.validHierarchy).toBe(true);
 ```
 
 #### Keyboard Navigation
+
 ```typescript
 import {
   testKeyboardNavigation,
@@ -280,6 +283,7 @@ expect(skipLinks.hasSkipLink).toBe(true);
 ```
 
 #### Screenshots
+
 ```typescript
 import {
   captureNormalState,
@@ -301,15 +305,15 @@ const states = await captureElementStates(page, page.locator('input'), '/tmp/inp
 
 ```javascript
 // Good - uses accessible properties
-page.locator('button[aria-label="Close"]')
-page.locator('input[aria-label="Search"]')
+page.locator('button[aria-label="Close"]');
+page.locator('input[aria-label="Search"]');
 
 // Also good - uses visible text
-page.locator('button:has-text("Submit")')
+page.locator('button:has-text("Submit")');
 
 // Avoid - too specific or fragile
-page.locator('.btn-close-xyz-123')
-page.locator('div:nth-child(3) > button')
+page.locator('.btn-close-xyz-123');
+page.locator('div:nth-child(3) > button');
 ```
 
 ### 2. Wait for Network
@@ -406,8 +410,12 @@ test('has 4.5:1 contrast (WCAG 1.4.3)', async ({ page }) => {
 
 // Good - multiple criteria in related test group
 test.describe('Form Accessibility (WCAG 3.3.2, 2.1.1)', () => {
-  test('labels present', async ({ page }) => { /* ... */ });
-  test('keyboard navigable', async ({ page }) => { /* ... */ });
+  test('labels present', async ({ page }) => {
+    /* ... */
+  });
+  test('keyboard navigable', async ({ page }) => {
+    /* ... */
+  });
 });
 
 // Avoid - generic test names
@@ -467,28 +475,25 @@ test('modal dialog is accessible', async ({ page }) => {
 ### Example 3: Authenticated Page Test
 
 ```typescript
-authenticatedUserTest(
-  'user profile page is accessible',
-  async ({ authenticatedPage }) => {
-    await authenticatedPage.goto('/profile', { waitUntil: 'networkidle' });
+authenticatedUserTest('user profile page is accessible', async ({ authenticatedPage }) => {
+  await authenticatedPage.goto('/profile', { waitUntil: 'networkidle' });
 
-    // Test form accessibility
-    const labels = await validateFormLabels(authenticatedPage);
-    expect(labels.allLabeled).toBe(true);
+  // Test form accessibility
+  const labels = await validateFormLabels(authenticatedPage);
+  expect(labels.allLabeled).toBe(true);
 
-    // Test keyboard navigation
-    const nav = await testKeyboardNavigation(authenticatedPage);
-    expect(nav.success).toBe(true);
+  // Test keyboard navigation
+  const nav = await testKeyboardNavigation(authenticatedPage);
+  expect(nav.success).toBe(true);
 
-    // Test contrast
-    const contrast = await testTextContrast(
-      authenticatedPage,
-      authenticatedPage.locator('input'),
-      'AA'
-    );
-    expect(contrast.passes).toBe(true);
-  }
-);
+  // Test contrast
+  const contrast = await testTextContrast(
+    authenticatedPage,
+    authenticatedPage.locator('input'),
+    'AA'
+  );
+  expect(contrast.passes).toBe(true);
+});
 ```
 
 ## Common Patterns
@@ -623,7 +628,7 @@ Before submitting a PR with new tests:
 
 ### PR Description Template
 
-```markdown
+````markdown
 ## What's being tested
 
 - WCAG 2.1 criterion being tested
@@ -640,11 +645,13 @@ npm run test:ui:accessibility
 # or specific file
 npx playwright test [filename].spec.ts
 ```
+````
 
 ## Coverage updated
 
 - [ ] Updated COVERAGE.md with new tests
 - [ ] Updated README.md if major feature added
+
 ```
 
 ## Questions & Support
@@ -653,3 +660,4 @@ npx playwright test [filename].spec.ts
 - Review utility documentation in `README.md`
 - Ask in PR review or issues
 - Check WCAG 2.1 guidelines: https://www.w3.org/WAI/WCAG21/quickref/
+```

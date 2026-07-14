@@ -22,6 +22,7 @@ python scripts/setup/setup.py
 ```
 
 This launches the interactive wizard that will guide you through:
+
 1. Mode selection (Quick/Advanced/Component)
 2. JWT key generation
 3. Environment configuration
@@ -38,6 +39,7 @@ python scripts/setup/setup.py --quick
 ```
 
 Quick setup automatically:
+
 - Uses SQLite database (no PostgreSQL required)
 - Generates JWT keys
 - Configures for development environment
@@ -55,6 +57,7 @@ python scripts/setup/setup.py --advanced
 ```
 
 Advanced setup provides:
+
 - Profile selection (development/production)
 - Database choice (PostgreSQL/SQLite)
 - Interactive configuration prompts
@@ -70,12 +73,14 @@ Perfect for: Production deployments, custom configurations
 **Purpose**: Get PromptVault running quickly with minimal configuration
 
 **When to use**:
+
 - First-time setup
 - Development environments
 - Testing and demos
 - Learning the system
 
 **What it does**:
+
 1. Generates JWT keys automatically
 2. Creates `.env` with development profile
 3. Sets up SQLite database
@@ -84,6 +89,7 @@ Perfect for: Production deployments, custom configurations
 6. Shows access information
 
 **Command**:
+
 ```bash
 python scripts/setup/setup.py --quick
 ```
@@ -95,12 +101,14 @@ python scripts/setup/setup.py --quick
 **Purpose**: Full control over deployment configuration
 
 **When to use**:
+
 - Production deployments
 - Custom database configurations
 - Specific security requirements
 - Multi-environment setups
 
 **What it does**:
+
 1. Profile selection (development/production)
 2. Interactive JWT configuration
 3. Full environment variable configuration
@@ -109,6 +117,7 @@ python scripts/setup/setup.py --quick
 6. Deployment with customization
 
 **Command**:
+
 ```bash
 python scripts/setup/setup.py --advanced
 ```
@@ -120,18 +129,21 @@ python scripts/setup/setup.py --advanced
 **Purpose**: Run individual setup scripts independently
 
 **When to use**:
+
 - Re-running specific steps
 - Debugging setup issues
 - Updating specific components
 - Partial deployments
 
 **Available components**:
+
 - `jwt` - Generate JWT signing keys
 - `env` - Configure environment variables
 - `database` - Setup and initialize database
 - `deploy` - Deploy the application
 
 **Commands**:
+
 ```bash
 # Run specific component
 python scripts/setup/setup.py --component jwt
@@ -146,20 +158,21 @@ python scripts/setup/setup.py
 
 ## Command-Line Options
 
-| Option | Description |
-|--------|-------------|
-| `--quick` | Quick setup with defaults (SQLite, auto-config) |
-| `--advanced` | Advanced setup with full customization |
+| Option                  | Description                                                 |
+| ----------------------- | ----------------------------------------------------------- |
+| `--quick`               | Quick setup with defaults (SQLite, auto-config)             |
+| `--advanced`            | Advanced setup with full customization                      |
 | `--component COMPONENT` | Run specific component (`jwt`, `env`, `database`, `deploy`) |
-| `--config PATH` | Load configuration from YAML file |
-| `--non-interactive` | Run without prompts (use defaults) |
-| `--help` | Show help message and exit |
+| `--config PATH`         | Load configuration from YAML file                           |
+| `--non-interactive`     | Run without prompts (use defaults)                          |
+| `--help`                | Show help message and exit                                  |
 
 ## Deployment Profiles
 
 ### Development Profile
 
 **Characteristics**:
+
 - SQLite database (file-based, no server required)
 - Debug logging enabled
 - Relaxed security settings (for easier testing)
@@ -167,12 +180,14 @@ python scripts/setup/setup.py
 - Fast iteration and debugging
 
 **Default settings**:
+
 - `DATABASE_URL`: `sqlite:///./data/promptvault.db`
 - `ENVIRONMENT`: `development`
 - `LOG_LEVEL`: `DEBUG`
 - `DB_ECHO`: `true` (SQL query logging)
 
 **Use when**:
+
 - Developing locally
 - Running tests
 - Learning the system
@@ -181,6 +196,7 @@ python scripts/setup/setup.py
 ### Production Profile
 
 **Characteristics**:
+
 - PostgreSQL database (recommended)
 - Warning-level logging
 - Strict security settings
@@ -188,6 +204,7 @@ python scripts/setup/setup.py
 - Comprehensive monitoring
 
 **Default settings**:
+
 - `DATABASE_URL`: `postgresql://...` (PostgreSQL)
 - `ENVIRONMENT`: `production`
 - `LOG_LEVEL`: `WARNING`
@@ -196,6 +213,7 @@ python scripts/setup/setup.py
 - Rate limiting enabled
 
 **Use when**:
+
 - Deploying to production
 - Handling real user data
 - Security is critical
@@ -215,12 +233,14 @@ python scripts/setup/setup.py
 ```
 
 The wizard will:
+
 - Skip completed steps
 - Resume from where you left off
 - Preserve your configuration choices
 - Clear state on successful completion
 
 To start fresh (ignore saved state):
+
 ```bash
 # Delete the state file
 rm .setup_state.json
@@ -244,6 +264,7 @@ python scripts/setup/setup.py --component jwt --non-interactive
 ```
 
 **Behavior**:
+
 - Uses profile defaults (no prompts)
 - Auto-generates secure passwords
 - Uses sensible defaults for all settings
@@ -252,6 +273,7 @@ python scripts/setup/setup.py --component jwt --non-interactive
   - `1` = Failure
 
 **Example CI/CD usage**:
+
 ```yaml
 # forgejo Actions
 - name: Setup PromptVault
@@ -272,6 +294,7 @@ python scripts/setup/setup.py --config config.yaml --non-interactive
 ```
 
 **Example `config.yaml`**:
+
 ```yaml
 development:
   DATABASE_URL: sqlite:///./data/promptvault.db
@@ -295,16 +318,19 @@ production:
 **Purpose**: Generate ES256 (ECDSA P-256) key pairs for JWT signing
 
 **What it does**:
+
 - Generates cryptographically secure key pairs
 - Sets appropriate file permissions (600 for private, 644 for public)
 - Validates keys by testing sign/verify operations
 - Checks `.gitignore` configuration
 
 **Output**:
+
 - `secrets/jwt/private_key.pem` (keep secret!)
 - `secrets/jwt/public_key.pem` (can be shared)
 
 **Standalone usage**:
+
 ```bash
 python scripts/setup/setup_jwt.py --help
 ```
@@ -314,6 +340,7 @@ python scripts/setup/setup_jwt.py --help
 **Purpose**: Configure all environment variables with validation
 
 **What it does**:
+
 - Prompts for database configuration
 - Configures security settings (JWT, passwords, rate limiting)
 - Sets up email configuration (optional)
@@ -321,9 +348,11 @@ python scripts/setup/setup_jwt.py --help
 - Writes to `.env` file
 
 **Output**:
+
 - `.env` file with validated configuration
 
 **Standalone usage**:
+
 ```bash
 python scripts/setup/setup_env.py --help
 ```
@@ -333,16 +362,19 @@ python scripts/setup/setup_env.py --help
 **Purpose**: Setup and initialize the database
 
 **What it does**:
+
 - Creates PostgreSQL database and user (if PostgreSQL)
 - Tests database connectivity
 - Runs Alembic migrations (`upgrade head`)
 - Verifies schema integrity
 
 **Output**:
+
 - Initialized database with latest schema
 - Applied migrations
 
 **Standalone usage**:
+
 ```bash
 python scripts/setup/setup_database.py --help
 ```
@@ -352,6 +384,7 @@ python scripts/setup/setup_database.py --help
 **Purpose**: Deploy the application with Docker Compose
 
 **What it does**:
+
 - Runs pre-flight checks (Docker, ports, disk space)
 - Creates database backup
 - Starts infrastructure (PostgreSQL, Redis)
@@ -361,9 +394,11 @@ python scripts/setup/setup_database.py --help
 - Shows access information
 
 **Output**:
+
 - Running PromptVault instance on http://localhost:8001
 
 **Standalone usage**:
+
 ```bash
 python scripts/setup/deploy.py --help
 ```
@@ -371,6 +406,7 @@ python scripts/setup/deploy.py --help
 ## Setup Flow Diagram
 
 ### Quick Setup Flow
+
 ```
 Start
   ↓
@@ -390,6 +426,7 @@ Complete!
 ```
 
 ### Advanced Setup Flow
+
 ```
 Start
   ↓
@@ -421,6 +458,7 @@ After successful setup, you can:
 ### 1. Access PromptVault
 
 Open your browser to:
+
 - **Web Interface**: http://localhost:8001
 - **API Documentation**: http://localhost:8001/docs
 - **API Endpoint**: http://localhost:8001/api
@@ -467,6 +505,7 @@ cp data/promptvault.db data/promptvault.db.backup
 ### Wizard Stuck or Interrupted
 
 If the wizard is interrupted:
+
 1. Run it again: `python scripts/setup/setup.py`
 2. Choose "Yes" to resume from saved state
 3. Or delete `.setup_state.json` to start fresh
@@ -524,7 +563,7 @@ Change the port in `docker-compose.yml`:
 services:
   web:
     ports:
-      - "8002:8000"  # Changed from 8001 to 8002
+      - '8002:8000' # Changed from 8001 to 8002
 ```
 
 ### Database Connection Failed
@@ -583,14 +622,14 @@ rm .env .setup_state.json
 
 The wizard creates the following files:
 
-| File | Purpose | Location |
-|------|---------|----------|
+| File                          | Purpose                        | Location     |
+| ----------------------------- | ------------------------------ | ------------ |
 | `secrets/jwt/private_key.pem` | JWT private key (keep secret!) | Project root |
-| `secrets/jwt/public_key.pem` | JWT public key | Project root |
-| `.env` | Environment configuration | Project root |
-| `.setup_state.json` | Wizard state for resume | Project root |
-| `data/promptvault.db` | SQLite database (if SQLite) | Project root |
-| `data/backups/*.sql.gz` | Database backups | Project root |
+| `secrets/jwt/public_key.pem`  | JWT public key                 | Project root |
+| `.env`                        | Environment configuration      | Project root |
+| `.setup_state.json`           | Wizard state for resume        | Project root |
+| `data/promptvault.db`         | SQLite database (if SQLite)    | Project root |
+| `data/backups/*.sql.gz`       | Database backups               | Project root |
 
 **Important**: Never commit these files to version control!
 

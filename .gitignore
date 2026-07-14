@@ -1,5 +1,6 @@
 # Data files - Personal data should not be committed
 data/
+data-dev/
 *.db
 *.sqlite
 *.sqlite3

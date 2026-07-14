@@ -8,7 +8,7 @@
 
 **Input**: User description: "Implement a `Makefile` to streamline development workflows and standardize common tasks. Currently, repetitive commands are run manually, which slows onboarding and development. Proposed targets: `make dev`, `make install`, `make test`, `make lint`, `make build`."
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Fast Onboarding for a New Contributor (Priority: P1)
 
@@ -83,7 +83,7 @@ A maintainer preparing a release needs to produce a deployable build of the appl
 - **Interrupted long-running target**: A contributor interrupts the dev or test target mid-run. Interrupting should cleanly terminate all spawned processes so no orphaned server or watcher keeps running in the background.
 - **Coverage threshold edge**: The test suite passes but coverage lands exactly at or just below the gate. The test target must treat the mandated coverage floor as a hard failure so under-covered branches never pass locally.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -100,7 +100,7 @@ A maintainer preparing a release needs to produce a deployable build of the appl
 - **FR-011**: The new workflow files MUST be additive only and MUST NOT alter, remove, or break any existing documented command, script, or documented deployment path.
 - **FR-012**: The commands MUST be documented, including the supported environments, prerequisites, and how to handle common failure modes (missing runtime, missing dependencies, port conflicts).
 
-### Success Criteria *(mandatory)*
+### Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 

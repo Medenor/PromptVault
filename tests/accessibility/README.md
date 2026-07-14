@@ -86,6 +86,7 @@ Validate color contrast ratios according to WCAG 2.1 standards.
 #### Key Functions
 
 - **`parseColor(color)`** - Parse CSS color strings to RGB values
+
   ```javascript
   const rgb = parseColor('rgb(255, 0, 0)');
   const rgb2 = parseColor('#FF0000');
@@ -93,19 +94,19 @@ Validate color contrast ratios according to WCAG 2.1 standards.
   ```
 
 - **`calculateRelativeLuminance(rgb)`** - Calculate relative luminance per WCAG 2.1
+
   ```javascript
   const lum = calculateRelativeLuminance({ r: 255, g: 255, b: 255 });
   ```
 
 - **`calculateContrastRatio(color1, color2)`** - Calculate contrast ratio between colors
+
   ```javascript
-  const ratio = calculateContrastRatio(
-    { r: 0, g: 0, b: 0 },
-    { r: 255, g: 255, b: 255 }
-  ); // 21:1
+  const ratio = calculateContrastRatio({ r: 0, g: 0, b: 0 }, { r: 255, g: 255, b: 255 }); // 21:1
   ```
 
 - **`isContrastCompliant(ratio, level, type)`** - Check if ratio meets WCAG standards
+
   ```javascript
   // For WCAG AA text: requires 4.5:1
   isContrastCompliant(4.5, 'AA', 'text'); // true
@@ -115,12 +116,14 @@ Validate color contrast ratios according to WCAG 2.1 standards.
   ```
 
 - **`testTextContrast(page, element, wcagLevel)`** - Test text contrast on page
+
   ```javascript
   const result = await testTextContrast(page, page.locator('p'), 'AA');
   // Returns: { ratio, passes, foreground, background, required, violation }
   ```
 
 - **`testUIContrast(page, element, wcagLevel)`** - Test UI component contrast
+
   ```javascript
   const result = await testUIContrast(page, page.locator('button'), 'AA');
   ```
@@ -132,10 +135,10 @@ Validate color contrast ratios according to WCAG 2.1 standards.
 
 #### WCAG Contrast Standards
 
-| Type | AA | AAA |
-|------|----|----|
-| Text | 4.5:1 | 7:1 |
-| UI Components | 3:1 | 4.5:1 |
+| Type          | AA    | AAA   |
+| ------------- | ----- | ----- |
+| Text          | 4.5:1 | 7:1   |
+| UI Components | 3:1   | 4.5:1 |
 
 ### ARIA Testing (`utils/aria.js`)
 
@@ -144,39 +147,45 @@ Validate ARIA attributes and semantic HTML structure.
 #### Key Functions
 
 - **`checkAccessibleName(element)`** - Check if element has accessible name
+
   ```javascript
   const nameInfo = await checkAccessibleName(page.locator('button'));
   // Returns: { hasAccessibleName, name, sources }
   ```
 
 - **`validateAriaAttributes(element, requiredAttrs)`** - Validate ARIA attributes present
+
   ```javascript
-  const result = await validateAriaAttributes(
-    page.locator('[role="tablist"]'),
-    ['role', 'aria-label']
-  );
+  const result = await validateAriaAttributes(page.locator('[role="tablist"]'), [
+    'role',
+    'aria-label',
+  ]);
   // Returns: { valid, missing, present }
   ```
 
 - **`checkLandmarkRegions(page)`** - Check for WCAG landmark regions
+
   ```javascript
   const landmarks = await checkLandmarkRegions(page);
   // Returns: { hasLandmarks, landmarks: [{role, count}] }
   ```
 
 - **`validateFormLabels(page)`** - Verify all form inputs have labels
+
   ```javascript
   const labels = await validateFormLabels(page);
   // Returns: { allLabeled, labeled, unlabeled, unlabeledElements }
   ```
 
 - **`validateButtonLabels(page)`** - Check all buttons have accessible names
+
   ```javascript
   const buttons = await validateButtonLabels(page);
   // Returns: { allButtonsLabeled, labeled, unlabeled, unlabeledSelectors }
   ```
 
 - **`validateHeadingHierarchy(page)`** - Check heading level hierarchy
+
   ```javascript
   const hierarchy = await validateHeadingHierarchy(page);
   // Returns: { validHierarchy, headings, issues }
@@ -195,37 +204,43 @@ Test keyboard navigation and keyboard accessibility.
 #### Key Functions
 
 - **`extractTabOrder(page)`** - Get focusable elements in tab order
+
   ```javascript
   const tabOrder = await extractTabOrder(page);
   // Returns: [{selector, text, tabIndex, isNaturallyFocusable}]
   ```
 
 - **`testKeyboardNavigation(page)`** - Test Tab key navigation
+
   ```javascript
   const result = await testKeyboardNavigation(page);
   // Returns: { success, tabOrder, focusableElements, issues }
   ```
 
 - **`verifyFocusIndicators(page)`** - Check all focusable elements have visible focus
+
   ```javascript
   const result = await verifyFocusIndicators(page);
   // Returns: { hasFocusIndicators, elementsWithFocus, elementsWithoutFocus, details }
   ```
 
 - **`testKeyboardShortcuts(page, shortcuts)`** - Test custom keyboard shortcuts
+
   ```javascript
   const results = await testKeyboardShortcuts(page, [
-    { key: 'Control+S', expected: () => someCheckFunction() }
+    { key: 'Control+S', expected: () => someCheckFunction() },
   ]);
   ```
 
 - **`testBackwardNavigation(page)`** - Test Shift+Tab backward navigation
+
   ```javascript
   const result = await testBackwardNavigation(page);
   // Returns: { success, backwardTabOrder, issues }
   ```
 
 - **`validateRovingTabindex(page, containerSelector)`** - Check roving tabindex pattern
+
   ```javascript
   const result = await validateRovingTabindex(page, '[role="tablist"]');
   // Returns: { isRovingTabindex, activeIndex, items, violations }
@@ -251,6 +266,7 @@ Capture and compare element screenshots in different states.
 - **`captureDisabledState(page, element, filename)`** - Capture element when disabled
 
 - **`captureElementStates(page, element, basePath)`** - Capture all states at once
+
   ```javascript
   const states = await captureElementStates(page, page.locator('button'), '/tmp/button');
   // Returns: { normal, hover, focus, active }
@@ -270,16 +286,19 @@ Helpers for testing authenticated pages.
 #### Key Exports
 
 - **`login(page, username, password, attempt)`** - Login helper with retry logic
+
   ```javascript
   await login(page, 'user@example.com', 'password123');
   ```
 
 - **`logout(page)`** - Logout current user
+
   ```javascript
   await logout(page);
   ```
 
 - **`authenticatedUserTest`** - Fixture for user-level tests
+
   ```javascript
   import { authenticatedUserTest } from '@/fixtures/auth.js';
 
@@ -290,6 +309,7 @@ Helpers for testing authenticated pages.
   ```
 
 - **`authenticatedAdminTest`** - Fixture for admin-level tests
+
   ```javascript
   import { authenticatedAdminTest } from '@/fixtures/auth.js';
 
@@ -300,13 +320,14 @@ Helpers for testing authenticated pages.
   ```
 
 - **`dualAuthTest`** - Fixture for testing both user and admin paths
+
   ```javascript
   import { dualAuthTest } from '@/fixtures/auth.js';
 
   dualAuthTest('should have different access', async ({ authenticatedPages }) => {
     // authenticatedPages is array of [{role, page, context}]
-    const userPage = authenticatedPages.find(p => p.role === 'user').page;
-    const adminPage = authenticatedPages.find(p => p.role === 'admin').page;
+    const userPage = authenticatedPages.find((p) => p.role === 'user').page;
+    const adminPage = authenticatedPages.find((p) => p.role === 'admin').page;
   });
   ```
 
@@ -466,6 +487,7 @@ Key report sections:
 ## Documentation Files
 
 ### For Test Runners
+
 - **[RUN_TESTS.md](./RUN_TESTS.md)** - Complete guide for running, debugging, and CI/CD integration
   - Commands for different browsers and test files
   - Debugging techniques and tools
@@ -473,6 +495,7 @@ Key report sections:
   - Troubleshooting common issues
 
 ### For Test Writers
+
 - **[CONTRIBUTING.md](./CONTRIBUTING.md)** - Guide for writing new accessibility tests
   - Test file structure and naming conventions
   - Best practices and patterns
@@ -481,6 +504,7 @@ Key report sections:
   - Submission checklist
 
 ### For Coverage Analysis
+
 - **[COVERAGE.md](./COVERAGE.md)** - Detailed breakdown of what's tested
   - WCAG 2.1 AA criteria mapping
   - Page-by-page coverage
@@ -489,6 +513,7 @@ Key report sections:
   - Future improvements
 
 ### For Quick Reference
+
 - **[QUICK_START.md](./QUICK_START.md)** - Fast reference guide
   - Common utility functions
   - Environment variables
@@ -496,6 +521,7 @@ Key report sections:
   - WCAG quick reference
 
 ### For Compliance Tracking
+
 - **[CHECKLIST.md](./CHECKLIST.md)** - Interactive WCAG 2.1 AA checklist
   - All 50 criteria with status
   - Test coverage percentage
@@ -503,6 +529,7 @@ Key report sections:
   - Status tracking
 
 ### For Configuration
+
 - **[.forgejo-actions-example.yml](./.forgejo-actions-example.yml)** - CI/CD workflow template
   - Forgejo Actions examples
   - GitLab CI examples
@@ -515,6 +542,7 @@ Key report sections:
   - Browser-specific considerations
 
 ### For Data Management
+
 - **[fixtures/test-data.ts](./fixtures/test-data.ts)** - Test data management
   - Create test prompts, categories, tags
   - Cleanup test data
@@ -522,6 +550,7 @@ Key report sections:
   - Export test metadata
 
 ### For Report Generation
+
 - **[reporters/html-reporter.ts](./reporters/html-reporter.ts)** - Custom HTML reporter
   - Beautiful test report generation
   - WCAG criteria coverage display
@@ -537,12 +566,14 @@ Key report sections:
 ## Getting Started
 
 ### 1. Run Tests (5 minutes)
+
 ```bash
 npm run test:ui:accessibility
 # View report: open playwright-report/index.html
 ```
 
 ### 2. Write a Test (15 minutes)
+
 ```bash
 # See CONTRIBUTING.md for detailed guide
 # Copy pattern from existing test file
@@ -550,6 +581,7 @@ npm run test:ui:accessibility
 ```
 
 ### 3. Debug a Failure (10 minutes)
+
 ```bash
 # Run in debug mode
 HEADED=1 npx playwright test --grep "failing test"
@@ -557,6 +589,7 @@ HEADED=1 npx playwright test --grep "failing test"
 ```
 
 ### 4. Generate Report (2 minutes)
+
 ```bash
 npm run test:ui:accessibility:report
 # View at: accessibility-report/index.html
@@ -565,12 +598,14 @@ npm run test:ui:accessibility:report
 ## Test Execution Examples
 
 ### Run Everything
+
 ```bash
 npm run test:ui:accessibility           # Chromium only
 npm run test:ui:accessibility:all      # All browsers
 ```
 
 ### Run Specific Tests
+
 ```bash
 npx playwright test main-page.spec.ts              # Single file
 npx playwright test --grep "contrast"              # Test pattern
@@ -578,6 +613,7 @@ npx playwright test --project=firefox              # Specific browser
 ```
 
 ### Debug and Develop
+
 ```bash
 HEADED=1 npm run test:ui:accessibility            # See browser
 DEBUG=1 npx playwright test                        # Inspector mode
@@ -585,6 +621,7 @@ npx playwright test --ui                          # Interactive UI
 ```
 
 ### Generate Reports
+
 ```bash
 npm run test:ui:accessibility:report               # HTML report
 npm run test:ui:accessibility:summary              # Statistics
@@ -593,9 +630,11 @@ npm run test:ui:accessibility:summary              # Statistics
 ## CI/CD Integration
 
 ### Forgejo Actions
+
 Copy [.forgejo-actions-example.yml](./.forgejo-actions-example.yml) to `.forgejo/workflows/accessibility-tests.yml`
 
 Includes:
+
 - Automatic test runs on push and PR
 - Multi-browser testing
 - HTML report artifacts
@@ -603,6 +642,7 @@ Includes:
 - Daily scheduled reports
 
 ### Local Verification
+
 ```bash
 # Run tests before committing
 npm run test:ui:accessibility

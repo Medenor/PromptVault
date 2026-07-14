@@ -177,8 +177,7 @@ export const visualChecks = {
     name: 'Focus Indicator Visibility',
     selector: '*:focus',
     states: ['normal', 'focus'],
-    requirement:
-      'WCAG 2.4.7 - Focus indicator must be visible on all interactive elements',
+    requirement: 'WCAG 2.4.7 - Focus indicator must be visible on all interactive elements',
   },
 
   /**

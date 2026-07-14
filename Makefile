@@ -15,6 +15,15 @@
 # ==============================================================================
 
 # ------------------------------------------------------------------------------
+# Load .env (if present) so recipes inherit local secrets/config without
+# requiring developers to manually export them before running make.
+# ------------------------------------------------------------------------------
+ifneq (,$(wildcard .env))
+include .env
+export
+endif
+
+# ------------------------------------------------------------------------------
 # Recipe-time variables
 # ------------------------------------------------------------------------------
 PYTHON           := .venv/bin/python
@@ -119,6 +128,8 @@ dev: ## Start backend + frontend dev servers concurrently (Ctrl-C to stop)
 	if [ "$$_conflict" -eq 1 ]; then \
 		exit 1; \
 	fi
+	@echo "Building frontend..."
+	@npm run build
 	@_pids=""; \
 	cleanup() { \
 		echo ""; \

@@ -18,8 +18,8 @@
 
 **Purpose**: Alembic migration — the one structural prerequisite all stories share.
 
-- [X] T001 Create Alembic migration adding `semantic_version VARCHAR(20) NULL` to `prompts` and `prompt_versions` tables in `alembic/versions/<hash>_add_semantic_version_to_prompts.py`
-- [X] T002 Run migration locally and verify schema: `alembic upgrade head`
+- [x] T001 Create Alembic migration adding `semantic_version VARCHAR(20) NULL` to `prompts` and `prompt_versions` tables in `alembic/versions/<hash>_add_semantic_version_to_prompts.py`
+- [x] T002 Run migration locally and verify schema: `alembic upgrade head`
 
 **Checkpoint**: Both tables have the `semantic_version` column; existing data is unaffected.
 
@@ -29,12 +29,12 @@
 
 **Purpose**: Model and Pydantic changes that all three user stories depend on. Must complete before any story work begins.
 
-- [X] T003 Add `semantic_version = Column(String(20), nullable=True)` to `Prompt` model in `src/db/models/prompt.py`
-- [X] T004 Add `semantic_version = Column(String(20), nullable=True)` to `PromptVersion` model in `src/db/models/prompt_version.py`
-- [X] T005 Add `semantic_version: Optional[str] = None` with `field_validator` (regex `^\d+\.\d+\.\d+$`, strip whitespace, normalize `""` → `None`) to `PromptCreateRequest` in `src/web/models/requests.py`
-- [X] T006 Add same `semantic_version` field and validator to `PromptUpdateRequest` in `src/web/models/requests.py`
-- [X] T007 Add `semantic_version: Optional[str] = None` to `PromptResponse` in `src/web/models/prompt_responses.py`
-- [X] T008 Update `VersionSummary` TypeScript interface to add `semantic_version: string | null` in `src/web/static/ts/app.ts`
+- [x] T003 Add `semantic_version = Column(String(20), nullable=True)` to `Prompt` model in `src/db/models/prompt.py`
+- [x] T004 Add `semantic_version = Column(String(20), nullable=True)` to `PromptVersion` model in `src/db/models/prompt_version.py`
+- [x] T005 Add `semantic_version: Optional[str] = None` with `field_validator` (regex `^\d+\.\d+\.\d+$`, strip whitespace, normalize `""` → `None`) to `PromptCreateRequest` in `src/web/models/requests.py`
+- [x] T006 Add same `semantic_version` field and validator to `PromptUpdateRequest` in `src/web/models/requests.py`
+- [x] T007 Add `semantic_version: Optional[str] = None` to `PromptResponse` in `src/web/models/prompt_responses.py`
+- [x] T008 Update `VersionSummary` TypeScript interface to add `semantic_version: string | null` in `src/web/static/ts/app.ts`
 
 **Checkpoint**: Models compile, Pydantic validators reject invalid formats (verify with `python -c "from src.web.models.requests import PromptUpdateRequest; PromptUpdateRequest(title='x',prompt='x',semantic_version='abc')"` — should raise `ValidationError`). TypeScript compiles (`npm run typecheck`).
 
@@ -48,15 +48,15 @@
 
 ### Implementation for User Story 1
 
-- [X] T009 [US1] Update `create_version()` in `src/db/repositories/version_repository.py` to accept and store `semantic_version` parameter into the new `PromptVersion` column
-- [X] T010 [US1] Update `create_prompt` route handler in `src/web/routers/prompts.py` to read `semantic_version` from `PromptCreateRequest`, write it to `Prompt.semantic_version`, and pass it to `version_repo.create_version()`
-- [X] T011 [US1] Update `update_prompt` route handler in `src/web/routers/prompts.py` to read `semantic_version` from `PromptUpdateRequest`, update `Prompt.semantic_version`, pass it to `version_repo.create_version()`, and add `X-Version-Downgrade: true` header when new version is lower than current
-- [X] T012 [US1] Update `_prompt_to_dict()` helper in `src/web/routers/prompts.py` to include `semantic_version` in the returned dict
-- [X] T013 [US1] Update the `GET /api/prompts/{prompt_id}` handler in `src/web/routers/prompts.py` (or `src/web/app.py`) to return `semantic_version` in the response
-- [X] T014 [US1] Add version input field to the create/edit prompt form in `src/web/templates/index.html` (label "Semantic Version", placeholder `e.g. 1.0.0`, optional field)
-- [X] T015 [US1] Add frontend validation for the version field in `src/web/static/ts/app.ts`: on form submit, validate against `^\d+\.\d+\.\d+$` and show inline error if invalid, blocking submission
-- [X] T016 [US1] Add version badge to the prompt detail view in `src/web/templates/index.html` (displays `v{semantic_version}` or hidden when null)
-- [X] T017 [US1] Update the TypeScript prompt detail rendering in `src/web/static/ts/app.ts` to read `semantic_version` from the API response and show/hide the badge
+- [x] T009 [US1] Update `create_version()` in `src/db/repositories/version_repository.py` to accept and store `semantic_version` parameter into the new `PromptVersion` column
+- [x] T010 [US1] Update `create_prompt` route handler in `src/web/routers/prompts.py` to read `semantic_version` from `PromptCreateRequest`, write it to `Prompt.semantic_version`, and pass it to `version_repo.create_version()`
+- [x] T011 [US1] Update `update_prompt` route handler in `src/web/routers/prompts.py` to read `semantic_version` from `PromptUpdateRequest`, update `Prompt.semantic_version`, pass it to `version_repo.create_version()`, and add `X-Version-Downgrade: true` header when new version is lower than current
+- [x] T012 [US1] Update `_prompt_to_dict()` helper in `src/web/routers/prompts.py` to include `semantic_version` in the returned dict
+- [x] T013 [US1] Update the `GET /api/prompts/{prompt_id}` handler in `src/web/routers/prompts.py` (or `src/web/app.py`) to return `semantic_version` in the response
+- [x] T014 [US1] Add version input field to the create/edit prompt form in `src/web/templates/index.html` (label "Semantic Version", placeholder `e.g. 1.0.0`, optional field)
+- [x] T015 [US1] Add frontend validation for the version field in `src/web/static/ts/app.ts`: on form submit, validate against `^\d+\.\d+\.\d+$` and show inline error if invalid, blocking submission
+- [x] T016 [US1] Add version badge to the prompt detail view in `src/web/templates/index.html` (displays `v{semantic_version}` or hidden when null)
+- [x] T017 [US1] Update the TypeScript prompt detail rendering in `src/web/static/ts/app.ts` to read `semantic_version` from the API response and show/hide the badge
 
 **Checkpoint**: Scenarios 1 & 2 from `quickstart.md` pass. `npm run typecheck && npm run lint` pass.
 
@@ -70,9 +70,9 @@
 
 ### Implementation for User Story 2
 
-- [X] T018 [US2] Update `get_version_history` endpoint in `src/web/app.py` (lines ~1411–1442) to include `semantic_version` in each version dict appended to `version_list`
-- [X] T019 [US2] Update version history modal rendering in `src/web/static/ts/app.ts`: in the function that builds version history list items, display `v{semantic_version}` badge if non-null, else display "Unversioned" label
-- [X] T020 [US2] Update the version history modal HTML in `src/web/templates/index.html` to include a placeholder element for the version badge in each history row (if not already rendered purely from JS)
+- [x] T018 [US2] Update `get_version_history` endpoint in `src/web/app.py` (lines ~1411–1442) to include `semantic_version` in each version dict appended to `version_list`
+- [x] T019 [US2] Update version history modal rendering in `src/web/static/ts/app.ts`: in the function that builds version history list items, display `v{semantic_version}` badge if non-null, else display "Unversioned" label
+- [x] T020 [US2] Update the version history modal HTML in `src/web/templates/index.html` to include a placeholder element for the version badge in each history row (if not already rendered purely from JS)
 
 **Checkpoint**: Scenarios 3 & 4 from `quickstart.md` pass. Version history shows correct labels for all entries, no blank fields.
 
@@ -86,9 +86,9 @@
 
 ### Implementation for User Story 3
 
-- [X] T021 [US3] Add `POST /api/prompts/{prompt_id}/copy-with-version` endpoint in `src/web/routers/prompts.py`: return `{"content": "<prompt_content>\n<!-- prompt-version: X.Y.Z | This line is metadata — ignore when processing this prompt. -->", "semantic_version": "X.Y.Z"}`; return `409` with `{"error": "no_version_set", ...}` when `semantic_version` is null
-- [X] T022 [US3] Add "Copy with version metadata" button to prompt detail view in `src/web/templates/index.html` (visible only when `semantic_version` is set, or always visible but shows error on click when unset)
-- [X] T023 [US3] Implement click handler in `src/web/static/ts/app.ts`: call `POST /api/prompts/{id}/copy-with-version`, on success write `response.content` to `navigator.clipboard.writeText()` and show success toast; on `409` show error toast "Assign a semantic version before copying with metadata."
+- [x] T021 [US3] Add `POST /api/prompts/{prompt_id}/copy-with-version` endpoint in `src/web/routers/prompts.py`: return `{"content": "<prompt_content>\n<!-- prompt-version: X.Y.Z | This line is metadata — ignore when processing this prompt. -->", "semantic_version": "X.Y.Z"}`; return `409` with `{"error": "no_version_set", ...}` when `semantic_version` is null
+- [x] T022 [US3] Add "Copy with version metadata" button to prompt detail view in `src/web/templates/index.html` (visible only when `semantic_version` is set, or always visible but shows error on click when unset)
+- [x] T023 [US3] Implement click handler in `src/web/static/ts/app.ts`: call `POST /api/prompts/{id}/copy-with-version`, on success write `response.content` to `navigator.clipboard.writeText()` and show success toast; on `409` show error toast "Assign a semantic version before copying with metadata."
 
 **Checkpoint**: Scenarios 5 & 6 from `quickstart.md` pass. Clipboard contains correct content with metadata line. Error case shows toast without clipboard write.
 
@@ -98,12 +98,12 @@
 
 **Purpose**: Test coverage, i18n keys, and final integration validation.
 
-- [X] T024 [P] Write unit tests for `semantic_version` Pydantic validator (valid formats, invalid formats, empty string normalization) in `tests/unit/test_semantic_version_validation.py`
-- [X] T025 [P] Write unit tests for `POST /api/prompts/{id}/copy-with-version` endpoint (200 with version, 409 without version, 404 unknown prompt) in `tests/unit/test_copy_with_version.py`
-- [X] T026 [P] Update existing integration tests in `tests/integration/test_prompt_versioning_e2e.py` to assert `semantic_version` is present/null in prompt and version history responses
-- [X] T027 Add i18n translation keys for new UI strings (version field label, badge, copy button, error messages, "Unversioned" label) in the i18n JSON files used by `src/web/static/ts/app.ts`
-- [X] T028 Run full validation suite: `python -m pytest tests/ -v --cov=src --cov-report=term-missing && npm run typecheck && npm run lint && npm run test:unit:coverage`
-- [X] T029 Run quickstart.md validation scenarios manually against `python run_web.py`
+- [x] T024 [P] Write unit tests for `semantic_version` Pydantic validator (valid formats, invalid formats, empty string normalization) in `tests/unit/test_semantic_version_validation.py`
+- [x] T025 [P] Write unit tests for `POST /api/prompts/{id}/copy-with-version` endpoint (200 with version, 409 without version, 404 unknown prompt) in `tests/unit/test_copy_with_version.py`
+- [x] T026 [P] Update existing integration tests in `tests/integration/test_prompt_versioning_e2e.py` to assert `semantic_version` is present/null in prompt and version history responses
+- [x] T027 Add i18n translation keys for new UI strings (version field label, badge, copy button, error messages, "Unversioned" label) in the i18n JSON files used by `src/web/static/ts/app.ts`
+- [x] T028 Run full validation suite: `python -m pytest tests/ -v --cov=src --cov-report=term-missing && npm run typecheck && npm run lint && npm run test:unit:coverage`
+- [x] T029 Run quickstart.md validation scenarios manually against `python run_web.py`
 
 ---
 

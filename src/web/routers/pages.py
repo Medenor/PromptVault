@@ -41,16 +41,19 @@ Example Usage:
     >>> # Returns users.html template
 """
 
-from fastapi import APIRouter, Request, Depends
+from fastapi import APIRouter, Request, Depends, HTTPException, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 import os
 
 from src.config.auth_config import auth_settings
 from src.db.models.user import User
+from typing import Optional
+
 from src.web.dependencies.auth import (
     get_current_active_user,
     get_admin_user,
+    get_current_user_or_none,
 )
 from src.web.utils.manifest import load_manifest, get_asset_path, is_production
 
@@ -290,11 +293,29 @@ async def profile_page_alias(
 # ============================================================================
 
 
+def _require_auth_unless_disabled(
+    user: Optional[User] = Depends(get_current_user_or_none),
+) -> Optional[User]:
+    """Require an authenticated user, unless auth is disabled entirely.
+
+    Mirrors the API-side anonymous-mode bypass so page routes stay consistent
+    with the data endpoints they render: when ``AUTH_ENABLED=false`` the page
+    is served to anyone, otherwise a valid session is still required.
+    """
+    if user or not auth_settings.auth_enabled:
+        return user
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Authentication required",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+
 @router.get("/manage-categories", response_class=HTMLResponse)
 async def manage_categories_page(
-    request: Request, user: User = Depends(get_current_active_user)
+    request: Request, user: Optional[User] = Depends(_require_auth_unless_disabled)
 ):
-    """Serve the category management page (authenticated)."""
+    """Serve the category management page (accessible without auth when disabled)."""
     return templates.TemplateResponse(
         "manage_categories.html",
         {"request": request, "auth_enabled": auth_settings.auth_enabled},
@@ -303,9 +324,9 @@ async def manage_categories_page(
 
 @router.get("/manage-tags", response_class=HTMLResponse)
 async def manage_tags_page(
-    request: Request, user: User = Depends(get_current_active_user)
+    request: Request, user: Optional[User] = Depends(_require_auth_unless_disabled)
 ):
-    """Serve the tag management page (authenticated)."""
+    """Serve the tag management page (accessible without auth when disabled)."""
     return templates.TemplateResponse(
         "manage_tags.html",
         {"request": request, "auth_enabled": auth_settings.auth_enabled},

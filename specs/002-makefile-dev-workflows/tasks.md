@@ -4,7 +4,7 @@
 
 **Prerequisites**: plan.md (required), spec.md (required for user stories), research.md, data-model.md, contracts/
 
-**Tests**: No automated test tasks. This feature is a build/automation file; validation is manual smoke-testing of `make` targets per `quickstart.md`, plus optional `shellcheck` on recipes. The suites the Makefile *runs* (`python3 -m pytest`, `npm run test:unit:coverage`) are out of scope.
+**Tests**: No automated test tasks. This feature is a build/automation file; validation is manual smoke-testing of `make` targets per `quickstart.md`, plus optional `shellcheck` on recipes. The suites the Makefile _runs_ (`python3 -m pytest`, `npm run test:unit:coverage`) are out of scope.
 
 **Organization**: Tasks are grouped by user story to enable independent validation of each story. Because the primary deliverable is a single `Makefile`, most implementation tasks edit the same file and are therefore sequential within a phase; the `[P]` marker is reserved for genuinely independent files (e.g. documentation).
 
@@ -34,7 +34,7 @@
 
 **Purpose**: Create the single additive `Makefile` skeleton that all subsequent targets extend.
 
-- [X] T001 Create `Makefile` at repository root with the file header comment, the recipe-time variables block (`PYTHON`, `PIP`, `VENV_DIR`, `BACKEND_PORT`, `FRONTEND_PORT`, `PYTEST`, `BACKEND_TEST_CMD`, `FRONTEND_TEST_CMD`, `COMPOSE` per `data-model.md`), the `.PHONY:` declaration listing every phony target, and `.DEFAULT_GOAL := help` in `Makefile`
+- [x] T001 Create `Makefile` at repository root with the file header comment, the recipe-time variables block (`PYTHON`, `PIP`, `VENV_DIR`, `BACKEND_PORT`, `FRONTEND_PORT`, `PYTEST`, `BACKEND_TEST_CMD`, `FRONTEND_TEST_CMD`, `COMPOSE` per `data-model.md`), the `.PHONY:` declaration listing every phony target, and `.DEFAULT_GOAL := help` in `Makefile`
 
 ---
 
@@ -44,9 +44,9 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [X] T002 Implement the `help` target in `Makefile`: a self-documenting recipe (e.g. `awk`/`sed` over `$(MAKEFILE_LIST)`) that prints every `## `-annotated target with a one-line description, so listing grows automatically as later targets are added (FR-007)
-- [X] T003 Implement the `check-runtime` guard target in `Makefile`: verifies `python3` resolves to ≥ 3.14 and `node` exists via `command -v`, emitting a named, human-readable fail-fast message and exiting non-zero on a missing/wrong prerequisite (edge case: Missing runtime)
-- [X] T004 Implement the `check-deps` guard target in `Makefile`: verifies `.venv` and `node_modules` exist, else prints guidance to run `make install` and exits non-zero (edge case: Dependencies not yet installed)
+- [x] T002 Implement the `help` target in `Makefile`: a self-documenting recipe (e.g. `awk`/`sed` over `$(MAKEFILE_LIST)`) that prints every `## `-annotated target with a one-line description, so listing grows automatically as later targets are added (FR-007)
+- [x] T003 Implement the `check-runtime` guard target in `Makefile`: verifies `python3` resolves to ≥ 3.14 and `node` exists via `command -v`, emitting a named, human-readable fail-fast message and exiting non-zero on a missing/wrong prerequisite (edge case: Missing runtime)
+- [x] T004 Implement the `check-deps` guard target in `Makefile`: verifies `.venv` and `node_modules` exist, else prints guidance to run `make install` and exits non-zero (edge case: Dependencies not yet installed)
 
 **Checkpoint**: Foundation ready — `make help` prints usage, and guards fail fast on missing runtime/deps. User story implementation can now begin.
 
@@ -60,11 +60,11 @@
 
 ### Implementation for User Story 1
 
-- [X] T005 [US1] Implement the `install-backend` target in `Makefile`: create `.venv` with Python 3.14+ if missing, run `$(PIP) install -e ".[test]"`, then `$(PIP) install black`; idempotent (venv created only if absent) (FR-001)
-- [X] T006 [US1] Implement the `install-frontend` target in `Makefile`: run `npm ci` (reproducible install matching the Docker build) (FR-001)
-- [X] T007 [US1] Implement the aggregate `install` target in `Makefile` depending on `install-backend install-frontend` so backend deps install before frontend (FR-001, FR-008)
-- [X] T008 [US1] Implement the `dev` target in `Makefile`: invoke `check-deps` in-recipe, probe ports `BACKEND_PORT`/`FRONTEND_PORT` for conflicts with an advisory `lsof`/`nc` check (non-fatal if the tool is absent), start `$(PYTHON) run_web.py` and `npm run dev` concurrently in the background, and install a `trap` on `INT TERM EXIT` that kills the process group then `wait`s for a clean, orphan-free shutdown (FR-002, FR-010; edge cases: Port already in use, Interrupted long-running target)
-- [X] T009 [US1] Validate US1 by running quickstart scenarios 1–3 (`make help`, `make install`, `make dev` + Ctrl-C), confirming the app is reachable and `pgrep -fl "run_web.py|vite"` prints nothing after interrupt
+- [x] T005 [US1] Implement the `install-backend` target in `Makefile`: create `.venv` with Python 3.14+ if missing, run `$(PIP) install -e ".[test]"`, then `$(PIP) install black`; idempotent (venv created only if absent) (FR-001)
+- [x] T006 [US1] Implement the `install-frontend` target in `Makefile`: run `npm ci` (reproducible install matching the Docker build) (FR-001)
+- [x] T007 [US1] Implement the aggregate `install` target in `Makefile` depending on `install-backend install-frontend` so backend deps install before frontend (FR-001, FR-008)
+- [x] T008 [US1] Implement the `dev` target in `Makefile`: invoke `check-deps` in-recipe, probe ports `BACKEND_PORT`/`FRONTEND_PORT` for conflicts with an advisory `lsof`/`nc` check (non-fatal if the tool is absent), start `$(PYTHON) run_web.py` and `npm run dev` concurrently in the background, and install a `trap` on `INT TERM EXIT` that kills the process group then `wait`s for a clean, orphan-free shutdown (FR-002, FR-010; edge cases: Port already in use, Interrupted long-running target)
+- [x] T009 [US1] Validate US1 by running quickstart scenarios 1–3 (`make help`, `make install`, `make dev` + Ctrl-C), confirming the app is reachable and `pgrep -fl "run_web.py|vite"` prints nothing after interrupt
 
 **Checkpoint**: US1 fully functional and independently testable — the MVP is shippable.
 
@@ -78,10 +78,10 @@
 
 ### Implementation for User Story 2
 
-- [X] T010 [US2] Implement the `test-backend` target in `Makefile`: run `$(BACKEND_TEST_CMD)` (i.e. `python3 -m pytest`), delegating the 85% floor to `pytest.ini`'s `--cov-fail-under=85` (FR-003, FR-004)
-- [X] T011 [US2] Implement the `test-frontend` target in `Makefile`: run `$(FRONTEND_TEST_CMD)` (i.e. `npm run test:unit:coverage`), delegating thresholds to `vitest.config.ts` (FR-003, FR-004)
-- [X] T012 [US2] Implement the aggregate `test` target in `Makefile` depending on `test-backend test-frontend`, surfacing a per-suite pass/fail summary and failing overall if either suite fails (FR-003, FR-004, FR-009; edge case: Coverage threshold edge)
-- [X] T013 [US2] Validate US2 by running quickstart scenario 4 (`make test`, plus `make test-backend` and `make test-frontend` granular checks)
+- [x] T010 [US2] Implement the `test-backend` target in `Makefile`: run `$(BACKEND_TEST_CMD)` (i.e. `python3 -m pytest`), delegating the 85% floor to `pytest.ini`'s `--cov-fail-under=85` (FR-003, FR-004)
+- [x] T011 [US2] Implement the `test-frontend` target in `Makefile`: run `$(FRONTEND_TEST_CMD)` (i.e. `npm run test:unit:coverage`), delegating thresholds to `vitest.config.ts` (FR-003, FR-004)
+- [x] T012 [US2] Implement the aggregate `test` target in `Makefile` depending on `test-backend test-frontend`, surfacing a per-suite pass/fail summary and failing overall if either suite fails (FR-003, FR-004, FR-009; edge case: Coverage threshold edge)
+- [x] T013 [US2] Validate US2 by running quickstart scenario 4 (`make test`, plus `make test-backend` and `make test-frontend` granular checks)
 
 **Checkpoint**: US1 AND US2 both work independently.
 
@@ -95,11 +95,11 @@
 
 ### Implementation for User Story 3
 
-- [X] T014 [US3] Implement the `lint-backend` target in `Makefile`: run `black --check src tests` followed by `$(PYTEST) --collect-only -q` (fast import/syntax sanity check) (FR-005)
-- [X] T015 [US3] Implement the `lint-frontend` target in `Makefile`: run `npm run lint`, `npm run typecheck`, and `npm run format:check` (FR-005)
-- [X] T016 [US3] Implement the aggregate `lint` target in `Makefile` depending on `lint-backend lint-frontend`; it must not modify files on a clean tree and must fail on the first violation (FR-005, FR-009)
-- [X] T017 [US3] Implement the `lint-fix` target in `Makefile`: run `black src tests`, `npm run lint:fix`, and `npm run format` to correct auto-fixable issues in place (US3 scenario 3)
-- [X] T018 [US3] Validate US3 by running quickstart scenario 5 (`make lint` on a clean tree, inject a violation, run `make lint-fix`, re-run `make lint`)
+- [x] T014 [US3] Implement the `lint-backend` target in `Makefile`: run `black --check src tests` followed by `$(PYTEST) --collect-only -q` (fast import/syntax sanity check) (FR-005)
+- [x] T015 [US3] Implement the `lint-frontend` target in `Makefile`: run `npm run lint`, `npm run typecheck`, and `npm run format:check` (FR-005)
+- [x] T016 [US3] Implement the aggregate `lint` target in `Makefile` depending on `lint-backend lint-frontend`; it must not modify files on a clean tree and must fail on the first violation (FR-005, FR-009)
+- [x] T017 [US3] Implement the `lint-fix` target in `Makefile`: run `black src tests`, `npm run lint:fix`, and `npm run format` to correct auto-fixable issues in place (US3 scenario 3)
+- [x] T018 [US3] Validate US3 by running quickstart scenario 5 (`make lint` on a clean tree, inject a violation, run `make lint-fix`, re-run `make lint`)
 
 **Checkpoint**: US1, US2, AND US3 all work independently.
 
@@ -113,10 +113,10 @@
 
 ### Implementation for User Story 4
 
-- [X] T019 [US4] Implement the `build-frontend` target in `Makefile`: run `npm run build` producing `dist/static/` (compiled assets) (FR-006)
-- [X] T020 [US4] Implement the `build-image` target in `Makefile`: run `$(COMPOSE) build web` (Docker Compose v2) reproducing the production image from the root `Dockerfile` (FR-006, FR-008)
-- [X] T021 [US4] Implement the aggregate `build` target in `Makefile` depending on `build-frontend build-image`, with clean interrupt handling for spawned processes (FR-006, FR-009, FR-010)
-- [X] T022 [US4] Validate US4 by running quickstart scenario 6 (`make build`, smoke-test the image via `docker compose up -d web` + `/api/health`, plus `make build-frontend` and `make build-image` granular checks)
+- [x] T019 [US4] Implement the `build-frontend` target in `Makefile`: run `npm run build` producing `dist/static/` (compiled assets) (FR-006)
+- [x] T020 [US4] Implement the `build-image` target in `Makefile`: run `$(COMPOSE) build web` (Docker Compose v2) reproducing the production image from the root `Dockerfile` (FR-006, FR-008)
+- [x] T021 [US4] Implement the aggregate `build` target in `Makefile` depending on `build-frontend build-image`, with clean interrupt handling for spawned processes (FR-006, FR-009, FR-010)
+- [x] T022 [US4] Validate US4 by running quickstart scenario 6 (`make build`, smoke-test the image via `docker compose up -d web` + `/api/health`, plus `make build-frontend` and `make build-image` granular checks)
 
 **Checkpoint**: All four user stories are independently functional.
 
@@ -126,12 +126,12 @@
 
 **Purpose**: Documentation, portability hardening, and end-to-end validation across all stories.
 
-- [X] T023 [P] Create `docs/DEVELOPMENT.md` documenting: every `make` target, supported environments (POSIX; Windows via WSL/Git Bash), prerequisites (Python 3.14+, Node 20+, Docker Compose v2), and common failure modes (missing runtime, missing deps, port conflicts, non-POSIX limitation) (FR-012)
-- [X] T024 [P] Add a one-line pointer in `README.md` directing contributors to `make help` and `docs/DEVELOPMENT.md`
-- [X] T025 [P] Add `docs/DEVELOPMENT.md` and the `Makefile` to the "Development Commands" / contribution notes in `docs/TESTING.md` or relevant docs if a canonical entry point exists (additive cross-reference only — do not alter existing content)
-- [X] T026 Optionally validate `Makefile` recipes with `shellcheck` (extract recipes) and fix any POSIX-`/bin/sh` portability issues (GNU-isms avoided where a portable form exists)
-- [X] T027 Verify the `.PHONY:` list includes every phony target and that `make help` lists all targets with descriptions (FR-007, FR-009)
-- [X] T028 Run all six `quickstart.md` scenarios end-to-end and the edge-case spot checks (missing runtime, missing deps, port in use, clean interrupt), confirming each passes using only `make` targets and that no existing documented command/script/deployment path is altered (additive-only, FR-011)
+- [x] T023 [P] Create `docs/DEVELOPMENT.md` documenting: every `make` target, supported environments (POSIX; Windows via WSL/Git Bash), prerequisites (Python 3.14+, Node 20+, Docker Compose v2), and common failure modes (missing runtime, missing deps, port conflicts, non-POSIX limitation) (FR-012)
+- [x] T024 [P] Add a one-line pointer in `README.md` directing contributors to `make help` and `docs/DEVELOPMENT.md`
+- [x] T025 [P] Add `docs/DEVELOPMENT.md` and the `Makefile` to the "Development Commands" / contribution notes in `docs/TESTING.md` or relevant docs if a canonical entry point exists (additive cross-reference only — do not alter existing content)
+- [x] T026 Optionally validate `Makefile` recipes with `shellcheck` (extract recipes) and fix any POSIX-`/bin/sh` portability issues (GNU-isms avoided where a portable form exists)
+- [x] T027 Verify the `.PHONY:` list includes every phony target and that `make help` lists all targets with descriptions (FR-007, FR-009)
+- [x] T028 Run all six `quickstart.md` scenarios end-to-end and the edge-case spot checks (missing runtime, missing deps, port in use, clean interrupt), confirming each passes using only `make` targets and that no existing documented command/script/deployment path is altered (additive-only, FR-011)
 
 ---
 

@@ -77,7 +77,9 @@ test.describe('@regression-a11y Import-Export Page Accessibility Tests', () => {
       console.log('Found landmarks:', landmarks.landmarks);
     });
 
-    test('main landmark should exist and contain primary content', async ({ authenticatedPage: page }) => {
+    test('main landmark should exist and contain primary content', async ({
+      authenticatedPage: page,
+    }) => {
       const mainContent = page.locator('main[role="main"], [role="main"]').first();
       expect(await mainContent.count()).toBeGreaterThan(0);
 
@@ -146,9 +148,7 @@ test.describe('@regression-a11y Import-Export Page Accessibility Tests', () => {
       expect(tabOrder.length).toBeGreaterThan(0);
 
       // Find file input in tab order
-      const fileInputInTabOrder = tabOrder.some((el) =>
-        el.selector.includes('import-file')
-      );
+      const fileInputInTabOrder = tabOrder.some((el) => el.selector.includes('import-file'));
       expect(fileInputInTabOrder).toBe(true);
 
       // Focus the file input
@@ -157,7 +157,9 @@ test.describe('@regression-a11y Import-Export Page Accessibility Tests', () => {
       expect(isFocused).toBe(true);
     });
 
-    test('file input should have aria-describedby pointing to error message', async ({ authenticatedPage: page }) => {
+    test('file input should have aria-describedby pointing to error message', async ({
+      authenticatedPage: page,
+    }) => {
       const fileInput = page.locator('#import-file').first();
       const describedBy = await fileInput.getAttribute('aria-describedby');
 
@@ -168,7 +170,9 @@ test.describe('@regression-a11y Import-Export Page Accessibility Tests', () => {
       expect(await errorElement.count()).toBeGreaterThan(0);
     });
 
-    test('drag-and-drop zone should be keyboard accessible', async ({ authenticatedPage: page }) => {
+    test('drag-and-drop zone should be keyboard accessible', async ({
+      authenticatedPage: page,
+    }) => {
       // While HTML file input doesn't have native drag-and-drop, verify file input is reachable
       const fileInput = page.locator('#import-file').first();
       expect(await fileInput.count()).toBeGreaterThan(0);
@@ -192,9 +196,7 @@ test.describe('@regression-a11y Import-Export Page Accessibility Tests', () => {
       expect(tabOrder.length).toBeGreaterThan(0);
 
       // Form should contain multiple focusable elements
-      const formElements = tabOrder.filter((el) =>
-        el.selector.includes('export')
-      );
+      const formElements = tabOrder.filter((el) => el.selector.includes('export'));
       expect(formElements.length).toBeGreaterThan(0);
     });
 
@@ -205,9 +207,7 @@ test.describe('@regression-a11y Import-Export Page Accessibility Tests', () => {
       const tabOrder = await extractTabOrder(page);
       expect(tabOrder.length).toBeGreaterThan(0);
 
-      const formElements = tabOrder.filter((el) =>
-        el.selector.includes('import')
-      );
+      const formElements = tabOrder.filter((el) => el.selector.includes('import'));
       expect(formElements.length).toBeGreaterThan(0);
     });
 
@@ -231,7 +231,9 @@ test.describe('@regression-a11y Import-Export Page Accessibility Tests', () => {
       expect(labelText).toMatch(/format/i);
     });
 
-    test('import mode select should have label and description', async ({ authenticatedPage: page }) => {
+    test('import mode select should have label and description', async ({
+      authenticatedPage: page,
+    }) => {
       const select = page.locator('#import-mode').first();
       const label = page.locator('label[for="import-mode"]').first();
       const help = page.locator('#import-mode-help').first();
@@ -245,7 +247,9 @@ test.describe('@regression-a11y Import-Export Page Accessibility Tests', () => {
       expect(describedBy).toBe('import-mode-help');
     });
 
-    test('export filename input should have label and error description', async ({ authenticatedPage: page }) => {
+    test('export filename input should have label and error description', async ({
+      authenticatedPage: page,
+    }) => {
       const input = page.locator('#export-filename').first();
       const label = page.locator('label[for="export-filename"]').first();
       const error = page.locator('#export-filename-error').first();
@@ -289,7 +293,9 @@ test.describe('@regression-a11y Import-Export Page Accessibility Tests', () => {
       }
     });
 
-    test('form elements should not have skipped tabindex values', async ({ authenticatedPage: page }) => {
+    test('form elements should not have skipped tabindex values', async ({
+      authenticatedPage: page,
+    }) => {
       const tabOrder = await extractTabOrder(page);
 
       for (const element of tabOrder) {
@@ -307,13 +313,13 @@ test.describe('@regression-a11y Import-Export Page Accessibility Tests', () => {
   test.describe('@regression-a11y Modal Dialog Accessibility', () => {
     test('preview panel should be hidden initially', async ({ authenticatedPage: page }) => {
       const previewPanel = page.locator('#preview-panel').first();
-      const isHidden = await previewPanel.evaluate((el) =>
-        el.classList.contains('hidden')
-      );
+      const isHidden = await previewPanel.evaluate((el) => el.classList.contains('hidden'));
       expect(isHidden).toBe(true);
     });
 
-    test('preview panel should be keyboard accessible when shown', async ({ authenticatedPage: page }) => {
+    test('preview panel should be keyboard accessible when shown', async ({
+      authenticatedPage: page,
+    }) => {
       const previewPanel = page.locator('#preview-panel').first();
 
       // Show the preview panel
@@ -363,7 +369,9 @@ test.describe('@regression-a11y Import-Export Page Accessibility Tests', () => {
       expect(cancelText).toMatch(/cancel|close/i);
     });
 
-    test('modal confirm button should have clear action label', async ({ authenticatedPage: page }) => {
+    test('modal confirm button should have clear action label', async ({
+      authenticatedPage: page,
+    }) => {
       const previewPanel = page.locator('#preview-panel').first();
       await previewPanel.evaluate((el) => el.classList.remove('hidden'));
 
@@ -380,21 +388,19 @@ test.describe('@regression-a11y Import-Export Page Accessibility Tests', () => {
   test.describe('@regression-a11y Progress Indication', () => {
     test('export progress bar should be hidden initially', async ({ authenticatedPage: page }) => {
       const progressContainer = page.locator('#export-progress').first();
-      const isHidden = await progressContainer.evaluate((el) =>
-        el.classList.contains('hidden')
-      );
+      const isHidden = await progressContainer.evaluate((el) => el.classList.contains('hidden'));
       expect(isHidden).toBe(true);
     });
 
     test('import progress bar should be hidden initially', async ({ authenticatedPage: page }) => {
       const progressContainer = page.locator('#import-progress').first();
-      const isHidden = await progressContainer.evaluate((el) =>
-        el.classList.contains('hidden')
-      );
+      const isHidden = await progressContainer.evaluate((el) => el.classList.contains('hidden'));
       expect(isHidden).toBe(true);
     });
 
-    test('export progress indicator should have proper structure', async ({ authenticatedPage: page }) => {
+    test('export progress indicator should have proper structure', async ({
+      authenticatedPage: page,
+    }) => {
       const progressContainer = page.locator('#export-progress').first();
       const progressFill = page.locator('#export-progress-fill').first();
       const statusText = page.locator('#export-status').first();
@@ -404,7 +410,9 @@ test.describe('@regression-a11y Import-Export Page Accessibility Tests', () => {
       expect(await statusText.count()).toBeGreaterThan(0);
     });
 
-    test('import progress indicator should have proper structure', async ({ authenticatedPage: page }) => {
+    test('import progress indicator should have proper structure', async ({
+      authenticatedPage: page,
+    }) => {
       const progressContainer = page.locator('#import-progress').first();
       const progressFill = page.locator('#import-progress-fill').first();
       const statusText = page.locator('#import-status').first();
@@ -414,7 +422,9 @@ test.describe('@regression-a11y Import-Export Page Accessibility Tests', () => {
       expect(await statusText.count()).toBeGreaterThan(0);
     });
 
-    test('progress status text should be associated with live region', async ({ authenticatedPage: page }) => {
+    test('progress status text should be associated with live region', async ({
+      authenticatedPage: page,
+    }) => {
       const statusText = page.locator('#export-status').first();
       expect(await statusText.count()).toBeGreaterThan(0);
 
@@ -451,7 +461,9 @@ test.describe('@regression-a11y Import-Export Page Accessibility Tests', () => {
       expect(importLive).toBe('polite');
     });
 
-    test('error messages should be associated with form fields', async ({ authenticatedPage: page }) => {
+    test('error messages should be associated with form fields', async ({
+      authenticatedPage: page,
+    }) => {
       const exportFilenameError = page.locator('#export-filename-error').first();
       const importFileError = page.locator('#import-file-error').first();
 
@@ -487,12 +499,12 @@ test.describe('@regression-a11y Import-Export Page Accessibility Tests', () => {
       const exportError = page.locator('#export-filename-error').first();
       const importError = page.locator('#import-file-error').first();
 
-      if (await exportError.count() > 0) {
+      if ((await exportError.count()) > 0) {
         const contrast = await testTextContrast(page, exportError, 'AA');
         expect(contrast.passes).toBe(true);
       }
 
-      if (await importError.count() > 0) {
+      if ((await importError.count()) > 0) {
         const contrast = await testTextContrast(page, importError, 'AA');
         expect(contrast.passes).toBe(true);
       }
@@ -519,7 +531,9 @@ test.describe('@regression-a11y Import-Export Page Accessibility Tests', () => {
   // 7. SUCCESS/STATUS MESSAGE ACCESSIBILITY TESTS
   // ============================================================================
   test.describe('@regression-a11y Success/Status Messages', () => {
-    test('status messages should be announced to screen readers', async ({ authenticatedPage: page }) => {
+    test('status messages should be announced to screen readers', async ({
+      authenticatedPage: page,
+    }) => {
       const exportStatus = page.locator('#export-status').first();
       const importStatus = page.locator('#import-status').first();
 
@@ -552,7 +566,7 @@ test.describe('@regression-a11y Import-Export Page Accessibility Tests', () => {
       const heading = page.locator('h4:has-text("Recent Activity")').first();
 
       expect(await activitySection.count()).toBeGreaterThan(0);
-      if (await heading.count() > 0) {
+      if ((await heading.count()) > 0) {
         const text = await heading.textContent();
         expect(text).toMatch(/activity|history/i);
       }
@@ -579,7 +593,9 @@ test.describe('@regression-a11y Import-Export Page Accessibility Tests', () => {
       expect(nameInfo.name).toMatch(/preview/i);
     });
 
-    test('export format select should be keyboard accessible', async ({ authenticatedPage: page }) => {
+    test('export format select should be keyboard accessible', async ({
+      authenticatedPage: page,
+    }) => {
       const select = page.locator('#export-format').first();
 
       // Focus the select
@@ -647,7 +663,9 @@ test.describe('@regression-a11y Import-Export Page Accessibility Tests', () => {
       }
     });
 
-    test('form field borders should have sufficient contrast', async ({ authenticatedPage: page }) => {
+    test('form field borders should have sufficient contrast', async ({
+      authenticatedPage: page,
+    }) => {
       const inputs = await page.locator('input[type="text"], input[type="file"], select').all();
 
       for (let i = 0; i < Math.min(3, inputs.length); i++) {
@@ -684,7 +702,9 @@ test.describe('@regression-a11y Import-Export Page Accessibility Tests', () => {
       }
     });
 
-    test('placeholder text should have sufficient contrast', async ({ authenticatedPage: page }) => {
+    test('placeholder text should have sufficient contrast', async ({
+      authenticatedPage: page,
+    }) => {
       const inputsWithPlaceholder = await page.locator('input[placeholder]').all();
 
       for (let i = 0; i < Math.min(3, inputsWithPlaceholder.length); i++) {
@@ -693,17 +713,23 @@ test.describe('@regression-a11y Import-Export Page Accessibility Tests', () => {
       }
     });
 
-    test('progress indicators should have sufficient contrast', async ({ authenticatedPage: page }) => {
+    test('progress indicators should have sufficient contrast', async ({
+      authenticatedPage: page,
+    }) => {
       const progressFill = page.locator('#export-progress-fill, #import-progress-fill').first();
 
-      if (await progressFill.count() > 0) {
+      if ((await progressFill.count()) > 0) {
         const contrast = await testUIContrast(page, progressFill, 'AA');
         expect(contrast.ratio).toBeGreaterThanOrEqual(3);
       }
     });
 
-    test('focus indicators should have sufficient contrast', async ({ authenticatedPage: page }) => {
-      const focusableElements = await page.locator('a[href], button, input, select, textarea').all();
+    test('focus indicators should have sufficient contrast', async ({
+      authenticatedPage: page,
+    }) => {
+      const focusableElements = await page
+        .locator('a[href], button, input, select, textarea')
+        .all();
 
       if (focusableElements.length > 0) {
         const element = focusableElements[0];
@@ -718,7 +744,9 @@ test.describe('@regression-a11y Import-Export Page Accessibility Tests', () => {
       }
     });
 
-    test('all key elements should pass batch contrast check', async ({ authenticatedPage: page }) => {
+    test('all key elements should pass batch contrast check', async ({
+      authenticatedPage: page,
+    }) => {
       const keyElements = [
         'label',
         'button',
@@ -791,8 +819,8 @@ test.describe('@regression-a11y Import-Export Page Accessibility Tests', () => {
       const tabOrder = await extractTabOrder(page);
 
       // Find a button in tab order
-      const buttonInOrder = tabOrder.find((el) =>
-        el.selector.includes('button') || el.selector.includes('preview')
+      const buttonInOrder = tabOrder.find(
+        (el) => el.selector.includes('button') || el.selector.includes('preview')
       );
 
       if (buttonInOrder) {
@@ -829,10 +857,12 @@ test.describe('@regression-a11y Import-Export Page Accessibility Tests', () => {
       expect(visited.size).toBeGreaterThan(1);
     });
 
-    test('all interactive elements should be reachable via Tab', async ({ authenticatedPage: page }) => {
-      const allInteractiveElements = await page.locator(
-        'button, a[href], input, select, textarea, [role="button"], [role="link"]'
-      ).all();
+    test('all interactive elements should be reachable via Tab', async ({
+      authenticatedPage: page,
+    }) => {
+      const allInteractiveElements = await page
+        .locator('button, a[href], input, select, textarea, [role="button"], [role="link"]')
+        .all();
 
       const tabOrder = await extractTabOrder(page);
 
@@ -850,14 +880,17 @@ test.describe('@regression-a11y Import-Export Page Accessibility Tests', () => {
       expect(inTabOrder.length).toBeGreaterThan(0);
     });
 
-    test('should have visible focus indicators during keyboard navigation', async ({ authenticatedPage: page }) => {
+    test('should have visible focus indicators during keyboard navigation', async ({
+      authenticatedPage: page,
+    }) => {
       const focusResult = await verifyFocusIndicators(page);
 
       // Should have elements with focus indicators
       expect(focusResult.elementsWithFocus + focusResult.elementsWithoutFocus).toBeGreaterThan(0);
 
       // Ratio of focused elements should be reasonable
-      const ratio = focusResult.elementsWithFocus /
+      const ratio =
+        focusResult.elementsWithFocus /
         (focusResult.elementsWithFocus + focusResult.elementsWithoutFocus);
       expect(ratio).toBeGreaterThan(0.5);
 
@@ -871,7 +904,9 @@ test.describe('@regression-a11y Import-Export Page Accessibility Tests', () => {
   // 11. FORM VALIDATION AND SUBMISSION TESTS
   // ============================================================================
   test.describe('@regression-a11y Form Validation and Submission', () => {
-    test('export filename input should have maxlength attribute', async ({ authenticatedPage: page }) => {
+    test('export filename input should have maxlength attribute', async ({
+      authenticatedPage: page,
+    }) => {
       const input = page.locator('#export-filename').first();
       const maxlength = await input.getAttribute('maxlength');
 
@@ -879,14 +914,18 @@ test.describe('@regression-a11y Import-Export Page Accessibility Tests', () => {
       expect(parseInt(maxlength || '0')).toBeGreaterThan(0);
     });
 
-    test('export filename input should have pattern attribute', async ({ authenticatedPage: page }) => {
+    test('export filename input should have pattern attribute', async ({
+      authenticatedPage: page,
+    }) => {
       const input = page.locator('#export-filename').first();
       const pattern = await input.getAttribute('pattern');
 
       expect(pattern).toBeTruthy();
     });
 
-    test('import mode select should have help text associated', async ({ authenticatedPage: page }) => {
+    test('import mode select should have help text associated', async ({
+      authenticatedPage: page,
+    }) => {
       const select = page.locator('#import-mode').first();
       const helpId = await select.getAttribute('aria-describedby');
 
@@ -904,14 +943,16 @@ test.describe('@regression-a11y Import-Export Page Accessibility Tests', () => {
   // 12. VISUAL TESTING TESTS
   // ============================================================================
   test.describe('@regression-a11y Visual Accessibility', () => {
-    test('should capture import-export page state for visual review', async ({ authenticatedPage: page }) => {
+    test('should capture import-export page state for visual review', async ({
+      authenticatedPage: page,
+    }) => {
       await page.screenshot({ path: 'tests/accessibility/reports/import-export-page.png' });
       await expect(page.locator('body')).toBeVisible();
     });
 
     test('should capture export form focus state', async ({ authenticatedPage: page }) => {
       const exportBtn = page.locator('button[onclick="performExport()"]').first();
-      if (await exportBtn.count() > 0) {
+      if ((await exportBtn.count()) > 0) {
         await captureFocusState(
           page,
           exportBtn,
@@ -922,7 +963,7 @@ test.describe('@regression-a11y Import-Export Page Accessibility Tests', () => {
 
     test('should capture import form focus state', async ({ authenticatedPage: page }) => {
       const importBtn = page.locator('button[onclick="performImport()"]').first();
-      if (await importBtn.count() > 0) {
+      if ((await importBtn.count()) > 0) {
         await captureFocusState(
           page,
           importBtn,
@@ -933,7 +974,7 @@ test.describe('@regression-a11y Import-Export Page Accessibility Tests', () => {
 
     test('should capture file input focus state', async ({ authenticatedPage: page }) => {
       const fileInput = page.locator('#import-file').first();
-      if (await fileInput.count() > 0) {
+      if ((await fileInput.count()) > 0) {
         await captureFocusState(
           page,
           fileInput,
@@ -1000,12 +1041,14 @@ test.describe('@regression-a11y Import-Export Page Accessibility Tests', () => {
       }
     });
 
-    test('form groups should have proper labels or legends', async ({ authenticatedPage: page }) => {
+    test('form groups should have proper labels or legends', async ({
+      authenticatedPage: page,
+    }) => {
       const fieldsets = await page.locator('fieldset').all();
 
       for (const fieldset of fieldsets) {
         const legend = fieldset.locator('legend').first();
-        const hasLegend = await legend.count() > 0;
+        const hasLegend = (await legend.count()) > 0;
 
         // If using fieldset, should have legend
         if (hasLegend) {
@@ -1020,7 +1063,9 @@ test.describe('@regression-a11y Import-Export Page Accessibility Tests', () => {
   // 14. SKIP LINK FUNCTIONALITY TESTS
   // ============================================================================
   test.describe('@regression-a11y Skip Link Functionality', () => {
-    test('should have skip link as first focusable element', async ({ authenticatedPage: page }) => {
+    test('should have skip link as first focusable element', async ({
+      authenticatedPage: page,
+    }) => {
       const skipLinks = await validateSkipLinks(page);
       expect(skipLinks.hasSkipLink).toBe(true);
       expect(skipLinks.skipLinks.length).toBeGreaterThan(0);
@@ -1036,7 +1081,12 @@ test.describe('@regression-a11y Import-Export Page Accessibility Tests', () => {
         const style = window.getComputedStyle(skipLink);
         const clipPath = style.clipPath || '';
         // Hidden if: visibility hidden, display none, opacity 0, OR clip-path inset(100%)
-        return style.visibility === 'hidden' || style.display === 'none' || style.opacity === '0' || clipPath.includes('inset(100%)');
+        return (
+          style.visibility === 'hidden' ||
+          style.display === 'none' ||
+          style.opacity === '0' ||
+          clipPath.includes('inset(100%)')
+        );
       });
       expect(isHidden).toBe(true);
     });
@@ -1055,7 +1105,7 @@ test.describe('@regression-a11y Import-Export Page Accessibility Tests', () => {
 
     test('skip link should target main content', async ({ authenticatedPage: page }) => {
       const skipLink = page.locator('a[href^="#"]').first();
-      if (await skipLink.count() > 0) {
+      if ((await skipLink.count()) > 0) {
         const href = await skipLink.getAttribute('href');
         expect(href).toBeTruthy();
         expect(href).toMatch(/^#/);
@@ -1072,7 +1122,9 @@ test.describe('@regression-a11y Import-Export Page Accessibility Tests', () => {
   // 15. RESPONSIVE ACCESSIBILITY TESTS
   // ============================================================================
   test.describe('@regression-a11y Mobile Viewport Accessibility', () => {
-    test('should maintain accessibility at mobile viewport', async ({ authenticatedPage: page }) => {
+    test('should maintain accessibility at mobile viewport', async ({
+      authenticatedPage: page,
+    }) => {
       // Set mobile viewport
       await page.setViewportSize({ width: 375, height: 667 });
 
@@ -1093,7 +1145,9 @@ test.describe('@regression-a11y Import-Export Page Accessibility Tests', () => {
       await page.setViewportSize({ width: 1280, height: 720 });
     });
 
-    test('form inputs should be touch accessible at mobile size', async ({ authenticatedPage: page }) => {
+    test('form inputs should be touch accessible at mobile size', async ({
+      authenticatedPage: page,
+    }) => {
       await page.setViewportSize({ width: 375, height: 667 });
       await navigateToProtectedRoute(page, '/import-export');
 
@@ -1117,50 +1171,47 @@ test.describe('@regression-a11y Import-Export Page Accessibility Tests', () => {
 // ============================================================================
 // AUTHENTICATED USER TESTS
 // ============================================================================
-authenticatedUserTest.describe(
-  'Import-Export Page Accessibility - Authenticated User',
-  () => {
-    authenticatedUserTest.beforeEach(async ({ authenticatedPage: page }) => {
-      // Navigate to import-export page
-      await navigateToProtectedRoute(page, '/import-export');
-    });
+authenticatedUserTest.describe('Import-Export Page Accessibility - Authenticated User', () => {
+  authenticatedUserTest.beforeEach(async ({ authenticatedPage: page }) => {
+    // Navigate to import-export page
+    await navigateToProtectedRoute(page, '/import-export');
+  });
 
-    authenticatedUserTest(
-      'user should be able to access import-export functionality',
-      async ({ authenticatedPage: page }) => {
-        // Verify page loaded
-        const mainContent = page.locator('main[role="main"], [role="main"]').first();
-        expect(await mainContent.count()).toBeGreaterThan(0);
+  authenticatedUserTest(
+    'user should be able to access import-export functionality',
+    async ({ authenticatedPage: page }) => {
+      // Verify page loaded
+      const mainContent = page.locator('main[role="main"], [role="main"]').first();
+      expect(await mainContent.count()).toBeGreaterThan(0);
 
-        // Verify both forms are present
-        const importForm = page.locator('#import-form').first();
-        const exportForm = page.locator('#export-form').first();
+      // Verify both forms are present
+      const importForm = page.locator('#import-form').first();
+      const exportForm = page.locator('#export-form').first();
 
-        expect(await importForm.count()).toBeGreaterThan(0);
-        expect(await exportForm.count()).toBeGreaterThan(0);
+      expect(await importForm.count()).toBeGreaterThan(0);
+      expect(await exportForm.count()).toBeGreaterThan(0);
+    }
+  );
+
+  authenticatedUserTest(
+    'all import-export buttons should be accessible to authenticated user',
+    async ({ authenticatedPage: page }) => {
+      const buttons = await validateButtonLabels(page);
+      expect(buttons.allButtonsLabeled).toBe(true);
+    }
+  );
+
+  authenticatedUserTest(
+    'authenticated user should be able to navigate forms with keyboard',
+    async ({ authenticatedPage: page }) => {
+      const tabOrder = await extractTabOrder(page);
+      expect(tabOrder.length).toBeGreaterThan(0);
+
+      // Navigate through form fields
+      for (let i = 0; i < Math.min(3, tabOrder.length); i++) {
+        await page.keyboard.press('Tab');
+        await expect(page.locator(':focus')).toHaveCount(1);
       }
-    );
-
-    authenticatedUserTest(
-      'all import-export buttons should be accessible to authenticated user',
-      async ({ authenticatedPage: page }) => {
-        const buttons = await validateButtonLabels(page);
-        expect(buttons.allButtonsLabeled).toBe(true);
-      }
-    );
-
-    authenticatedUserTest(
-      'authenticated user should be able to navigate forms with keyboard',
-      async ({ authenticatedPage: page }) => {
-        const tabOrder = await extractTabOrder(page);
-        expect(tabOrder.length).toBeGreaterThan(0);
-
-        // Navigate through form fields
-        for (let i = 0; i < Math.min(3, tabOrder.length); i++) {
-          await page.keyboard.press('Tab');
-          await expect(page.locator(':focus')).toHaveCount(1);
-        }
-      }
-    );
-  }
-);
+    }
+  );
+});

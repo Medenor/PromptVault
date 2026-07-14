@@ -10,7 +10,7 @@
 
 import '../css/tailwind-globals.css';
 import '@/form-validation';
-import { changeLanguage, initI18n, t, tUnsafe, updateStaticTranslations } from '@/utils/i18n';
+import { initI18n, t, tUnsafe, updateStaticTranslations } from '@/utils/i18n';
 import { hideElement, showElement } from '@/utils/dom';
 import { reportError } from '@/telemetry';
 import { apiGet, apiPostForm, APIRequestError } from '@/utils/api';
@@ -260,9 +260,6 @@ function initializeImportExport(): void {
 }
 
 function setupEventListeners(): void {
-  const languageSelector = document.getElementById('language-selector');
-  languageSelector?.addEventListener('change', handleLanguageChange);
-
   const exportFormat = document.getElementById('export-format');
   exportFormat?.addEventListener('change', updateFilenameFromDropdown);
 
@@ -800,15 +797,6 @@ function showStatus(
       hideElement(progressContainer);
     }, 3000);
   }
-}
-
-function handleLanguageChange(event: Event): void {
-  const selectedLanguage = (event.target as HTMLSelectElement).value;
-  changeLanguage(selectedLanguage)
-    .then(() => updateStaticTranslations())
-    .catch((error) => {
-      reportError(IMPORT_EXPORT_COMPONENT, 'changeLanguage', error, { language: selectedLanguage });
-    });
 }
 
 function clearExportSettings(): void {

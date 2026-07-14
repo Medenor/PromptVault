@@ -132,23 +132,24 @@ test('EXAMPLE: Page has proper semantic structure and landmarks', async ({ page 
 /**
  * Example 5: Testing authenticated pages
  */
-authenticatedUserTest('EXAMPLE: Profile page is accessible to authenticated users', async ({
-  authenticatedPage,
-}) => {
-  await authenticatedPage.goto('/auth/profile');
+authenticatedUserTest(
+  'EXAMPLE: Profile page is accessible to authenticated users',
+  async ({ authenticatedPage }) => {
+    await authenticatedPage.goto('/auth/profile');
 
-  // Test form labeling
-  const labels = await validateFormLabels(authenticatedPage);
-  expect(labels.allLabeled).toBe(true);
+    // Test form labeling
+    const labels = await validateFormLabels(authenticatedPage);
+    expect(labels.allLabeled).toBe(true);
 
-  // Test button labels
-  const buttons = await validateButtonLabels(authenticatedPage);
-  expect(buttons.allButtonsLabeled).toBe(true);
+    // Test button labels
+    const buttons = await validateButtonLabels(authenticatedPage);
+    expect(buttons.allButtonsLabeled).toBe(true);
 
-  // Test keyboard navigation
-  const navResult = await testKeyboardNavigation(authenticatedPage);
-  expect(navResult.success).toBe(true);
-});
+    // Test keyboard navigation
+    const navResult = await testKeyboardNavigation(authenticatedPage);
+    expect(navResult.success).toBe(true);
+  }
+);
 
 /**
  * Example 6: Capturing element states for visual review

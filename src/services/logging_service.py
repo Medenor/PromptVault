@@ -239,6 +239,10 @@ class LoggingService:
                     "level": audit_level,
                     "propagate": False,
                 },
+                "sqlalchemy.engine": {
+                    "level": "WARNING",
+                    "propagate": False,
+                },
             },
         }
 

@@ -624,11 +624,15 @@ class AccessibilityHTMLReporter implements Reporter {
             </div>
 
             <!-- Failed Tests Section -->
-            ${failedTests.length > 0 ? `
+            ${
+              failedTests.length > 0
+                ? `
             <div class="section">
                 <div class="section-title">Failed Tests (${failedTests.length})</div>
                 <ul class="test-list">
-                    ${failedTests.map((test) => `
+                    ${failedTests
+                      .map(
+                        (test) => `
                     <li class="test-item failed">
                         <strong>${test.title}</strong>
                         <span class="test-badge failed">FAILED</span>
@@ -637,10 +641,14 @@ class AccessibilityHTMLReporter implements Reporter {
                         </div>
                         ${test.error ? `<div class="error-details">${this.escapeHtml(test.error)}</div>` : ''}
                     </li>
-                    `).join('')}
+                    `
+                      )
+                      .join('')}
                 </ul>
             </div>
-            ` : '<div class="section"><p style="color: #10b981; font-weight: 600;">All tests passed!</p></div>'}
+            `
+                : '<div class="section"><p style="color: #10b981; font-weight: 600;">All tests passed!</p></div>'
+            }
 
             <!-- Execution Details -->
             <div class="section">

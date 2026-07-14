@@ -68,7 +68,7 @@ services:
       - PORT=8001
       - DATABASE_URL=postgresql://promptvault:${POSTGRES_PASSWORD:-changeme}@db:5432/promptvault
       - REDIS_URL=redis://redis:6379/0
-      - DATA_DIR=/app/data
+      - PROMPTVAULT_DATA_DIR=/app/data
       - JWT_PRIVATE_KEY_PATH=/app/secrets/jwt/private_key.pem
       - JWT_PUBLIC_KEY_PATH=/app/secrets/jwt/public_key.pem
       - JWT_ACCESS_TOKEN_EXPIRE_SECONDS=${JWT_ACCESS_TOKEN_EXPIRE_SECONDS:-900}

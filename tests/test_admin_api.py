@@ -50,7 +50,7 @@ from src.db.models.user_session import UserSession
 
 
 @pytest.fixture
-def admin_client(test_db_engine, temp_data_dir: str):
+def admin_client(test_db_engine, temp_data_dir: str, monkeypatch):
     """FastAPI TestClient configured for admin testing.
 
     Creates a test client with in-memory database, proper session management,
@@ -59,8 +59,10 @@ def admin_client(test_db_engine, temp_data_dir: str):
     Yields:
         TestClient: Configured test client for API testing
     """
+    import os
     from src.web import app as web_app
     from src.db import session as session_module
+    from src.db import config as config_module
     from sqlalchemy.orm import sessionmaker
 
     # Store original session factory
@@ -71,6 +73,18 @@ def admin_client(test_db_engine, temp_data_dir: str):
 
     # Patch the session factory
     session_module.SessionLocal = TestSessionLocal
+
+    # Backup restore reads DATABASE_URL directly (bypassing SessionLocal) to
+    # open the raw sqlite file, so it must also point at a throwaway path —
+    # otherwise a restore-path test would overwrite the developer's real DB.
+    from sqlalchemy import create_engine as _create_engine
+    from src.db.base import Base as _Base
+
+    test_db_path = os.path.join(temp_data_dir, "admin_client_test.db")
+    monkeypatch.setattr(config_module.db_settings, "DATABASE_URL", f"sqlite:///{test_db_path}")
+    _file_engine = _create_engine(f"sqlite:///{test_db_path}")
+    _Base.metadata.create_all(_file_engine)
+    _file_engine.dispose()
 
     # Configure services with test data directory
     web_app.configure_services(data_dir=temp_data_dir)

@@ -11,11 +11,45 @@
 import '../css/tailwind-globals.css';
 import { reportError } from '@/telemetry';
 import '@/form-validation';
-import { changeLanguage, initI18n, t, updateStaticTranslations } from '@/utils/i18n';
+import { initI18n, t, updateStaticTranslations, changeLanguage } from '@/utils/i18n';
 import type { TranslationKey } from '@/types/i18n';
 import { hideElement, showElement } from '@/utils/dom';
-import { apiFetch, apiGet, apiPost, APIRequestError } from '@/utils/api';
+import { apiFetch, apiGet, apiPost, apiPostForm, APIRequestError } from '@/utils/api';
 import { announce } from '@/utils/a11y';
+import { loadMonitoringDashboard, loadAuditLog } from './components/backup-monitoring-dashboard';
+
+interface CloudProvider {
+  id: string;
+  name: string;
+  provider_type: string;
+  endpoint_url: string | null;
+  bucket_name: string;
+  prefix: string;
+  region: string | null;
+  enabled: boolean;
+}
+
+interface EncryptionConfig {
+  is_enabled: boolean;
+  algorithm: string;
+  kdf: string;
+  key_version: number;
+  rotated_at: string | null;
+}
+
+interface BackupSchedule {
+  id: string;
+  enabled: boolean;
+  frequency: string;
+  hour: number;
+  minute: number;
+  day_of_week: number | null;
+  day_of_month: number | null;
+  retention_days: number;
+  cloud_provider_id: string | null;
+  last_run_at: string | null;
+  last_run_status: string | null;
+}
 
 interface BackupItem {
   backup_id: string;
@@ -24,6 +58,10 @@ interface BackupItem {
   compressed: boolean;
   prompt_count: number;
   created_by?: string | null;
+  storage_path?: string | null;
+  cloud_provider_id?: string | null;
+  cloud_path?: string | null;
+  is_encrypted?: boolean;
 }
 
 interface BackupStats {
@@ -49,6 +87,7 @@ interface DeleteResponse {
 
 interface CleanupResponse {
   success: boolean;
+  dry_run?: boolean;
   removed_count?: number;
 }
 
@@ -70,7 +109,9 @@ const BACKUP_COMPONENT = 'backupManagement';
 const liveValidationState = new Map<string, boolean>();
 
 let currentBackups: BackupItem[] = [];
+const cloudProviderNames = new Map<string, string>();
 let selectedBackupId: string | null = null;
+let encryptionEnabled = false;
 
 // Focus management for modals
 let restoreConfirmationModalTrigger: HTMLElement | null = null;
@@ -199,12 +240,32 @@ function initializeBackupManagement(): void {
   void checkAdminAccess();
   void loadBackups();
   void loadBackupStats();
+  void loadMonitoringDashboard();
+  void loadAuditLog();
+  void loadSchedule();
+  void loadEncryptionConfig();
+  void loadCloudProviders();
+
+  // Monitoring/audit tables are rendered with translated headers at fetch
+  // time, so a language switch needs to re-fetch them to pick up the new
+  // strings (updateStaticTranslations() only covers data-i18n elements).
+  // initI18n() also binds its own 'change' listener that calls
+  // changeLanguage() to swap the active i18next language; that call is
+  // idempotent, so awaiting our own changeLanguage() here (rather than
+  // racing a plain synchronous reload) guarantees the dashboard is
+  // re-fetched only after the new language is actually active.
+  document.querySelectorAll('.language-selector').forEach((el) => {
+    el.addEventListener('change', () => {
+      if (!(el instanceof HTMLSelectElement)) return;
+      void changeLanguage(el.value).then(() => {
+        void loadMonitoringDashboard();
+        void loadAuditLog();
+      });
+    });
+  });
 }
 
 function setupEventListeners(): void {
-  const languageSelector = document.getElementById('language-selector');
-  languageSelector?.addEventListener('change', handleLanguageChange);
-
   const backupNameInput = document.getElementById('backup-name') as HTMLInputElement | null;
   if (backupNameInput) {
     const validateBackupName = () => {
@@ -231,18 +292,20 @@ function setupEventListeners(): void {
     });
   }
 
-  const retentionInput = document.getElementById('retention-days') as HTMLInputElement | null;
+  const retentionInput = document.getElementById(
+    'cleanup-retention-days'
+  ) as HTMLInputElement | null;
   if (retentionInput) {
     const validateRetention = () => {
       const raw = retentionInput.value.trim();
       const value = Number(raw);
       if (!raw) {
-        clearLiveFieldError('retention-days', 'retention-days-error');
+        clearLiveFieldError('cleanup-retention-days', 'retention-days-error');
         return;
       }
       if (!Number.isFinite(value)) {
         setLiveFieldError(
-          'retention-days',
+          'cleanup-retention-days',
           'retention-days-error',
           t('validation.retentionDaysInvalid') || 'Retention days must be a valid number.'
         );
@@ -250,7 +313,7 @@ function setupEventListeners(): void {
       }
       if (value < 1) {
         setLiveFieldError(
-          'retention-days',
+          'cleanup-retention-days',
           'retention-days-error',
           t('validation.retentionDaysTooLow') || 'Retention days is too low.'
         );
@@ -258,17 +321,17 @@ function setupEventListeners(): void {
       }
       if (value > 3650) {
         setLiveFieldError(
-          'retention-days',
+          'cleanup-retention-days',
           'retention-days-error',
           t('validation.retentionDaysTooHigh') || 'Retention days is too high.'
         );
         return;
       }
-      clearLiveFieldError('retention-days', 'retention-days-error');
+      clearLiveFieldError('cleanup-retention-days', 'retention-days-error');
     };
     retentionInput.addEventListener('blur', validateRetention);
     retentionInput.addEventListener('input', () => {
-      if (liveValidationState.get('retention-days') === true) {
+      if (liveValidationState.get('cleanup-retention-days') === true) {
         validateRetention();
       }
     });
@@ -323,6 +386,11 @@ function setupEventListeners(): void {
   const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
   confirmDeleteBtn?.addEventListener('click', confirmDelete);
 
+  const frequencySelect = document.getElementById('schedule-frequency') as HTMLSelectElement | null;
+  frequencySelect?.addEventListener('change', () => {
+    updateDayFieldVisibility(frequencySelect.value);
+  });
+
   // Button keyboard activation (Enter and Space keys)
   // Enables keyboard accessibility for all buttons
   document.addEventListener('keydown', (e) => {
@@ -334,16 +402,6 @@ function setupEventListeners(): void {
         button.click();
       }
     }
-  });
-}
-
-function handleLanguageChange(event: Event): void {
-  const target = event.target as HTMLSelectElement | null;
-  const selectedLanguage = target?.value;
-  if (!selectedLanguage) return;
-
-  changeLanguage(selectedLanguage).catch((err) => {
-    reportError(BACKUP_COMPONENT, 'changeLanguage', err, { language: selectedLanguage });
   });
 }
 
@@ -369,25 +427,21 @@ async function loadBackupStats(): Promise<void> {
 }
 
 function updateStatsDisplay(stats: BackupStats): void {
-  const totalBackups = document.getElementById('total-backups');
-  const totalSize = document.getElementById('total-size');
   const compressedCount = document.getElementById('compressed-count');
   const newestBackup = document.getElementById('newest-backup');
   const oldestBackup = document.getElementById('oldest-backup');
 
-  if (totalBackups) totalBackups.textContent = String(stats.total_backups || 0);
-  if (totalSize) totalSize.textContent = formatBytes(stats.total_size || 0);
   if (compressedCount) compressedCount.textContent = String(stats.compressed_count || 0);
 
   if (newestBackup) {
     newestBackup.textContent = stats.newest_backup
       ? new Date(stats.newest_backup).toLocaleString()
-      : 'None';
+      : t('backup.noneValue');
   }
   if (oldestBackup) {
     oldestBackup.textContent = stats.oldest_backup
       ? new Date(stats.oldest_backup).toLocaleString()
-      : 'None';
+      : t('backup.noneValue');
   }
 }
 
@@ -396,7 +450,7 @@ function renderBackupList(backups: BackupItem[]): void {
   if (!container) return;
 
   if (backups.length === 0) {
-    container.innerHTML = '<div class="text-gray-500 text-sm">No backups found</div>';
+    container.innerHTML = `<div class="text-gray-500 text-sm">${escapeHtml(t('backup.noBackupsFound'))}</div>`;
     return;
   }
 
@@ -404,29 +458,53 @@ function renderBackupList(backups: BackupItem[]): void {
   container.innerHTML = backupItems;
 }
 
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function createBackupItem(backup: BackupItem): string {
   const timestamp = new Date(backup.timestamp).toLocaleString();
   const size = formatBytes(backup.size_bytes);
   const isCompressed = backup.compressed ? ' (compressed)' : '';
   const compressionIcon = backup.compressed ? '🗜️' : '📄';
-  const createdBy = backup.created_by || 'unknown';
+  const createdBy = escapeHtml(backup.created_by || 'unknown');
+  const backupId = escapeHtml(backup.backup_id);
+  const cloudProviderName = backup.cloud_provider_id
+    ? cloudProviderNames.get(backup.cloud_provider_id) || backup.cloud_provider_id
+    : '';
+  const localBadge = backup.storage_path
+    ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-200 text-gray-700 text-xs font-medium">💻 ${escapeHtml(t('backup.localBadge'))}</span>`
+    : '';
+  const cloudBadge = backup.cloud_provider_id
+    ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-medium" title="${escapeHtml(cloudProviderName)}">☁️ ${escapeHtml(t('backup.cloudBadge'))}</span>`
+    : '';
+  const storageBadge = `${localBadge}${cloudBadge}`;
+  const encryptedBadge = backup.is_encrypted
+    ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-xs font-medium" title="${escapeHtml(t('backup.encryptedTooltip'))}">🔒 ${escapeHtml(t('backup.encryptedBadge'))}</span>`
+    : '';
 
   return `
-        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200 hover:border-blue-300 transition" data-id="${backup.backup_id}">
+        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200 hover:border-blue-300 transition" data-id="${backupId}" data-encrypted="${backup.is_encrypted ? 'true' : 'false'}">
             <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-3 md:gap-0 mb-3">
-                <h4 class="font-semibold text-gray-900 md:min-w-0">${backup.backup_id}${isCompressed}</h4>
+                <h4 class="font-semibold text-gray-900 min-w-0 truncate" title="${backupId}${isCompressed}">${backupId}${isCompressed}</h4>
                 <div class="flex gap-2 flex-shrink-0">
-                    <button class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-medium transition whitespace-nowrap" onclick="showRestoreModal('${backup.backup_id}')">Restore</button>
-                    <button class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-medium transition whitespace-nowrap" onclick="showDeleteModal('${backup.backup_id}')">Delete</button>
+                    <button class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-medium transition whitespace-nowrap" data-backup-id="${backupId}" data-i18n="backup.restoreBtn" onclick="showRestoreModal(this.dataset.backupId)">${escapeHtml(t('backup.restoreBtn'))}</button>
+                    <button class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-medium transition whitespace-nowrap" data-backup-id="${backupId}" data-i18n="backup.deleteBtn" onclick="showDeleteModal(this.dataset.backupId)">${escapeHtml(t('backup.deleteBtn'))}</button>
                 </div>
             </div>
+            <div class="flex items-center gap-2 mb-2">${storageBadge}${encryptedBadge}</div>
             <div class="space-y-1">
                 <div class="flex items-center justify-between text-sm text-gray-600">
-                    <span>${timestamp}</span>
-                    <span>${compressionIcon} ${size}</span>
+                    <span>${escapeHtml(timestamp)}</span>
+                    <span>${compressionIcon} ${escapeHtml(size)}</span>
                 </div>
-                <div class="text-sm text-gray-600">${backup.prompt_count} prompts</div>
-                <div class="text-xs text-gray-500">Created by: ${createdBy}</div>
+                <div class="text-sm text-gray-600">${backup.prompt_count} <span data-i18n="backup.promptsCount">${escapeHtml(t('backup.promptsCount'))}</span></div>
+                <div class="text-xs text-gray-500"><span data-i18n="backup.createdByLabel">${escapeHtml(t('backup.createdByLabel'))}</span> ${createdBy}</div>
             </div>
         </div>
     `;
@@ -435,7 +513,16 @@ function createBackupItem(backup: BackupItem): string {
 async function createBackup(): Promise<void> {
   const backupNameInput = document.getElementById('backup-name') as HTMLInputElement | null;
   const backupName = backupNameInput?.value.trim() ?? '';
+  const passphraseInput = document.getElementById(
+    'backup-create-passphrase'
+  ) as HTMLInputElement | null;
+  const passphrase = passphraseInput?.value ?? '';
+  const cloudProviderInput = document.getElementById(
+    'backup-create-cloud-provider'
+  ) as HTMLSelectElement | null;
+  const cloudProviderId = cloudProviderInput?.value ?? '';
   resetFieldError('backup-name', 'backup-name-error');
+  resetFieldError('backup-create-passphrase', 'backup-create-passphrase-error');
   resetErrorSummary('backup-create-error-summary');
   const validationErrors: FormValidationError[] = [];
 
@@ -448,27 +535,43 @@ async function createBackup(): Promise<void> {
     );
   }
 
+  if (encryptionEnabled && !passphrase) {
+    addFieldError(
+      validationErrors,
+      'backup-create-passphrase',
+      'backup-create-passphrase-error',
+      t('validation.passphraseRequired') || 'Encryption passphrase is required.'
+    );
+  }
+
   if (validationErrors.length > 0) {
     renderErrorSummary('backup-create-error-summary', validationErrors);
     return;
   }
 
-  showProgress('backup-progress', 'Creating backup...');
+  showProgress('backup-progress', t('backup.creatingBackupProgress'));
 
   try {
     const formData = new FormData();
     formData.append('name', backupName);
+    if (encryptionEnabled) {
+      formData.append('encrypt', 'true');
+      formData.append('passphrase', passphrase);
+    }
+    if (cloudProviderId) {
+      formData.append('cloud_provider_id', cloudProviderId);
+    }
 
-    const result = await apiFetch<BackupResponse>('/api/backups', {
-      method: 'POST',
-      body: formData,
-    });
+    const result = await apiPostForm<BackupResponse>('/api/backups', formData);
 
     if (result.success) {
       showStatus('backup-status', `Backup created successfully: ${result.backup_id}`, 'success');
       if (backupNameInput) backupNameInput.value = '';
+      if (passphraseInput) passphraseInput.value = '';
       void loadBackups();
       void loadBackupStats();
+      void loadMonitoringDashboard();
+      void loadAuditLog();
     } else {
       showStatus('backup-status', t('backup.createFailed'), 'error');
     }
@@ -490,12 +593,22 @@ function showRestoreModal(backupId: string): void {
   const infoDiv = document.getElementById('restore-backup-info');
   if (infoDiv) {
     infoDiv.innerHTML = `
-        <strong>Backup:</strong> ${backup.backup_id}<br>
-        <strong>Created:</strong> ${new Date(backup.timestamp).toLocaleString()}<br>
-        <strong>Size:</strong> ${formatBytes(backup.size_bytes)}<br>
-        <strong>Prompts:</strong> ${backup.prompt_count}
+        <strong>${escapeHtml(t('backup.backupLabel'))}</strong> ${escapeHtml(backup.backup_id)}<br>
+        <strong>${escapeHtml(t('backup.createdLabel'))}</strong> ${escapeHtml(new Date(backup.timestamp).toLocaleString())}<br>
+        <strong>${escapeHtml(t('backup.sizeLabel'))}</strong> ${escapeHtml(formatBytes(backup.size_bytes))}<br>
+        <strong>${escapeHtml(t('backup.promptsLabel'))}</strong> ${backup.prompt_count}
     `;
   }
+
+  const passphraseContainer = document.getElementById('restore-passphrase-container');
+  const passphraseInput = document.getElementById('restore-passphrase') as HTMLInputElement | null;
+  if (backup.is_encrypted) {
+    showElement(passphraseContainer);
+  } else {
+    hideElement(passphraseContainer);
+  }
+  if (passphraseInput) passphraseInput.value = '';
+  resetFieldError('restore-passphrase', 'restore-passphrase-error');
 
   const modal = document.getElementById('restore-modal') as HTMLElement | null;
   showElement(modal);
@@ -522,11 +635,28 @@ async function confirmRestore(): Promise<void> {
   if (!selectedBackupId) return;
 
   const backupIdToRestore = selectedBackupId;
+  const backup = currentBackups.find((item) => item.backup_id === backupIdToRestore);
+  const passphraseInput = document.getElementById('restore-passphrase') as HTMLInputElement | null;
+  const passphrase = passphraseInput?.value ?? '';
+
+  resetFieldError('restore-passphrase', 'restore-passphrase-error');
+  if (backup?.is_encrypted && !passphrase) {
+    setLiveFieldError(
+      'restore-passphrase',
+      'restore-passphrase-error',
+      t('validation.passphraseRequired') || 'Encryption passphrase is required.'
+    );
+    passphraseInput?.focus();
+    return;
+  }
+
   setRestoreInProgress(true, 'backup.restoreInProgress');
-  showProgress('backup-progress', 'Restoring backup...');
+  showProgress('backup-progress', t('backup.restoringBackupProgress'));
 
   try {
-    const result = await apiPost<RestoreResponse>(`/api/backups/${backupIdToRestore}/restore`);
+    const result = await apiPost<RestoreResponse>(`/api/backups/${backupIdToRestore}/restore`, {
+      passphrase: passphrase || undefined,
+    });
 
     if (result.success) {
       showStatus('backup-status', t('backup.restoreSuccess'), 'success');
@@ -540,8 +670,10 @@ async function confirmRestore(): Promise<void> {
     }
   } catch (error) {
     reportError(BACKUP_COMPONENT, 'restoreBackup', error, { backupId: backupIdToRestore });
-    showStatus('backup-status', t('backup.restoreError'), 'error');
+    const message = error instanceof APIRequestError ? error.message : t('backup.restoreError');
     setRestoreInProgress(false);
+    showStatus('restore-status', message, 'error');
+    showElement(document.getElementById('restore-status'));
   } finally {
     hideProgress('backup-progress');
   }
@@ -557,9 +689,9 @@ function showDeleteModal(backupId: string): void {
   const infoDiv = document.getElementById('delete-backup-info');
   if (infoDiv) {
     infoDiv.innerHTML = `
-        <strong>Backup:</strong> ${backup.backup_id}<br>
-        <strong>Created:</strong> ${new Date(backup.timestamp).toLocaleString()}<br>
-        <strong>Size:</strong> ${formatBytes(backup.size_bytes)}
+        <strong>${escapeHtml(t('backup.backupLabel'))}</strong> ${escapeHtml(backup.backup_id)}<br>
+        <strong>${escapeHtml(t('backup.createdLabel'))}</strong> ${escapeHtml(new Date(backup.timestamp).toLocaleString())}<br>
+        <strong>${escapeHtml(t('backup.sizeLabel'))}</strong> ${escapeHtml(formatBytes(backup.size_bytes))}
     `;
   }
 
@@ -588,7 +720,7 @@ async function confirmDelete(): Promise<void> {
 
   const backupIdToDelete = selectedBackupId;
   hideDeleteModal();
-  showProgress('backup-progress', 'Deleting backup...');
+  showProgress('backup-progress', t('backup.deletingBackupProgress'));
 
   try {
     const result = await apiFetch<DeleteResponse>(`/api/backups/${backupIdToDelete}`, {
@@ -599,6 +731,8 @@ async function confirmDelete(): Promise<void> {
       showStatus('backup-status', t('backup.deleteSuccess'), 'success');
       void loadBackups();
       void loadBackupStats();
+      void loadMonitoringDashboard();
+      void loadAuditLog();
     } else {
       showStatus('backup-status', t('backup.deleteFailed'), 'error');
     }
@@ -610,17 +744,61 @@ async function confirmDelete(): Promise<void> {
   }
 }
 
+function showDeleteAllModal(): void {
+  const modal = document.getElementById('delete-all-modal') as HTMLElement | null;
+  showElement(modal);
+  const firstFocusable = modal?.querySelector('h2, button') as HTMLElement | null;
+  firstFocusable?.focus();
+}
+
+function hideDeleteAllModal(): void {
+  hideElement(document.getElementById('delete-all-modal') as HTMLElement | null);
+}
+
+async function confirmDeleteAll(): Promise<void> {
+  hideDeleteAllModal();
+  showProgress('backup-progress', t('backup.deletingAllBackupsProgress'));
+
+  try {
+    const result = await apiFetch<{ deleted: string[]; failed: string[] }>(
+      '/api/backups?confirm=DELETE_ALL',
+      {
+        method: 'DELETE',
+      }
+    );
+
+    const count = result.deleted?.length ?? 0;
+    const failCount = result.failed?.length ?? 0;
+    if (failCount > 0) {
+      showStatus('backup-status', `Deleted ${count} backup(s), ${failCount} failed.`, 'error');
+    } else {
+      showStatus('backup-status', `Deleted ${count} backup(s).`, 'success');
+    }
+    void loadBackups();
+    void loadBackupStats();
+    void loadMonitoringDashboard();
+    void loadAuditLog();
+  } catch (error) {
+    reportError(BACKUP_COMPONENT, 'deleteAllBackups', error, {});
+    showStatus('backup-status', t('backup.deleteError'), 'error');
+  } finally {
+    hideProgress('backup-progress');
+  }
+}
+
 async function cleanupBackups(): Promise<void> {
-  const retentionInput = document.getElementById('retention-days') as HTMLInputElement | null;
+  const retentionInput = document.getElementById(
+    'cleanup-retention-days'
+  ) as HTMLInputElement | null;
   const retentionDays = retentionInput?.value ?? '';
-  resetFieldError('retention-days', 'retention-days-error');
+  resetFieldError('cleanup-retention-days', 'retention-days-error');
   resetErrorSummary('cleanup-error-summary');
   const validationErrors: FormValidationError[] = [];
   const retentionValue = Number(retentionDays);
   if (!Number.isFinite(retentionValue) || retentionValue < 1 || retentionValue > 3650) {
     addFieldError(
       validationErrors,
-      'retention-days',
+      'cleanup-retention-days',
       'retention-days-error',
       !Number.isFinite(retentionValue)
         ? t('validation.retentionDaysInvalid') || 'Retention days must be a valid number.'
@@ -634,16 +812,14 @@ async function cleanupBackups(): Promise<void> {
     return;
   }
 
-  showProgress('maintenance-progress', 'Cleaning up old backups...');
+  showProgress('maintenance-progress', t('backup.cleaningUpBackupsProgress'));
 
   try {
     const formData = new FormData();
     formData.append('retention_days', retentionDays);
+    formData.append('dry_run', 'false');
 
-    const result = await apiFetch<CleanupResponse>('/api/backups/cleanup', {
-      method: 'POST',
-      body: formData,
-    });
+    const result = await apiPostForm<CleanupResponse>('/api/backups/cleanup', formData);
 
     if (result.success) {
       showStatus(
@@ -653,11 +829,13 @@ async function cleanupBackups(): Promise<void> {
       );
       void loadBackups();
       void loadBackupStats();
+      void loadMonitoringDashboard();
+      void loadAuditLog();
     } else {
       showStatus('maintenance-status', t('backup.cleanupFailed'), 'error');
     }
   } catch (error) {
-    reportError(BACKUP_COMPONENT, 'cleanupBackups', error, { retentionDays });
+    reportError(BACKUP_COMPONENT, 'cleanupBackups', error, {});
     showStatus('maintenance-status', t('backup.cleanupError'), 'error');
   } finally {
     hideProgress('maintenance-progress');
@@ -688,16 +866,13 @@ async function compressBackups(): Promise<void> {
     return;
   }
 
-  showProgress('maintenance-progress', 'Compressing old backups...');
+  showProgress('maintenance-progress', t('backup.compressingBackupsProgress'));
 
   try {
     const formData = new FormData();
     formData.append('days_threshold', compressDays);
 
-    const result = await apiFetch<CompressResponse>('/api/backups/compress', {
-      method: 'POST',
-      body: formData,
-    });
+    const result = await apiPostForm<CompressResponse>('/api/backups/compress', formData);
 
     if (result.success) {
       showStatus(
@@ -707,6 +882,8 @@ async function compressBackups(): Promise<void> {
       );
       void loadBackups();
       void loadBackupStats();
+      void loadMonitoringDashboard();
+      void loadAuditLog();
     } else {
       showStatus('maintenance-status', t('backup.compressionFailed'), 'error');
     }
@@ -721,12 +898,19 @@ async function compressBackups(): Promise<void> {
 function refreshBackups(): void {
   void loadBackups();
   void loadBackupStats();
+  void loadMonitoringDashboard();
+  void loadAuditLog();
 }
 
 function clearBackupForm(): void {
   const backupNameInput = document.getElementById('backup-name') as HTMLInputElement | null;
   if (backupNameInput) backupNameInput.value = '';
+  const passphraseInput = document.getElementById(
+    'backup-create-passphrase'
+  ) as HTMLInputElement | null;
+  if (passphraseInput) passphraseInput.value = '';
   resetFieldError('backup-name', 'backup-name-error');
+  resetFieldError('backup-create-passphrase', 'backup-create-passphrase-error');
   resetErrorSummary('backup-create-error-summary');
 }
 
@@ -842,6 +1026,395 @@ async function checkAdminAccess(): Promise<void> {
   }
 }
 
+async function loadCloudProviders(): Promise<void> {
+  try {
+    const data = await apiGet<{ providers: CloudProvider[] }>('/api/backup-providers');
+    renderCloudProviders(data.providers || []);
+    populateCloudProviderSelect('schedule-cloud-provider', data.providers || []);
+    populateCloudProviderSelect('backup-create-cloud-provider', data.providers || []);
+    cloudProviderNames.clear();
+    for (const provider of data.providers || []) {
+      cloudProviderNames.set(provider.id, provider.name);
+    }
+    renderBackupList(currentBackups);
+  } catch {
+    const list = document.getElementById('cloud-providers-list');
+    if (list)
+      list.innerHTML = `<div class="text-gray-500 text-sm">${escapeHtml(t('backup.noProvidersConfigured'))}</div>`;
+  }
+}
+
+function populateCloudProviderSelect(selectId: string, providers: CloudProvider[]): void {
+  const select = document.getElementById(selectId) as HTMLSelectElement | null;
+  if (!select) return;
+
+  const previousValue = select.value;
+  const noneLabel = escapeHtml(t('backup.scheduleCloudProviderNone') || 'Local only');
+  const optionsHtml = providers
+    .map((p) => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)}</option>`)
+    .join('');
+  select.innerHTML = `<option value="">${noneLabel}</option>${optionsHtml}`;
+
+  if (providers.some((p) => p.id === previousValue)) {
+    select.value = previousValue;
+  }
+}
+
+function renderCloudProviders(providers: CloudProvider[]): void {
+  const list = document.getElementById('cloud-providers-list');
+  if (!list) return;
+
+  if (providers.length === 0) {
+    list.innerHTML = `<div class="text-gray-500 text-sm">${escapeHtml(t('backup.noProvidersConfigured'))}</div>`;
+    return;
+  }
+
+  list.innerHTML = providers
+    .map((p) => {
+      const pid = escapeHtml(p.id);
+      const endpointPart = p.endpoint_url ? ` (${escapeHtml(p.endpoint_url)})` : '';
+      return `
+    <div class="flex items-center justify-between bg-gray-50 rounded-lg p-3 border border-gray-200">
+      <div>
+        <div class="font-medium text-gray-900">${escapeHtml(p.name)}</div>
+        <div class="text-xs text-gray-500">${escapeHtml(p.provider_type)} — ${escapeHtml(p.bucket_name)}${endpointPart}</div>
+      </div>
+      <div class="flex gap-2">
+        <button class="px-2 py-1 text-xs bg-green-600 hover:bg-green-700 text-white rounded" data-provider-id="${pid}" data-i18n="backup.testBtn" onclick="testCloudProvider(this.dataset.providerId)">${escapeHtml(t('backup.testBtn'))}</button>
+        <button class="px-2 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded" data-provider-id="${pid}" data-i18n="backup.deleteBtn" onclick="deleteCloudProvider(this.dataset.providerId)">${escapeHtml(t('backup.deleteBtn'))}</button>
+      </div>
+    </div>`;
+    })
+    .join('');
+}
+
+async function addCloudProvider(): Promise<void> {
+  const name = (document.getElementById('provider-name') as HTMLInputElement)?.value ?? '';
+  const endpoint = (document.getElementById('provider-endpoint') as HTMLInputElement)?.value ?? '';
+  const bucket = (document.getElementById('provider-bucket') as HTMLInputElement)?.value ?? '';
+  const region = (document.getElementById('provider-region') as HTMLInputElement)?.value ?? '';
+  const accessKey =
+    (document.getElementById('provider-access-key') as HTMLInputElement)?.value ?? '';
+  const secretKey =
+    (document.getElementById('provider-secret-key') as HTMLInputElement)?.value ?? '';
+  const statusEl = document.getElementById('cloud-status');
+
+  if (!name || !bucket || !accessKey || !secretKey) {
+    if (statusEl) {
+      statusEl.textContent = t('backup.cloudProviderFieldsRequired');
+      statusEl.className = 'text-sm text-red-600 mt-2';
+    }
+    return;
+  }
+
+  try {
+    await apiFetch('/api/backup-providers', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name,
+        provider_type: 's3',
+        endpoint_url: endpoint || null,
+        bucket_name: bucket,
+        region: region || null,
+        access_key: accessKey,
+        secret_key: secretKey,
+      }),
+    });
+    if (statusEl) {
+      statusEl.textContent = t('backup.cloudProviderAdded');
+      statusEl.className = 'text-sm text-green-600 mt-2';
+    }
+    void loadCloudProviders();
+  } catch (error) {
+    reportError(BACKUP_COMPONENT, 'addCloudProvider', error);
+    if (statusEl) {
+      statusEl.textContent = t('backup.cloudProviderAddFailed');
+      statusEl.className = 'text-sm text-red-600 mt-2';
+    }
+  }
+}
+
+async function testCloudProvider(providerId: string): Promise<void> {
+  const statusEl = document.getElementById('cloud-status');
+  try {
+    const result = await apiPost<{ success: boolean; message: string }>(
+      `/api/backup-providers/${providerId}/test`
+    );
+    if (statusEl) {
+      statusEl.textContent = result.success ? `✓ ${result.message}` : `✗ ${result.message}`;
+      statusEl.className = `text-sm mt-2 ${result.success ? 'text-green-600' : 'text-red-600'}`;
+    }
+  } catch (error) {
+    reportError(BACKUP_COMPONENT, 'testCloudProvider', error, { providerId });
+    if (statusEl) {
+      statusEl.textContent = t('backup.cloudProviderTestFailed');
+      statusEl.className = 'text-sm text-red-600 mt-2';
+    }
+  }
+}
+
+async function deleteCloudProvider(providerId: string): Promise<void> {
+  const statusEl = document.getElementById('cloud-status');
+  try {
+    await apiFetch(`/api/backup-providers/${providerId}`, { method: 'DELETE' });
+    if (statusEl) {
+      statusEl.textContent = t('backup.cloudProviderDeleted');
+      statusEl.className = 'text-sm text-green-600 mt-2';
+    }
+    void loadCloudProviders();
+  } catch (error) {
+    reportError(BACKUP_COMPONENT, 'deleteCloudProvider', error, { providerId });
+    if (statusEl) {
+      statusEl.textContent = t('backup.cloudProviderDeleteFailed');
+      statusEl.className = 'text-sm text-red-600 mt-2';
+    }
+  }
+}
+
+async function loadEncryptionConfig(): Promise<void> {
+  try {
+    const config = await apiGet<EncryptionConfig>('/api/backup-encryption');
+    const enabledEl = document.getElementById('encryption-enabled') as HTMLInputElement | null;
+    const infoEl = document.getElementById('encryption-info');
+    const rotationEl = document.getElementById('encryption-key-rotation');
+    const rotateBtnEl = document.getElementById('encryption-rotate-btn');
+
+    if (enabledEl) enabledEl.checked = config.is_enabled;
+    if (infoEl) {
+      infoEl.textContent = `Algorithm: ${config.algorithm} | KDF: ${config.kdf} | Key version: ${config.key_version}${config.rotated_at ? ` | Rotated: ${new Date(config.rotated_at).toLocaleString()}` : ''}`;
+    }
+    rotationEl?.classList.toggle('hidden', !config.is_enabled);
+    rotateBtnEl?.classList.toggle('hidden', !config.is_enabled);
+    encryptionEnabled = config.is_enabled;
+  } catch {
+    // Encryption not configured
+    encryptionEnabled = false;
+  }
+
+  const createPassphraseContainer = document.getElementById('backup-create-passphrase-container');
+  if (createPassphraseContainer) {
+    createPassphraseContainer.classList.toggle('hidden', !encryptionEnabled);
+  }
+}
+
+async function saveEncryptionConfig(): Promise<void> {
+  const enabledEl = document.getElementById('encryption-enabled') as HTMLInputElement | null;
+  const passphraseEl = document.getElementById('encryption-passphrase') as HTMLInputElement | null;
+  const statusEl = document.getElementById('encryption-status');
+
+  const isEnabled = enabledEl?.checked ?? false;
+  const body: Record<string, unknown> = { is_enabled: isEnabled };
+
+  if (isEnabled) {
+    const passphrase = passphraseEl?.value ?? '';
+    if (!passphrase) {
+      if (statusEl) {
+        statusEl.textContent = t('backup.encryptionPassphraseRequiredToEnable');
+        statusEl.className = 'text-sm text-red-600 mt-2';
+      }
+      return;
+    }
+    body.passphrase = passphrase;
+  }
+
+  try {
+    await apiFetch<EncryptionConfig>('/api/backup-encryption', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (statusEl) {
+      statusEl.textContent = isEnabled
+        ? t('backup.encryptionEnabledStatus')
+        : t('backup.encryptionDisabledStatus');
+      statusEl.className = 'text-sm text-green-600 mt-2';
+    }
+    if (passphraseEl) passphraseEl.value = '';
+    void loadEncryptionConfig();
+  } catch (error) {
+    reportError(BACKUP_COMPONENT, 'saveEncryptionConfig', error);
+    if (statusEl) {
+      statusEl.textContent = t('backup.encryptionSaveFailed');
+      statusEl.className = 'text-sm text-red-600 mt-2';
+    }
+  }
+}
+
+async function rotateEncryptionKey(): Promise<void> {
+  const oldPassphraseEl = document.getElementById(
+    'encryption-old-passphrase'
+  ) as HTMLInputElement | null;
+  const newPassphraseEl = document.getElementById(
+    'encryption-new-passphrase'
+  ) as HTMLInputElement | null;
+  const statusEl = document.getElementById('encryption-status');
+
+  const oldPassphrase = oldPassphraseEl?.value ?? '';
+  const newPassphrase = newPassphraseEl?.value ?? '';
+
+  if (!oldPassphrase || !newPassphrase) {
+    if (statusEl) {
+      statusEl.textContent = t('backup.encryptionRotationPassphrasesRequired');
+      statusEl.className = 'text-sm text-red-600 mt-2';
+    }
+    return;
+  }
+
+  try {
+    await apiFetch<EncryptionConfig>('/api/backup-encryption', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        rotate_key: true,
+        old_passphrase: oldPassphrase,
+        new_passphrase: newPassphrase,
+      }),
+    });
+    if (statusEl) {
+      statusEl.textContent = t('backup.encryptionRotationSuccess');
+      statusEl.className = 'text-sm text-green-600 mt-2';
+    }
+    if (oldPassphraseEl) oldPassphraseEl.value = '';
+    if (newPassphraseEl) newPassphraseEl.value = '';
+    void loadEncryptionConfig();
+  } catch (error) {
+    reportError(BACKUP_COMPONENT, 'rotateEncryptionKey', error);
+    if (statusEl) {
+      statusEl.textContent = t('backup.encryptionRotationFailed');
+      statusEl.className = 'text-sm text-red-600 mt-2';
+    }
+  }
+}
+
+async function loadSchedule(): Promise<void> {
+  try {
+    const schedule = await apiGet<BackupSchedule>('/api/backup-schedule');
+    populateScheduleForm(schedule);
+  } catch {
+    // No schedule configured yet — that's fine
+  }
+}
+
+function populateScheduleForm(schedule: BackupSchedule): void {
+  const enabledEl = document.getElementById('schedule-enabled') as HTMLInputElement | null;
+  const frequencyEl = document.getElementById('schedule-frequency') as HTMLSelectElement | null;
+  const hourEl = document.getElementById('schedule-hour') as HTMLInputElement | null;
+  const minuteEl = document.getElementById('schedule-minute') as HTMLInputElement | null;
+  const dayEl = document.getElementById('schedule-day') as HTMLInputElement | null;
+  const dayLabel = document.getElementById('schedule-day-label');
+  const lastRun = document.getElementById('schedule-last-run');
+  const cloudProviderEl = document.getElementById(
+    'schedule-cloud-provider'
+  ) as HTMLSelectElement | null;
+  const cleanupRetentionDays = document.getElementById(
+    'cleanup-retention-days'
+  ) as HTMLInputElement | null;
+
+  if (enabledEl) enabledEl.checked = schedule.enabled;
+  if (frequencyEl) frequencyEl.value = schedule.frequency;
+  if (hourEl) hourEl.value = String(schedule.hour);
+  if (minuteEl) minuteEl.value = String(schedule.minute);
+  if (cleanupRetentionDays) cleanupRetentionDays.value = String(schedule.retention_days);
+  if (cloudProviderEl) cloudProviderEl.value = schedule.cloud_provider_id ?? '';
+
+  updateDayFieldVisibility(schedule.frequency);
+
+  if (schedule.frequency === 'weekly' && dayEl) {
+    dayEl.value = String(schedule.day_of_week ?? 0);
+    if (dayLabel) dayLabel.textContent = t('backup.scheduleDayOfWeek') || 'Day of week (0=Mon)';
+    if (dayEl) dayEl.max = '6';
+  } else if (schedule.frequency === 'monthly' && dayEl) {
+    dayEl.value = String(schedule.day_of_month ?? 1);
+    if (dayLabel) dayLabel.textContent = t('backup.scheduleDayOfMonth') || 'Day of month';
+    if (dayEl) {
+      dayEl.min = '1';
+      dayEl.max = '31';
+    }
+  }
+
+  if (lastRun && schedule.last_run_at) {
+    lastRun.classList.remove('hidden');
+    const status = schedule.last_run_status === 'success' ? '✓' : '✗';
+    lastRun.textContent = `Last run: ${new Date(schedule.last_run_at).toLocaleString()} (${status} ${schedule.last_run_status})`;
+  }
+}
+
+function updateDayFieldVisibility(frequency: string): void {
+  const dayContainer = document.getElementById('schedule-day-container');
+  const dayLabel = document.getElementById('schedule-day-label');
+  const dayEl = document.getElementById('schedule-day') as HTMLInputElement | null;
+
+  if (!dayContainer || !dayEl) return;
+
+  if (frequency === 'daily') {
+    dayContainer.classList.add('hidden');
+  } else {
+    dayContainer.classList.remove('hidden');
+    if (frequency === 'weekly') {
+      if (dayLabel) dayLabel.textContent = t('backup.scheduleDayOfWeek') || 'Day of week (0=Mon)';
+      dayEl.min = '0';
+      dayEl.max = '6';
+      dayEl.value = '0';
+    } else if (frequency === 'monthly') {
+      if (dayLabel) dayLabel.textContent = t('backup.scheduleDayOfMonth') || 'Day of month';
+      dayEl.min = '1';
+      dayEl.max = '31';
+      dayEl.value = '1';
+    }
+  }
+}
+
+async function saveSchedule(): Promise<void> {
+  const enabledEl = document.getElementById('schedule-enabled') as HTMLInputElement | null;
+  const frequencyEl = document.getElementById('schedule-frequency') as HTMLSelectElement | null;
+  const hourEl = document.getElementById('schedule-hour') as HTMLInputElement | null;
+  const minuteEl = document.getElementById('schedule-minute') as HTMLInputElement | null;
+  const dayEl = document.getElementById('schedule-day') as HTMLInputElement | null;
+  const cloudProviderEl = document.getElementById(
+    'schedule-cloud-provider'
+  ) as HTMLSelectElement | null;
+  const cleanupRetentionDays = document.getElementById(
+    'cleanup-retention-days'
+  ) as HTMLInputElement | null;
+  const statusEl = document.getElementById('schedule-status');
+
+  const frequency = frequencyEl?.value ?? 'daily';
+  const body: Record<string, unknown> = {
+    enabled: enabledEl?.checked ?? false,
+    frequency,
+    hour: Number(hourEl?.value ?? 2),
+    minute: Number(minuteEl?.value ?? 0),
+    retention_days: Number(cleanupRetentionDays?.value ?? 30),
+    cloud_provider_id: cloudProviderEl?.value || null,
+  };
+
+  if (frequency === 'weekly') {
+    body.day_of_week = Number(dayEl?.value ?? 0);
+  } else if (frequency === 'monthly') {
+    body.day_of_month = Number(dayEl?.value ?? 1);
+  }
+
+  try {
+    const result = await apiFetch<BackupSchedule>('/api/backup-schedule', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (statusEl) {
+      statusEl.textContent = t('backup.scheduleSaved');
+      statusEl.className = 'text-sm text-green-600 mt-2';
+    }
+    populateScheduleForm(result);
+  } catch (error) {
+    reportError(BACKUP_COMPONENT, 'saveSchedule', error);
+    if (statusEl) {
+      statusEl.textContent = t('backup.scheduleSaveFailed');
+      statusEl.className = 'text-sm text-red-600 mt-2';
+    }
+  }
+}
+
 function exposeGlobalHandlers(): void {
   const backupWindow = window as Window & {
     createBackup?: () => Promise<void>;
@@ -855,6 +1428,15 @@ function exposeGlobalHandlers(): void {
     showDeleteModal?: (backupId: string) => void;
     hideDeleteModal?: () => void;
     confirmDelete?: () => Promise<void>;
+    showDeleteAllModal?: () => void;
+    hideDeleteAllModal?: () => void;
+    confirmDeleteAll?: () => Promise<void>;
+    saveSchedule?: () => Promise<void>;
+    saveEncryptionConfig?: () => Promise<void>;
+    rotateEncryptionKey?: () => Promise<void>;
+    addCloudProvider?: () => Promise<void>;
+    testCloudProvider?: (id: string) => Promise<void>;
+    deleteCloudProvider?: (id: string) => Promise<void>;
   };
 
   backupWindow.createBackup = createBackup;
@@ -868,6 +1450,15 @@ function exposeGlobalHandlers(): void {
   backupWindow.showDeleteModal = showDeleteModal;
   backupWindow.hideDeleteModal = hideDeleteModal;
   backupWindow.confirmDelete = confirmDelete;
+  backupWindow.showDeleteAllModal = showDeleteAllModal;
+  backupWindow.hideDeleteAllModal = hideDeleteAllModal;
+  backupWindow.confirmDeleteAll = confirmDeleteAll;
+  backupWindow.saveSchedule = saveSchedule;
+  backupWindow.saveEncryptionConfig = saveEncryptionConfig;
+  backupWindow.rotateEncryptionKey = rotateEncryptionKey;
+  backupWindow.addCloudProvider = addCloudProvider;
+  backupWindow.testCloudProvider = testCloudProvider;
+  backupWindow.deleteCloudProvider = deleteCloudProvider;
 }
 
 initI18n(() => {

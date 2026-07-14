@@ -46,6 +46,7 @@ python scripts/setup/setup.py --quick
 ```
 
 **What it does:**
+
 - ✅ Generates JWT keys (ES256) automatically
 - ✅ Creates development configuration (SQLite database)
 - ✅ Initializes database and runs migrations
@@ -64,6 +65,7 @@ python scripts/setup/setup.py --advanced
 ```
 
 **What it configures:**
+
 - JWT key generation (with custom paths)
 - Environment configuration (development vs production profiles)
 - Database selection (PostgreSQL or SQLite)
@@ -73,6 +75,7 @@ python scripts/setup/setup.py --advanced
 - Full deployment with health checks
 
 **Production features:**
+
 - PostgreSQL with connection pooling
 - Strict password policies
 - Rate limiting enabled
@@ -98,6 +101,7 @@ python scripts/setup/setup.py --component deploy
 ```
 
 **Use cases:**
+
 - Regenerate JWT keys
 - Update environment configuration
 - Re-run database migrations
@@ -116,6 +120,7 @@ python scripts/setup/setup.py --config config.yaml --non-interactive
 ```
 
 **Example config.yaml:**
+
 ```yaml
 profile: production
 
@@ -151,6 +156,7 @@ deploy:
 You can also use the individual setup scripts directly:
 
 **JWT Key Generation:**
+
 ```bash
 # Generate keys with defaults
 python scripts/setup/setup_jwt.py
@@ -163,6 +169,7 @@ python scripts/setup/setup_jwt.py --force --backup
 ```
 
 **Environment Configuration:**
+
 ```bash
 # Interactive configuration
 python scripts/setup/setup_env.py
@@ -178,6 +185,7 @@ python scripts/setup/setup_env.py --validate-only
 ```
 
 **Database Setup:**
+
 ```bash
 # SQLite setup
 python scripts/setup/setup_database.py --type sqlite --non-interactive
@@ -195,6 +203,7 @@ python scripts/setup/setup_database.py --type sqlite --create-admin
 ```
 
 **Deployment:**
+
 ```bash
 # Full deployment
 python scripts/setup/deploy.py
@@ -344,11 +353,13 @@ curl http://localhost:8001/api/health
 **Why is the sleep command critical?**
 
 When you restart the database container, it needs time to:
+
 - Initialize the PostgreSQL cluster
 - Load all data from persistent volumes
 - Become fully responsive to connections
 
 If migrations run too soon, they may:
+
 - ❌ Appear to succeed but silently fail
 - ❌ Not actually apply, leaving schema out of sync
 - ❌ Cause API errors like "column does not exist"

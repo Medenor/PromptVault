@@ -7,7 +7,10 @@
     {% import "macros/scripts.html" as scripts %}
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="User Management - Manage user accounts, roles, and permissions for your PromptVault instance." />
+    <meta
+      name="description"
+      content="User Management - Manage user accounts, roles, and permissions for your PromptVault instance."
+    />
     <title>PromptVault - User Management</title>
     <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon.png" />
     {{ scripts.load_css('admin-users', true) }}
@@ -16,7 +19,9 @@
     <script src="https://unpkg.com/i18next-http-backend@2.4.2/i18nextHttpBackend.min.js"></script>
   </head>
   <body class="bg-gray-50 min-h-screen">
-    <a href="#main-content" class="skip-link" tabindex="0" data-i18n="nav.skipToMainContent">Skip to main content</a>
+    <a href="#main-content" class="skip-link" tabindex="0" data-i18n="nav.skipToMainContent"
+      >Skip to main content</a
+    >
     <div class="min-h-screen flex flex-col">
       <!-- Header -->
       <header class="bg-blue-700 text-white shadow-sm" role="banner" aria-label="Site header">
@@ -44,6 +49,7 @@
               aria-label="Admin page navigation"
               data-i18n="[aria-label]accessibility.labels.adminPageNavigation"
             >
+              {% include 'macros/language_selector.html' %}
               <button
                 type="button"
                 onclick="window.location.href = '/admin/sessions'"
@@ -70,20 +76,27 @@
               </button>
             </nav>
             <!-- Mobile menu button -->
-	            <button
-	              type="button"
-	              id="admin-menu-toggle"
-	              class="md:hidden p-2 text-blue-100 hover:text-white flex-shrink-0"
-	              aria-label="Toggle menu"
-	              data-i18n="[aria-label]accessibility.labels.toggleMenu"
-	              aria-expanded="false"
-	              aria-controls="admin-menu-dropdown"
-	            >
-	              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-	                <path
-	                  stroke-linecap="round"
-	                  stroke-linejoin="round"
-	                  stroke-width="2"
+            <button
+              type="button"
+              id="admin-menu-toggle"
+              class="md:hidden p-2 text-blue-100 hover:text-white flex-shrink-0"
+              aria-label="Toggle menu"
+              data-i18n="[aria-label]accessibility.labels.toggleMenu"
+              aria-expanded="false"
+              aria-controls="admin-menu-dropdown"
+            >
+              <svg
+                class="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
                   d="M4 6h16M4 12h16M4 18h16"
                 ></path>
               </svg>
@@ -97,6 +110,12 @@
             aria-label="Admin page navigation mobile"
             data-i18n="[aria-label]accessibility.labels.adminPageNavigationMobile"
           >
+            <div class="px-2 py-2">
+              <label class="block text-xs text-gray-500 mb-1" data-i18n="nav.language"
+                >Language</label
+              >
+              {% include 'macros/language_selector.html' %}
+            </div>
             <button
               type="button"
               onclick="window.location.href = '/admin/sessions'"
@@ -126,7 +145,11 @@
       </header>
 
       <!-- Main Content -->
-      <main id="main-content" role="main" class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+      <main
+        id="main-content"
+        role="main"
+        class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full"
+      >
         <h1 class="text-3xl font-bold text-gray-900 mb-4 md:mb-0" data-i18n="admin.users.title">
           User Management
         </h1>
@@ -168,15 +191,21 @@
                 data-i18n="[placeholder]admin.users.searchPlaceholder"
                 class="w-full pl-3 pr-10 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
               />
-	              <svg class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none w-5 h-5 transition-colors"
-	                   fill="none"
-	                   stroke="currentColor"
-	                   viewBox="0 0 24 24"
-	                   aria-hidden="true"
-	                   focusable="false">
-	                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-	                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-	              </svg>
+              <svg
+                class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none w-5 h-5 transition-colors"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
             </div>
             <div>
               <label
@@ -247,7 +276,10 @@
         <div class="bg-white rounded-lg shadow overflow-hidden">
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200" aria-label="User Management">
-              <caption class="sr-only">User Management - Complete list of all system users with their email, role, status, last login, active sessions, and management options</caption>
+              <caption class="sr-only">
+                User Management - Complete list of all system users with their email, role, status,
+                last login, active sessions, and management options
+              </caption>
               <thead class="bg-gray-50">
                 <tr>
                   <th
@@ -339,129 +371,140 @@
         </div>
       </main>
 
-      <footer role="contentinfo" aria-label="Site footer" class="mt-auto border-t border-gray-200 bg-gray-50">
+      <footer
+        role="contentinfo"
+        aria-label="Site footer"
+        class="mt-auto border-t border-gray-200 bg-gray-50"
+      >
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div class="flex flex-col gap-3 text-sm text-gray-600">
             <p>
-              PromptVault is licensed under <a href="https://www.mozilla.org/en-US/MPL/2.0/" class="text-blue-600 hover:text-blue-800 underline" target="_blank" rel="noopener noreferrer">Mozilla Public License 2.0</a>.
+              PromptVault is licensed under
+              <a
+                href="https://www.mozilla.org/en-US/MPL/2.0/"
+                class="text-blue-600 hover:text-blue-800 underline"
+                target="_blank"
+                rel="noopener noreferrer"
+                >Mozilla Public License 2.0</a
+              >.
             </p>
-            <a href="https://codeberg.org/medenor/promptvault" class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 transition" target="_blank" rel="noopener noreferrer" aria-label="PromptVault on Codeberg">
+            <a
+              href="https://codeberg.org/medenor/promptvault"
+              class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 transition"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="PromptVault on Codeberg"
+            >
               <?xml version="1.0" encoding="UTF-8" standalone="no"?>
               <svg
-                 width="16"
-                 height="16"
-                 viewBox="0 0 4.2333332 4.2333335"
-                 version="1.1"
-                 id="svg1468"
-                 sodipodi:docname="codeberg-logo_icon_blue.svg"
-                 inkscape:version="1.2-alpha1 (b6a15bb, 2022-02-23)"
-                 inkscape:export-filename="/home/mray/Projects/Codeberg/logo/icon/png/codeberg-logo_icon_blue.png"
-                 inkscape:export-xdpi="384"
-                 inkscape:export-ydpi="384"
-                 xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-                 xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
-                 xmlns:xlink="http://www.w3.org/1999/xlink"
-                 xmlns="http://www.w3.org/2000/svg"
-                 xmlns:svg="http://www.w3.org/2000/svg"
-                 xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-                 xmlns:cc="http://creativecommons.org/ns#"
-                 xmlns:dc="http://purl.org/dc/elements/1.1/">
-                <title
-                   id="title16">Codeberg logo</title>
-                <defs
-                   id="defs1462">
+                width="16"
+                height="16"
+                viewBox="0 0 4.2333332 4.2333335"
+                version="1.1"
+                id="svg1468"
+                sodipodi:docname="codeberg-logo_icon_blue.svg"
+                inkscape:version="1.2-alpha1 (b6a15bb, 2022-02-23)"
+                inkscape:export-filename="/home/mray/Projects/Codeberg/logo/icon/png/codeberg-logo_icon_blue.png"
+                inkscape:export-xdpi="384"
+                inkscape:export-ydpi="384"
+                xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+                xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+                xmlns:xlink="http://www.w3.org/1999/xlink"
+                xmlns="http://www.w3.org/2000/svg"
+                xmlns:svg="http://www.w3.org/2000/svg"
+                xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+                xmlns:cc="http://creativecommons.org/ns#"
+                xmlns:dc="http://purl.org/dc/elements/1.1/"
+              >
+                <title id="title16">Codeberg logo</title>
+                <defs id="defs1462">
                   <linearGradient
-                     xlink:href="#linearGradient6924"
-                     id="linearGradient6918"
-                     x1="42519.285"
-                     y1="-7078.7891"
-                     x2="42575.336"
-                     y2="-6966.9307"
-                     gradientUnits="userSpaceOnUse" />
-                  <linearGradient
-                     id="linearGradient6924">
+                    xlink:href="#linearGradient6924"
+                    id="linearGradient6918"
+                    x1="42519.285"
+                    y1="-7078.7891"
+                    x2="42575.336"
+                    y2="-6966.9307"
+                    gradientUnits="userSpaceOnUse"
+                  />
+                  <linearGradient id="linearGradient6924">
+                    <stop style="stop-color: #2185d0; stop-opacity: 0" offset="0" id="stop6920" />
                     <stop
-                       style="stop-color:#2185d0;stop-opacity:0"
-                       offset="0"
-                       id="stop6920" />
+                      id="stop6926"
+                      offset="0.49517274"
+                      style="stop-color: #2185d0; stop-opacity: 0.48923996"
+                    />
                     <stop
-                       id="stop6926"
-                       offset="0.49517274"
-                       style="stop-color:#2185d0;stop-opacity:0.48923996" />
-                    <stop
-                       style="stop-color:#2185d0;stop-opacity:0.63279623"
-                       offset="1"
-                       id="stop6922" />
+                      style="stop-color: #2185d0; stop-opacity: 0.63279623"
+                      offset="1"
+                      id="stop6922"
+                    />
                   </linearGradient>
                   <linearGradient
-                     xlink:href="#linearGradient6924-6"
-                     id="linearGradient6918-3"
-                     x1="42519.285"
-                     y1="-7078.7891"
-                     x2="42575.336"
-                     y2="-6966.9307"
-                     gradientUnits="userSpaceOnUse" />
-                  <linearGradient
-                     id="linearGradient6924-6">
+                    xlink:href="#linearGradient6924-6"
+                    id="linearGradient6918-3"
+                    x1="42519.285"
+                    y1="-7078.7891"
+                    x2="42575.336"
+                    y2="-6966.9307"
+                    gradientUnits="userSpaceOnUse"
+                  />
+                  <linearGradient id="linearGradient6924-6">
+                    <stop style="stop-color: #2185d0; stop-opacity: 0" offset="0" id="stop6920-7" />
                     <stop
-                       style="stop-color:#2185d0;stop-opacity:0;"
-                       offset="0"
-                       id="stop6920-7" />
+                      id="stop6926-5"
+                      offset="0.49517274"
+                      style="stop-color: #2185d0; stop-opacity: 0.30000001"
+                    />
                     <stop
-                       id="stop6926-5"
-                       offset="0.49517274"
-                       style="stop-color:#2185d0;stop-opacity:0.30000001;" />
-                    <stop
-                       style="stop-color:#2185d0;stop-opacity:0.30000001;"
-                       offset="1"
-                       id="stop6922-3" />
+                      style="stop-color: #2185d0; stop-opacity: 0.30000001"
+                      offset="1"
+                      id="stop6922-3"
+                    />
                   </linearGradient>
                 </defs>
                 <sodipodi:namedview
-                   showborder="false"
-                   id="base"
-                   pagecolor="#ffffff"
-                   bordercolor="#666666"
-                   borderopacity="1.0"
-                   inkscape:pageopacity="0.0"
-                   inkscape:pageshadow="2"
-                   inkscape:zoom="22.627417"
-                   inkscape:cx="12.948893"
-                   inkscape:cy="12.661631"
-                   inkscape:document-units="px"
-                   inkscape:current-layer="svg1468"
-                   inkscape:document-rotation="0"
-                   showgrid="false"
-                   fit-margin-top="0"
-                   fit-margin-left="0"
-                   fit-margin-right="0"
-                   fit-margin-bottom="0"
-                   units="px"
-                   inkscape:snap-global="false"
-                   inkscape:snap-page="true"
-                   showguides="false"
-                   inkscape:window-width="1531"
-                   inkscape:window-height="873"
-                   inkscape:window-x="69"
-                   inkscape:window-y="27"
-                   inkscape:window-maximized="1"
-                   inkscape:pagecheckerboard="0"
-                   inkscape:deskcolor="#d1d1d1">
-                  <inkscape:grid
-                     type="xygrid"
-                     id="grid2067" />
+                  showborder="false"
+                  id="base"
+                  pagecolor="#ffffff"
+                  bordercolor="#666666"
+                  borderopacity="1.0"
+                  inkscape:pageopacity="0.0"
+                  inkscape:pageshadow="2"
+                  inkscape:zoom="22.627417"
+                  inkscape:cx="12.948893"
+                  inkscape:cy="12.661631"
+                  inkscape:document-units="px"
+                  inkscape:current-layer="svg1468"
+                  inkscape:document-rotation="0"
+                  showgrid="false"
+                  fit-margin-top="0"
+                  fit-margin-left="0"
+                  fit-margin-right="0"
+                  fit-margin-bottom="0"
+                  units="px"
+                  inkscape:snap-global="false"
+                  inkscape:snap-page="true"
+                  showguides="false"
+                  inkscape:window-width="1531"
+                  inkscape:window-height="873"
+                  inkscape:window-x="69"
+                  inkscape:window-y="27"
+                  inkscape:window-maximized="1"
+                  inkscape:pagecheckerboard="0"
+                  inkscape:deskcolor="#d1d1d1"
+                >
+                  <inkscape:grid type="xygrid" id="grid2067" />
                 </sodipodi:namedview>
-                <metadata
-                   id="metadata1465">
+                <metadata id="metadata1465">
                   <rdf:RDF>
-                    <cc:Work
-                       rdf:about="">
+                    <cc:Work rdf:about="">
                       <dc:format>image/svg+xml</dc:format>
-                      <dc:type
-                         rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+                      <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
                       <dc:title>Codeberg logo</dc:title>
                       <cc:license
-                         rdf:resource="http://creativecommons.org/publicdomain/zero/1.0/" />
+                        rdf:resource="http://creativecommons.org/publicdomain/zero/1.0/"
+                      />
                       <dc:creator>
                         <cc:Agent>
                           <dc:title>Robert Martinez</dc:title>
@@ -469,7 +512,10 @@
                       </dc:creator>
                       <dc:rights>
                         <cc:Agent>
-                          <dc:title>Codeberg and the Codeberg Logo are trademarks of Codeberg e.V.</dc:title>
+                          <dc:title
+                            >Codeberg and the Codeberg Logo are trademarks of Codeberg
+                            e.V.</dc:title
+                          >
                         </cc:Agent>
                       </dc:rights>
                       <dc:date>2020-04-09</dc:date>
@@ -480,34 +526,57 @@
                       </dc:publisher>
                       <dc:source>codeberg.org</dc:source>
                     </cc:Work>
-                    <cc:License
-                       rdf:about="http://creativecommons.org/publicdomain/zero/1.0/">
-                      <cc:permits
-                         rdf:resource="http://creativecommons.org/ns#Reproduction" />
-                      <cc:permits
-                         rdf:resource="http://creativecommons.org/ns#Distribution" />
-                      <cc:permits
-                         rdf:resource="http://creativecommons.org/ns#DerivativeWorks" />
+                    <cc:License rdf:about="http://creativecommons.org/publicdomain/zero/1.0/">
+                      <cc:permits rdf:resource="http://creativecommons.org/ns#Reproduction" />
+                      <cc:permits rdf:resource="http://creativecommons.org/ns#Distribution" />
+                      <cc:permits rdf:resource="http://creativecommons.org/ns#DerivativeWorks" />
                     </cc:License>
                   </rdf:RDF>
                 </metadata>
                 <g
-                   id="g370484"
-                   inkscape:label="logo"
-                   transform="matrix(0.06551432,0,0,0.06551432,-2.232417,-1.431776)">
+                  id="g370484"
+                  inkscape:label="logo"
+                  transform="matrix(0.06551432,0,0,0.06551432,-2.232417,-1.431776)"
+                >
                   <path
-                     id="path6733-5"
-                     style="font-variation-settings:normal;opacity:1;vector-effect:none;fill:url(#linearGradient6918-3);fill-opacity:1;stroke:none;stroke-width:3.67846;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:2;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:stroke markers fill;stop-color:#000000;stop-opacity:1"
-                     d="m 42519.285,-7078.7891 a 0.76086879,0.56791688 0 0 0 -0.738,0.6739 l 33.586,125.8886 a 87.182358,87.182358 0 0 0 39.381,-33.7636 l -71.565,-92.5196 a 0.76086879,0.56791688 0 0 0 -0.664,-0.2793 z"
-                     transform="matrix(0.37058478,0,0,0.37058478,-15690.065,2662.0533)"
-                     inkscape:label="berg" />
+                    id="path6733-5"
+                    style="
+                      font-variation-settings: normal;
+                      opacity: 1;
+                      vector-effect: none;
+                      fill: url(#linearGradient6918-3);
+                      fill-opacity: 1;
+                      stroke: none;
+                      stroke-width: 3.67846;
+                      stroke-linecap: butt;
+                      stroke-linejoin: miter;
+                      stroke-miterlimit: 2;
+                      stroke-dasharray: none;
+                      stroke-dashoffset: 0;
+                      stroke-opacity: 1;
+                      paint-order: stroke markers fill;
+                      stop-color: #000000;
+                      stop-opacity: 1;
+                    "
+                    d="m 42519.285,-7078.7891 a 0.76086879,0.56791688 0 0 0 -0.738,0.6739 l 33.586,125.8886 a 87.182358,87.182358 0 0 0 39.381,-33.7636 l -71.565,-92.5196 a 0.76086879,0.56791688 0 0 0 -0.664,-0.2793 z"
+                    transform="matrix(0.37058478,0,0,0.37058478,-15690.065,2662.0533)"
+                    inkscape:label="berg"
+                  />
                   <path
-                     id="path360787"
-                     style="opacity:1;fill:#2185d0;fill-opacity:1;stroke-width:17.0055;paint-order:markers fill stroke;stop-color:#000000"
-                     d="m 11249.461,-1883.6961 c -12.74,0 -23.067,10.3275 -23.067,23.0671 0,4.3335 1.22,8.5795 3.522,12.2514 l 19.232,-24.8636 c 0.138,-0.1796 0.486,-0.1796 0.624,0 l 19.233,24.8646 c 2.302,-3.6721 3.523,-7.9185 3.523,-12.2524 0,-12.7396 -10.327,-23.0671 -23.067,-23.0671 z"
-                     sodipodi:nodetypes="sccccccs"
-                     inkscape:label="sky"
-                     transform="matrix(1.4006354,0,0,1.4006354,-15690.065,2662.0533)" />
+                    id="path360787"
+                    style="
+                      opacity: 1;
+                      fill: #2185d0;
+                      fill-opacity: 1;
+                      stroke-width: 17.0055;
+                      paint-order: markers fill stroke;
+                      stop-color: #000000;
+                    "
+                    d="m 11249.461,-1883.6961 c -12.74,0 -23.067,10.3275 -23.067,23.0671 0,4.3335 1.22,8.5795 3.522,12.2514 l 19.232,-24.8636 c 0.138,-0.1796 0.486,-0.1796 0.624,0 l 19.233,24.8646 c 2.302,-3.6721 3.523,-7.9185 3.523,-12.2524 0,-12.7396 -10.327,-23.0671 -23.067,-23.0671 z"
+                    sodipodi:nodetypes="sccccccs"
+                    inkscape:label="sky"
+                    transform="matrix(1.4006354,0,0,1.4006354,-15690.065,2662.0533)"
+                  />
                 </g>
               </svg>
               Source code on Codeberg
@@ -527,7 +596,11 @@
     >
       <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div class="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 id="user-detail-title" class="text-xl font-bold text-gray-900" data-i18n="admin.users.userDetails">
+          <h2
+            id="user-detail-title"
+            class="text-xl font-bold text-gray-900"
+            data-i18n="admin.users.userDetails"
+          >
             User Details
           </h2>
           <button
@@ -536,7 +609,9 @@
             aria-label="Close modal"
             data-i18n="[aria-label]actions.close"
             onclick="closeUserDetailModal()"
-          >&times;</button>
+          >
+            &times;
+          </button>
         </div>
         <div class="p-6">
           <div id="user-detail-content">
@@ -565,49 +640,53 @@
       class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50"
     >
       <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-	        <div class="flex items-center justify-between p-6 border-b border-gray-200">
-	          <h2 id="edit-user-title" class="text-xl font-bold text-gray-900" data-i18n="admin.users.editUser">
-	            Edit User
-	          </h2>
-	          <button
-	            type="button"
-	            class="text-gray-400 hover:text-gray-700 text-2xl leading-none rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
-	            aria-label="Close modal"
-	            data-i18n="[aria-label]actions.close"
-	            onclick="closeEditUserModal()"
-	          >
-	            &times;
-	          </button>
-	        </div>
-	        <div class="p-6">
-	          <form id="edit-user-form" class="space-y-4" novalidate>
-	            <div
-	              id="edit-user-error-summary"
-	              class="validation-error-banner"
-	              role="alert"
-	              aria-live="polite"
-	              tabindex="-1"
-	            ></div>
-	            <input type="hidden" id="edit-user-id" name="user_id" />
+        <div class="flex items-center justify-between p-6 border-b border-gray-200">
+          <h2
+            id="edit-user-title"
+            class="text-xl font-bold text-gray-900"
+            data-i18n="admin.users.editUser"
+          >
+            Edit User
+          </h2>
+          <button
+            type="button"
+            class="text-gray-400 hover:text-gray-700 text-2xl leading-none rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
+            aria-label="Close modal"
+            data-i18n="[aria-label]actions.close"
+            onclick="closeEditUserModal()"
+          >
+            &times;
+          </button>
+        </div>
+        <div class="p-6">
+          <form id="edit-user-form" class="space-y-4" novalidate>
+            <div
+              id="edit-user-error-summary"
+              class="validation-error-banner"
+              role="alert"
+              aria-live="polite"
+              tabindex="-1"
+            ></div>
+            <input type="hidden" id="edit-user-id" name="user_id" />
 
-	            <div>
-	              <label
-	                for="edit-role"
-	                class="block text-sm font-medium text-gray-700 mb-2"
-	                data-i18n="admin.users.role"
-	                >Role</label
-	              >
-	              <select
-	                id="edit-role"
-	                name="role"
-	                aria-describedby="edit-form-error"
-	                class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
-	              >
+            <div>
+              <label
+                for="edit-role"
+                class="block text-sm font-medium text-gray-700 mb-2"
+                data-i18n="admin.users.role"
+                >Role</label
+              >
+              <select
+                id="edit-role"
+                name="role"
+                aria-describedby="edit-form-error"
+                class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
+              >
                 <option value="viewer" data-i18n="admin.users.roleViewer">Viewer</option>
                 <option value="editor" data-i18n="admin.users.roleEditor">Editor</option>
                 <option value="admin" data-i18n="admin.users.roleAdmin">Admin</option>
-	              </select>
-	            </div>
+              </select>
+            </div>
 
             <div class="border-t pt-4 mt-4 space-y-2">
               <label for="edit-is-active" class="flex items-center gap-2">
@@ -632,17 +711,17 @@
                 <span class="text-sm text-gray-700" data-i18n="admin.users.emailVerified"
                   >Email Verified</span
                 >
-	              </label>
-	            </div>
-	
-	            <p
-	              class="text-red-600 text-xs hidden"
-	              id="edit-form-error"
-	              role="alert"
-	              aria-live="assertive"
-	            ></p>
-	          </form>
-	        </div>
+              </label>
+            </div>
+
+            <p
+              class="text-red-600 text-xs hidden"
+              id="edit-form-error"
+              role="alert"
+              aria-live="assertive"
+            ></p>
+          </form>
+        </div>
         <div class="flex justify-end space-x-3 p-6 border-t border-gray-200">
           <button
             type="button"
@@ -674,7 +753,11 @@
     >
       <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
         <div class="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 id="confirm-delete-title" class="text-xl font-bold text-gray-900" data-i18n="admin.users.confirmDelete">
+          <h2
+            id="confirm-delete-title"
+            class="text-xl font-bold text-gray-900"
+            data-i18n="admin.users.confirmDelete"
+          >
             Confirm Delete
           </h2>
           <button
@@ -725,7 +808,11 @@
     >
       <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div class="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 id="create-user-title" class="text-xl font-bold text-gray-900" data-i18n="admin.users.createUser">
+          <h2
+            id="create-user-title"
+            class="text-xl font-bold text-gray-900"
+            data-i18n="admin.users.createUser"
+          >
             Create New User
           </h2>
           <button
@@ -738,41 +825,41 @@
             &times;
           </button>
         </div>
-	        <div class="p-6">
-	          <form id="create-user-form" class="space-y-4" novalidate>
-	            <div
-	              id="create-user-error-summary"
-	              class="validation-error-banner"
-	              role="alert"
-	              aria-live="polite"
-	              tabindex="-1"
-	            ></div>
-	            <div>
-	              <label
-	                for="create-username"
+        <div class="p-6">
+          <form id="create-user-form" class="space-y-4" novalidate>
+            <div
+              id="create-user-error-summary"
+              class="validation-error-banner"
+              role="alert"
+              aria-live="polite"
+              tabindex="-1"
+            ></div>
+            <div>
+              <label
+                for="create-username"
                 class="block text-sm font-medium text-gray-700 mb-2"
                 data-i18n="admin.users.username"
                 >Username</label
               >
-	              <input
-	                type="text"
-	                id="create-username"
-	                name="username"
-	                aria-describedby="create-username-error"
-	                class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
-	                minlength="3"
-	                maxlength="32"
-	                required
-	                data-i18n="[placeholder]admin.users.usernamePlaceholder"
-	                placeholder="3-32 characters, letters, numbers, underscores"
-	              />
-	              <p
-	                class="text-red-600 text-xs mt-1 hidden"
-	                id="create-username-error"
-	                role="alert"
-	                aria-live="assertive"
-	              ></p>
-	            </div>
+              <input
+                type="text"
+                id="create-username"
+                name="username"
+                aria-describedby="create-username-error"
+                class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
+                minlength="3"
+                maxlength="32"
+                required
+                data-i18n="[placeholder]admin.users.usernamePlaceholder"
+                placeholder="3-32 characters, letters, numbers, underscores"
+              />
+              <p
+                class="text-red-600 text-xs mt-1 hidden"
+                id="create-username-error"
+                role="alert"
+                aria-live="assertive"
+              ></p>
+            </div>
 
             <div>
               <label
@@ -781,23 +868,23 @@
                 data-i18n="admin.users.email"
                 >Email</label
               >
-	              <input
-	                type="email"
-	                id="create-email"
-	                name="email"
-	                aria-describedby="create-email-error"
-	                class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
-	                required
-	                data-i18n="[placeholder]admin.users.emailPlaceholder"
-	                placeholder="user@example.com"
-	              />
-	              <p
-	                class="text-red-600 text-xs mt-1 hidden"
-	                id="create-email-error"
-	                role="alert"
-	                aria-live="assertive"
-	              ></p>
-	            </div>
+              <input
+                type="email"
+                id="create-email"
+                name="email"
+                aria-describedby="create-email-error"
+                class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
+                required
+                data-i18n="[placeholder]admin.users.emailPlaceholder"
+                placeholder="user@example.com"
+              />
+              <p
+                class="text-red-600 text-xs mt-1 hidden"
+                id="create-email-error"
+                role="alert"
+                aria-live="assertive"
+              ></p>
+            </div>
 
             <div>
               <label
@@ -860,13 +947,13 @@
                   <span data-i18n="auth.register.reqSpecial">One special character (!@#$%^&*)</span>
                 </div>
               </div>
-	              <p
-	                class="text-red-600 text-xs mt-1 hidden"
-	                id="create-password-error"
-	                role="alert"
-	                aria-live="assertive"
-	              ></p>
-	            </div>
+              <p
+                class="text-red-600 text-xs mt-1 hidden"
+                id="create-password-error"
+                role="alert"
+                aria-live="assertive"
+              ></p>
+            </div>
 
             <div>
               <label
@@ -898,13 +985,13 @@
                   ⊙
                 </button>
               </div>
-	              <p
-	                class="text-red-600 text-xs mt-1 hidden"
-	                id="create-confirm-password-error"
-	                role="alert"
-	                aria-live="assertive"
-	              ></p>
-	            </div>
+              <p
+                class="text-red-600 text-xs mt-1 hidden"
+                id="create-confirm-password-error"
+                role="alert"
+                aria-live="assertive"
+              ></p>
+            </div>
 
             <div class="border-t pt-4 mt-4">
               <label
@@ -924,8 +1011,8 @@
               </select>
             </div>
 
-	            <div>
-	              <label for="create-email-verified" class="flex items-center gap-2">
+            <div>
+              <label for="create-email-verified" class="flex items-center gap-2">
                 <input
                   type="checkbox"
                   id="create-email-verified"
@@ -935,17 +1022,17 @@
                 <span class="text-sm text-gray-700" data-i18n="admin.users.markEmailVerified"
                   >Mark email as verified</span
                 >
-	              </label>
-	            </div>
-	
-	            <p
-	              class="text-red-600 text-xs hidden"
-	              id="create-form-error"
-	              role="alert"
-	              aria-live="assertive"
-	            ></p>
-	          </form>
-	        </div>
+              </label>
+            </div>
+
+            <p
+              class="text-red-600 text-xs hidden"
+              id="create-form-error"
+              role="alert"
+              aria-live="assertive"
+            ></p>
+          </form>
+        </div>
         <div class="flex justify-end space-x-3 p-6 border-t border-gray-200">
           <button
             type="button"

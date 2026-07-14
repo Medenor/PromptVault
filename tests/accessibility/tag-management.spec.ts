@@ -48,7 +48,11 @@ async function hasVisibleDialog(page) {
     const dialogs = Array.from(document.querySelectorAll('[role="dialog"]'));
     return dialogs.some((dialog) => {
       const style = window.getComputedStyle(dialog);
-      return !dialog.classList.contains('hidden') && style.display !== 'none' && style.visibility !== 'hidden';
+      return (
+        !dialog.classList.contains('hidden') &&
+        style.display !== 'none' &&
+        style.visibility !== 'hidden'
+      );
     });
   });
 }
@@ -58,7 +62,11 @@ async function focusInsideVisibleDialog(page) {
     const dialogs = Array.from(document.querySelectorAll('[role="dialog"]'));
     const visibleDialog = dialogs.find((dialog) => {
       const style = window.getComputedStyle(dialog);
-      return !dialog.classList.contains('hidden') && style.display !== 'none' && style.visibility !== 'hidden';
+      return (
+        !dialog.classList.contains('hidden') &&
+        style.display !== 'none' &&
+        style.visibility !== 'hidden'
+      );
     });
     if (!visibleDialog) {
       return false;
@@ -120,7 +128,9 @@ test.describe('@regression-a11y Tag Management Page Accessibility Tests', () => 
       expect(mainLink).toBeDefined();
     });
 
-    test('skip link should focus main content when activated', async ({ authenticatedPage: page }) => {
+    test('skip link should focus main content when activated', async ({
+      authenticatedPage: page,
+    }) => {
       // Tab to skip link
       await page.keyboard.press('Tab');
 
@@ -128,7 +138,7 @@ test.describe('@regression-a11y Tag Management Page Accessibility Tests', () => 
       await page.keyboard.press('Enter');
 
       // Wait for focus to move
-      await page.waitForLoadState("networkidle").catch(() => {});
+      await page.waitForLoadState('networkidle').catch(() => {});
 
       // Verify focus is on main content or within it
       const focusedId = await page.evaluate(() => {
@@ -160,13 +170,13 @@ test.describe('@regression-a11y Tag Management Page Accessibility Tests', () => 
       expect(headers.length).toBeGreaterThan(0);
 
       // At least 'Name', 'Actions' headers expected
-      const headerTexts = await Promise.all(
-        headers.map((h) => h.textContent())
-      );
+      const headerTexts = await Promise.all(headers.map((h) => h.textContent()));
       expect(headerTexts.some((t) => t?.toLowerCase().includes('name'))).toBe(true);
     });
 
-    test('each tag row should have accessible checkbox for selection', async ({ authenticatedPage: page }) => {
+    test('each tag row should have accessible checkbox for selection', async ({
+      authenticatedPage: page,
+    }) => {
       // If there are tag rows, check for checkboxes
       const checkboxes = await page.locator('tbody tr input[type="checkbox"]').all();
 
@@ -181,7 +191,9 @@ test.describe('@regression-a11y Tag Management Page Accessibility Tests', () => 
       }
     });
 
-    test('tag items should have tag name accessible in each row', async ({ authenticatedPage: page }) => {
+    test('tag items should have tag name accessible in each row', async ({
+      authenticatedPage: page,
+    }) => {
       // Get first tag row if any
       const firstRow = page.locator('tbody tr').first();
       const exists = await firstRow.count();
@@ -193,7 +205,9 @@ test.describe('@regression-a11y Tag Management Page Accessibility Tests', () => 
       }
     });
 
-    test('tag color badge should not be the only indicator', async ({ authenticatedPage: page }) => {
+    test('tag color badge should not be the only indicator', async ({
+      authenticatedPage: page,
+    }) => {
       // Verify tags have text labels, not just color
       const firstRow = page.locator('tbody tr').first();
       const exists = await firstRow.count();
@@ -211,7 +225,9 @@ test.describe('@regression-a11y Tag Management Page Accessibility Tests', () => 
   // 3. ROVING TABINDEX PATTERN TESTS
   // ============================================================================
   test.describe('@regression-a11y Roving Tabindex Pattern in Tag List', () => {
-    test('only ONE tag item should have tabindex="0" at a time', async ({ authenticatedPage: page }) => {
+    test('only ONE tag item should have tabindex="0" at a time', async ({
+      authenticatedPage: page,
+    }) => {
       // Get all tag rows
       const rows = await page.locator('tbody tr').all();
       if (rows.length === 0) {
@@ -223,7 +239,9 @@ test.describe('@regression-a11y Tag Management Page Accessibility Tests', () => 
       const firstTabindex = await firstCheckbox.getAttribute('tabindex');
 
       // Count items with tabindex="0"
-      const tabindexZeroItems = await page.locator('tbody input[type="checkbox"][tabindex="0"]').count();
+      const tabindexZeroItems = await page
+        .locator('tbody input[type="checkbox"][tabindex="0"]')
+        .count();
       expect(tabindexZeroItems).toBeLessThanOrEqual(1);
 
       // All others should be tabindex="-1"
@@ -279,7 +297,7 @@ test.describe('@regression-a11y Tag Management Page Accessibility Tests', () => 
         return {
           isInTable,
           id: el?.id || 'unknown',
-          type: el?.getAttribute('type') || 'unknown'
+          type: el?.getAttribute('type') || 'unknown',
         };
       });
 
@@ -303,14 +321,18 @@ test.describe('@regression-a11y Tag Management Page Accessibility Tests', () => 
       expect(isFocused).toBe(true);
 
       // Get initial focus position
-      const initialFocusId = await page.evaluate(() => (document.activeElement as HTMLElement)?.id || 'unknown');
+      const initialFocusId = await page.evaluate(
+        () => (document.activeElement as HTMLElement)?.id || 'unknown'
+      );
 
       // Tab from the focused checkbox should move to next focusable element
       await page.keyboard.press('Tab');
-      await page.waitForLoadState("networkidle").catch(() => {});
+      await page.waitForLoadState('networkidle').catch(() => {});
 
       // Focus should move to next element
-      const nextFocusId = await page.evaluate(() => (document.activeElement as HTMLElement)?.id || 'unknown');
+      const nextFocusId = await page.evaluate(
+        () => (document.activeElement as HTMLElement)?.id || 'unknown'
+      );
       expect(nextFocusId || 'focus-moved').toBeTruthy();
     });
 
@@ -355,13 +377,13 @@ test.describe('@regression-a11y Tag Management Page Accessibility Tests', () => 
         const row = el?.closest('tr');
         return {
           rowIndex: Array.from(row?.parentElement?.children || []).indexOf(row as Element),
-          elementId: el?.id || 'unknown'
+          elementId: el?.id || 'unknown',
         };
       });
 
       // Press down arrow
       await page.keyboard.press('ArrowDown');
-      await page.waitForLoadState("networkidle").catch(() => {});
+      await page.waitForLoadState('networkidle').catch(() => {});
 
       // Verify focus moved or stayed valid
       const newFocus = await page.evaluate(() => {
@@ -369,7 +391,7 @@ test.describe('@regression-a11y Tag Management Page Accessibility Tests', () => 
         const row = el?.closest('tr');
         return {
           rowIndex: Array.from(row?.parentElement?.children || []).indexOf(row as Element),
-          elementId: el?.id || 'unknown'
+          elementId: el?.id || 'unknown',
         };
       });
 
@@ -397,7 +419,7 @@ test.describe('@regression-a11y Tag Management Page Accessibility Tests', () => 
 
       // Press up arrow
       await page.keyboard.press('ArrowUp');
-      await page.waitForLoadState("networkidle").catch(() => {});
+      await page.waitForLoadState('networkidle').catch(() => {});
 
       // Verify focus is still valid
       const newRowIndex = await page.evaluate(() => {
@@ -432,7 +454,7 @@ test.describe('@regression-a11y Tag Management Page Accessibility Tests', () => 
 
       // Press down arrow
       await page.keyboard.press('ArrowDown');
-      await page.waitForLoadState("networkidle").catch(() => {});
+      await page.waitForLoadState('networkidle').catch(() => {});
 
       // Verify tabindex values updated
       const firstTabindexAfter = await firstCheckbox.getAttribute('tabindex');
@@ -443,7 +465,9 @@ test.describe('@regression-a11y Tag Management Page Accessibility Tests', () => 
       expect([firstTabindexAfter, secondTabindexAfter]).toContain('-1');
     });
 
-    test('focus styling should be visible during navigation', async ({ authenticatedPage: page }) => {
+    test('focus styling should be visible during navigation', async ({
+      authenticatedPage: page,
+    }) => {
       // Get rows
       const rows = await page.locator('tbody tr').all();
       if (rows.length < 2) {
@@ -478,7 +502,7 @@ test.describe('@regression-a11y Tag Management Page Accessibility Tests', () => 
 
       // Press Home key
       await page.keyboard.press('Home');
-      await page.waitForLoadState("networkidle").catch(() => {});
+      await page.waitForLoadState('networkidle').catch(() => {});
 
       // Verify focus is on first row or first element
       const focusedRowIndex = await page.evaluate(() => {
@@ -506,7 +530,7 @@ test.describe('@regression-a11y Tag Management Page Accessibility Tests', () => 
 
       // Press End key
       await page.keyboard.press('End');
-      await page.waitForLoadState("networkidle").catch(() => {});
+      await page.waitForLoadState('networkidle').catch(() => {});
 
       // Verify focus is near end
       const focusedRowIndex = await page.evaluate(() => {
@@ -521,7 +545,9 @@ test.describe('@regression-a11y Tag Management Page Accessibility Tests', () => 
       expect(focusedRowIndex > 0 || focusedRowIndex === 0).toBeTruthy();
     });
 
-    test('tabindex values should update after Home/End navigation', async ({ authenticatedPage: page }) => {
+    test('tabindex values should update after Home/End navigation', async ({
+      authenticatedPage: page,
+    }) => {
       // Get all rows
       const rows = await page.locator('tbody tr').all();
       if (rows.length < 2) {
@@ -539,7 +565,7 @@ test.describe('@regression-a11y Tag Management Page Accessibility Tests', () => 
 
       // Press Home
       await page.keyboard.press('Home');
-      await page.waitForLoadState("networkidle").catch(() => {});
+      await page.waitForLoadState('networkidle').catch(() => {});
 
       // Verify still only one tabindex="0"
       const zeroCount2 = await page.locator('tbody input[type="checkbox"][tabindex="0"]').count();
@@ -570,21 +596,23 @@ test.describe('@regression-a11y Tag Management Page Accessibility Tests', () => 
       // Type first letter
       const firstLetter = firstTagName[0].toUpperCase();
       await page.keyboard.type(firstLetter, { delay: 100 });
-      await page.waitForLoadState("networkidle").catch(() => {});
+      await page.waitForLoadState('networkidle').catch(() => {});
 
       // Verify focus is on a tag (may be the same or matching one)
       const focusedElement = await page.evaluate(() => {
         const el = document.activeElement as HTMLElement;
         return {
           isCheckbox: el?.getAttribute('type') === 'checkbox',
-          inTable: el?.closest('#tags-table-container') !== null
+          inTable: el?.closest('#tags-table-container') !== null,
         };
       });
 
       expect(focusedElement.isCheckbox || focusedElement.inTable).toBeTruthy();
     });
 
-    test('typing multiple letters in quick succession should search', async ({ authenticatedPage: page }) => {
+    test('typing multiple letters in quick succession should search', async ({
+      authenticatedPage: page,
+    }) => {
       // Get all rows
       const rows = await page.locator('tbody tr').all();
       if (rows.length === 0) {
@@ -599,7 +627,7 @@ test.describe('@regression-a11y Tag Management Page Accessibility Tests', () => 
       for (const char of searchTerm) {
         await page.keyboard.type(char, { delay: 50 });
       }
-      await page.waitForLoadState("networkidle").catch(() => {});
+      await page.waitForLoadState('networkidle').catch(() => {});
 
       // Verify focus is still valid
       const focused = await page.evaluate(() => {
@@ -629,7 +657,7 @@ test.describe('@regression-a11y Tag Management Page Accessibility Tests', () => 
       // Type lowercase first letter
       const firstLetter = firstTagName[0].toLowerCase();
       await page.keyboard.type(firstLetter, { delay: 100 });
-      await page.waitForLoadState("networkidle").catch(() => {});
+      await page.waitForLoadState('networkidle').catch(() => {});
 
       // Verify typeahead works (should match regardless of case)
       const focused = await page.evaluate(() => {
@@ -652,14 +680,14 @@ test.describe('@regression-a11y Tag Management Page Accessibility Tests', () => 
 
       // Type first letter
       await page.keyboard.type('a', { delay: 100 });
-      await page.waitForLoadState("networkidle").catch(() => {});
+      await page.waitForLoadState('networkidle').catch(() => {});
 
       // Wait for typeahead timeout (usually 500-1000ms)
-      await page.waitForLoadState("networkidle").catch(() => {});
+      await page.waitForLoadState('networkidle').catch(() => {});
 
       // Type a different letter - should be treated as new search
       await page.keyboard.type('b', { delay: 100 });
-      await page.waitForLoadState("networkidle").catch(() => {});
+      await page.waitForLoadState('networkidle').catch(() => {});
 
       // Should have processed without error
       const focused = await page.evaluate(() => document.activeElement !== null);
@@ -678,7 +706,9 @@ test.describe('@regression-a11y Tag Management Page Accessibility Tests', () => 
       await lastCheckbox.focus();
 
       // Get last tag name
-      const lastTagName = await rows[rows.length - 1].locator('input[data-field="name"]').inputValue();
+      const lastTagName = await rows[rows.length - 1]
+        .locator('input[data-field="name"]')
+        .inputValue();
       if (!lastTagName || lastTagName.length === 0) {
         return;
       }
@@ -686,7 +716,7 @@ test.describe('@regression-a11y Tag Management Page Accessibility Tests', () => 
       // Type first letter (may wrap to another tag starting with same letter)
       const firstLetter = lastTagName[0].toLowerCase();
       await page.keyboard.type(firstLetter, { delay: 100 });
-      await page.waitForLoadState("networkidle").catch(() => {});
+      await page.waitForLoadState('networkidle').catch(() => {});
 
       // Verify focus is valid (may have wrapped)
       const focused = await page.evaluate(() => document.activeElement !== null);
@@ -730,12 +760,16 @@ test.describe('@regression-a11y Tag Management Page Accessibility Tests', () => 
       }
     });
 
-    test('merge help text should be associated with inputs', async ({ authenticatedPage: page }) => {
+    test('merge help text should be associated with inputs', async ({
+      authenticatedPage: page,
+    }) => {
       // Help text should be associated via aria-describedby
       const targetInput = page.locator('#tag-merge-target');
-      const hasDescribedBy = await targetInput.evaluate((el) => {
-        return el.hasAttribute('aria-describedby');
-      }).catch(() => false);
+      const hasDescribedBy = await targetInput
+        .evaluate((el) => {
+          return el.hasAttribute('aria-describedby');
+        })
+        .catch(() => false);
 
       // May or may not have aria-describedby, but input should exist
       expect(targetInput).toBeDefined();
@@ -748,14 +782,18 @@ test.describe('@regression-a11y Tag Management Page Accessibility Tests', () => 
       expect(exists).toBeGreaterThan(0);
 
       // Verify it's an alert region
-      const hasAlertRole = await errorBanner.evaluate((el) => {
-        return el.getAttribute('role') === 'alert';
-      }).catch(() => false);
+      const hasAlertRole = await errorBanner
+        .evaluate((el) => {
+          return el.getAttribute('role') === 'alert';
+        })
+        .catch(() => false);
 
       expect(hasAlertRole || errorBanner).toBeDefined();
     });
 
-    test('merge operation should be completable via keyboard', async ({ authenticatedPage: page }) => {
+    test('merge operation should be completable via keyboard', async ({
+      authenticatedPage: page,
+    }) => {
       const targetInput = page.locator('#tag-merge-target');
       const exists = await targetInput.count();
 
@@ -803,7 +841,9 @@ test.describe('@regression-a11y Tag Management Page Accessibility Tests', () => 
       }
     });
 
-    test('find/replace button should have accessible label', async ({ authenticatedPage: page }) => {
+    test('find/replace button should have accessible label', async ({
+      authenticatedPage: page,
+    }) => {
       const replaceBtn = page.locator('#tag-find-replace-btn');
       const exists = await replaceBtn.count();
 
@@ -813,13 +853,17 @@ test.describe('@regression-a11y Tag Management Page Accessibility Tests', () => 
       }
     });
 
-    test('find/replace section should have error announcements', async ({ authenticatedPage: page }) => {
+    test('find/replace section should have error announcements', async ({
+      authenticatedPage: page,
+    }) => {
       const errorBanner = page.locator('#tag-find-replace-error-summary');
       const exists = await errorBanner.count();
       expect(exists).toBeGreaterThan(0);
     });
 
-    test('find/replace operation should be completable via keyboard', async ({ authenticatedPage: page }) => {
+    test('find/replace operation should be completable via keyboard', async ({
+      authenticatedPage: page,
+    }) => {
       const findInput = page.locator('#tag-find');
       const exists = await findInput.count();
 
@@ -873,7 +917,9 @@ test.describe('@regression-a11y Tag Management Page Accessibility Tests', () => 
       }
     });
 
-    test('bulk delete section should have error announcements', async ({ authenticatedPage: page }) => {
+    test('bulk delete section should have error announcements', async ({
+      authenticatedPage: page,
+    }) => {
       const errorBanner = page.locator('#tag-bulk-delete-error-summary');
       const exists = await errorBanner.count();
       expect(exists).toBeGreaterThan(0);
@@ -936,7 +982,7 @@ test.describe('@regression-a11y Tag Management Page Accessibility Tests', () => 
         await searchInput.fill('test');
 
         // Wait for filtering
-        await page.waitForLoadState("networkidle").catch(() => {});
+        await page.waitForLoadState('networkidle').catch(() => {});
 
         // Verify page is still functional
         const tableBody = page.locator('#tags-table-body');
@@ -971,7 +1017,9 @@ test.describe('@regression-a11y Tag Management Page Accessibility Tests', () => 
       }
     });
 
-    test('tag description input should have accessible name', async ({ authenticatedPage: page }) => {
+    test('tag description input should have accessible name', async ({
+      authenticatedPage: page,
+    }) => {
       const descInput = page.locator('#tag-create-description');
       const exists = await descInput.count();
 
@@ -1025,7 +1073,7 @@ test.describe('@regression-a11y Tag Management Page Accessibility Tests', () => 
       }
 
       // Should be at or near the form
-      await page.waitForLoadState("networkidle").catch(() => {});
+      await page.waitForLoadState('networkidle').catch(() => {});
 
       // Check if we can reach the name input
       const nameInput = page.locator('#tag-create-name');
@@ -1068,9 +1116,11 @@ test.describe('@regression-a11y Tag Management Page Accessibility Tests', () => 
     });
 
     test('delete confirmation should be accessible', async ({ authenticatedPage: page }) => {
-      const deleteTrigger = page.locator(
-        'button:has-text("Delete"), button[aria-label*="delete" i], button[aria-label*="remove" i]'
-      ).first();
+      const deleteTrigger = page
+        .locator(
+          'button:has-text("Delete"), button[aria-label*="delete" i], button[aria-label*="remove" i]'
+        )
+        .first();
 
       if ((await deleteTrigger.count()) === 0) {
         test.skip();
@@ -1080,17 +1130,13 @@ test.describe('@regression-a11y Tag Management Page Accessibility Tests', () => 
       await deleteTrigger.focus();
       await deleteTrigger.click();
 
-      await expect
-        .poll(async () => await hasVisibleDialog(page), { timeout: 5000 })
-        .toBe(true);
+      await expect.poll(async () => await hasVisibleDialog(page), { timeout: 5000 }).toBe(true);
       await expect
         .poll(async () => await focusInsideVisibleDialog(page), { timeout: 5000 })
         .toBe(true);
 
       await page.keyboard.press('Escape');
-      await expect
-        .poll(async () => await hasVisibleDialog(page), { timeout: 5000 })
-        .toBe(false);
+      await expect.poll(async () => await hasVisibleDialog(page), { timeout: 5000 }).toBe(false);
     });
   });
 
@@ -1150,7 +1196,9 @@ test.describe('@regression-a11y Tag Management Page Accessibility Tests', () => 
       }
     });
 
-    test('merge selected button should have accessible label', async ({ authenticatedPage: page }) => {
+    test('merge selected button should have accessible label', async ({
+      authenticatedPage: page,
+    }) => {
       const mergeSelectedBtn = page.locator('#tag-selection-merge-btn');
       const exists = await mergeSelectedBtn.count();
 
@@ -1160,7 +1208,9 @@ test.describe('@regression-a11y Tag Management Page Accessibility Tests', () => 
       }
     });
 
-    test('find/replace selected button should have accessible label', async ({ authenticatedPage: page }) => {
+    test('find/replace selected button should have accessible label', async ({
+      authenticatedPage: page,
+    }) => {
       const findReplaceSelectedBtn = page.locator('#tag-selection-find-replace-btn');
       const exists = await findReplaceSelectedBtn.count();
 
@@ -1292,7 +1342,9 @@ test.describe('@regression-a11y Tag Management Page Accessibility Tests', () => 
       }
     });
 
-    test('input fields should have sufficient contrast on border', async ({ authenticatedPage: page }) => {
+    test('input fields should have sufficient contrast on border', async ({
+      authenticatedPage: page,
+    }) => {
       const inputs = await page.locator('input[type="text"], input[type="number"]').all();
 
       if (inputs.length > 0) {
@@ -1306,7 +1358,9 @@ test.describe('@regression-a11y Tag Management Page Accessibility Tests', () => 
       }
     });
 
-    test('focus indicators should have sufficient contrast', async ({ authenticatedPage: page }) => {
+    test('focus indicators should have sufficient contrast', async ({
+      authenticatedPage: page,
+    }) => {
       await page.keyboard.press('Tab');
 
       const activeElement = page.locator(':focus');
@@ -1318,7 +1372,9 @@ test.describe('@regression-a11y Tag Management Page Accessibility Tests', () => 
       }
     });
 
-    test('error message text should have sufficient contrast', async ({ authenticatedPage: page }) => {
+    test('error message text should have sufficient contrast', async ({
+      authenticatedPage: page,
+    }) => {
       const errorMessages = await page.locator('[id*="-error"]').all();
 
       if (errorMessages.length > 0) {
@@ -1336,7 +1392,9 @@ test.describe('@regression-a11y Tag Management Page Accessibility Tests', () => 
   // 17. FOCUS MANAGEMENT AND KEYBOARD-ONLY WORKFLOW
   // ============================================================================
   test.describe('@regression-a11y Focus Management and Keyboard-Only Workflow', () => {
-    test('focus should be visible when tabbing through page', async ({ authenticatedPage: page }) => {
+    test('focus should be visible when tabbing through page', async ({
+      authenticatedPage: page,
+    }) => {
       for (let i = 0; i < 5; i++) {
         await page.keyboard.press('Tab');
 
@@ -1384,7 +1442,9 @@ test.describe('@regression-a11y Tag Management Page Accessibility Tests', () => 
       expect(backFocus).toBeTruthy();
     });
 
-    test('keyboard-only navigation of tag list should work', async ({ authenticatedPage: page }) => {
+    test('keyboard-only navigation of tag list should work', async ({
+      authenticatedPage: page,
+    }) => {
       const rows = await page.locator('tbody tr').all();
       if (rows.length < 2) {
         return;
@@ -1432,7 +1492,9 @@ test.describe('@regression-a11y Tag Management Page Accessibility Tests', () => 
     });
 
     test('select all button should be accessible', async ({ authenticatedPage: page }) => {
-      const selectAllBtn = page.locator('button:has-text("Select All"), button[aria-label*="Select All"]').first();
+      const selectAllBtn = page
+        .locator('button:has-text("Select All"), button[aria-label*="Select All"]')
+        .first();
       const exists = await selectAllBtn.count();
 
       if (exists > 0) {
@@ -1451,7 +1513,9 @@ test.describe('@regression-a11y Tag Management Page Accessibility Tests', () => 
       }
     });
 
-    test('selected count announcement should be accessible', async ({ authenticatedPage: page }) => {
+    test('selected count announcement should be accessible', async ({
+      authenticatedPage: page,
+    }) => {
       const rows = await page.locator('tbody tr').all();
       if (rows.length < 2) {
         return;
@@ -1497,10 +1561,7 @@ test.describe('@regression-a11y Tag Management Page Accessibility Tests', () => 
   // ============================================================================
   test.describe('@regression-a11y Visual Accessibility Tests', () => {
     test('should capture page in normal state', async ({ authenticatedPage: page }) => {
-      await capturePageWithHighlight(
-        page,
-        'tests/accessibility/reports/tag-management-normal.png'
-      );
+      await capturePageWithHighlight(page, 'tests/accessibility/reports/tag-management-normal.png');
     });
 
     test('should capture focused form input', async ({ authenticatedPage: page }) => {
@@ -1526,10 +1587,7 @@ test.describe('@regression-a11y Tag Management Page Accessibility Tests', () => 
 
       if (exists > 0) {
         await firstCheckbox.focus();
-        await capturePageWithHighlight(
-          page,
-          'tests/accessibility/reports/tag-table-focus.png'
-        );
+        await capturePageWithHighlight(page, 'tests/accessibility/reports/tag-table-focus.png');
       }
     });
 
@@ -1542,16 +1600,15 @@ test.describe('@regression-a11y Tag Management Page Accessibility Tests', () => 
       // Select first item
       await checkboxes[0].click();
 
-      await capturePageWithHighlight(
-        page,
-        'tests/accessibility/reports/tag-table-selected.png'
-      );
+      await capturePageWithHighlight(page, 'tests/accessibility/reports/tag-table-selected.png');
 
       // Unselect for cleanup
       await checkboxes[0].click();
     });
 
-    test('should demonstrate accessible button focus states', async ({ authenticatedPage: page }) => {
+    test('should demonstrate accessible button focus states', async ({
+      authenticatedPage: page,
+    }) => {
       const mergeBtn = page.locator('#tag-merge-btn');
       const exists = await mergeBtn.count();
 
@@ -1572,7 +1629,9 @@ test.describe('@regression-a11y Tag Management Page Accessibility Tests', () => 
   // 21. EDGE CASES AND ERROR HANDLING
   // ============================================================================
   test.describe('@regression-a11y Edge Cases and Error Handling', () => {
-    test('page should remain accessible with empty tag list', async ({ authenticatedPage: page }) => {
+    test('page should remain accessible with empty tag list', async ({
+      authenticatedPage: page,
+    }) => {
       const landmarks = await checkLandmarkRegions(page);
       expect(landmarks.hasLandmarks).toBe(true);
 
@@ -1580,7 +1639,9 @@ test.describe('@regression-a11y Tag Management Page Accessibility Tests', () => 
       expect(await createForm.count()).toBeGreaterThan(0);
     });
 
-    test('search input should remain accessible when clearing text', async ({ authenticatedPage: page }) => {
+    test('search input should remain accessible when clearing text', async ({
+      authenticatedPage: page,
+    }) => {
       const searchInput = page.locator('#tag-search');
       const exists = await searchInput.count();
 
@@ -1599,7 +1660,9 @@ test.describe('@regression-a11y Tag Management Page Accessibility Tests', () => 
       }
     });
 
-    test('form elements should be accessible even with validation errors', async ({ authenticatedPage: page }) => {
+    test('form elements should be accessible even with validation errors', async ({
+      authenticatedPage: page,
+    }) => {
       const nameInput = page.locator('#tag-create-name');
       const exists = await nameInput.count();
 
@@ -1671,14 +1734,18 @@ test.describe('@regression-a11y Tag Management Page Accessibility Tests', () => 
       }
     });
 
-    test('selected items should have aria-selected or checked state', async ({ authenticatedPage: page }) => {
+    test('selected items should have aria-selected or checked state', async ({
+      authenticatedPage: page,
+    }) => {
       const checkboxes = await page.locator('tbody input[type="checkbox"]').all();
       if (checkboxes.length === 0) {
         return;
       }
 
       // Check first checkbox
-      const isCheckbox = await checkboxes[0].evaluate((el) => el.getAttribute('type') === 'checkbox');
+      const isCheckbox = await checkboxes[0].evaluate(
+        (el) => el.getAttribute('type') === 'checkbox'
+      );
       expect(isCheckbox).toBe(true);
 
       // Checkboxes use checked property, not aria-selected
@@ -1702,7 +1769,9 @@ test.describe('@regression-a11y Tag Management Page Accessibility Tests', () => 
       expect(unique.size === allIds.length).toBe(true);
     });
 
-    test('form inputs should have aria-describedby for help text', async ({ authenticatedPage: page }) => {
+    test('form inputs should have aria-describedby for help text', async ({
+      authenticatedPage: page,
+    }) => {
       const inputs = await page.locator('[aria-describedby]').all();
       // May or may not have aria-describedby, but should have proper structure
       expect(inputs.length >= 0).toBe(true);
@@ -1713,7 +1782,9 @@ test.describe('@regression-a11y Tag Management Page Accessibility Tests', () => 
   // 23. RESPONSIVE DESIGN AND MOBILE ACCESSIBILITY
   // ============================================================================
   test.describe('@regression-a11y Responsive Design', () => {
-    test('page elements should be accessible at different screen sizes', async ({ authenticatedPage: page }) => {
+    test('page elements should be accessible at different screen sizes', async ({
+      authenticatedPage: page,
+    }) => {
       await page.setViewportSize({ width: 375, height: 812 });
 
       const firstButton = page.locator('button').first();

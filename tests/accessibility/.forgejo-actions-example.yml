@@ -151,7 +151,7 @@ jobs:
             }
         if: always()
 
-# Alternative: Run tests on schedule and create report issue
+  # Alternative: Run tests on schedule and create report issue
   scheduled-report:
     name: Generate Scheduled Report
     runs-on: ubuntu-latest
@@ -226,7 +226,7 @@ jobs:
               labels: ['accessibility', 'automated']
             });
 
-# Manual trigger workflow
+  # Manual trigger workflow
   manual-test:
     name: Manual Accessibility Test Run
     runs-on: ubuntu-latest

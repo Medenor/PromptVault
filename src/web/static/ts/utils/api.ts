@@ -32,7 +32,7 @@ export class APIRequestError extends Error {
     const message =
       typeof error.detail === 'string'
         ? error.detail
-        : (error.detail?.[0]?.msg ?? 'Request failed');
+        : (error.detail?.[0]?.msg ?? error.error ?? 'Request failed');
     super(message);
     this.name = 'APIRequestError';
     this.status = status;

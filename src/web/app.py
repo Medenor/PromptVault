@@ -56,6 +56,7 @@ from src.web.routers import (
 )
 from src.utils.diff_utils import compute_character_diff
 from src.web.routers.scheduler import router as scheduler_router
+from src.web.routers.backup import router as backup_router, init_backup_router
 from src.web.middleware.rate_limit import limiter, rate_limit_exceeded_handler
 from src.web.middleware.security_headers import SecurityHeadersMiddleware
 from src.web.dependencies.auth import get_current_active_user, get_current_user_or_none
@@ -218,6 +219,7 @@ except Exception as e:
 app.include_router(prompts_router, prefix="/api")
 app.include_router(tag_category_router, prefix="/api")
 app.include_router(scheduler_router, prefix="/api")
+app.include_router(backup_router)
 
 
 # Authentication and admin routers are only mounted when auth is enabled.
@@ -289,6 +291,15 @@ async def startup_scheduler():
         # Start the scheduler
         session_cleanup_scheduler.start()
 
+        # Run an immediate sweep so expired sessions don't accumulate when the
+        # process restarts before the first scheduled interval elapses (common
+        # in dev, where the app rarely stays up for a full cleanup_interval_hours).
+        startup_cleanup_result = session_cleanup_scheduler.run_cleanup_now()
+        logger.info(
+            "✓ Startup session cleanup sweep completed "
+            f"(deleted: {startup_cleanup_result.get('deleted', 0)})"
+        )
+
         logger.info(
             "✓ Session cleanup scheduler initialized and started "
             f"(interval: {auth_settings.cleanup_interval_hours}h, "
@@ -302,6 +313,15 @@ async def startup_scheduler():
     except Exception as e:
         logger.error(f"Failed to initialize scheduler: {e}", exc_info=True)
         print(f"✗ Failed to initialize scheduler: {e}")
+
+    try:
+        from src.scheduler.backup_scheduler import register_backup_jobs
+
+        register_backup_jobs()
+        logger.info("✓ Backup schedule loaded and registered from database")
+    except Exception as e:
+        logger.error(f"Failed to register backup jobs: {e}", exc_info=True)
+        print(f"✗ Failed to register backup jobs: {e}")
 
 
 @app.on_event("shutdown")
@@ -426,6 +446,44 @@ def _resolve_data_locations(
     return data_file, data_dir
 
 
+def _warn_if_backup_dir_database_mismatch(backups_dir: str) -> None:
+    """Warn when PROMPTVAULT_DATA_DIR and DATABASE_URL point at unrelated trees.
+
+    Backup files (under PROMPTVAULT_DATA_DIR/backups) and backup metadata rows
+    (in the DATABASE_URL database) are written to independently-configured
+    locations. If they drift apart across restarts (e.g. DATABASE_URL changed
+    to point at a different SQLite file while PROMPTVAULT_DATA_DIR stayed the
+    same), existing backups' files survive on disk but their DB rows vanish,
+    causing restores to fail with a spurious "backup file not found" error.
+    This is a best-effort sanity check, not a hard failure, since the two
+    settings are legitimately independent for non-SQLite databases.
+    """
+    from src.db.config import db_settings
+
+    if not db_settings.is_sqlite:
+        return
+
+    db_url = db_settings.DATABASE_URL
+    if not db_url.startswith("sqlite:///") or ":memory:" in db_url:
+        return
+
+    db_path = db_url.replace("sqlite:///", "")
+    if not os.path.isabs(db_path):
+        db_path = os.path.abspath(db_path)
+
+    data_dir = os.path.dirname(os.path.abspath(backups_dir))
+    db_dir = os.path.dirname(db_path)
+
+    if os.path.abspath(db_dir) != os.path.abspath(data_dir):
+        logger.warning(
+            "PROMPTVAULT_DATA_DIR and DATABASE_URL point at different "
+            f"directories (backups dir: {data_dir}, database dir: {db_dir}). "
+            "Backup files and their database records may drift out of sync "
+            "across restarts, causing restores to fail with 'backup file not "
+            "found'. Ensure both settings are derived from the same source."
+        )
+
+
 def configure_services(
     data_file: Optional[str] = None, data_dir: Optional[str] = None
 ) -> None:
@@ -454,6 +512,7 @@ def configure_services(
     versioning_service = PromptVersioningService()
     import_export_service = PromptImportExportService()
     backup_service = BackupService(resolved_dir)
+    _warn_if_backup_dir_database_mismatch(backup_service.backups_dir)
 
     # Initialize validation monitor using the data directory for persistence
     logs_base = resolved_dir or "data"
@@ -511,6 +570,9 @@ def record_validation_event(
             },
             exc_info=exc,
         )
+
+
+init_backup_router(backup_service, validation_monitor, record_validation_event)
 
 
 @app.exception_handler(PromptVaultException)
@@ -1269,177 +1331,6 @@ async def backup_management_page(request: Request):
             "auth_enabled": auth_settings.auth_enabled,
         },
     )
-
-
-@app.get("/api/backups")
-async def get_backups():
-    """Get list of all backups"""
-    backups = backup_service.list_backups()
-    return {"backups": backups}
-
-
-@app.post("/api/backups")
-async def create_manual_backup(
-    name: str = Form(None),
-    current_user: Optional[User] = Depends(get_current_user_or_none),
-):
-    """Create a manual backup with validation."""
-    if not current_user:
-        raise HTTPException(
-            status_code=401,
-            detail="Authentication required",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    try:
-        validated_data = BackupCreateRequest(name=name)
-
-        backup_id = backup_service.create_backup(
-            validated_data.name,
-            created_by=current_user.username if current_user else "anonymous",
-        )
-        if backup_id:
-            record_validation_event(
-                endpoint="/api/backups",
-                success=True,
-            )
-            return {"success": True, "backup_id": backup_id}
-        else:
-            return JSONResponse(
-                status_code=500, content={"error": "Failed to create backup"}
-            )
-
-    except ValidationError as e:
-        record_validation_event(
-            endpoint="/api/backups",
-            success=False,
-            errors=[err.get("msg", "") for err in e.errors()],
-        )
-        return JSONResponse(
-            status_code=422,
-            content={"error": "Validation failed", "details": e.errors()},
-        )
-
-
-@app.post("/api/backups/{backup_id}/restore")
-async def restore_backup(
-    backup_id: str,
-    current_user: Optional[User] = Depends(get_current_user_or_none),
-):
-    """Restore from a specific backup."""
-    if not current_user:
-        raise HTTPException(
-            status_code=401,
-            detail="Authentication required",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    success = False
-    try:
-        success = backup_service.restore_backup(
-            backup_id,
-            created_by=current_user.username if current_user else "anonymous",
-        )
-    except BackupError as exc:
-        status_code = exc.http_status or 500
-        request_id = str(uuid.uuid4())
-        return JSONResponse(
-            status_code=status_code,
-            content={"error": str(exc), "request_id": request_id},
-            headers={"x-request-id": request_id},
-        )
-    if success:
-        return {"success": True}
-    return JSONResponse(status_code=500, content={"error": "Failed to restore backup"})
-
-
-@app.delete("/api/backups/{backup_id}")
-async def delete_backup(
-    backup_id: str,
-    current_user: Optional[User] = Depends(get_current_user_or_none),
-):
-    """Delete a specific backup."""
-    if not current_user:
-        raise HTTPException(
-            status_code=401,
-            detail="Authentication required",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    try:
-        backup_info = backup_service.get_backup_info(backup_id)
-        deleted = backup_service.delete_backup(backup_id)
-        if deleted:
-            return {"success": True}
-
-        if backup_info:
-            return JSONResponse(
-                status_code=500, content={"error": "Failed to delete backup"}
-            )
-        return JSONResponse(status_code=404, content={"error": "Backup not found"})
-
-    except Exception as e:
-        return JSONResponse(
-            status_code=500, content={"error": f"Failed to delete backup: {str(e)}"}
-        )
-
-
-@app.post("/api/backups/cleanup")
-async def cleanup_backups(retention_days: int = Form(30)):
-    """Clean up old backups with validation."""
-    try:
-        validated_data = BackupCleanupRequest(retention_days=retention_days)
-
-        removed_count = backup_service.cleanup_old_backups(
-            validated_data.retention_days
-        )
-        record_validation_event(
-            endpoint="/api/backups/cleanup",
-            success=True,
-        )
-        return {"success": True, "removed_count": removed_count}
-
-    except ValidationError as e:
-        record_validation_event(
-            endpoint="/api/backups/cleanup",
-            success=False,
-            errors=[err.get("msg", "") for err in e.errors()],
-        )
-        return JSONResponse(
-            status_code=422,
-            content={"error": "Validation failed", "details": e.errors()},
-        )
-
-
-@app.post("/api/backups/compress")
-async def compress_backups(days_threshold: int = Form(7)):
-    """Compress old backups with validation."""
-    try:
-        validated_data = BackupCompressRequest(days_threshold=days_threshold)
-
-        compressed_count = backup_service.compress_old_backups(
-            validated_data.days_threshold
-        )
-        record_validation_event(
-            endpoint="/api/backups/compress",
-            success=True,
-        )
-        return {"success": True, "compressed_count": compressed_count}
-
-    except ValidationError as e:
-        record_validation_event(
-            endpoint="/api/backups/compress",
-            success=False,
-            errors=[err.get("msg", "") for err in e.errors()],
-        )
-        return JSONResponse(
-            status_code=422,
-            content={"error": "Validation failed", "details": e.errors()},
-        )
-
-
-@app.get("/api/backups/stats")
-async def get_backup_stats():
-    """Get backup statistics"""
-    stats = backup_service.get_backup_stats()
-    return stats
 
 
 @app.get("/api/validation/stats")

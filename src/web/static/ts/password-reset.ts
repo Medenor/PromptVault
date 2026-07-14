@@ -10,7 +10,7 @@
 
 import '../css/tailwind-globals.css';
 import { reportError } from '@/telemetry';
-import { changeLanguage, initI18n, t, updateStaticTranslations } from '@/utils/i18n';
+import { initI18n, t, updateStaticTranslations } from '@/utils/i18n';
 import { clearAllErrors, hideElement, showElement, showError } from '@/utils/dom';
 import { announce } from '@/utils/a11y';
 
@@ -501,16 +501,6 @@ function setupResetPasswordForm(): void {
 
 function initializePasswordResetPage(): void {
   updateStaticTranslations();
-
-  const languageSelector = document.getElementById('language-selector') as HTMLSelectElement | null;
-  if (languageSelector) {
-    languageSelector.addEventListener('change', (event) => {
-      const target = event.target as HTMLSelectElement;
-      changeLanguage(target.value).catch((error) => {
-        reportError('password-reset', 'changeLanguage', error);
-      });
-    });
-  }
 
   if (document.getElementById('forgot-password-form')) {
     setupForgotPasswordForm();

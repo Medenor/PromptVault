@@ -43,7 +43,7 @@ describe('i18n utils', () => {
       <input data-i18n-placeholder="nav.searchPlaceholder" />
       <span data-i18n-title="actions.delete"></span>
       <button data-i18n="[title]actions.refresh"></button>
-      <select id="language-selector">
+      <select class="language-selector">
         <option value="en">English</option>
       </select>
     `;
@@ -54,7 +54,7 @@ describe('i18n utils', () => {
     const input = document.querySelector('[data-i18n-placeholder]') as HTMLInputElement | null;
     const titled = document.querySelector('[data-i18n-title]') as HTMLElement | null;
     const tooltip = document.querySelector('button[data-i18n]') as HTMLElement | null;
-    const selector = document.getElementById('language-selector') as HTMLSelectElement | null;
+    const selector = document.querySelector('.language-selector') as HTMLSelectElement | null;
 
     expect(textNode?.textContent).toBe('tr:nav.prompts');
     expect(input?.placeholder).toBe('tr:nav.searchPlaceholder');

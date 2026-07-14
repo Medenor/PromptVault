@@ -63,17 +63,27 @@ class BackupService:
         os.makedirs(self.backups_dir, exist_ok=True)
 
     def create_backup(
-        self, custom_name: Optional[str] = None, created_by: Optional[str] = None
+        self,
+        custom_name: Optional[str] = None,
+        created_by: Optional[str] = None,
+        encrypt: bool = False,
+        passphrase: Optional[str] = None,
+        backup_kind: str = "full",
     ) -> Optional[str]:
         """Create a backup of the database.
 
         Args:
             custom_name (str): Optional custom name for the backup
             created_by (str): Optional username for audit metadata
+            encrypt (bool): Whether to encrypt the backup
+            passphrase (str): Passphrase for encryption (required if encrypt=True)
 
         Returns:
             Optional[str]: Backup ID if successful, None otherwise
         """
+        from src.services.backup_audit_service import BackupAuditService
+        audit_service = BackupAuditService()
+
         try:
             # Generate backup ID with microseconds for uniqueness
             timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")[
@@ -82,23 +92,39 @@ class BackupService:
             if custom_name:
                 safe_suffix = self._sanitize_backup_name(custom_name)
                 backup_id = (
-                    f"backup_{safe_suffix}" if safe_suffix else f"backup_{timestamp}"
+                    f"backup_{safe_suffix}_{timestamp}"
+                    if safe_suffix
+                    else f"backup_{timestamp}"
                 )
             else:
                 backup_id = f"backup_{timestamp}"
 
             # Create backup based on database type
             if db_settings.is_sqlite:
-                return self._create_sqlite_backup(backup_id, created_by)
+                result = self._create_sqlite_backup(backup_id, created_by, encrypt=encrypt, passphrase=passphrase, backup_kind=backup_kind)
             elif db_settings.is_postgresql:
-                return self._create_pg_backup(backup_id, created_by)
+                result = self._create_pg_backup(backup_id, created_by, encrypt=encrypt, passphrase=passphrase, backup_kind=backup_kind)
             else:
                 raise BackupError(
                     "Unsupported database type",
                     context={"database_url": db_settings.DATABASE_URL},
                 )
 
-        except BackupError:
+            audit_service.log(
+                operation="backup.create",
+                outcome="success",
+                backup_id=result,
+                performed_by=created_by or self._get_current_user(),
+            )
+            return result
+
+        except BackupError as exc:
+            audit_service.log(
+                operation="backup.create",
+                outcome="failure",
+                performed_by=created_by or self._get_current_user(),
+                detail={"error": str(exc)},
+            )
             raise
         except Exception as exc:
             logger.error(
@@ -106,10 +132,18 @@ class BackupService:
                 extra={"event": "backup.create.failure"},
                 exc_info=exc,
             )
+            audit_service.log(
+                operation="backup.create",
+                outcome="failure",
+                performed_by=created_by or self._get_current_user(),
+                detail={"error": str(exc)},
+            )
             raise BackupError("Failed to create backup.", context={}) from exc
 
     def _create_sqlite_backup(
-        self, backup_id: str, created_by: Optional[str] = None
+        self, backup_id: str, created_by: Optional[str] = None,
+        encrypt: bool = False, passphrase: Optional[str] = None,
+        backup_kind: str = "full",
     ) -> str:
         """Create SQLite backup using file copy.
 
@@ -149,20 +183,33 @@ class BackupService:
             backup_filename = f"{backup_id}.db"
             backup_path = os.path.join(self.backups_dir, backup_filename)
 
-            # Copy database file
-            shutil.copy2(db_path, backup_path)
+            # Use VACUUM INTO rather than a raw file copy so the backup
+            # excludes free/unused pages left behind by deletes (e.g. after
+            # session cleanup sweeps). A plain shutil.copy2 would faithfully
+            # copy the live file's high-water-mark size, including pages
+            # SQLite has freed but not reclaimed.
+            import sqlite3
+            source_conn = sqlite3.connect(db_path)
+            try:
+                source_conn.execute("VACUUM INTO ?", (backup_path,))
+            finally:
+                source_conn.close()
 
-            # Get backup metadata
             backup_size = os.path.getsize(backup_path)
-
             prompt_count = self._get_prompt_count()
             created_by_name = created_by or self._get_current_user()
-
-            # Save metadata to database
             timestamp = datetime.now(timezone.utc).isoformat()
+
+            is_encrypted = False
+            encryption_salt = None
+            encryption_nonce = None
+
+            # Save metadata before encrypting so the salt/nonce are always
+            # recorded even if the process dies mid-encrypt.
             metadata = {
                 "backup_id": backup_id,
                 "backup_type": "sqlite_copy",
+                "backup_kind": backup_kind,
                 "filename": backup_filename,
                 "storage_path": backup_path,
                 "size_bytes": backup_size,
@@ -171,10 +218,29 @@ class BackupService:
                 "created_by": created_by_name,
                 "compressed": False,
                 "timestamp": timestamp,
+                "is_encrypted": False,
+                "encryption_salt": None,
+                "encryption_nonce": None,
             }
 
-            self._save_metadata_to_db(backup_id, metadata)
+            self._save_metadata_to_db(backup_id, metadata, backup_kind=backup_kind)
             self._write_metadata_file(metadata)
+
+            if encrypt:
+                if not passphrase:
+                    raise BackupError(
+                        "passphrase required when encrypt=True",
+                        context={"backup_id": backup_id},
+                    )
+                from src.services.backup_encryption_service import BackupEncryptionService
+                enc_service = BackupEncryptionService()
+                encryption_salt, encryption_nonce = enc_service.encrypt_file(backup_path, passphrase)
+                is_encrypted = True
+                metadata["is_encrypted"] = True
+                metadata["encryption_salt"] = encryption_salt
+                metadata["encryption_nonce"] = encryption_nonce
+                self._update_backup_encryption(backup_id, encryption_salt, encryption_nonce)
+                self._write_metadata_file(metadata)
 
             logger.info(
                 "SQLite backup created successfully",
@@ -206,7 +272,9 @@ class BackupService:
             ) from exc
 
     def _create_pg_backup(
-        self, backup_id: str, created_by: Optional[str] = None
+        self, backup_id: str, created_by: Optional[str] = None,
+        encrypt: bool = False, passphrase: Optional[str] = None,
+        backup_kind: str = "full",
     ) -> str:
         """Create PostgreSQL backup using pg_dump.
 
@@ -238,17 +306,19 @@ class BackupService:
             # Execute pg_dump
             result = subprocess.run(cmd, check=True, capture_output=True, text=True)
 
-            # Get backup metadata
             backup_size = os.path.getsize(backup_path)
-
             prompt_count = self._get_prompt_count()
             created_by_name = created_by or self._get_current_user()
-
-            # Save metadata to database
             timestamp = datetime.now(timezone.utc).isoformat()
+
+            is_encrypted = False
+            encryption_salt = None
+            encryption_nonce = None
+
             metadata = {
                 "backup_id": backup_id,
                 "backup_type": "pg_dump",
+                "backup_kind": backup_kind,
                 "filename": backup_filename,
                 "storage_path": backup_path,
                 "size_bytes": backup_size,
@@ -257,10 +327,29 @@ class BackupService:
                 "created_by": created_by_name,
                 "compressed": False,
                 "timestamp": timestamp,
+                "is_encrypted": False,
+                "encryption_salt": None,
+                "encryption_nonce": None,
             }
 
-            self._save_metadata_to_db(backup_id, metadata)
+            self._save_metadata_to_db(backup_id, metadata, backup_kind=backup_kind)
             self._write_metadata_file(metadata)
+
+            if encrypt:
+                if not passphrase:
+                    raise BackupError(
+                        "passphrase required when encrypt=True",
+                        context={"backup_id": backup_id},
+                    )
+                from src.services.backup_encryption_service import BackupEncryptionService
+                enc_service = BackupEncryptionService()
+                encryption_salt, encryption_nonce = enc_service.encrypt_file(backup_path, passphrase)
+                is_encrypted = True
+                metadata["is_encrypted"] = True
+                metadata["encryption_salt"] = encryption_salt
+                metadata["encryption_nonce"] = encryption_nonce
+                self._update_backup_encryption(backup_id, encryption_salt, encryption_nonce)
+                self._write_metadata_file(metadata)
 
             logger.info(
                 "PostgreSQL backup created successfully",
@@ -305,13 +394,33 @@ class BackupService:
                 "Failed to create PostgreSQL backup.", context={"backup_id": backup_id}
             ) from exc
 
-    def restore_backup(self, backup_id: str, created_by: Optional[str] = None) -> bool:
+    @staticmethod
+    def _maybe_decompress(path: str) -> str:
+        """If path is gzip-compressed, decompress it to a sibling temp file.
+
+        Returns the path to a readable, uncompressed file. Callers are
+        responsible for removing the returned path if it differs from the
+        input path.
+        """
+        if not path.endswith(".gz"):
+            return path
+        decompressed_path = path[: -len(".gz")] + ".decompressed"
+        with gzip.open(path, "rb") as src, open(decompressed_path, "wb") as dst:
+            shutil.copyfileobj(src, dst)
+        return decompressed_path
+
+    def restore_backup(
+        self, backup_id: str, created_by: Optional[str] = None,
+        passphrase: Optional[str] = None,
+    ) -> bool:
         """Restore database from a backup.
 
         Creates a pre-restore backup automatically before restoring.
 
         Args:
             backup_id (str): ID of the backup to restore
+            created_by (str): Optional username for audit metadata
+            passphrase (str): Passphrase for decrypting encrypted backups
 
         Returns:
             bool: True if successful
@@ -331,45 +440,96 @@ class BackupService:
 
             backup_type = metadata.get("backup_type")
 
-            # Verify backup file exists
-            backup_path = metadata.get("storage_path")
-            if not os.path.exists(backup_path):
-                raise BackupError(
-                    "Backup file does not exist",
-                    context={"backup_id": backup_id, "path": backup_path},
-                    http_status=404,
-                )
+            # Verify backup file exists locally, downloading from cloud if needed
+            backup_path = self._ensure_local_backup_file(backup_id, metadata)
 
-            # Create pre-restore backup with unique timestamp
-            from datetime import datetime, timezone
+            decompressed_path = self._maybe_decompress(backup_path)
+            if decompressed_path != backup_path:
+                backup_path = decompressed_path
 
-            timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")[
-                :21
-            ]  # Include microseconds for uniqueness
-            logger.info(
-                "Creating pre-restore backup",
-                extra={"event": "backup.restore.pre_backup"},
-            )
-            pre_restore_backup = self.create_backup(
-                f"pre_restore_{timestamp}",
-                created_by=created_by,
-            )
-            if not pre_restore_backup:
-                logger.warning(
-                    "Could not create pre-restore backup",
-                    extra={"event": "backup.restore.warning"},
-                )
+            is_encrypted = metadata.get("is_encrypted", False)
+            if is_encrypted:
+                if not passphrase:
+                    raise BackupError(
+                        "Passphrase required for encrypted backup",
+                        context={"backup_id": backup_id},
+                        http_status=400,
+                    )
+                from src.services.backup_encryption_service import BackupEncryptionService
+                enc_service = BackupEncryptionService()
 
-            # Restore based on backup type
-            if backup_type == "pg_dump":
-                success = self._restore_pg_backup(backup_id, backup_path)
-            elif backup_type == "sqlite_copy":
-                success = self._restore_sqlite_backup(backup_id, backup_path)
+                with get_db_session() as session:
+                    backup_record = session.query(Backup).filter_by(id=backup_id).first()
+                    if backup_record:
+                        salt = backup_record.encryption_salt
+                        nonce = backup_record.encryption_nonce
+                    else:
+                        salt = metadata.get("encryption_salt")
+                        nonce = metadata.get("encryption_nonce")
+
+                if not salt or not nonce:
+                    raise BackupError(
+                        "Encrypted backup missing salt/nonce",
+                        context={"backup_id": backup_id},
+                    )
+
+                decrypted_path = backup_path + ".decrypted"
+                shutil.copy2(backup_path, decrypted_path)
+                try:
+                    enc_service.decrypt_file(decrypted_path, passphrase, salt, nonce)
+                    backup_path = decrypted_path
+                except ValueError as exc:
+                    if os.path.exists(decrypted_path):
+                        os.remove(decrypted_path)
+                    if decompressed_path != metadata.get("storage_path") and os.path.exists(decompressed_path):
+                        os.remove(decompressed_path)
+                    raise BackupError(
+                        "Decryption failed: wrong passphrase or corrupt data",
+                        context={"backup_id": backup_id},
+                        http_status=400,
+                    ) from exc
             else:
-                raise BackupError(
-                    f"Unsupported backup type: {backup_type}",
-                    context={"backup_id": backup_id, "backup_type": backup_type},
+                decrypted_path = None
+
+            try:
+                # Create pre-restore backup with unique timestamp
+                from datetime import datetime, timezone
+
+                timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")[
+                    :21
+                ]  # Include microseconds for uniqueness
+                logger.info(
+                    "Creating pre-restore backup",
+                    extra={"event": "backup.restore.pre_backup"},
                 )
+                pre_restore_backup = self.create_backup(
+                    f"pre_restore_{timestamp}",
+                    created_by=created_by,
+                )
+                if not pre_restore_backup:
+                    logger.warning(
+                        "Could not create pre-restore backup",
+                        extra={"event": "backup.restore.warning"},
+                    )
+
+                # Restore based on backup type
+                if backup_type == "pg_dump":
+                    success = self._restore_pg_backup(backup_id, backup_path)
+                elif backup_type == "sqlite_copy":
+                    success = self._restore_sqlite_backup(backup_id, backup_path)
+                else:
+                    raise BackupError(
+                        f"Unsupported backup type: {backup_type}",
+                        context={"backup_id": backup_id, "backup_type": backup_type},
+                    )
+            finally:
+                if decrypted_path and os.path.exists(decrypted_path):
+                    os.remove(decrypted_path)
+                if decompressed_path != metadata.get("storage_path") and os.path.exists(decompressed_path):
+                    os.remove(decompressed_path)
+
+            from src.services.backup_audit_service import BackupAuditService
+            audit_service = BackupAuditService()
 
             if success:
                 logger.info(
@@ -381,16 +541,45 @@ class BackupService:
                     resource_type="backup",
                     resource_id=backup_id,
                 )
+                audit_service.log(
+                    operation="backup.restore",
+                    outcome="success",
+                    backup_id=backup_id,
+                    performed_by=created_by or self._get_current_user(),
+                )
+            else:
+                audit_service.log(
+                    operation="backup.restore",
+                    outcome="failure",
+                    backup_id=backup_id,
+                    performed_by=created_by or self._get_current_user(),
+                )
 
             return success
 
-        except BackupError:
+        except BackupError as exc:
+            from src.services.backup_audit_service import BackupAuditService
+            BackupAuditService().log(
+                operation="backup.restore",
+                outcome="failure",
+                backup_id=backup_id,
+                performed_by=created_by or self._get_current_user(),
+                detail={"error": str(exc)},
+            )
             raise
         except Exception as exc:
             logger.error(
                 "Failed to restore backup",
                 extra={"event": "backup.restore.failure", "resource_id": backup_id},
                 exc_info=exc,
+            )
+            from src.services.backup_audit_service import BackupAuditService
+            BackupAuditService().log(
+                operation="backup.restore",
+                outcome="failure",
+                backup_id=backup_id,
+                performed_by=created_by or self._get_current_user(),
+                detail={"error": str(exc)},
             )
             raise BackupError(
                 "Failed to restore backup.", context={"backup_id": backup_id}
@@ -424,8 +613,21 @@ class BackupService:
                 )
                 db_path = os.path.join(script_dir, db_path)
 
-            # Copy backup to database location
-            shutil.copy2(backup_path, db_path)
+            # Use SQLite's online backup API to safely replace the live database.
+            # This avoids the corruption risk of a raw file copy while connections
+            # are open and properly handles WAL/SHM state.
+            import sqlite3
+            from src.db.session import engine
+
+            engine.dispose()
+
+            src_conn = sqlite3.connect(backup_path)
+            dst_conn = sqlite3.connect(db_path)
+            try:
+                src_conn.backup(dst_conn)
+            finally:
+                dst_conn.close()
+                src_conn.close()
 
             logger.info(
                 "SQLite database restored from backup",
@@ -516,6 +718,7 @@ class BackupService:
                     serialized = {
                         "backup_id": backup.id,
                         "backup_type": backup.backup_type,
+                        "backup_kind": backup.backup_kind or "full",
                         "filename": backup.filename,
                         "storage_path": backup.storage_path,
                         "timestamp": timestamp,
@@ -526,6 +729,11 @@ class BackupService:
                         "database_type": metadata.get("database_type", "unknown"),
                         "created_by": metadata.get("created_by", "unknown"),
                         "compressed": metadata.get("compressed", False),
+                        "tags": backup.tags or [],
+                        "cloud_provider_id": backup.cloud_provider_id,
+                        "cloud_path": backup.cloud_path,
+                        "cloud_uploaded_at": backup.cloud_uploaded_at.isoformat() if backup.cloud_uploaded_at else None,
+                        "is_encrypted": backup.is_encrypted or False,
                     }
                     result.append(serialized)
                     seen_ids.add(backup.id)
@@ -558,6 +766,7 @@ class BackupService:
         Returns:
             Optional[Dict[str, Any]]: Backup metadata if found, None otherwise
         """
+        self._validate_backup_id(backup_id)
         try:
             with get_db_session() as session:
                 backup = session.query(Backup).filter_by(id=backup_id).first()
@@ -570,6 +779,7 @@ class BackupService:
                     info = {
                         "backup_id": backup.id,
                         "backup_type": backup.backup_type,
+                        "backup_kind": backup.backup_kind or "full",
                         "filename": backup.filename,
                         "storage_path": backup.storage_path,
                         "timestamp": timestamp,
@@ -580,6 +790,12 @@ class BackupService:
                         "database_type": metadata.get("database_type", "unknown"),
                         "created_by": metadata.get("created_by", "unknown"),
                         "compressed": metadata.get("compressed", False),
+                        "is_encrypted": backup.is_encrypted or False,
+                        "encryption_salt": backup.encryption_salt,
+                        "encryption_nonce": backup.encryption_nonce,
+                        "cloud_provider_id": backup.cloud_provider_id,
+                        "cloud_path": backup.cloud_path,
+                        "cloud_uploaded_at": backup.cloud_uploaded_at.isoformat() if backup.cloud_uploaded_at else None,
                     }
                     self._ensure_metadata_file(info)
                     return info
@@ -594,6 +810,76 @@ class BackupService:
         # Fallback to metadata file
         return self._load_metadata_from_file(backup_id)
 
+    def _ensure_local_backup_file(self, backup_id: str, metadata: Dict[str, Any]) -> str:
+        """Ensure the backup file exists locally, downloading from cloud if needed.
+
+        If the local storage_path is missing (e.g. removed by cleanup, or this
+        backup was only ever uploaded from another machine), fall back to the
+        cloud copy referenced by cloud_provider_id/cloud_path.
+
+        Args:
+            backup_id: Backup identifier
+            metadata: Backup metadata dict from get_backup_info()
+
+        Returns:
+            str: Local path to the backup file (existing or freshly downloaded)
+
+        Raises:
+            BackupError: If the file is missing locally and no cloud copy is available
+        """
+        backup_path = metadata.get("storage_path")
+        if backup_path and os.path.exists(backup_path):
+            return backup_path
+
+        cloud_provider_id = metadata.get("cloud_provider_id")
+        cloud_path = metadata.get("cloud_path")
+        if not cloud_provider_id or not cloud_path:
+            raise BackupError(
+                "Backup file not found",
+                context={"backup_id": backup_id, "path": backup_path},
+                http_status=404,
+            )
+
+        from src.services.backup_cloud_service import BackupCloudService
+        from src.db.models.backup_storage_provider import BackupStorageProvider
+
+        with get_db_session() as session:
+            provider = session.query(BackupStorageProvider).filter_by(id=cloud_provider_id).first()
+            if not provider or not provider.enabled:
+                raise BackupError(
+                    "Cloud storage provider not found or disabled",
+                    context={"backup_id": backup_id, "provider_id": cloud_provider_id},
+                    http_status=404,
+                )
+
+            dest_path = backup_path or os.path.join(self.backups_dir, metadata.get("filename", f"{backup_id}.db"))
+            try:
+                BackupCloudService().download(provider, cloud_path, dest_path)
+            except Exception as exc:
+                logger.error(
+                    "Failed to download backup from cloud storage",
+                    extra={
+                        "event": "backup.restore.cloud_download_failure",
+                        "backup_id": backup_id,
+                        "provider_id": cloud_provider_id,
+                    },
+                    exc_info=exc,
+                )
+                raise BackupError(
+                    "Failed to download backup from cloud storage.",
+                    context={"backup_id": backup_id, "provider_id": cloud_provider_id},
+                ) from exc
+
+        logger.info(
+            "Backup downloaded from cloud storage for restore",
+            extra={"event": "backup.restore.cloud_download_success", "backup_id": backup_id},
+        )
+
+        if not metadata.get("storage_path"):
+            self._update_backup_record(backup_id, {**metadata, "storage_path": dest_path})
+
+        return dest_path
+
     def delete_backup(self, backup_id: str) -> bool:
         """Delete a backup and its files.
 
@@ -603,6 +889,7 @@ class BackupService:
         Returns:
             bool: True if successful
         """
+        self._validate_backup_id(backup_id)
         try:
             with get_db_session() as session:
                 backup = session.query(Backup).filter_by(id=backup_id).first()
@@ -622,6 +909,11 @@ class BackupService:
                     os.remove(storage_path)
 
                 if backup:
+                    from src.db.models.backup_audit_log import AuditLogEntry
+
+                    session.query(AuditLogEntry).filter_by(backup_id=backup_id).update(
+                        {"backup_id": None}
+                    )
                     session.delete(backup)
                     session.flush()
 
@@ -633,6 +925,14 @@ class BackupService:
                     resource_id=backup_id,
                 )
 
+                from src.services.backup_audit_service import BackupAuditService
+                BackupAuditService().log(
+                    operation="backup.delete",
+                    outcome="success",
+                    performed_by=self._get_current_user(),
+                    detail={"backup_id": backup_id},
+                )
+
                 return True
 
         except Exception as exc:
@@ -640,6 +940,13 @@ class BackupService:
                 "Failed to delete backup",
                 extra={"event": "backup.delete.failure", "resource_id": backup_id},
                 exc_info=exc,
+            )
+            from src.services.backup_audit_service import BackupAuditService
+            BackupAuditService().log(
+                operation="backup.delete",
+                outcome="failure",
+                performed_by=self._get_current_user(),
+                detail={"backup_id": backup_id, "error": str(exc)},
             )
             raise BackupError(
                 "Failed to delete backup.", context={"backup_id": backup_id}
@@ -829,21 +1136,35 @@ class BackupService:
 
         return compressed_count
 
-    def _save_metadata_to_db(self, backup_id: str, metadata: Dict[str, Any]) -> None:
+    def _save_metadata_to_db(self, backup_id: str, metadata: Dict[str, Any],
+                              is_encrypted: bool = False,
+                              encryption_salt: Optional[str] = None,
+                              encryption_nonce: Optional[str] = None,
+                              backup_kind: str = "full") -> None:
         """Save backup metadata to database.
 
         Args:
             backup_id: Backup identifier
             metadata: Backup metadata dictionary
+            is_encrypted: Whether backup is encrypted
+            encryption_salt: Hex-encoded salt for encryption
+            encryption_nonce: Hex-encoded nonce for encryption
         """
         try:
             with get_db_session() as session:
                 backup = Backup(
                     id=backup_id,
                     backup_type=metadata["backup_type"],
+                    backup_kind=backup_kind,
                     filename=metadata["filename"],
                     storage_path=metadata["storage_path"],
+                    size_bytes=metadata.get("size_bytes"),
+                    prompt_count=metadata.get("prompt_count"),
+                    created_by=metadata.get("created_by"),
                     backup_metadata=metadata,
+                    is_encrypted=is_encrypted,
+                    encryption_salt=encryption_salt,
+                    encryption_nonce=encryption_nonce,
                 )
                 session.add(backup)
                 session.flush()
@@ -883,6 +1204,26 @@ class BackupService:
                 exc_info=exc,
             )
 
+    def _update_backup_encryption(
+        self, backup_id: str, encryption_salt: str, encryption_nonce: str
+    ) -> None:
+        """Persist encryption salt/nonce to an existing backup record.
+
+        Raises so the caller can handle DB inconsistency (file already encrypted
+        but DB record would be left with is_encrypted=False if this is swallowed).
+        """
+        with get_db_session() as session:
+            backup = session.query(Backup).filter_by(id=backup_id).first()
+            if not backup:
+                raise BackupError(
+                    "Backup record not found while persisting encryption state; "
+                    "file on disk is encrypted but DB metadata was not updated.",
+                    context={"backup_id": backup_id},
+                )
+            backup.is_encrypted = True
+            backup.encryption_salt = encryption_salt
+            backup.encryption_nonce = encryption_nonce
+
     def _get_prompt_count(self) -> int:
         """Return the current count of prompts for backup metadata."""
         try:
@@ -896,10 +1237,29 @@ class BackupService:
             )
             return 0
 
+    _BACKUP_ID_RE = re.compile(r'^[A-Za-z0-9_-]{1,128}$')
+
+    def _validate_backup_id(self, backup_id: str) -> None:
+        """Reject backup_id values that could cause path traversal."""
+        if not self._BACKUP_ID_RE.match(backup_id):
+            raise BackupError(
+                "Invalid backup ID",
+                context={"backup_id": backup_id},
+                http_status=400,
+            )
+
     def _metadata_file_path(self, backup_id: str) -> str:
         """Return on-disk path for backup metadata file."""
         filename = f"{backup_id}_metadata.json"
-        return os.path.join(self.backups_dir, filename)
+        resolved = os.path.realpath(os.path.join(self.backups_dir, filename))
+        backups_dir_real = os.path.realpath(self.backups_dir)
+        if not resolved.startswith(backups_dir_real + os.sep):
+            raise BackupError(
+                "Invalid backup ID",
+                context={"backup_id": backup_id},
+                http_status=400,
+            )
+        return resolved
 
     def _write_metadata_file(self, metadata: Dict[str, Any]) -> None:
         """Persist metadata alongside backup for DB-restore resilience."""
@@ -1011,3 +1371,268 @@ class BackupService:
         if parsed.tzinfo is None:
             parsed = parsed.replace(tzinfo=timezone.utc)
         return parsed
+
+    def compute_restore_diff(
+        self, backup_id: str, passphrase: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Compute a diff of what would change if this backup were restored.
+
+        Args:
+            backup_id: Backup to preview
+            passphrase: Passphrase for encrypted backups
+
+        Returns:
+            Dict with 'added', 'updated', 'deleted' lists and 'summary'
+        """
+        import tempfile
+        import json as json_lib
+
+        metadata = self.get_backup_info(backup_id)
+        if not metadata:
+            raise BackupError("Backup not found", context={"backup_id": backup_id}, http_status=404)
+
+        backup_path = self._ensure_local_backup_file(backup_id, metadata)
+
+        working_path = self._maybe_decompress(backup_path)
+        decompressed = working_path != backup_path
+
+        is_encrypted = metadata.get("is_encrypted", False)
+
+        if is_encrypted:
+            if not passphrase:
+                raise BackupError("Passphrase required for encrypted backup", http_status=400)
+            from src.services.backup_encryption_service import BackupEncryptionService
+            enc_service = BackupEncryptionService()
+            with get_db_session() as session:
+                backup_record = session.query(Backup).filter_by(id=backup_id).first()
+                salt = backup_record.encryption_salt if backup_record else metadata.get("encryption_salt")
+                nonce = backup_record.encryption_nonce if backup_record else metadata.get("encryption_nonce")
+            if not salt or not nonce:
+                raise BackupError("Encrypted backup missing salt/nonce")
+            decrypted_path = working_path + ".preview_decrypted"
+            shutil.copy2(working_path, decrypted_path)
+            try:
+                enc_service.decrypt_file(decrypted_path, passphrase, salt, nonce)
+            except ValueError:
+                if os.path.exists(decrypted_path):
+                    os.remove(decrypted_path)
+                if decompressed and os.path.exists(working_path):
+                    os.remove(working_path)
+                raise BackupError("Decryption failed", http_status=400)
+            if decompressed and os.path.exists(working_path):
+                os.remove(working_path)
+            working_path = decrypted_path
+            decompressed = True  # ensure cleanup below removes this temp file too
+
+        try:
+            backup_prompts = self._extract_prompts_from_backup(working_path, metadata.get("backup_type", "sqlite_copy"))
+        finally:
+            if decompressed and os.path.exists(working_path) and working_path != backup_path:
+                os.remove(working_path)
+
+        with get_db_session() as session:
+            current_prompts = session.query(Prompt).all()
+            current_map = {p.id: {"title": p.title, "prompt": p.prompt} for p in current_prompts}
+
+        backup_map = {p["id"]: p for p in backup_prompts if "id" in p}
+
+        added = []
+        updated = []
+        deleted = []
+
+        for pid, bp in backup_map.items():
+            if pid not in current_map:
+                added.append({"id": pid, "title": bp.get("title", ""), "prompt": bp.get("prompt", "")[:200]})
+            else:
+                cp = current_map[pid]
+                if cp["title"] != bp.get("title") or cp["prompt"] != bp.get("prompt"):
+                    updated.append({
+                        "id": pid,
+                        "title": bp.get("title", ""),
+                        "before": {"title": cp["title"], "prompt": cp["prompt"][:200]},
+                        "after": {"title": bp.get("title", ""), "prompt": bp.get("prompt", "")[:200]},
+                    })
+
+        for pid, cp in current_map.items():
+            if pid not in backup_map:
+                deleted.append({"id": pid, "title": cp["title"]})
+
+        return {
+            "backup_id": backup_id,
+            "summary": {"added": len(added), "updated": len(updated), "deleted": len(deleted)},
+            "changes": {"added": added, "updated": updated, "deleted": deleted},
+        }
+
+    def _extract_prompts_from_backup(self, backup_path: str, backup_type: str) -> list:
+        """Extract prompt records from a backup file.
+
+        Args:
+            backup_path: Path to the backup file
+            backup_type: Type of backup
+
+        Returns:
+            List of prompt dicts
+        """
+        if backup_type == "sqlite_copy":
+            import sqlite3
+            try:
+                conn = sqlite3.connect(backup_path)
+                cursor = conn.execute("SELECT id, title, prompt, note, favorite, category_id, semantic_version FROM prompts")
+                prompts = []
+                for row in cursor:
+                    prompts.append({
+                        "id": row[0], "title": row[1], "prompt": row[2],
+                        "note": row[3], "favorite": bool(row[4]),
+                        "category_id": row[5], "semantic_version": row[6],
+                    })
+                conn.close()
+                return prompts
+            except Exception as exc:
+                logger.error(
+                    "Failed to read prompts from backup file",
+                    extra={"event": "backup.extract_prompts.failure", "resource_id": backup_path},
+                    exc_info=exc,
+                )
+                raise BackupError(
+                    "Backup file is unreadable or corrupt",
+                    context={"backup_path": backup_path},
+                ) from exc
+        return []
+
+    def selective_restore(
+        self,
+        backup_id: str,
+        prompt_ids: list,
+        created_by: Optional[str] = None,
+        passphrase: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Restore only specific prompts from a backup.
+
+        Args:
+            backup_id: Backup to restore from
+            prompt_ids: List of prompt IDs to restore
+            created_by: Username performing the restore
+            passphrase: Passphrase for encrypted backups
+
+        Returns:
+            Dict with 'restored' and 'pre_restore_backup_id'
+        """
+        import tempfile
+        import json as json_lib
+
+        from src.services.backup_audit_service import BackupAuditService
+        audit_service = BackupAuditService()
+
+        try:
+            metadata = self.get_backup_info(backup_id)
+            if not metadata:
+                raise BackupError("Backup not found", context={"backup_id": backup_id}, http_status=404)
+
+            pre_restore_id = self.create_backup(
+                custom_name=f"pre_selective_restore_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}",
+                created_by=created_by,
+            )
+
+            backup_path = self._ensure_local_backup_file(backup_id, metadata)
+            is_encrypted = metadata.get("is_encrypted", False)
+            working_path = self._maybe_decompress(backup_path)
+            decompressed = working_path != backup_path
+
+            if is_encrypted:
+                if not passphrase:
+                    raise BackupError("Passphrase required for encrypted backup", http_status=400)
+                from src.services.backup_encryption_service import BackupEncryptionService
+                enc_service = BackupEncryptionService()
+                with get_db_session() as session:
+                    backup_record = session.query(Backup).filter_by(id=backup_id).first()
+                    salt = backup_record.encryption_salt if backup_record else metadata.get("encryption_salt")
+                    nonce = backup_record.encryption_nonce if backup_record else metadata.get("encryption_nonce")
+                if not salt or not nonce:
+                    raise BackupError(
+                        "Encrypted backup missing salt/nonce",
+                        context={"backup_id": backup_id},
+                    )
+                decrypted_path = working_path + ".selective_decrypted"
+                shutil.copy2(working_path, decrypted_path)
+                try:
+                    enc_service.decrypt_file(decrypted_path, passphrase, salt, nonce)
+                except ValueError:
+                    if os.path.exists(decrypted_path):
+                        os.remove(decrypted_path)
+                    if decompressed and os.path.exists(working_path):
+                        os.remove(working_path)
+                    raise BackupError("Decryption failed", http_status=400)
+                if decompressed and os.path.exists(working_path):
+                    os.remove(working_path)
+                working_path = decrypted_path
+                decompressed = True
+
+            try:
+                backup_prompts = self._extract_prompts_from_backup(working_path, metadata.get("backup_type", "sqlite_copy"))
+            finally:
+                if decompressed and os.path.exists(working_path) and working_path != backup_path:
+                    os.remove(working_path)
+
+            backup_map = {p["id"]: p for p in backup_prompts}
+            restored_count = 0
+
+            with get_db_session() as session:
+                for pid in prompt_ids:
+                    if pid not in backup_map:
+                        continue
+                    bp = backup_map[pid]
+                    existing = session.query(Prompt).filter_by(id=pid).first()
+                    if existing:
+                        existing.title = bp.get("title", existing.title)
+                        existing.prompt = bp.get("prompt", existing.prompt)
+                        existing.note = bp.get("note", existing.note)
+                        if bp.get("favorite") is not None:
+                            existing.favorite = bp["favorite"]
+                        restored_count += 1
+                    else:
+                        new_prompt = Prompt(
+                            id=pid,
+                            title=bp.get("title", ""),
+                            prompt=bp.get("prompt", ""),
+                            note=bp.get("note"),
+                            favorite=bp.get("favorite", False),
+                        )
+                        session.add(new_prompt)
+                        restored_count += 1
+                session.commit()
+
+            audit_service.log(
+                operation="backup.selective_restore",
+                outcome="success",
+                backup_id=backup_id,
+                performed_by=created_by or self._get_current_user(),
+                detail={"prompt_ids": prompt_ids, "restored_count": restored_count},
+            )
+
+            return {"restored": True, "pre_restore_backup_id": pre_restore_id, "count": restored_count}
+
+        except BackupError as exc:
+            audit_service.log(
+                operation="backup.selective_restore",
+                outcome="failure",
+                backup_id=backup_id,
+                performed_by=created_by or self._get_current_user(),
+                detail={"error": str(exc)},
+            )
+            raise
+        except Exception as exc:
+            logger.error(
+                "Failed to selectively restore backup",
+                extra={"event": "backup.selective_restore.failure", "resource_id": backup_id},
+                exc_info=exc,
+            )
+            audit_service.log(
+                operation="backup.selective_restore",
+                outcome="failure",
+                backup_id=backup_id,
+                performed_by=created_by or self._get_current_user(),
+                detail={"error": str(exc)},
+            )
+            raise BackupError(
+                "Failed to selectively restore backup.", context={"backup_id": backup_id}
+            ) from exc
