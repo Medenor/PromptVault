@@ -27,19 +27,19 @@ A user opens PromptVault on their phone during a commute to find, read, and edit
 
 ---
 
-### User Story 2 - Work with prompts offline and get back online seamlessly (Priority: P2)
+### User Story 2 - View and copy prompts offline (Priority: P2)
 
-A user loses connectivity (e.g., in transit) while using PromptVault. They expect to still view previously loaded prompts, and any edits they make should sync automatically once connectivity returns.
+A user loses connectivity (e.g., in transit) while using PromptVault. They expect to still view and copy previously loaded prompts. Editing, creating, deleting, and any other write action require connectivity and are clearly blocked while offline rather than silently failing or being queued.
 
-**Why this priority**: Offline resilience is a major differentiator called out in the ticket and materially expands where/when the app is usable, but it depends on the mobile layout (P1) already being in place to be worth using on a phone.
+**Why this priority**: Offline resilience is a major differentiator called out in the ticket and materially expands where/when the app is usable, but it depends on the mobile layout (P1) already being in place to be worth using on a phone. Scoping offline to read/copy only (rather than also supporting queued edits) keeps the feature focused on its most common real-world use — grabbing a prompt with no signal — while avoiding the correctness risks of a write-queue/conflict-resolution system for a use case that doesn't need it.
 
-**Independent Test**: Load the app while online, switch the device/browser to offline mode, confirm previously-viewed prompts remain visible with an offline indicator, make an edit, then restore connectivity and confirm the edit syncs without user intervention.
+**Independent Test**: Load the app while online, switch the device/browser to offline mode, confirm previously-viewed prompts remain visible with an offline indicator, copy a prompt (with and without version), confirm all create/edit/delete controls are disabled with a clear "reconnect to continue" message, then restore connectivity and confirm normal editing works again.
 
 **Acceptance Scenarios**:
 
 1. **Given** the user has previously loaded the app while online, **When** connectivity is lost, **Then** an offline indicator appears and previously-viewed prompts remain accessible from cache.
-2. **Given** the app is offline, **When** the user edits or creates a prompt, **Then** the change is queued locally and the user is informed the change will sync later.
-3. **Given** queued offline changes exist, **When** connectivity is restored, **Then** the queued changes sync automatically without requiring the user to manually retry.
+2. **Given** the app is offline and a prompt (and its version history, if previously viewed) is cached, **When** the user copies that prompt's content — with or without a specific version — **Then** the copy succeeds using the cached data.
+3. **Given** the app is offline, **When** the user attempts to create, edit, delete, revert, or bulk-modify a prompt (or navigate to a page that requires connectivity, such as Import/Export), **Then** the action is blocked before any request is attempted and a clear "this needs an internet connection" message is shown.
 4. **Given** the user is offline and requests data that was never cached, **When** they attempt to load it, **Then** the app shows a clear "unavailable offline" message rather than a generic error or blank screen.
 
 ---
@@ -65,7 +65,7 @@ A frequent mobile user wants faster interactions than desktop-style menus allow:
 
 - What happens when a user rotates their device mid-interaction (e.g., mid-swipe-gesture or with the navigation drawer open)? Layout must adapt without losing the open/interaction state unexpectedly.
 - How does the system handle a swipe gesture that starts on a scrollable element (e.g., a long prompt body) — does it conflict with vertical scroll?
-- What happens when the user is offline, has queued multiple conflicting edits to the same prompt (e.g., edited on two devices), and then comes back online? The most recent queued edit wins; the user is notified if a queued change was superseded.
+- What happens when the user attempts a create/edit/delete/revert/bulk action while offline? The action is blocked client-side before any request is attempted (no queuing), with a clear message that connectivity is required.
 - What happens when Service Worker registration fails (e.g., unsupported browser, storage quota exceeded)? The app must continue to function online-only with no offline features, without breaking the base experience.
 - What happens on tablets in landscape mode — should the layout use the mobile drawer/bottom-nav pattern or the desktop sidebar? Landscape tablets above the 768px breakpoint use the desktop-style layout.
 - What happens when a user with a screen reader navigates the mobile drawer or swipe-gesture controls? All gesture-based actions must have an equivalent accessible control (e.g., a visible button) reachable without performing the gesture.
@@ -82,10 +82,10 @@ A frequent mobile user wants faster interactions than desktop-style menus allow:
 - **FR-006**: System MUST provide a floating action button on mobile for creating a new prompt, reachable from the main prompt list view.
 - **FR-007**: System MUST support swipe-left on a prompt card to reveal a delete action, and swipe-right to reveal an edit action, each also reachable via a visible on-screen control for accessibility.
 - **FR-008**: System MUST support a pull-to-refresh gesture on the main prompts list that reloads current data, with an equivalent visible refresh control available for non-touch input.
-- **FR-009**: System MUST cache static assets and previously-viewed prompt data via a Service Worker so that previously-viewed content remains accessible while offline.
+- **FR-009**: System MUST cache static assets and previously-viewed prompt data (including version history, once viewed) via a Service Worker so that previously-viewed content remains viewable and copyable while offline.
 - **FR-010**: System MUST display a persistent, visible indicator when the app detects it is offline.
-- **FR-011**: System MUST queue prompt create/edit changes made while offline and automatically sync them to the server once connectivity is restored, without requiring manual user action.
-- **FR-012**: System MUST notify the user when a queued offline change could not be applied on sync (e.g., due to a conflicting server-side update).
+- **FR-011**: System MUST block create, edit, delete, revert, and bulk-modify actions on prompts while offline, showing a clear message that the action requires connectivity, rather than attempting or queuing the change.
+- **FR-012**: System MUST block navigation to pages that require connectivity (Import/Export, Manage Categories/Tags, Backup Management) while offline, showing a "reconnect to continue" message instead of navigating — offline access is scoped to viewing and copying prompts on the main page only.
 - **FR-013**: System MUST provide a web app manifest enabling "Add to Home Screen" installation, including app name and icons at multiple sizes for different device resolutions.
 - **FR-014**: System MUST support pinch-to-zoom and horizontal-scroll-based viewing for long prompt content and diff views on mobile, without breaking the surrounding page layout.
 - **FR-015**: System MUST truncate long prompt text on mobile list/card views with a "Read More" control to expand the full content.

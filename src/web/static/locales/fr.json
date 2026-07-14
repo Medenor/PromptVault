@@ -747,11 +747,8 @@
     }
   },
   "offline": {
-    "indicator": "Vous êtes hors ligne. Affichage des prompts en cache — les modifications seront synchronisées une fois de retour en ligne.",
-    "changeQueued": "Hors ligne — votre modification a été enregistrée et sera synchronisée automatiquement une fois de retour en ligne.",
-    "syncConflict": "Une modification en attente n'a pas pu être synchronisée car ce prompt a été modifié ailleurs. Vérifiez la version actuelle avant de réessayer.",
+    "indicator": "Vous êtes hors ligne. Affichage des prompts en cache — reconnectez-vous pour apporter des modifications.",
     "unavailableOffline": "Ce contenu n'est pas disponible hors ligne. Reconnectez-vous pour le consulter.",
-    "synced": "Vos modifications hors ligne ont été synchronisées.",
-    "syncFailed": "Une modification en attente n'a pas pu être synchronisée après plusieurs tentatives et n'a pas été appliquée. Veuillez refaire la modification."
+    "editUnavailable": "Cette action nécessite une connexion internet. Reconnectez-vous pour continuer."
   }
 }

@@ -38,16 +38,18 @@ test.describe('Offline cache and indicator (FR-009, FR-010)', () => {
     await expect(page.locator('.prompt-item').first()).toBeVisible();
 
     // A Service Worker only controls the *next* navigation after it activates —
-    // not the load during which it was first registered. Reload once while
-    // still online, after the authenticated app content has actually rendered,
-    // so the cached navigation response is the real app shell (not a
-    // pre-auth-check loading state) and API fetches are intercepted/cached.
+    // not the load during which it was first registered, so none of this
+    // first visit's own fetches (shell HTML, JS/CSS bundle) go through the
+    // `fetch` handler. The SW's `install` step precaches the shell + its
+    // linked static assets to cover this gap — wait for that precache to
+    // finish (rather than reloading, which would mask a regression here) so a
+    // single online visit is enough for offline mode to work.
     await page.waitForFunction(async () => {
       const reg = await navigator.serviceWorker.getRegistration();
-      return !!reg?.active;
+      if (!reg?.active) return false;
+      const cache = await caches.open('promptvault-static-v1');
+      return (await cache.match('/')) !== undefined;
     });
-    await page.reload({ waitUntil: 'networkidle' });
-    await expect(page.locator('.prompt-item').first()).toBeVisible();
 
     await context.setOffline(true);
     await page.reload({ waitUntil: 'domcontentloaded' });

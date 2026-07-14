@@ -175,7 +175,7 @@
               <button
                 type="button"
                 id="import-export-btn"
-                onclick="window.location.href = '/import-export'"
+                onclick="if (window.__requireOnlineNav) { window.__requireOnlineNav('/import-export'); } else { window.location.href = '/import-export'; }"
                 class="hidden md:block px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
                 data-i18n="nav.importExport"
               >
@@ -184,7 +184,7 @@
               <button
                 type="button"
                 id="backup-btn"
-                onclick="window.location.href = '/backup-management'"
+                onclick="if (window.__requireOnlineNav) { window.__requireOnlineNav('/backup-management'); } else { window.location.href = '/backup-management'; }"
                 class="hidden md:block px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
                 data-i18n="nav.backupManagement"
               >
@@ -407,7 +407,7 @@
               <div class="space-y-2">
                 <button
                   type="button"
-                  onclick="window.location.href = '/manage-categories'"
+                  onclick="if (window.__requireOnlineNav) { window.__requireOnlineNav('/manage-categories'); } else { window.location.href = '/manage-categories'; }"
                   class="w-full px-4 py-2 text-sm font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
                   data-i18n="categories.manage"
                 >
@@ -415,7 +415,7 @@
                 </button>
                 <button
                   type="button"
-                  onclick="window.location.href = '/manage-tags'"
+                  onclick="if (window.__requireOnlineNav) { window.__requireOnlineNav('/manage-tags'); } else { window.location.href = '/manage-tags'; }"
                   class="w-full px-4 py-2 text-sm font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
                   data-i18n="tags.manage"
                 >
@@ -477,7 +477,7 @@
               <div class="space-y-1">
                 <button
                   type="button"
-                  onclick="window.location.href = '/import-export'"
+                  onclick="if (window.__requireOnlineNav) { window.__requireOnlineNav('/import-export'); } else { window.location.href = '/import-export'; }"
                   class="w-full min-h-[44px] text-left px-4 py-2 text-sm rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-inset"
                   data-i18n="nav.importExport"
                 >
@@ -485,7 +485,7 @@
                 </button>
                 <button
                   type="button"
-                  onclick="window.location.href = '/backup-management'"
+                  onclick="if (window.__requireOnlineNav) { window.__requireOnlineNav('/backup-management'); } else { window.location.href = '/backup-management'; }"
                   class="w-full min-h-[44px] text-left px-4 py-2 text-sm rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-inset"
                   data-i18n="nav.backupManagement"
                 >
@@ -624,7 +624,7 @@
               <div class="space-y-1">
                 <button
                   type="button"
-                  onclick="window.location.href = '/manage-categories'"
+                  onclick="if (window.__requireOnlineNav) { window.__requireOnlineNav('/manage-categories'); } else { window.location.href = '/manage-categories'; }"
                   class="w-full min-h-[44px] text-left px-4 py-2 text-sm rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-inset"
                   data-i18n="categories.manage"
                 >
@@ -632,7 +632,7 @@
                 </button>
                 <button
                   type="button"
-                  onclick="window.location.href = '/manage-tags'"
+                  onclick="if (window.__requireOnlineNav) { window.__requireOnlineNav('/manage-tags'); } else { window.location.href = '/manage-tags'; }"
                   class="w-full min-h-[44px] text-left px-4 py-2 text-sm rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-inset"
                   data-i18n="tags.manage"
                 >

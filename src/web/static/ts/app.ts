@@ -30,9 +30,11 @@ import {
 } from '@/utils/pagination';
 import { closeMobileDrawer, initKeyboardSafeScroll, initMobileNav } from '@/mobile-nav';
 import { closeSearchOverlay, initSearchOverlay, isSearchOverlayOpen } from '@/search-overlay';
-import { clearOfflineDataOnLogout, initOfflineIndicator, registerServiceWorker } from '@/sw-register';
-import { syncOfflineQueue } from '@/offline-sync';
-import { addQueueEntry } from '@/utils/offline-queue';
+import {
+  clearOfflineDataOnLogout,
+  initOfflineIndicator,
+  registerServiceWorker,
+} from '@/sw-register';
 import { attachPullToRefresh, attachSwipeReveal } from '@/gestures';
 
 interface TagInfo {
@@ -1136,15 +1138,22 @@ function setupEventListeners(): void {
   // Keep the prompt editor's fields visible above the on-screen keyboard (FR-005)
   initKeyboardSafeScroll(['#prompt-title', '#prompt-content']);
 
-  // Offline resilience: Service Worker caching, persistent offline indicator,
-  // and automatic queue sync on reconnect (FR-009, FR-010, FR-011)
+  // Offline resilience: Service Worker caching + persistent offline indicator.
+  // Offline mode is read/copy-only (FR-009, FR-010) — editing is gated behind
+  // connectivity rather than queued, so there's no write-sync step here.
   registerServiceWorker();
-  initOfflineIndicator(() => {
-    void syncOfflineQueue();
-  });
-  if (navigator.onLine) {
-    void syncOfflineQueue();
-  }
+  initOfflineIndicator();
+
+  // Secondary pages (Import/Export, Manage Categories/Tags, Backup) require
+  // connectivity and aren't reachable offline (FR-012) — their nav buttons
+  // call this instead of navigating directly when offline.
+  window.__requireOnlineNav = (path: string): void => {
+    if (navigator.onLine) {
+      window.location.href = path;
+      return;
+    }
+    showNotification(t('offline.editUnavailable'), 'error');
+  };
 
   // Pull-to-refresh on the prompt list (FR-008), with an accessible refresh
   // button as the always-visible equivalent control.
@@ -1195,12 +1204,6 @@ function setupEventListeners(): void {
   // New prompt floating action button (mobile, FR-006)
   const newPromptFab = document.getElementById('new-prompt-fab');
   newPromptFab?.addEventListener('click', showNewPromptForm);
-
-  // Import/Export button (navigates to import/export page)
-  const importExportBtn = document.getElementById('import-export-btn');
-  importExportBtn?.addEventListener('click', function () {
-    window.location.href = '/import-export';
-  });
 
   // Logout button
   const logoutBtn = document.getElementById('logout-btn');
@@ -1996,6 +1999,13 @@ function setPaginationControlsVisible(visible: boolean): void {
 }
 
 function showNewPromptForm() {
+  // Offline mode is read/copy-only (FR-009) — creating requires connectivity,
+  // so there's no point opening a form the user can't submit.
+  if (!navigator.onLine) {
+    showNotification(t('offline.editUnavailable'), 'error');
+    return;
+  }
+
   const promptEditor = document.getElementById('prompt-editor');
   const promptsList = document.getElementById('prompts-list');
   const pullRefreshToolbar = document.getElementById('pull-refresh-toolbar');
@@ -2032,6 +2042,14 @@ async function handlePromptSubmit(event: SubmitEvent): Promise<void> {
   if (!form) {
     return;
   }
+
+  // Offline mode is read/copy-only (FR-009) — editing requires connectivity
+  // rather than being queued for later sync.
+  if (!navigator.onLine) {
+    showNotification(t('offline.editUnavailable'), 'error');
+    return;
+  }
+
   const tagInput = getTagInputElement();
   if (tagInput) {
     commitTagInput(tagInput);
@@ -2127,48 +2145,12 @@ async function handlePromptSubmit(event: SubmitEvent): Promise<void> {
       );
     }
   } catch (error) {
-    if (!navigator.onLine) {
-      await queueOfflinePromptSave(form, formData, isEditMode, promptId);
-      return;
-    }
     reportAppIssue('savePrompt', error, {
       mode: isEditMode ? 'edit' : 'create',
       promptId: promptId || null,
     });
     showNotification(t('messages.error'), 'error');
   }
-}
-
-/**
- * Queues a prompt create/edit made while offline (FR-011). The queued change
- * syncs automatically via syncOfflineQueue() on the next `online` event.
- */
-async function queueOfflinePromptSave(
-  form: HTMLFormElement,
-  formData: FormData,
-  isEditMode: boolean,
-  promptId: PromptId | undefined
-): Promise<void> {
-  const payload: Record<string, unknown> = {};
-  formData.forEach((value, key) => {
-    payload[key] = value;
-  });
-
-  if (isEditMode && promptId) {
-    const baseVersionRaw = form.dataset.baseVersion;
-    const baseVersion = baseVersionRaw ? Number(baseVersionRaw) : null;
-    await addQueueEntry({
-      operation: 'update',
-      promptId: String(promptId),
-      baseVersion,
-      payload,
-    });
-  } else {
-    await addQueueEntry({ operation: 'create', payload });
-  }
-
-  history.back();
-  showNotification(t('offline.changeQueued'), 'info');
 }
 
 async function copyPromptWithVersion(id: PromptId): Promise<void> {
@@ -2294,11 +2276,24 @@ function showCopyFeedback(id: PromptId, message: string): void {
 }
 
 async function editPrompt(id: PromptId): Promise<void> {
+  // Offline mode is read/copy-only (FR-009) — editing requires connectivity,
+  // so there's no point opening a form the user can't submit.
+  if (!navigator.onLine) {
+    showNotification(t('offline.editUnavailable'), 'error');
+    return;
+  }
+
+  let prompt: PromptResponse;
   try {
-    const prompt = await apiGet<PromptResponse>(`/api/prompts/${id}`);
-
+    prompt = await apiGet<PromptResponse>(`/api/prompts/${id}`);
     promptCache[id] = prompt;
+  } catch (error) {
+    reportAppIssue('loadPromptForEdit', error, { promptId: id });
+    showNotification(t('messages.error'), 'error');
+    return;
+  }
 
+  try {
     // Show editor without resetting form
     history.pushState({ modal: 'editor' }, '');
     showElement(document.getElementById('prompt-editor'));
@@ -2325,25 +2320,18 @@ async function editPrompt(id: PromptId): Promise<void> {
       form.dataset.mode = 'edit';
       form.dataset.id = id;
     }
-
-    // Track the current version for offline-sync conflict detection (FR-012):
-    // best-effort — if this fails (e.g. offline), the form simply has no
-    // baseVersion and the offline queue omits expected_version on sync.
-    try {
-      const history_ = await apiGet<{ versions: VersionSummary[] }>(`/api/prompts/${id}/versions`);
-      const latest = history_.versions[0];
-      if (form && latest) {
-        form.dataset.baseVersion = String(latest.version_number);
-      }
-    } catch {
-      // Non-fatal: offline-sync conflict detection degrades to "no check requested".
-    }
   } catch (error) {
     reportAppIssue('loadPromptForEdit', error, { promptId: id });
   }
 }
 
 async function deletePrompt(id: PromptId): Promise<void> {
+  // Offline mode is read/copy-only (FR-009) — deleting requires connectivity.
+  if (!navigator.onLine) {
+    showNotification(t('offline.editUnavailable'), 'error');
+    return;
+  }
+
   const confirmed = await confirmAsync({
     title: t('actions.confirmDelete') || 'Confirm',
     message: t('messages.confirmDelete') || 'Are you sure?',
@@ -3292,6 +3280,12 @@ function showRevertConfirmation(versionId: string): void {
 async function performRevert(versionId: string): Promise<void> {
   try {
     if (currentVersionPromptId === null) {
+      return;
+    }
+
+    // Offline mode is read/copy-only (FR-009) — reverting requires connectivity.
+    if (!navigator.onLine) {
+      showNotification(t('offline.editUnavailable'), 'error');
       return;
     }
     const revertMessageInput = document.getElementById(
@@ -4735,6 +4729,12 @@ function hideBulkTagModal() {
 async function performBulkDelete(): Promise<void> {
   if (selectedPromptIds.size === 0) return;
 
+  // Offline mode is read/copy-only (FR-009) — bulk delete requires connectivity.
+  if (!navigator.onLine) {
+    showNotification(t('offline.editUnavailable'), 'error');
+    return;
+  }
+
   const promptIdsArray = Array.from(selectedPromptIds);
 
   try {
@@ -4790,6 +4790,12 @@ async function performBulkDelete(): Promise<void> {
 
 async function performBulkTagUpdate(): Promise<void> {
   if (selectedPromptIds.size === 0) return;
+
+  // Offline mode is read/copy-only (FR-009) — bulk tag updates require connectivity.
+  if (!navigator.onLine) {
+    showNotification(t('offline.editUnavailable'), 'error');
+    return;
+  }
 
   const addInput = document.getElementById('bulk-tag-add') as HTMLInputElement | null;
   const removeInput = document.getElementById('bulk-tag-remove') as HTMLInputElement | null;
@@ -4872,10 +4878,9 @@ async function logout() {
     console.error('Logout error:', error);
     reportAppIssue('logout-error', error, {}, 'warning');
   } finally {
-    // Clear cached prompt API responses and any queued offline writes so a
-    // different user signing in on this device afterward can't see or replay
-    // this user's data.
-    await clearOfflineDataOnLogout();
+    // Clear cached prompt API responses so a different user signing in on
+    // this device afterward can't see this user's data.
+    clearOfflineDataOnLogout();
 
     // Always clear storage and redirect
     localStorage.removeItem('access_token');

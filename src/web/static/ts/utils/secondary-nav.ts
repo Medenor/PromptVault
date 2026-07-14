@@ -45,10 +45,9 @@ async function logout(component: string): Promise<void> {
   } catch (error) {
     reportError(component, 'logout-error', error, {}, 'warning');
   } finally {
-    // Clear cached prompt API responses and any queued offline writes so a
-    // different user signing in on this device afterward can't see or replay
-    // this user's data.
-    await clearOfflineDataOnLogout();
+    // Clear cached prompt API responses so a different user signing in on
+    // this device afterward can't see this user's data.
+    clearOfflineDataOnLogout();
 
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');

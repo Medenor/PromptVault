@@ -741,11 +741,8 @@
     }
   },
   "offline": {
-    "indicator": "Estás sin conexión. Mostrando prompts en caché — los cambios se sincronizarán cuando vuelvas a estar en línea.",
-    "changeQueued": "Sin conexión — tu cambio se guardó y se sincronizará automáticamente cuando vuelvas a estar en línea.",
-    "syncConflict": "No se pudo sincronizar un cambio pendiente porque este prompt cambió en otro lugar. Revisa la versión actual antes de reintentarlo.",
+    "indicator": "Estás sin conexión. Mostrando prompts en caché — vuelve a conectarte para hacer cambios.",
     "unavailableOffline": "Este contenido no está disponible sin conexión. Vuelve a conectarte para verlo.",
-    "synced": "Tus cambios sin conexión se han sincronizado.",
-    "syncFailed": "No se pudo sincronizar un cambio pendiente después de varios intentos y no se aplicó. Por favor, vuelve a realizar el cambio."
+    "editUnavailable": "Esta acción necesita conexión a internet. Vuelve a conectarte para continuar."
   }
 }

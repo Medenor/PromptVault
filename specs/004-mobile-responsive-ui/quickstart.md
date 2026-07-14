@@ -17,16 +17,18 @@
 
 Automated equivalent: `npx playwright test mobile-nav.spec.ts --project=mobile` (see tasks.md for the file to be created).
 
-## Validate User Story 2 — Offline resilience (P2)
+## Validate User Story 2 — View and copy prompts offline (P2)
+
+Offline mode is read/copy-only — editing, creating, deleting, and secondary-page navigation all require connectivity and are blocked client-side rather than queued.
 
 1. With the app loaded and online, browse to the prompt list and open a couple of prompts (to populate the Service Worker cache).
 2. In DevTools, go offline (Network tab → Offline) or use Playwright's `context.setOffline(true)`.
 3. Confirm the offline indicator appears and the previously-viewed prompts remain viewable.
-4. Edit one of the cached prompts; confirm the app confirms the change was queued rather than erroring.
-5. Go back online; confirm the queued edit syncs automatically within ~10 seconds without user action, per `SC-005`.
-6. Repeat steps 2-4 but from two "clients" (two tabs) editing the same prompt to different values while both are offline; bring one online first, then the other — confirm the second sync surfaces a conflict notification per `FR-012` instead of silently overwriting.
+4. Copy one of the cached prompts (with and without a specific version); confirm the copy succeeds using cached data.
+5. Attempt to create, edit, delete, revert, or bulk-modify a prompt, or click a nav button to Import/Export, Manage Categories/Tags, or Backup Management; confirm each is blocked before any request is sent, with a "this needs an internet connection" message (`FR-011`, `FR-012`).
+6. Go back online; confirm editing and secondary-page navigation work normally again.
 
-Automated equivalent: `npx playwright test offline-sync.spec.ts --project=mobile`.
+Automated equivalent: `npx playwright test offline-cache.spec.ts --project=mobile`.
 
 ## Validate User Story 3 — Gestures and PWA install (P3)
 

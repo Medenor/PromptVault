@@ -10,6 +10,7 @@ declare global {
   interface Window {
     FrontendLogger: FrontendLogger;
     __AUTH_ENABLED__: boolean;
+    __requireOnlineNav?: (path: string) => void;
   }
 }
 

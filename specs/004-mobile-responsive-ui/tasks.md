@@ -84,34 +84,36 @@ Single project, existing structure: `src/web/templates/`, `src/web/static/ts/`, 
 
 ---
 
-## Phase 4: User Story 2 - Work with prompts offline and sync seamlessly (Priority: P2)
+## Phase 4: User Story 2 - View and copy prompts offline (Priority: P2)
 
-**Goal**: Cache previously-viewed prompts and static assets via a Service Worker, queue offline edits in IndexedDB, and auto-sync with conflict detection when connectivity returns.
+**⚠️ SCOPE CHANGE (post-hoc)**: T025-T039 below originally built offline **write** support (IndexedDB queue, auto-sync on reconnect, `expected_version` conflict detection). After real-device testing surfaced problems with that approach, offline scope was narrowed to **read/copy-only** — editing, creating, deleting, reverting, bulk actions, and secondary-page navigation are now blocked client-side while offline instead of queued. The queue/sync/conflict subsystem (`offline-queue.ts`, `offline-sync.ts`, the `TestUpdatePromptVersionConflict` backend tests, `check_version_conflict`/`VersionConflictResult`, `offline-sync.spec.ts`, `offline-conflict.spec.ts`) was removed entirely rather than left disabled. T025, T027, T029, T030, T033-T036 are historical record of work that was later reverted — see `contracts/offline-sync.md` and `data-model.md` for the current (read-only) contract. T026, T028, T031, T032, T037-T039 remain accurate for the caching/indicator pieces that were kept.
 
-**Independent Test**: Load online, go offline, confirm cached prompts remain viewable with an offline indicator, edit a prompt, go back online, confirm the edit syncs automatically within 10s; verify a conflicting concurrent edit surfaces a notification instead of silently overwriting.
+**Goal**: Cache previously-viewed prompts and static assets via a Service Worker so the main prompt list remains viewable and copyable offline; block all write actions and secondary-page navigation while offline with a clear message.
+
+**Independent Test**: Load online, go offline, confirm cached prompts remain viewable with an offline indicator, copy a prompt (with and without version), confirm create/edit/delete/secondary-nav are all blocked with a "reconnect to continue" message, then restore connectivity and confirm normal editing works again.
 
 ### Tests for User Story 2
 
-- [X] T025 [P] [US2] Vitest unit test for `OfflineQueueEntry` CRUD + status transitions in `src/web/static/ts/__tests__/offline-queue.test.ts` (mocking `indexedDB`) — uses `fake-indexeddb` devDependency
+- [X] T025 [P] [US2] ~~Vitest unit test for `OfflineQueueEntry` CRUD + status transitions~~ — removed with the offline queue (see scope-change note above)
 - [X] T026 [P] [US2] Vitest unit test for Service Worker registration + offline-indicator wiring in `src/web/static/ts/__tests__/sw-register.test.ts`
-- [X] T027 [P] [US2] pytest test for `expected_version` conflict detection on `PUT /prompts/{prompt_id}` (200 on match, 409 on mismatch) in `tests/unit/test_prompts_router.py` (or existing equivalent test file for `src/web/routers/prompts.py`) — implemented as `TestUpdatePromptVersionConflict` in `tests/test_api_endpoints.py` (existing equivalent file)
+- [X] T027 [P] [US2] ~~pytest test for `expected_version` conflict detection~~ — removed with the conflict-detection backend code (see scope-change note above)
 - [X] T028 [P] [US2] Playwright test: cached prompts remain viewable offline with visible offline indicator in `tests/e2e/offline-cache.spec.ts` (using `context.setOffline(true)`) — WebKit skipped (Playwright driver limitation, verified manually); requires AUTH_ENABLED=true + test-admin login
-- [X] T029 [P] [US2] Playwright test: offline edit queues, then auto-syncs within 10s of reconnect, in `tests/e2e/offline-sync.spec.ts`
-- [X] T030 [P] [US2] Playwright test: conflicting concurrent offline edits from two contexts surface a conflict notification instead of silent overwrite, in `tests/e2e/offline-conflict.spec.ts`
+- [X] T029 [P] [US2] ~~Playwright test: offline edit queues, then auto-syncs~~ — removed (`offline-sync.spec.ts` deleted), editing is now blocked offline rather than queued
+- [X] T030 [P] [US2] ~~Playwright test: conflicting concurrent offline edits~~ — removed (`offline-conflict.spec.ts` deleted), no longer applicable
 
 ### Implementation for User Story 2
 
-- [X] T031 [US2] Implement `src/web/static/ts/sw.ts`: cache static assets (CSS/JS/manifest/icons) and previously-fetched prompt API responses using the Cache API, with a cache-versioning/invalidation strategy (depends on T006 build entry) — also caches navigation requests so a reload while offline has a shell to fall back to; served at root `/sw.js` (new route in app.py) instead of `/static/dist/sw.js` so its scope covers the whole app
+- [X] T031 [US2] Implement `src/web/static/ts/sw.ts`: cache static assets (CSS/JS/manifest/icons) and previously-fetched prompt API responses using the Cache API, with a cache-versioning/invalidation strategy (depends on T006 build entry) — also caches navigation requests so a reload while offline has a shell to fall back to; served at root `/sw.js` (new route in app.py) instead of `/static/dist/sw.js` so its scope covers the whole app. Later revised to precache the shell + linked assets on `install` (a page is never controlled by the Service Worker that installs it, so a first-ever visit would otherwise leave the cache empty) and to scope caching to `/` only, since secondary pages are no longer accessible offline.
 - [X] T032 [US2] Implement `src/web/static/ts/sw-register.ts`: register the compiled `sw.js`, listen for `online`/`offline` events, render the persistent offline indicator (depends on T031)
-- [X] T033 [US2] [P] [US2] Implement `src/web/static/ts/utils/offline-queue.ts`: IndexedDB-backed `OfflineQueueEntry` store per `data-model.md` (add/list/update-status operations, `pending → syncing → (synced|conflict)` transitions)
-- [X] T034 [US2] Implement sync replay logic (in `sw-register.ts` or a new `offline-sync.ts`) that, on reconnect, replays `pending` queue entries via the existing prompt create/update endpoints with `expected_version`, per the contract in `specs/004-mobile-responsive-ui/contracts/offline-sync.md` (depends on T033)
-- [X] T035 [US2] Implement conflict notification UI (reusing `src/web/static/ts/utils/notifications.ts` if present) triggered when a queued entry's sync returns 409 (depends on T034)
-- [X] T036 [US2] Add `expected_version` optional form field handling to `update_prompt` in `src/web/routers/prompts.py:654`, comparing against the prompt's current version (via existing `VersionRepository`/`PromptVersion` data) and returning `409` with `{"error": "version_conflict", "current_version": ..., "current_prompt": {...}}` on mismatch — implemented in the service layer per Constitution Principle I, not directly in the router (see `check_version_conflict` in `src/services/prompt_versioning_service.py`)
-- [X] T037 [US2] Wire `sw-register.ts` and `offline-queue.ts` into `src/web/static/ts/app.ts`, hooking prompt edit/create UI actions to queue when offline instead of failing — also fixed a pre-existing gap where checkAdminAccess() redirected to /auth/login on ANY /api/auth/me failure including network errors, which broke offline access entirely for authenticated deployments
-- [X] T038 [US2] Run `python3 -m pytest` and confirm the updated router/service logic keeps backend coverage ≥85% — 86.20% (6 pre-existing unrelated test_scheduler.py failures, confirmed via git stash)
-- [X] T039 [US2] Run `npm run typecheck && npm run lint && npm run test:unit:coverage` for the new TS modules — 91.85% coverage, 211 tests passing
+- [X] T033 [US2] ~~Implement `src/web/static/ts/utils/offline-queue.ts`~~ — removed (see scope-change note above)
+- [X] T034 [US2] ~~Implement sync replay logic~~ — removed (see scope-change note above)
+- [X] T035 [US2] ~~Implement conflict notification UI~~ — removed (see scope-change note above)
+- [X] T036 [US2] ~~Add `expected_version` optional form field handling to `update_prompt`~~ — removed; `check_version_conflict`/`VersionConflictResult` deleted from `src/services/prompt_versioning_service.py`
+- [X] T037 [US2] Wire `sw-register.ts` into `src/web/static/ts/app.ts`, gating prompt create/edit/delete/revert/bulk-action UI (and secondary-page navigation via `window.__requireOnlineNav`) behind `navigator.onLine` instead of queuing when offline — also fixed a pre-existing gap where checkAdminAccess() redirected to /auth/login on ANY /api/auth/me failure including network errors, which broke offline access entirely for authenticated deployments
+- [X] T038 [US2] Run `python3 -m pytest` and confirm the updated router/service logic keeps backend coverage ≥85%
+- [X] T039 [US2] Run `npm run typecheck && npm run lint && npm run test:unit:coverage` for the new TS modules
 
-**Checkpoint**: User Stories 1 AND 2 both work independently — offline browsing, queuing, and conflict-aware sync all functional on top of the P1 mobile layout.
+**Checkpoint**: User Stories 1 AND 2 both work independently — offline browsing and copying (read-only) functional on top of the P1 mobile layout; all write actions and secondary pages correctly require connectivity.
 
 ---
 

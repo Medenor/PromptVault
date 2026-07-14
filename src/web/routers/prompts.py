@@ -46,7 +46,6 @@ from src.db.repositories.category_repository import CategoryRepository
 from src.db.repositories.tag_repository import TagRepository
 from src.db.repositories.version_repository import VersionRepository
 from src.config.auth_config import auth_settings
-from src.services.prompt_versioning_service import check_version_conflict
 from src.web.dependencies.auth import (
     get_current_active_user,
     get_optional_user,
@@ -762,9 +761,6 @@ async def create_prompt(
         401: {"description": "Authentication required"},
         403: {"description": "Permission denied (not owner or admin)"},
         404: {"description": "Prompt not found"},
-        409: {
-            "description": "expected_version did not match the prompt's current version (offline-sync conflict)"
-        },
         422: {"description": "Validation failed"},
     },
 )
@@ -776,7 +772,6 @@ async def update_prompt(
     tags: str = Form(""),
     commit_message: str = Form("Update"),
     semantic_version: str = Form(""),
-    expected_version: Optional[int] = Form(None),
     user: User = Depends(get_current_user_or_default),
     db: Session = Depends(get_db),
 ):
@@ -790,10 +785,6 @@ async def update_prompt(
         tags: New tags (comma-separated)
         commit_message: Version control message
         semantic_version: Optional semantic version label (MAJOR.MINOR.PATCH)
-        expected_version: Optional version the client last saw (offline-sync conflict
-            detection, per specs/004-mobile-responsive-ui contracts/offline-sync.md).
-            When present and it does not match the prompt's current version, the
-            update is rejected with 409 instead of applied.
         user: Authenticated user
         db: Database session
 
@@ -801,7 +792,7 @@ async def update_prompt(
         dict: Success response
 
     Raises:
-        HTTPException: 404 if not found, 403 if not authorized, 409 on version conflict
+        HTTPException: 404 if not found, 403 if not authorized
     """
     # Validate using Pydantic model
     validated_data = PromptUpdateRequest(
@@ -828,18 +819,6 @@ async def update_prompt(
 
     # Check ownership
     check_prompt_ownership(existing_prompt, user)
-
-    # Offline-sync conflict detection (backward-compatible: no-op when omitted)
-    conflict_result = check_version_conflict(version_repo, prompt_id, expected_version)
-    if conflict_result.has_conflict:
-        return JSONResponse(
-            status_code=status.HTTP_409_CONFLICT,
-            content={
-                "error": "version_conflict",
-                "current_version": conflict_result.current_version,
-                "current_prompt": _prompt_to_dict(existing_prompt),
-            },
-        )
 
     # Get or create category
     category_obj = None

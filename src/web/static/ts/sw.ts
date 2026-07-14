@@ -60,17 +60,78 @@ function isStaticAssetRequest(url: URL): boolean {
   return STATIC_ASSET_PATH_PREFIXES.some((prefix) => url.pathname.startsWith(prefix));
 }
 
+// Covers prompts (incl. per-prompt version history/diff sub-routes), categories,
+// and tags — the read data the app needs to stay usable offline, not just the
+// prompt list itself (FR-009: "previously-viewed prompts" implies the
+// categories/tags used to browse and filter them too).
+const CACHEABLE_API_PATH_PATTERN = /^\/api\/(prompts|categories|tags)(\/|$)/;
+
 function isCacheablePromptApiRequest(request: Request, url: URL): boolean {
-  return request.method === 'GET' && /^\/api\/prompts(\/|$)/.test(url.pathname);
+  return request.method === 'GET' && CACHEABLE_API_PATH_PATTERN.test(url.pathname);
 }
 
 function isNavigationRequest(request: Request): boolean {
   return request.mode === 'navigate';
 }
 
+// Locale files are fetched lazily and dynamically by i18next-http-backend at
+// runtime (loadPath: '/static/locales/{{lng}}.json' in utils/i18n.ts) — they
+// aren't referenced via a <script>/<link> tag the HTML-scraping precache
+// below can discover, so without listing them explicitly here, a language
+// the user never actually switched to while online (e.g. they only ever used
+// the browser-detected default) silently fails to switch offline. Keep in
+// sync with `supportedLngs` in utils/i18n.ts.
+const SUPPORTED_LOCALES = ['en', 'fr', 'es', 'de'];
+
+// A page that registers this Service Worker for the first time is never
+// controlled by it (SW spec) — none of that page's own fetches (its own HTML,
+// JS/CSS bundle) go through our `fetch` handler below, so without this
+// precache step a first-ever visit leaves the offline caches empty and the
+// app is completely broken the moment connectivity drops, even though the
+// user just viewed it while online. Offline access is scoped to the main
+// prompt list (`/`) only — secondary pages (Import/Export, Manage
+// Categories/Tags, Backup Management) require connectivity and are blocked
+// client-side rather than precached, so only `/` needs warming here.
+async function precacheShell(): Promise<void> {
+  const cache = await caches.open(STATIC_CACHE);
+  const pageResponse = await fetch('/');
+  if (!pageResponse.ok) {
+    return;
+  }
+  await cache.put('/', pageResponse.clone());
+
+  const html = await pageResponse.text();
+  const assetUrls = new Set<string>();
+  const attrPattern = /(?:src|href)="(\/static\/[^"]+)"/g;
+  let match: RegExpExecArray | null;
+  while ((match = attrPattern.exec(html)) !== null) {
+    const assetUrl = match[1];
+    if (assetUrl) {
+      assetUrls.add(assetUrl);
+    }
+  }
+
+  for (const locale of SUPPORTED_LOCALES) {
+    assetUrls.add(`/static/locales/${locale}.json`);
+  }
+
+  await Promise.all(
+    Array.from(assetUrls).map(async (assetUrl) => {
+      try {
+        const response = await fetch(assetUrl);
+        if (response.ok) {
+          await cache.put(assetUrl, response);
+        }
+      } catch {
+        // Best-effort: a single missing/failed asset shouldn't block install.
+      }
+    })
+  );
+}
+
 self.addEventListener('install', (event) => {
   void self.skipWaiting();
-  event.waitUntil(caches.open(STATIC_CACHE).then(() => undefined));
+  event.waitUntil(precacheShell());
 });
 
 self.addEventListener('activate', (event) => {

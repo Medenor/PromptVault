@@ -782,11 +782,8 @@
     }
   },
   "offline": {
-    "indicator": "You're offline. Viewing cached prompts — changes will sync when you're back online.",
-    "changeQueued": "Offline — your change was saved and will sync automatically once you're back online.",
-    "syncConflict": "A queued change could not be synced because this prompt changed elsewhere. Review the current version before retrying.",
+    "indicator": "You're offline. Viewing cached prompts — reconnect to make changes.",
     "unavailableOffline": "This content isn't available offline. Reconnect to view it.",
-    "synced": "Your offline changes have synced.",
-    "syncFailed": "A queued change couldn't be synced after several attempts and was not applied. Please make the change again."
+    "editUnavailable": "This action needs an internet connection. Reconnect to continue."
   }
 }
