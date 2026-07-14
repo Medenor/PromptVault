@@ -1907,6 +1907,18 @@ function renderTags(tags: TagInfo[]): void {
   syncRovingTabindexForList(listMobile);
 }
 
+function setPaginationControlsVisible(visible: boolean): void {
+  const pageSizeControl = document.getElementById('page-size-control');
+  const loadMoreContainer = document.getElementById('load-more-container');
+  if (visible) {
+    showElement(pageSizeControl);
+    toggleElement(loadMoreContainer, paginationState.hasNext);
+  } else {
+    hideElement(pageSizeControl);
+    hideElement(loadMoreContainer);
+  }
+}
+
 function showNewPromptForm() {
   const promptEditor = document.getElementById('prompt-editor');
   const promptsList = document.getElementById('prompts-list');
@@ -1921,6 +1933,7 @@ function showNewPromptForm() {
     tagInput.value = '';
   }
   hideElement(promptsList);
+  setPaginationControlsVisible(false);
 }
 
 function hidePromptEditor() {
@@ -1929,6 +1942,7 @@ function hidePromptEditor() {
 
   hideElement(promptEditor);
   showElement(promptsList);
+  setPaginationControlsVisible(true);
 }
 
 async function handlePromptSubmit(event: SubmitEvent): Promise<void> {
@@ -2173,6 +2187,7 @@ async function editPrompt(id: PromptId): Promise<void> {
     history.pushState({ modal: 'editor' }, '');
     showElement(document.getElementById('prompt-editor'));
     hideElement(document.getElementById('prompts-list'));
+    setPaginationControlsVisible(false);
 
     // Populate form
     const promptTitle = document.getElementById('prompt-title') as HTMLInputElement | null;
