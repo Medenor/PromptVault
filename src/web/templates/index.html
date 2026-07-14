@@ -467,50 +467,32 @@
               >
                 New Prompt
               </button>
-              <button
-                type="button"
-                onclick="window.location.href = '/import-export'"
-                class="w-full min-h-[44px] text-left px-4 py-2 text-sm rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-inset"
-                data-i18n="nav.importExport"
-              >
-                Import/Export
-              </button>
-              <button
-                type="button"
-                onclick="window.location.href = '/backup-management'"
-                class="w-full min-h-[44px] text-left px-4 py-2 text-sm rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-inset"
-                data-i18n="nav.backupManagement"
-              >
-                Backup
-              </button>
-              <button
-                type="button"
-                onclick="window.location.href = '/auth/profile'"
-                class="w-full min-h-[44px] text-left px-4 py-2 text-sm rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-inset"
-                data-i18n="nav.profile"
-              >
-                Profile
-              </button>
-              <button
-                type="button"
-                id="admin-btn-mobile"
-                onclick="window.location.href = '/admin/users'"
-                class="w-full min-h-[44px] text-left px-4 py-2 text-sm rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-inset"
-                data-i18n="nav.admin"
-                style="display: none"
-              >
-                Admin
-              </button>
-              <div class="border-t border-gray-200 dark:border-gray-700 my-2"></div>
-              <button
-                type="button"
-                id="logout-btn-mobile"
-                class="w-full min-h-[44px] text-left px-4 py-2 text-sm rounded-lg text-red-700 hover:bg-red-50 transition-colors font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-inset"
-                data-i18n="nav.logout"
-              >
-                Logout
-              </button>
             </nav>
+
+            <!-- Data Section -->
+            <div class="mb-6 border-t border-gray-200 dark:border-gray-700 pt-4" role="group" aria-labelledby="mobile-drawer-data-heading">
+              <h3 id="mobile-drawer-data-heading" class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3" data-i18n="nav.data">
+                Data
+              </h3>
+              <div class="space-y-1">
+                <button
+                  type="button"
+                  onclick="window.location.href = '/import-export'"
+                  class="w-full min-h-[44px] text-left px-4 py-2 text-sm rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-inset"
+                  data-i18n="nav.importExport"
+                >
+                  Import/Export
+                </button>
+                <button
+                  type="button"
+                  onclick="window.location.href = '/backup-management'"
+                  class="w-full min-h-[44px] text-left px-4 py-2 text-sm rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-inset"
+                  data-i18n="nav.backupManagement"
+                >
+                  Backup
+                </button>
+              </div>
+            </div>
 
             <!-- Filters Section -->
             <div class="mb-6">
@@ -635,15 +617,15 @@
             </div>
 
             <!-- Management Links -->
-            <div class="mt-6 border-t border-gray-200 dark:border-gray-700 pt-4">
-              <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4" data-i18n="management.manage">
+            <div class="mt-6 border-t border-gray-200 dark:border-gray-700 pt-4" role="group" aria-labelledby="mobile-drawer-manage-heading">
+              <h3 id="mobile-drawer-manage-heading" class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3" data-i18n="management.manage">
                 Manage
               </h3>
-              <div class="space-y-2">
+              <div class="space-y-1">
                 <button
                   type="button"
                   onclick="window.location.href = '/manage-categories'"
-                  class="w-full px-4 py-2 text-sm font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
+                  class="w-full min-h-[44px] text-left px-4 py-2 text-sm rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-inset"
                   data-i18n="categories.manage"
                 >
                   Manage Categories
@@ -651,10 +633,45 @@
                 <button
                   type="button"
                   onclick="window.location.href = '/manage-tags'"
-                  class="w-full px-4 py-2 text-sm font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
+                  class="w-full min-h-[44px] text-left px-4 py-2 text-sm rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-inset"
                   data-i18n="tags.manage"
                 >
                   Manage Tags
+                </button>
+              </div>
+            </div>
+
+            <!-- Account Section -->
+            <div id="mobile-drawer-account-section" class="mt-6 border-t border-gray-200 dark:border-gray-700 pt-4" role="group" aria-labelledby="mobile-drawer-account-heading">
+              <h3 id="mobile-drawer-account-heading" class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3" data-i18n="nav.account">
+                Account
+              </h3>
+              <div class="space-y-1">
+                <button
+                  type="button"
+                  onclick="window.location.href = '/auth/profile'"
+                  class="w-full min-h-[44px] text-left px-4 py-2 text-sm rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-inset"
+                  data-i18n="nav.profile"
+                >
+                  Profile
+                </button>
+                <button
+                  type="button"
+                  id="admin-btn-mobile"
+                  onclick="window.location.href = '/admin/users'"
+                  class="w-full min-h-[44px] text-left px-4 py-2 text-sm rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-inset"
+                  data-i18n="nav.admin"
+                  style="display: none"
+                >
+                  Admin
+                </button>
+                <button
+                  type="button"
+                  id="logout-btn-mobile"
+                  class="w-full min-h-[44px] text-left px-4 py-2 text-sm rounded-lg text-red-700 hover:bg-red-50 transition-colors font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-inset"
+                  data-i18n="nav.logout"
+                >
+                  Logout
                 </button>
               </div>
             </div>

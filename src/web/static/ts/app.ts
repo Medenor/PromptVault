@@ -1014,7 +1014,7 @@ async function initializeApp(): Promise<void> {
 
 function hideAuthOnlyElements(): void {
   // Hide elements that only make sense when authentication is enabled.
-  const idsToHide = ['profile-btn', 'logout-btn', 'logout-btn-mobile'];
+  const idsToHide = ['profile-btn', 'logout-btn', 'mobile-drawer-account-section'];
   idsToHide.forEach((id) => {
     const el = document.getElementById(id);
     if (el) {
