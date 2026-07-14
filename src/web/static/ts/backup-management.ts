@@ -58,6 +58,7 @@ interface BackupItem {
   compressed: boolean;
   prompt_count: number;
   created_by?: string | null;
+  storage_path?: string | null;
   cloud_provider_id?: string | null;
   cloud_path?: string | null;
   is_encrypted?: boolean;
@@ -458,9 +459,13 @@ function createBackupItem(backup: BackupItem): string {
   const cloudProviderName = backup.cloud_provider_id
     ? cloudProviderNames.get(backup.cloud_provider_id) || backup.cloud_provider_id
     : '';
-  const storageBadge = backup.cloud_provider_id
+  const localBadge = backup.storage_path
+    ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-200 text-gray-700 text-xs font-medium">💻 ${escapeHtml(t('backup.localBadge'))}</span>`
+    : '';
+  const cloudBadge = backup.cloud_provider_id
     ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-medium" title="${escapeHtml(cloudProviderName)}">☁️ ${escapeHtml(t('backup.cloudBadge'))}</span>`
-    : `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-200 text-gray-700 text-xs font-medium">💻 ${escapeHtml(t('backup.localBadge'))}</span>`;
+    : '';
+  const storageBadge = `${localBadge}${cloudBadge}`;
   const encryptedBadge = backup.is_encrypted
     ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-xs font-medium" title="${escapeHtml(t('backup.encryptedTooltip'))}">🔒 ${escapeHtml(t('backup.encryptedBadge'))}</span>`
     : '';
