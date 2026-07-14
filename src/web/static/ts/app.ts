@@ -3081,6 +3081,7 @@ function renderVersionHistory(versions: VersionSummary[]): void {
 // version at a time via swipe or the visible prev/next buttons.
 let versionCarouselIndex = 0;
 let detachVersionCarouselSwipe: (() => void) | null = null;
+let detachVersionCarouselButtons: (() => void) | null = null;
 
 function hideVersionCarouselNav(): void {
   document.getElementById('version-carousel-nav')?.classList.add('hidden');
@@ -3138,8 +3139,13 @@ function initVersionCarousel(versionList: HTMLElement, total: number): void {
     updateVersionCarouselPosition(total);
   };
 
+  detachVersionCarouselButtons?.();
   prevBtn?.addEventListener('click', goToPrev);
   nextBtn?.addEventListener('click', goToNext);
+  detachVersionCarouselButtons = () => {
+    prevBtn?.removeEventListener('click', goToPrev);
+    nextBtn?.removeEventListener('click', goToNext);
+  };
 
   detachVersionCarouselSwipe?.();
   detachVersionCarouselSwipe = attachSwipeReveal(versionList, {
