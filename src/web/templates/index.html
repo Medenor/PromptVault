@@ -689,22 +689,6 @@
 
         <!-- Main Content -->
         <main id="main-content" role="main" class="flex-1 w-full">
-          <!-- Mobile Sidebar Toggle Bar -->
-          <div class="md:hidden flex items-center gap-3 px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-            <button
-              type="button"
-              id="sidebar-toggle"
-              class="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:text-gray-100 transition-colors rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
-              aria-label="Toggle sidebar"
-              data-i18n="[aria-label]accessibility.labels.toggleSidebar"
-            >
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-              </svg>
-            </button>
-            <h2 class="text-lg font-bold text-gray-900 dark:text-gray-100" data-i18n="nav.categoriesAndTags">Categories & Tags</h2>
-          </div>
-
           <div class="p-6 max-w-7xl mx-auto">
             <!-- Search Results Info -->
           <h3 class="sr-only">Search Results</h3>
@@ -762,8 +746,8 @@
                 id="page-size-select"
                 class="text-sm rounded-lg border border-gray-300 py-1.5 px-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
               >
-                <option value="25">25</option>
-                <option value="50" selected>50</option>
+                <option value="25" selected>25</option>
+                <option value="50">50</option>
                 <option value="100">100</option>
               </select>
             </div>

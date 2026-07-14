@@ -29,7 +29,7 @@ import {
   type PageSize,
 } from '@/utils/pagination';
 import { closeMobileDrawer, initKeyboardSafeScroll, initMobileNav } from '@/mobile-nav';
-import { initSearchOverlay } from '@/search-overlay';
+import { closeSearchOverlay, initSearchOverlay, isSearchOverlayOpen } from '@/search-overlay';
 import { initOfflineIndicator, registerServiceWorker } from '@/sw-register';
 import { syncOfflineQueue } from '@/offline-sync';
 import { addQueueEntry } from '@/utils/offline-queue';
@@ -2611,8 +2611,15 @@ function handleSearchInput(event: Event): void {
   }
 
   // Debounce search
+  const isOverlayInput = target.id === 'search-input-overlay';
   searchTimeout = setTimeout(() => {
-    void performSearch();
+    void performSearch().then(() => {
+      // Close the full-screen overlay once results are ready so the user
+      // can see the filtered list without an extra manual dismiss (FR-016).
+      if (isOverlayInput && isSearchOverlayOpen()) {
+        closeSearchOverlay();
+      }
+    });
   }, 300);
 }
 
