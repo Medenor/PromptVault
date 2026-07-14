@@ -5,6 +5,7 @@
 <html lang="en">
   <head>
     {% import "macros/scripts.html" as scripts %}
+    {% import "macros/mobile_drawer.html" as drawer %}
     <meta charset="UTF-8" />
     <script>
       // Dark mode bootstrap (FR-017): runs synchronously before first paint to
@@ -54,10 +55,16 @@
               class="h-8 w-8 border-2 border-gray-400 rounded-lg shadow-lg"
             />
           </a>
-          {% include 'macros/language_selector.html' %}
+          <div class="flex items-center gap-2">
+            <div class="hidden md:block">
+              {% include 'macros/language_selector.html' %}
+            </div>
+            {{ drawer.toggle_button() }}
+          </div>
         </div>
       </div>
     </header>
+    {{ drawer.minimal_drawer() }}
     <main
       id="main-content"
       role="main"

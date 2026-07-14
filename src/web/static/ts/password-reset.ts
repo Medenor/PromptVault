@@ -13,6 +13,7 @@ import { reportError } from '@/telemetry';
 import { initI18n, t, updateStaticTranslations } from '@/utils/i18n';
 import { clearAllErrors, hideElement, showElement, showError } from '@/utils/dom';
 import { announce } from '@/utils/a11y';
+import { initSecondaryNav } from '@/utils/secondary-nav';
 
 const API_BASE = '/api/auth';
 
@@ -501,6 +502,7 @@ function setupResetPasswordForm(): void {
 
 function initializePasswordResetPage(): void {
   updateStaticTranslations();
+  initSecondaryNav({ component: 'password-reset' });
 
   if (document.getElementById('forgot-password-form')) {
     setupForgotPasswordForm();

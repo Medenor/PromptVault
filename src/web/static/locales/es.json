@@ -24,7 +24,9 @@
     "backToMain": "Volver al menú principal",
     "skipToMainContent": "Saltar al contenido principal",
     "home": "Inicio",
-    "language": "Idioma"
+    "language": "Idioma",
+    "account": "Cuenta",
+    "data": "Datos"
   },
   "actions": {
     "add": "Añadir",

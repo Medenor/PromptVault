@@ -1,0 +1,195 @@
+{# This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0. If a copy of
+the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/. #}
+
+{% macro toggle_button() %}
+<button
+  type="button"
+  id="mobile-menu-toggle"
+  class="md:hidden inline-flex items-center justify-center w-11 h-11 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
+  aria-label="Open menu"
+  aria-haspopup="true"
+  aria-expanded="false"
+  aria-controls="mobile-sidebar"
+  data-i18n="[aria-label]accessibility.labels.openMenu"
+>
+  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+  </svg>
+</button>
+{% endmacro %}
+
+{% macro _backdrop() %}
+<div
+  id="sidebar-backdrop"
+  class="fixed inset-0 bg-black/50 z-40 hidden md:hidden transition-opacity duration-300"
+></div>
+{% endmacro %}
+
+{% macro _drawer_open(aria_label) %}
+<aside
+  id="mobile-sidebar"
+  class="fixed top-0 left-0 w-64 h-full bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 z-50 md:hidden transform -translate-x-full transition-transform duration-300 ease-in-out overflow-y-auto"
+  role="dialog"
+  aria-modal="true"
+  aria-label="{{ aria_label }}"
+>
+  <div class="p-4">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-lg font-bold text-gray-900 dark:text-gray-100" data-i18n="nav.menu">Menu</h2>
+      <button
+        type="button"
+        id="sidebar-close"
+        class="flex items-center justify-center w-11 h-11 text-gray-700 dark:text-gray-300 hover:text-gray-700 dark:text-gray-300 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
+        aria-label="Close sidebar"
+        data-i18n="[aria-label]accessibility.labels.closeSidebar"
+      >
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+    </div>
+{% endmacro %}
+
+{% macro minimal_drawer(back_url='/') %}
+{{ _backdrop() }}
+{{ _drawer_open('Navigation') }}
+    <nav
+      class="mb-6 space-y-1"
+      role="navigation"
+      aria-label="Primary actions mobile"
+      data-i18n="[aria-label]accessibility.labels.primaryActionsMobile"
+    >
+      <button
+        type="button"
+        onclick="window.location.href = '{{ back_url }}'"
+        class="w-full min-h-[44px] text-left px-4 py-2 text-sm rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-inset"
+        data-i18n="nav.backToMain"
+      >
+        Back to Main
+      </button>
+    </nav>
+
+    <div class="mt-6 border-t border-gray-200 dark:border-gray-700 pt-4">
+      <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3" data-i18n="nav.language">
+        Language
+      </h3>
+      {% with variant = 'block' %}
+        {% include 'macros/language_selector.html' %}
+      {% endwith %}
+    </div>
+  </div>
+</aside>
+{% endmacro %}
+
+{% macro full_nav_drawer() %}
+{{ _backdrop() }}
+{{ _drawer_open('Navigation') }}
+    <nav
+      class="mb-6"
+      role="navigation"
+      aria-label="Primary actions mobile"
+      data-i18n="[aria-label]accessibility.labels.primaryActionsMobile"
+    >
+      <button
+        type="button"
+        onclick="window.location.href = '/'"
+        class="w-full min-h-[44px] text-left px-4 py-2 text-sm font-semibold rounded-lg text-blue-700 hover:bg-blue-50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-inset"
+        data-i18n="nav.home"
+      >
+        Homepage
+      </button>
+    </nav>
+
+    <div class="mt-6 border-t border-gray-200 dark:border-gray-700 pt-4" role="group" aria-labelledby="mobile-drawer-data-heading">
+      <h3 id="mobile-drawer-data-heading" class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3" data-i18n="nav.data">
+        Data
+      </h3>
+      <div class="space-y-1">
+        <button
+          type="button"
+          onclick="window.location.href = '/import-export'"
+          class="w-full min-h-[44px] text-left px-4 py-2 text-sm rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-inset"
+          data-i18n="nav.importExport"
+        >
+          Import/Export
+        </button>
+        <button
+          type="button"
+          onclick="window.location.href = '/backup-management'"
+          class="w-full min-h-[44px] text-left px-4 py-2 text-sm rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-inset"
+          data-i18n="nav.backupManagement"
+        >
+          Backup
+        </button>
+      </div>
+    </div>
+
+    <div class="mt-6 border-t border-gray-200 dark:border-gray-700 pt-4" role="group" aria-labelledby="mobile-drawer-manage-heading">
+      <h3 id="mobile-drawer-manage-heading" class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3" data-i18n="management.manage">
+        Manage
+      </h3>
+      <div class="space-y-1">
+        <button
+          type="button"
+          onclick="window.location.href = '/manage-categories'"
+          class="w-full min-h-[44px] text-left px-4 py-2 text-sm rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-inset"
+          data-i18n="categories.manage"
+        >
+          Manage Categories
+        </button>
+        <button
+          type="button"
+          onclick="window.location.href = '/manage-tags'"
+          class="w-full min-h-[44px] text-left px-4 py-2 text-sm rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-inset"
+          data-i18n="tags.manage"
+        >
+          Manage Tags
+        </button>
+      </div>
+    </div>
+
+    <div id="mobile-drawer-account-section" class="mt-6 border-t border-gray-200 dark:border-gray-700 pt-4" role="group" aria-labelledby="mobile-drawer-account-heading">
+      <h3 id="mobile-drawer-account-heading" class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3" data-i18n="nav.account">
+        Account
+      </h3>
+      <div class="space-y-1">
+        <button
+          type="button"
+          onclick="window.location.href = '/auth/profile'"
+          class="w-full min-h-[44px] text-left px-4 py-2 text-sm rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-inset"
+          data-i18n="nav.profile"
+        >
+          Profile
+        </button>
+        <button
+          type="button"
+          id="admin-btn-mobile"
+          onclick="window.location.href = '/admin/users'"
+          class="w-full min-h-[44px] text-left px-4 py-2 text-sm rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-inset"
+          data-i18n="nav.admin"
+          style="display: none"
+        >
+          Admin
+        </button>
+        <button
+          type="button"
+          id="logout-btn-mobile"
+          class="w-full min-h-[44px] text-left px-4 py-2 text-sm rounded-lg text-red-700 hover:bg-red-50 transition-colors font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-inset"
+          data-i18n="nav.logout"
+        >
+          Logout
+        </button>
+      </div>
+    </div>
+
+    <div class="mt-6 border-t border-gray-200 dark:border-gray-700 pt-4">
+      <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3" data-i18n="nav.language">
+        Language
+      </h3>
+      {% with variant = 'block' %}
+        {% include 'macros/language_selector.html' %}
+      {% endwith %}
+    </div>
+  </div>
+</aside>
+{% endmacro %}

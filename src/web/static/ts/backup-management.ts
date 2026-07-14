@@ -17,6 +17,7 @@ import { hideElement, showElement } from '@/utils/dom';
 import { apiFetch, apiGet, apiPost, apiPostForm, APIRequestError } from '@/utils/api';
 import { announce } from '@/utils/a11y';
 import { loadMonitoringDashboard, loadAuditLog } from './components/backup-monitoring-dashboard';
+import { initSecondaryNav } from '@/utils/secondary-nav';
 
 interface CloudProvider {
   id: string;
@@ -94,10 +95,6 @@ interface CleanupResponse {
 interface CompressResponse {
   success: boolean;
   compressed_count?: number;
-}
-
-interface AuthResponse {
-  role?: string;
 }
 
 interface FormValidationError {
@@ -236,8 +233,8 @@ function renderErrorSummary(summaryId: string, errors: FormValidationError[]): v
 }
 
 function initializeBackupManagement(): void {
+  initSecondaryNav({ component: BACKUP_COMPONENT, requireAuth: true });
   setupEventListeners();
-  void checkAdminAccess();
   void loadBackups();
   void loadBackupStats();
   void loadMonitoringDashboard();
@@ -999,30 +996,6 @@ function setRestoreInProgress(isRestoring: boolean, messageKey?: TranslationKey)
 
   if (modal) {
     modal.setAttribute('aria-busy', isRestoring ? 'true' : 'false');
-  }
-}
-
-async function checkAdminAccess(): Promise<void> {
-  // Anonymous mode (AUTH_ENABLED=false): no auth check, no redirect.
-  if (window.__AUTH_ENABLED__ === false) {
-    return;
-  }
-
-  try {
-    const data = await apiGet<AuthResponse>('/api/auth/me');
-    if (data.role === 'admin') {
-      const adminBtn = document.getElementById('admin-btn');
-      if (adminBtn) {
-        (adminBtn as HTMLElement).style.display = '';
-      }
-    }
-  } catch (error) {
-    reportError(BACKUP_COMPONENT, 'checkAdminAccess', error);
-    if (error instanceof APIRequestError && error.status === 401) {
-      window.location.href = '/auth/login';
-    } else {
-      window.location.href = '/auth/login';
-    }
   }
 }
 

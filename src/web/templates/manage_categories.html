@@ -5,6 +5,7 @@
 <html lang="en">
   <head>
     {% import "macros/scripts.html" as scripts %}
+    {% import "macros/mobile_drawer.html" as drawer %}
     <meta charset="UTF-8" />
     <script>
       // Dark mode bootstrap (FR-017): runs synchronously before first paint to
@@ -62,20 +63,25 @@
               role="navigation"
               aria-label="Page navigation"
               data-i18n="[aria-label]accessibility.labels.pageNavigation"
+              class="flex items-center gap-2"
             >
-              {% include 'macros/language_selector.html' %}
+              <div class="hidden md:block">
+                {% include 'macros/language_selector.html' %}
+              </div>
               <button
                 type="button"
                 onclick="window.location.href = '/'"
-                class="px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
+                class="hidden md:block px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
                 data-i18n="nav.backToMain"
               >
                 Back to Main
               </button>
+              {{ drawer.toggle_button() }}
             </nav>
           </div>
         </div>
       </header>
+      {{ drawer.full_nav_drawer() }}
 
       <main
         id="main-content"
@@ -890,6 +896,7 @@
       </footer>
     </div>
 
+    <script>window.__AUTH_ENABLED__ = {{ 'true' if auth_enabled else 'false' }};</script>
     {{ scripts.load_scripts('manage-categories', true) }}
   </body>
 </html>

@@ -24,7 +24,9 @@
     "backToMain": "Back to Main",
     "skipToMainContent": "Skip to main content",
     "home": "Home",
-    "language": "Language"
+    "language": "Language",
+    "account": "Account",
+    "data": "Data"
   },
   "actions": {
     "add": "Add",

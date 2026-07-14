@@ -14,6 +14,7 @@ import { createTypeahead } from '@/utils/typeahead';
 import { announce } from '@/utils/a11y';
 import { confirmAsync } from '@/utils/dialogs';
 import { announceToScreenReader } from '@/utils/focus-management';
+import { initSecondaryNav } from '@/utils/secondary-nav';
 
 type CategoryItem = {
   id: number;
@@ -1252,6 +1253,8 @@ function handleError(error: unknown, fallback: string): void {
 }
 
 function init(): void {
+  initSecondaryNav({ component: 'manage-categories', requireAuth: true });
+
   // Initialize enhanced color picker
   try {
     initializeColorPicker({

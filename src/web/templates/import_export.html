@@ -5,6 +5,7 @@
 <html lang="en">
   <head>
     {% import "macros/scripts.html" as scripts %}
+    {% import "macros/mobile_drawer.html" as drawer %}
     <meta charset="UTF-8" />
     <script>
       // Dark mode bootstrap (FR-017): runs synchronously before first paint to
@@ -54,20 +55,24 @@
               </a>
               <div class="text-2xl font-bold">PromptVault</div>
             </div>
-            <nav role="navigation" aria-label="Page navigation" data-i18n="[aria-label]accessibility.labels.pageNavigation">
-              {% include 'macros/language_selector.html' %}
+            <nav role="navigation" aria-label="Page navigation" data-i18n="[aria-label]accessibility.labels.pageNavigation" class="flex items-center gap-2">
+              <div class="hidden md:block">
+                {% include 'macros/language_selector.html' %}
+              </div>
               <button
                 type="button"
                 onclick="window.location.href = '/'"
-                class="px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
+                class="hidden md:block px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
                 data-i18n="nav.backToMain"
               >
                 Back to Main
               </button>
+              {{ drawer.toggle_button() }}
             </nav>
           </div>
         </div>
       </header>
+      {{ drawer.full_nav_drawer() }}
 
       <!-- Main Content -->
       <main id="main-content" role="main" class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
@@ -612,6 +617,7 @@
               </footer>
               </div>
 
+                 <script>window.__AUTH_ENABLED__ = {{ 'true' if auth_enabled else 'false' }};</script>
                  {{ scripts.load_scripts('import-export', true, 'import_export', true) }}
               </body>
               </html>

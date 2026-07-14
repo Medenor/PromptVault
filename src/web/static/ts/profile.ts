@@ -15,6 +15,7 @@ import { clearAllErrors, showError } from '@/utils/dom';
 import { showNotification } from '@/utils/notifications';
 import { apiGet, apiPost, apiDelete, APIRequestError } from '@/utils/api';
 import { announce } from '@/utils/a11y';
+import { initSecondaryNav } from '@/utils/secondary-nav';
 
 const API_BASE = '/api/auth';
 
@@ -574,6 +575,7 @@ function setupChangePasswordForm(): void {
 
 function initializeProfilePage(): void {
   updateStaticTranslations();
+  initSecondaryNav({ component: 'profile', requireAuth: true });
 
   // Button keyboard activation (Enter and Space keys)
   // Enables keyboard accessibility for all buttons
