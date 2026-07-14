@@ -17,7 +17,7 @@ from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import JSONResponse
 
 from src.db.models.user import User
-from src.web.dependencies.auth import get_admin_or_bypass, get_current_user_or_none
+from src.web.dependencies.auth import get_admin_or_bypass, get_user_or_bypass
 from src.web.models import BackupCreateRequest, BackupCompressRequest
 
 router = APIRouter(tags=["backups"])
@@ -47,7 +47,7 @@ def _get_backup_service():
     return _backup_service
 
 
-@router.get("/api/backups", dependencies=[Depends(get_current_user_or_none)])
+@router.get("/api/backups", dependencies=[Depends(get_user_or_bypass)])
 async def get_backups(
     tag: Optional[str] = None,
     start_date: Optional[str] = None,
@@ -287,7 +287,7 @@ async def compress_backups(days_threshold: int = Form(7)):
         raise
 
 
-@router.get("/api/backups/stats", dependencies=[Depends(get_current_user_or_none)])
+@router.get("/api/backups/stats", dependencies=[Depends(get_user_or_bypass)])
 async def get_backup_stats():
     """Get backup statistics."""
     service = _get_backup_service()
@@ -295,7 +295,7 @@ async def get_backup_stats():
     return stats
 
 
-@router.get("/api/backup-schedule", dependencies=[Depends(get_current_user_or_none)])
+@router.get("/api/backup-schedule", dependencies=[Depends(get_user_or_bypass)])
 async def get_backup_schedule():
     """Get current backup schedule configuration."""
     from src.services.backup_scheduler_service import BackupSchedulerService
@@ -382,7 +382,7 @@ async def update_backup_schedule(request: Request):
     return result
 
 
-@router.get("/api/backup-encryption", dependencies=[Depends(get_current_user_or_none)])
+@router.get("/api/backup-encryption", dependencies=[Depends(get_user_or_bypass)])
 async def get_encryption_config():
     """Get encryption configuration (never returns passphrase)."""
     from src.services.backup_encryption_service import BackupEncryptionService
@@ -426,7 +426,7 @@ async def update_encryption_config(request: Request):
         return result
 
 
-@router.get("/api/backup-providers", dependencies=[Depends(get_current_user_or_none)])
+@router.get("/api/backup-providers", dependencies=[Depends(get_user_or_bypass)])
 async def list_backup_providers():
     """List configured cloud storage providers."""
     from src.services.backup_cloud_service import BackupCloudService
@@ -495,7 +495,7 @@ async def test_backup_provider(provider_id: str):
         return service.test_connectivity(provider)
 
 
-@router.get("/api/backup-monitoring", dependencies=[Depends(get_current_user_or_none)])
+@router.get("/api/backup-monitoring", dependencies=[Depends(get_user_or_bypass)])
 async def get_backup_monitoring():
     """Get backup monitoring dashboard statistics."""
     from src.services.backup_audit_service import BackupAuditService
@@ -503,7 +503,7 @@ async def get_backup_monitoring():
     return service.get_dashboard_stats()
 
 
-@router.get("/api/backup-audit-log", dependencies=[Depends(get_current_user_or_none)])
+@router.get("/api/backup-audit-log", dependencies=[Depends(get_user_or_bypass)])
 async def get_backup_audit_log(
     operation: Optional[str] = None,
     outcome: Optional[str] = None,

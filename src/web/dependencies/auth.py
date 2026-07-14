@@ -965,6 +965,29 @@ async def get_current_user_or_default(
     return user_repo.get_or_create_default_user()
 
 
+async def get_user_or_bypass(
+    user: Optional[User] = Depends(get_current_user_or_none),
+) -> Optional[User]:
+    """Require any authenticated user when auth is enabled; bypass (None) when disabled.
+
+    For read endpoints over sensitive data (backups, schedules, audit logs)
+    that must stay 401-guarded in normal deployments but remain accessible
+    when ``AUTH_ENABLED=false``.
+
+    Raises:
+        HTTPException: 401 if auth enabled but unauthenticated.
+    """
+    if not auth_settings.auth_enabled:
+        return None
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication required",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return user
+
+
 async def get_admin_or_bypass(
     user: Optional[User] = Depends(get_current_user_or_none),
 ) -> Optional[User]:

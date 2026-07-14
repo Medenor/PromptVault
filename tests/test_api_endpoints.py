@@ -970,10 +970,10 @@ class TestBackupManagementEndpoints:
         assert compress.json()["success"] is True
 
     def test_restore_invalid_backup_returns_structured_error(
-        self, api_client, api_auth_headers
+        self, api_client, api_admin_auth_headers
     ):
         response = api_client.post(
-            "/api/backups/unknown-id/restore", headers=api_auth_headers
+            "/api/backups/unknown-id/restore", headers=api_admin_auth_headers
         )
         assert response.status_code == 404
         payload = response.json()
