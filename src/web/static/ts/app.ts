@@ -1480,7 +1480,6 @@ async function loadTags(): Promise<void> {
 }
 
 function renderPrompts(prompts: Record<string, PromptResponse>): void {
-  promptCache = { ...prompts };
   const container = document.getElementById('prompts-list') as HTMLElement | null;
   const searchResultsInfo = document.getElementById('search-results-info');
   const promptsEmptyState = document.getElementById('prompts-empty-state');
@@ -2500,7 +2499,7 @@ async function performSearch(): Promise<void> {
     updateLoadMoreControl();
 
     // Update result count and handle empty results
-    updateSearchResultsInfo(promptCache);
+    updateSearchResultsInfo(promptCache, data.total_count);
   } catch (error) {
     reportAppIssue('searchPrompts', error, {
       filters: {
@@ -2527,9 +2526,11 @@ async function performSearch(): Promise<void> {
   }
 }
 
-function updateSearchResultsInfo(prompts: Record<string, PromptResponse>): void {
+function updateSearchResultsInfo(
+  prompts: Record<string, PromptResponse>,
+  totalCount: number
+): void {
   const resultCount = Object.keys(prompts || {}).length;
-  const totalCount = Object.keys(promptCache).length;
   const searchResultsInfo = document.getElementById('search-results-info');
   const promptsList = document.getElementById('prompts-list');
 

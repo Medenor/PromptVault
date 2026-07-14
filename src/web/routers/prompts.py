@@ -327,7 +327,10 @@ async def list_prompts(
     else:
         prompt_repo = PromptRepository(db)
         total_count = prompt_repo.count()
-        prompts = prompt_repo.get_all(skip=(page - 1) * limit, limit=limit)
+        # Use search() rather than get_all() so results are stably ordered
+        # (get_all() has no ORDER BY, which makes OFFSET/LIMIT pagination
+        # non-deterministic across pages).
+        prompts = prompt_repo.search(limit=limit, offset=(page - 1) * limit)
 
         prompts_dict = {}
         for prompt in prompts:
