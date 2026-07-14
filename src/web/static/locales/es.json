@@ -745,6 +745,7 @@
     "changeQueued": "Sin conexión — tu cambio se guardó y se sincronizará automáticamente cuando vuelvas a estar en línea.",
     "syncConflict": "No se pudo sincronizar un cambio pendiente porque este prompt cambió en otro lugar. Revisa la versión actual antes de reintentarlo.",
     "unavailableOffline": "Este contenido no está disponible sin conexión. Vuelve a conectarte para verlo.",
-    "synced": "Tus cambios sin conexión se han sincronizado."
+    "synced": "Tus cambios sin conexión se han sincronizado.",
+    "syncFailed": "No se pudo sincronizar un cambio pendiente después de varios intentos y no se aplicó. Por favor, vuelve a realizar el cambio."
   }
 }

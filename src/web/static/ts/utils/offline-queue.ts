@@ -15,7 +15,7 @@ const DB_VERSION = 1;
 const STORE_NAME = 'queue';
 
 export type QueueOperation = 'create' | 'update';
-export type QueueStatus = 'pending' | 'syncing' | 'synced' | 'conflict';
+export type QueueStatus = 'pending' | 'syncing' | 'synced' | 'conflict' | 'failed';
 
 export interface OfflineQueueEntry {
   id: string;
@@ -25,6 +25,7 @@ export interface OfflineQueueEntry {
   baseVersion: number | null;
   timestamp: number;
   status: QueueStatus;
+  retryCount: number;
 }
 
 function openDb(): Promise<IDBDatabase> {
@@ -92,6 +93,7 @@ export async function addQueueEntry(
     baseVersion: entry.operation === 'update' ? entry.baseVersion : null,
     timestamp: Date.now(),
     status: 'pending',
+    retryCount: 0,
   };
 
   await runTransaction('readwrite', (store) => store.add(fullEntry));
@@ -110,13 +112,15 @@ export async function listPendingQueueEntries(): Promise<OfflineQueueEntry[]> {
 
 /**
  * Updates a queue entry's status. Enforces the forward-only transition rule
- * from data-model.md: pending -> syncing -> (synced | conflict). A conflict
- * entry may be retried by resetting it to 'pending' with an updated baseVersion.
+ * from data-model.md: pending -> syncing -> (synced | conflict | failed). A
+ * conflict entry may be retried by resetting it to 'pending' with an updated
+ * baseVersion. A 'failed' entry has exhausted its retry cap (see
+ * offline-sync.ts) and is left out of future replay attempts.
  */
 export async function updateQueueEntryStatus(
   id: string,
   status: QueueStatus,
-  updates?: Partial<Pick<OfflineQueueEntry, 'baseVersion'>>
+  updates?: Partial<Pick<OfflineQueueEntry, 'baseVersion' | 'retryCount'>>
 ): Promise<void> {
   const db = await openDb();
   await new Promise<void>((resolve, reject) => {
@@ -134,6 +138,9 @@ export async function updateQueueEntryStatus(
       if (updates?.baseVersion !== undefined) {
         entry.baseVersion = updates.baseVersion;
       }
+      if (updates?.retryCount !== undefined) {
+        entry.retryCount = updates.retryCount;
+      }
       const putRequest = store.put(entry);
       putRequest.onsuccess = () => resolve();
       putRequest.onerror = () => reject(putRequest.error);
@@ -149,4 +156,13 @@ export async function removeQueueEntry(id: string): Promise<void> {
 export async function getQueueEntryCount(): Promise<number> {
   const entries = await listQueueEntries();
   return entries.length;
+}
+
+/**
+ * Clears all queued entries. Used on logout so a subsequent user signing in on
+ * the same device can't have another user's queued writes replayed under their
+ * session (the queue is not otherwise scoped per-user).
+ */
+export async function clearQueue(): Promise<void> {
+  await runTransaction('readwrite', (store) => store.clear());
 }

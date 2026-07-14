@@ -745,6 +745,7 @@
     "changeQueued": "Offline — deine Änderung wurde gespeichert und wird automatisch synchronisiert, sobald du wieder online bist.",
     "syncConflict": "Eine wartende Änderung konnte nicht synchronisiert werden, da sich dieser Prompt anderswo geändert hat. Überprüfe die aktuelle Version, bevor du es erneut versuchst.",
     "unavailableOffline": "Dieser Inhalt ist offline nicht verfügbar. Stelle die Verbindung wieder her, um ihn anzuzeigen.",
-    "synced": "Deine Offline-Änderungen wurden synchronisiert."
+    "synced": "Deine Offline-Änderungen wurden synchronisiert.",
+    "syncFailed": "Eine wartende Änderung konnte nach mehreren Versuchen nicht synchronisiert werden und wurde nicht übernommen. Bitte nimm die Änderung erneut vor."
   }
 }

@@ -11,6 +11,7 @@
  */
 
 import { t } from '@/utils/i18n';
+import { clearQueue } from '@/utils/offline-queue';
 
 export function registerServiceWorker(): void {
   if (!navigator.serviceWorker) {
@@ -43,6 +44,22 @@ export function updateOfflineIndicator(isOffline: boolean): void {
 
 export function isOffline(): boolean {
   return !navigator.onLine;
+}
+
+/**
+ * Clears data cached/queued for offline use so it can't leak across users on a
+ * shared device: tells the active service worker to drop its cached prompt API
+ * responses (API_CACHE in sw.ts), and clears the IndexedDB-backed offline write
+ * queue (which would otherwise replay a previous user's queued edits under the
+ * next user's session). Call this as part of logout, before navigating away.
+ */
+export async function clearOfflineDataOnLogout(): Promise<void> {
+  navigator.serviceWorker?.controller?.postMessage('clear-api-cache');
+  try {
+    await clearQueue();
+  } catch (error) {
+    console.warn('[sw-register] Failed to clear offline queue on logout.', error);
+  }
 }
 
 let onlineHandler: (() => void) | null = null;

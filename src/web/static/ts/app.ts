@@ -30,7 +30,7 @@ import {
 } from '@/utils/pagination';
 import { closeMobileDrawer, initKeyboardSafeScroll, initMobileNav } from '@/mobile-nav';
 import { closeSearchOverlay, initSearchOverlay, isSearchOverlayOpen } from '@/search-overlay';
-import { initOfflineIndicator, registerServiceWorker } from '@/sw-register';
+import { clearOfflineDataOnLogout, initOfflineIndicator, registerServiceWorker } from '@/sw-register';
 import { syncOfflineQueue } from '@/offline-sync';
 import { addQueueEntry } from '@/utils/offline-queue';
 import { attachPullToRefresh, attachSwipeReveal } from '@/gestures';
@@ -4858,6 +4858,11 @@ async function logout() {
     console.error('Logout error:', error);
     reportAppIssue('logout-error', error, {}, 'warning');
   } finally {
+    // Clear cached prompt API responses and any queued offline writes so a
+    // different user signing in on this device afterward can't see or replay
+    // this user's data.
+    await clearOfflineDataOnLogout();
+
     // Always clear storage and redirect
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');

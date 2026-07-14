@@ -34,9 +34,15 @@ interface FetchEvent extends Event {
   respondWith(response: Promise<Response> | Response): void;
 }
 
+interface ExtendableMessageEvent extends Event {
+  readonly data: unknown;
+  waitUntil?(promise: Promise<unknown>): void;
+}
+
 declare const self: {
   addEventListener(type: 'install' | 'activate', listener: (event: ExtendableEvent) => void): void;
   addEventListener(type: 'fetch', listener: (event: FetchEvent) => void): void;
+  addEventListener(type: 'message', listener: (event: ExtendableMessageEvent) => void): void;
   skipWaiting(): Promise<void>;
   clients: { claim(): Promise<void> };
 };
@@ -130,6 +136,21 @@ self.addEventListener('fetch', (event) => {
 
   if (isCacheablePromptApiRequest(request, url)) {
     event.respondWith(networkFirst(request, API_CACHE));
+  }
+});
+
+// Clears the cached prompt API responses on logout so a subsequent user signing
+// in on the same device can't be served a previous user's cached data (FR-009's
+// offline cache must not leak data across sessions on shared devices).
+async function clearApiCache(): Promise<void> {
+  const cache = await caches.open(API_CACHE);
+  const keys = await cache.keys();
+  await Promise.all(keys.map((key) => cache.delete(key)));
+}
+
+self.addEventListener('message', (event) => {
+  if (event.data === 'clear-api-cache') {
+    void clearApiCache();
   }
 });
 

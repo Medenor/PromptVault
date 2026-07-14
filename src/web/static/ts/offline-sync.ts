@@ -23,6 +23,10 @@ import {
   type OfflineQueueEntry,
 } from '@/utils/offline-queue';
 
+/** Max replay attempts for a non-409 failure before an entry is marked 'failed'
+ * and stops being retried on every `online` event. */
+const MAX_RETRY_COUNT = 3;
+
 function toFormData(payload: Record<string, unknown>): FormData {
   const formData = new FormData();
   for (const [key, value] of Object.entries(payload)) {
@@ -83,9 +87,17 @@ export async function syncOfflineQueue(): Promise<void> {
         }
 
         if (!response.ok) {
-          // Non-network failure (validation, auth, etc.) — leave pending for a
-          // later retry rather than silently dropping the queued change.
-          await updateQueueEntryStatus(entry.id, 'pending');
+          // Non-network failure (validation, auth, etc.). Retry a bounded number
+          // of times; a permanently-broken entry (e.g. 422) would otherwise retry
+          // forever on every `online` event. Past the cap, mark it 'failed' so it
+          // stops being replayed.
+          const retryCount = entry.retryCount + 1;
+          if (retryCount >= MAX_RETRY_COUNT) {
+            await updateQueueEntryStatus(entry.id, 'failed', { retryCount });
+            showNotification(t('offline.syncFailed'), 'error', 8000);
+          } else {
+            await updateQueueEntryStatus(entry.id, 'pending', { retryCount });
+          }
           continue;
         }
 

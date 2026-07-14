@@ -15,6 +15,7 @@
 import { initMobileNav } from '@/mobile-nav';
 import { apiGet, APIRequestError } from '@/utils/api';
 import { reportError } from '@/telemetry';
+import { clearOfflineDataOnLogout } from '@/sw-register';
 
 export interface SecondaryNavOptions {
   /** Component name passed to reportError for telemetry. */
@@ -44,6 +45,11 @@ async function logout(component: string): Promise<void> {
   } catch (error) {
     reportError(component, 'logout-error', error, {}, 'warning');
   } finally {
+    // Clear cached prompt API responses and any queued offline writes so a
+    // different user signing in on this device afterward can't see or replay
+    // this user's data.
+    await clearOfflineDataOnLogout();
+
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     localStorage.removeItem('user');

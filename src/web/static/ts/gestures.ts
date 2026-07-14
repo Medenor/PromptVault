@@ -135,13 +135,17 @@ export function attachPullToRefresh(
     }
   }
 
+  const handlePointerUp = (e: PointerEvent): void => void onPointerUp(e);
+
   container.addEventListener('pointerdown', onPointerDown);
   container.addEventListener('pointermove', onPointerMove);
-  container.addEventListener('pointerup', (e) => void onPointerUp(e));
-  container.addEventListener('pointercancel', (e) => void onPointerUp(e));
+  container.addEventListener('pointerup', handlePointerUp);
+  container.addEventListener('pointercancel', handlePointerUp);
 
   return () => {
     container.removeEventListener('pointerdown', onPointerDown);
     container.removeEventListener('pointermove', onPointerMove);
+    container.removeEventListener('pointerup', handlePointerUp);
+    container.removeEventListener('pointercancel', handlePointerUp);
   };
 }
