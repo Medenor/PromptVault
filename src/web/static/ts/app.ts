@@ -1998,6 +1998,7 @@ function setPaginationControlsVisible(visible: boolean): void {
 function showNewPromptForm() {
   const promptEditor = document.getElementById('prompt-editor');
   const promptsList = document.getElementById('prompts-list');
+  const pullRefreshToolbar = document.getElementById('pull-refresh-toolbar');
 
   history.pushState({ modal: 'editor' }, '');
   showElement(promptEditor);
@@ -2009,15 +2010,18 @@ function showNewPromptForm() {
     tagInput.value = '';
   }
   hideElement(promptsList);
+  hideElement(pullRefreshToolbar);
   setPaginationControlsVisible(false);
 }
 
 function hidePromptEditor() {
   const promptEditor = document.getElementById('prompt-editor');
   const promptsList = document.getElementById('prompts-list');
+  const pullRefreshToolbar = document.getElementById('pull-refresh-toolbar');
 
   hideElement(promptEditor);
   showElement(promptsList);
+  showElement(pullRefreshToolbar);
   setPaginationControlsVisible(true);
 }
 
@@ -2299,6 +2303,7 @@ async function editPrompt(id: PromptId): Promise<void> {
     history.pushState({ modal: 'editor' }, '');
     showElement(document.getElementById('prompt-editor'));
     hideElement(document.getElementById('prompts-list'));
+    hideElement(document.getElementById('pull-refresh-toolbar'));
     setPaginationControlsVisible(false);
 
     // Populate form
