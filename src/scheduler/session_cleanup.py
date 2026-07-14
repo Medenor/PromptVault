@@ -159,7 +159,7 @@ class SessionCleanupScheduler:
             logger.error(f"Error stopping cleanup scheduler: {e}", exc_info=True)
             self.is_running = False
 
-    def _cleanup_expired_sessions(self) -> None:
+    def _cleanup_expired_sessions(self) -> dict:
         """Internal method to perform session cleanup.
 
         This method:
@@ -168,6 +168,9 @@ class SessionCleanupScheduler:
         3. Logs cleanup statistics
 
         Called automatically by scheduler at configured interval.
+
+        Returns:
+            Dict with expired_found and deleted counts.
         """
         session = None
         try:
@@ -185,7 +188,7 @@ class SessionCleanupScheduler:
             expired_count = len(expired_sessions)
             if expired_count == 0:
                 logger.debug("No expired sessions to clean up")
-                return
+                return {"expired_found": 0, "deleted": 0}
 
             # Delete expired sessions in batches
             deleted_count = 0
@@ -211,12 +214,7 @@ class SessionCleanupScheduler:
                 f"duration={duration:.2f}s"
             )
 
-        except Exception as e:
-            logger.error(
-                f"Error during session cleanup: {e}",
-                exc_info=True,
-                extra={"context": "session_cleanup"},
-            )
+            return {"expired_found": expired_count, "deleted": deleted_count}
 
         finally:
             if session:
@@ -258,11 +256,12 @@ class SessionCleanupScheduler:
             >>> print(f"Deleted {result['deleted']} sessions")
         """
         try:
-            self._cleanup_expired_sessions()
+            stats = self._cleanup_expired_sessions()
 
             return {
                 "success": True,
                 "timestamp": datetime.utcnow().isoformat(),
+                **stats,
             }
 
         except Exception as e:

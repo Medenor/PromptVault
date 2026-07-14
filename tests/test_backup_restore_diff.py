@@ -256,13 +256,13 @@ class TestExtractPromptsFromBackup:
         assert prompts[0]["category_id"] == 5
         assert prompts[0]["semantic_version"] == "2.0"
 
-    def test_extract_from_corrupt_file_returns_empty(self, db_backup_service, temp_data_dir):
+    def test_extract_from_corrupt_file_raises(self, db_backup_service, temp_data_dir):
         backup_path = os.path.join(temp_data_dir, "corrupt.db")
         with open(backup_path, "wb") as f:
             f.write(b"not a sqlite database")
 
-        prompts = db_backup_service._extract_prompts_from_backup(backup_path, "sqlite_copy")
-        assert prompts == []
+        with pytest.raises(BackupError):
+            db_backup_service._extract_prompts_from_backup(backup_path, "sqlite_copy")
 
     def test_extract_unknown_type_returns_empty(self, db_backup_service):
         prompts = db_backup_service._extract_prompts_from_backup("/any/path", "unknown_type")

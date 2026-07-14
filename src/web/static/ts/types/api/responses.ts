@@ -115,6 +115,12 @@ export interface PromptResponse {
  */
 export interface PromptListResponse {
   prompts: Record<string, PromptResponse>;
+  page: number;
+  limit: number;
+  total_pages: number;
+  total_count: number;
+  has_next: boolean;
+  has_previous: boolean;
 }
 
 /**

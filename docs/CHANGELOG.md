@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### ✨ Added
 
+- **Server-side pagination for the prompt list**: `GET /api/prompts` and `GET /api/prompts/search` now return one page of results instead of the entire dataset
+  - **Pagination envelope**: Responses include `page`, `limit`, `total_pages`, `total_count`, `has_next`, and `has_previous` alongside the `prompts` payload (additive, backward-compatible)
+  - **Query params**: `page` (1-indexed, default 1) and `limit` (default 50, clamped to a max of 100); out-of-range values are normalized rather than rejected
+  - **"Load More" UI**: New page-size selector (25/50/100) and a "Load More" control on the prompt list, backed by a new `utils/pagination.ts` state module with duplicate-click and past-last-page guards
+  - **Test coverage**: New backend tests for the pagination envelope and repository `count()` method, plus a dedicated frontend test suite for the pagination state module
+
 - **Enhanced Backup & Restore System** (spec 003): Encryption, cloud storage, scheduling, and audit logging for database backups
   - **Encryption**: Backups can be encrypted at creation with a user-supplied passphrase (AES-GCM); key rotation verifies the old passphrase via a stored sentinel before re-encrypting; scheduled backups fall back to unencrypted with a warning since no passphrase can be prompted for in a background job
   - **Cloud storage**: New S3-compatible provider configuration (with SSRF-safe endpoint URL validation) lets manual and scheduled backups upload to cloud storage; restore automatically falls back to downloading from cloud when the local backup file is missing
@@ -47,6 +53,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### 🐛 Fixed
 
+- **Unbounded prompt list query**: `GET /api/prompts` and `GET /api/prompts/search` routed through `data_service.load_prompts()`, which fetched the entire prompts table unconditionally on every request rather than only as a rare legacy-JSON fallback; this path is now paginated too, and the previously unreachable `favorites=true` without-auth 401 check now actually fires
 - **Backup restore on compressed backups**: `restore_backup`, `compute_restore_diff`, and `selective_restore` failed silently on gzip-compressed backups (read errors were swallowed, making restore-preview falsely report every prompt as "to be deleted" and selective restore silently restore nothing); backups are now decompressed before decryption in all three paths, and genuinely corrupt backups now fail loudly
 - **Backup schedule schema drift**: A pre-existing `backup_schedules` table from an earlier prototype (with `retention_daily_count/weekly/monthly` columns) could slip past the migration's "if not exists" guard, breaking schedule saves with a missing-column error; the migration now reconciles existing tables into the new `retention_days` column
 - **Backup ID collisions**: Scheduled and custom-named backups reused a fixed ID, colliding on the `backups.id` unique constraint after the first run; timestamps are now always appended

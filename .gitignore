@@ -79,6 +79,7 @@ node_modules/
 # Test reports
 playwright-report/
 test-results/
+.playwright-mcp/
 .nyc_output/
 accessibility-report/
 tests/accessibility/reports/

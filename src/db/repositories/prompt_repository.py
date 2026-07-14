@@ -110,6 +110,66 @@ class PromptRepository(BaseRepository[Prompt]):
 
         return results
 
+    def count(
+        self,
+        query: Optional[str] = None,
+        category: Optional[str] = None,
+        tags: Optional[List[str]] = None,
+        favorite: Optional[bool] = None,
+        case_sensitive: bool = False,
+    ) -> int:
+        """Count prompts matching the same filters as search().
+
+        Mirrors search()'s filter-building logic exactly (minus limit/offset/
+        ordering) so total_count/total_pages reflect the same result set that
+        search() would page through.
+
+        Args:
+            query: Text search in title and prompt content (LIKE-based)
+            category: Filter by category name
+            tags: Filter by tag names (prompts with ANY of these tags)
+            favorite: Filter by favorite status
+            case_sensitive: Enforce case-sensitive matching on query
+
+        Returns:
+            Total number of matching prompts
+        """
+        q = self.session.query(Prompt)
+
+        if query:
+            search_pattern = f"%{query}%"
+            comparator = or_(
+                Prompt.title.ilike(search_pattern),
+                Prompt.prompt.ilike(search_pattern),
+                Prompt.note.ilike(search_pattern),
+            )
+            q = q.filter(comparator)
+
+        if category:
+            q = q.join(Category).filter(Category.name == category)
+
+        if tags and len(tags) > 0:
+            q = q.join(Prompt.tags).filter(Tag.name.in_(tags)).distinct()
+
+        if favorite is not None:
+            q = q.filter(Prompt.favorite == favorite)
+
+        # Case-sensitive matching can't be expressed in SQL here (SQLite LIKE
+        # is case-insensitive), so fall back to counting in Python, same as
+        # search() does when case_sensitive is requested.
+        if case_sensitive and query:
+            count = 0
+            for prompt in q.all():
+                if (
+                    (query in prompt.title)
+                    or (query in prompt.prompt)
+                    or (prompt.note and query in prompt.note)
+                ):
+                    count += 1
+            return count
+
+        return q.count()
+
     def get_with_relationships(self, prompt_id: int) -> Optional[Prompt]:
         """Get a prompt with all relationships eagerly loaded.
 

@@ -76,11 +76,23 @@ class PromptListResponse(BaseModel):
 
     Attributes:
         prompts: Dictionary of prompts keyed by ID (as string)
+        page: Current page number returned (post-normalization)
+        limit: Page size used (post-clamping)
+        total_pages: Total number of pages for the current filters
+        total_count: Total number of prompts matching the current filters
+        has_next: Whether a next page is available
+        has_previous: Whether a previous page is available
     """
 
     prompts: Dict[str, PromptResponse] = Field(
         ..., description="Dictionary of prompts keyed by ID"
     )
+    page: int = Field(..., description="Current page number (post-normalization)")
+    limit: int = Field(..., description="Page size used (post-clamping)")
+    total_pages: int = Field(..., description="Total number of pages")
+    total_count: int = Field(..., description="Total number of matching prompts")
+    has_next: bool = Field(..., description="Whether a next page is available")
+    has_previous: bool = Field(..., description="Whether a previous page is available")
 
     model_config = {
         "json_schema_extra": {
@@ -98,7 +110,13 @@ class PromptListResponse(BaseModel):
                         "created_at": "2024-01-01T12:00:00Z",
                         "updated_at": None,
                     }
-                }
+                },
+                "page": 1,
+                "limit": 50,
+                "total_pages": 3,
+                "total_count": 120,
+                "has_next": True,
+                "has_previous": False,
             }
         }
     }

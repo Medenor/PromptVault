@@ -100,7 +100,7 @@ class TestRestorePreview:
         conn = sqlite3.connect(backup_db_path)
         conn.execute("""
             CREATE TABLE prompts (
-                id INTEGER PRIMARY KEY, title TEXT, content TEXT,
+                id INTEGER PRIMARY KEY, title TEXT, prompt TEXT,
                 note TEXT, favorite INTEGER, category_id INTEGER, semantic_version TEXT
             )
         """)
@@ -147,7 +147,7 @@ class TestSelectiveRestore:
         conn = sqlite3.connect(backup_db_path)
         conn.execute("""
             CREATE TABLE prompts (
-                id INTEGER PRIMARY KEY, title TEXT, content TEXT,
+                id INTEGER PRIMARY KEY, title TEXT, prompt TEXT,
                 note TEXT, favorite INTEGER, category_id INTEGER, semantic_version TEXT
             )
         """)
@@ -254,9 +254,12 @@ class TestEncryptedRestore:
 
 
 class TestBackupSchedule:
-    def test_get_schedule_not_found(self, api_client, api_auth_headers):
+    def test_get_schedule_returns_default_when_not_configured(self, api_client, api_auth_headers):
         resp = api_client.get("/api/backup-schedule", headers=api_auth_headers)
-        assert resp.status_code == 404
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["id"] is None
+        assert data["enabled"] is False
 
     def test_get_schedule_unauthenticated(self, api_client):
         resp = api_client.get("/api/backup-schedule")

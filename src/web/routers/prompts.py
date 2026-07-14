@@ -45,6 +45,7 @@ from src.db.repositories.prompt_repository import PromptRepository
 from src.db.repositories.category_repository import CategoryRepository
 from src.db.repositories.tag_repository import TagRepository
 from src.db.repositories.version_repository import VersionRepository
+from src.config.auth_config import auth_settings
 from src.web.dependencies.auth import (
     get_current_active_user,
     get_optional_user,
@@ -172,6 +173,79 @@ def _prompt_to_dict(prompt: Prompt) -> dict:
     }
 
 
+DEFAULT_PAGE_SIZE = 50
+MAX_PAGE_SIZE = 100
+
+
+def normalize_pagination(page: int, limit: int) -> tuple[int, int]:
+    """Normalize page/limit query params to safe, bounded values.
+
+    Args:
+        page: Requested page number (1-indexed)
+        limit: Requested page size
+
+    Returns:
+        Tuple of (normalized_page, normalized_limit): page<1 becomes 1;
+        limit<1 becomes DEFAULT_PAGE_SIZE; limit>MAX_PAGE_SIZE is clamped.
+    """
+    normalized_page = page if page >= 1 else 1
+    if limit < 1:
+        normalized_limit = DEFAULT_PAGE_SIZE
+    elif limit > MAX_PAGE_SIZE:
+        normalized_limit = MAX_PAGE_SIZE
+    else:
+        normalized_limit = limit
+    return normalized_page, normalized_limit
+
+
+def _build_pagination_envelope(
+    prompts_dict: dict, page: int, limit: int, total_count: int
+) -> dict:
+    """Build the standard pagination response envelope.
+
+    Args:
+        prompts_dict: Prompts for the current page, keyed by ID
+        page: Normalized current page number
+        limit: Normalized page size
+        total_count: Total number of matching prompts across all pages
+
+    Returns:
+        dict: Full response envelope including pagination metadata
+    """
+    total_pages = (total_count + limit - 1) // limit if total_count > 0 else 0
+    return {
+        "prompts": prompts_dict,
+        "page": page,
+        "limit": limit,
+        "total_pages": total_pages,
+        "total_count": total_count,
+        "has_next": page < total_pages,
+        "has_previous": page > 1,
+    }
+
+
+def _paginate_mapping(items: dict, page: int, limit: int) -> tuple[dict, int]:
+    """Slice an ordered mapping into one page, preserving key order.
+
+    Used to paginate dict results sourced from data_service (which may hold
+    legacy JSON-shaped entries alongside DB-backed ones) with the same
+    page/limit semantics as the SQLAlchemy-backed paths.
+
+    Args:
+        items: Ordered mapping of all matching entries, keyed by ID
+        page: Normalized page number
+        limit: Normalized page size
+
+    Returns:
+        Tuple of (page_slice_dict, total_count)
+    """
+    total_count = len(items)
+    start = (page - 1) * limit
+    end = start + limit
+    page_slice = dict(list(items.items())[start:end])
+    return page_slice, total_count
+
+
 # ============================================================================
 # Read Endpoints (Public with Optional Authentication)
 # ============================================================================
@@ -192,27 +266,38 @@ def _prompt_to_dict(prompt: Prompt) -> dict:
     - Future: Could filter or sort by user preferences
 
     **Response:**
-    - Returns all prompts with metadata
+    - Returns one page of prompts with pagination metadata
     - Includes category and tags
+
+    **Query Parameters:**
+    - page: Page number, 1-indexed (default 1; values <1 normalize to 1)
+    - limit: Page size (default 50; clamped to a maximum of 100)
     """,
     responses={
         200: {"description": "Prompts retrieved successfully"},
     },
 )
 async def list_prompts(
+    page: int = 1,
+    limit: int = DEFAULT_PAGE_SIZE,
     user: Optional[User] = Depends(get_optional_user),
     db: Session = Depends(get_db),
 ):
-    """List all prompts (public access with optional personalization).
+    """List prompts with offset pagination (public access with optional personalization).
 
     Args:
+        page: Page number, 1-indexed
+        limit: Page size
         user: Authenticated user (optional)
         db: Database session
 
     Returns:
-        dict: Prompts dictionary keyed by ID
+        dict: Pagination envelope with prompts dictionary keyed by ID
     """
-    # Prefer legacy data service when available (tests may monkeypatch it)
+    page, limit = normalize_pagination(page, limit)
+
+    # Prefer legacy data service when available (also tolerates legacy
+    # dict shapes without a "data" wrapper; tests may monkeypatch it)
     try:
         from src.web import app as web_app
 
@@ -221,10 +306,10 @@ async def list_prompts(
         legacy_prompts = None
 
     if legacy_prompts:
-        prompts_dict = {}
+        all_prompts_dict = {}
         for pid, info in legacy_prompts.items():
             data = info["data"] if "data" in info else info
-            prompts_dict[str(pid)] = {
+            all_prompts_dict[str(pid)] = {
                 "id": pid,
                 "title": data.get("title", ""),
                 "prompt": data.get("prompt", ""),
@@ -238,9 +323,15 @@ async def list_prompts(
                 "created_at": data.get("created_at"),
                 "updated_at": data.get("updated_at"),
             }
+        prompts_dict, total_count = _paginate_mapping(all_prompts_dict, page, limit)
+        result = _build_pagination_envelope(prompts_dict, page, limit, total_count)
     else:
         prompt_repo = PromptRepository(db)
-        prompts = prompt_repo.get_all()
+        total_count = prompt_repo.count()
+        # Use search() rather than get_all() so results are stably ordered
+        # (get_all() has no ORDER BY, which makes OFFSET/LIMIT pagination
+        # non-deterministic across pages).
+        prompts = prompt_repo.search(limit=limit, offset=(page - 1) * limit)
 
         prompts_dict = {}
         for prompt in prompts:
@@ -248,10 +339,12 @@ async def list_prompts(
             prompt_dict.pop("semantic_version", None)
             prompts_dict[str(prompt.id)] = prompt_dict
 
+        result = _build_pagination_envelope(prompts_dict, page, limit, total_count)
+
     if user:
         logger.debug(f"User {user.username} ({user.id}) accessed prompt list")
 
-    return {"prompts": prompts_dict}
+    return result
 
 
 @router.get(
@@ -270,6 +363,8 @@ async def list_prompts(
     - tag: Filter by specific tag
     - favorites: Show only favorite prompts (requires authentication)
     - case_sensitive: Enable case-sensitive search
+    - page: Page number, 1-indexed (default 1; values <1 normalize to 1)
+    - limit: Page size (default 50; clamped to a maximum of 100)
 
     **Authentication:**
     - Optional for general search
@@ -286,10 +381,12 @@ async def search_prompts(
     tag: str = "",
     favorites: bool = False,
     case_sensitive: bool = False,
-    user: Optional[User] = Depends(get_optional_user),
+    page: int = 1,
+    limit: int = DEFAULT_PAGE_SIZE,
+    user: Optional[User] = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
-    """Search and filter prompts.
+    """Search and filter prompts with offset pagination.
 
     Args:
         search: Text search query
@@ -297,20 +394,43 @@ async def search_prompts(
         tag: Tag filter
         favorites: Filter by favorites (requires auth)
         case_sensitive: Case-sensitive search
+        page: Page number, 1-indexed
+        limit: Page size
         user: Authenticated user (optional)
         db: Database session
 
     Returns:
-        dict: Filtered prompts
+        dict: Pagination envelope with filtered prompts
 
     Raises:
         HTTPException: 401 if favorites filter used without authentication
     """
-    # Legacy fallback for tests that monkeypatch data_service
-    from src.web import app as web_app
+    # Favorites filter requires authentication (only enforced when auth is enabled;
+    # anonymous-mode deployments have no logged-in user by design)
+    if favorites and not user and auth_settings.auth_enabled:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication required to filter by favorites",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    page, limit = normalize_pagination(page, limit)
 
     try:
+        # Legacy fallback for tests that monkeypatch data_service (also
+        # tolerates legacy dict shapes without a "data" wrapper)
+        from src.web import app as web_app
+
         legacy_prompts = web_app.data_service.load_prompts()
+    except HTTPException:
+        raise
+    except Exception:
+        return JSONResponse(
+            status_code=500,
+            content={"error": "Search failed: internal error"},
+        )
+
+    if legacy_prompts:
         filtered = {}
         for pid, info in legacy_prompts.items():
             data = info["data"] if "data" in info else info
@@ -354,25 +474,10 @@ async def search_prompts(
                 "created_at": data.get("created_at"),
                 "updated_at": data.get("updated_at"),
             }
-        return {"prompts": filtered}
-    except HTTPException:
-        raise
-    except Exception:
-        # If legacy path fails, return 500 per tests expecting error handling
-        return JSONResponse(
-            status_code=500,
-            content={"error": "Search failed: internal error"},
-        )
+        prompts_dict, total_count = _paginate_mapping(filtered, page, limit)
+        return _build_pagination_envelope(prompts_dict, page, limit, total_count)
 
-    # Favorites filter requires authentication
-    if favorites and not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication required to filter by favorites",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    # Default DB-backed search if legacy path not used
+    # Fallback when data_service has no data (e.g. empty DB): search directly
     prompt_repo = PromptRepository(db)
 
     search_query = search if search else None
@@ -380,11 +485,20 @@ async def search_prompts(
     tag_filter = [tag] if tag else None
     favorite_filter = favorites if favorites else None
 
+    total_count = prompt_repo.count(
+        query=search_query,
+        category=category_filter,
+        tags=tag_filter,
+        favorite=favorite_filter,
+        case_sensitive=case_sensitive,
+    )
     prompts = prompt_repo.search(
         query=search_query,
         category=category_filter,
         tags=tag_filter,
         favorite=favorite_filter,
+        limit=limit,
+        offset=(page - 1) * limit,
         case_sensitive=case_sensitive,
     )
 
@@ -392,10 +506,7 @@ async def search_prompts(
     for prompt in prompts:
         prompts_dict[str(prompt.id)] = _prompt_to_dict(prompt)
 
-    # Ensure diff endpoint has data; if versions differ, include prompt change key
-    # (Handled in compare endpoint; nothing needed here)
-
-    return {"prompts": prompts_dict}
+    return _build_pagination_envelope(prompts_dict, page, limit, total_count)
 
 
 @router.get(
