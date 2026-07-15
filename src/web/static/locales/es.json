@@ -7,6 +7,7 @@
     "allCategories": "Todas las categorías",
     "tags": "Etiquetas",
     "allTags": "Todas las etiquetas",
+    "menu": "Menú",
     "categoriesAndTags": "Categorías & Etiquetas",
     "filters": "Filtros",
     "showFavorites": "Mostrar favoritos",
@@ -23,7 +24,9 @@
     "backToMain": "Volver al menú principal",
     "skipToMainContent": "Saltar al contenido principal",
     "home": "Inicio",
-    "language": "Idioma"
+    "language": "Idioma",
+    "account": "Cuenta",
+    "data": "Datos"
   },
   "actions": {
     "add": "Añadir",
@@ -41,6 +44,7 @@
     "export": "Exportar",
     "import": "Importar",
     "close": "Cerrar",
+    "clearSearch": "Borrar búsqueda",
     "refresh": "Actualizar",
     "create": "Crear",
     "revoke": "Revocar",
@@ -58,7 +62,9 @@
     "replace": "Reemplazar",
     "saveOrder": "Guardar orden",
     "saveAll": "Guardar todo",
-    "undo": "Deshacer"
+    "undo": "Deshacer",
+    "refreshPrompts": "Actualizar lista de prompts",
+    "newPromptFab": "Crear nuevo prompt"
   },
   "form": {
     "title": "Título del Prompt:",
@@ -97,7 +103,8 @@
     "suggestTagsFailed": "No se pudieron obtener sugerencias de etiquetas.",
     "bulkTagProvideAtLeastOne": "Proporcione al menos una etiqueta para agregar o eliminar.",
     "bulkTagUpdateSuccess": "Etiquetas actualizadas para los prompts seleccionados.",
-    "bulkTagUpdateFailed": "No se pudieron actualizar las etiquetas."
+    "bulkTagUpdateFailed": "No se pudieron actualizar las etiquetas.",
+    "refreshing": "Actualizando…"
   },
   "validation": {
     "errorSummaryHeader": "Corrija los siguientes errores:",
@@ -240,7 +247,9 @@
     }
   },
   "prompt": {
-    "editorTitle": "Crear/Editar prompt"
+    "editorTitle": "Crear/Editar prompt",
+    "readMore": "Leer más",
+    "readLess": "Leer menos"
   },
   "version": {
     "history": "Historial",
@@ -259,7 +268,9 @@
     "version2": "Versión 2",
     "noVersions": "No hay versiones disponibles",
     "revertSuccess": "Reversión a versión anterior exitosa",
-    "revertError": "Error al revertir versión"
+    "revertError": "Error al revertir versión",
+    "previousVersion": "Versión anterior",
+    "nextVersion": "Versión siguiente"
   },
   "bulkDelete": {
     "confirmTitle": "Confirmar eliminación masiva",
@@ -728,5 +739,10 @@
       "fallbackNoteHeading": "Nota:",
       "fallbackNoteBody": "Algunos atajos solo están disponibles en la página principal de prompts."
     }
+  },
+  "offline": {
+    "indicator": "Estás sin conexión. Mostrando prompts en caché — vuelve a conectarte para hacer cambios.",
+    "unavailableOffline": "Este contenido no está disponible sin conexión. Vuelve a conectarte para verlo.",
+    "editUnavailable": "Esta acción necesita conexión a internet. Vuelve a conectarte para continuar."
   }
 }

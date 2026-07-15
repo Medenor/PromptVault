@@ -8,6 +8,8 @@
 
 ## Summary
 
+**⚠️ Post-hoc scope change**: this plan originally designed offline support around an IndexedDB write queue with version-based conflict detection (see "Storage", "Performance Goals", Constitution Check, and Project Structure below). Real-device testing after implementation showed problems with that approach, and offline scope was narrowed to **read/copy-only** — the write queue, sync-on-reconnect, and conflict detection described here were built and then removed. The sections below are left as historical record of the original design; see `contracts/offline-sync.md` and `data-model.md` for the current, accurate contract.
+
 Deliver a mobile-first navigation and interaction layer (slide-out drawer, 44px touch targets, full-screen modals/search, FAB, swipe/pull-to-refresh gestures with accessible fallbacks) plus offline resilience (Service Worker asset/API caching, IndexedDB-backed offline write queue with version-based conflict detection, install-to-home-screen PWA manifest) and `prefers-color-scheme` dark mode — all implemented additively in TypeScript (`src/web/static/ts/`) and Tailwind utility classes on top of the existing Jinja2/FastAPI server-rendered app, without introducing new frontend frameworks or rewriting desktop layouts.
 
 ## Technical Context

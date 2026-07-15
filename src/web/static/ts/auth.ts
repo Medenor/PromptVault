@@ -14,6 +14,7 @@ import { initI18n, t, updateStaticTranslations } from '@/utils/i18n';
 import { clearAllErrors, hideElement, showElement, showError } from '@/utils/dom';
 import { showNotification } from '@/utils/notifications';
 import { announce } from '@/utils/a11y';
+import { initSecondaryNav } from '@/utils/secondary-nav';
 
 const API_BASE = '/api/auth';
 
@@ -651,6 +652,7 @@ function initializeAuthPage(): void {
   });
 
   updateStaticTranslations();
+  initSecondaryNav({ component: 'auth' });
 
   if (document.getElementById('login-form')) {
     setupLoginForm();

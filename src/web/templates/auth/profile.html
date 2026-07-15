@@ -5,20 +5,37 @@
 <html lang="en">
   <head>
     {% import "macros/scripts.html" as scripts %}
+    {% import "macros/mobile_drawer.html" as drawer %}
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      // Dark mode bootstrap (FR-017): runs synchronously before first paint to
+      // avoid a flash of the wrong theme. Follows the OS prefers-color-scheme;
+      // no manual toggle is provided in this feature (see spec Assumptions).
+      (function () {
+        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content" />
     <meta
       name="description"
       content="User Profile - Manage your PromptVault account settings, preferences, and personal information."
     />
     <title>PromptVault - Profile</title>
     <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon.png" />
+    <link rel="manifest" href="/static/manifest.json" />
+    <link rel="apple-touch-icon" href="/static/images/icons/icon-192.png" />
+    <meta name="apple-mobile-web-app-title" content="PromptVault" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="theme-color" content="#3B82F6" />
     {{ scripts.load_css('profile', true) }}
     <script src="https://unpkg.com/i18next@23.7.6/i18next.min.js"></script>
     <script src="https://unpkg.com/i18next-browser-languagedetector@7.2.0/i18nextBrowserLanguageDetector.min.js"></script>
     <script src="https://unpkg.com/i18next-http-backend@2.4.2/i18nextHttpBackend.min.js"></script>
   </head>
-  <body class="bg-white">
+  <body class="bg-white dark:bg-gray-800">
     <a href="#main-content" class="skip-link" data-i18n="nav.skipToMainContent"
       >Skip to main content</a
     >
@@ -37,7 +54,7 @@
                 src="/static/images/promptvault_logo_frontend.webp"
                 alt=""
                 aria-hidden="true"
-                class="h-14 w-14 border-2 border-gray-400 rounded-lg shadow-lg flex-shrink-0"
+                class="h-14 w-14 border-2 border-gray-400 rounded-lg shadow-lg flex-shrink-0 dark:border-gray-600"
               />
             </a>
             <div class="text-2xl font-bold truncate">PromptVault</div>
@@ -46,34 +63,39 @@
             role="navigation"
             aria-label="Page navigation"
             data-i18n="[aria-label]accessibility.labels.pageNavigation"
+            class="flex items-center gap-2"
           >
-            {% include 'macros/language_selector.html' %}
+            <div class="hidden md:block">
+              {% include 'macros/language_selector.html' %}
+            </div>
             <button
               type="button"
               onclick="window.location.href = '/'"
-              class="px-4 py-2 text-sm font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all whitespace-nowrap flex-shrink-0"
+              class="hidden md:block px-4 py-2 text-sm font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all whitespace-nowrap flex-shrink-0 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
               data-i18n="nav.backToMain"
             >
               Back to Main
             </button>
+            {{ drawer.toggle_button() }}
           </nav>
         </div>
       </div>
     </header>
+    {{ drawer.full_nav_drawer() }}
 
     <!-- Main Content -->
     <main id="main-content" role="main" class="max-w-4xl mx-auto px-4 py-8">
-      <h1 class="text-2xl font-bold text-gray-900 mb-6" data-i18n="auth.profile.title">
+      <h1 class="text-2xl font-bold text-gray-900 mb-6 dark:text-gray-100" data-i18n="auth.profile.title">
         Your Profile
       </h1>
       <!-- Profile Info Section -->
       <section
         aria-labelledby="profile-info-heading"
-        class="mb-8 bg-white border border-gray-200 rounded-lg p-6"
+        class="mb-8 bg-white border border-gray-200 rounded-lg p-6 dark:bg-gray-800 dark:border-gray-700"
       >
         <h2
           id="profile-info-heading"
-          class="text-xl font-bold text-gray-900 mb-6"
+          class="text-xl font-bold text-gray-900 mb-6 dark:text-gray-100"
           data-i18n="auth.profile.profileInfo"
         >
           Profile Information
@@ -84,7 +106,7 @@
           <div>
             <label
               for="user-username"
-              class="block text-sm font-medium text-gray-900 mb-2"
+              class="block text-sm font-medium text-gray-900 mb-2 dark:text-gray-100"
               data-i18n="auth.profile.username"
               >Username</label
             >
@@ -93,7 +115,7 @@
               id="user-username"
               readonly
               tabindex="-1"
-              class="w-full px-3 py-2 text-sm text-gray-900 border border-gray-600 rounded-md placeholder-gray-700 bg-gray-50 cursor-not-allowed"
+              class="w-full px-3 py-2 text-sm text-gray-900 border border-gray-600 rounded-md placeholder-gray-700 dark:placeholder-gray-400 bg-gray-50 cursor-not-allowed dark:bg-gray-900 dark:text-gray-100 dark:border-gray-500"
             />
           </div>
 
@@ -101,7 +123,7 @@
           <div>
             <label
               for="user-email"
-              class="block text-sm font-medium text-gray-900 mb-2"
+              class="block text-sm font-medium text-gray-900 mb-2 dark:text-gray-100"
               data-i18n="auth.profile.email"
               >Email</label
             >
@@ -110,7 +132,7 @@
               id="user-email"
               readonly
               tabindex="-1"
-              class="w-full px-3 py-2 text-sm text-gray-900 border border-gray-600 rounded-md placeholder-gray-700 bg-gray-50 cursor-not-allowed"
+              class="w-full px-3 py-2 text-sm text-gray-900 border border-gray-600 rounded-md placeholder-gray-700 dark:placeholder-gray-400 bg-gray-50 cursor-not-allowed dark:bg-gray-900 dark:text-gray-100 dark:border-gray-500"
             />
           </div>
 
@@ -118,19 +140,19 @@
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
             <div>
               <span
-                class="block text-sm font-medium text-gray-700"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300"
                 data-i18n="auth.profile.memberSince"
                 >Member Since</span
               >
-              <span id="user-created" class="text-gray-900"></span>
+              <span id="user-created" class="text-gray-900 dark:text-gray-100"></span>
             </div>
             <div>
               <span
-                class="block text-sm font-medium text-gray-700"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300"
                 data-i18n="auth.profile.lastLogin"
                 >Last Login</span
               >
-              <span id="user-last-login" class="text-gray-900"></span>
+              <span id="user-last-login" class="text-gray-900 dark:text-gray-100"></span>
             </div>
           </div>
         </div>
@@ -139,11 +161,11 @@
       <!-- Security Section -->
       <section
         aria-labelledby="security-heading"
-        class="mb-8 bg-white border border-gray-200 rounded-lg p-6"
+        class="mb-8 bg-white border border-gray-200 rounded-lg p-6 dark:bg-gray-800 dark:border-gray-700"
       >
         <h2
           id="security-heading"
-          class="text-xl font-bold text-gray-900 mb-6"
+          class="text-xl font-bold text-gray-900 mb-6 dark:text-gray-100"
           data-i18n="auth.profile.security"
         >
           Security
@@ -151,7 +173,7 @@
 
         <div>
           <h3
-            class="text-sm font-medium text-gray-900 mb-4"
+            class="text-sm font-medium text-gray-900 mb-4 dark:text-gray-100"
             data-i18n="auth.profile.changePassword"
           >
             Change Password
@@ -169,7 +191,7 @@
             <div>
               <label
                 for="current-password"
-                class="block text-sm font-medium text-gray-900 mb-2"
+                class="block text-sm font-medium text-gray-900 mb-2 dark:text-gray-100"
                 data-i18n="auth.profile.currentPassword"
                 >Current Password
                 <span aria-label="required" class="text-red-600 ml-1">*</span>
@@ -179,7 +201,7 @@
                   type="password"
                   id="current-password"
                   name="current_password"
-                  class="w-full px-3 py-2 pr-12 text-sm text-gray-900 border border-gray-600 rounded-md placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
+                  class="w-full px-3 py-2 pr-12 text-sm text-gray-900 border border-gray-600 rounded-md placeholder-gray-700 dark:placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed dark:text-gray-100 dark:border-gray-500"
                   data-i18n="[placeholder]auth.profile.currentPasswordPlaceholder"
                   required
                   autocomplete="current-password"
@@ -188,7 +210,7 @@
                 />
                 <button
                   type="button"
-                  class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-700 hover:text-gray-900 rounded"
+                  class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-700 hover:text-gray-900 rounded dark:text-gray-300 dark:hover:text-gray-100"
                   id="toggle-current-password"
                   aria-label="Toggle password visibility"
                   data-i18n="[aria-label]accessibility.labels.togglePasswordVisibility"
@@ -197,7 +219,7 @@
                   <span class="text-xl">👁️</span>
                 </button>
               </div>
-              <p id="current-password-hint" class="text-xs text-gray-700 mt-1">Required field.</p>
+              <p id="current-password-hint" class="text-xs text-gray-700 mt-1 dark:text-gray-300">Required field.</p>
               <p
                 id="current-password-error"
                 class="text-red-700 text-xs mt-1 hidden"
@@ -210,7 +232,7 @@
             <div>
               <label
                 for="new-password"
-                class="block text-sm font-medium text-gray-900 mb-2"
+                class="block text-sm font-medium text-gray-900 mb-2 dark:text-gray-100"
                 data-i18n="auth.profile.newPassword"
                 >New Password
                 <span aria-label="required" class="text-red-600 ml-1">*</span>
@@ -220,7 +242,7 @@
                   type="password"
                   id="new-password"
                   name="new_password"
-                  class="w-full px-3 py-2 pr-12 text-sm text-gray-900 border border-gray-600 rounded-md placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
+                  class="w-full px-3 py-2 pr-12 text-sm text-gray-900 border border-gray-600 rounded-md placeholder-gray-700 dark:placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed dark:text-gray-100 dark:border-gray-500"
                   data-i18n="[placeholder]auth.profile.newPasswordPlaceholder"
                   required
                   autocomplete="new-password"
@@ -229,7 +251,7 @@
                 />
                 <button
                   type="button"
-                  class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-700 hover:text-gray-900 rounded"
+                  class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-700 hover:text-gray-900 rounded dark:text-gray-300 dark:hover:text-gray-100"
                   id="toggle-new-password"
                   aria-label="Toggle password visibility"
                   data-i18n="[aria-label]accessibility.labels.togglePasswordVisibility"
@@ -238,7 +260,7 @@
                   <span class="text-xl">👁️</span>
                 </button>
               </div>
-              <p id="new-password-hint" class="text-xs text-gray-700 mt-1">
+              <p id="new-password-hint" class="text-xs text-gray-700 mt-1 dark:text-gray-300">
                 Minimum 12 characters.
               </p>
               <p
@@ -250,17 +272,17 @@
 
               <!-- Password Strength Indicator -->
               <div id="password-strength" class="mt-2" aria-live="polite">
-                <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div class="h-2 bg-gray-200 rounded-full overflow-hidden dark:bg-gray-700">
                   <div
                     id="strength-bar-fill"
                     class="h-full w-0 transition-all duration-200 bg-gray-300"
                   ></div>
                 </div>
-                <p id="strength-text" class="text-xs text-gray-700 mt-1"></p>
+                <p id="strength-text" class="text-xs text-gray-700 mt-1 dark:text-gray-300"></p>
               </div>
 
               <!-- Password Requirements -->
-              <ul id="password-policy" class="mt-3 space-y-1 text-xs text-gray-700">
+              <ul id="password-policy" class="mt-3 space-y-1 text-xs text-gray-700 dark:text-gray-300">
                 <li id="policy-length" class="policy-requirement">
                   <span class="policy-icon">○</span>
                   <span data-i18n="auth.register.policyLength">At least 12 characters</span>
@@ -294,7 +316,7 @@
             <div>
               <label
                 for="confirm-new-password"
-                class="block text-sm font-medium text-gray-900 mb-2"
+                class="block text-sm font-medium text-gray-900 mb-2 dark:text-gray-100"
                 data-i18n="auth.profile.confirmNewPassword"
                 >Confirm New Password
                 <span aria-label="required" class="text-red-600 ml-1">*</span>
@@ -304,7 +326,7 @@
                   type="password"
                   id="confirm-new-password"
                   name="confirm_password"
-                  class="w-full px-3 py-2 pr-12 text-sm text-gray-900 border border-gray-600 rounded-md placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
+                  class="w-full px-3 py-2 pr-12 text-sm text-gray-900 border border-gray-600 rounded-md placeholder-gray-700 dark:placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed dark:text-gray-100 dark:border-gray-500"
                   data-i18n="[placeholder]auth.profile.confirmNewPasswordPlaceholder"
                   required
                   autocomplete="new-password"
@@ -313,7 +335,7 @@
                 />
                 <button
                   type="button"
-                  class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-700 hover:text-gray-900 rounded"
+                  class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-700 hover:text-gray-900 rounded dark:text-gray-300 dark:hover:text-gray-100"
                   id="toggle-confirm-new-password"
                   aria-label="Toggle password visibility"
                   data-i18n="[aria-label]accessibility.labels.togglePasswordVisibility"
@@ -322,7 +344,7 @@
                   <span class="text-xl">👁️</span>
                 </button>
               </div>
-              <p id="confirm-new-password-hint" class="text-xs text-gray-700 mt-1">
+              <p id="confirm-new-password-hint" class="text-xs text-gray-700 mt-1 dark:text-gray-300">
                 Must match the new password field.
               </p>
               <p
@@ -344,7 +366,7 @@
               </button>
               <button
                 type="button"
-                class="px-6 py-2 bg-gray-300 text-gray-900 rounded-md hover:bg-gray-400 font-medium"
+                class="px-6 py-2 bg-gray-300 text-gray-900 rounded-md hover:bg-gray-400 font-medium dark:text-gray-100"
                 onclick="document.getElementById('change-password-form').reset()"
                 data-i18n="actions.cancel"
               >
@@ -358,17 +380,17 @@
       <!-- Sessions Section -->
       <section
         aria-labelledby="sessions-heading"
-        class="mb-8 bg-white border border-gray-200 rounded-lg p-6"
+        class="mb-8 bg-white border border-gray-200 rounded-lg p-6 dark:bg-gray-800 dark:border-gray-700"
       >
         <h2
           id="sessions-heading"
-          class="text-xl font-bold text-gray-900 mb-6"
+          class="text-xl font-bold text-gray-900 mb-6 dark:text-gray-100"
           data-i18n="auth.profile.sessions"
         >
           Active Sessions
         </h2>
         <div id="sessions-list" class="space-y-3">
-          <div class="text-gray-700 text-sm" data-i18n="messages.loading">Loading...</div>
+          <div class="text-gray-700 text-sm dark:text-gray-300" data-i18n="messages.loading">Loading...</div>
         </div>
       </section>
     </main>
@@ -377,10 +399,10 @@
     <footer
       role="contentinfo"
       aria-label="Site footer"
-      class="mt-auto border-t border-gray-200 bg-gray-50"
+      class="mt-auto border-t border-gray-200 bg-gray-50 dark:bg-gray-900 dark:border-gray-700"
     >
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div class="flex flex-col gap-3 text-sm text-gray-700">
+        <div class="flex flex-col gap-3 text-sm text-gray-700 dark:text-gray-300">
           <p>
             PromptVault is licensed under
             <a
@@ -586,6 +608,7 @@
       </div>
     </footer>
 
+    <script>window.__AUTH_ENABLED__ = {{ 'true' if auth_enabled else 'false' }};</script>
     {{ scripts.load_scripts('profile', true, 'profile', true) }}
   </body>
 </html>

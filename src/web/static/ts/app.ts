@@ -13,7 +13,7 @@ import '@/form-validation';
 import type { PromptResponse, PromptListResponse } from '@/types';
 import type { TranslationKey } from '@/types/i18n';
 import { initI18n, t, tUnsafe, updateStaticTranslations } from '@/utils/i18n';
-import { apiFetch, apiGet, apiPostForm, APIRequestError } from '@/utils/api';
+import { apiFetch, apiGet, apiPostForm } from '@/utils/api';
 import { setupScrollIndicators } from '@/utils/dom';
 import { showNotification } from '@/utils/notifications';
 import { createTypeahead } from '@/utils/typeahead';
@@ -28,6 +28,11 @@ import {
   type PaginationState,
   type PageSize,
 } from '@/utils/pagination';
+import { closeMobileDrawer, initKeyboardSafeScroll, initMobileNav } from '@/mobile-nav';
+import { closeSearchOverlay, initSearchOverlay, isSearchOverlayOpen } from '@/search-overlay';
+import { initOfflineIndicator, registerServiceWorker } from '@/sw-register';
+import { attachPullToRefresh, attachSwipeReveal } from '@/gestures';
+import { logout, hideAuthOnlyElements, fetchRoleAndRevealAdmin } from '@/utils/auth-nav';
 
 interface TagInfo {
   name: string;
@@ -1006,21 +1011,6 @@ async function initializeApp(): Promise<void> {
   void loadTags();
 }
 
-function hideAuthOnlyElements(): void {
-  // Hide elements that only make sense when authentication is enabled.
-  const idsToHide = ['profile-btn', 'logout-btn', 'logout-btn-mobile'];
-  idsToHide.forEach((id) => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.style.display = 'none';
-    }
-  });
-  // Hide profile navigation links (desktop button + mobile dropdown entries).
-  document.querySelectorAll<HTMLElement>('[onclick*="/auth/profile"]').forEach((el) => {
-    el.style.display = 'none';
-  });
-}
-
 async function checkAdminAccess(): Promise<void> {
   // Anonymous mode (AUTH_ENABLED=false): show the app immediately without an
   // auth check and hide auth-only UI elements (profile, logout, etc.).
@@ -1034,31 +1024,34 @@ async function checkAdminAccess(): Promise<void> {
   }
 
   try {
-    const data = await apiGet<{ role?: string }>('/api/auth/me');
+    await fetchRoleAndRevealAdmin();
 
     // Authentication successful - show the app
     const loadingOverlay = document.getElementById('auth-loading-overlay');
     const appDiv = document.querySelector('.app') as HTMLElement | null;
     if (loadingOverlay) loadingOverlay.style.display = 'none';
     if (appDiv) appDiv.style.display = 'block';
-
-    if (data.role === 'admin') {
-      const adminBtn = document.getElementById('admin-btn');
-      const adminBtnMobile = document.getElementById('admin-btn-mobile');
-      if (adminBtn) {
-        adminBtn.style.display = '';
-      }
-      if (adminBtnMobile) {
-        adminBtnMobile.style.display = '';
-      }
-    }
   } catch (error) {
-    if (error instanceof APIRequestError) {
-      reportAppIssue('checkAdminAccess', error);
-    } else {
-      reportAppIssue('checkAdminAccess', error);
+    reportAppIssue('checkAdminAccess', error);
+
+    // Offline or request timeout (network failure, not a real auth
+    // rejection): show the cached app shell instead of redirecting to
+    // login, so previously-viewed content remains accessible per FR-009.
+    // apiFetch already handles a genuine 401 (server reachable, session
+    // invalid) with its own redirect. Any other error (including a genuine
+    // APIRequestError or an unexpected bug) is treated as a real failure
+    // and redirects to login for security.
+    const isNetworkFailure =
+      !navigator.onLine || (error instanceof Error && error.message === 'Request timeout');
+    if (isNetworkFailure) {
+      const loadingOverlay = document.getElementById('auth-loading-overlay');
+      const appDiv = document.querySelector('.app') as HTMLElement | null;
+      if (loadingOverlay) loadingOverlay.style.display = 'none';
+      if (appDiv) appDiv.style.display = 'block';
+      return;
     }
-    // On error, redirect to login for security (apiFetch already handles 401 with redirect)
+
+    // On a genuine auth error while online, redirect to login for security.
     window.location.href = '/auth/login';
   }
 }
@@ -1111,34 +1104,66 @@ function updateLoadMoreControl(): void {
 }
 
 function setupEventListeners(): void {
-  // Mobile sidebar toggle
-  const sidebarToggle = document.getElementById('sidebar-toggle');
-  sidebarToggle?.addEventListener('click', toggleMobileSidebar);
+  // Unified mobile navigation drawer (hamburger triggers, close button,
+  // backdrop, outside-tap/Escape close, focus trap) — see mobile-nav.ts
+  initMobileNav();
 
-  // Mobile sidebar close button
-  const sidebarClose = document.getElementById('sidebar-close');
-  sidebarClose?.addEventListener('click', closeMobileSidebar);
+  // Full-screen mobile search overlay (FR-016) — see search-overlay.ts
+  initSearchOverlay();
 
-  // Mobile sidebar backdrop
-  const sidebarBackdrop = document.getElementById('sidebar-backdrop');
-  sidebarBackdrop?.addEventListener('click', closeMobileSidebar);
+  // Keep the prompt editor's fields visible above the on-screen keyboard (FR-005)
+  initKeyboardSafeScroll(['#prompt-title', '#prompt-content']);
 
-  // Mobile menu dropdown toggle
-  const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
-  mobileMenuToggle?.addEventListener('click', toggleMobileMenu);
+  // Offline resilience: Service Worker caching + persistent offline indicator.
+  // Offline mode is read/copy-only (FR-009, FR-010) — editing is gated behind
+  // connectivity rather than queued, so there's no write-sync step here.
+  registerServiceWorker();
+  initOfflineIndicator();
 
-  // Close mobile menu when clicking outside
-  document.addEventListener('click', (event) => {
-    const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
-    const mobileMenuDropdown = document.getElementById('mobile-menu-dropdown');
-    if (
-      mobileMenuToggle &&
-      mobileMenuDropdown &&
-      !mobileMenuToggle.contains(event.target as Node) &&
-      !mobileMenuDropdown.contains(event.target as Node)
-    ) {
-      closeMobileMenu();
+  // Secondary pages (Import/Export, Manage Categories/Tags, Backup) require
+  // connectivity and aren't reachable offline (FR-012) — their nav buttons
+  // call this instead of navigating directly when offline.
+  window.__requireOnlineNav = (path: string): void => {
+    if (navigator.onLine) {
+      window.location.href = path;
+      return;
     }
+    showNotification(t('offline.editUnavailable'), 'error');
+  };
+
+  // Pull-to-refresh on the prompt list (FR-008), with an accessible refresh
+  // button as the always-visible equivalent control.
+  const promptsList = document.getElementById('prompts-list');
+  const pullRefreshIndicator = document.getElementById('pull-refresh-indicator');
+  const refreshPromptsBtn = document.getElementById('refresh-prompts-btn');
+
+  const showRefreshLoading = (): void => {
+    pullRefreshIndicator?.classList.remove('hidden');
+    pullRefreshIndicator?.classList.add('flex');
+  };
+  const hideRefreshLoading = (): void => {
+    pullRefreshIndicator?.classList.add('hidden');
+    pullRefreshIndicator?.classList.remove('flex');
+  };
+  const refreshPrompts = async (): Promise<void> => {
+    if (isAnyFilterActive()) {
+      await performSearch();
+    } else {
+      await loadPrompts();
+    }
+  };
+
+  if (promptsList) {
+    attachPullToRefresh(promptsList, {
+      onRefresh: refreshPrompts,
+      showLoading: showRefreshLoading,
+      hideLoading: hideRefreshLoading,
+    });
+  }
+
+  refreshPromptsBtn?.addEventListener('click', () => {
+    showRefreshLoading();
+    void refreshPrompts().finally(hideRefreshLoading);
   });
 
   // New prompt button
@@ -1149,20 +1174,18 @@ function setupEventListeners(): void {
   const newPromptBtnMobile = document.getElementById('new-prompt-btn-mobile');
   newPromptBtnMobile?.addEventListener('click', () => {
     showNewPromptForm();
-    closeMobileMenu();
+    closeMobileDrawer();
   });
 
-  // Import/Export button (navigates to import/export page)
-  const importExportBtn = document.getElementById('import-export-btn');
-  importExportBtn?.addEventListener('click', function () {
-    window.location.href = '/import-export';
-  });
+  // New prompt floating action button (mobile, FR-006)
+  const newPromptFab = document.getElementById('new-prompt-fab');
+  newPromptFab?.addEventListener('click', showNewPromptForm);
 
   // Logout button
   const logoutBtn = document.getElementById('logout-btn');
   if (logoutBtn) {
     logoutBtn.addEventListener('click', () => {
-      void logout();
+      void logout(APP_COMPONENT);
     });
   }
 
@@ -1170,7 +1193,7 @@ function setupEventListeners(): void {
   const logoutBtnMobile = document.getElementById('logout-btn-mobile');
   if (logoutBtnMobile) {
     logoutBtnMobile.addEventListener('click', () => {
-      void logout();
+      void logout(APP_COMPONENT);
     });
   }
 
@@ -1239,7 +1262,7 @@ function setupEventListeners(): void {
   const categoriesListMobile = document.getElementById('categories-list-mobile');
   categoriesListMobile?.addEventListener('click', (event) => {
     handleCategoryFilter(event);
-    closeMobileSidebar();
+    closeMobileDrawer();
   });
 
   const tagsList = document.getElementById('tags-list');
@@ -1247,7 +1270,7 @@ function setupEventListeners(): void {
   const tagsListMobile = document.getElementById('tags-list-mobile');
   tagsListMobile?.addEventListener('click', (event) => {
     handleTagFilter(event);
-    closeMobileSidebar();
+    closeMobileDrawer();
   });
   initializeFilterListKeyboardNavigation();
 
@@ -1546,7 +1569,7 @@ function isAnyFilterActive(): boolean {
 function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement {
   const div = document.createElement('div');
   div.className =
-    'prompt-item bg-white rounded-lg border border-gray-200 p-4 transition-all hover:scale-[1.02] cursor-pointer';
+    'prompt-item bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 transition-all hover:scale-[1.02] cursor-pointer';
   div.dataset.id = id;
   div.dataset.navLabel = prompt.title || '';
 
@@ -1559,7 +1582,8 @@ function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement
   const titleId = `prompt-title-${id}`;
   const checkbox = document.createElement('input');
   checkbox.type = 'checkbox';
-  checkbox.className = 'prompt-checkbox rounded text-blue-500 focus:ring-blue-500';
+  checkbox.className =
+    'prompt-checkbox w-5 h-5 md:w-4 md:h-4 rounded text-blue-500 focus:ring-blue-500';
   checkbox.dataset.promptId = id;
   checkbox.setAttribute('aria-labelledby', titleId);
   checkbox.checked = selectedPromptIds.has(parseInt(id));
@@ -1577,7 +1601,7 @@ function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement
           .map((tag) => {
             const color = tagColorLookup[tag] ?? tagColorMap[tag];
             const style = buildPillStyleOutline(color);
-            return `<span class="px-2 py-1 text-xs font-medium rounded-full border" data-tag-pill="true" data-tag-name="${escapeHtml(tag)}"${style}>
+            return `<span class="px-2 py-1 text-xs font-medium rounded-full border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200" data-tag-pill="true" data-tag-name="${escapeHtml(tag)}"${style}>
                 ${escapeHtml(tag)}
               </span>`;
           })
@@ -1593,26 +1617,27 @@ function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement
 
   div.innerHTML = `
 	        <div class="flex items-start justify-between mb-3">
-	            <h4 id="${titleId}" class="text-lg font-semibold text-gray-900 flex-1 flex items-center flex-wrap gap-1">${escapeHtml(prompt.title)}${semVerBadge}</h4>
+	            <h4 id="${titleId}" class="text-prompt-title font-semibold text-gray-900 dark:text-gray-100 flex-1 flex items-center flex-wrap gap-1">${escapeHtml(prompt.title)}${semVerBadge}</h4>
 	            <div class="flex items-center gap-1 ml-2" id="prompt-actions-${id}">
-	                <button class="favorite-btn text-xl hover:scale-110 transition-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 rounded" data-id="${id}">
+	                <button class="favorite-btn flex items-center justify-center min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 text-xl hover:scale-110 transition-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 rounded" data-id="${id}">
 	                    ${prompt.favorite ? '★' : '☆'}
 	                </button>
 	            </div>
 	        </div>
         <div class="flex flex-wrap gap-2 mb-3">
-            <span class="px-2 py-1 text-xs font-semibold rounded-md" data-category-pill="true" data-category-name="${escapeHtml(prompt.category)}"${categoryStyle}>
+            <span class="px-2 py-1 text-xs font-semibold rounded-md bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200" data-category-pill="true" data-category-name="${escapeHtml(prompt.category)}"${categoryStyle}>
               ${escapeHtml(prompt.category) || t('categories.noCategory')}
             </span>
             ${tagsHTML}
         </div>
-        <p class="text-sm text-gray-600 mb-4 line-clamp-3">${escapeHtml(truncateText(prompt.prompt, 100))}</p>
+        <p class="prompt-body-text text-prompt-body text-gray-600 dark:text-gray-300 mb-1 line-clamp-3">${escapeHtml(prompt.prompt)}</p>
+        <button type="button" class="read-more-btn hidden min-h-[44px] md:min-h-0 -ml-2 px-2 mb-3 text-xs font-medium text-blue-700 hover:text-blue-800 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 rounded" data-i18n="prompt.readMore">Read More</button>
         <div class="flex flex-wrap gap-2">
-            <button class="history-btn px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all hover:scale-105 active:scale-95" data-id="${id}" data-i18n="version.history">History</button>
-            <button class="copy-btn px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all hover:scale-105 active:scale-95" data-id="${id}" data-i18n="actions.copy">Copy</button>
-            <button class="copy-with-version-btn px-3 py-1.5 text-xs font-medium rounded-lg bg-purple-100 text-purple-700 hover:bg-purple-200 transition-all hover:scale-105 active:scale-95" data-id="${id}" data-i18n="version.copyWithMetadata">Copy+Version</button>
-            <button class="edit-btn px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 transition-all hover:scale-105 active:scale-95" data-id="${id}" data-i18n="actions.edit">Edit</button>
-            <button class="delete-btn px-3 py-1.5 text-xs font-medium rounded-lg bg-red-100 text-red-700 hover:bg-red-200 transition-all hover:scale-105 active:scale-95" data-id="${id}" data-i18n="actions.delete">Delete</button>
+            <button class="history-btn min-h-[44px] md:min-h-0 px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all hover:scale-105 active:scale-95" data-id="${id}" data-i18n="version.history">History</button>
+            <button class="copy-btn min-h-[44px] md:min-h-0 px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all hover:scale-105 active:scale-95" data-id="${id}" data-i18n="actions.copy">Copy</button>
+            <button class="copy-with-version-btn min-h-[44px] md:min-h-0 px-3 py-1.5 text-xs font-medium rounded-lg bg-purple-100 text-purple-700 hover:bg-purple-200 transition-all hover:scale-105 active:scale-95" data-id="${id}" data-i18n="version.copyWithMetadata">Copy+Version</button>
+            <button class="edit-btn min-h-[44px] md:min-h-0 px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 transition-all hover:scale-105 active:scale-95" data-id="${id}" data-i18n="actions.edit">Edit</button>
+            <button class="delete-btn min-h-[44px] md:min-h-0 px-3 py-1.5 text-xs font-medium rounded-lg bg-red-100 text-red-700 hover:bg-red-200 transition-all hover:scale-105 active:scale-95" data-id="${id}" data-i18n="actions.delete">Delete</button>
         </div>
     `;
 
@@ -1695,6 +1720,41 @@ function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement
     }
     lastSelectedPromptId = parseInt(id, 10);
     void editPrompt(id);
+  });
+
+  // "Read More" — reveal the full prompt body when the clamped text overflows.
+  const bodyText = div.querySelector('.prompt-body-text') as HTMLElement | null;
+  const readMoreBtn = div.querySelector('.read-more-btn') as HTMLButtonElement | null;
+  if (bodyText && readMoreBtn) {
+    requestAnimationFrame(() => {
+      if (bodyText.scrollHeight > bodyText.clientHeight + 1) {
+        readMoreBtn.classList.remove('hidden');
+      }
+    });
+    readMoreBtn.addEventListener('click', (event) => {
+      event.stopPropagation();
+      const isNowClamped = bodyText.classList.toggle('line-clamp-3');
+      readMoreBtn.textContent = isNowClamped ? t('prompt.readMore') : t('prompt.readLess');
+    });
+  }
+
+  // Swipe gestures (FR-007): left reveals delete (with confirmation, same as
+  // the visible Delete button), right opens the editor (same as tapping the
+  // card). Both are shortcuts for the existing, always-visible controls above.
+  // The returned detach fn is intentionally unused: each card is a fresh,
+  // never-reused element (unlike the version carousel's persistent
+  // versionList, which stores/calls its detach fn before re-initializing in
+  // place) and renderPrompts() always discards prior cards wholesale via
+  // container.innerHTML = '', which drops the listeners with the node.
+  attachSwipeReveal(div, {
+    onSwipeLeft: () => {
+      lastSelectedPromptId = parseInt(id, 10);
+      void deletePrompt(id);
+    },
+    onSwipeRight: () => {
+      lastSelectedPromptId = parseInt(id, 10);
+      void editPrompt(id);
+    },
   });
 
   return div;
@@ -1919,9 +1979,24 @@ function setPaginationControlsVisible(visible: boolean): void {
   }
 }
 
+// Offline mode is read/copy-only (FR-009) — writes (create/edit/delete/revert/
+// bulk actions) require connectivity rather than being queued for later sync.
+// Returns false (and shows the standard notification) when offline, so callers
+// can early-return with `if (!guardOnlineOnly()) return;`.
+function guardOnlineOnly(): boolean {
+  if (!navigator.onLine) {
+    showNotification(t('offline.editUnavailable'), 'error');
+    return false;
+  }
+  return true;
+}
+
 function showNewPromptForm() {
+  if (!guardOnlineOnly()) return;
+
   const promptEditor = document.getElementById('prompt-editor');
   const promptsList = document.getElementById('prompts-list');
+  const pullRefreshToolbar = document.getElementById('pull-refresh-toolbar');
 
   history.pushState({ modal: 'editor' }, '');
   showElement(promptEditor);
@@ -1933,15 +2008,18 @@ function showNewPromptForm() {
     tagInput.value = '';
   }
   hideElement(promptsList);
+  hideElement(pullRefreshToolbar);
   setPaginationControlsVisible(false);
 }
 
 function hidePromptEditor() {
   const promptEditor = document.getElementById('prompt-editor');
   const promptsList = document.getElementById('prompts-list');
+  const pullRefreshToolbar = document.getElementById('pull-refresh-toolbar');
 
   hideElement(promptEditor);
   showElement(promptsList);
+  showElement(pullRefreshToolbar);
   setPaginationControlsVisible(true);
 }
 
@@ -1952,6 +2030,9 @@ async function handlePromptSubmit(event: SubmitEvent): Promise<void> {
   if (!form) {
     return;
   }
+
+  if (!guardOnlineOnly()) return;
+
   const tagInput = getTagInputElement();
   if (tagInput) {
     commitTagInput(tagInput);
@@ -2178,15 +2259,24 @@ function showCopyFeedback(id: PromptId, message: string): void {
 }
 
 async function editPrompt(id: PromptId): Promise<void> {
+  if (!guardOnlineOnly()) return;
+
+  let prompt: PromptResponse;
   try {
-    const prompt = await apiGet<PromptResponse>(`/api/prompts/${id}`);
-
+    prompt = await apiGet<PromptResponse>(`/api/prompts/${id}`);
     promptCache[id] = prompt;
+  } catch (error) {
+    reportAppIssue('loadPromptForEdit', error, { promptId: id });
+    showNotification(t('messages.error'), 'error');
+    return;
+  }
 
+  try {
     // Show editor without resetting form
     history.pushState({ modal: 'editor' }, '');
     showElement(document.getElementById('prompt-editor'));
     hideElement(document.getElementById('prompts-list'));
+    hideElement(document.getElementById('pull-refresh-toolbar'));
     setPaginationControlsVisible(false);
 
     // Populate form
@@ -2214,6 +2304,8 @@ async function editPrompt(id: PromptId): Promise<void> {
 }
 
 async function deletePrompt(id: PromptId): Promise<void> {
+  if (!guardOnlineOnly()) return;
+
   const confirmed = await confirmAsync({
     title: t('actions.confirmDelete') || 'Confirm',
     message: t('messages.confirmDelete') || 'Are you sure?',
@@ -2373,14 +2465,15 @@ function hideModal() {
   hideElement(document.getElementById('prompt-modal'));
 }
 
-function truncateText(text: string, maxLength: number): string {
-  if (!text) return '';
-  if (text.length <= maxLength) return text;
-  return text.substring(0, maxLength) + '...';
-}
-
 // Search and Filter Functions
 let searchTimeout: ReturnType<typeof setTimeout> | null = null;
+let overlayCloseTimeout: ReturnType<typeof setTimeout> | null = null;
+
+// How long the search overlay stays open, with no typing, after results load
+// before auto-closing (FR-016). Kept well above the search debounce so the
+// overlay doesn't feel like it's snapping shut while results are still being
+// read.
+const SEARCH_OVERLAY_AUTO_CLOSE_MS = 1200;
 
 function setupSearchEventListeners() {
   // Search input with debouncing (desktop)
@@ -2395,7 +2488,7 @@ function setupSearchEventListeners() {
     });
   }
 
-  // Search input (mobile)
+  // Search input (mobile drawer)
   const searchInputMobile = document.getElementById(
     'search-input-mobile'
   ) as HTMLInputElement | null;
@@ -2407,6 +2500,26 @@ function setupSearchEventListeners() {
         clearAllFilters();
       }
     });
+  }
+
+  // Search input (full-screen mobile overlay, FR-016)
+  const searchInputOverlay = document.getElementById(
+    'search-input-overlay'
+  ) as HTMLInputElement | null;
+  if (searchInputOverlay) {
+    searchInputOverlay.addEventListener('input', handleSearchInput);
+  }
+
+  // Inline clear (×) buttons: clear just the search term, not other filters.
+  updateSearchClearButtons();
+  const searchInputClearPairs: Array<[string, string]> = [
+    ['search-input-clear', 'search-input'],
+    ['search-input-mobile-clear', 'search-input-mobile'],
+    ['search-input-overlay-clear', 'search-input-overlay'],
+  ];
+  for (const [clearBtnId, inputId] of searchInputClearPairs) {
+    const clearBtn = document.getElementById(clearBtnId);
+    clearBtn?.addEventListener('click', () => clearSearchTerm(inputId));
   }
 
   // Case sensitive toggle (desktop)
@@ -2456,6 +2569,48 @@ function setupSearchEventListeners() {
   }
 }
 
+/** Show each search input's inline × button only while it has text. */
+function updateSearchClearButtons(): void {
+  const pairs: Array<[string, string]> = [
+    ['search-input', 'search-input-clear'],
+    ['search-input-mobile', 'search-input-mobile-clear'],
+    ['search-input-overlay', 'search-input-overlay-clear'],
+  ];
+  for (const [inputId, clearBtnId] of pairs) {
+    const input = document.getElementById(inputId) as HTMLInputElement | null;
+    const clearBtn = document.getElementById(clearBtnId);
+    const icon = input?.parentElement?.querySelector('.search-input-icon');
+    const hasValue = !!input?.value;
+    toggleElement(clearBtn, hasValue);
+    if (icon instanceof SVGElement || icon instanceof HTMLElement) {
+      icon.classList.toggle('hidden', hasValue);
+    }
+  }
+}
+
+/** Clear only the search term (all synced inputs), preserving other active filters. */
+function clearSearchTerm(sourceInputId: string): void {
+  searchState.searchTerm = '';
+
+  const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
+  const searchInputMobile = document.getElementById(
+    'search-input-mobile'
+  ) as HTMLInputElement | null;
+  const searchInputOverlay = document.getElementById(
+    'search-input-overlay'
+  ) as HTMLInputElement | null;
+  if (searchInput) searchInput.value = '';
+  if (searchInputMobile) searchInputMobile.value = '';
+  if (searchInputOverlay) searchInputOverlay.value = '';
+
+  updateSearchClearButtons();
+
+  const sourceInput = document.getElementById(sourceInputId) as HTMLInputElement | null;
+  sourceInput?.focus();
+
+  void performSearch();
+}
+
 function handleSearchInput(event: Event): void {
   const target = event.target as HTMLInputElement | null;
   if (!target) {
@@ -2464,23 +2619,44 @@ function handleSearchInput(event: Event): void {
   const searchTerm = target.value;
   searchState.searchTerm = searchTerm;
 
-  // Sync both search inputs (desktop and mobile)
+  // Sync all search inputs (desktop, mobile drawer, mobile overlay)
   const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
   const searchInputMobile = document.getElementById(
     'search-input-mobile'
   ) as HTMLInputElement | null;
+  const searchInputOverlay = document.getElementById(
+    'search-input-overlay'
+  ) as HTMLInputElement | null;
   if (searchInput && target.id !== 'search-input') searchInput.value = searchTerm;
   if (searchInputMobile && target.id !== 'search-input-mobile')
     searchInputMobile.value = searchTerm;
+  if (searchInputOverlay && target.id !== 'search-input-overlay')
+    searchInputOverlay.value = searchTerm;
 
-  // Clear previous timeout
+  updateSearchClearButtons();
+
+  // Clear previous timeouts
   if (searchTimeout) {
     clearTimeout(searchTimeout);
   }
+  if (overlayCloseTimeout) {
+    clearTimeout(overlayCloseTimeout);
+    overlayCloseTimeout = null;
+  }
 
   // Debounce search
+  const isOverlayInput = target.id === 'search-input-overlay';
   searchTimeout = setTimeout(() => {
-    void performSearch();
+    void performSearch().then(() => {
+      // Auto-close the full-screen overlay after results have been visible
+      // and idle for a bit, so the user can see the filtered list without an
+      // extra manual dismiss (FR-016) but isn't rushed off it while reading.
+      if (isOverlayInput && isSearchOverlayOpen()) {
+        overlayCloseTimeout = setTimeout(() => {
+          closeSearchOverlay();
+        }, SEARCH_OVERLAY_AUTO_CLOSE_MS);
+      }
+    });
   }, 300);
 }
 
@@ -2665,6 +2841,15 @@ function clearAllFilters(): void {
   if (searchInput) {
     searchInput.value = '';
   }
+
+  const searchInputOverlay = document.getElementById(
+    'search-input-overlay'
+  ) as HTMLInputElement | null;
+  if (searchInputOverlay) {
+    searchInputOverlay.value = '';
+  }
+
+  updateSearchClearButtons();
 
   const caseSensitiveToggle = document.getElementById(
     'case-sensitive-toggle'
@@ -2854,6 +3039,7 @@ function renderVersionHistory(versions: VersionSummary[]): void {
   if (versions.length === 0) {
     versionList.innerHTML =
       '<div class="text-center text-gray-500 py-8">' + t('version.noVersions') + '</div>';
+    hideVersionCarouselNav();
     return;
   }
 
@@ -2864,6 +3050,84 @@ function renderVersionHistory(versions: VersionSummary[]): void {
   });
 
   initializeVersionListKeyboardNavigation(versionList);
+  initVersionCarousel(versionList, versions.length);
+}
+
+// Mobile swipeable version-history carousel (FR-018): pages through one
+// version at a time via swipe or the visible prev/next buttons.
+let versionCarouselIndex = 0;
+let detachVersionCarouselSwipe: (() => void) | null = null;
+let detachVersionCarouselButtons: (() => void) | null = null;
+
+function hideVersionCarouselNav(): void {
+  document.getElementById('version-carousel-nav')?.classList.add('hidden');
+  document.getElementById('version-list')?.classList.remove('carousel-mode');
+}
+
+function updateVersionCarouselPosition(total: number): void {
+  const position = document.getElementById('version-carousel-position');
+  const prevBtn = document.getElementById('version-carousel-prev') as HTMLButtonElement | null;
+  const nextBtn = document.getElementById('version-carousel-next') as HTMLButtonElement | null;
+  if (position) {
+    position.textContent = `${versionCarouselIndex + 1} / ${total}`;
+  }
+  if (prevBtn) prevBtn.disabled = versionCarouselIndex === 0;
+  if (nextBtn) nextBtn.disabled = versionCarouselIndex === total - 1;
+}
+
+function showVersionCarouselItem(versionList: HTMLElement, index: number): void {
+  const items = versionList.querySelectorAll<HTMLElement>('.version-item');
+  items.forEach((item, i) => {
+    item.classList.toggle('carousel-active', i === index);
+  });
+}
+
+function initVersionCarousel(versionList: HTMLElement, total: number): void {
+  const nav = document.getElementById('version-carousel-nav');
+  if (!nav || total === 0) return;
+
+  // Only enabled on mobile viewports; desktop keeps the vertical list (md:hidden on nav).
+  if (window.matchMedia('(min-width: 768px)').matches) {
+    hideVersionCarouselNav();
+    return;
+  }
+
+  nav.classList.remove('hidden');
+  nav.classList.add('flex');
+  versionList.classList.add('carousel-mode');
+  versionCarouselIndex = 0;
+  showVersionCarouselItem(versionList, versionCarouselIndex);
+  updateVersionCarouselPosition(total);
+
+  const prevBtn = document.getElementById('version-carousel-prev');
+  const nextBtn = document.getElementById('version-carousel-next');
+
+  const goToPrev = (): void => {
+    if (versionCarouselIndex === 0) return;
+    versionCarouselIndex -= 1;
+    showVersionCarouselItem(versionList, versionCarouselIndex);
+    updateVersionCarouselPosition(total);
+  };
+  const goToNext = (): void => {
+    if (versionCarouselIndex === total - 1) return;
+    versionCarouselIndex += 1;
+    showVersionCarouselItem(versionList, versionCarouselIndex);
+    updateVersionCarouselPosition(total);
+  };
+
+  detachVersionCarouselButtons?.();
+  prevBtn?.addEventListener('click', goToPrev);
+  nextBtn?.addEventListener('click', goToNext);
+  detachVersionCarouselButtons = () => {
+    prevBtn?.removeEventListener('click', goToPrev);
+    nextBtn?.removeEventListener('click', goToNext);
+  };
+
+  detachVersionCarouselSwipe?.();
+  detachVersionCarouselSwipe = attachSwipeReveal(versionList, {
+    onSwipeLeft: goToNext,
+    onSwipeRight: goToPrev,
+  });
 }
 
 function createVersionItem(
@@ -2873,7 +3137,7 @@ function createVersionItem(
 ): HTMLDivElement {
   const div = document.createElement('div');
   div.className =
-    'version-item bg-white border border-gray-200 rounded-lg p-4 cursor-pointer hover:bg-gray-50 transition-colors';
+    'version-item bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors';
   div.dataset.versionId = version.version_id;
   div.dataset.navLabel = version.message;
   div.setAttribute('role', 'button');
@@ -2904,13 +3168,13 @@ function createVersionItem(
     `
         <div class="flex items-center justify-between mb-2">
             <div class="flex items-center gap-2">
-              <span class="text-sm font-semibold text-gray-900">#${totalVersions - index} ${version.version_id.substring(0, 8)}...</span>
+              <span class="text-sm font-semibold text-gray-900 dark:text-gray-100">#${totalVersions - index} ${version.version_id.substring(0, 8)}...</span>
               ${semVerBadge}
             </div>
-            <span class="text-xs text-gray-500">${timestamp}</span>
+            <span class="text-xs text-gray-500 dark:text-gray-400">${timestamp}</span>
         </div>
-        <div class="text-xs text-gray-600 mb-1">${t('version.author')}: ${escapeHtml(version.author)}</div>
-        <div class="text-sm text-gray-700 mb-3">${escapeHtml(version.message)}</div>
+        <div class="text-xs text-gray-600 dark:text-gray-400 mb-1">${t('version.author')}: ${escapeHtml(version.author)}</div>
+        <div class="text-sm text-gray-700 dark:text-gray-300 mb-3">${escapeHtml(version.message)}</div>
         <div class="flex gap-2">
             ${!isLatest ? `<button class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-red-500 text-white hover:bg-red-600 transition-all hover:scale-105 active:scale-95" onclick="showRevertConfirmation('${version.version_id}')" data-i18n="version.revert">` + t('version.revert') + `</button>` : ''}
             <button class="px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 transition-all hover:scale-105 active:scale-95" onclick="selectVersionForComparison('${version.version_id}')" data-i18n="version.select">` +
@@ -2935,11 +3199,17 @@ function toggleVersionSelection(versionId: string, element: HTMLElement | null):
   }
   if (selectedVersions.has(versionId)) {
     selectedVersions.delete(versionId);
-    element.classList.remove('selected', 'ring-2', 'ring-blue-500', 'bg-blue-50');
+    element.classList.remove(
+      'selected',
+      'ring-2',
+      'ring-blue-500',
+      'bg-blue-50',
+      'dark:bg-blue-950'
+    );
     element.setAttribute('aria-pressed', 'false');
   } else {
     selectedVersions.add(versionId);
-    element.classList.add('selected', 'ring-2', 'ring-blue-500', 'bg-blue-50');
+    element.classList.add('selected', 'ring-2', 'ring-blue-500', 'bg-blue-50', 'dark:bg-blue-950');
     element.setAttribute('aria-pressed', 'true');
   }
   updateCompareButton();
@@ -2992,6 +3262,8 @@ async function performRevert(versionId: string): Promise<void> {
     if (currentVersionPromptId === null) {
       return;
     }
+
+    if (!guardOnlineOnly()) return;
     const revertMessageInput = document.getElementById(
       'revert-commit-message'
     ) as HTMLInputElement | null;
@@ -3222,10 +3494,11 @@ function displayDiff(diff: VersionDiffResponse): void {
 
   Object.entries(diff.changes).forEach(([field, change]) => {
     const fieldDiv = document.createElement('div');
-    fieldDiv.className = 'bg-white border border-gray-200 rounded-lg p-4';
+    fieldDiv.className =
+      'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4';
 
     const fieldName = document.createElement('div');
-    fieldName.className = 'text-sm font-semibold text-gray-900 mb-3';
+    fieldName.className = 'text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3';
     fieldName.textContent =
       fieldDisplayNames[field] || field.charAt(0).toUpperCase() + field.slice(1);
     fieldDiv.appendChild(fieldName);
@@ -3234,7 +3507,8 @@ function displayDiff(diff: VersionDiffResponse): void {
     if (change.diff && change.diff.length > 0) {
       const diffContainer = renderCharacterDiff(change.diff);
       diffContainer.className =
-        'p-3 bg-gray-50 border border-gray-200 rounded-lg ' + diffContainer.className;
+        'p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg ' +
+        diffContainer.className;
       fieldDiv.appendChild(diffContainer);
     } else {
       // Fallback to old/new display for backward compatibility
@@ -4088,12 +4362,12 @@ function showTagAutocomplete(filteredTags: TagInfo[]) {
 
       const item = document.createElement('div');
       item.className =
-        'tag-autocomplete-item px-4 py-2 cursor-pointer hover:bg-gray-50 transition-colors flex items-center justify-between';
+        'tag-autocomplete-item px-4 py-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center justify-between';
       item.dataset.index = String(index);
       item.dataset.tagName = tagName;
 
       const nameSpan = document.createElement('span');
-      nameSpan.className = 'text-sm text-gray-900';
+      nameSpan.className = 'text-sm text-gray-900 dark:text-gray-100';
       nameSpan.textContent = tagName;
       item.appendChild(nameSpan);
 
@@ -4209,13 +4483,13 @@ function highlightTagItem(index: number) {
 
   // Remove previous highlight
   autocompleteDiv.querySelectorAll('.tag-autocomplete-item').forEach((item) => {
-    item.classList.remove('highlighted', 'bg-blue-50');
+    item.classList.remove('highlighted', 'bg-blue-50', 'dark:bg-blue-950');
   });
 
   // Add new highlight
   const items = autocompleteDiv.querySelectorAll('.tag-autocomplete-item');
   if (items[index]) {
-    items[index].classList.add('highlighted', 'bg-blue-50');
+    items[index].classList.add('highlighted', 'bg-blue-50', 'dark:bg-blue-950');
     // Scroll into view if needed
     items[index].scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }
@@ -4431,6 +4705,8 @@ function hideBulkTagModal() {
 async function performBulkDelete(): Promise<void> {
   if (selectedPromptIds.size === 0) return;
 
+  if (!guardOnlineOnly()) return;
+
   const promptIdsArray = Array.from(selectedPromptIds);
 
   try {
@@ -4487,6 +4763,8 @@ async function performBulkDelete(): Promise<void> {
 async function performBulkTagUpdate(): Promise<void> {
   if (selectedPromptIds.size === 0) return;
 
+  if (!guardOnlineOnly()) return;
+
   const addInput = document.getElementById('bulk-tag-add') as HTMLInputElement | null;
   const removeInput = document.getElementById('bulk-tag-remove') as HTMLInputElement | null;
 
@@ -4527,54 +4805,8 @@ async function performBulkTagUpdate(): Promise<void> {
   }
 }
 
-// ============================================
-// Mobile Sidebar & Menu Functions
-// ============================================
-
-function toggleMobileSidebar(): void {
-  const mobileSidebar = document.getElementById('mobile-sidebar');
-  const backdrop = document.getElementById('sidebar-backdrop');
-
-  if (mobileSidebar && backdrop) {
-    const isOpen = !mobileSidebar.classList.contains('-translate-x-full');
-
-    if (isOpen) {
-      closeMobileSidebar();
-    } else {
-      // Open sidebar
-      mobileSidebar.classList.remove('-translate-x-full');
-      backdrop.classList.remove('hidden');
-      // Prevent body scroll when sidebar is open
-      document.body.style.overflow = 'hidden';
-    }
-  }
-}
-
-function closeMobileSidebar(): void {
-  const mobileSidebar = document.getElementById('mobile-sidebar');
-  const backdrop = document.getElementById('sidebar-backdrop');
-
-  if (mobileSidebar && backdrop) {
-    mobileSidebar.classList.add('-translate-x-full');
-    backdrop.classList.add('hidden');
-    // Restore body scroll
-    document.body.style.overflow = '';
-  }
-}
-
-function toggleMobileMenu(): void {
-  const dropdown = document.getElementById('mobile-menu-dropdown');
-  if (dropdown) {
-    dropdown.classList.toggle('hidden');
-  }
-}
-
-function closeMobileMenu(): void {
-  const dropdown = document.getElementById('mobile-menu-dropdown');
-  if (dropdown) {
-    dropdown.classList.add('hidden');
-  }
-}
+// Mobile navigation drawer (hamburger, close, backdrop, focus trap) lives in
+// mobile-nav.ts — see initMobileNav() wired in setupEventListeners() above.
 
 initI18n(() => {
   try {
@@ -4587,42 +4819,6 @@ initI18n(() => {
 
 // Initialize lazy loading on app start
 initializeLazyLoading();
-
-// Logout function
-async function logout() {
-  // Anonymous mode: no session to revoke, just navigate home.
-  if (window.__AUTH_ENABLED__ === false) {
-    window.location.href = '/';
-    return;
-  }
-
-  try {
-    // Get refresh token from localStorage (if it exists from old implementation)
-    const refreshToken =
-      localStorage.getItem('refresh_token') || sessionStorage.getItem('refresh_token');
-
-    // Call logout endpoint with cookies
-    await fetch('/api/auth/logout', {
-      method: 'POST',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: refreshToken ? JSON.stringify({ refresh_token: refreshToken }) : '{}',
-    });
-  } catch (error) {
-    console.error('Logout error:', error);
-    reportAppIssue('logout-error', error, {}, 'warning');
-  } finally {
-    // Always clear storage and redirect
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('user');
-    sessionStorage.clear();
-
-    window.location.href = '/auth/login';
-  }
-}
 
 const appWindow = window as unknown as Window & {
   selectVersionForComparison: (versionId: string) => void;

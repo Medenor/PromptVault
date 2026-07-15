@@ -18,15 +18,15 @@ const noFilters: PaginationFilters = {
 };
 
 describe('pagination utils', () => {
-  it('exposes the three supported page size options with a default of 50', () => {
+  it('exposes the three supported page size options with a default of 25', () => {
     expect(PAGE_SIZE_OPTIONS).toEqual([25, 50, 100]);
-    expect(DEFAULT_PAGE_SIZE).toBe(50);
+    expect(DEFAULT_PAGE_SIZE).toBe(25);
   });
 
   it('creates initial state at page 1 with hasNext false and no loading', () => {
     const state = createInitialPaginationState(noFilters);
     expect(state.currentPage).toBe(1);
-    expect(state.pageSize).toBe(50);
+    expect(state.pageSize).toBe(25);
     expect(state.hasNext).toBe(false);
     expect(state.isLoadingMore).toBe(false);
     expect(state.activeFilters).toEqual(noFilters);

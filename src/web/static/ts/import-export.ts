@@ -15,6 +15,7 @@ import { hideElement, showElement } from '@/utils/dom';
 import { reportError } from '@/telemetry';
 import { apiGet, apiPostForm, APIRequestError } from '@/utils/api';
 import { announce } from '@/utils/a11y';
+import { initSecondaryNav } from '@/utils/secondary-nav';
 
 type OperationType = 'export' | 'import' | null;
 interface FormValidationError {
@@ -254,8 +255,8 @@ async function downloadBlob(url: string, formData: FormData, filename: string): 
 }
 
 function initializeImportExport(): void {
+  initSecondaryNav({ component: IMPORT_EXPORT_COMPONENT, requireAuth: true });
   setupEventListeners();
-  checkAdminAccess();
   void loadStatistics();
 }
 
@@ -454,8 +455,8 @@ function updateActivityHistory(): void {
   historyList.innerHTML = `
         <div class="history-item">
             <div class="history-info">
-                <div>No recent activity</div>
-                <div class="history-details">Activity tracking not yet implemented</div>
+                <div class="text-sm text-gray-700 dark:text-gray-300">No recent activity</div>
+                <div class="history-details text-xs text-gray-500 dark:text-gray-400">Activity tracking not yet implemented</div>
             </div>
         </div>
     `;
@@ -819,24 +820,6 @@ function clearExportSettings(): void {
   setTimeout(() => {
     showStatus('export', '', 'info');
   }, 2000);
-}
-
-async function checkAdminAccess(): Promise<void> {
-  try {
-    const data = await apiGet<{ role: string }>('/api/auth/me');
-
-    if (data.role === 'admin') {
-      const adminBtn = document.getElementById('admin-btn');
-      if (adminBtn) {
-        (adminBtn as HTMLElement).style.display = '';
-      }
-    }
-  } catch (error) {
-    reportError(IMPORT_EXPORT_COMPONENT, 'checkAdminAccess', error);
-    // apiGet handles 401 errors automatically with token refresh
-    // If we get here, it means auth failed after refresh attempt
-    // The apiGet utility will have already redirected to login if needed
-  }
 }
 
 function exposeGlobalHandlers(): void {

@@ -5,20 +5,37 @@
 <html lang="en">
   <head>
     {% import "macros/scripts.html" as scripts %}
+    {% import "macros/mobile_drawer.html" as drawer %}
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      // Dark mode bootstrap (FR-017): runs synchronously before first paint to
+      // avoid a flash of the wrong theme. Follows the OS prefers-color-scheme;
+      // no manual toggle is provided in this feature (see spec Assumptions).
+      (function () {
+        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content" />
     <meta
       name="description"
       content="Session Management - Monitor and manage active user sessions for your PromptVault instance."
     />
     <title>PromptVault - Session Management</title>
     <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon.png" />
+    <link rel="manifest" href="/static/manifest.json" />
+    <link rel="apple-touch-icon" href="/static/images/icons/icon-192.png" />
+    <meta name="apple-mobile-web-app-title" content="PromptVault" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="theme-color" content="#3B82F6" />
     {{ scripts.load_css('admin-sessions', true) }}
     <script src="https://unpkg.com/i18next@23.7.6/i18next.min.js"></script>
     <script src="https://unpkg.com/i18next-browser-languagedetector@7.2.0/i18nextBrowserLanguageDetector.min.js"></script>
     <script src="https://unpkg.com/i18next-http-backend@2.4.2/i18nextHttpBackend.min.js"></script>
   </head>
-  <body class="bg-gray-50 min-h-screen">
+  <body class="bg-gray-50 min-h-screen dark:bg-gray-900">
     <a href="#main-content" class="skip-link" tabindex="0" data-i18n="nav.skipToMainContent"
       >Skip to main content</a
     >
@@ -38,7 +55,7 @@
                   src="/static/images/promptvault_logo_frontend.webp"
                   alt=""
                   aria-hidden="true"
-                  class="h-14 w-14 border-2 border-gray-400 rounded-lg shadow-lg flex-shrink-0"
+                  class="h-14 w-14 border-2 border-gray-400 rounded-lg shadow-lg flex-shrink-0 dark:border-gray-600"
                 />
               </a>
               <div class="text-2xl font-bold truncate">PromptVault Admin</div>
@@ -53,7 +70,7 @@
               <button
                 type="button"
                 onclick="window.location.href = '/admin/users'"
-                class="px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all whitespace-nowrap"
+                class="px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all whitespace-nowrap dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
                 data-i18n="admin.nav.users"
               >
                 Users
@@ -61,7 +78,7 @@
               <button
                 type="button"
                 onclick="window.location.href = '/auth/profile'"
-                class="px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all whitespace-nowrap"
+                class="px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all whitespace-nowrap dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
                 data-i18n="admin.nav.profile"
               >
                 Profile
@@ -69,80 +86,17 @@
               <button
                 type="button"
                 onclick="window.location.href = '/'"
-                class="px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all whitespace-nowrap"
+                class="px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all whitespace-nowrap dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
                 data-i18n="nav.backToMain"
               >
                 Back to Main
               </button>
             </nav>
-            <!-- Mobile menu button -->
-            <button
-              type="button"
-              id="admin-menu-toggle"
-              class="md:hidden p-2 text-blue-100 hover:text-white flex-shrink-0"
-              aria-label="Toggle menu"
-              data-i18n="[aria-label]accessibility.labels.toggleMenu"
-              aria-expanded="false"
-              aria-controls="admin-menu-dropdown"
-            >
-              <svg
-                class="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-                focusable="false"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M4 6h16M4 12h16M4 18h16"
-                ></path>
-              </svg>
-            </button>
+            {{ drawer.toggle_button() }}
           </div>
-          <!-- Mobile menu dropdown -->
-          <nav
-            id="admin-menu-dropdown"
-            class="hidden md:hidden mt-4 flex flex-col gap-2"
-            role="navigation"
-            aria-label="Admin page navigation mobile"
-            data-i18n="[aria-label]accessibility.labels.adminPageNavigationMobile"
-          >
-            <div class="px-2 py-2">
-              <label class="block text-xs text-gray-500 mb-1" data-i18n="nav.language"
-                >Language</label
-              >
-              {% include 'macros/language_selector.html' %}
-            </div>
-            <button
-              type="button"
-              onclick="window.location.href = '/admin/users'"
-              class="w-full px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all text-left"
-              data-i18n="admin.nav.users"
-            >
-              Users
-            </button>
-            <button
-              type="button"
-              onclick="window.location.href = '/auth/profile'"
-              class="w-full px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all text-left"
-              data-i18n="admin.nav.profile"
-            >
-              Profile
-            </button>
-            <button
-              type="button"
-              onclick="window.location.href = '/'"
-              class="w-full px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all text-left"
-              data-i18n="nav.backToMain"
-            >
-              Back to Main
-            </button>
-          </nav>
         </div>
       </header>
+      {{ drawer.admin_nav_drawer('users') }}
 
       <!-- Main Content -->
       <main
@@ -150,7 +104,7 @@
         role="main"
         class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full"
       >
-        <h1 class="text-3xl font-bold text-gray-900 mb-4 md:mb-0" data-i18n="admin.sessions.title">
+        <h1 class="text-3xl font-bold text-gray-900 mb-4 md:mb-0 dark:text-gray-100" data-i18n="admin.sessions.title">
           Active Sessions
         </h1>
         <!-- Page Header -->
@@ -178,9 +132,16 @@
         </div>
 
         <!-- Filters -->
-        <div class="bg-white rounded-lg shadow p-6 mb-6">
+        <div class="bg-white rounded-lg shadow p-6 mb-6 dark:bg-gray-800">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div class="relative">
+            <div>
+              <label
+                for="search-input"
+                class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300 invisible"
+                aria-hidden="true"
+                >Search</label
+              >
+              <div class="relative">
               <input
                 type="text"
                 id="search-input"
@@ -188,8 +149,8 @@
                 placeholder="Search by username..."
                 aria-label="Search sessions by username"
                 data-i18n="[aria-label]admin.sessions.searchPlaceholder"
-                data-i18n="[placeholder]admin.sessions.searchPlaceholder"
-                class="w-full pl-3 pr-10 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
+                data-i18n-placeholder="admin.sessions.searchPlaceholder"
+                class="w-full pl-3 pr-10 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 dark:placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed dark:border-gray-600 text-gray-900 dark:text-gray-100"
               />
               <svg
                 class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none w-5 h-5 transition-colors"
@@ -206,18 +167,19 @@
                   d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                 />
               </svg>
+              </div>
             </div>
             <div>
               <label
                 for="user-filter"
-                class="block text-sm font-medium text-gray-700 mb-1"
+                class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300"
                 data-i18n="admin.sessions.filterUser"
                 >User:</label
               >
               <select
                 id="user-filter"
                 name="user_filter"
-                class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
+                class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 dark:placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed dark:border-gray-600 text-gray-900 dark:text-gray-100"
               >
                 <option value="all" data-i18n="admin.sessions.allUsers">All Users</option>
               </select>
@@ -227,80 +189,80 @@
 
         <!-- Stats Cards -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-6">
-          <div class="bg-white rounded-lg shadow p-6">
-            <div class="text-3xl font-bold text-gray-900" id="total-sessions">0</div>
-            <div class="text-sm text-gray-700 mt-1" data-i18n="admin.sessions.totalSessions">
+          <div class="bg-white rounded-lg shadow p-6 dark:bg-gray-800">
+            <div class="text-3xl font-bold text-gray-900 dark:text-gray-100" id="total-sessions">0</div>
+            <div class="text-sm text-gray-700 mt-1 dark:text-gray-300" data-i18n="admin.sessions.totalSessions">
               Total Sessions
             </div>
           </div>
-          <div class="bg-white rounded-lg shadow p-6">
+          <div class="bg-white rounded-lg shadow p-6 dark:bg-gray-800">
             <div class="text-3xl font-bold text-green-600" id="active-sessions">0</div>
-            <div class="text-sm text-gray-700 mt-1" data-i18n="admin.sessions.activeSessions">
+            <div class="text-sm text-gray-700 mt-1 dark:text-gray-300" data-i18n="admin.sessions.activeSessions">
               Active Now
             </div>
           </div>
-          <div class="bg-white rounded-lg shadow p-6">
+          <div class="bg-white rounded-lg shadow p-6 dark:bg-gray-800">
             <div class="text-3xl font-bold text-blue-600" id="unique-users">0</div>
-            <div class="text-sm text-gray-700 mt-1" data-i18n="admin.sessions.uniqueUsers">
+            <div class="text-sm text-gray-700 mt-1 dark:text-gray-300" data-i18n="admin.sessions.uniqueUsers">
               Unique Users
             </div>
           </div>
         </div>
 
         <!-- Sessions Table -->
-        <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="bg-white rounded-lg shadow overflow-hidden dark:bg-gray-800">
           <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200" aria-label="Active Sessions">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700" aria-label="Active Sessions">
               <caption class="sr-only">
                 List of active user sessions with termination options
               </caption>
-              <thead class="bg-gray-50">
+              <thead class="bg-gray-50 dark:bg-gray-900">
                 <tr>
                   <th
                     scope="col"
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider dark:text-gray-300"
                     data-i18n="admin.sessions.username"
                   >
                     Username
                   </th>
                   <th
                     scope="col"
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider dark:text-gray-300"
                     data-i18n="admin.sessions.ipAddress"
                   >
                     IP Address
                   </th>
                   <th
                     scope="col"
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider dark:text-gray-300"
                     data-i18n="admin.sessions.userAgent"
                   >
                     User Agent
                   </th>
                   <th
                     scope="col"
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider dark:text-gray-300"
                     data-i18n="admin.sessions.createdAt"
                   >
                     Created
                   </th>
                   <th
                     scope="col"
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider dark:text-gray-300"
                     data-i18n="admin.sessions.lastUsed"
                   >
                     Last Used
                   </th>
                   <th
                     scope="col"
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider dark:text-gray-300"
                     data-i18n="admin.sessions.expiresAt"
                   >
                     Expires
                   </th>
                   <th
                     scope="col"
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider dark:text-gray-300"
                     aria-label="Actions"
                     data-i18n="admin.sessions.actions"
                   >
@@ -308,9 +270,9 @@
                   </th>
                 </tr>
               </thead>
-              <tbody id="sessions-table-body" class="bg-white divide-y divide-gray-200">
+              <tbody id="sessions-table-body" class="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
                 <tr>
-                  <td colspan="7" class="px-6 py-4 text-center text-gray-700">
+                  <td colspan="7" class="px-6 py-4 text-center text-gray-700 dark:text-gray-300">
                     <div data-i18n="messages.loading">Loading...</div>
                   </td>
                 </tr>
@@ -323,10 +285,10 @@
       <footer
         role="contentinfo"
         aria-label="Site footer"
-        class="mt-auto border-t border-gray-200 bg-gray-50"
+        class="mt-auto border-t border-gray-200 bg-gray-50 dark:bg-gray-900 dark:border-gray-700"
       >
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div class="flex flex-col gap-3 text-sm text-gray-600">
+          <div class="flex flex-col gap-3 text-sm text-gray-600 dark:text-gray-400">
             <p>
               PromptVault is licensed under
               <a
@@ -543,18 +505,18 @@
       role="dialog"
       class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50"
     >
-      <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div class="flex items-center justify-between p-6 border-b border-gray-200">
+      <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto dark:bg-gray-800">
+        <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <h2
             id="session-detail-title"
-            class="text-xl font-bold text-gray-900"
+            class="text-xl font-bold text-gray-900 dark:text-gray-100"
             data-i18n="admin.sessions.sessionDetails"
           >
             Session Details
           </h2>
           <button
             type="button"
-            class="text-gray-400 hover:text-gray-700 text-2xl cursor-pointer rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
+            class="text-gray-400 hover:text-gray-700 text-2xl cursor-pointer rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 dark:hover:text-gray-300"
             aria-label="Close modal"
             data-i18n="[aria-label]actions.close"
             onclick="closeSessionDetailModal()"
@@ -564,16 +526,16 @@
         </div>
         <div class="p-6">
           <div id="session-detail-content">
-            <div class="text-gray-700" data-i18n="messages.loading">Loading...</div>
+            <div class="text-gray-700 dark:text-gray-300" data-i18n="messages.loading">Loading...</div>
           </div>
         </div>
-        <div class="flex justify-end space-x-3 p-6 border-t border-gray-200">
+        <div class="flex justify-end space-x-3 p-6 border-t border-gray-200 dark:border-gray-700">
           <button
             type="button"
             id="revoke-session-btn"
             class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded font-medium transition"
             aria-label="Revoke this session and log out the user"
-            data-i18n="[aria-label]admin.sessions.revokeSessionAriaLabel"
+            data-i18n-aria-label="admin.sessions.revokeSessionAriaLabel"
             data-i18n="admin.sessions.revokeSession"
           >
             Revoke Session
@@ -598,18 +560,18 @@
       role="dialog"
       class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50"
     >
-      <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
-        <div class="flex items-center justify-between p-6 border-b border-gray-200">
+      <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 dark:bg-gray-800">
+        <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <h2
             id="confirm-revoke-title"
-            class="text-xl font-bold text-gray-900"
+            class="text-xl font-bold text-gray-900 dark:text-gray-100"
             data-i18n="admin.sessions.confirmRevoke"
           >
             Confirm Revoke
           </h2>
           <button
             type="button"
-            class="text-gray-400 hover:text-gray-700 text-2xl cursor-pointer rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
+            class="text-gray-400 hover:text-gray-700 text-2xl cursor-pointer rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 dark:hover:text-gray-300"
             aria-label="Close modal"
             data-i18n="[aria-label]actions.close"
             onclick="closeConfirmRevokeModal()"
@@ -618,11 +580,11 @@
           </button>
         </div>
         <div class="p-6">
-          <p class="text-gray-700" data-i18n="admin.sessions.revokeWarning">
+          <p class="text-gray-700 dark:text-gray-300" data-i18n="admin.sessions.revokeWarning">
             Are you sure you want to revoke this session? The user will be logged out immediately.
           </p>
         </div>
-        <div class="flex justify-end space-x-3 p-6 border-t border-gray-200">
+        <div class="flex justify-end space-x-3 p-6 border-t border-gray-200 dark:border-gray-700">
           <button
             type="button"
             id="confirm-revoke-btn"

@@ -1,38 +1,24 @@
-# Contract: Offline Queue Sync
+# Contract: Offline Access
 
-This feature does not introduce a new sync API. It extends the existing prompt update endpoint with an optional conflict-detection parameter, and defines the client-side contract for replaying a queued offline write.
+Offline mode is read/copy-only (spec.md User Story 2, FR-009 through FR-012). This feature does not introduce any offline write, sync, or conflict-detection API — there is no queued-write contract to define.
 
-## Backend: extend `PUT /prompts/{prompt_id}`
+## Service Worker cache contract
 
-Existing endpoint (`src/web/routers/prompts.py:622`, form-encoded body) gains one optional field:
+`src/web/static/ts/sw.ts`, compiled to `/sw.js` (served at the site root so its scope covers the whole app):
 
-| Field              | Type             | Required                 | Notes                                                                                                                                                                           |
-| ------------------ | ---------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `expected_version` | int (form field) | No (backward compatible) | The prompt's version the client last saw before queuing the offline edit. When present, the server compares it against the prompt's current version before applying the update. |
+- **`STATIC_CACHE` (`promptvault-static-v1`)**: the main prompt list page (`/`) and its linked `/static/...` assets (JS bundle, CSS, manifest, icons), precached on Service Worker `install` so a single online visit to `/` is enough for offline access — a page is never controlled by the Service Worker that installs it, so without precaching, a first-ever visit would leave the offline cache empty. Also serves subsequent navigations to `/` and any `/static/...` request cache-first/network-first per `sw.ts`.
+- **`API_CACHE` (`promptvault-api-v1`)**: GET responses under `/api/prompts`, `/api/categories`, and `/api/tags` (including per-prompt sub-routes like `/api/prompts/{id}/versions`), cached network-first as they're fetched during normal browsing. This is what makes a previously-viewed prompt (and its version history, if opened) available offline.
 
-**Behavior**:
+Offline access is scoped to the main page only. Secondary pages (Import/Export, Manage Categories/Tags, Backup Management) are **not** precached or cached, and their write endpoints are never called while offline — see "Client: offline write gating" below.
 
-- If `expected_version` is omitted: existing behavior, unchanged (no regression for non-offline clients).
-- If `expected_version` is present and matches the current server-side version: update proceeds normally, creating a new version as today.
-- If `expected_version` is present and does NOT match (server has moved on): respond `409 Conflict` with a JSON body `{"error": "version_conflict", "current_version": <int>, "current_prompt": {...}}` instead of applying the write.
+## Client: offline write gating
 
-**Responses added**:
-| Code | Meaning |
-|---|---|
-| 409 | `expected_version` did not match the prompt's current version; client must surface a conflict to the user rather than silently overwrite |
+There is no offline write queue. Instead, every create/edit/delete/revert/bulk-modify action and every secondary-page navigation checks `navigator.onLine` before attempting anything:
 
-This stays within the existing router → service → repository layering (Constitution Principle I): the version comparison is a service-layer check using data already exposed by `VersionRepository` / `PromptVersion`, not a new subsystem.
+- If online: proceed normally (existing endpoints, unchanged — no `expected_version` or conflict-detection parameters).
+- If offline: the action is blocked client-side before any request is sent, and a "this needs an internet connection" notification is shown (`offline.editUnavailable` translation key). Secondary-page nav buttons route through `window.__requireOnlineNav()` (wired in `app.ts`), which performs the same check before navigating.
 
-## Client: Offline Queue → Sync replay contract
-
-When connectivity is restored, `offline-queue.ts` replays each `OfflineQueueEntry` with `status: "pending"` in `timestamp` order:
-
-1. Set entry `status` to `syncing`.
-2. For `operation: "update"`: POST to the existing update endpoint with the entry's `payload` fields plus `expected_version: entry.baseVersion`.
-3. For `operation: "create"`: POST to the existing create endpoint (no version check applicable).
-4. On `200`: set `status` to `synced`, remove from active queue display, update any local cache with the server's response.
-5. On `409`: set `status` to `conflict`, surface a user-facing notification (per spec FR-012) with a link to review the current server version vs. the queued change. Do not retry automatically.
-6. On network failure during replay: leave `status` as `pending` and retry on the next `online` event.
+This means the backend's `PUT /prompts/{prompt_id}` (and all other write endpoints) never see requests while the client is offline — there is nothing for the server to reconcile.
 
 ## Manifest contract (static asset, not an API)
 

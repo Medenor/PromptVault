@@ -72,7 +72,7 @@ function renderDiff(diff: RestoreDiff, backupId: string): void {
 
   const { summary, changes } = diff;
 
-  let html = `<div class="mb-4 text-sm font-medium text-gray-700">
+  let html = `<div class="mb-4 text-sm font-medium text-gray-700 dark:text-gray-300">
     Summary: <span class="text-green-600">${summary.added} added</span>,
     <span class="text-yellow-600">${summary.updated} updated</span>,
     <span class="text-red-600">${summary.deleted} deleted</span>
@@ -84,7 +84,7 @@ function renderDiff(diff: RestoreDiff, backupId: string): void {
     html += `<div class="flex items-start gap-2 p-2 bg-green-50 rounded border border-green-200">
       <input type="checkbox" class="restore-select mt-1" data-id="${escapeHtml(item.id)}" checked />
       <div><span class="text-green-700 font-medium text-xs">ADDED</span>
-      <div class="text-sm text-gray-900">${escapeHtml(item.title)}</div></div>
+      <div class="text-sm text-gray-900 dark:text-gray-100">${escapeHtml(item.title)}</div></div>
     </div>`;
   }
 
@@ -92,8 +92,8 @@ function renderDiff(diff: RestoreDiff, backupId: string): void {
     html += `<div class="flex items-start gap-2 p-2 bg-yellow-50 rounded border border-yellow-200">
       <input type="checkbox" class="restore-select mt-1" data-id="${escapeHtml(item.id)}" checked />
       <div><span class="text-yellow-700 font-medium text-xs">UPDATED</span>
-      <div class="text-sm text-gray-900">${escapeHtml(item.title)}</div>
-      <div class="text-xs text-gray-500">"${escapeHtml(item.before.title)}" → "${escapeHtml(item.after.title)}"</div></div>
+      <div class="text-sm text-gray-900 dark:text-gray-100">${escapeHtml(item.title)}</div>
+      <div class="text-xs text-gray-500 dark:text-gray-400">"${escapeHtml(item.before.title)}" → "${escapeHtml(item.after.title)}"</div></div>
     </div>`;
   }
 
@@ -101,7 +101,7 @@ function renderDiff(diff: RestoreDiff, backupId: string): void {
     html += `<div class="flex items-start gap-2 p-2 bg-red-50 rounded border border-red-200">
       <input type="checkbox" class="restore-select mt-1" data-id="${escapeHtml(item.id)}" checked />
       <div><span class="text-red-700 font-medium text-xs">DELETED</span>
-      <div class="text-sm text-gray-900">${escapeHtml(item.title)}</div></div>
+      <div class="text-sm text-gray-900 dark:text-gray-100">${escapeHtml(item.title)}</div></div>
     </div>`;
   }
 

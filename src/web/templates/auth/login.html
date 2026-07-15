@@ -5,24 +5,41 @@
 <html lang="en">
   <head>
     {% import "macros/scripts.html" as scripts %}
+    {% import "macros/mobile_drawer.html" as drawer %}
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      // Dark mode bootstrap (FR-017): runs synchronously before first paint to
+      // avoid a flash of the wrong theme. Follows the OS prefers-color-scheme;
+      // no manual toggle is provided in this feature (see spec Assumptions).
+      (function () {
+        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content" />
     <meta
       name="description"
       content="Login - Sign in to your PromptVault account to access your prompts and collections."
     />
     <title>PromptVault - Login</title>
     <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon.png" />
+    <link rel="manifest" href="/static/manifest.json" />
+    <link rel="apple-touch-icon" href="/static/images/icons/icon-192.png" />
+    <meta name="apple-mobile-web-app-title" content="PromptVault" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="theme-color" content="#3B82F6" />
     {{ scripts.load_css('auth', true) }}
     <script src="https://unpkg.com/i18next@23.7.6/i18next.min.js"></script>
     <script src="https://unpkg.com/i18next-browser-languagedetector@7.2.0/i18nextBrowserLanguageDetector.min.js"></script>
     <script src="https://unpkg.com/i18next-http-backend@2.4.2/i18nextHttpBackend.min.js"></script>
   </head>
-  <body class="bg-white min-h-screen flex flex-col">
+  <body class="bg-white min-h-screen flex flex-col dark:bg-gray-800">
     <a href="#main-content" class="skip-link" data-i18n="nav.skipToMainContent"
       >Skip to main content</a
     >
-    <header class="bg-white border-b border-gray-200" role="banner" aria-label="Site header">
+    <header class="bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700" role="banner" aria-label="Site header">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-16">
           <a
@@ -35,19 +52,25 @@
               src="/static/images/promptvault_logo_frontend.webp"
               alt=""
               aria-hidden="true"
-              class="h-8 w-8 border-2 border-gray-400 rounded-lg shadow-lg"
+              class="h-8 w-8 border-2 border-gray-400 rounded-lg shadow-lg dark:border-gray-600"
             />
           </a>
-          {% include 'macros/language_selector.html' %}
+          <div class="flex items-center gap-2">
+            <div class="hidden md:block">
+              {% include 'macros/language_selector.html' %}
+            </div>
+            {{ drawer.toggle_button() }}
+          </div>
         </div>
       </div>
     </header>
+    {{ drawer.minimal_drawer() }}
     <main
       id="main-content"
       role="main"
       class="min-h-screen flex flex-col items-center justify-center px-4 flex-1"
     >
-      <h1 class="text-4xl font-bold text-gray-900 mb-2">Login</h1>
+      <h1 class="text-4xl font-bold text-gray-900 mb-2 dark:text-gray-100">Login</h1>
       <!-- Logo/Header Section -->
       <div class="text-center mb-8">
         <a
@@ -60,15 +83,15 @@
             src="/static/images/promptvault_logo_frontend.webp"
             alt=""
             aria-hidden="true"
-            class="h-14 w-14 mx-auto mb-4 border-2 border-gray-400 rounded-lg shadow-lg"
+            class="h-14 w-14 mx-auto mb-4 border-2 border-gray-400 rounded-lg shadow-lg dark:border-gray-600"
           />
         </a>
-        <div class="text-4xl font-bold text-gray-900 mb-2">PromptVault</div>
-        <p class="text-gray-700" data-i18n="auth.login.subtitle">Sign in to your account</p>
+        <div class="text-4xl font-bold text-gray-900 mb-2 dark:text-gray-100">PromptVault</div>
+        <p class="text-gray-700 dark:text-gray-300" data-i18n="auth.login.subtitle">Sign in to your account</p>
       </div>
 
       <!-- Login Card -->
-      <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-8 max-w-md w-full">
+      <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-8 max-w-md w-full dark:bg-gray-800 dark:border-gray-700">
         <form id="login-form" class="space-y-4" novalidate>
           <div
             id="login-error-summary"
@@ -82,7 +105,7 @@
           <div>
             <label
               for="username-or-email"
-              class="block text-sm font-medium text-gray-900 mb-2"
+              class="block text-sm font-medium text-gray-900 mb-2 dark:text-gray-100"
               data-i18n="auth.login.usernameOrEmail"
             >
               Username or Email
@@ -97,9 +120,9 @@
               autocomplete="username"
               aria-required="true"
               aria-describedby="username-help username-error"
-              class="w-full px-3 py-2 text-sm text-gray-900 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
+              class="w-full px-3 py-2 text-sm text-gray-900 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 dark:placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed dark:text-gray-100 dark:border-gray-500"
             />
-            <p id="username-help" class="text-xs text-gray-700 mt-1">Required field</p>
+            <p id="username-help" class="text-xs text-gray-700 mt-1 dark:text-gray-300">Required field</p>
             <p
               id="username-error"
               class="text-red-700 text-xs mt-1 hidden"
@@ -112,7 +135,7 @@
           <div>
             <label
               for="password"
-              class="block text-sm font-medium text-gray-900 mb-2"
+              class="block text-sm font-medium text-gray-900 mb-2 dark:text-gray-100"
               data-i18n="auth.login.password"
             >
               Password
@@ -128,12 +151,12 @@
                 autocomplete="current-password"
                 aria-required="true"
                 aria-describedby="password-hint password-error"
-                class="w-full px-3 py-2 text-sm text-gray-900 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
+                class="w-full px-3 py-2 text-sm text-gray-900 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 dark:placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed dark:text-gray-100 dark:border-gray-500"
               />
               <button
                 type="button"
                 id="toggle-password"
-                class="absolute right-3 top-2.5 text-gray-700 hover:text-gray-900 transition-colors rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                class="absolute right-3 top-2.5 text-gray-700 hover:text-gray-900 transition-colors rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-gray-300 dark:hover:text-gray-100"
                 aria-label="Toggle password visibility"
                 data-i18n="[aria-label]accessibility.labels.togglePasswordVisibility"
                 aria-pressed="false"
@@ -141,7 +164,7 @@
                 👁️
               </button>
             </div>
-            <p id="password-hint" class="text-xs text-gray-700 mt-1">Required field</p>
+            <p id="password-hint" class="text-xs text-gray-700 mt-1 dark:text-gray-300">Required field</p>
             <p
               id="password-error"
               class="text-red-700 text-xs mt-1 hidden"
@@ -158,11 +181,11 @@
               name="remember_me"
               aria-label="Remember me"
               data-i18n="[aria-label]auth.login.rememberMe"
-              class="w-4 h-4 rounded border-gray-300 text-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              class="w-4 h-4 rounded border-gray-300 text-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:border-gray-600 text-gray-900 dark:text-gray-100"
             />
             <label
               for="remember-me"
-              class="text-sm text-gray-700"
+              class="text-sm text-gray-700 dark:text-gray-300"
               data-i18n="auth.login.rememberMe"
             >
               Remember me
@@ -190,7 +213,7 @@
             >
               Forgot password?
             </a>
-            <p class="text-center text-gray-700 text-sm">
+            <p class="text-center text-gray-700 text-sm dark:text-gray-300">
               <span data-i18n="auth.login.noAccount">Don't have an account?</span>
               <a
                 href="/auth/register"
@@ -220,10 +243,10 @@
     <footer
       role="contentinfo"
       aria-label="Site footer"
-      class="mt-auto border-t border-gray-200 bg-gray-50"
+      class="mt-auto border-t border-gray-200 bg-gray-50 dark:bg-gray-900 dark:border-gray-700"
     >
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div class="flex flex-col gap-3 text-sm text-gray-700">
+        <div class="flex flex-col gap-3 text-sm text-gray-700 dark:text-gray-300">
           <p>
             PromptVault is licensed under
             <a

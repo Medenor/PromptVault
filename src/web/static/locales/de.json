@@ -7,6 +7,7 @@
     "allCategories": "Alle Kategorien",
     "tags": "Tags",
     "allTags": "Alle Tags",
+    "menu": "Menü",
     "categoriesAndTags": "Kategorien & Tags",
     "filters": "Filter",
     "showFavorites": "Favoriten anzeigen",
@@ -23,7 +24,9 @@
     "backToMain": "Zurück zum Hauptmenü",
     "skipToMainContent": "Zum Hauptinhalten springen",
     "home": "Startseite",
-    "language": "Sprache"
+    "language": "Sprache",
+    "account": "Konto",
+    "data": "Daten"
   },
   "actions": {
     "add": "Hinzufügen",
@@ -41,6 +44,7 @@
     "export": "Exportieren",
     "import": "Importieren",
     "close": "Schließen",
+    "clearSearch": "Suche löschen",
     "refresh": "Aktualisieren",
     "create": "Erstellen",
     "revoke": "Widerrufen",
@@ -58,7 +62,9 @@
     "replace": "Ersetzen",
     "saveOrder": "Reihenfolge speichern",
     "saveAll": "Alle speichern",
-    "undo": "Rückgängig"
+    "undo": "Rückgängig",
+    "refreshPrompts": "Prompt-Liste aktualisieren",
+    "newPromptFab": "Neuen Prompt erstellen"
   },
   "form": {
     "title": "Prompt-Titel:",
@@ -97,7 +103,8 @@
     "suggestTagsFailed": "Tag-Vorschläge konnten nicht abgerufen werden.",
     "bulkTagProvideAtLeastOne": "Geben Sie mindestens einen Tag zum Hinzufügen oder Entfernen an.",
     "bulkTagUpdateSuccess": "Tags für die ausgewählten Prompts aktualisiert.",
-    "bulkTagUpdateFailed": "Tags konnten nicht aktualisiert werden."
+    "bulkTagUpdateFailed": "Tags konnten nicht aktualisiert werden.",
+    "refreshing": "Wird aktualisiert…"
   },
   "validation": {
     "errorSummaryHeader": "Bitte korrigieren Sie die folgenden Fehler:",
@@ -240,7 +247,9 @@
     }
   },
   "prompt": {
-    "editorTitle": "Prompt erstellen/bearbeiten"
+    "editorTitle": "Prompt erstellen/bearbeiten",
+    "readMore": "Mehr lesen",
+    "readLess": "Weniger anzeigen"
   },
   "version": {
     "history": "Verlauf",
@@ -259,7 +268,9 @@
     "version2": "Version 2",
     "noVersions": "Keine Versionen verfügbar",
     "revertSuccess": "Erfolgreich zur vorherigen Version zurückgekehrt",
-    "revertError": "Fehler beim Zurücksetzen der Version"
+    "revertError": "Fehler beim Zurücksetzen der Version",
+    "previousVersion": "Vorherige Version",
+    "nextVersion": "Nächste Version"
   },
   "bulkDelete": {
     "confirmTitle": "Massenlöschung bestätigen",
@@ -728,5 +739,10 @@
       "fallbackNoteHeading": "Hinweis:",
       "fallbackNoteBody": "Einige Kurzbefehle sind nur auf der Hauptseite der Prompts verfügbar."
     }
+  },
+  "offline": {
+    "indicator": "Du bist offline. Zwischengespeicherte Prompts werden angezeigt — stelle die Verbindung wieder her, um Änderungen vorzunehmen.",
+    "unavailableOffline": "Dieser Inhalt ist offline nicht verfügbar. Stelle die Verbindung wieder her, um ihn anzuzeigen.",
+    "editUnavailable": "Für diese Aktion ist eine Internetverbindung erforderlich. Stelle die Verbindung wieder her, um fortzufahren."
   }
 }

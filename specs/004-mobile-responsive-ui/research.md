@@ -16,7 +16,9 @@
 
 **Alternatives considered**: Third-party SW tooling (Workbox) — rejected as an added dependency beyond what the ticket requires for a cache-static-assets + queue-offline-writes scope; a hand-rolled SW using the Cache API and IndexedDB is sufficient and keeps the dependency surface small (Simplicity gate).
 
-## Decision: Offline write queue persistence
+## Decision: Offline write queue persistence — SUPERSEDED
+
+**⚠️ This decision and its implementation were later reverted.** Real-device testing showed problems with the queue/sync/conflict approach; offline scope was narrowed to read/copy-only, and `offline-queue.ts` was deleted. See `contracts/offline-sync.md` for the current, accurate contract. Left below as historical record of the original design.
 
 **Decision**: Use IndexedDB (via a small typed wrapper module `src/web/static/ts/utils/offline-queue.ts`) to persist queued create/edit operations, keyed by a client-generated operation ID, with fields `{id, promptId, operation, payload, timestamp, status}`.
 
@@ -24,7 +26,9 @@
 
 **Alternatives considered**: `localStorage` — rejected, string-only and awkward for structured queue records with status transitions. A dedicated backend "outbox" table — rejected as unnecessary; the queue is a client concern until sync, at which point it uses the existing prompt update endpoints.
 
-## Decision: Offline sync conflict handling
+## Decision: Offline sync conflict handling — SUPERSEDED
+
+**⚠️ This decision and its implementation were later reverted**, along with the write queue above. There is no conflict detection in the current implementation — writes are simply blocked while offline. Left below as historical record.
 
 **Decision**: Reuse the existing prompt update endpoint(s) for syncing queued changes. On sync, compare the queued change's base version/timestamp against the server's current version (already tracked per feature 001-prompt-versioning); if the server version has advanced past what the client last saw, mark the queued entry `conflict` and surface a notification rather than silently overwriting.
 

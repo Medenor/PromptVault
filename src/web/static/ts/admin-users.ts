@@ -16,6 +16,7 @@ import { apiGet, apiPost, apiPut, apiDelete, APIRequestError } from '@/utils/api
 import { createTypeahead } from '@/utils/typeahead';
 import { announce } from '@/utils/a11y';
 import { announceToScreenReader } from '@/utils/focus-management';
+import { initMobileNav } from '@/mobile-nav';
 import { escapeHtml } from '@/utils/dom';
 
 const API_BASE = '/api/admin';
@@ -303,7 +304,7 @@ async function loadUsers(): Promise<void> {
   if (!tableBody) return;
 
   tableBody.innerHTML =
-    '<tr><td colspan="7" class="px-6 py-4 text-center text-gray-500"><div>Loading...</div></td></tr>';
+    '<tr><td colspan="7" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400"><div>Loading...</div></td></tr>';
 
   try {
     const params = new URLSearchParams({
@@ -334,7 +335,7 @@ async function loadUsers(): Promise<void> {
 
     if (users.length === 0) {
       tableBody.innerHTML =
-        '<tr><td colspan="7" class="px-6 py-4 text-center text-gray-500">No users found</td></tr>';
+        '<tr><td colspan="7" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">No users found</td></tr>';
     } else {
       tableBody.innerHTML = users
         .map((user) => {
@@ -352,17 +353,17 @@ async function loadUsers(): Promise<void> {
                 ? 'bg-red-100 text-red-800'
                 : 'bg-gray-100 text-gray-800';
           return `
-              <tr class="hover:bg-gray-50">
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${escapeHtml(user.username)}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${escapeHtml(user.email)}</td>
+              <tr class="hover:bg-gray-50 dark:hover:bg-gray-800">
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">${escapeHtml(user.username)}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">${escapeHtml(user.email)}</td>
                 <td class="px-6 py-4 whitespace-nowrap"><span class="inline-block px-3 py-1 rounded-full text-xs font-medium ${roleBadgeClass}">${getTranslatedRole(user.role)}</span></td>
                 <td class="px-6 py-4 whitespace-nowrap"><span class="inline-block px-3 py-1 rounded-full text-xs font-medium ${statusBadgeClass}">${getStatusText(user)}</span></td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${formatDate(user.last_login)}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${user.session_count || 0}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">${formatDate(user.last_login)}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">${user.session_count || 0}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm">
                   <div class="flex space-x-2">
                     <button class="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 text-xs font-medium focus:outline-2 focus:outline-blue-500 focus:outline-offset-1" data-action="view-user" data-user-id="${escapeHtml(user.id)}" aria-label="View user ${escapeHtml(user.username)}" data-i18n="actions.view">View</button>
-                    <button class="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 text-xs font-medium focus:outline-2 focus:outline-gray-500 focus:outline-offset-1" data-action="edit-user" data-user-id="${escapeHtml(user.id)}" aria-label="Edit user ${escapeHtml(user.username)}" data-i18n="actions.edit">Edit</button>
+                    <button class="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 text-xs font-medium focus:outline-2 focus:outline-gray-500 focus:outline-offset-1 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600" data-action="edit-user" data-user-id="${escapeHtml(user.id)}" aria-label="Edit user ${escapeHtml(user.username)}" data-i18n="actions.edit">Edit</button>
                     <button class="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 text-xs font-medium focus:outline-2 focus:outline-red-500 focus:outline-offset-1" data-action="delete-user" data-user-id="${escapeHtml(user.id)}" data-user-name="${escapeHtml(user.username)}" aria-label="Delete user ${escapeHtml(user.username)}" data-i18n="actions.delete">Delete</button>
                   </div>
                 </td>
@@ -423,7 +424,7 @@ async function loadUsers(): Promise<void> {
 async function viewUser(userId: string): Promise<void> {
   const content = document.getElementById('user-detail-content');
   if (content) {
-    content.innerHTML = '<div class="text-gray-500">Loading...</div>';
+    content.innerHTML = '<div class="text-gray-500 dark:text-gray-400">Loading...</div>';
   }
   showModal('user-detail-modal');
 
@@ -445,41 +446,41 @@ async function viewUser(userId: string): Promise<void> {
             : 'bg-gray-100 text-gray-800';
       content.innerHTML = `
           <div class="space-y-4">
-            <div class="flex justify-between py-3 border-b border-gray-200">
-              <div class="text-sm font-medium text-gray-500">Username:</div>
-              <div class="text-sm text-gray-900">${escapeHtml(user.username)}</div>
+            <div class="flex justify-between py-3 border-b border-gray-200 dark:border-gray-700">
+              <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Username:</div>
+              <div class="text-sm text-gray-900 dark:text-gray-100">${escapeHtml(user.username)}</div>
             </div>
-            <div class="flex justify-between py-3 border-b border-gray-200">
-              <div class="text-sm font-medium text-gray-500">Email:</div>
-              <div class="text-sm text-gray-900">${escapeHtml(user.email)}</div>
+            <div class="flex justify-between py-3 border-b border-gray-200 dark:border-gray-700">
+              <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Email:</div>
+              <div class="text-sm text-gray-900 dark:text-gray-100">${escapeHtml(user.email)}</div>
             </div>
-            <div class="flex justify-between py-3 border-b border-gray-200">
-              <div class="text-sm font-medium text-gray-500">Role:</div>
+            <div class="flex justify-between py-3 border-b border-gray-200 dark:border-gray-700">
+              <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Role:</div>
               <div class="text-sm"><span class="inline-block px-3 py-1 rounded-full text-xs font-medium ${roleBadgeClass}">${getTranslatedRole(user.role)}</span></div>
             </div>
-            <div class="flex justify-between py-3 border-b border-gray-200">
-              <div class="text-sm font-medium text-gray-500">Status:</div>
+            <div class="flex justify-between py-3 border-b border-gray-200 dark:border-gray-700">
+              <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Status:</div>
               <div class="text-sm"><span class="inline-block px-3 py-1 rounded-full text-xs font-medium ${statusBadgeClass}">${getStatusText(user)}</span></div>
             </div>
-            <div class="flex justify-between py-3 border-b border-gray-200">
-              <div class="text-sm font-medium text-gray-500">Email Verified:</div>
-              <div class="text-sm text-gray-900">${user.email_verified ? 'Yes' : 'No'}</div>
+            <div class="flex justify-between py-3 border-b border-gray-200 dark:border-gray-700">
+              <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Email Verified:</div>
+              <div class="text-sm text-gray-900 dark:text-gray-100">${user.email_verified ? 'Yes' : 'No'}</div>
             </div>
-            <div class="flex justify-between py-3 border-b border-gray-200">
-              <div class="text-sm font-medium text-gray-500">Created:</div>
-              <div class="text-sm text-gray-900">${formatDate(user.created_at)}</div>
+            <div class="flex justify-between py-3 border-b border-gray-200 dark:border-gray-700">
+              <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Created:</div>
+              <div class="text-sm text-gray-900 dark:text-gray-100">${formatDate(user.created_at)}</div>
             </div>
-            <div class="flex justify-between py-3 border-b border-gray-200">
-              <div class="text-sm font-medium text-gray-500">Last Login:</div>
-              <div class="text-sm text-gray-900">${formatDate(user.last_login)}</div>
+            <div class="flex justify-between py-3 border-b border-gray-200 dark:border-gray-700">
+              <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Last Login:</div>
+              <div class="text-sm text-gray-900 dark:text-gray-100">${formatDate(user.last_login)}</div>
             </div>
-            <div class="flex justify-between py-3 border-b border-gray-200">
-              <div class="text-sm font-medium text-gray-500">Failed Login Attempts:</div>
-              <div class="text-sm text-gray-900">${user.failed_login_attempts || 0}</div>
+            <div class="flex justify-between py-3 border-b border-gray-200 dark:border-gray-700">
+              <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Failed Login Attempts:</div>
+              <div class="text-sm text-gray-900 dark:text-gray-100">${user.failed_login_attempts || 0}</div>
             </div>
             <div class="flex justify-between py-3">
-              <div class="text-sm font-medium text-gray-500">Active Sessions:</div>
-              <div class="text-sm text-gray-900">${user.session_count || 0}</div>
+              <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Active Sessions:</div>
+              <div class="text-sm text-gray-900 dark:text-gray-100">${user.session_count || 0}</div>
             </div>
           </div>
         `;
@@ -1205,107 +1206,10 @@ async function submitCreateUserForm(): Promise<void> {
   }
 }
 
-function setupAdminMenuKeyboardNavigation(): void {
-  const adminMenuToggle = document.getElementById('admin-menu-toggle');
-  const adminMenuDropdown = document.getElementById('admin-menu-dropdown');
-
-  if (!adminMenuToggle || !adminMenuDropdown) {
-    return;
-  }
-
-  // When menu opens, focus first menu item
-  adminMenuToggle.addEventListener('click', () => {
-    const isOpen = !adminMenuDropdown.classList.contains('hidden');
-    if (isOpen) {
-      // Menu just opened, focus first button
-      setTimeout(() => {
-        const firstButton = adminMenuDropdown.querySelector('button') as HTMLButtonElement;
-        if (firstButton) {
-          firstButton.focus();
-        }
-      }, 0);
-    }
-  });
-
-  // Handle keyboard navigation within dropdown menu
-  adminMenuDropdown.addEventListener('keydown', (event: KeyboardEvent) => {
-    const isOpen = !adminMenuDropdown.classList.contains('hidden');
-    if (!isOpen) {
-      return;
-    }
-
-    const menuItems = Array.from(
-      adminMenuDropdown.querySelectorAll('button')
-    ) as HTMLButtonElement[];
-    if (menuItems.length === 0) {
-      return;
-    }
-
-    const currentFocused = document.activeElement as HTMLElement | null;
-    const currentIndex = currentFocused
-      ? menuItems.indexOf(currentFocused as HTMLButtonElement)
-      : -1;
-
-    switch (event.key) {
-      case 'Escape': {
-        // Close menu and return focus to toggle button
-        adminMenuDropdown.classList.add('hidden');
-        adminMenuToggle.setAttribute('aria-expanded', 'false');
-        adminMenuToggle.focus();
-        event.preventDefault();
-        break;
-      }
-      case 'ArrowDown': {
-        // Move to next menu item or wrap around
-        const nextIndex =
-          currentIndex === -1 || currentIndex >= menuItems.length - 1 ? 0 : currentIndex + 1;
-        menuItems[nextIndex]?.focus();
-        event.preventDefault();
-        break;
-      }
-      case 'ArrowUp': {
-        // Move to previous menu item or wrap around
-        const prevIndex =
-          currentIndex === -1 || currentIndex === 0 ? menuItems.length - 1 : currentIndex - 1;
-        menuItems[prevIndex]?.focus();
-        event.preventDefault();
-        break;
-      }
-      case 'Home': {
-        // Jump to first menu item
-        menuItems[0]?.focus();
-        event.preventDefault();
-        break;
-      }
-      case 'End': {
-        // Jump to last menu item
-        menuItems[menuItems.length - 1]?.focus();
-        event.preventDefault();
-        break;
-      }
-    }
-  });
-}
-
 function initializeAdminUsersPage(): void {
   updateStaticTranslations();
 
-  // Mobile menu toggle
-  const adminMenuToggle = document.getElementById('admin-menu-toggle');
-  if (adminMenuToggle) {
-    adminMenuToggle.addEventListener('click', () => {
-      const dropdown = document.getElementById('admin-menu-dropdown');
-      if (dropdown) {
-        dropdown.classList.toggle('hidden');
-        // Update aria-expanded state
-        const isExpanded = !dropdown.classList.contains('hidden');
-        adminMenuToggle.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
-      }
-    });
-  }
-
-  // Setup keyboard navigation for menu (WCAG 2.1 AA)
-  setupAdminMenuKeyboardNavigation();
+  initMobileNav();
 
   const refreshBtn = document.getElementById('refresh-users-btn');
   if (refreshBtn) {

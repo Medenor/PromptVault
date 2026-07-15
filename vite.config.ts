@@ -37,9 +37,16 @@ export default defineConfig({
         telemetry: resolve(__dirname, 'src/web/static/ts/telemetry.ts'),
         // Global shortcuts/help (loaded on all pages)
         globalShortcuts: resolve(__dirname, 'src/web/static/ts/global-shortcuts.ts'),
+        // Service Worker: must be emitted as a plain, unhashed root-scoped file
+        sw: resolve(__dirname, 'src/web/static/ts/sw.ts'),
       },
       output: {
-        entryFileNames: 'js/[name].[hash].js',
+        entryFileNames: (chunkInfo) => {
+          if (chunkInfo.name === 'sw') {
+            return 'sw.js';
+          }
+          return 'js/[name].[hash].js';
+        },
         chunkFileNames: 'js/chunks/[name].[hash].js',
         assetFileNames: 'assets/[name].[hash][extname]',
       },

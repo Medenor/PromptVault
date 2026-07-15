@@ -14,6 +14,7 @@ import { createTypeahead } from '@/utils/typeahead';
 import { announce } from '@/utils/a11y';
 import { confirmAsync } from '@/utils/dialogs';
 import { announceToScreenReader } from '@/utils/focus-management';
+import { initSecondaryNav } from '@/utils/secondary-nav';
 
 type TagItem = {
   id: number;
@@ -634,16 +635,16 @@ function renderRows(items: TagItem[]): void {
       <td class="py-2 pr-4">
         <input type="checkbox" id="checkbox-${item.id}" data-select-id="${item.id}" aria-label="${selectLabel} #${item.id}" tabindex="-1" />
       </td>
-      <td class="py-2 pr-4 text-gray-600">#${item.id}</td>
+      <td class="py-2 pr-4 text-gray-600 dark:text-gray-400">#${item.id}</td>
       <td class="py-2 pr-4">
-        <input id="name-input-${item.id}" data-field="name" aria-label="${nameLabel}" class="w-full px-2 py-1 border border-gray-300 rounded" value="${item.name}" />
+        <input id="name-input-${item.id}" data-field="name" aria-label="${nameLabel}" class="w-full px-2 py-1 border border-gray-300 rounded dark:border-gray-600" value="${item.name}" />
       </td>
       <td class="py-2 pr-4">
-        <input id="desc-input-${item.id}" data-field="description" aria-label="${descriptionLabel}" class="w-full px-2 py-1 border border-gray-300 rounded" value="${item.description ?? ''}" />
+        <input id="desc-input-${item.id}" data-field="description" aria-label="${descriptionLabel}" class="w-full px-2 py-1 border border-gray-300 rounded dark:border-gray-600" value="${item.description ?? ''}" />
       </td>
       <td class="py-2 pr-4">
         <div class="flex items-center gap-2">
-          <input id="color-input-${item.id}" data-field="color" aria-label="${colorLabel}" class="w-full px-2 py-1 border border-gray-300 rounded" value="${item.color ?? ''}" />
+          <input id="color-input-${item.id}" data-field="color" aria-label="${colorLabel}" class="w-full px-2 py-1 border border-gray-300 rounded dark:border-gray-600" value="${item.color ?? ''}" />
           <input
             id="color-picker-${item.id}"
             data-color-picker
@@ -651,16 +652,16 @@ function renderRows(items: TagItem[]): void {
             value="${normalizeHexForPicker(item.color)}"
             title="${colorLabel}"
             aria-label="${colorLabel}"
-            class="h-8 w-8 rounded border border-gray-300 p-0"
+            class="h-8 w-8 rounded border border-gray-300 p-0 dark:border-gray-600"
           />
         </div>
       </td>
       <td class="py-2 pr-4">
-        <select id="parent-select-${item.id}" data-field="parent_tag_id" aria-label="${parentLabel}" class="w-36 px-2 py-1 border border-gray-300 rounded">
+        <select id="parent-select-${item.id}" data-field="parent_tag_id" aria-label="${parentLabel}" class="w-36 px-2 py-1 border border-gray-300 rounded dark:border-gray-600">
           ${renderParentOptions(item.id, item.parent_tag_id ?? null, parentNoneLabel)}
         </select>
       </td>
-      <td class="py-2 pr-4 text-gray-600">${item.usage_count}</td>
+      <td class="py-2 pr-4 text-gray-600 dark:text-gray-400">${item.usage_count}</td>
       <td class="py-2 pr-4">
         <div class="flex items-center gap-2">
           <button id="save-btn-${item.id}" data-action="save" class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">${saveLabel}</button>
@@ -1336,13 +1337,13 @@ async function renderPromptDetails(promptIds: number[], container: HTMLElement):
     const li = document.createElement('li');
     li.className = 'flex flex-col gap-2 md:flex-row md:items-center md:justify-between';
     li.innerHTML = `
-      <span class="text-gray-800">#${id} — ${title || tUnsafe('management.untitledPrompt')}</span>
+      <span class="text-gray-800 dark:text-gray-100">#${id} — ${title || tUnsafe('management.untitledPrompt')}</span>
       <div class="flex flex-col gap-2 md:flex-row md:items-center md:gap-3">
         <input
           type="text"
           data-prompt-tags="${id}"
           placeholder="${tUnsafe('management.tagsPlaceholder')}"
-          class="w-full md:w-56 px-2 py-1 border border-gray-300 rounded"
+          class="w-full md:w-56 px-2 py-1 border border-gray-300 rounded dark:border-gray-600"
         />
         <button
           type="button"
@@ -1402,6 +1403,8 @@ function handleError(error: unknown, fallback: string): void {
 }
 
 function init(): void {
+  initSecondaryNav({ component: 'manage-tags', requireAuth: true });
+
   // Initialize enhanced color picker
   try {
     initializeColorPicker({

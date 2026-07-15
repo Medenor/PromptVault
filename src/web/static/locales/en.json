@@ -7,6 +7,7 @@
     "allCategories": "All Categories",
     "tags": "Tags",
     "allTags": "All Tags",
+    "menu": "Menu",
     "categoriesAndTags": "Categories & Tags",
     "filters": "Filters",
     "showFavorites": "Show Favorites",
@@ -23,7 +24,9 @@
     "backToMain": "Back to Main",
     "skipToMainContent": "Skip to main content",
     "home": "Home",
-    "language": "Language"
+    "language": "Language",
+    "account": "Account",
+    "data": "Data"
   },
   "actions": {
     "add": "Add",
@@ -41,6 +44,7 @@
     "export": "Export",
     "import": "Import",
     "close": "Close",
+    "clearSearch": "Clear search",
     "refresh": "Refresh",
     "create": "Create",
     "revoke": "Revoke",
@@ -58,7 +62,9 @@
     "replace": "Replace",
     "saveOrder": "Save Order",
     "saveAll": "Save All",
-    "undo": "Undo"
+    "undo": "Undo",
+    "refreshPrompts": "Refresh prompt list",
+    "newPromptFab": "Create new prompt"
   },
   "form": {
     "title": "Prompt Title:",
@@ -97,7 +103,8 @@
     "suggestTagsFailed": "Failed to get tag suggestions.",
     "bulkTagProvideAtLeastOne": "Provide at least one tag to add or remove.",
     "bulkTagUpdateSuccess": "Tags updated for selected prompts.",
-    "bulkTagUpdateFailed": "Failed to update tags."
+    "bulkTagUpdateFailed": "Failed to update tags.",
+    "refreshing": "Refreshing…"
   },
   "validation": {
     "errorSummaryHeader": "Please correct the following errors:",
@@ -361,7 +368,9 @@
     }
   },
   "prompt": {
-    "editorTitle": "Create/Edit Prompt"
+    "editorTitle": "Create/Edit Prompt",
+    "readMore": "Read More",
+    "readLess": "Read Less"
   },
   "version": {
     "history": "History",
@@ -386,7 +395,9 @@
     "unversioned": "Unversioned",
     "copyWithMetadata": "Copy+Version",
     "copiedWithMetadata": "Copied with version metadata!",
-    "noVersionForCopy": "Assign a semantic version before copying with metadata."
+    "noVersionForCopy": "Assign a semantic version before copying with metadata.",
+    "previousVersion": "Previous version",
+    "nextVersion": "Next version"
   },
   "bulkDelete": {
     "confirmTitle": "Confirm Bulk Deletion",
@@ -769,5 +780,10 @@
       "fallbackNoteHeading": "Note:",
       "fallbackNoteBody": "Some shortcuts are only available on the main prompts page."
     }
+  },
+  "offline": {
+    "indicator": "You're offline. Viewing cached prompts — reconnect to make changes.",
+    "unavailableOffline": "This content isn't available offline. Reconnect to view it.",
+    "editUnavailable": "This action needs an internet connection. Reconnect to continue."
   }
 }

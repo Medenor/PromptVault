@@ -5,24 +5,42 @@
 <html lang="en">
   <head>
     {% import "macros/scripts.html" as scripts %}
+    {% import "macros/mobile_drawer.html" as drawer %}
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      // Dark mode bootstrap (FR-017): runs synchronously before first paint to
+      // avoid a flash of the wrong theme. Follows the OS prefers-color-scheme;
+      // no manual toggle is provided in this feature (see spec Assumptions).
+      (function () {
+        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content" />
     <meta
       name="description"
       content="Manage Categories - Create and organize categories to structure your prompt library."
     />
     <title>PromptVault - Manage Categories</title>
     <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon.png" />
+    <link rel="manifest" href="/static/manifest.json" />
+    <link rel="apple-touch-icon" href="/static/images/icons/icon-192.png" />
+    <meta name="apple-mobile-web-app-title" content="PromptVault" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="theme-color" content="#3B82F6" />
     {{ scripts.load_css('app', true) }}
     <script src="https://unpkg.com/i18next@23.7.6/i18next.min.js"></script>
     <script src="https://unpkg.com/i18next-browser-languagedetector@7.2.0/i18nextBrowserLanguageDetector.min.js"></script>
     <script src="https://unpkg.com/i18next-http-backend@2.4.2/i18nextHttpBackend.min.js"></script>
   </head>
-  <body class="bg-gray-50 min-h-screen">
+  <body class="bg-gray-50 min-h-screen dark:bg-gray-900">
     <a href="#main-content" class="skip-link" tabindex="0" data-i18n="nav.skipToMainContent"
       >Skip to main content</a
     >
     <div class="min-h-screen flex flex-col">
+
       <header class="bg-blue-700 text-white shadow-sm" role="banner" aria-label="Site header">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div class="flex items-center justify-between h-16">
@@ -37,7 +55,7 @@
                   src="/static/images/promptvault_logo_frontend.webp"
                   alt=""
                   aria-hidden="true"
-                  class="h-14 w-14 border-2 border-gray-400 rounded-lg shadow-lg"
+                  class="h-14 w-14 border-2 border-gray-400 rounded-lg shadow-lg dark:border-gray-600"
                 />
               </a>
               <div class="text-2xl font-bold">PromptVault</div>
@@ -46,37 +64,42 @@
               role="navigation"
               aria-label="Page navigation"
               data-i18n="[aria-label]accessibility.labels.pageNavigation"
+              class="flex items-center gap-2"
             >
-              {% include 'macros/language_selector.html' %}
+              <div class="hidden md:block">
+                {% include 'macros/language_selector.html' %}
+              </div>
               <button
                 type="button"
                 onclick="window.location.href = '/'"
-                class="px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
+                class="hidden md:block px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600"
                 data-i18n="nav.backToMain"
               >
                 Back to Main
               </button>
+              {{ drawer.toggle_button() }}
             </nav>
           </div>
         </div>
       </header>
+      {{ drawer.full_nav_drawer() }}
 
       <main
         id="main-content"
         role="main"
         class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full"
       >
-        <h1 class="text-3xl font-bold text-gray-900 mb-2" data-i18n="categories.manage">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2 dark:text-gray-100" data-i18n="categories.manage">
           Manage Categories
         </h1>
         <div class="mb-6">
-          <p class="text-gray-700" data-i18n="categories.manageDesc">
+          <p class="text-gray-700 dark:text-gray-300" data-i18n="categories.manageDesc">
             Create, edit, and remove categories across all prompts.
           </p>
         </div>
 
-        <section class="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 class="text-lg font-semibold text-gray-900 mb-4" data-i18n="categories.createTitle">
+        <section class="bg-white rounded-lg shadow p-6 mb-6 dark:bg-gray-800">
+          <h2 class="text-lg font-semibold text-gray-900 mb-4 dark:text-gray-100" data-i18n="categories.createTitle">
             Create Category
           </h2>
           <form id="category-create-form" class="space-y-4">
@@ -91,7 +114,7 @@
               <div>
                 <label
                   for="category-create-name"
-                  class="block text-sm font-medium text-gray-700 mb-2"
+                  class="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300"
                   >Name</label
                 >
                 <input
@@ -101,7 +124,7 @@
                   placeholder="Name"
                   data-i18n-placeholder="management.namePlaceholder"
                   aria-describedby="category-create-name-error"
-                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
+                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 dark:placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed dark:border-gray-600 text-gray-900 dark:text-gray-100"
                   required
                 />
                 <p
@@ -114,7 +137,7 @@
               <div>
                 <label
                   for="category-create-description"
-                  class="block text-sm font-medium text-gray-700 mb-2"
+                  class="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300"
                   >Description</label
                 >
                 <input
@@ -124,7 +147,7 @@
                   placeholder="Description"
                   data-i18n-placeholder="management.descriptionPlaceholder"
                   aria-describedby="category-create-description-error"
-                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
+                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 dark:placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed dark:border-gray-600 text-gray-900 dark:text-gray-100"
                 />
                 <p
                   id="category-create-description-error"
@@ -136,7 +159,7 @@
               <div>
                 <label
                   for="category-create-color"
-                  class="block text-sm font-medium text-gray-700 mb-2"
+                  class="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300"
                   >Color</label
                 >
                 <div id="category-create-color-picker-container">
@@ -148,7 +171,7 @@
                     placeholder="Color token or hex"
                     data-i18n-placeholder="management.colorPlaceholder"
                     aria-describedby="category-create-color-error"
-                    class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
+                    class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 dark:placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed dark:border-gray-600 text-gray-900 dark:text-gray-100"
                   />
                   <p
                     id="category-create-color-error"
@@ -180,9 +203,9 @@
           </form>
         </section>
 
-        <section class="bg-white rounded-lg shadow p-6 mb-6">
+        <section class="bg-white rounded-lg shadow p-6 mb-6 dark:bg-gray-800">
           <div class="flex items-center justify-between mb-4">
-            <h2 class="text-lg font-semibold text-gray-900" data-i18n="categories.listTitle">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100" data-i18n="categories.listTitle">
               Categories
             </h2>
             <div class="relative w-full md:w-64">
@@ -195,7 +218,7 @@
                 aria-label="Search categories"
                 data-i18n-placeholder="management.searchCategoriesPlaceholder"
                 data-i18n="[aria-label]management.searchCategoriesPlaceholder"
-                class="w-full pl-3 pr-10 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
+                class="w-full pl-3 pr-10 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 dark:placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed dark:border-gray-600 text-gray-900 dark:text-gray-100"
               />
               <svg
                 class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none w-5 h-5 transition-colors"
@@ -218,17 +241,17 @@
           <!-- Empty State -->
           <div
             id="categories-empty-state"
-            class="hidden text-center p-12 bg-gray-50 rounded-lg border border-gray-200"
+            class="hidden text-center p-12 bg-gray-50 rounded-lg border border-gray-200 dark:bg-gray-900 dark:border-gray-700"
           >
             <div class="text-4xl text-gray-400 mb-4">📁</div>
             <h3 class="sr-only">No categories available</h3>
             <p
-              class="text-lg font-semibold text-gray-700 mb-2"
+              class="text-lg font-semibold text-gray-700 mb-2 dark:text-gray-300"
               data-i18n="emptyStates.noCategories.title"
             >
               No categories yet
             </p>
-            <p class="text-sm text-gray-700 mb-4" data-i18n="emptyStates.noCategories.description">
+            <p class="text-sm text-gray-700 mb-4 dark:text-gray-300" data-i18n="emptyStates.noCategories.description">
               Create your first category to organize your prompts
             </p>
             <button
@@ -248,7 +271,7 @@
                 color coding, usage count across prompts, and edit/delete actions for each category
               </caption>
               <thead>
-                <tr class="text-left text-gray-700 border-b">
+                <tr class="text-left text-gray-700 border-b dark:text-gray-300">
                   <th scope="col" class="py-2 pr-4" data-i18n="management.select">Select</th>
                   <th scope="col" class="py-2 pr-4" data-i18n="management.id">ID</th>
                   <th scope="col" class="py-2 pr-4" data-i18n="management.name">Name</th>
@@ -301,13 +324,13 @@
           </div>
         </section>
 
-        <section class="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 class="text-lg font-semibold text-gray-900 mb-4" data-i18n="management.bulkActions">
+        <section class="bg-white rounded-lg shadow p-6 mb-6 dark:bg-gray-800">
+          <h2 class="text-lg font-semibold text-gray-900 mb-4 dark:text-gray-100" data-i18n="management.bulkActions">
             Bulk Actions
           </h2>
           <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div class="border border-gray-200 rounded-lg p-4">
-              <h3 class="font-semibold text-gray-800 mb-3" data-i18n="actions.merge">Merge</h3>
+            <div class="border border-gray-200 rounded-lg p-4 dark:border-gray-700">
+              <h3 class="font-semibold text-gray-800 mb-3 dark:text-gray-100" data-i18n="actions.merge">Merge</h3>
               <div
                 id="category-merge-error-summary"
                 class="validation-error-banner"
@@ -324,7 +347,7 @@
                   placeholder="Target ID"
                   data-i18n-placeholder="management.targetIdPlaceholder"
                   data-i18n="[aria-label]management.targetIdPlaceholder"
-                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
+                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 dark:placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed dark:border-gray-600 text-gray-900 dark:text-gray-100"
                 />
                 <p
                   id="category-merge-target-error"
@@ -334,7 +357,7 @@
                 ></p>
                 <p
                   id="category-merge-target-help"
-                  class="text-xs text-gray-700"
+                  class="text-xs text-gray-700 dark:text-gray-300"
                   data-i18n="management.mergeTargetHelp"
                 >
                   Target is the category that remains after merge.
@@ -347,7 +370,7 @@
                   placeholder="Source IDs (comma-separated)"
                   data-i18n-placeholder="management.sourceIdsPlaceholder"
                   data-i18n="[aria-label]management.sourceIdsPlaceholder"
-                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
+                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 dark:placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed dark:border-gray-600 text-gray-900 dark:text-gray-100"
                 />
                 <p
                   id="category-merge-sources-error"
@@ -357,7 +380,7 @@
                 ></p>
                 <p
                   id="category-merge-sources-help"
-                  class="text-xs text-gray-700"
+                  class="text-xs text-gray-700 dark:text-gray-300"
                   data-i18n="management.mergeSourcesHelp"
                 >
                   Sources will be merged into the target and removed.
@@ -374,8 +397,8 @@
               </div>
             </div>
 
-            <div class="border border-gray-200 rounded-lg p-4">
-              <h3 class="font-semibold text-gray-800 mb-3" data-i18n="actions.findReplace">
+            <div class="border border-gray-200 rounded-lg p-4 dark:border-gray-700">
+              <h3 class="font-semibold text-gray-800 mb-3 dark:text-gray-100" data-i18n="actions.findReplace">
                 Find & Replace
               </h3>
               <div
@@ -394,7 +417,7 @@
                   placeholder="Find name"
                   data-i18n-placeholder="management.findPlaceholder"
                   data-i18n="[aria-label]management.findPlaceholder"
-                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
+                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 dark:placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed dark:border-gray-600 text-gray-900 dark:text-gray-100"
                 />
                 <p
                   id="category-find-error"
@@ -410,7 +433,7 @@
                   placeholder="Replace name"
                   data-i18n-placeholder="management.replacePlaceholder"
                   data-i18n="[aria-label]management.replacePlaceholder"
-                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
+                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 dark:placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed dark:border-gray-600 text-gray-900 dark:text-gray-100"
                 />
                 <p
                   id="category-replace-error"
@@ -430,8 +453,8 @@
               </div>
             </div>
 
-            <div class="border border-gray-200 rounded-lg p-4">
-              <h3 class="font-semibold text-gray-800 mb-3" data-i18n="actions.bulkDelete">
+            <div class="border border-gray-200 rounded-lg p-4 dark:border-gray-700">
+              <h3 class="font-semibold text-gray-800 mb-3 dark:text-gray-100" data-i18n="actions.bulkDelete">
                 Bulk Delete
               </h3>
               <div
@@ -450,7 +473,7 @@
                   placeholder="IDs (comma-separated)"
                   data-i18n-placeholder="management.idsPlaceholder"
                   data-i18n="[aria-label]management.idsPlaceholder"
-                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
+                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 dark:placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed dark:border-gray-600 text-gray-900 dark:text-gray-100"
                 />
                 <p
                   id="category-bulk-delete-ids-error"
@@ -460,7 +483,7 @@
                 ></p>
                 <label
                   for="category-bulk-delete-force"
-                  class="flex items-center gap-2 text-sm text-gray-700"
+                  class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300"
                 >
                   <input
                     id="category-bulk-delete-force"
@@ -487,7 +510,7 @@
               type="button"
               id="category-undo-btn"
               name="undo_action"
-              class="px-4 py-2 text-sm font-medium bg-gray-200 text-gray-900 rounded-lg hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
+              class="px-4 py-2 text-sm font-medium bg-gray-200 text-gray-900 rounded-lg hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600"
               data-i18n="actions.undo"
             >
               Undo
@@ -495,24 +518,24 @@
           </div>
         </section>
 
-        <section class="bg-white rounded-lg shadow p-6 mb-6">
+        <section class="bg-white rounded-lg shadow p-6 mb-6 dark:bg-gray-800">
           <div class="flex items-center justify-between mb-4">
-            <h2 class="text-lg font-semibold text-gray-900" data-i18n="management.importExport">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100" data-i18n="management.importExport">
               Import & Export
             </h2>
-            <span class="text-xs text-gray-700" data-i18n="management.importExportHint"
+            <span class="text-xs text-gray-700 dark:text-gray-300" data-i18n="management.importExportHint"
               >JSON only</span
             >
           </div>
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div class="rounded-lg border border-gray-200 bg-gray-50 p-4">
+            <div class="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:bg-gray-900 dark:border-gray-700">
               <div class="flex items-center justify-between mb-2">
-                <h3 class="text-sm font-semibold text-gray-800" data-i18n="management.exportTitle">
+                <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-100" data-i18n="management.exportTitle">
                   Export
                 </h3>
-                <span class="text-xs text-gray-700">.json</span>
+                <span class="text-xs text-gray-700 dark:text-gray-300">.json</span>
               </div>
-              <p class="text-sm text-gray-700 mb-4" data-i18n="management.exportDesc">
+              <p class="text-sm text-gray-700 mb-4 dark:text-gray-300" data-i18n="management.exportDesc">
                 Download your category definitions.
               </p>
               <button
@@ -525,12 +548,12 @@
                 Export JSON
               </button>
             </div>
-            <div class="rounded-lg border border-gray-200 bg-gray-50 p-4">
+            <div class="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:bg-gray-900 dark:border-gray-700">
               <div class="flex items-center justify-between mb-2">
-                <h3 class="text-sm font-semibold text-gray-800" data-i18n="management.importTitle">
+                <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-100" data-i18n="management.importTitle">
                   Import
                 </h3>
-                <span class="text-xs text-gray-700">.json</span>
+                <span class="text-xs text-gray-700 dark:text-gray-300">.json</span>
               </div>
               <div
                 id="category-import-error-summary"
@@ -539,16 +562,16 @@
                 aria-live="polite"
                 tabindex="-1"
               ></div>
-              <p class="text-sm text-gray-700 mb-4" data-i18n="management.importDesc">
+              <p class="text-sm text-gray-700 mb-4 dark:text-gray-300" data-i18n="management.importDesc">
                 Upload a JSON file to create or update categories.
               </p>
               <div class="flex flex-col gap-3">
-                <div id="category-import-file-help" class="text-xs text-gray-700">
+                <div id="category-import-file-help" class="text-xs text-gray-700 dark:text-gray-300">
                   <p>Supported format: JSON (.json)</p>
                 </div>
                 <label
                   for="category-import-file"
-                  class="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-gray-300 bg-white px-3 py-4 text-sm text-gray-700"
+                  class="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-gray-300 bg-white px-3 py-4 text-sm text-gray-700 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300"
                 >
                   <span data-i18n="management.importDrop">Choose a JSON file</span>
                   <input
@@ -557,7 +580,7 @@
                     type="file"
                     accept="application/json"
                     aria-describedby="category-import-file-help category-import-file-error"
-                    class="text-xs text-gray-700"
+                    class="text-xs text-gray-700 dark:text-gray-300"
                   />
                 </label>
                 <p
@@ -580,8 +603,8 @@
           </div>
         </section>
 
-        <section class="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 class="text-lg font-semibold text-gray-900 mb-4" data-i18n="management.analytics">
+        <section class="bg-white rounded-lg shadow p-6 mb-6 dark:bg-gray-800">
+          <h2 class="text-lg font-semibold text-gray-900 mb-4 dark:text-gray-100" data-i18n="management.analytics">
             Analytics
           </h2>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
@@ -605,52 +628,52 @@
             </div>
           </div>
           <div>
-            <h3 class="text-sm font-semibold text-gray-700 mb-2" data-i18n="management.top">
+            <h3 class="text-sm font-semibold text-gray-700 mb-2 dark:text-gray-300" data-i18n="management.top">
               Top Categories
             </h3>
-            <ul id="category-analytics-top" class="text-sm text-gray-700 space-y-1"></ul>
+            <ul id="category-analytics-top" class="text-sm text-gray-700 space-y-1 dark:text-gray-300"></ul>
           </div>
         </section>
 
-        <section class="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 class="text-lg font-semibold text-gray-900 mb-4" data-i18n="management.orphans">
+        <section class="bg-white rounded-lg shadow p-6 mb-6 dark:bg-gray-800">
+          <h2 class="text-lg font-semibold text-gray-900 mb-4 dark:text-gray-100" data-i18n="management.orphans">
             Orphans
           </h2>
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div class="border border-gray-200 rounded-lg p-4">
-              <h3 class="font-semibold text-gray-800 mb-3" data-i18n="categories.unusedTitle">
+            <div class="border border-gray-200 rounded-lg p-4 dark:border-gray-700">
+              <h3 class="font-semibold text-gray-800 mb-3 dark:text-gray-100" data-i18n="categories.unusedTitle">
                 Unused categories
               </h3>
-              <p class="text-sm text-gray-700 mb-3">
+              <p class="text-sm text-gray-700 mb-3 dark:text-gray-300">
                 <span data-i18n="categories.unusedLabel">Unused categories:</span>
                 <strong id="category-unused-count">0</strong>
               </p>
               <ul
                 id="category-unused-list"
-                class="text-sm text-gray-700 space-y-1 max-h-48 overflow-y-auto"
+                class="text-sm text-gray-700 space-y-1 max-h-48 overflow-y-auto dark:text-gray-300"
               ></ul>
             </div>
-            <div class="border border-gray-200 rounded-lg p-4">
+            <div class="border border-gray-200 rounded-lg p-4 dark:border-gray-700">
               <h3
-                class="font-semibold text-gray-800 mb-3"
+                class="font-semibold text-gray-800 mb-3 dark:text-gray-100"
                 data-i18n="categories.orphanPromptsTitle"
               >
                 Prompts without a category
               </h3>
-              <p class="text-sm text-gray-700 mb-3">
+              <p class="text-sm text-gray-700 mb-3 dark:text-gray-300">
                 <span data-i18n="categories.orphans">Prompts without a category:</span>
                 <strong id="category-orphans-count">0</strong>
               </p>
               <div class="mt-3">
                 <h4
-                  class="text-sm font-semibold text-gray-700 mb-2"
+                  class="text-sm font-semibold text-gray-700 mb-2 dark:text-gray-300"
                   data-i18n="management.promptDetails"
                 >
                   Prompt details
                 </h4>
                 <ul
                   id="category-orphans-details"
-                  class="text-sm text-gray-700 space-y-1 max-h-48 overflow-y-auto"
+                  class="text-sm text-gray-700 space-y-1 max-h-48 overflow-y-auto dark:text-gray-300"
                 ></ul>
               </div>
             </div>
@@ -661,10 +684,10 @@
       <footer
         role="contentinfo"
         aria-label="Site footer"
-        class="mt-auto border-t border-gray-200 bg-gray-50"
+        class="mt-auto border-t border-gray-200 bg-gray-50 dark:bg-gray-900 dark:border-gray-700"
       >
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div class="flex flex-col gap-3 text-sm text-gray-600">
+          <div class="flex flex-col gap-3 text-sm text-gray-600 dark:text-gray-400">
             <p>
               PromptVault is licensed under
               <a
@@ -874,6 +897,7 @@
       </footer>
     </div>
 
+    <script>window.__AUTH_ENABLED__ = {{ 'true' if auth_enabled else 'false' }};</script>
     {{ scripts.load_scripts('manage-categories', true) }}
   </body>
 </html>

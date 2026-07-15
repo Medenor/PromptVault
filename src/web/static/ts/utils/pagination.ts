@@ -11,7 +11,7 @@
 
 export const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
 export type PageSize = (typeof PAGE_SIZE_OPTIONS)[number];
-export const DEFAULT_PAGE_SIZE: PageSize = 50;
+export const DEFAULT_PAGE_SIZE: PageSize = 25;
 
 /** Filter values that determine whether pagination should reset to page 1. */
 export interface PaginationFilters {
