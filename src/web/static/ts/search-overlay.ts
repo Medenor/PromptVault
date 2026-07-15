@@ -16,6 +16,7 @@ import {
   focusFirstElement,
   restoreFocusToTrigger,
 } from '@/utils/focus-management';
+import { lockBodyScroll, unlockBodyScroll } from '@/utils/scroll-lock';
 
 let removeFocusTrap: (() => void) | null = null;
 const lastTrigger: { current: HTMLElement | null } = { current: null };
@@ -42,7 +43,7 @@ export function openSearchOverlay(triggerElement?: HTMLElement | null): void {
   }
 
   overlay.classList.remove('hidden');
-  document.body.style.overflow = 'hidden';
+  lockBodyScroll('search-overlay');
   toggle.setAttribute('aria-expanded', 'true');
 
   focusFirstElement(overlay);
@@ -62,7 +63,7 @@ export function closeSearchOverlay(): void {
   }
 
   overlay.classList.add('hidden');
-  document.body.style.overflow = '';
+  unlockBodyScroll('search-overlay');
   toggle.setAttribute('aria-expanded', 'false');
 
   removeFocusTrap?.();

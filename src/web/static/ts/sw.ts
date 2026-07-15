@@ -34,8 +34,13 @@ interface FetchEvent extends Event {
   respondWith(response: Promise<Response> | Response): void;
 }
 
+interface MinimalMessageSource {
+  postMessage(message: unknown): void;
+}
+
 interface ExtendableMessageEvent extends Event {
   readonly data: unknown;
+  readonly source: MinimalMessageSource | null;
   waitUntil?(promise: Promise<unknown>): void;
 }
 
@@ -211,7 +216,9 @@ async function clearApiCache(): Promise<void> {
 
 self.addEventListener('message', (event) => {
   if (event.data === 'clear-api-cache') {
-    void clearApiCache();
+    void clearApiCache().then(() => {
+      event.source?.postMessage('cache-cleared');
+    });
   }
 });
 

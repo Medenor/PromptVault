@@ -18,6 +18,7 @@ import {
   focusFirstElement,
   restoreFocusToTrigger,
 } from '@/utils/focus-management';
+import { lockBodyScroll, unlockBodyScroll } from '@/utils/scroll-lock';
 
 let removeFocusTrap: (() => void) | null = null;
 const lastTrigger: { current: HTMLElement | null } = { current: null };
@@ -54,7 +55,7 @@ export function openMobileDrawer(triggerElement?: HTMLElement | null): void {
 
   drawer.classList.remove('-translate-x-full');
   backdrop.classList.remove('hidden');
-  document.body.style.overflow = 'hidden';
+  lockBodyScroll('mobile-nav');
 
   toggles.forEach((toggle) => toggle.setAttribute('aria-expanded', 'true'));
 
@@ -76,7 +77,7 @@ export function closeMobileDrawer(): void {
 
   drawer.classList.add('-translate-x-full');
   backdrop.classList.add('hidden');
-  document.body.style.overflow = '';
+  unlockBodyScroll('mobile-nav');
 
   toggles.forEach((toggle) => toggle.setAttribute('aria-expanded', 'false'));
 

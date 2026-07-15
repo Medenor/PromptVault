@@ -13,59 +13,15 @@
  */
 
 import { initMobileNav } from '@/mobile-nav';
-import { apiGet, APIRequestError } from '@/utils/api';
+import { APIRequestError } from '@/utils/api';
 import { reportError } from '@/telemetry';
-import { clearOfflineDataOnLogout } from '@/sw-register';
+import { logout, hideAuthOnlyElements, fetchRoleAndRevealAdmin } from '@/utils/auth-nav';
 
 export interface SecondaryNavOptions {
   /** Component name passed to reportError for telemetry. */
   component: string;
   /** Wire #logout-btn/#logout-btn-mobile and admin-link visibility. Default false. */
   requireAuth?: boolean;
-}
-
-async function logout(component: string): Promise<void> {
-  if (window.__AUTH_ENABLED__ === false) {
-    window.location.href = '/';
-    return;
-  }
-
-  try {
-    const refreshToken =
-      localStorage.getItem('refresh_token') || sessionStorage.getItem('refresh_token');
-
-    await fetch('/api/auth/logout', {
-      method: 'POST',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: refreshToken ? JSON.stringify({ refresh_token: refreshToken }) : '{}',
-    });
-  } catch (error) {
-    reportError(component, 'logout-error', error, {}, 'warning');
-  } finally {
-    // Clear cached prompt API responses so a different user signing in on
-    // this device afterward can't see this user's data.
-    clearOfflineDataOnLogout();
-
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('user');
-    sessionStorage.clear();
-
-    window.location.href = '/auth/login';
-  }
-}
-
-function hideAuthOnlyElements(): void {
-  const idsToHide = ['profile-btn', 'logout-btn', 'mobile-drawer-account-section'];
-  idsToHide.forEach((id) => {
-    document.getElementById(id)?.style.setProperty('display', 'none');
-  });
-  document.querySelectorAll<HTMLElement>('[onclick*="/auth/profile"]').forEach((el) => {
-    el.style.display = 'none';
-  });
 }
 
 async function checkAdminAccess(component: string): Promise<void> {
@@ -75,11 +31,7 @@ async function checkAdminAccess(component: string): Promise<void> {
   }
 
   try {
-    const data = await apiGet<{ role?: string }>('/api/auth/me');
-    if (data.role === 'admin') {
-      document.getElementById('admin-btn')?.style.setProperty('display', '');
-      document.getElementById('admin-btn-mobile')?.style.setProperty('display', '');
-    }
+    await fetchRoleAndRevealAdmin();
   } catch (error) {
     reportError(component, 'checkAdminAccess', error);
     if (error instanceof APIRequestError && error.isAuthError()) {

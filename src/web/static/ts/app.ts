@@ -13,7 +13,7 @@ import '@/form-validation';
 import type { PromptResponse, PromptListResponse } from '@/types';
 import type { TranslationKey } from '@/types/i18n';
 import { initI18n, t, tUnsafe, updateStaticTranslations } from '@/utils/i18n';
-import { apiFetch, apiGet, apiPostForm, APIRequestError } from '@/utils/api';
+import { apiFetch, apiGet, apiPostForm } from '@/utils/api';
 import { setupScrollIndicators } from '@/utils/dom';
 import { showNotification } from '@/utils/notifications';
 import { createTypeahead } from '@/utils/typeahead';
@@ -30,12 +30,9 @@ import {
 } from '@/utils/pagination';
 import { closeMobileDrawer, initKeyboardSafeScroll, initMobileNav } from '@/mobile-nav';
 import { closeSearchOverlay, initSearchOverlay, isSearchOverlayOpen } from '@/search-overlay';
-import {
-  clearOfflineDataOnLogout,
-  initOfflineIndicator,
-  registerServiceWorker,
-} from '@/sw-register';
+import { initOfflineIndicator, registerServiceWorker } from '@/sw-register';
 import { attachPullToRefresh, attachSwipeReveal } from '@/gestures';
+import { logout, hideAuthOnlyElements, fetchRoleAndRevealAdmin } from '@/utils/auth-nav';
 
 interface TagInfo {
   name: string;
@@ -1014,21 +1011,6 @@ async function initializeApp(): Promise<void> {
   void loadTags();
 }
 
-function hideAuthOnlyElements(): void {
-  // Hide elements that only make sense when authentication is enabled.
-  const idsToHide = ['profile-btn', 'logout-btn', 'mobile-drawer-account-section'];
-  idsToHide.forEach((id) => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.style.display = 'none';
-    }
-  });
-  // Hide profile navigation links (desktop button + mobile dropdown entries).
-  document.querySelectorAll<HTMLElement>('[onclick*="/auth/profile"]').forEach((el) => {
-    el.style.display = 'none';
-  });
-}
-
 async function checkAdminAccess(): Promise<void> {
   // Anonymous mode (AUTH_ENABLED=false): show the app immediately without an
   // auth check and hide auth-only UI elements (profile, logout, etc.).
@@ -1042,32 +1024,26 @@ async function checkAdminAccess(): Promise<void> {
   }
 
   try {
-    const data = await apiGet<{ role?: string }>('/api/auth/me');
+    await fetchRoleAndRevealAdmin();
 
     // Authentication successful - show the app
     const loadingOverlay = document.getElementById('auth-loading-overlay');
     const appDiv = document.querySelector('.app') as HTMLElement | null;
     if (loadingOverlay) loadingOverlay.style.display = 'none';
     if (appDiv) appDiv.style.display = 'block';
-
-    if (data.role === 'admin') {
-      const adminBtn = document.getElementById('admin-btn');
-      const adminBtnMobile = document.getElementById('admin-btn-mobile');
-      if (adminBtn) {
-        adminBtn.style.display = '';
-      }
-      if (adminBtnMobile) {
-        adminBtnMobile.style.display = '';
-      }
-    }
   } catch (error) {
     reportAppIssue('checkAdminAccess', error);
 
-    // Offline (network failure, not a real auth rejection): show the cached
-    // app shell instead of redirecting to login, so previously-viewed content
-    // remains accessible per FR-009. apiFetch already handles a genuine 401
-    // (server reachable, session invalid) with its own redirect.
-    if (!navigator.onLine || !(error instanceof APIRequestError)) {
+    // Offline or request timeout (network failure, not a real auth
+    // rejection): show the cached app shell instead of redirecting to
+    // login, so previously-viewed content remains accessible per FR-009.
+    // apiFetch already handles a genuine 401 (server reachable, session
+    // invalid) with its own redirect. Any other error (including a genuine
+    // APIRequestError or an unexpected bug) is treated as a real failure
+    // and redirects to login for security.
+    const isNetworkFailure =
+      !navigator.onLine || (error instanceof Error && error.message === 'Request timeout');
+    if (isNetworkFailure) {
       const loadingOverlay = document.getElementById('auth-loading-overlay');
       const appDiv = document.querySelector('.app') as HTMLElement | null;
       if (loadingOverlay) loadingOverlay.style.display = 'none';
@@ -1209,7 +1185,7 @@ function setupEventListeners(): void {
   const logoutBtn = document.getElementById('logout-btn');
   if (logoutBtn) {
     logoutBtn.addEventListener('click', () => {
-      void logout();
+      void logout(APP_COMPONENT);
     });
   }
 
@@ -1217,7 +1193,7 @@ function setupEventListeners(): void {
   const logoutBtnMobile = document.getElementById('logout-btn-mobile');
   if (logoutBtnMobile) {
     logoutBtnMobile.addEventListener('click', () => {
-      void logout();
+      void logout(APP_COMPONENT);
     });
   }
 
@@ -1765,6 +1741,11 @@ function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement
   // Swipe gestures (FR-007): left reveals delete (with confirmation, same as
   // the visible Delete button), right opens the editor (same as tapping the
   // card). Both are shortcuts for the existing, always-visible controls above.
+  // The returned detach fn is intentionally unused: each card is a fresh,
+  // never-reused element (unlike the version carousel's persistent
+  // versionList, which stores/calls its detach fn before re-initializing in
+  // place) and renderPrompts() always discards prior cards wholesale via
+  // container.innerHTML = '', which drops the listeners with the node.
   attachSwipeReveal(div, {
     onSwipeLeft: () => {
       lastSelectedPromptId = parseInt(id, 10);
@@ -1998,13 +1979,20 @@ function setPaginationControlsVisible(visible: boolean): void {
   }
 }
 
-function showNewPromptForm() {
-  // Offline mode is read/copy-only (FR-009) — creating requires connectivity,
-  // so there's no point opening a form the user can't submit.
+// Offline mode is read/copy-only (FR-009) — writes (create/edit/delete/revert/
+// bulk actions) require connectivity rather than being queued for later sync.
+// Returns false (and shows the standard notification) when offline, so callers
+// can early-return with `if (!guardOnlineOnly()) return;`.
+function guardOnlineOnly(): boolean {
   if (!navigator.onLine) {
     showNotification(t('offline.editUnavailable'), 'error');
-    return;
+    return false;
   }
+  return true;
+}
+
+function showNewPromptForm() {
+  if (!guardOnlineOnly()) return;
 
   const promptEditor = document.getElementById('prompt-editor');
   const promptsList = document.getElementById('prompts-list');
@@ -2043,12 +2031,7 @@ async function handlePromptSubmit(event: SubmitEvent): Promise<void> {
     return;
   }
 
-  // Offline mode is read/copy-only (FR-009) — editing requires connectivity
-  // rather than being queued for later sync.
-  if (!navigator.onLine) {
-    showNotification(t('offline.editUnavailable'), 'error');
-    return;
-  }
+  if (!guardOnlineOnly()) return;
 
   const tagInput = getTagInputElement();
   if (tagInput) {
@@ -2276,12 +2259,7 @@ function showCopyFeedback(id: PromptId, message: string): void {
 }
 
 async function editPrompt(id: PromptId): Promise<void> {
-  // Offline mode is read/copy-only (FR-009) — editing requires connectivity,
-  // so there's no point opening a form the user can't submit.
-  if (!navigator.onLine) {
-    showNotification(t('offline.editUnavailable'), 'error');
-    return;
-  }
+  if (!guardOnlineOnly()) return;
 
   let prompt: PromptResponse;
   try {
@@ -2326,11 +2304,7 @@ async function editPrompt(id: PromptId): Promise<void> {
 }
 
 async function deletePrompt(id: PromptId): Promise<void> {
-  // Offline mode is read/copy-only (FR-009) — deleting requires connectivity.
-  if (!navigator.onLine) {
-    showNotification(t('offline.editUnavailable'), 'error');
-    return;
-  }
+  if (!guardOnlineOnly()) return;
 
   const confirmed = await confirmAsync({
     title: t('actions.confirmDelete') || 'Confirm',
@@ -3225,7 +3199,13 @@ function toggleVersionSelection(versionId: string, element: HTMLElement | null):
   }
   if (selectedVersions.has(versionId)) {
     selectedVersions.delete(versionId);
-    element.classList.remove('selected', 'ring-2', 'ring-blue-500', 'bg-blue-50', 'dark:bg-blue-950');
+    element.classList.remove(
+      'selected',
+      'ring-2',
+      'ring-blue-500',
+      'bg-blue-50',
+      'dark:bg-blue-950'
+    );
     element.setAttribute('aria-pressed', 'false');
   } else {
     selectedVersions.add(versionId);
@@ -3283,11 +3263,7 @@ async function performRevert(versionId: string): Promise<void> {
       return;
     }
 
-    // Offline mode is read/copy-only (FR-009) — reverting requires connectivity.
-    if (!navigator.onLine) {
-      showNotification(t('offline.editUnavailable'), 'error');
-      return;
-    }
+    if (!guardOnlineOnly()) return;
     const revertMessageInput = document.getElementById(
       'revert-commit-message'
     ) as HTMLInputElement | null;
@@ -4729,11 +4705,7 @@ function hideBulkTagModal() {
 async function performBulkDelete(): Promise<void> {
   if (selectedPromptIds.size === 0) return;
 
-  // Offline mode is read/copy-only (FR-009) — bulk delete requires connectivity.
-  if (!navigator.onLine) {
-    showNotification(t('offline.editUnavailable'), 'error');
-    return;
-  }
+  if (!guardOnlineOnly()) return;
 
   const promptIdsArray = Array.from(selectedPromptIds);
 
@@ -4791,11 +4763,7 @@ async function performBulkDelete(): Promise<void> {
 async function performBulkTagUpdate(): Promise<void> {
   if (selectedPromptIds.size === 0) return;
 
-  // Offline mode is read/copy-only (FR-009) — bulk tag updates require connectivity.
-  if (!navigator.onLine) {
-    showNotification(t('offline.editUnavailable'), 'error');
-    return;
-  }
+  if (!guardOnlineOnly()) return;
 
   const addInput = document.getElementById('bulk-tag-add') as HTMLInputElement | null;
   const removeInput = document.getElementById('bulk-tag-remove') as HTMLInputElement | null;
@@ -4851,46 +4819,6 @@ initI18n(() => {
 
 // Initialize lazy loading on app start
 initializeLazyLoading();
-
-// Logout function
-async function logout() {
-  // Anonymous mode: no session to revoke, just navigate home.
-  if (window.__AUTH_ENABLED__ === false) {
-    window.location.href = '/';
-    return;
-  }
-
-  try {
-    // Get refresh token from localStorage (if it exists from old implementation)
-    const refreshToken =
-      localStorage.getItem('refresh_token') || sessionStorage.getItem('refresh_token');
-
-    // Call logout endpoint with cookies
-    await fetch('/api/auth/logout', {
-      method: 'POST',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: refreshToken ? JSON.stringify({ refresh_token: refreshToken }) : '{}',
-    });
-  } catch (error) {
-    console.error('Logout error:', error);
-    reportAppIssue('logout-error', error, {}, 'warning');
-  } finally {
-    // Clear cached prompt API responses so a different user signing in on
-    // this device afterward can't see this user's data.
-    clearOfflineDataOnLogout();
-
-    // Always clear storage and redirect
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('user');
-    sessionStorage.clear();
-
-    window.location.href = '/auth/login';
-  }
-}
 
 const appWindow = window as unknown as Window & {
   selectVersionForComparison: (versionId: string) => void;

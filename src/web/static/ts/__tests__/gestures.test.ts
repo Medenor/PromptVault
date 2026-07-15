@@ -9,10 +9,16 @@ import { attachPullToRefresh, attachSwipeReveal } from '../gestures';
 
 // jsdom does not implement PointerEvent; build a MouseEvent and attach the
 // pointer-specific properties gestures.ts reads (pointerId, pointerType).
-function pointerEvent(type: string, x: number, y: number, id = 1): PointerEvent {
+function pointerEvent(
+  type: string,
+  x: number,
+  y: number,
+  id = 1,
+  pointerType = 'touch'
+): PointerEvent {
   const event = new MouseEvent(type, { clientX: x, clientY: y, bubbles: true });
   Object.defineProperty(event, 'pointerId', { value: id });
-  Object.defineProperty(event, 'pointerType', { value: 'touch' });
+  Object.defineProperty(event, 'pointerType', { value: pointerType });
   return event as unknown as PointerEvent;
 }
 
@@ -155,6 +161,19 @@ describe('attachPullToRefresh', () => {
     container.dispatchEvent(pointerEvent('pointerup', 100, 200));
 
     expect(onRefresh).not.toHaveBeenCalled();
+  });
+
+  it('does not trigger onRefresh for a mouse-originated drag', async () => {
+    const onRefresh = vi.fn();
+    const showLoading = vi.fn();
+    const hideLoading = vi.fn();
+    attachPullToRefresh(container, { onRefresh, showLoading, hideLoading });
+
+    container.dispatchEvent(pointerEvent('pointerdown', 100, 50, 1, 'mouse'));
+    container.dispatchEvent(pointerEvent('pointerup', 100, 150, 1, 'mouse'));
+
+    expect(onRefresh).not.toHaveBeenCalled();
+    expect(showLoading).not.toHaveBeenCalled();
   });
 
   it('hides the loading affordance even when onRefresh rejects', async () => {

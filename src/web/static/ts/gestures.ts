@@ -105,6 +105,7 @@ export function attachPullToRefresh(
   let pointerId: number | null = null;
 
   function onPointerDown(event: PointerEvent): void {
+    if (event.pointerType === 'mouse') return;
     if (container.scrollTop > 0) return;
     startY = event.clientY;
     pulling = true;
