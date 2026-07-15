@@ -23,18 +23,17 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def _column_exists(conn, table: str, column: str) -> bool:
     """Check if a column exists in a table."""
-    cursor = conn.execute(sa.text(f"PRAGMA table_info({table})"))
-    columns = [row[1] for row in cursor]
+    inspector = sa.inspect(conn)
+    if table not in inspector.get_table_names():
+        return False
+    columns = [col["name"] for col in inspector.get_columns(table)]
     return column in columns
 
 
 def _table_exists(conn, table: str) -> bool:
     """Check if a table exists."""
-    cursor = conn.execute(
-        sa.text("SELECT name FROM sqlite_master WHERE type='table' AND name=:name"),
-        {"name": table},
-    )
-    return cursor.fetchone() is not None
+    inspector = sa.inspect(conn)
+    return table in inspector.get_table_names()
 
 
 def upgrade() -> None:
@@ -53,7 +52,7 @@ def upgrade() -> None:
             sa.Column("credentials_encrypted", sa.Text(), nullable=False),
             sa.Column("credentials_salt", sa.String(32), nullable=False),
             sa.Column("credentials_nonce", sa.String(24), nullable=False),
-            sa.Column("enabled", sa.Boolean(), nullable=False, server_default=sa.text("1")),
+            sa.Column("enabled", sa.Boolean(), nullable=False, server_default=sa.true()),
             sa.Column(
                 "created_at",
                 sa.DateTime(timezone=True),
@@ -63,23 +62,23 @@ def upgrade() -> None:
         )
 
     backup_columns = [
-        ("backup_kind", "ALTER TABLE backups ADD COLUMN backup_kind VARCHAR(20) NOT NULL DEFAULT 'full'"),
-        ("parent_backup_id", "ALTER TABLE backups ADD COLUMN parent_backup_id VARCHAR(36)"),
-        ("checksum", "ALTER TABLE backups ADD COLUMN checksum VARCHAR(64)"),
-        ("integrity_verified_at", "ALTER TABLE backups ADD COLUMN integrity_verified_at DATETIME"),
-        ("is_encrypted", "ALTER TABLE backups ADD COLUMN is_encrypted BOOLEAN NOT NULL DEFAULT 0"),
-        ("encryption_salt", "ALTER TABLE backups ADD COLUMN encryption_salt VARCHAR(32)"),
-        ("encryption_nonce", "ALTER TABLE backups ADD COLUMN encryption_nonce VARCHAR(24)"),
-        ("cloud_provider_id", "ALTER TABLE backups ADD COLUMN cloud_provider_id VARCHAR(36)"),
-        ("cloud_path", "ALTER TABLE backups ADD COLUMN cloud_path TEXT"),
-        ("cloud_uploaded_at", "ALTER TABLE backups ADD COLUMN cloud_uploaded_at DATETIME"),
-        ("tags", "ALTER TABLE backups ADD COLUMN tags JSON"),
-        ("delta_payload", "ALTER TABLE backups ADD COLUMN delta_payload JSON"),
+        sa.Column("backup_kind", sa.String(20), nullable=False, server_default="full"),
+        sa.Column("parent_backup_id", sa.String(36), nullable=True),
+        sa.Column("checksum", sa.String(64), nullable=True),
+        sa.Column("integrity_verified_at", sa.DateTime(timezone=True), nullable=True),
+        sa.Column("is_encrypted", sa.Boolean(), nullable=False, server_default=sa.false()),
+        sa.Column("encryption_salt", sa.String(32), nullable=True),
+        sa.Column("encryption_nonce", sa.String(24), nullable=True),
+        sa.Column("cloud_provider_id", sa.String(36), nullable=True),
+        sa.Column("cloud_path", sa.Text(), nullable=True),
+        sa.Column("cloud_uploaded_at", sa.DateTime(timezone=True), nullable=True),
+        sa.Column("tags", sa.JSON(), nullable=True),
+        sa.Column("delta_payload", sa.JSON(), nullable=True),
     ]
 
-    for col_name, ddl in backup_columns:
-        if not _column_exists(conn, "backups", col_name):
-            conn.execute(sa.text(ddl))
+    for column in backup_columns:
+        if not _column_exists(conn, "backups", column.name):
+            op.add_column("backups", column)
 
     if _table_exists(conn, "backup_schedules") and not _column_exists(
         conn, "backup_schedules", "retention_days"
@@ -116,7 +115,7 @@ def upgrade() -> None:
         op.create_table(
             "backup_schedules",
             sa.Column("id", sa.String(36), primary_key=True),
-            sa.Column("enabled", sa.Boolean(), nullable=False, server_default=sa.text("0")),
+            sa.Column("enabled", sa.Boolean(), nullable=False, server_default=sa.false()),
             sa.Column("frequency", sa.String(20), nullable=False),
             sa.Column("hour", sa.Integer(), nullable=False),
             sa.Column("minute", sa.Integer(), nullable=False, server_default=sa.text("0")),
@@ -129,7 +128,7 @@ def upgrade() -> None:
                 "encrypt_scheduled_backups",
                 sa.Boolean(),
                 nullable=False,
-                server_default=sa.text("0"),
+                server_default=sa.false(),
             ),
             sa.Column("cloud_provider_id", sa.String(36), nullable=True),
             sa.Column(
@@ -179,7 +178,7 @@ def upgrade() -> None:
         op.create_table(
             "encryption_key_configs",
             sa.Column("id", sa.String(36), primary_key=True),
-            sa.Column("is_enabled", sa.Boolean(), nullable=False, server_default=sa.text("0")),
+            sa.Column("is_enabled", sa.Boolean(), nullable=False, server_default=sa.false()),
             sa.Column(
                 "algorithm", sa.String(20), nullable=False, server_default="AES-256-GCM"
             ),
@@ -205,13 +204,13 @@ def upgrade() -> None:
         )
     else:
         encryption_columns = [
-            ("verification_salt", "ALTER TABLE encryption_key_configs ADD COLUMN verification_salt VARCHAR(32)"),
-            ("verification_nonce", "ALTER TABLE encryption_key_configs ADD COLUMN verification_nonce VARCHAR(24)"),
-            ("verification_ciphertext", "ALTER TABLE encryption_key_configs ADD COLUMN verification_ciphertext TEXT"),
+            sa.Column("verification_salt", sa.String(32), nullable=True),
+            sa.Column("verification_nonce", sa.String(24), nullable=True),
+            sa.Column("verification_ciphertext", sa.Text(), nullable=True),
         ]
-        for col_name, ddl in encryption_columns:
-            if not _column_exists(conn, "encryption_key_configs", col_name):
-                conn.execute(sa.text(ddl))
+        for column in encryption_columns:
+            if not _column_exists(conn, "encryption_key_configs", column.name):
+                op.add_column("encryption_key_configs", column)
 
 
 def downgrade() -> None:
@@ -228,6 +227,6 @@ def downgrade() -> None:
     ]
     for col in columns_to_drop:
         if _column_exists(conn, "backups", col):
-            conn.execute(sa.text(f"ALTER TABLE backups DROP COLUMN {col}"))
+            op.drop_column("backups", col)
 
     op.drop_table("backup_storage_providers")
