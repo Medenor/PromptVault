@@ -854,7 +854,7 @@ When working on a development session:
 - **Don't skip error handling**: Always wrap I/O and database operations in try-except
 - **Don't forget transactions**: Use database sessions with proper commit/rollback
 - **Don't use legacy services**: Use database-backed services (PromptDataServiceDB, BackupServiceDB)
-- **Don't break database migrations**: Test with both SQLite and PostgreSQL when modifying models
+- **Don't break database migrations**: Test with both SQLite and PostgreSQL when modifying models — see [docs/DEVELOPMENT.md#writing-alembic-migrations](docs/DEVELOPMENT.md#writing-alembic-migrations) for the dialect-portability rules and a real incident (v1.10.0/v1.10.1) this caught
 - **Don't use console.log in production**: Remove debug statements before committing
 - **Don't skip database session management**: Always close sessions properly
 

@@ -88,6 +88,17 @@ Override ports: `BACKEND_PORT=9000 make dev` or `FRONTEND_PORT=3000 make dev`.
 
 ---
 
+## Writing Alembic Migrations
+
+Migrations are authored and tested against **SQLite** in dev, but run against **PostgreSQL** in production (see [DEPLOYMENT.md](DEPLOYMENT.md)). A migration that only works on one dialect will pass local testing and then break the production upgrade — this happened in `f1a2b3c4d5e6_enhanced_backup_tables` (fixed in v1.10.1). When writing or reviewing a migration:
+
+- **Existence checks**: Use `sa.inspect(conn).get_table_names()` / `.get_columns(table)`. Never query dialect-specific catalogs directly — `sqlite_master` and `PRAGMA table_info(...)` don't exist on PostgreSQL (`UndefinedTable: relation "sqlite_master" does not exist`).
+- **Boolean defaults**: Use `sa.true()` / `sa.false()` for `server_default` on Boolean columns. `sa.text("1")` / `sa.text("0")` works on SQLite (booleans are ints there) but PostgreSQL rejects it (`DatatypeMismatch: column "enabled" is of type boolean but default expression is of type integer`).
+- **Column changes**: Prefer `op.add_column` / `op.drop_column` (or `op.batch_alter_table` when SQLite needs a table rebuild) over raw `ALTER TABLE ... ADD COLUMN` strings — raw DDL tends to smuggle in dialect-specific types (`DATETIME`, `JSON`, `BOOLEAN ... DEFAULT 0`) that don't parse identically on both engines.
+- **Before merging**: Run the migration against a local PostgreSQL container in addition to the default SQLite dev setup — dev-only testing is exactly what let the above bug ship.
+
+---
+
 ## Environment Variables
 
 | Variable        | Default | Purpose                  |
