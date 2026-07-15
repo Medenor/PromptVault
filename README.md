@@ -273,6 +273,29 @@ Admin dashboard for user management with filters, role badges, and quick actions
 <img src="docs/images/gallery/promptvaul_category_management.jpg" alt="Category Management" width="90%"><br/>
 Category and tags management interface with color pickers, hierarchization (for tags), organization, statistics and bulk actions.
 
+<br><br>
+
+### Mobile-Responsive UI
+
+#### 10. Main Page (Mobile)
+
+<img src="docs/images/gallery/mobile/promptvault_main_page_mobile.jpg" alt="PromptVault Main Interface on Mobile" width="40%"><br/>
+Mobile-first prompt dashboard with a floating action button, full-screen search overlay, and touch-optimized cards.
+
+<br><br>
+
+#### 11. Slide-Out Navigation Drawer (Mobile)
+
+<img src="docs/images/gallery/mobile/promptvault_main_page_mobile_menu.jpg" alt="PromptVault Mobile Navigation Drawer" width="40%"><br/>
+Hamburger-triggered slide-out drawer replacing the desktop sidebar below 768px, with sectioned Data/Manage/Account navigation.
+
+<br><br>
+
+#### 12. Tag Management (Mobile)
+
+<img src="docs/images/gallery/mobile/promptvaul_tag_management_mobile.jpg" alt="PromptVault Tag Management on Mobile" width="40%"><br/>
+Tag management interface adapted for touch, with 44×44px minimum tap targets and full-screen layout.
+
 </div>
 
 </details>
@@ -590,7 +613,7 @@ PromptVault is a fully installable Progressive Web App with a mobile-first UI, t
 - **Touch targets & layout**: All interactive controls meet a 44×44px minimum tap size; modals are full-screen on mobile and centered on desktop; the on-screen keyboard no longer obscures focused form fields.
 - **Search**: A dedicated full-screen search overlay on mobile, separate from the desktop inline search bar.
 - **Gestures**: Swipe left/right on a prompt card to reveal delete (with confirmation) or edit actions; pull-to-refresh on the prompt list. Every gesture has a visible, tappable equivalent for accessibility.
-- **Offline support**: A Service Worker (root-scoped at `/sw.js`) caches static assets and API/navigation responses. Edits made while offline are queued in IndexedDB and synced automatically on reconnect, with 409 conflict detection if the prompt changed on the server in the meantime.
+- **Offline support**: A Service Worker (root-scoped at `/sw.js`) precaches the app shell and locale files so previously-viewed prompts and their version history remain viewable and copyable offline. Create, edit, delete, revert, and bulk actions — and navigation to pages that require connectivity — are blocked client-side with a clear message instead of being queued.
 - **Installable**: A Web App Manifest (`/static/manifest.json`) lets the app be added to a device home screen and launched standalone.
 - **Dark mode**: Automatic light/dark theme based on the OS `prefers-color-scheme` setting.
 
