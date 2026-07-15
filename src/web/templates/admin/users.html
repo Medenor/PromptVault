@@ -34,7 +34,7 @@
     <script src="https://unpkg.com/i18next-browser-languagedetector@7.2.0/i18nextBrowserLanguageDetector.min.js"></script>
     <script src="https://unpkg.com/i18next-http-backend@2.4.2/i18nextHttpBackend.min.js"></script>
   </head>
-  <body class="bg-gray-50 min-h-screen">
+  <body class="bg-gray-50 min-h-screen dark:bg-gray-900">
     <a href="#main-content" class="skip-link" tabindex="0" data-i18n="nav.skipToMainContent"
       >Skip to main content</a
     >
@@ -54,7 +54,7 @@
                   src="/static/images/promptvault_logo_frontend.webp"
                   alt=""
                   aria-hidden="true"
-                  class="h-14 w-14 border-2 border-gray-400 rounded-lg shadow-lg flex-shrink-0"
+                  class="h-14 w-14 border-2 border-gray-400 rounded-lg shadow-lg flex-shrink-0 dark:border-gray-600"
                 />
               </a>
               <div class="text-2xl font-bold truncate">PromptVault Admin</div>
@@ -69,7 +69,7 @@
               <button
                 type="button"
                 onclick="window.location.href = '/admin/sessions'"
-                class="px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all whitespace-nowrap"
+                class="px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all whitespace-nowrap dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
                 data-i18n="admin.nav.sessions"
               >
                 Sessions
@@ -77,7 +77,7 @@
               <button
                 type="button"
                 onclick="window.location.href = '/auth/profile'"
-                class="px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all whitespace-nowrap"
+                class="px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all whitespace-nowrap dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
                 data-i18n="admin.nav.profile"
               >
                 Profile
@@ -85,7 +85,7 @@
               <button
                 type="button"
                 onclick="window.location.href = '/'"
-                class="px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all whitespace-nowrap"
+                class="px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all whitespace-nowrap dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
                 data-i18n="nav.backToMain"
               >
                 Back to Main
@@ -127,7 +127,7 @@
             data-i18n="[aria-label]accessibility.labels.adminPageNavigationMobile"
           >
             <div class="px-2 py-2">
-              <label class="block text-xs text-gray-500 mb-1" data-i18n="nav.language"
+              <label class="block text-xs text-gray-500 mb-1 dark:text-gray-400" data-i18n="nav.language"
                 >Language</label
               >
               {% include 'macros/language_selector.html' %}
@@ -135,7 +135,7 @@
             <button
               type="button"
               onclick="window.location.href = '/admin/sessions'"
-              class="w-full px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all text-left"
+              class="w-full px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all text-left dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
               data-i18n="admin.nav.sessions"
             >
               Sessions
@@ -143,7 +143,7 @@
             <button
               type="button"
               onclick="window.location.href = '/auth/profile'"
-              class="w-full px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all text-left"
+              class="w-full px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all text-left dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
               data-i18n="admin.nav.profile"
             >
               Profile
@@ -151,7 +151,7 @@
             <button
               type="button"
               onclick="window.location.href = '/'"
-              class="w-full px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all text-left"
+              class="w-full px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all text-left dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
               data-i18n="nav.backToMain"
             >
               Back to Main
@@ -166,7 +166,7 @@
         role="main"
         class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full"
       >
-        <h1 class="text-3xl font-bold text-gray-900 mb-4 md:mb-0" data-i18n="admin.users.title">
+        <h1 class="text-3xl font-bold text-gray-900 mb-4 md:mb-0 dark:text-gray-100" data-i18n="admin.users.title">
           User Management
         </h1>
         <!-- Page Header -->
@@ -194,7 +194,7 @@
         </div>
 
         <!-- Filters -->
-        <div class="bg-white rounded-lg shadow p-6 mb-6">
+        <div class="bg-white rounded-lg shadow p-6 mb-6 dark:bg-gray-800">
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="relative">
               <input
@@ -205,7 +205,7 @@
                 aria-label="Search users"
                 data-i18n="[aria-label]admin.users.searchPlaceholder"
                 data-i18n-placeholder="admin.users.searchPlaceholder"
-                class="w-full pl-3 pr-10 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
+                class="w-full pl-3 pr-10 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 dark:placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed dark:border-gray-600 text-gray-900 dark:text-gray-100"
               />
               <svg
                 class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none w-5 h-5 transition-colors"
@@ -226,14 +226,14 @@
             <div>
               <label
                 for="role-filter"
-                class="block text-sm font-medium text-gray-700 mb-1"
+                class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300"
                 data-i18n="admin.users.filterRole"
                 >Role:</label
               >
               <select
                 id="role-filter"
                 name="role_filter"
-                class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
+                class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 dark:placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed dark:border-gray-600 text-gray-900 dark:text-gray-100"
               >
                 <option value="all" data-i18n="admin.users.allRoles">All Roles</option>
                 <option value="viewer" data-i18n="admin.users.roleViewer">Viewer</option>
@@ -244,14 +244,14 @@
             <div>
               <label
                 for="status-filter"
-                class="block text-sm font-medium text-gray-700 mb-1"
+                class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300"
                 data-i18n="admin.users.filterStatus"
                 >Status:</label
               >
               <select
                 id="status-filter"
                 name="status_filter"
-                class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
+                class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 dark:placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed dark:border-gray-600 text-gray-900 dark:text-gray-100"
               >
                 <option value="all" data-i18n="admin.users.allStatuses">All Statuses</option>
                 <option value="active" data-i18n="admin.users.statusActive">Active</option>
@@ -264,85 +264,85 @@
 
         <!-- Stats Cards -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-          <div class="bg-white rounded-lg shadow p-6">
-            <div class="text-3xl font-bold text-gray-900" id="total-users">0</div>
-            <div class="text-sm text-gray-700 mt-1" data-i18n="admin.users.totalUsers">
+          <div class="bg-white rounded-lg shadow p-6 dark:bg-gray-800">
+            <div class="text-3xl font-bold text-gray-900 dark:text-gray-100" id="total-users">0</div>
+            <div class="text-sm text-gray-700 mt-1 dark:text-gray-300" data-i18n="admin.users.totalUsers">
               Total Users
             </div>
           </div>
-          <div class="bg-white rounded-lg shadow p-6">
+          <div class="bg-white rounded-lg shadow p-6 dark:bg-gray-800">
             <div class="text-3xl font-bold text-green-600" id="active-users">0</div>
-            <div class="text-sm text-gray-700 mt-1" data-i18n="admin.users.activeUsers">
+            <div class="text-sm text-gray-700 mt-1 dark:text-gray-300" data-i18n="admin.users.activeUsers">
               Active Users
             </div>
           </div>
-          <div class="bg-white rounded-lg shadow p-6">
+          <div class="bg-white rounded-lg shadow p-6 dark:bg-gray-800">
             <div class="text-3xl font-bold text-red-600" id="locked-users">0</div>
-            <div class="text-sm text-gray-700 mt-1" data-i18n="admin.users.lockedUsers">
+            <div class="text-sm text-gray-700 mt-1 dark:text-gray-300" data-i18n="admin.users.lockedUsers">
               Locked Users
             </div>
           </div>
-          <div class="bg-white rounded-lg shadow p-6">
+          <div class="bg-white rounded-lg shadow p-6 dark:bg-gray-800">
             <div class="text-3xl font-bold text-blue-600" id="admin-users">0</div>
-            <div class="text-sm text-gray-700 mt-1" data-i18n="admin.users.adminUsers">Admins</div>
+            <div class="text-sm text-gray-700 mt-1 dark:text-gray-300" data-i18n="admin.users.adminUsers">Admins</div>
           </div>
         </div>
 
         <!-- Users Table -->
-        <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="bg-white rounded-lg shadow overflow-hidden dark:bg-gray-800">
           <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200" aria-label="User Management">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700" aria-label="User Management">
               <caption class="sr-only">
                 User Management - Complete list of all system users with their email, role, status,
                 last login, active sessions, and management options
               </caption>
-              <thead class="bg-gray-50">
+              <thead class="bg-gray-50 dark:bg-gray-900">
                 <tr>
                   <th
                     scope="col"
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider dark:text-gray-300"
                     data-i18n="admin.users.username"
                   >
                     Username
                   </th>
                   <th
                     scope="col"
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider dark:text-gray-300"
                     data-i18n="admin.users.email"
                   >
                     Email
                   </th>
                   <th
                     scope="col"
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider dark:text-gray-300"
                     data-i18n="admin.users.role"
                   >
                     Role
                   </th>
                   <th
                     scope="col"
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider dark:text-gray-300"
                     data-i18n="admin.users.status"
                   >
                     Status
                   </th>
                   <th
                     scope="col"
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider dark:text-gray-300"
                     data-i18n="admin.users.lastLogin"
                   >
                     Last Login
                   </th>
                   <th
                     scope="col"
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider dark:text-gray-300"
                     data-i18n="admin.users.sessions"
                   >
                     Sessions
                   </th>
                   <th
                     scope="col"
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider dark:text-gray-300"
                     aria-label="Actions"
                     data-i18n="admin.users.actions"
                   >
@@ -350,9 +350,9 @@
                   </th>
                 </tr>
               </thead>
-              <tbody id="users-table-body" class="bg-white divide-y divide-gray-200">
+              <tbody id="users-table-body" class="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
                 <tr>
-                  <td colspan="7" class="px-6 py-4 text-center text-gray-700">
+                  <td colspan="7" class="px-6 py-4 text-center text-gray-700 dark:text-gray-300">
                     <div data-i18n="messages.loading">Loading...</div>
                   </td>
                 </tr>
@@ -362,22 +362,22 @@
 
           <!-- Pagination -->
           <div
-            class="bg-gray-50 px-6 py-4 flex items-center justify-between border-t border-gray-200"
+            class="bg-gray-50 px-6 py-4 flex items-center justify-between border-t border-gray-200 dark:bg-gray-900 dark:border-gray-700"
           >
             <button
               type="button"
               id="prev-page"
-              class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
               disabled
               data-i18n="admin.users.previous"
             >
               Previous
             </button>
-            <span id="page-info" class="text-sm text-gray-700">Page 1 of 1</span>
+            <span id="page-info" class="text-sm text-gray-700 dark:text-gray-300">Page 1 of 1</span>
             <button
               type="button"
               id="next-page"
-              class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
               disabled
               data-i18n="admin.users.next"
             >
@@ -390,10 +390,10 @@
       <footer
         role="contentinfo"
         aria-label="Site footer"
-        class="mt-auto border-t border-gray-200 bg-gray-50"
+        class="mt-auto border-t border-gray-200 bg-gray-50 dark:bg-gray-900 dark:border-gray-700"
       >
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div class="flex flex-col gap-3 text-sm text-gray-600">
+          <div class="flex flex-col gap-3 text-sm text-gray-600 dark:text-gray-400">
             <p>
               PromptVault is licensed under
               <a
@@ -610,18 +610,18 @@
       role="dialog"
       class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50"
     >
-      <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div class="flex items-center justify-between p-6 border-b border-gray-200">
+      <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto dark:bg-gray-800">
+        <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <h2
             id="user-detail-title"
-            class="text-xl font-bold text-gray-900"
+            class="text-xl font-bold text-gray-900 dark:text-gray-100"
             data-i18n="admin.users.userDetails"
           >
             User Details
           </h2>
           <button
             type="button"
-            class="text-gray-400 hover:text-gray-700 text-2xl cursor-pointer rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
+            class="text-gray-400 hover:text-gray-700 text-2xl cursor-pointer rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 dark:hover:text-gray-300"
             aria-label="Close modal"
             data-i18n="[aria-label]actions.close"
             onclick="closeUserDetailModal()"
@@ -631,10 +631,10 @@
         </div>
         <div class="p-6">
           <div id="user-detail-content">
-            <div class="text-gray-700" data-i18n="messages.loading">Loading...</div>
+            <div class="text-gray-700 dark:text-gray-300" data-i18n="messages.loading">Loading...</div>
           </div>
         </div>
-        <div class="flex justify-end space-x-3 p-6 border-t border-gray-200">
+        <div class="flex justify-end space-x-3 p-6 border-t border-gray-200 dark:border-gray-700">
           <button
             type="button"
             id="close-user-detail-btn"
@@ -655,18 +655,18 @@
       role="dialog"
       class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50"
     >
-      <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div class="flex items-center justify-between p-6 border-b border-gray-200">
+      <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto dark:bg-gray-800">
+        <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <h2
             id="edit-user-title"
-            class="text-xl font-bold text-gray-900"
+            class="text-xl font-bold text-gray-900 dark:text-gray-100"
             data-i18n="admin.users.editUser"
           >
             Edit User
           </h2>
           <button
             type="button"
-            class="text-gray-400 hover:text-gray-700 text-2xl leading-none rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
+            class="text-gray-400 hover:text-gray-700 text-2xl leading-none rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 dark:hover:text-gray-300"
             aria-label="Close modal"
             data-i18n="[aria-label]actions.close"
             onclick="closeEditUserModal()"
@@ -688,7 +688,7 @@
             <div>
               <label
                 for="edit-role"
-                class="block text-sm font-medium text-gray-700 mb-2"
+                class="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300"
                 data-i18n="admin.users.role"
                 >Role</label
               >
@@ -696,7 +696,7 @@
                 id="edit-role"
                 name="role"
                 aria-describedby="edit-form-error"
-                class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
+                class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 dark:placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed dark:border-gray-600 text-gray-900 dark:text-gray-100"
               >
                 <option value="viewer" data-i18n="admin.users.roleViewer">Viewer</option>
                 <option value="editor" data-i18n="admin.users.roleEditor">Editor</option>
@@ -710,9 +710,9 @@
                   type="checkbox"
                   id="edit-is-active"
                   name="is_active"
-                  class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:border-gray-600 text-gray-900 dark:text-gray-100"
                 />
-                <span class="text-sm text-gray-700" data-i18n="admin.users.activeAccount"
+                <span class="text-sm text-gray-700 dark:text-gray-300" data-i18n="admin.users.activeAccount"
                   >Active Account</span
                 >
               </label>
@@ -722,9 +722,9 @@
                   type="checkbox"
                   id="edit-email-verified"
                   name="email_verified"
-                  class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:border-gray-600 text-gray-900 dark:text-gray-100"
                 />
-                <span class="text-sm text-gray-700" data-i18n="admin.users.emailVerified"
+                <span class="text-sm text-gray-700 dark:text-gray-300" data-i18n="admin.users.emailVerified"
                   >Email Verified</span
                 >
               </label>
@@ -738,7 +738,7 @@
             ></p>
           </form>
         </div>
-        <div class="flex justify-end space-x-3 p-6 border-t border-gray-200">
+        <div class="flex justify-end space-x-3 p-6 border-t border-gray-200 dark:border-gray-700">
           <button
             type="button"
             id="save-user-btn"
@@ -767,18 +767,18 @@
       role="dialog"
       class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50"
     >
-      <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
-        <div class="flex items-center justify-between p-6 border-b border-gray-200">
+      <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 dark:bg-gray-800">
+        <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <h2
             id="confirm-delete-title"
-            class="text-xl font-bold text-gray-900"
+            class="text-xl font-bold text-gray-900 dark:text-gray-100"
             data-i18n="admin.users.confirmDelete"
           >
             Confirm Delete
           </h2>
           <button
             type="button"
-            class="text-gray-400 hover:text-gray-700 text-2xl leading-none rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
+            class="text-gray-400 hover:text-gray-700 text-2xl leading-none rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 dark:hover:text-gray-300"
             aria-label="Close modal"
             data-i18n="[aria-label]actions.close"
             onclick="closeConfirmDeleteModal()"
@@ -787,13 +787,13 @@
           </button>
         </div>
         <div class="p-6">
-          <p class="text-gray-700 mb-4" data-i18n="admin.users.deleteWarning">
+          <p class="text-gray-700 mb-4 dark:text-gray-300" data-i18n="admin.users.deleteWarning">
             Are you sure you want to permanently delete this user? This action cannot be undone and
             will remove all user data from the database.
           </p>
           <p class="font-bold text-red-600"><strong id="delete-username"></strong></p>
         </div>
-        <div class="flex justify-end space-x-3 p-6 border-t border-gray-200">
+        <div class="flex justify-end space-x-3 p-6 border-t border-gray-200 dark:border-gray-700">
           <button
             type="button"
             id="confirm-delete-btn"
@@ -822,18 +822,18 @@
       role="dialog"
       class="hidden fixed inset-0 bg-black/25 flex items-center justify-center z-50"
     >
-      <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div class="flex items-center justify-between p-6 border-b border-gray-200">
+      <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto dark:bg-gray-800">
+        <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <h2
             id="create-user-title"
-            class="text-xl font-bold text-gray-900"
+            class="text-xl font-bold text-gray-900 dark:text-gray-100"
             data-i18n="admin.users.createUser"
           >
             Create New User
           </h2>
           <button
             type="button"
-            class="text-gray-400 hover:text-gray-700 text-2xl leading-none rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
+            class="text-gray-400 hover:text-gray-700 text-2xl leading-none rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 dark:hover:text-gray-300"
             aria-label="Close modal"
             data-i18n="[aria-label]actions.close"
             onclick="closeCreateUserModal()"
@@ -853,7 +853,7 @@
             <div>
               <label
                 for="create-username"
-                class="block text-sm font-medium text-gray-700 mb-2"
+                class="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300"
                 data-i18n="admin.users.username"
                 >Username</label
               >
@@ -862,7 +862,7 @@
                 id="create-username"
                 name="username"
                 aria-describedby="create-username-error"
-                class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
+                class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 dark:placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed dark:border-gray-600 text-gray-900 dark:text-gray-100"
                 minlength="3"
                 maxlength="32"
                 required
@@ -880,7 +880,7 @@
             <div>
               <label
                 for="create-email"
-                class="block text-sm font-medium text-gray-700 mb-2"
+                class="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300"
                 data-i18n="admin.users.email"
                 >Email</label
               >
@@ -889,7 +889,7 @@
                 id="create-email"
                 name="email"
                 aria-describedby="create-email-error"
-                class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
+                class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 dark:placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed dark:border-gray-600 text-gray-900 dark:text-gray-100"
                 required
                 data-i18n="[placeholder]admin.users.emailPlaceholder"
                 placeholder="user@example.com"
@@ -905,7 +905,7 @@
             <div>
               <label
                 for="create-password"
-                class="block text-sm font-medium text-gray-700 mb-2"
+                class="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300"
                 data-i18n="admin.users.password"
                 >Password</label
               >
@@ -915,7 +915,7 @@
                   id="create-password"
                   name="password"
                   aria-describedby="create-password-error create-strength-text create-password-policy"
-                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
+                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 dark:placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed dark:border-gray-600 text-gray-900 dark:text-gray-100"
                   minlength="12"
                   maxlength="128"
                   required
@@ -925,7 +925,7 @@
                 <button
                   type="button"
                   id="toggle-password-create"
-                  class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-700 hover:text-gray-700"
+                  class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-700 hover:text-gray-700 dark:text-gray-300 dark:hover:text-gray-300"
                   aria-label="Toggle password visibility"
                   data-i18n="[aria-label]accessibility.labels.togglePasswordVisibility"
                 >
@@ -933,7 +933,7 @@
                 </button>
               </div>
               <div id="create-password-strength" class="mt-2" aria-live="polite">
-                <div class="h-2 bg-gray-200 rounded overflow-hidden">
+                <div class="h-2 bg-gray-200 rounded overflow-hidden dark:bg-gray-700">
                   <div
                     class="h-full transition-all duration-300"
                     id="create-strength-bar-fill"
@@ -942,23 +942,23 @@
                 <p class="text-xs mt-1" id="create-strength-text"></p>
               </div>
               <div id="create-password-policy" class="mt-2 space-y-1">
-                <div id="req-length" class="text-xs text-gray-700 flex items-center gap-2">
+                <div id="req-length" class="text-xs text-gray-700 flex items-center gap-2 dark:text-gray-300">
                   <span>○</span>
                   <span data-i18n="auth.register.reqLength">At least 12 characters</span>
                 </div>
-                <div id="req-uppercase" class="text-xs text-gray-700 flex items-center gap-2">
+                <div id="req-uppercase" class="text-xs text-gray-700 flex items-center gap-2 dark:text-gray-300">
                   <span>○</span>
                   <span data-i18n="auth.register.reqUppercase">One uppercase letter (A-Z)</span>
                 </div>
-                <div id="req-lowercase" class="text-xs text-gray-700 flex items-center gap-2">
+                <div id="req-lowercase" class="text-xs text-gray-700 flex items-center gap-2 dark:text-gray-300">
                   <span>○</span>
                   <span data-i18n="auth.register.reqLowercase">One lowercase letter (a-z)</span>
                 </div>
-                <div id="req-digit" class="text-xs text-gray-700 flex items-center gap-2">
+                <div id="req-digit" class="text-xs text-gray-700 flex items-center gap-2 dark:text-gray-300">
                   <span>○</span>
                   <span data-i18n="auth.register.reqDigit">One digit (0-9)</span>
                 </div>
-                <div id="req-special" class="text-xs text-gray-700 flex items-center gap-2">
+                <div id="req-special" class="text-xs text-gray-700 flex items-center gap-2 dark:text-gray-300">
                   <span>○</span>
                   <span data-i18n="auth.register.reqSpecial">One special character (!@#$%^&*)</span>
                 </div>
@@ -974,7 +974,7 @@
             <div>
               <label
                 for="create-confirm-password"
-                class="block text-sm font-medium text-gray-700 mb-2"
+                class="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300"
                 data-i18n="admin.users.confirmPassword"
                 >Confirm Password</label
               >
@@ -984,7 +984,7 @@
                   id="create-confirm-password"
                   name="confirm_password"
                   aria-describedby="create-confirm-password-error"
-                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
+                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 dark:placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed dark:border-gray-600 text-gray-900 dark:text-gray-100"
                   minlength="12"
                   maxlength="128"
                   required
@@ -994,7 +994,7 @@
                 <button
                   type="button"
                   id="toggle-confirm-password-create"
-                  class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-700 hover:text-gray-700"
+                  class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-700 hover:text-gray-700 dark:text-gray-300 dark:hover:text-gray-300"
                   aria-label="Toggle password visibility"
                   data-i18n="[aria-label]accessibility.labels.togglePasswordVisibility"
                 >
@@ -1012,14 +1012,14 @@
             <div class="border-t pt-4 mt-4">
               <label
                 for="create-role"
-                class="block text-sm font-medium text-gray-700 mb-2"
+                class="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300"
                 data-i18n="admin.users.role"
                 >Role</label
               >
               <select
                 id="create-role"
                 name="role"
-                class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
+                class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 dark:placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed dark:border-gray-600 text-gray-900 dark:text-gray-100"
               >
                 <option value="viewer" data-i18n="admin.users.roleViewer">Viewer</option>
                 <option value="editor" data-i18n="admin.users.roleEditor">Editor</option>
@@ -1033,9 +1033,9 @@
                   type="checkbox"
                   id="create-email-verified"
                   name="email_verified"
-                  class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:border-gray-600 text-gray-900 dark:text-gray-100"
                 />
-                <span class="text-sm text-gray-700" data-i18n="admin.users.markEmailVerified"
+                <span class="text-sm text-gray-700 dark:text-gray-300" data-i18n="admin.users.markEmailVerified"
                   >Mark email as verified</span
                 >
               </label>
@@ -1049,7 +1049,7 @@
             ></p>
           </form>
         </div>
-        <div class="flex justify-end space-x-3 p-6 border-t border-gray-200">
+        <div class="flex justify-end space-x-3 p-6 border-t border-gray-200 dark:border-gray-700">
           <button
             type="button"
             id="create-user-submit-btn"

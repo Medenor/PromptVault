@@ -455,8 +455,8 @@ function updateActivityHistory(): void {
   historyList.innerHTML = `
         <div class="history-item">
             <div class="history-info">
-                <div>No recent activity</div>
-                <div class="history-details">Activity tracking not yet implemented</div>
+                <div class="text-sm text-gray-700 dark:text-gray-300">No recent activity</div>
+                <div class="history-details text-xs text-gray-500 dark:text-gray-400">Activity tracking not yet implemented</div>
             </div>
         </div>
     `;

@@ -32,7 +32,7 @@
     <script src="https://unpkg.com/i18next-browser-languagedetector@7.2.0/i18nextBrowserLanguageDetector.min.js"></script>
     <script src="https://unpkg.com/i18next-http-backend@2.4.2/i18nextHttpBackend.min.js"></script>
   </head>
-  <body class="bg-gray-50 min-h-screen">
+  <body class="bg-gray-50 min-h-screen dark:bg-gray-900">
     <a href="#main-content" class="skip-link" data-i18n="nav.skipToMainContent">Skip to main content</a>
     <div class="min-h-screen flex flex-col">
       <!-- Header -->
@@ -50,7 +50,7 @@
                   src="/static/images/promptvault_logo_frontend.webp"
                   alt=""
                   aria-hidden="true"
-                  class="h-14 w-14 border-2 border-gray-400 rounded-lg shadow-lg"
+                  class="h-14 w-14 border-2 border-gray-400 rounded-lg shadow-lg dark:border-gray-600"
                 />
               </a>
               <div class="text-2xl font-bold">PromptVault</div>
@@ -62,7 +62,7 @@
               <button
                 type="button"
                 onclick="window.location.href = '/'"
-                class="hidden md:block px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
+                class="hidden md:block px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600"
                 data-i18n="nav.backToMain"
               >
                 Back to Main
@@ -76,12 +76,12 @@
 
       <!-- Main Content -->
       <main id="main-content" role="main" class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
-        <h1 class="text-3xl font-bold text-gray-900 mb-2" data-i18n="importExport.title">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2 dark:text-gray-100" data-i18n="importExport.title">
           Import & Export
         </h1>
         <!-- Page Header -->
         <div class="mb-8">
-          <p class="text-gray-700" data-i18n="importExport.description">
+          <p class="text-gray-700 dark:text-gray-300" data-i18n="importExport.description">
             Manage your prompt data with comprehensive import and export capabilities
           </p>
         </div>
@@ -89,8 +89,8 @@
         <!-- Export & Import Cards -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           <!-- Export Section -->
-          <div class="bg-white rounded-lg shadow p-6">
-            <h2 class="text-xl font-bold text-gray-900 mb-6" data-i18n="importExport.exportTitle">
+          <div class="bg-white rounded-lg shadow p-6 dark:bg-gray-800">
+            <h2 class="text-xl font-bold text-gray-900 mb-6 dark:text-gray-100" data-i18n="importExport.exportTitle">
               Export Prompts
             </h3>
 
@@ -105,14 +105,14 @@
               <div>
                 <label
                   for="export-format"
-                  class="block text-sm font-medium text-gray-700 mb-2"
+                  class="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300"
                   data-i18n="importExport.exportFormat"
                   >Export Format</label
                 >
                 <select
                   id="export-format"
                   name="export_format"
-                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
+                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 dark:placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                 >
                   <option value="csv">CSV - Comma-separated values</option>
                   <option value="markdown">Markdown - Human-readable format</option>
@@ -127,9 +127,9 @@
                     id="include-favorites"
                     name="include_favorites"
                     unchecked
-                    class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:border-gray-600 text-gray-900 dark:text-gray-100"
                   />
-                  <span class="text-sm text-gray-700" data-i18n="importExport.includeFavorites"
+                  <span class="text-sm text-gray-700 dark:text-gray-300" data-i18n="importExport.includeFavorites"
                     >Include only favorite prompts</span
                   >
                 </label>
@@ -139,9 +139,9 @@
                     id="include-metadata"
                     name="include_metadata"
                     checked
-                    class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:border-gray-600 text-gray-900 dark:text-gray-100"
                   />
-                  <span class="text-sm text-gray-700" data-i18n="importExport.includeMetadata"
+                  <span class="text-sm text-gray-700 dark:text-gray-300" data-i18n="importExport.includeMetadata"
                     >Include metadata (tags, categories)</span
                   >
                 </label>
@@ -150,7 +150,7 @@
               <div>
                 <label
                   for="export-filename"
-                  class="block text-sm font-medium text-gray-700 mb-2"
+                  class="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300"
                   data-i18n="importExport.filename"
                   >Filename</label
                 >
@@ -163,7 +163,7 @@
                   maxlength="255"
                   pattern="[A-Za-z0-9_\\-]+"
                   aria-describedby="export-filename-error"
-                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
+                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 dark:placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed dark:border-gray-600 text-gray-900 dark:text-gray-100"
                 />
                 <p
                   class="text-red-600 text-xs mt-1"
@@ -187,7 +187,7 @@
                   <button
                     type="button"
                     name="preview_export"
-                    class="px-4 py-2 text-sm font-medium bg-gray-200 text-gray-900 hover:bg-gray-300 rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
+                    class="px-4 py-2 text-sm font-medium bg-gray-200 text-gray-900 hover:bg-gray-300 rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600"
                     onclick="previewExport()"
                     data-i18n="importExport.previewBtn"
                   >
@@ -196,7 +196,7 @@
                   <button
                     type="button"
                     name="clear_export"
-                    class="px-4 py-2 text-sm font-medium bg-gray-200 text-gray-900 hover:bg-gray-300 rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
+                    class="px-4 py-2 text-sm font-medium bg-gray-200 text-gray-900 hover:bg-gray-300 rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600"
                     onclick="clearExportSettings()"
                     data-i18n="importExport.clearBtn"
                   >
@@ -206,7 +206,7 @@
               </div>
 
               <div class="hidden" id="export-progress">
-                <div class="h-2 bg-gray-200 rounded overflow-hidden mt-2">
+                <div class="h-2 bg-gray-200 rounded overflow-hidden mt-2 dark:bg-gray-700">
                   <div
                     class="h-full bg-blue-600 transition-all duration-300"
                     id="export-progress-fill"
@@ -219,8 +219,8 @@
           </div>
 
           <!-- Import Section -->
-          <div class="bg-white rounded-lg shadow p-6">
-            <h2 class="text-xl font-bold text-gray-900 mb-6" data-i18n="importExport.importTitle">
+          <div class="bg-white rounded-lg shadow p-6 dark:bg-gray-800">
+            <h2 class="text-xl font-bold text-gray-900 mb-6 dark:text-gray-100" data-i18n="importExport.importTitle">
               Import Prompts
             </h3>
 
@@ -235,11 +235,11 @@
               <div>
                 <label
                   for="import-file"
-                  class="block text-sm font-medium text-gray-700 mb-2"
+                  class="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300"
                   data-i18n="importExport.selectFile"
                   >Select File</label
                 >
-                <div id="import-file-help" class="text-sm text-gray-700 mb-3">
+                <div id="import-file-help" class="text-sm text-gray-700 mb-3 dark:text-gray-300">
                   <p class="mb-2">Supported formats: CSV, JSON, Markdown (.csv, .json, .md, .markdown)</p>
                   <p>Maximum file size: 10MB</p>
                 </div>
@@ -250,7 +250,7 @@
                   accept=".csv,.json,.md,.markdown"
                   aria-describedby="import-file-help import-file-error"
                   aria-errormessage="import-file-error"
-                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:border-gray-600 text-gray-900 dark:text-gray-100"
                 />
                 <p
                   class="text-red-600 text-xs mt-1"
@@ -267,9 +267,9 @@
                     id="import-merge"
                     name="import_merge"
                     checked
-                    class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:border-gray-600 text-gray-900 dark:text-gray-100"
                   />
-                  <span class="text-sm text-gray-700" data-i18n="importExport.mergeData"
+                  <span class="text-sm text-gray-700 dark:text-gray-300" data-i18n="importExport.mergeData"
                     >Merge with existing data</span
                   >
                 </label>
@@ -279,9 +279,9 @@
                     id="import-validate"
                     name="import_validate"
                     checked
-                    class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:border-gray-600 text-gray-900 dark:text-gray-100"
                   />
-                  <span class="text-sm text-gray-700" data-i18n="importExport.validateData"
+                  <span class="text-sm text-gray-700 dark:text-gray-300" data-i18n="importExport.validateData"
                     >Validate data before import</span
                   >
                 </label>
@@ -290,7 +290,7 @@
               <div>
                 <label
                   for="import-mode"
-                  class="block text-sm font-medium text-gray-700 mb-2"
+                  class="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300"
                   data-i18n="importExport.importMode"
                   >Import Mode</label
                 >
@@ -298,7 +298,7 @@
                   id="import-mode"
                   name="import_mode"
                   aria-describedby="import-mode-help"
-                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
+                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 dark:placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                 >
                   <option value="append" data-i18n="importExport.modeAppend">
                     Append to existing
@@ -310,7 +310,7 @@
                 </select>
                 <p
                   id="import-mode-help"
-                  class="text-xs text-gray-700 mt-1"
+                  class="text-xs text-gray-700 mt-1 dark:text-gray-300"
                   data-i18n="importExport.modeHelp"
                 >
                   Append adds new prompts and keeps current ones (creating duplicates if titles
@@ -333,7 +333,7 @@
                   <button
                     type="button"
                     name="preview_import"
-                    class="px-4 py-2 text-sm font-medium bg-gray-200 text-gray-900 hover:bg-gray-300 rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
+                    class="px-4 py-2 text-sm font-medium bg-gray-200 text-gray-900 hover:bg-gray-300 rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600"
                     onclick="previewImport()"
                     data-i18n="importExport.previewBtn"
                   >
@@ -343,7 +343,7 @@
               </div>
 
               <div class="hidden" id="import-progress">
-                <div class="h-2 bg-gray-200 rounded overflow-hidden mt-2">
+                <div class="h-2 bg-gray-200 rounded overflow-hidden mt-2 dark:bg-gray-700">
                   <div
                     class="h-full bg-blue-600 transition-all duration-300"
                     id="import-progress-fill"
@@ -357,19 +357,19 @@
         </div>
 
         <!-- Preview Panel -->
-        <div class="hidden bg-white rounded-lg shadow p-6 mb-8" id="preview-panel">
-          <h2 class="text-xl font-bold text-gray-900 mb-4" data-i18n="importExport.previewTitle">
+        <div class="hidden bg-white rounded-lg shadow p-6 mb-8 dark:bg-gray-800" id="preview-panel">
+          <h2 class="text-xl font-bold text-gray-900 mb-4 dark:text-gray-100" data-i18n="importExport.previewTitle">
             Preview
           </h3>
           <div
-            class="bg-gray-50 rounded p-4 mb-4 font-mono text-sm overflow-auto max-h-96"
+            class="bg-gray-50 rounded p-4 mb-4 font-mono text-sm overflow-auto max-h-96 dark:bg-gray-900"
             id="preview-content"
           ></div>
           <div class="flex gap-2 items-center justify-end">
             <button
               type="button"
               name="cancel_preview"
-              class="px-4 py-2 text-sm font-medium bg-gray-200 text-gray-900 hover:bg-gray-300 rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
+              class="px-4 py-2 text-sm font-medium bg-gray-200 text-gray-900 hover:bg-gray-300 rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600"
               onclick="cancelPreview()"
               id="cancel-btn-import-preview"
             >
@@ -388,49 +388,49 @@
         </div>
 
         <!-- Statistics Panel -->
-        <div class="bg-white rounded-lg shadow p-6">
-          <h2 class="text-xl font-bold text-gray-900 mb-6" data-i18n="importExport.statisticsTitle">
+        <div class="bg-white rounded-lg shadow p-6 dark:bg-gray-800">
+          <h2 class="text-xl font-bold text-gray-900 mb-6 dark:text-gray-100" data-i18n="importExport.statisticsTitle">
             Statistics & History
           </h3>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
-              <h3 class="font-semibold text-gray-900 mb-4" data-i18n="importExport.currentStats">
+              <h3 class="font-semibold text-gray-900 mb-4 dark:text-gray-100" data-i18n="importExport.currentStats">
                 Current Data
               </h4>
               <div class="space-y-3">
-                <div class="flex justify-between py-2 border-b border-gray-200">
-                  <span class="text-sm text-gray-700" data-i18n="importExport.totalPrompts"
+                <div class="flex justify-between py-2 border-b border-gray-200 dark:border-gray-700">
+                  <span class="text-sm text-gray-700 dark:text-gray-300" data-i18n="importExport.totalPrompts"
                     >Total Prompts:</span
                   >
-                  <span class="text-sm font-medium text-gray-900" id="total-prompts">-</span>
+                  <span class="text-sm font-medium text-gray-900 dark:text-gray-100" id="total-prompts">-</span>
                 </div>
-                <div class="flex justify-between py-2 border-b border-gray-200">
-                  <span class="text-sm text-gray-700" data-i18n="importExport.totalCategories"
+                <div class="flex justify-between py-2 border-b border-gray-200 dark:border-gray-700">
+                  <span class="text-sm text-gray-700 dark:text-gray-300" data-i18n="importExport.totalCategories"
                     >Categories:</span
                   >
-                  <span class="text-sm font-medium text-gray-900" id="total-categories">-</span>
+                  <span class="text-sm font-medium text-gray-900 dark:text-gray-100" id="total-categories">-</span>
                 </div>
-                <div class="flex justify-between py-2 border-b border-gray-200">
-                  <span class="text-sm text-gray-700" data-i18n="importExport.totalTags"
+                <div class="flex justify-between py-2 border-b border-gray-200 dark:border-gray-700">
+                  <span class="text-sm text-gray-700 dark:text-gray-300" data-i18n="importExport.totalTags"
                     >Tags:</span
                   >
-                  <span class="text-sm font-medium text-gray-900" id="total-tags">-</span>
+                  <span class="text-sm font-medium text-gray-900 dark:text-gray-100" id="total-tags">-</span>
                 </div>
                 <div class="flex justify-between py-2">
-                  <span class="text-sm text-gray-700" data-i18n="importExport.favoritePrompts"
+                  <span class="text-sm text-gray-700 dark:text-gray-300" data-i18n="importExport.favoritePrompts"
                     >Favorite Prompts:</span
                   >
-                  <span class="text-sm font-medium text-gray-900" id="favorite-prompts">-</span>
+                  <span class="text-sm font-medium text-gray-900 dark:text-gray-100" id="favorite-prompts">-</span>
                 </div>
               </div>
             </div>
             <div>
-              <h3 class="font-semibold text-gray-900 mb-4" data-i18n="importExport.recentActivity">
+              <h3 class="font-semibold text-gray-900 mb-4 dark:text-gray-100" data-i18n="importExport.recentActivity">
                 Recent Activity
               </h4>
               <div id="activity-history" class="space-y-2">
-                <div class="p-3 bg-gray-50 rounded">
-                  <div class="text-sm text-gray-700">No recent activity</div>
+                <div class="p-3 bg-gray-50 rounded dark:bg-gray-900">
+                  <div class="text-sm text-gray-700 dark:text-gray-300">No recent activity</div>
                 </div>
               </div>
             </div>
@@ -438,9 +438,9 @@
         </div>
       </main>
 
-      <footer role="contentinfo" aria-label="Site footer" class="mt-auto border-t border-gray-200 bg-gray-50">
+      <footer role="contentinfo" aria-label="Site footer" class="mt-auto border-t border-gray-200 bg-gray-50 dark:bg-gray-900 dark:border-gray-700">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div class="flex flex-col gap-3 text-sm text-gray-600">
+          <div class="flex flex-col gap-3 text-sm text-gray-600 dark:text-gray-400">
             <p>
               PromptVault is licensed under <a href="https://www.mozilla.org/en-US/MPL/2.0/" class="text-blue-600 hover:text-blue-800 underline" target="_blank" rel="noopener noreferrer">Mozilla Public License 2.0</a>.
             </p>

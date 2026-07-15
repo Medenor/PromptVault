@@ -79,7 +79,7 @@ function renderDashboard(stats: MonitoringStats): void {
       </table>`;
   } else if (historyEl) {
     historyEl.innerHTML =
-      `<div class="text-gray-500 text-sm">${t('backup.noHistoryData')}</div>`;
+      `<div class="text-gray-500 text-sm dark:text-gray-400">${t('backup.noHistoryData')}</div>`;
   }
 }
 
@@ -99,7 +99,7 @@ function renderAuditLog(entries: AuditEntry[]): void {
   if (!el) return;
 
   if (entries.length === 0) {
-    el.innerHTML = `<div class="text-gray-500 text-sm">${t('backup.noAuditEntries')}</div>`;
+    el.innerHTML = `<div class="text-gray-500 text-sm dark:text-gray-400">${t('backup.noAuditEntries')}</div>`;
     return;
   }
 

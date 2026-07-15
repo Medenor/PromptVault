@@ -146,7 +146,7 @@ function displaySessions(): void {
 
   if (filteredSessions.length === 0) {
     tableBody.innerHTML =
-      '<tr><td colspan="7" class="px-6 py-4 text-center text-gray-500">No active sessions found</td></tr>';
+      '<tr><td colspan="7" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">No active sessions found</td></tr>';
     return;
   }
 
@@ -157,7 +157,9 @@ function displaySessions(): void {
       const ipAddress = session.ip_address || 'Unknown';
       const userId = session.userId || '';
       const sessionId = session.id;
-      const rowClass = session.is_current ? 'bg-blue-50 hover:bg-blue-100' : 'hover:bg-gray-50';
+      const rowClass = session.is_current
+        ? 'bg-blue-50 hover:bg-blue-100 dark:bg-blue-950 dark:hover:bg-blue-900'
+        : 'hover:bg-gray-50 dark:hover:bg-gray-800';
       const textClass = session.is_current ? 'font-semibold' : '';
       const currentBadge = session.is_current
         ? `<span class="ml-2 px-2 py-1 bg-blue-700 text-white text-xs rounded font-medium">${t('admin.sessions.currentBadge')}</span>`
@@ -165,12 +167,12 @@ function displaySessions(): void {
 
       return `
         <tr class="${rowClass}">
-          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 ${textClass}">${username} ${currentBadge}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 ${textClass}">${ipAddress}</td>
-          <td class="px-6 py-4 text-sm text-gray-700 max-w-xs truncate ${textClass}" title="${userAgent}">${truncateText(userAgent, 50)}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 ${textClass}">${formatDate(session.created_at)}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 ${textClass}">${formatDate(session.last_used_at)}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 ${textClass}">${formatDate(session.expires_at)}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 ${textClass} dark:text-gray-100">${username} ${currentBadge}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 ${textClass} dark:text-gray-300">${ipAddress}</td>
+          <td class="px-6 py-4 text-sm text-gray-700 max-w-xs truncate ${textClass} dark:text-gray-300" title="${userAgent}">${truncateText(userAgent, 50)}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 ${textClass} dark:text-gray-300">${formatDate(session.created_at)}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 ${textClass} dark:text-gray-300">${formatDate(session.last_used_at)}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 ${textClass} dark:text-gray-300">${formatDate(session.expires_at)}</td>
           <td class="px-6 py-4 whitespace-nowrap text-sm">
             <button class="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 text-xs font-medium focus:outline-2 focus:outline-red-500 focus:outline-offset-1" onclick="window.showRevokeConfirmation('${userId}', '${sessionId}', '${username}')" data-i18n="actions.revoke">Revoke</button>
           </td>
@@ -311,7 +313,7 @@ async function loadAllSessions(): Promise<void> {
   const tableBody = document.getElementById('sessions-table-body');
   if (tableBody) {
     tableBody.innerHTML =
-      '<tr><td colspan="7" class="px-6 py-4 text-center text-gray-500"><div>Loading...</div></td></tr>';
+      '<tr><td colspan="7" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400"><div>Loading...</div></td></tr>';
   }
 
   try {

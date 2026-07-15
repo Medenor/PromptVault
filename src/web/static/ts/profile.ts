@@ -308,7 +308,7 @@ async function loadSessions(): Promise<void> {
   if (!sessionsList) return;
 
   sessionsList.innerHTML =
-    '<div class="text-gray-600 text-sm" data-i18n="messages.loading">Loading...</div>';
+    '<div class="text-gray-600 text-sm dark:text-gray-400" data-i18n="messages.loading">Loading...</div>';
 
   try {
     const data = await apiGet<{ sessions?: SessionItem[] }>(`${API_BASE}/sessions`);
@@ -320,7 +320,7 @@ async function loadSessions(): Promise<void> {
     }
 
     if (sessions.length === 0) {
-      sessionsList.innerHTML = '<p class="text-gray-600 text-sm">No active sessions</p>';
+      sessionsList.innerHTML = '<p class="text-gray-600 text-sm dark:text-gray-400">No active sessions</p>';
       return;
     }
 
@@ -341,15 +341,15 @@ async function loadSessions(): Promise<void> {
         }
 
         return `
-            <div class="border border-gray-200 rounded-lg p-4 ${session.is_current ? 'bg-blue-50 border-blue-300' : 'bg-white'}" data-session-id="${sessionId}">
+            <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 ${session.is_current ? 'bg-blue-50 border-blue-300 dark:bg-blue-950 dark:border-blue-800' : 'bg-white dark:bg-gray-800'}" data-session-id="${sessionId}">
               <div class="flex justify-between items-start">
                 <div class="flex-1">
                   <div class="flex items-center gap-2 mb-2">
-                    <div class="font-medium text-gray-900">${deviceDisplay}</div>
+                    <div class="font-medium text-gray-900 dark:text-gray-100">${deviceDisplay}</div>
                     ${session.is_current ? '<span class="px-2 py-1 text-xs bg-blue-700 text-white rounded">Current Session</span>' : ''}
                   </div>
-                  <div class="text-sm text-gray-600 mb-1">${browserDisplay} on ${osDisplay}</div>
-                  <div class="text-xs text-gray-500">
+                  <div class="text-sm text-gray-600 mb-1 dark:text-gray-400">${browserDisplay} on ${osDisplay}</div>
+                  <div class="text-xs text-gray-500 dark:text-gray-400">
                     IP: ${session.ip_address || 'Unknown'} |
                     Last used: ${formatDate(session.last_used_at)} |
                     Expires: ${formatDate(session.expires_at)}

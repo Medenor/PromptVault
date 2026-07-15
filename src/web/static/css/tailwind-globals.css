@@ -10,6 +10,11 @@
 /* Tailwind CSS v4 */
 @import 'tailwindcss';
 
+/* Tailwind v4 ignores the `darkMode: 'class'` option in tailwind.config.ts;
+   dark: variants must be told explicitly to key off the `.dark` class set by
+   the prefers-color-scheme bootstrap script, not the raw OS media query. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* Source paths for Tailwind to scan */
 @source "../../templates";
 @source "../ts";
@@ -229,9 +234,17 @@
     color: #b91c1c !important; /* red-700 for high contrast on light backgrounds */
   }
 
+  .dark .text-red-500 {
+    color: #fca5a5 !important; /* red-300 for high contrast on dark backgrounds */
+  }
+
   /* Ensure yellow/amber warning text has high contrast for WCAG AA compliance */
   .text-yellow-700 {
     color: #854d0e !important; /* amber-800 for high contrast on light backgrounds */
+  }
+
+  .dark .text-yellow-700 {
+    color: #fcd34d !important; /* amber-300 for high contrast on dark backgrounds */
   }
 
   .skip-link {
@@ -634,42 +647,43 @@
     }
   }
 
-  /* Dark mode support */
-  @media (prefers-color-scheme: dark) {
-    .form-group label {
-      color: #f3f4f6;
-    }
+  /* Dark mode support — keyed off the `.dark` class the prefers-color-scheme
+     bootstrap script sets on <html>, not the raw media query, so it stays in
+     sync with the Tailwind dark: utilities used everywhere else. */
+  .dark .form-group label {
+    color: #f3f4f6;
+  }
 
-    .form-group input[type='text'],
-    .form-group input[type='number'],
-    .form-group textarea,
-    .form-group select {
-      background-color: #1f2937;
-      border-color: #4b5563;
-      color: #f3f4f6;
-    }
+  .dark .form-group input[type='text'],
+  .dark .form-group input[type='number'],
+  .dark .form-group textarea,
+  .dark .form-group select {
+    background-color: #1f2937;
+    border-color: #4b5563;
+    color: #f3f4f6;
+  }
 
-    .char-counter-pristine,
-    .char-counter-valid {
-      color: #9ca3af;
-    }
+  .dark .char-counter,
+  .dark .char-counter-pristine,
+  .dark .char-counter-valid {
+    color: #9ca3af;
+  }
 
-    .validation-error-banner {
-      background-color: #7f1d1d;
-      border-color: #ef4444;
-    }
+  .dark .validation-error-banner {
+    background-color: #7f1d1d;
+    border-color: #ef4444;
+  }
 
-    .error-banner-header,
-    .error-banner-list,
-    .error-banner-message {
-      color: #fee2e2;
-    }
+  .dark .error-banner-header,
+  .dark .error-banner-list,
+  .dark .error-banner-message {
+    color: #fee2e2;
+  }
 
-    #prompt-tags-duplicates {
-      background-color: #664d03;
-      border-color: #fbbf24;
-      color: #ffecb5;
-    }
+  .dark #prompt-tags-duplicates {
+    background-color: #664d03;
+    border-color: #fbbf24;
+    color: #ffecb5;
   }
 
   /* Print styles */
@@ -740,14 +754,26 @@
     font-weight: 600;
   }
 
+  .dark table thead th {
+    color: #d1d5db; /* gray-300 */
+  }
+
   /* Table cells should use gray-700 for normal text */
   table tbody td {
     color: #374151; /* gray-700 */
   }
 
+  .dark table tbody td {
+    color: #d1d5db; /* gray-300 */
+  }
+
   /* Table header background should have dark text */
   table thead tr {
     background-color: #f3f4f6; /* gray-100 */
+  }
+
+  .dark table thead tr {
+    background-color: #1f2937; /* gray-800 */
   }
 
   /* Custom Scrollbar Styling */
@@ -840,23 +866,21 @@
   }
 
   /* Dark mode support for fade indicators */
-  @media (prefers-color-scheme: dark) {
-    .scroll-fade-top {
-      background: linear-gradient(
-        to bottom,
-        rgba(80, 80, 80, 0.15),
-        rgba(80, 80, 80, 0.05),
-        transparent
-      );
-    }
+  .dark .scroll-fade-top {
+    background: linear-gradient(
+      to bottom,
+      rgba(80, 80, 80, 0.15),
+      rgba(80, 80, 80, 0.05),
+      transparent
+    );
+  }
 
-    .scroll-fade-bottom {
-      background: linear-gradient(
-        to top,
-        rgba(80, 80, 80, 0.15),
-        rgba(80, 80, 80, 0.05),
-        transparent
-      );
-    }
+  .dark .scroll-fade-bottom {
+    background: linear-gradient(
+      to top,
+      rgba(80, 80, 80, 0.15),
+      rgba(80, 80, 80, 0.05),
+      transparent
+    );
   }
 }

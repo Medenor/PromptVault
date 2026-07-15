@@ -447,7 +447,7 @@ function renderBackupList(backups: BackupItem[]): void {
   if (!container) return;
 
   if (backups.length === 0) {
-    container.innerHTML = `<div class="text-gray-500 text-sm">${escapeHtml(t('backup.noBackupsFound'))}</div>`;
+    container.innerHTML = `<div class="text-gray-500 text-sm dark:text-gray-400">${escapeHtml(t('backup.noBackupsFound'))}</div>`;
     return;
   }
 
@@ -475,7 +475,7 @@ function createBackupItem(backup: BackupItem): string {
     ? cloudProviderNames.get(backup.cloud_provider_id) || backup.cloud_provider_id
     : '';
   const localBadge = backup.storage_path
-    ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-200 text-gray-700 text-xs font-medium">💻 ${escapeHtml(t('backup.localBadge'))}</span>`
+    ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-200 text-gray-700 text-xs font-medium dark:bg-gray-700 dark:text-gray-300">💻 ${escapeHtml(t('backup.localBadge'))}</span>`
     : '';
   const cloudBadge = backup.cloud_provider_id
     ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-medium" title="${escapeHtml(cloudProviderName)}">☁️ ${escapeHtml(t('backup.cloudBadge'))}</span>`
@@ -486,9 +486,9 @@ function createBackupItem(backup: BackupItem): string {
     : '';
 
   return `
-        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200 hover:border-blue-300 transition" data-id="${backupId}" data-encrypted="${backup.is_encrypted ? 'true' : 'false'}">
+        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200 hover:border-blue-300 transition dark:bg-gray-900 dark:border-gray-700" data-id="${backupId}" data-encrypted="${backup.is_encrypted ? 'true' : 'false'}">
             <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-3 md:gap-0 mb-3">
-                <h4 class="font-semibold text-gray-900 min-w-0 truncate" title="${backupId}${isCompressed}">${backupId}${isCompressed}</h4>
+                <h4 class="font-semibold text-gray-900 min-w-0 truncate dark:text-gray-100" title="${backupId}${isCompressed}">${backupId}${isCompressed}</h4>
                 <div class="flex gap-2 flex-shrink-0">
                     <button class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-medium transition whitespace-nowrap" data-backup-id="${backupId}" data-i18n="backup.restoreBtn" onclick="showRestoreModal(this.dataset.backupId)">${escapeHtml(t('backup.restoreBtn'))}</button>
                     <button class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-medium transition whitespace-nowrap" data-backup-id="${backupId}" data-i18n="backup.deleteBtn" onclick="showDeleteModal(this.dataset.backupId)">${escapeHtml(t('backup.deleteBtn'))}</button>
@@ -496,12 +496,12 @@ function createBackupItem(backup: BackupItem): string {
             </div>
             <div class="flex items-center gap-2 mb-2">${storageBadge}${encryptedBadge}</div>
             <div class="space-y-1">
-                <div class="flex items-center justify-between text-sm text-gray-600">
+                <div class="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
                     <span>${escapeHtml(timestamp)}</span>
                     <span>${compressionIcon} ${escapeHtml(size)}</span>
                 </div>
-                <div class="text-sm text-gray-600">${backup.prompt_count} <span data-i18n="backup.promptsCount">${escapeHtml(t('backup.promptsCount'))}</span></div>
-                <div class="text-xs text-gray-500"><span data-i18n="backup.createdByLabel">${escapeHtml(t('backup.createdByLabel'))}</span> ${createdBy}</div>
+                <div class="text-sm text-gray-600 dark:text-gray-400">${backup.prompt_count} <span data-i18n="backup.promptsCount">${escapeHtml(t('backup.promptsCount'))}</span></div>
+                <div class="text-xs text-gray-500 dark:text-gray-400"><span data-i18n="backup.createdByLabel">${escapeHtml(t('backup.createdByLabel'))}</span> ${createdBy}</div>
             </div>
         </div>
     `;
@@ -1013,7 +1013,7 @@ async function loadCloudProviders(): Promise<void> {
   } catch {
     const list = document.getElementById('cloud-providers-list');
     if (list)
-      list.innerHTML = `<div class="text-gray-500 text-sm">${escapeHtml(t('backup.noProvidersConfigured'))}</div>`;
+      list.innerHTML = `<div class="text-gray-500 text-sm dark:text-gray-400">${escapeHtml(t('backup.noProvidersConfigured'))}</div>`;
   }
 }
 
@@ -1038,7 +1038,7 @@ function renderCloudProviders(providers: CloudProvider[]): void {
   if (!list) return;
 
   if (providers.length === 0) {
-    list.innerHTML = `<div class="text-gray-500 text-sm">${escapeHtml(t('backup.noProvidersConfigured'))}</div>`;
+    list.innerHTML = `<div class="text-gray-500 text-sm dark:text-gray-400">${escapeHtml(t('backup.noProvidersConfigured'))}</div>`;
     return;
   }
 
@@ -1047,10 +1047,10 @@ function renderCloudProviders(providers: CloudProvider[]): void {
       const pid = escapeHtml(p.id);
       const endpointPart = p.endpoint_url ? ` (${escapeHtml(p.endpoint_url)})` : '';
       return `
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-gray-50 rounded-lg p-3 border border-gray-200">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-gray-50 rounded-lg p-3 border border-gray-200 dark:bg-gray-900 dark:border-gray-700">
       <div class="min-w-0">
-        <div class="font-medium text-gray-900 break-words">${escapeHtml(p.name)}</div>
-        <div class="text-xs text-gray-500 break-words">${escapeHtml(p.provider_type)} — ${escapeHtml(p.bucket_name)}${endpointPart}</div>
+        <div class="font-medium text-gray-900 break-words dark:text-gray-100">${escapeHtml(p.name)}</div>
+        <div class="text-xs text-gray-500 break-words dark:text-gray-400">${escapeHtml(p.provider_type)} — ${escapeHtml(p.bucket_name)}${endpointPart}</div>
       </div>
       <div class="flex gap-2 shrink-0">
         <button class="px-2 py-1 text-xs bg-green-600 hover:bg-green-700 text-white rounded" data-provider-id="${pid}" data-i18n="backup.testBtn" onclick="testCloudProvider(this.dataset.providerId)">${escapeHtml(t('backup.testBtn'))}</button>

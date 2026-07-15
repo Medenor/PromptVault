@@ -32,7 +32,7 @@
     <script src="https://unpkg.com/i18next-browser-languagedetector@7.2.0/i18nextBrowserLanguageDetector.min.js"></script>
     <script src="https://unpkg.com/i18next-http-backend@2.4.2/i18nextHttpBackend.min.js"></script>
   </head>
-  <body class="bg-gray-50 min-h-screen">
+  <body class="bg-gray-50 min-h-screen dark:bg-gray-900">
     <a href="#main-content" class="skip-link" data-i18n="nav.skipToMainContent">Skip to main content</a>
     <div class="min-h-screen flex flex-col">
       <!-- Header -->
@@ -50,7 +50,7 @@
                   src="/static/images/promptvault_logo_frontend.webp"
                   alt=""
                   aria-hidden="true"
-                  class="h-14 w-14 border-2 border-gray-400 rounded-lg shadow-lg flex-shrink-0"
+                  class="h-14 w-14 border-2 border-gray-400 rounded-lg shadow-lg flex-shrink-0 dark:border-gray-600"
                 />
               </a>
               <div class="text-2xl font-bold truncate">PromptVault</div>
@@ -62,7 +62,7 @@
               <button
                 type="button"
                 onclick="window.location.href = '/'"
-                class="hidden md:block px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 transition whitespace-nowrap flex-shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
+                class="hidden md:block px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 transition whitespace-nowrap flex-shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600"
                 data-i18n="nav.backToMain"
               >
                 Back to Main
@@ -76,12 +76,12 @@
 
       <!-- Main Content -->
       <main id="main-content" role="main" class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
-        <h1 class="text-3xl font-bold text-gray-900 mb-2" data-i18n="backup.title">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2 dark:text-gray-100" data-i18n="backup.title">
           Backup Management
         </h1>
         <!-- Page Header -->
         <div class="mb-8">
-          <p class="text-gray-700" data-i18n="backup.description">
+          <p class="text-gray-700 dark:text-gray-300" data-i18n="backup.description">
             Manage your data backups with comprehensive backup and restoration capabilities
           </p>
         </div>
@@ -89,8 +89,8 @@
         <!-- Create Backup & Backup List -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           <!-- Create Backup Section -->
-          <div class="bg-white rounded-lg shadow p-6">
-            <h2 class="text-xl font-bold text-gray-900 mb-6" data-i18n="backup.createTitle">
+          <div class="bg-white rounded-lg shadow p-6 dark:bg-gray-800">
+            <h2 class="text-xl font-bold text-gray-900 mb-6 dark:text-gray-100" data-i18n="backup.createTitle">
               Create Backup
             </h3>
 
@@ -105,7 +105,7 @@
               <div>
                 <label
                   for="backup-name"
-                  class="block text-sm font-medium text-gray-700 mb-2"
+                  class="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300"
                   data-i18n="backup.backupName"
                   >Backup Name (optional)</label
                 >
@@ -117,7 +117,7 @@
                   maxlength="64"
                   pattern="[A-Za-z0-9_-]*"
                   aria-describedby="backup-name-error"
-                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
+                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 dark:placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed dark:border-gray-600 text-gray-900 dark:text-gray-100"
                 />
                 <p
                   class="text-red-600 text-xs mt-1"
@@ -130,7 +130,7 @@
               <div class="hidden" id="backup-create-passphrase-container">
                 <label
                   for="backup-create-passphrase"
-                  class="block text-sm font-medium text-gray-700 mb-2"
+                  class="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300"
                   data-i18n="backup.createPassphrase"
                   >Encryption passphrase</label
                 >
@@ -139,10 +139,10 @@
                   id="backup-create-passphrase"
                   data-i18n="[placeholder]backup.createPassphrasePlaceholder"
                   aria-describedby="backup-create-passphrase-hint backup-create-passphrase-error"
-                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700"
+                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 dark:placeholder-gray-400 dark:border-gray-600 text-gray-900 dark:text-gray-100"
                 />
                 <p
-                  class="text-gray-500 text-xs mt-1"
+                  class="text-gray-500 text-xs mt-1 dark:text-gray-400"
                   id="backup-create-passphrase-hint"
                   data-i18n="backup.createPassphraseHint"
                 >This is never stored, so it's required for every backup you create.</p>
@@ -157,13 +157,13 @@
               <div>
                 <label
                   for="backup-create-cloud-provider"
-                  class="block text-sm font-medium text-gray-700 mb-2"
+                  class="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300"
                   data-i18n="backup.createCloudProvider"
                   >Upload to cloud</label
                 >
                 <select
                   id="backup-create-cloud-provider"
-                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 text-gray-900 dark:text-gray-100"
                 >
                   <option value="" data-i18n="backup.scheduleCloudProviderNone">Local only</option>
                 </select>
@@ -185,7 +185,7 @@
                     type="button"
                     aria-label="Clear the backup form"
                     data-i18n-aria-label="backup.clearBtnAriaLabel"
-                    class="px-4 py-2 text-sm font-medium bg-gray-200 text-gray-900 hover:bg-gray-300 rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
+                    class="px-4 py-2 text-sm font-medium bg-gray-200 text-gray-900 hover:bg-gray-300 rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600"
                     onclick="clearBackupForm()"
                     data-i18n="backup.clearBtn"
                   >
@@ -195,7 +195,7 @@
               </div>
 
               <div class="hidden" id="backup-progress">
-                <div class="h-2 bg-gray-200 rounded overflow-hidden mt-2">
+                <div class="h-2 bg-gray-200 rounded overflow-hidden mt-2 dark:bg-gray-700">
                   <div
                     class="h-full bg-blue-600 transition-all duration-300"
                     id="backup-progress-fill"
@@ -208,13 +208,13 @@
           </div>
 
           <!-- Backup List Section -->
-          <div class="bg-white rounded-lg shadow p-6">
-            <h2 class="text-xl font-bold text-gray-900 mb-6" data-i18n="backup.listTitle">
+          <div class="bg-white rounded-lg shadow p-6 dark:bg-gray-800">
+            <h2 class="text-xl font-bold text-gray-900 mb-6 dark:text-gray-100" data-i18n="backup.listTitle">
               Available Backups
             </h3>
 
             <div class="space-y-3 max-h-96 overflow-y-auto" id="backup-list">
-              <div class="text-gray-700 text-sm" data-i18n="messages.loading">
+              <div class="text-gray-700 text-sm dark:text-gray-300" data-i18n="messages.loading">
                 Loading backups...
               </div>
             </div>
@@ -224,7 +224,7 @@
                 type="button"
                 aria-label="Refresh the list of available backups"
                 data-i18n-aria-label="backup.refreshBtnAriaLabel"
-                class="flex-1 px-4 py-2 text-sm font-medium bg-gray-200 text-gray-900 hover:bg-gray-300 rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
+                class="flex-1 px-4 py-2 text-sm font-medium bg-gray-200 text-gray-900 hover:bg-gray-300 rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600"
                 onclick="refreshBackups()"
                 data-i18n="actions.refresh"
               >
@@ -245,14 +245,14 @@
         </div>
 
         <!-- Maintenance Section -->
-        <div class="bg-white rounded-lg shadow p-6 mb-8">
-          <h2 class="text-xl font-bold text-gray-900 mb-6" data-i18n="backup.maintenanceTitle">
+        <div class="bg-white rounded-lg shadow p-6 mb-8 dark:bg-gray-800">
+          <h2 class="text-xl font-bold text-gray-900 mb-6 dark:text-gray-100" data-i18n="backup.maintenanceTitle">
             Maintenance
           </h3>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <h3 class="font-semibold text-gray-900 mb-4" data-i18n="backup.cleanupTitle">
+              <h3 class="font-semibold text-gray-900 mb-4 dark:text-gray-100" data-i18n="backup.cleanupTitle">
                 Cleanup Old Backups
               </h4>
               <div class="space-y-4">
@@ -266,7 +266,7 @@
                 <div>
                   <label
                     for="cleanup-retention-days"
-                    class="block text-sm font-medium text-gray-700 mb-2"
+                    class="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300"
                     data-i18n="backup.retentionDays"
                     >Keep backups for (days):</label
                   >
@@ -278,7 +278,7 @@
                     min="1"
                     max="3650"
                     aria-describedby="retention-days-error"
-                    class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
+                    class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 dark:placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed dark:border-gray-600 text-gray-900 dark:text-gray-100"
                   />
                   <div
                     class="text-red-600 text-sm mt-1"
@@ -301,7 +301,7 @@
             </div>
 
             <div>
-              <h3 class="font-semibold text-gray-900 mb-4" data-i18n="backup.compressTitle">
+              <h3 class="font-semibold text-gray-900 mb-4 dark:text-gray-100" data-i18n="backup.compressTitle">
                 Compress Old Backups
               </h4>
               <div class="space-y-4">
@@ -315,7 +315,7 @@
                 <div>
                   <label
                     for="compress-days"
-                    class="block text-sm font-medium text-gray-700 mb-2"
+                    class="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300"
                     data-i18n="backup.compressDays"
                     >Compress backups older than (days):</label
                   >
@@ -327,7 +327,7 @@
                     min="1"
                     max="365"
                     aria-describedby="compress-days-error"
-                    class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed"
+                    class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 dark:placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed dark:border-gray-600 text-gray-900 dark:text-gray-100"
                   />
                   <div
                     class="text-red-600 text-sm mt-1"
@@ -351,7 +351,7 @@
           </div>
 
           <div class="hidden mt-6" id="maintenance-progress">
-            <div class="h-2 bg-gray-200 rounded overflow-hidden">
+            <div class="h-2 bg-gray-200 rounded overflow-hidden dark:bg-gray-700">
               <div
                 class="h-full bg-blue-600 transition-all duration-300"
                 id="maintenance-progress-fill"
@@ -363,47 +363,47 @@
         </div>
 
         <!-- Schedule Section -->
-        <div class="bg-white rounded-lg shadow p-6 mb-8">
-          <h2 class="text-xl font-bold text-gray-900 mb-6" data-i18n="backup.scheduleTitle">
+        <div class="bg-white rounded-lg shadow p-6 mb-8 dark:bg-gray-800">
+          <h2 class="text-xl font-bold text-gray-900 mb-6 dark:text-gray-100" data-i18n="backup.scheduleTitle">
             Scheduled Backups
           </h2>
           <form id="schedule-form" class="space-y-4" novalidate>
             <div class="flex items-center gap-3">
-              <label for="schedule-enabled" class="text-sm font-medium text-gray-700" data-i18n="backup.scheduleEnabled">Enable scheduled backups</label>
-              <input type="checkbox" id="schedule-enabled" class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+              <label for="schedule-enabled" class="text-sm font-medium text-gray-700 dark:text-gray-300" data-i18n="backup.scheduleEnabled">Enable scheduled backups</label>
+              <input type="checkbox" id="schedule-enabled" class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:border-gray-600 text-gray-900 dark:text-gray-100" />
             </div>
             <p class="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2" data-i18n="backup.scheduleEncryptionNotice">
               Scheduled backups are never encrypted, even if encryption is enabled below, because there is no way to prompt for a passphrase in the background. Encryption only applies to backups you create manually.
             </p>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
-                <label for="schedule-frequency" class="block text-sm font-medium text-gray-700 mb-1" data-i18n="backup.scheduleFrequency">Frequency</label>
-                <select id="schedule-frequency" class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <label for="schedule-frequency" class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300" data-i18n="backup.scheduleFrequency">Frequency</label>
+                <select id="schedule-frequency" class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 text-gray-900 dark:text-gray-100">
                   <option value="daily" data-i18n="backup.scheduleFrequencyDaily">Daily</option>
                   <option value="weekly" data-i18n="backup.scheduleFrequencyWeekly">Weekly</option>
                   <option value="monthly" data-i18n="backup.scheduleFrequencyMonthly">Monthly</option>
                 </select>
               </div>
               <div>
-                <label for="schedule-hour" class="block text-sm font-medium text-gray-700 mb-1" data-i18n="backup.scheduleHour">Hour (UTC)</label>
-                <input type="number" id="schedule-hour" min="0" max="23" value="2" class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <label for="schedule-hour" class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300" data-i18n="backup.scheduleHour">Hour (UTC)</label>
+                <input type="number" id="schedule-hour" min="0" max="23" value="2" class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 text-gray-900 dark:text-gray-100" />
               </div>
               <div>
-                <label for="schedule-minute" class="block text-sm font-medium text-gray-700 mb-1" data-i18n="backup.scheduleMinute">Minute</label>
-                <input type="number" id="schedule-minute" min="0" max="59" value="0" class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <label for="schedule-minute" class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300" data-i18n="backup.scheduleMinute">Minute</label>
+                <input type="number" id="schedule-minute" min="0" max="59" value="0" class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 text-gray-900 dark:text-gray-100" />
               </div>
               <div id="schedule-day-container" class="hidden">
-                <label for="schedule-day" id="schedule-day-label" class="block text-sm font-medium text-gray-700 mb-1" data-i18n="backup.scheduleDay">Day</label>
-                <input type="number" id="schedule-day" min="0" max="31" value="0" class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <label for="schedule-day" id="schedule-day-label" class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300" data-i18n="backup.scheduleDay">Day</label>
+                <input type="number" id="schedule-day" min="0" max="31" value="0" class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 text-gray-900 dark:text-gray-100" />
               </div>
               <div>
-                <label for="schedule-cloud-provider" class="block text-sm font-medium text-gray-700 mb-1" data-i18n="backup.scheduleCloudProvider">Also upload to cloud</label>
-                <select id="schedule-cloud-provider" class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <label for="schedule-cloud-provider" class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300" data-i18n="backup.scheduleCloudProvider">Also upload to cloud</label>
+                <select id="schedule-cloud-provider" class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 text-gray-900 dark:text-gray-100">
                   <option value="" data-i18n="backup.scheduleCloudProviderNone">None (local backup only)</option>
                 </select>
               </div>
             </div>
-            <div id="schedule-last-run" class="text-sm text-gray-500 hidden"></div>
+            <div id="schedule-last-run" class="text-sm text-gray-500 hidden dark:text-gray-400"></div>
             <div class="flex gap-2">
               <button type="button" class="px-4 py-2 text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2" onclick="saveSchedule()" data-i18n="backup.saveScheduleBtn">
                 Save Schedule
@@ -414,29 +414,29 @@
         </div>
 
         <!-- Encryption Section -->
-        <div class="bg-white rounded-lg shadow p-6 mb-8">
-          <h2 class="text-xl font-bold text-gray-900 mb-6" data-i18n="backup.encryptionTitle">
+        <div class="bg-white rounded-lg shadow p-6 mb-8 dark:bg-gray-800">
+          <h2 class="text-xl font-bold text-gray-900 mb-6 dark:text-gray-100" data-i18n="backup.encryptionTitle">
             Backup Encryption
           </h2>
           <form id="encryption-form" class="space-y-4" novalidate>
             <div class="flex items-center gap-3">
-              <label for="encryption-enabled" class="text-sm font-medium text-gray-700" data-i18n="backup.encryptionEnabled">Enable encryption for new backups</label>
-              <input type="checkbox" id="encryption-enabled" class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+              <label for="encryption-enabled" class="text-sm font-medium text-gray-700 dark:text-gray-300" data-i18n="backup.encryptionEnabled">Enable encryption for new backups</label>
+              <input type="checkbox" id="encryption-enabled" class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:border-gray-600 text-gray-900 dark:text-gray-100" />
             </div>
             <div id="encryption-passphrase-container">
-              <label for="encryption-passphrase" class="block text-sm font-medium text-gray-700 mb-1" data-i18n="backup.encryptionPassphrase">Passphrase</label>
-              <input type="password" id="encryption-passphrase" class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
-              <p class="text-gray-500 text-xs mt-1" data-i18n="backup.encryptionPassphraseHint">Sets the passphrase for new backups. It isn't stored — you'll enter it again each time you create a backup.</p>
+              <label for="encryption-passphrase" class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300" data-i18n="backup.encryptionPassphrase">Passphrase</label>
+              <input type="password" id="encryption-passphrase" class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 text-gray-900 dark:text-gray-100" />
+              <p class="text-gray-500 text-xs mt-1 dark:text-gray-400" data-i18n="backup.encryptionPassphraseHint">Sets the passphrase for new backups. It isn't stored — you'll enter it again each time you create a backup.</p>
             </div>
             <div id="encryption-key-rotation" class="hidden space-y-3 border-t pt-4">
-              <h3 class="text-sm font-semibold text-gray-700" data-i18n="backup.encryptionKeyRotation">Key Rotation</h3>
+              <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300" data-i18n="backup.encryptionKeyRotation">Key Rotation</h3>
               <div>
-                <label for="encryption-old-passphrase" class="block text-sm font-medium text-gray-700 mb-1" data-i18n="backup.encryptionOldPassphrase">Old passphrase</label>
-                <input type="password" id="encryption-old-passphrase" class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <label for="encryption-old-passphrase" class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300" data-i18n="backup.encryptionOldPassphrase">Old passphrase</label>
+                <input type="password" id="encryption-old-passphrase" class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 text-gray-900 dark:text-gray-100" />
               </div>
               <div>
-                <label for="encryption-new-passphrase" class="block text-sm font-medium text-gray-700 mb-1" data-i18n="backup.encryptionNewPassphrase">New passphrase</label>
-                <input type="password" id="encryption-new-passphrase" class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <label for="encryption-new-passphrase" class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300" data-i18n="backup.encryptionNewPassphrase">New passphrase</label>
+                <input type="password" id="encryption-new-passphrase" class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 text-gray-900 dark:text-gray-100" />
               </div>
             </div>
             <div class="flex gap-2">
@@ -448,44 +448,44 @@
               </button>
             </div>
             <div id="encryption-status" class="text-sm mt-2"></div>
-            <div id="encryption-info" class="text-xs text-gray-500 mt-2"></div>
+            <div id="encryption-info" class="text-xs text-gray-500 mt-2 dark:text-gray-400"></div>
           </form>
         </div>
 
         <!-- Cloud Storage Section -->
-        <div class="bg-white rounded-lg shadow p-6 mb-8">
-          <h2 class="text-xl font-bold text-gray-900 mb-6" data-i18n="backup.cloudTitle">
+        <div class="bg-white rounded-lg shadow p-6 mb-8 dark:bg-gray-800">
+          <h2 class="text-xl font-bold text-gray-900 mb-6 dark:text-gray-100" data-i18n="backup.cloudTitle">
             Cloud Storage Providers
           </h2>
           <div id="cloud-providers-list" class="space-y-3 mb-4">
-            <div class="text-gray-500 text-sm" data-i18n="backup.cloudLoadingProviders">Loading providers...</div>
+            <div class="text-gray-500 text-sm dark:text-gray-400" data-i18n="backup.cloudLoadingProviders">Loading providers...</div>
           </div>
           <div class="border-t pt-4 space-y-3">
-            <h3 class="text-sm font-semibold text-gray-700" data-i18n="backup.cloudAddProvider">Add Provider</h3>
+            <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300" data-i18n="backup.cloudAddProvider">Add Provider</h3>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label for="provider-name" class="block text-sm font-medium text-gray-700 mb-1" data-i18n="backup.cloudProviderName">Name</label>
-                <input type="text" id="provider-name" class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <label for="provider-name" class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300" data-i18n="backup.cloudProviderName">Name</label>
+                <input type="text" id="provider-name" class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 text-gray-900 dark:text-gray-100" />
               </div>
               <div>
-                <label for="provider-endpoint" class="block text-sm font-medium text-gray-700 mb-1" data-i18n="backup.cloudProviderEndpoint">Endpoint URL (optional)</label>
-                <input type="text" id="provider-endpoint" placeholder="http://minio:9000" class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <label for="provider-endpoint" class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300" data-i18n="backup.cloudProviderEndpoint">Endpoint URL (optional)</label>
+                <input type="text" id="provider-endpoint" placeholder="http://minio:9000" class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 text-gray-900 dark:text-gray-100" />
               </div>
               <div>
-                <label for="provider-bucket" class="block text-sm font-medium text-gray-700 mb-1" data-i18n="backup.cloudProviderBucket">Bucket Name</label>
-                <input type="text" id="provider-bucket" class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <label for="provider-bucket" class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300" data-i18n="backup.cloudProviderBucket">Bucket Name</label>
+                <input type="text" id="provider-bucket" class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 text-gray-900 dark:text-gray-100" />
               </div>
               <div>
-                <label for="provider-region" class="block text-sm font-medium text-gray-700 mb-1" data-i18n="backup.cloudProviderRegion">Region (optional)</label>
-                <input type="text" id="provider-region" class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <label for="provider-region" class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300" data-i18n="backup.cloudProviderRegion">Region (optional)</label>
+                <input type="text" id="provider-region" class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 text-gray-900 dark:text-gray-100" />
               </div>
               <div>
-                <label for="provider-access-key" class="block text-sm font-medium text-gray-700 mb-1" data-i18n="backup.cloudProviderAccessKey">Access Key</label>
-                <input type="text" id="provider-access-key" class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <label for="provider-access-key" class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300" data-i18n="backup.cloudProviderAccessKey">Access Key</label>
+                <input type="text" id="provider-access-key" class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 text-gray-900 dark:text-gray-100" />
               </div>
               <div>
-                <label for="provider-secret-key" class="block text-sm font-medium text-gray-700 mb-1" data-i18n="backup.cloudProviderSecretKey">Secret Key</label>
-                <input type="password" id="provider-secret-key" class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <label for="provider-secret-key" class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300" data-i18n="backup.cloudProviderSecretKey">Secret Key</label>
+                <input type="password" id="provider-secret-key" class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 text-gray-900 dark:text-gray-100" />
               </div>
             </div>
             <div class="flex gap-2">
@@ -498,53 +498,53 @@
         </div>
 
         <!-- Statistics Panel (merged Backup Statistics + Monitoring & Audit) -->
-        <div class="bg-white rounded-lg shadow p-6">
-          <h2 class="text-xl font-bold text-gray-900 mb-6" data-i18n="backup.statisticsTitle">
+        <div class="bg-white rounded-lg shadow p-6 dark:bg-gray-800">
+          <h2 class="text-xl font-bold text-gray-900 mb-6 dark:text-gray-100" data-i18n="backup.statisticsTitle">
             Backup Statistics
           </h2>
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <div class="text-center p-3 bg-gray-50 rounded-lg">
-              <div class="text-2xl font-bold text-gray-900" id="monitoring-total-backups">-</div>
-              <div class="text-xs text-gray-600" data-i18n="backup.totalBackups">Total Backups</div>
+            <div class="text-center p-3 bg-gray-50 rounded-lg dark:bg-gray-900">
+              <div class="text-2xl font-bold text-gray-900 dark:text-gray-100" id="monitoring-total-backups">-</div>
+              <div class="text-xs text-gray-600 dark:text-gray-400" data-i18n="backup.totalBackups">Total Backups</div>
             </div>
-            <div class="text-center p-3 bg-gray-50 rounded-lg">
+            <div class="text-center p-3 bg-gray-50 rounded-lg dark:bg-gray-900">
               <div class="text-2xl font-bold text-blue-600" id="monitoring-total-size">-</div>
-              <div class="text-xs text-gray-600" data-i18n="backup.totalSize">Total Size</div>
+              <div class="text-xs text-gray-600 dark:text-gray-400" data-i18n="backup.totalSize">Total Size</div>
             </div>
-            <div class="text-center p-3 bg-gray-50 rounded-lg">
+            <div class="text-center p-3 bg-gray-50 rounded-lg dark:bg-gray-900">
               <div class="text-2xl font-bold text-green-600" id="compressed-count">-</div>
-              <div class="text-xs text-gray-600" data-i18n="backup.compressedCount">Compressed</div>
+              <div class="text-xs text-gray-600 dark:text-gray-400" data-i18n="backup.compressedCount">Compressed</div>
             </div>
-            <div class="text-center p-3 bg-gray-50 rounded-lg">
+            <div class="text-center p-3 bg-gray-50 rounded-lg dark:bg-gray-900">
               <div class="text-2xl font-bold text-green-600" id="monitoring-success-rate">-</div>
-              <div class="text-xs text-gray-600" data-i18n="backup.monitoringSuccessRate">Success Rate (30d)</div>
+              <div class="text-xs text-gray-600 dark:text-gray-400" data-i18n="backup.monitoringSuccessRate">Success Rate (30d)</div>
             </div>
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-            <div class="text-center p-3 bg-gray-50 rounded-lg">
-              <div class="text-sm font-medium text-gray-900" id="monitoring-last-backup">-</div>
-              <div class="text-xs text-gray-600" data-i18n="backup.monitoringLastBackup">Last Backup</div>
+            <div class="text-center p-3 bg-gray-50 rounded-lg dark:bg-gray-900">
+              <div class="text-sm font-medium text-gray-900 dark:text-gray-100" id="monitoring-last-backup">-</div>
+              <div class="text-xs text-gray-600 dark:text-gray-400" data-i18n="backup.monitoringLastBackup">Last Backup</div>
             </div>
-            <div class="text-center p-3 bg-gray-50 rounded-lg">
-              <div class="text-sm font-medium text-gray-900" id="newest-backup">-</div>
-              <div class="text-xs text-gray-600" data-i18n="backup.newestBackup">Newest Backup</div>
+            <div class="text-center p-3 bg-gray-50 rounded-lg dark:bg-gray-900">
+              <div class="text-sm font-medium text-gray-900 dark:text-gray-100" id="newest-backup">-</div>
+              <div class="text-xs text-gray-600 dark:text-gray-400" data-i18n="backup.newestBackup">Newest Backup</div>
             </div>
-            <div class="text-center p-3 bg-gray-50 rounded-lg">
-              <div class="text-sm font-medium text-gray-900" id="oldest-backup">-</div>
-              <div class="text-xs text-gray-600" data-i18n="backup.oldestBackup">Oldest Backup</div>
+            <div class="text-center p-3 bg-gray-50 rounded-lg dark:bg-gray-900">
+              <div class="text-sm font-medium text-gray-900 dark:text-gray-100" id="oldest-backup">-</div>
+              <div class="text-xs text-gray-600 dark:text-gray-400" data-i18n="backup.oldestBackup">Oldest Backup</div>
             </div>
           </div>
           <div id="monitoring-quota-warning" class="mb-4"></div>
-          <h3 class="font-semibold text-gray-900 mb-3" data-i18n="backup.monitoringHistory">Backup History (30 days)</h3>
+          <h3 class="font-semibold text-gray-900 mb-3 dark:text-gray-100" data-i18n="backup.monitoringHistory">Backup History (30 days)</h3>
           <div id="monitoring-history" class="mb-6"></div>
-          <h3 class="font-semibold text-gray-900 mb-3" data-i18n="backup.monitoringAuditLog">Audit Log</h3>
+          <h3 class="font-semibold text-gray-900 mb-3 dark:text-gray-100" data-i18n="backup.monitoringAuditLog">Audit Log</h3>
           <div id="audit-log-table"></div>
         </div>
       </main>
 
-      <footer role="contentinfo" aria-label="Site footer" class="mt-auto border-t border-gray-200 bg-gray-50">
+      <footer role="contentinfo" aria-label="Site footer" class="mt-auto border-t border-gray-200 bg-gray-50 dark:bg-gray-900 dark:border-gray-700">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div class="flex flex-col gap-3 text-sm text-gray-600">
+          <div class="flex flex-col gap-3 text-sm text-gray-600 dark:text-gray-400">
             <p>
               PromptVault is licensed under <a href="https://www.mozilla.org/en-US/MPL/2.0/" class="text-blue-600 hover:text-blue-800 underline" target="_blank" rel="noopener noreferrer">Mozilla Public License 2.0</a>.
             </p>
@@ -723,18 +723,18 @@
 
                 <!-- Restore Preview Modal -->
                 <div id="restore-preview-modal" aria-modal="true" aria-labelledby="restore-preview-title" role="dialog" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                  <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4">
-                    <div class="flex items-center justify-between p-6 border-b border-gray-200">
-                      <h2 id="restore-preview-title" class="text-xl font-bold text-gray-900" data-i18n="backup.restorePreviewTitle">Restore Preview</h2>
-                      <button type="button" class="text-gray-400 hover:text-gray-700 text-2xl cursor-pointer rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700" aria-label="Close modal" data-i18n="[aria-label]actions.close" onclick="hideRestorePreview()">&times;</button>
+                  <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 dark:bg-gray-800">
+                    <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+                      <h2 id="restore-preview-title" class="text-xl font-bold text-gray-900 dark:text-gray-100" data-i18n="backup.restorePreviewTitle">Restore Preview</h2>
+                      <button type="button" class="text-gray-400 hover:text-gray-700 text-2xl cursor-pointer rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 dark:hover:text-gray-300" aria-label="Close modal" data-i18n="[aria-label]actions.close" onclick="hideRestorePreview()">&times;</button>
                     </div>
                     <div class="p-6">
-                      <p class="text-gray-700 mb-4" data-i18n="backup.restorePreviewDescription">Select which prompts to restore:</p>
+                      <p class="text-gray-700 mb-4 dark:text-gray-300" data-i18n="backup.restorePreviewDescription">Select which prompts to restore:</p>
                       <div id="restore-preview-content"></div>
                       <div id="restore-preview-status" class="text-sm mt-4"></div>
                     </div>
-                    <div class="flex items-center justify-end gap-2 p-6 border-t border-gray-200">
-                      <button type="button" class="px-4 py-2 text-sm font-medium bg-gray-200 text-gray-900 hover:bg-gray-300 rounded-lg transition" onclick="hideRestorePreview()" data-i18n="actions.cancel">Cancel</button>
+                    <div class="flex items-center justify-end gap-2 p-6 border-t border-gray-200 dark:border-gray-700">
+                      <button type="button" class="px-4 py-2 text-sm font-medium bg-gray-200 text-gray-900 hover:bg-gray-300 rounded-lg transition dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600" onclick="hideRestorePreview()" data-i18n="actions.cancel">Cancel</button>
                       <button type="button" id="confirm-selective-restore-btn" class="px-4 py-2 text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition" data-i18n="backup.restoreSelectedBtn">Restore Selected</button>
                     </div>
                   </div>
@@ -748,28 +748,28 @@
                  role="dialog"
                  class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50"
                  >
-                <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
-                <div class="flex items-center justify-between p-6 border-b border-gray-200">
-                <h2 id="restore-modal-title" class="text-xl font-bold text-gray-900" data-i18n="backup.confirmRestore">
+                <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 dark:bg-gray-800">
+                <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+                <h2 id="restore-modal-title" class="text-xl font-bold text-gray-900 dark:text-gray-100" data-i18n="backup.confirmRestore">
                  Confirm Restore
               </h2>
                 <button
                  type="button"
-                 class="text-gray-400 hover:text-gray-700 text-2xl cursor-pointer rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
+                 class="text-gray-400 hover:text-gray-700 text-2xl cursor-pointer rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 dark:hover:text-gray-300"
                  aria-label="Close modal"
                  data-i18n="[aria-label]actions.close"
                  onclick="hideRestoreModal()"
                 >&times;</button>
               </div>
                 <div class="p-6">
-                <p class="text-gray-700 mb-4" data-i18n="backup.restoreWarning">
+                <p class="text-gray-700 mb-4 dark:text-gray-300" data-i18n="backup.restoreWarning">
                  Are you sure you want to restore from this backup? This will replace your current data.
               </p>
-              <div class="bg-gray-50 rounded p-3 text-sm" id="restore-backup-info"></div>
+              <div class="bg-gray-50 rounded p-3 text-sm dark:bg-gray-900" id="restore-backup-info"></div>
               <div class="hidden mt-4" id="restore-passphrase-container">
                 <label
                   for="restore-passphrase"
-                  class="block text-sm font-medium text-gray-700 mb-2"
+                  class="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300"
                   data-i18n="backup.restorePassphrase"
                   >Encryption passphrase</label
                 >
@@ -778,7 +778,7 @@
                   id="restore-passphrase"
                   data-i18n="[placeholder]backup.restorePassphrasePlaceholder"
                   aria-describedby="restore-passphrase-error"
-                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700"
+                  class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 dark:placeholder-gray-400 dark:border-gray-600 text-gray-900 dark:text-gray-100"
                 />
                 <p
                   class="text-red-600 text-xs mt-1"
@@ -796,11 +796,11 @@
               </div>
               </div>
                 <div
-                 class="flex items-center justify-end gap-2 p-6 border-t border-gray-200"
+                 class="flex items-center justify-end gap-2 p-6 border-t border-gray-200 dark:border-gray-700"
                  >
                 <button
                  type="button"
-                 class="px-4 py-2 text-sm font-medium bg-gray-200 text-gray-900 hover:bg-gray-300 rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
+                 class="px-4 py-2 text-sm font-medium bg-gray-200 text-gray-900 hover:bg-gray-300 rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600"
                  onclick="hideRestoreModal()"
                  data-i18n="actions.cancel"
                  >
@@ -826,31 +826,31 @@
                  role="dialog"
                  class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50"
                  >
-                <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
-                <div class="flex items-center justify-between p-6 border-b border-gray-200">
-                <h2 id="delete-modal-title" class="text-xl font-bold text-gray-900" data-i18n="backup.confirmDelete">
+                <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 dark:bg-gray-800">
+                <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+                <h2 id="delete-modal-title" class="text-xl font-bold text-gray-900 dark:text-gray-100" data-i18n="backup.confirmDelete">
                  Confirm Delete
               </h2>
                 <button
                  type="button"
-                 class="text-gray-400 hover:text-gray-700 text-2xl cursor-pointer rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
+                 class="text-gray-400 hover:text-gray-700 text-2xl cursor-pointer rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 dark:hover:text-gray-300"
                  aria-label="Close modal"
                  data-i18n="[aria-label]actions.close"
                  onclick="hideDeleteModal()"
                 >&times;</button>
               </div>
                 <div class="p-6">
-                <p class="text-gray-700 mb-4" data-i18n="backup.deleteWarning">
+                <p class="text-gray-700 mb-4 dark:text-gray-300" data-i18n="backup.deleteWarning">
                  Are you sure you want to delete this backup? This action cannot be undone.
               </p>
-              <div class="bg-gray-50 rounded p-3 text-sm" id="delete-backup-info"></div>
+              <div class="bg-gray-50 rounded p-3 text-sm dark:bg-gray-900" id="delete-backup-info"></div>
               </div>
                 <div
-                 class="flex items-center justify-end gap-2 p-6 border-t border-gray-200"
+                 class="flex items-center justify-end gap-2 p-6 border-t border-gray-200 dark:border-gray-700"
                  >
                 <button
                  type="button"
-                 class="px-4 py-2 text-sm font-medium bg-gray-200 text-gray-900 hover:bg-gray-300 rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
+                 class="px-4 py-2 text-sm font-medium bg-gray-200 text-gray-900 hover:bg-gray-300 rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600"
                  onclick="hideDeleteModal()"
                  data-i18n="actions.cancel"
                  >
@@ -876,28 +876,28 @@
                   role="dialog"
                   class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50"
                 >
-                  <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
-                    <div class="flex items-center justify-between p-6 border-b border-gray-200">
-                      <h2 id="delete-all-modal-title" class="text-xl font-bold text-gray-900" data-i18n="backup.confirmDeleteAll">
+                  <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 dark:bg-gray-800">
+                    <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+                      <h2 id="delete-all-modal-title" class="text-xl font-bold text-gray-900 dark:text-gray-100" data-i18n="backup.confirmDeleteAll">
                         Delete All Backups
                       </h2>
                       <button
                         type="button"
-                        class="text-gray-400 hover:text-gray-700 text-2xl cursor-pointer rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
+                        class="text-gray-400 hover:text-gray-700 text-2xl cursor-pointer rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 dark:hover:text-gray-300"
                         aria-label="Close modal"
                         data-i18n="[aria-label]actions.close"
                         onclick="hideDeleteAllModal()"
                       >&times;</button>
                     </div>
                     <div class="p-6">
-                      <p class="text-gray-700" data-i18n="backup.deleteAllWarning">
+                      <p class="text-gray-700 dark:text-gray-300" data-i18n="backup.deleteAllWarning">
                         Are you sure you want to delete all backups? This action cannot be undone.
                       </p>
                     </div>
-                    <div class="flex items-center justify-end gap-2 p-6 border-t border-gray-200">
+                    <div class="flex items-center justify-end gap-2 p-6 border-t border-gray-200 dark:border-gray-700">
                       <button
                         type="button"
-                        class="px-4 py-2 text-sm font-medium bg-gray-200 text-gray-900 hover:bg-gray-300 rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
+                        class="px-4 py-2 text-sm font-medium bg-gray-200 text-gray-900 hover:bg-gray-300 rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600"
                         onclick="hideDeleteAllModal()"
                         data-i18n="actions.cancel"
                       >

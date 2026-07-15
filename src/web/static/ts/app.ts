@@ -1625,7 +1625,7 @@ function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement
           .map((tag) => {
             const color = tagColorLookup[tag] ?? tagColorMap[tag];
             const style = buildPillStyleOutline(color);
-            return `<span class="px-2 py-1 text-xs font-medium rounded-full border" data-tag-pill="true" data-tag-name="${escapeHtml(tag)}"${style}>
+            return `<span class="px-2 py-1 text-xs font-medium rounded-full border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200" data-tag-pill="true" data-tag-name="${escapeHtml(tag)}"${style}>
                 ${escapeHtml(tag)}
               </span>`;
           })
@@ -1641,7 +1641,7 @@ function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement
 
   div.innerHTML = `
 	        <div class="flex items-start justify-between mb-3">
-	            <h4 id="${titleId}" class="text-prompt-title font-semibold text-gray-900 flex-1 flex items-center flex-wrap gap-1">${escapeHtml(prompt.title)}${semVerBadge}</h4>
+	            <h4 id="${titleId}" class="text-prompt-title font-semibold text-gray-900 dark:text-gray-100 flex-1 flex items-center flex-wrap gap-1">${escapeHtml(prompt.title)}${semVerBadge}</h4>
 	            <div class="flex items-center gap-1 ml-2" id="prompt-actions-${id}">
 	                <button class="favorite-btn flex items-center justify-center min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 text-xl hover:scale-110 transition-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 rounded" data-id="${id}">
 	                    ${prompt.favorite ? '★' : '☆'}
@@ -1649,12 +1649,12 @@ function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement
 	            </div>
 	        </div>
         <div class="flex flex-wrap gap-2 mb-3">
-            <span class="px-2 py-1 text-xs font-semibold rounded-md" data-category-pill="true" data-category-name="${escapeHtml(prompt.category)}"${categoryStyle}>
+            <span class="px-2 py-1 text-xs font-semibold rounded-md bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200" data-category-pill="true" data-category-name="${escapeHtml(prompt.category)}"${categoryStyle}>
               ${escapeHtml(prompt.category) || t('categories.noCategory')}
             </span>
             ${tagsHTML}
         </div>
-        <p class="prompt-body-text text-prompt-body text-gray-600 mb-1 line-clamp-3">${escapeHtml(prompt.prompt)}</p>
+        <p class="prompt-body-text text-prompt-body text-gray-600 dark:text-gray-300 mb-1 line-clamp-3">${escapeHtml(prompt.prompt)}</p>
         <button type="button" class="read-more-btn hidden min-h-[44px] md:min-h-0 -ml-2 px-2 mb-3 text-xs font-medium text-blue-700 hover:text-blue-800 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 rounded" data-i18n="prompt.readMore">Read More</button>
         <div class="flex flex-wrap gap-2">
             <button class="history-btn min-h-[44px] md:min-h-0 px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all hover:scale-105 active:scale-95" data-id="${id}" data-i18n="version.history">History</button>
@@ -3225,11 +3225,11 @@ function toggleVersionSelection(versionId: string, element: HTMLElement | null):
   }
   if (selectedVersions.has(versionId)) {
     selectedVersions.delete(versionId);
-    element.classList.remove('selected', 'ring-2', 'ring-blue-500', 'bg-blue-50');
+    element.classList.remove('selected', 'ring-2', 'ring-blue-500', 'bg-blue-50', 'dark:bg-blue-950');
     element.setAttribute('aria-pressed', 'false');
   } else {
     selectedVersions.add(versionId);
-    element.classList.add('selected', 'ring-2', 'ring-blue-500', 'bg-blue-50');
+    element.classList.add('selected', 'ring-2', 'ring-blue-500', 'bg-blue-50', 'dark:bg-blue-950');
     element.setAttribute('aria-pressed', 'true');
   }
   updateCompareButton();
@@ -4507,13 +4507,13 @@ function highlightTagItem(index: number) {
 
   // Remove previous highlight
   autocompleteDiv.querySelectorAll('.tag-autocomplete-item').forEach((item) => {
-    item.classList.remove('highlighted', 'bg-blue-50');
+    item.classList.remove('highlighted', 'bg-blue-50', 'dark:bg-blue-950');
   });
 
   // Add new highlight
   const items = autocompleteDiv.querySelectorAll('.tag-autocomplete-item');
   if (items[index]) {
-    items[index].classList.add('highlighted', 'bg-blue-50');
+    items[index].classList.add('highlighted', 'bg-blue-50', 'dark:bg-blue-950');
     // Scroll into view if needed
     items[index].scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }

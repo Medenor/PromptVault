@@ -82,7 +82,7 @@ export class ColorPicker {
     // Preview box
     this.previewBox = document.createElement('div');
     this.previewBox.className =
-      'w-12 h-12 rounded border-2 border-gray-300 shadow-sm transition-colors';
+      'w-12 h-12 rounded border-2 border-gray-300 dark:border-gray-600 shadow-sm transition-colors';
     this.previewBox.style.backgroundColor = this.currentColor;
     previewRow.appendChild(this.previewBox);
 
@@ -96,7 +96,7 @@ export class ColorPicker {
     this.hexInput.placeholder = '#000000';
     this.hexInput.maxLength = 7;
     this.hexInput.className =
-      'w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400';
+      'w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 dark:placeholder-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100';
     hexInputWrapper.appendChild(this.hexInput);
     previewRow.appendChild(hexInputWrapper);
 
@@ -108,7 +108,7 @@ export class ColorPicker {
 
     // Preset colors grid
     const presetsLabel = document.createElement('div');
-    presetsLabel.className = 'text-xs font-medium text-gray-600 mt-3';
+    presetsLabel.className = 'text-xs font-medium text-gray-600 dark:text-gray-400 mt-3';
     presetsLabel.textContent = 'Preset Colors';
     wrapper.appendChild(presetsLabel);
 
@@ -121,7 +121,7 @@ export class ColorPicker {
       const button = document.createElement('button');
       button.type = 'button';
       button.className =
-        'preset-color w-8 h-8 rounded-full border-2 border-gray-300 hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-blue-500';
+        'preset-color w-8 h-8 rounded-full border-2 border-gray-300 dark:border-gray-600 hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-blue-500';
       button.style.backgroundColor = color;
       button.dataset.color = color;
       button.title = color;
@@ -270,7 +270,7 @@ export class ColorPicker {
     // Remove previous selection
     if (this.selectedPresetButton) {
       this.selectedPresetButton.classList.remove('border-blue-500', 'border-4', 'scale-110');
-      this.selectedPresetButton.classList.add('border-gray-300', 'border-2');
+      this.selectedPresetButton.classList.add('border-gray-300', 'dark:border-gray-600', 'border-2');
     }
 
     // Find and highlight matching preset
@@ -280,7 +280,7 @@ export class ColorPicker {
       ) as HTMLButtonElement;
 
       if (matchingButton) {
-        matchingButton.classList.remove('border-gray-300', 'border-2');
+        matchingButton.classList.remove('border-gray-300', 'dark:border-gray-600', 'border-2');
         matchingButton.classList.add('border-blue-500', 'border-4', 'scale-110');
         this.selectedPresetButton = matchingButton;
       } else {
