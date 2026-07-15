@@ -12,7 +12,7 @@ Represents one distinct placeholder found in a prompt's current content.
 | `delimiter` | `'bracket' \| 'brace'`   | Which syntax it was written in — informational, since `raw` already disambiguates identity. |
 | `label`     | `string`                 | Text to show on the form field — the inner text between delimiters, e.g. `"DURATION"`. |
 
-**Derivation**: Computed fresh from `prompt.content` (or `prompt.prompt`, matching the existing field name used by `copyPrompt`) every time the copy flow runs — never cached across edits (FR-009), never persisted (per spec Key Entities: "Not persisted as a separate record").
+**Derivation**: Computed fresh from `prompt.prompt` (the DB/API field name, per `src/db/models/prompt.py`, matching the existing field used by `copyPrompt`) every time the copy flow runs — never cached across edits (FR-009), never persisted (per spec Key Entities: "Not persisted as a separate record").
 
 **Validation rules**: A candidate span qualifies only if non-empty, contains no `\n`, and contains no nested occurrence of its own delimiter type (see research.md regex decision). No other validation (no charset restriction on the inner text).
 
