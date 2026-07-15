@@ -3,11 +3,18 @@ the MPL was not distributed with this file, You can obtain one at https://mozill
 {% macro load_css(entry_name, use_vite=true) %} {# CSS loading macro for HEAD section #} {% if
 is_dev() and use_vite_assets() and use_vite %} {# Development mode - Vite handles CSS injection via
 dev server #} {% else %} {# Production mode - load CSS from manifest #} {% set manifest =
-load_manifest() %} {% if (use_vite_assets() or is_production()) and use_vite and 'ts/' + entry_name
-+ '.ts' in manifest %} {% set entry_data = manifest['ts/' + entry_name + '.ts'] %} {% if 'css' in
-entry_data %} {% for css_file in entry_data['css'] %}
+load_manifest() %} {% if (use_vite_assets() or is_production()) and use_vite %} {% set css_files =
+[] %} {% if 'ts/' + entry_name + '.ts' in manifest %} {% set entry_data = manifest['ts/' +
+entry_name + '.ts'] %} {% if 'css' in entry_data %} {% for css_file in entry_data['css'] %} {% set
+_ = css_files.append(css_file) %} {% endfor %} {% endif %} {% endif %} {# Rollup dedupes identical
+CSS output across entries and may park the shared Tailwind bundle on the telemetry entry instead of
+the page's own entry, since telemetry is loaded on every page. #} {% if 'ts/telemetry.ts' in
+manifest %} {% set telemetry_data = manifest['ts/telemetry.ts'] %} {% if 'css' in telemetry_data %}
+{% for css_file in telemetry_data['css'] %} {% if css_file not in css_files %} {% set _ =
+css_files.append(css_file) %} {% endif %} {% endfor %} {% endif %} {% endif %} {% for css_file in
+css_files %}
 <link rel="stylesheet" href="/static/dist/{{ css_file }}" />
-{% endfor %} {% endif %} {% endif %} {% endif %} {% endmacro %} {% macro load_scripts(entry_name,
+{% endfor %} {% endif %} {% endif %} {% endmacro %} {% macro load_scripts(entry_name,
 include_telemetry=true, legacy_name=None, use_vite=true) %} {% set legacy_entry = legacy_name or
 entry_name %} {% if is_dev() and use_vite_assets() and use_vite %} {# Development mode - load from
 Vite dev server #}
