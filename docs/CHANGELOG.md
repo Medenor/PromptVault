@@ -41,7 +41,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Frontend Unit Tests**: Added unit test coverage for 7 previously untested TypeScript utility modules
   - `utils/a11y.ts`, `utils/color-picker.ts`, `utils/dialogs.ts`, `utils/focus-management.ts`, `utils/keyboard-nav.ts`, `utils/typeahead.ts`, `utils/button-keyboard-activation.ts`
 
-- **Mobile-Responsive UI Enhancements** (spec, plan, and tasks only — not yet implemented): Planning artifacts for mobile navigation, touch targets, gestures, offline support via Service Worker, and PWA installability (Codeberg #20)
+- **Mobile-Responsive UI Enhancements** (spec 004, Codeberg #20): Touch-optimized navigation, layouts, gestures, offline support, and PWA installability
+  - **Slide-out navigation drawer**: Hamburger-triggered drawer replaces the desktop sidebar below 768px, with sectioned Data/Manage/Account layout (for clearer screen-reader landmarks) shared across the homepage and all 9 secondary pages (admin users/sessions, backup, import/export, categories, tags, profile); shared `mobile_drawer` macro and `initMobileNav`/`utils/secondary-nav.ts` deduplicate logout and admin-visibility logic across pages
+  - **Touch targets & layout**: 44x44px minimum touch targets, full-screen modals on mobile vs. centered dialogs on desktop, responsive breakpoints at 320/375/425/768px with no horizontal scrolling, keyboard-safe input focus, floating action button for new prompts, "Read More" truncation for long prompt text on mobile cards
+  - **Full-screen mobile search overlay**: Replaces the desktop inline search bar; auto-closes shortly after results settle (1.2s idle timer, reset on each keystroke) rather than snapping shut mid-search; inline clear (×) buttons added to all search inputs (desktop, drawer, overlay)
+  - **Touch gestures**: Swipe-left/right on prompt cards reveals delete/edit actions (with accessible on-screen equivalents), pull-to-refresh on the prompt list with a visible fallback control for non-touch input
+  - **Offline support (read/copy-only)**: Service Worker precaches the app shell and all locale files (including languages never switched to while online) so previously-viewed prompts, their version history, and copy actions keep working offline; create/edit/delete/revert/bulk actions and navigation to connectivity-requiring pages (Import/Export, Manage Categories/Tags, Backup Management) are blocked client-side with a "reconnect to continue" message instead of being queued; cache and offline queue are purged on logout to prevent stale data leaking across users on shared devices
+  - **PWA installability**: Web app manifest with icons at multiple resolutions for "Add to Home Screen"; `apple-touch-icon`/`apple-mobile-web-app-title` meta tags so iOS Safari shows the app icon and full name instead of a generic icon and truncated title
+  - **Dark mode retrofit**: `prefers-color-scheme` dark theme extended from the homepage (its only prior scope) to every page, form, and shared component; required an explicit Tailwind v4 `@custom-variant dark` declaration since `darkMode: 'class'` in `tailwind.config.ts` is ignored, plus fixes for hardcoded light-only colors in form inputs, tables, validation banners, sidebar lists, session highlight rows, and the color picker
+  - **Test coverage**: New Playwright mobile suites (navigation, touch targets, modals, keyboard, swipe/pull-to-refresh gestures + a11y, offline cache, PWA install, ARIA audit, tablet-landscape, performance) and Vitest unit tests for all new TypeScript modules (`gestures.ts`, `mobile-nav.ts`, `sw-register.ts`, `secondary-nav.ts`, `focus-management.ts`)
 
 ### 🔒 Security
 
@@ -70,6 +78,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`copy-with-version` metadata placement**: The portable metadata comment (`<!-- prompt-version: ... -->`) is now prepended to the copied content rather than appended, so consumers that detect it by reading the first line work correctly
 - **Session cleanup double-open**: `SessionCleanupScheduler.run_cleanup_now()` was opening a DB session then calling `_cleanup_expired_sessions()` which opened a second concurrent session; it now delegates directly, eliminating the redundant connection and a potential SQLite lock
 - **Session cleanup inflated count**: `run_cleanup_now` was counting expired sessions without the `is_revoked = false` filter used by the actual cleanup query, causing `expired_found` in the return value to be higher than sessions actually deleted
+- **Mobile logo distortion**: A mobile media-query override in `@layer components` always lost to Tailwind's `@layer utilities`, causing inconsistent logo sizing on small viewports
+- **Version history carousel listener leak**: Prev/next click handlers were re-attached on every reload without removing prior ones, so stacked stale-closure handlers drove the carousel index past its bounds after repeated opens
+- **Pull-to-refresh listener leak**: Fixed a `pointerup`/`pointercancel` listener leak in `attachPullToRefresh`, and resolved a scroll-lock conflict with mouse-triggered pull-to-refresh
+- **First-visit offline cache gap**: A page is never controlled by the Service Worker that installs it, so a first-ever visit previously left the offline cache empty until a second load
 
 ### 🔧 Changed
 
