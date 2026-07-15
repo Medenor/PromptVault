@@ -32,14 +32,15 @@ Detect `[NAME]` / `{NAME}` placeholder tokens in a prompt's content on the clien
 
 _GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
-No `.specify/memory/constitution.md` exists in this repository, so no project-specific constitutional gates apply. Applying general spec-kit defaults as advisory:
+Evaluated against `.specify/memory/constitution.md` v1.0.0:
 
-- **Simplicity**: PASS — single new utility module, no new projects/services, no new dependencies.
-- **Anti-Abstraction**: PASS — uses the existing `createModal` component directly rather than building a new dialog abstraction.
-- **Integration-First**: PASS (adapted) — this feature has no external API contract to define since it's client-only; the "contract" is the existing `PromptResponse` shape already consumed by `copyPrompt`, which is unchanged.
-- **Test-First**: Tasks phase will order unit tests for the token-detection/substitution utility before wiring it into `app.ts` call sites.
+- **I. Layered Service Architecture**: N/A — this feature touches no backend route, service, or repository code; it is entirely a client-side (frontend) concern operating on data already returned by existing, unmodified endpoints.
+- **II. Test Coverage Gate (NON-NEGOTIABLE)**: PASS (planned) — Vitest unit tests for `detectPlaceholders`/`substitutePlaceholders` and a Playwright e2e spec are included in scope; tasks phase MUST order these alongside/before the `app.ts` call-site changes so the ≥85% frontend coverage floor is maintained, not backfilled after merge.
+- **III. Security-First Authentication**: N/A — no new endpoints, no data mutation, nothing to authenticate; existing `copyPrompt`/`copyPromptWithVersion` auth behavior is unchanged.
+- **IV. TypeScript-Only Frontend**: PASS — all new code lives under `src/web/static/ts/`; the legacy `src/web/static/js/` directory is untouched. New modal field labels MUST use typed `t('key.path')` i18n calls (not raw strings) per this principle — noted as a Phase 2 task requirement, not yet reflected in research.md/data-model.md, which predate this constitution check and only mention field `label` as plain string.
+- **V. Database-Backed Persistence**: PASS (N/A) — explicitly no schema changes, no new persisted entities (see data-model.md); placeholders and filled values are transient/in-memory only, consistent with this principle's intent that nothing here needs Alembic migrations.
 
-No violations requiring justification.
+No violations requiring justification. One follow-up for Phase 2 tasks: ensure the modal template applies the project's i18n (`t()`) convention for field labels per Principle IV, since this constitution predates the earlier passes over this plan.
 
 ## Project Structure
 
