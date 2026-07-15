@@ -46,8 +46,9 @@ Single web-app project, frontend-only change: `src/web/static/ts/` for source, `
 ### Implementation for User Story 1
 
 - [ ] T006 [US1] Add a placeholder-fill modal builder function (e.g. `openPlaceholderForm(tokens, onConfirm)`) in `src/web/static/ts/app.ts`, using the existing `createModal` helper from `@components` (same pattern as the keyboard-shortcuts-help modal around line 3653) with one labeled text input per `PlaceholderToken`
-- [ ] T007 [US1] Wire `copyPrompt()` in `src/web/static/ts/app.ts` (~line 2179) to call `detectPlaceholders()` on the fetched/cached prompt content; if non-empty, open the modal from T006 and, on confirm, call `substitutePlaceholders()` before passing the result to `copyTextToClipboard()` (depends on T004, T006)
-- [ ] T008 [US1] Wire `copyPromptWithVersion()` in `src/web/static/ts/app.ts` (~line 2139) with the same detect → form → substitute flow before the `navigator.clipboard.writeText(data.content)` call (depends on T004, T006)
+- [ ] T006a [US1] Add the modal's static chrome strings (title, confirm/cancel button labels, e.g. `placeholders.modalTitle`, `placeholders.copyButton`, `placeholders.cancelButton`) as new keys under a `placeholders` namespace in `src/web/static/locales/en.json`, mirror the same key paths in `de.json`, `fr.json`, `es.json`, and reference them via typed `t('placeholders.xxx')` calls in T006's modal builder — per constitution Principle IV (TypeScript-Only Frontend / typed i18n); per-field labels stay as the literal placeholder text (`PlaceholderToken.label`, e.g. `DURATION`), which is user-authored content, not translatable UI chrome, so it is NOT run through `t()` (depends on T006)
+- [ ] T007 [US1] Wire `copyPrompt()` in `src/web/static/ts/app.ts` (~line 2179) to call `detectPlaceholders()` on the fetched/cached prompt content; if non-empty, open the modal from T006/T006a and, on confirm, call `substitutePlaceholders()` before passing the result to `copyTextToClipboard()` (depends on T004, T006, T006a)
+- [ ] T008 [US1] Wire `copyPromptWithVersion()` in `src/web/static/ts/app.ts` (~line 2139) with the same detect → form → substitute flow before the `navigator.clipboard.writeText(data.content)` call (depends on T004, T006, T006a)
 - [ ] T009 [P] [US1] Write Playwright e2e spec `tests/e2e/prompt-placeholders.spec.ts` covering: opening a prompt with 3 known placeholders shows 3 labeled fields, filling all 3 and confirming produces the exact expected substituted text on the clipboard (per quickstart.md scenario)
 
 **Checkpoint**: User Story 1 fully functional and independently testable — this is the MVP.
@@ -79,6 +80,7 @@ Single web-app project, frontend-only change: `src/web/static/ts/` for source, `
 ### Implementation for User Story 3
 
 - [ ] T013 [US3] Confirm `copyPrompt()`/`copyPromptWithVersion()` (T007/T008) always re-run `detectPlaceholders()` against the latest fetched content rather than any cached token list, so edits are reflected on next open (depends on T007, T008)
+- [ ] T013a [P] [US3] Confirm (per spec FR-004a) that no placeholder-form code is added to the version-history modal (`#version-history-modal`) or diff view (`displayDiff`/`renderCharacterDiff`) in `src/web/static/ts/app.ts` — those per-version "Revert" and "Select for diff" actions remain untouched and text-only; add a Playwright e2e case asserting the diff/history modal shows no placeholder input fields even when the prompt's current or historical content contains placeholder tokens
 - [ ] T014 [P] [US3] Run existing backend suites unmodified to confirm no regression: `pytest tests/test_prompt_versioning_service.py tests/test_prompt_import_export_service.py tests/test_copy_with_version.py`
 - [ ] T015 [P] [US3] Add a Playwright e2e case to `tests/e2e/prompt-placeholders.spec.ts`: edit a prompt to change its set of placeholders, reopen the copy form, and confirm the field set matches the new content (not the old one)
 - [ ] T016 [P] [US3] Manually verify (or add a lightweight assertion in the e2e spec) that searching for placeholder-token substrings and exporting a prompt containing placeholders return the same results/content as before this feature, per quickstart.md's regression checks
@@ -104,8 +106,8 @@ Single web-app project, frontend-only change: `src/web/static/ts/` for source, `
 - **Setup (Phase 1)**: No dependencies.
 - **Foundational (Phase 2)**: Depends on Setup — BLOCKS all user stories (the detect/substitute utility is shared by every story).
 - **User Story 1 (Phase 3)**: Depends on Foundational. This is the MVP.
-- **User Story 2 (Phase 4)**: Depends on Foundational and on the modal/wiring built in Phase 3 (T006-T008) since it exercises the same UI path with different inputs.
-- **User Story 3 (Phase 5)**: Depends on Foundational and Phase 3 wiring (T007/T008); mostly regression verification, can run in parallel with Phase 4 once Phase 3 lands.
+- **User Story 2 (Phase 4)**: Depends on Foundational and on the modal/wiring built in Phase 3 (T006-T008, including T006a) since it exercises the same UI path with different inputs.
+- **User Story 3 (Phase 5)**: Depends on Foundational and Phase 3 wiring (T007/T008); mostly regression verification, can run in parallel with Phase 4 once Phase 3 lands. T013a has no dependency on Phase 3 wiring since it verifies the *absence* of new code in the version-history/diff view.
 - **Polish (Phase 6)**: Depends on all desired user stories being complete.
 
 ### Within Each User Story
@@ -118,7 +120,7 @@ Single web-app project, frontend-only change: `src/web/static/ts/` for source, `
 
 - T002 and T003 (unit test files, same file but independent test blocks — write together, can be drafted in parallel by different people if desired).
 - T009, T011, T012 can be worked in parallel once their preceding implementation tasks land.
-- T014, T015, T016 in Phase 5 are independent of each other and can run in parallel.
+- T013a, T014, T015, T016 in Phase 5 are independent of each other and can run in parallel.
 
 ---
 
@@ -154,6 +156,8 @@ Task: "Write failing tests for substitutePlaceholders() in src/web/static/ts/uti
 
 ## Notes
 
-- No backend changes anywhere in this feature — every task above touches only `src/web/static/ts/` and test files.
+- No backend changes anywhere in this feature — every task above touches only `src/web/static/ts/`, `src/web/static/locales/`, and test files.
 - [P] tasks touch independent test blocks/files or are read-only verification steps; sequential tasks share `app.ts` edits (T007, T008) or build directly on one another.
+- T006a touches locale JSON files (`en.json`, `de.json`, `fr.json`, `es.json`), not `app.ts` directly, so it can be drafted alongside T006 but must land before T007/T008 reference the new `t()` keys.
+- Per-field labels (the placeholder's own name, e.g. `DURATION`) are user-authored prompt content and are never passed through `t()` — only the modal's static chrome (title, button labels) is translated (see T006a).
 - Commit after each phase checkpoint, consistent with how prior features (e.g. `005-pagination-lazy-loading`) were merged via PR per feature branch.
