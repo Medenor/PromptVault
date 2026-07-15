@@ -118,7 +118,7 @@ from src.web.utils.manifest import load_manifest, get_asset_path, is_production
 
 app = FastAPI(
     title="PromptVault API",
-    version="1.9.0",
+    version="1.10.0",
     description="""
     PromptVault API with comprehensive authentication and authorization.
 
