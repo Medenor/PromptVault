@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.10.1] - 2026-07-15
+
+### 🐛 Fixed
+
+- **PostgreSQL migration failure in `enhanced_backup_tables`**: The v1.10.0 migration was written and tested against SQLite only and failed on PostgreSQL production deployments
+  - Table/column existence checks used SQLite-only `sqlite_master`/`PRAGMA table_info` queries (`UndefinedTable: relation "sqlite_master" does not exist` on Postgres); replaced with dialect-agnostic `sa.inspect(conn)`
+  - Boolean column defaults were declared as SQLite-style integer literals (`sa.text("1")`/`sa.text("0")`), which Postgres rejects (`DatatypeMismatch: column "enabled" is of type boolean but default expression is of type integer`); replaced with `sa.true()`/`sa.false()`
+  - Raw `ALTER TABLE ... ADD COLUMN` SQL strings replaced with `op.add_column`/`op.drop_column` for portability
+  - No schema or data changes beyond what v1.10.0 intended — this only fixes migration execution on PostgreSQL
+
 ## [1.10.0] - 2026-07-15
 
 ### ✨ Added
