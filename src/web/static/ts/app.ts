@@ -2221,8 +2221,12 @@ function openPlaceholderForm(
 
 async function writeTextToClipboardRaw(text: string): Promise<void> {
   if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
-    await navigator.clipboard.writeText(text);
-    return;
+    try {
+      await navigator.clipboard.writeText(text);
+      return;
+    } catch (error) {
+      reportAppIssue('clipboardWrite', error, { strategy: 'navigator.clipboard' }, 'warning');
+    }
   }
 
   const textArea = document.createElement('textarea');
@@ -2263,10 +2267,20 @@ async function copyPromptWithVersion(id: PromptId): Promise<void> {
     }
 
     openPlaceholderForm(tokens, (values) => {
-      const finalText = substitutePlaceholders(data.content, values);
-      void writeTextToClipboardRaw(finalText).then(() => {
-        showNotification(t('version.copiedWithMetadata'), 'success');
-      });
+      try {
+        const finalText = substitutePlaceholders(data.content, values);
+        void writeTextToClipboardRaw(finalText)
+          .then(() => {
+            showNotification(t('version.copiedWithMetadata'), 'success');
+          })
+          .catch((error) => {
+            reportAppIssue('copyPromptWithVersion', error, { promptId: id });
+            showNotification(t('messages.copyFailed'), 'error');
+          });
+      } catch (error) {
+        reportAppIssue('copyPromptWithVersion', error, { promptId: id });
+        showNotification(t('messages.copyFailed'), 'error');
+      }
     });
   } catch (error) {
     reportAppIssue('copyPromptWithVersion', error, { promptId: id });
@@ -2300,8 +2314,13 @@ function copyPromptContent(content: string, id: PromptId): void {
   }
 
   openPlaceholderForm(tokens, (values) => {
-    const finalText = substitutePlaceholders(content, values);
-    copyTextToClipboard(finalText, id);
+    try {
+      const finalText = substitutePlaceholders(content, values);
+      copyTextToClipboard(finalText, id);
+    } catch (error) {
+      reportAppIssue('copyPromptContent', error, { promptId: id });
+      showCopyFeedback(id, 'messages.copyFailed');
+    }
   });
 }
 

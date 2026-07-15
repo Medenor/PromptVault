@@ -23,16 +23,16 @@ function collectMatches(
   content: string,
   re: RegExp,
   delimiter: 'bracket' | 'brace'
-): PlaceholderToken[] {
-  const tokens: PlaceholderToken[] = [];
+): Array<{ token: PlaceholderToken; index: number }> {
+  const matches: Array<{ token: PlaceholderToken; index: number }> = [];
   for (const match of content.matchAll(re)) {
     const label = match[1];
     if (label === undefined) {
       continue;
     }
-    tokens.push({ raw: match[0], delimiter, label });
+    matches.push({ token: { raw: match[0], delimiter, label }, index: match.index });
   }
-  return tokens;
+  return matches;
 }
 
 export function detectPlaceholders(content: string): PlaceholderToken[] {
@@ -40,14 +40,8 @@ export function detectPlaceholders(content: string): PlaceholderToken[] {
     return [];
   }
 
-  const bracketMatches = collectMatches(content, BRACKET_RE, 'bracket').map((token) => ({
-    token,
-    index: content.indexOf(token.raw),
-  }));
-  const braceMatches = collectMatches(content, BRACE_RE, 'brace').map((token) => ({
-    token,
-    index: content.indexOf(token.raw),
-  }));
+  const bracketMatches = collectMatches(content, BRACKET_RE, 'bracket');
+  const braceMatches = collectMatches(content, BRACE_RE, 'brace');
 
   const seen = new Set<string>();
   const result: PlaceholderToken[] = [];
