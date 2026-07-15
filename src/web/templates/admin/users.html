@@ -5,6 +5,7 @@
 <html lang="en">
   <head>
     {% import "macros/scripts.html" as scripts %}
+    {% import "macros/mobile_drawer.html" as drawer %}
     <meta charset="UTF-8" />
     <script>
       // Dark mode bootstrap (FR-017): runs synchronously before first paint to
@@ -91,74 +92,11 @@
                 Back to Main
               </button>
             </nav>
-            <!-- Mobile menu button -->
-            <button
-              type="button"
-              id="admin-menu-toggle"
-              class="md:hidden p-2 text-blue-100 hover:text-white flex-shrink-0"
-              aria-label="Toggle menu"
-              data-i18n="[aria-label]accessibility.labels.toggleMenu"
-              aria-expanded="false"
-              aria-controls="admin-menu-dropdown"
-            >
-              <svg
-                class="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-                focusable="false"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M4 6h16M4 12h16M4 18h16"
-                ></path>
-              </svg>
-            </button>
+            {{ drawer.toggle_button() }}
           </div>
-          <!-- Mobile menu dropdown -->
-          <nav
-            id="admin-menu-dropdown"
-            class="hidden md:hidden mt-4 flex flex-col gap-2"
-            role="navigation"
-            aria-label="Admin page navigation mobile"
-            data-i18n="[aria-label]accessibility.labels.adminPageNavigationMobile"
-          >
-            <div class="px-2 py-2">
-              <label class="block text-xs text-gray-500 mb-1 dark:text-gray-400" data-i18n="nav.language"
-                >Language</label
-              >
-              {% include 'macros/language_selector.html' %}
-            </div>
-            <button
-              type="button"
-              onclick="window.location.href = '/admin/sessions'"
-              class="w-full px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all text-left dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
-              data-i18n="admin.nav.sessions"
-            >
-              Sessions
-            </button>
-            <button
-              type="button"
-              onclick="window.location.href = '/auth/profile'"
-              class="w-full px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all text-left dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
-              data-i18n="admin.nav.profile"
-            >
-              Profile
-            </button>
-            <button
-              type="button"
-              onclick="window.location.href = '/'"
-              class="w-full px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all text-left dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
-              data-i18n="nav.backToMain"
-            >
-              Back to Main
-            </button>
-          </nav>
         </div>
       </header>
+      {{ drawer.admin_nav_drawer('sessions') }}
 
       <!-- Main Content -->
       <main
@@ -196,7 +134,14 @@
         <!-- Filters -->
         <div class="bg-white rounded-lg shadow p-6 mb-6 dark:bg-gray-800">
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="relative">
+            <div>
+              <label
+                for="search-input"
+                class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300 invisible"
+                aria-hidden="true"
+                >Search</label
+              >
+              <div class="relative">
               <input
                 type="text"
                 id="search-input"
@@ -222,6 +167,7 @@
                   d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                 />
               </svg>
+              </div>
             </div>
             <div>
               <label

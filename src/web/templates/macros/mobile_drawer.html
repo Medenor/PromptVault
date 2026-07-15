@@ -193,3 +193,61 @@ the MPL was not distributed with this file, You can obtain one at https://mozill
   </div>
 </aside>
 {% endmacro %}
+
+{% macro admin_nav_drawer(other_page) %}
+{{ _backdrop() }}
+{{ _drawer_open('Admin navigation') }}
+    <nav
+      class="mb-6 space-y-1"
+      role="navigation"
+      aria-label="Admin page navigation mobile"
+      data-i18n="[aria-label]accessibility.labels.adminPageNavigationMobile"
+    >
+      {% if other_page == 'sessions' %}
+      <button
+        type="button"
+        onclick="window.location.href = '/admin/sessions'"
+        class="w-full min-h-[44px] text-left px-4 py-2 text-sm rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-inset"
+        data-i18n="admin.nav.sessions"
+      >
+        Sessions
+      </button>
+      {% else %}
+      <button
+        type="button"
+        onclick="window.location.href = '/admin/users'"
+        class="w-full min-h-[44px] text-left px-4 py-2 text-sm rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-inset"
+        data-i18n="admin.nav.users"
+      >
+        Users
+      </button>
+      {% endif %}
+      <button
+        type="button"
+        onclick="window.location.href = '/auth/profile'"
+        class="w-full min-h-[44px] text-left px-4 py-2 text-sm rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-inset"
+        data-i18n="admin.nav.profile"
+      >
+        Profile
+      </button>
+      <button
+        type="button"
+        onclick="window.location.href = '/'"
+        class="w-full min-h-[44px] text-left px-4 py-2 text-sm rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-inset"
+        data-i18n="nav.backToMain"
+      >
+        Back to Main
+      </button>
+    </nav>
+
+    <div class="mt-6 border-t border-gray-200 dark:border-gray-700 pt-4">
+      <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3" data-i18n="nav.language">
+        Language
+      </h3>
+      {% with variant = 'block' %}
+        {% include 'macros/language_selector.html' %}
+      {% endwith %}
+    </div>
+  </div>
+</aside>
+{% endmacro %}

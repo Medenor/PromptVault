@@ -16,6 +16,7 @@ import { apiGet, apiPost, apiPut, apiDelete, APIRequestError } from '@/utils/api
 import { createTypeahead } from '@/utils/typeahead';
 import { announce } from '@/utils/a11y';
 import { announceToScreenReader } from '@/utils/focus-management';
+import { initMobileNav } from '@/mobile-nav';
 import { escapeHtml } from '@/utils/dom';
 
 const API_BASE = '/api/admin';
@@ -1205,107 +1206,10 @@ async function submitCreateUserForm(): Promise<void> {
   }
 }
 
-function setupAdminMenuKeyboardNavigation(): void {
-  const adminMenuToggle = document.getElementById('admin-menu-toggle');
-  const adminMenuDropdown = document.getElementById('admin-menu-dropdown');
-
-  if (!adminMenuToggle || !adminMenuDropdown) {
-    return;
-  }
-
-  // When menu opens, focus first menu item
-  adminMenuToggle.addEventListener('click', () => {
-    const isOpen = !adminMenuDropdown.classList.contains('hidden');
-    if (isOpen) {
-      // Menu just opened, focus first button
-      setTimeout(() => {
-        const firstButton = adminMenuDropdown.querySelector('button') as HTMLButtonElement;
-        if (firstButton) {
-          firstButton.focus();
-        }
-      }, 0);
-    }
-  });
-
-  // Handle keyboard navigation within dropdown menu
-  adminMenuDropdown.addEventListener('keydown', (event: KeyboardEvent) => {
-    const isOpen = !adminMenuDropdown.classList.contains('hidden');
-    if (!isOpen) {
-      return;
-    }
-
-    const menuItems = Array.from(
-      adminMenuDropdown.querySelectorAll('button')
-    ) as HTMLButtonElement[];
-    if (menuItems.length === 0) {
-      return;
-    }
-
-    const currentFocused = document.activeElement as HTMLElement | null;
-    const currentIndex = currentFocused
-      ? menuItems.indexOf(currentFocused as HTMLButtonElement)
-      : -1;
-
-    switch (event.key) {
-      case 'Escape': {
-        // Close menu and return focus to toggle button
-        adminMenuDropdown.classList.add('hidden');
-        adminMenuToggle.setAttribute('aria-expanded', 'false');
-        adminMenuToggle.focus();
-        event.preventDefault();
-        break;
-      }
-      case 'ArrowDown': {
-        // Move to next menu item or wrap around
-        const nextIndex =
-          currentIndex === -1 || currentIndex >= menuItems.length - 1 ? 0 : currentIndex + 1;
-        menuItems[nextIndex]?.focus();
-        event.preventDefault();
-        break;
-      }
-      case 'ArrowUp': {
-        // Move to previous menu item or wrap around
-        const prevIndex =
-          currentIndex === -1 || currentIndex === 0 ? menuItems.length - 1 : currentIndex - 1;
-        menuItems[prevIndex]?.focus();
-        event.preventDefault();
-        break;
-      }
-      case 'Home': {
-        // Jump to first menu item
-        menuItems[0]?.focus();
-        event.preventDefault();
-        break;
-      }
-      case 'End': {
-        // Jump to last menu item
-        menuItems[menuItems.length - 1]?.focus();
-        event.preventDefault();
-        break;
-      }
-    }
-  });
-}
-
 function initializeAdminUsersPage(): void {
   updateStaticTranslations();
 
-  // Mobile menu toggle
-  const adminMenuToggle = document.getElementById('admin-menu-toggle');
-  if (adminMenuToggle) {
-    adminMenuToggle.addEventListener('click', () => {
-      const dropdown = document.getElementById('admin-menu-dropdown');
-      if (dropdown) {
-        dropdown.classList.toggle('hidden');
-        // Update aria-expanded state
-        const isExpanded = !dropdown.classList.contains('hidden');
-        adminMenuToggle.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
-      }
-    });
-  }
-
-  // Setup keyboard navigation for menu (WCAG 2.1 AA)
-  setupAdminMenuKeyboardNavigation();
+  initMobileNav();
 
   const refreshBtn = document.getElementById('refresh-users-btn');
   if (refreshBtn) {
