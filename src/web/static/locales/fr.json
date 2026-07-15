@@ -279,6 +279,13 @@
     "previousVersion": "Version précédente",
     "nextVersion": "Version suivante"
   },
+  "placeholders": {
+    "modalTitle": "Remplir les espaces réservés",
+    "modalAriaLabel": "Remplir les espaces réservés du prompt",
+    "modalDescription": "Renseignez les valeurs souhaitées, puis copiez. Les champs laissés vides conservent leur texte d'espace réservé d'origine.",
+    "copyButton": "Copier",
+    "cancelButton": "Annuler"
+  },
   "bulkDelete": {
     "confirmTitle": "Confirmer la suppression groupée",
     "confirmMessage": "Vous êtes sur le point de supprimer",

@@ -272,6 +272,13 @@
     "previousVersion": "Versión anterior",
     "nextVersion": "Versión siguiente"
   },
+  "placeholders": {
+    "modalTitle": "Completar marcadores de posición",
+    "modalAriaLabel": "Completar los marcadores de posición del prompt",
+    "modalDescription": "Complete los valores que desee usar y luego copie. Los campos dejados en blanco conservan su texto de marcador de posición original.",
+    "copyButton": "Copiar",
+    "cancelButton": "Cancelar"
+  },
   "bulkDelete": {
     "confirmTitle": "Confirmar eliminación masiva",
     "confirmMessage": "Está a punto de eliminar",

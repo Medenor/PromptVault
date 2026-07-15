@@ -399,6 +399,13 @@
     "previousVersion": "Previous version",
     "nextVersion": "Next version"
   },
+  "placeholders": {
+    "modalTitle": "Fill in placeholders",
+    "modalAriaLabel": "Fill in prompt placeholders",
+    "modalDescription": "Fill in any values you'd like to use, then copy. Fields left blank keep their original placeholder text.",
+    "copyButton": "Copy",
+    "cancelButton": "Cancel"
+  },
   "bulkDelete": {
     "confirmTitle": "Confirm Bulk Deletion",
     "confirmMessage": "You are about to delete",

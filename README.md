@@ -594,6 +594,7 @@ PORT=8001 python3 run_web.py
 
 - **Authentication & Authorization**: Multi-user support with JWT tokens, role-based access control (viewer, editor, admin), and session management
 - **Prompt Management**: Create, edit, delete, and organize prompts through an intuitive web interface
+- **Dynamic Placeholders**: Prompts containing `[NAME]` or `{NAME}` tokens show a fill-in form on Copy — filled values are substituted, unfilled tokens are copied as-is
 - **Bulk Operations**: Multi-select prompts with checkboxes and delete multiple prompts in a single operation with automatic backups
 - **Version Control**: Git-like versioning system with full history tracking, diff visualization, and safe revert functionality
 - **Categories & Tags**: Organize prompts with categories and tags for easy discovery

@@ -18,7 +18,7 @@ Single web-app project, frontend-only change: `src/web/static/ts/` for source, `
 
 **Purpose**: No new project scaffolding needed — reusing existing Vite/Vitest/Playwright setup and existing `createModal` component. Nothing to do here beyond confirming the branch is checked out.
 
-- [ ] T001 Confirm branch `006-prompt-placeholders` is checked out and `npm install` / `npx playwright install` (if needed) succeed locally
+- [X] T001 Confirm branch `006-prompt-placeholders` is checked out and `npm install` / `npx playwright install` (if needed) succeed locally
 
 ---
 
@@ -28,10 +28,10 @@ Single web-app project, frontend-only change: `src/web/static/ts/` for source, `
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T002 [P] Write failing Vitest unit tests for `detectPlaceholders()` in `src/web/static/ts/utils/__tests__/placeholders.test.ts`: distinct `[NAME]`/`{NAME}` tokens, repeated-token de-duplication, `[DURATION]` vs `{DURATION}` treated as distinct, malformed spans ignored (`[]`, unmatched `[abc`, nested `[[X]]`, multi-line span), first-seen order preserved, empty content returns empty array
-- [ ] T003 [P] Write failing Vitest unit tests for `substitutePlaceholders()` in the same `src/web/static/ts/utils/__tests__/placeholders.test.ts`: filled tokens replaced everywhere they occur, unfilled tokens left byte-for-byte unchanged, a filled value containing placeholder-like text (`[NESTED]`) is not re-expanded (single-pass), empty `values` map returns content unchanged
-- [ ] T004 Implement `PlaceholderToken` type, `detectPlaceholders()`, and `substitutePlaceholders()` in new file `src/web/static/ts/utils/placeholders.ts` per contracts/placeholders-module.md, making T002/T003 pass (depends on T002, T003)
-- [ ] T005 Run `npx vitest run src/web/static/ts/utils/__tests__/placeholders.test.ts` and confirm all tests pass with no regressions to existing suites (depends on T004)
+- [X] T002 [P] Write failing Vitest unit tests for `detectPlaceholders()` in `src/web/static/ts/utils/__tests__/placeholders.test.ts`: distinct `[NAME]`/`{NAME}` tokens, repeated-token de-duplication, `[DURATION]` vs `{DURATION}` treated as distinct, malformed spans ignored (`[]`, unmatched `[abc`, nested `[[X]]`, multi-line span), first-seen order preserved, empty content returns empty array
+- [X] T003 [P] Write failing Vitest unit tests for `substitutePlaceholders()` in the same `src/web/static/ts/utils/__tests__/placeholders.test.ts`: filled tokens replaced everywhere they occur, unfilled tokens left byte-for-byte unchanged, a filled value containing placeholder-like text (`[NESTED]`) is not re-expanded (single-pass), empty `values` map returns content unchanged
+- [X] T004 Implement `PlaceholderToken` type, `detectPlaceholders()`, and `substitutePlaceholders()` in new file `src/web/static/ts/utils/placeholders.ts` per contracts/placeholders-module.md, making T002/T003 pass (depends on T002, T003)
+- [X] T005 Run `npx vitest run src/web/static/ts/utils/__tests__/placeholders.test.ts` and confirm all tests pass with no regressions to existing suites (depends on T004)
 
 **Checkpoint**: Detection/substitution utility is correct and fully unit-tested — user story implementation can now begin.
 
@@ -45,11 +45,11 @@ Single web-app project, frontend-only change: `src/web/static/ts/` for source, `
 
 ### Implementation for User Story 1
 
-- [ ] T006 [US1] Add a placeholder-fill modal builder function (e.g. `openPlaceholderForm(tokens, onConfirm)`) in `src/web/static/ts/app.ts`, using the existing `createModal` helper from `@components` (same pattern as the keyboard-shortcuts-help modal around line 3653) with one labeled text input per `PlaceholderToken`
-- [ ] T006a [US1] Add the modal's static chrome strings (title, confirm/cancel button labels, e.g. `placeholders.modalTitle`, `placeholders.copyButton`, `placeholders.cancelButton`) as new keys under a `placeholders` namespace in `src/web/static/locales/en.json`, mirror the same key paths in `de.json`, `fr.json`, `es.json`, and reference them via typed `t('placeholders.xxx')` calls in T006's modal builder — per constitution Principle IV (TypeScript-Only Frontend / typed i18n); per-field labels stay as the literal placeholder text (`PlaceholderToken.label`, e.g. `DURATION`), which is user-authored content, not translatable UI chrome, so it is NOT run through `t()` (depends on T006)
-- [ ] T007 [US1] Wire `copyPrompt()` in `src/web/static/ts/app.ts` (~line 2179) to call `detectPlaceholders()` on the fetched/cached prompt content; if non-empty, open the modal from T006/T006a and, on confirm, call `substitutePlaceholders()` before passing the result to `copyTextToClipboard()` (depends on T004, T006, T006a)
-- [ ] T008 [US1] Wire `copyPromptWithVersion()` in `src/web/static/ts/app.ts` (~line 2139) with the same detect → form → substitute flow before the `navigator.clipboard.writeText(data.content)` call (depends on T004, T006, T006a)
-- [ ] T009 [P] [US1] Write Playwright e2e spec `tests/e2e/prompt-placeholders.spec.ts` covering: (a) opening a prompt with 3 known placeholders shows 3 labeled fields, filling all 3 and confirming produces the exact expected substituted text on the clipboard, and (b) opening a prompt with zero placeholders shows no modal and Copy copies the raw content immediately, matching pre-feature behavior (per spec FR-004/US1 acceptance scenario 4 and quickstart.md scenario 6)
+- [X] T006 [US1] Add a placeholder-fill modal builder function (e.g. `openPlaceholderForm(tokens, onConfirm)`) in `src/web/static/ts/app.ts`, using the existing `createModal` helper from `@components` (same pattern as the keyboard-shortcuts-help modal around line 3653) with one labeled text input per `PlaceholderToken`
+- [X] T006a [US1] Add the modal's static chrome strings (title, confirm/cancel button labels, e.g. `placeholders.modalTitle`, `placeholders.copyButton`, `placeholders.cancelButton`) as new keys under a `placeholders` namespace in `src/web/static/locales/en.json`, mirror the same key paths in `de.json`, `fr.json`, `es.json`, and reference them via typed `t('placeholders.xxx')` calls in T006's modal builder — per constitution Principle IV (TypeScript-Only Frontend / typed i18n); per-field labels stay as the literal placeholder text (`PlaceholderToken.label`, e.g. `DURATION`), which is user-authored content, not translatable UI chrome, so it is NOT run through `t()` (depends on T006)
+- [X] T007 [US1] Wire `copyPrompt()` in `src/web/static/ts/app.ts` (~line 2179) to call `detectPlaceholders()` on the fetched/cached prompt content; if non-empty, open the modal from T006/T006a and, on confirm, call `substitutePlaceholders()` before passing the result to `copyTextToClipboard()` (depends on T004, T006, T006a)
+- [X] T008 [US1] Wire `copyPromptWithVersion()` in `src/web/static/ts/app.ts` (~line 2139) with the same detect → form → substitute flow before the `navigator.clipboard.writeText(data.content)` call (depends on T004, T006, T006a)
+- [X] T009 [P] [US1] Write Playwright e2e spec `tests/e2e/prompt-placeholders.spec.ts` covering: (a) opening a prompt with 3 known placeholders shows 3 labeled fields, filling all 3 and confirming produces the exact expected substituted text on the clipboard, and (b) opening a prompt with zero placeholders shows no modal and Copy copies the raw content immediately, matching pre-feature behavior (per spec FR-004/US1 acceptance scenario 4 and quickstart.md scenario 6)
 
 **Checkpoint**: User Story 1 fully functional and independently testable — this is the MVP.
 
@@ -63,9 +63,9 @@ Single web-app project, frontend-only change: `src/web/static/ts/` for source, `
 
 ### Implementation for User Story 2
 
-- [ ] T010 [US2] Confirm (and adjust if needed) that the modal built in T006 allows submitting with any subset of fields empty, and that `substitutePlaceholders()` is called with only the non-empty entries in the values map (depends on T004, T006, T007, T008)
-- [ ] T011 [P] [US2] Extend `tests/e2e/prompt-placeholders.spec.ts` (from T009) with cases: all fields left blank → clipboard equals original raw content; one field left blank among several filled → only that token remains literal in the output
-- [ ] T012 [P] [US2] Extend `src/web/static/ts/utils/__tests__/placeholders.test.ts` with a direct unit test asserting `substitutePlaceholders(content, new Map())` returns `content` unchanged (covers the "never opened the form" path at the utility level)
+- [X] T010 [US2] Confirm (and adjust if needed) that the modal built in T006 allows submitting with any subset of fields empty, and that `substitutePlaceholders()` is called with only the non-empty entries in the values map (depends on T004, T006, T007, T008)
+- [X] T011 [P] [US2] Extend `tests/e2e/prompt-placeholders.spec.ts` (from T009) with cases: all fields left blank → clipboard equals original raw content; one field left blank among several filled → only that token remains literal in the output
+- [X] T012 [P] [US2] Extend `src/web/static/ts/utils/__tests__/placeholders.test.ts` with a direct unit test asserting `substitutePlaceholders(content, new Map())` returns `content` unchanged (covers the "never opened the form" path at the utility level)
 
 **Checkpoint**: User Stories 1 and 2 both work independently.
 
@@ -79,11 +79,11 @@ Single web-app project, frontend-only change: `src/web/static/ts/` for source, `
 
 ### Implementation for User Story 3
 
-- [ ] T013 [US3] Confirm `copyPrompt()`/`copyPromptWithVersion()` (T007/T008) always re-run `detectPlaceholders()` against the latest fetched content rather than any cached token list, so edits are reflected on next open (depends on T007, T008)
-- [ ] T013a [P] [US3] Confirm (per spec FR-004a) that no placeholder-form code is added to the version-history modal (`#version-history-modal`) or diff view (`displayDiff`/`renderCharacterDiff`) in `src/web/static/ts/app.ts` — those per-version "Revert" and "Select for diff" actions remain untouched and text-only; add a Playwright e2e case asserting the diff/history modal shows no placeholder input fields even when the prompt's current or historical content contains placeholder tokens
-- [ ] T014 [P] [US3] Run existing backend suites unmodified to confirm no regression: `pytest tests/test_prompt_versioning_service.py tests/test_prompt_import_export_service.py tests/test_copy_with_version.py`
-- [ ] T015 [P] [US3] Add a Playwright e2e case to `tests/e2e/prompt-placeholders.spec.ts`: edit a prompt to change its set of placeholders, reopen the copy form, and confirm the field set matches the new content (not the old one)
-- [ ] T016 [P] [US3] Manually verify (or add a lightweight assertion in the e2e spec) that searching for placeholder-token substrings and exporting a prompt containing placeholders return the same results/content as before this feature, per quickstart.md's regression checks
+- [X] T013 [US3] Confirm `copyPrompt()`/`copyPromptWithVersion()` (T007/T008) always re-run `detectPlaceholders()` against the latest fetched content rather than any cached token list, so edits are reflected on next open (depends on T007, T008)
+- [X] T013a [P] [US3] Confirm (per spec FR-004a) that no placeholder-form code is added to the version-history modal (`#version-history-modal`) or diff view (`displayDiff`/`renderCharacterDiff`) in `src/web/static/ts/app.ts` — those per-version "Revert" and "Select for diff" actions remain untouched and text-only; add a Playwright e2e case asserting the diff/history modal shows no placeholder input fields even when the prompt's current or historical content contains placeholder tokens
+- [X] T014 [P] [US3] Run existing backend suites unmodified to confirm no regression: `pytest tests/test_prompt_versioning_service.py tests/test_prompt_import_export_service.py tests/test_copy_with_version.py`
+- [X] T015 [P] [US3] Add a Playwright e2e case to `tests/e2e/prompt-placeholders.spec.ts`: edit a prompt to change its set of placeholders, reopen the copy form, and confirm the field set matches the new content (not the old one)
+- [X] T016 [P] [US3] Manually verify (or add a lightweight assertion in the e2e spec) that searching for placeholder-token substrings and exporting a prompt containing placeholders return the same results/content as before this feature, per quickstart.md's regression checks
 
 **Checkpoint**: All three user stories independently functional; no regressions in existing features.
 
@@ -93,9 +93,9 @@ Single web-app project, frontend-only change: `src/web/static/ts/` for source, `
 
 **Purpose**: Final validation across the whole feature.
 
-- [ ] T017 Run `npm run typecheck` and `npm run lint` and fix any issues introduced by `placeholders.ts` or `app.ts` changes
-- [ ] T018 Run full quickstart.md validation end-to-end (unit tests, e2e spec, backend regression suites) and confirm every step passes
-- [ ] T019 [P] Update relevant user-facing docs (e.g. README feature list) to mention placeholder support, if the project's doc conventions call for it
+- [X] T017 Run `npm run typecheck` and `npm run lint` and fix any issues introduced by `placeholders.ts` or `app.ts` changes
+- [X] T018 Run full quickstart.md validation end-to-end (unit tests, e2e spec, backend regression suites) and confirm every step passes
+- [X] T019 [P] Update relevant user-facing docs (e.g. README feature list) to mention placeholder support, if the project's doc conventions call for it
 
 ---
 
