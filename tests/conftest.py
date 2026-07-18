@@ -380,6 +380,21 @@ def category_repo(test_db_session: Session) -> CategoryRepository:
 
 
 @pytest.fixture
+def backup_repo(test_db_session: Session) -> "BackupRepository":
+    """Create a BackupRepository instance.
+
+    Args:
+        test_db_session: Database session
+
+    Returns:
+        BackupRepository: Repository for backup metadata operations
+    """
+    from src.db.repositories.backup_repository import BackupRepository
+
+    return BackupRepository(test_db_session)
+
+
+@pytest.fixture
 def tag_repo(test_db_session: Session) -> TagRepository:
     """Create a TagRepository instance.
 

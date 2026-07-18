@@ -17,17 +17,19 @@ vi.mock('@/sw-register', () => ({
 }));
 
 const apiGet = vi.fn().mockResolvedValue({ role: 'user' });
+let isAuthErrorResult = false;
 vi.mock('@/utils/api', () => ({
   apiGet: (...args: unknown[]) => apiGet(...args),
   APIRequestError: class APIRequestError extends Error {
     isAuthError() {
-      return false;
+      return isAuthErrorResult;
     }
   },
 }));
 
+const reportError = vi.fn();
 vi.mock('@/telemetry', () => ({
-  reportError: vi.fn(),
+  reportError: (...args: unknown[]) => reportError(...args),
 }));
 
 import { initSecondaryNav } from '../utils/secondary-nav';
@@ -38,6 +40,9 @@ describe('initSecondaryNav', () => {
     initMobileNav.mockClear();
     clearOfflineDataOnLogout.mockClear();
     apiGet.mockClear();
+    reportError.mockClear();
+    isAuthErrorResult = false;
+    apiGet.mockResolvedValue({ role: 'user' });
     delete (window as unknown as { __AUTH_ENABLED__?: boolean }).__AUTH_ENABLED__;
   });
 
@@ -73,5 +78,59 @@ describe('initSecondaryNav', () => {
     document.getElementById('logout-btn')?.dispatchEvent(new MouseEvent('click'));
 
     expect(clearOfflineDataOnLogout).not.toHaveBeenCalled();
+  });
+
+  it('wires the mobile logout button to trigger logout as well', () => {
+    document.body.innerHTML = '<button id="logout-btn-mobile">Logout</button>';
+    (window as unknown as { __AUTH_ENABLED__?: boolean }).__AUTH_ENABLED__ = false;
+    let href: string | undefined;
+    delete (window as unknown as Record<string, unknown>).location;
+    (window as unknown as Record<string, unknown>).location = {
+      get href() {
+        return href ?? '';
+      },
+      set href(value: string) {
+        href = value;
+      },
+    };
+
+    initSecondaryNav({ component: 'test-page', requireAuth: true });
+    document.getElementById('logout-btn-mobile')?.dispatchEvent(new MouseEvent('click'));
+
+    expect(href).toBe('/');
+  });
+
+  it('reports the error without redirecting when apiGet rejects with a plain error', async () => {
+    apiGet.mockRejectedValueOnce(new Error('boom'));
+
+    initSecondaryNav({ component: 'test-page', requireAuth: true });
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(reportError).toHaveBeenCalledWith('test-page', 'checkAdminAccess', expect.any(Error));
+  });
+
+  it('redirects to login when apiGet rejects with an auth error', async () => {
+    let href: string | undefined;
+    delete (window as unknown as Record<string, unknown>).location;
+    (window as unknown as Record<string, unknown>).location = {
+      get href() {
+        return href ?? '';
+      },
+      set href(value: string) {
+        href = value;
+      },
+    };
+    isAuthErrorResult = true;
+    const { APIRequestError } = await import('@/utils/api');
+    apiGet.mockRejectedValueOnce(new APIRequestError('unauthorized'));
+
+    initSecondaryNav({ component: 'test-page', requireAuth: true });
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(href).toBe('/auth/login');
   });
 });

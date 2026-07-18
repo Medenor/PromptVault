@@ -64,6 +64,53 @@ describe('notifications utils', () => {
     vi.useRealTimers();
   });
 
+  it('renders a success icon and non-alert status/polite attributes', () => {
+    vi.useFakeTimers();
+    showNotification('Saved', 'success', 10);
+
+    const toast = document.querySelector('.notification-success');
+    expect(toast?.getAttribute('role')).toBe('status');
+    expect(toast?.getAttribute('aria-live')).toBe('polite');
+    const icon = toast?.querySelector('svg.notification-icon path');
+    expect(icon?.getAttribute('d')).toBe(
+      'M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm-1 14.2-3.2-3.2 1.4-1.4 1.8 1.8 4.6-4.6 1.4 1.4Z'
+    );
+
+    vi.advanceTimersByTime(10);
+    vi.useRealTimers();
+  });
+
+  it('renders an error icon with alert role and assertive aria-live', () => {
+    vi.useFakeTimers();
+    showNotification('Failed', 'error', 10);
+
+    const toast = document.querySelector('.notification-error');
+    expect(toast?.getAttribute('role')).toBe('alert');
+    expect(toast?.getAttribute('aria-live')).toBe('assertive');
+    const icon = toast?.querySelector('svg.notification-icon path');
+    expect(icon?.getAttribute('d')).toBe(
+      'M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm3.5 13.1-1.4 1.4L12 13.4l-2.1 2.1-1.4-1.4L10.6 12 8.5 9.9l1.4-1.4L12 10.6l2.1-2.1 1.4 1.4L13.4 12Z'
+    );
+
+    vi.advanceTimersByTime(10);
+    vi.useRealTimers();
+  });
+
+  it('renders the default info icon for unrecognized/default type', () => {
+    vi.useFakeTimers();
+    showNotification('Info', 'info', 10);
+
+    const toast = document.querySelector('.notification-info');
+    expect(toast?.getAttribute('role')).toBe('status');
+    const icon = toast?.querySelector('svg.notification-icon path');
+    expect(icon?.getAttribute('d')).toBe(
+      'M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm1 15h-2V11h2v6Zm0-8h-2V7h2v2Z'
+    );
+
+    vi.advanceTimersByTime(10);
+    vi.useRealTimers();
+  });
+
   it('reports errors and warnings via telemetry when available', () => {
     const reportErrorMock = vi.fn();
     const logger = {
