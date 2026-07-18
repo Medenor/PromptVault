@@ -17,6 +17,11 @@ import { apiFetch, apiGet, apiPostForm } from '@/utils/api';
 import { setupScrollIndicators } from '@/utils/dom';
 import { showNotification } from '@/utils/notifications';
 import { createTypeahead } from '@/utils/typeahead';
+import {
+  detectPlaceholders,
+  substitutePlaceholders,
+  type PlaceholderToken,
+} from '@/utils/placeholders';
 import { createModal } from '@components';
 import { announce } from '@/utils/a11y';
 import { confirmAsync } from '@/utils/dialogs';
@@ -2136,6 +2141,108 @@ async function handlePromptSubmit(event: SubmitEvent): Promise<void> {
   }
 }
 
+function openPlaceholderForm(
+  tokens: PlaceholderToken[],
+  onConfirm: (values: Map<string, string>) => void
+): void {
+  const content = document.createElement('div');
+  content.className = 'space-y-3 text-sm text-gray-700';
+
+  const description = document.createElement('p');
+  description.className = 'text-gray-600';
+  description.textContent = t('placeholders.modalDescription');
+  content.appendChild(description);
+
+  const fieldsContainer = document.createElement('div');
+  fieldsContainer.className = 'space-y-3';
+
+  const inputs = new Map<string, HTMLInputElement>();
+  tokens.forEach((token, index) => {
+    const fieldId = `placeholder-field-${index}`;
+
+    const wrapper = document.createElement('div');
+
+    const label = document.createElement('label');
+    label.setAttribute('for', fieldId);
+    label.className = 'block text-sm font-medium text-gray-700 mb-1';
+    label.textContent = token.label;
+    wrapper.appendChild(label);
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.id = fieldId;
+    input.className =
+      'w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500';
+    wrapper.appendChild(input);
+
+    fieldsContainer.appendChild(wrapper);
+    inputs.set(token.raw, input);
+  });
+
+  content.appendChild(fieldsContainer);
+
+  const modal = createModal({
+    id: 'placeholder-fill-modal',
+    title: t('placeholders.modalTitle'),
+    content,
+    ariaLabel: t('placeholders.modalAriaLabel'),
+    size: 'md',
+    actions: [
+      {
+        label: t('placeholders.cancelButton'),
+        variant: 'secondary',
+        onClick: () => {
+          modal.close();
+        },
+      },
+      {
+        label: t('placeholders.copyButton'),
+        variant: 'primary',
+        onClick: () => {
+          const values = new Map<string, string>();
+          inputs.forEach((input, raw) => {
+            if (input.value !== '') {
+              values.set(raw, input.value);
+            }
+          });
+          modal.close();
+          onConfirm(values);
+        },
+      },
+    ],
+    closeOnEscape: true,
+    closeOnBackdrop: true,
+    showClose: true,
+  });
+
+  document.body.appendChild(modal.element);
+  modal.open();
+}
+
+async function writeTextToClipboardRaw(text: string): Promise<void> {
+  if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+    try {
+      await navigator.clipboard.writeText(text);
+      return;
+    } catch (error) {
+      reportAppIssue('clipboardWrite', error, { strategy: 'navigator.clipboard' }, 'warning');
+    }
+  }
+
+  const textArea = document.createElement('textarea');
+  textArea.value = text;
+  textArea.setAttribute('readonly', '');
+  textArea.className = 'clipboard-helper';
+  document.body.appendChild(textArea);
+  try {
+    textArea.focus();
+    textArea.select();
+    document.execCommand('copy');
+  } finally {
+    document.body.removeChild(textArea);
+  }
+}
+
 async function copyPromptWithVersion(id: PromptId): Promise<void> {
   try {
     const response = await fetch(`/api/prompts/${id}/copy-with-version`, { method: 'POST' });
@@ -2152,24 +2259,29 @@ async function copyPromptWithVersion(id: PromptId): Promise<void> {
 
     const data = (await response.json()) as { content: string; semantic_version: string };
 
-    if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
-      await navigator.clipboard.writeText(data.content);
-    } else {
-      const textArea = document.createElement('textarea');
-      textArea.value = data.content;
-      textArea.setAttribute('readonly', '');
-      textArea.className = 'clipboard-helper';
-      document.body.appendChild(textArea);
-      try {
-        textArea.focus();
-        textArea.select();
-        document.execCommand('copy');
-      } finally {
-        document.body.removeChild(textArea);
-      }
+    const tokens = detectPlaceholders(data.content);
+    if (tokens.length === 0) {
+      await writeTextToClipboardRaw(data.content);
+      showNotification(t('version.copiedWithMetadata'), 'success');
+      return;
     }
 
-    showNotification(t('version.copiedWithMetadata'), 'success');
+    openPlaceholderForm(tokens, (values) => {
+      try {
+        const finalText = substitutePlaceholders(data.content, values);
+        void writeTextToClipboardRaw(finalText)
+          .then(() => {
+            showNotification(t('version.copiedWithMetadata'), 'success');
+          })
+          .catch((error) => {
+            reportAppIssue('copyPromptWithVersion', error, { promptId: id });
+            showNotification(t('messages.copyFailed'), 'error');
+          });
+      } catch (error) {
+        reportAppIssue('copyPromptWithVersion', error, { promptId: id });
+        showNotification(t('messages.copyFailed'), 'error');
+      }
+    });
   } catch (error) {
     reportAppIssue('copyPromptWithVersion', error, { promptId: id });
     showNotification(t('messages.copyFailed'), 'error');
@@ -2180,18 +2292,36 @@ async function copyPrompt(id: PromptId): Promise<void> {
   const cachedPrompt = promptCache[id];
 
   if (cachedPrompt && typeof cachedPrompt.prompt === 'string') {
-    copyTextToClipboard(cachedPrompt.prompt, id);
+    copyPromptContent(cachedPrompt.prompt, id);
     return;
   }
 
   try {
     const prompt = await apiGet<PromptResponse>(`/api/prompts/${id}`);
     promptCache[id] = prompt;
-    copyTextToClipboard(prompt.prompt, id);
+    copyPromptContent(prompt.prompt, id);
   } catch (error) {
     reportAppIssue('copyPrompt', error, { promptId: id });
     showCopyFeedback(id, 'messages.copyFailed');
   }
+}
+
+function copyPromptContent(content: string, id: PromptId): void {
+  const tokens = detectPlaceholders(content);
+  if (tokens.length === 0) {
+    copyTextToClipboard(content, id);
+    return;
+  }
+
+  openPlaceholderForm(tokens, (values) => {
+    try {
+      const finalText = substitutePlaceholders(content, values);
+      copyTextToClipboard(finalText, id);
+    } catch (error) {
+      reportAppIssue('copyPromptContent', error, { promptId: id });
+      showCopyFeedback(id, 'messages.copyFailed');
+    }
+  });
 }
 
 function copyTextToClipboard(textToCopy: string, id: PromptId): void {

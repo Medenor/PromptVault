@@ -272,6 +272,13 @@
     "previousVersion": "Vorherige Version",
     "nextVersion": "Nächste Version"
   },
+  "placeholders": {
+    "modalTitle": "Platzhalter ausfüllen",
+    "modalAriaLabel": "Prompt-Platzhalter ausfüllen",
+    "modalDescription": "Füllen Sie die gewünschten Werte aus und kopieren Sie dann. Leer gelassene Felder behalten ihren ursprünglichen Platzhaltertext.",
+    "copyButton": "Kopieren",
+    "cancelButton": "Abbrechen"
+  },
   "bulkDelete": {
     "confirmTitle": "Massenlöschung bestätigen",
     "confirmMessage": "Sie sind dabei zu löschen",
