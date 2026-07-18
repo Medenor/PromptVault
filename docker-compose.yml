@@ -18,7 +18,7 @@ services:
     # Uncomment the following lines if you need external access (change port if 5432 is in use):
     # ports:
     #   - "5433:5432"  # Use 5433 on host if 5432 is already in use
-    restart: unless-stopped
+    restart: always
     security_opt:
       - no-new-privileges:true
     cap_drop:
@@ -37,7 +37,7 @@ services:
     command: redis-server --appendonly yes
     volumes:
       - redis_data:/data
-    restart: unless-stopped
+    restart: always
     security_opt:
       - no-new-privileges:true
     cap_drop:
@@ -76,7 +76,7 @@ services:
       - ENVIRONMENT=${ENVIRONMENT:-production}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - DISABLE_RATE_LIMITING=${DISABLE_RATE_LIMITING:-false}
-    restart: unless-stopped
+    restart: always
     security_opt:
       - no-new-privileges:true
     cap_drop:
