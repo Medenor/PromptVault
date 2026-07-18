@@ -1,14 +1,14 @@
 # PromptVault Test Suite Documentation
 
-**Version:** 2.1
-**Last Updated:** 2025-11-30
+**Version:** 2.2
+**Last Updated:** 2026-07-18
 **Status:** Production Ready ✅
 
 ---
 
 ## Overview
 
-The PromptVault test suite has been completely rewritten from scratch to provide comprehensive coverage of the database-backed architecture. The suite achieves **86.46% code coverage** (exceeding the 85% requirement) with **514 passing tests** and a **100% pass rate**.
+The PromptVault test suite provides comprehensive coverage of the database-backed architecture, with both backend (pytest) and frontend (Vitest) suites enforcing a **minimum 85% coverage gate** in CI. Test counts and exact coverage percentages are intentionally not pinned in this document — they change with every PR. Run the suites locally (see Quick Start below) to see current numbers; treat their console output and `htmlcov/index.html` / `coverage/index.html` as the source of truth, not this file.
 
 Frontend unit tests run with Vitest against TypeScript sources in `src/web/static/ts`, with coverage enforced via v8. Coverage reports are printed to the console and saved to `coverage/` when enabled.
 
@@ -38,16 +38,16 @@ npm run test:unit:coverage
 
 > **Tip:** You can also use `make test` to run both backend and frontend suites with their coverage gates in one command. See [docs/DEVELOPMENT.md](DEVELOPMENT.md) for all available `make` targets.
 
-## Test Suite Metrics
+## Test Suite Gates
 
-| Metric             | Value       | Status                |
-| ------------------ | ----------- | --------------------- |
-| **Total Tests**    | 514         | -                     |
-| **Passing Tests**  | 514         | ✅                    |
-| **Failing Tests**  | 0           | ✅                    |
-| **Code Coverage**  | 86.46%      | ✅ Exceeds 85% target |
-| **Execution Time** | ~10 seconds | ✅ Very fast          |
-| **Pass Rate**      | 100%        | ✅ Excellent          |
+| Gate                        | Enforced by                                          | Threshold                                             |
+| ---------------------------- | ----------------------------------------------------- | ------------------------------------------------------ |
+| **Backend coverage**          | `pytest.ini` (`--cov-fail-under`)                       | 85% minimum, all source under `src/`                    |
+| **Frontend coverage**         | `vitest.config.ts` (`coverage.thresholds`)              | 85% minimum on lines/branches/functions/statements, scoped to `src/web/static/ts/utils/**` |
+| **Pass rate**                 | CI (any test failure fails the build)                   | 100% — no expected failures                             |
+| **Execution time**            | Informal — both suites are designed to run in seconds  | Backend and frontend suites should each complete in well under a minute locally |
+
+A test run reports the current test count and coverage percentage directly in its output — see Quick Start below to reproduce it. If you need historical figures for a specific date, check the CI logs or `git log -- docs/TESTING.md` rather than this file.
 
 ---
 
@@ -55,12 +55,9 @@ npm run test:unit:coverage
 
 ### 1. Repository Layer Tests
 
-**File:** `tests/test_db_repositories.py` (1,273 lines)
-**Tests:** 78 comprehensive tests
-**Coverage:** 89-100%
-**Status:** ✅ All passing
+**File:** `tests/test_db_repositories.py`
 
-#### PromptRepository (28 tests)
+#### PromptRepository
 
 Tests for the main prompt repository covering:
 
@@ -83,7 +80,7 @@ Tests for the main prompt repository covering:
 - `test_pagination` - Offset and limit
 - `test_cascade_delete_versions` - Referential integrity
 
-#### VersionRepository (17 tests)
+#### VersionRepository
 
 Tests for version control repository:
 
@@ -103,7 +100,7 @@ Tests for version control repository:
 - `test_version_chain` - Parent-child linking
 - `test_immutability` - Snapshots don't change
 
-#### CategoryRepository (11 tests)
+#### CategoryRepository
 
 Tests for category management:
 
@@ -114,7 +111,7 @@ Tests for category management:
 - ✅ Delete-if-unused logic
 - ✅ Unique constraint enforcement
 
-#### TagRepository (22 tests)
+#### TagRepository
 
 Tests for tag management:
 
@@ -129,12 +126,9 @@ Tests for tag management:
 
 ### 2. Service Layer Tests
 
-**File:** `tests/test_db_services.py` (1,086 lines)
-**Tests:** 88 tests
-**Coverage:** 75-82%
-**Status:** ✅ 94% passing (83/88)
+**File:** `tests/test_db_services.py`
 
-#### PromptDataService (46 tests - 100% passing)
+#### PromptDataService
 
 Tests for the main data service:
 
@@ -154,7 +148,7 @@ Tests for the main data service:
 - `test_delete_prompts_bulk` - Bulk operations
 - `test_normalize_tags` - Data sanitization
 
-#### BackupService (42 tests - 88% passing)
+#### BackupService
 
 Tests for backup and restore:
 
@@ -176,12 +170,9 @@ Tests for backup and restore:
 
 ### 3. Version Control Tests
 
-**File:** `tests/test_version_system.py` (1,100+ lines)
-**Tests:** 48 comprehensive tests
-**Coverage:** 95-100%
-**Status:** ✅ All passing
+**File:** `tests/test_version_system.py`
 
-#### Version Creation (8 tests)
+#### Version Creation
 
 - ✅ Automatic version on create/update
 - ✅ Complete metadata capture
@@ -189,7 +180,7 @@ Tests for backup and restore:
 - ✅ Parent-child linking
 - ✅ Custom commit messages
 
-#### Version History (10 tests)
+#### Version History
 
 - ✅ History retrieval and ordering (newest first)
 - ✅ Pagination and limiting
@@ -199,7 +190,7 @@ Tests for backup and restore:
 - ✅ Empty history handling
 - ✅ Cascade delete on prompt deletion
 
-#### Version Comparison (8 tests)
+#### Version Comparison
 
 - ✅ Diff generation between versions
 - ✅ Changed field detection
@@ -208,7 +199,7 @@ Tests for backup and restore:
 - ✅ Content differences
 - ✅ Error handling for missing versions
 
-#### Version Revert (10 tests)
+#### Version Revert
 
 - ✅ Revert to previous versions
 - ✅ New version creation on revert (preserves history)
@@ -216,7 +207,7 @@ Tests for backup and restore:
 - ✅ Multiple sequential reverts
 - ✅ Custom revert messages
 
-#### Integration Tests (12 tests)
+#### Integration Tests
 
 - ✅ Complete version workflows
 - ✅ Immutability verification
@@ -427,30 +418,29 @@ python3 -m pytest --tb=long
 
 ### Current Coverage by Component
 
-| Component               | Statements | Missed | Coverage   | Status |
-| ----------------------- | ---------- | ------ | ---------- | ------ |
-| **Database Models**     | 124        | 0      | 100%       | ✅     |
-| **Repositories**        | 216        | 13     | 94%        | ✅     |
-| **PromptRepository**    | 54         | 0      | 100%       | ✅     |
-| **VersionRepository**   | 62         | 0      | 100%       | ✅     |
-| **CategoryRepository**  | 36         | 4      | 89%        | ✅     |
-| **TagRepository**       | 60         | 4      | 93%        | ✅     |
-| **Services (DB)**       | 849        | 200    | 76%        | ✅     |
-| **PromptDataServiceDB** | 298        | 54     | 82%        | ✅     |
-| **BackupServiceDB**     | 371        | 102    | 73%        | ✅     |
-| **Version Services**    | 312        | 9      | 97%        | ✅     |
-| **Web API**             | 624        | 112    | 82%        | ✅     |
-| **Validators**          | 187        | 31     | 83%        | ✅     |
-| **TOTAL**               | 2,741      | 371    | **86.46%** | ✅     |
+Per-component coverage percentages are not tracked in this document because they shift with nearly every PR. To see current numbers by file/component:
 
-### Coverage Gaps
+```bash
+# Backend: full per-file breakdown with missing line numbers
+python3 -m pytest --cov=src --cov-report=term-missing
 
-The remaining uncovered code consists primarily of:
+# Backend: browsable HTML report
+python3 -m pytest --cov=src --cov-report=html:htmlcov
+open htmlcov/index.html
 
-1. **Error handling paths** - Edge cases that are difficult to trigger
-2. **Legacy compatibility code** - Deprecated methods
-3. **Database health checks** - Excluded from coverage by design
-4. **Web API error handlers** - Rarely-used error paths
+# Frontend: per-file breakdown (scoped to src/web/static/ts/utils/**)
+npm run test:unit:coverage
+```
+
+### Known Accepted Gaps
+
+Some coverage gaps are accepted rather than actively pursued, because closing them would require introducing new test-mocking patterns (or mocking framework internals) for low bug-risk code:
+
+1. **Generic `except Exception` fallback handlers** - e.g. in `src/web/routers/auth.py`, the catch-all 500 branches sitting alongside specific, well-tested exception handlers. These require injecting an unexpected exception to hit, which the existing integration-style test suite for that router does not do.
+2. **Legacy/deprecated compatibility code** - superseded implementations kept temporarily for backward compatibility.
+3. **Database health checks** (`src/db/health.py`) - excluded from coverage by design (see `.coveragerc`).
+
+If you add a new accepted gap, note it here with the reason so it isn't mistaken for an oversight in a future coverage review.
 
 ---
 
@@ -715,9 +705,9 @@ The test suite was completely rewritten. Key changes:
 
 The PromptVault test suite provides:
 
-- ✅ **86.46% code coverage** (exceeds 85% requirement)
-- ✅ **514 passing tests** (100% pass rate)
-- ✅ **Fast execution** (~10 seconds)
+- ✅ **≥85% code coverage**, enforced as a hard gate on both backend and frontend
+- ✅ **100% pass rate** required — any failure fails CI
+- ✅ **Fast execution** (both suites run in well under a minute locally)
 - ✅ **Comprehensive coverage** of database operations
 - ✅ **Modern infrastructure** with proper isolation
 - ✅ **CI/CD ready** with no external dependencies
