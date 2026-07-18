@@ -23,6 +23,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Placeholder copy error handling**: Clipboard write failures and substitution errors inside the placeholder-fill modal's confirm callback previously ran outside the enclosing try/catch and were silently dropped instead of surfacing a success or error notification
 
+### 🧪 Tests
+
+- **Backend/frontend coverage gaps closed**: Removed `src/services/tag_category_undo.py` (dead code superseded by the DB-backed undo system); added tests for `backup_scheduler.register_backup_jobs` and `BackupRepository` (both previously untested); added/extended frontend tests for `auth-nav.ts` (no prior test file), `dom.ts` scroll indicators, `notifications.ts` icon branches, and `secondary-nav.ts` auth-error handling
+- **`docs/TESTING.md` rewritten**: Metrics sections now describe coverage gates and structure instead of point-in-time test counts/percentages that drifted out of date; added a "Known Accepted Gaps" section documenting intentionally-deferred low-value coverage (e.g. generic exception fallbacks in `auth.py`)
+
 ## [1.10.1] - 2026-07-15
 
 ### 🐛 Fixed
