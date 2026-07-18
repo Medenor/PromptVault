@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### ✨ Added
+
+- **Dynamic Prompt Placeholders** (spec 006, Codeberg #42): Prompt content can now contain `[NAME]`- or `{NAME}`-style placeholder tokens that get filled in at copy time
+  - **Placeholder detection**: Clicking Copy on a prompt card whose content contains bracketed (`[DURATION]`) or braced (`{DURATION}`) tokens opens a form with one input per distinct token instead of copying immediately; prompts with no placeholders keep today's instant one-click copy unchanged
+  - **Substitution**: Confirming the form replaces every occurrence of each filled placeholder with its value in the copied text; a repeated token (e.g. `[TITLE]` used twice) is filled once and substituted everywhere; unfilled fields are left as their original token, and confirming with all fields blank reproduces the raw content exactly
+  - **Syntax rules**: `[NAME]` and `{NAME}` are distinct placeholder identities even with the same name; matching is exact and case-sensitive; only well-formed tokens (non-empty, no nested brackets/braces, no internal newline) are recognized — things like `array[0]` or unmatched `[abc` are left as plain text
+  - **Non-recursive substitution**: A user-entered value is inserted as literal text and is not itself re-scanned for placeholder tokens
+  - **No persistence, no schema change**: Placeholders are derived on the fly from prompt content; stored content, version history, search/filter matching, and CSV/Markdown/JSON export all continue to use the raw, unsubstituted text unchanged
+  - **Version history untouched**: The placeholder-fill form only appears on the Copy-click action for a prompt's current content; the version-history/diff view stays read-only/text-only with no placeholder form (revert to an older version first to copy it with placeholders filled in)
+  - **New module**: `src/web/static/ts/utils/placeholders.ts` (`detectPlaceholders`/`substitutePlaceholders`), covered by a dedicated unit test suite and a new Playwright e2e spec (`tests/e2e/prompt-placeholders.spec.ts`)
+  - **i18n**: Placeholder modal chrome translated across EN/FR/ES/DE
+
+### 🐛 Fixed
+
+- **Placeholder copy error handling**: Clipboard write failures and substitution errors inside the placeholder-fill modal's confirm callback previously ran outside the enclosing try/catch and were silently dropped instead of surfacing a success or error notification
+
 ## [1.10.1] - 2026-07-15
 
 ### 🐛 Fixed
