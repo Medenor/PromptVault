@@ -28,6 +28,17 @@ describe('notifications utils', () => {
     confirmSpy.mockRestore();
   });
 
+  it('passes interpolation options through confirmAction', () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
+
+    const result = confirmAction('messages.confirmDelete', { name: 'thing' });
+
+    expect(confirmSpy).toHaveBeenCalledWith('tr:messages.confirmDelete');
+    expect(result).toBe(false);
+
+    confirmSpy.mockRestore();
+  });
+
   it('shows loading text with translations', () => {
     document.body.innerHTML = '<div id="loading"></div>';
 
@@ -36,6 +47,20 @@ describe('notifications utils', () => {
     const element = document.getElementById('loading');
     expect(element?.textContent).toBe('tr:messages.loading');
     expect(element?.classList.contains('hidden')).toBe(false);
+  });
+
+  it('shows loading with an explicit message', () => {
+    document.body.innerHTML = '<div id="loading"></div>';
+
+    showLoading('loading', 'Custom loading text');
+
+    const element = document.getElementById('loading');
+    expect(element?.textContent).toBe('Custom loading text');
+  });
+
+  it('does nothing when the loading element is missing', () => {
+    document.body.innerHTML = '';
+    expect(() => showLoading('missing')).not.toThrow();
   });
 
   it('shows and hides status messages', () => {
@@ -49,6 +74,29 @@ describe('notifications utils', () => {
 
     hideStatus('status');
     expect(element?.classList.contains('hidden')).toBe(true);
+  });
+
+  it('sets alert role and assertive aria-live for error status', () => {
+    document.body.innerHTML = '<div id="status"></div>';
+
+    showStatus('status', 'Failed', 'error');
+    const element = document.getElementById('status');
+    expect(element?.getAttribute('role')).toBe('alert');
+    expect(element?.getAttribute('aria-live')).toBe('assertive');
+  });
+
+  it('defaults to info type when none is given', () => {
+    document.body.innerHTML = '<div id="status"></div>';
+
+    showStatus('status', 'Neutral');
+    const element = document.getElementById('status');
+    expect(element?.className).toContain('status-info');
+  });
+
+  it('does nothing when the status element is missing', () => {
+    document.body.innerHTML = '';
+    expect(() => showStatus('missing', 'text')).not.toThrow();
+    expect(() => hideStatus('missing')).not.toThrow();
   });
 
   it('shows toast notifications', () => {
@@ -131,5 +179,30 @@ describe('notifications utils', () => {
     consoleError.mockRestore();
     consoleWarn.mockRestore();
     delete (window as unknown as { FrontendLogger?: typeof logger }).FrontendLogger;
+  });
+
+  it('logs to console without throwing when no telemetry logger is present', () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    delete (window as unknown as { FrontendLogger?: unknown }).FrontendLogger;
+
+    expect(() => reportError('test', 'action', new Error('boom'))).not.toThrow();
+    expect(() => reportWarning('test', 'warn', 'careful')).not.toThrow();
+
+    expect(consoleError).toHaveBeenCalled();
+    expect(consoleWarn).toHaveBeenCalled();
+
+    consoleError.mockRestore();
+    consoleWarn.mockRestore();
+  });
+
+  it('does not call a logger without a reportError function', () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    (window as unknown as { FrontendLogger?: unknown }).FrontendLogger = {};
+
+    expect(() => reportError('test', 'action', new Error('boom'))).not.toThrow();
+
+    consoleError.mockRestore();
+    delete (window as unknown as { FrontendLogger?: unknown }).FrontendLogger;
   });
 });

@@ -50,7 +50,9 @@ jobs:
       - name: Python dependency audit
         run: |
           pip install -e . pip-audit
-          pip-audit
+          # PYSEC-2026-1325 (ecdsa): no fix available upstream at ecdsa's
+          # latest release (0.19.2), transitive via python-jose.
+          pip-audit --ignore-vuln PYSEC-2026-1325
 
       - name: Setup Node
         uses: actions/setup-node@v4
