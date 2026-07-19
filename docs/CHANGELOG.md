@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 🔒 Security
+
+- **Unpinned and patched vulnerable dependencies**: `fastapi`, `uvicorn`, `jinja2`, `python-multipart`, and `aiofiles` were pinned to exact versions frozen since ~2023; `pip-audit` found 24 known CVEs across them (notably a Jinja2 XSS/sandbox-escape family and a `python-multipart` parsing DoS family), invisible without running the audit manually. Floors bumped to patched versions; `starlette` (transitive via `fastapi`) now resolves to ≥1.3, closing those too
+  - Updated all 14 `Jinja2Templates.TemplateResponse(...)` call sites to the `(request, name, context)` signature required by `starlette>=0.40` (the old `(name, {"request": request, ...})` form breaks Jinja2's internal template cache under the new Starlette)
+- **Removed unused `codex` npm dependency**: A 2013-era documentation generator, present in `package.json` `dependencies` but referenced nowhere in the codebase, was dragging in 25 npm vulnerabilities (3 critical) via its `tea`/`orchid`/`ws` sub-dependencies
+- **`vite` 5→8 and `vitest` 2→4 upgraded**: Closed the remaining transitive `esbuild`/`rollup`/`ws` vulnerabilities; 0 npm vulnerabilities remain (`npm audit`)
+- **CI security-audit job**: New Forgejo Actions job runs `pip-audit` and `npm audit --audit-level=high` on every push/PR; `ecdsa` (transitive via `python-jose`, no fixed version available upstream) is explicitly ignored via `--ignore-vuln` with a comment rather than silently allowed
+
+### ⚙️ CI/Build
+
+- **New `ci.yml` Forgejo workflow**: Runs `make lint`, `make test`, and `make build-frontend` on every push/PR — previously only the `accessibility.yml` workflow existed, so lint/test regressions and dependency drift were only caught when a developer remembered to run them locally
+
 ### ✨ Added
 
 - **Dynamic Prompt Placeholders** (spec 006, Codeberg #42): Prompt content can now contain `[NAME]`- or `{NAME}`-style placeholder tokens that get filled in at copy time
@@ -27,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Backend/frontend coverage gaps closed**: Removed `src/services/tag_category_undo.py` (dead code superseded by the DB-backed undo system); added tests for `backup_scheduler.register_backup_jobs` and `BackupRepository` (both previously untested); added/extended frontend tests for `auth-nav.ts` (no prior test file), `dom.ts` scroll indicators, `notifications.ts` icon branches, and `secondary-nav.ts` auth-error handling
 - **`docs/TESTING.md` rewritten**: Metrics sections now describe coverage gates and structure instead of point-in-time test counts/percentages that drifted out of date; added a "Known Accepted Gaps" section documenting intentionally-deferred low-value coverage (e.g. generic exception fallbacks in `auth.py`)
+- **Frontend branch coverage restored after `vitest` 4 upgrade**: `@vitest/coverage-v8` 4.x computes branch coverage more strictly than 2.x, dropping the global figure from 91% to 79.55% with no functional regression; added targeted branch tests for `api.ts`, `i18n.ts`, `notifications.ts`, and `color-picker.ts` to bring it back to 86.57% (threshold: 85%) rather than lowering the gate
 
 ## [1.10.1] - 2026-07-15
 
