@@ -66,6 +66,7 @@ class BackupSchedulerService:
         """
         if self._backup_service is None:
             from src.services.backup_service_db import BackupService
+
             self._backup_service = BackupService(os.getenv("PROMPTVAULT_DATA_DIR"))
         return self._backup_service
 

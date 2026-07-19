@@ -622,7 +622,9 @@ class TestPromptRepository:
         )
 
         # Favorite filter
-        assert prompt_repo.count(favorite=True) == len(prompt_repo.search(favorite=True))
+        assert prompt_repo.count(favorite=True) == len(
+            prompt_repo.search(favorite=True)
+        )
 
         # Combined filters
         assert prompt_repo.count(query="Marketing", favorite=True) == len(

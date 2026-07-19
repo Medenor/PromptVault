@@ -40,12 +40,12 @@ npm run test:unit:coverage
 
 ## Test Suite Gates
 
-| Gate                        | Enforced by                                          | Threshold                                             |
-| ---------------------------- | ----------------------------------------------------- | ------------------------------------------------------ |
-| **Backend coverage**          | `pytest.ini` (`--cov-fail-under`)                       | 85% minimum, all source under `src/`                    |
-| **Frontend coverage**         | `vitest.config.ts` (`coverage.thresholds`)              | 85% minimum on lines/branches/functions/statements, scoped to `src/web/static/ts/utils/**` |
-| **Pass rate**                 | CI (any test failure fails the build)                   | 100% — no expected failures                             |
-| **Execution time**            | Informal — both suites are designed to run in seconds  | Backend and frontend suites should each complete in well under a minute locally |
+| Gate                  | Enforced by                                           | Threshold                                                                                  |
+| --------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| **Backend coverage**  | `pytest.ini` (`--cov-fail-under`)                     | 85% minimum, all source under `src/`                                                       |
+| **Frontend coverage** | `vitest.config.ts` (`coverage.thresholds`)            | 85% minimum on lines/branches/functions/statements, scoped to `src/web/static/ts/utils/**` |
+| **Pass rate**         | CI (any test failure fails the build)                 | 100% — no expected failures                                                                |
+| **Execution time**    | Informal — both suites are designed to run in seconds | Backend and frontend suites should each complete in well under a minute locally            |
 
 A test run reports the current test count and coverage percentage directly in its output — see Quick Start below to reproduce it. If you need historical figures for a specific date, check the CI logs or `git log -- docs/TESTING.md` rather than this file.
 

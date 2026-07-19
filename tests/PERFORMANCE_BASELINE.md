@@ -1,6 +1,6 @@
 # Performance Baseline Report
 
-Generated: 2026-07-14T19:49:11.128029+00:00
+Generated: 2026-07-19T13:45:46.403619+00:00
 Platform: darwin
 
 ## Summary
@@ -10,18 +10,18 @@ This report documents the performance characteristics of `list_all_with_counts()
 ## Category Performance
 
 | Dataset | Categories | Prompts | Time (s) | Queries | Memory (MB) |
-|---------|-----------|---------|----------|---------|-------------|
-| Small | 10 | 100 | 0.0017 | 1 | 0.04 |
-| Medium | 100 | 1000 | 0.0025 | 1 | 0.13 |
-| Large | 1000 | 5000 | 0.0292 | 1 | 1.49 |
+| ------- | ---------- | ------- | -------- | ------- | ----------- |
+| Small   | 10         | 100     | 0.0016   | 1       | 0.04        |
+| Medium  | 100        | 1000    | 0.0025   | 1       | 0.13        |
+| Large   | 1000       | 5000    | 0.0244   | 1       | 1.49        |
 
 ## Tag Performance
 
 | Dataset | Tags | Prompts | Time (s) | Queries | Memory (MB) |
-|---------|------|---------|----------|---------|-------------|
-| Small | 100 | 500 | 0.0134 | 1 | 0.32 |
-| Medium | 500 | 2000 | 0.0249 | 1 | 0.88 |
-| Large | 1000 | 10000 | 0.0602 | 1 | 2.46 |
+| ------- | ---- | ------- | -------- | ------- | ----------- |
+| Small   | 100  | 500     | 0.0141   | 1       | 0.32        |
+| Medium  | 500  | 2000    | 0.0256   | 1       | 0.88        |
+| Large   | 1000 | 10000   | 0.0661   | 1       | 2.46        |
 
 ## Analysis
 
@@ -43,4 +43,3 @@ This report documents the performance characteristics of `list_all_with_counts()
 2. **Caching**: Consider caching results for frequently accessed lists
 3. **Indexing**: Ensure proper database indexes are maintained
 4. **Monitoring**: Set up alerts if response time exceeds baseline by >10%
-

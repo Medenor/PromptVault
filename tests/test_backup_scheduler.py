@@ -32,15 +32,19 @@ class TestRegisterBackupJobs:
         mock_repo.get_active.return_value = schedule
         mock_session = MagicMock()
 
-        with patch(
-            "src.scheduler.backup_scheduler.get_db_session",
-            return_value=_session_cm(mock_session),
-        ), patch(
-            "src.scheduler.backup_scheduler.BackupScheduleRepository",
-            return_value=mock_repo,
-        ), patch(
-            "src.services.backup_scheduler_service.BackupSchedulerService"
-        ) as mock_service_cls:
+        with (
+            patch(
+                "src.scheduler.backup_scheduler.get_db_session",
+                return_value=_session_cm(mock_session),
+            ),
+            patch(
+                "src.scheduler.backup_scheduler.BackupScheduleRepository",
+                return_value=mock_repo,
+            ),
+            patch(
+                "src.services.backup_scheduler_service.BackupSchedulerService"
+            ) as mock_service_cls,
+        ):
             mock_service = MagicMock()
             mock_service_cls.return_value = mock_service
 
@@ -63,20 +67,26 @@ class TestRegisterBackupJobs:
             for record in caplog.records
         )
 
-    def test_register_backup_jobs_with_no_active_schedule_skips_registration(self, caplog):
+    def test_register_backup_jobs_with_no_active_schedule_skips_registration(
+        self, caplog
+    ):
         mock_repo = MagicMock()
         mock_repo.get_active.return_value = None
         mock_session = MagicMock()
 
-        with patch(
-            "src.scheduler.backup_scheduler.get_db_session",
-            return_value=_session_cm(mock_session),
-        ), patch(
-            "src.scheduler.backup_scheduler.BackupScheduleRepository",
-            return_value=mock_repo,
-        ), patch(
-            "src.services.backup_scheduler_service.BackupSchedulerService"
-        ) as mock_service_cls:
+        with (
+            patch(
+                "src.scheduler.backup_scheduler.get_db_session",
+                return_value=_session_cm(mock_session),
+            ),
+            patch(
+                "src.scheduler.backup_scheduler.BackupScheduleRepository",
+                return_value=mock_repo,
+            ),
+            patch(
+                "src.services.backup_scheduler_service.BackupSchedulerService"
+            ) as mock_service_cls,
+        ):
             with caplog.at_level("INFO"):
                 register_backup_jobs()
 
@@ -87,21 +97,27 @@ class TestRegisterBackupJobs:
             for record in caplog.records
         )
 
-    def test_register_backup_jobs_with_disabled_schedule_skips_registration(self, caplog):
+    def test_register_backup_jobs_with_disabled_schedule_skips_registration(
+        self, caplog
+    ):
         schedule = MagicMock(enabled=False)
         mock_repo = MagicMock()
         mock_repo.get_active.return_value = schedule
         mock_session = MagicMock()
 
-        with patch(
-            "src.scheduler.backup_scheduler.get_db_session",
-            return_value=_session_cm(mock_session),
-        ), patch(
-            "src.scheduler.backup_scheduler.BackupScheduleRepository",
-            return_value=mock_repo,
-        ), patch(
-            "src.services.backup_scheduler_service.BackupSchedulerService"
-        ) as mock_service_cls:
+        with (
+            patch(
+                "src.scheduler.backup_scheduler.get_db_session",
+                return_value=_session_cm(mock_session),
+            ),
+            patch(
+                "src.scheduler.backup_scheduler.BackupScheduleRepository",
+                return_value=mock_repo,
+            ),
+            patch(
+                "src.services.backup_scheduler_service.BackupSchedulerService"
+            ) as mock_service_cls,
+        ):
             with caplog.at_level("INFO"):
                 register_backup_jobs()
 
@@ -112,7 +128,9 @@ class TestRegisterBackupJobs:
             for record in caplog.records
         )
 
-    def test_register_backup_jobs_on_repository_error_logs_and_does_not_raise(self, caplog):
+    def test_register_backup_jobs_on_repository_error_logs_and_does_not_raise(
+        self, caplog
+    ):
         with patch(
             "src.scheduler.backup_scheduler.get_db_session",
             side_effect=RuntimeError("db unavailable"),

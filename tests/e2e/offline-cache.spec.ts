@@ -26,7 +26,10 @@ async function login(page: Page): Promise<void> {
 // error even when the SW/cache setup is correct) — this suite runs on
 // Chromium-based mobile projects only. Verified manually against real
 // Safari/WebKit that the offline cache/indicator behavior works correctly.
-test.skip(({ browserName }) => browserName === 'webkit', 'Playwright WebKit + SW + offline is flaky');
+test.skip(
+  ({ browserName }) => browserName === 'webkit',
+  'Playwright WebKit + SW + offline is flaky'
+);
 
 test.describe('Offline cache and indicator (FR-009, FR-010)', () => {
   test('cached prompts remain viewable offline with a visible offline indicator', async ({

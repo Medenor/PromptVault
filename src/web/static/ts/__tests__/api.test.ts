@@ -14,6 +14,8 @@ import {
   apiPostForm,
   apiPut,
   APIRequestError,
+  buildUrl,
+  handleApiError,
 } from '@/utils/api';
 
 describe('api utils', () => {
@@ -21,7 +23,11 @@ describe('api utils', () => {
     vi.stubGlobal('fetch', vi.fn());
     // Mock window.location
     delete (window as unknown as Record<string, unknown>).location;
-    (window as unknown as Record<string, unknown>).location = { href: '', pathname: '/app' };
+    (window as unknown as Record<string, unknown>).location = {
+      href: '',
+      pathname: '/app',
+      origin: 'http://localhost',
+    };
 
     const createStorage = () => {
       const store = new Map<string, string>();
@@ -203,6 +209,51 @@ describe('api utils', () => {
 
     const formData = new FormData();
     await expect(apiPostForm('/api/upload', formData)).rejects.toBeInstanceOf(APIRequestError);
+  });
+
+  it('uses status text for form data failures when error payload is not JSON', async () => {
+    const response = {
+      ok: false,
+      status: 500,
+      statusText: 'Server Error',
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: vi.fn().mockRejectedValue(new Error('bad json')),
+    };
+
+    (globalThis.fetch as unknown as Mock).mockResolvedValue(response);
+
+    const formData = new FormData();
+    await expect(apiPostForm('/api/upload', formData)).rejects.toThrow('HTTP 500: Server Error');
+  });
+
+  it('redirects to login when refresh fails for apiPostForm on 401', async () => {
+    localStorage.setItem('refresh_token', 'invalid_refresh_token');
+
+    const fetchMock = globalThis.fetch as unknown as Mock;
+
+    const unauthorizedResponse = {
+      ok: false,
+      status: 401,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: vi.fn().mockResolvedValue({ detail: 'Unauthorized' }),
+    };
+
+    const refreshFailedResponse = {
+      ok: false,
+      status: 401,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: vi.fn().mockResolvedValue({ detail: 'Invalid refresh token' }),
+    };
+
+    fetchMock
+      .mockResolvedValueOnce(unauthorizedResponse)
+      .mockResolvedValueOnce(refreshFailedResponse);
+
+    const formData = new FormData();
+    await expect(apiPostForm('/api/upload', formData)).rejects.toBeInstanceOf(APIRequestError);
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(window.location.href).toBe('/auth/login');
   });
 
   describe('automatic token refresh', () => {
@@ -462,6 +513,47 @@ describe('api utils', () => {
 
       expect(result.uploaded).toBe(true);
       expect(fetchMock).toHaveBeenCalledTimes(3);
+    });
+  });
+
+  describe('buildUrl', () => {
+    it('appends only defined, non-empty params', () => {
+      const url = buildUrl('/api/prompts', {
+        page: 2,
+        search: '',
+        active: true,
+        missing: undefined,
+      });
+
+      expect(url).toContain('page=2');
+      expect(url).toContain('active=true');
+      expect(url).not.toContain('search=');
+      expect(url).not.toContain('missing');
+    });
+  });
+
+  describe('handleApiError', () => {
+    it('returns the session-expired message for auth errors', () => {
+      const error = new APIRequestError(401, { detail: 'Unauthorized' });
+      expect(handleApiError(error, 'default')).toBe('auth.sessionExpired');
+    });
+
+    it('returns the rate-limit message for rate limit errors', () => {
+      const error = new APIRequestError(429, { detail: 'Too many' });
+      expect(handleApiError(error, 'default')).toBe('errors.rateLimit');
+    });
+
+    it('returns the error message for other APIRequestError statuses', () => {
+      const error = new APIRequestError(422, { detail: 'Invalid' });
+      expect(handleApiError(error, 'default')).toBe('Invalid');
+    });
+
+    it('returns the message for a plain Error', () => {
+      expect(handleApiError(new Error('boom'), 'default')).toBe('boom');
+    });
+
+    it('returns the default message for unknown error shapes', () => {
+      expect(handleApiError('not an error', 'default')).toBe('default');
     });
   });
 });

@@ -415,6 +415,7 @@ async def service_worker():
         raise HTTPException(status_code=404, detail="Service Worker not built")
     return FileResponse(sw_path, media_type="application/javascript")
 
+
 # Templates
 templates = Jinja2Templates(directory="src/web/templates")
 templates.env.globals["load_manifest"] = load_manifest
@@ -930,9 +931,9 @@ async def home(request: Request):
         tags = data_service.get_tags()
 
         return templates.TemplateResponse(
+            request,
             "index.html",
             {
-                "request": request,
                 "prompts": prompts,
                 "categories": categories,
                 "tags": tags,
@@ -965,9 +966,9 @@ async def home(request: Request):
     tags = data_service.get_tags()
 
     return templates.TemplateResponse(
+        request,
         "index.html",
         {
-            "request": request,
             "prompts": prompts,
             "categories": categories,
             "tags": tags,
@@ -1030,9 +1031,9 @@ async def import_export_page(request: Request):
     unique_tags = len(all_tags)
 
     return templates.TemplateResponse(
+        request,
         "import_export.html",
         {
-            "request": request,
             "total_prompts": total_prompts,
             "favorite_prompts": favorite_prompts,
             "total_categories": unique_categories,
@@ -1338,9 +1339,9 @@ async def backup_management_page(request: Request):
     stats = backup_service.get_backup_stats()
 
     return templates.TemplateResponse(
+        request,
         "backup_management.html",
         {
-            "request": request,
             "backup_stats": stats,
             "auth_enabled": auth_settings.auth_enabled,
         },

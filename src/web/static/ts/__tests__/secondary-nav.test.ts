@@ -124,7 +124,7 @@ describe('initSecondaryNav', () => {
     };
     isAuthErrorResult = true;
     const { APIRequestError } = await import('@/utils/api');
-    apiGet.mockRejectedValueOnce(new APIRequestError('unauthorized'));
+    apiGet.mockRejectedValueOnce(new APIRequestError(401, { detail: 'unauthorized' }));
 
     initSecondaryNav({ component: 'test-page', requireAuth: true });
     await Promise.resolve();

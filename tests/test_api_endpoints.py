@@ -383,7 +383,9 @@ class TestPaginationListPrompts:
         assert ids_page1.isdisjoint(ids_page2)
         assert page2["has_previous"] is True
 
-    def test_limit_clamped_when_above_max(self, api_client, api_data_service, sample_prompt_data):
+    def test_limit_clamped_when_above_max(
+        self, api_client, api_data_service, sample_prompt_data
+    ):
         self._seed_many(api_data_service, sample_prompt_data, 110)
 
         response = api_client.get("/api/prompts", params={"limit": 9999})
@@ -405,9 +407,7 @@ class TestPaginationListPrompts:
         assert payload["prompts"] == {}
         assert payload["has_next"] is False
 
-    def test_empty_library_returns_zero_total_count(
-        self, api_client, api_data_service
-    ):
+    def test_empty_library_returns_zero_total_count(self, api_client, api_data_service):
         # Delete the two default seeded prompts
         for pid in list(api_data_service.load_prompts().keys()):
             api_data_service.delete_prompt(pid)
@@ -443,9 +443,7 @@ class TestPaginationSearchPrompts:
     ):
         self._seed_matching(api_data_service, sample_prompt_data, count=50, matching=30)
 
-        response = api_client.get(
-            "/api/prompts/search", params={"search": "Marketing"}
-        )
+        response = api_client.get("/api/prompts/search", params={"search": "Marketing"})
         payload = response.json()
 
         assert response.status_code == 200
@@ -477,9 +475,7 @@ class TestPaginationSearchPrompts:
         not auth_settings.auth_enabled,
         reason="Requires AUTH_ENABLED=true (default); see test_auth_optional.py for the anonymous-mode counterpart",
     )
-    def test_favorites_without_auth_still_401_with_pagination_params(
-        self, api_client
-    ):
+    def test_favorites_without_auth_still_401_with_pagination_params(self, api_client):
         response = api_client.get(
             "/api/prompts/search",
             params={"favorites": True, "page": 1, "limit": 25},
@@ -489,7 +485,9 @@ class TestPaginationSearchPrompts:
     def test_search_limit_clamped_when_above_max(
         self, api_client, api_data_service, sample_prompt_data
     ):
-        self._seed_matching(api_data_service, sample_prompt_data, count=110, matching=110)
+        self._seed_matching(
+            api_data_service, sample_prompt_data, count=110, matching=110
+        )
 
         response = api_client.get(
             "/api/prompts/search", params={"search": "Marketing", "limit": 500}
@@ -929,7 +927,9 @@ class TestBackupManagementEndpoints:
         assert page.status_code == 200
 
         create = api_client.post(
-            "/api/backups", data={"name": "coverage-backup"}, headers=api_admin_auth_headers
+            "/api/backups",
+            data={"name": "coverage-backup"},
+            headers=api_admin_auth_headers,
         )
         assert create.status_code == 200
         backup_id = create.json()["backup_id"]
@@ -956,7 +956,9 @@ class TestBackupManagementEndpoints:
 
         # Use minimum valid values (validation requires >= 1)
         cleanup = api_client.post(
-            "/api/backups/cleanup", data={"retention_days": 1}, headers=api_admin_auth_headers
+            "/api/backups/cleanup",
+            data={"retention_days": 1},
+            headers=api_admin_auth_headers,
         )
         assert cleanup.status_code == 200
         assert cleanup.json()["success"] is True

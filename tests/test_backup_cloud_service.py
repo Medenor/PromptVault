@@ -13,7 +13,10 @@ from unittest.mock import patch, MagicMock
 import pytest
 from botocore.exceptions import ClientError, EndpointConnectionError
 
-from src.services.backup_cloud_service import BackupCloudService, _get_credentials_passphrase
+from src.services.backup_cloud_service import (
+    BackupCloudService,
+    _get_credentials_passphrase,
+)
 from src.services.backup_encryption_service import BackupEncryptionService
 
 
@@ -114,12 +117,18 @@ class TestListProviders:
 
     def test_list_after_create(self, cloud_service):
         cloud_service.create_provider(
-            name="P1", provider_type="s3", bucket_name="b1",
-            access_key="ak1", secret_key="sk1",
+            name="P1",
+            provider_type="s3",
+            bucket_name="b1",
+            access_key="ak1",
+            secret_key="sk1",
         )
         cloud_service.create_provider(
-            name="P2", provider_type="s3", bucket_name="b2",
-            access_key="ak2", secret_key="sk2",
+            name="P2",
+            provider_type="s3",
+            bucket_name="b2",
+            access_key="ak2",
+            secret_key="sk2",
         )
         providers = cloud_service.list_providers()
         assert len(providers) == 2
@@ -128,8 +137,11 @@ class TestListProviders:
 
     def test_list_never_includes_credentials(self, cloud_service):
         cloud_service.create_provider(
-            name="P1", provider_type="s3", bucket_name="b1",
-            access_key="ak1", secret_key="sk1",
+            name="P1",
+            provider_type="s3",
+            bucket_name="b1",
+            access_key="ak1",
+            secret_key="sk1",
         )
         for p in cloud_service.list_providers():
             assert "credentials_encrypted" not in p
@@ -140,8 +152,11 @@ class TestListProviders:
 class TestDeleteProvider:
     def test_delete_existing_provider(self, cloud_service):
         result = cloud_service.create_provider(
-            name="ToDelete", provider_type="s3", bucket_name="b",
-            access_key="ak", secret_key="sk",
+            name="ToDelete",
+            provider_type="s3",
+            bucket_name="b",
+            access_key="ak",
+            secret_key="sk",
         )
         deleted = cloud_service.delete_provider(result["id"])
         assert deleted is True
@@ -151,12 +166,17 @@ class TestDeleteProvider:
         deleted = cloud_service.delete_provider("nonexistent-id")
         assert deleted is False
 
-    def test_delete_provider_referenced_by_backup_raises(self, cloud_service, patched_db_session):
+    def test_delete_provider_referenced_by_backup_raises(
+        self, cloud_service, patched_db_session
+    ):
         from src.db.models import Backup
 
         result = cloud_service.create_provider(
-            name="InUse", provider_type="s3", bucket_name="b",
-            access_key="ak", secret_key="sk",
+            name="InUse",
+            provider_type="s3",
+            bucket_name="b",
+            access_key="ak",
+            secret_key="sk",
         )
         with patched_db_session() as session:
             backup = Backup(
@@ -177,7 +197,9 @@ class TestEncryptDecryptCredentials:
     def test_roundtrip(self, monkeypatch):
         passphrase = "test-passphrase"
         creds = json.dumps({"access_key": "AK", "secret_key": "SK"})
-        salt, nonce, encrypted = BackupCloudService._encrypt_credentials(creds, passphrase)
+        salt, nonce, encrypted = BackupCloudService._encrypt_credentials(
+            creds, passphrase
+        )
 
         from argon2.low_level import hash_secret_raw, Type
         from cryptography.hazmat.primitives.ciphers.aead import AESGCM
@@ -192,8 +214,13 @@ class TestEncryptDecryptCredentials:
             hash_len=32,
             type=Type.ID,
         )
-        plaintext = AESGCM(key).decrypt(bytes.fromhex(nonce), base64.b64decode(encrypted), None)
-        assert json.loads(plaintext.decode("utf-8")) == {"access_key": "AK", "secret_key": "SK"}
+        plaintext = AESGCM(key).decrypt(
+            bytes.fromhex(nonce), base64.b64decode(encrypted), None
+        )
+        assert json.loads(plaintext.decode("utf-8")) == {
+            "access_key": "AK",
+            "secret_key": "SK",
+        }
 
 
 class TestUpload:
@@ -213,9 +240,17 @@ class TestUpload:
             f.write(b"backup data")
 
         mock_client = MagicMock()
-        with patch.object(cloud_service, "_decrypt_credentials", return_value={"access_key": "ak", "secret_key": "sk"}):
-            with patch.object(BackupCloudService, "_get_client", return_value=mock_client):
-                full_key = cloud_service.upload(backup_path, provider, "backup_20240101.db")
+        with patch.object(
+            cloud_service,
+            "_decrypt_credentials",
+            return_value={"access_key": "ak", "secret_key": "sk"},
+        ):
+            with patch.object(
+                BackupCloudService, "_get_client", return_value=mock_client
+            ):
+                full_key = cloud_service.upload(
+                    backup_path, provider, "backup_20240101.db"
+                )
 
         mock_client.upload_fileobj.assert_called_once()
         call_args = mock_client.upload_fileobj.call_args
@@ -237,8 +272,14 @@ class TestUpload:
             f.write(b"data")
 
         mock_client = MagicMock()
-        with patch.object(cloud_service, "_decrypt_credentials", return_value={"access_key": "ak", "secret_key": "sk"}):
-            with patch.object(BackupCloudService, "_get_client", return_value=mock_client):
+        with patch.object(
+            cloud_service,
+            "_decrypt_credentials",
+            return_value={"access_key": "ak", "secret_key": "sk"},
+        ):
+            with patch.object(
+                BackupCloudService, "_get_client", return_value=mock_client
+            ):
                 full_key = cloud_service.upload(backup_path, provider, "file.db")
 
         assert full_key == "file.db"
@@ -256,8 +297,14 @@ class TestDownload:
         dest_path = os.path.join(tmpdir, "downloaded.db")
 
         mock_client = MagicMock()
-        with patch.object(cloud_service, "_decrypt_credentials", return_value={"access_key": "ak", "secret_key": "sk"}):
-            with patch.object(BackupCloudService, "_get_client", return_value=mock_client):
+        with patch.object(
+            cloud_service,
+            "_decrypt_credentials",
+            return_value={"access_key": "ak", "secret_key": "sk"},
+        ):
+            with patch.object(
+                BackupCloudService, "_get_client", return_value=mock_client
+            ):
                 cloud_service.download(provider, "remote/key.db", dest_path)
 
         mock_client.download_fileobj.assert_called_once()
@@ -277,8 +324,14 @@ class TestTestConnectivity:
         mock_client = MagicMock()
         mock_client.head_bucket.return_value = {}
 
-        with patch.object(cloud_service, "_decrypt_credentials", return_value={"access_key": "ak", "secret_key": "sk"}):
-            with patch.object(BackupCloudService, "_get_client", return_value=mock_client):
+        with patch.object(
+            cloud_service,
+            "_decrypt_credentials",
+            return_value={"access_key": "ak", "secret_key": "sk"},
+        ):
+            with patch.object(
+                BackupCloudService, "_get_client", return_value=mock_client
+            ):
                 result = cloud_service.test_connectivity(provider)
 
         assert result["success"] is True
@@ -294,8 +347,14 @@ class TestTestConnectivity:
         error_response = {"Error": {"Code": "403", "Message": "Forbidden"}}
         mock_client.head_bucket.side_effect = ClientError(error_response, "HeadBucket")
 
-        with patch.object(cloud_service, "_decrypt_credentials", return_value={"access_key": "ak", "secret_key": "sk"}):
-            with patch.object(BackupCloudService, "_get_client", return_value=mock_client):
+        with patch.object(
+            cloud_service,
+            "_decrypt_credentials",
+            return_value={"access_key": "ak", "secret_key": "sk"},
+        ):
+            with patch.object(
+                BackupCloudService, "_get_client", return_value=mock_client
+            ):
                 result = cloud_service.test_connectivity(provider)
 
         assert result["success"] is False
@@ -308,10 +367,18 @@ class TestTestConnectivity:
         provider.region = None
 
         mock_client = MagicMock()
-        mock_client.head_bucket.side_effect = EndpointConnectionError(endpoint_url="https://bad-endpoint.example.com")
+        mock_client.head_bucket.side_effect = EndpointConnectionError(
+            endpoint_url="https://bad-endpoint.example.com"
+        )
 
-        with patch.object(cloud_service, "_decrypt_credentials", return_value={"access_key": "ak", "secret_key": "sk"}):
-            with patch.object(BackupCloudService, "_get_client", return_value=mock_client):
+        with patch.object(
+            cloud_service,
+            "_decrypt_credentials",
+            return_value={"access_key": "ak", "secret_key": "sk"},
+        ):
+            with patch.object(
+                BackupCloudService, "_get_client", return_value=mock_client
+            ):
                 result = cloud_service.test_connectivity(provider)
 
         assert result["success"] is False
@@ -326,8 +393,14 @@ class TestTestConnectivity:
         mock_client = MagicMock()
         mock_client.head_bucket.side_effect = RuntimeError("unexpected")
 
-        with patch.object(cloud_service, "_decrypt_credentials", return_value={"access_key": "ak", "secret_key": "sk"}):
-            with patch.object(BackupCloudService, "_get_client", return_value=mock_client):
+        with patch.object(
+            cloud_service,
+            "_decrypt_credentials",
+            return_value={"access_key": "ak", "secret_key": "sk"},
+        ):
+            with patch.object(
+                BackupCloudService, "_get_client", return_value=mock_client
+            ):
                 result = cloud_service.test_connectivity(provider)
 
         assert result["success"] is False
@@ -384,7 +457,9 @@ class TestUploadBackupById:
         backup_id = db_backup_service.create_backup("upload-test", created_by="tester")
         assert backup_id
 
-        with patch.object(BackupCloudService, "upload", return_value="remote/key.db") as mock_upload:
+        with patch.object(
+            BackupCloudService, "upload", return_value="remote/key.db"
+        ) as mock_upload:
             result = cloud_service.upload_backup_by_id(
                 db_backup_service, backup_id, provider["id"], log_prefix="backup.manual"
             )
@@ -398,20 +473,28 @@ class TestUploadBackupById:
             assert backup.cloud_path == "remote/key.db"
             assert backup.cloud_uploaded_at is not None
 
-    def test_returns_false_when_backup_info_missing(self, cloud_service, db_backup_service):
+    def test_returns_false_when_backup_info_missing(
+        self, cloud_service, db_backup_service
+    ):
         result = cloud_service.upload_backup_by_id(
             db_backup_service, "nonexistent-backup-id", "some-provider-id"
         )
         assert result is False
 
-    def test_returns_false_when_provider_missing(self, cloud_service, db_backup_service):
-        backup_id = db_backup_service.create_backup("upload-test-2", created_by="tester")
+    def test_returns_false_when_provider_missing(
+        self, cloud_service, db_backup_service
+    ):
+        backup_id = db_backup_service.create_backup(
+            "upload-test-2", created_by="tester"
+        )
         result = cloud_service.upload_backup_by_id(
             db_backup_service, backup_id, "nonexistent-provider-id"
         )
         assert result is False
 
-    def test_returns_false_when_provider_disabled(self, cloud_service, db_backup_service):
+    def test_returns_false_when_provider_disabled(
+        self, cloud_service, db_backup_service
+    ):
         from src.db.models.backup_storage_provider import BackupStorageProvider
         from src.db import session as session_module
 
@@ -423,12 +506,20 @@ class TestUploadBackupById:
             secret_key="SK",
         )
         with session_module.get_db_session() as session:
-            row = session.query(BackupStorageProvider).filter_by(id=provider["id"]).first()
+            row = (
+                session.query(BackupStorageProvider)
+                .filter_by(id=provider["id"])
+                .first()
+            )
             row.enabled = False
             session.commit()
 
-        backup_id = db_backup_service.create_backup("upload-test-3", created_by="tester")
-        result = cloud_service.upload_backup_by_id(db_backup_service, backup_id, provider["id"])
+        backup_id = db_backup_service.create_backup(
+            "upload-test-3", created_by="tester"
+        )
+        result = cloud_service.upload_backup_by_id(
+            db_backup_service, backup_id, provider["id"]
+        )
         assert result is False
 
     def test_returns_false_on_upload_exception(self, cloud_service, db_backup_service):
@@ -439,10 +530,16 @@ class TestUploadBackupById:
             access_key="AK",
             secret_key="SK",
         )
-        backup_id = db_backup_service.create_backup("upload-test-4", created_by="tester")
+        backup_id = db_backup_service.create_backup(
+            "upload-test-4", created_by="tester"
+        )
 
-        with patch.object(BackupCloudService, "upload", side_effect=RuntimeError("boom")):
-            result = cloud_service.upload_backup_by_id(db_backup_service, backup_id, provider["id"])
+        with patch.object(
+            BackupCloudService, "upload", side_effect=RuntimeError("boom")
+        ):
+            result = cloud_service.upload_backup_by_id(
+                db_backup_service, backup_id, provider["id"]
+            )
 
         assert result is False
 

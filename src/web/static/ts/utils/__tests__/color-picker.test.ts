@@ -255,6 +255,23 @@ describe('ColorPicker', () => {
     expect(focusSpy).toHaveBeenCalled();
   });
 
+  it('ignores keydown events not targeting a preset color button', () => {
+    new ColorPicker({
+      containerId: 'color-container',
+      colorInputId: 'color-input',
+      colorPickerId: 'color-picker-native',
+    });
+
+    const container = document.getElementById('color-container') as HTMLElement;
+    const focusSpy = vi.spyOn(HTMLButtonElement.prototype, 'focus');
+
+    const event = new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true });
+    Object.defineProperty(event, 'target', { value: container });
+    container.dispatchEvent(event);
+
+    expect(focusSpy).not.toHaveBeenCalled();
+  });
+
   it('preset keyboard ArrowUp moves 5 backward (clamped to 0)', () => {
     new ColorPicker({
       containerId: 'color-container',

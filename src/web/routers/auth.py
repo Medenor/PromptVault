@@ -805,7 +805,7 @@ def logout(
 
         logger.info(f"User logged out successfully from {ip_address}")
 
-    except (InvalidTokenError, SessionNotFoundError):
+    except InvalidTokenError, SessionNotFoundError:
         # Token invalid or session not found - treat as already logged out
         logger.info(f"Logout attempt with invalid/expired token from {ip_address}")
 

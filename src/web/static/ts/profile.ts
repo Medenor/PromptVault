@@ -320,7 +320,8 @@ async function loadSessions(): Promise<void> {
     }
 
     if (sessions.length === 0) {
-      sessionsList.innerHTML = '<p class="text-gray-600 text-sm dark:text-gray-400">No active sessions</p>';
+      sessionsList.innerHTML =
+        '<p class="text-gray-600 text-sm dark:text-gray-400">No active sessions</p>';
       return;
     }
 

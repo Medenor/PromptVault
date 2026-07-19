@@ -52,7 +52,9 @@ def api_admin_auth_headers(api_client_context) -> Dict[str, str]:
 
     test_session = SessionLocal()
     try:
-        admin_user = test_session.query(User).filter_by(id="api-admin-backup-test-id").first()
+        admin_user = (
+            test_session.query(User).filter_by(id="api-admin-backup-test-id").first()
+        )
         if not admin_user:
             admin_user = User(
                 id="api-admin-backup-test-id",
@@ -94,7 +96,9 @@ def api_admin_auth_headers(api_client_context) -> Dict[str, str]:
 
 
 class TestRestorePreview:
-    def test_restore_preview_success(self, api_client, api_admin_auth_headers, api_client_context):
+    def test_restore_preview_success(
+        self, api_client, api_admin_auth_headers, api_client_context
+    ):
         temp_dir = api_client_context["temp_dir"]
         backup_db_path = os.path.join(temp_dir, "backups", "preview_test.db")
         conn = sqlite3.connect(backup_db_path)
@@ -104,16 +108,21 @@ class TestRestorePreview:
                 note TEXT, favorite INTEGER, category_id INTEGER, semantic_version TEXT
             )
         """)
-        conn.execute("INSERT INTO prompts VALUES (1, 'Test', 'Content', NULL, 0, NULL, '1.0')")
+        conn.execute(
+            "INSERT INTO prompts VALUES (1, 'Test', 'Content', NULL, 0, NULL, '1.0')"
+        )
         conn.commit()
         conn.close()
 
         from src.db.session import SessionLocal
+
         session = SessionLocal()
         try:
             backup = Backup(
-                id="backup-preview-ep", backup_type="sqlite_copy",
-                filename="preview_test.db", storage_path=backup_db_path,
+                id="backup-preview-ep",
+                backup_type="sqlite_copy",
+                filename="preview_test.db",
+                storage_path=backup_db_path,
                 succeeded=True,
             )
             session.add(backup)
@@ -141,7 +150,9 @@ class TestRestorePreview:
 
 
 class TestSelectiveRestore:
-    def test_selective_restore_success(self, api_client, api_admin_auth_headers, api_client_context):
+    def test_selective_restore_success(
+        self, api_client, api_admin_auth_headers, api_client_context
+    ):
         temp_dir = api_client_context["temp_dir"]
         backup_db_path = os.path.join(temp_dir, "backups", "selective_test.db")
         conn = sqlite3.connect(backup_db_path)
@@ -151,16 +162,21 @@ class TestSelectiveRestore:
                 note TEXT, favorite INTEGER, category_id INTEGER, semantic_version TEXT
             )
         """)
-        conn.execute("INSERT INTO prompts VALUES (1, 'Test', 'Content', NULL, 0, NULL, '1.0')")
+        conn.execute(
+            "INSERT INTO prompts VALUES (1, 'Test', 'Content', NULL, 0, NULL, '1.0')"
+        )
         conn.commit()
         conn.close()
 
         from src.db.session import SessionLocal
+
         session = SessionLocal()
         try:
             backup = Backup(
-                id="backup-selective-ep", backup_type="sqlite_copy",
-                filename="selective_test.db", storage_path=backup_db_path,
+                id="backup-selective-ep",
+                backup_type="sqlite_copy",
+                filename="selective_test.db",
+                storage_path=backup_db_path,
                 succeeded=True,
             )
             session.add(backup)
@@ -201,28 +217,41 @@ class TestEncryptedRestore:
                 note TEXT, favorite INTEGER, category_id INTEGER, semantic_version TEXT
             )
         """)
-        conn.execute("INSERT INTO prompts VALUES (1, 'Secret', 'Encrypted Content', NULL, 0, NULL, '1.0')")
+        conn.execute(
+            "INSERT INTO prompts VALUES (1, 'Secret', 'Encrypted Content', NULL, 0, NULL, '1.0')"
+        )
         conn.commit()
         conn.close()
 
-        salt, nonce = BackupEncryptionService().encrypt_file(backup_db_path, "correct-horse-battery-staple")
+        salt, nonce = BackupEncryptionService().encrypt_file(
+            backup_db_path, "correct-horse-battery-staple"
+        )
 
         from src.db.session import SessionLocal
+
         session = SessionLocal()
         try:
             backup = Backup(
-                id=backup_id, backup_type="sqlite_copy",
-                filename=f"{backup_id}.db", storage_path=backup_db_path,
-                succeeded=True, is_encrypted=True,
-                encryption_salt=salt, encryption_nonce=nonce,
+                id=backup_id,
+                backup_type="sqlite_copy",
+                filename=f"{backup_id}.db",
+                storage_path=backup_db_path,
+                succeeded=True,
+                is_encrypted=True,
+                encryption_salt=salt,
+                encryption_nonce=nonce,
             )
             session.add(backup)
             session.commit()
         finally:
             session.close()
 
-    def test_restore_without_passphrase_returns_400(self, api_client, api_admin_auth_headers, api_client_context):
-        self._make_encrypted_backup(api_client_context["temp_dir"], "backup-enc-no-pass")
+    def test_restore_without_passphrase_returns_400(
+        self, api_client, api_admin_auth_headers, api_client_context
+    ):
+        self._make_encrypted_backup(
+            api_client_context["temp_dir"], "backup-enc-no-pass"
+        )
 
         resp = api_client.post(
             "/api/backups/backup-enc-no-pass/restore",
@@ -231,7 +260,9 @@ class TestEncryptedRestore:
         assert resp.status_code == 400
         assert "assphrase" in resp.json()["error"]
 
-    def test_restore_with_correct_passphrase_succeeds(self, api_client, api_admin_auth_headers, api_client_context):
+    def test_restore_with_correct_passphrase_succeeds(
+        self, api_client, api_admin_auth_headers, api_client_context
+    ):
         self._make_encrypted_backup(api_client_context["temp_dir"], "backup-enc-ok")
 
         resp = api_client.post(
@@ -242,7 +273,9 @@ class TestEncryptedRestore:
         assert resp.status_code == 200
         assert resp.json()["success"] is True
 
-    def test_restore_with_wrong_passphrase_returns_400(self, api_client, api_admin_auth_headers, api_client_context):
+    def test_restore_with_wrong_passphrase_returns_400(
+        self, api_client, api_admin_auth_headers, api_client_context
+    ):
         self._make_encrypted_backup(api_client_context["temp_dir"], "backup-enc-wrong")
 
         resp = api_client.post(
@@ -254,7 +287,9 @@ class TestEncryptedRestore:
 
 
 class TestBackupSchedule:
-    def test_get_schedule_returns_default_when_not_configured(self, api_client, api_auth_headers):
+    def test_get_schedule_returns_default_when_not_configured(
+        self, api_client, api_auth_headers
+    ):
         resp = api_client.get("/api/backup-schedule", headers=api_auth_headers)
         assert resp.status_code == 200
         data = resp.json()
@@ -299,7 +334,9 @@ class TestBackupSchedule:
         assert data["frequency"] == "monthly"
         assert data["day_of_month"] == 15
 
-    def test_update_schedule_invalid_frequency(self, api_client, api_admin_auth_headers):
+    def test_update_schedule_invalid_frequency(
+        self, api_client, api_admin_auth_headers
+    ):
         resp = api_client.put(
             "/api/backup-schedule",
             headers=api_admin_auth_headers,
@@ -323,7 +360,9 @@ class TestBackupSchedule:
         )
         assert resp.status_code == 422
 
-    def test_update_schedule_weekly_missing_day(self, api_client, api_admin_auth_headers):
+    def test_update_schedule_weekly_missing_day(
+        self, api_client, api_admin_auth_headers
+    ):
         resp = api_client.put(
             "/api/backup-schedule",
             headers=api_admin_auth_headers,
@@ -331,7 +370,9 @@ class TestBackupSchedule:
         )
         assert resp.status_code == 422
 
-    def test_update_schedule_monthly_missing_day(self, api_client, api_admin_auth_headers):
+    def test_update_schedule_monthly_missing_day(
+        self, api_client, api_admin_auth_headers
+    ):
         resp = api_client.put(
             "/api/backup-schedule",
             headers=api_admin_auth_headers,
@@ -346,7 +387,9 @@ class TestBackupSchedule:
         )
         assert resp.status_code in (401, 403)
 
-    def test_get_schedule_after_create(self, api_client, api_admin_auth_headers, api_auth_headers):
+    def test_get_schedule_after_create(
+        self, api_client, api_admin_auth_headers, api_auth_headers
+    ):
         api_client.put(
             "/api/backup-schedule",
             headers=api_admin_auth_headers,
@@ -410,7 +453,11 @@ class TestBackupEncryption:
         resp = api_client.put(
             "/api/backup-encryption",
             headers=api_admin_auth_headers,
-            json={"rotate_key": True, "old_passphrase": "old-pass", "new_passphrase": "new-pass"},
+            json={
+                "rotate_key": True,
+                "old_passphrase": "old-pass",
+                "new_passphrase": "new-pass",
+            },
         )
         assert resp.status_code == 200
         data = resp.json()
@@ -463,7 +510,9 @@ class TestBackupProviders:
         )
         assert resp.status_code == 422
 
-    def test_create_provider_unsupported_type(self, api_client, api_admin_auth_headers, monkeypatch):
+    def test_create_provider_unsupported_type(
+        self, api_client, api_admin_auth_headers, monkeypatch
+    ):
         monkeypatch.setenv("PROMPTVAULT_CLOUD_CREDS_PASSPHRASE", "test-creds-pass")
         resp = api_client.post(
             "/api/backup-providers",
@@ -534,7 +583,9 @@ class TestManualBackupCloudUpload:
 
         called = {}
 
-        def fake_upload_backup_by_id(self, backup_service, backup_id, provider_id_arg, log_prefix="backup"):
+        def fake_upload_backup_by_id(
+            self, backup_service, backup_id, provider_id_arg, log_prefix="backup"
+        ):
             called["backup_id"] = backup_id
             called["provider_id"] = provider_id_arg
             called["log_prefix"] = log_prefix
@@ -563,9 +614,7 @@ class TestManualBackupCloudUpload:
         def fail_if_called(self, *args, **kwargs):
             raise AssertionError("upload_backup_by_id should not be called")
 
-        monkeypatch.setattr(
-            BackupCloudService, "upload_backup_by_id", fail_if_called
-        )
+        monkeypatch.setattr(BackupCloudService, "upload_backup_by_id", fail_if_called)
 
         resp = api_client.post(
             "/api/backups",
@@ -594,7 +643,9 @@ class TestManualBackupCloudUpload:
 
         from src.services.backup_cloud_service import BackupCloudService
 
-        def fake_upload_returns_false(self, backup_service, backup_id, provider_id_arg, log_prefix="backup"):
+        def fake_upload_returns_false(
+            self, backup_service, backup_id, provider_id_arg, log_prefix="backup"
+        ):
             return False
 
         monkeypatch.setattr(
@@ -672,25 +723,32 @@ class TestVerifyBackup:
         )
         assert resp.status_code == 404
 
-    def test_verify_backup_success(self, api_client, api_admin_auth_headers, api_client_context):
+    def test_verify_backup_success(
+        self, api_client, api_admin_auth_headers, api_client_context
+    ):
         temp_dir = api_client_context["temp_dir"]
         backup_path = os.path.join(temp_dir, "backups", "verify_test.db")
         with open(backup_path, "wb") as f:
             f.write(b"test backup data for verification")
 
         from src.db.session import SessionLocal
+
         session = SessionLocal()
         try:
             import hashlib
+
             sha256 = hashlib.sha256()
             with open(backup_path, "rb") as f:
                 sha256.update(f.read())
             expected_checksum = sha256.hexdigest()
 
             backup = Backup(
-                id="backup-verify-ep", backup_type="sqlite_copy",
-                filename="verify_test.db", storage_path=backup_path,
-                succeeded=True, checksum=expected_checksum,
+                id="backup-verify-ep",
+                backup_type="sqlite_copy",
+                filename="verify_test.db",
+                storage_path=backup_path,
+                succeeded=True,
+                checksum=expected_checksum,
             )
             session.add(backup)
             session.commit()
@@ -706,19 +764,25 @@ class TestVerifyBackup:
         assert data["valid"] is True
         assert "checksum" in data
 
-    def test_verify_backup_checksum_mismatch(self, api_client, api_admin_auth_headers, api_client_context):
+    def test_verify_backup_checksum_mismatch(
+        self, api_client, api_admin_auth_headers, api_client_context
+    ):
         temp_dir = api_client_context["temp_dir"]
         backup_path = os.path.join(temp_dir, "backups", "verify_mismatch.db")
         with open(backup_path, "wb") as f:
             f.write(b"test data")
 
         from src.db.session import SessionLocal
+
         session = SessionLocal()
         try:
             backup = Backup(
-                id="backup-verify-mismatch", backup_type="sqlite_copy",
-                filename="verify_mismatch.db", storage_path=backup_path,
-                succeeded=True, checksum="0000000000000000000000000000000000000000000000000000000000000000",
+                id="backup-verify-mismatch",
+                backup_type="sqlite_copy",
+                filename="verify_mismatch.db",
+                storage_path=backup_path,
+                succeeded=True,
+                checksum="0000000000000000000000000000000000000000000000000000000000000000",
             )
             session.add(backup)
             session.commit()
@@ -735,15 +799,20 @@ class TestVerifyBackup:
 
 
 class TestUpdateBackupTags:
-    def test_update_tags_success(self, api_client, api_admin_auth_headers, api_client_context):
+    def test_update_tags_success(
+        self, api_client, api_admin_auth_headers, api_client_context
+    ):
         temp_dir = api_client_context["temp_dir"]
 
         from src.db.session import SessionLocal
+
         session = SessionLocal()
         try:
             backup = Backup(
-                id="backup-tags-ep", backup_type="sqlite_copy",
-                filename="tags_test.db", storage_path=os.path.join(temp_dir, "tags_test.db"),
+                id="backup-tags-ep",
+                backup_type="sqlite_copy",
+                filename="tags_test.db",
+                storage_path=os.path.join(temp_dir, "tags_test.db"),
                 succeeded=True,
             )
             session.add(backup)
@@ -819,7 +888,9 @@ class TestCleanupBackupsRetention:
         data = resp.json()
         assert "would_delete" in data
 
-    def test_cleanup_with_explicit_retention_days(self, api_client, api_admin_auth_headers):
+    def test_cleanup_with_explicit_retention_days(
+        self, api_client, api_admin_auth_headers
+    ):
         resp = api_client.post(
             "/api/backups/cleanup",
             headers=api_admin_auth_headers,
@@ -832,7 +903,9 @@ class TestCleanupBackupsRetention:
 
 
 class TestBackupListWithFilters:
-    def test_list_backups_with_tag_filter(self, api_client, api_admin_auth_headers, api_client_context):
+    def test_list_backups_with_tag_filter(
+        self, api_client, api_admin_auth_headers, api_client_context
+    ):
         temp_dir = api_client_context["temp_dir"]
         backups_dir = os.path.join(temp_dir, "backups")
         os.makedirs(backups_dir, exist_ok=True)
@@ -846,18 +919,28 @@ class TestBackupListWithFilters:
             f.write(b"untagged backup")
 
         from src.db.session import SessionLocal
+
         session = SessionLocal()
         try:
-            session.add(Backup(
-                id="b-tagged", backup_type="sqlite_copy",
-                filename="tagged.db", storage_path=tagged_path,
-                succeeded=True, tags=["production", "daily"],
-            ))
-            session.add(Backup(
-                id="b-untagged", backup_type="sqlite_copy",
-                filename="untagged.db", storage_path=untagged_path,
-                succeeded=True,
-            ))
+            session.add(
+                Backup(
+                    id="b-tagged",
+                    backup_type="sqlite_copy",
+                    filename="tagged.db",
+                    storage_path=tagged_path,
+                    succeeded=True,
+                    tags=["production", "daily"],
+                )
+            )
+            session.add(
+                Backup(
+                    id="b-untagged",
+                    backup_type="sqlite_copy",
+                    filename="untagged.db",
+                    storage_path=untagged_path,
+                    succeeded=True,
+                )
+            )
             session.commit()
         finally:
             session.close()
@@ -871,17 +954,25 @@ class TestBackupListWithFilters:
         data = resp.json()
         assert data["total"] >= 1
 
-    def test_list_backups_with_kind_filter(self, api_client, api_admin_auth_headers, api_client_context):
+    def test_list_backups_with_kind_filter(
+        self, api_client, api_admin_auth_headers, api_client_context
+    ):
         temp_dir = api_client_context["temp_dir"]
 
         from src.db.session import SessionLocal
+
         session = SessionLocal()
         try:
-            session.add(Backup(
-                id="b-daily-kind", backup_type="sqlite_copy",
-                filename="daily.db", storage_path=os.path.join(temp_dir, "daily.db"),
-                succeeded=True, backup_kind="daily",
-            ))
+            session.add(
+                Backup(
+                    id="b-daily-kind",
+                    backup_type="sqlite_copy",
+                    filename="daily.db",
+                    storage_path=os.path.join(temp_dir, "daily.db"),
+                    succeeded=True,
+                    backup_kind="daily",
+                )
+            )
             session.commit()
         finally:
             session.close()

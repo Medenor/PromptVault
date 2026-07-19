@@ -164,10 +164,7 @@ describe('setupScrollIndicators', () => {
     originalResizeObserver = globalThis.ResizeObserver;
 
     class FakeResizeObserver {
-      private callback: () => void;
-
       constructor(callback: () => void) {
-        this.callback = callback;
         resizeCallbacks.push(callback);
       }
 
@@ -180,13 +177,10 @@ describe('setupScrollIndicators', () => {
     }
 
     vi.stubGlobal('ResizeObserver', FakeResizeObserver);
-    vi.stubGlobal(
-      'requestAnimationFrame',
-      (cb: FrameRequestCallback): number => {
-        cb(0);
-        return 0;
-      }
-    );
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback): number => {
+      cb(0);
+      return 0;
+    });
   });
 
   afterEach(() => {

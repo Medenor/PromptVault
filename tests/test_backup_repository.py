@@ -32,13 +32,22 @@ def seeded_backups(test_db_session):
     now = datetime.now(timezone.utc)
     backups = {
         "oldest": _make_backup(
-            test_db_session, created_at=now - timedelta(days=10), tag="weekly", kind="full"
+            test_db_session,
+            created_at=now - timedelta(days=10),
+            tag="weekly",
+            kind="full",
         ),
         "middle": _make_backup(
-            test_db_session, created_at=now - timedelta(days=5), tag="daily", kind="incremental"
+            test_db_session,
+            created_at=now - timedelta(days=5),
+            tag="daily",
+            kind="incremental",
         ),
         "newest": _make_backup(
-            test_db_session, created_at=now - timedelta(days=1), tag="daily", kind="full"
+            test_db_session,
+            created_at=now - timedelta(days=1),
+            tag="daily",
+            kind="full",
         ),
     }
     test_db_session.commit()
@@ -83,7 +92,9 @@ class TestListBackups:
         result = backup_repo.list_backups(kind="incremental")
         assert [b.id for b in result] == [seeded_backups["middle"].id]
 
-    def test_list_backups_with_combined_filters_intersects(self, backup_repo, seeded_backups):
+    def test_list_backups_with_combined_filters_intersects(
+        self, backup_repo, seeded_backups
+    ):
         result = backup_repo.list_backups(tag="daily", kind="full")
         assert [b.id for b in result] == [seeded_backups["newest"].id]
 
@@ -108,7 +119,9 @@ class TestGetAllForCleanup:
 
 
 class TestCountWithFilters:
-    def test_count_with_filters_with_no_filters_counts_all(self, backup_repo, seeded_backups):
+    def test_count_with_filters_with_no_filters_counts_all(
+        self, backup_repo, seeded_backups
+    ):
         assert backup_repo.count_with_filters() == 3
 
     def test_count_with_filters_with_tag_filter(self, backup_repo, seeded_backups):
@@ -121,5 +134,7 @@ class TestCountWithFilters:
     def test_count_with_filters_with_kind_filter(self, backup_repo, seeded_backups):
         assert backup_repo.count_with_filters(kind="full") == 2
 
-    def test_count_with_filters_with_combined_filters(self, backup_repo, seeded_backups):
+    def test_count_with_filters_with_combined_filters(
+        self, backup_repo, seeded_backups
+    ):
         assert backup_repo.count_with_filters(tag="daily", kind="incremental") == 1

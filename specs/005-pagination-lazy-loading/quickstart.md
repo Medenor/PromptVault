@@ -44,6 +44,7 @@
 python3 -m pytest tests/ -k "pagination or list_prompts or search_prompts" -v
 python3 -m pytest --cov=src --cov-report=term-missing
 ```
+
 Expect: new pagination tests pass; overall coverage remains ≥ 85% (constitution gate).
 
 ## Frontend validation
@@ -65,13 +66,14 @@ Expect: new pagination tests pass; overall coverage remains ≥ 85% (constitutio
 ```bash
 npm run test:unit:coverage
 ```
+
 Expect: new Vitest tests for `loadPrompts` pagination behavior, Load More guard, and page-size reset pass; overall coverage remains ≥ 85% (constitution gate).
 
 ## Success criteria mapping
 
-| Quickstart step | Spec criterion |
-|---|---|
-| Steps 2–3 (backend page fetch) | SC-001, SC-002 |
-| Frontend step 4 (Load More) | SC-003 |
-| Steps 4–6 backend + frontend steps 3,7 | SC-004 |
-| Frontend step 6 | SC-005 |
+| Quickstart step                        | Spec criterion |
+| -------------------------------------- | -------------- |
+| Steps 2–3 (backend page fetch)         | SC-001, SC-002 |
+| Frontend step 4 (Load More)            | SC-003         |
+| Steps 4–6 backend + frontend steps 3,7 | SC-004         |
+| Frontend step 6                        | SC-005         |

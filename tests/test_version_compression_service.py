@@ -502,6 +502,6 @@ class TestErrorHandling:
             decompressed = compression_service.decompress_version(incomplete_version)
             # If it doesn't raise an error, check it returns something reasonable
             assert isinstance(decompressed, dict)
-        except (ValueError, KeyError):
+        except ValueError, KeyError:
             # Expected error
             pass

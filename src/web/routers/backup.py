@@ -27,7 +27,9 @@ _validation_monitor = None
 _record_validation_event = None
 
 
-def init_backup_router(backup_service, validation_monitor=None, record_validation_event=None):
+def init_backup_router(
+    backup_service, validation_monitor=None, record_validation_event=None
+):
     """Initialize the backup router with service dependencies.
 
     Args:
@@ -70,7 +72,7 @@ async def get_backups(
         backups = [b for b in backups if (b.get("timestamp") or "") <= end_date]
 
     total = len(backups)
-    backups = backups[offset:offset + limit]
+    backups = backups[offset : offset + limit]
 
     return {"backups": backups, "total": total}
 
@@ -132,7 +134,10 @@ async def create_manual_backup(
         raise
 
 
-@router.post("/api/backups/{backup_id}/restore-preview", dependencies=[Depends(get_admin_or_bypass)])
+@router.post(
+    "/api/backups/{backup_id}/restore-preview",
+    dependencies=[Depends(get_admin_or_bypass)],
+)
 async def restore_preview(
     backup_id: str,
     request: Request,
@@ -145,11 +150,14 @@ async def restore_preview(
     passphrase = body.get("passphrase")
 
     from src.services.exceptions import BackupError
+
     try:
         diff = service.compute_restore_diff(backup_id, passphrase=passphrase)
         return diff
     except BackupError as exc:
-        return JSONResponse(status_code=exc.http_status or 400, content={"error": str(exc)})
+        return JSONResponse(
+            status_code=exc.http_status or 400, content={"error": str(exc)}
+        )
 
 
 @router.post("/api/backups/{backup_id}/restore")
@@ -237,7 +245,9 @@ async def delete_all_backups(confirm: str = ""):
     if confirm != "DELETE_ALL":
         return JSONResponse(
             status_code=400,
-            content={"error": "Missing or invalid confirmation. Pass ?confirm=DELETE_ALL."},
+            content={
+                "error": "Missing or invalid confirmation. Pass ?confirm=DELETE_ALL."
+            },
         )
 
     service = _get_backup_service()
@@ -330,7 +340,9 @@ async def update_backup_schedule(request: Request):
 
     frequency = body.get("frequency")
     if frequency not in ("daily", "weekly", "monthly"):
-        raise HTTPException(status_code=422, detail="frequency must be daily, weekly, or monthly")
+        raise HTTPException(
+            status_code=422, detail="frequency must be daily, weekly, or monthly"
+        )
 
     hour = body.get("hour")
     if hour is None or not (0 <= hour <= 23):
@@ -343,16 +355,22 @@ async def update_backup_schedule(request: Request):
     if frequency == "weekly":
         day_of_week = body.get("day_of_week")
         if day_of_week is None or not (0 <= day_of_week <= 6):
-            raise HTTPException(status_code=422, detail="day_of_week must be 0-6 for weekly")
+            raise HTTPException(
+                status_code=422, detail="day_of_week must be 0-6 for weekly"
+            )
 
     if frequency == "monthly":
         day_of_month = body.get("day_of_month")
         if day_of_month is None or not (1 <= day_of_month <= 31):
-            raise HTTPException(status_code=422, detail="day_of_month must be 1-31 for monthly")
+            raise HTTPException(
+                status_code=422, detail="day_of_month must be 1-31 for monthly"
+            )
 
     retention_days = body.get("retention_days", 30)
     if not isinstance(retention_days, int) or retention_days < 1:
-        raise HTTPException(status_code=422, detail="retention_days must be a positive integer")
+        raise HTTPException(
+            status_code=422, detail="retention_days must be a positive integer"
+        )
 
     encrypt_scheduled_backups = body.get("encrypt_scheduled_backups", False)
     if encrypt_scheduled_backups:
@@ -390,7 +408,13 @@ async def get_encryption_config():
     service = BackupEncryptionService()
     config = service.get_config()
     if config is None:
-        return {"is_enabled": False, "algorithm": "AES-256-GCM", "kdf": "argon2id", "key_version": 1, "rotated_at": None}
+        return {
+            "is_enabled": False,
+            "algorithm": "AES-256-GCM",
+            "kdf": "argon2id",
+            "key_version": 1,
+            "rotated_at": None,
+        }
     return config
 
 
@@ -407,7 +431,10 @@ async def update_encryption_config(request: Request):
         old_passphrase = body.get("old_passphrase", "")
         new_passphrase = body.get("new_passphrase", "")
         if not old_passphrase or not new_passphrase:
-            raise HTTPException(status_code=422, detail="old_passphrase and new_passphrase required for key rotation")
+            raise HTTPException(
+                status_code=422,
+                detail="old_passphrase and new_passphrase required for key rotation",
+            )
         try:
             return service.rotate_key(old_passphrase, new_passphrase)
         except ValueError as exc:
@@ -417,12 +444,20 @@ async def update_encryption_config(request: Request):
     if is_enabled:
         passphrase = body.get("passphrase", "")
         if not passphrase:
-            raise HTTPException(status_code=422, detail="passphrase required to enable encryption")
+            raise HTTPException(
+                status_code=422, detail="passphrase required to enable encryption"
+            )
         return service.enable(passphrase)
     else:
         result = service.disable()
         if result is None:
-            return {"is_enabled": False, "algorithm": "AES-256-GCM", "kdf": "argon2id", "key_version": 1, "rotated_at": None}
+            return {
+                "is_enabled": False,
+                "algorithm": "AES-256-GCM",
+                "kdf": "argon2id",
+                "key_version": 1,
+                "rotated_at": None,
+            }
         return result
 
 
@@ -430,16 +465,22 @@ async def update_encryption_config(request: Request):
 async def list_backup_providers():
     """List configured cloud storage providers."""
     from src.services.backup_cloud_service import BackupCloudService
+
     service = BackupCloudService()
     providers = service.list_providers()
     return {"providers": providers}
 
 
-@router.post("/api/backup-providers", status_code=201, dependencies=[Depends(get_admin_or_bypass)])
+@router.post(
+    "/api/backup-providers",
+    status_code=201,
+    dependencies=[Depends(get_admin_or_bypass)],
+)
 async def create_backup_provider(request: Request):
     """Configure a new cloud storage provider."""
 
     from src.services.backup_cloud_service import BackupCloudService
+
     body = await request.json()
 
     required = ["name", "provider_type", "bucket_name", "access_key", "secret_key"]
@@ -463,11 +504,14 @@ async def create_backup_provider(request: Request):
         raise HTTPException(status_code=422, detail=str(exc))
 
 
-@router.delete("/api/backup-providers/{provider_id}", dependencies=[Depends(get_admin_or_bypass)])
+@router.delete(
+    "/api/backup-providers/{provider_id}", dependencies=[Depends(get_admin_or_bypass)]
+)
 async def delete_backup_provider(provider_id: str):
     """Remove a cloud storage provider."""
 
     from src.services.backup_cloud_service import BackupCloudService
+
     service = BackupCloudService()
     try:
         deleted = service.delete_provider(provider_id)
@@ -478,7 +522,10 @@ async def delete_backup_provider(provider_id: str):
         return JSONResponse(status_code=409, content={"error": str(exc)})
 
 
-@router.post("/api/backup-providers/{provider_id}/test", dependencies=[Depends(get_admin_or_bypass)])
+@router.post(
+    "/api/backup-providers/{provider_id}/test",
+    dependencies=[Depends(get_admin_or_bypass)],
+)
 async def test_backup_provider(provider_id: str):
     """Test connectivity to a cloud storage provider."""
 
@@ -487,9 +534,13 @@ async def test_backup_provider(provider_id: str):
     from src.db.models.backup_storage_provider import BackupStorageProvider
 
     with get_db_session() as session:
-        provider = session.query(BackupStorageProvider).filter_by(id=provider_id).first()
+        provider = (
+            session.query(BackupStorageProvider).filter_by(id=provider_id).first()
+        )
         if not provider:
-            return JSONResponse(status_code=404, content={"error": "Provider not found"})
+            return JSONResponse(
+                status_code=404, content={"error": "Provider not found"}
+            )
 
         service = BackupCloudService()
         return service.test_connectivity(provider)
@@ -499,6 +550,7 @@ async def test_backup_provider(provider_id: str):
 async def get_backup_monitoring():
     """Get backup monitoring dashboard statistics."""
     from src.services.backup_audit_service import BackupAuditService
+
     service = BackupAuditService()
     return service.get_dashboard_stats()
 
@@ -512,11 +564,16 @@ async def get_backup_audit_log(
 ):
     """Get paginated backup audit log entries."""
     from src.services.backup_audit_service import BackupAuditService
+
     service = BackupAuditService()
-    return service.get_log(operation=operation, outcome=outcome, limit=limit, offset=offset)
+    return service.get_log(
+        operation=operation, outcome=outcome, limit=limit, offset=offset
+    )
 
 
-@router.post("/api/backups/{backup_id}/verify", dependencies=[Depends(get_admin_or_bypass)])
+@router.post(
+    "/api/backups/{backup_id}/verify", dependencies=[Depends(get_admin_or_bypass)]
+)
 async def verify_backup(backup_id: str):
     """Verify backup integrity by recomputing SHA-256 checksum."""
 
@@ -531,7 +588,7 @@ async def verify_backup(backup_id: str):
         return JSONResponse(status_code=404, content={"error": "Backup not found"})
 
     storage_path = metadata.get("storage_path")
-    if not storage_path or not __import__('os').path.exists(storage_path):
+    if not storage_path or not __import__("os").path.exists(storage_path):
         return JSONResponse(status_code=404, content={"error": "Backup file not found"})
 
     sha256 = hashlib.sha256()
@@ -548,18 +605,33 @@ async def verify_backup(backup_id: str):
             if backup:
                 backup.integrity_verified_at = datetime.now(timezone.utc)
                 session.commit()
-            return {"valid": True, "checksum": actual_checksum, "verified_at": datetime.now(timezone.utc).isoformat()}
+            return {
+                "valid": True,
+                "checksum": actual_checksum,
+                "verified_at": datetime.now(timezone.utc).isoformat(),
+            }
         elif stored_checksum:
-            return {"valid": False, "expected": stored_checksum, "actual": actual_checksum, "verified_at": datetime.now(timezone.utc).isoformat()}
+            return {
+                "valid": False,
+                "expected": stored_checksum,
+                "actual": actual_checksum,
+                "verified_at": datetime.now(timezone.utc).isoformat(),
+            }
         else:
             if backup:
                 backup.checksum = actual_checksum
                 backup.integrity_verified_at = datetime.now(timezone.utc)
                 session.commit()
-            return {"valid": True, "checksum": actual_checksum, "verified_at": datetime.now(timezone.utc).isoformat()}
+            return {
+                "valid": True,
+                "checksum": actual_checksum,
+                "verified_at": datetime.now(timezone.utc).isoformat(),
+            }
 
 
-@router.post("/api/backups/{backup_id}/tags", dependencies=[Depends(get_admin_or_bypass)])
+@router.post(
+    "/api/backups/{backup_id}/tags", dependencies=[Depends(get_admin_or_bypass)]
+)
 async def update_backup_tags(backup_id: str, request: Request):
     """Add or replace tags on a backup."""
 
@@ -575,7 +647,9 @@ async def update_backup_tags(backup_id: str, request: Request):
         raise HTTPException(status_code=422, detail="Maximum 20 tags per backup")
     for tag in tags:
         if not isinstance(tag, str) or len(tag) > 64:
-            raise HTTPException(status_code=422, detail="Each tag must be a string of max 64 characters")
+            raise HTTPException(
+                status_code=422, detail="Each tag must be a string of max 64 characters"
+            )
 
     with get_db_session() as session:
         backup = session.query(Backup).filter_by(id=backup_id).first()
@@ -596,7 +670,9 @@ async def cleanup_backups_retention(
 
     if retention_days is None:
         from src.db.session import get_db_session
-        from src.db.repositories.backup_schedule_repository import BackupScheduleRepository
+        from src.db.repositories.backup_schedule_repository import (
+            BackupScheduleRepository,
+        )
 
         with get_db_session() as session:
             repo = BackupScheduleRepository(session)
@@ -604,10 +680,18 @@ async def cleanup_backups_retention(
             retention_days = schedule.retention_days if schedule else None
 
     if retention_days is None:
-        return {"success": True, "dry_run": dry_run, "removed_count": 0, "would_delete": [], "deleted": []}
+        return {
+            "success": True,
+            "dry_run": dry_run,
+            "removed_count": 0,
+            "would_delete": [],
+            "deleted": [],
+        }
 
     if retention_days < 1:
-        raise HTTPException(status_code=422, detail="retention_days must be a positive integer")
+        raise HTTPException(
+            status_code=422, detail="retention_days must be a positive integer"
+        )
 
     cutoff = datetime.now(timezone.utc) - timedelta(days=retention_days)
     backups = service.list_backups()

@@ -592,7 +592,7 @@ class JWTService:
             # First try as access token
             claims = self.validate_access_token(token)
             return claims
-        except (InvalidTokenError, MissingRequiredClaimError):
+        except InvalidTokenError, MissingRequiredClaimError:
             try:
                 # If access token validation fails, try refresh token
                 claims = self.validate_refresh_token(token)

@@ -81,7 +81,9 @@ def admin_client(test_db_engine, temp_data_dir: str, monkeypatch):
     from src.db.base import Base as _Base
 
     test_db_path = os.path.join(temp_data_dir, "admin_client_test.db")
-    monkeypatch.setattr(config_module.db_settings, "DATABASE_URL", f"sqlite:///{test_db_path}")
+    monkeypatch.setattr(
+        config_module.db_settings, "DATABASE_URL", f"sqlite:///{test_db_path}"
+    )
     _file_engine = _create_engine(f"sqlite:///{test_db_path}")
     _Base.metadata.create_all(_file_engine)
     _file_engine.dispose()

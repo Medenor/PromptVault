@@ -725,7 +725,7 @@ class AuthService:
         """
         try:
             claims = self.jwt_service.validate_refresh_token(refresh_token)
-        except (ExpiredSignatureError, JWTInvalidTokenError):
+        except ExpiredSignatureError, JWTInvalidTokenError:
             # Even if token is expired, try to revoke it
             try:
                 claims = self.jwt_service.decode_token_unsafe(refresh_token)

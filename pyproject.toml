@@ -7,7 +7,7 @@ name = "promptvault"
 version = "1.10.1"
 description = "Web-based prompt manager for organizing and versioning AI prompts."
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.14"
 license = { file = "LICENSE" }
 authors = [
   { name = "Medenor" }
@@ -18,12 +18,6 @@ classifiers = [
   "Intended Audience :: Developers",
   "License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.8",
-  "Programming Language :: Python :: 3.9",
-  "Programming Language :: Python :: 3.10",
-  "Programming Language :: Python :: 3.11",
-  "Programming Language :: Python :: 3.12",
-  "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: 3.14",
   "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
   "Topic :: Utilities",
@@ -31,11 +25,11 @@ classifiers = [
   "Operating System :: OS Independent",
 ]
 dependencies = [
-  "fastapi==0.104.1",
-  "uvicorn[standard]==0.24.0",
-  "jinja2==3.1.2",
-  "python-multipart==0.0.6",
-  "aiofiles==23.2.1",
+  "fastapi>=0.109.1",
+  "uvicorn[standard]>=0.24.0",
+  "jinja2>=3.1.6",
+  "python-multipart>=0.0.31",
+  "aiofiles>=23.2.1",
   "sqlalchemy>=2.0.25",
   "alembic>=1.13.1",
   "psycopg2-binary>=2.9.9",

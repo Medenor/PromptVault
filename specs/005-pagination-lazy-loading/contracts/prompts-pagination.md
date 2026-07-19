@@ -6,10 +6,10 @@ Lists prompts, now paginated.
 
 ### Query Parameters
 
-| Name | Type | Required | Default | Notes |
-|------|------|----------|---------|-------|
-| `page` | integer | No | `1` | Normalized to `1` if `<1` or invalid |
-| `limit` | integer | No | `50` | Clamped to `100` if higher; normalized to `50` if `<1` or invalid |
+| Name    | Type    | Required | Default | Notes                                                             |
+| ------- | ------- | -------- | ------- | ----------------------------------------------------------------- |
+| `page`  | integer | No       | `1`     | Normalized to `1` if `<1` or invalid                              |
+| `limit` | integer | No       | `50`    | Clamped to `100` if higher; normalized to `50` if `<1` or invalid |
 
 ### Response `200 OK`
 
@@ -23,7 +23,7 @@ Lists prompts, now paginated.
       "category": "Marketing",
       "category_color": "#ff0000",
       "tags": ["email"],
-      "tag_colors": {"email": "#00ff00"},
+      "tag_colors": { "email": "#00ff00" },
       "note": "",
       "favorite": false,
       "user_id": "abc",
@@ -48,15 +48,15 @@ Search/filter prompts, now paginated. All existing filter parameters (`search`, 
 
 ### Query Parameters
 
-| Name | Type | Required | Default | Notes |
-|------|------|----------|---------|-------|
-| `search` | string | No | `""` | Unchanged |
-| `category` | string | No | `""` | Unchanged |
-| `tag` | string | No | `""` | Unchanged |
-| `favorites` | boolean | No | `false` | Unchanged; requires auth (401 if used without auth — unchanged) |
-| `case_sensitive` | boolean | No | `false` | Unchanged |
-| `page` | integer | No | `1` | Same normalization as above |
-| `limit` | integer | No | `50` | Same clamping as above |
+| Name             | Type    | Required | Default | Notes                                                           |
+| ---------------- | ------- | -------- | ------- | --------------------------------------------------------------- |
+| `search`         | string  | No       | `""`    | Unchanged                                                       |
+| `category`       | string  | No       | `""`    | Unchanged                                                       |
+| `tag`            | string  | No       | `""`    | Unchanged                                                       |
+| `favorites`      | boolean | No       | `false` | Unchanged; requires auth (401 if used without auth — unchanged) |
+| `case_sensitive` | boolean | No       | `false` | Unchanged                                                       |
+| `page`           | integer | No       | `1`     | Same normalization as above                                     |
+| `limit`          | integer | No       | `50`    | Same clamping as above                                          |
 
 ### Response `200 OK`
 

@@ -63,11 +63,11 @@ describe('logout', () => {
 
   it('redirects immediately without calling fetch when auth is disabled (anonymous mode)', async () => {
     (window as unknown as { __AUTH_ENABLED__?: boolean }).__AUTH_ENABLED__ = false;
-    global.fetch = vi.fn();
+    globalThis.fetch = vi.fn();
 
     await logout('test-page');
 
-    expect(global.fetch).not.toHaveBeenCalled();
+    expect(globalThis.fetch).not.toHaveBeenCalled();
     expect(window.location.href).toBe('/');
   });
 
@@ -76,11 +76,11 @@ describe('logout', () => {
     localStorage.setItem('refresh_token', 'r');
     localStorage.setItem('user', 'u');
     sessionStorage.setItem('other', 'value');
-    global.fetch = vi.fn().mockResolvedValue({ ok: true });
+    globalThis.fetch = vi.fn().mockResolvedValue({ ok: true });
 
     await logout('test-page');
 
-    expect(global.fetch).toHaveBeenCalledWith(
+    expect(globalThis.fetch).toHaveBeenCalledWith(
       '/api/auth/logout',
       expect.objectContaining({ method: 'POST' })
     );
@@ -94,16 +94,19 @@ describe('logout', () => {
 
   it('sends the refresh token from localStorage in the request body when present', async () => {
     localStorage.setItem('refresh_token', 'stored-refresh-token');
-    global.fetch = vi.fn().mockResolvedValue({ ok: true });
+    globalThis.fetch = vi.fn().mockResolvedValue({ ok: true });
 
     await logout('test-page');
 
-    const [, init] = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+    const [, init] = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0] as [
+      string,
+      { body: string },
+    ];
     expect(JSON.parse(init.body)).toEqual({ refresh_token: 'stored-refresh-token' });
   });
 
   it('still clears storage, reports the error, and redirects when fetch rejects', async () => {
-    global.fetch = vi.fn().mockRejectedValue(new Error('network error'));
+    globalThis.fetch = vi.fn().mockRejectedValue(new Error('network error'));
 
     await logout('test-page');
 
@@ -160,7 +163,8 @@ describe('hideAuthOnlyElements', () => {
 
 describe('revealAdminButtons', () => {
   beforeEach(() => {
-    document.body.innerHTML = '<div id="admin-btn" style="display:none"></div><div id="admin-btn-mobile" style="display:none"></div>';
+    document.body.innerHTML =
+      '<div id="admin-btn" style="display:none"></div><div id="admin-btn-mobile" style="display:none"></div>';
   });
 
   it('does nothing when role is not admin', () => {

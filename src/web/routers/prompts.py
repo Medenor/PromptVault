@@ -847,7 +847,7 @@ async def update_prompt(
             old_v = _parse_semver(existing_prompt.semantic_version)
             if new_v < old_v:
                 version_downgrade = True
-        except (ValueError, AttributeError):
+        except ValueError, AttributeError:
             pass
 
     # Update prompt

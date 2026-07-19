@@ -78,8 +78,7 @@ function renderDashboard(stats: MonitoringStats): void {
         <tbody>${stats.history.map((h) => `<tr class="border-b border-gray-100"><td class="py-1">${h.date}</td><td class="text-right py-1">${h.count}</td><td class="text-right py-1">${h.success}</td><td class="text-right py-1">${formatBytes(h.total_size_bytes)}</td></tr>`).join('')}</tbody>
       </table>`;
   } else if (historyEl) {
-    historyEl.innerHTML =
-      `<div class="text-gray-500 text-sm dark:text-gray-400">${t('backup.noHistoryData')}</div>`;
+    historyEl.innerHTML = `<div class="text-gray-500 text-sm dark:text-gray-400">${t('backup.noHistoryData')}</div>`;
   }
 }
 

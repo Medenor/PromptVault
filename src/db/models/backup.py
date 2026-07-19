@@ -9,7 +9,16 @@ SQLite (file copy) backup operations, with support for encryption,
 cloud storage, incremental backups, and integrity verification.
 """
 
-from sqlalchemy import Column, String, Text, BigInteger, Integer, Boolean, DateTime, ForeignKey
+from sqlalchemy import (
+    Column,
+    String,
+    Text,
+    BigInteger,
+    Integer,
+    Boolean,
+    DateTime,
+    ForeignKey,
+)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.types import JSON
 from sqlalchemy.sql import func
@@ -55,9 +64,7 @@ class Backup(Base):
     __tablename__ = "backups"
 
     id = Column(String(36), primary_key=True)
-    backup_type = Column(
-        String(50), nullable=False
-    )
+    backup_type = Column(String(50), nullable=False)
     filename = Column(String(255), nullable=False)
     storage_path = Column(Text, nullable=False)
     size_bytes = Column(BigInteger)
@@ -68,9 +75,7 @@ class Backup(Base):
     backup_metadata = Column(JSON)
 
     backup_kind = Column(String(20), nullable=False, default="full")
-    parent_backup_id = Column(
-        String(36), ForeignKey("backups.id"), nullable=True
-    )
+    parent_backup_id = Column(String(36), ForeignKey("backups.id"), nullable=True)
     checksum = Column(String(64), nullable=True)
     integrity_verified_at = Column(DateTime(timezone=True), nullable=True)
     is_encrypted = Column(Boolean, nullable=False, default=False)
@@ -86,7 +91,9 @@ class Backup(Base):
 
     parent_backup = relationship("Backup", remote_side=[id], backref="child_backups")
     storage_provider = relationship(
-        "BackupStorageProvider", back_populates="backups", foreign_keys=[cloud_provider_id]
+        "BackupStorageProvider",
+        back_populates="backups",
+        foreign_keys=[cloud_provider_id],
     )
 
     def __repr__(self):

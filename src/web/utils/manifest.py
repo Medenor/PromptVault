@@ -38,7 +38,7 @@ def load_manifest() -> Dict[str, Any]:
             _manifest_cache = json.load(file)
             _manifest_mtime = current_mtime
             return _manifest_cache
-    except (json.JSONDecodeError, OSError):
+    except json.JSONDecodeError, OSError:
         _manifest_cache = {}
         _manifest_mtime = None
         return {}
