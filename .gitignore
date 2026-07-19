@@ -83,3 +83,5 @@ test-results/
 .nyc_output/
 accessibility-report/
 tests/accessibility/reports/
+.setup_state.json
+tests/PERFORMANCE_BASELINE.md
