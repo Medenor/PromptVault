@@ -141,8 +141,9 @@ async def login_page(request: Request):
         return RedirectResponse(url="/", status_code=302)
 
     response = templates.TemplateResponse(
+        request,
         "auth/login.html",
-        {"request": request, "auth_enabled": auth_settings.auth_enabled},
+        {"auth_enabled": auth_settings.auth_enabled},
     )
     # Prevent the browser (and intermediate caches) from caching the login
     # page so that back/forward navigation always re-evaluates auth state.
@@ -169,8 +170,9 @@ async def register_page(request: Request):
         src/web/templates/auth/register.html
     """
     return templates.TemplateResponse(
+        request,
         "auth/register.html",
-        {"request": request, "auth_enabled": auth_settings.auth_enabled},
+        {"auth_enabled": auth_settings.auth_enabled},
     )
 
 
@@ -191,8 +193,9 @@ async def forgot_password_page(request: Request):
         src/web/templates/auth/forgot_password.html
     """
     return templates.TemplateResponse(
+        request,
         "auth/forgot_password.html",
-        {"request": request, "auth_enabled": auth_settings.auth_enabled},
+        {"auth_enabled": auth_settings.auth_enabled},
     )
 
 
@@ -216,8 +219,9 @@ async def reset_password_page(request: Request):
         The reset token should be passed as a query parameter (e.g., ?token=abc123)
     """
     return templates.TemplateResponse(
+        request,
         "auth/reset_password.html",
-        {"request": request, "auth_enabled": auth_settings.auth_enabled},
+        {"auth_enabled": auth_settings.auth_enabled},
     )
 
 
@@ -251,8 +255,9 @@ async def profile_page(request: Request, user: User = Depends(get_current_active
         - user: User model instance with profile data
     """
     return templates.TemplateResponse(
+        request,
         "auth/profile.html",
-        {"request": request, "user": user, "auth_enabled": auth_settings.auth_enabled},
+        {"user": user, "auth_enabled": auth_settings.auth_enabled},
     )
 
 
@@ -283,8 +288,9 @@ async def profile_page_alias(
         - user: User model instance with profile data
     """
     return templates.TemplateResponse(
+        request,
         "auth/profile.html",
-        {"request": request, "user": user, "auth_enabled": auth_settings.auth_enabled},
+        {"user": user, "auth_enabled": auth_settings.auth_enabled},
     )
 
 
@@ -317,8 +323,9 @@ async def manage_categories_page(
 ):
     """Serve the category management page (accessible without auth when disabled)."""
     return templates.TemplateResponse(
+        request,
         "manage_categories.html",
-        {"request": request, "auth_enabled": auth_settings.auth_enabled},
+        {"auth_enabled": auth_settings.auth_enabled},
     )
 
 
@@ -328,8 +335,9 @@ async def manage_tags_page(
 ):
     """Serve the tag management page (accessible without auth when disabled)."""
     return templates.TemplateResponse(
+        request,
         "manage_tags.html",
-        {"request": request, "auth_enabled": auth_settings.auth_enabled},
+        {"auth_enabled": auth_settings.auth_enabled},
     )
 
 
@@ -363,8 +371,9 @@ async def admin_users_page(request: Request, admin: User = Depends(get_admin_use
         - user: Admin user instance (for header/navigation)
     """
     return templates.TemplateResponse(
+        request,
         "admin/users.html",
-        {"request": request, "user": admin, "auth_enabled": auth_settings.auth_enabled},
+        {"user": admin, "auth_enabled": auth_settings.auth_enabled},
     )
 
 
@@ -393,6 +402,7 @@ async def admin_sessions_page(request: Request, admin: User = Depends(get_admin_
         - user: Admin user instance (for header/navigation)
     """
     return templates.TemplateResponse(
+        request,
         "admin/sessions.html",
-        {"request": request, "user": admin, "auth_enabled": auth_settings.auth_enabled},
+        {"user": admin, "auth_enabled": auth_settings.auth_enabled},
     )

@@ -37,9 +37,7 @@ class AuditLogEntry(Base):
     )
     operation = Column(String(50), nullable=False)
     outcome = Column(String(20), nullable=False)
-    backup_id = Column(
-        String(36), ForeignKey("backups.id"), nullable=True
-    )
+    backup_id = Column(String(36), ForeignKey("backups.id"), nullable=True)
     performed_by = Column(String(100), nullable=True)
     detail = Column(JSON, nullable=True)
 

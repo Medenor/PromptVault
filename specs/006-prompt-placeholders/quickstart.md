@@ -12,6 +12,7 @@ npx vitest run src/web/static/ts/utils/__tests__/placeholders.test.ts
 ```
 
 **Expected outcome**: All tests pass, covering:
+
 - Detecting distinct `[NAME]` and `{NAME}` tokens, including repeated occurrences of the same token collapsing to one entry.
 - Treating `[DURATION]` and `{DURATION}` as distinct entries.
 - Ignoring malformed spans (`[]`, unmatched `[abc`, nested `[[X]]`, multi-line spans).
@@ -28,6 +29,7 @@ npx playwright test tests/e2e/prompt-placeholders.spec.ts
 ```
 
 **Expected outcome / manual walkthrough this spec automates**:
+
 1. Create or open a prompt whose content includes `Your task is to create a [DURATION] [TYPE OF PRESENTATION] titled "[INSERT PRESENTATION TITLE]".`
 2. Click "Copy" — a modal appears with three labeled fields: `DURATION`, `TYPE OF PRESENTATION`, `INSERT PRESENTATION TITLE`.
 3. Fill in `1 hour`, `Sales`, `How to build an app`; confirm.

@@ -28,10 +28,10 @@ Single project, existing structure: `src/web/templates/`, `src/web/static/ts/`, 
 
 **Purpose**: Base assets and scaffolding shared by all user stories
 
-- [X] T001 Create icon assets (192x192, 512x512, maskable) under `src/web/static/images/icons/`
-- [X] T002 [P] Create `src/web/static/manifest.json` per contract in `specs/004-mobile-responsive-ui/contracts/offline-sync.md` (name, icons, start_url, display: standalone, theme_color/background_color matching `tailwind.config.ts`)
-- [X] T003 [P] Add `<link rel="manifest">` and theme-color meta tag to the shared base template (locate the layout included by `src/web/templates/index.html` and `src/web/templates/import_export.html`)
-- [X] T004 [P] Configure Tailwind `darkMode: 'class'` in `tailwind.config.ts` if not already set
+- [x] T001 Create icon assets (192x192, 512x512, maskable) under `src/web/static/images/icons/`
+- [x] T002 [P] Create `src/web/static/manifest.json` per contract in `specs/004-mobile-responsive-ui/contracts/offline-sync.md` (name, icons, start_url, display: standalone, theme_color/background_color matching `tailwind.config.ts`)
+- [x] T003 [P] Add `<link rel="manifest">` and theme-color meta tag to the shared base template (locate the layout included by `src/web/templates/index.html` and `src/web/templates/import_export.html`)
+- [x] T004 [P] Configure Tailwind `darkMode: 'class'` in `tailwind.config.ts` if not already set
 
 **Checkpoint**: Manifest and icons installable-ready; base template wired for later dark-mode/gesture/nav work
 
@@ -43,10 +43,10 @@ Single project, existing structure: `src/web/templates/`, `src/web/static/ts/`, 
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [X] T005 Add Tailwind responsive breakpoint audit pass: identify current tap-target, overflow, and layout issues in `src/web/templates/index.html` and `src/web/templates/import_export.html` (audit output feeds US1 tasks; no code changes yet)
-- [X] T006 [P] Add a Vite build entry for the Service Worker so `src/web/static/ts/sw.ts` compiles to a standalone `src/web/static/sw.js` (not bundled into the main app chunk), per `research.md` decision on SW build output
-- [X] T007 [P] Create `src/web/static/ts/utils/dom-a11y-helpers.ts` (or extend existing `src/web/static/ts/utils/a11y.ts`) with a shared focus-trap helper for use by the nav drawer and full-screen modals/search overlay
-- [X] T008 Create Playwright mobile device projects (`iPhone 14`, `Pixel 7`) in `playwright.config.ts` if not already present, so all US test files below can target `--project=mobile`
+- [x] T005 Add Tailwind responsive breakpoint audit pass: identify current tap-target, overflow, and layout issues in `src/web/templates/index.html` and `src/web/templates/import_export.html` (audit output feeds US1 tasks; no code changes yet)
+- [x] T006 [P] Add a Vite build entry for the Service Worker so `src/web/static/ts/sw.ts` compiles to a standalone `src/web/static/sw.js` (not bundled into the main app chunk), per `research.md` decision on SW build output
+- [x] T007 [P] Create `src/web/static/ts/utils/dom-a11y-helpers.ts` (or extend existing `src/web/static/ts/utils/a11y.ts`) with a shared focus-trap helper for use by the nav drawer and full-screen modals/search overlay
+- [x] T008 Create Playwright mobile device projects (`iPhone 14`, `Pixel 7`) in `playwright.config.ts` if not already present, so all US test files below can target `--project=mobile`
 
 **Checkpoint**: Foundation ready — user story implementation can now begin in parallel
 
@@ -60,25 +60,25 @@ Single project, existing structure: `src/web/templates/`, `src/web/static/ts/`, 
 
 ### Tests for User Story 1
 
-- [X] T009 [P] [US1] Vitest unit test for drawer open/close/focus-trap logic in `src/web/static/ts/__tests__/mobile-nav.test.ts`
-- [X] T010 [P] [US1] Playwright test: hamburger opens drawer, outside-tap closes it, no horizontal scroll at 320/375/425/768px in `tests/e2e/mobile-nav.spec.ts`
-- [X] T011 [P] [US1] Playwright test: touch targets ≥44x44px on primary mobile screens (prompt list, prompt editor) in `tests/e2e/mobile-touch-targets.spec.ts`
-- [X] T012 [P] [US1] Playwright test: full-screen modal on mobile vs. centered dialog on desktop for the prompt editor in `tests/e2e/mobile-modals.spec.ts`
-- [X] T013 [P] [US1] Playwright test: virtual keyboard does not obscure the focused input on mobile in `tests/e2e/mobile-keyboard.spec.ts`
+- [x] T009 [P] [US1] Vitest unit test for drawer open/close/focus-trap logic in `src/web/static/ts/__tests__/mobile-nav.test.ts`
+- [x] T010 [P] [US1] Playwright test: hamburger opens drawer, outside-tap closes it, no horizontal scroll at 320/375/425/768px in `tests/e2e/mobile-nav.spec.ts`
+- [x] T011 [P] [US1] Playwright test: touch targets ≥44x44px on primary mobile screens (prompt list, prompt editor) in `tests/e2e/mobile-touch-targets.spec.ts`
+- [x] T012 [P] [US1] Playwright test: full-screen modal on mobile vs. centered dialog on desktop for the prompt editor in `tests/e2e/mobile-modals.spec.ts`
+- [x] T013 [P] [US1] Playwright test: virtual keyboard does not obscure the focused input on mobile in `tests/e2e/mobile-keyboard.spec.ts`
 
 ### Implementation for User Story 1
 
-- [X] T014 [US1] Implement `src/web/static/ts/mobile-nav.ts`: hamburger toggle, slide-out drawer, focus trap (using T007 helper), outside-tap/Escape close, ARIA roles/labels (`role="dialog"`, `aria-expanded`) (depends on T007)
-- [X] T015 [US1] Wire `mobile-nav.ts` into `src/web/static/ts/app.ts` entry point
-- [X] T016 [US1] Update `src/web/templates/index.html` (and the shared base layout) to replace the current `hidden md:block` sidebar pattern with a drawer container + hamburger trigger markup, removing horizontal-scroll-prone layout at narrow widths (unified the pre-existing filters drawer + separate mobile-menu dropdown into one `#mobile-sidebar` drawer per user decision)
-- [X] T017 [US1] [P] Update Tailwind utility classes across `src/web/templates/index.html` interactive elements (buttons, menu items, prompt card actions) to guarantee 44x44px minimum touch targets on mobile breakpoints (applied to both the Jinja fallback markup and the real JS-rendered card template in `app.ts`)
-- [X] T018 [US1] [P] Update modal markup to use full-screen layout on mobile (`sm:` breakpoint container swap) and centered dialog on desktop (scope corrected: applied to the actual `role="dialog"` modals in `index.html` — version-history and diff — since `import_export.html` has no modals)
-- [X] T019 [US1] Implement responsive font sizing using `clamp()` in the relevant Tailwind/CSS layer for prompt titles/body text (mobile-readability requirement)
-- [X] T020 [US1] Implement virtual-keyboard-safe scroll behavior (e.g., `scrollIntoView` on focus, or `interactive-widget=resizes-content` viewport meta) in `src/web/static/ts/mobile-nav.ts` or a small dedicated module, applied to the prompt editor's text inputs
-- [X] T021 [US1] Implement a full-screen search overlay component (`src/web/static/ts/mobile-nav.ts` or new `search-overlay.ts`) replacing the desktop inline search bar on mobile viewports, with the shared focus-trap helper
-- [X] T022 [US1] Implement "Read More" smart truncation for long prompt text on mobile card/list views in `src/web/templates/index.html` + a small TS helper for expand/collapse state
-- [X] T023 [US1] Run `npm run typecheck && npm run lint` and fix any issues introduced by T014-T022
-- [X] T024 [US1] Run `npm run test:unit:coverage` and confirm new TS modules keep the suite ≥85% coverage
+- [x] T014 [US1] Implement `src/web/static/ts/mobile-nav.ts`: hamburger toggle, slide-out drawer, focus trap (using T007 helper), outside-tap/Escape close, ARIA roles/labels (`role="dialog"`, `aria-expanded`) (depends on T007)
+- [x] T015 [US1] Wire `mobile-nav.ts` into `src/web/static/ts/app.ts` entry point
+- [x] T016 [US1] Update `src/web/templates/index.html` (and the shared base layout) to replace the current `hidden md:block` sidebar pattern with a drawer container + hamburger trigger markup, removing horizontal-scroll-prone layout at narrow widths (unified the pre-existing filters drawer + separate mobile-menu dropdown into one `#mobile-sidebar` drawer per user decision)
+- [x] T017 [US1] [P] Update Tailwind utility classes across `src/web/templates/index.html` interactive elements (buttons, menu items, prompt card actions) to guarantee 44x44px minimum touch targets on mobile breakpoints (applied to both the Jinja fallback markup and the real JS-rendered card template in `app.ts`)
+- [x] T018 [US1] [P] Update modal markup to use full-screen layout on mobile (`sm:` breakpoint container swap) and centered dialog on desktop (scope corrected: applied to the actual `role="dialog"` modals in `index.html` — version-history and diff — since `import_export.html` has no modals)
+- [x] T019 [US1] Implement responsive font sizing using `clamp()` in the relevant Tailwind/CSS layer for prompt titles/body text (mobile-readability requirement)
+- [x] T020 [US1] Implement virtual-keyboard-safe scroll behavior (e.g., `scrollIntoView` on focus, or `interactive-widget=resizes-content` viewport meta) in `src/web/static/ts/mobile-nav.ts` or a small dedicated module, applied to the prompt editor's text inputs
+- [x] T021 [US1] Implement a full-screen search overlay component (`src/web/static/ts/mobile-nav.ts` or new `search-overlay.ts`) replacing the desktop inline search bar on mobile viewports, with the shared focus-trap helper
+- [x] T022 [US1] Implement "Read More" smart truncation for long prompt text on mobile card/list views in `src/web/templates/index.html` + a small TS helper for expand/collapse state
+- [x] T023 [US1] Run `npm run typecheck && npm run lint` and fix any issues introduced by T014-T022
+- [x] T024 [US1] Run `npm run test:unit:coverage` and confirm new TS modules keep the suite ≥85% coverage
 
 **Checkpoint**: User Story 1 fully functional and independently testable — mobile nav, touch targets, modals, keyboard handling, search overlay all working without touching offline/gesture code.
 
@@ -94,24 +94,24 @@ Single project, existing structure: `src/web/templates/`, `src/web/static/ts/`, 
 
 ### Tests for User Story 2
 
-- [X] T025 [P] [US2] ~~Vitest unit test for `OfflineQueueEntry` CRUD + status transitions~~ — removed with the offline queue (see scope-change note above)
-- [X] T026 [P] [US2] Vitest unit test for Service Worker registration + offline-indicator wiring in `src/web/static/ts/__tests__/sw-register.test.ts`
-- [X] T027 [P] [US2] ~~pytest test for `expected_version` conflict detection~~ — removed with the conflict-detection backend code (see scope-change note above)
-- [X] T028 [P] [US2] Playwright test: cached prompts remain viewable offline with visible offline indicator in `tests/e2e/offline-cache.spec.ts` (using `context.setOffline(true)`) — WebKit skipped (Playwright driver limitation, verified manually); requires AUTH_ENABLED=true + test-admin login
-- [X] T029 [P] [US2] ~~Playwright test: offline edit queues, then auto-syncs~~ — removed (`offline-sync.spec.ts` deleted), editing is now blocked offline rather than queued
-- [X] T030 [P] [US2] ~~Playwright test: conflicting concurrent offline edits~~ — removed (`offline-conflict.spec.ts` deleted), no longer applicable
+- [x] T025 [P] [US2] ~~Vitest unit test for `OfflineQueueEntry` CRUD + status transitions~~ — removed with the offline queue (see scope-change note above)
+- [x] T026 [P] [US2] Vitest unit test for Service Worker registration + offline-indicator wiring in `src/web/static/ts/__tests__/sw-register.test.ts`
+- [x] T027 [P] [US2] ~~pytest test for `expected_version` conflict detection~~ — removed with the conflict-detection backend code (see scope-change note above)
+- [x] T028 [P] [US2] Playwright test: cached prompts remain viewable offline with visible offline indicator in `tests/e2e/offline-cache.spec.ts` (using `context.setOffline(true)`) — WebKit skipped (Playwright driver limitation, verified manually); requires AUTH_ENABLED=true + test-admin login
+- [x] T029 [P] [US2] ~~Playwright test: offline edit queues, then auto-syncs~~ — removed (`offline-sync.spec.ts` deleted), editing is now blocked offline rather than queued
+- [x] T030 [P] [US2] ~~Playwright test: conflicting concurrent offline edits~~ — removed (`offline-conflict.spec.ts` deleted), no longer applicable
 
 ### Implementation for User Story 2
 
-- [X] T031 [US2] Implement `src/web/static/ts/sw.ts`: cache static assets (CSS/JS/manifest/icons) and previously-fetched prompt API responses using the Cache API, with a cache-versioning/invalidation strategy (depends on T006 build entry) — also caches navigation requests so a reload while offline has a shell to fall back to; served at root `/sw.js` (new route in app.py) instead of `/static/dist/sw.js` so its scope covers the whole app. Later revised to precache the shell + linked assets on `install` (a page is never controlled by the Service Worker that installs it, so a first-ever visit would otherwise leave the cache empty) and to scope caching to `/` only, since secondary pages are no longer accessible offline.
-- [X] T032 [US2] Implement `src/web/static/ts/sw-register.ts`: register the compiled `sw.js`, listen for `online`/`offline` events, render the persistent offline indicator (depends on T031)
-- [X] T033 [US2] ~~Implement `src/web/static/ts/utils/offline-queue.ts`~~ — removed (see scope-change note above)
-- [X] T034 [US2] ~~Implement sync replay logic~~ — removed (see scope-change note above)
-- [X] T035 [US2] ~~Implement conflict notification UI~~ — removed (see scope-change note above)
-- [X] T036 [US2] ~~Add `expected_version` optional form field handling to `update_prompt`~~ — removed; `check_version_conflict`/`VersionConflictResult` deleted from `src/services/prompt_versioning_service.py`
-- [X] T037 [US2] Wire `sw-register.ts` into `src/web/static/ts/app.ts`, gating prompt create/edit/delete/revert/bulk-action UI (and secondary-page navigation via `window.__requireOnlineNav`) behind `navigator.onLine` instead of queuing when offline — also fixed a pre-existing gap where checkAdminAccess() redirected to /auth/login on ANY /api/auth/me failure including network errors, which broke offline access entirely for authenticated deployments
-- [X] T038 [US2] Run `python3 -m pytest` and confirm the updated router/service logic keeps backend coverage ≥85%
-- [X] T039 [US2] Run `npm run typecheck && npm run lint && npm run test:unit:coverage` for the new TS modules
+- [x] T031 [US2] Implement `src/web/static/ts/sw.ts`: cache static assets (CSS/JS/manifest/icons) and previously-fetched prompt API responses using the Cache API, with a cache-versioning/invalidation strategy (depends on T006 build entry) — also caches navigation requests so a reload while offline has a shell to fall back to; served at root `/sw.js` (new route in app.py) instead of `/static/dist/sw.js` so its scope covers the whole app. Later revised to precache the shell + linked assets on `install` (a page is never controlled by the Service Worker that installs it, so a first-ever visit would otherwise leave the cache empty) and to scope caching to `/` only, since secondary pages are no longer accessible offline.
+- [x] T032 [US2] Implement `src/web/static/ts/sw-register.ts`: register the compiled `sw.js`, listen for `online`/`offline` events, render the persistent offline indicator (depends on T031)
+- [x] T033 [US2] ~~Implement `src/web/static/ts/utils/offline-queue.ts`~~ — removed (see scope-change note above)
+- [x] T034 [US2] ~~Implement sync replay logic~~ — removed (see scope-change note above)
+- [x] T035 [US2] ~~Implement conflict notification UI~~ — removed (see scope-change note above)
+- [x] T036 [US2] ~~Add `expected_version` optional form field handling to `update_prompt`~~ — removed; `check_version_conflict`/`VersionConflictResult` deleted from `src/services/prompt_versioning_service.py`
+- [x] T037 [US2] Wire `sw-register.ts` into `src/web/static/ts/app.ts`, gating prompt create/edit/delete/revert/bulk-action UI (and secondary-page navigation via `window.__requireOnlineNav`) behind `navigator.onLine` instead of queuing when offline — also fixed a pre-existing gap where checkAdminAccess() redirected to /auth/login on ANY /api/auth/me failure including network errors, which broke offline access entirely for authenticated deployments
+- [x] T038 [US2] Run `python3 -m pytest` and confirm the updated router/service logic keeps backend coverage ≥85%
+- [x] T039 [US2] Run `npm run typecheck && npm run lint && npm run test:unit:coverage` for the new TS modules
 
 **Checkpoint**: User Stories 1 AND 2 both work independently — offline browsing and copying (read-only) functional on top of the P1 mobile layout; all write actions and secondary pages correctly require connectivity.
 
@@ -125,25 +125,25 @@ Single project, existing structure: `src/web/templates/`, `src/web/static/ts/`, 
 
 ### Tests for User Story 3
 
-- [X] T040 [P] [US3] Vitest unit test for swipe-reveal and pull-to-refresh Pointer Event handling in `src/web/static/ts/__tests__/gestures.test.ts` — jsdom lacks PointerEvent, tests build it from MouseEvent + defineProperty
-- [X] T041 [P] [US3] Playwright test: swipe-left reveals delete action requiring confirmation, swipe-right reveals edit action, in `tests/e2e/gestures-swipe.spec.ts` — also covers the version-history carousel swipe (T049)
-- [X] T042 [P] [US3] Playwright test: pull-to-refresh reloads the prompt list with a loading affordance, in `tests/e2e/gestures-pull-refresh.spec.ts`
-- [X] T043 [P] [US3] Playwright test: every gesture action has a visible, keyboard/screen-reader-reachable equivalent control (FR-020) in `tests/e2e/gestures-a11y.spec.ts`
-- [X] T044 [P] [US3] Playwright test: PWA installability (manifest fields present, "Add to Home Screen" affordance available) in `tests/e2e/pwa-install.spec.ts`
+- [x] T040 [P] [US3] Vitest unit test for swipe-reveal and pull-to-refresh Pointer Event handling in `src/web/static/ts/__tests__/gestures.test.ts` — jsdom lacks PointerEvent, tests build it from MouseEvent + defineProperty
+- [x] T041 [P] [US3] Playwright test: swipe-left reveals delete action requiring confirmation, swipe-right reveals edit action, in `tests/e2e/gestures-swipe.spec.ts` — also covers the version-history carousel swipe (T049)
+- [x] T042 [P] [US3] Playwright test: pull-to-refresh reloads the prompt list with a loading affordance, in `tests/e2e/gestures-pull-refresh.spec.ts`
+- [x] T043 [P] [US3] Playwright test: every gesture action has a visible, keyboard/screen-reader-reachable equivalent control (FR-020) in `tests/e2e/gestures-a11y.spec.ts`
+- [x] T044 [P] [US3] Playwright test: PWA installability (manifest fields present, "Add to Home Screen" affordance available) in `tests/e2e/pwa-install.spec.ts`
 
 ### Implementation for User Story 3
 
-- [X] T045 [US3] Implement `src/web/static/ts/gestures.ts`: Pointer-Event-based swipe-reveal (left → delete action, right → edit action) with a confirming tap step for delete, per `research.md` gesture decision
-- [X] T046 [US3] [P] [US3] Extend `gestures.ts` (or add a sibling module) with pull-to-refresh handling on the prompt list container, including a loading affordance
-- [X] T047 [US3] Add visible, accessible fallback buttons (edit/delete/refresh) alongside every gesture-driven action in `src/web/templates/index.html`, wired to the same handlers as the gestures (depends on T045, T046) — Edit/Delete already existed as card buttons; added the Refresh button + loading indicator
-- [X] T048 [US3] Implement a floating action button (FAB) for "New Prompt" in `src/web/templates/index.html` + supporting styles, visible only on mobile breakpoints
-- [X] T049 [US3] [P] [US3] Implement a touch-friendly swipeable carousel for version history in the prompt detail/version view template, using `gestures.ts` primitives — mobile-only one-at-a-time paging with visible prev/next + position indicator; desktop keeps the vertical list unchanged
-- [X] T050 [US3] [P] [US3] Enable pinch-to-zoom and horizontal-scroll containment for long prompt content and the diff viewer on mobile (viewport meta + CSS `overflow-x`/`touch-action` adjustments), without affecting desktop layout — pinch-zoom was already unrestricted (no user-scalable=no); added overflow-x-auto + touch-action to the diff viewer
-- [X] T051 [US3] Implement `prefers-color-scheme` dark mode bootstrap script (adds/removes `dark` class on `<html>`) per `research.md` decision, loaded from the base template before first paint to avoid flash-of-wrong-theme — applied to all 12 page templates for consistency, not just index.html
-- [X] T052 [US3] Apply `dark:` Tailwind variants across `src/web/templates/index.html` and `src/web/templates/import_export.html` primary UI surfaces — also covered JS-rendered surfaces (prompt cards, version history, diff viewer, tag autocomplete) in app.ts
-- [X] T053 [US3] Implement lazy-loading for non-critical images/assets (`loading="lazy"` + any needed TS intersection-observer helper) across mobile views — verified not applicable: the only `<img>` in scope is the above-the-fold header logo (should not be lazy-loaded); no other images exist in current templates or JS-rendered content
-- [X] T054 [US3] Wire `gestures.ts` and the dark-mode bootstrap into `src/web/static/ts/app.ts`
-- [X] T055 [US3] Run `npm run typecheck && npm run lint && npm run test:unit:coverage` for gesture/dark-mode modules — 221 tests passing, 91.85% coverage
+- [x] T045 [US3] Implement `src/web/static/ts/gestures.ts`: Pointer-Event-based swipe-reveal (left → delete action, right → edit action) with a confirming tap step for delete, per `research.md` gesture decision
+- [x] T046 [US3] [P] [US3] Extend `gestures.ts` (or add a sibling module) with pull-to-refresh handling on the prompt list container, including a loading affordance
+- [x] T047 [US3] Add visible, accessible fallback buttons (edit/delete/refresh) alongside every gesture-driven action in `src/web/templates/index.html`, wired to the same handlers as the gestures (depends on T045, T046) — Edit/Delete already existed as card buttons; added the Refresh button + loading indicator
+- [x] T048 [US3] Implement a floating action button (FAB) for "New Prompt" in `src/web/templates/index.html` + supporting styles, visible only on mobile breakpoints
+- [x] T049 [US3] [P] [US3] Implement a touch-friendly swipeable carousel for version history in the prompt detail/version view template, using `gestures.ts` primitives — mobile-only one-at-a-time paging with visible prev/next + position indicator; desktop keeps the vertical list unchanged
+- [x] T050 [US3] [P] [US3] Enable pinch-to-zoom and horizontal-scroll containment for long prompt content and the diff viewer on mobile (viewport meta + CSS `overflow-x`/`touch-action` adjustments), without affecting desktop layout — pinch-zoom was already unrestricted (no user-scalable=no); added overflow-x-auto + touch-action to the diff viewer
+- [x] T051 [US3] Implement `prefers-color-scheme` dark mode bootstrap script (adds/removes `dark` class on `<html>`) per `research.md` decision, loaded from the base template before first paint to avoid flash-of-wrong-theme — applied to all 12 page templates for consistency, not just index.html
+- [x] T052 [US3] Apply `dark:` Tailwind variants across `src/web/templates/index.html` and `src/web/templates/import_export.html` primary UI surfaces — also covered JS-rendered surfaces (prompt cards, version history, diff viewer, tag autocomplete) in app.ts
+- [x] T053 [US3] Implement lazy-loading for non-critical images/assets (`loading="lazy"` + any needed TS intersection-observer helper) across mobile views — verified not applicable: the only `<img>` in scope is the above-the-fold header logo (should not be lazy-loaded); no other images exist in current templates or JS-rendered content
+- [x] T054 [US3] Wire `gestures.ts` and the dark-mode bootstrap into `src/web/static/ts/app.ts`
+- [x] T055 [US3] Run `npm run typecheck && npm run lint && npm run test:unit:coverage` for gesture/dark-mode modules — 221 tests passing, 91.85% coverage
 
 **Checkpoint**: All user stories independently functional — full mobile experience (nav, offline, gestures, install, dark mode) complete.
 
@@ -153,12 +153,12 @@ Single project, existing structure: `src/web/templates/`, `src/web/static/ts/`, 
 
 **Purpose**: Improvements that span multiple user stories, and final validation
 
-- [X] T056 [P] Add mobile-specific ARIA audit pass across drawer, FAB, swipe actions, and search overlay (FR-020) — extend or add to existing accessibility test coverage (`@axe-core/playwright` is already a dependency). Implemented in `tests/e2e/mobile-aria-audit.spec.ts` (8 tests: drawer, search overlay, FAB, swipe-delete-confirm dialog, full-page scan — all axe-clean, zero violations)
-- [X] T057 [P] Add landscape-tablet layout check (≥768px width uses desktop layout per FR-021) as a Playwright test in `tests/e2e/tablet-landscape.spec.ts`. Verifies desktop sidebar visible / mobile nav-toggle+FAB hidden at 1024px and exactly at the 768px boundary, and the inverse at 767px
-- [X] T058 Performance check: verify prompt list is interactive within 3s on simulated 4G on a mid-tier emulated device (SC-007), using Playwright's network throttling. Implemented in `tests/e2e/mobile-performance.spec.ts` using Chromium CDP `Network.emulateNetworkConditions` (Regular 4G profile) + 4x CPU throttling; measured ~1.9s to interactive (well under the 3s budget). Chromium-only (CDP not available on WebKit/Firefox drivers) — test skips cleanly on other engines
-- [X] T059 Docker parity check: validate the feature under `docker-compose up --build` per constitution Development Workflow item 6. Verified in an isolated project-scoped compose stack (temporary override for container names/port to avoid colliding with a pre-existing unrelated stack on the same host, torn down after): image builds clean, container reaches healthy, `/sw.js` and `/static/manifest.json` both 200, login page renders with manifest link + theme-color meta. No new env vars/dependencies introduced by this feature
-- [X] T060 Run full `specs/004-mobile-responsive-ui/quickstart.md` validation sweep (pytest, typecheck, lint, unit coverage, Playwright mobile suite) and record results. Results: `pytest` 2023 passed / 6 pre-existing unrelated `test_scheduler.py` failures (established baseline) / 5 skipped, 86.20% coverage (gate: ≥85%); `npm run typecheck` clean; `npm run lint` clean; `npm run test:unit:coverage` 221 passed, 91.85% coverage (gate: ≥85%); Playwright mobile suite (`mobile`, `iPhone 14`, `Pixel 7` projects, excluding the unrelated pre-existing `landmarks.spec.ts` which is hardcoded to port 8003 independent of this feature) — 36 passed, 4 skipped (WebKit-only skips for CDP-dependent/known-limitation specs), 0 failed; `offline-sync.spec.ts` and `offline-conflict.spec.ts` separately re-verified passing with `AUTH_ENABLED=true` + real login per the earlier scoping decision, then `.env` reverted to `AUTH_ENABLED=false`
-- [X] T061 Update project documentation (README mobile/PWA section) reflecting the new capabilities. Added a "Mobile-Responsive UI & PWA" subsection under Usage/Features in `README.md` covering navigation, touch targets/layout, search overlay, gestures, offline support, installability, and dark mode; updated the top-level Features bullet to point to it
+- [x] T056 [P] Add mobile-specific ARIA audit pass across drawer, FAB, swipe actions, and search overlay (FR-020) — extend or add to existing accessibility test coverage (`@axe-core/playwright` is already a dependency). Implemented in `tests/e2e/mobile-aria-audit.spec.ts` (8 tests: drawer, search overlay, FAB, swipe-delete-confirm dialog, full-page scan — all axe-clean, zero violations)
+- [x] T057 [P] Add landscape-tablet layout check (≥768px width uses desktop layout per FR-021) as a Playwright test in `tests/e2e/tablet-landscape.spec.ts`. Verifies desktop sidebar visible / mobile nav-toggle+FAB hidden at 1024px and exactly at the 768px boundary, and the inverse at 767px
+- [x] T058 Performance check: verify prompt list is interactive within 3s on simulated 4G on a mid-tier emulated device (SC-007), using Playwright's network throttling. Implemented in `tests/e2e/mobile-performance.spec.ts` using Chromium CDP `Network.emulateNetworkConditions` (Regular 4G profile) + 4x CPU throttling; measured ~1.9s to interactive (well under the 3s budget). Chromium-only (CDP not available on WebKit/Firefox drivers) — test skips cleanly on other engines
+- [x] T059 Docker parity check: validate the feature under `docker-compose up --build` per constitution Development Workflow item 6. Verified in an isolated project-scoped compose stack (temporary override for container names/port to avoid colliding with a pre-existing unrelated stack on the same host, torn down after): image builds clean, container reaches healthy, `/sw.js` and `/static/manifest.json` both 200, login page renders with manifest link + theme-color meta. No new env vars/dependencies introduced by this feature
+- [x] T060 Run full `specs/004-mobile-responsive-ui/quickstart.md` validation sweep (pytest, typecheck, lint, unit coverage, Playwright mobile suite) and record results. Results: `pytest` 2023 passed / 6 pre-existing unrelated `test_scheduler.py` failures (established baseline) / 5 skipped, 86.20% coverage (gate: ≥85%); `npm run typecheck` clean; `npm run lint` clean; `npm run test:unit:coverage` 221 passed, 91.85% coverage (gate: ≥85%); Playwright mobile suite (`mobile`, `iPhone 14`, `Pixel 7` projects, excluding the unrelated pre-existing `landmarks.spec.ts` which is hardcoded to port 8003 independent of this feature) — 36 passed, 4 skipped (WebKit-only skips for CDP-dependent/known-limitation specs), 0 failed; `offline-sync.spec.ts` and `offline-conflict.spec.ts` separately re-verified passing with `AUTH_ENABLED=true` + real login per the earlier scoping decision, then `.env` reverted to `AUTH_ENABLED=false`
+- [x] T061 Update project documentation (README mobile/PWA section) reflecting the new capabilities. Added a "Mobile-Responsive UI & PWA" subsection under Usage/Features in `README.md` covering navigation, touch targets/layout, search overlay, gestures, offline support, installability, and dark mode; updated the top-level Features bullet to point to it
 
 ---
 

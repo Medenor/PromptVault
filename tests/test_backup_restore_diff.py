@@ -30,9 +30,15 @@ def backup_with_sqlite_copy(db_backup_service, patched_db_session, temp_data_dir
             semantic_version TEXT
         )
     """)
-    conn.execute("INSERT INTO prompts VALUES (1, 'Backup Prompt 1', 'Content B1', 'Note B1', 0, NULL, '1.0')")
-    conn.execute("INSERT INTO prompts VALUES (2, 'Backup Prompt 2', 'Content B2', 'Note B2', 1, NULL, '1.0')")
-    conn.execute("INSERT INTO prompts VALUES (3, 'Only In Backup', 'Content B3', 'Note B3', 0, NULL, '1.0')")
+    conn.execute(
+        "INSERT INTO prompts VALUES (1, 'Backup Prompt 1', 'Content B1', 'Note B1', 0, NULL, '1.0')"
+    )
+    conn.execute(
+        "INSERT INTO prompts VALUES (2, 'Backup Prompt 2', 'Content B2', 'Note B2', 1, NULL, '1.0')"
+    )
+    conn.execute(
+        "INSERT INTO prompts VALUES (3, 'Only In Backup', 'Content B3', 'Note B3', 0, NULL, '1.0')"
+    )
     conn.commit()
     conn.close()
 
@@ -54,9 +60,17 @@ def backup_with_sqlite_copy(db_backup_service, patched_db_session, temp_data_dir
 @pytest.fixture
 def current_prompts(patched_db_session):
     with patched_db_session() as session:
-        session.add(Prompt(id=1, title="Current Prompt 1", prompt="Content C1", note="Note C1"))
-        session.add(Prompt(id=2, title="Backup Prompt 2", prompt="Content B2", note="Note B2"))
-        session.add(Prompt(id=99, title="Only In Current", prompt="Content C99", note="Note C99"))
+        session.add(
+            Prompt(id=1, title="Current Prompt 1", prompt="Content C1", note="Note C1")
+        )
+        session.add(
+            Prompt(id=2, title="Backup Prompt 2", prompt="Content B2", note="Note B2")
+        )
+        session.add(
+            Prompt(
+                id=99, title="Only In Current", prompt="Content C99", note="Note C99"
+            )
+        )
         session.commit()
 
 
@@ -88,7 +102,9 @@ class TestComputeRestoreDiff:
         assert updated["before"]["title"] == "Current Prompt 1"
         assert updated["after"]["title"] == "Backup Prompt 1"
 
-    def test_diff_no_changes_when_identical(self, db_backup_service, patched_db_session, temp_data_dir):
+    def test_diff_no_changes_when_identical(
+        self, db_backup_service, patched_db_session, temp_data_dir
+    ):
         with patched_db_session() as session:
             session.add(Prompt(id=1, title="Same", prompt="Same Content"))
             session.commit()
@@ -101,16 +117,22 @@ class TestComputeRestoreDiff:
                 note TEXT, favorite INTEGER, category_id INTEGER, semantic_version TEXT
             )
         """)
-        conn.execute("INSERT INTO prompts VALUES (1, 'Same', 'Same Content', NULL, 0, NULL, '1.0')")
+        conn.execute(
+            "INSERT INTO prompts VALUES (1, 'Same', 'Same Content', NULL, 0, NULL, '1.0')"
+        )
         conn.commit()
         conn.close()
 
         with patched_db_session() as session:
-            session.add(Backup(
-                id="backup-identical", backup_type="sqlite_copy",
-                filename="identical.db", storage_path=backup_db_path,
-                succeeded=True,
-            ))
+            session.add(
+                Backup(
+                    id="backup-identical",
+                    backup_type="sqlite_copy",
+                    filename="identical.db",
+                    storage_path=backup_db_path,
+                    succeeded=True,
+                )
+            )
             session.commit()
 
         diff = db_backup_service.compute_restore_diff("backup-identical")
@@ -124,11 +146,15 @@ class TestComputeRestoreDiff:
 
     def test_diff_raises_for_missing_file(self, db_backup_service, patched_db_session):
         with patched_db_session() as session:
-            session.add(Backup(
-                id="backup-no-file", backup_type="sqlite_copy",
-                filename="missing.db", storage_path="/nonexistent/path.db",
-                succeeded=True,
-            ))
+            session.add(
+                Backup(
+                    id="backup-no-file",
+                    backup_type="sqlite_copy",
+                    filename="missing.db",
+                    storage_path="/nonexistent/path.db",
+                    succeeded=True,
+                )
+            )
             session.commit()
 
         with pytest.raises(BackupError, match="Backup file not found"):
@@ -151,16 +177,22 @@ class TestComputeRestoreDiff:
                 note TEXT, favorite INTEGER, category_id INTEGER, semantic_version TEXT
             )
         """)
-        conn.execute(f"INSERT INTO prompts VALUES (1, 'T', '{long_content}', NULL, 0, NULL, '1.0')")
+        conn.execute(
+            f"INSERT INTO prompts VALUES (1, 'T', '{long_content}', NULL, 0, NULL, '1.0')"
+        )
         conn.commit()
         conn.close()
 
         with patched_db_session() as session:
-            session.add(Backup(
-                id="backup-trunc", backup_type="sqlite_copy",
-                filename="trunc.db", storage_path=backup_db_path,
-                succeeded=True,
-            ))
+            session.add(
+                Backup(
+                    id="backup-trunc",
+                    backup_type="sqlite_copy",
+                    filename="trunc.db",
+                    storage_path=backup_db_path,
+                    succeeded=True,
+                )
+            )
             session.commit()
 
         diff = db_backup_service.compute_restore_diff("backup-trunc")
@@ -212,9 +244,7 @@ class TestSelectiveRestore:
         )
         assert result["count"] == 0
 
-    def test_selective_restore_raises_for_nonexistent_backup(
-        self, db_backup_service
-    ):
+    def test_selective_restore_raises_for_nonexistent_backup(self, db_backup_service):
         with pytest.raises(BackupError, match="Backup not found"):
             db_backup_service.selective_restore("nonexistent", prompt_ids=[1])
 
@@ -243,11 +273,15 @@ class TestExtractPromptsFromBackup:
                 note TEXT, favorite INTEGER, category_id INTEGER, semantic_version TEXT
             )
         """)
-        conn.execute("INSERT INTO prompts VALUES (1, 'Test', 'Content', 'Note', 1, 5, '2.0')")
+        conn.execute(
+            "INSERT INTO prompts VALUES (1, 'Test', 'Content', 'Note', 1, 5, '2.0')"
+        )
         conn.commit()
         conn.close()
 
-        prompts = db_backup_service._extract_prompts_from_backup(backup_path, "sqlite_copy")
+        prompts = db_backup_service._extract_prompts_from_backup(
+            backup_path, "sqlite_copy"
+        )
         assert len(prompts) == 1
         assert prompts[0]["id"] == 1
         assert prompts[0]["title"] == "Test"
@@ -265,7 +299,9 @@ class TestExtractPromptsFromBackup:
             db_backup_service._extract_prompts_from_backup(backup_path, "sqlite_copy")
 
     def test_extract_unknown_type_returns_empty(self, db_backup_service):
-        prompts = db_backup_service._extract_prompts_from_backup("/any/path", "unknown_type")
+        prompts = db_backup_service._extract_prompts_from_backup(
+            "/any/path", "unknown_type"
+        )
         assert prompts == []
 
 
@@ -302,21 +338,29 @@ class TestEnsureLocalBackupFile:
                     note TEXT, favorite INTEGER, category_id INTEGER, semantic_version TEXT
                 )
             """)
-            conn.execute("INSERT INTO prompts VALUES (1, 'Cloud Prompt', 'Cloud Content', NULL, 0, NULL, '1.0')")
+            conn.execute(
+                "INSERT INTO prompts VALUES (1, 'Cloud Prompt', 'Cloud Content', NULL, 0, NULL, '1.0')"
+            )
             conn.commit()
             conn.close()
 
         from src.services.backup_cloud_service import BackupCloudService
+
         monkeypatch.setattr(BackupCloudService, "download", fake_download)
 
         with patched_db_session() as session:
             self._make_provider(session)
-            session.add(Backup(
-                id="backup-cloud-only", backup_type="sqlite_copy",
-                filename="cloud_only.db", storage_path=missing_path,
-                cloud_provider_id="provider-1", cloud_path="backups/cloud_only.db",
-                succeeded=True,
-            ))
+            session.add(
+                Backup(
+                    id="backup-cloud-only",
+                    backup_type="sqlite_copy",
+                    filename="cloud_only.db",
+                    storage_path=missing_path,
+                    cloud_provider_id="provider-1",
+                    cloud_path="backups/cloud_only.db",
+                    succeeded=True,
+                )
+            )
             session.commit()
 
         diff = db_backup_service.compute_restore_diff("backup-cloud-only")
@@ -327,11 +371,15 @@ class TestEnsureLocalBackupFile:
         self, db_backup_service, patched_db_session
     ):
         with patched_db_session() as session:
-            session.add(Backup(
-                id="backup-orphan", backup_type="sqlite_copy",
-                filename="orphan.db", storage_path="/nonexistent/orphan.db",
-                succeeded=True,
-            ))
+            session.add(
+                Backup(
+                    id="backup-orphan",
+                    backup_type="sqlite_copy",
+                    filename="orphan.db",
+                    storage_path="/nonexistent/orphan.db",
+                    succeeded=True,
+                )
+            )
             session.commit()
 
         with pytest.raises(BackupError, match="Backup file not found"):
@@ -343,13 +391,20 @@ class TestEnsureLocalBackupFile:
         with patched_db_session() as session:
             provider = self._make_provider(session)
             provider.enabled = False
-            session.add(Backup(
-                id="backup-disabled-provider", backup_type="sqlite_copy",
-                filename="disabled.db", storage_path="/nonexistent/disabled.db",
-                cloud_provider_id="provider-1", cloud_path="backups/disabled.db",
-                succeeded=True,
-            ))
+            session.add(
+                Backup(
+                    id="backup-disabled-provider",
+                    backup_type="sqlite_copy",
+                    filename="disabled.db",
+                    storage_path="/nonexistent/disabled.db",
+                    cloud_provider_id="provider-1",
+                    cloud_path="backups/disabled.db",
+                    succeeded=True,
+                )
+            )
             session.commit()
 
-        with pytest.raises(BackupError, match="Cloud storage provider not found or disabled"):
+        with pytest.raises(
+            BackupError, match="Cloud storage provider not found or disabled"
+        ):
             db_backup_service.compute_restore_diff("backup-disabled-provider")

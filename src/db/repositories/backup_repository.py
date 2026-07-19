@@ -75,11 +75,7 @@ class BackupRepository(BaseRepository[Backup]):
         Returns:
             List of all Backup instances ordered by created_at ascending
         """
-        return (
-            self.session.query(Backup)
-            .order_by(Backup.created_at.asc())
-            .all()
-        )
+        return self.session.query(Backup).order_by(Backup.created_at.asc()).all()
 
     def count_with_filters(
         self,

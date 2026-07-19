@@ -53,7 +53,7 @@ class VersionCompressionService:
                 version_date = version_date.replace(tzinfo=timezone.utc)
             age_days = (_utc_now() - version_date).days
             return age_days >= self.compression_threshold_days
-        except (ValueError, AttributeError):
+        except ValueError, AttributeError:
             return False
 
     def compress_version(self, version: Dict[str, Any]) -> Dict[str, Any]:
@@ -240,7 +240,7 @@ class VersionCompressionService:
                     archived.append(version)
                 else:
                     kept.append(version)
-            except (ValueError, AttributeError):
+            except ValueError, AttributeError:
                 kept.append(version)
 
         return {

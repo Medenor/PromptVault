@@ -98,7 +98,9 @@ test.describe('Dynamic prompt placeholders', () => {
 
     await expect(modal).toBeHidden();
     const clipboardText = await readClipboard(page);
-    expect(clipboardText).toBe('Your task is to create a 1 hour Sales titled "How to build an app".');
+    expect(clipboardText).toBe(
+      'Your task is to create a 1 hour Sales titled "How to build an app".'
+    );
   });
 
   test('prompt with no placeholders copies immediately with no modal', async ({ page }) => {
@@ -131,9 +133,7 @@ test.describe('Dynamic prompt placeholders', () => {
     expect(clipboardText).toBe(content);
   });
 
-  test('leaving one field blank among several keeps only that token literal', async ({
-    page,
-  }) => {
+  test('leaving one field blank among several keeps only that token literal', async ({ page }) => {
     const title = `Partial Fields Test ${Date.now()}`;
     const content = 'Say hello to [NAME] from {CITY}.';
     await createPrompt(page, title, content);

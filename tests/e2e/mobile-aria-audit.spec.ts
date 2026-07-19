@@ -50,8 +50,8 @@ test.describe('Mobile ARIA audit (FR-020)', () => {
     const hasAccessibleName = await drawer.evaluate((el) => {
       return Boolean(
         el.getAttribute('aria-label') ||
-          (el.getAttribute('aria-labelledby') &&
-            document.getElementById(el.getAttribute('aria-labelledby')!))
+        (el.getAttribute('aria-labelledby') &&
+          document.getElementById(el.getAttribute('aria-labelledby')!))
       );
     });
     expect(hasAccessibleName).toBe(true);
@@ -64,7 +64,9 @@ test.describe('Mobile ARIA audit (FR-020)', () => {
     expect(focusStayedInDrawer).toBe(true);
   });
 
-  test('search overlay has no automatically-detectable a11y violations when open', async ({ page }) => {
+  test('search overlay has no automatically-detectable a11y violations when open', async ({
+    page,
+  }) => {
     await page.goto('/', { waitUntil: 'networkidle' });
     await page.locator('#mobile-search-toggle').click();
     await expect(page.locator('#mobile-search-overlay')).toBeVisible();
@@ -77,7 +79,9 @@ test.describe('Mobile ARIA audit (FR-020)', () => {
     expect(results.violations).toEqual([]);
   });
 
-  test('search overlay moves focus to the search input and returns focus on close', async ({ page }) => {
+  test('search overlay moves focus to the search input and returns focus on close', async ({
+    page,
+  }) => {
     await page.goto('/', { waitUntil: 'networkidle' });
     const searchToggle = page.locator('#mobile-search-toggle');
     await searchToggle.click();
@@ -89,7 +93,9 @@ test.describe('Mobile ARIA audit (FR-020)', () => {
     await expect(searchToggle).toBeFocused();
   });
 
-  test('floating action button has an accessible name and meets touch-target size', async ({ page }) => {
+  test('floating action button has an accessible name and meets touch-target size', async ({
+    page,
+  }) => {
     await page.goto('/', { waitUntil: 'networkidle' });
     const fab = page.locator('#new-prompt-fab');
     await expect(fab).toBeVisible();
@@ -113,14 +119,19 @@ test.describe('Mobile ARIA audit (FR-020)', () => {
 
     const box = await firstCard.boundingBox();
     if (!box) throw new Error('card has no bounding box');
-    await firstCard.evaluate((el, [sx, sy]) => {
-      function fire(type: string, x: number, y: number): void {
-        el.dispatchEvent(new PointerEvent(type, { clientX: x, clientY: y, pointerId: 1, bubbles: true }));
-      }
-      fire('pointerdown', sx, sy);
-      fire('pointermove', sx - 100, sy);
-      fire('pointerup', sx - 100, sy);
-    }, [box.x + box.width / 2, box.y + 20]);
+    await firstCard.evaluate(
+      (el, [sx, sy]) => {
+        function fire(type: string, x: number, y: number): void {
+          el.dispatchEvent(
+            new PointerEvent(type, { clientX: x, clientY: y, pointerId: 1, bubbles: true })
+          );
+        }
+        fire('pointerdown', sx, sy);
+        fire('pointermove', sx - 100, sy);
+        fire('pointerup', sx - 100, sy);
+      },
+      [box.x + box.width / 2, box.y + 20]
+    );
 
     const confirmModal = page.getByRole('dialog', { name: /confirm delete/i });
     await expect(confirmModal).toBeVisible({ timeout: 5000 });
@@ -132,7 +143,9 @@ test.describe('Mobile ARIA audit (FR-020)', () => {
     await confirmModal.getByRole('button', { name: /cancel/i }).click();
   });
 
-  test('full page at mobile viewport has no automatically-detectable a11y violations', async ({ page }) => {
+  test('full page at mobile viewport has no automatically-detectable a11y violations', async ({
+    page,
+  }) => {
     await page.goto('/', { waitUntil: 'networkidle' });
 
     const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();

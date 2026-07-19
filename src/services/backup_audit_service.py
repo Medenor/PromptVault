@@ -121,22 +121,19 @@ class BackupAuditService:
             total_backups = session.query(Backup).count()
 
             total_size = (
-                session.query(func.coalesce(func.sum(Backup.size_bytes), 0)).scalar() or 0
+                session.query(func.coalesce(func.sum(Backup.size_bytes), 0)).scalar()
+                or 0
             )
 
             thirty_days_ago = datetime.now(timezone.utc) - timedelta(days=30)
             recent = (
-                session.query(Backup)
-                .filter(Backup.created_at >= thirty_days_ago)
-                .all()
+                session.query(Backup).filter(Backup.created_at >= thirty_days_ago).all()
             )
             successful_30d = sum(1 for b in recent if b.succeeded)
             success_rate = successful_30d / len(recent) if recent else 1.0
 
             last_backup = (
-                session.query(Backup)
-                .order_by(Backup.created_at.desc())
-                .first()
+                session.query(Backup).order_by(Backup.created_at.desc()).first()
             )
 
             history = self._compute_history(session)
@@ -154,8 +151,9 @@ class BackupAuditService:
                     _isoformat_utc(last_backup.created_at) if last_backup else None
                 ),
                 "last_backup_status": (
-                    "success" if last_backup and last_backup.succeeded else "failure"
-                    if last_backup else None
+                    "success"
+                    if last_backup and last_backup.succeeded
+                    else "failure" if last_backup else None
                 ),
                 "history": history,
             }
@@ -176,7 +174,13 @@ class BackupAuditService:
             if b.created_at:
                 day_key = b.created_at.strftime("%Y-%m-%d")
                 if day_key not in day_map:
-                    day_map[day_key] = {"date": day_key, "count": 0, "success": 0, "failure": 0, "total_size_bytes": 0}
+                    day_map[day_key] = {
+                        "date": day_key,
+                        "count": 0,
+                        "success": 0,
+                        "failure": 0,
+                        "total_size_bytes": 0,
+                    }
                 day_map[day_key]["count"] += 1
                 if b.succeeded:
                     day_map[day_key]["success"] += 1

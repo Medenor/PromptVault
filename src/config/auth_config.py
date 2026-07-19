@@ -486,7 +486,7 @@ class AuthConfig(BaseSettings):
         if ":" in host_port:
             try:
                 return int(host_port.split(":")[1])
-            except (ValueError, IndexError):
+            except ValueError, IndexError:
                 return 6379
         return 6379
 
@@ -501,7 +501,7 @@ class AuthConfig(BaseSettings):
         if "/" in url:
             try:
                 return int(url.split("/")[1].split("?")[0])
-            except (ValueError, IndexError):
+            except ValueError, IndexError:
                 return 0
         return 0
 

@@ -123,9 +123,18 @@ def reset_database(request):
     # Only reset for tests using the persistent database
     from src.db.session import drop_all_tables, create_all_tables
     from src.db.models import (
-        User, Category, Tag, Prompt, PromptVersion, PromptBranch,
-        Backup, BackupSchedule, BackupStorageProvider, AuditLogEntry,
-        EncryptionKeyConfig, prompt_tags,
+        User,
+        Category,
+        Tag,
+        Prompt,
+        PromptVersion,
+        PromptBranch,
+        Backup,
+        BackupSchedule,
+        BackupStorageProvider,
+        AuditLogEntry,
+        EncryptionKeyConfig,
+        prompt_tags,
     )
 
     try:
@@ -170,9 +179,18 @@ def test_db_engine(request):
 
     # Ensure all models are imported before creating tables
     from src.db.models import (
-        User, Category, Tag, Prompt, PromptVersion, PromptBranch,
-        Backup, BackupSchedule, BackupStorageProvider, AuditLogEntry,
-        EncryptionKeyConfig, prompt_tags,
+        User,
+        Category,
+        Tag,
+        Prompt,
+        PromptVersion,
+        PromptBranch,
+        Backup,
+        BackupSchedule,
+        BackupStorageProvider,
+        AuditLogEntry,
+        EncryptionKeyConfig,
+        prompt_tags,
     )
 
     db_name = f"test_db_{uuid.uuid4().hex}"
@@ -459,7 +477,9 @@ def db_data_service(test_db_engine, monkeypatch) -> PromptDataService:
     # (`from src.db.session import get_db_session`), so patching the
     # attribute on src.db.session alone doesn't affect its already-bound
     # module-level reference — patch it explicitly too.
-    monkeypatch.setattr("src.services.prompt_data_service_db.get_db_session", mock_get_db_session)
+    monkeypatch.setattr(
+        "src.services.prompt_data_service_db.get_db_session", mock_get_db_session
+    )
 
     service = PromptDataService()
     return service
@@ -527,8 +547,12 @@ def db_backup_service(temp_data_dir: str, test_db_engine, monkeypatch) -> Backup
     # src.db.session alone does not affect those already-bound references,
     # so they must be patched individually or they silently fall through to
     # the real, unpatched engine (and the real on-disk database).
-    monkeypatch.setattr("src.services.backup_service_db.get_db_session", mock_get_db_session)
-    monkeypatch.setattr("src.services.backup_audit_service.get_db_session", mock_get_db_session)
+    monkeypatch.setattr(
+        "src.services.backup_service_db.get_db_session", mock_get_db_session
+    )
+    monkeypatch.setattr(
+        "src.services.backup_audit_service.get_db_session", mock_get_db_session
+    )
 
     return BackupService(temp_data_dir)
 
@@ -557,11 +581,21 @@ def patched_db_session(test_db_engine, monkeypatch):
             session.close()
 
     monkeypatch.setattr(session_module, "get_db_session", mock_get_db_session)
-    monkeypatch.setattr("src.services.backup_encryption_service.get_db_session", mock_get_db_session)
-    monkeypatch.setattr("src.services.backup_cloud_service.get_db_session", mock_get_db_session)
-    monkeypatch.setattr("src.services.backup_scheduler_service.get_db_session", mock_get_db_session)
-    monkeypatch.setattr("src.services.backup_audit_service.get_db_session", mock_get_db_session)
-    monkeypatch.setattr("src.services.backup_service_db.get_db_session", mock_get_db_session)
+    monkeypatch.setattr(
+        "src.services.backup_encryption_service.get_db_session", mock_get_db_session
+    )
+    monkeypatch.setattr(
+        "src.services.backup_cloud_service.get_db_session", mock_get_db_session
+    )
+    monkeypatch.setattr(
+        "src.services.backup_scheduler_service.get_db_session", mock_get_db_session
+    )
+    monkeypatch.setattr(
+        "src.services.backup_audit_service.get_db_session", mock_get_db_session
+    )
+    monkeypatch.setattr(
+        "src.services.backup_service_db.get_db_session", mock_get_db_session
+    )
     return TestSessionLocal
 
 
@@ -574,7 +608,9 @@ def encryption_service(patched_db_session):
 @pytest.fixture
 def cloud_service(patched_db_session, monkeypatch):
     """Create BackupCloudService with patched DB session and env var."""
-    monkeypatch.setenv("PROMPTVAULT_CLOUD_CREDS_PASSPHRASE", "test-cloud-passphrase-secret")
+    monkeypatch.setenv(
+        "PROMPTVAULT_CLOUD_CREDS_PASSPHRASE", "test-cloud-passphrase-secret"
+    )
     return BackupCloudService()
 
 
@@ -584,7 +620,10 @@ def scheduler_service(patched_db_session, db_backup_service):
     BackupSchedulerService._class_scheduler = None
     svc = BackupSchedulerService(backup_service=db_backup_service)
     yield svc
-    if BackupSchedulerService._class_scheduler and BackupSchedulerService._class_scheduler.running:
+    if (
+        BackupSchedulerService._class_scheduler
+        and BackupSchedulerService._class_scheduler.running
+    ):
         BackupSchedulerService._class_scheduler.shutdown(wait=False)
     BackupSchedulerService._class_scheduler = None
 
@@ -868,7 +907,9 @@ def temp_data_dir() -> Generator[str, None, None]:
 
 
 @pytest.fixture
-def api_client(test_db_engine, temp_data_dir: str, monkeypatch) -> Generator[TestClient, None, None]:
+def api_client(
+    test_db_engine, temp_data_dir: str, monkeypatch
+) -> Generator[TestClient, None, None]:
     """FastAPI TestClient with database backend.
 
     This fixture configures the FastAPI app to use an in-memory test database
@@ -911,7 +952,9 @@ def api_client(test_db_engine, temp_data_dir: str, monkeypatch) -> Generator[Tes
     from src.db.base import Base as _Base
 
     test_db_path = os.path.join(temp_data_dir, "api_client_test.db")
-    monkeypatch.setattr(config_module.db_settings, "DATABASE_URL", f"sqlite:///{test_db_path}")
+    monkeypatch.setattr(
+        config_module.db_settings, "DATABASE_URL", f"sqlite:///{test_db_path}"
+    )
     _file_engine = _create_engine(f"sqlite:///{test_db_path}")
     _Base.metadata.create_all(_file_engine)
     _file_engine.dispose()
@@ -964,7 +1007,9 @@ def api_client_context(
     from src.db.base import Base as _Base
 
     test_db_path = os.path.join(temp_data_dir, "api_client_context_test.db")
-    monkeypatch.setattr(config_module.db_settings, "DATABASE_URL", f"sqlite:///{test_db_path}")
+    monkeypatch.setattr(
+        config_module.db_settings, "DATABASE_URL", f"sqlite:///{test_db_path}"
+    )
     _file_engine = _create_engine(f"sqlite:///{test_db_path}")
     _Base.metadata.create_all(_file_engine)
     _file_engine.dispose()

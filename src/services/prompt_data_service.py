@@ -199,7 +199,7 @@ class PromptDataService:
                 raw_next_id = loaded_data.get("next_id", 0)
                 try:
                     self.next_id = int(raw_next_id)
-                except (TypeError, ValueError):
+                except TypeError, ValueError:
                     self.next_id = 0
                 loaded_prompts = {}
                 for k, v in loaded_data.get("prompts", {}).items():

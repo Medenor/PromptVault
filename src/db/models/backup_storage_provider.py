@@ -47,9 +47,15 @@ class BackupStorageProvider(Base):
     credentials_salt = Column(String(32), nullable=False)
     credentials_nonce = Column(String(24), nullable=False)
     enabled = Column(Boolean, nullable=False, default=True)
-    created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    created_at = Column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
 
-    backups = relationship("Backup", back_populates="storage_provider", foreign_keys="Backup.cloud_provider_id")
+    backups = relationship(
+        "Backup",
+        back_populates="storage_provider",
+        foreign_keys="Backup.cloud_provider_id",
+    )
 
     def __repr__(self):
         return f"<BackupStorageProvider(id='{self.id[:8]}...', name='{self.name}', type='{self.provider_type}')>"

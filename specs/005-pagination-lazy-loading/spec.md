@@ -10,7 +10,7 @@
 
 **Related**: Codeberg issue [#14](https://codeberg.org/medenor/promptvault/issues/14) (scoped down — see Assumptions). Depends on issue #13 (Database Migration, closed).
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Browse a large prompt library without a slow initial load (Priority: P1)
 
@@ -68,7 +68,7 @@ A user who wants fewer, larger batches (or smaller, faster-loading batches) sele
 - What happens if new prompts are added or removed while the user is paging through results? Later pages reflect the current state at fetch time; minor shifts (an item appearing twice or being skipped) are acceptable and not required to be prevented in this scope.
 - What happens when "Load More" is triggered while a previous page request is still in flight? The system must not allow duplicate concurrent requests for the same next page; the control shows a loading state and is disabled until the in-flight request completes.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -90,7 +90,7 @@ A user who wants fewer, larger batches (or smaller, faster-loading batches) sele
 - **Prompt Page Result**: A bounded slice of the prompt collection returned for a single request — includes the list of prompts for that page plus pagination metadata (current page, total pages, total count, has-next, has-previous).
 - **Pagination State**: The client-side record of what has been loaded so far for the current filter context — current page size, current page reached, and the accumulated list of prompts displayed.
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 

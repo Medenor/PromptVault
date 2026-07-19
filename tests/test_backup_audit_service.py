@@ -131,6 +131,7 @@ class TestGetLog:
 
     def test_entries_ordered_newest_first(self, audit_service, patched_db_session):
         import time
+
         audit_service.log(operation="op1", outcome="success")
         time.sleep(1.1)
         audit_service.log(operation="op2", outcome="success")
@@ -212,16 +213,26 @@ class TestGetDashboardStats:
     def test_dashboard_mixed_success_rate(self, audit_service, patched_db_session):
         now = datetime.now(timezone.utc)
         with patched_db_session() as session:
-            session.add(Backup(
-                id="b-ok", backup_type="sqlite_copy", filename="ok.db",
-                storage_path="/tmp/ok.db", succeeded=True,
-                created_at=now - timedelta(days=1),
-            ))
-            session.add(Backup(
-                id="b-fail", backup_type="sqlite_copy", filename="fail.db",
-                storage_path="/tmp/fail.db", succeeded=False,
-                created_at=now - timedelta(days=2),
-            ))
+            session.add(
+                Backup(
+                    id="b-ok",
+                    backup_type="sqlite_copy",
+                    filename="ok.db",
+                    storage_path="/tmp/ok.db",
+                    succeeded=True,
+                    created_at=now - timedelta(days=1),
+                )
+            )
+            session.add(
+                Backup(
+                    id="b-fail",
+                    backup_type="sqlite_copy",
+                    filename="fail.db",
+                    storage_path="/tmp/fail.db",
+                    succeeded=False,
+                    created_at=now - timedelta(days=2),
+                )
+            )
             session.commit()
 
         stats = audit_service.get_dashboard_stats()
@@ -230,16 +241,28 @@ class TestGetDashboardStats:
     def test_dashboard_history(self, audit_service, patched_db_session):
         now = datetime.now(timezone.utc)
         with patched_db_session() as session:
-            session.add(Backup(
-                id="b-h1", backup_type="sqlite_copy", filename="h1.db",
-                storage_path="/tmp/h1.db", succeeded=True, size_bytes=100,
-                created_at=now,
-            ))
-            session.add(Backup(
-                id="b-h2", backup_type="sqlite_copy", filename="h2.db",
-                storage_path="/tmp/h2.db", succeeded=False, size_bytes=200,
-                created_at=now,
-            ))
+            session.add(
+                Backup(
+                    id="b-h1",
+                    backup_type="sqlite_copy",
+                    filename="h1.db",
+                    storage_path="/tmp/h1.db",
+                    succeeded=True,
+                    size_bytes=100,
+                    created_at=now,
+                )
+            )
+            session.add(
+                Backup(
+                    id="b-h2",
+                    backup_type="sqlite_copy",
+                    filename="h2.db",
+                    storage_path="/tmp/h2.db",
+                    succeeded=False,
+                    size_bytes=200,
+                    created_at=now,
+                )
+            )
             session.commit()
 
         stats = audit_service.get_dashboard_stats()
@@ -250,13 +273,20 @@ class TestGetDashboardStats:
         assert today_entry["failure"] == 1
         assert today_entry["total_size_bytes"] == 300
 
-    def test_dashboard_last_backup_failure_status(self, audit_service, patched_db_session):
+    def test_dashboard_last_backup_failure_status(
+        self, audit_service, patched_db_session
+    ):
         with patched_db_session() as session:
-            session.add(Backup(
-                id="b-last-fail", backup_type="sqlite_copy", filename="f.db",
-                storage_path="/tmp/f.db", succeeded=False,
-                created_at=datetime.now(timezone.utc),
-            ))
+            session.add(
+                Backup(
+                    id="b-last-fail",
+                    backup_type="sqlite_copy",
+                    filename="f.db",
+                    storage_path="/tmp/f.db",
+                    succeeded=False,
+                    created_at=datetime.now(timezone.utc),
+                )
+            )
             session.commit()
 
         stats = audit_service.get_dashboard_stats()

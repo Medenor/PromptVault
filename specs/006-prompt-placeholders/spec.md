@@ -10,7 +10,7 @@
 
 **Related**: Codeberg issue [#42](https://codeberg.org/medenor/promptvault/issues/42) ("feat: Use placeholders to dynamically module prompt content").
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Fill in placeholders and copy a ready-to-use prompt (Priority: P1)
 
@@ -78,7 +78,7 @@ A user edits a prompt's content (adding, removing, or renaming placeholders), vi
 - Q: The version-history modal today only offers "Revert" and "Select for diff" per version, with no copy action tied to viewing an older version's raw text (to copy an old version, a user must revert to it first, then use the regular Copy button). Should the placeholder feature add a new copy-with-placeholders affordance inside version history/diff, or stay out of it? → A: Stay out of it — no placeholder form appears in the version-history or diff view; those remain read-only/text-only as today. To copy an older version with placeholders filled in, the user reverts first (making it current), then uses the regular Copy-click flow from User Story 1/2.
 - Q: Since Copy now always opens the placeholder form when a prompt has placeholders, how does a user get raw/unsubstituted output "without touching the form" (User Story 2 scenario 2)? → A: There is no separate bypass action — the form opens with all fields blank, and clicking the same confirm/copy action with nothing entered in any field copies the raw content with every token left unchanged. This is the same single confirm action as the fill-in case, just invoked with empty inputs.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -102,7 +102,7 @@ A user edits a prompt's content (adding, removing, or renaming placeholders), vi
 - **Placeholder Token**: A bracketed (`[NAME]`) or braced (`{NAME}`) span of text found within a prompt's content. Identity is the exact delimiter type plus the exact text between delimiters. Not persisted as a separate record — always derived on the fly from the prompt's current content.
 - **Placeholder Value Set**: The transient, per-use collection of user-entered values keyed by placeholder token, scoped to a single viewing/copy session for a prompt. Not persisted with the prompt or its version history.
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 

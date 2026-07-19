@@ -1,0 +1,7 @@
+# Jinja2 templates use {% %} / {{ }} syntax that Prettier's HTML parser
+# cannot handle (it mistakes template tags for malformed HTML).
+src/web/templates/**/*.html
+
+# TypeScript syntax (interfaces) inside a .mjs file — Prettier's JS parser
+# rejects it. Pre-existing; not part of this change.
+scripts/test_analysis.mjs

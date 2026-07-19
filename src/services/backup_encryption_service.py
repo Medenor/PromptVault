@@ -127,8 +127,14 @@ class BackupEncryptionService:
             if config is None:
                 raise ValueError("Encryption not configured")
 
-            if not config.verification_salt or not config.verification_nonce or not config.verification_ciphertext:
-                raise ValueError("No verification sentinel stored — call enable() before rotating the key")
+            if (
+                not config.verification_salt
+                or not config.verification_nonce
+                or not config.verification_ciphertext
+            ):
+                raise ValueError(
+                    "No verification sentinel stored — call enable() before rotating the key"
+                )
 
             self._verify_passphrase(
                 old_passphrase,
@@ -137,7 +143,9 @@ class BackupEncryptionService:
                 config.verification_ciphertext,
             )
 
-            v_salt, v_nonce, v_ciphertext = self._make_verification_sentinel(new_passphrase)
+            v_salt, v_nonce, v_ciphertext = self._make_verification_sentinel(
+                new_passphrase
+            )
             config.key_version += 1
             config.rotated_at = datetime.now(timezone.utc)
             config.verification_salt = v_salt
@@ -207,7 +215,9 @@ class BackupEncryptionService:
         try:
             plaintext = aesgcm.decrypt(nonce, ciphertext, None)
         except Exception as exc:
-            raise ValueError("Decryption failed: wrong passphrase or corrupt data") from exc
+            raise ValueError(
+                "Decryption failed: wrong passphrase or corrupt data"
+            ) from exc
 
         tmp_path = file_path + ".tmp"
         try:
@@ -249,11 +259,15 @@ class BackupEncryptionService:
         salt = os.urandom(SALT_BYTES)
         nonce = os.urandom(NONCE_BYTES)
         key = BackupEncryptionService._derive_key(passphrase, salt)
-        ciphertext = AESGCM(key).encrypt(nonce, b"promptvault-verification-sentinel", None)
+        ciphertext = AESGCM(key).encrypt(
+            nonce, b"promptvault-verification-sentinel", None
+        )
         return salt.hex(), nonce.hex(), base64.b64encode(ciphertext).decode("utf-8")
 
     @staticmethod
-    def _verify_passphrase(passphrase: str, salt_hex: str, nonce_hex: str, ciphertext_b64: str) -> None:
+    def _verify_passphrase(
+        passphrase: str, salt_hex: str, nonce_hex: str, ciphertext_b64: str
+    ) -> None:
         """Raise ValueError if passphrase does not decrypt the stored sentinel."""
         salt = bytes.fromhex(salt_hex)
         nonce = bytes.fromhex(nonce_hex)

@@ -355,7 +355,7 @@ class PasswordService:
             # It extracts parameters from the hash and re-hashes the password
             self._hasher.verify(password_hash, password)
             return True
-        except (VerifyMismatchError, VerificationError, InvalidHashError):
+        except VerifyMismatchError, VerificationError, InvalidHashError:
             # VerifyMismatchError: Password doesn't match
             # VerificationError: Generic verification error
             # InvalidHashError: Malformed hash string
@@ -631,6 +631,6 @@ class PasswordService:
         """
         try:
             return self._hasher.check_needs_rehash(password_hash)
-        except (InvalidHashError, Exception):
+        except InvalidHashError, Exception:
             # If hash is invalid or cannot be checked, assume it needs rehash
             return True

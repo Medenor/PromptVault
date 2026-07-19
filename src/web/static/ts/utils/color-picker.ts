@@ -270,7 +270,11 @@ export class ColorPicker {
     // Remove previous selection
     if (this.selectedPresetButton) {
       this.selectedPresetButton.classList.remove('border-blue-500', 'border-4', 'scale-110');
-      this.selectedPresetButton.classList.add('border-gray-300', 'dark:border-gray-600', 'border-2');
+      this.selectedPresetButton.classList.add(
+        'border-gray-300',
+        'dark:border-gray-600',
+        'border-2'
+      );
     }
 
     // Find and highlight matching preset

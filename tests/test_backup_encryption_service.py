@@ -103,7 +103,9 @@ class TestRotateKey:
         result = encryption_service.rotate_key("pass-v2", "pass-v3")
         assert result["key_version"] == 3
 
-    def test_rotate_key_raises_without_sentinel(self, encryption_service, patched_db_session):
+    def test_rotate_key_raises_without_sentinel(
+        self, encryption_service, patched_db_session
+    ):
         from src.db.models.encryption_key_config import EncryptionKeyConfig
         import uuid
 
@@ -138,7 +140,9 @@ class TestEncryptDecryptFile:
         with pytest.raises(ValueError, match="Decryption failed"):
             encryption_service.decrypt_file(temp_file, "wrong", salt_hex, nonce_hex)
 
-    def test_encrypt_produces_different_ciphertext_each_time(self, encryption_service, temp_file):
+    def test_encrypt_produces_different_ciphertext_each_time(
+        self, encryption_service, temp_file
+    ):
         content = open(temp_file, "rb").read()
         salt1, nonce1 = encryption_service.encrypt_file(temp_file, "pass")
         encrypted1 = open(temp_file, "rb").read()

@@ -7,6 +7,7 @@
 **Rationale**: Avoids duplicating query-building logic; keeps filter definitions (text/category/tag/favorite) in exactly one place (`search()`), satisfying the Anti-Abstraction / Simplicity spirit even though this project's constitution doesn't name that gate explicitly. Adding a `count(...)` method mirroring `search()`'s filter args is the minimal change.
 
 **Alternatives considered**:
+
 - Running `search()` twice (once unbounded to count via `len()`) — rejected, defeats the purpose of pagination by always loading full result set.
 - A generic `paginate()` wrapper — rejected as premature abstraction; two call sites (`get_all`+`count` for list, `search`+new `count` for search) don't yet justify a shared paginator.
 
@@ -29,6 +30,7 @@ export interface PromptListResponse {
 **Rationale**: Keeping `prompts` as `Record<string, PromptResponse>` (keyed by ID) preserves the existing shape consumed by `renderPrompts()` in `app.ts:1377`, minimizing frontend rewrite — pagination metadata is purely additive, not a breaking change to the envelope's existing field.
 
 **Alternatives considered**:
+
 - Switching `prompts` to an array — rejected; would require rewriting `renderPrompts` and all call sites for no functional gain, and increases the blast radius of this change beyond what the spec calls for.
 - A separate `/api/prompts/page-info` endpoint — rejected; splits an atomic read into two requests for no benefit.
 
@@ -44,9 +46,10 @@ export interface PromptListResponse {
 
 **Decision**: The legacy branch in `list_prompts` and `search_prompts` (used when `data_service.load_prompts()` returns data, primarily for existing monkeypatched tests) is left unpaginated — it continues to return the full filtered dict as today, but is updated to also match the new response envelope shape with pagination fields defaulted to reflect "single page containing everything" (page=1, total_pages=1, total_count=len(results), has_next=false, has_previous=false).
 
-**Rationale**: Constitution Principle V forbids JSON/file storage for *new* features but does not mandate removing already-existing legacy code paths in this change. Adding real pagination to the JSON-backed path would mean writing new pagination logic against deprecated storage — contrary to the constitution's intent. Normalizing its response shape (not its behavior) keeps the API contract consistent for frontend consumers without expanding use of the deprecated path.
+**Rationale**: Constitution Principle V forbids JSON/file storage for _new_ features but does not mandate removing already-existing legacy code paths in this change. Adding real pagination to the JSON-backed path would mean writing new pagination logic against deprecated storage — contrary to the constitution's intent. Normalizing its response shape (not its behavior) keeps the API contract consistent for frontend consumers without expanding use of the deprecated path.
 
 **Alternatives considered**:
+
 - Fully paginating the legacy path too — rejected as expanding investment in deprecated storage.
 - Leaving the legacy response shape untouched (no pagination fields at all) — rejected because it would make the frontend's envelope handling inconsistent depending on which backend path served the request.
 

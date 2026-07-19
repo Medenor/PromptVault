@@ -43,7 +43,9 @@ class EncryptionKeyConfig(Base):
     kdf_parallelism = Column(Integer, nullable=False, default=1)
     key_version = Column(Integer, nullable=False, default=1)
     rotated_at = Column(DateTime(timezone=True), nullable=True)
-    created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    created_at = Column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
     # Stored sentinel for passphrase verification during key rotation.
     # Encrypted with the active passphrase; never contains the passphrase itself.
     verification_salt = Column(String(32), nullable=True)

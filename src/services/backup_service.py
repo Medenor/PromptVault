@@ -243,9 +243,10 @@ class BackupService:
 
             # Restore the backup (handle compressed files transparently)
             if backup_path.endswith(".gz"):
-                with gzip.open(backup_path, "rb") as src, open(
-                    self.data_file, "wb"
-                ) as dst:
+                with (
+                    gzip.open(backup_path, "rb") as src,
+                    open(self.data_file, "wb") as dst,
+                ):
                     shutil.copyfileobj(src, dst)
             else:
                 shutil.copy2(backup_path, self.data_file)

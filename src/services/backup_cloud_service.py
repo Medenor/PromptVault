@@ -39,6 +39,7 @@ from src.services.backup_encryption_service import (
 
 logger = logging.getLogger(__name__)
 
+
 def _get_credentials_passphrase() -> str:
     """Return the passphrase for cloud credential encryption.
 
@@ -179,7 +180,10 @@ class BackupCloudService:
             if not info or not info.get("storage_path"):
                 logger.warning(
                     "Cannot upload backup: metadata or storage_path missing",
-                    extra={"event": f"{log_prefix}.upload_skipped", "backup_id": backup_id},
+                    extra={
+                        "event": f"{log_prefix}.upload_skipped",
+                        "backup_id": backup_id,
+                    },
                 )
                 return False
 
@@ -197,7 +201,9 @@ class BackupCloudService:
                     )
                     return False
 
-                remote_key = self.upload(info["storage_path"], provider, info["filename"])
+                remote_key = self.upload(
+                    info["storage_path"], provider, info["filename"]
+                )
 
                 backup = session.query(Backup).filter_by(id=backup_id).first()
                 if backup:
@@ -338,7 +344,10 @@ class BackupCloudService:
         """
         with get_db_session() as session:
             from src.db.models import Backup
-            ref_count = session.query(Backup).filter_by(cloud_provider_id=provider_id).count()
+
+            ref_count = (
+                session.query(Backup).filter_by(cloud_provider_id=provider_id).count()
+            )
             if ref_count > 0:
                 raise ValueError(
                     f"Cannot delete provider: {ref_count} backup(s) reference it"

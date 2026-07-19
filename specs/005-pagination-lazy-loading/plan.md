@@ -30,15 +30,15 @@ Add server-side offset pagination (`page`, `limit`) to `GET /api/prompts` and `G
 
 ## Constitution Check
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+_GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
 - **I. Layered Service Architecture**: PASS. Pagination logic (limit/offset/count) is added to `PromptRepository` (data layer), invoked from the router (web layer) — no layer bypass.
 - **II. Test Coverage Gate**: PASS (must be enforced during implementation). New pagination code paths in both router and repository require pytest coverage; frontend "Load More" logic requires Vitest coverage. Tracked as explicit tasks.
 - **III. Security-First Authentication**: PASS / N/A. Both affected endpoints (`GET /api/prompts`, `GET /api/prompts/search`) are read-only and already publicly accessible with optional auth; pagination adds no new mutation surface.
-- **IV. TypeScript-Only Frontend**: PASS *with correction*. The user-supplied implementation notes referenced `src/web/static/js/app.js`, which is legacy and MUST NOT be edited per this principle. The actual target is `src/web/static/ts/app.ts` (and its compiled output). This plan corrects that and targets `app.ts` exclusively.
+- **IV. TypeScript-Only Frontend**: PASS _with correction_. The user-supplied implementation notes referenced `src/web/static/js/app.js`, which is legacy and MUST NOT be edited per this principle. The actual target is `src/web/static/ts/app.ts` (and its compiled output). This plan corrects that and targets `app.ts` exclusively.
 - **V. Database-Backed Persistence**: PASS. Pagination is implemented purely via SQLAlchemy `.limit()`/`.offset()` and a count query — no raw SQL, no JSON storage involvement for the primary path.
 
-**Legacy data_service fallback**: Both `list_prompts` and `search_prompts` contain a legacy branch that loads from `data_service` (JSON-backed) when present, used by existing monkeypatched tests. Per Principle V, JSON/file-based storage MUST NOT be used for *new* features. Decision: the legacy branch is left functionally as-is (unpaginated) for backward test compatibility, and pagination is only added to the SQLAlchemy-backed path. This is not a new use of JSON storage — it's non-expansion of an existing deprecated path. Documented as a research decision in `research.md`.
+**Legacy data_service fallback**: Both `list_prompts` and `search_prompts` contain a legacy branch that loads from `data_service` (JSON-backed) when present, used by existing monkeypatched tests. Per Principle V, JSON/file-based storage MUST NOT be used for _new_ features. Decision: the legacy branch is left functionally as-is (unpaginated) for backward test compatibility, and pagination is only added to the SQLAlchemy-backed path. This is not a new use of JSON storage — it's non-expansion of an existing deprecated path. Documented as a research decision in `research.md`.
 
 No unresolved violations. No Complexity Tracking entries required.
 
@@ -85,4 +85,4 @@ tests/
 
 ## Complexity Tracking
 
-*No violations requiring justification.*
+_No violations requiring justification._
