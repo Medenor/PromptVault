@@ -339,16 +339,6 @@ async def shutdown_scheduler():
             print(f"✗ Error stopping scheduler: {e}")
 
 
-# Register scheduler router if scheduler is available
-try:
-    from src.web.routers import scheduler as scheduler_router
-
-    app.include_router(scheduler_router.router, prefix="/api")
-    logger.info("Scheduler management endpoints registered: /api/admin/scheduler")
-except ImportError:
-    logger.debug("Scheduler router not available")
-
-
 # ============================================================================
 # HEALTH CHECK ENDPOINT
 # ============================================================================

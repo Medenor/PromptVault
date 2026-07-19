@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### 🐛 Fixed
+
+- **Duplicate scheduler router registration**: `src/web/app.py` registered `scheduler_router` twice under the same `/api` prefix — once via the module-level import (`from src.web.routers.scheduler import router as scheduler_router`) and again via a redundant `try`/`except ImportError` block later in the file that re-imported the same module and used its `.router` attribute. The second registration was dead code (FastAPI matches the first-registered route) left over from an incomplete refactor; removed it
+
 ## [1.11.0] - 2026-07-19
 
 ### 🔒 Security
