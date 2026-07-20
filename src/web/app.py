@@ -260,6 +260,20 @@ def configure_services(
     backup_service = BackupService(resolved_dir)
     _warn_if_backup_dir_database_mismatch(backup_service.backups_dir)
 
+    # The backup router caches its own module-level service reference at
+    # wiring time (see init_backup_router) rather than reading this module's
+    # `backup_service` global per-request. Without re-syncing it here, a
+    # caller that re-runs configure_services() with a different data_dir
+    # (e.g. test fixtures isolating to a temp directory) leaves the router
+    # bound to whatever backup_service existed at the first import-time
+    # call — which previously caused test-created backups to be written to
+    # the real, non-isolated default data directory. Only the service
+    # reference is re-synced; validation_monitor/record_validation_event
+    # wiring is set up once at first import and does not vary per call.
+    from src.web.routers import backup as backup_router_module
+
+    backup_router_module._backup_service = backup_service
+
     # Initialize validation monitor using the data directory for persistence
     logs_base = resolved_dir or "data"
     logs_dir = os.path.join(logs_base, "logs")
