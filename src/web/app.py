@@ -2,16 +2,11 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-from fastapi import FastAPI, Request, Form, File, UploadFile, HTTPException, Depends
+from fastapi import Request, Form, File, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
-from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse as FastAPIJSONResponse
 from pydantic import ValidationError
-import pydantic_core
 import json
-import uuid
 import os
 import time
 from datetime import datetime
@@ -23,20 +18,12 @@ from src.services.prompt_filter_service import PromptFilterService
 from src.services.prompt_versioning_service import PromptVersioningService
 from src.services.prompt_import_export_service import PromptImportExportService
 from src.services.backup_service_db import BackupService
-from src.services.exceptions import PromptVaultException, BackupError
 from src.services.logging_service import logging_service
-from src.db.models.user import User
 from src.web.models import (
-    PromptCreateRequest,
-    PromptUpdateRequest,
     ExportRequest,
     ImportRequest,
-    BackupCreateRequest,
-    BackupCleanupRequest,
-    BackupCompressRequest,
     VersionRevertRequest,
     FrontendLogEntry,
-    BulkDeleteRequest,
     ExportFormat,
     ImportMode,
 )
@@ -47,21 +34,13 @@ from src.web.validators import (
     get_file_extension_from_format,
 )
 from src.web.monitoring import ValidationMonitor
-from src.web.routers import (
-    auth_router,
-    admin_router,
-    prompts_router,
-    tag_category_router,
-    pages_router,
-)
 from src.utils.diff_utils import compute_character_diff
-from src.web.routers.scheduler import router as scheduler_router
-from src.web.routers.backup import router as backup_router, init_backup_router
-from src.web.middleware.rate_limit import limiter, rate_limit_exceeded_handler
-from src.web.middleware.security_headers import SecurityHeadersMiddleware
-from src.web.dependencies.auth import get_current_active_user, get_current_user_or_none
+from src.web.routers.backup import init_backup_router
+from src.web.factory import create_app
+from src.web.middleware_setup import configure_middleware
+from src.web.routing_setup import configure_routing, _warn_if_auth_disabled  # noqa: F401
+from src.web.startup import register_lifecycle_events
 from src.config.auth_config import auth_settings
-from slowapi.errors import RateLimitExceeded
 from src.web.utils.manifest import load_manifest, get_asset_path, is_production
 
 # ============================================================================
@@ -116,228 +95,13 @@ from src.web.utils.manifest import load_manifest, get_asset_path, is_production
 # - All endpoints include comprehensive documentation with examples
 # ============================================================================
 
-app = FastAPI(
-    title="PromptVault API",
-    version="1.11.0",
-    description="""
-    PromptVault API with comprehensive authentication and authorization.
-
-    Features:
-    - JWT-based authentication (ES256 algorithm)
-    - Role-based access control (viewer, editor, admin)
-    - Session management and tracking
-    - Password reset with secure tokens
-    - Rate limiting on sensitive endpoints
-    - Ownership-based authorization for prompts
-
-    Security:
-    - All passwords hashed with Argon2id
-    - Tokens signed with ECDSA (ES256)
-    - Account lockout protection
-    - Token family tracking and reuse detection
-    - Redis-backed rate limiting
-
-    Authentication:
-    - Include access token in Authorization header: "Bearer <token>"
-    - Refresh tokens using /api/auth/refresh endpoint
-    - Session limit: 5 concurrent sessions per user
-    """,
-    openapi_tags=[
-        {
-            "name": "Authentication",
-            "description": "User authentication, registration, and session management",
-        },
-        {
-            "name": "Admin",
-            "description": "Administrative endpoints for user and system management (admin role required)",
-        },
-        {
-            "name": "Prompts",
-            "description": "Prompt CRUD operations with authentication and authorization",
-        },
-        {
-            "name": "Legacy",
-            "description": "Deprecated endpoints - migrate to /api/prompts routes",
-        },
-    ],
-)
+app = create_app()
 
 validation_monitor: Optional[ValidationMonitor] = None
-
-# ============================================================================
-# SECURITY HEADERS MIDDLEWARE
-# ============================================================================
-# Add middleware to inject security headers into all HTTP responses
-# Headers include: HSTS, CSP, X-Frame-Options, X-XSS-Protection, etc.
-app.add_middleware(SecurityHeadersMiddleware)
-logger_init = logging_service.get_logger(__name__)
-logger_init.info("Security headers middleware initialized")
-print("✓ Security headers middleware added (HSTS, CSP, X-Frame-Options, etc.)")
-
-# ============================================================================
-# RATE LIMITING SETUP
-# ============================================================================
-# Initialize rate limiter with Redis backend (falls back to in-memory if Redis unavailable)
-# Rate limits are enforced per IP address or authenticated user ID
-# Limits are configured in AuthConfig via environment variables
-app.state.limiter = limiter
-
-# Register rate limit exception handler
-app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
-
 logger = logging_service.get_logger(__name__)
-logger.info("Rate limiting initialized successfully")
 
-# ============================================================================
-# JWT SERVICE INITIALIZATION (for middleware)
-# ============================================================================
-# Initialize JWT service once for actor extraction in logging middleware
-jwt_service_for_logging = None
-try:
-    from src.services.auth.jwt_service import JWTService
-    from src.config.auth_config import auth_settings
-
-    jwt_service_for_logging = JWTService(auth_settings)
-    print(f"✓ JWT service initialized for logging middleware")
-    logger.info("JWT service initialized for logging middleware")
-except Exception as e:
-    print(f"✗ JWT service initialization failed: {e}")
-    import traceback
-
-    traceback.print_exc()
-    logger.warning(f"JWT service initialization failed for logging: {e}")
-    jwt_service_for_logging = None
-
-# ============================================================================
-# API ROUTERS REGISTRATION
-# ============================================================================
-# Register all API routers with appropriate prefixes:
-# - /api/auth - Authentication endpoints (public + protected)
-# - /api/admin - Admin endpoints (admin role required)
-# - /api/admin/scheduler - Scheduler management endpoints (admin role required)
-# - /api/prompts - Prompt CRUD with authentication
-app.include_router(prompts_router, prefix="/api")
-app.include_router(tag_category_router, prefix="/api")
-app.include_router(scheduler_router, prefix="/api")
-app.include_router(backup_router)
-
-
-# Authentication and admin routers are only mounted when auth is enabled.
-# When AUTH_ENABLED=false the app runs in anonymous mode and these routes
-# are unmounted (return 404).
-def _warn_if_auth_disabled() -> None:
-    """Emit a loud startup warning when authentication is disabled.
-
-    Extracted as a helper so it can be exercised by the test suite.
-    """
-    if not auth_settings.auth_enabled:
-        logger.warning(
-            "AUTH_ENABLED=false — Authentication is DISABLED. All endpoints are "
-            "publicly accessible. Do NOT use this mode in a multi-user or "
-            "network-exposed deployment."
-        )
-
-
-if auth_settings.auth_enabled:
-    app.include_router(auth_router, prefix="/api")
-    app.include_router(admin_router, prefix="/api")
-    logger.info("Authentication enabled: /api/auth and /api/admin routes registered")
-else:
-    _warn_if_auth_disabled()
-    print(
-        "⚠ AUTH_ENABLED=false — Authentication is DISABLED. All endpoints are "
-        "publicly accessible."
-    )
-
-# Register HTML page routes (no /api prefix)
-# - /auth/* - Authentication pages (login, register, profile, etc.)
-# - /admin/* - Admin pages (users, sessions)
-app.include_router(pages_router)
-
-logger.info(
-    "API routers registered: /api/auth, /api/admin, /api/prompts, /api/categories, /api/tags"
-)
-logger.info("HTML page routes registered: /auth/*, /admin/*")
-
-# ============================================================================
-# SCHEDULER INITIALIZATION
-# ============================================================================
-# Initialize session cleanup scheduler for background maintenance tasks
-session_cleanup_scheduler = None
-
-
-@app.on_event("startup")
-async def startup_scheduler():
-    """Initialize and start the session cleanup scheduler on app startup."""
-    global session_cleanup_scheduler
-
-    try:
-        from src.db.session import SessionLocal
-        from src.config.auth_config import auth_settings
-        from src.scheduler.session_cleanup import SessionCleanupScheduler
-        from src.web.routers.scheduler import set_scheduler
-
-        # Create scheduler instance
-        session_cleanup_scheduler = SessionCleanupScheduler(
-            session_factory=SessionLocal,
-            config=auth_settings,
-            cleanup_interval_hours=auth_settings.cleanup_interval_hours,
-            batch_size=auth_settings.cleanup_batch_size,
-        )
-
-        # Register with router for dependency injection
-        set_scheduler(session_cleanup_scheduler)
-
-        # Start the scheduler
-        session_cleanup_scheduler.start()
-
-        # Run an immediate sweep so expired sessions don't accumulate when the
-        # process restarts before the first scheduled interval elapses (common
-        # in dev, where the app rarely stays up for a full cleanup_interval_hours).
-        startup_cleanup_result = session_cleanup_scheduler.run_cleanup_now()
-        logger.info(
-            "✓ Startup session cleanup sweep completed "
-            f"(deleted: {startup_cleanup_result.get('deleted', 0)})"
-        )
-
-        logger.info(
-            "✓ Session cleanup scheduler initialized and started "
-            f"(interval: {auth_settings.cleanup_interval_hours}h, "
-            f"batch_size: {auth_settings.cleanup_batch_size})"
-        )
-        print(f"✓ Session cleanup scheduler started")
-
-    except ImportError as e:
-        logger.warning(f"Scheduler imports not available: {e}")
-        print(f"⚠ Scheduler imports not available: {e}")
-    except Exception as e:
-        logger.error(f"Failed to initialize scheduler: {e}", exc_info=True)
-        print(f"✗ Failed to initialize scheduler: {e}")
-
-    try:
-        from src.scheduler.backup_scheduler import register_backup_jobs
-
-        register_backup_jobs()
-        logger.info("✓ Backup schedule loaded and registered from database")
-    except Exception as e:
-        logger.error(f"Failed to register backup jobs: {e}", exc_info=True)
-        print(f"✗ Failed to register backup jobs: {e}")
-
-
-@app.on_event("shutdown")
-async def shutdown_scheduler():
-    """Gracefully shutdown the session cleanup scheduler on app shutdown."""
-    global session_cleanup_scheduler
-
-    if session_cleanup_scheduler is not None:
-        try:
-            session_cleanup_scheduler.stop()
-            logger.info("✓ Session cleanup scheduler stopped gracefully")
-            print(f"✓ Session cleanup scheduler stopped")
-        except Exception as e:
-            logger.error(f"Error stopping scheduler: {e}", exc_info=True)
-            print(f"✗ Error stopping scheduler: {e}")
-
+configure_routing(app)
+register_lifecycle_events(app)
 
 # ============================================================================
 # HEALTH CHECK ENDPOINT
@@ -382,29 +146,6 @@ audit_logger = logging_service.get_audit_logger()
 FRONTEND_LOG_WINDOW = 60.0
 FRONTEND_LOG_LIMIT = 10
 frontend_log_rate: Dict[str, Deque[float]] = defaultdict(deque)
-
-# Mount static files
-# Mount built assets first (higher priority for production builds)
-import os
-
-if os.path.exists("dist/static"):
-    app.mount("/static/dist", StaticFiles(directory="dist/static"), name="dist")
-app.mount("/static", StaticFiles(directory="src/web/static"), name="static")
-
-
-@app.get("/sw.js", include_in_schema=False)
-async def service_worker():
-    """Serve the compiled Service Worker at the site root.
-
-    A Service Worker's default scope is limited to its own path and below;
-    serving it from the root (rather than /static/dist/sw.js) lets it control
-    the whole app without requiring a Service-Worker-Allowed header.
-    """
-    sw_path = "dist/static/sw.js"
-    if not os.path.exists(sw_path):
-        raise HTTPException(status_code=404, detail="Service Worker not built")
-    return FileResponse(sw_path, media_type="application/javascript")
-
 
 # Templates
 templates = Jinja2Templates(directory="src/web/templates")
@@ -579,56 +320,10 @@ def record_validation_event(
 
 init_backup_router(backup_service, validation_monitor, record_validation_event)
 
-
-@app.exception_handler(PromptVaultException)
-async def promptvault_exception_handler(
-    request: Request, exc: PromptVaultException
-) -> JSONResponse:
-    """Translate PromptVaultException into structured API responses."""
-    log_extra = {
-        "event": "api.error",
-        "action": str(request.url.path),
-        "resource_id": str(request.url.path),
-        **exc.context,
-    }
-    log_method = getattr(logger, exc.log_level, logger.error)
-    log_method(exc.message, extra=log_extra)
-
-    if exc.context.get("backup_id"):
-        audit_logger.error(
-            "Audit: service failure",
-            extra={
-                "event": "audit.error",
-                "resource_id": exc.context.get("backup_id"),
-                "status": "failure",
-            },
-        )
-
-    response_payload = exc.to_dict()
-    request_id = logging_service.get_request_id()
-    response_payload["request_id"] = request_id
-    response = JSONResponse(status_code=exc.http_status, content=response_payload)
-    if request_id:
-        response.headers["X-Request-ID"] = request_id
-    return response
-
-
-@app.exception_handler(Exception)
-async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
-    """Catch-all exception handler to ensure JSON responses."""
-    logger.exception(
-        "Unhandled server error",
-        extra={"event": "api.error", "action": str(request.url.path)},
-    )
-    response_payload = {
-        "error": "Internal server error.",
-        "request_id": logging_service.get_request_id(),
-    }
-    response = JSONResponse(status_code=500, content=response_payload)
-    request_id = logging_service.get_request_id()
-    if request_id:
-        response.headers["X-Request-ID"] = request_id
-    return response
+# Security headers, rate limiting, static mounts, request logging, and
+# exception/validation handlers are wired up together here since several of
+# them (the validation handlers) depend on record_validation_event above.
+configure_middleware(app, record_validation_event)
 
 
 def _sanitize_text(value: Optional[str], max_length: int) -> Optional[str]:
@@ -669,212 +364,6 @@ async def log_frontend_error(entry: FrontendLogEntry, request: Request):
         },
     )
     return {"success": True}
-
-
-@app.middleware("http")
-async def request_logging_middleware(request: Request, call_next):
-    """Attach request IDs and emit structured request logs."""
-    request_id = (
-        request.headers.get("X-Request-ID") or logging_service.generate_request_id()
-    )
-
-    # Try to extract actor from JWT token
-    actor = "anonymous"
-
-    # Only attempt JWT decoding if service is available
-    if jwt_service_for_logging:
-        # Check for JWT in Authorization header
-        auth_header = request.headers.get("Authorization")
-        if auth_header and auth_header.startswith("Bearer "):
-            try:
-                token = auth_header.split(" ")[1]
-                payload = jwt_service_for_logging.validate_access_token(token)
-                actor = payload.get("username", "anonymous")
-                logger.debug(f"Extracted actor from Authorization header: {actor}")
-            except Exception as e:
-                # Token invalid or expired, keep as anonymous
-                logger.debug(f"Failed to decode JWT from Authorization header: {e}")
-
-        # Check for JWT in cookie if not in header
-        if actor == "anonymous":
-            access_token_cookie = request.cookies.get("access_token")
-            if access_token_cookie:
-                try:
-                    payload = jwt_service_for_logging.validate_access_token(
-                        access_token_cookie
-                    )
-                    actor = payload.get("username", "anonymous")
-                    logger.debug(f"Extracted actor from cookie: {actor}")
-                except Exception as e:
-                    # Token invalid or expired, keep as anonymous
-                    logger.debug(f"Failed to decode JWT from cookie: {e}")
-
-    # Fallback to custom headers (for proxy/gateway scenarios)
-    if actor == "anonymous":
-        actor = (
-            request.headers.get("X-PromptVault-Actor")
-            or request.headers.get("X-Forwarded-User")
-            or "anonymous"
-        )
-
-    start_time = time.perf_counter()
-    with logging_service.request_context(request_id=request_id, actor=actor):
-        try:
-            response = await call_next(request)
-        except Exception:
-            duration_ms = round((time.perf_counter() - start_time) * 1000, 2)
-            logger.exception(
-                "Unhandled exception during request",
-                extra={
-                    "event": "http.request.error",
-                    "action": f"{request.method} {request.url.path}",
-                    "resource_id": str(request.url.path),
-                    "status": 500,
-                    "duration_ms": duration_ms,
-                    "client": request.client.host if request.client else None,
-                },
-            )
-            raise
-
-        duration_ms = round((time.perf_counter() - start_time) * 1000, 2)
-        logger.info(
-            "Request handled",
-            extra={
-                "event": "http.request",
-                "action": f"{request.method} {request.url.path}",
-                "resource_id": str(request.url.path),
-                "status": response.status_code,
-                "duration_ms": duration_ms,
-                "client": request.client.host if request.client else None,
-            },
-        )
-        if os.getenv("ENV", "production") == "development":
-            content_type = response.headers.get("content-type", "")
-            if content_type.startswith("text/html"):
-                response.headers["Cache-Control"] = (
-                    "no-store, no-cache, must-revalidate, max-age=0"
-                )
-                response.headers["Pragma"] = "no-cache"
-                response.headers["Expires"] = "0"
-        response.headers["X-Request-ID"] = request_id
-        return response
-
-
-# Custom validation error handler
-@app.exception_handler(RequestValidationError)
-async def validation_exception_handler(request: Request, exc: RequestValidationError):
-    """Handle Pydantic validation errors with user-friendly messages."""
-    errors = exc.errors()
-    error_messages = []
-    sanitized_errors = []
-
-    for error in errors:
-        field = " -> ".join(str(loc) for loc in error["loc"] if loc != "body")
-        message = error["msg"]
-        error_messages.append(f"{field}: {message}")
-
-        # Sanitize error dict for JSON serialization
-        sanitized_error = {
-            "type": error.get("type"),
-            "loc": error.get("loc"),
-            "msg": error.get("msg"),
-            "input": str(error.get("input"))[:100] if error.get("input") else None,
-        }
-        sanitized_errors.append(sanitized_error)
-
-    record_validation_event(
-        endpoint=str(request.url.path),
-        success=False,
-        errors=error_messages,
-        client=request.client.host if request.client else None,
-    )
-
-    return JSONResponse(
-        status_code=422,
-        content={
-            "error": "Validation failed",
-            "details": error_messages,
-            "errors": sanitized_errors,
-        },
-    )
-
-
-@app.exception_handler(ValidationError)
-async def pydantic_validation_exception_handler(request: Request, exc: ValidationError):
-    """Handle Pydantic ValidationError raised in endpoint functions."""
-    errors = exc.errors()
-    error_messages = []
-    sanitized_errors = []
-
-    for error in errors:
-        field = " -> ".join(str(loc) for loc in error["loc"])
-        message = error["msg"]
-        error_messages.append(f"{field}: {message}")
-
-        # Sanitize error dict for JSON serialization
-        sanitized_error = {
-            "type": error.get("type"),
-            "loc": error.get("loc"),
-            "msg": error.get("msg"),
-            "input": str(error.get("input"))[:100] if error.get("input") else None,
-        }
-        sanitized_errors.append(sanitized_error)
-
-    record_validation_event(
-        endpoint=str(request.url.path),
-        success=False,
-        errors=error_messages,
-        client=request.client.host if request.client else None,
-    )
-
-    return JSONResponse(
-        status_code=422,
-        content={
-            "error": "Validation failed",
-            "details": error_messages,
-            "errors": sanitized_errors,
-        },
-    )
-
-
-@app.exception_handler(pydantic_core.ValidationError)
-async def pydantic_core_validation_exception_handler(
-    request: Request, exc: pydantic_core.ValidationError
-):
-    """Handle pydantic_core ValidationError raised in endpoint functions."""
-    errors = exc.errors()
-    error_messages = []
-    sanitized_errors = []
-
-    for error in errors:
-        field = " -> ".join(str(loc) for loc in error["loc"])
-        message = error["msg"]
-        error_messages.append(f"{field}: {message}")
-
-        # Sanitize error dict for JSON serialization
-        sanitized_error = {
-            "type": error.get("type"),
-            "loc": error.get("loc"),
-            "msg": error.get("msg"),
-            "input": str(error.get("input"))[:100] if error.get("input") else None,
-        }
-        sanitized_errors.append(sanitized_error)
-
-    record_validation_event(
-        endpoint=str(request.url.path),
-        success=False,
-        errors=error_messages,
-        client=request.client.host if request.client else None,
-    )
-
-    return JSONResponse(
-        status_code=422,
-        content={
-            "error": "Validation failed",
-            "details": error_messages,
-            "errors": sanitized_errors,
-        },
-    )
 
 
 def _parse_tags_field(tags: str) -> List[str]:
