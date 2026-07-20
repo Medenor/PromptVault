@@ -68,6 +68,13 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
     },
 
+    /* Functional smoke tests (Phase 0c characterization safety net) */
+    {
+      name: 'smoke',
+      testDir: './tests/smoke',
+      use: { ...devices['Desktop Chrome'] },
+    },
+
     {
       name: 'firefox',
       testDir: './tests/accessibility',
