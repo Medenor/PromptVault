@@ -12,12 +12,13 @@ import '../css/tailwind-globals.css';
 import { reportError } from '@/telemetry';
 import { initI18n, t, tUnsafe, updateStaticTranslations } from '@/utils/i18n';
 import { showNotification } from '@/utils/notifications';
-import { apiGet, apiPost, apiPut, apiDelete, APIRequestError } from '@/utils/api';
+import { apiGet, apiPost, apiPut, apiDelete, APIRequestError, handleApiError } from '@/utils/api';
 import { createTypeahead } from '@/utils/typeahead';
 import { announce } from '@/utils/a11y';
 import { announceToScreenReader } from '@/utils/focus-management';
 import { initMobileNav } from '@/mobile-nav';
 import { escapeHtml } from '@/utils/dom';
+import { debounce } from '@/utils/debounce';
 
 const API_BASE = '/api/admin';
 const HIDDEN_CLASS = 'hidden';
@@ -516,8 +517,10 @@ async function editUser(userId: string): Promise<void> {
 
     showModal('edit-user-modal');
   } catch (error) {
-    reportError('admin-users', 'editUser', error);
-    showNotification('Failed to load user', 'error');
+    if (!(error instanceof APIRequestError)) {
+      reportError('admin-users', 'editUser', error);
+    }
+    showNotification(handleApiError(error, 'Failed to load user'), 'error');
   }
 }
 
@@ -609,12 +612,10 @@ async function deleteUser(userId: string, username: string): Promise<void> {
           'polite'
         );
       } catch (error) {
-        if (error instanceof APIRequestError) {
-          showNotification(error.message || 'Failed to delete user', 'error');
-        } else {
+        if (!(error instanceof APIRequestError)) {
           reportError('admin-users', 'deleteUser', error);
-          showNotification('Failed to delete user', 'error');
         }
+        showNotification(handleApiError(error, 'Failed to delete user'), 'error');
       }
     };
   }
@@ -626,17 +627,13 @@ function setupFilters(): void {
   const statusFilter = document.getElementById('status-filter') as HTMLSelectElement | null;
 
   if (searchInput) {
-    let searchTimeout: number | null = null;
+    const debouncedSearch = debounce((target: HTMLInputElement) => {
+      currentFilters.search = target.value;
+      currentPage = 1;
+      void loadUsers();
+    }, 500);
     searchInput.addEventListener('input', (event) => {
-      const target = event.target as HTMLInputElement;
-      if (searchTimeout) {
-        window.clearTimeout(searchTimeout);
-      }
-      searchTimeout = window.setTimeout(() => {
-        currentFilters.search = target.value;
-        currentPage = 1;
-        void loadUsers();
-      }, 500);
+      debouncedSearch(event.target as HTMLInputElement);
     });
   }
 

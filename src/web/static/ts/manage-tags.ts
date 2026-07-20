@@ -5,7 +5,7 @@
  */
 
 import '../css/tailwind-globals.css';
-import { apiFetch, APIRequestError } from '@/utils/api';
+import { apiFetch, APIRequestError, handleApiError } from '@/utils/api';
 import { initI18n, t, tUnsafe, updateStaticTranslations } from '@/utils/i18n';
 import { initializeColorPicker } from '@/utils/color-picker';
 import { setupScrollIndicators } from '@/utils/dom';
@@ -1394,12 +1394,10 @@ async function assignTagsToPrompt(promptId: number, tags: string[]): Promise<voi
 }
 
 function handleError(error: unknown, fallback: string): void {
-  if (error instanceof APIRequestError) {
-    showNotification(error.message, 'error');
-    return;
+  if (!(error instanceof APIRequestError)) {
+    console.error(error);
   }
-  console.error(error);
-  showNotification(fallback, 'error');
+  showNotification(handleApiError(error, fallback), 'error');
 }
 
 function init(): void {

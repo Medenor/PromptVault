@@ -14,6 +14,7 @@ import type { PromptResponse, PromptListResponse } from '@/types';
 import type { TranslationKey } from '@/types/i18n';
 import { initI18n, t, tUnsafe, updateStaticTranslations } from '@/utils/i18n';
 import { apiFetch, apiGet, apiPostForm } from '@/utils/api';
+import { debounce } from '@/utils/debounce';
 import { setupScrollIndicators } from '@/utils/dom';
 import { showNotification } from '@/utils/notifications';
 import { createTypeahead } from '@/utils/typeahead';
@@ -2596,7 +2597,6 @@ function hideModal() {
 }
 
 // Search and Filter Functions
-let searchTimeout: ReturnType<typeof setTimeout> | null = null;
 let overlayCloseTimeout: ReturnType<typeof setTimeout> | null = null;
 
 // How long the search overlay stays open, with no typing, after results load
@@ -2765,30 +2765,27 @@ function handleSearchInput(event: Event): void {
 
   updateSearchClearButtons();
 
-  // Clear previous timeouts
-  if (searchTimeout) {
-    clearTimeout(searchTimeout);
-  }
+  // Clear previous overlay-close timeout
   if (overlayCloseTimeout) {
     clearTimeout(overlayCloseTimeout);
     overlayCloseTimeout = null;
   }
 
-  // Debounce search
-  const isOverlayInput = target.id === 'search-input-overlay';
-  searchTimeout = setTimeout(() => {
-    void performSearch().then(() => {
-      // Auto-close the full-screen overlay after results have been visible
-      // and idle for a bit, so the user can see the filtered list without an
-      // extra manual dismiss (FR-016) but isn't rushed off it while reading.
-      if (isOverlayInput && isSearchOverlayOpen()) {
-        overlayCloseTimeout = setTimeout(() => {
-          closeSearchOverlay();
-        }, SEARCH_OVERLAY_AUTO_CLOSE_MS);
-      }
-    });
-  }, 300);
+  debouncedSearch(target.id === 'search-input-overlay');
 }
+
+const debouncedSearch = debounce((isOverlayInput: boolean) => {
+  void performSearch().then(() => {
+    // Auto-close the full-screen overlay after results have been visible
+    // and idle for a bit, so the user can see the filtered list without an
+    // extra manual dismiss (FR-016) but isn't rushed off it while reading.
+    if (isOverlayInput && isSearchOverlayOpen()) {
+      overlayCloseTimeout = setTimeout(() => {
+        closeSearchOverlay();
+      }, SEARCH_OVERLAY_AUTO_CLOSE_MS);
+    }
+  });
+}, 300);
 
 async function performSearch(): Promise<void> {
   if (searchState.isLoading) {

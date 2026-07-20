@@ -14,7 +14,7 @@ import '@/form-validation';
 import { initI18n, t, updateStaticTranslations, changeLanguage } from '@/utils/i18n';
 import type { TranslationKey } from '@/types/i18n';
 import { hideElement, showElement } from '@/utils/dom';
-import { apiFetch, apiGet, apiPost, apiPostForm, APIRequestError } from '@/utils/api';
+import { apiFetch, apiGet, apiPost, apiPostForm, handleApiError } from '@/utils/api';
 import { announce } from '@/utils/a11y';
 import { loadMonitoringDashboard, loadAuditLog } from './components/backup-monitoring-dashboard';
 import { initSecondaryNav } from '@/utils/secondary-nav';
@@ -667,7 +667,7 @@ async function confirmRestore(): Promise<void> {
     }
   } catch (error) {
     reportError(BACKUP_COMPONENT, 'restoreBackup', error, { backupId: backupIdToRestore });
-    const message = error instanceof APIRequestError ? error.message : t('backup.restoreError');
+    const message = handleApiError(error, t('backup.restoreError'));
     setRestoreInProgress(false);
     showStatus('restore-status', message, 'error');
     showElement(document.getElementById('restore-status'));
