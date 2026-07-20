@@ -60,7 +60,6 @@ from src.web.models.requests import (
     BulkDeleteRequest,
 )
 from src.web.models.auth_responses import MessageResponse
-from src.db.models.prompt_branch import PromptBranch
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -673,7 +672,8 @@ async def create_prompt(
         tag_objects.append(tag_obj)
 
     # Create prompt
-    new_prompt = Prompt(
+    new_prompt = prompt_repo.create_with_tags(
+        tag_objects,
         title=validated_data.title,
         prompt=validated_data.prompt,
         category_id=category_obj.id if category_obj else None,
@@ -683,13 +683,6 @@ async def create_prompt(
         user_id=user.id if user else None,
         created_at=datetime.now(timezone.utc),
     )
-
-    # Add tags
-    new_prompt.tags = tag_objects
-
-    # Save to database
-    db.add(new_prompt)
-    db.flush()
     db.commit()
 
     # Create initial version
@@ -702,14 +695,7 @@ async def create_prompt(
     )
 
     # Create main branch pointing to initial version
-    from src.db.models import PromptBranch
-
-    main_branch = PromptBranch(
-        prompt_id=new_prompt.id,
-        branch_name="main",
-        current_version_id=version.version_id,
-    )
-    db.add(main_branch)
+    prompt_repo.create_main_branch(new_prompt.id, version.version_id)
     db.commit()
 
     # Log action
@@ -851,16 +837,18 @@ async def update_prompt(
             pass
 
     # Update prompt
-    existing_prompt.title = validated_data.title
-    existing_prompt.prompt = validated_data.prompt
-    existing_prompt.category_id = category_obj.id if category_obj else None
-    existing_prompt.tags = tag_objects
-    existing_prompt.updated_at = datetime.now(timezone.utc)
+    update_fields = {
+        "title": validated_data.title,
+        "prompt": validated_data.prompt,
+        "category_id": category_obj.id if category_obj else None,
+        "updated_at": datetime.now(timezone.utc),
+    }
     if validated_data.semantic_version is not None:
-        existing_prompt.semantic_version = validated_data.semantic_version
+        update_fields["semantic_version"] = validated_data.semantic_version
 
-    # Flush to ensure prompt is updated
-    db.flush()
+    existing_prompt = prompt_repo.apply_update(
+        instance=existing_prompt, tags=tag_objects, **update_fields
+    )
 
     # Get current version ID (parent for new version)
     main_branch = next(
@@ -882,12 +870,9 @@ async def update_prompt(
     if main_branch:
         main_branch.current_version_id = version.version_id
     else:
-        main_branch = PromptBranch(
-            prompt_id=existing_prompt.id,
-            branch_name="main",
-            current_version_id=version.version_id,
+        main_branch = prompt_repo.create_main_branch(
+            existing_prompt.id, version.version_id
         )
-        db.add(main_branch)
 
     # Commit all changes
     db.commit()
@@ -1164,10 +1149,12 @@ async def toggle_favorite(
 
     # Toggle favorite
     new_favorite_status = not existing_prompt.favorite
-    existing_prompt.favorite = new_favorite_status
-    existing_prompt.updated_at = datetime.now(timezone.utc)
+    prompt_repo.update(
+        prompt_id,
+        favorite=new_favorite_status,
+        updated_at=datetime.now(timezone.utc),
+    )
 
-    db.flush()
     db.commit()
 
     # Log action

@@ -168,6 +168,52 @@ class TagRepository(BaseRepository[Tag]):
             .count()
         )
 
+    def get_prompt_ids(self, tag_id: int) -> List[int]:
+        """Return IDs of prompts associated with the tag."""
+        from sqlalchemy import select
+        from src.db.models.associations import prompt_tags
+
+        return [
+            row[0]
+            for row in self.session.execute(
+                select(prompt_tags.c.prompt_id).where(prompt_tags.c.tag_id == tag_id)
+            ).all()
+        ]
+
+    def clear_associations(self, tag_ids: List[int]) -> None:
+        """Remove all prompt-tag associations for the given tags."""
+        from sqlalchemy import delete
+        from src.db.models.associations import prompt_tags
+
+        self.session.execute(
+            delete(prompt_tags).where(prompt_tags.c.tag_id.in_(tag_ids))
+        )
+
+    def get_orphan_prompt_ids(self) -> List[int]:
+        """Return IDs of prompts with no tags assigned."""
+        from src.db.models import Prompt
+        from src.db.models.associations import prompt_tags
+
+        results = (
+            self.session.query(Prompt.id)
+            .outerjoin(prompt_tags, Prompt.id == prompt_tags.c.prompt_id)
+            .filter(prompt_tags.c.tag_id.is_(None))
+            .all()
+        )
+        return [row[0] for row in results]
+
+    def get_orphan_prompts(self) -> List[tuple]:
+        """Return (id, title) tuples for prompts with no tags assigned."""
+        from src.db.models import Prompt
+        from src.db.models.associations import prompt_tags
+
+        return (
+            self.session.query(Prompt.id, Prompt.title)
+            .outerjoin(prompt_tags, Prompt.id == prompt_tags.c.prompt_id)
+            .filter(prompt_tags.c.tag_id.is_(None))
+            .all()
+        )
+
     def rename(self, tag_id: int, new_name: str) -> Optional[Tag]:
         """Rename a tag.
 

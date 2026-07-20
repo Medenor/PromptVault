@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 from src.db.session import get_db
 from src.db.repositories.category_repository import CategoryRepository
 from src.db.repositories.tag_repository import TagRepository
+from src.db.repositories.prompt_repository import PromptRepository
 from src.web.dependencies.auth import get_current_user_or_none
 from src.web.models.auth_responses import MessageResponse
 from src.web.models.tag_category_requests import (
@@ -238,33 +239,18 @@ async def delete_category(
     usage_count = category_repo.count_usage(category_id)
     prompt_ids = []
     if usage_count > 0:
-        from src.db.models import Prompt
-
-        prompt_ids = [
-            row[0]
-            for row in db.query(Prompt.id)
-            .filter(Prompt.category_id == category_id)
-            .all()
-        ]
+        prompt_ids = category_repo.get_prompt_ids(category_id)
     if usage_count > 0 and not force:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="Category is in use. Use force=true to remove from prompts and delete.",
         )
 
-    from src.db.models import Prompt, PromptVersion
-
     if usage_count > 0 and force:
-        db.query(Prompt).filter(Prompt.category_id == category_id).update(
-            {Prompt.category_id: None},
-            synchronize_session=False,
-        )
+        category_repo.clear_from_prompts(category_id)
 
     # Clear historical references to avoid FK violations on delete.
-    db.query(PromptVersion).filter(PromptVersion.category_id == category_id).update(
-        {PromptVersion.category_id: None},
-        synchronize_session=False,
-    )
+    category_repo.clear_from_prompt_versions(category_id)
 
     category_repo.delete(category_id)
     db.commit()
@@ -323,13 +309,7 @@ async def merge_categories(
         source = category_repo.get_by_id(source_id)
         if not source:
             continue
-        prompt_ids = []
-        from src.db.models import Prompt
-
-        prompt_ids = [
-            row[0]
-            for row in db.query(Prompt.id).filter(Prompt.category_id == source_id).all()
-        ]
+        prompt_ids = category_repo.get_prompt_ids(source_id)
         sources_payload.append(
             {"category": _category_snapshot(source), "prompt_ids": prompt_ids}
         )
@@ -377,36 +357,21 @@ async def bulk_delete_categories(
         )
 
     # Collect prompt_ids BEFORE clearing category assignments
-    from src.db.models import Prompt
-
     delete_payloads = []
     for category_id in payload.ids:
         category = category_repo.get_by_id(category_id)
         if category:
-            prompt_ids = [
-                row[0]
-                for row in db.query(Prompt.id)
-                .filter(Prompt.category_id == category_id)
-                .all()
-            ]
+            prompt_ids = category_repo.get_prompt_ids(category_id)
             delete_payloads.append(
                 {"category": _category_snapshot(category), "prompt_ids": prompt_ids}
             )
 
     # Clear historical references to avoid FK violations on delete.
-    from src.db.models import PromptVersion
-
-    db.query(PromptVersion).filter(PromptVersion.category_id.in_(payload.ids)).update(
-        {PromptVersion.category_id: None},
-        synchronize_session=False,
-    )
+    category_repo.bulk_clear_from_prompt_versions(payload.ids)
 
     # Now clear category assignments if force=true
     if payload.force:
-        db.query(Prompt).filter(Prompt.category_id.in_(payload.ids)).update(
-            {Prompt.category_id: None},
-            synchronize_session=False,
-        )
+        category_repo.bulk_clear_from_prompts(payload.ids)
 
     deleted = category_repo.delete_many(payload.ids)
     db.commit()
@@ -450,14 +415,7 @@ async def find_replace_categories(
         replace_category = category_repo.create(name=payload.replace)
 
     if find_category.id != replace_category.id:
-        from src.db.models import Prompt
-
-        prompt_ids = [
-            row[0]
-            for row in db.query(Prompt.id)
-            .filter(Prompt.category_id == find_category.id)
-            .all()
-        ]
+        prompt_ids = category_repo.get_prompt_ids(find_category.id)
         category_repo.merge_categories([find_category.id], replace_category.id)
         undo_service.push(
             user_id=user.id if user else None,
@@ -518,10 +476,8 @@ async def category_orphans(
     user: Optional[User] = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
-    from src.db.models import Prompt
-
-    results = db.query(Prompt.id).filter(Prompt.category_id.is_(None)).all()
-    prompt_ids = [row[0] for row in results]
+    category_repo = CategoryRepository(db)
+    prompt_ids = category_repo.get_orphan_prompt_ids()
     return OrphanPromptsResponse(prompt_ids=prompt_ids, count=len(prompt_ids))
 
 
@@ -534,11 +490,8 @@ async def category_orphans_details(
     user: Optional[User] = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
-    from src.db.models import Prompt
-
-    prompts = (
-        db.query(Prompt.id, Prompt.title).filter(Prompt.category_id.is_(None)).all()
-    )
+    category_repo = CategoryRepository(db)
+    prompts = category_repo.get_orphan_prompts()
     items = [OrphanPromptItem(id=row[0], title=row[1] or "") for row in prompts]
     return OrphanPromptDetailsResponse(items=items, count=len(items))
 
@@ -578,14 +531,13 @@ async def assign_category_orphans(
             detail="Confirmation required",
         )
 
-    from src.db.models import Prompt
-
     category_repo = CategoryRepository(db)
+    prompt_repo = PromptRepository(db)
     category = category_repo.get_by_name_case_insensitive(payload.category)
     if not category:
         category = category_repo.create(name=payload.category)
 
-    prompts = db.query(Prompt).filter(Prompt.id.in_(payload.prompt_ids)).all()
+    prompts = prompt_repo.get_by_ids(payload.prompt_ids)
     found_ids = {prompt.id for prompt in prompts}
     missing = [
         prompt_id for prompt_id in payload.prompt_ids if prompt_id not in found_ids
@@ -596,11 +548,10 @@ async def assign_category_orphans(
             detail=f"Prompts not found: {missing}",
         )
 
-    for prompt in prompts:
-        prompt.category_id = category.id
+    affected = category_repo.assign_prompts(payload.prompt_ids, category.id)
 
     db.commit()
-    return BulkActionResponse(success=True, affected=len(prompts))
+    return BulkActionResponse(success=True, affected=affected)
 
 
 @router.get(
@@ -903,28 +854,18 @@ async def bulk_delete_tags(
         )
 
     # Collect prompt_ids for all tags BEFORE clearing associations
-    from sqlalchemy import select, delete
-    from src.db.models.associations import prompt_tags
-
     delete_payloads = []
     for tag_id in payload.ids:
         tag = tag_repo.get_by_id(tag_id)
         if tag:
-            prompt_ids = [
-                row[0]
-                for row in db.execute(
-                    select(prompt_tags.c.prompt_id).where(
-                        prompt_tags.c.tag_id == tag_id
-                    )
-                ).all()
-            ]
+            prompt_ids = tag_repo.get_prompt_ids(tag_id)
             delete_payloads.append(
                 {"tag": _tag_snapshot(tag), "prompt_ids": prompt_ids}
             )
 
     # THEN clear tag-prompt associations if force=true
     if payload.force:
-        db.execute(delete(prompt_tags).where(prompt_tags.c.tag_id.in_(payload.ids)))
+        tag_repo.clear_associations(payload.ids)
 
     deleted = tag_repo.delete_many(payload.ids)
     db.commit()
@@ -1019,15 +960,8 @@ async def tag_orphan_prompts(
     user: Optional[User] = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
-    from src.db.models import Prompt, prompt_tags
-
-    results = (
-        db.query(Prompt.id)
-        .outerjoin(prompt_tags, Prompt.id == prompt_tags.c.prompt_id)
-        .filter(prompt_tags.c.tag_id.is_(None))
-        .all()
-    )
-    prompt_ids = [row[0] for row in results]
+    tag_repo = TagRepository(db)
+    prompt_ids = tag_repo.get_orphan_prompt_ids()
     return OrphanPromptsResponse(prompt_ids=prompt_ids, count=len(prompt_ids))
 
 
@@ -1040,14 +974,8 @@ async def tag_orphan_prompts_details(
     user: Optional[User] = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
-    from src.db.models import Prompt, prompt_tags
-
-    prompts = (
-        db.query(Prompt.id, Prompt.title)
-        .outerjoin(prompt_tags, Prompt.id == prompt_tags.c.prompt_id)
-        .filter(prompt_tags.c.tag_id.is_(None))
-        .all()
-    )
+    tag_repo = TagRepository(db)
+    prompts = tag_repo.get_orphan_prompts()
     items = [OrphanPromptItem(id=row[0], title=row[1] or "") for row in prompts]
     return OrphanPromptDetailsResponse(items=items, count=len(items))
 
@@ -1121,7 +1049,6 @@ async def undo_category_operation(
         )
 
     category_repo = CategoryRepository(db)
-    from src.db.models import Prompt
 
     if op["operation"] == "update":
         category_repo.update(op["payload"]["id"], **op["payload"]["before"])
@@ -1142,10 +1069,7 @@ async def undo_category_operation(
                 category = category_repo.create(**category_data)
             prompt_ids = source.get("prompt_ids", [])
             if prompt_ids:
-                db.query(Prompt).filter(Prompt.id.in_(prompt_ids)).update(
-                    {Prompt.category_id: category.id},
-                    synchronize_session=False,
-                )
+                category_repo.restore_prompts_category(prompt_ids, category.id)
             affected += 1
         db.commit()
         return BulkActionResponse(success=True, affected=affected)
@@ -1161,10 +1085,7 @@ async def undo_category_operation(
                 category = category_repo.create(**category_data)
             prompt_ids = item.get("prompt_ids", [])
             if prompt_ids:
-                db.query(Prompt).filter(Prompt.id.in_(prompt_ids)).update(
-                    {Prompt.category_id: category.id},
-                    synchronize_session=False,
-                )
+                category_repo.restore_prompts_category(prompt_ids, category.id)
             affected += 1
         db.commit()
         return BulkActionResponse(success=True, affected=affected)
@@ -1192,7 +1113,7 @@ async def undo_tag_operation(
         )
 
     tag_repo = TagRepository(db)
-    from src.db.models import Prompt
+    prompt_repo = PromptRepository(db)
 
     if op["operation"] == "update":
         tag_repo.update(op["payload"]["id"], **op["payload"]["before"])
@@ -1215,7 +1136,7 @@ async def undo_tag_operation(
                 tag = tag_repo.create(**tag_data)
             prompt_ids = source.get("prompt_ids", [])
             if prompt_ids:
-                prompts = db.query(Prompt).filter(Prompt.id.in_(prompt_ids)).all()
+                prompts = prompt_repo.get_by_ids(prompt_ids)
                 # Get list of prompts that gained the target tag during merge
                 prompts_gaining_target = source.get("prompts_gaining_target", [])
                 prompts_gaining_target_set = set(prompts_gaining_target)
@@ -1244,7 +1165,7 @@ async def undo_tag_operation(
                 tag = tag_repo.create(**tag_data)
             prompt_ids = item.get("prompt_ids", [])
             if prompt_ids:
-                prompts = db.query(Prompt).filter(Prompt.id.in_(prompt_ids)).all()
+                prompts = prompt_repo.get_by_ids(prompt_ids)
                 for prompt in prompts:
                     if tag not in prompt.tags:
                         prompt.tags.append(tag)
@@ -1274,9 +1195,9 @@ async def bulk_update_tags(
             detail="Confirmation required",
         )
 
-    from src.db.models import Prompt
+    prompt_repo = PromptRepository(db)
 
-    prompts = db.query(Prompt).filter(Prompt.id.in_(payload.prompt_ids)).all()
+    prompts = prompt_repo.get_by_ids(payload.prompt_ids)
     found_ids = {prompt.id for prompt in prompts}
     missing = [
         prompt_id for prompt_id in payload.prompt_ids if prompt_id not in found_ids
@@ -1297,13 +1218,7 @@ async def bulk_update_tags(
             if tag:
                 tags_to_remove.append(tag)
 
-    for prompt in prompts:
-        for tag in tags_to_add:
-            if tag not in prompt.tags:
-                prompt.tags.append(tag)
-        for tag in tags_to_remove:
-            if tag in prompt.tags:
-                prompt.tags.remove(tag)
+    prompt_repo.bulk_update_tags(prompts, tags_to_add, tags_to_remove)
 
     db.commit()
     return BulkActionResponse(success=True, affected=len(prompts))
