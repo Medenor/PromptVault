@@ -553,6 +553,18 @@ def db_backup_service(temp_data_dir: str, test_db_engine, monkeypatch) -> Backup
     monkeypatch.setattr(
         "src.services.backup_audit_service.get_db_session", mock_get_db_session
     )
+    monkeypatch.setattr(
+        "src.services.backup_metadata_store.get_db_session", mock_get_db_session
+    )
+    monkeypatch.setattr(
+        "src.services.backup_creation_service.get_db_session", mock_get_db_session
+    )
+    monkeypatch.setattr(
+        "src.services.backup_restore_service.get_db_session", mock_get_db_session
+    )
+    monkeypatch.setattr(
+        "src.services.backup_diff_service.get_db_session", mock_get_db_session
+    )
 
     return BackupService(temp_data_dir)
 
@@ -595,6 +607,18 @@ def patched_db_session(test_db_engine, monkeypatch):
     )
     monkeypatch.setattr(
         "src.services.backup_service_db.get_db_session", mock_get_db_session
+    )
+    monkeypatch.setattr(
+        "src.services.backup_metadata_store.get_db_session", mock_get_db_session
+    )
+    monkeypatch.setattr(
+        "src.services.backup_creation_service.get_db_session", mock_get_db_session
+    )
+    monkeypatch.setattr(
+        "src.services.backup_restore_service.get_db_session", mock_get_db_session
+    )
+    monkeypatch.setattr(
+        "src.services.backup_diff_service.get_db_session", mock_get_db_session
     )
     return TestSessionLocal
 
