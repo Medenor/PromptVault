@@ -613,3 +613,116 @@
 - **Reliability**: 99.9% uptime, < 0.1% error rate
 
 This prioritized roadmap balances user value, technical complexity, and strategic dependencies to guide PromptVault's evolution from a personal tool to a production-ready collaborative platform.
+
+---
+
+# 2026 Feature Improvement Report
+
+_Added 2026-07-21. The sections above reflect the original (largely completed) roadmap — validation, structured logging, and authentication all shipped. This report is a fresh prioritization against the current production-ready codebase, focused on the gaps between what PromptVault markets (team-ready, AI-native) and what it currently implements._
+
+## Priority List (High to Low)
+
+Each item notes any overlapping open Codeberg issue so work can be tracked there rather than duplicated.
+
+### 1. Prompt Sharing & Team Collaboration
+
+- **Related issues**: [#23 Export & Sharing Enhancements](https://codeberg.org/Medenor/promptvault/issues/23), [#17 Collaborative Editing & Real-time Updates](https://codeberg.org/Medenor/promptvault/issues/17)
+- **Description**: Allow an Editor to share a prompt (or a collection) with specific users or make it team-visible, with read/edit permission granularity. Today RBAC only distinguishes "own" vs "admin-sees-all" — there is no middle ground for collaboration, which the README explicitly positions as a selling point ("ready for team deployments").
+- **Rationale**: Highest user value. The product markets itself for teams but has no actual sharing primitive. It builds directly on existing RBAC, the `User` model, and the repository pattern, so integration cost is moderate rather than greenfield. This is the single biggest gap between the marketing claim and the implementation.
+- **To-Do List**:
+  - Design `prompt_shares` schema (prompt_id, grantee_user_id, permission enum) + Alembic migration (SQLite + Postgres portable — no PRAGMA/int-boolean literals).
+  - Add `SharingRepository` following the existing repository pattern.
+  - Extend `PromptRepository` queries so "list prompts" unions owned + shared-with-me.
+  - Add API endpoints: `POST/DELETE /api/prompts/{id}/shares`, `GET /api/prompts/shared-with-me`.
+  - Enforce permission checks in the service layer (share ≠ ownership; block re-sharing/deletion by grantees).
+  - Frontend: share modal (TypeScript component + tests), "Shared" badge on cards, shared filter in sidebar.
+  - i18n keys for all 4 languages; audit-log share/unshare events (Issue #10 fields).
+
+### 2. AI-Native Prompt Tooling (Test/Run, Token Estimation, Model Metadata)
+
+- **Related issues**: none — new work.
+- **Description**: Add a "Test Prompt" panel that fills placeholders, estimates token count, and (optionally, via user-supplied API key) runs the prompt against a configured LLM to preview output — plus per-prompt metadata for target model/provider and parameters.
+- **Rationale**: PromptVault stores prompts but does nothing *AI-aware* with them — it's a note app for a highly specific audience. Token counting and a run/preview loop are the features that turn it from storage into a workflow tool. Complexity is medium (BYO-key keeps it stateless/secure); it slots into the existing placeholder-substitution feature.
+- **To-Do List**:
+  - Add optional prompt metadata fields (target_model, provider, temperature/params) — migration + schema + validation.
+  - Client-side token estimator (tiktoken-style heuristic) with live counter in editor.
+  - "Test" panel reusing existing placeholder fill-in form; render substituted prompt.
+  - Optional BYO-key run: settings to store an encrypted-at-rest provider key per user; server proxy endpoint that never logs the key or prompt body (respect existing "no prompt bodies in logs" rule).
+  - Rate-limit and audit the run endpoint; graceful degradation when no key configured.
+  - i18n + tests (backend service + Vitest component).
+
+### 3. Full-Text & Semantic Search Upgrade
+
+- **Related issues**: [#15 Advanced Search & Filtering Capabilities](https://codeberg.org/Medenor/promptvault/issues/15)
+- **Description**: Replace/augment the current title-and-field filtering with real full-text search across prompt content and notes (PostgreSQL `tsvector` / SQLite FTS5), with an optional embedding-based "find similar prompts" mode.
+- **Rationale**: As vaults grow, exact-field filtering becomes the primary pain point. Postgres full-text and SQLite FTS5 are native, low-dependency, and map cleanly onto the existing dual-backend `PromptRepository`. High user value, contained blast radius.
+- **To-Do List**:
+  - Add FTS index for SQLite (FTS5 virtual table) and `tsvector` GIN column for Postgres via Alembic (dialect-branched).
+  - Extend `PromptRepository.search()` to use FTS when available, fall back to LIKE.
+  - Update `/api/prompts/search` with relevance ranking + snippet highlighting.
+  - Frontend: highlight matches, ranked ordering; keep existing filter chips.
+  - (Optional phase 2) embeddings table + "similar prompts" endpoint behind a feature flag.
+  - Tests for both backends; benchmark on a large seed dataset.
+
+### 4. Retire Legacy JSON Services & Dead Code (Refactor)
+
+- **Related issues**: none — tracked as an AGENTS.md "current priority".
+- **Description**: Complete the migration the docs already flag as a priority: delete deprecated `prompt_data_service.py`, `backup_service.py`, the standalone versioning/compression/tagging/export services, and legacy `static/js/`.
+- **Rationale**: AGENTS.md itself lists "complete removal of legacy JSON-based services" as a current priority. Dead parallel code paths are a correctness and security liability (two backup implementations, two data services) and inflate the surface every other feature must reason about. Low user-visible value but high maintainability payoff and low risk once test coverage is confirmed.
+- **To-Do List**:
+  - Grep for all imports of legacy services; confirm none are on live code paths.
+  - Migrate any still-used legacy fixtures in `conftest.py` to DB-backed equivalents.
+  - Delete deprecated service modules + `static/js/` (keep telemetry.js if still referenced, or port it to TS).
+  - Update `.coveragerc`, AGENTS.md, README to drop legacy references.
+  - Run full pytest + Vitest; confirm coverage holds ≥85%.
+
+### 5. Two-Factor Authentication (TOTP) — Security Enhancement
+
+- **Related issues**: none — new work.
+- **Description**: Add optional TOTP-based 2FA for user logins, with recovery codes and admin enforcement policy.
+- **Rationale**: The auth stack is already strong (Argon2id, ES256, rotation, lockout), so 2FA is the natural next hardening step for a "production-ready, multi-user" tool and a common compliance requirement. Well-bounded: it extends the existing auth flow rather than reworking it.
+- **To-Do List**:
+  - Add `totp_secret`, `totp_enabled`, `recovery_codes` to `User` (encrypted) + migration.
+  - Endpoints: enroll (QR provisioning URI), verify, disable, regenerate recovery codes.
+  - Insert TOTP challenge step into `/api/auth/login` when enabled.
+  - Admin policy toggle to require 2FA for a role; profile-page UI + i18n.
+  - Rate-limit verification attempts; audit 2FA enable/disable/challenge events.
+  - Tests covering enrollment, valid/invalid codes, recovery-code single-use.
+
+### 6. Prompt Templates, Variables & Snippet Library
+
+- **Related issues**: none — new work.
+- **Description**: Formalize the existing `[NAME]`/`{NAME}` placeholders into typed, documented variables with defaults and descriptions, plus reusable snippet blocks that can be composed into prompts.
+- **Rationale**: Builds directly on a shipped feature (dynamic placeholders) and dramatically increases prompt reusability. Medium value, medium complexity, entirely additive.
+- **To-Do List**:
+  - Define variable schema (name, type, default, description, required) stored per prompt.
+  - Parser upgrade to extract/validate variables from content.
+  - Editor UI for defining variable metadata; fill-in form reads defaults/descriptions.
+  - Snippet entity + include mechanism (composition at copy/test time).
+  - Validation parity (client/server) + i18n + tests.
+
+### 7. Dark Mode Completion & UX Polish
+
+- **Related issues**: none — new work.
+- **Description**: The README says dark mode auto-follows the OS and AGENTS.md calls it "ready for future implementation" — reconcile the two and deliver a fully audited dark theme plus a manual light/dark/system toggle.
+- **Rationale**: Low complexity, visible quality win, and the docs are currently contradictory. Tailwind `dark:` variants make this mostly a styling audit. Good "polish" item to interleave with heavier work.
+- **To-Do List**:
+  - Audit every template/component for missing `dark:` variants.
+  - Add explicit theme toggle (system/light/dark) persisted to user preferences.
+  - Verify WCAG AA contrast in dark palette.
+  - Update screenshots/docs; Vitest coverage for the toggle logic.
+
+### 8. Prompt Analytics & Usage Dashboard
+
+- **Related issues**: [#22 Performance Monitoring & Analytics](https://codeberg.org/Medenor/promptvault/issues/22)
+- **Description**: A per-user dashboard: most-copied prompts, recently edited, tag/category distribution, version-churn, and vault growth over time — reusing existing audit logs and validation metrics.
+- **Rationale**: Nice-to-have that surfaces value from data already being logged. Lower priority because it's discretionary, but integration cost is low since the telemetry/audit infrastructure exists.
+- **To-Do List**:
+  - Aggregate queries over audit log / add lightweight `copy` event tracking.
+  - `GET /api/analytics/*` endpoints (owner-scoped).
+  - Dashboard page with charts (accessible, theme-aware).
+  - i18n + tests; ensure no prompt bodies logged.
+
+## Suggested Execution Order
+
+Ship **#4 (legacy cleanup)** early as it de-risks everything after it, then **#1** and **#2** as the flagship value drivers, interleaving **#7** as low-cost polish. **#3** and **#5** follow as the next infrastructure/security tier, with **#6** and **#8** as fast-follows.
