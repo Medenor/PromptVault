@@ -666,7 +666,7 @@ Testing instructions live in **[docs/TESTING.md](docs/TESTING.md)**, including b
 
 ## Roadmap
 
-For a comprehensive feature improvement roadmap with detailed implementation plans, see [ROADMAP.md](ROADMAP.md).
+For a comprehensive feature improvement roadmap with detailed implementation plans, see [ROADMAP.md](docs/ROADMAP.md).
 
 For proposed features and known issues, visit the [open issues](https://codeberg.org/medenor/promptvault/issues) page.
 
