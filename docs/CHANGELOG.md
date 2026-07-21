@@ -7,9 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 🔧 Changed
+
+- **God-file decomposition (backend)**: `src/web/app.py` split into a factory plus dedicated middleware/routing/startup modules; the auth, tag_category, and prompts routers split into focused modules; `backup_service_db.py` split into focused service modules
+- **God-file decomposition (frontend)**: `manage-tags.ts`, `manage-categories.ts`, `admin-users.ts`, `backup-management.ts`, and `app.ts` split into per-concern modules under `tags/`, `categories/`, `admin-users/`, `backup/`, and `app/` respectively; extracted a shared `utils/debounce.ts` utility with errors routed through `handleApiError`
+- **Consolidated write paths**: Prompt/tag/category write paths consolidated into repositories; duplicated auth dependency pipelines unified into a single pipeline
+
 ### 🐛 Fixed
 
-- **Duplicate scheduler router registration**: `src/web/app.py` registered `scheduler_router` twice under the same `/api` prefix — once via the module-level import (`from src.web.routers.scheduler import router as scheduler_router`) and again via a redundant `try`/`except ImportError` block later in the file that re-imported the same module and used its `.router` attribute. The second registration was dead code (FastAPI matches the first-registered route) left over from an incomplete refactor; removed it
+- **Duplicate scheduler router registration**: `src/web/app.py` registered `scheduler_router` twice under the same `/api` prefix — once via the module-level import (`from src.web.routers.scheduler import router as scheduler_router`) and again via a redundant `try`/`except ImportError` block later in the file that re-imported the same module and used its `.router` attribute. The second registration was dead code (FastAPI matches the first-registered route) left over from an incomplete refactor; removed as part of the `app.py` split
+- **Duplicate user creation race**: A race in user creation could raise an untyped/unclear error on conflicting concurrent registrations; now raises a typed exception
+- **Dev/prod backup data dir leak**: Test/isolated `data_dir` overrides could leak into the production backups directory when the override wasn't scoped per environment; backup directory resolution is now correctly isolated per environment
+
+### 🧪 Tests
+
+- **Phase 0 safety net**: Added Playwright smoke tests (admin-users, backup-management, category-management, prompt-management, tag-management) and expanded backend tests (DB services, prompts router, full backup roundtrip) ahead of the god-file decomposition, to guard against behavioral regressions during the refactor
 
 ## [1.11.0] - 2026-07-19
 
