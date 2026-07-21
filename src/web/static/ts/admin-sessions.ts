@@ -16,6 +16,7 @@ import { apiGet, apiDelete, APIRequestError } from '@/utils/api';
 import { createTypeahead } from '@/utils/typeahead';
 import { announceToScreenReader } from '@/utils/focus-management';
 import { initMobileNav } from '@/mobile-nav';
+import { debounce } from '@/utils/debounce';
 
 const API_BASE = '/api/admin';
 const HIDDEN_CLASS = 'hidden';
@@ -377,16 +378,12 @@ function setupFilters(): void {
   const userFilter = document.getElementById('user-filter') as HTMLSelectElement | null;
 
   if (searchInput) {
-    let searchTimeout: number | null = null;
+    const debouncedSearch = debounce((target: HTMLInputElement) => {
+      currentFilters.search = target.value;
+      displaySessions();
+    }, 500);
     searchInput.addEventListener('input', (event) => {
-      const target = event.target as HTMLInputElement;
-      if (searchTimeout) {
-        window.clearTimeout(searchTimeout);
-      }
-      searchTimeout = window.setTimeout(() => {
-        currentFilters.search = target.value;
-        displaySessions();
-      }, 500);
+      debouncedSearch(event.target as HTMLInputElement);
     });
   }
 

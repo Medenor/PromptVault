@@ -172,6 +172,106 @@ def get_jwt_service(config: AuthConfig = Depends(get_auth_config)) -> JWTService
 # ============================================================================
 
 
+def _extract_bearer_or_cookie_token(
+    authorization: Optional[str], access_token_cookie: Optional[str]
+) -> Optional[str]:
+    """Parse a Bearer token from an Authorization header or a cookie fallback.
+
+    Returns None if neither source yields a token. Raises 401 if an
+    Authorization header is present but malformed (wrong scheme).
+    """
+    if authorization:
+        parts = authorization.split()
+        if len(parts) != 2 or parts[0].lower() != "bearer":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid authentication scheme. Expected: Bearer <token>",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        return parts[1]
+
+    if access_token_cookie:
+        return access_token_cookie
+
+    return None
+
+
+def _validate_access_token_claims(jwt_service: JWTService, token: str) -> dict:
+    """Validate an access token and return its claims, mapping JWT errors to 401s."""
+    try:
+        return jwt_service.validate_access_token(token)
+
+    except ExpiredSignatureError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication token has expired",
+            headers={
+                "WWW-Authenticate": 'Bearer error="invalid_token", error_description="Token expired"'
+            },
+        )
+
+    except InvalidSignatureError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token signature",
+            headers={
+                "WWW-Authenticate": 'Bearer error="invalid_token", error_description="Invalid signature"'
+            },
+        )
+
+    except InvalidTokenError as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Invalid authentication token: {str(e)}",
+            headers={"WWW-Authenticate": 'Bearer error="invalid_token"'},
+        )
+
+    except Exception:
+        # Catch-all for unexpected errors
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication token validation failed",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+
+def _resolve_active_user(session: Session, user_id: str) -> User:
+    """Look up a user by id and verify they have at least one active session.
+
+    Shared by dependencies that must raise 401 on missing user / revoked
+    sessions (as opposed to the bypass variants, which swallow failures).
+    """
+    user_repo = UserRepository(session)
+    user = user_repo.get_by_id(user_id)
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found",
+            headers={
+                "WWW-Authenticate": 'Bearer error="invalid_token", error_description="User not found"'
+            },
+        )
+
+    # Check if user has at least one active (non-revoked) session
+    # This ensures revoked sessions invalidate access tokens
+    from src.db.repositories.session_repository import SessionRepository
+
+    session_repo = SessionRepository(session)
+    active_session_count = session_repo.count_user_sessions(user_id, active_only=True)
+
+    if active_session_count == 0:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="All sessions have been revoked. Please log in again.",
+            headers={
+                "WWW-Authenticate": 'Bearer error="invalid_token", error_description="Session revoked"'
+            },
+        )
+
+    return user
+
+
 def get_current_user_token(
     authorization: Optional[str] = Header(
         None, description="Bearer token in format: Bearer <token>"
@@ -218,25 +318,8 @@ def get_current_user_token(
         - Returns 401 with WWW-Authenticate header per RFC 6750
         - Supports both header and HTTP-only cookie authentication
     """
-    token = None
+    token = _extract_bearer_or_cookie_token(authorization, access_token_cookie)
 
-    # Check Authorization header first
-    if authorization:
-        # Validate Bearer scheme format
-        parts = authorization.split()
-        if len(parts) != 2 or parts[0].lower() != "bearer":
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid authentication scheme. Expected: Bearer <token>",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
-        token = parts[1]
-
-    # Fall back to cookie if no header
-    elif access_token_cookie:
-        token = access_token_cookie
-
-    # No token found in either location
     if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -244,43 +327,7 @@ def get_current_user_token(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # Validate JWT token
-    try:
-        claims = jwt_service.validate_access_token(token)
-        return claims
-
-    except ExpiredSignatureError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication token has expired",
-            headers={
-                "WWW-Authenticate": 'Bearer error="invalid_token", error_description="Token expired"'
-            },
-        )
-
-    except InvalidSignatureError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token signature",
-            headers={
-                "WWW-Authenticate": 'Bearer error="invalid_token", error_description="Invalid signature"'
-            },
-        )
-
-    except InvalidTokenError as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Invalid authentication token: {str(e)}",
-            headers={"WWW-Authenticate": 'Bearer error="invalid_token"'},
-        )
-
-    except Exception as e:
-        # Catch-all for unexpected errors
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication token validation failed",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+    return _validate_access_token_claims(jwt_service, token)
 
 
 # ============================================================================
@@ -333,34 +380,7 @@ def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # Retrieve user from database
-    user_repo = UserRepository(session)
-    user = user_repo.get_by_id(user_id)
-
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found",
-            headers={
-                "WWW-Authenticate": 'Bearer error="invalid_token", error_description="User not found"'
-            },
-        )
-
-    # Check if user has at least one active (non-revoked) session
-    # This ensures revoked sessions invalidate access tokens
-    from src.db.repositories.session_repository import SessionRepository
-
-    session_repo = SessionRepository(session)
-    active_session_count = session_repo.count_user_sessions(user_id, active_only=True)
-
-    if active_session_count == 0:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="All sessions have been revoked. Please log in again.",
-            headers={
-                "WWW-Authenticate": 'Bearer error="invalid_token", error_description="Session revoked"'
-            },
-        )
+    user = _resolve_active_user(session, user_id)
 
     # Attach family_id from token for session identification
     user.family_id = token_data.get("family_id")
@@ -479,15 +499,7 @@ def get_optional_user(
 
     # Token provided - must be valid
     try:
-        # Extract token from Bearer scheme
-        parts = authorization.split()
-        if len(parts) != 2 or parts[0].lower() != "bearer":
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid authentication scheme. Expected: Bearer <token>",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
-        token = parts[1]
+        token = _extract_bearer_or_cookie_token(authorization, None)
 
         # Validate JWT token
         claims = jwt_service.validate_access_token(token)
@@ -501,36 +513,7 @@ def get_optional_user(
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
-        # Retrieve user from database
-        user_repo = UserRepository(session)
-        user = user_repo.get_by_id(user_id)
-
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="User not found",
-                headers={
-                    "WWW-Authenticate": 'Bearer error="invalid_token", error_description="User not found"'
-                },
-            )
-
-        # Check if user has at least one active (non-revoked) session
-        # This ensures revoked sessions invalidate access tokens
-        from src.db.repositories.session_repository import SessionRepository
-
-        session_repo = SessionRepository(session)
-        active_session_count = session_repo.count_user_sessions(
-            user_id, active_only=True
-        )
-
-        if active_session_count == 0:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="All sessions have been revoked. Please log in again.",
-                headers={
-                    "WWW-Authenticate": 'Bearer error="invalid_token", error_description="Session revoked"'
-                },
-            )
+        user = _resolve_active_user(session, user_id)
 
         # Optionally check if user is active (recommended)
         if not user.is_active:
@@ -827,12 +810,7 @@ def get_admin_user(user: User = Depends(get_current_active_user)) -> User:
         ...     # Only admins can delete users
         ...     return {"deleted": user_id}
     """
-    if user.role != "admin":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"Access denied. This operation requires 'admin' role. Your role: '{user.role}'",
-        )
-    return user
+    return require_role(["admin"])(user)
 
 
 def get_editor_or_admin_user(user: User = Depends(get_current_active_user)) -> User:
@@ -859,12 +837,7 @@ def get_editor_or_admin_user(user: User = Depends(get_current_active_user)) -> U
         ...     # Editors and admins can create prompts
         ...     return {"created": True, "user_id": user.id}
     """
-    if user.role not in ["admin", "editor"]:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"Access denied. This operation requires 'admin' or 'editor' role. Your role: '{user.role}'",
-        )
-    return user
+    return require_role(["admin", "editor"])(user)
 
 
 # ============================================================================
@@ -905,13 +878,10 @@ async def get_current_user_or_none(
         return None
 
     try:
-        token = None
-        if authorization:
-            parts = authorization.split()
-            if len(parts) == 2 and parts[0].lower() == "bearer":
-                token = parts[1]
-        elif access_token_cookie:
-            token = access_token_cookie
+        try:
+            token = _extract_bearer_or_cookie_token(authorization, access_token_cookie)
+        except HTTPException:
+            return None
 
         if not token:
             return None
@@ -965,6 +935,50 @@ async def get_current_user_or_default(
     return user_repo.get_or_create_default_user()
 
 
+def require_role_or_bypass(allowed_roles: Optional[list[str]] = None) -> Callable:
+    """Create a dependency requiring role(s) when auth is enabled; bypass (None) when disabled.
+
+    Mirrors :func:`require_role`, but short-circuits to ``None`` when
+    ``auth_settings.auth_enabled`` is ``False`` instead of enforcing
+    authentication. Pass ``allowed_roles=None`` to require any authenticated
+    user without a role check.
+
+    Args:
+        allowed_roles: Role names permitted, or None to allow any authenticated user.
+
+    Returns:
+        Callable: FastAPI dependency function.
+
+    Raises:
+        HTTPException: 401 if auth enabled but unauthenticated; 403 if role check fails.
+    """
+
+    async def check_user_role_or_bypass(
+        user: Optional[User] = Depends(get_current_user_or_none),
+    ) -> Optional[User]:
+        if not auth_settings.auth_enabled:
+            return None
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Authentication required",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        if allowed_roles is not None and user.role not in allowed_roles:
+            if len(allowed_roles) == 1:
+                role_msg = f"'{allowed_roles[0]}' role"
+            else:
+                role_list = "', '".join(allowed_roles)
+                role_msg = f"one of the following roles: '{role_list}'"
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Access denied. This operation requires {role_msg}. Your role: '{user.role}'",
+            )
+        return user
+
+    return check_user_role_or_bypass
+
+
 async def get_user_or_bypass(
     user: Optional[User] = Depends(get_current_user_or_none),
 ) -> Optional[User]:
@@ -977,15 +991,7 @@ async def get_user_or_bypass(
     Raises:
         HTTPException: 401 if auth enabled but unauthenticated.
     """
-    if not auth_settings.auth_enabled:
-        return None
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication required",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    return user
+    return await require_role_or_bypass()(user)
 
 
 async def get_admin_or_bypass(
@@ -1000,20 +1006,7 @@ async def get_admin_or_bypass(
     Raises:
         HTTPException: 401 if auth enabled but unauthenticated, 403 if not admin.
     """
-    if not auth_settings.auth_enabled:
-        return None
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication required",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    if user.role != "admin":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"Access denied. This operation requires 'admin' role. Your role: '{user.role}'",
-        )
-    return user
+    return await require_role_or_bypass(["admin"])(user)
 
 
 async def get_editor_or_admin_or_bypass(
@@ -1027,17 +1020,4 @@ async def get_editor_or_admin_or_bypass(
     Raises:
         HTTPException: 401 if auth enabled but unauthenticated, 403 if not editor/admin.
     """
-    if not auth_settings.auth_enabled:
-        return None
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication required",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    if user.role not in ["admin", "editor"]:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"Access denied. This operation requires 'admin' or 'editor' role. Your role: '{user.role}'",
-        )
-    return user
+    return await require_role_or_bypass(["admin", "editor"])(user)

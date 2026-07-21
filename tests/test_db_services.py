@@ -717,10 +717,30 @@ class TestBackupService:
             finally:
                 session.close()
 
-        # Monkeypatch BOTH the session module AND the backup_service module
+        # Monkeypatch the session module and every backup_* module that binds
+        # its own module-level get_db_session name at import time.
         monkeypatch.setattr(session_module, "get_db_session", mock_get_db_session)
         monkeypatch.setattr(
             backup_service_module, "get_db_session", mock_get_db_session
+        )
+        from src.services import backup_metadata_store as backup_metadata_store_module
+        from src.services import (
+            backup_creation_service as backup_creation_service_module,
+        )
+        from src.services import backup_restore_service as backup_restore_service_module
+        from src.services import backup_diff_service as backup_diff_service_module
+
+        monkeypatch.setattr(
+            backup_metadata_store_module, "get_db_session", mock_get_db_session
+        )
+        monkeypatch.setattr(
+            backup_creation_service_module, "get_db_session", mock_get_db_session
+        )
+        monkeypatch.setattr(
+            backup_restore_service_module, "get_db_session", mock_get_db_session
+        )
+        monkeypatch.setattr(
+            backup_diff_service_module, "get_db_session", mock_get_db_session
         )
 
         fresh_service = BackupService(temp_data_dir)
@@ -953,10 +973,30 @@ class TestBackupService:
             finally:
                 session.close()
 
-        # Monkeypatch BOTH the session module AND the backup_service module
+        # Monkeypatch the session module and every backup_* module that binds
+        # its own module-level get_db_session name at import time.
         monkeypatch.setattr(session_module, "get_db_session", mock_get_db_session)
         monkeypatch.setattr(
             backup_service_module, "get_db_session", mock_get_db_session
+        )
+        from src.services import backup_metadata_store as backup_metadata_store_module
+        from src.services import (
+            backup_creation_service as backup_creation_service_module,
+        )
+        from src.services import backup_restore_service as backup_restore_service_module
+        from src.services import backup_diff_service as backup_diff_service_module
+
+        monkeypatch.setattr(
+            backup_metadata_store_module, "get_db_session", mock_get_db_session
+        )
+        monkeypatch.setattr(
+            backup_creation_service_module, "get_db_session", mock_get_db_session
+        )
+        monkeypatch.setattr(
+            backup_restore_service_module, "get_db_session", mock_get_db_session
+        )
+        monkeypatch.setattr(
+            backup_diff_service_module, "get_db_session", mock_get_db_session
         )
 
         fresh_service = BackupService(temp_data_dir)

@@ -38,6 +38,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_, func
+from sqlalchemy.exc import IntegrityError
 
 from src.config.auth_config import AuthConfig
 from src.services.auth.auth_service import AuthService
@@ -59,6 +60,10 @@ from src.web.models.admin_responses import (
     UserDetailResponse,
     UserListResponse,
     AdminStatsResponse,
+)
+from src.services.exceptions import (
+    EmailAlreadyExistsError,
+    UsernameAlreadyExistsError,
 )
 from src.web.models.auth_responses import (
     MessageResponse,
@@ -357,6 +362,20 @@ async def create_user(
 
         # Return user details
         return _user_to_detail_response(new_user, session_count=0)
+
+    except IntegrityError as e:
+        db.rollback()
+        logger.warning(f"Duplicate user on create (race): {str(e)}")
+        _log_admin_action(
+            admin.id,
+            admin.username,
+            "CREATE_USER_FAILED",
+            "N/A",
+            f"username={request_data.username}, email={request_data.email} (race: already exists)",
+        )
+        if user_repo.username_exists(request_data.username):
+            raise UsernameAlreadyExistsError()
+        raise EmailAlreadyExistsError()
 
     except Exception as e:
         db.rollback()

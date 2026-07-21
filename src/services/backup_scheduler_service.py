@@ -63,11 +63,24 @@ class BackupSchedulerService:
         BackupService's own default, since APScheduler's SQLAlchemyJobStore
         pickles jobs for crash recovery and reloads them in a fresh instance
         that never went through app.py's configure_services() injection.
+
+        Raises if PROMPTVAULT_DATA_DIR is unset, instead of silently falling
+        back to BackupService's repo-anchored default directory — that
+        default previously caused test runs (which set PROMPTVAULT_DATA_DIR
+        only via .env, not the process environment) to write backup files
+        into the real data directory used by the running app/container.
         """
         if self._backup_service is None:
             from src.services.backup_service_db import BackupService
 
-            self._backup_service = BackupService(os.getenv("PROMPTVAULT_DATA_DIR"))
+            data_dir = os.getenv("PROMPTVAULT_DATA_DIR")
+            if not data_dir:
+                raise RuntimeError(
+                    "PROMPTVAULT_DATA_DIR must be set in the process environment "
+                    "for BackupSchedulerService to resolve a backup directory "
+                    "(it cannot rely on .env files or BackupService's default)."
+                )
+            self._backup_service = BackupService(data_dir)
         return self._backup_service
 
     def _get_scheduler(self) -> BackgroundScheduler:

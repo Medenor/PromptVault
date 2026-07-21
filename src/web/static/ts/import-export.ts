@@ -13,7 +13,7 @@ import '@/form-validation';
 import { initI18n, t, tUnsafe, updateStaticTranslations } from '@/utils/i18n';
 import { hideElement, showElement } from '@/utils/dom';
 import { reportError } from '@/telemetry';
-import { apiGet, apiPostForm, APIRequestError } from '@/utils/api';
+import { apiGet, apiPostForm, handleApiError } from '@/utils/api';
 import { announce } from '@/utils/a11y';
 import { initSecondaryNav } from '@/utils/secondary-nav';
 
@@ -743,13 +743,7 @@ async function performImport(): Promise<void> {
       validate,
       filename: selectedFile.name,
     });
-
-    // Handle API errors with better messages
-    let errorMessage = 'importFailed';
-    if (error instanceof APIRequestError) {
-      errorMessage = error.message;
-    }
-    showStatus('import', errorMessage, 'error');
+    showStatus('import', handleApiError(error, 'importFailed'), 'error');
   } finally {
     hideProgress('import');
   }

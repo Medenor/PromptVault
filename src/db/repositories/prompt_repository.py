@@ -12,7 +12,7 @@ from typing import List, Optional, Dict, Any
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import or_, and_, func
 
-from src.db.models import Prompt, Tag, Category
+from src.db.models import Prompt, Tag, Category, PromptBranch
 from src.db.repositories.base import BaseRepository
 
 
@@ -284,6 +284,92 @@ class PromptRepository(BaseRepository[Prompt]):
             prompt.tags.remove(tag)
             self.session.flush()
         return prompt
+
+    def create_with_tags(self, tags: List[Tag], **kwargs) -> Prompt:
+        """Create a prompt and attach tags in one flush.
+
+        Args:
+            tags: Tag objects to attach to the new prompt
+            **kwargs: Prompt model attributes
+
+        Returns:
+            The created Prompt (flushed, ID populated)
+        """
+        prompt = Prompt(**kwargs)
+        prompt.tags = tags
+        self.session.add(prompt)
+        self.session.flush()
+        return prompt
+
+    def apply_update(self, instance: Prompt, tags: List[Tag], **kwargs) -> Prompt:
+        """Apply field updates and tag assignment to an existing prompt, then flush.
+
+        Args:
+            instance: Prompt instance to update (already loaded/attached)
+            tags: New tag list to assign
+            **kwargs: Fields to set on the prompt
+
+        Returns:
+            The updated Prompt
+        """
+        for key, value in kwargs.items():
+            setattr(instance, key, value)
+        instance.tags = tags
+        self.session.flush()
+        return instance
+
+    def create_main_branch(self, prompt_id: int, version_id: str) -> PromptBranch:
+        """Create the initial "main" branch pointer for a prompt.
+
+        Args:
+            prompt_id: Prompt ID
+            version_id: Version ID the branch should point to
+
+        Returns:
+            The created PromptBranch
+        """
+        branch = PromptBranch(
+            prompt_id=prompt_id,
+            branch_name="main",
+            current_version_id=version_id,
+        )
+        self.session.add(branch)
+        return branch
+
+    def get_by_ids(self, prompt_ids: List[int]) -> List[Prompt]:
+        """Get multiple prompts by ID.
+
+        Args:
+            prompt_ids: List of prompt IDs
+
+        Returns:
+            List of found prompts (may be fewer than requested IDs)
+        """
+        return self.session.query(Prompt).filter(Prompt.id.in_(prompt_ids)).all()
+
+    def bulk_update_tags(
+        self,
+        prompts: List[Prompt],
+        tags_to_add: Optional[List[Tag]] = None,
+        tags_to_remove: Optional[List[Tag]] = None,
+    ) -> None:
+        """Add and/or remove tags across multiple prompts in one pass.
+
+        Args:
+            prompts: Prompts to update
+            tags_to_add: Tags to attach if not already present
+            tags_to_remove: Tags to detach if present
+        """
+        tags_to_add = tags_to_add or []
+        tags_to_remove = tags_to_remove or []
+        for prompt in prompts:
+            for tag in tags_to_add:
+                if tag not in prompt.tags:
+                    prompt.tags.append(tag)
+            for tag in tags_to_remove:
+                if tag in prompt.tags:
+                    prompt.tags.remove(tag)
+        self.session.flush()
 
     def get_statistics(self) -> Dict[str, int]:
         """Get prompt statistics.

@@ -143,6 +143,107 @@ class CategoryRepository(BaseRepository[Category]):
         """
         return self.update(category_id, name=new_name)
 
+    def get_prompt_ids(self, category_id: int) -> List[int]:
+        """Return IDs of prompts assigned to the category."""
+        from src.db.models import Prompt
+
+        return [
+            row[0]
+            for row in self.session.query(Prompt.id)
+            .filter(Prompt.category_id == category_id)
+            .all()
+        ]
+
+    def clear_from_prompts(self, category_id: int) -> None:
+        """Unset category_id on all prompts referencing this category."""
+        from src.db.models import Prompt
+
+        self.session.query(Prompt).filter(Prompt.category_id == category_id).update(
+            {Prompt.category_id: None},
+            synchronize_session=False,
+        )
+
+    def clear_from_prompt_versions(self, category_id: int) -> None:
+        """Unset category_id on historical prompt versions referencing this category."""
+        from src.db.models import PromptVersion
+
+        self.session.query(PromptVersion).filter(
+            PromptVersion.category_id == category_id
+        ).update(
+            {PromptVersion.category_id: None},
+            synchronize_session=False,
+        )
+
+    def bulk_clear_from_prompts(self, category_ids: List[int]) -> None:
+        """Unset category_id on all prompts referencing any of these categories."""
+        from src.db.models import Prompt
+
+        self.session.query(Prompt).filter(
+            Prompt.category_id.in_(category_ids)
+        ).update(
+            {Prompt.category_id: None},
+            synchronize_session=False,
+        )
+
+    def bulk_clear_from_prompt_versions(self, category_ids: List[int]) -> None:
+        """Unset category_id on historical prompt versions referencing any of these categories."""
+        from src.db.models import PromptVersion
+
+        self.session.query(PromptVersion).filter(
+            PromptVersion.category_id.in_(category_ids)
+        ).update(
+            {PromptVersion.category_id: None},
+            synchronize_session=False,
+        )
+
+    def get_orphan_prompt_ids(self) -> List[int]:
+        """Return IDs of prompts with no category assigned."""
+        from src.db.models import Prompt
+
+        return [
+            row[0]
+            for row in self.session.query(Prompt.id)
+            .filter(Prompt.category_id.is_(None))
+            .all()
+        ]
+
+    def get_orphan_prompts(self) -> List[tuple]:
+        """Return (id, title) tuples for prompts with no category assigned."""
+        from src.db.models import Prompt
+
+        return (
+            self.session.query(Prompt.id, Prompt.title)
+            .filter(Prompt.category_id.is_(None))
+            .all()
+        )
+
+    def assign_prompts(self, prompt_ids: List[int], category_id: int) -> int:
+        """Assign the given prompts to a category, returning matched count.
+
+        Loads prompts individually (rather than a bulk UPDATE) so callers can
+        validate which requested IDs matched real prompts.
+        """
+        from src.db.models import Prompt
+
+        prompts = (
+            self.session.query(Prompt).filter(Prompt.id.in_(prompt_ids)).all()
+        )
+        for prompt in prompts:
+            prompt.category_id = category_id
+        self.session.flush()
+        return len(prompts)
+
+    def restore_prompts_category(self, prompt_ids: List[int], category_id: int) -> None:
+        """Bulk-set category_id on the given prompts (used by undo restore)."""
+        if not prompt_ids:
+            return
+        from src.db.models import Prompt
+
+        self.session.query(Prompt).filter(Prompt.id.in_(prompt_ids)).update(
+            {Prompt.category_id: category_id},
+            synchronize_session=False,
+        )
+
     def merge_categories(
         self, source_category_ids: List[int], target_category_id: int
     ) -> int:
