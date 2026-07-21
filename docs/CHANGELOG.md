@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Duplicate scheduler router registration**: `src/web/app.py` registered `scheduler_router` twice under the same `/api` prefix — once via the module-level import (`from src.web.routers.scheduler import router as scheduler_router`) and again via a redundant `try`/`except ImportError` block later in the file that re-imported the same module and used its `.router` attribute. The second registration was dead code (FastAPI matches the first-registered route) left over from an incomplete refactor; removed as part of the `app.py` split
 - **Duplicate user creation race**: A race in user creation could raise an untyped/unclear error on conflicting concurrent registrations; now raises a typed exception
 - **Dev/prod backup data dir leak**: Test/isolated `data_dir` overrides could leak into the production backups directory when the override wasn't scoped per environment; backup directory resolution is now correctly isolated per environment
+- **Roadmap link**: The "Roadmap" link in the `README.md` footer was broken (404) after the `ROADMAP.md` file was moved to `docs/ROADMAP.md`; fixed the link
 
 ### 🧪 Tests
 
