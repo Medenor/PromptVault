@@ -15,8 +15,7 @@ css_files.append(css_file) %} {% endif %} {% endfor %} {% endif %} {% endif %} {
 css_files %}
 <link rel="stylesheet" href="/static/dist/{{ css_file }}" />
 {% endfor %} {% endif %} {% endif %} {% endmacro %} {% macro load_scripts(entry_name,
-include_telemetry=true, legacy_name=None, use_vite=true) %} {% set legacy_entry = legacy_name or
-entry_name %} {% if is_dev() and use_vite_assets() and use_vite %} {# Development mode - load from
+include_telemetry=true, use_vite=true) %} {% if is_dev() and use_vite_assets() and use_vite %} {# Development mode - load from
 Vite dev server #}
 <script type="module" src="http://localhost:5173/static/@vite/client"></script>
 {% if include_telemetry %}
@@ -28,8 +27,6 @@ Vite dev server #}
 (use_vite_assets() or is_production()) and use_vite and include_telemetry and 'ts/telemetry.ts' in
 manifest %}
 <script type="module" src="/static/dist/{{ manifest['ts/telemetry.ts']['file'] }}"></script>
-{% elif include_telemetry %}
-<script src="/static/js/telemetry.js" defer></script>
 {% endif %} {% if (use_vite_assets() or is_production()) and use_vite and 'ts/' + entry_name + '.ts'
 in manifest %} {% if (use_vite_assets() or is_production()) and use_vite and
 'ts/global-shortcuts.ts' in manifest %}
@@ -39,6 +36,4 @@ in manifest %} {% if (use_vite_assets() or is_production()) and use_vite and
   type="module"
   src="/static/dist/{{ manifest['ts/' + entry_name + '.ts']['file'] }}"
 ></script>
-{% else %} {# Fallback to original JS during migration #}
-<script src="/static/js/{{ legacy_entry }}.js" defer></script>
 {% endif %} {% endif %} {% endmacro %}
