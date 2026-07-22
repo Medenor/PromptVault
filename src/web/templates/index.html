@@ -141,19 +141,7 @@
     <a href="#main-content" class="skip-link" data-i18n="nav.skipToMainContent">Skip to main content</a>
     <div id="keyboard-navigation-announcer" class="sr-only" aria-live="polite"></div>
 
-    <!-- Authentication loading overlay -->
-    <div
-      id="auth-loading-overlay"
-      class="fixed inset-0 bg-gray-900 z-[9999] flex items-center justify-center flex-col"
-    >
-      <div class="text-white text-lg mb-5">Verifying session...</div>
-      <div
-        class="border-4 border-gray-700 border-t-blue-500 rounded-full w-10 h-10"
-        style="animation: spin 1s linear infinite"
-      ></div>
-    </div>
-
-    <div class="app min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col" style="display: none">
+    <div class="app min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
       <!-- Persistent offline indicator (FR-010) -->
       <div
         id="offline-indicator"
@@ -901,7 +889,26 @@
             id="prompts-list"
             class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
           >
-            <!-- Initial server-side prompts (will be replaced by JS) -->
+            {% if auth_enabled %}
+            <!--
+              Skeleton placeholder: prompts are private until the client-side
+              /api/auth/me check (checkAdminAccess in index.ts) confirms the
+              session hasn't been revoked. loadPrompts() replaces this
+              container's innerHTML once the check passes, so no real prompt
+              data is rendered here for auth-enabled sessions.
+            -->
+            <div id="prompts-skeleton" class="contents" aria-hidden="true">
+              {% for _ in range(6) %}
+              <div class="rounded-lg border border-gray-200 dark:border-gray-700 p-4 animate-pulse">
+                <div class="h-5 w-2/3 rounded bg-gray-200 dark:bg-gray-700 mb-4"></div>
+                <div class="h-4 w-1/3 rounded bg-gray-200 dark:bg-gray-700 mb-3"></div>
+                <div class="h-3 w-full rounded bg-gray-200 dark:bg-gray-700 mb-2"></div>
+                <div class="h-3 w-5/6 rounded bg-gray-200 dark:bg-gray-700"></div>
+              </div>
+              {% endfor %}
+            </div>
+            {% else %}
+            <!-- Anonymous mode: prompts are public, safe to render immediately -->
             {% for prompt_id, prompt_info in prompts.items() %}
 	            <div
 	              class="prompt-item bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 transition-all hover:scale-[1.02] cursor-pointer"
@@ -984,6 +991,7 @@
               </div>
             </div>
             {% endfor %}
+            {% endif %}
           </div>
 
           <!-- Load More (pagination) -->

@@ -994,6 +994,37 @@ async def get_user_or_bypass(
     return await require_role_or_bypass()(user)
 
 
+def has_valid_auth_cookie(request: Request) -> bool:
+    """Best-effort check for a valid access token in the request cookie.
+
+    Validates the ``access_token`` cookie signature/expiration without
+    performing a database lookup, so it is cheap and stateless. It is
+    intentionally optimistic: any failure (missing cookie, expired, invalid
+    signature) simply means "not authenticated".
+
+    Note this does not check for session revocation (that requires a DB
+    lookup) — callers relying on this for privacy-sensitive gating must pair
+    it with a client-side check against an endpoint that does check revocation
+    (e.g. ``/api/auth/me``).
+
+    Args:
+        request: FastAPI request object
+
+    Returns:
+        bool: True if the access_token cookie contains a valid JWT
+    """
+    token = request.cookies.get("access_token")
+    if not token:
+        return False
+
+    try:
+        jwt_service = JWTService(auth_settings)
+        jwt_service.validate_access_token(token)
+        return True
+    except Exception:
+        return False
+
+
 async def get_admin_or_bypass(
     user: Optional[User] = Depends(get_current_user_or_none),
 ) -> Optional[User]:

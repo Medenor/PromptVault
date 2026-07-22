@@ -54,41 +54,9 @@ from src.web.dependencies.auth import (
     get_current_active_user,
     get_admin_user,
     get_current_user_or_none,
+    has_valid_auth_cookie as _has_valid_auth_cookie,
 )
 from src.web.utils.manifest import load_manifest, get_asset_path, is_production
-
-
-def _has_valid_auth_cookie(request: Request) -> bool:
-    """Best-effort check for a valid access token in the request cookie.
-
-    Document (browser) navigations such as the back/forward buttons send cookies
-    but not the ``Authorization`` header. When a logged-in user navigates back to
-    a public auth page (e.g. ``/auth/login``), the cached login page would
-    otherwise be shown even though the session is still valid.
-
-    This helper validates the ``access_token`` cookie signature/expiration without
-    performing a database lookup, so it is cheap and stateless. It is intentionally
-    optimistic: any failure (missing cookie, expired, invalid signature) simply
-    means "not authenticated" and the public page is served normally.
-
-    Args:
-        request: FastAPI request object
-
-    Returns:
-        bool: True if the access_token cookie contains a valid JWT
-    """
-    token = request.cookies.get("access_token")
-    if not token:
-        return False
-
-    try:
-        from src.services.auth.jwt_service import JWTService
-
-        jwt_service = JWTService(auth_settings)
-        jwt_service.validate_access_token(token)
-        return True
-    except Exception:
-        return False
 
 
 # ============================================================================
