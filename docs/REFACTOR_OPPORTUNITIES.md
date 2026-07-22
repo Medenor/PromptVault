@@ -99,10 +99,21 @@ data-service and backup implementations — a correctness and security liability
 
 ---
 
-## Tier 1.5 — God files still present post-merge (high value, moderate risk)
+## Tier 1.5 — God files still present post-merge (high value, moderate risk) — ✅ Done (2026-07-22)
 
 These are the files PR #62 reported as "split" but that remain 1,000+ lines because the handlers were
 never moved out. Confirmed against current `main`.
+
+`app.py`, `admin.py`, and `auth_service.py` were done as three parallel worktree-isolated passes (disjoint
+file sets, no merge conflicts) and combined into one PR, matching how Tier 1 shipped. `app.py` dropped
+from 1,060 to 434 lines (5 genuinely app-level routes remain: `/health`, `/api/health`,
+`/api/validation/stats`, `/api/logs/frontend`, `/`); the other 12 handlers moved into two new routers
+(`prompts_versions_router.py`, `import_export_router.py`) plus existing `categories_router.py` /
+`tags_router.py` / `pages.py`. `admin.py` split into `admin_users_router.py` / `admin_sessions_router.py`
+/ `admin_shared.py`. `auth_service.py`'s `login` and `refresh_tokens` got Extract Method treatment (8 new
+private helpers total); `password_service.py:check_password_strength` was table-driven as a bonus. Full
+suite green throughout: 2146 passed, 10 skipped, ~86.5% coverage on every branch and on the merged result.
+`dependencies/auth.py` (below) was correctly left untouched per its own "do NOT split" analysis.
 
 ### `src/web/app.py` — 1,060 lines, **17 route handlers still on `@app`**
 
@@ -180,9 +191,7 @@ radius and lower payoff. Refactor opportunistically, only if you're already edit
 
 1. ~~**Tier 1b** (dead services)~~ — ✅ done, see above.
 2. ~~**Tier 1a** (legacy JS)~~ — ✅ done, see above.
-3. **Tier 1.5** (finish the god-file split) — `app.py` route extraction first (clearest win, existing
-   routers to move into), then `admin.py` resource split. Each moved handler is behavior-preserving if
-   the route path/signature is unchanged; the Playwright smoke tests PR #62 added guard these flows.
+3. ~~**Tier 1.5** (finish the god-file split)~~ — ✅ done, see above.
 4. **Tier 2** — incremental Extract Method passes on the remaining long methods, one function per
    commit, tests green after each.
 
