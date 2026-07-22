@@ -26,6 +26,11 @@ PromptVault is a modern web-based prompt management application built with FastA
 - **Type-safe i18n**: Use `t('key.path')` with `TranslationKey` for compile-time safety. Use `tUnsafe()` only for dynamic keys (e.g. `data-i18n` attributes).
 - **Locale Sources**: Translation keys live in `src/web/static/locales/*.json` (TypeScript keys inferred from `en.json`).
 
+### Git Workflow
+
+- **Always work on a branch**: Never commit non-trivial changes directly to `main`. Create a feature/fix branch, push it, and open a PR on Codeberg (see `.forgejo/PULL_REQUEST_TEMPLATE.md`) — even for solo work, so changes go through review and CI.
+- **Docs-only exception**: Small, low-risk documentation-only updates (e.g. marking a roadmap item done, changelog entries for already-merged work) may be committed directly to `main` if the user explicitly says so for that change; otherwise default to a branch + PR.
+
 ### Testing
 
 > **Important:** Always use `python3 -m pytest` instead of `pytest` directly to ensure correct dependency versions.
