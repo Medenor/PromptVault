@@ -77,6 +77,15 @@ def _category_snapshot(category) -> dict:
 # ============================================================================
 
 
+@router.get("/categories")
+async def get_categories():
+    """Get all categories (legacy compatibility endpoint)."""
+    from src.web import app as web_app
+
+    categories = web_app.data_service.get_categories()
+    return {"categories": categories}
+
+
 @router.get(
     "/categories/manage",
     response_model=CategoryListResponse,
