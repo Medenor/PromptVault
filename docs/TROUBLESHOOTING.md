@@ -2081,7 +2081,6 @@ DATABASE_URL=postgresql://promptvault:REDACTED@db:5432/promptvault
 
 - [Turnkey Deployment Guide](DEPLOYMENT.md) - Automated deployment with rollback capabilities
 - [Deployment Guide](DEPLOYMENT.md) - Detailed deployment instructions
-- [Migration Guide](MIGRATION_GUIDE_JSON_TO_DB.md) - Migrating from JSON to database
 - [Authentication Documentation](AUTHENTICATION_DEPLOYMENT.md) - JWT and security setup
 - [Testing Guide](TESTING.md) - Running tests and validation
 

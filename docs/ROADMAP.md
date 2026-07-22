@@ -111,13 +111,15 @@
   - Add TypeScript coverage reporting to track migration progress
   - Create developer documentation for TypeScript patterns used in the project
 
-### 5. Database Migration (SQLite/PostgreSQL)
+### 5. ~~Database Migration (SQLite/PostgreSQL)~~ — Done
 
 - **Description**: Migrate from JSON file storage to a relational database (SQLite for development/small deployments, PostgreSQL for production) with proper schema design, indexing, and ORM integration (SQLAlchemy) for improved performance, reliability, and scalability.
 
 - **Rationale**: While the current JSON file approach works for small datasets, it has significant limitations: no concurrent access control (last-write-wins data loss), all data loaded into memory, no efficient querying/indexing, synchronous file I/O blocking the entire application, and performance degradation as dataset grows. The test suite already shows performance concerns with 1,000+ prompts. A database provides ACID transactions, concurrent access, indexing for fast searches, and pagination support - all essential for production deployment with multiple users.
 
-- **To-Do List**:
+- **Resolution**: Shipped — the app is now fully DB-backed (SQLAlchemy + Alembic, see `docs/SPECS/SPEC_DATABASE.md`). The JSON-era services (`prompt_data_service.py`, `backup_service.py`, `version_compression_service.py`, `version_export_service.py`, `version_tagging_service.py`) were later retired as dead code in [PR #63](https://codeberg.org/Medenor/promptvault/pulls/63) (see item 4 above). Original to-do list preserved below for historical reference.
+
+- **To-Do List** (historical):
   - Design database schema with tables for users, prompts, versions, categories, tags, prompt_tags (many-to-many), and backups
   - Create SQLAlchemy models corresponding to each table with relationships
   - Install SQLAlchemy and database drivers (sqlite3, psycopg2-binary for PostgreSQL)
@@ -669,7 +671,7 @@ Each item notes any overlapping open Codeberg issue so work can be tracked there
 - **Related issues**: none — tracked as an AGENTS.md "current priority".
 - **Description**: Complete the migration the docs already flag as a priority: delete deprecated `prompt_data_service.py`, `backup_service.py`, the standalone versioning/compression/tagging/export services, and legacy `static/js/`.
 - **Rationale**: AGENTS.md itself lists "complete removal of legacy JSON-based services" as a current priority. Dead parallel code paths are a correctness and security liability (two backup implementations, two data services) and inflate the surface every other feature must reason about. Low user-visible value but high maintainability payoff and low risk once test coverage is confirmed.
-- **Resolution**: Shipped in [PR #63](https://codeberg.org/Medenor/promptvault/pulls/63) (merged 2026-07-22). Deleted `src/web/static/js/` (~7.7k lines) and the five dead JSON-era service modules (~2.3k lines). One file, `form_validation.js`, turned out to still be live (wired via a `form-validation.ts` bridge despite its "historical reference only" header) and was ported to TypeScript rather than deleted. `test_audit_logging.py` was migrated onto the live DB-backed services rather than dropped, to preserve audit-emission coverage. `.coveragerc`, `pytest.ini`, `conftest.py`, README, AGENTS.md, and `docs/TESTING.md` updated. Full suite: 2139 passed, 86.35% coverage. See `docs/REFACTOR_OPPORTUNITIES.md` Tier 1 for the source analysis and `docs/CHANGELOG.md` for details.
+- **Resolution**: Shipped in [PR #63](https://codeberg.org/Medenor/promptvault/pulls/63) (merged 2026-07-22). Deleted `src/web/static/js/` (~7.7k lines) and the five dead JSON-era service modules (~2.3k lines). One file, `form_validation.js`, turned out to still be live (wired via a `form-validation.ts` bridge despite its "historical reference only" header) and was ported to TypeScript rather than deleted. `test_audit_logging.py` was migrated onto the live DB-backed services rather than dropped, to preserve audit-emission coverage. `.coveragerc`, `pytest.ini`, `conftest.py`, README, AGENTS.md, and `docs/TESTING.md` updated. Full suite: 2139 passed, 86.35% coverage. See `docs/CHANGELOG.md` for details.
 
 ### 5. Two-Factor Authentication (TOTP) — Security Enhancement
 
