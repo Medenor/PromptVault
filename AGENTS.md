@@ -30,6 +30,7 @@ PromptVault is a modern web-based prompt management application built with FastA
 
 - **Always work on a branch**: Never commit non-trivial changes directly to `main`. Create a feature/fix branch, push it, and open a PR on Codeberg (see `.forgejo/PULL_REQUEST_TEMPLATE.md`) — even for solo work, so changes go through review and CI.
 - **Docs-only exception**: Small, low-risk documentation-only updates (e.g. marking a roadmap item done, changelog entries for already-merged work) may be committed directly to `main` if the user explicitly says so for that change; otherwise default to a branch + PR.
+- **Read-only tasks stay read-only**: If a task is scoped as investigation/diagnosis only (e.g. "root-cause this failure," "find out why," any task explicitly marked read-only or "do not fix/modify"), do not commit, push, branch, or open a PR — report findings back and let the requester decide on any fix. Never open a PR, merge, push, or otherwise write to the remote without an explicit go-ahead for that specific action; being told to "investigate" or "look into" something is not authorization to also fix and publish it. This applies to subagents/forks too — a delegated read-only task must not escalate into a write action on its own.
 
 ### Testing
 
