@@ -15,6 +15,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **God-file decomposition (frontend)**: `manage-tags.ts`, `manage-categories.ts`, `admin-users.ts`, `backup-management.ts`, and `app.ts` split into per-concern modules under `tags/`, `categories/`, `admin-users/`, `backup/`, and `app/` respectively; extracted a shared `utils/debounce.ts` utility with errors routed through `handleApiError`
 - **Consolidated write paths**: Prompt/tag/category write paths consolidated into repositories; duplicated auth dependency pipelines unified into a single pipeline
 
+### 📝 Documentation
+
+- **Removed dead docs**: Deleted `docs/QUICK_START.md` (a content-free deprecation stub pointing to `docs/DEPLOYMENT.md`) and fixed dangling links to the already-removed `docs/REFACTOR_OPPORTUNITIES.md` and `docs/MIGRATION_GUIDE_JSON_TO_DB.md` across `docs/CHANGELOG.md`, `docs/ROADMAP.md`, `docs/DEPLOYMENT.md`, `docs/TROUBLESHOOTING.md`, and `README.md`
+- **Marked `docs/ROADMAP.md` database migration item as done**: Item 5 ("Database Migration (SQLite/PostgreSQL)") was still phrased as pending work despite having shipped long ago; struck through and given a Resolution note, consistent with how other completed roadmap items are recorded
+- **Synced `docs/SPECS/SPEC_APP.md` and `docs/SPECS/SPEC_DATABASE.md` with shipped features**: These living architecture specs (as opposed to the frozen per-feature specs under `specs/`) had drifted behind two shipped features — the `semantic_version` field on prompts/versions and the "copy with version metadata" UI action (001-prompt-versioning), and the full backup subsystem (003-enhanced-backup-restore): scheduled backups, AES-256-GCM encryption, S3-compatible cloud storage upload, incremental/delta backups with checksums, and an append-only audit log. Both specs bumped to v1.1.0
+
 ### 🐛 Fixed
 
 - **Duplicate scheduler router registration**: `src/web/app.py` registered `scheduler_router` twice under the same `/api` prefix — once via the module-level import (`from src.web.routers.scheduler import router as scheduler_router`) and again via a redundant `try`/`except ImportError` block later in the file that re-imported the same module and used its `.router` attribute. The second registration was dead code (FastAPI matches the first-registered route) left over from an incomplete refactor; removed as part of the `app.py` split
