@@ -2,6 +2,11 @@
 
 _Generated 2026-07-21. Scope: `src/`, `scripts/`. Behavior-preserving refactors only — no feature changes._
 
+> **Update 2026-07-22:** Tier 1 (both 1a and 1b) shipped in
+> [PR #63](https://codeberg.org/Medenor/promptvault/pulls/63) (merged). See the Tier 1 sections below
+> for what was done and how it diverged from the original analysis. Tier 1.5, Tier 2, and Tier 3 remain
+> open.
+
 ## Context: what's already been done — and what it left behind
 
 PR #62 — "decompose god files into focused modules" (merged `e34e2c4`) — is **already on `main`**, so
@@ -18,11 +23,20 @@ The two highest-value tracks remain: **retiring dead parallel code** (ROADMAP §
 
 ---
 
-## Tier 1 — Retire legacy / dead code (highest value, lowest risk)
+## Tier 1 — Retire legacy / dead code (highest value, lowest risk) — ✅ Done (2026-07-22)
 
 This is ROADMAP §4 ("Retire Legacy JSON Services & Dead Code") and AGENTS.md's stated current
 priority. The analysis below **verifies** the claim and corrects a couple of module names the roadmap
 got wrong.
+
+Shipped in [PR #63](https://codeberg.org/Medenor/promptvault/pulls/63) (merged 2026-07-22). One
+correction to the analysis below surfaced during implementation: **`form_validation.js`, part of the
+"dead" `static/js/` tree, was not actually dead** — it was still loaded in production via a thin
+`form-validation.ts` bridge (`import '../js/form_validation.js'`), despite carrying the same
+"historical reference only" header as the rest of the directory. Deleting it broke the Vite build. It
+was ported to TypeScript (reusing the validators/constants that *had* already been ported) rather than
+deleted outright. Everything else in this section — both the 1a file list and the 1b module list —
+was accurate as analyzed.
 
 ### 1a. Delete the legacy `src/web/static/js/` directory — ~7,674 lines
 
@@ -164,10 +178,8 @@ radius and lower payoff. Refactor opportunistically, only if you're already edit
 
 ## Recommended order
 
-1. **Tier 1b** (dead services) — self-contained, biggest risk-reduction per line, unblocks the
-   `.coveragerc`/AGENTS.md cleanup.
-2. **Tier 1a** (legacy JS) — removes the largest single chunk; do after confirming the telemetry-TS
-   port is live in production.
+1. ~~**Tier 1b** (dead services)~~ — ✅ done, see above.
+2. ~~**Tier 1a** (legacy JS)~~ — ✅ done, see above.
 3. **Tier 1.5** (finish the god-file split) — `app.py` route extraction first (clearest win, existing
    routers to move into), then `admin.py` resource split. Each moved handler is behavior-preserving if
    the route path/signature is unchanged; the Playwright smoke tests PR #62 added guard these flows.

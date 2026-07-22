@@ -664,17 +664,12 @@ Each item notes any overlapping open Codeberg issue so work can be tracked there
   - (Optional phase 2) embeddings table + "similar prompts" endpoint behind a feature flag.
   - Tests for both backends; benchmark on a large seed dataset.
 
-### 4. Retire Legacy JSON Services & Dead Code (Refactor)
+### 4. ~~Retire Legacy JSON Services & Dead Code (Refactor)~~ — Done (2026-07-22)
 
 - **Related issues**: none — tracked as an AGENTS.md "current priority".
 - **Description**: Complete the migration the docs already flag as a priority: delete deprecated `prompt_data_service.py`, `backup_service.py`, the standalone versioning/compression/tagging/export services, and legacy `static/js/`.
 - **Rationale**: AGENTS.md itself lists "complete removal of legacy JSON-based services" as a current priority. Dead parallel code paths are a correctness and security liability (two backup implementations, two data services) and inflate the surface every other feature must reason about. Low user-visible value but high maintainability payoff and low risk once test coverage is confirmed.
-- **To-Do List**:
-  - Grep for all imports of legacy services; confirm none are on live code paths.
-  - Migrate any still-used legacy fixtures in `conftest.py` to DB-backed equivalents.
-  - Delete deprecated service modules + `static/js/` (keep telemetry.js if still referenced, or port it to TS).
-  - Update `.coveragerc`, AGENTS.md, README to drop legacy references.
-  - Run full pytest + Vitest; confirm coverage holds ≥85%.
+- **Resolution**: Shipped in [PR #63](https://codeberg.org/Medenor/promptvault/pulls/63) (merged 2026-07-22). Deleted `src/web/static/js/` (~7.7k lines) and the five dead JSON-era service modules (~2.3k lines). One file, `form_validation.js`, turned out to still be live (wired via a `form-validation.ts` bridge despite its "historical reference only" header) and was ported to TypeScript rather than deleted. `test_audit_logging.py` was migrated onto the live DB-backed services rather than dropped, to preserve audit-emission coverage. `.coveragerc`, `pytest.ini`, `conftest.py`, README, AGENTS.md, and `docs/TESTING.md` updated. Full suite: 2139 passed, 86.35% coverage. See `docs/REFACTOR_OPPORTUNITIES.md` Tier 1 for the source analysis and `docs/CHANGELOG.md` for details.
 
 ### 5. Two-Factor Authentication (TOTP) — Security Enhancement
 
@@ -725,4 +720,4 @@ Each item notes any overlapping open Codeberg issue so work can be tracked there
 
 ## Suggested Execution Order
 
-Ship **#4 (legacy cleanup)** early as it de-risks everything after it, then **#1** and **#2** as the flagship value drivers, interleaving **#7** as low-cost polish. **#3** and **#5** follow as the next infrastructure/security tier, with **#6** and **#8** as fast-follows.
+**#4 (legacy cleanup) is done** — see resolution above. Next: **#1** and **#2** as the flagship value drivers, interleaving **#7** as low-cost polish. **#3** and **#5** follow as the next infrastructure/security tier, with **#6** and **#8** as fast-follows.
