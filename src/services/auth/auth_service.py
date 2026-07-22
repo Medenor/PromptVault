@@ -95,6 +95,7 @@ Security Notes:
     - All database operations are transactional
 """
 
+import logging
 import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional
@@ -124,6 +125,8 @@ from src.services.exceptions import (
     UnauthorizedError,
     UsernameAlreadyExistsError,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class AuthService:

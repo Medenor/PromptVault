@@ -72,32 +72,30 @@ import { hideBulkDeleteModal, initializeBulkActions } from './bulk-actions';
 import type { PromptId } from './types';
 import type { PageSize } from '@/utils/pagination';
 
+function removePromptsSkeleton(): void {
+  document.getElementById('prompts-skeleton')?.remove();
+}
+
 async function checkAdminAccess(): Promise<void> {
-  // Anonymous mode (AUTH_ENABLED=false): show the app immediately without an
-  // auth check and hide auth-only UI elements (profile, logout, etc.).
+  // Anonymous mode (AUTH_ENABLED=false): the shell and real prompts are
+  // already rendered server-side; just hide auth-only UI elements.
   if (window.__AUTH_ENABLED__ === false) {
-    const loadingOverlay = document.getElementById('auth-loading-overlay');
-    const appDiv = document.querySelector('.app') as HTMLElement | null;
-    if (loadingOverlay) loadingOverlay.style.display = 'none';
-    if (appDiv) appDiv.style.display = 'block';
     hideAuthOnlyElements();
     return;
   }
 
   try {
     await fetchRoleAndRevealAdmin();
-
-    // Authentication successful - show the app
-    const loadingOverlay = document.getElementById('auth-loading-overlay');
-    const appDiv = document.querySelector('.app') as HTMLElement | null;
-    if (loadingOverlay) loadingOverlay.style.display = 'none';
-    if (appDiv) appDiv.style.display = 'block';
+    // Authentication successful. The skeleton is left in place here;
+    // the subsequent loadPrompts() call replaces #prompts-list's
+    // innerHTML with real data, which removes it.
   } catch (error) {
     reportAppIssue('checkAdminAccess', error);
 
     // Offline or request timeout (network failure, not a real auth
-    // rejection): show the cached app shell instead of redirecting to
-    // login, so previously-viewed content remains accessible per FR-009.
+    // rejection): the app shell is already visible, so just stop showing
+    // the skeleton and let the cached-shell/offline indicator behavior
+    // stand, so previously-viewed content remains accessible per FR-009.
     // apiFetch already handles a genuine 401 (server reachable, session
     // invalid) with its own redirect. Any other error (including a genuine
     // APIRequestError or an unexpected bug) is treated as a real failure
@@ -105,14 +103,13 @@ async function checkAdminAccess(): Promise<void> {
     const isNetworkFailure =
       !navigator.onLine || (error instanceof Error && error.message === 'Request timeout');
     if (isNetworkFailure) {
-      const loadingOverlay = document.getElementById('auth-loading-overlay');
-      const appDiv = document.querySelector('.app') as HTMLElement | null;
-      if (loadingOverlay) loadingOverlay.style.display = 'none';
-      if (appDiv) appDiv.style.display = 'block';
+      removePromptsSkeleton();
       return;
     }
 
     // On a genuine auth error while online, redirect to login for security.
+    // The skeleton (not real data) is what's on screen, so no private
+    // content leaks during this redirect.
     window.location.href = '/auth/login';
   }
 }

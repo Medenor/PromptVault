@@ -336,8 +336,8 @@ Each session tracks:
 
 1. **Database Check**: Every authenticated request checks if the user has at least one active (non-revoked) session
 2. **Immediate Invalidation**: If all sessions are revoked, access tokens are immediately rejected
-3. **Frontend Protection**: Main app UI blocks content rendering until session is verified
-4. **Privacy Protection**: Loading overlay prevents content flash before redirect
+3. **Frontend Protection**: The prompt list renders a skeleton placeholder (not real data) until the session is verified — the rest of the app shell (header, sidebar, layout) renders immediately since it carries no private data
+4. **Privacy Protection**: The skeleton prevents prompt-content flash before redirect
 
 **Implementation**:
 
@@ -361,11 +361,12 @@ if active_session_count == 0:
 
 **Frontend Security Flow**:
 
-1. Page loads with full-screen "Verifying session..." overlay
-2. Authentication check runs: `GET /api/auth/me`
-3. If 401 (revoked): Immediate redirect to login (content never shown)
-4. If 200 (valid): Hide overlay, show content
-5. No content flash - prevents privacy leaks
+1. `GET /` first passes a stateless, server-side JWT validity check (signature + expiration, no DB lookup) — a missing, invalid, or expired `access_token` cookie is redirected to `/auth/login` before any HTML is sent (see `has_valid_auth_cookie()` in `src/web/dependencies/auth.py`). This does **not** catch revocation, since that requires a DB lookup.
+2. If the stateless check passes, the app shell renders immediately; the prompt grid shows a skeleton placeholder instead of real data
+3. Client-side authentication check runs: `GET /api/auth/me` (this is what actually catches revocation)
+4. If 401 (revoked): Immediate redirect to login (prompt content never shown — only the skeleton was ever on screen)
+5. If 200 (valid): Skeleton is replaced with real prompt data
+6. No prompt-content flash - prevents privacy leaks
 
 **Why This Matters**:
 

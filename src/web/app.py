@@ -26,6 +26,7 @@ from src.web.routing_setup import configure_routing, _warn_if_auth_disabled  # n
 from src.web.startup import register_lifecycle_events
 from src.config.auth_config import auth_settings
 from src.web.utils.manifest import load_manifest, get_asset_path, is_production
+from src.web.dependencies.auth import has_valid_auth_cookie
 
 # ============================================================================
 # APPLICATION INITIALIZATION
@@ -397,12 +398,15 @@ async def home(request: Request):
             },
         )
 
-    # Check if user is authenticated (simple check for auth token)
-    auth_header = request.headers.get("Authorization")
-    auth_cookie = request.cookies.get("access_token")
-
-    if not auth_header and not auth_cookie:
-        # No authentication provided, redirect to login.
+    # Validate the access token cookie's signature/expiration statelessly (no
+    # DB lookup). This catches the common cases (missing/expired/tampered
+    # cookie) before any HTML is sent, avoiding the redirect flash. It does
+    # NOT catch admin-revoked-but-unexpired sessions — that requires a DB
+    # lookup and is handled by the client-side /api/auth/me check instead
+    # (see the inline skeleton in index.html), preserving the privacy
+    # guarantee that revoked sessions never see prompt data.
+    if not has_valid_auth_cookie(request):
+        # No/invalid authentication, redirect to login.
         # Mark the redirect as non-cacheable so that browser history
         # navigation (back/forward) always re-evaluates auth state and
         # does not replay a stale redirect to the login page.
@@ -412,11 +416,18 @@ async def home(request: Request):
         )
         redirect.headers["Pragma"] = "no-cache"
         redirect.headers["Expires"] = "0"
+        # Clear the stale/expired cookie. Without this, an expired
+        # access_token cookie keeps getting resent, and the login page's
+        # bfcache guard (redirectIfAuthenticated in auth.ts, which trusts
+        # localStorage's access_token independently of cookie validity)
+        # bounces the user straight back to "/", creating a redirect loop.
+        redirect.delete_cookie(key="access_token", path="/")
         return redirect
 
-    # User appears to be authenticated, show the main app
-    # Note: The JavaScript will validate the token on the client side
-    # and redirect to login if it's invalid
+    # User is authenticated, show the main app. The client-side /api/auth/me
+    # check (see index.ts checkAdminAccess) still runs to catch
+    # admin-revoked-but-unexpired sessions; until it resolves, the prompt
+    # grid shows a skeleton placeholder rather than real data.
     prompts = data_service.load_prompts()
     categories = data_service.get_categories()
     tags = data_service.get_tags()

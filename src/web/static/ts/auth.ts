@@ -15,6 +15,7 @@ import { clearAllErrors, hideElement, showElement, showError } from '@/utils/dom
 import { showNotification } from '@/utils/notifications';
 import { announce } from '@/utils/a11y';
 import { initSecondaryNav } from '@/utils/secondary-nav';
+import { clearStoredTokens, refreshTokens } from '@/utils/api';
 
 const API_BASE = '/api/auth';
 
@@ -633,21 +634,35 @@ function hasStoredAccessToken(): boolean {
  * hitting the server. Without this guard, the user would see the login form
  * again even though their session is still valid. The server-side redirect
  * handles fresh navigations; this complements it for client-side restoration.
+ *
+ * A stored access token alone does not mean the session is still valid: it
+ * may have expired without ever being cleared (that normally only happens
+ * via a 401 from apiFetch, which never runs if the user lands here directly).
+ * If the server-side home() redirect rejected an expired cookie and sent the
+ * user here, blindly trusting localStorage would redirect straight back to
+ * "/", which the server would reject again — an infinite loop. So verify the
+ * session by attempting a token refresh first, and clear stale tokens if it
+ * fails instead of redirecting.
  */
-function redirectIfAuthenticated(): void {
-  if (hasStoredAccessToken()) {
+async function redirectIfAuthenticated(): Promise<void> {
+  if (!hasStoredAccessToken()) {
+    return;
+  }
+  if (await refreshTokens()) {
     window.location.replace('/');
+  } else {
+    clearStoredTokens();
   }
 }
 
 function initializeAuthPage(): void {
   // Guard against bfcache restoration showing the login page to an
   // already-authenticated user (fixes "previous page" history navigation).
-  redirectIfAuthenticated();
+  void redirectIfAuthenticated();
   window.addEventListener('pageshow', (event) => {
     // event.persisted is true when the page is restored from the bfcache.
     if (event.persisted) {
-      redirectIfAuthenticated();
+      void redirectIfAuthenticated();
     }
   });
 

@@ -94,13 +94,20 @@ function updateStoredTokens(accessToken: string, refreshToken: string): void {
 }
 
 /**
- * Clear all stored tokens and redirect to login
+ * Clear all stored access/refresh tokens (localStorage and sessionStorage).
  */
-function clearTokensAndRedirect(): void {
+export function clearStoredTokens(): void {
   localStorage.removeItem('access_token');
   localStorage.removeItem('refresh_token');
   sessionStorage.removeItem('access_token');
   sessionStorage.removeItem('refresh_token');
+}
+
+/**
+ * Clear all stored tokens and redirect to login
+ */
+function clearTokensAndRedirect(): void {
+  clearStoredTokens();
 
   // Only redirect if not already on auth page
   if (!window.location.pathname.includes('/auth/')) {
@@ -112,7 +119,7 @@ function clearTokensAndRedirect(): void {
  * Refresh access token using the stored refresh token
  * @returns Promise<boolean> - true if refresh succeeded, false otherwise
  */
-async function refreshTokens(): Promise<boolean> {
+export async function refreshTokens(): Promise<boolean> {
   const refreshToken = getRefreshToken();
 
   if (!refreshToken) {
