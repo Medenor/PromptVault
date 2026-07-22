@@ -1,9 +1,9 @@
 ---
 id: spec-database-migration
 title: PromptVault Relational Database Migration
-version: 1.0.1
+version: 1.1.0
 date_created: 2025-11-29
-last_updated: 2025-12-10
+last_updated: 2026-07-22
 owner: medenor
 tags: [database, functional, migration, storage, api]
 status: published
@@ -230,10 +230,13 @@ All schemas are expressed in JSON-like pseudo-notation and are conceptual. They 
   "category": "General",
   "tags": ["tag1", "tag2"],
   "favorite": false,
+  "semantic_version": "1.2.0",
   "created_at": "2025-01-01T12:00:00Z",
   "updated_at": "2025-01-02T13:00:00Z"
 }
 ```
+
+`semantic_version` is an optional MAJOR.MINOR.PATCH string set by the client on create/update; the system does not compute it automatically (see 001-prompt-versioning).
 
 #### 6.1.2 Version Resource
 
@@ -250,7 +253,8 @@ All schemas are expressed in JSON-like pseudo-notation and are conceptual. They 
     "content": "Prompt text",
     "category": "General",
     "tags": ["tag1", "tag2"],
-    "favorite": false
+    "favorite": false,
+    "semantic_version": "1.2.0"
   },
   "parent_version_id": null
 }
@@ -261,16 +265,85 @@ All schemas are expressed in JSON-like pseudo-notation and are conceptual. They 
 ```json
 {
   "backup_id": "string-unique-id",
-  "backup_type": "full",
-  "description": "optional description",
+  "backup_type": "pg_dump | sqlite_copy | json_export",
+  "backup_kind": "full | incremental",
+  "parent_backup_id": "string-unique-id | null",
   "filename": "logical or physical name",
   "size_bytes": 123456,
+  "prompt_count": 42,
+  "created_by": "user-identifier",
   "created_at": "2025-01-03T10:00:00Z",
+  "succeeded": true,
+  "checksum": "sha256-hex-digest",
+  "integrity_verified_at": "2025-01-03T11:00:00Z",
+  "is_encrypted": false,
+  "cloud_provider_id": "string-unique-id | null",
+  "cloud_path": "remote/key/path | null",
+  "cloud_uploaded_at": "2025-01-03T10:05:00Z",
+  "tags": ["pre-migration"],
+  "delta_payload": { "...": "present only for incremental backups" },
   "metadata": {
     "schema_version": "1.0.0"
   }
 }
 ```
+
+Encryption fields (`encryption_salt`, `encryption_nonce`) are internal (Argon2id-derived AES-256-GCM key material) and MUST NOT be exposed via any read API. See 003-enhanced-backup-restore.
+
+##### 6.1.3.1 Backup Schedule Resource
+
+```json
+{
+  "id": "string-unique-id",
+  "enabled": true,
+  "frequency": "daily | weekly | monthly",
+  "hour": 3,
+  "minute": 0,
+  "day_of_week": null,
+  "day_of_month": null,
+  "retention_days": 30,
+  "encrypt_scheduled_backups": false,
+  "cloud_provider_id": "string-unique-id | null",
+  "last_run_at": "2025-01-03T03:00:00Z",
+  "last_run_status": "success | failure"
+}
+```
+
+At most one active `BackupSchedule` MAY exist per system (enforced at the service layer, not a DB constraint).
+
+##### 6.1.3.2 Backup Storage Provider Resource
+
+```json
+{
+  "id": "string-unique-id",
+  "name": "Admin-given display name",
+  "provider_type": "s3",
+  "endpoint_url": "https://s3-compatible-endpoint | null",
+  "bucket_name": "bucket-name",
+  "prefix": "optional/key/prefix",
+  "region": "us-east-1 | null",
+  "enabled": true,
+  "created_at": "2025-01-01T00:00:00Z"
+}
+```
+
+Credentials (`credentials_encrypted`, `credentials_salt`, `credentials_nonce`) are stored AES-256-GCM encrypted and MUST NOT be exposed via any read API.
+
+##### 6.1.3.3 Audit Log Entry Resource
+
+```json
+{
+  "id": "string-unique-id",
+  "occurred_at": "2025-01-03T10:00:00Z",
+  "operation": "backup.create | backup.restore | backup.delete | schedule.update | ...",
+  "outcome": "success | failure",
+  "backup_id": "string-unique-id | null",
+  "performed_by": "user-identifier | scheduler",
+  "detail": { "...": "operation-specific context" }
+}
+```
+
+Append-only: rows are never deleted or modified by application code (INV-level guarantee for the backup subsystem).
 
 ### 6.2 Logical API Operations
 

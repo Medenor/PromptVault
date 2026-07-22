@@ -1,9 +1,9 @@
 ---
 id: spec-app-promptvault
 title: PromptVault Application Functional Specification
-version: 1.0.1
+version: 1.1.0
 date_created: 2025-11-27
-last_updated: 2025-12-10
+last_updated: 2026-07-22
 owner: medenor
 tags: [app, functional, architecture, prompt-management]
 status: published
@@ -407,12 +407,12 @@ Constraints:
 ##### List Versions
 
 - **Method & Path**: `GET /api/prompts/{id}/versions`
-- Returns a list of version summaries: `version_id`, timestamp, author, message.
+- Returns a list of version summaries: `version_id`, timestamp, author, message, `semantic_version`.
 
 ##### Get Version
 
 - **Method & Path**: `GET /api/prompts/{id}/versions/{version_id}`
-- Returns full Version payload, including snapshot data.
+- Returns full Version payload, including snapshot data and `semantic_version`.
 
 ##### Revert Version
 
@@ -420,6 +420,12 @@ Constraints:
 - Behavior:
   - MUST restore data from the target version,
   - MUST create a new Version representing the revert action.
+
+##### Copy with Version Metadata (client-side UI action)
+
+- Not a server endpoint. A frontend action that copies the prompt content to the clipboard with an appended, LLM-ignorable metadata line embedding the current `semantic_version` (e.g. `<!-- prompt-version: 1.2.0 -->`), so a user can later tell whether an external copy (pasted into ChatGPT/Claude/Gemini, etc.) is out of date relative to the PromptVault source of truth. See 001-prompt-versioning.
+
+**`semantic_version` field:** an optional client-supplied MAJOR.MINOR.PATCH string stored on the Prompt and snapshotted on each Version, and displayed on the prompt detail view. The system does not compute or increment it automatically.
 
 ---
 
@@ -456,10 +462,12 @@ Constraints:
 
 #### 6.2.8 Backups
 
+Backups support full and incremental snapshots, optional AES-256-GCM encryption, optional upload to an S3-compatible cloud storage provider, integrity verification via checksum, and scheduled/automatic creation with retention. Every backup-affecting operation is recorded in an append-only audit log. See 003-enhanced-backup-restore.
+
 ##### List Backups
 
 - **Method & Path**: `GET /api/backups`
-- Returns backup metadata (id, name, created_at, scope).
+- Returns backup metadata (id, backup_type, backup_kind, parent_backup_id, filename, size_bytes, prompt_count, created_by, created_at, succeeded, checksum, is_encrypted, cloud_provider_id, cloud_path, tags).
 
 ##### Create Backup
 
@@ -467,18 +475,58 @@ Constraints:
 - Request fields:
   - name: optional string
   - include_versions: optional boolean
+  - kind: optional, `full` (default) or `incremental`
+  - encrypt: optional boolean — encrypts the backup file (AES-256-GCM, Argon2id-derived key)
+  - cloud_provider_id: optional — uploads the backup to the given configured cloud storage provider after creation
+  - tags: optional string[] — admin-assigned labels
 
 ##### Restore Backup
 
 - **Method & Path**: `POST /api/backups/{backup_id}/restore`
 - Behavior:
   - MUST create a pre-restore backup,
-  - MUST restore state from the given backup.
+  - MUST verify the target backup's checksum before restoring,
+  - MUST restore state from the given backup (resolving the `full` + `incremental` chain via `parent_backup_id` when restoring an incremental backup),
+  - MUST record the operation in the backup audit log.
 
 ##### Compress Backups
 
 - **Method & Path**: `POST /api/backups/compress`
 - Purpose: apply retention/compression rules to older backups.
+
+##### Backup Schedule
+
+- **Method & Path**: `GET/PUT /api/backup-schedule`
+- Behavior:
+  - Configures at most one active automatic backup schedule (`daily`, `weekly`, or `monthly`; time of day; retention_days; optional encryption; optional cloud provider auto-upload),
+  - The scheduler runs unattended and records each run's outcome (`last_run_at`, `last_run_status`) and an audit log entry (`performed_by: "scheduler"`).
+
+##### Backup Encryption Configuration
+
+- **Method & Path**: `GET/PUT /api/backup-encryption`
+- Behavior: configures default encryption settings applied to new backups.
+
+##### Cloud Storage Providers
+
+- **Method & Path**: `GET/POST/DELETE /api/backup-providers`
+- Behavior:
+  - CRUD for S3-compatible storage provider configuration (endpoint, bucket, prefix, region, credentials),
+  - Credentials MUST be encrypted at rest and MUST NEVER be returned by any read endpoint.
+
+##### Backup Monitoring
+
+- **Method & Path**: `GET /api/backup-monitoring`
+- Returns health/status metrics for the backup subsystem (e.g. last successful run, storage usage).
+
+##### Backup Audit Log
+
+- **Method & Path**: `GET /api/backup-audit-log`
+- Returns an append-only, paginated list of backup-related operations (operation type, outcome, actor, timestamp, detail). Entries are never deleted by application code.
+
+##### Backup Cleanup
+
+- **Method & Path**: `POST /api/backups/cleanup`
+- Purpose: deletes backups outside the configured retention window.
 
 ---
 
