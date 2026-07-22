@@ -308,7 +308,52 @@ class AuthService:
                 context={"identifier": username_or_email},
             )
 
-        # Check if account is locked
+        # Check account lockout status (unlocking if the lock has expired)
+        self._enforce_account_lockout(user)
+
+        # Check if account is active
+        if not user.is_active:
+            raise AccountInactiveError(
+                f"Account is not active: {user.id}",
+                context={"user_id": user.id},
+            )
+
+        # Verify password, handling failed-attempt tracking and lockout
+        self._verify_login_password(user, password)
+
+        # Check session limits
+        self._enforce_login_session_limit(user)
+
+        # Reset failed login attempts
+        self.user_repo.reset_failed_login(user.id)
+
+        # Update last login timestamp
+        self.user_repo.update_last_login(user.id)
+
+        # Commit before generating tokens
+        self.db.commit()
+        self.db.refresh(user)
+
+        # Generate tokens and create session
+        return self._generate_tokens_and_session(
+            user,
+            ip_address,
+            user_agent,
+            remember_me=remember_me,
+        )
+
+    def _enforce_account_lockout(self, user: User) -> None:
+        """Reject login when the account is locked, unlocking if lock expired.
+
+        If the account has an active lock, raises AccountLockedError. If the
+        lock period has already elapsed, the account is unlocked in place.
+
+        Args:
+            user: User attempting to authenticate
+
+        Raises:
+            AccountLockedError: If the account is currently locked
+        """
         if user.locked_until:
             locked_until = user.locked_until
             if locked_until.tzinfo is None:
@@ -327,14 +372,20 @@ class AuthService:
                 self.db.commit()
                 self.db.refresh(user)
 
-        # Check if account is active
-        if not user.is_active:
-            raise AccountInactiveError(
-                f"Account is not active: {user.id}",
-                context={"user_id": user.id},
-            )
+    def _verify_login_password(self, user: User, password: str) -> None:
+        """Verify the supplied password, tracking failures and lockout.
 
-        # Verify password
+        On a wrong password the failed-login counter is incremented and, once
+        the configured threshold is reached, the account is locked.
+
+        Args:
+            user: User attempting to authenticate
+            password: Plain text password to verify
+
+        Raises:
+            InvalidCredentialsError: If the password is incorrect
+            AccountLockedError: If this failure triggers an account lockout
+        """
         if not self.password_service.verify_password(password, user.password_hash):
             # Increment failed login attempts
             self.user_repo.increment_failed_login(user.id)
@@ -365,7 +416,16 @@ class AuthService:
                 context={"user_id": user.id, "failed_attempts": failed_attempts},
             )
 
-        # Check session limits
+    def _enforce_login_session_limit(self, user: User) -> None:
+        """Free up a session slot when the user is at the session limit.
+
+        When session limits are enforced and the user already has the maximum
+        number of active sessions, the oldest session is revoked to make room
+        for the new login.
+
+        Args:
+            user: User attempting to authenticate
+        """
         if not self.config.unlimited_sessions:
             active_sessions = self.session_repo.count_user_sessions(
                 user.id, active_only=True
@@ -376,24 +436,6 @@ class AuthService:
                 if oldest_session:
                     self.session_repo.revoke_session(oldest_session.family_id)
                     self.db.commit()
-
-        # Reset failed login attempts
-        self.user_repo.reset_failed_login(user.id)
-
-        # Update last login timestamp
-        self.user_repo.update_last_login(user.id)
-
-        # Commit before generating tokens
-        self.db.commit()
-        self.db.refresh(user)
-
-        # Generate tokens and create session
-        return self._generate_tokens_and_session(
-            user,
-            ip_address,
-            user_agent,
-            remember_me=remember_me,
-        )
 
     def refresh_tokens(
         self,
@@ -443,9 +485,79 @@ class AuthService:
             ...     user_agent="Mozilla/5.0..."
             ... )
         """
-        # Validate refresh token
+        # Validate refresh token and extract identifying claims
+        claims = self._validate_refresh_token(refresh_token)
+
+        user_id = claims["sub"]
+        family_id = claims["family_id"]
+        token_jti = claims["jti"]
+
+        # Find the active session, detecting reuse of a rotated-out token
+        session = self._load_active_session_for_refresh(family_id, token_jti)
+
+        # Get user and verify the account is still active
+        user = self._get_active_user_for_refresh(user_id)
+
+        # Compute remaining lifetime, revoking the session if already expired
+        remaining_seconds = self._compute_refresh_remaining_seconds(session, family_id)
+
+        # Generate new tokens with SAME family_id but NEW jti
+        new_jti = str(uuid.uuid4())
+        new_access_token = self.jwt_service.generate_access_token(
+            user_id=user.id,
+            username=user.username,
+            email=user.email,
+            role=user.role,
+            family_id=family_id,  # Same family for session identification
+        )
+        new_refresh_token = self.jwt_service.generate_refresh_token(
+            user_id=user.id,
+            family_id=family_id,  # Same family
+            jti=new_jti,  # New JTI
+            expires_in_seconds=remaining_seconds,
+        )
+
+        # Update session with new JTI
+        self.session_repo.update_session_token(family_id, new_jti)
+
+        # ENHANCED: Check and enforce maximum sessions limit
+        self._enforce_refresh_session_limit(user, family_id)
+
+        self.db.commit()
+
+        # Fixed: Include all required UserResponse fields to prevent Pydantic validation error
+        return {
+            "access_token": new_access_token,
+            "refresh_token": new_refresh_token,
+            "token_type": "Bearer",
+            "expires_in": self.config.jwt_access_token_expire_seconds,
+            "remaining_seconds": remaining_seconds,  # For cookie max_age
+            "user": {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email,
+                "role": user.role,
+                "is_active": user.is_active,
+                "email_verified": user.email_verified,
+                "created_at": user.created_at,
+                "updated_at": user.updated_at,
+            },
+        }
+
+    def _validate_refresh_token(self, refresh_token: str) -> Dict[str, any]:
+        """Validate a refresh token JWT and return its decoded claims.
+
+        Args:
+            refresh_token: Current refresh token
+
+        Returns:
+            Decoded token claims
+
+        Raises:
+            InvalidTokenError: If the token is expired or otherwise invalid
+        """
         try:
-            claims = self.jwt_service.validate_refresh_token(refresh_token)
+            return self.jwt_service.validate_refresh_token(refresh_token)
         except ExpiredSignatureError:
             raise InvalidTokenError(
                 "Refresh token has expired",
@@ -457,10 +569,25 @@ class AuthService:
                 context={"reason": "invalid_token"},
             )
 
-        user_id = claims["sub"]
-        family_id = claims["family_id"]
-        token_jti = claims["jti"]
+    def _load_active_session_for_refresh(self, family_id: str, token_jti: str):
+        """Load the session for a refresh, detecting reuse of a rotated token.
 
+        Locates the session by family ID, rejects missing or revoked sessions,
+        and — critically — detects token reuse: if the presented JTI does not
+        match the stored JTI an old token is being replayed, so the entire
+        token family is revoked as a security breach.
+
+        Args:
+            family_id: Token family identifier from the refresh token
+            token_jti: JTI claim from the presented refresh token
+
+        Returns:
+            The active session matching the family ID
+
+        Raises:
+            SessionNotFoundError: If the session is missing or revoked
+            TokenReuseDetectedError: If token reuse is detected (revokes family)
+        """
         # Find session by family ID
         session = self.session_repo.get_by_family_id(family_id)
 
@@ -494,7 +621,21 @@ class AuthService:
                 },
             )
 
-        # Get user
+        return session
+
+    def _get_active_user_for_refresh(self, user_id: str) -> User:
+        """Load the user for a refresh and verify the account is active.
+
+        Args:
+            user_id: User identifier from the refresh token
+
+        Returns:
+            The active User instance
+
+        Raises:
+            InvalidCredentialsError: If the user does not exist
+            AccountInactiveError: If the account is deactivated
+        """
         user = self.user_repo.get_by_id(user_id)
         if not user:
             raise InvalidCredentialsError(
@@ -509,6 +650,21 @@ class AuthService:
                 context={"user_id": user.id},
             )
 
+        return user
+
+    def _compute_refresh_remaining_seconds(self, session, family_id: str) -> int:
+        """Compute a session's remaining lifetime, revoking it if expired.
+
+        Args:
+            session: The active session being refreshed
+            family_id: Token family identifier (used for error context)
+
+        Returns:
+            The number of seconds remaining before the session expires
+
+        Raises:
+            SessionNotFoundError: If the session has already expired
+        """
         session_expires_at = session.expires_at
         if session_expires_at.tzinfo is None:
             session_expires_at = session_expires_at.replace(tzinfo=timezone.utc)
@@ -523,26 +679,19 @@ class AuthService:
                 context={"family_id": family_id, "expired": True},
             )
 
-        # Generate new tokens with SAME family_id but NEW jti
-        new_jti = str(uuid.uuid4())
-        new_access_token = self.jwt_service.generate_access_token(
-            user_id=user.id,
-            username=user.username,
-            email=user.email,
-            role=user.role,
-            family_id=family_id,  # Same family for session identification
-        )
-        new_refresh_token = self.jwt_service.generate_refresh_token(
-            user_id=user.id,
-            family_id=family_id,  # Same family
-            jti=new_jti,  # New JTI
-            expires_in_seconds=remaining_seconds,
-        )
+        return remaining_seconds
 
-        # Update session with new JTI
-        self.session_repo.update_session_token(family_id, new_jti)
+    def _enforce_refresh_session_limit(self, user: User, family_id: str) -> None:
+        """Revoke oldest sessions to keep the user within the session limit.
 
-        # ENHANCED: Check and enforce maximum sessions limit
+        Preserves the session currently being refreshed (identified by
+        ``family_id``) and stops once the limit is met or no further sessions
+        can be revoked without affecting the current one.
+
+        Args:
+            user: The authenticated user
+            family_id: Token family of the session being refreshed
+        """
         if not self.config.unlimited_sessions:
             active_sessions = self.session_repo.count_user_sessions(
                 user.id, active_only=True
@@ -560,27 +709,6 @@ class AuthService:
                         active_sessions -= 1
                     else:
                         break  # Can't revoke more without affecting current session
-
-        self.db.commit()
-
-        # Fixed: Include all required UserResponse fields to prevent Pydantic validation error
-        return {
-            "access_token": new_access_token,
-            "refresh_token": new_refresh_token,
-            "token_type": "Bearer",
-            "expires_in": self.config.jwt_access_token_expire_seconds,
-            "remaining_seconds": remaining_seconds,  # For cookie max_age
-            "user": {
-                "id": user.id,
-                "username": user.username,
-                "email": user.email,
-                "role": user.role,
-                "is_active": user.is_active,
-                "email_verified": user.email_verified,
-                "created_at": user.created_at,
-                "updated_at": user.updated_at,
-            },
-        }
 
     def update_user_profile(
         self,
