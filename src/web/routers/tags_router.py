@@ -96,6 +96,27 @@ def _is_descendant(
 # ============================================================================
 
 
+@router.get("/tags")
+async def get_tags():
+    """Get all tags with usage counts (legacy compatibility endpoint)."""
+    try:
+        from src.db.session import get_db_session
+        from src.db.repositories.tag_repository import TagRepository
+
+        with get_db_session() as session:
+            tag_repo = TagRepository(session)
+            results = tag_repo.list_all_with_counts()
+            tags_with_counts = [
+                {"name": tag.name, "count": count or 0} for tag, count in results
+            ]
+            return {"tags": tags_with_counts}
+    except Exception:
+        from src.web import app as web_app
+
+        tags_with_counts = web_app.data_service.get_tags_with_counts()
+        return {"tags": tags_with_counts}
+
+
 @router.get(
     "/tags/manage",
     response_model=TagListResponse,

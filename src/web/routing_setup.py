@@ -17,6 +17,8 @@ from src.web.routers import (
     auth_router,
     admin_router,
     prompts_router,
+    prompts_versions_router,
+    import_export_router,
     tag_category_router,
     pages_router,
 )
@@ -52,6 +54,8 @@ def configure_routing(app: FastAPI) -> None:
     are unmounted (return 404).
     """
     app.include_router(prompts_router, prefix="/api")
+    app.include_router(prompts_versions_router, prefix="/api")
+    app.include_router(import_export_router, prefix="/api")
     app.include_router(tag_category_router, prefix="/api")
     app.include_router(scheduler_router, prefix="/api")
     app.include_router(backup_router)

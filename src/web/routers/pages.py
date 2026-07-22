@@ -342,6 +342,64 @@ async def manage_tags_page(
 
 
 # ============================================================================
+# Import/Export & Backup Management Pages
+# ============================================================================
+
+
+@router.get("/import-export", response_class=HTMLResponse)
+async def import_export_page(request: Request):
+    """Import/Export management page"""
+    from src.web import app as web_app
+
+    data_service = web_app.data_service
+    prompts = data_service.load_prompts()
+    categories = data_service.get_categories()
+    tags = data_service.get_tags()
+
+    # Calculate statistics
+    total_prompts = len(prompts)
+    favorite_prompts = sum(
+        1 for p in prompts.values() if p.get("data", {}).get("favorite", False)
+    )
+    unique_categories = len(
+        set(p.get("data", {}).get("category", "No category") for p in prompts.values())
+    )
+    all_tags = set()
+    for p in prompts.values():
+        all_tags.update(p.get("data", {}).get("tags", []))
+    unique_tags = len(all_tags)
+
+    return templates.TemplateResponse(
+        request,
+        "import_export.html",
+        {
+            "total_prompts": total_prompts,
+            "favorite_prompts": favorite_prompts,
+            "total_categories": unique_categories,
+            "total_tags": unique_tags,
+            "auth_enabled": auth_settings.auth_enabled,
+        },
+    )
+
+
+@router.get("/backup-management", response_class=HTMLResponse)
+async def backup_management_page(request: Request):
+    """Backup management page"""
+    from src.web import app as web_app
+
+    stats = web_app.backup_service.get_backup_stats()
+
+    return templates.TemplateResponse(
+        request,
+        "backup_management.html",
+        {
+            "backup_stats": stats,
+            "auth_enabled": auth_settings.auth_enabled,
+        },
+    )
+
+
+# ============================================================================
 # Admin Pages (Protected)
 # ============================================================================
 
