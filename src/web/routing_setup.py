@@ -15,7 +15,8 @@ from src.config.auth_config import auth_settings
 from src.services.logging_service import logging_service
 from src.web.routers import (
     auth_router,
-    admin_router,
+    admin_users_router,
+    admin_sessions_router,
     prompts_router,
     tag_category_router,
     pages_router,
@@ -58,7 +59,8 @@ def configure_routing(app: FastAPI) -> None:
 
     if auth_settings.auth_enabled:
         app.include_router(auth_router, prefix="/api")
-        app.include_router(admin_router, prefix="/api")
+        app.include_router(admin_users_router, prefix="/api")
+        app.include_router(admin_sessions_router, prefix="/api")
         logger.info(
             "Authentication enabled: /api/auth and /api/admin routes registered"
         )
