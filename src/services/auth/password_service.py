@@ -552,26 +552,39 @@ class PasswordService:
         else:
             level = "very_strong"
 
-        # Generate feedback for improvement
+        # Generate feedback for improvement. Rules are evaluated in order; each
+        # is a (condition, message) pair so new suggestions can be added to the
+        # table without growing a chain of if-statements.
         feedback = []
-
-        if len(password) < 12:
-            feedback.append("Consider using a longer password (12+ characters)")
-
-        if not has_uppercase:
-            feedback.append("Add uppercase letters for increased strength")
-
-        if not has_lowercase:
-            feedback.append("Add lowercase letters for increased strength")
-
-        if not has_digits:
-            feedback.append("Add numbers for increased strength")
-
-        if not has_special:
-            feedback.append("Add special characters for increased strength")
-
-        if char_diversity < len(password) * 0.5:
-            feedback.append("Use more unique characters (avoid repetition)")
+        feedback_rules = [
+            (
+                len(password) < 12,
+                "Consider using a longer password (12+ characters)",
+            ),
+            (
+                not has_uppercase,
+                "Add uppercase letters for increased strength",
+            ),
+            (
+                not has_lowercase,
+                "Add lowercase letters for increased strength",
+            ),
+            (
+                not has_digits,
+                "Add numbers for increased strength",
+            ),
+            (
+                not has_special,
+                "Add special characters for increased strength",
+            ),
+            (
+                char_diversity < len(password) * 0.5,
+                "Use more unique characters (avoid repetition)",
+            ),
+        ]
+        for triggered, message in feedback_rules:
+            if triggered:
+                feedback.append(message)
 
         if self._is_common_password_variation(password):
             feedback.append(
@@ -579,19 +592,28 @@ class PasswordService:
             )
             level = "weak"  # Override level for common passwords
 
-        # Check for sequential patterns
-        if re.search(r"(012|123|234|345|456|567|678|789|890)", password):
-            feedback.append("Avoid sequential number patterns")
-
-        if re.search(
-            r"(abc|bcd|cde|def|efg|fgh|ghi|hij|ijk|jkl|klm|lmn|mno|nop|opq|pqr|qrs|rst|stu|tuv|uvw|vwx|wxy|xyz)",
-            password.lower(),
-        ):
-            feedback.append("Avoid sequential letter patterns")
-
-        # Check for repeated characters
-        if re.search(r"(.)\1{2,}", password):
-            feedback.append("Avoid repeating the same character multiple times")
+        # Pattern-based feedback rules (evaluated after the composition rules
+        # to preserve the original message ordering).
+        pattern_rules = [
+            (
+                re.search(r"(012|123|234|345|456|567|678|789|890)", password),
+                "Avoid sequential number patterns",
+            ),
+            (
+                re.search(
+                    r"(abc|bcd|cde|def|efg|fgh|ghi|hij|ijk|jkl|klm|lmn|mno|nop|opq|pqr|qrs|rst|stu|tuv|uvw|vwx|wxy|xyz)",
+                    password.lower(),
+                ),
+                "Avoid sequential letter patterns",
+            ),
+            (
+                re.search(r"(.)\1{2,}", password),
+                "Avoid repeating the same character multiple times",
+            ),
+        ]
+        for triggered, message in pattern_rules:
+            if triggered:
+                feedback.append(message)
 
         return {
             "level": level,

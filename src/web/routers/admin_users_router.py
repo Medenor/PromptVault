@@ -2,11 +2,11 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-"""Admin routes for PromptVault.
+"""Admin user-administration routes for PromptVault.
 
 This module provides administrative endpoints for user management,
-including listing, viewing, updating, and deleting users, as well
-as managing user sessions and viewing system statistics.
+including listing, creating, viewing, updating, and deleting users, as
+well as managing the sessions belonging to a specific user.
 
 All endpoints require admin authentication and implement proper
 authorization, audit logging, and security best practices.
@@ -21,12 +21,13 @@ Security Features:
 
 Available Endpoints:
     GET    /admin/users                List all users (paginated)
+    POST   /admin/users                Create a new user
     GET    /admin/users/{user_id}      Get user details
     PUT    /admin/users/{user_id}      Update user
     DELETE /admin/users/{user_id}      Delete/deactivate user
-    GET    /admin/users/{user_id}/sessions  Get user's sessions
-    DELETE /admin/users/{user_id}/sessions  Revoke user's sessions
-    GET    /admin/stats                Get system statistics
+    GET    /admin/users/{user_id}/sessions              Get user's sessions
+    DELETE /admin/users/{user_id}/sessions              Revoke user's sessions
+    DELETE /admin/users/{user_id}/sessions/{session_id} Revoke a session
 """
 
 import math
@@ -37,17 +38,15 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_, func
+from sqlalchemy import or_, func
 from sqlalchemy.exc import IntegrityError
 
 from src.config.auth_config import AuthConfig
-from src.services.auth.auth_service import AuthService
 from src.services.auth.password_service import PasswordService
 from src.web.dependencies.auth import get_auth_config
 
 from src.db.session import get_db
 from src.db.models.user import User
-from src.db.models.user_session import UserSession
 from src.db.repositories.user_repository import UserRepository
 from src.db.repositories.session_repository import SessionRepository
 from src.web.dependencies.auth import require_role
@@ -59,7 +58,6 @@ from src.web.models.admin_requests import (
 from src.web.models.admin_responses import (
     UserDetailResponse,
     UserListResponse,
-    AdminStatsResponse,
 )
 from src.services.exceptions import (
     EmailAlreadyExistsError,
@@ -70,6 +68,10 @@ from src.web.models.auth_responses import (
     SessionResponse,
     SessionListResponse,
     RevokeSessionResponse,
+)
+from src.web.routers.admin_shared import (
+    _log_admin_action,
+    _user_to_detail_response,
 )
 
 # Configure logging
@@ -87,53 +89,48 @@ router = APIRouter(
 # ============================================================================
 
 
-def _user_to_detail_response(user: User, session_count: int) -> UserDetailResponse:
-    """Convert User model to UserDetailResponse with session count.
+def _validate_user_uniqueness(
+    user_repo: UserRepository,
+    request_data: CreateUserRequest,
+    admin: User,
+) -> None:
+    """Ensure the requested username and email are not already taken.
 
     Args:
-        user: User model instance
-        session_count: Number of active sessions
+        user_repo: Repository used to check for existing users
+        request_data: User creation request with username and email
+        admin: Authenticated admin user (for audit logging)
 
-    Returns:
-        UserDetailResponse with all fields populated
+    Raises:
+        HTTPException: 409 if the username or email already exists
     """
-    return UserDetailResponse(
-        id=user.id,
-        username=user.username,
-        email=user.email,
-        role=user.role,
-        is_active=user.is_active,
-        email_verified=user.email_verified,
-        created_at=user.created_at,
-        updated_at=user.updated_at,
-        last_login=user.last_login,
-        failed_login_attempts=user.failed_login_attempts or 0,
-        locked_until=user.locked_until,
-        password_changed_at=user.password_changed_at,
-        session_count=session_count,
-    )
+    # Check if username already exists
+    if user_repo.username_exists(request_data.username):
+        _log_admin_action(
+            admin.id,
+            admin.username,
+            "CREATE_USER_FAILED",
+            "N/A",
+            f"username={request_data.username} (already exists)",
+        )
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Username '{request_data.username}' already exists",
+        )
 
-
-def _log_admin_action(
-    admin_id: str,
-    admin_username: str,
-    action: str,
-    target_user_id: str,
-    details: str = "",
-):
-    """Log administrative action for audit trail.
-
-    Args:
-        admin_id: Administrator's user ID
-        admin_username: Administrator's username
-        action: Action performed (e.g., "UPDATE_USER", "DELETE_USER")
-        target_user_id: Target user's ID
-        details: Additional details about the action
-    """
-    logger.info(
-        f"ADMIN_ACTION: {action} | Admin: {admin_username} ({admin_id}) | "
-        f"Target: {target_user_id} | Details: {details}"
-    )
+    # Check if email already exists
+    if user_repo.email_exists(request_data.email):
+        _log_admin_action(
+            admin.id,
+            admin.username,
+            "CREATE_USER_FAILED",
+            "N/A",
+            f"email={request_data.email} (already exists)",
+        )
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Email '{request_data.email}' is already registered",
+        )
 
 
 # ============================================================================
@@ -303,33 +300,8 @@ async def create_user(
     user_repo = UserRepository(db)
     password_service = PasswordService(config)
 
-    # Check if username already exists
-    if user_repo.username_exists(request_data.username):
-        _log_admin_action(
-            admin.id,
-            admin.username,
-            "CREATE_USER_FAILED",
-            "N/A",
-            f"username={request_data.username} (already exists)",
-        )
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=f"Username '{request_data.username}' already exists",
-        )
-
-    # Check if email already exists
-    if user_repo.email_exists(request_data.email):
-        _log_admin_action(
-            admin.id,
-            admin.username,
-            "CREATE_USER_FAILED",
-            "N/A",
-            f"email={request_data.email} (already exists)",
-        )
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=f"Email '{request_data.email}' is already registered",
-        )
+    # Reject duplicate username/email before attempting creation
+    _validate_user_uniqueness(user_repo, request_data, admin)
 
     try:
         # Hash password
@@ -690,7 +662,7 @@ async def delete_user(
 
 
 # ============================================================================
-# Session Management Endpoints
+# Per-User Session Management Endpoints
 # ============================================================================
 
 
@@ -952,154 +924,4 @@ async def revoke_user_sessions(
     return RevokeSessionResponse(
         message=f"All sessions revoked for user {user.username}",
         revoked_count=revoked_count,
-    )
-
-
-@router.delete(
-    "/sessions",
-    response_model=RevokeSessionResponse,
-    summary="Revoke all sessions globally",
-    description="""
-    Revoke all sessions for all users in the system.
-
-    **Effect:**
-    - All active sessions across all users are revoked
-    - All users will be logged out of all devices
-    - Refresh tokens become invalid
-
-    **Use Cases:**
-    - Security incident response (system-wide)
-    - System maintenance requiring all users to re-authenticate
-    - Emergency lockdown
-
-    **Security:**
-    - Requires admin role
-    - Audit logged
-    """,
-    responses={
-        200: {"description": "All sessions revoked successfully"},
-        403: {"description": "Admin role required"},
-    },
-)
-async def revoke_all_sessions(
-    admin: User = Depends(require_role(["admin"])),
-    db: Session = Depends(get_db),
-) -> RevokeSessionResponse:
-    """Revoke all sessions for all users.
-
-    Args:
-        admin: Authenticated admin user
-        db: Database session
-
-    Returns:
-        RevokeSessionResponse with count of revoked sessions
-    """
-    session_repo = SessionRepository(db)
-
-    # Revoke all sessions
-    revoked_count = session_repo.revoke_all_sessions()
-    db.commit()
-
-    # Log admin action
-    _log_admin_action(
-        admin.id,
-        admin.username,
-        "REVOKE_ALL_SESSIONS",
-        "SYSTEM",
-        f"sessions_revoked={revoked_count}",
-    )
-
-    return RevokeSessionResponse(
-        message=f"All sessions revoked system-wide",
-        revoked_count=revoked_count,
-    )
-
-
-# ============================================================================
-# Statistics Endpoint
-# ============================================================================
-
-
-@router.get(
-    "/stats",
-    response_model=AdminStatsResponse,
-    summary="Get system statistics",
-    description="""
-    Get comprehensive system statistics.
-
-    **Includes:**
-    - Total users (all)
-    - Active users (is_active=True)
-    - Inactive users (is_active=False)
-    - Total sessions (all)
-    - Active sessions (not expired, not revoked)
-    - Users by role breakdown (viewer, editor, admin)
-
-    **Use Cases:**
-    - Dashboard metrics
-    - System monitoring
-    - Capacity planning
-
-    **Security:**
-    - Requires admin role
-    - Audit logged
-    """,
-    responses={
-        200: {"description": "Statistics retrieved successfully"},
-        403: {"description": "Admin role required"},
-    },
-)
-async def get_stats(
-    admin: User = Depends(require_role(["admin"])),
-    db: Session = Depends(get_db),
-) -> AdminStatsResponse:
-    """Get system statistics.
-
-    Args:
-        admin: Authenticated admin user
-        db: Database session
-
-    Returns:
-        AdminStatsResponse with system statistics
-    """
-    # Count users
-    total_users = db.query(User).count()
-    active_users = db.query(User).filter(User.is_active == True).count()
-    inactive_users = total_users - active_users
-
-    # Count sessions
-    total_sessions = db.query(UserSession).count()
-    active_sessions = (
-        db.query(UserSession)
-        .filter(
-            and_(
-                UserSession.is_revoked == False,
-                UserSession.expires_at > datetime.now(timezone.utc),
-            )
-        )
-        .count()
-    )
-
-    # Count users by role
-    users_by_role = {}
-    for role in ["viewer", "editor", "admin"]:
-        count = db.query(User).filter(User.role == role).count()
-        users_by_role[role] = count
-
-    # Log admin action
-    _log_admin_action(
-        admin.id,
-        admin.username,
-        "VIEW_STATS",
-        "N/A",
-        f"total_users={total_users}, active_users={active_users}",
-    )
-
-    return AdminStatsResponse(
-        total_users=total_users,
-        active_users=active_users,
-        inactive_users=inactive_users,
-        total_sessions=total_sessions,
-        active_sessions=active_sessions,
-        users_by_role=users_by_role,
     )

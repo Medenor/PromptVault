@@ -15,8 +15,11 @@ from src.config.auth_config import auth_settings
 from src.services.logging_service import logging_service
 from src.web.routers import (
     auth_router,
-    admin_router,
+    admin_users_router,
+    admin_sessions_router,
     prompts_router,
+    prompts_versions_router,
+    import_export_router,
     tag_category_router,
     pages_router,
 )
@@ -52,13 +55,16 @@ def configure_routing(app: FastAPI) -> None:
     are unmounted (return 404).
     """
     app.include_router(prompts_router, prefix="/api")
+    app.include_router(prompts_versions_router, prefix="/api")
+    app.include_router(import_export_router, prefix="/api")
     app.include_router(tag_category_router, prefix="/api")
     app.include_router(scheduler_router, prefix="/api")
     app.include_router(backup_router)
 
     if auth_settings.auth_enabled:
         app.include_router(auth_router, prefix="/api")
-        app.include_router(admin_router, prefix="/api")
+        app.include_router(admin_users_router, prefix="/api")
+        app.include_router(admin_sessions_router, prefix="/api")
         logger.info(
             "Authentication enabled: /api/auth and /api/admin routes registered"
         )
