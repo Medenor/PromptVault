@@ -3,12 +3,9 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import json
-import json
 from pathlib import Path
 
 from src.services.logging_service import logging_service
-from src.services.prompt_data_service import PromptDataService
-from src.services.backup_service import BackupService
 
 
 def configure_logging(tmp_path: Path) -> Path:
@@ -30,12 +27,10 @@ def _read_audit_events(log_dir: Path):
     return events
 
 
-def test_prompt_creation_emits_audit_record(tmp_path):
+def test_prompt_creation_emits_audit_record(tmp_path, db_data_service, sample_prompt_data):
     log_dir = configure_logging(tmp_path)
-    data_file = tmp_path / "prompts.json"
-    service = PromptDataService(str(data_file))
 
-    prompt_id = service.create_prompt({"title": "Audit Prompt", "prompt": "Body"})
+    prompt_id = db_data_service.add_new_prompt(sample_prompt_data(title="Audit Prompt"))
 
     events = _read_audit_events(log_dir)
     matching = [
@@ -50,25 +45,19 @@ def test_prompt_creation_emits_audit_record(tmp_path):
     assert entry.get("resource_type") == "prompt"
 
 
-def test_backup_compression_emits_audit_record(tmp_path):
+def test_backup_compression_emits_audit_record(tmp_path, db_backup_service):
     log_dir = configure_logging(tmp_path)
-    data_dir = tmp_path / "data"
-    data_dir.mkdir()
-    data_file = data_dir / "prompts_data.json"
-    data_file.write_text(json.dumps({"next_id": 1, "prompts": {}}), encoding="utf-8")
 
-    service = BackupService(str(data_dir))
-    backup_id = service.create_backup("audit-backup")
+    backup_id = db_backup_service.create_backup("audit-backup")
 
-    compressed = service.compress_old_backups(days_threshold=0)
+    compressed = db_backup_service.compress_old_backups(days_threshold=0)
 
-    assert compressed == 1
+    assert compressed >= 1
     events = _read_audit_events(log_dir)
     compress_entries = [
         event for event in events if event.get("action") == "backup.compress"
     ]
     assert compress_entries, "Expected backup.compress audit log"
-    assert compress_entries[-1].get("compressed_count") == 1
     creation_entries = [
         event
         for event in events

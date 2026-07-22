@@ -71,9 +71,6 @@ from src.services.backup_audit_service import BackupAuditService
 from src.services.prompt_filter_service import PromptFilterService
 from src.services.prompt_import_export_service import PromptImportExportService
 from src.services.prompt_versioning_service import PromptVersioningService
-from src.services.version_compression_service import VersionCompressionService
-from src.services.version_tagging_service import VersionTaggingService
-from src.services.version_export_service import VersionExportService
 
 # ============================================================================
 # ENVIRONMENT SETUP FOR TESTS
@@ -686,36 +683,6 @@ def versioning_service() -> PromptVersioningService:
         PromptVersioningService: Service for version control
     """
     return PromptVersioningService()
-
-
-@pytest.fixture
-def compression_service() -> VersionCompressionService:
-    """Create VersionCompressionService instance.
-
-    Returns:
-        VersionCompressionService: Service for version compression
-    """
-    return VersionCompressionService(compression_threshold_days=30)
-
-
-@pytest.fixture
-def tagging_service() -> VersionTaggingService:
-    """Create VersionTaggingService instance.
-
-    Returns:
-        VersionTaggingService: Service for version tagging
-    """
-    return VersionTaggingService()
-
-
-@pytest.fixture
-def export_service() -> VersionExportService:
-    """Create VersionExportService instance.
-
-    Returns:
-        VersionExportService: Service for version export
-    """
-    return VersionExportService()
 
 
 # ============================================================================

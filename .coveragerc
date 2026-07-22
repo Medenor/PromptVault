@@ -1,9 +1,6 @@
 [run]
 source = src
 omit =
-    # Legacy JSON-based services (deprecated, kept for backward compatibility)
-    */services/prompt_data_service.py
-    */services/backup_service.py
     # Database-backed backup service (integration-heavy, covered by E2E)
     */services/backup_service_db.py
     # Legacy/unused prompt filters

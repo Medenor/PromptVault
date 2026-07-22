@@ -15,7 +15,6 @@ export default [
     ignores: [
       'node_modules/**',
       'dist/**',
-      'src/web/static/js/**',
       'src/web/static/vendor/**',
       '**/coverage/**',
       '**/*.min.*',

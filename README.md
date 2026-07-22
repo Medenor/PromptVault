@@ -171,7 +171,7 @@ PromptVault's frontend has been modernized with Tailwind CSS v4 for consistent, 
 
 ### TypeScript Migration
 
-PromptVault's frontend has been migrated from legacy JavaScript to TypeScript. All page scripts now live under `src/web/static/ts`, are built via Vite, and type-checked with `tsc`. Legacy JS under `src/web/static/js` remains only for historical reference and should not be edited for new work.
+PromptVault's frontend has been migrated from legacy JavaScript to TypeScript. All page scripts live under `src/web/static/ts`, are built via Vite, and type-checked with `tsc`.
 
 ### Version Control
 
@@ -660,7 +660,7 @@ Testing instructions live in **[docs/TESTING.md](docs/TESTING.md)**, including b
 ## Observability & Telemetry
 
 - **Structured Logs**: Application and audit logs live in `data/logs/` as newline-delimited JSON. Use tools like `jq` (`tail -f data/logs/audit.log | jq '.action,.resource_id'`) when troubleshooting in development.
-- **Frontend Reporter**: `src/web/static/js/telemetry.js` registers a global `window.FrontendLogger`. Call `window.FrontendLogger.reportError('component', 'action', error, { extra: 'context' });` to capture handled failures. All payloads are sanitized (strings truncated to 500–2,000 chars) and rate limited (10 reports per client IP per minute).
+- **Frontend Reporter**: `src/web/static/ts/telemetry.ts` registers a global `window.FrontendLogger`. Call `window.FrontendLogger.reportError('component', 'action', error, { extra: 'context' });` to capture handled failures. All payloads are sanitized (strings truncated to 500–2,000 chars) and rate limited (10 reports per client IP per minute).
 - **Opt-out Controls**: Developers/testers can disable reporting via `window.FrontendLogger.disable()` or by setting `localStorage.setItem('promptvault.telemetry.optOut', 'true')`. Call `window.FrontendLogger.enable()` to re-enable. The reporter only sends when enabled and still logs to the browser console for debugging.
 - **Server Endpoint**: The `/api/logs/frontend` route receives telemetry, enriches it with the caller IP/request metadata, and stores it through the same logging infrastructure so alerts/exports see both backend and frontend failures.
 
