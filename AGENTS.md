@@ -75,7 +75,6 @@ PromptVault is a modern web-based prompt management application built with FastA
      - Automatic versioning on updates
      - Category and tag management
      - Search and filtering capabilities
-     - **Note**: Legacy JSON-based service ([`prompt_data_service.py`](src/services/prompt_data_service.py)) deprecated
 
    - **BackupServiceDB** ([`backup_service_db.py`](src/services/backup_service_db.py)): Database backup system
      - SQLite: File copy with metadata tracking
@@ -83,7 +82,6 @@ PromptVault is a modern web-based prompt management application built with FastA
      - Backup restoration with safety features
      - Retention policies and cleanup
      - Compression for older backups
-     - **Note**: Legacy JSON-based service ([`backup_service.py`](src/services/backup_service.py)) deprecated
 
    - **PromptVersioningService** ([`prompt_versioning_service.py`](src/services/prompt_versioning_service.py)): Git-like version control (legacy)
      - **Note**: Version control now integrated into database models and PromptDataServiceDB
@@ -106,11 +104,6 @@ PromptVault is a modern web-based prompt management application built with FastA
      - JSON format support
      - Multiple import modes (append, merge, replace)
      - Data validation on import
-
-   - **Version Management Services** (legacy):
-     - **VersionCompressionService** ([`version_compression_service.py`](src/services/version_compression_service.py)): Compresses old versions with zlib (deprecated)
-     - **VersionTaggingService** ([`version_tagging_service.py`](src/services/version_tagging_service.py)): Tag management for versions (deprecated)
-     - **VersionExportService** ([`version_export_service.py`](src/services/version_export_service.py)): Export version history and diffs (deprecated)
 
 3. **Web Application Layer** ([`src/web/`](src/web/))
    - **FastAPI Application** ([`app.py`](src/web/app.py)): Main web server
@@ -652,7 +645,7 @@ describe('MyComponent', () => {
 
 - **Location**: All tests in [`tests/`](tests/) directory
 - **Fixtures**: Shared fixtures in [`conftest.py`](tests/conftest.py)
-- **Naming**: Test files must start with `test_` (e.g., `test_prompt_data_service.py`)
+- **Naming**: Test files must start with `test_` (e.g., `test_db_services.py`)
 - **Structure**: One test file per service/module being tested
 
 ### Test Fixtures

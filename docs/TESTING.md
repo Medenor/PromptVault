@@ -312,9 +312,6 @@ Configures coverage reporting and exclusions:
 [run]
 source = src
 omit =
-    # Legacy JSON-based services (deprecated)
-    */services/prompt_data_service.py
-    */services/backup_service.py
     # Database health checks
     */db/health.py
 ```
