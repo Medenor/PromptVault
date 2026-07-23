@@ -105,18 +105,20 @@ With built-in multi-user authentication and role-based access control, PromptVau
 
 PromptVault is **fully tested and production-ready**:
 
-- **Backend Testing**: Pytest unit tests targeting min. 85% coverage with full integration tests
-- **Frontend Testing**: TypeScript unit tests targeting min. 85% coverage with component and utility tests
-- **UI Redesign**: Complete Tailwind CSS v4 migration with responsive design and improved accessibility
+- **Backend Testing**: Pytest suite with an 85% minimum coverage gate and full integration tests
+- **Frontend Testing**: Vitest/TypeScript unit tests with an 85% minimum coverage gate
+- **UI**: Tailwind CSS v4 design system with responsive, mobile-first layouts and accessibility support
 - **Security**: Comprehensive security configuration with JWT ES256 authentication, password hashing, rate limiting, and session management
 - **Internationalization**: Full i18n support for English, French, Spanish, and German
+
+Exact test counts and coverage percentages aren't pinned here since they change with every PR — see [docs/TESTING.md](docs/TESTING.md) for how to reproduce current numbers.
 
 ### Built With
 
 - [Python](https://www.python.org/) 3.14+
 - [FastAPI](https://fastapi.tiangolo.com/) - Modern web framework
 - [Uvicorn](https://www.uvicorn.org/) - High-performance ASGI server
-- [TypeScript](https://www.typescriptlang.org/) - Frontend logic (migration complete)
+- [TypeScript](https://www.typescriptlang.org/) - Frontend logic
 - [Vite](https://vitejs.dev/) - Frontend build and dev server
 - [Jinja2](https://jinja.palletsprojects.com/) - Template engine
 - [SQLAlchemy](https://www.sqlalchemy.org/) - Database ORM
@@ -131,32 +133,9 @@ PromptVault is **fully tested and production-ready**:
 
 ### Architecture
 
-PromptVault follows a clean, layered architecture with clear separation of concerns:
+PromptVault follows a clean, layered architecture: a service layer holds business logic (prompt data, filtering, versioning, import/export, backups), a repository-based data layer abstracts SQLAlchemy models and sessions over PostgreSQL or SQLite, and Alembic handles schema migrations.
 
-**Service Layer:**
-
-- **PromptDataService**: Handles all data-related operations including loading, saving, and migration of prompt data
-- **PromptFilterService**: Manages filtering and searching logic for prompts
-- **PromptVersioningService**: Handles version control operations for prompts
-- **PromptImportExportService**: Manages import and export operations in various formats (CSV, Markdown)
-- **BackupService**: Provides comprehensive data backup and restoration capabilities with automatic pre-operation backups
-
-**Data Layer (Database Backend):**
-
-- **Repository Pattern**: Abstract data access through specialized repositories (PromptRepository, VersionRepository, CategoryRepository, TagRepository)
-- **ORM Models**: SQLAlchemy models for type-safe database operations
-- **Session Management**: Context managers for transaction safety and automatic rollback
-- **Migration Support**: Alembic-based database versioning and schema evolution
-
-**Storage Options:**
-
-- **PostgreSQL**: Production-ready relational database for high-performance, concurrent access (recommended for production)
-- **SQLite**: Lightweight embedded database for development and small deployments
-- **JSON (Legacy)**: File-based storage for backward compatibility (deprecated)
-
-This modular design improves code maintainability, testability, and extensibility while providing flexibility in deployment options.
-
-For detailed technical specifications and database schema, see [Database Specification](docs/SPECS/SPEC_DATABASE.md). For development guidelines and codebase structure, see [AGENTS.md](docs/AGENTS.md).
+For the full breakdown and database schema, see [Database Specification](docs/SPECS/SPEC_DATABASE.md). For development guidelines and codebase structure, see [AGENTS.md](AGENTS.md). Individual features also have frozen spec/plan/tasks documents under [`specs/`](specs/) (e.g. [001-prompt-versioning](specs/001-prompt-versioning/), [003-enhanced-backup-restore](specs/003-enhanced-backup-restore/)).
 
 ### UI Design & Styling
 
@@ -164,14 +143,14 @@ PromptVault's frontend has been modernized with Tailwind CSS v4 for consistent, 
 
 - **Tailwind CSS v4**: Utility-first CSS framework with @theme directives for custom design system
 - **Responsive Design**: Mobile-first approach with breakpoints for all device sizes
-- **Dark Mode Ready**: Tailwind color palette supports light and dark themes
+- **Dark Mode**: Automatic light/dark theme based on the OS `prefers-color-scheme` setting (Tailwind `dark:` variants)
 - **Component Library**: Reusable button, card, form, input, and navigation components
 - **Accessibility**: Focus states, keyboard navigation, ARIA labels, and semantic HTML
 - **Performance**: CSS purging and optimization for minimal bundle size
 
-### TypeScript Migration
+### Frontend Stack
 
-PromptVault's frontend has been migrated from legacy JavaScript to TypeScript. All page scripts live under `src/web/static/ts`, are built via Vite, and type-checked with `tsc`.
+PromptVault's frontend is written entirely in TypeScript. All page scripts live under `src/web/static/ts`, are built via Vite, and type-checked with `tsc`.
 
 ### Version Control
 
@@ -190,17 +169,9 @@ For detailed usage instructions, see [Version Control Documentation](docs/VERSIO
 
 ### Data Backup System
 
-PromptVault includes a comprehensive, production-ready backup system to prevent data loss and enable easy recovery:
+Backups are created automatically before risky operations (deletes, import replace) and pre-restore, or on demand/schedule from the `/backup-management` page. They support at-rest encryption (Argon2id-derived AES-256-GCM), optional upload to S3-compatible storage, checksum-based incremental/delta storage, gzip compression, configurable retention cleanup, and an append-only audit log.
 
-- **Automatic Backups**: Pre-operation backups are created automatically before risky operations (delete prompts, replace imports)
-- **Manual Backups**: Users can create custom-named backups at any time through the web interface
-- **Backup Management**: Full-featured backup management page (`/backup-management`) for viewing, restoring, and managing all backups
-- **Smart Retention**: Configurable cleanup policies to remove old backups and save disk space
-- **Compression**: Automatic gzip compression of older backups to optimize storage usage
-- **Safety Features**: Pre-restore backups ensure no data loss during restoration operations
-- **Complete Metadata**: Every backup includes comprehensive metadata (timestamp, size, prompt count, author)
-- **Maintenance Tools**: Built-in cleanup and compression utilities with progress indicators
-- **Statistics Dashboard**: Real-time backup statistics and storage information
+For technical details, see the [Database Specification](docs/SPECS/SPEC_DATABASE.md) and [003-enhanced-backup-restore](specs/003-enhanced-backup-restore/) spec.
 
 ## Screenshots and gallery
 
@@ -334,52 +305,12 @@ For a detailed walkthrough, see the **[Turnkey Deployment Guide](docs/DEPLOYMENT
 
 ### Automated Setup (Recommended)
 
-PromptVault includes a comprehensive setup wizard that automates the entire deployment process. The wizard provides three modes:
+The setup wizard also supports `--quick` (SQLite, development defaults), `--advanced` (choose PostgreSQL/SQLite, full config control, production-ready), and `--component {jwt,env,database,deploy}` to run a single step in isolation.
 
-**Quick Setup** (5 minutes, recommended for development):
-
-```bash
-python scripts/setup/setup.py --quick
-```
-
-- Uses SQLite database
-- Generates JWT keys automatically
-- Creates development configuration
-- Sets up admin user
-- Starts the application
-
-**Advanced Setup** (customizable, recommended for production):
-
-```bash
-python scripts/setup/setup.py --advanced
-```
-
-- Choose PostgreSQL or SQLite
-- Customize all configuration options
-- Full control over security settings
-- Production-ready deployment
-
-**Component Setup** (run individual components):
-
-```bash
-# JWT keys only
-python scripts/setup/setup.py --component jwt
-
-# Environment configuration only
-python scripts/setup/setup.py --component env
-
-# Database setup only
-python scripts/setup/setup.py --component database
-
-# Deployment only
-python scripts/setup/setup.py --component deploy
-```
-
-For complete documentation on the automated setup system, see:
+For the full walkthrough of each mode, see:
 
 - **[Turnkey Deployment Guide](docs/DEPLOYMENT.md)** - Automated deployment with rollback
 - **[Troubleshooting Guide](docs/TROUBLESHOOTING.md)** - Common issues and solutions
-- **[Deployment Guide](docs/DEPLOYMENT.md)** - Detailed deployment documentation
 
 ### Alternative: Manual Installation
 
@@ -452,43 +383,9 @@ PromptVault supports three distinct user roles with different permission levels:
 
 ### Security Features
 
-PromptVault implements defense-in-depth security following OWASP best practices:
+PromptVault implements defense-in-depth security following OWASP best practices: Argon2id password hashing with a strong policy and account lockout, ES256 JWT access/refresh tokens with rotation and reuse detection, rate limiting and CSRF protection on auth endpoints, a 5-concurrent-session cap with device/IP tracking and revocation, and a no-enumeration email-based password reset flow.
 
-**Password Security:**
-
-- Argon2id password hashing (winner of Password Hashing Competition, OWASP recommended)
-- Password policy enforcement: minimum 12 characters with complexity requirements
-- Common password detection to prevent easily guessable passwords
-- Account lockout after 5 failed login attempts (15-minute duration)
-
-**Token-Based Authentication:**
-
-- ES256 (ECDSA P-256) JWT tokens for secure authentication
-- Short-lived access tokens (30 minutes) with automatic refresh
-- Refresh token rotation on every use for enhanced security
-- Token family tracking with automatic reuse detection and revocation
-- HTTP-only cookies to prevent XSS attacks
-
-**Rate Limiting & Protection:**
-
-- Rate limiting on authentication endpoints (slowapi + Redis)
-- Failed login attempt tracking per user
-- Temporary account lockout after repeated failures
-- CSRF protection via SameSite=Strict cookies
-
-**Session Management:**
-
-- Maximum 5 concurrent sessions per user
-- Session metadata tracking (device, browser, IP, last used)
-- Ability to view and revoke active sessions
-- Automatic cleanup of expired sessions
-
-**Password Reset Flow:**
-
-- Secure email-based password reset with single-use tokens
-- 1-hour token expiration for security
-- Rate limiting (3 requests per hour per IP)
-- No user enumeration (same response for existing/non-existing emails)
+For the full details on every control, see the [Authentication Security Guide](docs/AUTHENTICATION_SECURITY.md).
 
 ### First-Time Setup
 
@@ -513,38 +410,7 @@ The script will:
 
 ### Authentication Endpoints
 
-PromptVault provides 20 authentication endpoints organized into three categories:
-
-**Public Endpoints (no authentication required):**
-
-- `POST /api/auth/register` - Create new user account
-- `POST /api/auth/login` - Login and receive JWT tokens
-- `POST /api/auth/refresh` - Refresh access token
-- `POST /api/auth/logout` - Logout and revoke tokens
-- `POST /api/auth/password-reset/request` - Request password reset email
-- `POST /api/auth/password-reset/confirm` - Confirm password reset with token
-
-**Protected User Endpoints (authentication required):**
-
-- `GET /api/auth/me` - Get current user profile
-- `PUT /api/auth/me` - Update profile information
-- `POST /api/auth/me/change-password` - Change password
-- `GET /api/auth/me/sessions` - View active sessions
-- `DELETE /api/auth/me/sessions/{session_id}` - Revoke specific session
-
-**Admin Endpoints (admin role required):**
-
-- `GET /api/admin/users` - List all users with pagination
-- `GET /api/admin/users/{user_id}` - Get user details
-- `PUT /api/admin/users/{user_id}/role` - Update user role
-- `PUT /api/admin/users/{user_id}/status` - Activate/deactivate user
-- `DELETE /api/admin/users/{user_id}` - Delete user account
-- `GET /api/admin/sessions` - View all sessions across all users
-- `DELETE /api/admin/sessions/{session_id}` - Revoke any user's session
-
-For complete API documentation with request/response examples, see [Authentication API Guide](docs/AUTHENTICATION_API.md).
-
-For security documentation and OWASP compliance details, see [Authentication Security Guide](docs/AUTHENTICATION_SECURITY.md).
+Authentication and user/session management are exposed via public endpoints (register, login, refresh, logout, password reset), protected user endpoints (profile, change password, session management), and admin-only endpoints (user and session administration). For the full endpoint list with request/response examples, see the [Authentication API Guide](docs/AUTHENTICATION_API.md).
 
 ## Usage
 
@@ -596,7 +462,7 @@ PORT=8001 python3 run_web.py
 - **Categories & Tags**: Organize prompts with categories and tags for easy discovery
 - **Search & Filter**: Find prompts quickly with advanced filtering and search capabilities
 - **Import/Export**: Support for CSV, Markdown, and JSON formats with preview functionality
-- **Data Backup System**: Comprehensive backup and restoration with automatic pre-operation backups, manual backups, cleanup, and compression
+- **Data Backup System**: Comprehensive backup and restoration with automatic pre-operation backups, manual/scheduled backups, encryption, S3-compatible cloud upload, cleanup, and compression
 - **Security**: Argon2id password hashing, ES256 JWT tokens, rate limiting, account lockout, password reset flow
 - **Mobile-Responsive UI & PWA**: Installable Progressive Web App with offline support, touch gestures, and a mobile-first navigation drawer (see below)
 - **Multi-language Support**: Internationalization with English, French, Spanish, and German (authentication UI in English)
@@ -604,15 +470,7 @@ PORT=8001 python3 run_web.py
 
 ### Mobile-Responsive UI & PWA
 
-PromptVault is a fully installable Progressive Web App with a mobile-first UI, tested at 320px–768px+ viewport widths (tablet-landscape at 768px+ uses the existing desktop layout):
-
-- **Navigation**: A unified slide-out drawer (hamburger menu) replaces the desktop sidebar below 768px, combining navigation links and filters with focus-trapped keyboard access.
-- **Touch targets & layout**: All interactive controls meet a 44×44px minimum tap size; modals are full-screen on mobile and centered on desktop; the on-screen keyboard no longer obscures focused form fields.
-- **Search**: A dedicated full-screen search overlay on mobile, separate from the desktop inline search bar.
-- **Gestures**: Swipe left/right on a prompt card to reveal delete (with confirmation) or edit actions; pull-to-refresh on the prompt list. Every gesture has a visible, tappable equivalent for accessibility.
-- **Offline support**: A Service Worker (root-scoped at `/sw.js`) precaches the app shell and locale files so previously-viewed prompts and their version history remain viewable and copyable offline. Create, edit, delete, revert, and bulk actions — and navigation to pages that require connectivity — are blocked client-side with a clear message instead of being queued.
-- **Installable**: A Web App Manifest (`/static/manifest.json`) lets the app be added to a device home screen and launched standalone.
-- **Dark mode**: Automatic light/dark theme based on the OS `prefers-color-scheme` setting.
+PromptVault is a fully installable Progressive Web App with a mobile-first UI, tested at 320px–768px+ viewport widths. Below 768px it swaps to a slide-out navigation drawer, full-screen search, and swipe/pull-to-refresh gestures (each with a tappable equivalent); a root-scoped Service Worker (`/sw.js`) keeps previously-viewed prompts and version history readable offline, while write actions are blocked client-side (not queued) until connectivity returns; a Web App Manifest (`/static/manifest.json`) makes it installable to a home screen.
 
 ### Internationalization
 
@@ -625,29 +483,11 @@ PromptVault supports multiple languages (English, French, Spanish, German). The 
 
 ### Validation & Monitoring
 
-PromptVault ships with an end-to-end input validation and sanitization framework:
-
-- **API contracts**: All POST/PUT endpoints use Pydantic schemas with length, pattern, and enum constraints (prompts, export/import, backups, version revert).
-- **Server sanitization**: Safe filename/backup handling, upload MIME/size checks, control-character stripping, whitespace normalization, tag deduplication.
-- **Client parity**: Real-time validation, character counters, duplicate-tag warnings, ARIA/i18n (en/fr/es/de), suppression of native browser prompts.
-- **Monitoring**: Validation metrics persisted to `data/logs/validation_metrics.json` and exposed via `GET /api/validation/stats` (success/failure counts, per-endpoint breakdown, recent failures, failure_rate).
-
-See `docs/API_VALIDATION_AND_MONITORING.md` and `docs/VALIDATION_TEST_CHECKLIST.md` for usage and test steps.
+Input validation runs end-to-end — Pydantic schemas on the API, server-side sanitization, and matching client-side checks (with i18n error messages) — and validation outcomes are tracked in `data/logs/validation_metrics.json` and exposed via `GET /api/validation/stats`. See `docs/API_VALIDATION_AND_MONITORING.md` and `docs/VALIDATION_TEST_CHECKLIST.md` for details.
 
 ### Project Structure
 
-PromptVault follows a clean, layered architecture:
-
-- **`src/web/`** - FastAPI web application, templates, and static assets
-- **`src/services/`** - Business logic layer (data services, filtering, versioning, import/export, backups)
-- **`src/db/`** - Database layer with SQLAlchemy models and repositories
-- **`scripts/`** - Utility scripts (database migration, operations testing)
-- **`alembic/`** - Database migration version control
-- **`data/`** - Application data (database, backups, logs)
-- **`tests/`** - Comprehensive test suite (509 tests, 86.90% coverage)
-- **`docs/`** - Documentation and specifications
-
-For detailed project structure and development guidelines, see [AGENTS.md](docs/AGENTS.md).
+`src/web/` (FastAPI app, templates, static assets), `src/services/` (business logic), `src/db/` (SQLAlchemy models and repositories), `scripts/`, `alembic/`, `data/`, `tests/`, `docs/`, and `specs/` — see [AGENTS.md](AGENTS.md) for the full breakdown and development guidelines.
 
 ## Testing
 
@@ -655,10 +495,7 @@ Testing instructions live in **[docs/TESTING.md](docs/TESTING.md)**, including b
 
 ## Observability & Telemetry
 
-- **Structured Logs**: Application and audit logs live in `data/logs/` as newline-delimited JSON. Use tools like `jq` (`tail -f data/logs/audit.log | jq '.action,.resource_id'`) when troubleshooting in development.
-- **Frontend Reporter**: `src/web/static/ts/telemetry.ts` registers a global `window.FrontendLogger`. Call `window.FrontendLogger.reportError('component', 'action', error, { extra: 'context' });` to capture handled failures. All payloads are sanitized (strings truncated to 500–2,000 chars) and rate limited (10 reports per client IP per minute).
-- **Opt-out Controls**: Developers/testers can disable reporting via `window.FrontendLogger.disable()` or by setting `localStorage.setItem('promptvault.telemetry.optOut', 'true')`. Call `window.FrontendLogger.enable()` to re-enable. The reporter only sends when enabled and still logs to the browser console for debugging.
-- **Server Endpoint**: The `/api/logs/frontend` route receives telemetry, enriches it with the caller IP/request metadata, and stores it through the same logging infrastructure so alerts/exports see both backend and frontend failures.
+Application and audit logs are written to `data/logs/` as newline-delimited JSON. Frontend errors are captured via a `window.FrontendLogger` reporter (sanitized and rate-limited) and forwarded to `/api/logs/frontend`, so backend and frontend failures land in the same logging pipeline. See `src/web/static/ts/telemetry.ts` for the reporter API and opt-out controls.
 
 ## Roadmap
 
