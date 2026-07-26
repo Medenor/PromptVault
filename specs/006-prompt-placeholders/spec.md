@@ -64,8 +64,8 @@ A user edits a prompt's content (adding, removing, or renaming placeholders), vi
 ### Edge Cases
 
 - What happens when a prompt mixes both syntaxes, e.g., `[DURATION]` and `{DURATION}` in the same content? Treated as two distinct placeholders (different tokens), each getting its own field, since the two syntaxes are not declared equivalent to each other.
-- What happens when brackets/braces appear in the content but don't look like a placeholder (e.g., empty `[]`, unmatched `[abc`, or a code sample containing literal brackets like `array[0]`)? Only well-formed tokens (non-empty, matching opening/closing pair, no nested brackets/braces, no internal newline) are treated as placeholders; anything else is left as plain text.
-- What happens when a placeholder name contains unusual characters (punctuation, numbers, mixed case)? The full text between the delimiters is used as the placeholder's identity and display label as-is; matching is exact and case-sensitive.
+- What happens when brackets/braces appear in the content but don't look like a placeholder (e.g., empty `[]`, unmatched `[abc`, `[point]`, `[YYYY-MM-DD]`, `[P]`, or a code sample containing literal brackets like `array[0]`)? Only well-formed tokens (matching opening/closing pair, name is 2+ characters of uppercase ASCII letters/digits/underscores/spaces) are treated as placeholders; anything else is left as plain text.
+- What happens when a placeholder name contains unusual characters (punctuation, numbers, mixed case)? Only names matching `[A-Z0-9_ ]{2,}` are recognized. Mixed case like `[Duration]` or names with hyphens like `[YYYY-MM-DD]` are NOT placeholders.
 - What happens when the user copies a prompt with placeholders where the substituted values would make the text extremely long? No special handling — substitution is a straightforward text replacement with no length limit beyond existing prompt content limits.
 - What happens when a placeholder value contains characters that look like another placeholder token (e.g., user enters `[NESTED]` as the value for `[DURATION]`)? The value is inserted as literal text and is not itself re-scanned for placeholders (single-pass substitution, no recursive expansion).
 - What happens on a prompt with a very large number of distinct placeholders? All distinct placeholders get a field; no cap is imposed by this feature (existing prompt content size limits still apply).
@@ -82,8 +82,8 @@ A user edits a prompt's content (adding, removing, or renaming placeholders), vi
 
 ### Functional Requirements
 
-- **FR-001**: System MUST recognize placeholder tokens in prompt content written in square-bracket syntax (`[NAME]`) and curly-brace syntax (`{NAME}`), where `NAME` is any non-empty run of characters that does not itself contain a newline or a nested opening/closing delimiter of the same kind.
-- **FR-002**: System MUST treat `[NAME]` and `{NAME}` as two distinct placeholder identities even when `NAME` is identical, and MUST treat placeholder matching as case-sensitive and exact-text.
+- **FR-001**: System MUST recognize placeholder tokens in prompt content written in square-bracket syntax (`[NAME]`) and curly-brace syntax (`{NAME}`), where `NAME` consists of 2 or more characters drawn exclusively from uppercase ASCII letters (`A–Z`), digits (`0–9`), underscores (`_`), and spaces (` `).
+- **FR-002**: System MUST treat `[NAME]` and `{NAME}` as two distinct placeholder identities even when `NAME` is identical, and MUST treat placeholder matching as case-sensitive and exact-text. Lowercase letters, hyphens, slashes, and other punctuation inside delimiters MUST NOT be recognized as placeholders.
 - **FR-003**: System MUST detect all distinct placeholder tokens present in a prompt's current content and present exactly one input field per distinct token when the user clicks Copy on that prompt's card.
 - **FR-004**: System MUST NOT display a placeholder form for prompts whose content contains no recognized placeholder tokens; copy behavior for such prompts MUST remain unchanged from current behavior (immediate one-click copy).
 - **FR-004a**: System MUST NOT display a placeholder form within the version-history or diff view; those views remain read-only/text-only as today. The placeholder-fill flow applies only to the Copy-click action on a prompt's current content.
@@ -99,7 +99,7 @@ A user edits a prompt's content (adding, removing, or renaming placeholders), vi
 
 ### Key Entities
 
-- **Placeholder Token**: A bracketed (`[NAME]`) or braced (`{NAME}`) span of text found within a prompt's content. Identity is the exact delimiter type plus the exact text between delimiters. Not persisted as a separate record — always derived on the fly from the prompt's current content.
+- **Placeholder Token**: A bracketed (`[NAME]`) or braced (`{NAME}`) span of text found within a prompt's content, where `NAME` is 2+ characters of uppercase ASCII letters, digits, underscores, or spaces (`[A-Z0-9_ ]{2,}`). Identity is the exact delimiter type plus the exact text between delimiters. Not persisted as a separate record — always derived on the fly from the prompt's current content.
 - **Placeholder Value Set**: The transient, per-use collection of user-entered values keyed by placeholder token, scoped to a single viewing/copy session for a prompt. Not persisted with the prompt or its version history.
 
 ## Success Criteria _(mandatory)_

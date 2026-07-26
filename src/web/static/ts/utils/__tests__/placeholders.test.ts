@@ -45,9 +45,7 @@ describe('detectPlaceholders', () => {
   });
 
   it('ignores unmatched/unterminated brackets while still matching well-formed spans', () => {
-    expect(detectPlaceholders('array[0] and [unterminated')).toEqual([
-      { raw: '[0]', delimiter: 'bracket', label: '0' },
-    ]);
+    expect(detectPlaceholders('array[0] and [unterminated')).toEqual([]);
   });
 
   it('ignores a fully unterminated bracket span', () => {
@@ -55,18 +53,41 @@ describe('detectPlaceholders', () => {
   });
 
   it('does not treat doubled outer brackets as part of the token identity', () => {
-    expect(detectPlaceholders('[[X]]')).toEqual([{ raw: '[X]', delimiter: 'bracket', label: 'X' }]);
+    expect(detectPlaceholders('[[XY]]')).toEqual([
+      { raw: '[XY]', delimiter: 'bracket', label: 'XY' },
+    ]);
   });
 
   it('ignores multi-line spans', () => {
     expect(detectPlaceholders('[NAME\nSTILL]')).toEqual([]);
   });
 
-  it('preserves first-seen order across mixed delimiters', () => {
-    const tokens = detectPlaceholders('{B} then [A] then {B} then [A]');
+  it('ignores lowercase names', () => {
+    expect(detectPlaceholders('Say hello to [point] and [titre].')).toEqual([]);
+  });
+
+  it('ignores names shorter than 2 characters', () => {
+    expect(detectPlaceholders('Check [P] and [N] and {X}.')).toEqual([]);
+  });
+
+  it('ignores names with hyphens or slashes', () => {
+    expect(detectPlaceholders('Date: [YYYY-MM-DD] and path: [A/B].')).toEqual([]);
+  });
+
+  it('accepts names with digits, underscores, and spaces', () => {
+    const tokens = detectPlaceholders('[ID_2] and [TYPE OF THING] and {V2}.');
     expect(tokens).toEqual([
-      { raw: '{B}', delimiter: 'brace', label: 'B' },
-      { raw: '[A]', delimiter: 'bracket', label: 'A' },
+      { raw: '[ID_2]', delimiter: 'bracket', label: 'ID_2' },
+      { raw: '[TYPE OF THING]', delimiter: 'bracket', label: 'TYPE OF THING' },
+      { raw: '{V2}', delimiter: 'brace', label: 'V2' },
+    ]);
+  });
+
+  it('preserves first-seen order across mixed delimiters', () => {
+    const tokens = detectPlaceholders('{BB} then [AA] then {BB} then [AA]');
+    expect(tokens).toEqual([
+      { raw: '{BB}', delimiter: 'brace', label: 'BB' },
+      { raw: '[AA]', delimiter: 'bracket', label: 'AA' },
     ]);
   });
 

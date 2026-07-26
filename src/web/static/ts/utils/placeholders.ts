@@ -16,8 +16,8 @@ export type PlaceholderToken = {
   label: string;
 };
 
-const BRACKET_RE = /\[([^[\]\n]+)\]/g;
-const BRACE_RE = /\{([^{}\n]+)\}/g;
+const BRACKET_RE = /\[([A-Z0-9_ ]{2,})\]/g;
+const BRACE_RE = /\{([A-Z0-9_ ]{2,})\}/g;
 
 function collectMatches(
   content: string,

@@ -7,7 +7,8 @@ This feature has no network/API contract (no backend involved). The "contract" b
 - **Input**: raw prompt content string (may be empty, may contain zero, one, or many placeholder-like spans).
 - **Output**: array of `PlaceholderToken` (see data-model.md), one per **distinct** `raw` value, in first-seen order. Empty array if none found.
 - **Guarantees**:
-  - Never throws — malformed/unmatched brackets (e.g. `"array[0]"`, `"[unterminated"`, `"[]"`) are simply not included in the result.
+  - Never throws — malformed/unmatched brackets (e.g. `"array[0]"`, `"[unterminated"`, `"[]"`) and non-conforming names (lowercase, too short, containing hyphens/slashes/punctuation) are simply not included in the result.
+  - Only names matching `[A-Z0-9_ ]{2,}` (2+ uppercase ASCII letters, digits, underscores, or spaces) are recognized as placeholders.
   - Pure function: does not mutate `content`, no side effects.
 
 ## `substitutePlaceholders(content: string, values: Map<string, string>): string`

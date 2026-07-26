@@ -15,7 +15,7 @@ npx vitest run src/web/static/ts/utils/__tests__/placeholders.test.ts
 
 - Detecting distinct `[NAME]` and `{NAME}` tokens, including repeated occurrences of the same token collapsing to one entry.
 - Treating `[DURATION]` and `{DURATION}` as distinct entries.
-- Ignoring malformed spans (`[]`, unmatched `[abc`, nested `[[X]]`, multi-line spans).
+- Ignoring malformed spans (`[]`, unmatched `[abc`, nested `[[XY]]`, multi-line spans), non-conforming names (lowercase `[point]`, too-short `[P]`, containing hyphens `[YYYY-MM-DD]`).
 - Substituting only filled tokens, leaving unfilled ones as the original literal text.
 - Not re-expanding a substituted value that itself looks like a placeholder.
 
