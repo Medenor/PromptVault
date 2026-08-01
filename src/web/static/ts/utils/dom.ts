@@ -128,13 +128,23 @@ export function setFieldState(
   }
 }
 
+const HTML_ESCAPE_MAP: Record<string, string> = {
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#39;',
+};
+
 /**
- * Escape HTML to prevent XSS
+ * Escape HTML to prevent XSS.
+ *
+ * Escapes quote characters in addition to &, <, > so the result is safe to
+ * interpolate into both text-node and double/single-quoted attribute-value
+ * positions — a `textContent`/`innerHTML` round-trip only escapes the former.
  */
 export function escapeHtml(text: string): string {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
+  return text.replace(/[&<>"']/g, (char) => HTML_ESCAPE_MAP[char] ?? char);
 }
 
 /**

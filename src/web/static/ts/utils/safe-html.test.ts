@@ -22,6 +22,20 @@ describe('html tagged template', () => {
     expect(result).toContain('&lt;tag&gt;');
   });
 
+  it('does not allow a double-quoted attribute value to break out and inject a new attribute', () => {
+    const evil = '" onmouseover="alert(1)';
+    const result = html`<div data-name="${evil}"></div>`;
+
+    const container = document.createElement('div');
+    container.innerHTML = result;
+    const parsed = container.firstElementChild;
+
+    expect(parsed).not.toBeNull();
+    expect(parsed?.hasAttribute('onmouseover')).toBe(false);
+    expect(parsed?.attributes.length).toBe(1);
+    expect(parsed?.getAttribute('data-name')).toBe(evil);
+  });
+
   it('leaves raw()-wrapped values unescaped', () => {
     const trusted = raw('<b>bold</b>');
     const result = html`<div>${trusted}</div>`;
