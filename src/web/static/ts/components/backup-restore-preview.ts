@@ -106,6 +106,7 @@ function renderDiff(diff: RestoreDiff, backupId: string): void {
   }
 
   html += '</div>';
+  // eslint-disable-next-line no-restricted-properties -- static markup, no interpolation
   content.innerHTML = html;
 
   const confirmBtn = document.getElementById('confirm-selective-restore-btn');

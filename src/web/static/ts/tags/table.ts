@@ -6,6 +6,7 @@
 
 import { tUnsafe } from '@/utils/i18n';
 import { setupScrollIndicators } from '@/utils/dom';
+import { html, raw } from '@/utils/safe-html';
 import {
   applyFocusStyles,
   initializeTableFirstCharNavigation,
@@ -63,13 +64,13 @@ function renderParentOptions(
   selectedId: number | null,
   parentNoneLabel: string
 ): string {
-  const options = [`<option value="">${parentNoneLabel}</option>`];
+  const options = [html`<option value="">${parentNoneLabel}</option>`];
   items.forEach((item) => {
     if (item.id === currentId) {
       return;
     }
     const selected = selectedId === item.id ? 'selected' : '';
-    options.push(`<option value="${item.id}" ${selected}>${item.name}</option>`);
+    options.push(html`<option value="${item.id}" ${raw(selected)}>${item.name}</option>`);
   });
   return options.join('');
 }
@@ -81,7 +82,8 @@ export function populateCreateParentSelect(
   if (!createParent) {
     return;
   }
-  createParent.innerHTML = `<option value="">${tUnsafe('management.parentNone')}</option>`;
+  // eslint-disable-next-line no-restricted-properties -- structurally escaped via html`` tagged template (utils/safe-html.ts)
+  createParent.innerHTML = html`<option value="">${tUnsafe('management.parentNone')}</option>`;
   items.forEach((item) => {
     const option = document.createElement('option');
     option.value = String(item.id);
@@ -104,6 +106,7 @@ export function renderRows(
   if (!tableBody) {
     return;
   }
+  // eslint-disable-next-line no-restricted-properties -- static markup, no interpolation
   tableBody.innerHTML = '';
 
   const emptyState = document.getElementById('tags-empty-state');
@@ -142,20 +145,45 @@ export function renderRows(
     row.dataset.id = String(item.id);
     row.id = `data-tag-id-${item.id}`;
 
-    row.innerHTML = `
+    // eslint-disable-next-line no-restricted-properties -- structurally escaped via html`` tagged template (utils/safe-html.ts)
+    row.innerHTML = html`
       <td class="py-2 pr-4">
-        <input type="checkbox" id="checkbox-${item.id}" data-select-id="${item.id}" aria-label="${selectLabel} #${item.id}" tabindex="-1" />
+        <input
+          type="checkbox"
+          id="checkbox-${item.id}"
+          data-select-id="${item.id}"
+          aria-label="${selectLabel} #${item.id}"
+          tabindex="-1"
+        />
       </td>
       <td class="py-2 pr-4 text-gray-600 dark:text-gray-400">#${item.id}</td>
       <td class="py-2 pr-4">
-        <input id="name-input-${item.id}" data-field="name" aria-label="${nameLabel}" class="w-full px-2 py-1 border border-gray-300 rounded dark:border-gray-600" value="${item.name}" />
+        <input
+          id="name-input-${item.id}"
+          data-field="name"
+          aria-label="${nameLabel}"
+          class="w-full px-2 py-1 border border-gray-300 rounded dark:border-gray-600"
+          value="${item.name}"
+        />
       </td>
       <td class="py-2 pr-4">
-        <input id="desc-input-${item.id}" data-field="description" aria-label="${descriptionLabel}" class="w-full px-2 py-1 border border-gray-300 rounded dark:border-gray-600" value="${item.description ?? ''}" />
+        <input
+          id="desc-input-${item.id}"
+          data-field="description"
+          aria-label="${descriptionLabel}"
+          class="w-full px-2 py-1 border border-gray-300 rounded dark:border-gray-600"
+          value="${item.description ?? ''}"
+        />
       </td>
       <td class="py-2 pr-4">
         <div class="flex items-center gap-2">
-          <input id="color-input-${item.id}" data-field="color" aria-label="${colorLabel}" class="w-full px-2 py-1 border border-gray-300 rounded dark:border-gray-600" value="${item.color ?? ''}" />
+          <input
+            id="color-input-${item.id}"
+            data-field="color"
+            aria-label="${colorLabel}"
+            class="w-full px-2 py-1 border border-gray-300 rounded dark:border-gray-600"
+            value="${item.color ?? ''}"
+          />
           <input
             id="color-picker-${item.id}"
             data-color-picker
@@ -168,15 +196,34 @@ export function renderRows(
         </div>
       </td>
       <td class="py-2 pr-4">
-        <select id="parent-select-${item.id}" data-field="parent_tag_id" aria-label="${parentLabel}" class="w-36 px-2 py-1 border border-gray-300 rounded dark:border-gray-600">
-          ${renderParentOptions(allItems, item.id, item.parent_tag_id ?? null, parentNoneLabel)}
+        <select
+          id="parent-select-${item.id}"
+          data-field="parent_tag_id"
+          aria-label="${parentLabel}"
+          class="w-36 px-2 py-1 border border-gray-300 rounded dark:border-gray-600"
+        >
+          ${raw(
+            renderParentOptions(allItems, item.id, item.parent_tag_id ?? null, parentNoneLabel)
+          )}
         </select>
       </td>
       <td class="py-2 pr-4 text-gray-600 dark:text-gray-400">${item.usage_count}</td>
       <td class="py-2 pr-4">
         <div class="flex items-center gap-2">
-          <button id="save-btn-${item.id}" data-action="save" class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">${saveLabel}</button>
-          <button id="delete-btn-${item.id}" data-action="delete" class="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700">${deleteLabel}</button>
+          <button
+            id="save-btn-${item.id}"
+            data-action="save"
+            class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            ${saveLabel}
+          </button>
+          <button
+            id="delete-btn-${item.id}"
+            data-action="delete"
+            class="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700"
+          >
+            ${deleteLabel}
+          </button>
         </div>
       </td>
     `;

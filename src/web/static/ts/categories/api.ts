@@ -94,7 +94,10 @@ export function fetchUnusedCategories(): Promise<CategoryListResponse> {
   return apiFetch<CategoryListResponse>('/api/categories/unused');
 }
 
-export function assignCategoryToPromptRequest(promptId: number, category: string): Promise<unknown> {
+export function assignCategoryToPromptRequest(
+  promptId: number,
+  category: string
+): Promise<unknown> {
   return apiFetch('/api/categories/assign-orphans', {
     method: 'POST',
     body: JSON.stringify({ prompt_ids: [promptId], category, confirm: true }),

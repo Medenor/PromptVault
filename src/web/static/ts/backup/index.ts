@@ -28,7 +28,12 @@ import {
   showRestoreModal,
 } from './list';
 import { cleanupBackups, compressBackups } from './maintenance';
-import { addCloudProvider, deleteCloudProvider, loadCloudProviders, testCloudProvider } from './cloud';
+import {
+  addCloudProvider,
+  deleteCloudProvider,
+  loadCloudProviders,
+  testCloudProvider,
+} from './cloud';
 import { loadEncryptionConfig, rotateEncryptionKey, saveEncryptionConfig } from './encryption';
 import { loadSchedule, saveSchedule, updateDayFieldVisibility } from './schedule';
 

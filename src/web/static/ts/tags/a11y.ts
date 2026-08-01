@@ -177,7 +177,9 @@ export function initializeRovingTabindex(): void {
   );
 }
 
-export function initializeTableFirstCharNavigation(tableBody: HTMLTableSectionElement | null): void {
+export function initializeTableFirstCharNavigation(
+  tableBody: HTMLTableSectionElement | null
+): void {
   if (tableKeyboardNavInitialized) {
     return;
   }

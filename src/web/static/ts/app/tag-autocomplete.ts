@@ -7,7 +7,14 @@
 import { apiFetch, apiGet } from '@/utils/api';
 import { t } from '@/utils/i18n';
 import { showNotification } from '@/utils/notifications';
-import { getSoftMutedColorScheme, getTagColorMap, normalizeTagItems, setTagColorMap, applyPromptColorStyles } from './colors';
+import { html } from '@/utils/safe-html';
+import {
+  getSoftMutedColorScheme,
+  getTagColorMap,
+  normalizeTagItems,
+  setTagColorMap,
+  applyPromptColorStyles,
+} from './colors';
 import { showElement, hideElement, reportAppIssue, MAX_TAGS } from './shared';
 import { showPromptFieldError, clearPromptFieldError } from './prompt-form';
 import type { TagInfo, TagItem } from './types';
@@ -72,6 +79,7 @@ export function renderTagChips(): void {
   if (!chipContainer) {
     return;
   }
+  // eslint-disable-next-line no-restricted-properties -- static markup, no interpolation
   chipContainer.innerHTML = '';
 
   // Don't show empty state - the input placeholder already provides guidance
@@ -90,11 +98,16 @@ export function renderTagChips(): void {
     chip.style.borderColor = colorScheme.border;
 
     chip.dataset.tagName = tag;
-    chip.innerHTML = `
+    // eslint-disable-next-line no-restricted-properties -- structurally escaped via html`` tagged template (utils/safe-html.ts)
+    chip.innerHTML = html`
       <span>${tag}</span>
-      <button type="button" class="text-xs leading-none px-1 opacity-70 hover:opacity-100 transition-opacity" aria-label="${t(
-        'actions.remove'
-      )}">×</button>
+      <button
+        type="button"
+        class="text-xs leading-none px-1 opacity-70 hover:opacity-100 transition-opacity"
+        aria-label="${t('actions.remove')}"
+      >
+        ×
+      </button>
     `;
     chipContainer.appendChild(chip);
   });
@@ -401,6 +414,7 @@ function showTagAutocomplete(filteredTags: TagInfo[]): void {
     return;
   }
 
+  // eslint-disable-next-line no-restricted-properties -- static markup, no interpolation
   autocompleteDiv.innerHTML = '';
 
   if (filteredTags.length === 0) {

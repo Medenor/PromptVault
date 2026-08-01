@@ -12,6 +12,7 @@ import '../../css/tailwind-globals.css';
 import '@/form-validation';
 import { initI18n, t, updateStaticTranslations } from '@/utils/i18n';
 import { setupScrollIndicators } from '@/utils/dom';
+import { html, raw } from '@/utils/safe-html';
 import { showNotification } from '@/utils/notifications';
 import { createModal } from '@components';
 import { closeMobileDrawer, initKeyboardSafeScroll, initMobileNav } from '@/mobile-nav';
@@ -162,17 +163,6 @@ let keyboardHelpModal: {
   close: () => void;
 } | null = null;
 
-function escapeHtmlLocal(text: string): string {
-  const map: Record<string, string> = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#039;',
-  };
-  return text.replace(/[&<>"']/g, (m) => map[m] ?? m);
-}
-
 function showKeyboardShortcutsHelpModal(): void {
   const buildLandmarksHelpList = (): string => {
     const landmarks = Array.from(
@@ -182,7 +172,7 @@ function showKeyboardShortcutsHelpModal(): void {
     );
 
     if (landmarks.length === 0) {
-      return `<li>${escapeHtmlLocal(t('accessibility.keyboardHelp.noLandmarks'))}</li>`;
+      return html`<li>${t('accessibility.keyboardHelp.noLandmarks')}</li>`;
     }
 
     return landmarks
@@ -195,7 +185,7 @@ function showKeyboardShortcutsHelpModal(): void {
           : '';
         const label = ariaLabel || labelledByText;
         const description = label ? `${role} (${label})` : role;
-        return `<li><strong>${index + 1}.</strong> ${escapeHtmlLocal(description)}</li>`;
+        return html`<li><strong>${index + 1}.</strong> ${description}</li>`;
       })
       .join('');
   };
@@ -203,22 +193,26 @@ function showKeyboardShortcutsHelpModal(): void {
   if (!keyboardHelpModal) {
     const content = document.createElement('div');
     content.className = 'space-y-3 text-sm text-gray-700';
-    content.innerHTML = `
-      <p class="text-gray-600">${escapeHtmlLocal(t('accessibility.keyboardHelp.shortcutsHeading'))}</p>
+    // eslint-disable-next-line no-restricted-properties -- structurally escaped via html`` tagged template (utils/safe-html.ts)
+    content.innerHTML = html`
+      <p class="text-gray-600">${t('accessibility.keyboardHelp.shortcutsHeading')}</p>
       <ul class="list-disc list-inside space-y-1">
-        <li><strong>Ctrl/Cmd + H</strong>: ${escapeHtmlLocal(t('accessibility.keyboardHelp.shortcutHistory'))}</li>
-        <li><strong>Ctrl/Cmd + N</strong>: ${escapeHtmlLocal(t('accessibility.keyboardHelp.shortcutNewPrompt'))}</li>
-        <li><strong>Escape</strong>: ${escapeHtmlLocal(t('accessibility.keyboardHelp.shortcutEscape'))}</li>
-        <li><strong>?</strong>: ${escapeHtmlLocal(t('accessibility.keyboardHelp.shortcutQuestion'))}</li>
-        <li><strong>Arrow keys</strong>: ${escapeHtmlLocal(t('accessibility.keyboardHelp.shortcutArrows'))}</li>
-        <li><strong>Enter / Space</strong>: ${escapeHtmlLocal(t('accessibility.keyboardHelp.shortcutActivate'))}</li>
-        <li><strong>Home / End</strong>: ${escapeHtmlLocal(t('accessibility.keyboardHelp.shortcutHomeEnd'))}</li>
-        <li><strong>${escapeHtmlLocal(t('accessibility.keyboardHelp.shortcutCharacterKey'))}</strong>: ${escapeHtmlLocal(t('accessibility.keyboardHelp.shortcutCharacter'))}</li>
+        <li><strong>Ctrl/Cmd + H</strong>: ${t('accessibility.keyboardHelp.shortcutHistory')}</li>
+        <li><strong>Ctrl/Cmd + N</strong>: ${t('accessibility.keyboardHelp.shortcutNewPrompt')}</li>
+        <li><strong>Escape</strong>: ${t('accessibility.keyboardHelp.shortcutEscape')}</li>
+        <li><strong>?</strong>: ${t('accessibility.keyboardHelp.shortcutQuestion')}</li>
+        <li><strong>Arrow keys</strong>: ${t('accessibility.keyboardHelp.shortcutArrows')}</li>
+        <li><strong>Enter / Space</strong>: ${t('accessibility.keyboardHelp.shortcutActivate')}</li>
+        <li><strong>Home / End</strong>: ${t('accessibility.keyboardHelp.shortcutHomeEnd')}</li>
+        <li>
+          <strong>${t('accessibility.keyboardHelp.shortcutCharacterKey')}</strong>:
+          ${t('accessibility.keyboardHelp.shortcutCharacter')}
+        </li>
       </ul>
       <div class="pt-2 border-t border-gray-200">
-        <p class="text-gray-600">${escapeHtmlLocal(t('accessibility.keyboardHelp.landmarksHeading'))}</p>
+        <p class="text-gray-600">${t('accessibility.keyboardHelp.landmarksHeading')}</p>
         <ul id="keyboard-help-landmarks-list" class="list-disc list-inside space-y-1">
-          ${buildLandmarksHelpList()}
+          ${raw(buildLandmarksHelpList())}
         </ul>
       </div>
     `;
@@ -250,6 +244,7 @@ function showKeyboardShortcutsHelpModal(): void {
     '#keyboard-help-landmarks-list'
   );
   if (landmarksList) {
+    // eslint-disable-next-line no-restricted-properties -- static markup, no interpolation
     landmarksList.innerHTML = buildLandmarksHelpList();
   }
 

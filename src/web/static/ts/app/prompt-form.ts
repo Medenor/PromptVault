@@ -7,6 +7,7 @@
 import type { TranslationKey } from '@/types/i18n';
 import { t } from '@/utils/i18n';
 import { announce } from '@/utils/a11y';
+import { html, raw } from '@/utils/safe-html';
 import { ERROR_VISIBLE_CLASS } from './shared';
 import { getTagInputElement } from './tag-autocomplete';
 import type { PromptFieldError } from './types';
@@ -130,7 +131,7 @@ export function showPromptFieldError(
 
 export function showPromptErrorSummary(
   errors: PromptFieldError[],
-  escapeHtml: (text: string) => string
+  _escapeHtml: (text: string) => string
 ): void {
   const banner = document.getElementById('validation-error-banner');
   if (!banner) {
@@ -142,16 +143,16 @@ export function showPromptErrorSummary(
     return;
   }
 
-  const itemsHtml = errors
-    .map((err) => {
-      const message = t(err.messageKey);
-      return `<li><a href="#${escapeHtml(err.fieldId)}" class="underline">${escapeHtml(message)}</a></li>`;
-    })
-    .join('');
+  const itemsHtml = errors.map(
+    (err) => html`<li><a href="#${err.fieldId}" class="underline">${t(err.messageKey)}</a></li>`
+  );
 
-  banner.innerHTML = `
-    <p class="font-semibold">${escapeHtml(t('validation.errorSummaryHeader'))}</p>
-    <ul class="list-disc list-inside mt-2 space-y-1">${itemsHtml}</ul>
+  // eslint-disable-next-line no-restricted-properties -- structurally escaped via html`` tagged template (utils/safe-html.ts)
+  banner.innerHTML = html`
+    <p class="font-semibold">${t('validation.errorSummaryHeader')}</p>
+    <ul class="list-disc list-inside mt-2 space-y-1">
+      ${raw(itemsHtml.join(''))}
+    </ul>
   `;
   banner.style.display = 'block';
 

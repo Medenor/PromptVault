@@ -5,7 +5,7 @@
  */
 
 import { tUnsafe } from '@/utils/i18n';
-import { escapeHtml } from '@/utils/dom';
+import { html, raw } from '@/utils/safe-html';
 import type { AdminUser, UsersResponse } from './types';
 
 export function formatDate(dateString?: string | null): string {
@@ -88,11 +88,13 @@ export function renderUsersTable(
   callbacks: RenderUsersTableCallbacks
 ): void {
   if (users.length === 0) {
+    // eslint-disable-next-line no-restricted-properties -- static markup, no interpolation
     tableBody.innerHTML =
       '<tr><td colspan="7" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">No users found</td></tr>';
     return;
   }
 
+  // eslint-disable-next-line no-restricted-properties -- structurally escaped via html`` tagged template (utils/safe-html.ts)
   tableBody.innerHTML = users
     .map((user) => {
       const roleBadgeClass =
@@ -108,51 +110,104 @@ export function renderUsersTable(
           : statusClass === 'locked'
             ? 'bg-red-100 text-red-800'
             : 'bg-gray-100 text-gray-800';
-      return `
-          <tr class="hover:bg-gray-50 dark:hover:bg-gray-800">
-            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">${escapeHtml(user.username)}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">${escapeHtml(user.email)}</td>
-            <td class="px-6 py-4 whitespace-nowrap"><span class="inline-block px-3 py-1 rounded-full text-xs font-medium ${roleBadgeClass}">${getTranslatedRole(user.role)}</span></td>
-            <td class="px-6 py-4 whitespace-nowrap"><span class="inline-block px-3 py-1 rounded-full text-xs font-medium ${statusBadgeClass}">${getStatusText(user)}</span></td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">${formatDate(user.last_login)}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">${user.session_count || 0}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm">
-              <div class="flex space-x-2">
-                <button class="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 text-xs font-medium focus:outline-2 focus:outline-blue-500 focus:outline-offset-1" data-action="view-user" data-user-id="${escapeHtml(user.id)}" aria-label="View user ${escapeHtml(user.username)}" data-i18n="actions.view">View</button>
-                <button class="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 text-xs font-medium focus:outline-2 focus:outline-gray-500 focus:outline-offset-1 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600" data-action="edit-user" data-user-id="${escapeHtml(user.id)}" aria-label="Edit user ${escapeHtml(user.username)}" data-i18n="actions.edit">Edit</button>
-                <button class="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 text-xs font-medium focus:outline-2 focus:outline-red-500 focus:outline-offset-1" data-action="delete-user" data-user-id="${escapeHtml(user.id)}" data-user-name="${escapeHtml(user.username)}" aria-label="Delete user ${escapeHtml(user.username)}" data-i18n="actions.delete">Delete</button>
-              </div>
-            </td>
-          </tr>
-        `;
+      return html`
+        <tr class="hover:bg-gray-50 dark:hover:bg-gray-800">
+          <td
+            class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100"
+          >
+            ${user.username}
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
+            ${user.email}
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap">
+            <span
+              class="inline-block px-3 py-1 rounded-full text-xs font-medium ${raw(roleBadgeClass)}"
+              >${getTranslatedRole(user.role)}</span
+            >
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap">
+            <span
+              class="inline-block px-3 py-1 rounded-full text-xs font-medium ${raw(
+                statusBadgeClass
+              )}"
+              >${getStatusText(user)}</span
+            >
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
+            ${formatDate(user.last_login)}
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
+            ${user.session_count || 0}
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm">
+            <div class="flex space-x-2">
+              <button
+                class="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 text-xs font-medium focus:outline-2 focus:outline-blue-500 focus:outline-offset-1"
+                data-action="view-user"
+                data-user-id="${user.id}"
+                aria-label="View user ${user.username}"
+                data-i18n="actions.view"
+              >
+                View
+              </button>
+              <button
+                class="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 text-xs font-medium focus:outline-2 focus:outline-gray-500 focus:outline-offset-1 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                data-action="edit-user"
+                data-user-id="${user.id}"
+                aria-label="Edit user ${user.username}"
+                data-i18n="actions.edit"
+              >
+                Edit
+              </button>
+              <button
+                class="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 text-xs font-medium focus:outline-2 focus:outline-red-500 focus:outline-offset-1"
+                data-action="delete-user"
+                data-user-id="${user.id}"
+                data-user-name="${user.username}"
+                aria-label="Delete user ${user.username}"
+                data-i18n="actions.delete"
+              >
+                Delete
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
     })
     .join('');
 
-  tableBody.querySelectorAll<HTMLButtonElement>('button[data-action="view-user"]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const userId = btn.getAttribute('data-user-id');
-      if (userId) {
-        callbacks.onView(userId, btn);
-      }
+  tableBody
+    .querySelectorAll<HTMLButtonElement>('button[data-action="view-user"]')
+    .forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const userId = btn.getAttribute('data-user-id');
+        if (userId) {
+          callbacks.onView(userId, btn);
+        }
+      });
     });
-  });
 
-  tableBody.querySelectorAll<HTMLButtonElement>('button[data-action="edit-user"]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const userId = btn.getAttribute('data-user-id');
-      if (userId) {
-        callbacks.onEdit(userId, btn);
-      }
+  tableBody
+    .querySelectorAll<HTMLButtonElement>('button[data-action="edit-user"]')
+    .forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const userId = btn.getAttribute('data-user-id');
+        if (userId) {
+          callbacks.onEdit(userId, btn);
+        }
+      });
     });
-  });
 
-  tableBody.querySelectorAll<HTMLButtonElement>('button[data-action="delete-user"]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const userId = btn.getAttribute('data-user-id');
-      const username = btn.getAttribute('data-user-name');
-      if (userId && username) {
-        callbacks.onDelete(userId, username, btn);
-      }
+  tableBody
+    .querySelectorAll<HTMLButtonElement>('button[data-action="delete-user"]')
+    .forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const userId = btn.getAttribute('data-user-id');
+        const username = btn.getAttribute('data-user-name');
+        if (userId && username) {
+          callbacks.onDelete(userId, username, btn);
+        }
+      });
     });
-  });
 }

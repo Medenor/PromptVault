@@ -7,6 +7,7 @@
 import { tUnsafe } from '@/utils/i18n';
 import { setupScrollIndicators } from '@/utils/dom';
 import { showNotification } from '@/utils/notifications';
+import { html } from '@/utils/safe-html';
 import { fetchOrphanPromptDetails, fetchOrphanPrompts, fetchOrphanTags } from './api';
 import type { TagItem } from './types';
 
@@ -14,6 +15,7 @@ export function renderHierarchyTree(hierarchyTree: HTMLElement | null, items: Ta
   if (!hierarchyTree) {
     return;
   }
+  // eslint-disable-next-line no-restricted-properties -- static markup, no interpolation
   hierarchyTree.innerHTML = '';
 
   const byParent: Record<string, TagItem[]> = {};
@@ -80,6 +82,7 @@ export async function loadOrphans(
       elements.orphansCount.textContent = String(data.items.length);
     }
     if (elements.orphansList) {
+      // eslint-disable-next-line no-restricted-properties -- static markup, no interpolation
       elements.orphansList.innerHTML = '';
       data.items.forEach((item) => {
         const li = document.createElement('li');
@@ -119,6 +122,7 @@ async function renderPromptDetails(
   onAssignTags: (promptId: number, tags: string[]) => void,
   resolveTagInputs: (rawTags: string) => string[] | null
 ): Promise<void> {
+  // eslint-disable-next-line no-restricted-properties -- static markup, no interpolation
   container.innerHTML = '';
   if (promptIds.length === 0) {
     return;
@@ -140,8 +144,11 @@ async function renderPromptDetails(
     const title = detailsMap.get(id)?.trim() || tUnsafe('management.promptNotFound');
     const li = document.createElement('li');
     li.className = 'flex flex-col gap-2 md:flex-row md:items-center md:justify-between';
-    li.innerHTML = `
-      <span class="text-gray-800 dark:text-gray-100">#${id} — ${title || tUnsafe('management.untitledPrompt')}</span>
+    // eslint-disable-next-line no-restricted-properties -- structurally escaped via html`` tagged template (utils/safe-html.ts)
+    li.innerHTML = html`
+      <span class="text-gray-800 dark:text-gray-100"
+        >#${id} — ${title || tUnsafe('management.untitledPrompt')}</span
+      >
       <div class="flex flex-col gap-2 md:flex-row md:items-center md:gap-3">
         <input
           type="text"

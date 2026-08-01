@@ -15,7 +15,7 @@ import { showNotification } from '@/utils/notifications';
 import { APIRequestError, handleApiError } from '@/utils/api';
 import { announceToScreenReader } from '@/utils/focus-management';
 import { initMobileNav } from '@/mobile-nav';
-import { escapeHtml } from '@/utils/dom';
+import { html, raw } from '@/utils/safe-html';
 import { debounce } from '@/utils/debounce';
 import { fetchUser, fetchUsers, createUser, deleteUserRequest, updateUser } from './api';
 import {
@@ -28,7 +28,15 @@ import {
   setLiveFieldError,
   showFieldError,
 } from './a11y';
-import { getStatusClass, getStatusText, getTranslatedRole, updatePagination, updateStats, renderUsersTable, formatDate } from './list';
+import {
+  getStatusClass,
+  getStatusText,
+  getTranslatedRole,
+  updatePagination,
+  updateStats,
+  renderUsersTable,
+  formatDate,
+} from './list';
 import {
   hideModal,
   mapCreateUserField,
@@ -58,6 +66,7 @@ async function loadUsers(): Promise<void> {
   const tableBody = document.getElementById('users-table-body');
   if (!tableBody) return;
 
+  // eslint-disable-next-line no-restricted-properties -- static markup, no interpolation
   tableBody.innerHTML =
     '<tr><td colspan="7" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400"><div>Loading...</div></td></tr>';
 
@@ -93,6 +102,7 @@ async function loadUsers(): Promise<void> {
     initializeUsersTableFirstCharNavigation();
   } catch (error) {
     reportError('admin-users', 'loadUsers', error);
+    // eslint-disable-next-line no-restricted-properties -- static markup, no interpolation
     tableBody.innerHTML =
       '<tr><td colspan="7" class="px-6 py-4 text-center text-red-600">Error loading users</td></tr>';
   }
@@ -101,6 +111,7 @@ async function loadUsers(): Promise<void> {
 async function viewUser(userId: string): Promise<void> {
   const content = document.getElementById('user-detail-content');
   if (content) {
+    // eslint-disable-next-line no-restricted-properties -- static markup, no interpolation
     content.innerHTML = '<div class="text-gray-500 dark:text-gray-400">Loading...</div>';
   }
   showModal('user-detail-modal');
@@ -121,50 +132,76 @@ async function viewUser(userId: string): Promise<void> {
           : statusClass === 'locked'
             ? 'bg-red-100 text-red-800'
             : 'bg-gray-100 text-gray-800';
-      content.innerHTML = `
-          <div class="space-y-4">
-            <div class="flex justify-between py-3 border-b border-gray-200 dark:border-gray-700">
-              <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Username:</div>
-              <div class="text-sm text-gray-900 dark:text-gray-100">${escapeHtml(user.username)}</div>
-            </div>
-            <div class="flex justify-between py-3 border-b border-gray-200 dark:border-gray-700">
-              <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Email:</div>
-              <div class="text-sm text-gray-900 dark:text-gray-100">${escapeHtml(user.email)}</div>
-            </div>
-            <div class="flex justify-between py-3 border-b border-gray-200 dark:border-gray-700">
-              <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Role:</div>
-              <div class="text-sm"><span class="inline-block px-3 py-1 rounded-full text-xs font-medium ${roleBadgeClass}">${getTranslatedRole(user.role)}</span></div>
-            </div>
-            <div class="flex justify-between py-3 border-b border-gray-200 dark:border-gray-700">
-              <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Status:</div>
-              <div class="text-sm"><span class="inline-block px-3 py-1 rounded-full text-xs font-medium ${statusBadgeClass}">${getStatusText(user)}</span></div>
-            </div>
-            <div class="flex justify-between py-3 border-b border-gray-200 dark:border-gray-700">
-              <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Email Verified:</div>
-              <div class="text-sm text-gray-900 dark:text-gray-100">${user.email_verified ? 'Yes' : 'No'}</div>
-            </div>
-            <div class="flex justify-between py-3 border-b border-gray-200 dark:border-gray-700">
-              <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Created:</div>
-              <div class="text-sm text-gray-900 dark:text-gray-100">${formatDate(user.created_at)}</div>
-            </div>
-            <div class="flex justify-between py-3 border-b border-gray-200 dark:border-gray-700">
-              <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Last Login:</div>
-              <div class="text-sm text-gray-900 dark:text-gray-100">${formatDate(user.last_login)}</div>
-            </div>
-            <div class="flex justify-between py-3 border-b border-gray-200 dark:border-gray-700">
-              <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Failed Login Attempts:</div>
-              <div class="text-sm text-gray-900 dark:text-gray-100">${user.failed_login_attempts || 0}</div>
-            </div>
-            <div class="flex justify-between py-3">
-              <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Active Sessions:</div>
-              <div class="text-sm text-gray-900 dark:text-gray-100">${user.session_count || 0}</div>
+      // eslint-disable-next-line no-restricted-properties -- structurally escaped via html`` tagged template (utils/safe-html.ts)
+      content.innerHTML = html`
+        <div class="space-y-4">
+          <div class="flex justify-between py-3 border-b border-gray-200 dark:border-gray-700">
+            <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Username:</div>
+            <div class="text-sm text-gray-900 dark:text-gray-100">${user.username}</div>
+          </div>
+          <div class="flex justify-between py-3 border-b border-gray-200 dark:border-gray-700">
+            <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Email:</div>
+            <div class="text-sm text-gray-900 dark:text-gray-100">${user.email}</div>
+          </div>
+          <div class="flex justify-between py-3 border-b border-gray-200 dark:border-gray-700">
+            <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Role:</div>
+            <div class="text-sm">
+              <span
+                class="inline-block px-3 py-1 rounded-full text-xs font-medium ${raw(
+                  roleBadgeClass
+                )}"
+                >${getTranslatedRole(user.role)}</span
+              >
             </div>
           </div>
-        `;
+          <div class="flex justify-between py-3 border-b border-gray-200 dark:border-gray-700">
+            <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Status:</div>
+            <div class="text-sm">
+              <span
+                class="inline-block px-3 py-1 rounded-full text-xs font-medium ${raw(
+                  statusBadgeClass
+                )}"
+                >${getStatusText(user)}</span
+              >
+            </div>
+          </div>
+          <div class="flex justify-between py-3 border-b border-gray-200 dark:border-gray-700">
+            <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Email Verified:</div>
+            <div class="text-sm text-gray-900 dark:text-gray-100">
+              ${user.email_verified ? 'Yes' : 'No'}
+            </div>
+          </div>
+          <div class="flex justify-between py-3 border-b border-gray-200 dark:border-gray-700">
+            <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Created:</div>
+            <div class="text-sm text-gray-900 dark:text-gray-100">
+              ${formatDate(user.created_at)}
+            </div>
+          </div>
+          <div class="flex justify-between py-3 border-b border-gray-200 dark:border-gray-700">
+            <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Last Login:</div>
+            <div class="text-sm text-gray-900 dark:text-gray-100">
+              ${formatDate(user.last_login)}
+            </div>
+          </div>
+          <div class="flex justify-between py-3 border-b border-gray-200 dark:border-gray-700">
+            <div class="text-sm font-medium text-gray-500 dark:text-gray-400">
+              Failed Login Attempts:
+            </div>
+            <div class="text-sm text-gray-900 dark:text-gray-100">
+              ${user.failed_login_attempts || 0}
+            </div>
+          </div>
+          <div class="flex justify-between py-3">
+            <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Active Sessions:</div>
+            <div class="text-sm text-gray-900 dark:text-gray-100">${user.session_count || 0}</div>
+          </div>
+        </div>
+      `;
     }
   } catch (error) {
     reportError('admin-users', 'viewUser', error);
     if (content) {
+      // eslint-disable-next-line no-restricted-properties -- static markup, no interpolation
       content.innerHTML = '<p class="text-red-600">Failed to load user details</p>';
     }
   }
@@ -649,7 +686,9 @@ function initializeAdminUsersPage(): void {
 
   const closeBtn = document.getElementById('close-user-detail-btn');
   if (closeBtn) {
-    closeBtn.addEventListener('click', () => hideModal('user-detail-modal', userDetailModalTrigger));
+    closeBtn.addEventListener('click', () =>
+      hideModal('user-detail-modal', userDetailModalTrigger)
+    );
   }
 
   const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
@@ -661,7 +700,9 @@ function initializeAdminUsersPage(): void {
 
   const cancelEditBtn = document.getElementById('cancel-edit-btn');
   if (cancelEditBtn) {
-    cancelEditBtn.addEventListener('click', () => hideModal('edit-user-modal', editUserModalTrigger));
+    cancelEditBtn.addEventListener('click', () =>
+      hideModal('edit-user-modal', editUserModalTrigger)
+    );
   }
 
   const saveBtn = document.getElementById('save-user-btn');

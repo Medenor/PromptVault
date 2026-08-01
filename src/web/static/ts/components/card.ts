@@ -70,6 +70,7 @@ export function createCard(content: HTMLElement | string, props: CardProps = {})
   // Add main content
   const contentContainer = document.createElement('div');
   if (typeof content === 'string') {
+    // eslint-disable-next-line no-restricted-properties -- generic component sink; no caller passes untrusted data as a string
     contentContainer.innerHTML = content;
   } else {
     contentContainer.appendChild(content);
@@ -81,6 +82,7 @@ export function createCard(content: HTMLElement | string, props: CardProps = {})
     const footerElement = document.createElement('div');
     footerElement.className = 'mt-4 pt-4 border-t border-gray-200';
     if (typeof props.footer === 'string') {
+      // eslint-disable-next-line no-restricted-properties -- generic component sink; no caller passes untrusted data as a string
       footerElement.innerHTML = props.footer;
     } else {
       footerElement.appendChild(props.footer);

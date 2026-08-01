@@ -38,7 +38,12 @@ describe('dom utils', () => {
 
   it('escapes HTML safely', () => {
     const html = '<script>alert("x")</script>';
-    expect(escapeHtml(html)).toBe('&lt;script&gt;alert("x")&lt;/script&gt;');
+    expect(escapeHtml(html)).toBe('&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt;');
+  });
+
+  it('escapes quote characters so attribute values cannot break out', () => {
+    const evil = '" onmouseover="alert(1)';
+    expect(escapeHtml(evil)).toBe('&quot; onmouseover=&quot;alert(1)');
   });
 
   it('clears validation errors', () => {

@@ -25,6 +25,7 @@ export function createContainer(
     `mx-auto ${maxWidthClasses} ${paddingClasses} ${props?.className || ''}`.trim();
 
   if (typeof content === 'string') {
+    // eslint-disable-next-line no-restricted-properties -- generic component sink; no caller passes untrusted data as a string
     container.innerHTML = content;
   } else {
     container.appendChild(content);

@@ -15,6 +15,7 @@
 import { createModal } from '@components';
 import { t } from '@/utils/i18n';
 import { initButtonKeyboardActivation } from '@/utils/button-keyboard-activation';
+import { html } from '@/utils/safe-html';
 
 type KeyboardHelpEventDetail = {
   markHandled: () => void;
@@ -31,17 +32,6 @@ function ensureKeyboardNavigationAnnouncer(): void {
   el.className = 'sr-only';
   el.setAttribute('aria-live', 'polite');
   document.body.insertBefore(el, document.body.firstChild);
-}
-
-function escapeHtml(text: string): string {
-  const map: Record<string, string> = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#039;',
-  };
-  return String(text).replace(/[&<>"']/g, (m) => map[m] ?? m);
 }
 
 function isTypingTarget(target: EventTarget | null): boolean {
@@ -76,15 +66,16 @@ function openFallbackKeyboardHelpModal(): void {
   if (!fallbackHelpModal) {
     const content = document.createElement('div');
     content.className = 'space-y-3 text-sm text-gray-700';
-    content.innerHTML = `
-      <p class="text-gray-600">${escapeHtml(t('accessibility.keyboardHelp.shortcutsHeading'))}</p>
+    // eslint-disable-next-line no-restricted-properties -- structurally escaped via html`` tagged template (utils/safe-html.ts)
+    content.innerHTML = html`
+      <p class="text-gray-600">${t('accessibility.keyboardHelp.shortcutsHeading')}</p>
       <ul class="list-disc list-inside space-y-1">
-        <li><strong>?</strong>: ${escapeHtml(t('accessibility.keyboardHelp.shortcutQuestion'))}</li>
-        <li><strong>Escape</strong>: ${escapeHtml(t('accessibility.keyboardHelp.shortcutEscape'))}</li>
+        <li><strong>?</strong>: ${t('accessibility.keyboardHelp.shortcutQuestion')}</li>
+        <li><strong>Escape</strong>: ${t('accessibility.keyboardHelp.shortcutEscape')}</li>
       </ul>
       <div class="pt-2 border-t border-gray-200">
-        <p class="text-gray-600">${escapeHtml(t('accessibility.keyboardHelp.fallbackNoteHeading'))}</p>
-        <p class="text-gray-600">${escapeHtml(t('accessibility.keyboardHelp.fallbackNoteBody'))}</p>
+        <p class="text-gray-600">${t('accessibility.keyboardHelp.fallbackNoteHeading')}</p>
+        <p class="text-gray-600">${t('accessibility.keyboardHelp.fallbackNoteBody')}</p>
       </div>
     `;
 

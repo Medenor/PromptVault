@@ -17,7 +17,12 @@ import {
 import { createModal } from '@components';
 import { escapeHtml, guardOnlineOnly, hideElement, reportAppIssue, showElement } from './shared';
 import { clearPromptFormErrors, showPromptErrorSummary, showPromptFieldError } from './prompt-form';
-import { commitTagInput, getTagInputElement, loadAvailableTags, setSelectedTags } from './tag-autocomplete';
+import {
+  commitTagInput,
+  getTagInputElement,
+  loadAvailableTags,
+  setSelectedTags,
+} from './tag-autocomplete';
 import { clearVersionCache } from './versions';
 import { promptCache } from './prompt-list';
 import type { PromptFieldError, PromptId } from './types';

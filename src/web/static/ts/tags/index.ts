@@ -137,9 +137,14 @@ async function loadTags(): Promise<void> {
     applySearchFilter();
     renderHierarchyTree(elements.hierarchyTree, cachedItems);
     await loadAnalytics(elements, handleError);
-    await loadOrphans(elements, handleError, (promptId, tags) => {
-      void assignTagsToPrompt(promptId, tags);
-    }, resolveTagInputs);
+    await loadOrphans(
+      elements,
+      handleError,
+      (promptId, tags) => {
+        void assignTagsToPrompt(promptId, tags);
+      },
+      resolveTagInputs
+    );
   } catch (error) {
     handleError(error, 'Failed to load tags');
   }

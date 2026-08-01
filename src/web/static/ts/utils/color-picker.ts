@@ -69,6 +69,7 @@ export class ColorPicker {
 
   private buildEnhancedUI(): void {
     // Clear container
+    // eslint-disable-next-line no-restricted-properties -- static markup, no interpolation
     this.container.innerHTML = '';
 
     // Create wrapper
@@ -299,6 +300,7 @@ export class ColorPicker {
 
   public destroy(): void {
     // Clean up event listeners if needed
+    // eslint-disable-next-line no-restricted-properties -- static markup, no interpolation
     this.container.innerHTML = '';
   }
 }
