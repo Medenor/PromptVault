@@ -18,7 +18,7 @@ _Global analysis performed 2026-07-31 against the current `main` codebase. Compl
 
 ## Priority List (High to Low)
 
-### 1. XSS Hardening: `innerHTML` Elimination & Lint Enforcement (Security)
+### 1. XSS Hardening: `innerHTML` Elimination & Lint Enforcement (Security) - ✅ Done 2026-08-01 on branch `security/innerhtml-hardening`
 
 - **Description**: Audit and remediate the 85 `innerHTML` call sites, replace unsafe patterns with DOM-construction or a small sanctioned `html`-tagged-template helper, and add an ESLint rule so the AGENTS.md "no `innerHTML`" policy is machine-enforced rather than aspirational.
 - **Rationale**: Highest-severity class of vulnerability in a prompt manager: prompt bodies, tags, and commit messages are user-controlled and rendered back into the DOM. Most sites use `escapeHtml`, but the guarantee is manual and per-call-site — one missed interpolation (e.g. banner builders in `form-validation.ts:578`, `app/prompt-form.ts:152`, chip rendering in `app/tag-autocomplete.ts:93`) is a stored XSS. CSP (`self`-only scripts) is a good second layer but inline event-handler and HTML-injection vectors remain. Low complexity, very high value, purely additive.
