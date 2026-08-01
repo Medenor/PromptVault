@@ -7,6 +7,7 @@
 import { apiGet } from '@/utils/api';
 import { reportError } from '@/telemetry';
 import { t } from '@/utils/i18n';
+import { html, raw } from '@/utils/safe-html';
 
 const COMPONENT = 'backupMonitoringDashboard';
 
@@ -72,13 +73,34 @@ function renderDashboard(stats: MonitoringStats): void {
   }
 
   if (historyEl && stats.history.length > 0) {
-    historyEl.innerHTML = `
-      <table class="w-full text-sm">
-        <thead><tr class="border-b"><th class="text-left py-1">${t('backup.columnDate')}</th><th class="text-right py-1">${t('backup.columnCount')}</th><th class="text-right py-1">${t('backup.columnSuccess')}</th><th class="text-right py-1">${t('backup.columnSize')}</th></tr></thead>
-        <tbody>${stats.history.map((h) => `<tr class="border-b border-gray-100"><td class="py-1">${h.date}</td><td class="text-right py-1">${h.count}</td><td class="text-right py-1">${h.success}</td><td class="text-right py-1">${formatBytes(h.total_size_bytes)}</td></tr>`).join('')}</tbody>
-      </table>`;
+    const rows = stats.history.map(
+      (h) =>
+        html`<tr class="border-b border-gray-100">
+          <td class="py-1">${h.date}</td>
+          <td class="text-right py-1">${h.count}</td>
+          <td class="text-right py-1">${h.success}</td>
+          <td class="text-right py-1">${formatBytes(h.total_size_bytes)}</td>
+        </tr>`
+    );
+    // eslint-disable-next-line no-restricted-properties -- structurally escaped via html`` tagged template (utils/safe-html.ts)
+    historyEl.innerHTML = html` <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b">
+          <th class="text-left py-1">${t('backup.columnDate')}</th>
+          <th class="text-right py-1">${t('backup.columnCount')}</th>
+          <th class="text-right py-1">${t('backup.columnSuccess')}</th>
+          <th class="text-right py-1">${t('backup.columnSize')}</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${raw(rows.join(''))}
+      </tbody>
+    </table>`;
   } else if (historyEl) {
-    historyEl.innerHTML = `<div class="text-gray-500 text-sm dark:text-gray-400">${t('backup.noHistoryData')}</div>`;
+    // eslint-disable-next-line no-restricted-properties -- structurally escaped via html`` tagged template (utils/safe-html.ts)
+    historyEl.innerHTML = html`<div class="text-gray-500 text-sm dark:text-gray-400">
+      ${t('backup.noHistoryData')}
+    </div>`;
   }
 }
 
@@ -98,15 +120,40 @@ function renderAuditLog(entries: AuditEntry[]): void {
   if (!el) return;
 
   if (entries.length === 0) {
-    el.innerHTML = `<div class="text-gray-500 text-sm dark:text-gray-400">${t('backup.noAuditEntries')}</div>`;
+    // eslint-disable-next-line no-restricted-properties -- structurally escaped via html`` tagged template (utils/safe-html.ts)
+    el.innerHTML = html`<div class="text-gray-500 text-sm dark:text-gray-400">
+      ${t('backup.noAuditEntries')}
+    </div>`;
     return;
   }
 
-  el.innerHTML = `
-    <table class="w-full text-sm">
-      <thead><tr class="border-b"><th class="text-left py-1">${t('backup.columnTime')}</th><th class="text-left py-1">${t('backup.columnOperation')}</th><th class="text-left py-1">${t('backup.columnOutcome')}</th><th class="text-left py-1">${t('backup.columnPerformedBy')}</th></tr></thead>
-      <tbody>${entries.map((e) => `<tr class="border-b border-gray-100"><td class="py-1">${new Date(e.occurred_at).toLocaleString()}</td><td class="py-1">${e.operation}</td><td class="py-1"><span class="${e.outcome === 'success' ? 'text-green-600' : 'text-red-600'}">${e.outcome}</span></td><td class="py-1">${e.performed_by || '-'}</td></tr>`).join('')}</tbody>
-    </table>`;
+  const rows = entries.map(
+    (e) =>
+      html`<tr class="border-b border-gray-100">
+        <td class="py-1">${new Date(e.occurred_at).toLocaleString()}</td>
+        <td class="py-1">${e.operation}</td>
+        <td class="py-1">
+          <span class="${raw(e.outcome === 'success' ? 'text-green-600' : 'text-red-600')}"
+            >${e.outcome}</span
+          >
+        </td>
+        <td class="py-1">${e.performed_by || '-'}</td>
+      </tr>`
+  );
+  // eslint-disable-next-line no-restricted-properties -- structurally escaped via html`` tagged template (utils/safe-html.ts)
+  el.innerHTML = html` <table class="w-full text-sm">
+    <thead>
+      <tr class="border-b">
+        <th class="text-left py-1">${t('backup.columnTime')}</th>
+        <th class="text-left py-1">${t('backup.columnOperation')}</th>
+        <th class="text-left py-1">${t('backup.columnOutcome')}</th>
+        <th class="text-left py-1">${t('backup.columnPerformedBy')}</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${raw(rows.join(''))}
+    </tbody>
+  </table>`;
 }
 
 function formatBytes(bytes: number): string {

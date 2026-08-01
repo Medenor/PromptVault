@@ -5,6 +5,7 @@
  */
 
 import type { ButtonProps } from './types';
+import { html } from '@/utils/safe-html';
 
 /**
  * Creates a styled button element using Tailwind CSS
@@ -67,7 +68,8 @@ export function createButton(label: string, props: ButtonProps = {}): HTMLButton
   if (props.loading) {
     button.disabled = true;
     // Simple loading indicator (can be enhanced with spinner component)
-    button.innerHTML = `<span class="inline-block animate-spin mr-2">⌛</span>${label}`;
+    // eslint-disable-next-line no-restricted-properties -- structurally escaped via html`` tagged template (utils/safe-html.ts)
+    button.innerHTML = html`<span class="inline-block animate-spin mr-2">⌛</span>${label}`;
     button.setAttribute('aria-busy', 'true');
   }
 

@@ -16,6 +16,7 @@ import { showNotification } from '@/utils/notifications';
 import { apiGet, apiPost, apiDelete, APIRequestError } from '@/utils/api';
 import { announce } from '@/utils/a11y';
 import { initSecondaryNav } from '@/utils/secondary-nav';
+import { html, raw } from '@/utils/safe-html';
 
 const API_BASE = '/api/auth';
 
@@ -307,6 +308,7 @@ async function loadSessions(): Promise<void> {
   const sessionsList = document.getElementById('sessions-list');
   if (!sessionsList) return;
 
+  // eslint-disable-next-line no-restricted-properties -- static markup, no interpolation
   sessionsList.innerHTML =
     '<div class="text-gray-600 text-sm dark:text-gray-400" data-i18n="messages.loading">Loading...</div>';
 
@@ -320,11 +322,13 @@ async function loadSessions(): Promise<void> {
     }
 
     if (sessions.length === 0) {
+      // eslint-disable-next-line no-restricted-properties -- static markup, no interpolation
       sessionsList.innerHTML =
         '<p class="text-gray-600 text-sm dark:text-gray-400">No active sessions</p>';
       return;
     }
 
+    // eslint-disable-next-line no-restricted-properties -- structurally escaped via html`` tagged template (utils/safe-html.ts)
     sessionsList.innerHTML = sessions
       .map((session) => {
         const expirationStatus = getExpirationStatus(session.expires_at ?? null);
@@ -341,38 +345,74 @@ async function loadSessions(): Promise<void> {
           badgeClass = 'bg-amber-100 text-amber-700';
         }
 
-        return `
-            <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 ${session.is_current ? 'bg-blue-50 border-blue-300 dark:bg-blue-950 dark:border-blue-800' : 'bg-white dark:bg-gray-800'}" data-session-id="${sessionId}">
-              <div class="flex justify-between items-start">
-                <div class="flex-1">
-                  <div class="flex items-center gap-2 mb-2">
-                    <div class="font-medium text-gray-900 dark:text-gray-100">${deviceDisplay}</div>
-                    ${session.is_current ? '<span class="px-2 py-1 text-xs bg-blue-700 text-white rounded">Current Session</span>' : ''}
-                  </div>
-                  <div class="text-sm text-gray-600 mb-1 dark:text-gray-400">${browserDisplay} on ${osDisplay}</div>
-                  <div class="text-xs text-gray-500 dark:text-gray-400">
-                    IP: ${session.ip_address || 'Unknown'} |
-                    Last used: ${formatDate(session.last_used_at)} |
-                    Expires: ${formatDate(session.expires_at)}
-                    ${expirationStatus.message ? `<span class="${badgeClass} px-2 py-0.5 rounded text-xs ml-1">${expirationStatus.message}</span>` : ''}
-                  </div>
+        return html`
+          <div
+            class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 ${raw(
+              session.is_current
+                ? 'bg-blue-50 border-blue-300 dark:bg-blue-950 dark:border-blue-800'
+                : 'bg-white dark:bg-gray-800'
+            )}"
+            data-session-id="${sessionId}"
+          >
+            <div class="flex justify-between items-start">
+              <div class="flex-1">
+                <div class="flex items-center gap-2 mb-2">
+                  <div class="font-medium text-gray-900 dark:text-gray-100">${deviceDisplay}</div>
+                  ${raw(
+                    session.is_current
+                      ? '<span class="px-2 py-1 text-xs bg-blue-700 text-white rounded">Current Session</span>'
+                      : ''
+                  )}
                 </div>
-                <div class="ml-4">
-                  <button
-                    onclick="window.revokeSession('${sessionId}')"
-                    ${session.is_current ? 'disabled' : ''}
-                    class="px-3 py-1 text-sm ${session.is_current ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-red-700 hover:bg-red-800 text-white'} rounded-md font-medium"
-                  >
-                    ${t('auth.profile.revokeSession') || 'Revoke'}
-                  </button>
+                <div class="text-sm text-gray-600 mb-1 dark:text-gray-400">
+                  ${browserDisplay} on ${osDisplay}
+                </div>
+                <div class="text-xs text-gray-500 dark:text-gray-400">
+                  IP: ${session.ip_address || 'Unknown'} | Last used:
+                  ${formatDate(session.last_used_at)} | Expires: ${formatDate(session.expires_at)}
+                  ${raw(
+                    expirationStatus.message
+                      ? html`<span class="${raw(badgeClass)} px-2 py-0.5 rounded text-xs ml-1"
+                          >${expirationStatus.message}</span
+                        >`
+                      : ''
+                  )}
                 </div>
               </div>
+              <div class="ml-4">
+                <button
+                  data-revoke-session-id="${sessionId}"
+                  ${raw(session.is_current ? 'disabled' : '')}
+                  class="px-3 py-1 text-sm ${raw(
+                    session.is_current
+                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                      : 'bg-red-700 hover:bg-red-800 text-white'
+                  )} rounded-md font-medium"
+                >
+                  ${t('auth.profile.revokeSession') || 'Revoke'}
+                </button>
+              </div>
             </div>
-          `;
+          </div>
+        `;
       })
       .join('');
+
+    sessionsList
+      .querySelectorAll<HTMLButtonElement>('[data-revoke-session-id]')
+      .forEach((button) => {
+        button.addEventListener('click', () => {
+          const id = button.dataset.revokeSessionId;
+          if (id) {
+            void (
+              window as Window & { revokeSession?: (sessionId: string) => Promise<void> }
+            ).revokeSession?.(id);
+          }
+        });
+      });
   } catch (error) {
     reportError('profile', 'loadSessions', error);
+    // eslint-disable-next-line no-restricted-properties -- static markup, no interpolation
     sessionsList.innerHTML = '<p class="text-red-500 text-sm">Failed to load sessions</p>';
   }
 }

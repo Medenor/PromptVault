@@ -687,6 +687,56 @@ PromptVault's authentication system follows OWASP (Open Web Application Security
 
 ---
 
+## Content Security Policy
+
+The frontend's defense in depth against stored/reflected XSS combines two
+layers: structural output escaping in the TypeScript frontend
+(`src/web/static/ts/utils/safe-html.ts`, plus the `no-restricted-properties`
+ESLint rule banning raw `innerHTML`/`outerHTML`/`insertAdjacentHTML` writes)
+and the `Content-Security-Policy` response header set by
+`SecurityHeadersMiddleware` (`src/web/middleware/security_headers.py`).
+
+Current policy:
+
+```
+default-src 'self';
+script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com;
+script-src-attr 'unsafe-inline';
+style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com;
+img-src 'self' data: https:;
+font-src 'self' data: https://fonts.gstatic.com;
+connect-src 'self' https://fonts.gstatic.com;
+object-src 'none';
+frame-ancestors 'none';
+base-uri 'self';
+form-action 'self'
+```
+
+(`http://localhost:5173` and `ws://localhost:5173` are additionally allowed
+in `script-src`/`connect-src` only when `ENV=development` and
+`USE_VITE_ASSETS=true`, for the Vite dev server.)
+
+**Known gap**: `script-src` and `script-src-attr` both carry
+`'unsafe-inline'`. This is required today because several templates still
+attach behavior via inline `onclick="..."` attributes; a handful of these
+previously interpolated raw string data (session IDs, usernames) directly
+into the `onclick` attribute, which was itself an injection vector
+independent of `innerHTML`. Those specific sites (`profile.ts`,
+`admin-sessions.ts`) were converted to `data-*` attributes plus
+`addEventListener`, which is the safe pattern already used by most of the
+codebase. Removing `'unsafe-inline'` from `script-src`/`script-src-attr`
+tightens the policy considerably (a working CSP nonce or full removal of
+inline handlers would make injected `<script>` tags and `onerror=`/`onclick=`
+payloads inert even if an escaping bug slipped through) but requires
+auditing and migrating the remaining inline `onclick=` handlers
+project-wide, which is out of scope for this change and tracked separately.
+
+**Present**: `object-src 'none'` (blocks `<object>`/`<embed>`/legacy plugin
+vectors) and `frame-ancestors 'none'` (blocks clickjacking via iframe
+embedding) are both set.
+
+---
+
 ## Security Best Practices
 
 ### For Developers

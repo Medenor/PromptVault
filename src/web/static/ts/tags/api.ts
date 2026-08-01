@@ -18,7 +18,10 @@ export function createTagRequest(payload: Record<string, unknown>): Promise<unkn
   });
 }
 
-export function updateTagRequest(tagId: number, payload: Record<string, unknown>): Promise<unknown> {
+export function updateTagRequest(
+  tagId: number,
+  payload: Record<string, unknown>
+): Promise<unknown> {
   return apiFetch(`/api/tags/${tagId}`, {
     method: 'PUT',
     body: JSON.stringify(payload),

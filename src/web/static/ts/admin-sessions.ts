@@ -17,6 +17,7 @@ import { createTypeahead } from '@/utils/typeahead';
 import { announceToScreenReader } from '@/utils/focus-management';
 import { initMobileNav } from '@/mobile-nav';
 import { debounce } from '@/utils/debounce';
+import { html, raw } from '@/utils/safe-html';
 
 const API_BASE = '/api/admin';
 const HIDDEN_CLASS = 'hidden';
@@ -110,6 +111,7 @@ function populateUserFilter(users: AdminUser[]): void {
   if (!userFilter) return;
 
   const currentValue = userFilter.value;
+  // eslint-disable-next-line no-restricted-properties -- static markup, no interpolation
   userFilter.innerHTML =
     '<option value="all" data-i18n="admin.sessions.allUsers">All Users</option>';
 
@@ -147,11 +149,13 @@ function displaySessions(): void {
   }
 
   if (filteredSessions.length === 0) {
+    // eslint-disable-next-line no-restricted-properties -- static markup, no interpolation
     tableBody.innerHTML =
       '<tr><td colspan="7" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">No active sessions found</td></tr>';
     return;
   }
 
+  // eslint-disable-next-line no-restricted-properties -- structurally escaped via html`` tagged template (utils/safe-html.ts)
   tableBody.innerHTML = filteredSessions
     .map((session) => {
       const username = session.username || 'Unknown';
@@ -164,24 +168,84 @@ function displaySessions(): void {
         : 'hover:bg-gray-50 dark:hover:bg-gray-800';
       const textClass = session.is_current ? 'font-semibold' : '';
       const currentBadge = session.is_current
-        ? `<span class="ml-2 px-2 py-1 bg-blue-700 text-white text-xs rounded font-medium">${t('admin.sessions.currentBadge')}</span>`
+        ? html`<span class="ml-2 px-2 py-1 bg-blue-700 text-white text-xs rounded font-medium"
+            >${t('admin.sessions.currentBadge')}</span
+          >`
         : '';
 
-      return `
-        <tr class="${rowClass}">
-          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 ${textClass} dark:text-gray-100">${username} ${currentBadge}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 ${textClass} dark:text-gray-300">${ipAddress}</td>
-          <td class="px-6 py-4 text-sm text-gray-700 max-w-xs truncate ${textClass} dark:text-gray-300" title="${userAgent}">${truncateText(userAgent, 50)}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 ${textClass} dark:text-gray-300">${formatDate(session.created_at)}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 ${textClass} dark:text-gray-300">${formatDate(session.last_used_at)}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 ${textClass} dark:text-gray-300">${formatDate(session.expires_at)}</td>
+      return html`
+        <tr class="${raw(rowClass)}">
+          <td
+            class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 ${raw(
+              textClass
+            )} dark:text-gray-100"
+          >
+            ${username} ${raw(currentBadge)}
+          </td>
+          <td
+            class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 ${raw(
+              textClass
+            )} dark:text-gray-300"
+          >
+            ${ipAddress}
+          </td>
+          <td
+            class="px-6 py-4 text-sm text-gray-700 max-w-xs truncate ${raw(
+              textClass
+            )} dark:text-gray-300"
+            title="${userAgent}"
+          >
+            ${truncateText(userAgent, 50)}
+          </td>
+          <td
+            class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 ${raw(
+              textClass
+            )} dark:text-gray-300"
+          >
+            ${formatDate(session.created_at)}
+          </td>
+          <td
+            class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 ${raw(
+              textClass
+            )} dark:text-gray-300"
+          >
+            ${formatDate(session.last_used_at)}
+          </td>
+          <td
+            class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 ${raw(
+              textClass
+            )} dark:text-gray-300"
+          >
+            ${formatDate(session.expires_at)}
+          </td>
           <td class="px-6 py-4 whitespace-nowrap text-sm">
-            <button class="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 text-xs font-medium focus:outline-2 focus:outline-red-500 focus:outline-offset-1" onclick="window.showRevokeConfirmation('${userId}', '${sessionId}', '${username}')" data-i18n="actions.revoke">Revoke</button>
+            <button
+              class="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 text-xs font-medium focus:outline-2 focus:outline-red-500 focus:outline-offset-1"
+              data-revoke-user-id="${userId}"
+              data-revoke-session-id="${sessionId}"
+              data-revoke-username="${username}"
+              data-i18n="actions.revoke"
+            >
+              Revoke
+            </button>
           </td>
         </tr>
       `;
     })
     .join('');
+
+  tableBody.querySelectorAll<HTMLButtonElement>('[data-revoke-session-id]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const revokeUserId = button.dataset.revokeUserId ?? '';
+      const revokeSessionId = button.dataset.revokeSessionId ?? '';
+      const revokeUsername = button.dataset.revokeUsername ?? '';
+      (
+        window as Window & {
+          showRevokeConfirmation?: (userId: string, sessionId: string, username: string) => void;
+        }
+      ).showRevokeConfirmation?.(revokeUserId, revokeSessionId, revokeUsername);
+    });
+  });
 
   updateStaticTranslations();
   initializeSessionsTableFirstCharNavigation();
@@ -314,6 +378,7 @@ function initializeSessionsTableFirstCharNavigation(): void {
 async function loadAllSessions(): Promise<void> {
   const tableBody = document.getElementById('sessions-table-body');
   if (tableBody) {
+    // eslint-disable-next-line no-restricted-properties -- static markup, no interpolation
     tableBody.innerHTML =
       '<tr><td colspan="7" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400"><div>Loading...</div></td></tr>';
   }
@@ -346,6 +411,7 @@ async function loadAllSessions(): Promise<void> {
   } catch (error) {
     reportError('admin-sessions', 'loadAllSessions', error);
     if (tableBody) {
+      // eslint-disable-next-line no-restricted-properties -- static markup, no interpolation
       tableBody.innerHTML =
         '<tr><td colspan="7" class="px-6 py-4 text-center text-red-600">Error loading sessions</td></tr>';
     }

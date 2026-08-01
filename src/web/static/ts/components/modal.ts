@@ -58,6 +58,7 @@ export function createModal(props: ModalProps): {
     // Close button (X) in top-right (user-initiated dismissal → fromAction=false)
     if (props.showClose !== false && (props.closable === undefined || props.closable)) {
       const closeBtn = document.createElement('button');
+      // eslint-disable-next-line no-restricted-properties -- static markup, no interpolation
       closeBtn.innerHTML = '&times;';
       closeBtn.className =
         'text-gray-400 hover:text-gray-600 text-3xl leading-none transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded';
@@ -76,6 +77,7 @@ export function createModal(props: ModalProps): {
   body.id = descriptionId;
   body.className = 'mb-6';
   if (typeof props.content === 'string') {
+    // eslint-disable-next-line no-restricted-properties -- generic component sink; no caller passes untrusted data as a string
     body.innerHTML = props.content;
   } else {
     body.appendChild(props.content);

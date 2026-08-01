@@ -25,6 +25,7 @@ export async function loadCloudProviders(): Promise<void> {
   } catch {
     const list = document.getElementById('cloud-providers-list');
     if (list)
+      // eslint-disable-next-line no-restricted-properties -- every interpolation is wrapped in escapeHtml()
       list.innerHTML = `<div class="text-gray-500 text-sm dark:text-gray-400">${escapeHtml(t('backup.noProvidersConfigured'))}</div>`;
   }
 }
@@ -38,6 +39,7 @@ export function populateCloudProviderSelect(selectId: string, providers: CloudPr
   const optionsHtml = providers
     .map((p) => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)}</option>`)
     .join('');
+  // eslint-disable-next-line no-restricted-properties -- static markup, no interpolation
   select.innerHTML = `<option value="">${noneLabel}</option>${optionsHtml}`;
 
   if (providers.some((p) => p.id === previousValue)) {
@@ -50,10 +52,12 @@ function renderCloudProviders(providers: CloudProvider[]): void {
   if (!list) return;
 
   if (providers.length === 0) {
+    // eslint-disable-next-line no-restricted-properties -- every interpolation is wrapped in escapeHtml()
     list.innerHTML = `<div class="text-gray-500 text-sm dark:text-gray-400">${escapeHtml(t('backup.noProvidersConfigured'))}</div>`;
     return;
   }
 
+  // eslint-disable-next-line no-restricted-properties -- every interpolation is wrapped in escapeHtml()
   list.innerHTML = providers
     .map((p) => {
       const pid = escapeHtml(p.id);

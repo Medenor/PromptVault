@@ -86,6 +86,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "img-src 'self' data: https:; "
             "font-src 'self' data: https://fonts.gstatic.com; "
             "connect-src 'self' https://fonts.gstatic.com; "
+            "object-src 'none'; "
             "frame-ancestors 'none'; "
             "base-uri 'self'; "
             "form-action 'self'"

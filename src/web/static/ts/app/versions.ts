@@ -110,6 +110,7 @@ async function loadVersionHistory(promptId: number): Promise<void> {
   try {
     const versionList = document.getElementById('version-list');
     if (versionList) {
+      // eslint-disable-next-line no-restricted-properties -- static markup, no interpolation
       versionList.innerHTML =
         '<div class="text-center text-gray-500 py-8">' + t('messages.loading') + '</div>';
     }
@@ -140,6 +141,7 @@ async function loadVersionHistory(promptId: number): Promise<void> {
     reportAppIssue('loadVersionHistory', error, { promptId });
     const versionList = document.getElementById('version-list');
     if (versionList) {
+      // eslint-disable-next-line no-restricted-properties -- static markup, no interpolation
       versionList.innerHTML =
         '<div class="text-center text-red-600 py-8">Error loading versions</div>';
     }
@@ -153,12 +155,14 @@ function renderVersionHistory(versions: VersionSummary[]): void {
   }
 
   if (versions.length === 0) {
+    // eslint-disable-next-line no-restricted-properties -- static markup, no interpolation
     versionList.innerHTML =
       '<div class="text-center text-gray-500 py-8">' + t('version.noVersions') + '</div>';
     hideVersionCarouselNav();
     return;
   }
 
+  // eslint-disable-next-line no-restricted-properties -- static markup, no interpolation
   versionList.innerHTML = '';
   versions.forEach((version, index) => {
     const versionItem = createVersionItem(version, index, versions.length);
@@ -280,6 +284,7 @@ function createVersionItem(
     ? `<span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-100 text-blue-700">${version.semantic_version}</span>`
     : `<span class="px-2 py-0.5 text-xs font-medium rounded-full bg-gray-100 text-gray-500" data-i18n="version.unversioned">${t('version.unversioned')}</span>`;
 
+  // eslint-disable-next-line no-restricted-properties -- every interpolation is wrapped in escapeHtml()
   div.innerHTML =
     `
         <div class="flex items-center justify-between mb-2">
@@ -450,7 +455,9 @@ function populateDiffSelectors(selectedIds: string[]): void {
     return;
   }
 
+  // eslint-disable-next-line no-restricted-properties -- static markup, no interpolation
   v1Selector.innerHTML = '';
+  // eslint-disable-next-line no-restricted-properties -- static markup, no interpolation
   v2Selector.innerHTML = '';
 
   allVersions.forEach((version, index) => {
@@ -481,6 +488,7 @@ async function updateDiff(): Promise<void> {
   if (v1 === v2) {
     const diffView = document.getElementById('diff-view');
     if (diffView) {
+      // eslint-disable-next-line no-restricted-properties -- static markup, no interpolation
       diffView.innerHTML =
         '<div class="text-center text-gray-500 py-8">Select different versions to compare</div>';
     }
@@ -497,6 +505,7 @@ async function loadAndDisplayDiff(v1Id: string, v2Id: string): Promise<void> {
     }
     const diffView = document.getElementById('diff-view');
     if (diffView) {
+      // eslint-disable-next-line no-restricted-properties -- static markup, no interpolation
       diffView.innerHTML =
         '<div class="text-center text-gray-500 py-8">' + t('messages.loading') + '</div>';
     }
@@ -527,6 +536,7 @@ async function loadAndDisplayDiff(v1Id: string, v2Id: string): Promise<void> {
     });
     const diffView = document.getElementById('diff-view');
     if (diffView) {
+      // eslint-disable-next-line no-restricted-properties -- static markup, no interpolation
       diffView.innerHTML = '<div class="text-center text-red-600 py-8">Error loading diff</div>';
     }
   }
@@ -574,9 +584,11 @@ function displayDiff(diff: VersionDiffResponse): void {
   if (!diffView) {
     return;
   }
+  // eslint-disable-next-line no-restricted-properties -- static markup, no interpolation
   diffView.innerHTML = '';
 
   if (!diff.changes || Object.keys(diff.changes).length === 0) {
+    // eslint-disable-next-line no-restricted-properties -- static markup, no interpolation
     diffView.innerHTML =
       '<div class="text-center text-gray-500 py-8">No changes between these versions</div>';
     return;
@@ -613,6 +625,7 @@ function displayDiff(diff: VersionDiffResponse): void {
       if (change.old !== null && change.old !== undefined) {
         const oldDiv = document.createElement('div');
         oldDiv.className = 'mb-2 p-3 bg-red-50 border border-red-200 rounded-lg';
+        // eslint-disable-next-line no-restricted-properties -- every interpolation is wrapped in escapeHtml()
         oldDiv.innerHTML = `<strong class="text-red-700">Old:</strong> <span class="text-gray-700">${escapeHtml(formatValue(change.old))}</span>`;
         fieldDiv.appendChild(oldDiv);
       }
@@ -621,6 +634,7 @@ function displayDiff(diff: VersionDiffResponse): void {
       if (change.new !== null && change.new !== undefined) {
         const newDiv = document.createElement('div');
         newDiv.className = 'p-3 bg-emerald-50 border border-emerald-200 rounded-lg';
+        // eslint-disable-next-line no-restricted-properties -- every interpolation is wrapped in escapeHtml()
         newDiv.innerHTML = `<strong class="text-emerald-700">New:</strong> <span class="text-gray-700">${escapeHtml(formatValue(change.new))}</span>`;
         fieldDiv.appendChild(newDiv);
       }

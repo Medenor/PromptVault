@@ -94,7 +94,9 @@ export async function bulkDeleteTags(
   }
 }
 
-export async function exportTags(handleError: (error: unknown, fallback: string) => void): Promise<void> {
+export async function exportTags(
+  handleError: (error: unknown, fallback: string) => void
+): Promise<void> {
   try {
     const data = await exportTagsRequest();
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -161,6 +163,7 @@ export async function loadAnalytics(
     if (elements.analyticsUsed) elements.analyticsUsed.textContent = String(data.used ?? 0);
     if (elements.analyticsUnused) elements.analyticsUnused.textContent = String(data.unused ?? 0);
     if (elements.analyticsTop) {
+      // eslint-disable-next-line no-restricted-properties -- static markup, no interpolation
       elements.analyticsTop.innerHTML = '';
       data.top.forEach((item) => {
         const li = document.createElement('li');
@@ -169,6 +172,7 @@ export async function loadAnalytics(
       });
     }
     if (elements.analyticsCooccurrence) {
+      // eslint-disable-next-line no-restricted-properties -- static markup, no interpolation
       elements.analyticsCooccurrence.innerHTML = '';
       data.co_occurrence.forEach((item) => {
         const li = document.createElement('li');

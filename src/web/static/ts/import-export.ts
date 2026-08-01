@@ -452,6 +452,7 @@ async function loadStatistics(): Promise<void> {
 function updateActivityHistory(): void {
   const historyList = document.getElementById('activity-history');
   if (!historyList) return;
+  // eslint-disable-next-line no-restricted-properties -- static markup, no interpolation
   historyList.innerHTML = `
         <div class="history-item">
             <div class="history-info">

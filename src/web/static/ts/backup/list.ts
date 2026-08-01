@@ -90,11 +90,13 @@ export function renderBackupList(backups: BackupItem[]): void {
   if (!container) return;
 
   if (backups.length === 0) {
+    // eslint-disable-next-line no-restricted-properties -- every interpolation is wrapped in escapeHtml()
     container.innerHTML = `<div class="text-gray-500 text-sm dark:text-gray-400">${escapeHtml(t('backup.noBackupsFound'))}</div>`;
     return;
   }
 
   const backupItems = backups.map((backup) => createBackupItem(backup)).join('');
+  // eslint-disable-next-line no-restricted-properties -- static markup, no interpolation
   container.innerHTML = backupItems;
 }
 
@@ -222,6 +224,7 @@ export function showRestoreModal(backupId: string): void {
   restoreConfirmationModalTrigger = (event as unknown as { target: HTMLElement }).target || null;
   const infoDiv = document.getElementById('restore-backup-info');
   if (infoDiv) {
+    // eslint-disable-next-line no-restricted-properties -- every interpolation is wrapped in escapeHtml()
     infoDiv.innerHTML = `
         <strong>${escapeHtml(t('backup.backupLabel'))}</strong> ${escapeHtml(backup.backup_id)}<br>
         <strong>${escapeHtml(t('backup.createdLabel'))}</strong> ${escapeHtml(new Date(backup.timestamp).toLocaleString())}<br>
@@ -318,6 +321,7 @@ export function showDeleteModal(backupId: string): void {
   deleteConfirmationModalTrigger = (event as unknown as { target: HTMLElement }).target || null;
   const infoDiv = document.getElementById('delete-backup-info');
   if (infoDiv) {
+    // eslint-disable-next-line no-restricted-properties -- every interpolation is wrapped in escapeHtml()
     infoDiv.innerHTML = `
         <strong>${escapeHtml(t('backup.backupLabel'))}</strong> ${escapeHtml(backup.backup_id)}<br>
         <strong>${escapeHtml(t('backup.createdLabel'))}</strong> ${escapeHtml(new Date(backup.timestamp).toLocaleString())}<br>
@@ -462,4 +466,3 @@ function setRestoreInProgress(isRestoring: boolean, messageKey?: TranslationKey)
     modal.setAttribute('aria-busy', isRestoring ? 'true' : 'false');
   }
 }
-

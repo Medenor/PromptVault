@@ -17,6 +17,8 @@
 
 import i18next from 'i18next';
 
+import { html, raw } from './utils/safe-html';
+
 import {
   MAX_TITLE_LENGTH,
   MAX_PROMPT_LENGTH,
@@ -571,19 +573,20 @@ function showErrorSummary(errors: Record<string, string>): void {
     }
   }
 
-  const errorList = Object.keys(errors)
-    .map((field) => `<li>${i18next.t(errors[field] ?? '')}</li>`)
-    .join('');
+  const errorItems = Object.keys(errors).map(
+    (field) => html`<li>${i18next.t(errors[field] ?? '')}</li>`
+  );
 
-  banner.innerHTML = `
-        <div class="error-banner-header">
-            <strong>${i18next.t(translationKey, { count: errorCount })}</strong>
-        </div>
-        <ul class="error-banner-list">
-            ${errorList}
-        </ul>
-        <p class="error-banner-message">${i18next.t('validation.fixErrorsMessage')}</p>
-    `;
+  // eslint-disable-next-line no-restricted-properties -- structurally escaped via html`` tagged template (utils/safe-html.ts)
+  banner.innerHTML = html`
+    <div class="error-banner-header">
+      <strong>${i18next.t(translationKey, { count: errorCount })}</strong>
+    </div>
+    <ul class="error-banner-list">
+      ${raw(errorItems.join(''))}
+    </ul>
+    <p class="error-banner-message">${i18next.t('validation.fixErrorsMessage')}</p>
+  `;
 
   banner.style.display = 'block';
   banner.scrollIntoView({ behavior: 'smooth', block: 'nearest' });

@@ -29,10 +29,7 @@ import {
   clearCategoryColorMap,
 } from './colors';
 import { escapeHtml, hideElement, reportAppIssue, showElement, toggleElement } from './shared';
-import {
-  initializePromptsListKeyboardNavigation,
-  syncRovingTabindexForList,
-} from './keyboard-nav';
+import { initializePromptsListKeyboardNavigation, syncRovingTabindexForList } from './keyboard-nav';
 import { selectedPromptIds, handleCheckboxChange } from './bulk-actions';
 import type { CategoryItem, PromptId, TagInfo, TagItem } from './types';
 
@@ -236,6 +233,7 @@ function updateSearchResultsInfo(
 
     // Show empty state in prompts list
     if (promptsListEl) {
+      // eslint-disable-next-line no-restricted-properties -- static markup, no interpolation
       promptsListEl.innerHTML = `<div class="col-span-full text-center text-gray-500 py-12">${t('search.noResultsMessage')}</div>`;
     }
 
@@ -377,6 +375,7 @@ export function renderPrompts(prompts: Record<string, PromptResponse>): void {
   if (!container) {
     return;
   }
+  // eslint-disable-next-line no-restricted-properties -- static markup, no interpolation
   container.innerHTML = '';
 
   // Handle case when there are no prompts at all
@@ -504,6 +503,7 @@ function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement
     ? `<span class="version-badge px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-100 text-blue-700 ml-2">v${prompt.semantic_version}</span>`
     : '';
 
+  // eslint-disable-next-line no-restricted-properties -- every interpolation is wrapped in escapeHtml()
   div.innerHTML = `
 	        <div class="flex items-start justify-between mb-3">
 	            <h4 id="${titleId}" class="text-prompt-title font-semibold text-gray-900 dark:text-gray-100 flex-1 flex items-center flex-wrap gap-1">${escapeHtml(prompt.title)}${semVerBadge}</h4>
@@ -666,6 +666,7 @@ function renderCategories(categories: string[]): void {
 
   // Clear existing categories except "All Categories"
   const allPromptsItem = list.querySelector('[data-category="all"]');
+  // eslint-disable-next-line no-restricted-properties -- static markup, no interpolation
   list.innerHTML = '';
   if (allPromptsItem) {
     list.appendChild(allPromptsItem);
@@ -674,6 +675,7 @@ function renderCategories(categories: string[]): void {
   // Handle mobile list
   if (listMobile) {
     const allPromptsItemMobile = listMobile.querySelector('[data-category="all"]');
+    // eslint-disable-next-line no-restricted-properties -- static markup, no interpolation
     listMobile.innerHTML = '';
     if (allPromptsItemMobile) {
       listMobile.appendChild(allPromptsItemMobile);
@@ -763,6 +765,7 @@ function renderTags(tags: TagInfo[]): void {
 
   // Clear existing tags except "All Tags"
   const allTagsItem = list.querySelector('[data-tag="all"]');
+  // eslint-disable-next-line no-restricted-properties -- static markup, no interpolation
   list.innerHTML = '';
   if (allTagsItem) {
     list.appendChild(allTagsItem);
@@ -771,6 +774,7 @@ function renderTags(tags: TagInfo[]): void {
   // Handle mobile list
   if (listMobile) {
     const allTagsItemMobile = listMobile.querySelector('[data-tag="all"]');
+    // eslint-disable-next-line no-restricted-properties -- static markup, no interpolation
     listMobile.innerHTML = '';
     if (allTagsItemMobile) {
       listMobile.appendChild(allTagsItemMobile);

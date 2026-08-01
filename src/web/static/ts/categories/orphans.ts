@@ -7,6 +7,7 @@
 import { tUnsafe } from '@/utils/i18n';
 import { setupScrollIndicators } from '@/utils/dom';
 import { showNotification } from '@/utils/notifications';
+import { html } from '@/utils/safe-html';
 import {
   fetchCategoryAnalytics,
   fetchOrphanPromptDetails,
@@ -31,6 +32,7 @@ export async function loadAnalytics(
     if (elements.analyticsUsed) elements.analyticsUsed.textContent = String(data.used ?? 0);
     if (elements.analyticsUnused) elements.analyticsUnused.textContent = String(data.unused ?? 0);
     if (elements.analyticsTop) {
+      // eslint-disable-next-line no-restricted-properties -- static markup, no interpolation
       elements.analyticsTop.innerHTML = '';
       data.top.forEach((item) => {
         const li = document.createElement('li');
@@ -81,6 +83,7 @@ export async function loadOrphans(
       elements.unusedCount.textContent = String(data.items?.length ?? 0);
     }
     if (elements.unusedList) {
+      // eslint-disable-next-line no-restricted-properties -- static markup, no interpolation
       elements.unusedList.innerHTML = '';
       (data.items ?? []).forEach((item) => {
         const li = document.createElement('li');
@@ -101,6 +104,7 @@ async function renderPromptDetails(
   onAssignCategory: (promptId: number, category: string) => void,
   resolveCategoryInput: (rawCategory: string) => string | null
 ): Promise<void> {
+  // eslint-disable-next-line no-restricted-properties -- static markup, no interpolation
   container.innerHTML = '';
   if (promptIds.length === 0) {
     return;
@@ -121,8 +125,11 @@ async function renderPromptDetails(
     const title = detailsMap.get(id)?.trim() || tUnsafe('management.promptNotFound');
     const li = document.createElement('li');
     li.className = 'flex flex-col gap-2 md:flex-row md:items-center md:justify-between';
-    li.innerHTML = `
-      <span class="text-gray-800 dark:text-gray-100">#${id} — ${title || tUnsafe('management.untitledPrompt')}</span>
+    // eslint-disable-next-line no-restricted-properties -- structurally escaped via html`` tagged template (utils/safe-html.ts)
+    li.innerHTML = html`
+      <span class="text-gray-800 dark:text-gray-100"
+        >#${id} — ${title || tUnsafe('management.untitledPrompt')}</span
+      >
       <div class="flex flex-col gap-2 md:flex-row md:items-center md:gap-3">
         <input
           type="text"

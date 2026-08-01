@@ -6,6 +6,7 @@
 
 import { tUnsafe } from '@/utils/i18n';
 import { setupScrollIndicators } from '@/utils/dom';
+import { html } from '@/utils/safe-html';
 import {
   initializeTableFirstCharNavigation,
   initializeRovingTabindex,
@@ -65,6 +66,7 @@ export function renderRows(
   if (!tableBody) {
     return;
   }
+  // eslint-disable-next-line no-restricted-properties -- static markup, no interpolation
   tableBody.innerHTML = '';
 
   const emptyState = document.getElementById('categories-empty-state');
@@ -100,20 +102,41 @@ export function renderRows(
     row.setAttribute('role', 'option');
     row.dataset.id = String(item.id);
 
-    row.innerHTML = `
+    // eslint-disable-next-line no-restricted-properties -- structurally escaped via html`` tagged template (utils/safe-html.ts)
+    row.innerHTML = html`
       <td class="py-2 pr-4">
-        <input type="checkbox" data-select-id="${item.id}" aria-label="${selectLabel} #${item.id}" tabindex="-1" />
+        <input
+          type="checkbox"
+          data-select-id="${item.id}"
+          aria-label="${selectLabel} #${item.id}"
+          tabindex="-1"
+        />
       </td>
       <td class="py-2 pr-4 text-gray-600 dark:text-gray-400">#${item.id}</td>
       <td class="py-2 pr-4">
-        <input data-field="name" aria-label="${nameLabel}" class="w-full px-2 py-1 border border-gray-300 rounded dark:border-gray-600" value="${item.name}" />
+        <input
+          data-field="name"
+          aria-label="${nameLabel}"
+          class="w-full px-2 py-1 border border-gray-300 rounded dark:border-gray-600"
+          value="${item.name}"
+        />
       </td>
       <td class="py-2 pr-4">
-        <input data-field="description" aria-label="${descriptionLabel}" class="w-full px-2 py-1 border border-gray-300 rounded dark:border-gray-600" value="${item.description ?? ''}" />
+        <input
+          data-field="description"
+          aria-label="${descriptionLabel}"
+          class="w-full px-2 py-1 border border-gray-300 rounded dark:border-gray-600"
+          value="${item.description ?? ''}"
+        />
       </td>
       <td class="py-2 pr-4">
         <div class="flex items-center gap-2">
-          <input data-field="color" aria-label="${colorLabel}" class="w-full px-2 py-1 border border-gray-300 rounded dark:border-gray-600" value="${item.color ?? ''}" />
+          <input
+            data-field="color"
+            aria-label="${colorLabel}"
+            class="w-full px-2 py-1 border border-gray-300 rounded dark:border-gray-600"
+            value="${item.color ?? ''}"
+          />
           <input
             data-color-picker
             type="color"
@@ -127,8 +150,18 @@ export function renderRows(
       <td class="py-2 pr-4 text-gray-600 dark:text-gray-400">${item.usage_count}</td>
       <td class="py-2 pr-4">
         <div class="flex items-center gap-2">
-          <button data-action="save" class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">${saveLabel}</button>
-          <button data-action="delete" class="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700">${deleteLabel}</button>
+          <button
+            data-action="save"
+            class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            ${saveLabel}
+          </button>
+          <button
+            data-action="delete"
+            class="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700"
+          >
+            ${deleteLabel}
+          </button>
         </div>
       </td>
     `;
