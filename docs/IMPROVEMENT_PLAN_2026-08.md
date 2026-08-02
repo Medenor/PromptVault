@@ -155,6 +155,7 @@ _Global analysis performed 2026-07-31 against the current `main` codebase. Compl
 - **Description**: Reinstate continuous dependency auditing (`pip-audit` + `npm audit`) as a PR-blocking or at least PR-visible check, pin/lock backend dependencies, and add basic SBOM output.
 - **Rationale**: A recent commit moved the security audit to a weekly cron and restricted CI scope — reasonable for cost, but it means a vulnerable dependency can ride into `main` unflagged for up to a week. A lightweight advisory-check on PRs (cached, fast) restores coverage without the old CI footprint.
 - **To-Do List**:
+  - Reassess this in the context of the **Restricted CI trigger scope and reduced Forgejo Actions footprint** (Codeberg [PR #67](https://codeberg.org/Medenor/promptvault/pulls/67))
   - Add a fast `pip-audit --strict` + `npm audit --audit-level=high` job on PRs touching `pyproject.toml`/`package-lock.json` only (path filter keeps footprint tiny); keep the weekly full cron.
   - Ensure backend deps are lock-pinned (constraints file or `uv lock`/`pip-compile` artifact committed) so audits are reproducible.
   - Generate CycloneDX SBOM in the weekly job; attach as artifact.
