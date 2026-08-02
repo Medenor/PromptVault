@@ -25,7 +25,7 @@ Example:
     >>> # Validate password meets policy
     >>> is_valid, errors = service.validate_password_policy("MyP@ssw0rd123")
     >>> if not is_valid:
-    ...     print(f"Password validation failed: {errors}")
+    ...     errors  # validation failure reasons
     >>>
     >>> # Hash password
     >>> password_hash = service.hash_password("MyP@ssw0rd123")
@@ -35,7 +35,7 @@ Example:
     >>>
     >>> # Check password strength
     >>> strength = service.check_password_strength("MyP@ssw0rd123")
-    >>> print(f"Password strength: {strength['level']}")
+    >>> strength['level']
 
 References:
     - OWASP Password Storage Cheat Sheet: https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html
@@ -390,7 +390,7 @@ class PasswordService:
         Example:
             >>> service = PasswordService(auth_settings)
             >>> is_valid, errors = service.validate_password_policy("abc")
-            >>> print(errors)
+            >>> errors
             ['Password must be at least 12 characters long',
              'Password must contain at least one uppercase letter',
              'Password must contain at least one digit',
@@ -490,7 +490,7 @@ class PasswordService:
         Example:
             >>> service = PasswordService(auth_settings)
             >>> strength = service.check_password_strength("MyP@ssw0rd123")
-            >>> print(strength)
+            >>> strength
             {
                 'level': 'strong',
                 'entropy': 68.4,

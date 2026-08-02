@@ -70,10 +70,6 @@ def configure_routing(app: FastAPI) -> None:
         )
     else:
         _warn_if_auth_disabled()
-        print(
-            "⚠ AUTH_ENABLED=false — Authentication is DISABLED. All endpoints are "
-            "publicly accessible."
-        )
 
     # Register HTML page routes (no /api prefix)
     # - /auth/* - Authentication pages (login, register, profile, etc.)

@@ -166,7 +166,7 @@ class UndoService:
         Example:
             >>> op = service.pop(user_id="user-123", entity_type="category")
             >>> if op:
-            ...     print(f"Undoing {op['operation']} on {op['entity_type']}")
+            ...     op['operation'], op['entity_type']
             ...     # Use op['payload'] to perform undo
         """
         # Query for the most recent operation
@@ -235,8 +235,7 @@ class UndoService:
 
         Example:
             >>> history = service.get_history(user_id="user-123", limit=5)
-            >>> for op in history:
-            ...     print(f"{op['entity_type']}.{op['operation']} at {op['created_at']}")
+            >>> [(op['entity_type'], op['operation'], op['created_at']) for op in history]
         """
         query = self.db.query(UndoOperation).filter(UndoOperation.user_id == user_id)
 
@@ -279,7 +278,7 @@ class UndoService:
 
         Example:
             >>> deleted = service.clear_user_undo(user_id="user-123")
-            >>> print(f"Cleared {deleted} undo operations")
+            >>> deleted
         """
         deleted_count = (
             self.db.query(UndoOperation)
@@ -305,7 +304,7 @@ class UndoService:
 
         Example:
             >>> deleted = service.cleanup_expired()
-            >>> print(f"Cleaned up {deleted} expired undo operations")
+            >>> deleted
         """
         now = datetime.now(timezone.utc)
 

@@ -132,7 +132,6 @@
   - Implement database transactions for atomic operations (create prompt with version in single transaction)
   - Add database indices on frequently queried fields (prompt title, category, tags, created_at, user_id)
   - Implement full-text search using database capabilities (PostgreSQL tsvector, SQLite FTS5)
-  - Refactor PromptFilterService to use SQL queries instead of in-memory filtering
   - Add database connection health checks to API startup
   - Implement database backup strategy (pg_dump for PostgreSQL, .sqlite file backup for SQLite)
   - Add database connection string configuration via environment variables

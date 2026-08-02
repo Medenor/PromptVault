@@ -63,7 +63,7 @@ class UserAgentParser:
 
         Example:
             >>> info = UserAgentParser.parse_user_agent("Mozilla/5.0...")
-            >>> print(info['device'])
+            >>> info['device']
             'Desktop'
         """
         if not user_agent or user_agent == "unknown":
@@ -151,7 +151,7 @@ class UserAgentParser:
 
         Example:
             >>> display = UserAgentParser.format_session_display("Mozilla/5.0...")
-            >>> print(display)
+            >>> display
             'Chrome 91.0 on Mac OS X 10.15'
         """
         info = UserAgentParser.parse_user_agent(user_agent)

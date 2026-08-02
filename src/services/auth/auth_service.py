@@ -67,7 +67,7 @@ Example:
     ...     ip_address="192.168.1.1",
     ...     user_agent="Mozilla/5.0..."
     ... )
-    >>> print(result["access_token"])
+    >>> result["access_token"]
     >>>
     >>> # Login existing user
     >>> result = auth_service.login(
@@ -208,7 +208,7 @@ class AuthService:
             ...     ip_address="192.168.1.1",
             ...     user_agent="Mozilla/5.0..."
             ... )
-            >>> print(result["user"]["username"])
+            >>> result["user"]["username"]
             'alice'
         """
         # Validate password policy
@@ -786,7 +786,7 @@ class AuthService:
 
         Example:
             >>> stats = auth_service.get_user_stats("user-uuid")
-            >>> print(f"Active sessions: {stats['active_sessions_count']}")
+            >>> stats['active_sessions_count']
         """
         from datetime import datetime, timezone
 
@@ -966,8 +966,7 @@ class AuthService:
 
         Example:
             >>> sessions = auth_service.get_user_sessions("123", "family-123")
-            >>> for session in sessions:
-            ...     print(session["user_agent"])
+            >>> [session["user_agent"] for session in sessions]
         """
         sessions = self.session_repo.get_user_sessions(user_id, active_only=True)
 
@@ -1049,7 +1048,7 @@ class AuthService:
         Example:
             >>> # Revoke all sessions (force logout from all devices)
             >>> count = auth_service.revoke_all_sessions("user-uuid")
-            >>> print(f"Revoked {count} sessions")
+            >>> count
             >>>
             >>> # Revoke all OTHER sessions (keep current session)
             >>> count = auth_service.revoke_all_sessions(

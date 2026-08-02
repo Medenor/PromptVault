@@ -46,8 +46,8 @@ Example:
     >>>
     >>> # Validate and decode
     >>> claims = jwt_service.validate_access_token(access_token)
-    >>> print(claims["sub"])  # "123"
-    >>> print(claims["role"])  # "user"
+    >>> claims["sub"]  # "123"
+    >>> claims["role"]  # "user"
 
 Security Notes:
     - NEVER use HS256 - it's vulnerable to key confusion attacks
