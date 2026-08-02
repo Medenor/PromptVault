@@ -478,7 +478,7 @@ class PasswordResetService:
         Example:
             >>> # In a cron job or scheduled task
             >>> deleted_count = service.cleanup_expired_tokens()
-            >>> print(f"Cleaned up {deleted_count} expired tokens")
+            >>> deleted_count
         """
         deleted_count = self.token_repository.cleanup_expired_tokens()
 

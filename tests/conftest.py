@@ -68,9 +68,7 @@ from src.services.backup_encryption_service import BackupEncryptionService
 from src.services.backup_cloud_service import BackupCloudService
 from src.services.backup_scheduler_service import BackupSchedulerService
 from src.services.backup_audit_service import BackupAuditService
-from src.services.prompt_filter_service import PromptFilterService
 from src.services.prompt_import_export_service import PromptImportExportService
-from src.services.prompt_versioning_service import PromptVersioningService
 
 # ============================================================================
 # ENVIRONMENT SETUP FOR TESTS
@@ -656,16 +654,6 @@ def audit_service(patched_db_session):
 
 
 @pytest.fixture
-def filter_service() -> PromptFilterService:
-    """Create PromptFilterService instance.
-
-    Returns:
-        PromptFilterService: Filter service for prompt filtering
-    """
-    return PromptFilterService()
-
-
-@pytest.fixture
 def import_export_service() -> PromptImportExportService:
     """Create PromptImportExportService instance.
 
@@ -673,16 +661,6 @@ def import_export_service() -> PromptImportExportService:
         PromptImportExportService: Service for import/export operations
     """
     return PromptImportExportService()
-
-
-@pytest.fixture
-def versioning_service() -> PromptVersioningService:
-    """Create PromptVersioningService instance.
-
-    Returns:
-        PromptVersioningService: Service for version control
-    """
-    return PromptVersioningService()
 
 
 # ============================================================================
@@ -1010,9 +988,7 @@ def api_client_context(
     original_services = (
         web_app.data_service,
         web_app.backup_service,
-        web_app.filter_service,
         web_app.import_export_service,
-        web_app.versioning_service,
     )
 
     # Generate test JWT keys
@@ -1175,9 +1151,7 @@ def api_client_context(
         (
             web_app.data_service,
             web_app.backup_service,
-            web_app.filter_service,
             web_app.import_export_service,
-            web_app.versioning_service,
         ) = original_services
 
         # Restore original auth_settings

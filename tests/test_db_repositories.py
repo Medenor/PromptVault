@@ -926,6 +926,36 @@ class TestVersionRepository:
         assert tag1.name in version.tags
         assert tag2.name in version.tags
 
+    def test_revert_to_version_restores_tags(
+        self, version_repo, prompt_repo, test_user, test_category, test_db_session
+    ):
+        """Test that reverting to a version restores that version's tags."""
+        tag1 = Tag(name="tag-a")
+        tag2 = Tag(name="tag-b")
+        test_db_session.add_all([tag1, tag2])
+        test_db_session.flush()
+
+        prompt = prompt_repo.create(
+            title="V1 Title",
+            prompt="V1 Content",
+            category_id=test_category.id,
+            user_id=test_user.id,
+        )
+        prompt.tags.extend([tag1, tag2])
+        test_db_session.flush()
+        v1 = version_repo.create_version(prompt, test_user.username, "v1")
+
+        # Change tags and create a second version without tag1
+        prompt.tags = [tag2]
+        prompt_repo.update(prompt.id, title="V2 Title")
+        test_db_session.flush()
+        version_repo.create_version(prompt, test_user.username, "v2")
+
+        version_repo.revert_to_version(prompt, v1.version_id, test_user.username)
+
+        restored_names = {tag.name for tag in prompt.tags}
+        assert restored_names == {"tag-a", "tag-b"}
+
 
 # ============================================================================
 # CATEGORY REPOSITORY TESTS

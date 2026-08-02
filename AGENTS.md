@@ -89,21 +89,6 @@ PromptVault is a modern web-based prompt management application built with FastA
      - Retention policies and cleanup
      - Compression for older backups
 
-   - **PromptVersioningService** ([`prompt_versioning_service.py`](src/services/prompt_versioning_service.py)): Git-like version control (legacy)
-     - **Note**: Version control now integrated into database models and PromptDataServiceDB
-     - UUID-based version identification
-     - Automatic versioning on updates
-     - Metadata tracking (timestamp, author, message)
-     - Parent relationship management
-     - Version history preservation
-
-   - **PromptFilterService** ([`prompt_filter_service.py`](src/services/prompt_filter_service.py)): Search and filtering (legacy)
-     - **Note**: Filtering now integrated into PromptRepository with database-backed search
-     - Multi-criteria filtering (category, tags, search term)
-     - Case-sensitive/insensitive search
-     - Favorites filtering
-     - Sorting by title
-
    - **PromptImportExportService** ([`prompt_import_export_service.py`](src/services/prompt_import_export_service.py)): Data import/export
      - CSV format support
      - Markdown format support
@@ -478,7 +463,7 @@ As part of the Tailwind CSS v4 migration, legacy CSS files should be consolidate
 - **Single Responsibility**: Each function/class should have one clear purpose
 - **Code Organization**: Group related functionality together in modules
 - **Constants**: Define magic numbers and strings as named constants
-- **Logging**: Legacy code still uses `print()` for error reporting, but Issue #10 requires migrating to centralized structured logging with JSON payloads, request IDs, and rotating files in `data/logs/`. Reference `docs/plan_centralized_error_logging.md` for the mandated fields and retention targets, and prefer the shared logging helpers once they land. Use direct `print()` only as a short-lived fallback when no logger is injected yet.
+- **Logging**: All code uses centralized structured logging (`logging_service.get_logger(__name__)`) with JSON payloads, request IDs, and rotating files in `data/logs/`. Reference `docs/plan_centralized_error_logging.md` for the mandated fields and retention targets. `print()` is disallowed in `src/` and `run_web.py`, enforced by the `make lint` CI gate (`rg "print\(" src run_web.py`).
 
 ### Observability Requirements (Issue #10)
 
@@ -834,7 +819,7 @@ When working on a development session:
 - **Don't hardcode file paths**: Use `os.path.join()` and relative paths
 - **Don't skip error handling**: Always wrap I/O and database operations in try-except
 - **Don't forget transactions**: Use database sessions with proper commit/rollback
-- **Don't use legacy services**: Use database-backed services (PromptDataServiceDB, BackupServiceDB)
+- **Use database-backed services**: PromptDataServiceDB, BackupServiceDB (the legacy JSON-file services have been removed)
 - **Don't break database migrations**: Test with both SQLite and PostgreSQL when modifying models — see [docs/DEVELOPMENT.md#writing-alembic-migrations](docs/DEVELOPMENT.md#writing-alembic-migrations) for the dialect-portability rules and a real incident (v1.10.0/v1.10.1) this caught
 - **Don't use console.log in production**: Remove debug statements before committing
 - **Don't skip database session management**: Always close sessions properly
@@ -861,7 +846,6 @@ Current priorities:
 - Input validation and sanitization
 - Centralized error handling and logging (Issue #10)
 - Tag and category management interface
-- Complete removal of legacy JSON-based services
 - PostgreSQL production deployment guide
 
 ## Quick Reference

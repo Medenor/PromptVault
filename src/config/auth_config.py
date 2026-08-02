@@ -55,9 +55,9 @@ Environment Variables:
 
 Example:
     >>> from src.config.auth_config import auth_settings
-    >>> print(auth_settings.jwt_algorithm)
+    >>> auth_settings.jwt_algorithm
     'ES256'
-    >>> print(auth_settings.password_min_length)
+    >>> auth_settings.password_min_length
     12
 """
 

@@ -20,7 +20,7 @@ Quick Start:
 
     # Check database type
     if db_settings.is_sqlite:
-        print("Using SQLite")
+        logger.info("Using SQLite")
 
     # Use session context manager
     with get_db_session() as session:

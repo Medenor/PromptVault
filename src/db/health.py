@@ -58,7 +58,7 @@ def get_database_info() -> Dict[str, Any]:
 
     Example:
         info = get_database_info()
-        print(f"Database: {info['type']}, Healthy: {info['healthy']}")
+        logger.info(f"Database: {info['type']}, Healthy: {info['healthy']}")
     """
     # Sanitize database URL (remove password)
     sanitized_url = db_settings.DATABASE_URL
@@ -156,8 +156,7 @@ def validate_database_schema() -> bool:
 
     Example:
         if not validate_database_schema():
-            print("Database schema validation failed!")
-            print("Run: alembic upgrade head")
+            logger.error("Database schema validation failed! Run: alembic upgrade head")
     """
     # Check basic connectivity
     if not check_database_health():

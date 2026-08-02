@@ -61,14 +61,11 @@ def register_lifecycle_events(app: FastAPI) -> None:
                 f"(interval: {auth_settings.cleanup_interval_hours}h, "
                 f"batch_size: {auth_settings.cleanup_batch_size})"
             )
-            print("✓ Session cleanup scheduler started")
 
         except ImportError as e:
             logger.warning(f"Scheduler imports not available: {e}")
-            print(f"⚠ Scheduler imports not available: {e}")
         except Exception as e:
             logger.error(f"Failed to initialize scheduler: {e}", exc_info=True)
-            print(f"✗ Failed to initialize scheduler: {e}")
 
         try:
             from src.scheduler.backup_scheduler import register_backup_jobs
@@ -77,7 +74,6 @@ def register_lifecycle_events(app: FastAPI) -> None:
             logger.info("✓ Backup schedule loaded and registered from database")
         except Exception as e:
             logger.error(f"Failed to register backup jobs: {e}", exc_info=True)
-            print(f"✗ Failed to register backup jobs: {e}")
 
     @app.on_event("shutdown")
     async def shutdown_scheduler():
@@ -88,7 +84,5 @@ def register_lifecycle_events(app: FastAPI) -> None:
             try:
                 _session_cleanup_scheduler.stop()
                 logger.info("✓ Session cleanup scheduler stopped gracefully")
-                print("✓ Session cleanup scheduler stopped")
             except Exception as e:
                 logger.error(f"Error stopping scheduler: {e}", exc_info=True)
-                print(f"✗ Error stopping scheduler: {e}")

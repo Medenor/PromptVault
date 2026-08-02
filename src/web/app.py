@@ -12,8 +12,6 @@ from typing import List, Optional, Tuple, Dict, Deque, Any
 from collections import defaultdict, deque
 
 from src.services.prompt_data_service_db import PromptDataService
-from src.services.prompt_filter_service import PromptFilterService
-from src.services.prompt_versioning_service import PromptVersioningService
 from src.services.prompt_import_export_service import PromptImportExportService
 from src.services.backup_service_db import BackupService
 from src.services.logging_service import logging_service
@@ -224,7 +222,7 @@ def configure_services(
         data_file (Optional[str]): Explicit data file path.
         data_dir (Optional[str]): Explicit data directory path.
     """
-    global data_service, filter_service, versioning_service, import_export_service, backup_service, validation_monitor
+    global data_service, import_export_service, backup_service, validation_monitor
 
     resolved_file, resolved_dir = _resolve_data_locations(data_file, data_dir)
 
@@ -238,8 +236,6 @@ def configure_services(
         data_dir_base = resolved_dir or "data"
     logs_dir = os.path.join(data_dir_base, "logs")
     logging_service.configure_logging(log_dir=logs_dir)
-    filter_service = PromptFilterService()
-    versioning_service = PromptVersioningService()
     import_export_service = PromptImportExportService()
     backup_service = BackupService(resolved_dir)
     _warn_if_backup_dir_database_mismatch(backup_service.backups_dir)

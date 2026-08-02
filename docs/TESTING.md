@@ -284,9 +284,7 @@ This means you can:
 
 - `db_data_service` - PromptDataService with in-memory DB
 - `db_backup_service` - BackupService with temp directory
-- `filter_service` - PromptFilterService
 - `import_export_service` - PromptImportExportService
-- `versioning_service` - PromptVersioningService
 - And more...
 
 #### Data Factory Fixtures

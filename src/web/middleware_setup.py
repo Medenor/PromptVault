@@ -40,15 +40,12 @@ def _init_jwt_service_for_logging():
         from src.config.auth_config import auth_settings
 
         jwt_service = JWTService(auth_settings)
-        print("✓ JWT service initialized for logging middleware")
         logger.info("JWT service initialized for logging middleware")
         return jwt_service
     except Exception as e:
-        print(f"✗ JWT service initialization failed: {e}")
-        import traceback
-
-        traceback.print_exc()
-        logger.warning(f"JWT service initialization failed for logging: {e}")
+        logger.warning(
+            f"JWT service initialization failed for logging: {e}", exc_info=True
+        )
         return None
 
 
@@ -62,8 +59,9 @@ def configure_middleware(app: FastAPI, record_validation_event) -> None:
     """
     # Security headers on all responses (HSTS, CSP, X-Frame-Options, etc.)
     app.add_middleware(SecurityHeadersMiddleware)
-    logger.info("Security headers middleware initialized")
-    print("✓ Security headers middleware added (HSTS, CSP, X-Frame-Options, etc.)")
+    logger.info(
+        "Security headers middleware added (HSTS, CSP, X-Frame-Options, etc.)"
+    )
 
     # Rate limiting (Redis-backed with slowapi, falls back to in-memory)
     app.state.limiter = limiter

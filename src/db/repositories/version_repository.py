@@ -16,6 +16,7 @@ import uuid
 
 from src.db.models import PromptVersion, Prompt
 from src.db.repositories.base import BaseRepository
+from src.db.repositories.tag_repository import TagRepository
 
 
 class VersionRepository(BaseRepository[PromptVersion]):
@@ -223,10 +224,9 @@ class VersionRepository(BaseRepository[PromptVersion]):
         prompt.note = target_version.note
         prompt.favorite = target_version.favorite
 
-        # Update tags (clear and re-add from version)
-        prompt.tags.clear()
-        # Note: tag restoration would require tag lookup by name
-        # This is a simplified version; full implementation would restore tags
+        # Restore tags from the target version's denormalized snapshot
+        tag_repo = TagRepository(self.session)
+        prompt.tags = tag_repo.get_or_create_many(target_version.tags or [])
 
         self.session.flush()
 

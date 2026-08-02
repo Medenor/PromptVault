@@ -6,8 +6,8 @@ _Global analysis performed 2026-07-31 against the current `main` codebase. Compl
 
 | Claim | Reality in code |
 | --- | --- |
-| "Structured logging shipped, zero `print()`" | 34 `print()` calls remain in 12 `src/` files (startup, auth services, `db/health.py`) |
-| "Legacy JSON services retired (PR #63)" | `PromptFilterService` + `PromptVersioningService` still imported and instantiated in `src/web/app.py:15-16, 241-242` |
+| "Structured logging shipped, zero `print()`" | ✅ Done 2026-08-02: zero executable `print()` calls in `src/`/`run_web.py`; CI gate (`make lint` → `rg "print\(" src run_web.py`) enforces it |
+| "Legacy JSON services retired (PR #63)" | ✅ Done 2026-08-02: `PromptFilterService` + `PromptVersioningService` deleted along with their tests/fixtures |
 | "Don't use `innerHTML`" (AGENTS.md) | 85 `innerHTML` sites in `static/ts/`; mostly escaped, no lint enforcement |
 | Search | `LIKE`/`ilike` only; FTS explicitly deferred (`prompt_repository.py:23`) |
 | Rate limiting | Auth endpoints only; prompt CRUD/import/backup endpoints unthrottled |
@@ -33,7 +33,7 @@ _Global analysis performed 2026-07-31 against the current `main` codebase. Compl
   - Verify CSP in `middleware/security_headers.py` includes `object-src 'none'` and no `unsafe-inline` for scripts; document the final policy in `docs/AUTHENTICATION_SECURITY.md`.
   - CI: `npm run lint` must fail on any new `innerHTML`.
 
-### 2. Finish What's Declared Done: Legacy Service Removal + `print()` Eradication (Refactoring / Integrity)
+### 2. Finish What's Declared Done: Legacy Service Removal + `print()` Eradication (Refactoring / Integrity) - ✅ Done 2026-08-02 on branch `refactor/legacy-service-removal-print-eradication`
 
 - **Description**: Delete the still-live `PromptFilterService` and `PromptVersioningService` (superseded by `PromptRepository`/DB versioning), and complete the `print()` → structured-logger migration (34 remaining calls), then enforce both in CI.
 - **Rationale**: The roadmap and AGENTS.md declare both migrations complete; the code disagrees. This gap is worse than ordinary tech debt because docs are the contract agents and contributors rely on. The roadmap's own success metric — "`rg "print(" src run_web.py` must return zero matches in CI" — was never wired up. Small, safe, immediately verifiable.
@@ -155,6 +155,7 @@ _Global analysis performed 2026-07-31 against the current `main` codebase. Compl
 - **Description**: Reinstate continuous dependency auditing (`pip-audit` + `npm audit`) as a PR-blocking or at least PR-visible check, pin/lock backend dependencies, and add basic SBOM output.
 - **Rationale**: A recent commit moved the security audit to a weekly cron and restricted CI scope — reasonable for cost, but it means a vulnerable dependency can ride into `main` unflagged for up to a week. A lightweight advisory-check on PRs (cached, fast) restores coverage without the old CI footprint.
 - **To-Do List**:
+  - Reassess this in the context of the **Restricted CI trigger scope and reduced Forgejo Actions footprint** (Codeberg [PR #67](https://codeberg.org/Medenor/promptvault/pulls/67))
   - Add a fast `pip-audit --strict` + `npm audit --audit-level=high` job on PRs touching `pyproject.toml`/`package-lock.json` only (path filter keeps footprint tiny); keep the weekly full cron.
   - Ensure backend deps are lock-pinned (constraints file or `uv lock`/`pip-compile` artifact committed) so audits are reproducible.
   - Generate CycloneDX SBOM in the weekly job; attach as artifact.

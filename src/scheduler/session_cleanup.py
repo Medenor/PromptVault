@@ -228,7 +228,7 @@ class SessionCleanupScheduler:
             >>> scheduler = SessionCleanupScheduler()
             >>> scheduler.start()
             >>> info = scheduler.get_job_info()
-            >>> print(info['next_run_time'])
+            >>> info['next_run_time']
         """
         if not self.current_job or not self.is_running:
             return None
@@ -251,7 +251,7 @@ class SessionCleanupScheduler:
         Example:
             >>> scheduler = SessionCleanupScheduler()
             >>> result = scheduler.run_cleanup_now()
-            >>> print(f"Deleted {result['deleted']} sessions")
+            >>> result['deleted']
         """
         try:
             stats = self._cleanup_expired_sessions()
