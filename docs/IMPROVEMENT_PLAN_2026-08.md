@@ -150,18 +150,7 @@ _Global analysis performed 2026-07-31 against the current `main` codebase. Compl
   - Update README/AGENTS to a single consistent statement; refresh screenshots.
   - Vitest for toggle persistence logic; visual spot-check on all 9 pages including auth (English-only) pages.
 
-### 11. Supply-Chain & Dependency Security Gate (Security / CI)
-
-- **Description**: Reinstate continuous dependency auditing (`pip-audit` + `npm audit`) as a PR-blocking or at least PR-visible check, pin/lock backend dependencies, and add basic SBOM output.
-- **Rationale**: A recent commit moved the security audit to a weekly cron and restricted CI scope — reasonable for cost, but it means a vulnerable dependency can ride into `main` unflagged for up to a week. A lightweight advisory-check on PRs (cached, fast) restores coverage without the old CI footprint.
-- **To-Do List**:
-  - Reassess this in the context of the **Restricted CI trigger scope and reduced Forgejo Actions footprint** (Codeberg [PR #67](https://codeberg.org/Medenor/promptvault/pulls/67))
-  - Add a fast `pip-audit --strict` + `npm audit --audit-level=high` job on PRs touching `pyproject.toml`/`package-lock.json` only (path filter keeps footprint tiny); keep the weekly full cron.
-  - Ensure backend deps are lock-pinned (constraints file or `uv lock`/`pip-compile` artifact committed) so audits are reproducible.
-  - Generate CycloneDX SBOM in the weekly job; attach as artifact.
-  - Document the triage process (severity thresholds, exception file with expiry dates) in `docs/DEVELOPMENT.md`.
-
-### 12. Prompt Analytics & Usage Dashboard (Feature)
+### 11. Prompt Analytics & Usage Dashboard (Feature)
 
 - **Description**: Owner-scoped dashboard: most-copied prompts, recently edited, tag/category distribution, version churn, vault growth — built on the existing audit log plus a lightweight `copy` event.
 - **Rationale**: Surfaces value from telemetry that already exists; strictly additive and read-only. Lowest priority because it's discretionary polish, but cheap after items 4/5 stabilize the query layer. Carried from ROADMAP 2026 #8 (issue #22).
@@ -189,12 +178,11 @@ _Global analysis performed 2026-07-31 against the current `main` codebase. Compl
 | 8 | AI-native tooling | Feature | High | Medium | 3 |
 | 9 | Pagination completion | UX/Perf | Med | Low | — |
 | 10 | Dark mode + toggle | UX | Med | Low | — |
-| 11 | Supply-chain gate | Security | Med | Low | — |
-| 12 | Analytics dashboard | Feature | Med | Medium | 5 (soft) |
+| 11 | Analytics dashboard | Feature | Med | Medium | 5 (soft) |
 
 ## Suggested Execution Order
 
-1. **Sprint A (hygiene, 1–2 weeks)**: items 1, 2, 11 — small, independent, restore doc/code integrity and close the cheapest security gaps.
+1. **Sprint A (hygiene, 1–2 weeks)**: items 1, 2 — small, independent, restore doc/code integrity and close the cheapest security gaps.
 2. **Sprint B (hardening, 2 weeks)**: items 3 → 7, with 10 interleaved as polish.
 3. **Sprint C (flagship, 4–6 weeks)**: item 4 (sharing), then 5 (FTS), with 9 folded into whichever list surface each touches.
-4. **Sprint D (differentiation)**: items 8, 12, continuing 6 opportunistically (one split-PR per week).
+4. **Sprint D (differentiation)**: items 8, 11, continuing 6 opportunistically (one split-PR per week).
