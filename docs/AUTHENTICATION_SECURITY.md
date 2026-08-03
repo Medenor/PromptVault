@@ -471,6 +471,11 @@ locked_until: datetime | None
 
 ### Rate Limit Rules
 
+This section covers **authentication** endpoints only. Rate limiting also extends
+to all state-changing and expensive API endpoints (prompt CRUD, import/export,
+backups, version revert) via a per-user four-bucket taxonomy — see
+[`docs/RATE_LIMITING.md`](RATE_LIMITING.md) for that.
+
 | Endpoint                       | Limit      | Window | Scope     |
 | ------------------------------ | ---------- | ------ | --------- |
 | `/auth/login`                  | 5 attempts | 15 min | Per IP    |

@@ -96,6 +96,8 @@
     "missingContent": "Missing Content",
     "missingCommitMessage": "Missing Required Field",
     "unknownError": "Unknown error",
+    "rateLimit": "Too many requests. Please wait {{seconds}}s before trying again.",
+    "rateLimitGeneric": "Too many requests. Please slow down and try again shortly.",
     "selectTwoVersions": "Please select exactly 2 versions to compare",
     "selectPromptFirst": "Please select a prompt first",
     "suggestTagsMissingContent": "Add prompt content before requesting suggestions.",

@@ -14,9 +14,11 @@ import logging
 from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status, Form
+from fastapi import APIRouter, Depends, HTTPException, Request, status, Form
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
+
+from src.web.middleware.rate_limit import limiter, write_limit, bulk_limit
 
 from src.db.session import get_db
 from src.db.models.user import User
@@ -158,9 +160,12 @@ async def get_prompt(
         201: {"description": "Prompt created successfully"},
         401: {"description": "Authentication required"},
         422: {"description": "Validation failed"},
+        429: {"description": "Rate limit exceeded"},
     },
 )
+@limiter.limit(write_limit)
 async def create_prompt(
+    request: Request,
     title: str = Form(...),
     prompt: str = Form(...),
     category: str = Form(""),
@@ -292,10 +297,13 @@ async def create_prompt(
         403: {"description": "Permission denied (not owner or admin)"},
         404: {"description": "Prompt not found"},
         422: {"description": "Validation failed"},
+        429: {"description": "Rate limit exceeded"},
     },
 )
+@limiter.limit(write_limit)
 async def update_prompt(
     prompt_id: int,
+    request: Request,
     title: str = Form(...),
     prompt: str = Form(...),
     category: str = Form(""),
@@ -461,9 +469,12 @@ async def update_prompt(
         200: {"description": "Bulk deletion completed"},
         403: {"description": "Admin role required"},
         422: {"description": "Validation failed"},
+        429: {"description": "Rate limit exceeded"},
     },
 )
+@limiter.limit(bulk_limit)
 async def bulk_delete_prompts(
+    request: Request,
     body: BulkDeleteRequest,
     admin: Optional[User] = Depends(get_admin_or_bypass),
     db: Session = Depends(get_db),
@@ -555,10 +566,13 @@ async def bulk_delete_prompts(
         401: {"description": "Authentication required"},
         403: {"description": "Permission denied (not owner or admin)"},
         404: {"description": "Prompt not found"},
+        429: {"description": "Rate limit exceeded"},
     },
 )
+@limiter.limit(write_limit)
 async def delete_prompt(
     prompt_id: int,
+    request: Request,
     user: User = Depends(get_current_user_or_default),
     db: Session = Depends(get_db),
 ):

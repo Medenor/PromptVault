@@ -18,6 +18,7 @@ from fastapi.responses import JSONResponse
 
 from src.db.models.user import User
 from src.web.dependencies.auth import get_admin_or_bypass, get_user_or_bypass
+from src.web.middleware.rate_limit import limiter, expensive_limit, bulk_limit
 from src.web.models import BackupCreateRequest, BackupCompressRequest
 
 router = APIRouter(tags=["backups"])
@@ -77,8 +78,10 @@ async def get_backups(
     return {"backups": backups, "total": total}
 
 
-@router.post("/api/backups")
+@router.post("/api/backups", responses={429: {"description": "Rate limit exceeded"}})
+@limiter.limit(expensive_limit)
 async def create_manual_backup(
+    request: Request,
     name: str = Form(None),
     encrypt: bool = Form(False),
     passphrase: str = Form(None),
@@ -137,7 +140,9 @@ async def create_manual_backup(
 @router.post(
     "/api/backups/{backup_id}/restore-preview",
     dependencies=[Depends(get_admin_or_bypass)],
+    responses={429: {"description": "Rate limit exceeded"}},
 )
+@limiter.limit(expensive_limit)
 async def restore_preview(
     backup_id: str,
     request: Request,
@@ -160,7 +165,11 @@ async def restore_preview(
         )
 
 
-@router.post("/api/backups/{backup_id}/restore")
+@router.post(
+    "/api/backups/{backup_id}/restore",
+    responses={429: {"description": "Rate limit exceeded"}},
+)
+@limiter.limit(expensive_limit)
 async def restore_backup(
     backup_id: str,
     request: Request,
@@ -235,8 +244,13 @@ async def delete_backup(backup_id: str):
         )
 
 
-@router.delete("/api/backups", dependencies=[Depends(get_admin_or_bypass)])
-async def delete_all_backups(confirm: str = ""):
+@router.delete(
+    "/api/backups",
+    dependencies=[Depends(get_admin_or_bypass)],
+    responses={429: {"description": "Rate limit exceeded"}},
+)
+@limiter.limit(bulk_limit)
+async def delete_all_backups(request: Request, confirm: str = ""):
     """Delete all backups.
 
     Requires ?confirm=DELETE_ALL to guard against accidental/scripted calls
@@ -268,8 +282,13 @@ async def delete_all_backups(confirm: str = ""):
     return {"deleted": deleted, "failed": failed}
 
 
-@router.post("/api/backups/compress", dependencies=[Depends(get_admin_or_bypass)])
-async def compress_backups(days_threshold: int = Form(7)):
+@router.post(
+    "/api/backups/compress",
+    dependencies=[Depends(get_admin_or_bypass)],
+    responses={429: {"description": "Rate limit exceeded"}},
+)
+@limiter.limit(bulk_limit)
+async def compress_backups(request: Request, days_threshold: int = Form(7)):
     """Compress old backups with validation."""
     service = _get_backup_service()
     try:
@@ -572,9 +591,12 @@ async def get_backup_audit_log(
 
 
 @router.post(
-    "/api/backups/{backup_id}/verify", dependencies=[Depends(get_admin_or_bypass)]
+    "/api/backups/{backup_id}/verify",
+    dependencies=[Depends(get_admin_or_bypass)],
+    responses={429: {"description": "Rate limit exceeded"}},
 )
-async def verify_backup(backup_id: str):
+@limiter.limit(expensive_limit)
+async def verify_backup(backup_id: str, request: Request):
     """Verify backup integrity by recomputing SHA-256 checksum."""
 
     import hashlib
@@ -660,8 +682,14 @@ async def update_backup_tags(backup_id: str, request: Request):
         return {"tags": tags}
 
 
-@router.post("/api/backups/cleanup", dependencies=[Depends(get_admin_or_bypass)])
+@router.post(
+    "/api/backups/cleanup",
+    dependencies=[Depends(get_admin_or_bypass)],
+    responses={429: {"description": "Rate limit exceeded"}},
+)
+@limiter.limit(bulk_limit)
 async def cleanup_backups_retention(
+    request: Request,
     retention_days: Optional[int] = Form(None),
     dry_run: bool = Form(True),
 ):

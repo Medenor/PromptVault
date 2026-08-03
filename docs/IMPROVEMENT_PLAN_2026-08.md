@@ -10,7 +10,7 @@ _Global analysis performed 2026-07-31 against the current `main` codebase. Compl
 | "Legacy JSON services retired (PR #63)" | ✅ Done 2026-08-02: `PromptFilterService` + `PromptVersioningService` deleted along with their tests/fixtures |
 | "Don't use `innerHTML`" (AGENTS.md) | 85 `innerHTML` sites in `static/ts/`; mostly escaped, no lint enforcement |
 | Search | `LIKE`/`ilike` only; FTS explicitly deferred (`prompt_repository.py:23`) |
-| Rate limiting | Auth endpoints only; prompt CRUD/import/backup endpoints unthrottled |
+| Rate limiting | ✅ Done 2026-08-03: extended beyond auth to prompt CRUD/import/export/backup/revert via a per-user four-bucket taxonomy (`security/rate-limiting-beyond-auth`) |
 | 2FA / sharing | Absent (grep-confirmed) |
 | Largest files | `auth_service.py` 1148 · `dependencies/auth.py` 1054 · `index.html` 1745 · `prompt-list.ts` 871 |
 
@@ -45,7 +45,7 @@ _Global analysis performed 2026-07-31 against the current `main` codebase. Compl
   - Update AGENTS.md (remove the "legacy services" sections and the "Use direct `print()` only as a short-lived fallback" clause) and mark the roadmap metric satisfied.
   - Run full suite; coverage must stay ≥ 85%.
 
-### 3. Rate Limiting & Abuse Controls Beyond Auth (Security)
+### 3. Rate Limiting & Abuse Controls Beyond Auth (Security) - ✅ Done 2026-08-03 on branch `security/rate-limiting-beyond-auth`
 
 - **Description**: Extend slowapi rate limiting from auth endpoints to all state-changing and expensive endpoints — prompt CRUD, bulk delete, import, export, backup create/restore, version revert — with per-user (not just per-IP) keys and sane, configurable budgets.
 - **Rationale**: Auth is well-defended, but an authenticated (or token-stealing) client can hammer `/api/import`, `/api/backups`, or bulk delete without any throttle — a DoS and data-churn vector in a multi-user deployment. The slowapi infrastructure already exists in `src/web/middleware/rate_limit.py` (568 lines), so this is configuration + wiring, not new architecture.

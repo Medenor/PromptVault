@@ -241,6 +241,42 @@ class AuthConfig(BaseSettings):
         description="Password reset rate limit time window in seconds",
     )
 
+    # Rate Limiting — general API taxonomy (per-user, falling back to IP).
+    # Applied to state-changing and expensive endpoints beyond auth. Each
+    # bucket is overridable via its uppercased env var (e.g. RATE_LIMIT_WRITE_ATTEMPTS).
+    rate_limit_read_attempts: int = Field(
+        default=300, gt=0, description="Read-endpoint requests allowed per time window"
+    )
+    rate_limit_read_window_seconds: int = Field(
+        default=60, gt=0, description="Read-endpoint rate limit time window in seconds"
+    )
+    rate_limit_write_attempts: int = Field(
+        default=60,
+        gt=0,
+        description="Write-endpoint (create/update/delete) requests per time window",
+    )
+    rate_limit_write_window_seconds: int = Field(
+        default=60, gt=0, description="Write-endpoint rate limit time window in seconds"
+    )
+    rate_limit_expensive_attempts: int = Field(
+        default=10,
+        gt=0,
+        description="Expensive-op (import/export/backup/restore) requests per time window",
+    )
+    rate_limit_expensive_window_seconds: int = Field(
+        default=60,
+        gt=0,
+        description="Expensive-op rate limit time window in seconds",
+    )
+    rate_limit_bulk_attempts: int = Field(
+        default=5,
+        gt=0,
+        description="Bulk-op (bulk delete, delete-all, compress) requests per time window",
+    )
+    rate_limit_bulk_window_seconds: int = Field(
+        default=60, gt=0, description="Bulk-op rate limit time window in seconds"
+    )
+
     # Email Configuration
     smtp_host: str = Field(
         default="smtp.example.com", description="SMTP server hostname"
@@ -486,7 +522,7 @@ class AuthConfig(BaseSettings):
         if ":" in host_port:
             try:
                 return int(host_port.split(":")[1])
-            except ValueError, IndexError:
+            except (ValueError, IndexError):
                 return 6379
         return 6379
 
@@ -501,7 +537,7 @@ class AuthConfig(BaseSettings):
         if "/" in url:
             try:
                 return int(url.split("/")[1].split("?")[0])
-            except ValueError, IndexError:
+            except (ValueError, IndexError):
                 return 0
         return 0
 

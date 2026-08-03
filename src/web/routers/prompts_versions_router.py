@@ -21,10 +21,11 @@ Data access goes through the module-level ``data_service`` global on
 routers), so test fixtures that reconfigure services at runtime are honored.
 """
 
-from fastapi import APIRouter, Form
+from fastapi import APIRouter, Form, Request
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 
+from src.web.middleware.rate_limit import limiter, write_limit
 from src.web.models import VersionRevertRequest
 from src.utils.diff_utils import compute_character_diff
 
@@ -192,10 +193,15 @@ async def get_specific_version(prompt_id: str, version_id: str):
     return JSONResponse(status_code=404, content={"error": "Version not found"})
 
 
-@router.post("/{prompt_id}/versions/{version_id}/revert")
+@router.post(
+    "/{prompt_id}/versions/{version_id}/revert",
+    responses={429: {"description": "Rate limit exceeded"}},
+)
+@limiter.limit(write_limit)
 async def revert_to_version(
     prompt_id: str,
     version_id: str,
+    request: Request,
     commit_message: str = Form("Revert to previous version"),
 ):
     """Revert a prompt to a specific version with validation."""

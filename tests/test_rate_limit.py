@@ -24,8 +24,10 @@ from src.web.middleware.rate_limit import (
     auth_login_limit,
     auth_register_limit,
     password_reset_limit,
-    api_limit,
-    admin_limit,
+    read_limit,
+    write_limit,
+    expensive_limit,
+    bulk_limit,
     rate_limit_exceeded_handler,
     add_rate_limit_headers,
 )
@@ -134,15 +136,21 @@ class TestRateLimitHelpers:
         assert isinstance(limit, str)
         assert limit == "3/hour"
 
-    def test_api_limit_callable(self):
-        """Should return API rate limit."""
-        limit = api_limit()
-        assert limit == "100/minute"
+    def test_read_limit_callable(self):
+        """Should return the read-bucket rate limit (default 300/minute)."""
+        assert read_limit() == "300/minute"
 
-    def test_admin_limit_callable(self):
-        """Should return admin rate limit."""
-        limit = admin_limit()
-        assert limit == "200/minute"
+    def test_write_limit_callable(self):
+        """Should return the write-bucket rate limit (default 60/minute)."""
+        assert write_limit() == "60/minute"
+
+    def test_expensive_limit_callable(self):
+        """Should return the expensive-bucket rate limit (default 10/minute)."""
+        assert expensive_limit() == "10/minute"
+
+    def test_bulk_limit_callable(self):
+        """Should return the bulk-bucket rate limit (default 5/minute)."""
+        assert bulk_limit() == "5/minute"
 
 
 class TestRateLimitExceptionHandler:

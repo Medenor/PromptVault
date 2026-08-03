@@ -96,6 +96,8 @@
     "missingContent": "Inhalt fehlt",
     "missingCommitMessage": "Erforderliches Feld fehlt",
     "unknownError": "Unbekannter Fehler",
+    "rateLimit": "Zu viele Anfragen. Bitte warten Sie {{seconds}}s, bevor Sie es erneut versuchen.",
+    "rateLimitGeneric": "Zu viele Anfragen. Bitte langsamer und in Kürze erneut versuchen.",
     "selectTwoVersions": "Bitte wählen Sie genau 2 Versionen zum Vergleichen aus",
     "selectPromptFirst": "Bitte wählen Sie zunächst eine Eingabeaufforderung aus",
     "suggestTagsMissingContent": "Fügen Sie Prompt-Inhalt hinzu, bevor Sie Vorschläge anfordern.",

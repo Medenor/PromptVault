@@ -96,6 +96,8 @@
     "missingContent": "Contenu manquant",
     "missingCommitMessage": "Champ obligatoire manquant",
     "unknownError": "Erreur inconnue",
+    "rateLimit": "Trop de requêtes. Veuillez patienter {{seconds}}s avant de réessayer.",
+    "rateLimitGeneric": "Trop de requêtes. Veuillez ralentir et réessayer sous peu.",
     "selectTwoVersions": "Veuillez sélectionner exactement 2 versions à comparer",
     "selectPromptFirst": "Veuillez d'abord sélectionner une invite",
     "suggestTagsMissingContent": "Ajoutez du contenu au prompt avant de demander des suggestions.",
