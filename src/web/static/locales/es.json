@@ -96,6 +96,8 @@
     "missingContent": "Contenido faltante",
     "missingCommitMessage": "Campo requerido faltante",
     "unknownError": "Error desconocido",
+    "rateLimit": "Demasiadas solicitudes. Espere {{seconds}}s antes de volver a intentarlo.",
+    "rateLimitGeneric": "Demasiadas solicitudes. Reduzca la velocidad y vuelva a intentarlo en breve.",
     "selectTwoVersions": "Por favor, seleccione exactamente 2 versiones para comparar",
     "selectPromptFirst": "Por favor, seleccione primero una sugerencia",
     "suggestTagsMissingContent": "Agregue contenido al prompt antes de solicitar sugerencias.",

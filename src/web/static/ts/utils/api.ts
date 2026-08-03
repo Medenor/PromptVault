@@ -11,6 +11,11 @@
 import i18next from 'i18next';
 
 import type { APIError, TokenResponse } from '@/types';
+import { t } from '@/utils/i18n';
+import { showNotification } from '@/utils/notifications';
+
+/** Cap on how long a single automatic backoff-retry will wait, in seconds. */
+const MAX_RETRY_AFTER_SECONDS = 30;
 
 /**
  * Extended fetch options with timeout
@@ -27,8 +32,10 @@ export interface FetchOptions extends RequestInit {
 export class APIRequestError extends Error {
   public readonly status: number;
   public readonly error: APIError;
+  /** Seconds to wait before retrying, parsed from the Retry-After header (429 only). */
+  public readonly retryAfter?: number;
 
-  constructor(status: number, error: APIError) {
+  constructor(status: number, error: APIError, retryAfter?: number) {
     const message =
       typeof error.detail === 'string'
         ? error.detail
@@ -37,6 +44,9 @@ export class APIRequestError extends Error {
     this.name = 'APIRequestError';
     this.status = status;
     this.error = error;
+    if (retryAfter !== undefined) {
+      this.retryAfter = retryAfter;
+    }
   }
 
   /**
@@ -113,6 +123,38 @@ function clearTokensAndRedirect(): void {
   if (!window.location.pathname.includes('/auth/')) {
     window.location.href = '/auth/login';
   }
+}
+
+/**
+ * Parse the Retry-After header (delta-seconds form) into a number of seconds.
+ * Returns undefined when the header is absent or not a non-negative integer.
+ */
+function parseRetryAfter(response: Response): number | undefined {
+  const raw = response.headers.get('Retry-After');
+  if (!raw) {
+    return undefined;
+  }
+  const seconds = Number.parseInt(raw, 10);
+  return Number.isFinite(seconds) && seconds >= 0 ? seconds : undefined;
+}
+
+/**
+ * Surface a rate-limit (429) to the user via a warning toast, including the
+ * wait time when known. Kept i18n-ready so callers don't duplicate the string.
+ */
+function notifyRateLimited(retryAfter?: number): void {
+  const message =
+    retryAfter && retryAfter > 0
+      ? t('messages.rateLimit', { seconds: retryAfter })
+      : t('messages.rateLimitGeneric');
+  showNotification(message, 'warning');
+}
+
+/**
+ * Sleep for the given number of milliseconds.
+ */
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
@@ -196,6 +238,27 @@ export async function apiFetch<T>(url: string, options: FetchOptions = {}): Prom
           clearTokensAndRedirect();
           throw new APIRequestError(response.status, error);
         }
+      }
+
+      // Handle 429 rate limiting: for idempotent GETs, back off once and retry;
+      // for mutations, surface a toast and let the caller handle the failure
+      // (never auto-retry a write — it could duplicate the mutation).
+      if (response.status === 429) {
+        const retryAfter = parseRetryAfter(response);
+        const isGet = (fetchOptions.method ?? 'GET').toUpperCase() === 'GET';
+
+        if (
+          isGet &&
+          !_isRetry &&
+          retryAfter !== undefined &&
+          retryAfter <= MAX_RETRY_AFTER_SECONDS
+        ) {
+          await delay(retryAfter * 1000);
+          return apiFetch<T>(url, { ...options, _isRetry: true });
+        }
+
+        notifyRateLimited(retryAfter);
+        throw new APIRequestError(response.status, error, retryAfter);
       }
 
       throw new APIRequestError(response.status, error);
@@ -298,6 +361,14 @@ export async function apiPostForm<T>(
       }
     }
 
+    // Handle 429 rate limiting: form posts are always mutations (imports,
+    // uploads), so never auto-retry — toast and throw with the wait time.
+    if (response.status === 429) {
+      const retryAfter = parseRetryAfter(response);
+      notifyRateLimited(retryAfter);
+      throw new APIRequestError(response.status, error, retryAfter);
+    }
+
     throw new APIRequestError(response.status, error);
   }
 
@@ -331,7 +402,9 @@ export function handleApiError(error: unknown, defaultMessage: string): string {
       return i18next.t('auth.sessionExpired') || 'Session expired. Please log in again.';
     }
     if (error.isRateLimitError()) {
-      return i18next.t('errors.rateLimit') || 'Too many requests. Please try again later.';
+      return error.retryAfter && error.retryAfter > 0
+        ? t('messages.rateLimit', { seconds: error.retryAfter })
+        : t('messages.rateLimitGeneric');
     }
     return error.message;
   }

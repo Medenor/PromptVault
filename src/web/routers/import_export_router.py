@@ -25,11 +25,12 @@ import os
 from datetime import datetime
 from typing import List, Tuple
 
-from fastapi import APIRouter, Form, File, UploadFile
+from fastapi import APIRouter, Form, File, Request, UploadFile
 from fastapi.responses import JSONResponse, FileResponse
 from pydantic import ValidationError
 
 from src.services.logging_service import logging_service
+from src.web.middleware.rate_limit import limiter, expensive_limit
 from src.web.models import ExportRequest, ImportRequest, ExportFormat, ImportMode
 from src.web.validators import (
     sanitize_filename,
@@ -138,8 +139,10 @@ def _ingest_prompts(imported_prompts: List[dict], mode: ImportMode) -> int:
     return added_count
 
 
-@router.post("/export")
+@router.post("/export", responses={429: {"description": "Rate limit exceeded"}})
+@limiter.limit(expensive_limit)
 async def export_prompts(
+    request: Request,
     format: str = Form(...),
     filename: str = Form("promptvault_export"),
     include_favorites: bool = Form(False),
@@ -253,8 +256,10 @@ async def export_prompts(
         )
 
 
-@router.post("/import")
+@router.post("/import", responses={429: {"description": "Rate limit exceeded"}})
+@limiter.limit(expensive_limit)
 async def import_prompts(
+    request: Request,
     file: UploadFile = File(...),
     mode: str = Form("append"),
     validate_data: bool = Form(True),

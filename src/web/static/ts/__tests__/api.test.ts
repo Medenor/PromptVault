@@ -6,6 +6,14 @@ vi.mock('i18next', () => ({
   },
 }));
 
+vi.mock('@/utils/i18n', () => ({
+  t: vi.fn((key: string) => key),
+}));
+
+vi.mock('@/utils/notifications', () => ({
+  showNotification: vi.fn(),
+}));
+
 import {
   apiDelete,
   apiFetch,
@@ -532,15 +540,84 @@ describe('api utils', () => {
     });
   });
 
+  describe('429 rate limiting', () => {
+    it('backs off once and retries an idempotent GET within budget', async () => {
+      const fetchMock = globalThis.fetch as unknown as Mock;
+      const limited = {
+        ok: false,
+        status: 429,
+        statusText: 'Too Many Requests',
+        headers: new Headers({ 'Retry-After': '0' }),
+        json: vi.fn().mockResolvedValue({ detail: 'slow down' }),
+      };
+      const okResponse = {
+        ok: true,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: vi.fn().mockResolvedValue({ value: 7 }),
+      };
+      fetchMock.mockResolvedValueOnce(limited).mockResolvedValueOnce(okResponse);
+
+      const result = await apiGet<{ value: number }>('/api/test');
+      expect(result.value).toBe(7);
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    it('does not retry a write and throws with retryAfter + toast', async () => {
+      const { showNotification } = await import('@/utils/notifications');
+      const fetchMock = globalThis.fetch as unknown as Mock;
+      const limited = {
+        ok: false,
+        status: 429,
+        statusText: 'Too Many Requests',
+        headers: new Headers({ 'Retry-After': '15' }),
+        json: vi.fn().mockResolvedValue({ detail: 'slow down' }),
+      };
+      fetchMock.mockResolvedValue(limited);
+
+      await expect(apiPost('/api/test', { a: 1 })).rejects.toMatchObject({
+        status: 429,
+        retryAfter: 15,
+      });
+      // Only the single (failed) attempt — no auto-retry for a mutation.
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(showNotification).toHaveBeenCalled();
+    });
+
+    it('toasts and throws on a rate-limited form post without retrying', async () => {
+      const { showNotification } = await import('@/utils/notifications');
+      const fetchMock = globalThis.fetch as unknown as Mock;
+      const limited = {
+        ok: false,
+        status: 429,
+        statusText: 'Too Many Requests',
+        headers: new Headers({ 'Retry-After': '20' }),
+        json: vi.fn().mockResolvedValue({ detail: 'slow down' }),
+      };
+      fetchMock.mockResolvedValue(limited);
+
+      await expect(apiPostForm('/api/import', new FormData())).rejects.toMatchObject({
+        status: 429,
+        retryAfter: 20,
+      });
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(showNotification).toHaveBeenCalled();
+    });
+  });
+
   describe('handleApiError', () => {
     it('returns the session-expired message for auth errors', () => {
       const error = new APIRequestError(401, { detail: 'Unauthorized' });
       expect(handleApiError(error, 'default')).toBe('auth.sessionExpired');
     });
 
-    it('returns the rate-limit message for rate limit errors', () => {
+    it('returns the generic rate-limit message when no retry-after is known', () => {
       const error = new APIRequestError(429, { detail: 'Too many' });
-      expect(handleApiError(error, 'default')).toBe('errors.rateLimit');
+      expect(handleApiError(error, 'default')).toBe('messages.rateLimitGeneric');
+    });
+
+    it('returns the timed rate-limit message when retry-after is known', () => {
+      const error = new APIRequestError(429, { detail: 'Too many' }, 12);
+      expect(handleApiError(error, 'default')).toBe('messages.rateLimit');
     });
 
     it('returns the error message for other APIRequestError statuses', () => {
