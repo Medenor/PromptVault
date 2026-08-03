@@ -662,13 +662,29 @@ async def rate_limit_exceeded_handler(
         },
     )
 
+    # Extract the numeric limit for the X-RateLimit-Limit header. slowapi's
+    # exc.limit is a Limit wrapper whose .limit is a limits.RateLimitItem with an
+    # `.amount`; fall back gracefully rather than leaking a repr like
+    # "<slowapi.wrappers.Limit object at 0x...>".
+    limit_header = "unknown"
+    try:
+        exc_limit = getattr(exc, "limit", None)
+        rate_item = getattr(exc_limit, "limit", exc_limit)
+        amount = getattr(rate_item, "amount", None)
+        if amount is not None:
+            limit_header = str(amount)
+        elif rate_item is not None:
+            limit_header = str(rate_item)
+    except Exception:  # pragma: no cover - header is best-effort
+        pass
+
     # Build response with proper headers
     response = JSONResponse(
         status_code=429,
         content=error.to_dict(),
         headers={
             "Retry-After": str(retry_after),
-            "X-RateLimit-Limit": str(getattr(exc, "limit", "unknown")),
+            "X-RateLimit-Limit": limit_header,
             "X-RateLimit-Remaining": "0",
             "X-RateLimit-Reset": str(int(time.time() + retry_after)),
         },

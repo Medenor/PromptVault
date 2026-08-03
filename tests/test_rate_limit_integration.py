@@ -136,6 +136,11 @@ class TestRateLimitHeaders:
         assert "X-RateLimit-Limit" in resp.headers
         assert "X-RateLimit-Remaining" in resp.headers
         assert "X-RateLimit-Reset" in resp.headers
+        # The limit header must be a clean numeric value, not a repr of the
+        # slowapi Limit wrapper object.
+        assert resp.headers["X-RateLimit-Limit"] == "1"
+        assert "object at 0x" not in resp.headers["X-RateLimit-Limit"]
+        assert resp.headers["X-RateLimit-Remaining"] == "0"
 
 
 class TestEnvVarOverrides:
