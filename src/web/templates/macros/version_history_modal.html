@@ -1,0 +1,95 @@
+{# This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0. If a copy of
+the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/. #}
+
+{% macro version_history_modal() %}
+<!-- Version History Modal -->
+<div id="version-history-modal" aria-modal="true" aria-labelledby="version-history-title" role="dialog" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-0 sm:p-4">
+  <div class="bg-white dark:bg-gray-800 sm:rounded-lg shadow-xl w-full h-full sm:h-auto sm:max-w-4xl sm:max-h-[90vh] flex flex-col">
+    <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+      <h2 id="version-history-title" class="text-2xl font-bold text-gray-900 dark:text-gray-100" data-i18n="version.history">Version History</h2>
+      <button
+        id="close-version-history-btn"
+        type="button"
+        class="text-gray-400 hover:text-gray-700 dark:text-gray-300 text-2xl leading-none rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
+        aria-label="Close modal"
+        data-i18n="[aria-label]actions.close"
+      >
+        &times;
+      </button>
+    </div>
+    <div class="p-6 overflow-auto flex-1">
+      <div class="mb-4 relative">
+        <input
+          type="text"
+          id="version-search"
+          name="version_search"
+          aria-label="Search versions"
+          data-i18n="[aria-label]version.searchPlaceholder"
+          placeholder="Search versions..."
+          data-i18n-placeholder="version.searchPlaceholder"
+          class="w-full pl-3 pr-10 py-2 text-sm border border-gray-400 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 dark:placeholder-gray-400 disabled:bg-gray-50 dark:bg-gray-900 disabled:text-gray-700 dark:text-gray-300 disabled:cursor-not-allowed text-gray-900 dark:text-gray-100"
+        />
+        <svg class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none w-5 h-5 transition-colors"
+             fill="none"
+             stroke="currentColor"
+             viewBox="0 0 24 24"
+             aria-hidden="true"
+             focusable="false">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+      </div>
+      <div id="version-list" class="space-y-3 md:space-y-3 [&.carousel-mode>.version-item]:hidden [&.carousel-mode>.version-item.carousel-active]:block">
+        <div class="text-center text-gray-700 dark:text-gray-300 py-8" data-i18n="messages.loading">Loading...</div>
+      </div>
+
+      <!-- Mobile-only swipeable carousel navigation (FR-018): pages through
+           one version at a time; visible prev/next buttons are the
+           accessible equivalent of the swipe gesture. -->
+      <div id="version-carousel-nav" class="hidden md:hidden items-center justify-between mt-3">
+        <button
+          type="button"
+          id="version-carousel-prev"
+          class="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          aria-label="Previous version"
+          data-i18n="[aria-label]version.previousVersion"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <span id="version-carousel-position" class="text-sm text-gray-600 dark:text-gray-400" role="status" aria-live="polite"></span>
+        <button
+          type="button"
+          id="version-carousel-next"
+          class="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          aria-label="Next version"
+          data-i18n="[aria-label]version.nextVersion"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+      </div>
+    </div>
+    <div class="flex items-center justify-end gap-2 p-6 border-t border-gray-200 dark:border-gray-700">
+      <button
+        type="button"
+        id="close-version-history-btn"
+        class="px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
+        data-i18n="actions.close"
+      >
+        Close
+      </button>
+      <button
+        type="button"
+        id="compare-versions-btn"
+        class="hidden px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
+        data-i18n="version.compare"
+      >
+        Compare Selected
+      </button>
+    </div>
+  </div>
+</div>
+{% endmacro %}

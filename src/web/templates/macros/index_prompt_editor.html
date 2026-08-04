@@ -1,0 +1,220 @@
+{# This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0. If a copy of
+the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/. #}
+
+{% macro prompt_editor(categories) %}
+<!-- Prompt Editor (hidden by default) -->
+<div id="prompt-editor" class="hidden">
+  <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 max-w-4xl mx-auto">
+    <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6" data-i18n="prompt.editorTitle">Create/Edit Prompt</h2>
+    <form id="prompt-form" class="space-y-4" novalidate>
+      <div
+        id="validation-error-banner"
+        class="validation-error-banner"
+        role="alert"
+        aria-live="polite"
+        tabindex="-1"
+        style="display: none;"
+      ></div>
+      <!-- Title -->
+      <div>
+        <label for="prompt-title" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2" data-i18n="form.title">
+          Title:
+        </label>
+        <input
+          type="text"
+          id="prompt-title"
+          name="title"
+          data-i18n="[placeholder]form.titlePlaceholder"
+          required
+          maxlength="200"
+          aria-required="true"
+          aria-describedby="prompt-title-counter prompt-title-error"
+          class="w-full px-3 py-2 text-sm border border-gray-400 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 dark:placeholder-gray-400 disabled:bg-gray-50 dark:bg-gray-900 disabled:text-gray-700 dark:text-gray-300 disabled:cursor-not-allowed text-gray-900 dark:text-gray-100"
+        />
+        <div class="flex justify-between items-center mt-1">
+          <div
+            id="prompt-title-error"
+            class="validation-error text-xs text-red-600"
+            role="alert"
+            aria-live="assertive"
+          ></div>
+          <div id="prompt-title-counter" class="text-xs text-gray-700 dark:text-gray-300" aria-live="polite"></div>
+        </div>
+      </div>
+
+      <!-- Content -->
+      <div>
+        <label for="prompt-content" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2" data-i18n="form.content">
+          Content:
+        </label>
+        <textarea
+          id="prompt-content"
+          name="prompt"
+          rows="10"
+          required
+          maxlength="50000"
+          aria-required="true"
+          aria-describedby="prompt-content-counter prompt-content-error"
+          class="w-full px-3 py-2 text-sm border border-gray-400 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 dark:placeholder-gray-400 disabled:bg-gray-50 dark:bg-gray-900 disabled:text-gray-700 dark:text-gray-300 disabled:cursor-not-allowed font-mono text-gray-900 dark:text-gray-100"
+        ></textarea>
+        <div class="flex justify-between items-center mt-1">
+          <div
+            id="prompt-content-error"
+            class="validation-error text-xs text-red-600"
+            role="alert"
+            aria-live="assertive"
+          ></div>
+          <div id="prompt-content-counter" class="text-xs text-gray-700 dark:text-gray-300" aria-live="polite"></div>
+        </div>
+      </div>
+
+      <!-- Category -->
+      <div>
+        <label for="prompt-category" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2" data-i18n="form.category">
+          Category:
+        </label>
+        <select
+          id="prompt-category"
+          name="category"
+          aria-describedby="prompt-category-error"
+          class="w-full px-3 py-2 text-sm border border-gray-400 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 dark:bg-gray-900 disabled:text-gray-700 dark:text-gray-300 disabled:cursor-not-allowed text-gray-900 dark:text-gray-100"
+        >
+          <option value="">No category</option>
+          {% for category in categories %}
+          <option value="{{ category }}">{{ category }}</option>
+          {% endfor %}
+        </select>
+        <div
+          id="prompt-category-error"
+          class="validation-error text-xs text-red-600 mt-1"
+          role="alert"
+          aria-live="assertive"
+        ></div>
+      </div>
+
+      <!-- Tags -->
+        <div>
+          <label for="prompt-tags" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2" data-i18n="form.tags">
+            Tags (comma-separated):
+          </label>
+          <div class="relative">
+          <div
+            id="tag-chip-input"
+            class="flex flex-wrap items-center gap-2 w-full px-3 py-2 text-sm border border-gray-400 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent min-h-[42px]"
+          >
+            <div id="tag-chips" class="flex flex-wrap gap-2"></div>
+            <input
+              type="text"
+              id="prompt-tags-input"
+              data-i18n="[placeholder]form.tagPlaceholder"
+              autocomplete="off"
+              aria-describedby="prompt-tags-counter prompt-tags-error prompt-tags-duplicates"
+              class="flex-1 min-w-[120px] py-1 outline-none bg-transparent placeholder-gray-700 dark:placeholder-gray-400"
+            />
+          </div>
+          <input type="hidden" id="prompt-tags" name="tags" />
+          <div
+            id="tag-autocomplete"
+            class="hidden absolute z-10 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-60 overflow-auto"
+          ></div>
+        </div>
+        <div class="mt-2">
+          <button
+            type="button"
+            id="suggest-tags-btn"
+            class="px-4 py-2 text-sm font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
+            data-i18n="actions.suggestTags"
+          >
+            Suggest Tags
+          </button>
+        </div>
+        <div class="flex justify-between items-center mt-1">
+          <div>
+            <div
+              id="prompt-tags-duplicates"
+              class="validation-warning text-xs text-amber-600"
+              role="status"
+              aria-live="polite"
+            ></div>
+            <div
+              id="prompt-tags-error"
+              class="validation-error text-xs text-red-600"
+              role="alert"
+              aria-live="assertive"
+            ></div>
+          </div>
+          <div id="prompt-tags-counter" class="text-xs text-gray-700 dark:text-gray-300" aria-live="polite"></div>
+        </div>
+      </div>
+
+      <!-- Semantic Version -->
+      <div class="mt-4">
+        <label for="semantic-version" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2" data-i18n="version.semanticVersion">
+          Semantic Version:
+        </label>
+        <input
+          type="text"
+          id="semantic-version"
+          name="semantic_version"
+          data-i18n="[placeholder]version.semanticVersionPlaceholder"
+          placeholder="e.g. 1.0.0"
+          maxlength="20"
+          aria-describedby="semantic-version-error"
+          class="w-full px-3 py-2 text-sm border border-gray-400 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 dark:placeholder-gray-400 disabled:bg-gray-50 dark:bg-gray-900 disabled:text-gray-700 dark:text-gray-300 disabled:cursor-not-allowed text-gray-900 dark:text-gray-100"
+        />
+        <div
+          id="semantic-version-error"
+          class="validation-error text-xs text-red-600 mt-1"
+          role="alert"
+          aria-live="assertive"
+        ></div>
+      </div>
+
+      <!-- Commit Message -->
+      <div class="border-t pt-4 mt-4">
+        <label for="commit-message" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2" data-i18n="version.commitMessage">
+          Commit Message:
+        </label>
+        <input
+          type="text"
+          id="commit-message"
+          name="commit_message"
+          data-i18n="[placeholder]version.commitMessagePlaceholder"
+          placeholder="Describe your changes..."
+          maxlength="500"
+          aria-describedby="commit-message-counter commit-message-error"
+          class="w-full px-3 py-2 text-sm border border-gray-400 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 dark:placeholder-gray-400 disabled:bg-gray-50 dark:bg-gray-900 disabled:text-gray-700 dark:text-gray-300 disabled:cursor-not-allowed text-gray-900 dark:text-gray-100"
+        />
+        <div class="flex justify-between items-center mt-1">
+          <div
+            id="commit-message-error"
+            class="validation-error text-xs text-red-600"
+            role="alert"
+            aria-live="assertive"
+          ></div>
+          <div id="commit-message-counter" class="text-xs text-gray-700 dark:text-gray-300" aria-live="polite"></div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex gap-2 items-center justify-end pt-2">
+        <button
+          type="button"
+          id="cancel-btn-edit-modal"
+          class="px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
+          data-i18n="actions.cancel"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          class="px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
+          data-i18n="actions.save"
+        >
+          Save
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endmacro %}

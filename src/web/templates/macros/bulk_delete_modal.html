@@ -1,0 +1,51 @@
+{# This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0. If a copy of
+the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/. #}
+
+{% macro bulk_delete_modal() %}
+<!-- Bulk Delete Confirmation Modal -->
+<div id="bulk-delete-modal" aria-modal="true" aria-labelledby="bulk-delete-title" role="dialog" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+  <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full">
+    <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+      <h2 id="bulk-delete-title" class="text-xl font-bold text-gray-900 dark:text-gray-100" data-i18n="bulkDelete.confirmTitle">Confirm Bulk Deletion</h2>
+      <button
+        type="button"
+        onclick="hideBulkDeleteModal()"
+        class="text-gray-400 hover:text-gray-700 dark:text-gray-300 text-2xl leading-none rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
+        aria-label="Close modal"
+        data-i18n="[aria-label]actions.close"
+      >
+        &times;
+      </button>
+    </div>
+    <div class="p-6">
+      <p class="text-sm text-gray-700 dark:text-gray-300 mb-3">
+        <span data-i18n="bulkDelete.confirmMessage">You are about to delete</span>
+        <strong id="bulk-delete-count" class="text-red-600">0</strong>
+        <span data-i18n="bulkDelete.prompts">prompt(s)</span>.
+      </p>
+      <p class="text-sm text-amber-700 bg-amber-50 p-3 rounded-lg" data-i18n="bulkDelete.warningMessage">
+        This action will create an automatic backup, but deletion cannot be undone without
+        restoring from backup.
+      </p>
+    </div>
+    <div class="flex items-center justify-end gap-2 p-6 border-t border-gray-200 dark:border-gray-700">
+      <button
+        type="button"
+        id="cancel-bulk-delete-btn"
+        class="px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
+        data-i18n="actions.cancel"
+      >
+        Cancel
+      </button>
+      <button
+        type="button"
+        id="confirm-bulk-delete-btn"
+        class="px-4 py-2 text-sm font-semibold rounded-lg bg-red-600 text-white hover:bg-red-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
+        data-i18n="actions.confirmDelete"
+      >
+        Confirm Delete
+      </button>
+    </div>
+  </div>
+</div>
+{% endmacro %}
