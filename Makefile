@@ -44,7 +44,7 @@ COMPOSE          := docker compose
         install install-backend install-frontend \
         dev \
         test test-backend test-frontend \
-        lint lint-backend lint-frontend lint-fix \
+        lint lint-backend lint-frontend lint-fix check-file-sizes \
         build build-frontend build-image
 
 .DEFAULT_GOAL := help
@@ -196,7 +196,17 @@ lint-frontend: ## Check frontend lint + typecheck + formatting
 	npm run typecheck
 	npm run format:check
 
-lint: lint-backend lint-frontend ## Run all lint/format checks across both stacks (read-only)
+check-file-sizes: ## Warn (non-blocking) on source files exceeding 600 lines, to prevent god-file regrowth
+	@_over=$$(find src -type f \( -name '*.py' -o -name '*.ts' -o -name '*.html' \) \
+		! -path '*/node_modules/*' \
+		-exec sh -c 'lines=$$(wc -l < "$$1"); if [ "$$lines" -gt 600 ]; then echo "$$lines $$1"; fi' _ {} \; \
+		| sort -rn); \
+	if [ -n "$$_over" ]; then \
+		echo "WARNING: the following files exceed 600 lines (soft limit, not enforced):"; \
+		echo "$$_over" | awk '{printf "  %6d  %s\n", $$1, $$2}'; \
+	fi
+
+lint: lint-backend lint-frontend check-file-sizes ## Run all lint/format checks across both stacks (read-only)
 
 lint-fix: ## Auto-fix formatting and lint issues in place
 	$(PYTHON) -m black src tests
