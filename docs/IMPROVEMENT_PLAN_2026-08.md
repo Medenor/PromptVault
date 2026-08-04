@@ -1,4 +1,4 @@
-# Feature Improvement Report — July 2026
+# Feature Improvement Report — August 2026
 
 _Global analysis performed 2026-07-31 against the current `main` codebase. Complements (and cross-references) the 2026 report in `docs/ROADMAP.md`. Every finding below was verified against the code, not just the docs. Items are ranked by combined user value, technical complexity, and integration ease. Each To-Do list is written to be delegable as-is to an agent or contributor._
 
