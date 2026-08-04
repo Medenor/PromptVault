@@ -1,0 +1,328 @@
+{# This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0. If a copy of
+the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/. #}
+
+{% macro sidebar_backdrop() %}
+<!-- Sidebar Backdrop (Mobile Only) -->
+<div
+  id="sidebar-backdrop"
+  class="fixed inset-0 bg-black/50 z-40 hidden md:hidden transition-opacity duration-300"
+></div>
+{% endmacro %}
+
+{% macro nav_drawer(categories, tags) %}
+<!-- Mobile Nav Drawer (unified: primary nav actions + filters) -->
+<aside
+  id="mobile-sidebar"
+  class="fixed top-0 left-0 w-64 h-full bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 z-50 md:hidden transform -translate-x-full transition-transform duration-300 ease-in-out overflow-y-auto"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Navigation and prompt filters"
+  data-i18n="[aria-label]accessibility.labels.promptFiltersNavigationMobile"
+>
+  <div class="p-4">
+    <!-- Close Button -->
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-lg font-bold text-gray-900 dark:text-gray-100" data-i18n="nav.menu">Menu</h2>
+      <button
+        type="button"
+        id="sidebar-close"
+        class="flex items-center justify-center w-11 h-11 text-gray-700 dark:text-gray-300 hover:text-gray-700 dark:text-gray-300 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
+        aria-label="Close sidebar"
+        data-i18n="[aria-label]accessibility.labels.closeSidebar"
+      >
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Primary Navigation Actions -->
+    <nav
+      class="mb-6 space-y-1"
+      role="navigation"
+      aria-label="Primary actions mobile"
+      data-i18n="[aria-label]accessibility.labels.primaryActionsMobile"
+    >
+      <button
+        type="button"
+        id="new-prompt-btn-mobile"
+        class="w-full min-h-[44px] text-left px-4 py-2 text-sm font-semibold rounded-lg text-blue-700 hover:bg-blue-50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-inset"
+        data-i18n="nav.newPrompt"
+      >
+        New Prompt
+      </button>
+    </nav>
+
+    <!-- Data Section -->
+    <div class="mb-6 border-t border-gray-200 dark:border-gray-700 pt-4" role="group" aria-labelledby="mobile-drawer-data-heading">
+      <h3 id="mobile-drawer-data-heading" class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3" data-i18n="nav.data">
+        Data
+      </h3>
+      <div class="space-y-1">
+        <button
+          type="button"
+          onclick="if (window.__requireOnlineNav) { window.__requireOnlineNav('/import-export'); } else { window.location.href = '/import-export'; }"
+          class="w-full min-h-[44px] text-left px-4 py-2 text-sm rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-inset"
+          data-i18n="nav.importExport"
+        >
+          Import/Export
+        </button>
+        <button
+          type="button"
+          onclick="if (window.__requireOnlineNav) { window.__requireOnlineNav('/backup-management'); } else { window.location.href = '/backup-management'; }"
+          class="w-full min-h-[44px] text-left px-4 py-2 text-sm rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-inset"
+          data-i18n="nav.backupManagement"
+        >
+          Backup
+        </button>
+      </div>
+    </div>
+
+    <!-- Filters Section -->
+    <div class="mb-6">
+      <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3" data-i18n="nav.filters">
+        Filters
+      </h3>
+
+      <!-- Search Input -->
+      <div class="relative mb-3">
+        <input
+          type="text"
+          id="search-input-mobile"
+          name="search_input_mobile"
+          placeholder="Search prompts..."
+          aria-label="Search prompts"
+          data-i18n="[aria-label]nav.searchPlaceholder"
+          data-i18n-placeholder="nav.searchPlaceholder"
+          class="w-full pl-3 pr-10 py-2 text-sm border border-gray-400 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 dark:placeholder-gray-400 disabled:bg-gray-50 dark:bg-gray-900 disabled:text-gray-700 dark:text-gray-300 disabled:cursor-not-allowed text-gray-900 dark:text-gray-100"
+        />
+        <svg class="search-input-icon absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none w-5 h-5 transition-colors"
+             fill="none"
+             stroke="currentColor"
+             viewBox="0 0 24 24"
+             aria-hidden="true"
+             focusable="false">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+        <button
+          type="button"
+          id="search-input-mobile-clear"
+          class="hidden absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+          aria-label="Clear search"
+          data-i18n="[aria-label]actions.clearSearch"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Case Sensitive Toggle -->
+      <label for="case-sensitive-toggle-mobile" class="flex items-center gap-2 mb-2 cursor-pointer text-sm text-gray-700 dark:text-gray-300">
+        <input type="checkbox" id="case-sensitive-toggle-mobile" class="rounded text-blue-500 focus:ring-blue-500" />
+        <span data-i18n="nav.caseSensitive">Case Sensitive</span>
+      </label>
+
+      <!-- Favorites Filter -->
+      <label for="favorites-filter-mobile" class="flex items-center gap-2 mb-3 cursor-pointer text-sm text-gray-700 dark:text-gray-300">
+        <input type="checkbox" id="favorites-filter-mobile" class="rounded text-blue-500 focus:ring-blue-500" />
+        <span data-i18n="nav.showFavorites">Show Favorites</span>
+      </label>
+
+      <!-- Select All Checkbox -->
+      <label for="select-all-checkbox-mobile" class="flex items-center gap-2 mb-3 cursor-pointer text-sm text-gray-700 dark:text-gray-300">
+        <input type="checkbox" id="select-all-checkbox-mobile" class="rounded text-blue-500 focus:ring-blue-500" />
+        <span data-i18n="actions.selectAll">Select All</span>
+      </label>
+
+      <!-- Clear All Filters Button -->
+      <button
+        type="button"
+        id="clear-all-filters-btn-mobile"
+        class="w-full px-3 py-2 text-sm font-medium rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:bg-gray-700 transition-all hidden"
+        data-i18n="nav.clearFilters"
+      >
+        Clear All Filters
+      </button>
+    </div>
+
+    <!-- Categories Section -->
+    <div class="mb-6">
+      <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+        <svg class="h-4 w-4 text-gray-700 dark:text-gray-300" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" focusable="false">
+          <path d="M2.5 4.5c0-1.1.9-2 2-2h2.1c.4 0 .8.2 1.1.4l.8.8c.2.2.5.3.7.3h3.8c1.1 0 2 .9 2 2v5.5c0 1.1-.9 2-2 2h-8.5c-1.1 0-2-.9-2-2v-7z"></path>
+        </svg>
+        <span data-i18n="nav.categories">Categories</span>
+      </h3>
+      <ul id="categories-list-mobile" class="space-y-2 max-h-64 overflow-y-auto text-gray-700 dark:text-gray-300" role="listbox" aria-label="Filter prompts by category">
+        <li data-category="all" class="active" data-i18n="nav.allCategories" role="option" aria-selected="true" tabindex="0">
+          All Categories
+        </li>
+        {% for category in categories %}
+        <li data-category="{{ category }}" role="option" aria-selected="false" tabindex="-1">
+          {{ category }}
+        </li>
+        {% endfor %}
+      </ul>
+      <!-- Empty State for Categories (Mobile) -->
+      <div id="categories-sidebar-empty-mobile" class="hidden text-center p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 mt-2">
+        <div class="text-2xl text-gray-400 mb-2">📁</div>
+        <p class="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1" data-i18n="emptyStates.noCategoriesInSidebar.title">No categories available</p>
+        <p class="text-xs text-gray-700 dark:text-gray-300" data-i18n="emptyStates.noCategoriesInSidebar.description">Visit Manage Categories to create one</p>
+      </div>
+    </div>
+
+    <!-- Tags Section -->
+    <div>
+      <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+        <svg class="h-4 w-4 text-gray-700 dark:text-gray-300" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true" focusable="false">
+          <path d="M3.5 7.5L7.5 3.5H12.5V8.5L8.5 12.5L3.5 7.5Z"></path>
+          <circle cx="10.5" cy="5.5" r="1"></circle>
+        </svg>
+        <span data-i18n="nav.tags">Tags</span>
+      </h3>
+      <ul id="tags-list-mobile" class="space-y-2 max-h-64 overflow-y-auto text-gray-700 dark:text-gray-300" role="listbox" aria-label="Filter prompts by tag">
+        <li data-tag="all" class="active" data-i18n="nav.allTags" role="option" aria-selected="true" tabindex="0">
+          All Tags
+        </li>
+        {% for tag in tags %}
+        <li data-tag="{{ tag }}" role="option" aria-selected="false" tabindex="-1">
+          {{ tag }}
+        </li>
+        {% endfor %}
+      </ul>
+      <!-- Empty State for Tags (Mobile) -->
+      <div id="tags-sidebar-empty-mobile" class="hidden text-center p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 mt-2">
+        <div class="text-2xl text-gray-400 mb-2">🏷️</div>
+        <p class="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1" data-i18n="emptyStates.noTagsInSidebar.title">No tags available</p>
+        <p class="text-xs text-gray-700 dark:text-gray-300" data-i18n="emptyStates.noTagsInSidebar.description">Visit Manage Tags to create one</p>
+      </div>
+    </div>
+
+    <!-- Management Links -->
+    <div class="mt-6 border-t border-gray-200 dark:border-gray-700 pt-4" role="group" aria-labelledby="mobile-drawer-manage-heading">
+      <h3 id="mobile-drawer-manage-heading" class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3" data-i18n="management.manage">
+        Manage
+      </h3>
+      <div class="space-y-1">
+        <button
+          type="button"
+          onclick="if (window.__requireOnlineNav) { window.__requireOnlineNav('/manage-categories'); } else { window.location.href = '/manage-categories'; }"
+          class="w-full min-h-[44px] text-left px-4 py-2 text-sm rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-inset"
+          data-i18n="categories.manage"
+        >
+          Manage Categories
+        </button>
+        <button
+          type="button"
+          onclick="if (window.__requireOnlineNav) { window.__requireOnlineNav('/manage-tags'); } else { window.location.href = '/manage-tags'; }"
+          class="w-full min-h-[44px] text-left px-4 py-2 text-sm rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-inset"
+          data-i18n="tags.manage"
+        >
+          Manage Tags
+        </button>
+      </div>
+    </div>
+
+    <!-- Account Section -->
+    <div id="mobile-drawer-account-section" class="mt-6 border-t border-gray-200 dark:border-gray-700 pt-4" role="group" aria-labelledby="mobile-drawer-account-heading">
+      <h3 id="mobile-drawer-account-heading" class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3" data-i18n="nav.account">
+        Account
+      </h3>
+      <div class="space-y-1">
+        <button
+          type="button"
+          onclick="window.location.href = '/auth/profile'"
+          class="w-full min-h-[44px] text-left px-4 py-2 text-sm rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-inset"
+          data-i18n="nav.profile"
+        >
+          Profile
+        </button>
+        <button
+          type="button"
+          id="admin-btn-mobile"
+          onclick="window.location.href = '/admin/users'"
+          class="w-full min-h-[44px] text-left px-4 py-2 text-sm rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-inset"
+          data-i18n="nav.admin"
+          style="display: none"
+        >
+          Admin
+        </button>
+        <button
+          type="button"
+          id="logout-btn-mobile"
+          class="w-full min-h-[44px] text-left px-4 py-2 text-sm rounded-lg text-red-700 hover:bg-red-50 transition-colors font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-inset"
+          data-i18n="nav.logout"
+        >
+          Logout
+        </button>
+      </div>
+    </div>
+
+    <!-- Language Selector -->
+    <div class="mt-6 border-t border-gray-200 dark:border-gray-700 pt-4">
+      <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3" data-i18n="nav.language">
+        Language
+      </h3>
+      {% with variant = 'block' %}
+        {% include 'macros/language_selector.html' %}
+      {% endwith %}
+    </div>
+  </div>
+</aside>
+{% endmacro %}
+
+{% macro search_overlay() %}
+<!-- Mobile Full-Screen Search Overlay (FR-016) -->
+<div
+  id="mobile-search-overlay"
+  class="hidden fixed inset-0 bg-white dark:bg-gray-900 z-50 md:hidden flex flex-col"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Search prompts"
+>
+  <div class="flex items-center gap-2 p-4 border-b border-gray-200 dark:border-gray-700">
+    <div class="relative flex-1">
+      <input
+        type="text"
+        id="search-input-overlay"
+        name="search_input_overlay"
+        placeholder="Search prompts..."
+        aria-label="Search prompts"
+        data-i18n="[aria-label]nav.searchPlaceholder"
+        data-i18n-placeholder="nav.searchPlaceholder"
+        class="w-full pl-3 pr-10 py-3 text-base border border-gray-400 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 dark:placeholder-gray-400 text-gray-900 dark:text-gray-100"
+      />
+      <svg class="search-input-icon absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none w-5 h-5"
+           fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+      </svg>
+      <button
+        type="button"
+        id="search-input-overlay-clear"
+        class="hidden absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+        aria-label="Clear search"
+        data-i18n="[aria-label]actions.clearSearch"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+    </div>
+    <button
+      type="button"
+      id="search-overlay-close"
+      class="flex items-center justify-center w-11 h-11 text-gray-700 dark:text-gray-300 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
+      aria-label="Close search"
+      data-i18n="[aria-label]actions.close"
+    >
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+      </svg>
+    </button>
+  </div>
+  <div id="search-overlay-results-info" class="px-4 py-2 text-sm text-gray-600" role="status" aria-live="polite"></div>
+</div>
+{% endmacro %}

@@ -1,0 +1,71 @@
+{# This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0. If a copy of
+the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/. #}
+
+{% macro bulk_tag_modal() %}
+<!-- Bulk Tag Update Modal -->
+<div id="bulk-tag-modal" aria-modal="true" aria-labelledby="bulk-tag-title" role="dialog" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+  <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full">
+    <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+      <h2 id="bulk-tag-title" class="text-xl font-bold text-gray-900 dark:text-gray-100" data-i18n="bulkTag.title">Bulk Tag Update</h2>
+      <button
+        type="button"
+        onclick="hideBulkTagModal()"
+        class="text-gray-400 hover:text-gray-700 dark:text-gray-300 text-2xl leading-none rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
+        aria-label="Close modal"
+        data-i18n="[aria-label]actions.close"
+      >
+        &times;
+      </button>
+    </div>
+    <div class="p-6 space-y-4">
+      <p class="text-sm text-gray-700 dark:text-gray-300">
+        <span data-i18n="bulkTag.description">Update tags for</span>
+        <strong id="bulk-tag-count">0</strong>
+        <span data-i18n="bulkTag.prompts">prompt(s).</span>
+      </p>
+      <div>
+        <label for="bulk-tag-add" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2" data-i18n="bulkTag.addLabel">Add Tags</label>
+        <input
+          id="bulk-tag-add"
+          type="text"
+          placeholder="Comma-separated tags"
+          data-i18n="[placeholder]bulkTag.placeholder"
+          aria-describedby="bulk-tag-note"
+          class="w-full px-3 py-2 text-sm border border-gray-400 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 dark:placeholder-gray-400 disabled:bg-gray-50 dark:bg-gray-900 disabled:text-gray-700 dark:text-gray-300 disabled:cursor-not-allowed text-gray-900 dark:text-gray-100"
+        />
+      </div>
+      <div>
+        <label for="bulk-tag-remove" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2" data-i18n="bulkTag.removeLabel">Remove Tags</label>
+        <input
+          id="bulk-tag-remove"
+          type="text"
+          placeholder="Comma-separated tags"
+          data-i18n="[placeholder]bulkTag.placeholder"
+          aria-describedby="bulk-tag-note"
+          class="w-full px-3 py-2 text-sm border border-gray-400 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 dark:placeholder-gray-400 disabled:bg-gray-50 dark:bg-gray-900 disabled:text-gray-700 dark:text-gray-300 disabled:cursor-not-allowed text-gray-900 dark:text-gray-100"
+        />
+      </div>
+      <p id="bulk-tag-note" class="text-xs text-gray-700 dark:text-gray-300" data-i18n="bulkTag.note">
+        Tags added or removed will apply to all selected prompts.
+      </p>
+    </div>
+    <div class="flex items-center justify-end gap-2 p-6 border-t border-gray-200 dark:border-gray-700">
+      <button
+        type="button"
+        id="cancel-bulk-tag-btn"
+        class="px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
+      >
+        Cancel
+      </button>
+      <button
+        type="button"
+        id="confirm-bulk-tag-btn"
+        class="px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
+        data-i18n="actions.applyTags"
+      >
+        Apply Tags
+      </button>
+    </div>
+  </div>
+</div>
+{% endmacro %}

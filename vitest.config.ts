@@ -19,6 +19,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      '@components': path.resolve(__dirname, 'src/web/static/ts/components/index.ts'),
       '@': path.resolve(__dirname, 'src/web/static/ts'),
     },
   },

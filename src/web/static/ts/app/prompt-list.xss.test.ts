@@ -13,7 +13,8 @@ vi.mock('i18next', () => ({
   },
 }));
 
-import { renderPrompts, setPromptElementHandlers } from './prompt-list';
+import { renderPrompts } from './prompt-list';
+import { setPromptElementHandlers } from './prompt-card';
 import type { PromptResponse } from '@/types/api/responses';
 
 const XSS_PAYLOAD = '<img src=x onerror=alert(1)>';

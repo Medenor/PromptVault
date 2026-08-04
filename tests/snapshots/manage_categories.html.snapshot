@@ -1,0 +1,1049 @@
+<!doctype html>
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+License, v. 2.0. If a copy of the MPL was not distributed with this
+file, You can obtain one at https://mozilla.org/MPL/2.0/. -->
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<script>
+// Dark mode bootstrap (FR-017): runs synchronously before first paint to
+// avoid a flash of the wrong theme. Follows the OS prefers-color-scheme;
+// no manual toggle is provided in this feature (see spec Assumptions).
+(function () {
+if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+document.documentElement.classList.add('dark');
+}
+})();
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content" />
+<meta
+name="description"
+content="Manage Categories - Create and organize categories to structure your prompt library."
+/>
+<title>PromptVault - Manage Categories</title>
+<link rel="icon" type="image/png" sizes="32x32" href="/static/favicon.png" />
+<link rel="manifest" href="/static/manifest.json" />
+<link rel="apple-touch-icon" href="/static/images/icons/icon-192.png" />
+<meta name="apple-mobile-web-app-title" content="PromptVault" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="theme-color" content="#3B82F6" />
+<link rel="stylesheet" href="/static/dist/assets/telemetry.DLQDGxO_.css" />
+<script src="https://unpkg.com/i18next@23.7.6/i18next.min.js"></script>
+<script src="https://unpkg.com/i18next-browser-languagedetector@7.2.0/i18nextBrowserLanguageDetector.min.js"></script>
+<script src="https://unpkg.com/i18next-http-backend@2.4.2/i18nextHttpBackend.min.js"></script>
+</head>
+<body class="bg-gray-50 min-h-screen dark:bg-gray-900">
+<a href="#main-content" class="skip-link" tabindex="0" data-i18n="nav.skipToMainContent"
+>Skip to main content</a
+>
+<div class="min-h-screen flex flex-col">
+<header class="bg-blue-700 text-white shadow-sm" role="banner" aria-label="Site header">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="flex items-center justify-between h-16">
+<div class="flex items-center gap-4">
+<a
+href="/"
+class="inline-flex focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-700 rounded-lg"
+aria-label="PromptVault home"
+data-i18n="[aria-label]accessibility.labels.home"
+>
+<img
+src="/static/images/promptvault_logo_frontend.webp"
+alt=""
+aria-hidden="true"
+class="h-14 w-14 border-2 border-gray-400 rounded-lg shadow-lg dark:border-gray-600"
+/>
+</a>
+<div class="text-2xl font-bold">PromptVault</div>
+</div>
+<nav
+role="navigation"
+aria-label="Page navigation"
+data-i18n="[aria-label]accessibility.labels.pageNavigation"
+class="flex items-center gap-2"
+>
+<div class="hidden md:block">
+<select
+class="language-selector px-3 py-2 text-sm rounded-md border border-gray-400 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+aria-label="nav.language"
+data-i18n="[aria-label]nav.language"
+>
+<option value="en">EN</option>
+<option value="fr">FR</option>
+<option value="es">ES</option>
+<option value="de">DE</option>
+</select>
+</div>
+<button
+type="button"
+onclick="window.location.href = '/'"
+class="hidden md:block px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600"
+data-i18n="nav.backToMain"
+>
+Back to Main
+</button>
+<button
+type="button"
+id="mobile-menu-toggle"
+class="md:hidden inline-flex items-center justify-center w-11 h-11 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
+aria-label="Open menu"
+aria-haspopup="true"
+aria-expanded="false"
+aria-controls="mobile-sidebar"
+data-i18n="[aria-label]accessibility.labels.openMenu"
+>
+<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+</svg>
+</button>
+</nav>
+</div>
+</div>
+</header>
+<div
+id="sidebar-backdrop"
+class="fixed inset-0 bg-black/50 z-40 hidden md:hidden transition-opacity duration-300"
+></div>
+<aside
+id="mobile-sidebar"
+class="fixed top-0 left-0 w-64 h-full bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 z-50 md:hidden transform -translate-x-full transition-transform duration-300 ease-in-out overflow-y-auto"
+role="dialog"
+aria-modal="true"
+aria-label="Navigation"
+>
+<div class="p-4">
+<div class="flex items-center justify-between mb-4">
+<h2 class="text-lg font-bold text-gray-900 dark:text-gray-100" data-i18n="nav.menu">Menu</h2>
+<button
+type="button"
+id="sidebar-close"
+class="flex items-center justify-center w-11 h-11 text-gray-700 dark:text-gray-300 hover:text-gray-700 dark:text-gray-300 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
+aria-label="Close sidebar"
+data-i18n="[aria-label]accessibility.labels.closeSidebar"
+>
+<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+</svg>
+</button>
+</div>
+<nav
+class="mb-6"
+role="navigation"
+aria-label="Primary actions mobile"
+data-i18n="[aria-label]accessibility.labels.primaryActionsMobile"
+>
+<button
+type="button"
+onclick="window.location.href = '/'"
+class="w-full min-h-[44px] text-left px-4 py-2 text-sm font-semibold rounded-lg text-blue-700 hover:bg-blue-50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-inset"
+data-i18n="nav.home"
+>
+Homepage
+</button>
+</nav>
+<div class="mt-6 border-t border-gray-200 dark:border-gray-700 pt-4" role="group" aria-labelledby="mobile-drawer-data-heading">
+<h3 id="mobile-drawer-data-heading" class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3" data-i18n="nav.data">
+Data
+</h3>
+<div class="space-y-1">
+<button
+type="button"
+onclick="window.location.href = '/import-export'"
+class="w-full min-h-[44px] text-left px-4 py-2 text-sm rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-inset"
+data-i18n="nav.importExport"
+>
+Import/Export
+</button>
+<button
+type="button"
+onclick="window.location.href = '/backup-management'"
+class="w-full min-h-[44px] text-left px-4 py-2 text-sm rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-inset"
+data-i18n="nav.backupManagement"
+>
+Backup
+</button>
+</div>
+</div>
+<div class="mt-6 border-t border-gray-200 dark:border-gray-700 pt-4" role="group" aria-labelledby="mobile-drawer-manage-heading">
+<h3 id="mobile-drawer-manage-heading" class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3" data-i18n="management.manage">
+Manage
+</h3>
+<div class="space-y-1">
+<button
+type="button"
+onclick="window.location.href = '/manage-categories'"
+class="w-full min-h-[44px] text-left px-4 py-2 text-sm rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-inset"
+data-i18n="categories.manage"
+>
+Manage Categories
+</button>
+<button
+type="button"
+onclick="window.location.href = '/manage-tags'"
+class="w-full min-h-[44px] text-left px-4 py-2 text-sm rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-inset"
+data-i18n="tags.manage"
+>
+Manage Tags
+</button>
+</div>
+</div>
+<div id="mobile-drawer-account-section" class="mt-6 border-t border-gray-200 dark:border-gray-700 pt-4" role="group" aria-labelledby="mobile-drawer-account-heading">
+<h3 id="mobile-drawer-account-heading" class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3" data-i18n="nav.account">
+Account
+</h3>
+<div class="space-y-1">
+<button
+type="button"
+onclick="window.location.href = '/auth/profile'"
+class="w-full min-h-[44px] text-left px-4 py-2 text-sm rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-inset"
+data-i18n="nav.profile"
+>
+Profile
+</button>
+<button
+type="button"
+id="admin-btn-mobile"
+onclick="window.location.href = '/admin/users'"
+class="w-full min-h-[44px] text-left px-4 py-2 text-sm rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-inset"
+data-i18n="nav.admin"
+style="display: none"
+>
+Admin
+</button>
+<button
+type="button"
+id="logout-btn-mobile"
+class="w-full min-h-[44px] text-left px-4 py-2 text-sm rounded-lg text-red-700 hover:bg-red-50 transition-colors font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-inset"
+data-i18n="nav.logout"
+>
+Logout
+</button>
+</div>
+</div>
+<div class="mt-6 border-t border-gray-200 dark:border-gray-700 pt-4">
+<h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3" data-i18n="nav.language">
+Language
+</h3>
+<select
+class="language-selector w-full px-4 py-2 text-sm rounded-md border border-gray-400 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+aria-label="nav.language"
+data-i18n="[aria-label]nav.language"
+>
+<option value="en">EN</option>
+<option value="fr">FR</option>
+<option value="es">ES</option>
+<option value="de">DE</option>
+</select>
+</div>
+</div>
+</aside>
+<main
+id="main-content"
+role="main"
+class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full"
+>
+<h1 class="text-3xl font-bold text-gray-900 mb-2 dark:text-gray-100" data-i18n="categories.manage">
+Manage Categories
+</h1>
+<div class="mb-6">
+<p class="text-gray-700 dark:text-gray-300" data-i18n="categories.manageDesc">
+Create, edit, and remove categories across all prompts.
+</p>
+</div>
+<section class="bg-white rounded-lg shadow p-6 mb-6 dark:bg-gray-800">
+<h2 class="text-lg font-semibold text-gray-900 mb-4 dark:text-gray-100" data-i18n="categories.createTitle">
+Create Category
+</h2>
+<form id="category-create-form" class="space-y-4">
+<div
+id="category-create-error-summary"
+class="validation-error-banner"
+role="alert"
+aria-live="polite"
+tabindex="-1"
+></div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+<div>
+<label
+for="category-create-name"
+class="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300"
+>Name</label
+>
+<input
+id="category-create-name"
+name="category_name"
+type="text"
+placeholder="Name"
+data-i18n-placeholder="management.namePlaceholder"
+aria-describedby="category-create-name-error"
+class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 dark:placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed dark:border-gray-600 text-gray-900 dark:text-gray-100"
+required
+/>
+<p
+id="category-create-name-error"
+class="text-red-600 text-xs mt-1"
+role="alert"
+aria-live="assertive"
+></p>
+</div>
+<div>
+<label
+for="category-create-description"
+class="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300"
+>Description</label
+>
+<input
+id="category-create-description"
+name="category_description"
+type="text"
+placeholder="Description"
+data-i18n-placeholder="management.descriptionPlaceholder"
+aria-describedby="category-create-description-error"
+class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 dark:placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed dark:border-gray-600 text-gray-900 dark:text-gray-100"
+/>
+<p
+id="category-create-description-error"
+class="text-red-600 text-xs mt-1"
+role="alert"
+aria-live="assertive"
+></p>
+</div>
+<div>
+<label
+for="category-create-color"
+class="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300"
+>Color</label
+>
+<div id="category-create-color-picker-container">
+<!-- Enhanced color picker will be inserted here -->
+<input
+id="category-create-color"
+name="category_color"
+type="text"
+placeholder="Color token or hex"
+data-i18n-placeholder="management.colorPlaceholder"
+aria-describedby="category-create-color-error"
+class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 dark:placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed dark:border-gray-600 text-gray-900 dark:text-gray-100"
+/>
+<p
+id="category-create-color-error"
+class="text-red-600 text-xs mt-1"
+role="alert"
+aria-live="assertive"
+></p>
+<input
+id="category-create-color-picker"
+type="color"
+value="#3B82F6"
+class="hidden"
+aria-label="Pick a color"
+data-i18n="[aria-label]management.pickColor"
+/>
+</div>
+</div>
+</div>
+<div class="mt-4 flex justify-end">
+<button
+type="submit"
+name="create_category"
+class="px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
+data-i18n="actions.create"
+>
+Create
+</button>
+</div>
+</form>
+</section>
+<section class="bg-white rounded-lg shadow p-6 mb-6 dark:bg-gray-800">
+<div class="flex items-center justify-between mb-4">
+<h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100" data-i18n="categories.listTitle">
+Categories
+</h2>
+<div class="relative w-full md:w-64">
+<label for="category-search" class="sr-only">Search categories</label>
+<input
+id="category-search"
+name="category_search"
+type="text"
+placeholder="Search categories..."
+aria-label="Search categories"
+data-i18n-placeholder="management.searchCategoriesPlaceholder"
+data-i18n="[aria-label]management.searchCategoriesPlaceholder"
+class="w-full pl-3 pr-10 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 dark:placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed dark:border-gray-600 text-gray-900 dark:text-gray-100"
+/>
+<svg
+class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none w-5 h-5 transition-colors"
+fill="none"
+stroke="currentColor"
+viewBox="0 0 24 24"
+aria-hidden="true"
+focusable="false"
+>
+<path
+stroke-linecap="round"
+stroke-linejoin="round"
+stroke-width="2"
+d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+/>
+</svg>
+</div>
+</div>
+<!-- Empty State -->
+<div
+id="categories-empty-state"
+class="hidden text-center p-12 bg-gray-50 rounded-lg border border-gray-200 dark:bg-gray-900 dark:border-gray-700"
+>
+<div class="text-4xl text-gray-400 mb-4">📁</div>
+<h3 class="sr-only">No categories available</h3>
+<p
+class="text-lg font-semibold text-gray-700 mb-2 dark:text-gray-300"
+data-i18n="emptyStates.noCategories.title"
+>
+No categories yet
+</p>
+<p class="text-sm text-gray-700 mb-4 dark:text-gray-300" data-i18n="emptyStates.noCategories.description">
+Create your first category to organize your prompts
+</p>
+<button
+type="button"
+onclick="document.getElementById('category-create-name').focus()"
+class="px-6 py-3 text-base font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
+data-i18n="emptyStates.noCategories.action"
+>
+Create Category
+</button>
+</div>
+<div id="categories-table-container" class="overflow-x-auto max-h-96">
+<table class="min-w-full text-sm">
+<caption class="sr-only">
+Categories Management - Complete category inventory showing ID, name, description,
+color coding, usage count across prompts, and edit/delete actions for each category
+</caption>
+<thead>
+<tr class="text-left text-gray-700 border-b dark:text-gray-300">
+<th scope="col" class="py-2 pr-4" data-i18n="management.select">Select</th>
+<th scope="col" class="py-2 pr-4" data-i18n="management.id">ID</th>
+<th scope="col" class="py-2 pr-4" data-i18n="management.name">Name</th>
+<th scope="col" class="py-2 pr-4" data-i18n="management.description">
+Description
+</th>
+<th scope="col" class="py-2 pr-4" data-i18n="management.color">Color</th>
+<th scope="col" class="py-2 pr-4" data-i18n="management.usage">Usage</th>
+<th
+scope="col"
+class="py-2 pr-4"
+aria-label="Actions"
+data-i18n="management.actions"
+>
+Actions
+</th>
+</tr>
+</thead>
+<tbody id="categories-table-body"></tbody>
+</table>
+</div>
+<div class="mt-4 flex flex-col md:flex-row gap-2">
+<button
+type="button"
+id="category-save-all-btn"
+name="save_all_categories"
+class="px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
+data-i18n="actions.saveAll"
+>
+Save All
+</button>
+<button
+type="button"
+id="category-selection-merge-btn"
+name="merge_selected_categories"
+class="px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
+data-i18n="actions.mergeSelected"
+>
+Merge Selected
+</button>
+<button
+type="button"
+id="category-selection-find-replace-btn"
+name="find_replace_selected_categories"
+class="px-4 py-2 text-sm font-medium bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
+data-i18n="actions.findReplaceSelected"
+>
+Find/Replace Selected
+</button>
+</div>
+</section>
+<section class="bg-white rounded-lg shadow p-6 mb-6 dark:bg-gray-800">
+<h2 class="text-lg font-semibold text-gray-900 mb-4 dark:text-gray-100" data-i18n="management.bulkActions">
+Bulk Actions
+</h2>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<div class="border border-gray-200 rounded-lg p-4 dark:border-gray-700">
+<h3 class="font-semibold text-gray-800 mb-3 dark:text-gray-100" data-i18n="actions.merge">Merge</h3>
+<div
+id="category-merge-error-summary"
+class="validation-error-banner"
+role="alert"
+aria-live="polite"
+tabindex="-1"
+></div>
+<div class="space-y-3">
+<input
+id="category-merge-target"
+type="number"
+aria-label="Merge target category ID"
+aria-describedby="category-merge-target-help category-merge-target-error"
+placeholder="Target ID"
+data-i18n-placeholder="management.targetIdPlaceholder"
+data-i18n="[aria-label]management.targetIdPlaceholder"
+class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 dark:placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed dark:border-gray-600 text-gray-900 dark:text-gray-100"
+/>
+<p
+id="category-merge-target-error"
+class="text-red-600 text-xs mt-1"
+role="alert"
+aria-live="assertive"
+></p>
+<p
+id="category-merge-target-help"
+class="text-xs text-gray-700 dark:text-gray-300"
+data-i18n="management.mergeTargetHelp"
+>
+Target is the category that remains after merge.
+</p>
+<input
+id="category-merge-sources"
+type="text"
+aria-label="Source category IDs for merge"
+aria-describedby="category-merge-sources-help category-merge-sources-error"
+placeholder="Source IDs (comma-separated)"
+data-i18n-placeholder="management.sourceIdsPlaceholder"
+data-i18n="[aria-label]management.sourceIdsPlaceholder"
+class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 dark:placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed dark:border-gray-600 text-gray-900 dark:text-gray-100"
+/>
+<p
+id="category-merge-sources-error"
+class="text-red-600 text-xs mt-1"
+role="alert"
+aria-live="assertive"
+></p>
+<p
+id="category-merge-sources-help"
+class="text-xs text-gray-700 dark:text-gray-300"
+data-i18n="management.mergeSourcesHelp"
+>
+Sources will be merged into the target and removed.
+</p>
+<button
+type="button"
+id="category-merge-btn"
+name="merge_categories"
+class="w-full px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
+data-i18n="actions.merge"
+>
+Merge
+</button>
+</div>
+</div>
+<div class="border border-gray-200 rounded-lg p-4 dark:border-gray-700">
+<h3 class="font-semibold text-gray-800 mb-3 dark:text-gray-100" data-i18n="actions.findReplace">
+Find & Replace
+</h3>
+<div
+id="category-find-replace-error-summary"
+class="validation-error-banner"
+role="alert"
+aria-live="polite"
+tabindex="-1"
+></div>
+<div class="space-y-3">
+<input
+id="category-find"
+type="text"
+aria-label="Find category name"
+aria-describedby="category-find-error"
+placeholder="Find name"
+data-i18n-placeholder="management.findPlaceholder"
+data-i18n="[aria-label]management.findPlaceholder"
+class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 dark:placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed dark:border-gray-600 text-gray-900 dark:text-gray-100"
+/>
+<p
+id="category-find-error"
+class="text-red-600 text-xs mt-1"
+role="alert"
+aria-live="assertive"
+></p>
+<input
+id="category-replace"
+type="text"
+aria-label="Replacement category name"
+aria-describedby="category-replace-error"
+placeholder="Replace name"
+data-i18n-placeholder="management.replacePlaceholder"
+data-i18n="[aria-label]management.replacePlaceholder"
+class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 dark:placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed dark:border-gray-600 text-gray-900 dark:text-gray-100"
+/>
+<p
+id="category-replace-error"
+class="text-red-600 text-xs mt-1"
+role="alert"
+aria-live="assertive"
+></p>
+<button
+type="button"
+id="category-find-replace-btn"
+name="find_replace_categories"
+class="w-full px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
+data-i18n="actions.replace"
+>
+Replace
+</button>
+</div>
+</div>
+<div class="border border-gray-200 rounded-lg p-4 dark:border-gray-700">
+<h3 class="font-semibold text-gray-800 mb-3 dark:text-gray-100" data-i18n="actions.bulkDelete">
+Bulk Delete
+</h3>
+<div
+id="category-bulk-delete-error-summary"
+class="validation-error-banner"
+role="alert"
+aria-live="polite"
+tabindex="-1"
+></div>
+<div class="space-y-3">
+<input
+id="category-bulk-delete-ids"
+type="text"
+aria-label="Category IDs to delete"
+aria-describedby="category-bulk-delete-ids-error"
+placeholder="IDs (comma-separated)"
+data-i18n-placeholder="management.idsPlaceholder"
+data-i18n="[aria-label]management.idsPlaceholder"
+class="w-full px-3 py-2 text-sm border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 dark:placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-700 disabled:cursor-not-allowed dark:border-gray-600 text-gray-900 dark:text-gray-100"
+/>
+<p
+id="category-bulk-delete-ids-error"
+class="text-red-600 text-xs mt-1"
+role="alert"
+aria-live="assertive"
+></p>
+<label
+for="category-bulk-delete-force"
+class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300"
+>
+<input
+id="category-bulk-delete-force"
+type="checkbox"
+name="bulk_delete_force"
+class="rounded text-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+/>
+<span data-i18n="management.forceDelete">Force delete (remove from prompts)</span>
+</label>
+<button
+type="button"
+id="category-bulk-delete-btn"
+name="bulk_delete_categories"
+class="w-full px-4 py-2 text-sm font-semibold bg-red-600 text-white rounded-lg hover:bg-red-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
+data-i18n="actions.delete"
+>
+Delete
+</button>
+</div>
+</div>
+</div>
+<div class="mt-4 flex justify-end">
+<button
+type="button"
+id="category-undo-btn"
+name="undo_action"
+class="px-4 py-2 text-sm font-medium bg-gray-200 text-gray-900 rounded-lg hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600"
+data-i18n="actions.undo"
+>
+Undo
+</button>
+</div>
+</section>
+<section class="bg-white rounded-lg shadow p-6 mb-6 dark:bg-gray-800">
+<div class="flex items-center justify-between mb-4">
+<h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100" data-i18n="management.importExport">
+Import & Export
+</h2>
+<span class="text-xs text-gray-700 dark:text-gray-300" data-i18n="management.importExportHint"
+>JSON only</span
+>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+<div class="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:bg-gray-900 dark:border-gray-700">
+<div class="flex items-center justify-between mb-2">
+<h3 class="text-sm font-semibold text-gray-800 dark:text-gray-100" data-i18n="management.exportTitle">
+Export
+</h3>
+<span class="text-xs text-gray-700 dark:text-gray-300">.json</span>
+</div>
+<p class="text-sm text-gray-700 mb-4 dark:text-gray-300" data-i18n="management.exportDesc">
+Download your category definitions.
+</p>
+<button
+type="button"
+id="category-export-btn"
+name="export_categories"
+class="w-full px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
+data-i18n="actions.export"
+>
+Export JSON
+</button>
+</div>
+<div class="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:bg-gray-900 dark:border-gray-700">
+<div class="flex items-center justify-between mb-2">
+<h3 class="text-sm font-semibold text-gray-800 dark:text-gray-100" data-i18n="management.importTitle">
+Import
+</h3>
+<span class="text-xs text-gray-700 dark:text-gray-300">.json</span>
+</div>
+<div
+id="category-import-error-summary"
+class="validation-error-banner"
+role="alert"
+aria-live="polite"
+tabindex="-1"
+></div>
+<p class="text-sm text-gray-700 mb-4 dark:text-gray-300" data-i18n="management.importDesc">
+Upload a JSON file to create or update categories.
+</p>
+<div class="flex flex-col gap-3">
+<div id="category-import-file-help" class="text-xs text-gray-700 dark:text-gray-300">
+<p>Supported format: JSON (.json)</p>
+</div>
+<label
+for="category-import-file"
+class="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-gray-300 bg-white px-3 py-4 text-sm text-gray-700 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300"
+>
+<span data-i18n="management.importDrop">Choose a JSON file</span>
+<input
+id="category-import-file"
+name="import_file"
+type="file"
+accept="application/json"
+aria-describedby="category-import-file-help category-import-file-error"
+class="text-xs text-gray-700 dark:text-gray-300"
+/>
+</label>
+<p
+id="category-import-file-error"
+class="text-red-600 text-xs mt-1"
+role="alert"
+aria-live="assertive"
+></p>
+<button
+type="button"
+id="category-import-btn"
+name="import_categories"
+class="w-full px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
+data-i18n="actions.import"
+>
+Import
+</button>
+</div>
+</div>
+</div>
+</section>
+<section class="bg-white rounded-lg shadow p-6 mb-6 dark:bg-gray-800">
+<h2 class="text-lg font-semibold text-gray-900 mb-4 dark:text-gray-100" data-i18n="management.analytics">
+Analytics
+</h2>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+<div class="p-4 rounded-lg bg-blue-50">
+<div class="text-sm text-blue-800" data-i18n="management.total">Total Categories</div>
+<div id="category-analytics-total" class="text-2xl font-semibold text-blue-900">
+0
+</div>
+</div>
+<div class="p-4 rounded-lg bg-emerald-50">
+<div class="text-sm text-emerald-800" data-i18n="management.used">Used</div>
+<div id="category-analytics-used" class="text-2xl font-semibold text-emerald-900">
+0
+</div>
+</div>
+<div class="p-4 rounded-lg bg-amber-50">
+<div class="text-sm text-amber-800" data-i18n="management.unused">Unused</div>
+<div id="category-analytics-unused" class="text-2xl font-semibold text-amber-900">
+0
+</div>
+</div>
+</div>
+<div>
+<h3 class="text-sm font-semibold text-gray-700 mb-2 dark:text-gray-300" data-i18n="management.top">
+Top Categories
+</h3>
+<ul id="category-analytics-top" class="text-sm text-gray-700 space-y-1 dark:text-gray-300"></ul>
+</div>
+</section>
+<section class="bg-white rounded-lg shadow p-6 mb-6 dark:bg-gray-800">
+<h2 class="text-lg font-semibold text-gray-900 mb-4 dark:text-gray-100" data-i18n="management.orphans">
+Orphans
+</h2>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+<div class="border border-gray-200 rounded-lg p-4 dark:border-gray-700">
+<h3 class="font-semibold text-gray-800 mb-3 dark:text-gray-100" data-i18n="categories.unusedTitle">
+Unused categories
+</h3>
+<p class="text-sm text-gray-700 mb-3 dark:text-gray-300">
+<span data-i18n="categories.unusedLabel">Unused categories:</span>
+<strong id="category-unused-count">0</strong>
+</p>
+<ul
+id="category-unused-list"
+class="text-sm text-gray-700 space-y-1 max-h-48 overflow-y-auto dark:text-gray-300"
+></ul>
+</div>
+<div class="border border-gray-200 rounded-lg p-4 dark:border-gray-700">
+<h3
+class="font-semibold text-gray-800 mb-3 dark:text-gray-100"
+data-i18n="categories.orphanPromptsTitle"
+>
+Prompts without a category
+</h3>
+<p class="text-sm text-gray-700 mb-3 dark:text-gray-300">
+<span data-i18n="categories.orphans">Prompts without a category:</span>
+<strong id="category-orphans-count">0</strong>
+</p>
+<div class="mt-3">
+<h4
+class="text-sm font-semibold text-gray-700 mb-2 dark:text-gray-300"
+data-i18n="management.promptDetails"
+>
+Prompt details
+</h4>
+<ul
+id="category-orphans-details"
+class="text-sm text-gray-700 space-y-1 max-h-48 overflow-y-auto dark:text-gray-300"
+></ul>
+</div>
+</div>
+</div>
+</section>
+</main>
+<footer
+role="contentinfo"
+aria-label="Site footer"
+class="mt-auto border-t border-gray-200 bg-gray-50 dark:bg-gray-900 dark:border-gray-700"
+>
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<div class="flex flex-col gap-3 text-sm text-gray-600 dark:text-gray-400">
+<p>
+PromptVault is licensed under
+<a
+href="https://www.mozilla.org/en-US/MPL/2.0/"
+class="text-blue-600 hover:text-blue-800 underline"
+target="_blank"
+rel="noopener noreferrer"
+>Mozilla Public License 2.0</a
+>.
+</p>
+<a
+href="https://codeberg.org/medenor/promptvault"
+class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 transition"
+target="_blank"
+rel="noopener noreferrer"
+aria-label="PromptVault on Codeberg"
+>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+width="16"
+height="16"
+viewBox="0 0 4.2333332 4.2333335"
+version="1.1"
+id="svg1468"
+sodipodi:docname="codeberg-logo_icon_blue.svg"
+inkscape:version="1.2-alpha1 (b6a15bb, 2022-02-23)"
+inkscape:export-filename="/home/mray/Projects/Codeberg/logo/icon/png/codeberg-logo_icon_blue.png"
+inkscape:export-xdpi="384"
+inkscape:export-ydpi="384"
+xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+xmlns:xlink="http://www.w3.org/1999/xlink"
+xmlns="http://www.w3.org/2000/svg"
+xmlns:svg="http://www.w3.org/2000/svg"
+xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+xmlns:cc="http://creativecommons.org/ns#"
+xmlns:dc="http://purl.org/dc/elements/1.1/"
+>
+<title id="title16">Codeberg logo</title>
+<defs id="defs1462">
+<linearGradient
+xlink:href="#linearGradient6924"
+id="linearGradient6918"
+x1="42519.285"
+y1="-7078.7891"
+x2="42575.336"
+y2="-6966.9307"
+gradientUnits="userSpaceOnUse"
+/>
+<linearGradient id="linearGradient6924">
+<stop style="stop-color: #2185d0; stop-opacity: 0" offset="0" id="stop6920" />
+<stop
+id="stop6926"
+offset="0.49517274"
+style="stop-color: #2185d0; stop-opacity: 0.48923996"
+/>
+<stop
+style="stop-color: #2185d0; stop-opacity: 0.63279623"
+offset="1"
+id="stop6922"
+/>
+</linearGradient>
+<linearGradient
+xlink:href="#linearGradient6924-6"
+id="linearGradient6918-3"
+x1="42519.285"
+y1="-7078.7891"
+x2="42575.336"
+y2="-6966.9307"
+gradientUnits="userSpaceOnUse"
+/>
+<linearGradient id="linearGradient6924-6">
+<stop style="stop-color: #2185d0; stop-opacity: 0" offset="0" id="stop6920-7" />
+<stop
+id="stop6926-5"
+offset="0.49517274"
+style="stop-color: #2185d0; stop-opacity: 0.30000001"
+/>
+<stop
+style="stop-color: #2185d0; stop-opacity: 0.30000001"
+offset="1"
+id="stop6922-3"
+/>
+</linearGradient>
+</defs>
+<sodipodi:namedview
+showborder="false"
+id="base"
+pagecolor="#ffffff"
+bordercolor="#666666"
+borderopacity="1.0"
+inkscape:pageopacity="0.0"
+inkscape:pageshadow="2"
+inkscape:zoom="22.627417"
+inkscape:cx="12.948893"
+inkscape:cy="12.661631"
+inkscape:document-units="px"
+inkscape:current-layer="svg1468"
+inkscape:document-rotation="0"
+showgrid="false"
+fit-margin-top="0"
+fit-margin-left="0"
+fit-margin-right="0"
+fit-margin-bottom="0"
+units="px"
+inkscape:snap-global="false"
+inkscape:snap-page="true"
+showguides="false"
+inkscape:window-width="1531"
+inkscape:window-height="873"
+inkscape:window-x="69"
+inkscape:window-y="27"
+inkscape:window-maximized="1"
+inkscape:pagecheckerboard="0"
+inkscape:deskcolor="#d1d1d1"
+>
+<inkscape:grid type="xygrid" id="grid2067" />
+</sodipodi:namedview>
+<metadata id="metadata1465">
+<rdf:RDF>
+<cc:Work rdf:about="">
+<dc:format>image/svg+xml</dc:format>
+<dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+<dc:title>Codeberg logo</dc:title>
+<cc:license
+rdf:resource="http://creativecommons.org/publicdomain/zero/1.0/"
+/>
+<dc:creator>
+<cc:Agent>
+<dc:title>Robert Martinez</dc:title>
+</cc:Agent>
+</dc:creator>
+<dc:rights>
+<cc:Agent>
+<dc:title
+>Codeberg and the Codeberg Logo are trademarks of Codeberg
+e.V.</dc:title
+>
+</cc:Agent>
+</dc:rights>
+<dc:date>2020-04-09</dc:date>
+<dc:publisher>
+<cc:Agent>
+<dc:title>Codeberg e.V.</dc:title>
+</cc:Agent>
+</dc:publisher>
+<dc:source>codeberg.org</dc:source>
+</cc:Work>
+<cc:License rdf:about="http://creativecommons.org/publicdomain/zero/1.0/">
+<cc:permits rdf:resource="http://creativecommons.org/ns#Reproduction" />
+<cc:permits rdf:resource="http://creativecommons.org/ns#Distribution" />
+<cc:permits rdf:resource="http://creativecommons.org/ns#DerivativeWorks" />
+</cc:License>
+</rdf:RDF>
+</metadata>
+<g
+id="g370484"
+inkscape:label="logo"
+transform="matrix(0.06551432,0,0,0.06551432,-2.232417,-1.431776)"
+>
+<path
+id="path6733-5"
+style="
+font-variation-settings: normal;
+opacity: 1;
+vector-effect: none;
+fill: url(#linearGradient6918-3);
+fill-opacity: 1;
+stroke: none;
+stroke-width: 3.67846;
+stroke-linecap: butt;
+stroke-linejoin: miter;
+stroke-miterlimit: 2;
+stroke-dasharray: none;
+stroke-dashoffset: 0;
+stroke-opacity: 1;
+paint-order: stroke markers fill;
+stop-color: #000000;
+stop-opacity: 1;
+"
+d="m 42519.285,-7078.7891 a 0.76086879,0.56791688 0 0 0 -0.738,0.6739 l 33.586,125.8886 a 87.182358,87.182358 0 0 0 39.381,-33.7636 l -71.565,-92.5196 a 0.76086879,0.56791688 0 0 0 -0.664,-0.2793 z"
+transform="matrix(0.37058478,0,0,0.37058478,-15690.065,2662.0533)"
+inkscape:label="berg"
+/>
+<path
+id="path360787"
+style="
+opacity: 1;
+fill: #2185d0;
+fill-opacity: 1;
+stroke-width: 17.0055;
+paint-order: markers fill stroke;
+stop-color: #000000;
+"
+d="m 11249.461,-1883.6961 c -12.74,0 -23.067,10.3275 -23.067,23.0671 0,4.3335 1.22,8.5795 3.522,12.2514 l 19.232,-24.8636 c 0.138,-0.1796 0.486,-0.1796 0.624,0 l 19.233,24.8646 c 2.302,-3.6721 3.523,-7.9185 3.523,-12.2524 0,-12.7396 -10.327,-23.0671 -23.067,-23.0671 z"
+sodipodi:nodetypes="sccccccs"
+inkscape:label="sky"
+transform="matrix(1.4006354,0,0,1.4006354,-15690.065,2662.0533)"
+/>
+</g>
+</svg>
+Source code on Codeberg
+</a>
+</div>
+</div>
+</footer>
+</div>
+<script>window.__AUTH_ENABLED__ = true;</script>
+<script type="module" src="/static/dist/js/telemetry.BJbJzUdb.js"></script>
+<script type="module" src="/static/dist/js/globalShortcuts.De-dnQjC.js"></script>
+<script
+type="module"
+src="/static/dist/js/manage-categories.BbmktbpE.js"
+></script>
+</body>
+</html>

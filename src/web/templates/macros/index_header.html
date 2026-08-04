@@ -1,0 +1,130 @@
+{# This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0. If a copy of
+the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/. #}
+
+{% macro site_header() %}
+<header class="bg-blue-700 text-white shadow-sm" role="banner" aria-label="Site header">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex items-center justify-between h-16">
+      <!-- Logo and Title -->
+      <div class="flex items-center gap-4">
+        <a
+          href="/"
+          class="inline-flex focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500 rounded-lg"
+          aria-label="PromptVault home"
+          data-i18n="[aria-label]accessibility.labels.home"
+        >
+          <img
+            src="/static/images/promptvault_logo_frontend.webp"
+            alt=""
+            aria-hidden="true"
+            class="h-10 w-10 md:h-14 md:w-14 border-2 border-gray-400 dark:border-gray-600 rounded-lg shadow-lg shrink-0"
+          />
+        </a>
+        <div class="text-2xl font-bold">PromptVault</div>
+      </div>
+
+      <!-- Actions -->
+      <nav
+        class="flex items-center gap-2"
+        role="navigation"
+        aria-label="Main navigation"
+        data-i18n="[aria-label]accessibility.labels.mainNavigation"
+      >
+        <!-- Desktop-only: New Prompt -->
+        <button
+          type="button"
+          id="new-prompt-btn"
+          class="hidden md:block px-4 py-2 text-sm font-semibold rounded-lg bg-white text-blue-700 border border-blue-200 hover:bg-blue-50 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
+          data-i18n="nav.newPrompt"
+        >
+          New Prompt
+        </button>
+
+        <!-- Desktop-only buttons -->
+        <button
+          type="button"
+          id="import-export-btn"
+          onclick="if (window.__requireOnlineNav) { window.__requireOnlineNav('/import-export'); } else { window.location.href = '/import-export'; }"
+          class="hidden md:block px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
+          data-i18n="nav.importExport"
+        >
+          Import/Export
+        </button>
+        <button
+          type="button"
+          id="backup-btn"
+          onclick="if (window.__requireOnlineNav) { window.__requireOnlineNav('/backup-management'); } else { window.location.href = '/backup-management'; }"
+          class="hidden md:block px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
+          data-i18n="nav.backupManagement"
+        >
+          Backup
+        </button>
+        <div class="hidden md:block">
+          {% include 'macros/language_selector.html' %}
+        </div>
+        <button
+          type="button"
+          id="profile-btn"
+          onclick="window.location.href = '/auth/profile'"
+          class="hidden md:block px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
+          data-i18n="nav.profile"
+        >
+          Profile
+        </button>
+        <button
+          type="button"
+          id="admin-btn"
+          onclick="window.location.href = '/admin/users'"
+          class="hidden md:block px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
+          data-i18n="nav.admin"
+          style="display: none"
+        >
+          Admin
+        </button>
+
+        <!-- Mobile Search Overlay Trigger -->
+        <button
+          type="button"
+          id="mobile-search-toggle"
+          class="md:hidden inline-flex items-center justify-center w-11 h-11 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
+          aria-label="Search prompts"
+          aria-haspopup="true"
+          aria-expanded="false"
+          aria-controls="mobile-search-overlay"
+          data-i18n="[aria-label]nav.searchPlaceholder"
+        >
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </button>
+
+        <!-- Mobile Nav Drawer Trigger (opens the unified #mobile-sidebar drawer) -->
+        <button
+          type="button"
+          id="mobile-menu-toggle"
+          class="md:hidden inline-flex items-center justify-center w-11 h-11 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
+          aria-label="Open menu"
+          aria-haspopup="true"
+          aria-expanded="false"
+          aria-controls="mobile-sidebar"
+          data-i18n="[aria-label]accessibility.labels.openMenu"
+        >
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+          </svg>
+        </button>
+
+        <!-- Desktop-only: Logout -->
+        <button
+          type="button"
+          id="logout-btn"
+          class="hidden md:block px-4 py-2 text-sm font-medium rounded-lg bg-red-600 text-white hover:bg-red-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
+          data-i18n="nav.logout"
+        >
+          Logout
+        </button>
+      </nav>
+    </div>
+  </div>
+</header>
+{% endmacro %}
