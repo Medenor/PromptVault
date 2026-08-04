@@ -58,7 +58,7 @@ _Global analysis performed 2026-07-31 against the current `main` codebase. Compl
   - Tests: per-user isolation (user A throttled ≠ user B), header correctness, env-var overrides, exemption of health/static routes.
   - Document the budgets in `docs/AUTHENTICATION_SECURITY.md` and `.env.example`.
 
-### 4. Prompt Sharing & Team Collaboration (Feature — flagship)
+### 4. Prompt Sharing & Team Collaboration (Feature — flagship) - 🔄 Ongoing on branch `007-prompt-sharing`
 
 - **Description**: Per-prompt (and per-collection) sharing grants between users with read/edit permission levels, "shared with me" listing, and share badges — the middle ground between "own" and "admin-sees-all" that RBAC currently lacks.
 - **Rationale**: Confirmed absent (no share concept in `src/db/models/`). This remains the single biggest gap between the README's "ready for team deployments" claim and the implementation. Builds directly on existing RBAC, `User`, and the repository pattern. Carried from ROADMAP 2026 item #1 (Codeberg issues #23, #17) — still the top feature priority; plan refined below.
@@ -73,7 +73,7 @@ _Global analysis performed 2026-07-31 against the current `main` codebase. Compl
   - Rate-limit share endpoints (item 3 taxonomy); i18n keys in all 4 locales.
   - Tests: repository, service authz matrix (owner/grantee-read/grantee-edit/stranger/admin × view/edit/delete/share), API integration, migration up/down on both dialects.
 
-### 5. Full-Text Search (SQLite FTS5 / PostgreSQL tsvector) (Feature)
+### 5. Full-Text Search (SQLite FTS5 / PostgreSQL tsvector) (Feature) - 🔄 Ongoing on branch `008-full-text-search`
 
 - **Description**: Replace `ilike '%term%'` scans with real full-text search — FTS5 virtual table on SQLite, `tsvector` GIN column on Postgres — with relevance ranking and result snippets/highlighting; keep LIKE as fallback.
 - **Rationale**: Confirmed: `prompt_repository.py` comments say "FTS deferred to future phase". `LIKE '%x%'` can't use indexes, has no ranking, and degrades linearly with vault size. Native FTS in both backends means zero new dependencies. Carried from ROADMAP 2026 #3 (issue #15).
