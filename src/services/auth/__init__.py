@@ -13,6 +13,8 @@ Services available:
     - JWTService: ES256 JWT token generation and validation
     - AuthService: Complete authentication flow (register, login, refresh, logout)
     - PasswordResetService: Secure password reset flow with email
+    - LockoutService: Failed-login tracking and account lockout enforcement
+    - SessionService: Session-cap enforcement and session listing/revocation
 
 Usage:
     from src.services.auth import AuthService, PasswordService
@@ -26,12 +28,16 @@ Usage:
 
 from src.services.auth.password_service import PasswordService
 from src.services.auth.jwt_service import JWTService
+from src.services.auth.lockout_service import LockoutService
+from src.services.auth.session_service import SessionService
 from src.services.auth.auth_service import AuthService
 from src.services.auth.password_reset_service import PasswordResetService
 
 __all__ = [
     "PasswordService",
     "JWTService",
+    "LockoutService",
+    "SessionService",
     "AuthService",
     "PasswordResetService",
 ]

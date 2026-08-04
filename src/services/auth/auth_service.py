@@ -111,18 +111,17 @@ from src.db.models.user import User
 from src.db.repositories.session_repository import SessionRepository
 from src.db.repositories.user_repository import UserRepository
 from src.services.auth.jwt_service import JWTService
+from src.services.auth.lockout_service import LockoutService
 from src.services.auth.password_service import PasswordService
+from src.services.auth.session_service import SessionService
 from src.services.exceptions import (
     AccountInactiveError,
-    AccountLockedError,
     EmailAlreadyExistsError,
     InvalidCredentialsError,
     InvalidTokenError,
     PasswordPolicyError,
-    SessionLimitExceededError,
     SessionNotFoundError,
     TokenReuseDetectedError,
-    UnauthorizedError,
     UsernameAlreadyExistsError,
 )
 
@@ -157,6 +156,10 @@ class AuthService:
         self.jwt_service = JWTService(config)
         self.user_repo = UserRepository(db)
         self.session_repo = SessionRepository(db)
+        self.lockout_service = LockoutService(
+            db, config, self.password_service, self.user_repo
+        )
+        self.session_service = SessionService(db, config, self.session_repo)
 
     def register(
         self,
@@ -312,7 +315,7 @@ class AuthService:
             )
 
         # Check account lockout status (unlocking if the lock has expired)
-        self._enforce_account_lockout(user)
+        self.lockout_service.enforce_account_lockout(user)
 
         # Check if account is active
         if not user.is_active:
@@ -322,10 +325,10 @@ class AuthService:
             )
 
         # Verify password, handling failed-attempt tracking and lockout
-        self._verify_login_password(user, password)
+        self.lockout_service.verify_login_password(user, password)
 
         # Check session limits
-        self._enforce_login_session_limit(user)
+        self.session_service.enforce_login_session_limit(user)
 
         # Reset failed login attempts
         self.user_repo.reset_failed_login(user.id)
@@ -344,101 +347,6 @@ class AuthService:
             user_agent,
             remember_me=remember_me,
         )
-
-    def _enforce_account_lockout(self, user: User) -> None:
-        """Reject login when the account is locked, unlocking if lock expired.
-
-        If the account has an active lock, raises AccountLockedError. If the
-        lock period has already elapsed, the account is unlocked in place.
-
-        Args:
-            user: User attempting to authenticate
-
-        Raises:
-            AccountLockedError: If the account is currently locked
-        """
-        if user.locked_until:
-            locked_until = user.locked_until
-            if locked_until.tzinfo is None:
-                locked_until = locked_until.replace(tzinfo=timezone.utc)
-            now = datetime.now(timezone.utc)
-            if now < locked_until:
-                locked_until_str = user.locked_until.strftime("%Y-%m-%d %H:%M:%S UTC")
-                raise AccountLockedError(
-                    f"Account locked until {locked_until_str}",
-                    locked_until=locked_until_str,
-                    context={"user_id": user.id, "locked_until": locked_until_str},
-                )
-            else:
-                # Lock period expired, unlock account
-                self.user_repo.unlock_account(user.id)
-                self.db.commit()
-                self.db.refresh(user)
-
-    def _verify_login_password(self, user: User, password: str) -> None:
-        """Verify the supplied password, tracking failures and lockout.
-
-        On a wrong password the failed-login counter is incremented and, once
-        the configured threshold is reached, the account is locked.
-
-        Args:
-            user: User attempting to authenticate
-            password: Plain text password to verify
-
-        Raises:
-            InvalidCredentialsError: If the password is incorrect
-            AccountLockedError: If this failure triggers an account lockout
-        """
-        if not self.password_service.verify_password(password, user.password_hash):
-            # Increment failed login attempts
-            self.user_repo.increment_failed_login(user.id)
-
-            # Check if we should lock the account
-            failed_attempts = (user.failed_login_attempts or 0) + 1
-            if failed_attempts >= self.config.max_login_attempts:
-                locked_until = datetime.now(timezone.utc) + timedelta(
-                    seconds=self.config.account_lockout_duration_seconds
-                )
-                self.user_repo.lock_account(user.id, locked_until)
-                self.db.commit()
-
-                locked_until_str = locked_until.strftime("%Y-%m-%d %H:%M:%S UTC")
-                raise AccountLockedError(
-                    f"Account locked after {failed_attempts} failed attempts",
-                    locked_until=locked_until_str,
-                    context={
-                        "user_id": user.id,
-                        "failed_attempts": failed_attempts,
-                        "locked_until": locked_until_str,
-                    },
-                )
-
-            self.db.commit()
-            raise InvalidCredentialsError(
-                "Invalid password",
-                context={"user_id": user.id, "failed_attempts": failed_attempts},
-            )
-
-    def _enforce_login_session_limit(self, user: User) -> None:
-        """Free up a session slot when the user is at the session limit.
-
-        When session limits are enforced and the user already has the maximum
-        number of active sessions, the oldest session is revoked to make room
-        for the new login.
-
-        Args:
-            user: User attempting to authenticate
-        """
-        if not self.config.unlimited_sessions:
-            active_sessions = self.session_repo.count_user_sessions(
-                user.id, active_only=True
-            )
-            if active_sessions >= self.config.max_sessions_per_user:
-                # Remove oldest session to make room
-                oldest_session = self.session_repo.get_oldest_user_session(user.id)
-                if oldest_session:
-                    self.session_repo.revoke_session(oldest_session.family_id)
-                    self.db.commit()
 
     def refresh_tokens(
         self,
@@ -524,7 +432,7 @@ class AuthService:
         self.session_repo.update_session_token(family_id, new_jti)
 
         # ENHANCED: Check and enforce maximum sessions limit
-        self._enforce_refresh_session_limit(user, family_id)
+        self.session_service.enforce_refresh_session_limit(user, family_id)
 
         self.db.commit()
 
@@ -683,35 +591,6 @@ class AuthService:
             )
 
         return remaining_seconds
-
-    def _enforce_refresh_session_limit(self, user: User, family_id: str) -> None:
-        """Revoke oldest sessions to keep the user within the session limit.
-
-        Preserves the session currently being refreshed (identified by
-        ``family_id``) and stops once the limit is met or no further sessions
-        can be revoked without affecting the current one.
-
-        Args:
-            user: The authenticated user
-            family_id: Token family of the session being refreshed
-        """
-        if not self.config.unlimited_sessions:
-            active_sessions = self.session_repo.count_user_sessions(
-                user.id, active_only=True
-            )
-            if active_sessions > self.config.max_sessions_per_user:
-                # Revoke oldest sessions to maintain limit
-                while active_sessions > self.config.max_sessions_per_user:
-                    oldest_session = self.session_repo.get_oldest_user_session(user.id)
-                    if oldest_session and oldest_session.family_id != family_id:
-                        self.session_repo.revoke_session(oldest_session.family_id)
-                        logger.info(
-                            f"Auto-revoked oldest session {oldest_session.family_id} "
-                            f"to maintain session limit for user {user.id}"
-                        )
-                        active_sessions -= 1
-                    else:
-                        break  # Can't revoke more without affecting current session
 
     def update_user_profile(
         self,
@@ -968,29 +847,7 @@ class AuthService:
             >>> sessions = auth_service.get_user_sessions("123", "family-123")
             >>> [session["user_agent"] for session in sessions]
         """
-        sessions = self.session_repo.get_user_sessions(user_id, active_only=True)
-
-        return [
-            {
-                "id": session.id,
-                "family_id": session.family_id,
-                "user_agent": session.device_info,
-                "device_info": getattr(session, "device_info", None),
-                "ip_address": session.ip_address,
-                "created_at": session.created_at.isoformat(),
-                "last_used_at": (
-                    session.last_used_at.isoformat() if session.last_used_at else None
-                ),
-                "expires_at": session.expires_at.isoformat(),
-                "is_revoked": session.is_revoked,
-                "is_current": (
-                    session.family_id == current_family_id
-                    if current_family_id
-                    else False
-                ),
-            }
-            for session in sessions
-        ]
+        return self.session_service.get_user_sessions(user_id, current_family_id)
 
     def revoke_session(self, session_id: str, user_id: str) -> bool:
         """Revoke a specific user session.
@@ -1016,22 +873,7 @@ class AuthService:
             ... )
             True
         """
-        session = self.session_repo.get_by_id(session_id)
-
-        if not session:
-            return False
-
-        # Verify session belongs to user
-        if session.user_id != user_id:
-            raise UnauthorizedError(
-                f"Session {session_id} does not belong to user {user_id}",
-                context={"session_id": session_id, "user_id": user_id},
-            )
-
-        revoked = self.session_repo.revoke_session(session.family_id)
-        self.db.commit()
-
-        return revoked
+        return self.session_service.revoke_session(session_id, user_id)
 
     def revoke_all_sessions(
         self, user_id: str, except_family_id: Optional[str] = None
@@ -1056,21 +898,7 @@ class AuthService:
             ...     except_family_id="current-family-id"
             ... )
         """
-        if except_family_id:
-            # Revoke all except specified family
-            sessions = self.session_repo.get_user_sessions(user_id, active_only=True)
-            count = 0
-            for session in sessions:
-                if session.family_id != except_family_id:
-                    if self.session_repo.revoke_session(session.family_id):
-                        count += 1
-            self.db.commit()
-            return count
-        else:
-            # Revoke all sessions
-            count = self.session_repo.revoke_all_user_sessions(user_id)
-            self.db.commit()
-            return count
+        return self.session_service.revoke_all_sessions(user_id, except_family_id)
 
     def _generate_tokens_and_session(
         self,

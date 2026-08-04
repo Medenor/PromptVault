@@ -161,7 +161,7 @@ class TestUserRetrieval:
         """Test successful user retrieval."""
         token_data = {"sub": "user123"}
 
-        with patch("src.web.dependencies.auth.UserRepository") as mock_repo_class:
+        with patch("src.web.dependencies.token.UserRepository") as mock_repo_class:
             mock_repo = Mock()
             mock_repo.get_by_id.return_value = self.user
             mock_repo_class.return_value = mock_repo
@@ -185,7 +185,7 @@ class TestUserRetrieval:
         """Test error when user not found in database."""
         token_data = {"sub": "user123"}
 
-        with patch("src.web.dependencies.auth.UserRepository") as mock_repo_class:
+        with patch("src.web.dependencies.token.UserRepository") as mock_repo_class:
             mock_repo = Mock()
             mock_repo.get_by_id.return_value = None
             mock_repo_class.return_value = mock_repo

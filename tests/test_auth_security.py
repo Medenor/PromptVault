@@ -31,6 +31,8 @@ from src.services.auth.auth_service import AuthService
 from src.services.auth.password_service import PasswordService
 from src.services.auth.jwt_service import JWTService
 from src.services.auth.password_reset_service import PasswordResetService
+from src.services.auth.lockout_service import LockoutService
+from src.services.auth.session_service import SessionService
 from src.config.auth_config import AuthConfig
 from src.db.models.user import User
 from src.db.models.user_session import UserSession
@@ -243,6 +245,14 @@ def auth_service(
     service.jwt_service = mock_jwt_service
     service.user_repo = mock_user_repository
     service.session_repo = mock_session_repository
+    # Rebuild sub-services so they see the mocked dependencies above,
+    # not the real ones AuthService.__init__ constructed them with.
+    service.lockout_service = LockoutService(
+        mock_db_session, auth_config, password_service, mock_user_repository
+    )
+    service.session_service = SessionService(
+        mock_db_session, auth_config, mock_session_repository
+    )
     return service
 
 

@@ -32,6 +32,8 @@ from jwt.exceptions import (
 )
 
 from src.services.auth.auth_service import AuthService
+from src.services.auth.lockout_service import LockoutService
+from src.services.auth.session_service import SessionService
 from src.config.auth_config import AuthConfig
 from src.db.models.user import User
 from src.db.models.user_session import UserSession
@@ -224,6 +226,14 @@ def auth_service(
     service.jwt_service = mock_jwt_service
     service.user_repo = mock_user_repository
     service.session_repo = mock_session_repository
+    # Rebuild sub-services so they see the mocked dependencies above,
+    # not the real ones AuthService.__init__ constructed them with.
+    service.lockout_service = LockoutService(
+        mock_db_session, auth_config, mock_password_service, mock_user_repository
+    )
+    service.session_service = SessionService(
+        mock_db_session, auth_config, mock_session_repository
+    )
     return service
 
 
@@ -1748,6 +1758,12 @@ class TestEdgeCases:
         service.jwt_service = mock_jwt_service
         service.user_repo = mock_user_repository
         service.session_repo = mock_session_repository
+        service.lockout_service = LockoutService(
+            mock_db_session, config, mock_password_service, mock_user_repository
+        )
+        service.session_service = SessionService(
+            mock_db_session, config, mock_session_repository
+        )
 
         mock_user_repository.get_by_email_or_username.return_value = sample_user
         mock_session_repository.count_user_sessions.return_value = (
