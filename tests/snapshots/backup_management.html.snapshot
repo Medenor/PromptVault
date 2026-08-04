@@ -33,7 +33,6 @@ document.documentElement.classList.add('dark');
 <body class="bg-gray-50 min-h-screen dark:bg-gray-900">
 <a href="#main-content" class="skip-link" data-i18n="nav.skipToMainContent">Skip to main content</a>
 <div class="min-h-screen flex flex-col">
-<!-- Header -->
 <header class="bg-blue-700 text-white shadow-sm" role="banner" aria-label="Site header">
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 <div class="flex items-center justify-between h-16">
@@ -53,7 +52,12 @@ class="h-14 w-14 border-2 border-gray-400 rounded-lg shadow-lg flex-shrink-0 dar
 </a>
 <div class="text-2xl font-bold truncate">PromptVault</div>
 </div>
-<nav role="navigation" aria-label="Page navigation" data-i18n="[aria-label]accessibility.labels.pageNavigation" class="flex items-center gap-2">
+<nav
+role="navigation"
+aria-label="Page navigation"
+data-i18n="[aria-label]accessibility.labels.pageNavigation"
+class="flex items-center gap-2"
+>
 <div class="hidden md:block">
 <select
 class="language-selector px-3 py-2 text-sm rounded-md border border-gray-400 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -679,13 +683,30 @@ Backup Statistics
 <div id="audit-log-table"></div>
 </div>
 </main>
-<footer role="contentinfo" aria-label="Site footer" class="mt-auto border-t border-gray-200 bg-gray-50 dark:bg-gray-900 dark:border-gray-700">
+<footer
+role="contentinfo"
+aria-label="Site footer"
+class="mt-auto border-t border-gray-200 bg-gray-50 dark:bg-gray-900 dark:border-gray-700"
+>
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 <div class="flex flex-col gap-3 text-sm text-gray-600 dark:text-gray-400">
 <p>
-PromptVault is licensed under <a href="https://www.mozilla.org/en-US/MPL/2.0/" class="text-blue-600 hover:text-blue-800 underline" target="_blank" rel="noopener noreferrer">Mozilla Public License 2.0</a>.
+PromptVault is licensed under
+<a
+href="https://www.mozilla.org/en-US/MPL/2.0/"
+class="text-blue-600 hover:text-blue-800 underline"
+target="_blank"
+rel="noopener noreferrer"
+>Mozilla Public License 2.0</a
+>.
 </p>
-<a href="https://codeberg.org/medenor/promptvault" class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 transition" target="_blank" rel="noopener noreferrer" aria-label="PromptVault on Codeberg">
+<a
+href="https://codeberg.org/medenor/promptvault"
+class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 transition"
+target="_blank"
+rel="noopener noreferrer"
+aria-label="PromptVault on Codeberg"
+>
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <svg
 width="16"
@@ -705,11 +726,10 @@ xmlns="http://www.w3.org/2000/svg"
 xmlns:svg="http://www.w3.org/2000/svg"
 xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 xmlns:cc="http://creativecommons.org/ns#"
-xmlns:dc="http://purl.org/dc/elements/1.1/">
-<title
-id="title16">Codeberg logo</title>
-<defs
-id="defs1462">
+xmlns:dc="http://purl.org/dc/elements/1.1/"
+>
+<title id="title16">Codeberg logo</title>
+<defs id="defs1462">
 <linearGradient
 xlink:href="#linearGradient6924"
 id="linearGradient6918"
@@ -717,21 +737,20 @@ x1="42519.285"
 y1="-7078.7891"
 x2="42575.336"
 y2="-6966.9307"
-gradientUnits="userSpaceOnUse" />
-<linearGradient
-id="linearGradient6924">
-<stop
-style="stop-color:#2185d0;stop-opacity:0"
-offset="0"
-id="stop6920" />
+gradientUnits="userSpaceOnUse"
+/>
+<linearGradient id="linearGradient6924">
+<stop style="stop-color: #2185d0; stop-opacity: 0" offset="0" id="stop6920" />
 <stop
 id="stop6926"
 offset="0.49517274"
-style="stop-color:#2185d0;stop-opacity:0.48923996" />
+style="stop-color: #2185d0; stop-opacity: 0.48923996"
+/>
 <stop
-style="stop-color:#2185d0;stop-opacity:0.63279623"
+style="stop-color: #2185d0; stop-opacity: 0.63279623"
 offset="1"
-id="stop6922" />
+id="stop6922"
+/>
 </linearGradient>
 <linearGradient
 xlink:href="#linearGradient6924-6"
@@ -740,21 +759,20 @@ x1="42519.285"
 y1="-7078.7891"
 x2="42575.336"
 y2="-6966.9307"
-gradientUnits="userSpaceOnUse" />
-<linearGradient
-id="linearGradient6924-6">
-<stop
-style="stop-color:#2185d0;stop-opacity:0;"
-offset="0"
-id="stop6920-7" />
+gradientUnits="userSpaceOnUse"
+/>
+<linearGradient id="linearGradient6924-6">
+<stop style="stop-color: #2185d0; stop-opacity: 0" offset="0" id="stop6920-7" />
 <stop
 id="stop6926-5"
 offset="0.49517274"
-style="stop-color:#2185d0;stop-opacity:0.30000001;" />
+style="stop-color: #2185d0; stop-opacity: 0.30000001"
+/>
 <stop
-style="stop-color:#2185d0;stop-opacity:0.30000001;"
+style="stop-color: #2185d0; stop-opacity: 0.30000001"
 offset="1"
-id="stop6922-3" />
+id="stop6922-3"
+/>
 </linearGradient>
 </defs>
 <sodipodi:namedview
@@ -786,22 +804,19 @@ inkscape:window-x="69"
 inkscape:window-y="27"
 inkscape:window-maximized="1"
 inkscape:pagecheckerboard="0"
-inkscape:deskcolor="#d1d1d1">
-<inkscape:grid
-type="xygrid"
-id="grid2067" />
+inkscape:deskcolor="#d1d1d1"
+>
+<inkscape:grid type="xygrid" id="grid2067" />
 </sodipodi:namedview>
-<metadata
-id="metadata1465">
+<metadata id="metadata1465">
 <rdf:RDF>
-<cc:Work
-rdf:about="">
+<cc:Work rdf:about="">
 <dc:format>image/svg+xml</dc:format>
-<dc:type
-rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+<dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
 <dc:title>Codeberg logo</dc:title>
 <cc:license
-rdf:resource="http://creativecommons.org/publicdomain/zero/1.0/" />
+rdf:resource="http://creativecommons.org/publicdomain/zero/1.0/"
+/>
 <dc:creator>
 <cc:Agent>
 <dc:title>Robert Martinez</dc:title>
@@ -809,7 +824,10 @@ rdf:resource="http://creativecommons.org/publicdomain/zero/1.0/" />
 </dc:creator>
 <dc:rights>
 <cc:Agent>
-<dc:title>Codeberg and the Codeberg Logo are trademarks of Codeberg e.V.</dc:title>
+<dc:title
+>Codeberg and the Codeberg Logo are trademarks of Codeberg
+e.V.</dc:title
+>
 </cc:Agent>
 </dc:rights>
 <dc:date>2020-04-09</dc:date>
@@ -820,34 +838,57 @@ rdf:resource="http://creativecommons.org/publicdomain/zero/1.0/" />
 </dc:publisher>
 <dc:source>codeberg.org</dc:source>
 </cc:Work>
-<cc:License
-rdf:about="http://creativecommons.org/publicdomain/zero/1.0/">
-<cc:permits
-rdf:resource="http://creativecommons.org/ns#Reproduction" />
-<cc:permits
-rdf:resource="http://creativecommons.org/ns#Distribution" />
-<cc:permits
-rdf:resource="http://creativecommons.org/ns#DerivativeWorks" />
+<cc:License rdf:about="http://creativecommons.org/publicdomain/zero/1.0/">
+<cc:permits rdf:resource="http://creativecommons.org/ns#Reproduction" />
+<cc:permits rdf:resource="http://creativecommons.org/ns#Distribution" />
+<cc:permits rdf:resource="http://creativecommons.org/ns#DerivativeWorks" />
 </cc:License>
 </rdf:RDF>
 </metadata>
 <g
 id="g370484"
 inkscape:label="logo"
-transform="matrix(0.06551432,0,0,0.06551432,-2.232417,-1.431776)">
+transform="matrix(0.06551432,0,0,0.06551432,-2.232417,-1.431776)"
+>
 <path
 id="path6733-5"
-style="font-variation-settings:normal;opacity:1;vector-effect:none;fill:url(#linearGradient6918-3);fill-opacity:1;stroke:none;stroke-width:3.67846;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:2;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:stroke markers fill;stop-color:#000000;stop-opacity:1"
+style="
+font-variation-settings: normal;
+opacity: 1;
+vector-effect: none;
+fill: url(#linearGradient6918-3);
+fill-opacity: 1;
+stroke: none;
+stroke-width: 3.67846;
+stroke-linecap: butt;
+stroke-linejoin: miter;
+stroke-miterlimit: 2;
+stroke-dasharray: none;
+stroke-dashoffset: 0;
+stroke-opacity: 1;
+paint-order: stroke markers fill;
+stop-color: #000000;
+stop-opacity: 1;
+"
 d="m 42519.285,-7078.7891 a 0.76086879,0.56791688 0 0 0 -0.738,0.6739 l 33.586,125.8886 a 87.182358,87.182358 0 0 0 39.381,-33.7636 l -71.565,-92.5196 a 0.76086879,0.56791688 0 0 0 -0.664,-0.2793 z"
 transform="matrix(0.37058478,0,0,0.37058478,-15690.065,2662.0533)"
-inkscape:label="berg" />
+inkscape:label="berg"
+/>
 <path
 id="path360787"
-style="opacity:1;fill:#2185d0;fill-opacity:1;stroke-width:17.0055;paint-order:markers fill stroke;stop-color:#000000"
+style="
+opacity: 1;
+fill: #2185d0;
+fill-opacity: 1;
+stroke-width: 17.0055;
+paint-order: markers fill stroke;
+stop-color: #000000;
+"
 d="m 11249.461,-1883.6961 c -12.74,0 -23.067,10.3275 -23.067,23.0671 0,4.3335 1.22,8.5795 3.522,12.2514 l 19.232,-24.8636 c 0.138,-0.1796 0.486,-0.1796 0.624,0 l 19.233,24.8646 c 2.302,-3.6721 3.523,-7.9185 3.523,-12.2524 0,-12.7396 -10.327,-23.0671 -23.067,-23.0671 z"
 sodipodi:nodetypes="sccccccs"
 inkscape:label="sky"
-transform="matrix(1.4006354,0,0,1.4006354,-15690.065,2662.0533)" />
+transform="matrix(1.4006354,0,0,1.4006354,-15690.065,2662.0533)"
+/>
 </g>
 </svg>
 Source code on Codeberg
