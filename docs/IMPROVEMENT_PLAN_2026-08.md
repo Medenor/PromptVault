@@ -87,7 +87,7 @@ _Global analysis performed 2026-07-31 against the current `main` codebase. Compl
   - Seed-data benchmark (5k prompts) in `tests/`, asserting FTS beats LIKE and results stay correct; full test matrix on both dialects.
   - Migration guide note in CHANGELOG (FTS table build on upgrade may take seconds on large vaults).
 
-### 6. Template & Frontend God-File Decomposition (Refactoring)
+### 6. Template & Frontend God-File Decomposition (Refactoring) - ✅ Done 2026-08-04 on branch `refactor/god-file-decomposition`
 
 - **Description**: Break up the outsized frontend and backend units: `index.html` (1,745 lines) into Jinja2 partials/`{% include %}` blocks; `app/prompt-list.ts` (871), `import-export.ts` (847), `admin-users/index.ts` (786) into focused modules; split `auth_service.py` (1,148) and `dependencies/auth.py` (1,054) along their natural seams.
 - **Rationale**: These files are where every future feature (sharing modal, FTS snippets, analytics) must land; their size is the main drag on velocity and review quality. The `app/` directory already shows the target pattern (`prompt-crud.ts`, `versions.ts`, `keyboard-nav.ts` split) — this extends it. Behavior-preserving, test-protected, incremental.
