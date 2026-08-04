@@ -8,7 +8,8 @@ import { debounce } from '@/utils/debounce';
 import { closeSearchOverlay, isSearchOverlayOpen } from '@/search-overlay';
 import { hideElement, toggleElement } from './shared';
 import { syncFilterListsRovingTabindex } from './keyboard-nav';
-import { loadPrompts, performSearch, searchState } from './prompt-list';
+import { loadPrompts, performSearch } from './prompt-list';
+import { searchState } from './prompt-filters';
 
 // How long the search overlay stays open, with no typing, after results load
 // before auto-closing (FR-016). Kept well above the search debounce so the

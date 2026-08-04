@@ -23,17 +23,15 @@ import { logout, hideAuthOnlyElements, fetchRoleAndRevealAdmin } from '@/utils/a
 import { APP_COMPONENT, reportAppIssue } from './shared';
 import { addTooltips, initializeFilterListKeyboardNavigation } from './keyboard-nav';
 import {
-  isAnyFilterActive,
   lastSelectedPromptId,
-  loadCategories,
   loadMorePrompts,
   loadPrompts,
-  loadTags,
   performSearch,
   setPaginationControlsVisible,
   setPaginationPageSize,
-  setPromptElementHandlers,
 } from './prompt-list';
+import { isAnyFilterActive, loadCategories, loadTags } from './prompt-filters';
+import { setPromptElementHandlers } from './prompt-card';
 import {
   clearAllFilters,
   handleCategoryFilter,
