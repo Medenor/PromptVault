@@ -50,7 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### 🧪 Tests
 
-- **Phase 0 safety net**: Added Playwright smoke tests (admin-users, backup-management, category-management, prompt-management, tag-management) and expanded backend tests (DB services, prompts router, full backup roundtrip) ahead of the god-file decomposition, to guard against behavioral regressions during the refactor
+- **Phase 0 safety net**: Added Playwright smoke tests (admin-users, backup-management, category-management, prompt-management, tag-management) and expanded backend tests (DB services, prompts router, full backup roundtrip) to guard against behavioral regressions during refactoring works
 
 ## [1.11.0] - 2026-07-19
 
