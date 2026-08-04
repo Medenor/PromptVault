@@ -1,0 +1,46 @@
+{# This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0. If a copy of
+the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/. #}
+
+{% macro site_header(truncate_title=False) %}
+<header class="bg-blue-700 text-white shadow-sm" role="banner" aria-label="Site header">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex items-center justify-between h-16">
+      <div class="flex items-center gap-4{{ ' min-w-0' if truncate_title }}">
+        <a
+          href="/"
+          class="inline-flex{{ ' flex-shrink-0' if truncate_title }} focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-700 rounded-lg"
+          aria-label="PromptVault home"
+          data-i18n="[aria-label]accessibility.labels.home"
+        >
+          <img
+            src="/static/images/promptvault_logo_frontend.webp"
+            alt=""
+            aria-hidden="true"
+            class="h-14 w-14 border-2 border-gray-400 rounded-lg shadow-lg{{ ' flex-shrink-0' if truncate_title }} dark:border-gray-600"
+          />
+        </a>
+        <div class="text-2xl font-bold{{ ' truncate' if truncate_title }}">PromptVault</div>
+      </div>
+      <nav
+        role="navigation"
+        aria-label="Page navigation"
+        data-i18n="[aria-label]accessibility.labels.pageNavigation"
+        class="flex items-center gap-2"
+      >
+        <div class="hidden md:block">
+          {% include 'macros/language_selector.html' %}
+        </div>
+        <button
+          type="button"
+          onclick="window.location.href = '/'"
+          class="hidden md:block px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 transition{{ ' whitespace-nowrap flex-shrink-0' if truncate_title }} focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600"
+          data-i18n="nav.backToMain"
+        >
+          Back to Main
+        </button>
+        {{ caller() }}
+      </nav>
+    </div>
+  </div>
+</header>
+{% endmacro %}
