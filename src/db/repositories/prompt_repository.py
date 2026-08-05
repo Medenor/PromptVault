@@ -10,9 +10,9 @@ search, filtering, and relationship management capabilities.
 
 from typing import List, Optional, Dict, Any
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import or_, and_, func
+from sqlalchemy import or_, and_, func, select
 
-from src.db.models import Prompt, Tag, Category, PromptBranch
+from src.db.models import Prompt, PromptShare, Tag, Category, PromptBranch
 from src.db.repositories.base import BaseRepository
 
 
@@ -35,6 +35,45 @@ class PromptRepository(BaseRepository[Prompt]):
         """
         super().__init__(Prompt, session)
 
+    def _apply_visibility_filter(
+        self,
+        q,
+        visible_to_user_id: Optional[str],
+        shared_only: bool,
+    ):
+        """Apply the owned/shared/legacy-public visibility scope to a query.
+
+        Args:
+            q: Base SQLAlchemy query over Prompt
+            visible_to_user_id: Scope to this user's owned + shared +
+                legacy-public prompts; None leaves the query unscoped
+                (admin/anonymous-mode behavior — sees everything)
+            shared_only: When True (and visible_to_user_id is set), narrow to
+                the explicit-grant branch only, excluding legacy_public and
+                owned prompts (the "shared with me" filter)
+
+        Returns:
+            The query with the visibility filter applied (or unchanged if
+            visible_to_user_id is None)
+        """
+        if visible_to_user_id is None:
+            return q
+
+        shared_subquery = select(PromptShare.prompt_id).where(
+            PromptShare.grantee_user_id == visible_to_user_id
+        )
+
+        if shared_only:
+            return q.filter(Prompt.id.in_(shared_subquery))
+
+        return q.filter(
+            or_(
+                Prompt.user_id == visible_to_user_id,
+                Prompt.legacy_public.is_(True),
+                Prompt.id.in_(shared_subquery),
+            )
+        )
+
     def search(
         self,
         query: Optional[str] = None,
@@ -44,6 +83,8 @@ class PromptRepository(BaseRepository[Prompt]):
         limit: Optional[int] = None,
         offset: int = 0,
         case_sensitive: bool = False,
+        visible_to_user_id: Optional[str] = None,
+        shared_only: bool = False,
     ) -> List[Prompt]:
         """Search prompts with multiple filters.
 
@@ -51,9 +92,17 @@ class PromptRepository(BaseRepository[Prompt]):
             query: Text search in title and prompt content (LIKE-based)
             category: Filter by category name
             tags: Filter by tag names (prompts with ANY of these tags)
-            favorite: Filter by favorite status
+            favorite: Filter by favorite status. When combined with
+                visible_to_user_id, restricted to owned prompts only —
+                favorite is the owner's personal preference, so shared and
+                legacy-public prompts never match it for a recipient.
             limit: Maximum number of results
             offset: Number of results to skip
+            case_sensitive: Enforce case-sensitive matching on query
+            visible_to_user_id: Scope results to this user's owned + shared +
+                legacy-public prompts (None = unscoped, e.g. admin)
+            shared_only: Narrow to prompts explicitly shared with
+                visible_to_user_id (excludes legacy_public and owned)
 
         Returns:
             List of matching Prompt objects
@@ -82,9 +131,13 @@ class PromptRepository(BaseRepository[Prompt]):
         if tags and len(tags) > 0:
             q = q.join(Prompt.tags).filter(Tag.name.in_(tags)).distinct()
 
-        # Favorite filter
+        # Favorite filter — owned-only when visibility-scoped (spec Edge Cases)
         if favorite is not None:
             q = q.filter(Prompt.favorite == favorite)
+            if visible_to_user_id is not None:
+                q = q.filter(Prompt.user_id == visible_to_user_id)
+        else:
+            q = self._apply_visibility_filter(q, visible_to_user_id, shared_only)
 
         # Order by most recently updated (must come before limit/offset)
         q = q.order_by(Prompt.updated_at.desc().nullslast(), Prompt.created_at.desc())
@@ -117,6 +170,8 @@ class PromptRepository(BaseRepository[Prompt]):
         tags: Optional[List[str]] = None,
         favorite: Optional[bool] = None,
         case_sensitive: bool = False,
+        visible_to_user_id: Optional[str] = None,
+        shared_only: bool = False,
     ) -> int:
         """Count prompts matching the same filters as search().
 
@@ -128,8 +183,13 @@ class PromptRepository(BaseRepository[Prompt]):
             query: Text search in title and prompt content (LIKE-based)
             category: Filter by category name
             tags: Filter by tag names (prompts with ANY of these tags)
-            favorite: Filter by favorite status
+            favorite: Filter by favorite status (owned-only when
+                visible_to_user_id is set — see search())
             case_sensitive: Enforce case-sensitive matching on query
+            visible_to_user_id: Scope results to this user's owned + shared +
+                legacy-public prompts (None = unscoped, e.g. admin)
+            shared_only: Narrow to prompts explicitly shared with
+                visible_to_user_id (excludes legacy_public and owned)
 
         Returns:
             Total number of matching prompts
@@ -153,6 +213,10 @@ class PromptRepository(BaseRepository[Prompt]):
 
         if favorite is not None:
             q = q.filter(Prompt.favorite == favorite)
+            if visible_to_user_id is not None:
+                q = q.filter(Prompt.user_id == visible_to_user_id)
+        else:
+            q = self._apply_visibility_filter(q, visible_to_user_id, shared_only)
 
         # Case-sensitive matching can't be expressed in SQL here (SQLite LIKE
         # is case-insensitive), so fall back to counting in Python, same as

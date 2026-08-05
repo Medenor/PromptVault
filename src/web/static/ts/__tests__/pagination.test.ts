@@ -14,6 +14,7 @@ const noFilters: PaginationFilters = {
   category: 'all',
   tag: 'all',
   favorites: false,
+  sharedWithMe: false,
   caseSensitive: false,
 };
 
@@ -48,6 +49,7 @@ describe('pagination utils', () => {
       ['category', 'Marketing'],
       ['tag', 'email'],
       ['favorites', true],
+      ['sharedWithMe', true],
       ['caseSensitive', true],
     ])('returns true when %s changes', (key, value) => {
       const state = createInitialPaginationState(noFilters);

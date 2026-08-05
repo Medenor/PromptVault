@@ -4,15 +4,17 @@
 
 """Integration tests asserting semantic_version is present in prompt and version history responses."""
 
-import pytest
 from datetime import datetime, timezone
+from typing import Dict
+
+import pytest
 from sqlalchemy.orm import Session, sessionmaker
 
 from src.db.models.prompt import Prompt
 from src.db.models.prompt_version import PromptVersion
 
 
-def _insert_prompt(engine, semantic_version=None) -> int:
+def _insert_prompt(engine, semantic_version=None, user_id=None) -> int:
     TestSession = sessionmaker(bind=engine)
     session = TestSession()
     try:
@@ -22,6 +24,7 @@ def _insert_prompt(engine, semantic_version=None) -> int:
             note="",
             favorite=False,
             semantic_version=semantic_version,
+            user_id=user_id,
             created_at=datetime.now(timezone.utc),
         )
         session.add(prompt)
@@ -53,22 +56,71 @@ def client(api_client_context):
     return api_client_context["client"]
 
 
+@pytest.fixture
+def auth_headers(api_client_context) -> Dict[str, str]:
+    """Bearer token for a seeded user — GET /versions now enforces read-level
+    access (contract §6), so anonymous requests against these ownerless test
+    fixtures 404. The prompts here have no owner and aren't legacy_public,
+    so any authenticated user works for the read-only assertions in this file."""
+    from datetime import datetime as _dt, timezone as _tz
+
+    from src.services.auth.jwt_service import JWTService
+    from src.config import auth_config
+    from src.db.models.user import User
+    from src.db.session import SessionLocal
+
+    session = SessionLocal()
+    try:
+        user = session.query(User).filter_by(id="e2e-history-user-id").first()
+        if not user:
+            user = User(
+                id="e2e-history-user-id",
+                username="e2e_history_user",
+                email="e2e_history_user@example.com",
+                password_hash="x",
+                role="editor",
+                is_active=True,
+                email_verified=True,
+                created_at=_dt.now(_tz.utc),
+                updated_at=_dt.now(_tz.utc),
+            )
+            session.add(user)
+            session.commit()
+    finally:
+        session.close()
+
+    jwt_service = JWTService(auth_config.auth_settings)
+    access_token = jwt_service.generate_access_token(
+        user_id="e2e-history-user-id",
+        username="e2e_history_user",
+        email="e2e_history_user@example.com",
+        role="editor",
+    )
+    return {"Authorization": f"Bearer {access_token}"}
+
+
 class TestSemanticVersionInGetPrompt:
     def test_get_prompt_includes_semantic_version_when_set(
-        self, client, test_db_engine
+        self, client, test_db_engine, auth_headers
     ):
-        pid = _insert_prompt(test_db_engine, semantic_version="3.2.1")
+        pid = _insert_prompt(
+            test_db_engine, semantic_version="3.2.1", user_id="e2e-history-user-id"
+        )
 
-        resp = client.get(f"/api/prompts/{pid}")
+        resp = client.get(f"/api/prompts/{pid}", headers=auth_headers)
         assert resp.status_code == 200
         data = resp.json()
         assert "semantic_version" in data
         assert data["semantic_version"] == "3.2.1"
 
-    def test_get_prompt_semantic_version_null_when_unset(self, client, test_db_engine):
-        pid = _insert_prompt(test_db_engine, semantic_version=None)
+    def test_get_prompt_semantic_version_null_when_unset(
+        self, client, test_db_engine, auth_headers
+    ):
+        pid = _insert_prompt(
+            test_db_engine, semantic_version=None, user_id="e2e-history-user-id"
+        )
 
-        resp = client.get(f"/api/prompts/{pid}")
+        resp = client.get(f"/api/prompts/{pid}", headers=auth_headers)
         assert resp.status_code == 200
         data = resp.json()
         assert "semantic_version" in data
@@ -76,7 +128,9 @@ class TestSemanticVersionInGetPrompt:
 
 
 class TestSemanticVersionInVersionHistory:
-    def test_version_history_includes_semantic_version(self, client, test_db_engine):
+    def test_version_history_includes_semantic_version(
+        self, client, test_db_engine, auth_headers
+    ):
         TestSession = sessionmaker(bind=test_db_engine)
         session = TestSession()
         try:
@@ -86,6 +140,7 @@ class TestSemanticVersionInVersionHistory:
                 note="",
                 favorite=False,
                 semantic_version="1.0.0",
+                user_id="e2e-history-user-id",
                 created_at=datetime.now(timezone.utc),
             )
             session.add(prompt)
@@ -126,7 +181,9 @@ class TestSemanticVersionInVersionHistory:
         finally:
             session.close()
 
-        resp = client.get(f"/api/prompts/{prompt_id}/versions")
+        resp = client.get(
+            f"/api/prompts/{prompt_id}/versions", headers=auth_headers
+        )
         assert resp.status_code == 200
         versions = resp.json()["versions"]
         assert len(versions) == 2
@@ -135,10 +192,14 @@ class TestSemanticVersionInVersionHistory:
         assert "1.0.0" in sem_versions
         assert "1.1.0" in sem_versions
 
-    def test_version_history_null_for_old_entries(self, client, test_db_engine):
-        pid = _insert_prompt(test_db_engine, semantic_version=None)
+    def test_version_history_null_for_old_entries(
+        self, client, test_db_engine, auth_headers
+    ):
+        pid = _insert_prompt(
+            test_db_engine, semantic_version=None, user_id="e2e-history-user-id"
+        )
 
-        resp = client.get(f"/api/prompts/{pid}/versions")
+        resp = client.get(f"/api/prompts/{pid}/versions", headers=auth_headers)
         assert resp.status_code == 200
         versions = resp.json()["versions"]
         assert len(versions) >= 1

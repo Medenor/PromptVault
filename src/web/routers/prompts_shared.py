@@ -176,16 +176,28 @@ def _log_prompt_action(
     )
 
 
-def _prompt_to_dict(prompt: Prompt) -> dict:
+def _prompt_to_dict(
+    prompt: Prompt,
+    viewer: Optional[User] = None,
+    session: Optional[Session] = None,
+) -> dict:
     """Convert Prompt model to dictionary for API response.
+
+    When ``viewer`` and ``session`` are both provided, the payload gains the
+    per-viewer sharing fields from contracts/sharing-api.md §4 (``shared``,
+    ``legacy_public``, ``permission``). Omitted when either is absent so
+    existing callers (e.g. the legacy dict-shaped data_service paths, which
+    have no ORM Prompt/session to resolve grants against) are unaffected.
 
     Args:
         prompt: Prompt model instance
+        viewer: The requesting user, for permission resolution (optional)
+        session: Database session, for grant lookups (optional)
 
     Returns:
         dict: Prompt data formatted for API response
     """
-    return {
+    result = {
         "id": prompt.id,
         "title": prompt.title,
         "prompt": prompt.prompt,
@@ -202,6 +214,30 @@ def _prompt_to_dict(prompt: Prompt) -> dict:
         "updated_at": prompt.updated_at.isoformat() if prompt.updated_at else None,
         "semantic_version": prompt.semantic_version,
     }
+
+    if session is not None:
+        result["legacy_public"] = bool(prompt.legacy_public)
+        result["permission"] = effective_permission(prompt, viewer, session)
+        result["shared"] = _has_explicit_grant(prompt, viewer, session)
+
+    return result
+
+
+def _has_explicit_grant(
+    prompt: Prompt, viewer: Optional[User], session: Session
+) -> bool:
+    """True only when an explicit PromptShare names this viewer.
+
+    Never true for owner/admin access or legacy_public-only visibility —
+    'shared' in API payloads means "someone explicitly granted me access",
+    per contracts/sharing-api.md §4.
+    """
+    if viewer is None or prompt.user_id == viewer.id:
+        return False
+
+    from src.db.repositories.sharing_repository import SharingRepository
+
+    return SharingRepository(session).permission_for(prompt.id, viewer.id) is not None
 
 
 def normalize_pagination(page: int, limit: int) -> tuple[int, int]:

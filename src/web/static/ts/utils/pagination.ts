@@ -19,6 +19,8 @@ export interface PaginationFilters {
   category: string;
   tag: string;
   favorites: boolean;
+  /** 007-prompt-sharing (US2): "Shared with me" sidebar filter chip. */
+  sharedWithMe: boolean;
   caseSensitive: boolean;
 }
 
@@ -51,6 +53,7 @@ export function filtersChanged(state: PaginationState, filters: PaginationFilter
     prev.category !== filters.category ||
     prev.tag !== filters.tag ||
     prev.favorites !== filters.favorites ||
+    prev.sharedWithMe !== filters.sharedWithMe ||
     prev.caseSensitive !== filters.caseSensitive
   );
 }

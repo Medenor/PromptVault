@@ -19,6 +19,7 @@ function resetSearchState(): void {
   searchState.category = 'all';
   searchState.tag = 'all';
   searchState.favorites = false;
+  searchState.sharedWithMe = false;
   searchState.caseSensitive = false;
   searchState.isLoading = false;
 }
@@ -36,6 +37,7 @@ describe('currentFilters / buildSearchUrl', () => {
       category: 'dev',
       tag: 'all',
       favorites: false,
+      sharedWithMe: false,
       caseSensitive: false,
     });
   });
@@ -58,6 +60,13 @@ describe('currentFilters / buildSearchUrl', () => {
     expect(url).toContain('case_sensitive=true');
     expect(url).toContain('page=2');
     expect(url).toContain('limit=10');
+    expect(url).not.toContain('filter=shared-with-me');
+  });
+
+  it('includes filter=shared-with-me when sharedWithMe is active (007-prompt-sharing US2)', () => {
+    searchState.sharedWithMe = true;
+    const url = buildSearchUrl(1, 25);
+    expect(url).toContain('filter=shared-with-me');
   });
 });
 
@@ -66,6 +75,7 @@ describe('isAnyFilterActive', () => {
     document.body.innerHTML = `
       <input id="search-input" value="" />
       <input id="favorites-filter" type="checkbox" />
+      <input id="shared-with-me-filter" type="checkbox" />
       <ul id="categories-list"><li data-category="all" class="active"></li></ul>
       <ul id="tags-list"><li data-tag="all" class="active"></li></ul>
     `;
@@ -82,6 +92,11 @@ describe('isAnyFilterActive', () => {
 
   it('returns true when the favorites checkbox is checked', () => {
     (document.getElementById('favorites-filter') as HTMLInputElement).checked = true;
+    expect(isAnyFilterActive()).toBe(true);
+  });
+
+  it('returns true when the shared-with-me checkbox is checked', () => {
+    (document.getElementById('shared-with-me-filter') as HTMLInputElement).checked = true;
     expect(isAnyFilterActive()).toBe(true);
   });
 

@@ -27,15 +27,18 @@ import {
   loadMorePrompts,
   loadPrompts,
   performSearch,
+  promptCache,
   setPaginationControlsVisible,
   setPaginationPageSize,
 } from './prompt-list';
+import { createShareModal } from '@/components/share-modal';
 import { isAnyFilterActive, loadCategories, loadTags } from './prompt-filters';
 import { setPromptElementHandlers } from './prompt-card';
 import {
   clearAllFilters,
   handleCategoryFilter,
   handleFavoritesFilter,
+  handleSharedWithMeFilter,
   handleTagFilter,
   setupSearchEventListeners,
 } from './search';
@@ -461,6 +464,14 @@ function setupEventListeners(): void {
   const favoritesFilterMobile = document.getElementById('favorites-filter-mobile');
   favoritesFilterMobile?.addEventListener('change', handleFavoritesFilter);
 
+  // "Shared with me" filter chip (007-prompt-sharing, US2). Inert in
+  // anonymous mode (AUTH_ENABLED=false) — hideAuthOnlyElements() hides the
+  // chip itself, so no listener guard is needed here.
+  const sharedWithMeFilter = document.getElementById('shared-with-me-filter');
+  sharedWithMeFilter?.addEventListener('change', handleSharedWithMeFilter);
+  const sharedWithMeFilterMobile = document.getElementById('shared-with-me-filter-mobile');
+  sharedWithMeFilterMobile?.addEventListener('change', handleSharedWithMeFilter);
+
   // Modal close
   const closeBtn = document.querySelector('.close');
   closeBtn?.addEventListener('click', hideModal);
@@ -595,6 +606,25 @@ async function initializeApp(): Promise<void> {
   void loadTags();
 }
 
+// Share modal targets a single prompt, so a fresh instance is built per
+// open (and the previous one detached) rather than reused as a singleton —
+// unlike the version-history modal, its content is keyed to `prompt.id`.
+let shareModal: ReturnType<typeof createShareModal> | null = null;
+
+function openShareModal(id: PromptId): void {
+  const prompt = promptCache[id];
+  if (!prompt) {
+    reportAppIssue('openShareModal', new Error(`Prompt ${id} not found in cache`));
+    return;
+  }
+  if (shareModal) {
+    shareModal.element.remove();
+  }
+  shareModal = createShareModal(prompt);
+  document.body.appendChild(shareModal.element);
+  shareModal.open();
+}
+
 // Wire cross-module callbacks before anything runs.
 setPromptElementHandlers({
   onCopy: (id: PromptId) => {
@@ -614,6 +644,9 @@ setPromptElementHandlers({
   },
   onCopyWithVersion: (id: PromptId) => {
     void copyPromptWithVersion(id);
+  },
+  onShare: (id: PromptId) => {
+    openShareModal(id);
   },
 });
 

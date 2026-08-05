@@ -47,6 +47,7 @@ function makeHandlers(): PromptElementHandlers {
     onToggleFavorite: vi.fn(),
     onShowHistory: vi.fn(),
     onCopyWithVersion: vi.fn(),
+    onShare: vi.fn(),
   };
 }
 
@@ -128,6 +129,127 @@ describe('createPromptElement', () => {
 
     expect(withVersion.querySelector('.version-badge')?.textContent).toContain('1.2.0');
     expect(withoutVersion.querySelector('.version-badge')).toBeNull();
+  });
+});
+
+describe('sharing badges (007-prompt-sharing, US2)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+    selectedPromptIds.clear();
+    setLastSelectedPromptIdSetter(() => {});
+    setPromptElementHandlers(makeHandlers());
+  });
+
+  it('renders the "Shared" badge when prompt.shared is true', () => {
+    const el = createPromptElement('1', makePrompt({ shared: true, legacy_public: false }));
+    const badge = el.querySelector('.shared-badge');
+    expect(badge).not.toBeNull();
+    expect(el.querySelector('.legacy-public-badge')).toBeNull();
+  });
+
+  it('renders the "Public (legacy)" badge when only legacy_public is true', () => {
+    const el = createPromptElement('1', makePrompt({ shared: false, legacy_public: true }));
+    expect(el.querySelector('.legacy-public-badge')).not.toBeNull();
+    expect(el.querySelector('.shared-badge')).toBeNull();
+  });
+
+  it('shows neither badge when the prompt is neither shared nor legacy_public', () => {
+    const el = createPromptElement('1', makePrompt({ shared: false, legacy_public: false }));
+    expect(el.querySelector('.shared-badge')).toBeNull();
+    expect(el.querySelector('.legacy-public-badge')).toBeNull();
+  });
+
+  it('prefers the "Shared" badge over "Public (legacy)" when both flags are true (mutually exclusive)', () => {
+    const el = createPromptElement('1', makePrompt({ shared: true, legacy_public: true }));
+    expect(el.querySelector('.shared-badge')).not.toBeNull();
+    expect(el.querySelector('.legacy-public-badge')).toBeNull();
+  });
+
+  it('applies data-i18n translation keys to the badges, not raw English text nodes', () => {
+    const el = createPromptElement('1', makePrompt({ shared: true }));
+    const badge = el.querySelector('.shared-badge');
+    // The i18next mock returns `tr:<key>` for any key, so the badge text
+    // reflects the translation call rather than the hardcoded fallback.
+    expect(badge?.textContent).toBe('tr:sharing.badge');
+  });
+});
+
+describe('permission-gated controls (007-prompt-sharing, US2)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+    selectedPromptIds.clear();
+    setLastSelectedPromptIdSetter(() => {});
+    setPromptElementHandlers(makeHandlers());
+  });
+
+  it('shows edit, delete, favorite, and share controls for permission "owner"', () => {
+    const el = createPromptElement('1', makePrompt({ permission: 'owner' }));
+    expect(el.querySelector('.edit-btn')).not.toBeNull();
+    expect(el.querySelector('.delete-btn')).not.toBeNull();
+    expect(el.querySelector('.favorite-btn')).not.toBeNull();
+    expect(el.querySelector('.share-btn')).not.toBeNull();
+  });
+
+  it('shows edit but hides delete, favorite, and share for permission "edit"', () => {
+    const el = createPromptElement('1', makePrompt({ permission: 'edit' }));
+    expect(el.querySelector('.edit-btn')).not.toBeNull();
+    expect(el.querySelector('.delete-btn')).toBeNull();
+    expect(el.querySelector('.favorite-btn')).toBeNull();
+    expect(el.querySelector('.share-btn')).toBeNull();
+  });
+
+  it('hides edit, delete, favorite, and share for permission "read"', () => {
+    const el = createPromptElement('1', makePrompt({ permission: 'read' }));
+    expect(el.querySelector('.edit-btn')).toBeNull();
+    expect(el.querySelector('.delete-btn')).toBeNull();
+    expect(el.querySelector('.favorite-btn')).toBeNull();
+    expect(el.querySelector('.share-btn')).toBeNull();
+  });
+
+  it('hides all mutation controls for a legacy_public-only viewer (permission "read")', () => {
+    // A viewer who can only see the prompt via the grandfathered public flag
+    // gets `permission: 'read'` from the backend (contracts §4) — same as
+    // any other read-level grantee, not owner-equivalent.
+    const el = createPromptElement(
+      '1',
+      makePrompt({ permission: 'read', legacy_public: true, shared: false })
+    );
+    expect(el.querySelector('.edit-btn')).toBeNull();
+    expect(el.querySelector('.delete-btn')).toBeNull();
+    expect(el.querySelector('.favorite-btn')).toBeNull();
+    expect(el.querySelector('.share-btn')).toBeNull();
+  });
+
+  it('treats a missing permission field as fully allowed (anonymous mode, AUTH_ENABLED=false)', () => {
+    // makePrompt() doesn't set `permission` by default, so this reflects the
+    // anonymous-mode payload shape (field absent entirely, not present-as-undefined).
+    const el = createPromptElement('1', makePrompt());
+    expect(el.querySelector('.edit-btn')).not.toBeNull();
+    expect(el.querySelector('.delete-btn')).not.toBeNull();
+    expect(el.querySelector('.favorite-btn')).not.toBeNull();
+    expect(el.querySelector('.share-btn')).not.toBeNull();
+  });
+
+  it('does not invoke onEdit when clicking a read-level card body', () => {
+    const handlers = makeHandlers();
+    setPromptElementHandlers(handlers);
+    const el = createPromptElement('1', makePrompt({ permission: 'read' }));
+    document.body.appendChild(el);
+
+    el.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+    expect(handlers.onEdit).not.toHaveBeenCalled();
+  });
+
+  it('still invokes onEdit when clicking an edit-level card body', () => {
+    const handlers = makeHandlers();
+    setPromptElementHandlers(handlers);
+    const el = createPromptElement('1', makePrompt({ permission: 'edit' }));
+    document.body.appendChild(el);
+
+    el.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+    expect(handlers.onEdit).toHaveBeenCalledWith('1');
   });
 });
 

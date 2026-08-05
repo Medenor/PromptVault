@@ -753,5 +753,26 @@
     "indicator": "Du bist offline. Zwischengespeicherte Prompts werden angezeigt — stelle die Verbindung wieder her, um Änderungen vorzunehmen.",
     "unavailableOffline": "Dieser Inhalt ist offline nicht verfügbar. Stelle die Verbindung wieder her, um ihn anzuzeigen.",
     "editUnavailable": "Für diese Aktion ist eine Internetverbindung erforderlich. Stelle die Verbindung wieder her, um fortzufahren."
+  },
+  "sharing": {
+    "title": "Prompt teilen",
+    "share": "Teilen",
+    "grant": "Zugriff gewähren",
+    "permission": {
+      "read": "Kann ansehen",
+      "edit": "Kann bearbeiten"
+    },
+    "grant_failed": "Dieser Prompt konnte nicht geteilt werden. Überprüfe den Benutzernamen oder die E-Mail-Adresse und versuche es erneut.",
+    "picker_placeholder": "Nach Benutzername oder E-Mail suchen...",
+    "picker_no_results": "Keine passenden Benutzer gefunden",
+    "picker_searching": "Suche läuft...",
+    "revoke": "Entziehen",
+    "revoked": "Zugriff entzogen.",
+    "badge": "Geteilt",
+    "legacy_public_badge": "Öffentlich (alt)",
+    "shared_with_me": "Mit mir geteilt",
+    "no_shares": "Dieser Prompt wurde noch mit niemandem geteilt.",
+    "make_private": "Privat machen",
+    "make_private_confirm": "Diesen Prompt privat machen? Alle, die ihn bisher wegen der öffentlichen Sichtbarkeit ansehen konnten, verlieren den Zugriff, sofern du ihn nicht direkt mit ihnen teilst."
   }
 }

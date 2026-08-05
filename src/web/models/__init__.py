@@ -41,6 +41,14 @@ from .undo_responses import (
     UndoHistoryResponse,
     UndoResultResponse,
 )
+from .sharing_requests import ShareGrantRequest, PromptVisibilityUpdateRequest
+from .sharing_responses import (
+    UserSuggestion,
+    ShareGranteeInfo,
+    ShareResponse,
+    ShareListResponse,
+    UserSearchResponse,
+)
 
 __all__ = [
     # Prompt requests
@@ -78,4 +86,13 @@ __all__ = [
     "UndoOperationResponse",
     "UndoHistoryResponse",
     "UndoResultResponse",
+    # Sharing requests
+    "ShareGrantRequest",
+    "PromptVisibilityUpdateRequest",
+    # Sharing responses
+    "UserSuggestion",
+    "ShareGranteeInfo",
+    "ShareResponse",
+    "ShareListResponse",
+    "UserSearchResponse",
 ]

@@ -249,3 +249,180 @@ def test_grantee_deactivation_leaves_share_untouched(
     )
     assert refreshed is not None
     assert refreshed.permission == "read"
+
+
+# ---------------------------------------------------------------------------
+# PromptRepository.search()/count() visibility scoping (US2, T030)
+# ---------------------------------------------------------------------------
+
+
+def _make_prompt(session: Session, category, owner_id, title, legacy_public=False, favorite=False):
+    prompt = Prompt(
+        title=title,
+        prompt="content",
+        category_id=category.id,
+        favorite=favorite,
+        legacy_public=legacy_public,
+        user_id=owner_id,
+    )
+    session.add(prompt)
+    session.flush()
+    return prompt
+
+
+class TestPromptVisibilityScoping:
+    def test_search_returns_owned_shared_and_legacy_public_no_duplicates(
+        self,
+        prompt_repo,
+        sharing_repo: SharingRepository,
+        test_db_session: Session,
+        test_category,
+        test_user: User,
+        second_user: User,
+        third_user: User,
+    ):
+        owned = _make_prompt(test_db_session, test_category, second_user.id, "Owned by second")
+        shared = _make_prompt(test_db_session, test_category, third_user.id, "Shared with second")
+        legacy = _make_prompt(
+            test_db_session, test_category, third_user.id, "Legacy public", legacy_public=True
+        )
+        private_other = _make_prompt(
+            test_db_session, test_category, third_user.id, "Private, not shared"
+        )
+        sharing_repo.upsert(shared.id, second_user.id, "read", third_user.id)
+
+        results = prompt_repo.search(visible_to_user_id=second_user.id)
+        result_ids = {p.id for p in results}
+
+        assert owned.id in result_ids
+        assert shared.id in result_ids
+        assert legacy.id in result_ids
+        assert private_other.id not in result_ids
+        assert len(result_ids) == len(results)  # no duplicates
+
+    def test_search_shared_only_excludes_legacy_public_and_owned(
+        self,
+        prompt_repo,
+        sharing_repo: SharingRepository,
+        test_db_session: Session,
+        test_category,
+        second_user: User,
+        third_user: User,
+    ):
+        owned = _make_prompt(test_db_session, test_category, second_user.id, "Owned")
+        shared = _make_prompt(test_db_session, test_category, third_user.id, "Shared")
+        legacy = _make_prompt(
+            test_db_session, test_category, third_user.id, "Legacy", legacy_public=True
+        )
+        sharing_repo.upsert(shared.id, second_user.id, "read", third_user.id)
+
+        results = prompt_repo.search(visible_to_user_id=second_user.id, shared_only=True)
+        result_ids = {p.id for p in results}
+
+        assert result_ids == {shared.id}
+        assert owned.id not in result_ids
+        assert legacy.id not in result_ids
+
+    def test_search_honors_query_category_tags_with_visibility(
+        self,
+        prompt_repo,
+        sharing_repo: SharingRepository,
+        test_db_session: Session,
+        test_category,
+        second_user: User,
+        third_user: User,
+    ):
+        matching = _make_prompt(
+            test_db_session, test_category, third_user.id, "Findable Title"
+        )
+        non_matching = _make_prompt(
+            test_db_session, test_category, third_user.id, "Other Title"
+        )
+        sharing_repo.upsert(matching.id, second_user.id, "read", third_user.id)
+        sharing_repo.upsert(non_matching.id, second_user.id, "read", third_user.id)
+
+        results = prompt_repo.search(
+            query="Findable", visible_to_user_id=second_user.id
+        )
+        result_ids = {p.id for p in results}
+
+        assert result_ids == {matching.id}
+
+    def test_search_pagination_within_visible_set(
+        self,
+        prompt_repo,
+        sharing_repo: SharingRepository,
+        test_db_session: Session,
+        test_category,
+        second_user: User,
+        third_user: User,
+    ):
+        for i in range(5):
+            p = _make_prompt(test_db_session, test_category, third_user.id, f"Page prompt {i}")
+            sharing_repo.upsert(p.id, second_user.id, "read", third_user.id)
+
+        page1 = prompt_repo.search(visible_to_user_id=second_user.id, limit=2, offset=0)
+        page2 = prompt_repo.search(visible_to_user_id=second_user.id, limit=2, offset=2)
+
+        assert len(page1) == 2
+        assert len(page2) == 2
+        assert {p.id for p in page1}.isdisjoint({p.id for p in page2})
+
+    def test_favorite_filter_restricted_to_owned_when_visibility_scoped(
+        self,
+        prompt_repo,
+        sharing_repo: SharingRepository,
+        test_db_session: Session,
+        test_category,
+        second_user: User,
+        third_user: User,
+    ):
+        owned_favorite = _make_prompt(
+            test_db_session, test_category, second_user.id, "Owned favorite", favorite=True
+        )
+        shared_favorite = _make_prompt(
+            test_db_session, test_category, third_user.id, "Shared favorite", favorite=True
+        )
+        sharing_repo.upsert(shared_favorite.id, second_user.id, "read", third_user.id)
+
+        results = prompt_repo.search(
+            favorite=True, visible_to_user_id=second_user.id
+        )
+        result_ids = {p.id for p in results}
+
+        assert result_ids == {owned_favorite.id}
+        assert shared_favorite.id not in result_ids
+
+    def test_search_count_consistency(
+        self,
+        prompt_repo,
+        sharing_repo: SharingRepository,
+        test_db_session: Session,
+        test_category,
+        second_user: User,
+        third_user: User,
+    ):
+        for i in range(3):
+            p = _make_prompt(test_db_session, test_category, third_user.id, f"Count prompt {i}")
+            sharing_repo.upsert(p.id, second_user.id, "edit", third_user.id)
+
+        search_results = prompt_repo.search(visible_to_user_id=second_user.id)
+        count_result = prompt_repo.count(visible_to_user_id=second_user.id)
+
+        assert len(search_results) == count_result
+
+    def test_none_visible_to_user_id_is_unscoped(
+        self,
+        prompt_repo,
+        test_db_session: Session,
+        test_category,
+        third_user: User,
+    ):
+        private_prompt = _make_prompt(
+            test_db_session, test_category, third_user.id, "Fully private"
+        )
+
+        results = prompt_repo.search(visible_to_user_id=None)
+        result_ids = {p.id for p in results}
+
+        assert private_prompt.id in result_ids

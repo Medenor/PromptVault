@@ -753,5 +753,26 @@
     "indicator": "Estás sin conexión. Mostrando prompts en caché — vuelve a conectarte para hacer cambios.",
     "unavailableOffline": "Este contenido no está disponible sin conexión. Vuelve a conectarte para verlo.",
     "editUnavailable": "Esta acción necesita conexión a internet. Vuelve a conectarte para continuar."
+  },
+  "sharing": {
+    "title": "Compartir prompt",
+    "share": "Compartir",
+    "grant": "Conceder acceso",
+    "permission": {
+      "read": "Puede ver",
+      "edit": "Puede editar"
+    },
+    "grant_failed": "No se pudo compartir este prompt. Comprueba el nombre de usuario o el correo e inténtalo de nuevo.",
+    "picker_placeholder": "Buscar por nombre de usuario o correo...",
+    "picker_no_results": "No hay usuarios coincidentes",
+    "picker_searching": "Buscando...",
+    "revoke": "Revocar",
+    "revoked": "Acceso revocado.",
+    "badge": "Compartido",
+    "legacy_public_badge": "Público (antiguo)",
+    "shared_with_me": "Compartido conmigo",
+    "no_shares": "Este prompt aún no se ha compartido con nadie.",
+    "make_private": "Hacer privado",
+    "make_private_confirm": "¿Hacer privado este prompt? Cualquiera que pudiera verlo porque era público perderá el acceso, a menos que lo compartas directamente con esa persona."
   }
 }

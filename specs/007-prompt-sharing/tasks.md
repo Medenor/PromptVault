@@ -111,20 +111,20 @@
 
 ### Tests for User Story 3 (write first, ensure they fail)
 
-- [ ] T040 [P] [US3] Write API tests in `tests/test_sharing_api.py`: `GET /api/prompts/{id}/shares` 200 owner/admin with full list, 403 grantee (both levels), 404 stranger; `DELETE /api/prompts/{id}/shares/{user_id}` 200 + immediate access loss, 404 for absent grant, 403 non-owner; audit event `prompt.share.revoked`; rate-limit 429 on both endpoints
-- [ ] T041 [P] [US3] Write API tests for un-grandfathering in `tests/test_sharing_api.py`: `PATCH /api/prompts/{id}` with `{"legacy_public": false}` → 200 owner/admin, immediate loss of implicit visibility for other users on next request, 403 for non-owner/grantee, 400 when submitting `{"legacy_public": true}` (one-way, FR-018), no `PromptShare` row is created as a side effect (spec Edge Cases)
+- [X] T040 [P] [US3] Write API tests in `tests/test_sharing_api.py`: `GET /api/prompts/{id}/shares` 200 owner/admin with full list, 403 grantee (both levels), 404 stranger; `DELETE /api/prompts/{id}/shares/{user_id}` 200 + immediate access loss, 404 for absent grant, 403 non-owner; audit event `prompt.share.revoked`; rate-limit 429 on both endpoints
+- [X] T041 [P] [US3] Write API tests for un-grandfathering in `tests/test_sharing_api.py`: `PATCH /api/prompts/{id}` with `{"legacy_public": false}` → 200 owner/admin, immediate loss of implicit visibility for other users on next request, 403 for non-owner/grantee, 400 when submitting `{"legacy_public": true}` (one-way, FR-018), no `PromptShare` row is created as a side effect (spec Edge Cases)
 
 ### Implementation for User Story 3
 
-- [ ] T042 [US3] Add `list_shares(prompt_id, acting_user)` and `revoke_share(prompt_id, grantee_user_id, acting_user)` to `src/services/prompt_data_service_db.py` (owner/admin only; audit `prompt.share.revoked` including the revoked grant's permission level)
-- [ ] T043 [US3] Add `GET /api/prompts/{id}/shares` and `DELETE /api/prompts/{id}/shares/{user_id}` to `src/web/routers/prompts_sharing_router.py` (rate-limited, contracts §2–3) — depends on T042
-- [ ] T044 [US3] Add `set_legacy_public(prompt_id, acting_user)` to `src/services/prompt_data_service_db.py` (owner/admin only; rejects if already `False`; flips `True→False`; audit event `prompt.legacy_public.revoked` or equivalent per logging_service conventions; creates no `PromptShare` rows) — depends on T006
-- [ ] T045 [US3] Extend `PUT /api/prompts/{id}` in `src/web/routers/prompts_crud_router.py` (or add dedicated handling) to accept `legacy_public: false` in the request body per contracts §4b, routing to `set_legacy_public`; reject `legacy_public: true` with 400 — depends on T022, T044
-- [ ] T046 [US3] Extend `src/web/static/ts/components/share-modal.ts` with the current-grants list (grantee, permission, granted-by) and per-row revoke buttons; add `listShares`/`revokeShare` client functions to `src/web/static/ts/utils/api.ts`
-- [ ] T047 [US3] Add an "Make private" / un-grandfather action (owner/admin only) to the share modal or prompt card for `legacy_public` prompts in `src/web/static/ts/components/share-modal.ts` and/or `src/web/static/ts/app/`; add `unGrandfatherPrompt` client function to `src/web/static/ts/utils/api.ts` — depends on T045
-- [ ] T048 [P] [US3] Add revoke-flow and un-grandfather i18n keys (revoke, revoked, no_shares, make_private, make_private_confirm) to all four `src/web/static/locales/{en,fr,es,de}.json`
-- [ ] T049 [P] [US3] Extend Vitest specs in `src/web/static/ts/components/__tests__/share-modal.test.ts` for grant listing, revoke flow, and the un-grandfather action
-- [ ] T050 [US3] Run `npm run build` + full suites; fix until green, coverage ≥85%
+- [X] T042 [US3] Add `list_shares(prompt_id, acting_user)` and `revoke_share(prompt_id, grantee_user_id, acting_user)` to `src/services/prompt_data_service_db.py` (owner/admin only; audit `prompt.share.revoked` including the revoked grant's permission level)
+- [X] T043 [US3] Add `GET /api/prompts/{id}/shares` and `DELETE /api/prompts/{id}/shares/{user_id}` to `src/web/routers/prompts_sharing_router.py` (rate-limited, contracts §2–3) — depends on T042
+- [X] T044 [US3] Add `set_legacy_public(prompt_id, acting_user)` to `src/services/prompt_data_service_db.py` (owner/admin only; rejects if already `False`; flips `True→False`; audit event `prompt.legacy_public.revoked` or equivalent per logging_service conventions; creates no `PromptShare` rows) — depends on T006
+- [X] T045 [US3] Extend `PUT /api/prompts/{id}` in `src/web/routers/prompts_crud_router.py` (or add dedicated handling) to accept `legacy_public: false` in the request body per contracts §4b, routing to `set_legacy_public`; reject `legacy_public: true` with 400 — depends on T022, T044
+- [X] T046 [US3] Extend `src/web/static/ts/components/share-modal.ts` with the current-grants list (grantee, permission, granted-by) and per-row revoke buttons; add `listShares`/`revokeShare` client functions to `src/web/static/ts/utils/api.ts`
+- [X] T047 [US3] Add an "Make private" / un-grandfather action (owner/admin only) to the share modal or prompt card for `legacy_public` prompts in `src/web/static/ts/components/share-modal.ts` and/or `src/web/static/ts/app/`; add `unGrandfatherPrompt` client function to `src/web/static/ts/utils/api.ts` — depends on T045
+- [X] T048 [P] [US3] Add revoke-flow and un-grandfather i18n keys (revoke, revoked, no_shares, make_private, make_private_confirm) to all four `src/web/static/locales/{en,fr,es,de}.json`
+- [X] T049 [P] [US3] Extend Vitest specs in `src/web/static/ts/components/__tests__/share-modal.test.ts` for grant listing, revoke flow, and the un-grandfather action
+- [X] T050 [US3] Run `npm run build` + full suites; fix until green, coverage ≥85%
 
 **Checkpoint**: All three stories independently functional — full share lifecycle (grant → use → review → revoke) works end-to-end, and the grandfathering transition has a real exit path (un-grandfather).
 

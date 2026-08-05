@@ -119,9 +119,14 @@ def api_admin_auth_headers(api_client_context) -> Dict[str, str]:
 
 
 @pytest.fixture
-def seeded_prompt_id(api_client):
-    """Get the ID of the seeded 'API Prompt 1' prompt."""
-    response = api_client.get("/api/prompts")
+def seeded_prompt_id(api_client, api_auth_headers):
+    """Get the ID of the seeded 'API Prompt 1' prompt.
+
+    Authenticated as the seeded owner: with AUTH_ENABLED=true, prompt
+    listing is now visibility-scoped (owned + shared + legacy-public), so an
+    anonymous request would see nothing (007-prompt-sharing).
+    """
+    response = api_client.get("/api/prompts", headers=api_auth_headers)
     if response.status_code != 200:
         pytest.fail(
             f"Failed to get prompts: {response.status_code} - {response.content}"
@@ -136,8 +141,10 @@ def seeded_prompt_id(api_client):
 class TestPromptCrudEndpoints:
     """CRUD endpoint coverage."""
 
-    def test_get_prompts_returns_seed_data(self, api_client, seeded_prompt_id):
-        response = api_client.get("/api/prompts")
+    def test_get_prompts_returns_seed_data(
+        self, api_client, api_auth_headers, seeded_prompt_id
+    ):
+        response = api_client.get("/api/prompts", headers=api_auth_headers)
         assert response.status_code == 200
         data = response.json()["prompts"]
         assert len(data) == 2
@@ -173,7 +180,9 @@ class TestPromptCrudEndpoints:
         assert response.status_code == 201
         prompt_id = response.json()["prompt_id"]
 
-        retrieved = api_client.get(f"/api/prompts/{prompt_id}")
+        retrieved = api_client.get(
+            f"/api/prompts/{prompt_id}", headers=api_auth_headers
+        )
         assert retrieved.status_code == 200
         assert retrieved.json()["tags"] == ["vision", "creativity", "focus"]
 
@@ -184,8 +193,10 @@ class TestPromptCrudEndpoints:
         )
         assert response.status_code == 422
 
-    def test_get_prompt_by_id(self, api_client, seeded_prompt_id):
-        response = api_client.get(f"/api/prompts/{seeded_prompt_id}")
+    def test_get_prompt_by_id(self, api_client, api_auth_headers, seeded_prompt_id):
+        response = api_client.get(
+            f"/api/prompts/{seeded_prompt_id}", headers=api_auth_headers
+        )
         assert response.status_code == 200
         data = response.json()
         assert data["title"] == "API Prompt 1"
@@ -215,7 +226,9 @@ class TestPromptCrudEndpoints:
         assert response.status_code == 200
         assert response.json()["success"] is True
 
-        refreshed = api_client.get(f"/api/prompts/{seeded_prompt_id}")
+        refreshed = api_client.get(
+            f"/api/prompts/{seeded_prompt_id}", headers=api_auth_headers
+        )
         assert refreshed.json()["title"] == "Updated Title"
 
     def test_update_prompt_not_found(self, api_client, api_auth_headers):
@@ -299,7 +312,7 @@ class TestPromptCrudEndpoints:
 class TestSearchAndFilterEndpoints:
     """Search endpoints covering combinations and edge cases."""
 
-    def test_search_prompts_combined_filters(self, api_client):
+    def test_search_prompts_combined_filters(self, api_client, api_auth_headers):
         response = api_client.get(
             "/api/prompts/search",
             params={
@@ -308,6 +321,7 @@ class TestSearchAndFilterEndpoints:
                 "tag": "api",
                 "favorites": False,
             },
+            headers=api_auth_headers,
         )
         assert response.status_code == 200
         results = response.json()["prompts"]
@@ -353,11 +367,11 @@ class TestPaginationListPrompts:
             )
 
     def test_default_pagination_envelope(
-        self, api_client, api_data_service, sample_prompt_data
+        self, api_client, api_auth_headers, api_data_service, sample_prompt_data
     ):
         self._seed_many(api_data_service, sample_prompt_data, 60)
 
-        response = api_client.get("/api/prompts")
+        response = api_client.get("/api/prompts", headers=api_auth_headers)
         assert response.status_code == 200
         payload = response.json()
 
@@ -370,12 +384,16 @@ class TestPaginationListPrompts:
         assert payload["has_previous"] is False
 
     def test_second_page_returns_different_prompts(
-        self, api_client, api_data_service, sample_prompt_data
+        self, api_client, api_auth_headers, api_data_service, sample_prompt_data
     ):
         self._seed_many(api_data_service, sample_prompt_data, 60)
 
-        page1 = api_client.get("/api/prompts", params={"page": 1, "limit": 50}).json()
-        page2 = api_client.get("/api/prompts", params={"page": 2, "limit": 50}).json()
+        page1 = api_client.get(
+            "/api/prompts", params={"page": 1, "limit": 50}, headers=api_auth_headers
+        ).json()
+        page2 = api_client.get(
+            "/api/prompts", params={"page": 2, "limit": 50}, headers=api_auth_headers
+        ).json()
 
         ids_page1 = set(page1["prompts"].keys())
         ids_page2 = set(page2["prompts"].keys())
@@ -384,11 +402,13 @@ class TestPaginationListPrompts:
         assert page2["has_previous"] is True
 
     def test_limit_clamped_when_above_max(
-        self, api_client, api_data_service, sample_prompt_data
+        self, api_client, api_auth_headers, api_data_service, sample_prompt_data
     ):
         self._seed_many(api_data_service, sample_prompt_data, 110)
 
-        response = api_client.get("/api/prompts", params={"limit": 9999})
+        response = api_client.get(
+            "/api/prompts", params={"limit": 9999}, headers=api_auth_headers
+        )
         payload = response.json()
 
         assert response.status_code == 200
@@ -439,11 +459,15 @@ class TestPaginationSearchPrompts:
             )
 
     def test_total_count_reflects_filtered_set_not_full_library(
-        self, api_client, api_data_service, sample_prompt_data
+        self, api_client, api_auth_headers, api_data_service, sample_prompt_data
     ):
         self._seed_matching(api_data_service, sample_prompt_data, count=50, matching=30)
 
-        response = api_client.get("/api/prompts/search", params={"search": "Marketing"})
+        response = api_client.get(
+            "/api/prompts/search",
+            params={"search": "Marketing"},
+            headers=api_auth_headers,
+        )
         payload = response.json()
 
         assert response.status_code == 200
@@ -451,7 +475,7 @@ class TestPaginationSearchPrompts:
         assert len(payload["prompts"]) <= payload["limit"]
 
     def test_pagination_combines_with_category_filter(
-        self, api_client, api_data_service, sample_prompt_data
+        self, api_client, api_auth_headers, api_data_service, sample_prompt_data
     ):
         for i in range(10):
             api_data_service.add_new_prompt(
@@ -462,6 +486,7 @@ class TestPaginationSearchPrompts:
         response = api_client.get(
             "/api/prompts/search",
             params={"category": "SpecialCat", "page": 1, "limit": 5},
+            headers=api_auth_headers,
         )
         payload = response.json()
 
@@ -698,6 +723,23 @@ class TestLegacyDataFallbacks:
     def test_legacy_prompt_structure_fallbacks(
         self, api_client, api_data_service, api_auth_headers, monkeypatch
     ):
+        # The legacy data_service.load_prompts() dict fallback in
+        # list_prompts()/search_prompts()/get_prompt() is now only consulted
+        # when auth is disabled (007-prompt-sharing: visibility scoping must
+        # be enforced once auth is on, and that legacy path has no scoping
+        # concept) — so this legacy-structure-tolerance test needs auth off
+        # to reach it in all three routers. auth_settings is a frozen
+        # pydantic model (can't mutate an attribute), so swap the
+        # module-level name each router resolves each request instead.
+        import src.web.routers.prompts_search_router as search_router
+        import src.web.routers.prompts_crud_router as crud_router
+
+        class _Disabled:
+            auth_enabled = False
+
+        monkeypatch.setattr(search_router, "auth_settings", _Disabled())
+        monkeypatch.setattr(crud_router, "auth_settings", _Disabled())
+
         legacy_prompt = {
             "title": "Legacy Title",
             "prompt": "Legacy Body",
@@ -746,6 +788,16 @@ class TestApiErrorPaths:
     def test_search_prompts_exception_returns_500(
         self, api_client, api_data_service, monkeypatch
     ):
+        # As in test_legacy_prompt_structure_fallbacks: the legacy
+        # data_service.load_prompts() call in search_prompts() is only
+        # reached when auth is disabled (007-prompt-sharing scoping).
+        import src.web.routers.prompts_search_router as search_router
+
+        class _Disabled:
+            auth_enabled = False
+
+        monkeypatch.setattr(search_router, "auth_settings", _Disabled())
+
         def _explode():
             raise RuntimeError("unexpected failure")
 
@@ -1003,9 +1055,9 @@ class TestVersionEndpointCoverage:
         )
         assert update.status_code == 200
 
-        history = api_client.get(f"/api/prompts/{seeded_prompt_id}/versions").json()[
-            "versions"
-        ]
+        history = api_client.get(
+            f"/api/prompts/{seeded_prompt_id}/versions", headers=api_auth_headers
+        ).json()["versions"]
         assert len(history) >= 2
         latest_version = history[0]["version_id"]
         previous_version = history[1]["version_id"]
@@ -1013,13 +1065,15 @@ class TestVersionEndpointCoverage:
         comparison = api_client.get(
             f"/api/prompts/{seeded_prompt_id}/versions/compare",
             params={"v1": previous_version, "v2": latest_version},
+            headers=api_auth_headers,
         )
         assert comparison.status_code == 200
         changes = comparison.json()["changes"]
         assert "prompt" in changes
 
         version_detail = api_client.get(
-            f"/api/prompts/{seeded_prompt_id}/versions/{previous_version}"
+            f"/api/prompts/{seeded_prompt_id}/versions/{previous_version}",
+            headers=api_auth_headers,
         )
         assert version_detail.status_code == 200
         assert version_detail.json()["version_id"] == previous_version

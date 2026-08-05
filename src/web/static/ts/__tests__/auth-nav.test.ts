@@ -132,6 +132,8 @@ describe('hideAuthOnlyElements', () => {
       <div id="profile-btn"></div>
       <div id="logout-btn"></div>
       <div id="mobile-drawer-account-section"></div>
+      <div id="shared-with-me-filter-label"></div>
+      <div id="shared-with-me-filter-label-mobile"></div>
     `;
 
     hideAuthOnlyElements();
@@ -139,6 +141,10 @@ describe('hideAuthOnlyElements', () => {
     expect(document.getElementById('profile-btn')?.style.display).toBe('none');
     expect(document.getElementById('logout-btn')?.style.display).toBe('none');
     expect(document.getElementById('mobile-drawer-account-section')?.style.display).toBe('none');
+    expect(document.getElementById('shared-with-me-filter-label')?.style.display).toBe('none');
+    expect(document.getElementById('shared-with-me-filter-label-mobile')?.style.display).toBe(
+      'none'
+    );
   });
 
   it('does not throw when known elements are absent', () => {

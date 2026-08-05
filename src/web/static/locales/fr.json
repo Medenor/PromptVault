@@ -759,5 +759,26 @@
     "indicator": "Vous êtes hors ligne. Affichage des prompts en cache — reconnectez-vous pour apporter des modifications.",
     "unavailableOffline": "Ce contenu n'est pas disponible hors ligne. Reconnectez-vous pour le consulter.",
     "editUnavailable": "Cette action nécessite une connexion internet. Reconnectez-vous pour continuer."
+  },
+  "sharing": {
+    "title": "Partager le prompt",
+    "share": "Partager",
+    "grant": "Accorder l'accès",
+    "permission": {
+      "read": "Peut consulter",
+      "edit": "Peut modifier"
+    },
+    "grant_failed": "Impossible de partager ce prompt. Vérifiez le nom d'utilisateur ou l'e-mail et réessayez.",
+    "picker_placeholder": "Rechercher par nom d'utilisateur ou e-mail...",
+    "picker_no_results": "Aucun utilisateur correspondant",
+    "picker_searching": "Recherche en cours...",
+    "revoke": "Révoquer",
+    "revoked": "Accès révoqué.",
+    "badge": "Partagé",
+    "legacy_public_badge": "Public (ancien)",
+    "shared_with_me": "Partagé avec moi",
+    "no_shares": "Ce prompt n'a encore été partagé avec personne.",
+    "make_private": "Rendre privé",
+    "make_private_confirm": "Rendre ce prompt privé ? Toute personne qui pouvait le voir car il était public perdra cet accès, sauf si vous le partagez directement avec elle."
   }
 }

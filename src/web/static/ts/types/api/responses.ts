@@ -108,6 +108,53 @@ export interface PromptResponse {
   created_at: string | null;
   updated_at: string | null;
   semantic_version?: string | null;
+  /**
+   * Per-viewer sharing fields (007-prompt-sharing). Present only when
+   * AUTH_ENABLED and the request is attributed to a viewer; omitted
+   * otherwise (e.g. anonymous mode).
+   */
+  shared?: boolean;
+  legacy_public?: boolean;
+  permission?: 'owner' | 'edit' | 'read' | null;
+}
+
+// ============================================
+// SHARING RESPONSES
+// ============================================
+
+/**
+ * Minimal user info surfaced in sharing contexts (grant results, typeahead).
+ */
+export interface UserSuggestion {
+  id: string;
+  username: string;
+}
+
+/**
+ * Response for POST /api/prompts/{id}/shares (grant/update a share).
+ */
+export interface ShareResponse {
+  prompt_id: number;
+  grantee: UserSuggestion;
+  permission: 'read' | 'edit';
+  granted_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Response for GET /api/users/search (typeahead).
+ */
+export interface UserSearchResponse {
+  users: UserSuggestion[];
+}
+
+/**
+ * Response for GET /api/prompts/{id}/shares (grant review, US3).
+ */
+export interface ShareListResponse {
+  prompt_id: number;
+  shares: ShareResponse[];
 }
 
 /**

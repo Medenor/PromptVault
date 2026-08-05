@@ -25,7 +25,7 @@ document.documentElement.classList.add('dark');
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 <meta name="theme-color" content="#3B82F6" />
-<link rel="stylesheet" href="/static/dist/assets/telemetry.DLQDGxO_.css" />
+<link rel="stylesheet" href="/static/dist/assets/telemetry.qZwbOZfO.css" />
 <style>
 @keyframes spin {
 0% {
@@ -330,6 +330,11 @@ data-i18n="[aria-label]actions.clearSearch"
 <input type="checkbox" id="favorites-filter" class="rounded text-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" />
 <span data-i18n="nav.showFavorites">Show Favorites</span>
 </label>
+<!-- Shared with me Filter (007-prompt-sharing, US2; hidden in anonymous mode by hideAuthOnlyElements) -->
+<label id="shared-with-me-filter-label" for="shared-with-me-filter" class="flex items-center gap-2 mb-3 cursor-pointer text-sm text-gray-700 dark:text-gray-300">
+<input type="checkbox" id="shared-with-me-filter" class="rounded text-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" />
+<span data-i18n="sharing.shared_with_me">Shared with me</span>
+</label>
 <!-- Select All Checkbox -->
 <label for="select-all-checkbox" class="flex items-center gap-2 mb-3 cursor-pointer text-sm text-gray-700 dark:text-gray-300">
 <input type="checkbox" id="select-all-checkbox" class="rounded text-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" />
@@ -524,6 +529,11 @@ data-i18n="[aria-label]actions.clearSearch"
 <label for="favorites-filter-mobile" class="flex items-center gap-2 mb-3 cursor-pointer text-sm text-gray-700 dark:text-gray-300">
 <input type="checkbox" id="favorites-filter-mobile" class="rounded text-blue-500 focus:ring-blue-500" />
 <span data-i18n="nav.showFavorites">Show Favorites</span>
+</label>
+<!-- Shared with me Filter (007-prompt-sharing, US2; hidden in anonymous mode by hideAuthOnlyElements) -->
+<label id="shared-with-me-filter-label-mobile" for="shared-with-me-filter-mobile" class="flex items-center gap-2 mb-3 cursor-pointer text-sm text-gray-700 dark:text-gray-300">
+<input type="checkbox" id="shared-with-me-filter-mobile" class="rounded text-blue-500 focus:ring-blue-500" />
+<span data-i18n="sharing.shared_with_me">Shared with me</span>
 </label>
 <!-- Select All Checkbox -->
 <label for="select-all-checkbox-mobile" class="flex items-center gap-2 mb-3 cursor-pointer text-sm text-gray-700 dark:text-gray-300">
@@ -1602,11 +1612,11 @@ Apply Tags
 </div>
 </div>
 <script>window.__AUTH_ENABLED__ = true;</script>
-<script type="module" src="/static/dist/js/telemetry.BJbJzUdb.js"></script>
-<script type="module" src="/static/dist/js/globalShortcuts.De-dnQjC.js"></script>
+<script type="module" src="/static/dist/js/telemetry.BL0Lzp7l.js"></script>
+<script type="module" src="/static/dist/js/globalShortcuts.DTu61P6o.js"></script>
 <script
 type="module"
-src="/static/dist/js/app.BW8tZBMW.js"
+src="/static/dist/js/app.BD_-StyP.js"
 ></script>
 </body>
 </html>

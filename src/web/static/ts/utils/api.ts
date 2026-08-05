@@ -10,7 +10,14 @@
 
 import i18next from 'i18next';
 
-import type { APIError, TokenResponse } from '@/types';
+import type {
+  APIError,
+  PromptResponse,
+  ShareListResponse,
+  ShareResponse,
+  TokenResponse,
+  UserSearchResponse,
+} from '@/types';
 import { t } from '@/utils/i18n';
 import { showNotification } from '@/utils/notifications';
 
@@ -326,6 +333,17 @@ export function apiDelete<T>(url: string, body?: unknown, options?: FetchOptions
 }
 
 /**
+ * PATCH request helper
+ */
+export function apiPatch<T>(url: string, body?: unknown, options?: FetchOptions): Promise<T> {
+  return apiFetch<T>(url, {
+    ...options,
+    method: 'PATCH',
+    body: body ? JSON.stringify(body) : null,
+  });
+}
+
+/**
  * POST with FormData (for file uploads) with automatic token refresh
  */
 export async function apiPostForm<T>(
@@ -391,6 +409,64 @@ export function buildUrl(
   }
 
   return url.toString();
+}
+
+/**
+ * Grant (or update) a share on a prompt.
+ * POST /api/prompts/{promptId}/shares
+ *
+ * Resolves to a 201 (new grant) or 200 (existing grant updated) body — both
+ * share the same `ShareResponse` shape. Callers should show a generic
+ * failure message on error (no user enumeration, contracts §1).
+ */
+export function grantShare(
+  promptId: number,
+  identifier: string,
+  permission: 'read' | 'edit'
+): Promise<ShareResponse> {
+  return apiPost<ShareResponse>(`/api/prompts/${promptId}/shares`, { identifier, permission });
+}
+
+/**
+ * Typeahead search for active users by username or email prefix.
+ * GET /api/users/search?q=<prefix>
+ *
+ * `query` must be at least 2 characters (enforced server-side, 400 otherwise).
+ */
+export function searchUsers(query: string): Promise<UserSearchResponse> {
+  return apiGet<UserSearchResponse>(`/api/users/search?q=${encodeURIComponent(query)}`);
+}
+
+/**
+ * List a prompt's share grants (grant review, US3).
+ * GET /api/prompts/{promptId}/shares
+ *
+ * Owner/admin only — a grantee gets 403, a stranger gets 404.
+ */
+export function listShares(promptId: number): Promise<ShareListResponse> {
+  return apiGet<ShareListResponse>(`/api/prompts/${promptId}/shares`);
+}
+
+/**
+ * Revoke a grantee's access to a prompt (US3).
+ * DELETE /api/prompts/{promptId}/shares/{userId}
+ *
+ * Access ends immediately.
+ */
+export function revokeShare(promptId: number, userId: string): Promise<{ message: string }> {
+  return apiDelete<{ message: string }>(`/api/prompts/${promptId}/shares/${userId}`);
+}
+
+/**
+ * Un-grandfather a legacy-public prompt (US3).
+ * PATCH /api/prompts/{promptId} { legacy_public: false }
+ *
+ * One-way — there is no path back to `legacy_public: true`. Creates no
+ * share rows; a user who could previously view the prompt only via
+ * `legacy_public` loses that access immediately.
+ */
+export function unGrandfatherPrompt(promptId: number): Promise<PromptResponse> {
+  return apiPatch<PromptResponse>(`/api/prompts/${promptId}`, { legacy_public: false });
 }
 
 /**

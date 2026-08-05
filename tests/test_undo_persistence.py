@@ -458,11 +458,15 @@ class TestRelationshipAwareUndo:
         )
         assert delete_resp.status_code == 200
 
-        # Verify prompt's category was cleared
+        # Verify prompt's category was cleared. GET /api/prompts/{id} now
+        # always resolves through _prompt_to_dict() (the ORM path) once auth
+        # is enabled — 007-prompt-sharing bypasses the legacy data_service
+        # dict path, which used to render "No category" as the
+        # empty-category default; _prompt_to_dict() renders "" instead.
         prompt = api_client.get(
             f"/api/prompts/{prompt_id}", headers=api_auth_headers
         ).json()
-        assert prompt["category"] == "No category"
+        assert prompt["category"] == ""
 
         # Undo deletion
         undo_resp = api_client.post("/api/categories/undo", headers=api_auth_headers)

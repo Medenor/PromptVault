@@ -794,5 +794,26 @@
     "indicator": "You're offline. Viewing cached prompts — reconnect to make changes.",
     "unavailableOffline": "This content isn't available offline. Reconnect to view it.",
     "editUnavailable": "This action needs an internet connection. Reconnect to continue."
+  },
+  "sharing": {
+    "title": "Share prompt",
+    "share": "Share",
+    "grant": "Grant access",
+    "permission": {
+      "read": "Can view",
+      "edit": "Can edit"
+    },
+    "grant_failed": "Couldn't share this prompt. Check the username or email and try again.",
+    "picker_placeholder": "Search by username or email...",
+    "picker_no_results": "No matching users",
+    "picker_searching": "Searching...",
+    "revoke": "Revoke",
+    "revoked": "Access revoked.",
+    "badge": "Shared",
+    "legacy_public_badge": "Public (legacy)",
+    "shared_with_me": "Shared with me",
+    "no_shares": "This prompt hasn't been shared with anyone yet.",
+    "make_private": "Make private",
+    "make_private_confirm": "Make this prompt private? Anyone who could view it because it was public will lose access unless you share it with them directly."
   }
 }
