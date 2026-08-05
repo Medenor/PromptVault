@@ -21,6 +21,7 @@ from src.db.models.password_reset_token import PasswordResetToken
 from src.db.models.category import Category
 from src.db.models.tag import Tag
 from src.db.models.prompt import Prompt
+from src.db.models.prompt_share import PromptShare
 from src.db.models.prompt_version import PromptVersion
 from src.db.models.prompt_branch import PromptBranch
 from src.db.models.backup import Backup

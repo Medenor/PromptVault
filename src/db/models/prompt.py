@@ -58,6 +58,7 @@ class Prompt(Base):
     note = Column(Text)
     favorite = Column(Boolean, default=False, index=True)
     semantic_version = Column(String(20), nullable=True)
+    legacy_public = Column(Boolean, nullable=False, default=False)
     user_id = Column(String(36), ForeignKey("users.id"))
     created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
@@ -75,6 +76,9 @@ class Prompt(Base):
         "PromptBranch", back_populates="prompt", cascade="all, delete-orphan"
     )
     user = relationship("User", back_populates="prompts")
+    shares = relationship(
+        "PromptShare", back_populates="prompt", cascade="all, delete-orphan"
+    )
 
     # Composite indices for common query patterns
     __table_args__ = (

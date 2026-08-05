@@ -13,6 +13,7 @@ Repositories available:
     - SessionRepository: JWT refresh token session management
     - PasswordResetTokenRepository: Password reset token management
     - PromptRepository: Advanced prompt search and filtering
+    - SharingRepository: Per-prompt sharing grants (upsert/revoke/list)
     - VersionRepository: Version control operations
     - CategoryRepository: Category management with statistics
     - TagRepository: Tag management with usage tracking
@@ -33,6 +34,7 @@ from src.db.repositories.password_reset_token_repository import (
     PasswordResetTokenRepository,
 )
 from src.db.repositories.prompt_repository import PromptRepository
+from src.db.repositories.sharing_repository import SharingRepository
 from src.db.repositories.version_repository import VersionRepository
 from src.db.repositories.category_repository import CategoryRepository
 from src.db.repositories.tag_repository import TagRepository
@@ -49,6 +51,7 @@ __all__ = [
     "SessionRepository",
     "PasswordResetTokenRepository",
     "PromptRepository",
+    "SharingRepository",
     "VersionRepository",
     "CategoryRepository",
     "TagRepository",
