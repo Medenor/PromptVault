@@ -34,7 +34,8 @@ One row per (prompt, grantee) pair — a grant of access by a prompt's owner (or
 ### Prompt (`src/db/models/prompt.py`)
 
 - Add `shares = relationship("PromptShare", back_populates="prompt", cascade="all, delete-orphan")`.
-- No column changes. Derived, per-viewer attribute in API payloads only: `shared: bool` (viewer is not the owner) and `permission: 'read'|'edit'|'owner'` (viewer's effective level).
+- Add column `legacy_public: Boolean NOT NULL, default=False`. Migration backfills `True` on every pre-existing row (grandfathering, FR-017); new prompts get `False` (FR-016). Owner/admin can flip `True → False` via `PATCH /api/prompts/{id}` (FR-018); there is no path back to `True` — it is a one-time transition flag, not a re-enterable "make public" toggle.
+- Derived, per-viewer attributes in API payloads only: `shared: bool` (an explicit `PromptShare` grants the viewer access; `false` for grandfathered-public visibility), `legacy_public: bool` (echoes the column, lets the frontend distinguish "Shared" from "Public (legacy)" badges), and `permission: 'read'|'edit'|'owner'` (viewer's effective level).
 
 ### User (`src/db/models/user.py`)
 
@@ -62,13 +63,14 @@ For actor U on prompt P:
 2. U is admin → `owner` level.
 3. `P.user_id == U.id` → `owner` level.
 4. Grant exists for (P, U) → grant's `permission` (`read` or `edit`).
-5. Otherwise → no access (P invisible in listings; direct access 403/404).
+5. `P.legacy_public == True` → `read` level (never `edit`).
+6. Otherwise → no access (P invisible in listings; direct access 403/404).
 
 | Action | Required level |
 |--------|---------------|
-| View prompt, version history, diffs | `read` |
-| Update content/category/tags, revert version | `edit` |
-| Delete, toggle favorite, grant/revoke/list shares, transfer ownership | `owner` |
+| View prompt, version history, diffs | `read` (includes `legacy_public` prompts) |
+| Update content/category/tags, revert version | `edit` (grandfathered-public alone is insufficient) |
+| Delete, toggle favorite, grant/revoke/list shares, transfer ownership, un-grandfather (`legacy_public: true → false`) | `owner` |
 
 ## Repository Surface (`src/db/repositories/sharing_repository.py`)
 
@@ -78,7 +80,9 @@ For actor U on prompt P:
 - `list_for_grantee(user_id) -> List[PromptShare]`
 - `permission_for(prompt_id, user_id) -> Optional[str]` — hot path for authz checks
 
-`PromptRepository.search()` / `search_count()` gain `visible_to_user_id: Optional[str]` and `shared_only: bool` per research §4.
+`PromptRepository.search()` / `search_count()` gain `visible_to_user_id: Optional[str]` and `shared_only: bool` per research §4 (the visibility filter itself is `owner ∪ shared-via-PromptShare ∪ legacy_public`; `shared_only` narrows to the `PromptShare` branch alone, excluding `legacy_public` rows).
+
+`PromptRepository` also gains `set_legacy_public(prompt_id, value: bool) -> Prompt` (or reuses the existing update path) for the owner/admin-only un-grandfather action (FR-018); service layer rejects `value=True` when the prompt is already `legacy_public=False` (one-way).
 
 ## Volume Assumptions
 

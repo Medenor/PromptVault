@@ -87,16 +87,35 @@ GET /api/prompts/search?...&filter=shared-with-me
 
 **Behavior changes** (apply to the existing list/search endpoints):
 
-- Default scope (auth enabled): owned ∪ shared-with-me; admins see all (research §1/§4).
-- `filter=shared-with-me`: only prompts with a grant to the requester.
-- Every prompt object in list/search/detail responses gains two fields:
+- Default scope (auth enabled): owned ∪ shared-with-me ∪ legacy-public; admins see all, including private prompts (research §1/§4).
+- `filter=shared-with-me`: only prompts with an explicit `PromptShare` grant to the requester — grandfathered-public prompts are excluded from this filter (they aren't a grant to anyone specifically).
+- Every prompt object in list/search/detail responses gains three fields:
 
   ```json
-  {"shared": true, "permission": "read"}
+  {"shared": true, "legacy_public": false, "permission": "read"}
   ```
 
-  `shared` = requester is not the owner; `permission` = requester's effective level (`"owner"`, `"edit"`, `"read"`). The frontend renders the badge from `shared` and gates edit controls on `permission`.
-- Pagination, ordering, and the `category`/`tags`/text-query filters operate on the combined set unchanged (FR-008). Exception: the `favorite` filter matches **owned prompts only** — the flag is the owner's personal preference, so shared prompts are excluded from a recipient's favorites results (spec Edge Cases).
+  `shared` = an explicit `PromptShare` names the requester (never `true` for legacy-public-only visibility); `legacy_public` = echoes `Prompt.legacy_public`, letting the frontend show a distinct "Public (legacy)" indicator from the "Shared" badge; `permission` = requester's effective level (`"owner"`, `"edit"`, `"read"`). The frontend gates edit controls on `permission`, not on `shared`/`legacy_public` individually.
+- Pagination, ordering, and the `category`/`tags`/text-query filters operate on the combined set unchanged (FR-008). Exception: the `favorite` filter matches **owned prompts only** — the flag is the owner's personal preference, so shared and legacy-public prompts are excluded from a recipient's favorites results (spec Edge Cases).
+
+## 4b. Un-grandfather a prompt (make a legacy-public prompt private)
+
+```
+PATCH /api/prompts/{prompt_id}
+```
+
+Reuses the existing prompt-update endpoint; body carries `{"legacy_public": false}` alongside (or instead of) other editable fields.
+
+**Authorization**: prompt owner or admin (`owner` level) — same as favorite/delete (FR-018).
+
+**Responses**:
+
+- `200 OK` — updated prompt payload with `legacy_public: false`.
+- `400 Bad Request` — `legacy_public: true` submitted (one-way; there is no re-publish action, FR-018).
+- `403 Forbidden` — requester is neither owner nor admin, or holds only a `read`/`edit` share grant.
+- `404 Not Found` — prompt invisible/nonexistent.
+
+This action does **not** create any `PromptShare` rows — a user who could previously view the prompt via `legacy_public` loses that access immediately unless the owner separately grants them an explicit share (spec Edge Cases: un-grandfathering is not automatically re-shared).
 
 ## 5. User typeahead
 
@@ -120,8 +139,8 @@ GET /api/users/search?q=<prefix>
 
 | Endpoint | Old rule | New rule |
 |----------|----------|----------|
-| `GET /api/prompts/{id}` | any authenticated user | `read` level (owner/admin/any grantee); otherwise 404 |
-| `PUT /api/prompts/{id}` | owner or admin | `edit` level (owner/admin/edit-grantee); category & tags included; favorite field ignored/rejected for grantees |
+| `GET /api/prompts/{id}` | any authenticated (or anonymous) user | `read` level (owner/admin/any grantee/`legacy_public=true`); otherwise 404 |
+| `PUT /api/prompts/{id}` | owner or admin | `edit` level (owner/admin/edit-grantee); category & tags included; favorite and `legacy_public` fields ignored/rejected for grantees — `legacy_public: false` accepted from owner/admin only (§4b) |
 | `PUT /api/prompts/{id}/favorite` | owner or admin | unchanged — `owner` level (clarification #1) |
 | `DELETE /api/prompts/{id}` | owner or admin | unchanged — `owner` level |
 | `GET /api/prompts/{id}/versions*` | any authenticated user | `read` level |

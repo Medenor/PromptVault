@@ -6,9 +6,9 @@
 
 ## Summary
 
-Add per-prompt sharing grants between users with two permission levels (`read`, `edit`), a "shared with me" listing/filter with badges, owner-managed grant review/revocation, and full audit coverage. Technically: a new `prompt_shares` table (Alembic migration, SQLite+Postgres portable), a `SharingRepository`, authorization extensions in `PromptDataServiceDB` and the prompt routers, visibility-scoped list/search queries (owned ∪ shared, admin sees all), four new API endpoints plus a user-typeahead endpoint, and a share modal + badge + filter chip in the TypeScript frontend.
+Add per-prompt sharing grants between users with two permission levels (`read`, `edit`), a "shared with me" listing/filter with badges, owner-managed grant review/revocation, and full audit coverage — plus a change to default prompt visibility from global-read to private-by-default, with pre-existing prompts grandfathered as view-only-public until their owner/an admin opts them into the new private model. Technically: a new `prompt_shares` table, a new `legacy_public` column on `prompts` (both via Alembic migrations, SQLite+Postgres portable), a `SharingRepository`, authorization extensions in `PromptDataServiceDB` and the prompt routers, visibility-scoped list/search queries (owned ∪ shared ∪ legacy-public, admin sees all), five new/modified API endpoints (grant, revoke, list-grants, un-grandfather via existing PATCH, typeahead), and a share modal + "Shared"/"Public (legacy)" badges + filter chip in the TypeScript frontend.
 
-**Critical architectural note**: today `PromptRepository.search()` is not user-scoped — any authenticated user sees all prompts; ownership only gates mutations (`check_prompt_ownership` in `src/web/routers/prompts_shared.py:33`). This feature introduces read-visibility scoping (own + shared-with-me + admin-all) when `AUTH_ENABLED=true`. See research.md §1 for the migration/behavior decision.
+**Critical architectural note**: today `PromptRepository.search()` is not user-scoped — any authenticated (or even unauthenticated) caller sees all prompts; ownership only gates mutations (`check_prompt_ownership` in `src/web/routers/prompts_shared.py:33`). This feature introduces read-visibility scoping (own + shared-with-me + legacy-public + admin-all) when `AUTH_ENABLED=true`. Per the spec's clarification, this is NOT a straight cutover: prompts that exist before this feature ships are marked `legacy_public=true` by the migration and remain viewable (not editable) by all authenticated users until explicitly converted to private by their owner or an admin — a one-way action. Only prompts created after the feature ships default to private with no implicit visibility. See research.md §1 for the full decision and rejected alternatives.
 
 ## Technical Context
 
@@ -40,7 +40,7 @@ Add per-prompt sharing grants between users with two permission levels (`read`, 
 | II. Test Coverage Gate (≥85%) | Repository, service authz matrix, API integration, migration up/down (both dialects), Vitest for modal/badge — written alongside code | ✅ Test plan defined in quickstart.md; tasks will pair tests with each layer |
 | III. Security-First Authentication | All share-mutating endpoints require auth when enabled; rate-limited via existing `src/web/middleware/rate_limit.py`; no enumeration (mirrors password-reset); grantee privilege ceiling enforced server-side | ✅ Explicit authz matrix in spec FR-001..FR-007; anonymous mode: sharing disabled (research §2) |
 | IV. TypeScript-Only Frontend | Share modal, badge, filter chip all under `src/web/static/ts/`; typed `t('key.path')` i18n; no `innerHTML` with untrusted input (usernames rendered via `textContent`/safe-html helper) | ✅ Reuses `components/modal.ts`, `utils/typeahead.ts` |
-| V. Database-Backed Persistence | `prompt_shares` via SQLAlchemy model + Alembic migration; repository pattern; session context managers | ✅ No file/JSON storage involved |
+| V. Database-Backed Persistence | `prompt_shares` table + `prompts.legacy_public` column via SQLAlchemy models + two Alembic migrations (both dialect-portable, backfill scoped to pre-existing rows); repository pattern; session context managers | ✅ No file/JSON storage involved |
 
 **Initial gate**: PASS — no violations, Complexity Tracking not needed.
 
@@ -67,12 +67,13 @@ specs/007-prompt-sharing/
 
 ```text
 alembic/versions/
-└── <rev>_add_prompt_shares_table.py     # NEW — portable migration
+├── <rev>_add_prompt_shares_table.py     # NEW — portable migration
+└── <rev>_add_prompt_legacy_public.py    # NEW — add column + backfill True on pre-existing rows
 
 src/db/
 ├── models/
 │   ├── prompt_share.py                  # NEW — PromptShare ORM model
-│   ├── prompt.py                        # MODIFIED — shares relationship (cascade delete-orphan)
+│   ├── prompt.py                        # MODIFIED — shares relationship (cascade delete-orphan); legacy_public column
 │   ├── user.py                          # MODIFIED — received_shares relationship
 │   └── __init__.py                      # MODIFIED — export PromptShare
 └── repositories/

@@ -4,13 +4,15 @@
 
 All Technical Context unknowns are resolved below. Each entry records the decision, rationale, and alternatives considered.
 
-## 1. Read-visibility scoping (the hidden behavioral change)
+## 1. Read-visibility scoping (the hidden behavioral change) + grandfathering
 
-**Decision**: When `AUTH_ENABLED=true`, list/search endpoints return only prompts the requester owns, prompts shared with them, and (for admins) everything. When `AUTH_ENABLED=false` (anonymous single-user mode), behavior is unchanged (all prompts visible) and the sharing UI/endpoints are disabled.
+**Decision**: When `AUTH_ENABLED=true`, list/search/detail endpoints return only prompts the requester owns, prompts shared with them, prompts flagged `legacy_public` (view-only, see below), and (for admins) everything. When `AUTH_ENABLED=false` (anonymous single-user mode), behavior is unchanged (all prompts visible) and the sharing UI/endpoints are disabled.
 
-**Rationale**: Investigation confirmed `PromptRepository.search()` has **no user filter today** — every authenticated user sees every prompt; ownership only gates mutations. The spec's US2 ("B's list contains B's own prompts plus prompts shared with B") is meaningless without visibility scoping, and the feature's premise ("middle ground between own and admin-sees-all") assumes it. Existing deployments already assign every prompt an owner (migration `ccdab5b31836_assign_existing_prompts_to_default_user`), so scoping is well-defined on upgrade. This IS a visible behavior change for multi-user deployments — it must be a highlighted CHANGELOG/migration note: "users now see only their own and shared prompts."
+New prompts default `legacy_public=false` (private-by-default, FR-016). The migration that adds the column backfills `legacy_public=true` on every row that exists at migration time (FR-017) — this is the grandfathering mechanism, not a separate table or implicit-share rows. `legacy_public=true` grants **view only**, never edit (FR-017); it is surfaced to the owner/admin as a one-way-revocable flag: `PATCH /api/prompts/{id}` (owner/admin only) can flip `legacy_public` from `true` to `false` but never back (FR-018) — see contract addition below.
 
-**Alternatives considered**: (a) Keep global read visibility and make sharing only govern *edit* rights — rejected: contradicts spec US2/FR-008/FR-009 and makes "read" grants meaningless. (b) Add a deployment flag to opt into scoping — rejected for v1: two visibility regimes double the test matrix; can be added later if an actual deployment needs the old behavior.
+**Rationale**: Investigation confirmed `PromptRepository.search()` has **no user filter today** — every authenticated user sees every prompt; ownership only gates mutations. The spec's US2 ("B's list contains B's own prompts plus prompts shared with B") is meaningless without visibility scoping, and the feature's premise ("middle ground between own and admin-sees-all") assumes it. Existing deployments already assign every prompt an owner (migration `ccdab5b31836_assign_existing_prompts_to_default_user`), so scoping is well-defined on upgrade. A straight cutover to private-by-default for *all* prompts (including pre-existing ones) was the original plan but is now superseded by the spec's clarified grandfathering requirement (FR-017/FR-018): existing prompts must keep working for every current viewer on day one, with an explicit, auditable, one-way opt-out into the new private model per prompt. This is still a visible behavior change for multi-user deployments — it must be a highlighted CHANGELOG/migration note: "prompts created from now on are private by default; prompts that existed before this release remain visible to all authenticated users until their owner/an admin makes them private."
+
+**Alternatives considered**: (a) Keep global read visibility and make sharing only govern *edit* rights — rejected: contradicts spec US2/FR-008/FR-009 and makes "read" grants meaningless. (b) Cut over every prompt (old and new) to private-by-default with no grandfathering — rejected per clarification: breaks existing workflows on day one with no transition path. (c) Model grandfathering as an implicit `PromptShare` row per (prompt, every user) pair — rejected: O(prompts × users) rows, doesn't self-maintain as new users are created, and conflates "legacy public" with an actual grant in audit/UI surfaces; a single boolean column with migration-time backfill is simpler and matches "grandfathering is a transition aid, not a permanent tier" (spec Edge Cases). (d) Deployment-wide flag to opt into scoping — superseded by per-prompt grandfathering, which is more precise than an all-or-nothing switch.
 
 ## 2. Anonymous mode (`AUTH_ENABLED=false`) interaction
 
@@ -39,6 +41,8 @@ Alembic migration uses plain `op.create_table`/`op.drop_table`, no dialect intro
 
 **Alternatives considered**: Native Postgres ENUM — rejected (portability incident precedent). Composite PK (prompt_id, grantee_user_id) without surrogate id — workable, but a surrogate `id` matches every other model and `BaseRepository.delete(id)` conventions.
 
+**Grandfathering column** (separate migration on the existing `prompts` table, same portability rules): `legacy_public` BOOLEAN NOT NULL, `server_default=sa.false()` for the column-add DDL (so it's dialect-portable on both SQLite/Postgres), immediately followed by a data migration `op.execute(sa.update(prompts_table).values(legacy_public=True))` scoped to rows that existed before this migration ran — new inserts after migration use the model-level `default=False`. No composite index needed beyond a plain index on `legacy_public` if query plans show it's warranted at seed-scale (research §11); at "tens of users, thousands of prompts" scale a sequential scan on a boolean filter is cheap and this is deferred, not required, for v1.
+
 ## 4. Combined owned ∪ shared query strategy
 
 **Decision**: Extend `PromptRepository.search()` (and `search_count()`) with an optional `visible_to_user_id: Optional[str]` parameter. When set, add a single filter:
@@ -50,7 +54,17 @@ q = q.filter(or_(
 ))
 ```
 
-plus an optional `shared_with_user_id` variant for the `filter=shared-with-me` mode (only the EXISTS/IN branch). Admins pass `None` (no scoping). The router marks each returned prompt with `shared: true` when `prompt.user_id != requester.id`. One interaction rule: `favorite=True` combined with visibility scoping restricts to owned prompts only — the favorite flag is the owner's personal preference (spec Edge Cases; per-user favorites deferred).
+plus an optional `shared_with_user_id` variant for the `filter=shared-with-me` mode (only the EXISTS/IN branch). The base filter becomes:
+
+```
+q = q.filter(or_(
+    Prompt.user_id == user_id,
+    Prompt.legacy_public.is_(True),
+    Prompt.id.in_(select(PromptShare.prompt_id).where(PromptShare.grantee_user_id == user_id)),
+))
+```
+
+`filter=shared-with-me` narrows to the explicit-grant branch only — grandfathered-public prompts are not "shared with me" (they're not a grant to anyone in particular) and must not appear under that filter (spec Edge Cases: grandfathering is view access, not a share). Admins pass `None` (no scoping, see everything including private prompts). The router marks each returned prompt with `shared: true` only when a real `PromptShare` exists for the requester (not for `legacy_public`); a separate `legacy_public: bool` field lets the frontend render a distinct "Public (legacy)" indicator rather than conflating it with the "Shared" badge (contract §4 updated below). One interaction rule: `favorite=True` combined with visibility scoping restricts to owned prompts only — the favorite flag is the owner's personal preference (spec Edge Cases; per-user favorites deferred).
 
 **Rationale**: A filter (OR + IN-subquery) preserves the existing single-query shape, ordering, pagination, and all current filters without deduplication concerns — unlike an OUTER JOIN, which would require `distinct()` interacting badly with `ORDER BY updated_at` limit/offset on both dialects. The subquery hits `idx_prompt_shares_grantee`. Count stays consistent because the same filter applies to both.
 
@@ -62,7 +76,9 @@ plus an optional `shared_with_user_id` variant for the `filter=shared-with-me` m
 
 - `owner` level (delete, favorite toggle, share management): owner or admin only — existing `check_prompt_ownership` semantics.
 - `edit` level (update content/category/tags, revert version): owner, admin, or grantee with `edit`.
-- `read` level (view prompt, version history, diffs): owner, admin, or any grantee.
+- `read` level (view prompt, version history, diffs): owner, admin, any grantee, or any authenticated user when `prompt.legacy_public` is `true`.
+
+`legacy_public` never grants `edit` level — editing a grandfathered-public prompt still requires ownership, admin, or an explicit `edit` grant (FR-017). Flipping `legacy_public` from `true` to `false` (`un-grandfather`) requires `owner` level, same as favorite/delete/share-management, and is one-way — there is no endpoint to set it back to `true` (FR-018).
 
 Service-layer methods in `PromptDataServiceDB` receive the acting user id and enforce the same matrix (defense in depth, and it keeps routes thin per Constitution I).
 

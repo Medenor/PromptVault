@@ -16,6 +16,10 @@
 - Q: Does a recipient get notified when a prompt is shared with them? → A: No notification in v1 — recipients discover shares via the "shared with me" filter and badges.
 - Q: What happens to shares when a user account is deleted? → A: Sharing rides along with existing deletion behavior. Soft delete (deactivation) changes no data; the deactivated user simply can't use their access. Hard delete removes grants naming the deleted user as grantee; their owned prompts become orphans (existing behavior) and grants they issued survive on those orphans, revocable by admins.
 - Q: Who can see the user directory via the share typeahead? → A: Any authenticated user can typeahead-search the full user directory (usernames only, active accounts) when sharing.
+- Q: Today any user (even unauthenticated) can view any prompt. Does this feature change default visibility so prompts are private to their owner unless explicitly shared, or does it layer sharing on top of the existing global-read model? → A: Private by default — prompts created after this feature ships are visible only to their owner (and admins) unless explicitly shared.
+- Q: What happens to prompts that already exist today (currently globally visible)? → A: Grandfathered as public — prompts that exist at the time this feature ships keep their current visibility to all authenticated users; only prompts created after the change default to private.
+- Q: For grandfathered "public" prompts, what can any authenticated user do with them? → A: View only, equivalent to an implicit "read" share to everyone; editing a grandfathered public prompt still requires an explicit "edit" grant like any other prompt.
+- Q: Can a grandfathered public prompt be converted to private, share-controlled visibility? → A: Yes — the owner (or an admin) can flip a grandfathered prompt from public to private at any time; once flipped, it follows the same private-plus-explicit-grants model as new prompts and this action cannot be undone by the grantee (only the owner/admin can re-share it explicitly).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -75,6 +79,9 @@ A prompt owner wants to see who currently has access to each of their prompts an
 
 ### Edge Cases
 
+- **Default visibility change**: prompts created after this feature ships are visible only to their owner and admins unless explicitly shared (no more implicit global read access for new prompts).
+- **Existing prompts grandfathered**: prompts that already exist when this feature ships remain visible to all authenticated users (view only — editing still requires an explicit "edit" grant or ownership). This grandfathered visibility is a migration aid, not a permanent second visibility tier.
+- **Un-grandfathering**: the owner (or an admin) can convert a grandfathered public prompt to private at any time; once converted, it follows the same private-plus-explicit-grants model as any other prompt and is not automatically shared with anyone who previously had implicit view access.
 - Sharing a prompt with yourself: refused with a clear message.
 - Sharing with the same user twice: treated as a permission-level update, never a duplicate grant (scenario 1.4).
 - Deleting a prompt that has active grants: all its grants are removed with it; recipients simply no longer see it.
@@ -105,11 +112,14 @@ A prompt owner wants to see who currently has access to each of their prompts an
 - **FR-013**: Users MUST NOT be able to share a prompt with themselves.
 - **FR-014**: Deleting a prompt MUST remove all grants on it. Hard-deleting a user MUST remove all grants naming them as grantee, while grants they issued on their (now ownerless) prompts persist and remain revocable by admins; deactivating a user changes no share data.
 - **FR-015**: All sharing-related interface text MUST be available in all four supported languages (English, French, Spanish, German).
+- **FR-016**: Prompts created after this feature ships MUST default to private visibility: viewable only by their owner and admins, plus any user explicitly granted "read" or "edit" access. Unauthenticated access to prompt listing/detail endpoints MUST no longer return prompts belonging to another user by default.
+- **FR-017**: Prompts that already exist at the time this feature ships MUST be marked as grandfathered-public and remain viewable by all authenticated users (view only), without requiring an explicit share grant; this grandfathered status does not grant edit access.
+- **FR-018**: The owner of a grandfathered-public prompt (or an admin) MUST be able to convert it to private visibility; once converted, the prompt follows the same default-private, explicit-grant model as any other prompt, and the conversion MUST NOT itself create any share grants.
 
 ### Key Entities
 
 - **Share grant**: The permission a prompt's owner (or an admin) extends to one other user for one prompt. Attributes: the prompt concerned, the grantee, the permission level (read or edit), who granted it, and when. Uniquely identified by the (prompt, grantee) pair.
-- **Prompt** *(existing)*: Gains a set of zero or more share grants and, from a viewer's perspective, a derived "shared with me" status.
+- **Prompt** *(existing)*: Gains a set of zero or more share grants, a visibility state (private-by-default, or grandfathered-public for pre-existing prompts until converted), and, from a viewer's perspective, a derived "shared with me" status.
 - **User** *(existing)*: Can act as grantor (for prompts they own), grantee, or admin overseer.
 
 ## Success Criteria *(mandatory)*
@@ -127,8 +137,9 @@ A prompt owner wants to see who currently has access to each of their prompts an
 
 - **Prompt-level sharing only in v1**: The improvement plan mentions per-collection sharing in passing, but its entire scope of work covers per-prompt grants. Sharing whole categories/collections is out of scope for this feature and can build on the same model later.
 - **Two permission levels suffice**: "read" and "edit" only; no "comment", "manage", or custom roles in v1.
-- **Sharing is user-to-user**: No group/team/role-based grants and no public or link-based sharing in v1.
+- **Sharing is user-to-user**: No group/team/role-based grants and no new public or link-based sharing mechanism in v1; the only "public" visibility is the one-time grandfathering of pre-existing prompts described below, not a feature owners can newly opt into.
 - **Existing accounts, authentication, and RBAC are reused**: Recipients must already have an account; the feature does not include inviting new users.
+- **Default visibility flips from global-read to private-by-default**: today, prompt listing/detail endpoints have no owner filter at all (verified in code) — any authenticated or even unauthenticated caller can view any prompt. This feature changes that baseline: prompts created after it ships are visible only to their owner, admins, and explicit grantees. Prompts that already exist are grandfathered to remain publicly viewable (not editable) until their owner or an admin converts them to private, which is a one-time transition aid rather than a permanent parallel visibility model.
 - **Single-instance scope**: Sharing operates within one PromptVault deployment; cross-instance sharing is out of scope.
 - **Version history remains unified**: Edits by grantees enter the prompt's existing single version history with author attribution, per current versioning behavior.
 - **Typeahead user lookup is acceptable for authenticated users**: Any authenticated user may typeahead-search the directory while sharing (usernames only, active accounts only) — the deployment model is team-internal, like sharing in office suites; only *failure responses* must avoid confirming account existence (mirroring the existing password-reset behavior).
