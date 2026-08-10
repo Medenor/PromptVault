@@ -31,8 +31,7 @@ export function createModal(props: ModalProps): {
 
   // Modal card container
   const modalContent = document.createElement('div');
-  const baseClasses =
-    'bg-white rounded-lg shadow-lg relative flex flex-col max-h-[90vh]';
+  const baseClasses = 'bg-white rounded-lg shadow-lg relative flex flex-col max-h-[90vh]';
   const sizeClasses = getSizeClasses(props.size || 'md');
   const paddingClasses = 'p-6';
 
