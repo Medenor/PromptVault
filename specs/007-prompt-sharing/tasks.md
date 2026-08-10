@@ -140,6 +140,18 @@
 
 ---
 
+## Post-Phase-6 Follow-up: Export/Import Gap (found during 007 troubleshooting review)
+
+**Context**: Follow-up investigation found the spec's "export/import unchanged" assumption understated an actual side effect: REPLACE-mode import (`ImportMode.REPLACE`) deletes all existing prompts before loading the new file, which cascade-deletes any active `prompt_shares` grants on those prompts — with no warning to the operator prior to this fix.
+
+- [X] T056 [P] Add `SharingRepository.count_all()` and surface `active_shares_count` on `GET /api/import-export/stats`
+- [X] T057 [US-follow-up] Gate REPLACE-mode import behind a frontend confirmation when `active_shares_count > 0` (`src/web/static/ts/import-export/operations.ts`); emit dedicated audit event `prompt.shares.destroyed_by_replace_import` (with count) alongside the existing `backup_before_replace_import`/`prompt.clear_all` events
+- [X] T058 [P] Update "Replace existing" import-mode help text and add `confirmReplaceWithShares` i18n key in all four locales
+- [X] T059 [P] Add a visible export-page notice (`importExport.sharingNotIncluded`, all four locales) stating exported files never carry sharing grants or `legacy_public`; full database backup/restore is the only path that preserves them
+- [X] T060 [P] Update `docs/SPECS/SPEC_APP.md` REQ-008, `AGENTS.md`, `docs/CHANGELOG.md`, and spec.md's "Export/import and backup flows are unchanged" assumption to reflect the above precisely
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
