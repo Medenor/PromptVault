@@ -186,7 +186,7 @@ The `docker-compose.yml` at the repo root runs the user's **live production inst
 - `GET /api/prompts/{id}/shares` - List a prompt's grants (owner/admin only; 403 for grantees)
 - `DELETE /api/prompts/{id}/shares/{user_id}` - Revoke a share (owner/admin only; access loss is immediate)
 - `GET /api/users/search?q=` - Typeahead recipient lookup (any authenticated user; ≥2 chars; ≤10 active users; matches username/email prefix but returns usernames only)
-- `PUT /api/prompts/{id}` with `{"legacy_public": false}` - Un-grandfather a prompt, making it private (owner/admin only; one-way — `legacy_public: true` is rejected with 400)
+- `PATCH /api/prompts/{id}` with `{"legacy_public": false}` (JSON body) - Un-grandfather a prompt, making it private (owner/admin only; one-way — `legacy_public: true` is rejected with 400)
 - All sharing endpoints require `AUTH_ENABLED=true` (404 otherwise), are rate-limited, and audit-log `prompt.share.granted`/`prompt.share.revoked`
 
 #### Import/Export
