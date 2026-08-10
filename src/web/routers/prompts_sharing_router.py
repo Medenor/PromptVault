@@ -79,7 +79,7 @@ async def grant_share(
     """Grant or update a prompt share (owner or admin only)."""
     prompt_repo = PromptRepository(db)
     prompt = prompt_repo.get_by_id(prompt_id)
-    if not prompt:
+    if not prompt or effective_permission(prompt, user, db) is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Prompt with ID {prompt_id} not found",
@@ -194,7 +194,7 @@ async def revoke_share(
     """Revoke a prompt share grant (owner or admin only)."""
     prompt_repo = PromptRepository(db)
     prompt = prompt_repo.get_by_id(prompt_id)
-    if not prompt:
+    if not prompt or effective_permission(prompt, user, db) is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Prompt with ID {prompt_id} not found",

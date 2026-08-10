@@ -158,13 +158,16 @@ class TestGrantShare:
         grantee_auth_headers,
         owned_prompt_id,
     ):
+        # Prompt is private (freshly created, no grant/legacy_public), so a
+        # stranger with zero visibility gets 404 (existence hiding) rather
+        # than 403 — matching get_prompt/list_shares elsewhere in the API.
         response = api_client.post(
             f"/api/prompts/{owned_prompt_id}/shares",
             headers=stranger_auth_headers,
             json={"identifier": "share_grantee", "permission": "read"},
         )
 
-        assert response.status_code == 403
+        assert response.status_code == 404
 
     def test_grant_on_invisible_prompt_returns_404(
         self, api_client, owner_auth_headers
