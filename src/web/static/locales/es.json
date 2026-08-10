@@ -26,7 +26,8 @@
     "home": "Inicio",
     "language": "Idioma",
     "account": "Cuenta",
-    "data": "Datos"
+    "data": "Datos",
+    "perPage": "Por página:"
   },
   "actions": {
     "add": "Añadir",

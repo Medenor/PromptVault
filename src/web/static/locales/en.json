@@ -26,7 +26,8 @@
     "home": "Home",
     "language": "Language",
     "account": "Account",
-    "data": "Data"
+    "data": "Data",
+    "perPage": "Per page:"
   },
   "actions": {
     "add": "Add",
