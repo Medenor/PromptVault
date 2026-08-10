@@ -23,8 +23,10 @@ from src.db.repositories import (
     CategoryRepository,
     TagRepository,
 )
+from src.db.repositories.sharing_repository import SharingRepository
+from src.db.repositories.user_repository import UserRepository
 from src.db.models import Prompt, PromptVersion, Category, Tag, User
-from src.services.exceptions import DataPersistenceError
+from src.services.exceptions import DataPersistenceError, ShareGrantError
 from src.services.logging_service import logging_service
 
 # Import sanitization utilities from validators
@@ -946,10 +948,6 @@ class PromptDataService:
             ShareGrantError: Prompt not found, unknown/inactive grantee,
                 self-share, or sharing to the owner.
         """
-        from src.db.repositories.sharing_repository import SharingRepository
-        from src.db.repositories.user_repository import UserRepository
-        from src.services.exceptions import ShareGrantError
-
         with get_db_session() as session:
             prompt_repo = PromptRepository(session)
             user_repo = UserRepository(session)
@@ -1022,9 +1020,6 @@ class PromptDataService:
             Dict[str, Any]: ``{"prompt_id": ..., "shares": [...]}`` with each
             share serialized the same shape as :meth:`grant_share`'s result.
         """
-        from src.db.repositories.sharing_repository import SharingRepository
-        from src.db.repositories.user_repository import UserRepository
-
         with get_db_session() as session:
             sharing_repo = SharingRepository(session)
             user_repo = UserRepository(session)
@@ -1078,8 +1073,6 @@ class PromptDataService:
         Returns:
             bool: True if a grant was found and removed, False otherwise.
         """
-        from src.db.repositories.sharing_repository import SharingRepository
-
         with get_db_session() as session:
             sharing_repo = SharingRepository(session)
 
@@ -1096,11 +1089,22 @@ class PromptDataService:
                     actor=acting_user.username,
                     grantee=grantee_user_id,
                     permission=revoked_permission,
+                    status="success",
+                )
+            else:
+                logging_service.log_audit_event(
+                    action="prompt.share.revoked",
+                    resource_type="prompt",
+                    resource_id=str(prompt_id),
+                    actor=acting_user.username,
+                    grantee=grantee_user_id,
+                    status="failure",
+                    error="No grant found for that user on this prompt",
                 )
 
             return removed
 
-    def set_legacy_public(self, prompt_id: int, acting_user: User) -> Dict[str, Any]:
+    def set_legacy_public(self, prompt_id: int, acting_user: User) -> int:
         """Un-grandfather a legacy-public prompt (owner/admin only, US3).
 
         Flips ``Prompt.legacy_public`` from ``True`` to ``False``. One-way —
@@ -1110,21 +1114,20 @@ class PromptDataService:
         loses that access immediately unless separately granted a share.
 
         Callers are expected to have already checked owner-level access.
+        Serializing the updated prompt for the API response is the caller's
+        responsibility — the service layer doesn't depend on web-layer
+        serialization helpers.
 
         Args:
             prompt_id: Prompt being un-grandfathered.
             acting_user: The user performing the action (for audit).
 
         Returns:
-            Dict[str, Any]: The updated prompt, serialized via
-            ``_prompt_to_dict``.
+            int: The updated prompt's ID.
 
         Raises:
             ShareGrantError: Prompt not found, or already ``legacy_public=False``.
         """
-        from src.services.exceptions import ShareGrantError
-        from src.web.routers.prompts_shared import _prompt_to_dict
-
         with get_db_session() as session:
             prompt_repo = PromptRepository(session)
 
@@ -1149,5 +1152,4 @@ class PromptDataService:
                 actor=acting_user.username,
             )
 
-            result = _prompt_to_dict(prompt, viewer=acting_user, session=session)
-            return result
+            return prompt.id

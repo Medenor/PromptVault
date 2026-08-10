@@ -15,11 +15,14 @@ naturally 404 — the feature is inactive in anonymous mode.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from src.db.session import get_db
 from src.db.models.user import User
 from src.db.repositories.prompt_repository import PromptRepository
+from src.db.repositories.sharing_repository import SharingRepository
+from src.db.repositories.user_repository import UserRepository
 from src.services.exceptions import ShareGrantError
 from src.services.logging_service import logging_service
 from src.web.dependencies.bypass import get_current_user_or_default
@@ -88,9 +91,6 @@ async def grant_share(
     check_prompt_access(prompt, user, "owner", db)
 
     existing_permission = None
-    from src.db.repositories.sharing_repository import SharingRepository
-    from src.db.repositories.user_repository import UserRepository
-
     grantee_lookup = UserRepository(db).get_by_email_or_username(body.identifier)
     if grantee_lookup:
         existing_permission = SharingRepository(db).permission_for(
@@ -122,8 +122,6 @@ async def grant_share(
     status_code = (
         status.HTTP_200_OK if existing_permission else status.HTTP_201_CREATED
     )
-    from fastapi.responses import JSONResponse
-
     return JSONResponse(
         status_code=status_code, content=response.model_dump(mode="json")
     )

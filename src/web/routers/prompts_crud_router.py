@@ -532,14 +532,15 @@ async def update_prompt_visibility(
     from src.web import app as web_app
 
     try:
-        result = web_app.data_service.set_legacy_public(prompt_id, acting_user=user)
+        web_app.data_service.set_legacy_public(prompt_id, acting_user=user)
     except ShareGrantError as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=exc.user_message,
         )
 
-    return result
+    db.refresh(existing_prompt)
+    return _prompt_to_dict(existing_prompt, viewer=user, session=db)
 
 
 @router.delete(
