@@ -195,6 +195,7 @@ The `docker-compose.yml` at the repo root runs the user's **live production inst
 - `POST /api/export` - Export prompts (CSV/Markdown/JSON)
 - `POST /api/import` - Import prompts
 - `GET /api/import-export/stats` - Import/export statistics
+- Export/import is grant-blind by design: `prompt_shares` grants and the `legacy_public` flag are never included in export payloads or restored on import, since they're runtime access-control state tied to this instance's user accounts. Full database backup/restore (see Backup Management below) is the only path that preserves them.
 
 #### Backup Management
 

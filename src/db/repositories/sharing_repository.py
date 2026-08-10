@@ -127,6 +127,17 @@ class SharingRepository(BaseRepository[PromptShare]):
             .all()
         )
 
+    def count_all(self) -> int:
+        """Count all active sharing grants across every prompt.
+
+        Used to warn operators before destructive operations (e.g. a
+        REPLACE-mode import) that would cascade-delete every grant.
+
+        Returns:
+            Total number of PromptShare rows currently in the database
+        """
+        return self.session.query(PromptShare).count()
+
     def permission_for(self, prompt_id: int, user_id: str) -> Optional[str]:
         """Get the effective grant permission for a (prompt, user) pair.
 

@@ -150,6 +150,39 @@ def test_permission_for_miss(
     assert sharing_repo.permission_for(test_prompt.id, third_user.id) is None
 
 
+def test_count_all_empty(sharing_repo: SharingRepository):
+    assert sharing_repo.count_all() == 0
+
+
+def test_count_all_counts_grants_across_prompts(
+    sharing_repo: SharingRepository,
+    test_db_session: Session,
+    test_prompt: Prompt,
+    test_category,
+    second_user: User,
+    third_user: User,
+):
+    other_prompt = Prompt(
+        title="Other Prompt",
+        prompt="Other content",
+        category_id=test_category.id,
+        favorite=False,
+        user_id=test_prompt.user_id,
+    )
+    test_db_session.add(other_prompt)
+    test_db_session.flush()
+
+    sharing_repo.upsert(test_prompt.id, second_user.id, "read", test_prompt.user_id)
+    sharing_repo.upsert(test_prompt.id, third_user.id, "edit", test_prompt.user_id)
+    sharing_repo.upsert(other_prompt.id, second_user.id, "read", test_prompt.user_id)
+
+    assert sharing_repo.count_all() == 3
+
+    sharing_repo.revoke(test_prompt.id, second_user.id)
+
+    assert sharing_repo.count_all() == 2
+
+
 def test_cascade_on_prompt_delete(
     sharing_repo: SharingRepository,
     test_db_session: Session,

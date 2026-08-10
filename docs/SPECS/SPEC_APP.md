@@ -146,6 +146,7 @@ All requirements use normative language:
     The export operation MUST:
   - respect the requested format,
   - return data in a consistent, machine-readable structure.
+  - Export payloads MUST NOT include sharing grants (`prompt_shares`) or the `legacy_public` flag: these are runtime access-control state tied to this instance's user accounts, not portable prompt content. Operators who need to preserve sharing state across instances or over time MUST use full database backup/restore instead.
 
 - **REQ-009 (Field Constraints)**  
   The system MUST enforce the following constraints:

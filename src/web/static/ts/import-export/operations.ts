@@ -298,6 +298,33 @@ export async function performExport(): Promise<void> {
   }
 }
 
+/**
+ * Warn before a REPLACE-mode import: it clears all prompts, which
+ * cascade-deletes every active prompt_shares grant. Looks up the current
+ * active share count via the stats endpoint and, if any exist, asks the
+ * user to confirm before the destructive import proceeds.
+ *
+ * @returns true if the import should proceed (no shares, or user confirmed)
+ */
+export async function confirmReplaceDestroysShares(): Promise<boolean> {
+  try {
+    const stats = await apiGet<{ active_shares_count: number }>('/api/import-export/stats');
+    if (!stats.active_shares_count) {
+      return true;
+    }
+    const message = (t('importExport.confirmReplaceWithShares') || '').replace(
+      '{count}',
+      String(stats.active_shares_count)
+    );
+    return window.confirm(message);
+  } catch (error) {
+    reportError(IMPORT_EXPORT_COMPONENT, 'confirmReplaceDestroysShares', error);
+    // Fail open on the lookup itself so a stats-endpoint error doesn't block
+    // legitimate replace imports the user already confirmed via the UI.
+    return true;
+  }
+}
+
 export async function performImport(): Promise<void> {
   const fileInput = document.getElementById('import-file') as HTMLInputElement | null;
   const file = fileInput?.files?.[0];
@@ -346,6 +373,13 @@ export async function performImport(): Promise<void> {
     (document.getElementById('import-mode') as HTMLSelectElement | null)?.value || 'append';
   const validate =
     (document.getElementById('import-validate') as HTMLInputElement | null)?.checked ?? false;
+
+  if (mode === 'replace') {
+    const proceed = await confirmReplaceDestroysShares();
+    if (!proceed) {
+      return;
+    }
+  }
 
   try {
     showProgress('import', 'importProgress');

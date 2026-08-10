@@ -685,6 +685,95 @@ class TestImportEndpoints:
         ]
         assert titles == ["Replacement Prompt"]
 
+    def test_import_csv_replace_mode_emits_shares_destroyed_audit_event(
+        self, api_client, api_data_service, monkeypatch
+    ):
+        """REPLACE-mode import cascade-deletes prompt_shares; operators must be
+        warned via a dedicated audit event carrying the destroyed count."""
+        from src.db.session import get_db_session
+        from src.db.repositories.sharing_repository import SharingRepository
+        from src.services import logging_service as logging_service_module
+
+        api_data_service.load_prompts()
+        prompt_id = next(iter(api_data_service.prompts.keys()))
+
+        with get_db_session() as session:
+            SharingRepository(session).upsert(
+                prompt_id=int(prompt_id),
+                grantee_user_id="api-test-user-id",
+                permission="read",
+                granted_by="api-test-user-id",
+            )
+
+        audit_calls = []
+        original_log_audit_event = (
+            logging_service_module.logging_service.log_audit_event
+        )
+
+        def _capture_audit_event(*, action, **kwargs):
+            audit_calls.append((action, kwargs))
+            return original_log_audit_event(action=action, **kwargs)
+
+        monkeypatch.setattr(
+            logging_service_module.logging_service,
+            "log_audit_event",
+            _capture_audit_event,
+        )
+
+        csv_content = (
+            "title,prompt,note,category,tags,favorite\n"
+            "Replacement Prompt,Body,,Docs,,No\n"
+        )
+        self._post_import(
+            api_client, "replace_with_shares.csv", csv_content.encode("utf-8"), mode="replace"
+        )
+
+        matching = [
+            call
+            for call in audit_calls
+            if call[0] == "prompt.shares.destroyed_by_replace_import"
+        ]
+        assert len(matching) == 1
+        _, kwargs = matching[0]
+        assert kwargs["active_shares_count"] == 1
+        assert kwargs["resource_type"] == "prompt_share"
+
+    def test_import_csv_replace_mode_no_shares_skips_audit_event(
+        self, api_client, api_data_service, monkeypatch
+    ):
+        """No active shares means no destruction — the event should not fire."""
+        from src.services import logging_service as logging_service_module
+
+        audit_calls = []
+        original_log_audit_event = (
+            logging_service_module.logging_service.log_audit_event
+        )
+
+        def _capture_audit_event(*, action, **kwargs):
+            audit_calls.append((action, kwargs))
+            return original_log_audit_event(action=action, **kwargs)
+
+        monkeypatch.setattr(
+            logging_service_module.logging_service,
+            "log_audit_event",
+            _capture_audit_event,
+        )
+
+        csv_content = (
+            "title,prompt,note,category,tags,favorite\n"
+            "Replacement Prompt,Body,,Docs,,No\n"
+        )
+        self._post_import(
+            api_client, "replace_no_shares.csv", csv_content.encode("utf-8"), mode="replace"
+        )
+
+        matching = [
+            call
+            for call in audit_calls
+            if call[0] == "prompt.shares.destroyed_by_replace_import"
+        ]
+        assert matching == []
+
     def test_import_invalid_json_file(self, api_client):
         files = {
             "file": (
@@ -715,6 +804,28 @@ class TestImportExportStats:
         assert stats["total_prompts"] >= 2
         assert stats["total_categories"] >= 1
         assert stats["total_tags"] >= 1
+        assert stats["active_shares_count"] == 0
+
+    def test_get_import_export_stats_reflects_active_shares_count(
+        self, api_client, api_data_service
+    ):
+        from src.db.session import get_db_session
+        from src.db.repositories.sharing_repository import SharingRepository
+
+        api_data_service.load_prompts()
+        prompt_id = next(iter(api_data_service.prompts.keys()))
+
+        with get_db_session() as session:
+            SharingRepository(session).upsert(
+                prompt_id=int(prompt_id),
+                grantee_user_id="api-test-user-id",
+                permission="read",
+                granted_by="api-test-user-id",
+            )
+
+        response = api_client.get("/api/import-export/stats")
+        assert response.status_code == 200
+        assert response.json()["active_shares_count"] == 1
 
 
 class TestLegacyDataFallbacks:
