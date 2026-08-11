@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 🐛 Fixed
+
+- **Service worker `CACHE_VERSION` still hadn't been bumped for the `sharing.*` locale keys added after `v2`**: The `007-prompt-sharing` release added new i18n keys but `CACHE_VERSION` was last bumped `v1`→`v2` for an unrelated fix the same day — a second, unrelated `/static/` change landed on the same `v2` cache with no bump, so browsers with an already-installed Service Worker kept serving pre-sharing locale files and showed raw keys like `importExport.sharingNotIncluded`. Bumped to `v3`. See Codeberg #74.
+
+### ⚙️ CI/Build
+
+- **Added `make check-sw-cache-version`, wired into `make lint`/CI**: Manually remembering to bump `sw.ts`'s `CACHE_VERSION` on every `/static/` change proved unreliable in practice (see the Fixed entry above and `v1`→`v2` in 1.12.0) — the failure mode is silent (no test/build error) and only surfaces as a stale-content bug report. The new Makefile target diffs the current branch against its merge-base with `main` and fails if any file under `src/web/static/` changed without a corresponding `CACHE_VERSION` line change in `src/web/static/ts/sw.ts`. CI now checks out full history (`fetch-depth: 0`) and passes the PR base ref so the check has a merge-base to diff against. Codeberg #74.
+
 ### 📝 Docs
 
 - **Restructured AGENTS.md around progressive disclosure**: The root instructions file had grown to 975 lines with duplicated/contradictory content — four different, mutually inconsistent test-coverage snapshots (83.54%/1087 tests, 86.90%/509-of-514, 86.46%, 89.83% frontend), no mention of the `Makefile` that `docs/DEVELOPMENT.md` already documents as the canonical command surface (`make dev`/`make test`/`make lint`), and a dead "CSS File Consolidation" section referencing legacy stylesheets (`style.css`, `auth.css`, `admin.css`, `sessions.css`, `validation.css`) that no longer exist in the repo. Split into a minimal 44-line root `AGENTS.md` (project description, `make`-first command reference, and a pointer table) plus seven topic files under `docs/agents/` (`architecture.md`, `api.md`, `python-style.md`, `frontend.md`, `testing.md`, `git-and-docker-safety.md`, `workflow-and-pitfalls.md`), so an agent loads only what a given task needs instead of the full file on every turn. Stale coverage/test-count numbers were removed in favor of pointing at live test-runner output, matching the pattern `docs/TESTING.md` already used.
