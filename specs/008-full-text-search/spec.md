@@ -8,6 +8,16 @@
 
 **Input**: User description: "Replace `ilike '%term%'` scans with real full-text search — relevance ranking and result snippets/highlighting; keep substring matching as a fallback. Native full-text search in both backends means zero new dependencies. Carried from ROADMAP 2026 #3 (issue #15)."
 
+## Clarifications
+
+### Session 2026-08-11
+
+- Q: How should the FTS index be kept in sync with prompt writes (create/edit/delete)? → A: DB triggers (native SQLite FTS5 triggers and Postgres triggers/generated tsvector column) rather than application-level sync.
+- Q: When case-sensitive search is combined with pagination, how should it behave (today's code applies case-sensitive filtering in Python after the DB has already applied offset/limit)? → A: Fix — case-sensitive filtering must be applied before pagination so counts and pages stay consistent.
+- Q: When a prompt matches only in the title (not body/note), what should the result card show for a snippet? → A: No snippet shown — the title itself (already displayed with its own highlight) is sufficient.
+- Q: For a multi-word query with no quotes and no explicit AND/OR, should non-phrase multi-word search require ALL words to match, or include ANY-word matches ranked lower? → A: OR semantics — prompts matching any word are included, with all-word matches ranked above partial matches.
+- Q: How should the one-time FTS index build run when an existing vault upgrades to this feature? → A: Synchronous Alembic migration — the index (FTS5 virtual table / tsvector column) is created and backfilled as part of the standard migration step; the app starts only after migration completes.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Ranked, relevant search results (Priority: P1)
@@ -38,7 +48,7 @@ When results are shown, each result card displays a short excerpt of the matchin
 
 1. **Given** a prompt whose body contains the search term deep in a long text, **When** the user searches that term, **Then** the result card shows a short excerpt around the match with the term highlighted.
 2. **Given** a search term that includes characters that look like markup or formatting, **When** results render, **Then** the excerpt is displayed as plain text with only the intended highlight, and no markup is interpreted.
-3. **Given** a prompt that matches on title only, **When** results render, **Then** a sensible excerpt (or no excerpt) is shown without error.
+3. **Given** a prompt that matches on title only, **When** results render, **Then** no snippet is shown for that result (the highlighted title itself is sufficient), and no error occurs.
 
 ---
 
@@ -75,7 +85,7 @@ Certain searches — case-sensitive matching, or queries the full-text engine ca
 
 - **Empty or whitespace-only query**: returns the standard unfiltered/empty-search behavior, not an error.
 - **Query of only operator/punctuation characters**: sanitized so it never produces a search-engine syntax error; falls back to substring matching if needed.
-- **Very large existing vault upgrading to this feature**: the one-time index build during upgrade may take several seconds; the system remains usable and the delay is communicated in release notes.
+- **Very large existing vault upgrading to this feature**: the one-time index build runs synchronously as part of the Alembic migration and may take several seconds to minutes on very large vaults; the application does not begin serving requests until the migration completes, and the expected delay is communicated in release notes.
 - **Prompt with empty title, body, or note**: indexing and searching handle missing fields without error.
 - **Highlighted excerpt containing markup-like characters**: rendered safely as text; only the intended highlight is applied.
 - **Result count**: the number reported for a search matches the number of results actually returned by the ranked query (count and list stay consistent).
@@ -88,9 +98,9 @@ Certain searches — case-sensitive matching, or queries the full-text engine ca
 
 - **FR-001**: System MUST rank search results by relevance, with matches in a prompt's title weighted more heavily than matches in its body, and body matches weighted more heavily than matches in its note.
 - **FR-002**: System MUST return the same set of matching prompts that a user would reasonably expect from the search term, and MUST NOT drop matches that the previous substring behavior would have found for ordinary word queries.
-- **FR-003**: System MUST rank prompts matching all words of a multi-word query above prompts matching only some of the words.
+- **FR-003**: For a multi-word query without quotes, System MUST include prompts matching any one or more of the query words (OR semantics, preserving FR-002's no-dropped-matches guarantee) and MUST rank prompts matching all words above prompts matching only some of the words.
 - **FR-004**: Users MUST be able to request ranked search as the default behavior, while still being able to apply existing explicit sort options, which take precedence over relevance ordering when chosen.
-- **FR-005**: System MUST return a short contextual excerpt ("snippet") for each result, centered on the matched terms where the match occurs in body content.
+- **FR-005**: System MUST return a short contextual excerpt ("snippet") for each result, centered on the matched terms where the match occurs in body or note content. When a result matches only in the title, no snippet is returned (the highlighted title serves this purpose).
 - **FR-006**: System MUST highlight the matched terms within each excerpt.
 - **FR-007**: System MUST render excerpts and highlights safely as text, so that content resembling markup or scripts is never interpreted or executed.
 - **FR-008**: System MUST report a result count that is consistent with the ranked result list for the same query.
@@ -99,8 +109,8 @@ Certain searches — case-sensitive matching, or queries the full-text engine ca
 - **FR-011**: System MUST sanitize user input so that queries containing special or operator characters never cause a search failure.
 - **FR-012**: System MUST support quoted phrases as an explicit way to match a sequence of words as a unit.
 - **FR-013**: System MUST keep search results current as prompts are created, edited, or deleted, with no manual reindexing step required by the user.
-- **FR-014**: System MUST paginate ranked results consistently, so no result is duplicated across pages or skipped between pages.
-- **FR-015**: System MUST perform a one-time index preparation when upgrading an existing vault, after which existing prompts are fully searchable.
+- **FR-014**: System MUST paginate ranked results consistently, so no result is duplicated across pages or skipped between pages. This applies to case-sensitive fallback searches as well: case-sensitive filtering MUST be applied before pagination (not after), so the returned page and reported count stay consistent.
+- **FR-015**: System MUST perform a one-time index preparation when upgrading an existing vault, implemented as a synchronous Alembic migration (creating the FTS structure and backfilling existing rows) that completes before the application starts serving requests, after which existing prompts are fully searchable.
 - **FR-016**: Search results MUST return within the performance target on a vault of at least 5,000 prompts, and response time MUST NOT degrade linearly with vault size the way substring scanning does.
 - **FR-017**: System MUST behave consistently across both supported storage backends, producing equivalent ranking and snippet behavior for the same data and query.
 
@@ -109,7 +119,7 @@ Certain searches — case-sensitive matching, or queries the full-text engine ca
 - **Prompt**: The searchable item. Relevant attributes for this feature are its title, its body/prompt text, and its note. Each contributes to relevance with a different weight (title highest, then body, then note).
 - **Search Query**: The user-supplied text, optionally including quoted phrases, plus flags such as case-sensitive mode and whether ranked ordering is requested.
 - **Search Result**: A matched prompt augmented with a relevance rank and a contextual excerpt ("match context") containing highlighted terms.
-- **Search Index**: A derived, automatically maintained representation of prompt content that enables fast ranked lookup. It is kept in sync with prompts and is rebuilt once on upgrade.
+- **Search Index**: A derived, automatically maintained representation of prompt content that enables fast ranked lookup. It is kept in sync with prompts via database-level triggers (native SQLite FTS5 triggers; Postgres triggers or a generated tsvector column) rather than application-level sync calls, and is rebuilt once on upgrade.
 
 ## Success Criteria *(mandatory)*
 
