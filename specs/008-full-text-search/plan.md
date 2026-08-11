@@ -1,6 +1,6 @@
 # Implementation Plan: Full-Text Search
 
-**Branch**: `008-full-text-search` | **Date**: 2026-08-04 | **Spec**: [spec.md](./spec.md)
+**Branch**: `008-full-text-search` | **Date**: 2026-08-11 | **Spec**: [spec.md](./spec.md)
 
 **Input**: Feature specification from `/specs/008-full-text-search/spec.md`
 
@@ -24,7 +24,7 @@ Replace the current `ilike '%term%'` substring scan in `PromptRepository.search(
 
 **Performance Goals**: Single-word search returns in < 1s on a 5,000-prompt vault; response time flat (index-backed) rather than linear in vault size; ranked FTS measurably beats the substring-scan baseline on the same data set.
 
-**Constraints**: Must work identically across SQLite and Postgres. Highlight output must render through the existing `escapeHtml` safe-text path (no `innerHTML` of raw DB content). One-time index build on upgrade may take several seconds on large vaults; must be communicated in CHANGELOG. Must not regress the existing case-sensitive search behavior.
+**Constraints**: Must work identically across SQLite and Postgres. Highlight output must render through the existing `escapeHtml` safe-text path (no `innerHTML` of raw DB content). One-time index build runs synchronously as part of the Alembic migration (app does not serve requests until it completes); may take several seconds to minutes on large vaults, communicated in CHANGELOG. Case-sensitive fallback must filter before pagination is applied (fixing a pre-existing inconsistency where it filtered in Python after `OFFSET`/`LIMIT`). Non-phrase multi-word queries use OR semantics (no dropped matches) with all-word matches ranked above partial matches, not AND-only filtering.
 
 **Scale/Scope**: Repository search layer (`search`/`count`), one search API endpoint, one Alembic migration (dialect-branched), and the result-card frontend rendering. Benchmark harness for 5k prompts.
 

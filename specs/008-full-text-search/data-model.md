@@ -51,7 +51,7 @@ No columns are added to `prompts` on SQLite. On Postgres, one **generated** colu
 | `ranked` | `bool` (default `true`) | relevance ordering unless an explicit sort is chosen (FR-004) |
 | plus existing | `category`, `tags`, `favorite`, `limit`, `offset` | unchanged filters |
 
-**Sanitization** (`sanitize_fts_query`): strips operator-only tokens; extracts quoted phrases; yields a safe query object or signals "empty → fallback" (FR-010/FR-011).
+**Sanitization** (`sanitize_fts_query`): strips operator-only tokens; extracts quoted phrases; joins remaining bare terms with **OR** (not AND) so partial multi-word matches are included and ranked below all-word matches (FR-003); yields a safe query object or signals "empty → fallback" (FR-010/FR-011).
 
 ### Search Result (output)
 
@@ -67,4 +67,5 @@ Rank is used for ordering only and is **not** exposed in the response (implement
 
 - `count()` MUST build the **same** FTS predicate as `search()` so totals match the ranked list (FR-008).
 - Ranked ordering MUST include a deterministic tiebreaker (`id`) so OFFSET/LIMIT pagination never duplicates or skips a row (FR-014).
+- Case-sensitive fallback filtering MUST be applied in the SQL predicate **before** `OFFSET`/`LIMIT`, not in Python after the page is fetched, so `count()` and the returned page stay consistent under case-sensitive mode (FR-014).
 - The frontend MUST convert `[[MATCH]]`/`[[/MATCH]]` to `<mark>` **only after** `escapeHtml()` on the whole string (FR-007/SC-006).

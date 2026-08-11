@@ -50,6 +50,7 @@ Existing pagination envelope. Each prompt in `prompts` gains **one optional fiel
 
 ## Consistency & error contract
 - `pagination.total_count` reflects the **same** predicate as the returned list (FR-008).
+- `case_sensitive=true` filtering is applied in the SQL predicate before `OFFSET`/`LIMIT` (not in Python after fetch), so paginated results and `total_count` stay consistent under case-sensitive mode (FR-014, fixes a pre-existing pagination inconsistency).
 - A query the FTS parser cannot interpret MUST NOT 4xx/5xx on account of FTS: the server sanitizes and, if needed, falls back to substring — returning `200` with results (FR-010/FR-011).
 - Existing error behaviors (e.g. `401` for `favorites` without auth when auth enabled) are unchanged.
 

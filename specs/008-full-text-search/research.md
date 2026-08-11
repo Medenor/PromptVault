@@ -32,17 +32,18 @@ All Technical Context items were resolvable from the codebase and well-establish
 - **Decision**: Detect the active dialect at query time via `self.session.bind.dialect.name` (`"sqlite"` vs `"postgresql"`). Route to the FTS branch for the normal case; route to the **existing `ilike` substring path** when: (a) `case_sensitive=True`, or (b) the sanitized query is empty after stripping operators, or (c) the FTS query raises (caught, logged, fall back).
 - **Rationale**:
   - Mirrors the established pattern already used across this repo's Alembic migrations (`op.get_bind().dialect.name`, `7182f1f03364`, `b7a1c2d3e4f5`).
-  - Case-sensitive FTS is not natively supported by either engine's default configuration; the current Python-side case filter (already in `prompt_repository.py`) remains correct and is the right fallback (FR-009).
+  - Case-sensitive FTS is not natively supported by either engine's default configuration; the substring fallback is the right mechanism (FR-009). **Clarified 2026-08-11**: the *existing* case-sensitive path filters in Python **after** the DB has applied `OFFSET`/`LIMIT`, which can under-return or skip rows across pages. This is fixed as part of this feature: the case-sensitive predicate must be pushed into the SQL query (e.g. a `GLOB`-based or backend-appropriate case-sensitive comparison bound into the `WHERE` clause) so filtering happens **before** pagination, keeping `count()` and `search()` consistent (FR-014).
   - Graceful fallback on parser errors satisfies FR-010/FR-011 — the user never sees an FTS syntax error.
 - **Alternatives considered**:
   - *Global config flag to pick the engine* — rejected: the dialect is already known from the session; a flag adds config surface with no benefit.
 
 ## Decision 4 — Input sanitization & phrase support
 
-- **Decision**: Add a `sanitize_fts_query()` helper. Default mode: split on whitespace, drop tokens that are only FTS operator/punctuation characters, and pass the remaining terms to `plainto_tsquery` (PG) or as quoted/space-joined terms to FTS5 `MATCH`. Support explicit quoted phrases (`"code review"`) mapped to `phraseto_tsquery` (PG) / an FTS5 phrase (`"code review"`).
-- **Rationale**: Guarantees no syntax error reaches the engine (FR-011), while still allowing the one advanced feature in scope — quoted phrases (FR-012). Advanced boolean operators are explicitly out of scope per the spec.
+- **Decision**: Add a `sanitize_fts_query()` helper. Default mode: split on whitespace, drop tokens that are only FTS operator/punctuation characters, and join the remaining terms with explicit **OR** — `term1 OR term2` for FTS5 `MATCH`, `to_tsquery('term1 | term2')` for Postgres (not `plainto_tsquery`, which implies AND). Support explicit quoted phrases (`"code review"`) mapped to `phraseto_tsquery` (PG) / an FTS5 phrase (`"code review"`), OR'd together with any remaining bare terms.
+- **Rationale**: Guarantees no syntax error reaches the engine (FR-011), while still allowing the one advanced feature in scope — quoted phrases (FR-012). Advanced boolean operators are explicitly out of scope per the spec. **Clarified 2026-08-11**: non-phrase multi-word queries use OR semantics — prompts matching any one word are included (no dropped matches, FR-002) — with `bm25()`/`ts_rank()` naturally scoring all-word matches higher than partial matches, satisfying FR-003's ranking requirement without needing AND-only filtering.
 - **Alternatives considered**:
   - *Pass user input raw to `to_tsquery`/FTS5 `MATCH`* — rejected: both throw on unbalanced quotes/operators, violating FR-011.
+  - *`plainto_tsquery` / bare-word FTS5 `MATCH` (implicit AND)* — rejected after clarification: AND-only would silently drop prompts matching only some query words, violating FR-002 and acceptance scenario 1.2's expectation that partial matches still appear (just ranked lower).
 
 ## Decision 5 — Snippet generation & safe rendering
 
