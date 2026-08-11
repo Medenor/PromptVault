@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 📝 Docs
+
+- **Restructured AGENTS.md around progressive disclosure**: The root instructions file had grown to 975 lines with duplicated/contradictory content — four different, mutually inconsistent test-coverage snapshots (83.54%/1087 tests, 86.90%/509-of-514, 86.46%, 89.83% frontend), no mention of the `Makefile` that `docs/DEVELOPMENT.md` already documents as the canonical command surface (`make dev`/`make test`/`make lint`), and a dead "CSS File Consolidation" section referencing legacy stylesheets (`style.css`, `auth.css`, `admin.css`, `sessions.css`, `validation.css`) that no longer exist in the repo. Split into a minimal 44-line root `AGENTS.md` (project description, `make`-first command reference, and a pointer table) plus seven topic files under `docs/agents/` (`architecture.md`, `api.md`, `python-style.md`, `frontend.md`, `testing.md`, `git-and-docker-safety.md`, `workflow-and-pitfalls.md`), so an agent loads only what a given task needs instead of the full file on every turn. Stale coverage/test-count numbers were removed in favor of pointing at live test-runner output, matching the pattern `docs/TESTING.md` already used.
+
 ## [1.12.0] - 2026-08-11
 
 ### ✨ Added
