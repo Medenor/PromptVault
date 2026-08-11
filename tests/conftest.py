@@ -225,6 +225,60 @@ def test_db_session(test_db_engine) -> Generator[Session, None, None]:
         session.close()
 
 
+# --- Cross-dialect test matrix (FTS feature, research.md Decision 7) ------
+#
+# FTS correctness/ranking/snippet/fallback tests use `db_dialect_matrix` to
+# run the same assertions against SQLite (always) and PostgreSQL (skipped
+# unless DATABASE_URL points at a reachable Postgres instance), so coverage
+# never depends on a Postgres service being present.
+
+PG_DATABASE_URL = os.environ.get("DATABASE_URL", "")
+PG_AVAILABLE = PG_DATABASE_URL.startswith("postgresql")
+
+requires_postgres = pytest.mark.skipif(
+    not PG_AVAILABLE, reason="DATABASE_URL is not a PostgreSQL URL"
+)
+
+
+@pytest.fixture(scope="function")
+def postgres_db() -> Generator[Session, None, None]:
+    """Session-backed PostgreSQL fixture for the FTS cross-dialect matrix.
+
+    Skipped automatically when DATABASE_URL is not a postgresql:// URL.
+    Creates all tables fresh, yields a session, then drops everything so
+    tests stay isolated (mirrors test_db_session's SQLite lifecycle).
+    """
+    if not PG_AVAILABLE:
+        pytest.skip("DATABASE_URL is not a PostgreSQL URL")
+
+    engine = create_engine(PG_DATABASE_URL, echo=False)
+    Base.metadata.create_all(engine)
+    SessionLocal = sessionmaker(bind=engine)
+    session = SessionLocal()
+
+    try:
+        yield session
+    finally:
+        session.rollback()
+        session.close()
+        Base.metadata.drop_all(engine)
+        engine.dispose()
+
+
+@pytest.fixture(params=["sqlite", pytest.param("postgresql", marks=requires_postgres)])
+def db_dialect_matrix(request) -> Session:
+    """Parametrized session fixture: runs a test once per dialect.
+
+    SQLite always runs; the PostgreSQL leg is skip-marked (via
+    `requires_postgres`) when no Postgres test DB is available, so the
+    overall test still reports as skipped rather than failing/erroring.
+    Resolves the underlying fixture lazily via `getfixturevalue` so the
+    SQLite leg never instantiates (or skips on) `postgres_db`.
+    """
+    fixture_name = "test_db_session" if request.param == "sqlite" else "postgres_db"
+    return request.getfixturevalue(fixture_name)
+
+
 # ============================================================================
 # MODEL FIXTURES
 # ============================================================================

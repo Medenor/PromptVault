@@ -72,6 +72,12 @@ def test_db_session(test_db_engine) -> Generator[Session, None, None]:
         session.close()
 
 
+# NOTE: This module is not wired in as a pytest plugin (only tests/conftest.py
+# is auto-loaded); tests/conftest.py defines its own equivalent fixtures,
+# including the cross-dialect FTS matrix (`postgres_db`, `db_dialect_matrix`).
+# See tests/conftest.py for the fixtures actually used by the test suite.
+
+
 @pytest.fixture
 def test_user(test_db_session) -> User:
     """Create a test user."""

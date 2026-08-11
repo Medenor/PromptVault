@@ -13,7 +13,6 @@ import logging
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from src.db.session import get_db
@@ -29,7 +28,6 @@ from src.web.routers.prompts_shared import (
     _prompt_to_dict,
     normalize_pagination,
     _build_pagination_envelope,
-    _paginate_mapping,
 )
 
 
@@ -113,64 +111,29 @@ async def list_prompts(
     """
     page, limit = normalize_pagination(page, limit)
 
-    # When auth is enabled, sharing visibility must be enforced, so the
-    # unscoped legacy data_service path (which returns every prompt with no
-    # filter — see PromptRepository.get_all()) is bypassed entirely in favor
-    # of the visibility-scoped repository query below. Anonymous mode
-    # (AUTH_ENABLED=false) keeps the original legacy-first behavior.
-    legacy_prompts = None
-    if not auth_settings.auth_enabled:
-        try:
-            from src.web import app as web_app
+    prompt_repo = PromptRepository(db)
+    visible_to_user_id = _visibility_scope(user)
+    shared_only = filter == "shared-with-me"
+    total_count = prompt_repo.count(
+        visible_to_user_id=visible_to_user_id, shared_only=shared_only
+    )
+    # Use search() rather than get_all() so results are stably ordered
+    # (get_all() has no ORDER BY, which makes OFFSET/LIMIT pagination
+    # non-deterministic across pages).
+    prompts = prompt_repo.search(
+        limit=limit,
+        offset=(page - 1) * limit,
+        visible_to_user_id=visible_to_user_id,
+        shared_only=shared_only,
+    )
 
-            legacy_prompts = web_app.data_service.load_prompts()
-        except Exception:
-            legacy_prompts = None
+    prompts_dict = {}
+    for prompt in prompts:
+        prompt_dict = _prompt_to_dict(prompt, viewer=user, session=db)
+        prompt_dict.pop("semantic_version", None)
+        prompts_dict[str(prompt.id)] = prompt_dict
 
-    if legacy_prompts:
-        all_prompts_dict = {}
-        for pid, info in legacy_prompts.items():
-            data = info["data"] if "data" in info else info
-            all_prompts_dict[str(pid)] = {
-                "id": pid,
-                "title": data.get("title", ""),
-                "prompt": data.get("prompt", ""),
-                "category": data.get("category", ""),
-                "category_color": None,
-                "tags": data.get("tags", []),
-                "tag_colors": {},
-                "note": data.get("note", ""),
-                "favorite": data.get("favorite", False),
-                "user_id": data.get("user_id"),
-                "created_at": data.get("created_at"),
-                "updated_at": data.get("updated_at"),
-            }
-        prompts_dict, total_count = _paginate_mapping(all_prompts_dict, page, limit)
-        result = _build_pagination_envelope(prompts_dict, page, limit, total_count)
-    else:
-        prompt_repo = PromptRepository(db)
-        visible_to_user_id = _visibility_scope(user)
-        shared_only = filter == "shared-with-me"
-        total_count = prompt_repo.count(
-            visible_to_user_id=visible_to_user_id, shared_only=shared_only
-        )
-        # Use search() rather than get_all() so results are stably ordered
-        # (get_all() has no ORDER BY, which makes OFFSET/LIMIT pagination
-        # non-deterministic across pages).
-        prompts = prompt_repo.search(
-            limit=limit,
-            offset=(page - 1) * limit,
-            visible_to_user_id=visible_to_user_id,
-            shared_only=shared_only,
-        )
-
-        prompts_dict = {}
-        for prompt in prompts:
-            prompt_dict = _prompt_to_dict(prompt, viewer=user, session=db)
-            prompt_dict.pop("semantic_version", None)
-            prompts_dict[str(prompt.id)] = prompt_dict
-
-        result = _build_pagination_envelope(prompts_dict, page, limit, total_count)
+    result = _build_pagination_envelope(prompts_dict, page, limit, total_count)
 
     if user:
         logger.debug(f"User {user.username} ({user.id}) accessed prompt list")
@@ -250,72 +213,6 @@ async def search_prompts(
 
     page, limit = normalize_pagination(page, limit)
 
-    # As in list_prompts(): bypass the unscoped legacy data_service path
-    # entirely once auth is enabled, since sharing visibility must be
-    # enforced and that path has no such concept.
-    legacy_prompts = None
-    if not auth_settings.auth_enabled:
-        try:
-            from src.web import app as web_app
-
-            legacy_prompts = web_app.data_service.load_prompts()
-        except HTTPException:
-            raise
-        except Exception:
-            return JSONResponse(
-                status_code=500,
-                content={"error": "Search failed: internal error"},
-            )
-
-    if legacy_prompts:
-        filtered = {}
-        for pid, info in legacy_prompts.items():
-            data = info["data"] if "data" in info else info
-            if favorites and not data.get("favorite", False):
-                continue
-            if category and data.get("category") != category:
-                continue
-            if tag and tag not in data.get("tags", []):
-                continue
-            if search:
-                haystacks = [
-                    data.get("title", ""),
-                    data.get("prompt", ""),
-                    data.get("note", ""),
-                ]
-                matched = False
-                for hay in haystacks:
-                    if hay is None:
-                        continue
-                    if case_sensitive:
-                        if search in hay:
-                            matched = True
-                            break
-                    else:
-                        if search.lower() in hay.lower():
-                            matched = True
-                            break
-                if not matched:
-                    continue
-            filtered[str(pid)] = {
-                "id": pid,
-                "title": data.get("title", ""),
-                "prompt": data.get("prompt", ""),
-                "category": data.get("category", ""),
-                "category_color": None,
-                "tags": data.get("tags", []),
-                "tag_colors": {},
-                "note": data.get("note", ""),
-                "favorite": data.get("favorite", False),
-                "user_id": data.get("user_id"),
-                "created_at": data.get("created_at"),
-                "updated_at": data.get("updated_at"),
-            }
-        prompts_dict, total_count = _paginate_mapping(filtered, page, limit)
-        return _build_pagination_envelope(prompts_dict, page, limit, total_count)
-
-    # Fallback when data_service has no data (e.g. empty DB) or auth is
-    # enabled (visibility-scoped path): search directly
     prompt_repo = PromptRepository(db)
 
     search_query = search if search else None
