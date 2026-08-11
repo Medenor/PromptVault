@@ -23,7 +23,9 @@ import {
   apiPut,
   APIRequestError,
   buildUrl,
+  grantShare,
   handleApiError,
+  searchUsers,
 } from '@/utils/api';
 
 describe('api utils', () => {
@@ -111,6 +113,54 @@ describe('api utils', () => {
     expect(fetchMock).toHaveBeenCalledWith(
       '/api/test',
       expect.objectContaining({ method: 'DELETE' })
+    );
+  });
+
+  it('grantShare POSTs the identifier/permission body to the shares endpoint', async () => {
+    const shareResponse = {
+      prompt_id: 42,
+      grantee: { id: 'u1', username: 'alice' },
+      permission: 'read',
+      granted_by: 'bob',
+      created_at: '2026-08-04T12:00:00Z',
+      updated_at: '2026-08-04T12:00:00Z',
+    };
+    const response = {
+      ok: true,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: vi.fn().mockResolvedValue(shareResponse),
+    };
+    const fetchMock = globalThis.fetch as unknown as Mock;
+    fetchMock.mockResolvedValue(response);
+
+    const result = await grantShare(42, 'alice', 'read');
+
+    expect(result).toEqual(shareResponse);
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/prompts/42/shares',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ identifier: 'alice', permission: 'read' }),
+      })
+    );
+  });
+
+  it('searchUsers GETs the typeahead endpoint with a URL-encoded query', async () => {
+    const searchResponse = { users: [{ id: 'u1', username: 'alice' }] };
+    const response = {
+      ok: true,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: vi.fn().mockResolvedValue(searchResponse),
+    };
+    const fetchMock = globalThis.fetch as unknown as Mock;
+    fetchMock.mockResolvedValue(response);
+
+    const result = await searchUsers('ali ce');
+
+    expect(result).toEqual(searchResponse);
+    expect(fetchMock).toHaveBeenCalledWith(
+      `/api/users/search?q=${encodeURIComponent('ali ce')}`,
+      expect.objectContaining({ method: 'GET' })
     );
   });
 

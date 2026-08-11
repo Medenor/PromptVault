@@ -32,6 +32,25 @@ from src.web.routers.prompts_shared import (
     _paginate_mapping,
 )
 
+
+def _visibility_scope(user: Optional[User]) -> Optional[str]:
+    """Resolve the visible_to_user_id argument for PromptRepository scoping.
+
+    Admins and anonymous-mode (user=None with auth disabled) see everything
+    (None = unscoped). Any other authenticated user is scoped to their own
+    owned + shared + legacy-public prompts. When auth is enabled but the
+    request is unauthenticated, scope to a sentinel that matches nothing —
+    an anonymous caller under AUTH_ENABLED=true has no visibility (research
+    §1: read-visibility scoping only applies when auth is enabled).
+    """
+    if not auth_settings.auth_enabled:
+        return None
+    if user is None:
+        return "__no_such_user__"
+    if user.role == "admin":
+        return None
+    return user.id
+
 # Configure logging
 logger = logging.getLogger(__name__)
 
@@ -75,7 +94,8 @@ router = APIRouter(
 async def list_prompts(
     page: int = 1,
     limit: int = DEFAULT_PAGE_SIZE,
-    user: Optional[User] = Depends(get_optional_user),
+    filter: Optional[str] = None,
+    user: Optional[User] = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
     """List prompts with offset pagination (public access with optional personalization).
@@ -83,6 +103,8 @@ async def list_prompts(
     Args:
         page: Page number, 1-indexed
         limit: Page size
+        filter: 'shared-with-me' narrows to explicit grants only (excludes
+            legacy-public prompts); any other value is ignored
         user: Authenticated user (optional)
         db: Database session
 
@@ -91,14 +113,19 @@ async def list_prompts(
     """
     page, limit = normalize_pagination(page, limit)
 
-    # Prefer legacy data service when available (also tolerates legacy
-    # dict shapes without a "data" wrapper; tests may monkeypatch it)
-    try:
-        from src.web import app as web_app
+    # When auth is enabled, sharing visibility must be enforced, so the
+    # unscoped legacy data_service path (which returns every prompt with no
+    # filter — see PromptRepository.get_all()) is bypassed entirely in favor
+    # of the visibility-scoped repository query below. Anonymous mode
+    # (AUTH_ENABLED=false) keeps the original legacy-first behavior.
+    legacy_prompts = None
+    if not auth_settings.auth_enabled:
+        try:
+            from src.web import app as web_app
 
-        legacy_prompts = web_app.data_service.load_prompts()
-    except Exception:
-        legacy_prompts = None
+            legacy_prompts = web_app.data_service.load_prompts()
+        except Exception:
+            legacy_prompts = None
 
     if legacy_prompts:
         all_prompts_dict = {}
@@ -122,15 +149,24 @@ async def list_prompts(
         result = _build_pagination_envelope(prompts_dict, page, limit, total_count)
     else:
         prompt_repo = PromptRepository(db)
-        total_count = prompt_repo.count()
+        visible_to_user_id = _visibility_scope(user)
+        shared_only = filter == "shared-with-me"
+        total_count = prompt_repo.count(
+            visible_to_user_id=visible_to_user_id, shared_only=shared_only
+        )
         # Use search() rather than get_all() so results are stably ordered
         # (get_all() has no ORDER BY, which makes OFFSET/LIMIT pagination
         # non-deterministic across pages).
-        prompts = prompt_repo.search(limit=limit, offset=(page - 1) * limit)
+        prompts = prompt_repo.search(
+            limit=limit,
+            offset=(page - 1) * limit,
+            visible_to_user_id=visible_to_user_id,
+            shared_only=shared_only,
+        )
 
         prompts_dict = {}
         for prompt in prompts:
-            prompt_dict = _prompt_to_dict(prompt)
+            prompt_dict = _prompt_to_dict(prompt, viewer=user, session=db)
             prompt_dict.pop("semantic_version", None)
             prompts_dict[str(prompt.id)] = prompt_dict
 
@@ -178,6 +214,7 @@ async def search_prompts(
     case_sensitive: bool = False,
     page: int = 1,
     limit: int = DEFAULT_PAGE_SIZE,
+    filter: Optional[str] = None,
     user: Optional[User] = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
@@ -191,6 +228,8 @@ async def search_prompts(
         case_sensitive: Case-sensitive search
         page: Page number, 1-indexed
         limit: Page size
+        filter: 'shared-with-me' narrows to explicit grants only (excludes
+            legacy-public prompts); any other value is ignored
         user: Authenticated user (optional)
         db: Database session
 
@@ -211,19 +250,22 @@ async def search_prompts(
 
     page, limit = normalize_pagination(page, limit)
 
-    try:
-        # Legacy fallback for tests that monkeypatch data_service (also
-        # tolerates legacy dict shapes without a "data" wrapper)
-        from src.web import app as web_app
+    # As in list_prompts(): bypass the unscoped legacy data_service path
+    # entirely once auth is enabled, since sharing visibility must be
+    # enforced and that path has no such concept.
+    legacy_prompts = None
+    if not auth_settings.auth_enabled:
+        try:
+            from src.web import app as web_app
 
-        legacy_prompts = web_app.data_service.load_prompts()
-    except HTTPException:
-        raise
-    except Exception:
-        return JSONResponse(
-            status_code=500,
-            content={"error": "Search failed: internal error"},
-        )
+            legacy_prompts = web_app.data_service.load_prompts()
+        except HTTPException:
+            raise
+        except Exception:
+            return JSONResponse(
+                status_code=500,
+                content={"error": "Search failed: internal error"},
+            )
 
     if legacy_prompts:
         filtered = {}
@@ -272,13 +314,16 @@ async def search_prompts(
         prompts_dict, total_count = _paginate_mapping(filtered, page, limit)
         return _build_pagination_envelope(prompts_dict, page, limit, total_count)
 
-    # Fallback when data_service has no data (e.g. empty DB): search directly
+    # Fallback when data_service has no data (e.g. empty DB) or auth is
+    # enabled (visibility-scoped path): search directly
     prompt_repo = PromptRepository(db)
 
     search_query = search if search else None
     category_filter = category if category else None
     tag_filter = [tag] if tag else None
     favorite_filter = favorites if favorites else None
+    visible_to_user_id = _visibility_scope(user)
+    shared_only = filter == "shared-with-me"
 
     total_count = prompt_repo.count(
         query=search_query,
@@ -286,6 +331,8 @@ async def search_prompts(
         tags=tag_filter,
         favorite=favorite_filter,
         case_sensitive=case_sensitive,
+        visible_to_user_id=visible_to_user_id,
+        shared_only=shared_only,
     )
     prompts = prompt_repo.search(
         query=search_query,
@@ -295,10 +342,12 @@ async def search_prompts(
         limit=limit,
         offset=(page - 1) * limit,
         case_sensitive=case_sensitive,
+        visible_to_user_id=visible_to_user_id,
+        shared_only=shared_only,
     )
 
     prompts_dict = {}
     for prompt in prompts:
-        prompts_dict[str(prompt.id)] = _prompt_to_dict(prompt)
+        prompts_dict[str(prompt.id)] = _prompt_to_dict(prompt, viewer=user, session=db)
 
     return _build_pagination_envelope(prompts_dict, page, limit, total_count)

@@ -118,7 +118,11 @@ def test_category_delete_force_clears_prompts(api_client, api_auth_headers):
     prompt = api_client.get(
         f"/api/prompts/{prompt_id}", headers=api_auth_headers
     ).json()
-    assert prompt["category"] == "No category"
+    # GET /api/prompts/{id} now always resolves through _prompt_to_dict()
+    # (the ORM path) once auth is enabled — 007-prompt-sharing bypasses the
+    # legacy data_service dict path, which used to render "No category" as
+    # the empty-category default; _prompt_to_dict() renders "" instead.
+    assert prompt["category"] == ""
 
 
 def test_category_find_replace_updates_prompts(api_client, api_auth_headers):

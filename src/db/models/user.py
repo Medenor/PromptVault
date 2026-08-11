@@ -70,6 +70,12 @@ class User(Base):
     password_reset_tokens = relationship(
         "PasswordResetToken", back_populates="user", cascade="all, delete-orphan"
     )
+    received_shares = relationship(
+        "PromptShare",
+        foreign_keys="PromptShare.grantee_user_id",
+        back_populates="grantee",
+        cascade="all, delete-orphan",
+    )
 
     def __repr__(self):
         return f"<User(id={self.id}, username='{self.username}')>"

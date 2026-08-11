@@ -24,6 +24,8 @@ export interface PromptElementHandlers {
   onToggleFavorite: (id: PromptId) => void;
   onShowHistory: (id: number) => void;
   onCopyWithVersion: (id: PromptId) => void;
+  /** Open the share modal for this prompt (owner/admin only, 007-prompt-sharing). */
+  onShare: (id: PromptId) => void;
 }
 
 let promptElementHandlers: PromptElementHandlers | null = null;
@@ -98,14 +100,54 @@ export function createPromptElement(id: string, prompt: PromptResponse): HTMLDiv
     ? `<span class="version-badge px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-100 text-blue-700 ml-2">v${prompt.semantic_version}</span>`
     : '';
 
+  // Sharing badges (007-prompt-sharing, US2): mutually exclusive — an
+  // explicit grant ("shared") always implies not legacy_public-only, per
+  // the backend's `shared`/`legacy_public` payload fields (contracts §4).
+  const sharedBadge = prompt.shared
+    ? `<span class="shared-badge px-2 py-0.5 text-xs font-semibold rounded-full bg-green-100 text-green-700 ml-2" data-i18n="sharing.badge">Shared</span>`
+    : '';
+  const legacyPublicBadge =
+    !prompt.shared && prompt.legacy_public
+      ? `<span class="legacy-public-badge px-2 py-0.5 text-xs font-semibold rounded-full bg-amber-100 text-amber-700 ml-2" data-i18n="sharing.legacy_public_badge">Public (legacy)</span>`
+      : '';
+
+  // Permission-gated controls (007-prompt-sharing, US2 — contracts §4/§4b):
+  // `permission` is the viewer's effective level for this prompt
+  // ('owner' | 'edit' | 'read' | null/undefined). Absent entirely in
+  // anonymous mode (AUTH_ENABLED=false), where every control below is
+  // treated as allowed (`undefined === 'owner'` is false, so the `?? true`
+  // fallback keeps anonymous-mode behavior unchanged from before sharing
+  // existed).
+  const hasPermissionField = prompt.permission !== undefined && prompt.permission !== null;
+  // Content edits: owner, admin, or an explicit 'edit' grant.
+  const canEdit =
+    !hasPermissionField || prompt.permission === 'owner' || prompt.permission === 'edit';
+  // Owner-only: delete, favorite toggle, share management (contracts §4/§4b —
+  // favorite and legacy_public stay 'owner' level; delete is unchanged
+  // 'owner' level; share management is owner/admin only).
+  const isOwner = !hasPermissionField || prompt.permission === 'owner';
+  const canShare = isOwner;
+  const shareButtonHTML = canShare
+    ? `<button class="share-btn min-h-[44px] md:min-h-0 px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all hover:scale-105 active:scale-95" data-id="${id}" data-i18n="sharing.share">Share</button>`
+    : '';
+  const editButtonHTML = canEdit
+    ? `<button class="edit-btn min-h-[44px] md:min-h-0 px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 transition-all hover:scale-105 active:scale-95" data-id="${id}" data-i18n="actions.edit">Edit</button>`
+    : '';
+  const deleteButtonHTML = isOwner
+    ? `<button class="delete-btn min-h-[44px] md:min-h-0 px-3 py-1.5 text-xs font-medium rounded-lg bg-red-100 text-red-700 hover:bg-red-200 transition-all hover:scale-105 active:scale-95" data-id="${id}" data-i18n="actions.delete">Delete</button>`
+    : '';
+  const favoriteButtonHTML = isOwner
+    ? `<button class="favorite-btn flex items-center justify-center min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 text-xl hover:scale-110 transition-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 rounded" data-id="${id}">
+                    ${prompt.favorite ? '★' : '☆'}
+                </button>`
+    : '';
+
   // eslint-disable-next-line no-restricted-properties -- every interpolation is wrapped in escapeHtml()
   div.innerHTML = `
 	        <div class="flex items-start justify-between mb-3">
-	            <h4 id="${titleId}" class="text-prompt-title font-semibold text-gray-900 dark:text-gray-100 flex-1 flex items-center flex-wrap gap-1">${escapeHtml(prompt.title)}${semVerBadge}</h4>
+	            <h4 id="${titleId}" class="text-prompt-title font-semibold text-gray-900 dark:text-gray-100 flex-1 flex items-center flex-wrap gap-1">${escapeHtml(prompt.title)}${semVerBadge}${sharedBadge}${legacyPublicBadge}</h4>
 	            <div class="flex items-center gap-1 ml-2" id="prompt-actions-${id}">
-	                <button class="favorite-btn flex items-center justify-center min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 text-xl hover:scale-110 transition-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 rounded" data-id="${id}">
-	                    ${prompt.favorite ? '★' : '☆'}
-	                </button>
+	                ${favoriteButtonHTML}
 	            </div>
 	        </div>
         <div class="flex flex-wrap gap-2 mb-3">
@@ -120,8 +162,9 @@ export function createPromptElement(id: string, prompt: PromptResponse): HTMLDiv
             <button class="history-btn min-h-[44px] md:min-h-0 px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all hover:scale-105 active:scale-95" data-id="${id}" data-i18n="version.history">History</button>
             <button class="copy-btn min-h-[44px] md:min-h-0 px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all hover:scale-105 active:scale-95" data-id="${id}" data-i18n="actions.copy">Copy</button>
             <button class="copy-with-version-btn min-h-[44px] md:min-h-0 px-3 py-1.5 text-xs font-medium rounded-lg bg-purple-100 text-purple-700 hover:bg-purple-200 transition-all hover:scale-105 active:scale-95" data-id="${id}" data-i18n="version.copyWithMetadata">Copy+Version</button>
-            <button class="edit-btn min-h-[44px] md:min-h-0 px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 transition-all hover:scale-105 active:scale-95" data-id="${id}" data-i18n="actions.edit">Edit</button>
-            <button class="delete-btn min-h-[44px] md:min-h-0 px-3 py-1.5 text-xs font-medium rounded-lg bg-red-100 text-red-700 hover:bg-red-200 transition-all hover:scale-105 active:scale-95" data-id="${id}" data-i18n="actions.delete">Delete</button>
+            ${editButtonHTML}
+            ${shareButtonHTML}
+            ${deleteButtonHTML}
         </div>
     `;
 
@@ -156,6 +199,15 @@ export function createPromptElement(id: string, prompt: PromptResponse): HTMLDiv
   });
   if (editBtn) {
     editBtn.title = t('actions.edit');
+  }
+
+  const shareBtn = div.querySelector('.share-btn') as HTMLButtonElement | null;
+  shareBtn?.addEventListener('click', () => {
+    lastSelectedPromptIdSetter(parseInt(id, 10));
+    handlers.onShare(id);
+  });
+  if (shareBtn) {
+    shareBtn.title = t('sharing.share');
   }
 
   const deleteBtn = div.querySelector('.delete-btn') as HTMLButtonElement | null;
@@ -196,8 +248,12 @@ export function createPromptElement(id: string, prompt: PromptResponse): HTMLDiv
     copyWithVersionBtn.title = t('version.copyWithMetadata');
   }
 
-  // Track prompt selection on click and open editor
+  // Track prompt selection on click and open editor. Gated on `canEdit`
+  // (007-prompt-sharing, US2) — there is no read-only prompt viewer in this
+  // app, so a read-level viewer must not be able to open the edit form by
+  // tapping the card, even though they already can't see the Edit button.
   div.addEventListener('click', (event) => {
+    if (!canEdit) return;
     const target = event.target as Element | null;
     if (target && (target.closest('button') || target.closest('input') || target.closest('a'))) {
       return;
@@ -224,7 +280,9 @@ export function createPromptElement(id: string, prompt: PromptResponse): HTMLDiv
 
   // Swipe gestures (FR-007): left reveals delete (with confirmation, same as
   // the visible Delete button), right opens the editor (same as tapping the
-  // card). Both are shortcuts for the existing, always-visible controls above.
+  // card). Both are shortcuts for the existing controls above — gated the
+  // same way (isOwner / canEdit) so a swipe can't bypass the permission
+  // check the corresponding button is hidden by (007-prompt-sharing, US2).
   // The returned detach fn is intentionally unused: each card is a fresh,
   // never-reused element (unlike the version carousel's persistent
   // versionList, which stores/calls its detach fn before re-initializing in
@@ -232,10 +290,12 @@ export function createPromptElement(id: string, prompt: PromptResponse): HTMLDiv
   // container.innerHTML = '', which drops the listeners with the node.
   attachSwipeReveal(div, {
     onSwipeLeft: () => {
+      if (!isOwner) return;
       lastSelectedPromptIdSetter(parseInt(id, 10));
       handlers.onDelete(id);
     },
     onSwipeRight: () => {
+      if (!canEdit) return;
       lastSelectedPromptIdSetter(parseInt(id, 10));
       handlers.onEdit(id);
     },

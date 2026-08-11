@@ -26,7 +26,8 @@
     "home": "Accueil",
     "language": "Langue",
     "account": "Compte",
-    "data": "Données"
+    "data": "Données",
+    "perPage": "Par page :"
   },
   "actions": {
     "add": "Ajouter",
@@ -187,6 +188,7 @@
     "exportOptions": "Options d'exportation:",
     "includeFavorites": "Inclure uniquement les prompts favoris",
     "includeMetadata": "Inclure les métadonnées (étiquettes, catégories)",
+    "sharingNotIncluded": "Les fichiers exportés n'incluent pas les autorisations de partage ni les paramètres d'accès. Pour les conserver, utilisez une sauvegarde complète de la base de données.",
     "filename": "Nom du fichier:",
     "exportBtn": "Exporter les données",
     "previewBtn": "Aperçu",
@@ -198,7 +200,7 @@
     "modeAppend": "Ajouter aux données existantes",
     "modeReplace": "Remplacer les données existantes",
     "modeMerge": "Fusion intelligente",
-    "modeHelp": "Ajouter ajoute de nouveaux prompts et conserve les existants (créant des doublons si les titres correspondent). Remplacer efface les prompts existants avant l'importation. Fusion intelligente ignore les prompts dont le titre existe déjà.",
+    "modeHelp": "Ajouter ajoute de nouveaux prompts et conserve les existants (créant des doublons si les titres correspondent). Remplacer efface les prompts existants avant l'importation et supprime définitivement tous les partages actifs qui leur sont associés. Fusion intelligente ignore les prompts dont le titre existe déjà.",
     "importBtn": "Importer les données",
     "previewTitle": "Aperçu",
     "statisticsTitle": "Statistiques et historique",
@@ -218,6 +220,7 @@
     "importFailed": "Échec de l'importation",
     "confirmExport": "Exporter {count} prompts?",
     "confirmImport": "Importer {count} prompts?",
+    "confirmReplaceWithShares": "Cela supprimera aussi définitivement {count} partage(s) actif(s). Continuer ?",
     "noFileSelected": "Veuillez sélectionner un fichier à importer",
     "invalidFormat": "Format de fichier non supporté",
     "previewExportTitle": "Aperçu de l'exportation",
@@ -759,5 +762,26 @@
     "indicator": "Vous êtes hors ligne. Affichage des prompts en cache — reconnectez-vous pour apporter des modifications.",
     "unavailableOffline": "Ce contenu n'est pas disponible hors ligne. Reconnectez-vous pour le consulter.",
     "editUnavailable": "Cette action nécessite une connexion internet. Reconnectez-vous pour continuer."
+  },
+  "sharing": {
+    "title": "Partager le prompt",
+    "share": "Partager",
+    "grant": "Accorder l'accès",
+    "permission": {
+      "read": "Peut consulter",
+      "edit": "Peut modifier"
+    },
+    "grant_failed": "Impossible de partager ce prompt. Vérifiez le nom d'utilisateur ou l'e-mail et réessayez.",
+    "picker_placeholder": "Rechercher par nom d'utilisateur ou e-mail...",
+    "picker_no_results": "Aucun utilisateur correspondant",
+    "picker_searching": "Recherche en cours...",
+    "revoke": "Révoquer",
+    "revoked": "Accès révoqué.",
+    "badge": "Partagé",
+    "legacy_public_badge": "Public (ancien)",
+    "shared_with_me": "Partagé avec moi",
+    "no_shares": "Ce prompt n'a encore été partagé avec personne.",
+    "make_private": "Rendre privé",
+    "make_private_confirm": "Rendre ce prompt privé ? Toute personne qui pouvait le voir car il était public perdra cet accès, sauf si vous le partagez directement avec elle."
   }
 }

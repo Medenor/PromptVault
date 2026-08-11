@@ -26,7 +26,8 @@
     "home": "Startseite",
     "language": "Sprache",
     "account": "Konto",
-    "data": "Daten"
+    "data": "Daten",
+    "perPage": "Pro Seite:"
   },
   "actions": {
     "add": "Hinzufügen",
@@ -186,6 +187,7 @@
     "exportOptions": "Exportoptionen:",
     "includeFavorites": "Nur Lieblings-Prompts einschließen",
     "includeMetadata": "Metadaten einschließen (Tags, Kategorien)",
+    "sharingNotIncluded": "Exportierte Dateien enthalten keine Freigabeberechtigungen oder Zugriffseinstellungen. Verwenden Sie zum Erhalt dieser Daten eine vollständige Datenbanksicherung.",
     "filename": "Dateiname:",
     "exportBtn": "Daten exportieren",
     "previewBtn": "Vorschau",
@@ -197,7 +199,7 @@
     "modeAppend": "Zu vorhandenen Daten hinzufügen",
     "modeReplace": "Vorhandene Daten ersetzen",
     "modeMerge": "Intelligentes Zusammenführen",
-    "modeHelp": "Anhängen fügt neue Prompts hinzu und behält die vorhandenen (es entstehen Duplikate, wenn die Titel übereinstimmen). Ersetzen löscht vorhandene Prompts vor dem Import. Intelligentes Zusammenführen überspringt Prompts, deren Titel bereits existiert.",
+    "modeHelp": "Anhängen fügt neue Prompts hinzu und behält die vorhandenen (es entstehen Duplikate, wenn die Titel übereinstimmen). Ersetzen löscht vorhandene Prompts vor dem Import und entfernt dabei dauerhaft alle aktiven Freigaben für diese Prompts. Intelligentes Zusammenführen überspringt Prompts, deren Titel bereits existiert.",
     "importBtn": "Daten importieren",
     "previewTitle": "Vorschau",
     "statisticsTitle": "Statistiken und Verlauf",
@@ -217,6 +219,7 @@
     "importFailed": "Import fehlgeschlagen",
     "confirmExport": "{count} Prompts exportieren?",
     "confirmImport": "{count} Prompts importieren?",
+    "confirmReplaceWithShares": "Dadurch werden auch {count} aktive Freigabe(n) dauerhaft entfernt. Fortfahren?",
     "noFileSelected": "Bitte wählen Sie eine Datei zum Importieren aus",
     "invalidFormat": "Dateiformat wird nicht unterstützt",
     "previewExportTitle": "Exportvorschau",
@@ -753,5 +756,26 @@
     "indicator": "Du bist offline. Zwischengespeicherte Prompts werden angezeigt — stelle die Verbindung wieder her, um Änderungen vorzunehmen.",
     "unavailableOffline": "Dieser Inhalt ist offline nicht verfügbar. Stelle die Verbindung wieder her, um ihn anzuzeigen.",
     "editUnavailable": "Für diese Aktion ist eine Internetverbindung erforderlich. Stelle die Verbindung wieder her, um fortzufahren."
+  },
+  "sharing": {
+    "title": "Prompt teilen",
+    "share": "Teilen",
+    "grant": "Zugriff gewähren",
+    "permission": {
+      "read": "Kann ansehen",
+      "edit": "Kann bearbeiten"
+    },
+    "grant_failed": "Dieser Prompt konnte nicht geteilt werden. Überprüfe den Benutzernamen oder die E-Mail-Adresse und versuche es erneut.",
+    "picker_placeholder": "Nach Benutzername oder E-Mail suchen...",
+    "picker_no_results": "Keine passenden Benutzer gefunden",
+    "picker_searching": "Suche läuft...",
+    "revoke": "Entziehen",
+    "revoked": "Zugriff entzogen.",
+    "badge": "Geteilt",
+    "legacy_public_badge": "Öffentlich (alt)",
+    "shared_with_me": "Mit mir geteilt",
+    "no_shares": "Dieser Prompt wurde noch mit niemandem geteilt.",
+    "make_private": "Privat machen",
+    "make_private_confirm": "Diesen Prompt privat machen? Alle, die ihn bisher wegen der öffentlichen Sichtbarkeit ansehen konnten, verlieren den Zugriff, sofern du ihn nicht direkt mit ihnen teilst."
   }
 }

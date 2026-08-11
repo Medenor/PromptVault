@@ -26,6 +26,9 @@ export const searchState: {
   category: string;
   tag: string;
   favorites: boolean;
+  /** 007-prompt-sharing (US2): restrict results to prompts explicitly
+   * shared with the current user (excludes legacy_public-only prompts). */
+  sharedWithMe: boolean;
   caseSensitive: boolean;
   isLoading: boolean;
 } = {
@@ -33,6 +36,7 @@ export const searchState: {
   category: 'all',
   tag: 'all',
   favorites: false,
+  sharedWithMe: false,
   caseSensitive: false,
   isLoading: false,
 };
@@ -43,6 +47,7 @@ export function currentFilters() {
     category: searchState.category,
     tag: searchState.tag,
     favorites: searchState.favorites,
+    sharedWithMe: searchState.sharedWithMe,
     caseSensitive: searchState.caseSensitive,
   };
 }
@@ -54,6 +59,7 @@ export function buildSearchUrl(page: number, pageSize: number): string {
     params.append('category', searchState.category);
   if (searchState.tag && searchState.tag !== 'all') params.append('tag', searchState.tag);
   if (searchState.favorites) params.append('favorites', 'true');
+  if (searchState.sharedWithMe) params.append('filter', 'shared-with-me');
   if (searchState.caseSensitive) params.append('case_sensitive', 'true');
   params.append('page', String(page));
   params.append('limit', String(pageSize));
@@ -63,6 +69,9 @@ export function buildSearchUrl(page: number, pageSize: number): string {
 export function isAnyFilterActive(): boolean {
   const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
   const favoritesFilter = document.getElementById('favorites-filter') as HTMLInputElement | null;
+  const sharedWithMeFilter = document.getElementById(
+    'shared-with-me-filter'
+  ) as HTMLInputElement | null;
   const selectedCategory = document
     .querySelector('#categories-list li.active')
     ?.getAttribute('data-category');
@@ -71,6 +80,7 @@ export function isAnyFilterActive(): boolean {
   return !!(
     (searchInput && searchInput.value.trim()) ||
     (favoritesFilter && favoritesFilter.checked) ||
+    (sharedWithMeFilter && sharedWithMeFilter.checked) ||
     (selectedCategory && selectedCategory !== 'all') ||
     (selectedTag && selectedTag !== 'all')
   );

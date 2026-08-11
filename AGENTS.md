@@ -12,7 +12,7 @@ PromptVault is a modern web-based prompt management application built with FastA
 
 - **Run Development Server**: `python run_web.py` (default port 8003)
 - **Run with Custom Port**: `PORT=8001 python run_web.py`
-- **Run with Docker**: `docker-compose up --build` (production, port 8001)
+- **Run with Docker**: `docker-compose up --build` (⚠️ this is the **production** stack, port 8001 — see Docker Safety below)
 - **NEVER manually start uvicorn** - Always use the provided startup scripts
 - **Frontend Dev Server**: `npm run dev` (Vite, default port 5173)
 
@@ -25,6 +25,17 @@ PromptVault is a modern web-based prompt management application built with FastA
 - **Frontend Typecheck**: `npm run typecheck`
 - **Type-safe i18n**: Use `t('key.path')` with `TranslationKey` for compile-time safety. Use `tUnsafe()` only for dynamic keys (e.g. `data-i18n` attributes).
 - **Locale Sources**: Translation keys live in `src/web/static/locales/*.json` (TypeScript keys inferred from `en.json`).
+
+### Docker Safety — `docker-compose.yml` is production
+
+The `docker-compose.yml` at the repo root runs the user's **live production instance** (`promptvault-web`/`promptvault-db`/`promptvault-redis`, port 8001) — it is not a disposable dev sandbox, even though it lives in the repo and its compose file is named like any other project's. An incident already occurred where `docker-compose up --build` was used for a smoke check and the subsequent `docker-compose down` stopped and removed the running production containers (data survived only because named volumes aren't deleted by `down` without `-v`, and the user had to be asked to restart the stack manually).
+
+- **Never run `docker-compose down`, `stop`, `rm`, `restart`, or any command that stops/removes containers/networks/volumes against the root `docker-compose.yml`** without first confirming with the user that it's safe — assume it's live until told otherwise.
+- **Never run `docker-compose up`/`--build` against the root compose file for testing or verification purposes** (e.g. a Phase-6-style "smoke check" gate, manually validating a migration, checking a container boots). If a task or checklist calls for this kind of check, do it against an isolated copy instead:
+  - Copy `docker-compose.yml` to a scratch file (e.g. in the session scratchpad) with renamed container names, a different host port, a distinct `-p <project-name>` (`docker-compose -p <name> ...`), and either no volumes or fresh/fake-data volumes — so it cannot collide with or touch the running production containers, network, or named volumes.
+  - Or use a temporary, unnamed container (`docker run --rm ...`) built from the same Dockerfile instead of compose, when a full multi-service stack isn't actually needed for the check.
+  - Migration round-trips in particular: exercise them against an isolated SQLite file or a throwaway Postgres container/database — never against `data-dev/promptvault.db`, `data/promptvault.db`, or the production Postgres volume.
+- If you're unsure whether a Docker action is safe, treat it as production and ask first — the cost of asking is low; the cost of an unwanted `down` on a live service is not.
 
 ### Git Workflow
 
@@ -131,9 +142,10 @@ PromptVault is a modern web-based prompt management application built with FastA
      - `users`: User accounts with username and email
      - `categories`: Prompt categories with usage tracking
      - `tags`: Global tag definitions
-     - `prompts`: Main prompt entities with title, content, note, favorite status
+     - `prompts`: Main prompt entities with title, content, note, favorite status, `legacy_public` (grandfathered pre-sharing prompts visible to all authenticated users until un-grandfathered)
      - `prompt_tags`: Many-to-many relationship between prompts and tags
      - `prompt_versions`: Git-like version snapshots with parent relationships
+     - `prompt_shares`: Per-user grants (`prompt_id`, `grantee_id`, `permission` [`read`|`edit`], `granted_by`); unique per `(prompt_id, grantee_id)`, cascades on prompt/grantee delete, `SET NULL` on grantor delete
      - `backups`: Backup metadata tracking
 
    - **Legacy Data Store**: `data/prompts_data.json` (deprecated, kept for migration)
@@ -150,11 +162,11 @@ PromptVault is a modern web-based prompt management application built with FastA
 
 - `GET /api/prompts` - List all prompts
 - `POST /api/prompts` - Create new prompt
-- `GET /api/prompts/{id}` - Get specific prompt
-- `PUT /api/prompts/{id}` - Update prompt (creates new version)
-- `DELETE /api/prompts/{id}` - Delete prompt
-- `GET /api/prompts/search` - Search with filters
-- `PUT /api/prompts/{id}/favorite` - Toggle favorite status
+- `GET /api/prompts/{id}` - Get specific prompt (requires `read` access: owner, admin, any grantee, or a `legacy_public` prompt; 404 if invisible)
+- `PUT /api/prompts/{id}` - Update prompt (creates new version; requires `edit` access — owner, admin, or an edit-grantee; `favorite` and `legacy_public: true` are rejected for non-owners)
+- `DELETE /api/prompts/{id}` - Delete prompt (owner/admin only)
+- `GET /api/prompts/search` - Search with filters (default scope: owned ∪ shared-with-me ∪ legacy-public; `?filter=shared-with-me` narrows to explicit grants only; admins see all)
+- `PUT /api/prompts/{id}/favorite` - Toggle favorite status (owner/admin only)
 
 #### Categorization
 
@@ -163,10 +175,19 @@ PromptVault is a modern web-based prompt management application built with FastA
 
 #### Version Control
 
-- `GET /api/prompts/{id}/versions` - Get version history
+- `GET /api/prompts/{id}/versions` - Get version history (requires `read` access: owner, admin, any grantee, or a `legacy_public` prompt)
 - `GET /api/prompts/{id}/versions/compare` - Compare versions
 - `GET /api/prompts/{id}/versions/{version_id}` - Get specific version
-- `POST /api/prompts/{id}/versions/{version_id}/revert` - Revert to version
+- `POST /api/prompts/{id}/versions/{version_id}/revert` - Revert to version (requires `edit` access: owner, admin, or an edit-grantee — `legacy_public` alone is insufficient)
+
+#### Sharing & Collaboration
+
+- `POST /api/prompts/{id}/shares` - Grant or update a share (owner/admin only; body `{"identifier": "<username or email>", "permission": "read"|"edit"}`; generic 400 on unknown/inactive/self identifiers to avoid user enumeration)
+- `GET /api/prompts/{id}/shares` - List a prompt's grants (owner/admin only; 403 for grantees)
+- `DELETE /api/prompts/{id}/shares/{user_id}` - Revoke a share (owner/admin only; access loss is immediate)
+- `GET /api/users/search?q=` - Typeahead recipient lookup (any authenticated user; ≥2 chars; ≤10 active users; matches username/email prefix but returns usernames only)
+- `PATCH /api/prompts/{id}` with `{"legacy_public": false}` (JSON body) - Un-grandfather a prompt, making it private (owner/admin only; one-way — `legacy_public: true` is rejected with 400)
+- All sharing endpoints require `AUTH_ENABLED=true` (404 otherwise), are rate-limited, and audit-log `prompt.share.granted`/`prompt.share.revoked`
 
 #### Import/Export
 
@@ -174,6 +195,7 @@ PromptVault is a modern web-based prompt management application built with FastA
 - `POST /api/export` - Export prompts (CSV/Markdown/JSON)
 - `POST /api/import` - Import prompts
 - `GET /api/import-export/stats` - Import/export statistics
+- Export/import is grant-blind by design: `prompt_shares` grants and the `legacy_public` flag are never included in export payloads or restored on import, since they're runtime access-control state tied to this instance's user accounts. Full database backup/restore (see Backup Management below) is the only path that preserves them.
 
 #### Backup Management
 

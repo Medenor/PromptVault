@@ -19,6 +19,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from src.web.middleware.rate_limit import limiter, write_limit, bulk_limit
+from src.config.auth_config import auth_settings
 
 from src.db.session import get_db
 from src.db.models.user import User
@@ -37,9 +38,13 @@ from src.web.models.requests import (
     PromptUpdateRequest,
     BulkDeleteRequest,
 )
+from src.web.models.sharing_requests import PromptVisibilityUpdateRequest
+from src.services.exceptions import ShareGrantError
 from src.web.routers.prompts_shared import (
     _parse_semver,
     check_prompt_ownership,
+    check_prompt_access,
+    effective_permission,
     _parse_tags_field,
     _log_prompt_action,
     _prompt_to_dict,
@@ -60,25 +65,27 @@ router = APIRouter(
     description="""
     Get a specific prompt by ID.
 
-    **Public Access:**
-    - Anyone can view individual prompts
-    - No authentication required
+    **Access:**
+    - Anonymous mode (AUTH_ENABLED=false): anyone can view (legacy behavior)
+    - Authenticated: owner, admin, any share grantee, or a legacy_public
+      prompt (`read` level or above); otherwise 404 (existence hidden)
 
     **Response:**
     - Returns complete prompt data
-    - Includes category, tags, and metadata
+    - Includes category, tags, metadata, and the viewer's `shared`,
+      `legacy_public`, and `permission` fields
     """,
     responses={
         200: {"description": "Prompt retrieved successfully"},
-        404: {"description": "Prompt not found"},
+        404: {"description": "Prompt not found or invisible to requester"},
     },
 )
 async def get_prompt(
     prompt_id: int,
-    user: Optional[User] = Depends(get_optional_user),
+    user: Optional[User] = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
-    """Get a specific prompt by ID (public access).
+    """Get a specific prompt by ID (read-level access).
 
     Args:
         prompt_id: Prompt ID
@@ -89,34 +96,41 @@ async def get_prompt(
         dict: Prompt data
 
     Raises:
-        HTTPException: 404 if prompt not found
+        HTTPException: 404 if prompt not found or invisible to requester
     """
     prompt_repo = PromptRepository(db)
-    # Legacy compatibility: consult data_service when present
-    try:
-        from src.web import app as web_app
 
-        legacy_prompts = web_app.data_service.load_prompts()
-        if legacy_prompts and prompt_id in legacy_prompts:
-            info = legacy_prompts[prompt_id]
-            data = info["data"] if "data" in info else info
-            return {
-                "id": prompt_id,
-                "title": data.get("title", ""),
-                "prompt": data.get("prompt", ""),
-                "category": data.get("category", ""),
-                "category_color": None,
-                "tags": data.get("tags", []),
-                "tag_colors": {},
-                "note": data.get("note", ""),
-                "favorite": data.get("favorite", False),
-                "user_id": data.get("user_id"),
-                "created_at": data.get("created_at"),
-                "updated_at": data.get("updated_at"),
-                "semantic_version": data.get("semantic_version"),
-            }
-    except Exception:
-        pass
+    # Legacy compatibility: consult data_service when present. Once auth is
+    # enabled, sharing visibility must be enforced, so this unscoped legacy
+    # path (which has no concept of ownership/grants — see
+    # PromptRepository.get_all()) is skipped entirely, same as the search
+    # router. Anonymous mode (AUTH_ENABLED=false) keeps the original
+    # legacy-first behavior.
+    if not auth_settings.auth_enabled:
+        try:
+            from src.web import app as web_app
+
+            legacy_prompts = web_app.data_service.load_prompts()
+            if legacy_prompts and prompt_id in legacy_prompts:
+                info = legacy_prompts[prompt_id]
+                data = info["data"] if "data" in info else info
+                return {
+                    "id": prompt_id,
+                    "title": data.get("title", ""),
+                    "prompt": data.get("prompt", ""),
+                    "category": data.get("category", ""),
+                    "category_color": None,
+                    "tags": data.get("tags", []),
+                    "tag_colors": {},
+                    "note": data.get("note", ""),
+                    "favorite": data.get("favorite", False),
+                    "user_id": data.get("user_id"),
+                    "created_at": data.get("created_at"),
+                    "updated_at": data.get("updated_at"),
+                    "semantic_version": data.get("semantic_version"),
+                }
+        except Exception:
+            pass
 
     prompt = prompt_repo.get_with_relationships(prompt_id)
 
@@ -126,7 +140,13 @@ async def get_prompt(
             detail=f"Prompt with ID {prompt_id} not found",
         )
 
-    return _prompt_to_dict(prompt)
+    if auth_settings.auth_enabled and effective_permission(prompt, user, db) is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Prompt with ID {prompt_id} not found",
+        )
+
+    return _prompt_to_dict(prompt, viewer=user, session=db)
 
 
 # ============================================================================
@@ -355,8 +375,10 @@ async def update_prompt(
             detail=f"Prompt with ID {prompt_id} not found",
         )
 
-    # Check ownership
-    check_prompt_ownership(existing_prompt, user)
+    # Content/category/tags are editable at 'edit' level (owner, admin, or
+    # an edit-grantee); a read-only grant or legacy_public-only visibility
+    # is insufficient (data-model.md's action table).
+    check_prompt_access(existing_prompt, user, "edit", db)
 
     # Get or create category
     category_obj = None
@@ -443,6 +465,82 @@ async def update_prompt(
         response_headers["X-Version-Downgrade"] = "true"
 
     return JSONResponse(content={"success": True}, headers=response_headers)
+
+
+@router.patch(
+    "/{prompt_id}",
+    summary="Un-grandfather a legacy-public prompt",
+    description="""
+    Flip a legacy-public prompt to private (owner + admin + explicit grants
+    only). One-way — there is no path back to `legacy_public: true`.
+
+    **Authorization:** prompt owner or admin only (`owner` level) — same as
+    favorite/delete.
+
+    **Behavior:**
+    - Creates no `PromptShare` rows; a user who could previously view the
+      prompt only via `legacy_public` loses that access immediately.
+    """,
+    responses={
+        200: {"description": "Prompt un-grandfathered"},
+        400: {"description": "legacy_public: true submitted (one-way) or prompt already private"},
+        403: {"description": "Requester is neither owner nor admin"},
+        404: {"description": "Prompt not found or invisible"},
+        422: {"description": "Validation failed"},
+        429: {"description": "Rate limit exceeded"},
+    },
+)
+@limiter.limit(write_limit)
+async def update_prompt_visibility(
+    prompt_id: int,
+    body: PromptVisibilityUpdateRequest,
+    request: Request,
+    user: User = Depends(get_current_user_or_default),
+    db: Session = Depends(get_db),
+):
+    """Un-grandfather a legacy-public prompt (owner or admin only).
+
+    Args:
+        prompt_id: Prompt ID
+        body: Request body — only `legacy_public: false` is accepted
+        user: Authenticated user
+        db: Database session
+
+    Returns:
+        dict: Updated prompt payload
+
+    Raises:
+        HTTPException: 400 if `legacy_public: true` submitted or the prompt
+            is already private; 403 if not owner/admin; 404 if not found
+    """
+    if body.legacy_public is True:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="legacy_public cannot be set back to true (one-way transition)",
+        )
+
+    prompt_repo = PromptRepository(db)
+    existing_prompt = prompt_repo.get_by_id(prompt_id)
+    if not existing_prompt:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Prompt with ID {prompt_id} not found",
+        )
+
+    check_prompt_access(existing_prompt, user, "owner", db)
+
+    from src.web import app as web_app
+
+    try:
+        web_app.data_service.set_legacy_public(prompt_id, acting_user=user)
+    except ShareGrantError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=exc.user_message,
+        )
+
+    db.refresh(existing_prompt)
+    return _prompt_to_dict(existing_prompt, viewer=user, session=db)
 
 
 @router.delete(

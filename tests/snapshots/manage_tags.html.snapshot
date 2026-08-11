@@ -28,7 +28,7 @@ content="Manage Tags - Create and organize tags to categorize and filter your pr
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 <meta name="theme-color" content="#3B82F6" />
-<link rel="stylesheet" href="/static/dist/assets/telemetry.DLQDGxO_.css" />
+<link rel="stylesheet" href="/static/dist/assets/telemetry.qZwbOZfO.css" />
 <script src="https://unpkg.com/i18next@23.7.6/i18next.min.js"></script>
 <script src="https://unpkg.com/i18next-browser-languagedetector@7.2.0/i18nextBrowserLanguageDetector.min.js"></script>
 <script src="https://unpkg.com/i18next-http-backend@2.4.2/i18nextHttpBackend.min.js"></script>
@@ -1065,11 +1065,11 @@ Source code on Codeberg
 </footer>
 </div>
 <script>window.__AUTH_ENABLED__ = true;</script>
-<script type="module" src="/static/dist/js/telemetry.BJbJzUdb.js"></script>
-<script type="module" src="/static/dist/js/globalShortcuts.De-dnQjC.js"></script>
+<script type="module" src="/static/dist/js/telemetry.BL0Lzp7l.js"></script>
+<script type="module" src="/static/dist/js/globalShortcuts.DTu61P6o.js"></script>
 <script
 type="module"
-src="/static/dist/js/manage-tags.C_I3H24y.js"
+src="/static/dist/js/manage-tags.CzLjFQ1k.js"
 ></script>
 </body>
 </html>

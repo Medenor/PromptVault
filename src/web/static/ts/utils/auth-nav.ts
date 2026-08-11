@@ -60,10 +60,18 @@ export async function logout(component: string): Promise<void> {
 
 /**
  * Hide elements that only make sense when authentication is enabled
- * (profile/logout buttons, mobile drawer account section, profile links).
+ * (profile/logout buttons, mobile drawer account section, profile links,
+ * and — 007-prompt-sharing — the "Shared with me" filter chip, since
+ * sharing has no meaning without per-user accounts).
  */
 export function hideAuthOnlyElements(): void {
-  const idsToHide = ['profile-btn', 'logout-btn', 'mobile-drawer-account-section'];
+  const idsToHide = [
+    'profile-btn',
+    'logout-btn',
+    'mobile-drawer-account-section',
+    'shared-with-me-filter-label',
+    'shared-with-me-filter-label-mobile',
+  ];
   idsToHide.forEach((id) => {
     const el = document.getElementById(id);
     if (el) {

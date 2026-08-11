@@ -268,6 +268,31 @@ class UserRepository(BaseRepository[User]):
 
         return query.all()
 
+    def search_active_by_prefix(self, prefix: str, limit: int = 10) -> List[User]:
+        """Find active users whose username or email starts with a prefix.
+
+        Used by the sharing typeahead — callers must expose only the
+        username in API responses (never the email that may have matched).
+
+        Args:
+            prefix: Prefix to match against username or email (case-insensitive)
+            limit: Maximum number of results
+
+        Returns:
+            List of active User instances, ordered by username
+        """
+        pattern = f"{prefix}%"
+        return (
+            self.session.query(User)
+            .filter(
+                User.is_active == True,
+                or_(User.username.ilike(pattern), User.email.ilike(pattern)),
+            )
+            .order_by(User.username)
+            .limit(limit)
+            .all()
+        )
+
     def get_users_by_role(
         self, role: str, skip: int = 0, limit: Optional[int] = None
     ) -> List[User]:

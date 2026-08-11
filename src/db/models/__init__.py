@@ -17,6 +17,7 @@ Models exported:
     - Category: Prompt categories
     - Tag: Flexible tags for prompts
     - Prompt: Main prompt entity with current state
+    - PromptShare: Per-prompt sharing grant (read/edit) between users
     - PromptVersion: Version history (Git-like immutable snapshots)
     - PromptBranch: Branch pointers for version control
     - Backup: Backup metadata
@@ -30,6 +31,7 @@ from src.db.models.password_reset_token import PasswordResetToken
 from src.db.models.category import Category
 from src.db.models.tag import Tag
 from src.db.models.prompt import Prompt
+from src.db.models.prompt_share import PromptShare
 from src.db.models.prompt_version import PromptVersion
 from src.db.models.prompt_branch import PromptBranch
 from src.db.models.backup import Backup
@@ -47,6 +49,7 @@ __all__ = [
     "Category",
     "Tag",
     "Prompt",
+    "PromptShare",
     "PromptVersion",
     "PromptBranch",
     "Backup",

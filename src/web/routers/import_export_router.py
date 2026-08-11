@@ -29,6 +29,8 @@ from fastapi import APIRouter, Form, File, Request, UploadFile
 from fastapi.responses import JSONResponse, FileResponse
 from pydantic import ValidationError
 
+from src.db.repositories.sharing_repository import SharingRepository
+from src.db.session import get_db_session
 from src.services.logging_service import logging_service
 from src.web.middleware.rate_limit import limiter, expensive_limit
 from src.web.models import ExportRequest, ImportRequest, ExportFormat, ImportMode
@@ -117,6 +119,18 @@ def _ingest_prompts(imported_prompts: List[dict], mode: ImportMode) -> int:
                     "backup_id": backup_id,
                 },
             )
+
+        with get_db_session() as session:
+            active_shares_count = SharingRepository(session).count_all()
+
+        if active_shares_count:
+            logging_service.log_audit_event(
+                action="prompt.shares.destroyed_by_replace_import",
+                resource_type="prompt_share",
+                resource_id="all",
+                active_shares_count=active_shares_count,
+            )
+
         data_service.clear_all_prompts()
 
     for prompt_data in imported_prompts:
@@ -367,6 +381,9 @@ async def get_import_export_stats():
             if isinstance(prompt_tags, list):
                 all_tags.update(prompt_tags)
 
+        with get_db_session() as session:
+            active_shares_count = SharingRepository(session).count_all()
+
         return JSONResponse(
             content={
                 "total_prompts": total_prompts,
@@ -375,6 +392,7 @@ async def get_import_export_stats():
                 "total_tags": len(all_tags),
                 "categories": list(unique_categories),
                 "tags": list(all_tags),
+                "active_shares_count": active_shares_count,
             }
         )
 

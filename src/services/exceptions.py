@@ -439,6 +439,30 @@ class RateLimitExceededError(PromptVaultException):
         )
 
 
+class ShareGrantError(PromptVaultException):
+    """Raised when a prompt share grant cannot be created.
+
+    Deliberately generic: unknown identifier, inactive grantee, self-share,
+    and owner-as-grantee all raise this with the same user_message, so the
+    API response never lets a caller distinguish "user doesn't exist" from
+    "user exists but can't be granted" (FR-010, SC-006 — no user enumeration).
+    """
+
+    def __init__(
+        self,
+        message: str = "Unable to grant share",
+        *,
+        context: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        super().__init__(
+            message,
+            user_message="Unable to share this prompt with that user.",
+            http_status=400,
+            log_level="info",
+            context=context,
+        )
+
+
 class UserNotFoundError(PromptVaultException):
     """Raised when user is not found."""
 

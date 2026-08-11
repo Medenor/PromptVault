@@ -23,8 +23,10 @@ from src.db.repositories import (
     CategoryRepository,
     TagRepository,
 )
+from src.db.repositories.sharing_repository import SharingRepository
+from src.db.repositories.user_repository import UserRepository
 from src.db.models import Prompt, PromptVersion, Category, Tag, User
-from src.services.exceptions import DataPersistenceError
+from src.services.exceptions import DataPersistenceError, ShareGrantError
 from src.services.logging_service import logging_service
 
 # Import sanitization utilities from validators
@@ -785,7 +787,11 @@ class PromptDataService:
             return []
 
     def revert_prompt_to_version(
-        self, prompt_id: int, reverted_data: Dict[str, Any], commit_message: str
+        self,
+        prompt_id: int,
+        reverted_data: Dict[str, Any],
+        commit_message: str,
+        author: Optional[str] = None,
     ) -> bool:
         """Revert a prompt to a specific version.
 
@@ -793,12 +799,14 @@ class PromptDataService:
             prompt_id (int): The ID of the prompt to revert
             reverted_data (Dict[str, Any]): The data to revert to
             commit_message (str): The commit message
+            author (Optional[str]): Username to attribute the new version to
+                (the acting grantee, when reverted via an edit share grant)
 
         Returns:
             bool: True if successful, False otherwise
         """
         # Reuse update_prompt with reverted data
-        return self.update_prompt(prompt_id, reverted_data, commit_message)
+        return self.update_prompt(prompt_id, reverted_data, commit_message, author=author)
 
     def create_prompt(self, data: Dict[str, Any]) -> int:
         """Create a new prompt (alias for add_new_prompt).
@@ -910,3 +918,238 @@ class PromptDataService:
         self._prompts_cache = None
         self._categories_cache = None
         self._tags_cache = None
+
+    def grant_share(
+        self,
+        prompt_id: int,
+        identifier: str,
+        permission: str,
+        acting_user: User,
+    ) -> Dict[str, Any]:
+        """Grant (or update) a prompt share to another user.
+
+        Resolves ``identifier`` as a username or email of an active user,
+        rejects self-share and sharing to the prompt's own owner, and
+        upserts the grant. All rejection paths raise the same
+        :class:`ShareGrantError` (FR-010, SC-006 — no user enumeration).
+
+        Args:
+            prompt_id: Prompt being shared. Must be visible to acting_user
+                via any path (ownership, admin, or legacy_public) — callers
+                are expected to have already checked owner-level access.
+            identifier: Username or email of the grantee.
+            permission: 'read' or 'edit'.
+            acting_user: The user creating/updating the grant.
+
+        Returns:
+            Dict[str, Any]: The created/updated PromptShare, serialized.
+
+        Raises:
+            ShareGrantError: Prompt not found, unknown/inactive grantee,
+                self-share, or sharing to the owner.
+        """
+        with get_db_session() as session:
+            prompt_repo = PromptRepository(session)
+            user_repo = UserRepository(session)
+            sharing_repo = SharingRepository(session)
+
+            prompt = prompt_repo.get_by_id(prompt_id)
+            if not prompt:
+                raise ShareGrantError(
+                    "Prompt not found", context={"prompt_id": prompt_id}
+                )
+
+            grantee = user_repo.get_by_email_or_username(identifier)
+            if not grantee or not grantee.is_active:
+                raise ShareGrantError(
+                    "Unknown or inactive grantee", context={"prompt_id": prompt_id}
+                )
+
+            if grantee.id == acting_user.id:
+                raise ShareGrantError(
+                    "Cannot share a prompt with yourself",
+                    context={"prompt_id": prompt_id},
+                )
+
+            if grantee.id == prompt.user_id:
+                raise ShareGrantError(
+                    "Cannot share a prompt with its owner",
+                    context={"prompt_id": prompt_id},
+                )
+
+            share = sharing_repo.upsert(
+                prompt_id=prompt_id,
+                grantee_user_id=grantee.id,
+                permission=permission,
+                granted_by=acting_user.id,
+            )
+            session.flush()
+
+            logging_service.log_audit_event(
+                action="prompt.share.granted",
+                resource_type="prompt",
+                resource_id=str(prompt_id),
+                actor=acting_user.username,
+                grantee=grantee.username,
+                permission=permission,
+            )
+
+            granter = (
+                user_repo.get_by_id(acting_user.id) if acting_user.id else None
+            )
+
+            return {
+                "prompt_id": prompt_id,
+                "grantee": {"id": grantee.id, "username": grantee.username},
+                "permission": share.permission,
+                "granted_by": granter.username if granter else None,
+                "created_at": share.created_at,
+                "updated_at": share.updated_at,
+            }
+
+    def list_shares(self, prompt_id: int) -> Dict[str, Any]:
+        """List all grants on a prompt (grant review, US3).
+
+        Callers are expected to have already checked owner-level access
+        (``check_prompt_access(prompt, user, "owner", db)``) before calling.
+
+        Args:
+            prompt_id: Prompt whose grants are being listed.
+
+        Returns:
+            Dict[str, Any]: ``{"prompt_id": ..., "shares": [...]}`` with each
+            share serialized the same shape as :meth:`grant_share`'s result.
+        """
+        with get_db_session() as session:
+            sharing_repo = SharingRepository(session)
+            user_repo = UserRepository(session)
+
+            shares = sharing_repo.list_for_prompt(prompt_id)
+
+            grantee_ids = {share.grantee_user_id for share in shares}
+            granter_ids = {share.granted_by for share in shares if share.granted_by}
+            users_by_id = {
+                u.id: u
+                for u in (
+                    user_repo.get_by_id(uid) for uid in grantee_ids | granter_ids
+                )
+                if u is not None
+            }
+
+            serialized = []
+            for share in shares:
+                grantee = users_by_id.get(share.grantee_user_id)
+                granter = (
+                    users_by_id.get(share.granted_by) if share.granted_by else None
+                )
+                serialized.append(
+                    {
+                        "prompt_id": prompt_id,
+                        "grantee": {
+                            "id": share.grantee_user_id,
+                            "username": grantee.username if grantee else "",
+                        },
+                        "permission": share.permission,
+                        "granted_by": granter.username if granter else None,
+                        "created_at": share.created_at,
+                        "updated_at": share.updated_at,
+                    }
+                )
+
+            return {"prompt_id": prompt_id, "shares": serialized}
+
+    def revoke_share(
+        self, prompt_id: int, grantee_user_id: str, acting_user: User
+    ) -> bool:
+        """Revoke a prompt share grant (owner/admin only, US3).
+
+        Callers are expected to have already checked owner-level access.
+
+        Args:
+            prompt_id: Prompt the grant belongs to.
+            grantee_user_id: Grantee whose access is being revoked.
+            acting_user: The user performing the revocation (for audit).
+
+        Returns:
+            bool: True if a grant was found and removed, False otherwise.
+        """
+        with get_db_session() as session:
+            sharing_repo = SharingRepository(session)
+
+            revoked_permission = sharing_repo.permission_for(
+                prompt_id, grantee_user_id
+            )
+            removed = sharing_repo.revoke(prompt_id, grantee_user_id)
+
+            if removed:
+                logging_service.log_audit_event(
+                    action="prompt.share.revoked",
+                    resource_type="prompt",
+                    resource_id=str(prompt_id),
+                    actor=acting_user.username,
+                    grantee=grantee_user_id,
+                    permission=revoked_permission,
+                    status="success",
+                )
+            else:
+                logging_service.log_audit_event(
+                    action="prompt.share.revoked",
+                    resource_type="prompt",
+                    resource_id=str(prompt_id),
+                    actor=acting_user.username,
+                    grantee=grantee_user_id,
+                    status="failure",
+                    error="No grant found for that user on this prompt",
+                )
+
+            return removed
+
+    def set_legacy_public(self, prompt_id: int, acting_user: User) -> int:
+        """Un-grandfather a legacy-public prompt (owner/admin only, US3).
+
+        Flips ``Prompt.legacy_public`` from ``True`` to ``False``. One-way —
+        callers must reject a request to set it back to ``True`` before
+        calling this (contracts §4b, FR-018). Creates no ``PromptShare`` rows;
+        anyone who could previously view the prompt only via ``legacy_public``
+        loses that access immediately unless separately granted a share.
+
+        Callers are expected to have already checked owner-level access.
+        Serializing the updated prompt for the API response is the caller's
+        responsibility — the service layer doesn't depend on web-layer
+        serialization helpers.
+
+        Args:
+            prompt_id: Prompt being un-grandfathered.
+            acting_user: The user performing the action (for audit).
+
+        Returns:
+            int: The updated prompt's ID.
+
+        Raises:
+            ShareGrantError: Prompt not found, or already ``legacy_public=False``.
+        """
+        with get_db_session() as session:
+            prompt_repo = PromptRepository(session)
+
+            prompt = prompt_repo.get_by_id(prompt_id)
+            if not prompt:
+                raise ShareGrantError(
+                    "Prompt not found", context={"prompt_id": prompt_id}
+                )
+            if not prompt.legacy_public:
+                raise ShareGrantError(
+                    "Prompt is not legacy-public",
+                    context={"prompt_id": prompt_id},
+                )
+
+            prompt.legacy_public = False
+            session.flush()
+
+            logging_service.log_audit_event(
+                action="prompt.legacy_public.revoked",
+                resource_type="prompt",
+                resource_id=str(prompt_id),
+                actor=acting_user.username,
+            )
+
+            return prompt.id

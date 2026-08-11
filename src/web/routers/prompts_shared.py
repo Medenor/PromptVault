@@ -10,12 +10,14 @@ is unchanged.
 """
 
 import logging
-from typing import List
+from typing import List, Optional
 
 from fastapi import HTTPException, status
+from sqlalchemy.orm import Session
 
 from src.db.models.user import User
 from src.db.models.prompt import Prompt
+from src.config.auth_config import auth_settings
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -30,12 +32,93 @@ def _parse_semver(v: str) -> tuple:
     return tuple(int(p) for p in parts)
 
 
-def check_prompt_ownership(prompt: Prompt, user: User) -> None:
+_PERMISSION_RANK = {"read": 0, "edit": 1, "owner": 2}
+
+
+def effective_permission(
+    prompt: Prompt, user: Optional[User], session: Session
+) -> Optional[str]:
+    """Resolve a user's effective permission level on a prompt.
+
+    Resolution order (data-model.md "Effective Permission Resolution"):
+        1. AUTH_ENABLED=false -> legacy behavior; not handled here (callers
+           short-circuit before invoking this for anonymous mode).
+        2. Admin -> 'owner'.
+        3. Owner -> 'owner'.
+        4. Explicit PromptShare grant -> its permission ('read' or 'edit').
+        5. prompt.legacy_public == True -> 'read' (never 'edit').
+        6. Otherwise -> None (no access).
+
+    Args:
+        prompt: Prompt being accessed
+        user: Acting user (None only valid when auth is disabled)
+        session: Database session, used to look up any share grant
+
+    Returns:
+        'owner', 'edit', 'read', or None
+    """
+    if user is None:
+        return None
+
+    if user.role == "admin":
+        return "owner"
+
+    if prompt.user_id == user.id:
+        return "owner"
+
+    from src.db.repositories.sharing_repository import SharingRepository
+
+    grant = SharingRepository(session).permission_for(prompt.id, user.id)
+    if grant:
+        return grant
+
+    if prompt.legacy_public:
+        return "read"
+
+    return None
+
+
+def check_prompt_access(
+    prompt: Prompt, user: Optional[User], level: str, session: Session
+) -> None:
+    """Check that user has at least the given permission level on a prompt.
+
+    When ``AUTH_ENABLED=false`` this is a no-op (legacy pass-through — every
+    request behaves as before, sharing is inactive).
+
+    Args:
+        prompt: Prompt to check access to
+        user: User attempting the operation (may be None in anonymous mode)
+        level: Required level — 'read', 'edit', or 'owner'
+        session: Database session, used to look up any share grant
+
+    Raises:
+        HTTPException: 403 if the user's effective level is below the
+            required one; the caller decides whether to raise 404 instead
+            for read-path existence hiding.
+    """
+    if not auth_settings.auth_enabled:
+        return
+
+    effective = effective_permission(prompt, user, session)
+    if effective is None or _PERMISSION_RANK[effective] < _PERMISSION_RANK[level]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You don't have permission to perform this action on this prompt.",
+        )
+
+
+def check_prompt_ownership(prompt: Prompt, user: User, session: Session = None) -> None:
     """Check if user owns the prompt or is an admin.
+
+    Kept as the owner-level entry point for existing callers; delegates to
+    :func:`check_prompt_access` at the 'owner' level.
 
     Args:
         prompt: Prompt to check ownership of
         user: User attempting the operation
+        session: Database session (unused at 'owner' level, kept for a
+            uniform call signature with check_prompt_access)
 
     Raises:
         HTTPException: 403 if user doesn't have permission
@@ -93,16 +176,28 @@ def _log_prompt_action(
     )
 
 
-def _prompt_to_dict(prompt: Prompt) -> dict:
+def _prompt_to_dict(
+    prompt: Prompt,
+    viewer: Optional[User] = None,
+    session: Optional[Session] = None,
+) -> dict:
     """Convert Prompt model to dictionary for API response.
+
+    When ``viewer`` and ``session`` are both provided, the payload gains the
+    per-viewer sharing fields from contracts/sharing-api.md §4 (``shared``,
+    ``legacy_public``, ``permission``). Omitted when either is absent so
+    existing callers (e.g. the legacy dict-shaped data_service paths, which
+    have no ORM Prompt/session to resolve grants against) are unaffected.
 
     Args:
         prompt: Prompt model instance
+        viewer: The requesting user, for permission resolution (optional)
+        session: Database session, for grant lookups (optional)
 
     Returns:
         dict: Prompt data formatted for API response
     """
-    return {
+    result = {
         "id": prompt.id,
         "title": prompt.title,
         "prompt": prompt.prompt,
@@ -119,6 +214,30 @@ def _prompt_to_dict(prompt: Prompt) -> dict:
         "updated_at": prompt.updated_at.isoformat() if prompt.updated_at else None,
         "semantic_version": prompt.semantic_version,
     }
+
+    if session is not None:
+        result["legacy_public"] = bool(prompt.legacy_public)
+        result["permission"] = effective_permission(prompt, viewer, session)
+        result["shared"] = _has_explicit_grant(prompt, viewer, session)
+
+    return result
+
+
+def _has_explicit_grant(
+    prompt: Prompt, viewer: Optional[User], session: Session
+) -> bool:
+    """True only when an explicit PromptShare names this viewer.
+
+    Never true for owner/admin access or legacy_public-only visibility —
+    'shared' in API payloads means "someone explicitly granted me access",
+    per contracts/sharing-api.md §4.
+    """
+    if viewer is None or prompt.user_id == viewer.id:
+        return False
+
+    from src.db.repositories.sharing_repository import SharingRepository
+
+    return SharingRepository(session).permission_for(prompt.id, viewer.id) is not None
 
 
 def normalize_pagination(page: int, limit: int) -> tuple[int, int]:

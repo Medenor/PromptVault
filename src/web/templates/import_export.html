@@ -147,6 +147,14 @@
                 </label>
               </div>
 
+              <p
+                class="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-3 py-2 dark:text-amber-200 dark:bg-amber-900/30 dark:border-amber-800"
+                data-i18n="importExport.sharingNotIncluded"
+              >
+                Exported files do not include sharing permissions or access settings. To preserve these, use a full
+                database backup.
+              </p>
+
               <div>
                 <label
                   for="export-filename"
@@ -314,8 +322,9 @@
                   data-i18n="importExport.modeHelp"
                 >
                   Append adds new prompts and keeps current ones (creating duplicates if titles
-                  match). Replace clears existing prompts before import. Smart merge skips prompts
-                  whose title already exists.
+                  match). Replace clears existing prompts before import and permanently removes
+                  any active sharing grants on them. Smart merge skips prompts whose title already
+                  exists.
                 </p>
               </div>
 

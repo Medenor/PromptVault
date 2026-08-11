@@ -280,12 +280,44 @@ export function handleFavoritesFilter(event: Event): void {
   void performSearch();
 }
 
+/**
+ * "Shared with me" sidebar filter chip (007-prompt-sharing, US2). Composes
+ * with the other filters (search/category/tag/favorites) the same way the
+ * favorites checkbox does: it's just another param folded into
+ * buildSearchUrl() by prompt-filters.ts, so all filters narrow the result
+ * set together rather than being mutually exclusive.
+ */
+export function handleSharedWithMeFilter(event: Event): void {
+  const target = event.target as HTMLInputElement | null;
+  if (!target) return;
+  // Update search state and trigger search
+  searchState.sharedWithMe = target.checked;
+
+  // Sync both checkboxes (desktop and mobile)
+  const sharedWithMeFilter = document.getElementById(
+    'shared-with-me-filter'
+  ) as HTMLInputElement | null;
+  const sharedWithMeFilterMobile = document.getElementById(
+    'shared-with-me-filter-mobile'
+  ) as HTMLInputElement | null;
+
+  if (sharedWithMeFilter && target.id !== 'shared-with-me-filter') {
+    sharedWithMeFilter.checked = searchState.sharedWithMe;
+  }
+  if (sharedWithMeFilterMobile && target.id !== 'shared-with-me-filter-mobile') {
+    sharedWithMeFilterMobile.checked = searchState.sharedWithMe;
+  }
+
+  void performSearch();
+}
+
 export function clearAllFilters(): void {
   // Reset search state
   searchState.searchTerm = '';
   searchState.category = 'all';
   searchState.tag = 'all';
   searchState.favorites = false;
+  searchState.sharedWithMe = false;
   searchState.caseSensitive = false;
   searchState.isLoading = false;
 
@@ -316,6 +348,13 @@ export function clearAllFilters(): void {
     favoritesFilter.checked = false;
   }
 
+  const sharedWithMeFilter = document.getElementById(
+    'shared-with-me-filter'
+  ) as HTMLInputElement | null;
+  if (sharedWithMeFilter) {
+    sharedWithMeFilter.checked = false;
+  }
+
   // Reset UI elements (mobile)
   const searchInputMobile = document.getElementById(
     'search-input-mobile'
@@ -336,6 +375,13 @@ export function clearAllFilters(): void {
   ) as HTMLInputElement | null;
   if (favoritesFilterMobile) {
     favoritesFilterMobile.checked = false;
+  }
+
+  const sharedWithMeFilterMobile = document.getElementById(
+    'shared-with-me-filter-mobile'
+  ) as HTMLInputElement | null;
+  if (sharedWithMeFilterMobile) {
+    sharedWithMeFilterMobile.checked = false;
   }
 
   // Reset active states in sidebar (desktop)

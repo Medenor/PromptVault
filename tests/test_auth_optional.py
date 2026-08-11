@@ -159,6 +159,19 @@ class TestAnonymousMode:
         response = api_client.get("/api/admin/users")
         assert response.status_code == 404
 
+    def test_share_grant_returns_404_when_disabled(self, api_client: TestClient):
+        """``POST /api/prompts/{id}/shares`` is unmounted (404) in anonymous mode."""
+        response = api_client.post(
+            "/api/prompts/1/shares",
+            json={"identifier": "anyone", "permission": "read"},
+        )
+        assert response.status_code == 404
+
+    def test_users_search_returns_404_when_disabled(self, api_client: TestClient):
+        """``GET /api/users/search`` is unmounted (404) in anonymous mode."""
+        response = api_client.get("/api/users/search", params={"q": "al"})
+        assert response.status_code == 404
+
     def test_home_serves_app_without_redirect(self, api_client: TestClient):
         """``GET /`` serves the app (200) instead of redirecting to login."""
         response = api_client.get("/", follow_redirects=False)

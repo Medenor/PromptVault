@@ -31,7 +31,7 @@ export function createModal(props: ModalProps): {
 
   // Modal card container
   const modalContent = document.createElement('div');
-  const baseClasses = 'bg-white rounded-lg shadow-lg relative';
+  const baseClasses = 'bg-white rounded-lg shadow-lg relative flex flex-col max-h-[90vh]';
   const sizeClasses = getSizeClasses(props.size || 'md');
   const paddingClasses = 'p-6';
 
@@ -44,7 +44,7 @@ export function createModal(props: ModalProps): {
 
   if (props.title) {
     const header = document.createElement('div');
-    header.className = 'flex items-center justify-between mb-4';
+    header.className = 'flex items-center justify-between mb-4 shrink-0';
 
     const title = document.createElement('h2');
     title.id = titleId;
@@ -75,7 +75,7 @@ export function createModal(props: ModalProps): {
   // Body content
   const body = document.createElement('div');
   body.id = descriptionId;
-  body.className = 'mb-6';
+  body.className = 'mb-6 overflow-y-auto min-h-0';
   if (typeof props.content === 'string') {
     // eslint-disable-next-line no-restricted-properties -- generic component sink; no caller passes untrusted data as a string
     body.innerHTML = props.content;
@@ -88,7 +88,7 @@ export function createModal(props: ModalProps): {
   // Actions footer (buttons)
   if (props.actions && props.actions.length > 0) {
     const footer = document.createElement('div');
-    footer.className = 'flex justify-end gap-2';
+    footer.className = 'flex justify-end gap-2 shrink-0';
 
     props.actions.forEach((action) => {
       const button = createButton(action.label, {

@@ -13,6 +13,7 @@ This guide provides solutions to common issues encountered during PromptVault se
 - [Container Issues](#container-issues)
 - [Migration Issues](#migration-issues)
 - [Permission Errors](#permission-errors)
+- [Sharing & Visibility](#sharing--visibility)
 - [Error Code Reference](#error-code-reference)
 - [Debug Commands](#debug-commands)
 - [Log Locations](#log-locations)
@@ -1323,6 +1324,88 @@ mkdir -p /path/to/directory
 chmod 755 /path/to/directory
 chown $USER:$USER /path/to/directory
 ```
+
+---
+
+## Sharing & Visibility
+
+### Bulk "un-grandfather" legacy-public prompts
+
+**Background:** As of the 007-prompt-sharing release, newly created prompts default to **private**. Prompts that existed before the release were automatically grandfathered as **"Public (legacy)"** (`prompts.legacy_public = true`) so nothing changed visibility on upgrade. An owner or admin can flip an individual prompt to private via its Share modal's "Make private" button, which calls `PATCH /api/prompts/{prompt_id}` with `{"legacy_public": false}`. This is **one-way** — there is no API path back to `legacy_public: true`.
+
+There is no bulk UI or bulk endpoint for this. If you want to move every legacy-public prompt to private in one pass (e.g. to fully adopt the new sharing model instance-wide), run the flip through the service layer so each prompt still gets its `prompt.legacy_public.revoked` audit-log entry, instead of updating the `prompts` table directly with SQL.
+
+The script is the same either way — only how you invoke Python differs.
+
+```python
+# bulk_make_private.py
+from src.db.session import SessionLocal
+from src.db.models import Prompt, User
+from src.services.prompt_data_service_db import PromptDataService
+
+db = SessionLocal()
+# Use the username of the admin who should be attributed in the audit log
+admin = db.query(User).filter(User.username == "YOUR_ADMIN_USERNAME").one()
+service = PromptDataService(db)
+
+prompt_ids = [p.id for p in db.query(Prompt).filter(Prompt.legacy_public.is_(True)).all()]
+print(f"Flipping {len(prompt_ids)} prompts...")
+
+ok, failed = 0, []
+for pid in prompt_ids:
+    try:
+        service.set_legacy_public(pid, acting_user=admin)
+        ok += 1
+    except Exception as e:
+        failed.append((pid, str(e)))
+
+print(f"Success: {ok}")
+if failed:
+    print(f"Failed: {failed}")
+db.close()
+```
+
+**Docker deployment** (`docker-compose.yml`, Postgres):
+
+```bash
+# Adjust the container name if yours differs (check with: docker ps)
+docker cp bulk_make_private.py promptvault-web:/tmp/bulk_make_private.py
+docker exec promptvault-web python /tmp/bulk_make_private.py
+```
+
+**Local dev environment** (SQLite, no Docker):
+
+```bash
+# From the project root, with your dev venv active
+source .venv/bin/activate  # or however you activate it
+
+# Dev's SQLite file is resolved via PROMPTVAULT_DATA_DIR (or the code-anchored
+# default if unset) — make sure you're pointed at the same data dir the dev
+# server itself uses, not a different one, before running this.
+python bulk_make_private.py
+```
+
+Verify nothing is left:
+
+```bash
+python -c "
+from src.db.session import SessionLocal
+from src.db.models import Prompt
+
+db = SessionLocal()
+print('legacy_public=true remaining:', db.query(Prompt).filter(Prompt.legacy_public.is_(True)).count())
+db.close()
+"
+```
+
+Run that verify snippet the same way you ran the flip: prefix with `docker exec promptvault-web` in Docker, or plain (venv active) in local dev.
+
+**⚠️ Before running this:**
+
+- **It's irreversible per-prompt.** Anyone who could see a prompt only because it was legacy-public loses access the moment it flips — they will need an explicit share (`POST /api/prompts/{id}/shares`) to see it again. There is no bulk re-share.
+- Double-check the environment/database you're targeting — this touches every legacy-public prompt in that instance, and dev/prod use separate data directories via `PROMPTVAULT_DATA_DIR` (see [Database Issues](#database-issues)).
+- If the import fails with `ImportError: cannot import name '...'`, confirm the exact class name in your checkout/image before adjusting the script: `grep -n "^class" src/services/prompt_data_service_db.py` (`docker exec promptvault-web grep -n "^class" /app/src/services/prompt_data_service_db.py` in Docker) — it is `PromptDataService` as of this writing.
+- In local dev, make sure the venv you're running in is the same one the dev server uses, and that `PROMPTVAULT_DATA_DIR` (if set) points at the same SQLite file the dev server is serving from — otherwise you'll flip a different database than the one you're looking at in the browser.
 
 ---
 

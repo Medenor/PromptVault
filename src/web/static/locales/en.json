@@ -26,7 +26,8 @@
     "home": "Home",
     "language": "Language",
     "account": "Account",
-    "data": "Data"
+    "data": "Data",
+    "perPage": "Per page:"
   },
   "actions": {
     "add": "Add",
@@ -273,6 +274,7 @@
     "exportOptions": "Export Options:",
     "includeFavorites": "Include only favorite prompts",
     "includeMetadata": "Include metadata (tags, categories)",
+    "sharingNotIncluded": "Exported files do not include sharing permissions or access settings. To preserve these, use a full database backup.",
     "filename": "Filename:",
     "exportBtn": "Export Data",
     "previewBtn": "Preview",
@@ -284,7 +286,7 @@
     "modeAppend": "Append to existing",
     "modeReplace": "Replace existing",
     "modeMerge": "Smart merge",
-    "modeHelp": "Append adds new prompts and keeps current ones (creating duplicates if titles match). Replace clears existing prompts before import. Smart merge skips prompts whose title already exists.",
+    "modeHelp": "Append adds new prompts and keeps current ones (creating duplicates if titles match). Replace clears existing prompts before import and permanently removes any active sharing grants on them. Smart merge skips prompts whose title already exists.",
     "importBtn": "Import Data",
     "previewTitle": "Preview",
     "statisticsTitle": "Statistics & History",
@@ -304,6 +306,7 @@
     "importFailed": "Import failed",
     "confirmExport": "Export {count} prompts?",
     "confirmImport": "Import {count} prompts?",
+    "confirmReplaceWithShares": "This will also permanently remove {count} active sharing grant(s). Continue?",
     "noFileSelected": "Please select a file to import",
     "invalidFormat": "Unsupported file format",
     "previewExportTitle": "Export Preview",
@@ -794,5 +797,26 @@
     "indicator": "You're offline. Viewing cached prompts — reconnect to make changes.",
     "unavailableOffline": "This content isn't available offline. Reconnect to view it.",
     "editUnavailable": "This action needs an internet connection. Reconnect to continue."
+  },
+  "sharing": {
+    "title": "Share prompt",
+    "share": "Share",
+    "grant": "Grant access",
+    "permission": {
+      "read": "Can view",
+      "edit": "Can edit"
+    },
+    "grant_failed": "Couldn't share this prompt. Check the username or email and try again.",
+    "picker_placeholder": "Search by username or email...",
+    "picker_no_results": "No matching users",
+    "picker_searching": "Searching...",
+    "revoke": "Revoke",
+    "revoked": "Access revoked.",
+    "badge": "Shared",
+    "legacy_public_badge": "Public (legacy)",
+    "shared_with_me": "Shared with me",
+    "no_shares": "This prompt hasn't been shared with anyone yet.",
+    "make_private": "Make private",
+    "make_private_confirm": "Make this prompt private? Anyone who could view it because it was public will lose access unless you share it with them directly."
   }
 }

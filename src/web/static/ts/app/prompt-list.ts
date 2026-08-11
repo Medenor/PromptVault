@@ -38,6 +38,7 @@ export let paginationState: PaginationState = createInitialPaginationState({
   category: 'all',
   tag: 'all',
   favorites: false,
+  sharedWithMe: false,
   caseSensitive: false,
 });
 

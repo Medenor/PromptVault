@@ -25,7 +25,13 @@ vi.mock('@/telemetry', () => ({
   reportError: (...args: unknown[]) => reportErrorMock(...args),
 }));
 
-import { loadStatistics, normalizeExportFilename, showProgress, showStatus } from '../operations';
+import {
+  confirmReplaceDestroysShares,
+  loadStatistics,
+  normalizeExportFilename,
+  showProgress,
+  showStatus,
+} from '../operations';
 
 beforeEach(() => {
   document.body.innerHTML = '';
@@ -81,6 +87,59 @@ describe('loadStatistics', () => {
     expect(reportErrorMock).toHaveBeenCalledWith(
       'importExport',
       'loadStatistics',
+      expect.any(Error)
+    );
+  });
+});
+
+describe('confirmReplaceDestroysShares', () => {
+  let confirmSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    confirmSpy?.mockRestore();
+    confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+  });
+
+  it('proceeds without prompting when there are no active shares', async () => {
+    apiGetMock.mockResolvedValue({ active_shares_count: 0 });
+
+    const result = await confirmReplaceDestroysShares();
+
+    expect(result).toBe(true);
+    expect(confirmSpy).not.toHaveBeenCalled();
+  });
+
+  it('prompts with the share count and returns the user choice', async () => {
+    apiGetMock.mockResolvedValue({ active_shares_count: 3 });
+    confirmSpy.mockReturnValue(true);
+
+    const result = await confirmReplaceDestroysShares();
+
+    expect(result).toBe(true);
+    expect(confirmSpy).toHaveBeenCalledWith(
+      expect.stringContaining('importExport.confirmReplaceWithShares')
+    );
+  });
+
+  it('returns false when the user declines the confirmation', async () => {
+    apiGetMock.mockResolvedValue({ active_shares_count: 2 });
+    confirmSpy.mockReturnValue(false);
+
+    const result = await confirmReplaceDestroysShares();
+
+    expect(result).toBe(false);
+  });
+
+  it('fails open (returns true) when the stats lookup errors', async () => {
+    apiGetMock.mockRejectedValue(new Error('network down'));
+
+    const result = await confirmReplaceDestroysShares();
+
+    expect(result).toBe(true);
+    expect(confirmSpy).not.toHaveBeenCalled();
+    expect(reportErrorMock).toHaveBeenCalledWith(
+      'importExport',
+      'confirmReplaceDestroysShares',
       expect.any(Error)
     );
   });

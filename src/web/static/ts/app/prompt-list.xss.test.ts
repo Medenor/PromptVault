@@ -35,6 +35,7 @@ describe('renderPrompts XSS hardening', () => {
       onToggleFavorite: () => {},
       onShowHistory: () => {},
       onCopyWithVersion: () => {},
+      onShare: () => {},
     });
 
     (window as unknown as { alert?: unknown }).alert = vi.fn();

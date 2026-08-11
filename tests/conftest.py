@@ -47,6 +47,7 @@ from src.db.models import (
     Prompt,
     PromptVersion,
     PromptBranch,
+    PromptShare,
     Backup,
     BackupSchedule,
     BackupStorageProvider,
@@ -124,6 +125,7 @@ def reset_database(request):
         Prompt,
         PromptVersion,
         PromptBranch,
+        PromptShare,
         Backup,
         BackupSchedule,
         BackupStorageProvider,
@@ -180,6 +182,7 @@ def test_db_engine(request):
         Prompt,
         PromptVersion,
         PromptBranch,
+        PromptShare,
         Backup,
         BackupSchedule,
         BackupStorageProvider,
@@ -240,6 +243,46 @@ def test_user(test_db_session: Session) -> User:
         display_name="Test User",
         email="test@example.com",
         password_hash="hashed_password_placeholder",  # Required field
+        role="user",
+    )
+    test_db_session.add(user)
+    test_db_session.flush()
+    return user
+
+
+@pytest.fixture
+def second_user(test_db_session: Session) -> User:
+    """Create a second test user (typically a share grantee).
+
+    Returns:
+        User: Test user with username 'second_user'
+    """
+    user = User(
+        id="second-user-id",
+        username="second_user",
+        display_name="Second User",
+        email="second@example.com",
+        password_hash="hashed_password_placeholder",
+        role="user",
+    )
+    test_db_session.add(user)
+    test_db_session.flush()
+    return user
+
+
+@pytest.fixture
+def third_user(test_db_session: Session) -> User:
+    """Create a third test user (typically an unrelated stranger).
+
+    Returns:
+        User: Test user with username 'third_user'
+    """
+    user = User(
+        id="third-user-id",
+        username="third_user",
+        display_name="Third User",
+        email="third@example.com",
+        password_hash="hashed_password_placeholder",
         role="user",
     )
     test_db_session.add(user)
@@ -311,6 +354,75 @@ def test_prompt(
 
 
 @pytest.fixture
+def shared_prompt(
+    test_db_session: Session,
+    test_prompt: Prompt,
+    second_user: User,
+) -> Callable[..., "PromptShare"]:
+    """Factory: grant second_user access to test_prompt at a given level.
+
+    Args:
+        test_db_session: Database session
+        test_prompt: Owned by test_user
+        second_user: Default grantee
+
+    Returns:
+        Callable[[str, Optional[User]], PromptShare]: call with a permission
+            ('read' or 'edit') and an optional grantee override to create the
+            grant; defaults to granting second_user.
+    """
+    from src.db.repositories.sharing_repository import SharingRepository
+
+    def _make(permission: str = "read", grantee: User = None) -> "PromptShare":
+        repo = SharingRepository(test_db_session)
+        share = repo.upsert(
+            prompt_id=test_prompt.id,
+            grantee_user_id=(grantee or second_user).id,
+            permission=permission,
+            granted_by=test_prompt.user_id,
+        )
+        test_db_session.flush()
+        return share
+
+    return _make
+
+
+@pytest.fixture
+def legacy_public_prompt(
+    test_db_session: Session,
+    test_user: User,
+    test_category: Category,
+) -> Callable[..., Prompt]:
+    """Factory: create a grandfathered legacy-public prompt (no grants).
+
+    Args:
+        test_db_session: Database session
+        test_user: Owner of the created prompt
+        test_category: Category for the created prompt
+
+    Returns:
+        Callable[[], Prompt]: call with no args to create a fresh
+            legacy_public=True prompt owned by test_user.
+    """
+
+    def _make() -> Prompt:
+        prompt = Prompt(
+            title="Legacy Public Prompt",
+            prompt="This prompt existed before the sharing feature shipped",
+            category_id=test_category.id,
+            note="",
+            favorite=False,
+            legacy_public=True,
+            user_id=test_user.id,
+        )
+        test_db_session.add(prompt)
+        test_db_session.flush()
+        return prompt
+
+    return _make
+
+
+@pytest.fixture
 def test_prompt_with_versions(
     test_db_session: Session, test_prompt: Prompt, test_user: User
 ) -> tuple[Prompt, List[PromptVersion]]:
@@ -364,6 +476,21 @@ def prompt_repo(test_db_session: Session) -> PromptRepository:
         PromptRepository: Repository for prompt operations
     """
     return PromptRepository(test_db_session)
+
+
+@pytest.fixture
+def sharing_repo(test_db_session: Session) -> "SharingRepository":
+    """Create a SharingRepository instance.
+
+    Args:
+        test_db_session: Database session
+
+    Returns:
+        SharingRepository: Repository for prompt_shares operations
+    """
+    from src.db.repositories.sharing_repository import SharingRepository
+
+    return SharingRepository(test_db_session)
 
 
 @pytest.fixture

@@ -21,12 +21,24 @@ Data access goes through the module-level ``data_service`` global on
 routers), so test fixtures that reconfigure services at runtime are honored.
 """
 
-from fastapi import APIRouter, Form, Request
+from typing import Optional
+
+from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
+from sqlalchemy.orm import Session
 
+from src.config.auth_config import auth_settings
+from src.db.models.user import User
+from src.db.repositories.prompt_repository import PromptRepository
+from src.db.session import get_db
+from src.web.dependencies.bypass import (
+    get_current_user_or_default,
+    get_current_user_or_none,
+)
 from src.web.middleware.rate_limit import limiter, write_limit
 from src.web.models import VersionRevertRequest
+from src.web.routers.prompts_shared import check_prompt_access, effective_permission
 from src.utils.diff_utils import compute_character_diff
 
 router = APIRouter(
@@ -48,8 +60,46 @@ def _record_validation_event(*args, **kwargs):
     web_app.record_validation_event(*args, **kwargs)
 
 
+def _check_read_access(prompt_id_int: int, user: Optional[User], db: Session) -> bool:
+    """Return False (caller should 404) when the prompt is invisible to user.
+
+    Looks the prompt up via the ORM (not data_service's legacy dict shape)
+    since check_prompt_access needs a Prompt instance. A prompt visible only
+    through the legacy data_service dict path (no DB row) has no sharing
+    concept to enforce, so it is treated as visible — matching that path's
+    existing public-access behavior elsewhere in the prompt routers.
+    """
+    if not auth_settings.auth_enabled:
+        return True
+    prompt = PromptRepository(db).get_by_id(prompt_id_int)
+    if prompt is None:
+        return True
+    return effective_permission(prompt, user, db) is not None
+
+
+def _check_edit_access(prompt_id_int: int, user: Optional[User], db: Session) -> bool:
+    """Return False (caller should 403) when user lacks 'edit' level.
+
+    Revert requires 'edit' (owner, admin, or an edit-grantee) — a
+    legacy_public prompt alone is insufficient (data-model.md). Unlike read
+    paths, insufficient-but-visible access reports 403, not 404 (contract
+    §6: mutation attempts on visible prompts are 403).
+    """
+    if not auth_settings.auth_enabled:
+        return True
+    prompt = PromptRepository(db).get_by_id(prompt_id_int)
+    if prompt is None:
+        return True
+    level = effective_permission(prompt, user, db)
+    return level in ("edit", "owner")
+
+
 @router.get("/{prompt_id}/versions")
-async def get_version_history(prompt_id: str):
+async def get_version_history(
+    prompt_id: str,
+    user: Optional[User] = Depends(get_current_user_or_none),
+    db: Session = Depends(get_db),
+):
     """Get version history for a specific prompt"""
     try:
         prompt_id_int = int(prompt_id)
@@ -59,6 +109,9 @@ async def get_version_history(prompt_id: str):
     data_service = _data_service()
     prompts = data_service.load_prompts()
     if prompt_id_int not in prompts:
+        return JSONResponse(status_code=404, content={"error": "Prompt not found"})
+
+    if not _check_read_access(prompt_id_int, user, db):
         return JSONResponse(status_code=404, content={"error": "Prompt not found"})
 
     versions = data_service.get_prompt_versions(prompt_id_int)
@@ -85,7 +138,13 @@ async def get_version_history(prompt_id: str):
 
 
 @router.get("/{prompt_id}/versions/compare")
-async def compare_versions(prompt_id: str, v1: str = None, v2: str = None):
+async def compare_versions(
+    prompt_id: str,
+    v1: str = None,
+    v2: str = None,
+    user: Optional[User] = Depends(get_current_user_or_none),
+    db: Session = Depends(get_db),
+):
     """Compare two versions of a prompt"""
     try:
         prompt_id_int = int(prompt_id)
@@ -101,6 +160,9 @@ async def compare_versions(prompt_id: str, v1: str = None, v2: str = None):
     data_service = _data_service()
     prompts = data_service.load_prompts()
     if prompt_id_int not in prompts:
+        return JSONResponse(status_code=404, content={"error": "Prompt not found"})
+
+    if not _check_read_access(prompt_id_int, user, db):
         return JSONResponse(status_code=404, content={"error": "Prompt not found"})
 
     versions = data_service.get_prompt_versions(prompt_id_int)
@@ -172,7 +234,12 @@ async def compare_versions(prompt_id: str, v1: str = None, v2: str = None):
 
 
 @router.get("/{prompt_id}/versions/{version_id}")
-async def get_specific_version(prompt_id: str, version_id: str):
+async def get_specific_version(
+    prompt_id: str,
+    version_id: str,
+    user: Optional[User] = Depends(get_current_user_or_none),
+    db: Session = Depends(get_db),
+):
     """Get a specific version of a prompt"""
     try:
         prompt_id_int = int(prompt_id)
@@ -182,6 +249,9 @@ async def get_specific_version(prompt_id: str, version_id: str):
     data_service = _data_service()
     prompts = data_service.load_prompts()
     if prompt_id_int not in prompts:
+        return JSONResponse(status_code=404, content={"error": "Prompt not found"})
+
+    if not _check_read_access(prompt_id_int, user, db):
         return JSONResponse(status_code=404, content={"error": "Prompt not found"})
 
     versions = data_service.get_prompt_versions(prompt_id_int)
@@ -203,6 +273,8 @@ async def revert_to_version(
     version_id: str,
     request: Request,
     commit_message: str = Form("Revert to previous version"),
+    user: User = Depends(get_current_user_or_default),
+    db: Session = Depends(get_db),
 ):
     """Revert a prompt to a specific version with validation."""
     try:
@@ -227,6 +299,14 @@ async def revert_to_version(
     if prompt_id_int not in prompts:
         return JSONResponse(status_code=404, content={"error": "Prompt not found"})
 
+    if not _check_read_access(prompt_id_int, user, db):
+        return JSONResponse(status_code=404, content={"error": "Prompt not found"})
+    if not _check_edit_access(prompt_id_int, user, db):
+        return JSONResponse(
+            status_code=403,
+            content={"error": "You don't have permission to revert this prompt."},
+        )
+
     versions = data_service.get_prompt_versions(prompt_id_int)
 
     version_to_revert = None
@@ -241,7 +321,10 @@ async def revert_to_version(
     reverted_data = version_to_revert.get("data", {}).copy()
 
     success = data_service.revert_prompt_to_version(
-        prompt_id_int, reverted_data, validated_data.commit_message
+        prompt_id_int,
+        reverted_data,
+        validated_data.commit_message,
+        author=user.username if user else None,
     )
 
     if success:

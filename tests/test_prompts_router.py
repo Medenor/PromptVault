@@ -324,6 +324,53 @@ class TestCreatePromptAnonymous:
         assert response.status_code == 201
         prompt_id = response.json()["prompt_id"]
 
-        retrieved = api_client.get(f"/api/prompts/{prompt_id}")
-        assert retrieved.status_code == 200
-        assert retrieved.json()["title"] == "Anonymous Prompt"
+        # With AUTH_ENABLED=true, an anonymous-created prompt has no owner,
+        # no grant, and is not legacy_public — it is invisible to everyone
+        # (including a later anonymous request), per 007-prompt-sharing's
+        # visibility scoping. The admin role always sees it (existence check).
+        from datetime import datetime, timezone
+
+        from src.services.auth.jwt_service import JWTService
+        from src.services.auth.password_service import PasswordService
+        from src.config import auth_config
+        from src.db.models.user import User
+        from src.db.session import SessionLocal
+
+        session = SessionLocal()
+        try:
+            if not session.query(User).filter_by(id="anon-check-admin-id").first():
+                password_service = PasswordService(auth_config.auth_settings)
+                session.add(
+                    User(
+                        id="anon-check-admin-id",
+                        username="anon_check_admin",
+                        email="anon_check_admin@example.com",
+                        password_hash=password_service.hash_password("AdminP@ssw0rd123"),
+                        role="admin",
+                        is_active=True,
+                        email_verified=True,
+                        created_at=datetime.now(timezone.utc),
+                        updated_at=datetime.now(timezone.utc),
+                    )
+                )
+                session.commit()
+        finally:
+            session.close()
+
+        jwt_service = JWTService(auth_config.auth_settings)
+        admin_token = jwt_service.generate_access_token(
+            user_id="anon-check-admin-id",
+            username="anon_check_admin",
+            email="anon_check_admin@example.com",
+            role="admin",
+        )
+        admin_headers = {"Authorization": f"Bearer {admin_token}"}
+
+        retrieved_anon = api_client.get(f"/api/prompts/{prompt_id}")
+        assert retrieved_anon.status_code == 404
+
+        retrieved_admin = api_client.get(
+            f"/api/prompts/{prompt_id}", headers=admin_headers
+        )
+        assert retrieved_admin.status_code == 200
+        assert retrieved_admin.json()["title"] == "Anonymous Prompt"
