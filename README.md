@@ -70,6 +70,7 @@
 - [About](#about)
   - [Built With](#built-with)
   - [Version Control](#version-control)
+  - [Prompt Sharing & Collaboration](#prompt-sharing--collaboration)
   - [Screenshots](#screenshots-and-gallery)
 - [Quick Start](#quick-start)
 - [Getting Started](#getting-started)
@@ -99,7 +100,7 @@
 
 PromptVault is a modern web-based prompt management application designed to help users easily organize, store, and retrieve their prompts for various AI applications, software development, content marketing, and much more. Whether you are a developer, writer, marketer, or simply a user of AI-based tools, PromptVault allows you to centralize your prompts and improve your productivity through a responsive web interface accessible from any browser.
 
-With built-in multi-user authentication and role-based access control, PromptVault is ready for team deployments and production environments. Secure your prompts, manage user permissions, and collaborate with confidence.
+With built-in multi-user authentication, role-based access control, and per-prompt sharing, PromptVault is ready for team deployments and production environments. Secure your prompts, manage user permissions, share individual prompts with teammates, and collaborate with confidence.
 
 ### Current Status & Test Coverage
 
@@ -172,6 +173,14 @@ For detailed usage instructions, see [Version Control Documentation](docs/VERSIO
 Backups are created automatically before risky operations (deletes, import replace) and pre-restore, or on demand/schedule from the `/backup-management` page. They support at-rest encryption (Argon2id-derived AES-256-GCM), optional upload to S3-compatible storage, checksum-based incremental/delta storage, gzip compression, configurable retention cleanup, and an append-only audit log.
 
 For technical details, see the [Database Specification](docs/SPECS/SPEC_DATABASE.md) and [003-enhanced-backup-restore](specs/003-enhanced-backup-restore/) spec.
+
+### Prompt Sharing & Collaboration
+
+Prompt owners can grant individual teammates `read` or `edit` access to a specific prompt via a Share modal (recipient typeahead, permission selector, revoke at any time). `read` unlocks viewing and version history; `edit` additionally allows editing content/category/tags and reverting — grantees can never delete, re-share, transfer ownership, or toggle favorite status on a shared prompt. A "Shared with me" filter and a "Shared" badge distinguish prompts shared explicitly with you from your own.
+
+**Visibility change**: prompts created from this release onward default to **private** (visible only to their owner, admins, and explicitly-granted users). Prompts that existed before this release were automatically grandfathered as **"Public (legacy)"**, remaining visible to every authenticated user until their owner or an admin makes them private — a one-way transition. Export/import does not carry sharing grants or the legacy-public flag; only a full database backup/restore preserves sharing state.
+
+For technical details, see the [007-prompt-sharing](specs/007-prompt-sharing/) spec.
 
 ## Screenshots and gallery
 
@@ -459,6 +468,7 @@ PORT=8001 python3 run_web.py
 - **Dynamic Placeholders**: Prompts containing `[NAME]` or `{NAME}` tokens show a fill-in form on Copy — filled values are substituted, unfilled tokens are copied as-is
 - **Bulk Operations**: Multi-select prompts with checkboxes and delete multiple prompts in a single operation with automatic backups
 - **Version Control**: Git-like versioning system with full history tracking, diff visualization, and safe revert functionality
+- **Prompt Sharing**: Grant teammates `read` or `edit` access to individual prompts, with a "Shared with me" filter and share badges
 - **Categories & Tags**: Organize prompts with categories and tags for easy discovery
 - **Search & Filter**: Find prompts quickly with advanced filtering and search capabilities
 - **Import/Export**: Support for CSV, Markdown, and JSON formats with preview functionality
