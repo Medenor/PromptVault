@@ -57,6 +57,7 @@ from src.web.dependencies.auth import (
     has_valid_auth_cookie as _has_valid_auth_cookie,
 )
 from src.web.utils.manifest import load_manifest, get_asset_path, is_production
+from src.web.utils.version import get_app_version
 
 
 # ============================================================================
@@ -76,6 +77,7 @@ templates.env.globals["is_dev"] = (
 templates.env.globals["use_vite_assets"] = (
     lambda: os.getenv("USE_VITE_ASSETS", "false").lower() == "true"
 )
+templates.env.globals["app_version"] = get_app_version()
 
 # ============================================================================
 # Authentication Pages (Public)

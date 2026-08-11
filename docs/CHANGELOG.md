@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### ✨ Added
+
+- **App version in the site footer**: The footer (shared `macros/page_footer.html`/`macros/index_footer.html`) now displays the running `v{{ app_version }}`, read from `pyproject.toml` at request time (`src/web/utils/version.py`, with an `importlib.metadata` fallback for installed-but-unsourced deployments) and exposed as a Jinja global on both template environments (`app.py`, `routers/pages.py`). While wiring this in, found the footer markup — including a ~200-line inline Codeberg logo SVG — was duplicated verbatim across 8 auth/admin page templates (login, register, forgot/reset password, profile, import-export, admin users/sessions) instead of using the existing shared macro; all 8 now call `{{ page_footer.site_footer() }}`, removing ~1,650 lines of duplication project-wide
+
 ## [1.12.0] - 2026-08-11
 
 ### ✨ Added
