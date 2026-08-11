@@ -28,9 +28,9 @@ Web application, existing layout: backend `src/`, frontend `src/web/static/ts/`,
 
 **Purpose**: Prepare the FTS helper module location and confirm the toolchain.
 
-- [ ] T001 Create the search helper package `src/db/search/` with an empty `__init__.py`
-- [ ] T002 [P] Add a `tests/benchmarks/` directory with `__init__.py` and a `conftest.py` placeholder for benchmark fixtures
-- [ ] T003 [P] Confirm SQLite build has FTS5 available and record the check in `tests/test_fts_search.py` skeleton (a module-level `pytest.importorskip`/`PRAGMA compile_options` guard that skips with a clear message if FTS5 is absent)
+- [X] T001 Create the search helper package `src/db/search/` with an empty `__init__.py`
+- [X] T002 [P] Add a `tests/benchmarks/` directory with `__init__.py` and a `conftest.py` placeholder for benchmark fixtures
+- [X] T003 [P] Confirm SQLite build has FTS5 available and record the check in `tests/test_fts_search.py` skeleton (a module-level `pytest.importorskip`/`PRAGMA compile_options` guard that skips with a clear message if FTS5 is absent)
 
 ---
 
@@ -40,15 +40,17 @@ Web application, existing layout: backend `src/`, frontend `src/web/static/ts/`,
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete. In particular T004 is a hard prerequisite — until the legacy in-Python search path is removed, the repository `search()` FTS work is shadowed in production and cannot be validated end-to-end (Codeberg #72).
 
-- [ ] T004 Collapse the legacy `data_service` dual-path to the repository path in `src/web/routers/prompts_search_router.py` (remove the `web_app.data_service.load_prompts()` dispatch and the `if legacy_prompts:` block in BOTH `list_prompts` and `search_prompts`; always use `PromptRepository(db)`). Rewrite/drop the two dependent tests in `tests/test_api_endpoints.py` (`test_legacy_prompt_structure_fallbacks`, `test_search_prompts_exception_returns_500`) and verify pagination/ordering assertions elsewhere still hold. Ref: Codeberg #72.
-- [ ] T005 [P] Implement dialect detection + FTS query sanitization in `src/db/search/fts.py`: `active_dialect(session) -> str`, `sanitize_fts_query(raw: str) -> SafeQuery | None` (strips operator-only tokens, extracts `"quoted phrases"`, OR-joins remaining bare terms rather than AND, returns None when empty ⇒ signal fallback). Ref: research.md Decisions 3–4, FR-002/FR-003/FR-010/FR-011/FR-012.
-- [ ] T006 [P] Implement snippet sentinel constants + helpers in `src/db/search/fts.py` (`MATCH_START='[[MATCH]]'`, `MATCH_END='[[/MATCH]]'`, and the per-dialect snippet arg builders for `snippet()` / `ts_headline`). Ref: research.md Decision 5, FR-005/FR-006.
-- [ ] T007 Create the dialect-branched Alembic migration `alembic/versions/<rev>_full_text_search.py` (down_revision = `f1a2b3c4d5e6`), branching on `op.get_bind().dialect.name`:
+- [X] T004 Collapse the legacy `data_service` dual-path to the repository path in `src/web/routers/prompts_search_router.py` (remove the `web_app.data_service.load_prompts()` dispatch and the `if legacy_prompts:` block in BOTH `list_prompts` and `search_prompts`; always use `PromptRepository(db)`). Rewrite/drop the two dependent tests in `tests/test_api_endpoints.py` (`test_legacy_prompt_structure_fallbacks`, `test_search_prompts_exception_returns_500`) and verify pagination/ordering assertions elsewhere still hold. Ref: Codeberg #72.
+- [X] T005 [P] Implement dialect detection + FTS query sanitization in `src/db/search/fts.py`: `active_dialect(session) -> str`, `sanitize_fts_query(raw: str) -> SafeQuery | None` (strips operator-only tokens, extracts `"quoted phrases"`, OR-joins remaining bare terms rather than AND, returns None when empty ⇒ signal fallback). Ref: research.md Decisions 3–4, FR-002/FR-003/FR-010/FR-011/FR-012.
+- [X] T006 [P] Implement snippet sentinel constants + helpers in `src/db/search/fts.py` (`MATCH_START='[[MATCH]]'`, `MATCH_END='[[/MATCH]]'`, and the per-dialect snippet arg builders for `snippet()` / `ts_headline`). Ref: research.md Decision 5, FR-005/FR-006.
+- [X] T007 Create the dialect-branched Alembic migration `alembic/versions/<rev>_full_text_search.py` (down_revision = `f1a2b3c4d5e6`), branching on `op.get_bind().dialect.name`:
   - **SQLite**: create `prompts_fts` FTS5 external-content virtual table over `(title, prompt, note)` with `content='prompts', content_rowid='id'`; create AFTER INSERT/UPDATE/DELETE sync triggers; backfill from existing rows.
   - **PostgreSQL**: add generated `search_vector tsvector` column (weighted title=A, prompt=B, note=C, `coalesce`-guarded) + `GIN` index.
   - Provide a symmetric `downgrade()` dropping all created objects. Ref: data-model.md, research.md Decisions 1–2, FR-013/FR-015.
-- [ ] T008 [P] Migration test in `tests/test_fts_migration.py`: upgrade→downgrade→upgrade round-trips cleanly on SQLite; asserts the FTS table/triggers exist after upgrade and are gone after downgrade; asserts backfill populated existing rows. (Postgres leg runs when the matrix fixture from T009 is active.)
-- [ ] T009 [P] Stand up the cross-dialect test matrix fixture in `tests/conftest_db.py`: a parametrized/`postgres_db` fixture + marker that provides a Postgres-backed session when a Postgres test DB is available and is `skip`-marked otherwise (SQLite leg always runs). This enables the Postgres leg of every parametrized FTS test (T008 migration, T010 ranking, T016 snippet, T024 fallback) from US1 onward (SC-005). Ref: research.md Decision 7, FR-017.
+  - Note: down_revision is `b2c3d4e5f6a7` (current head at implementation time — `f1a2b3c4d5e6` was superseded by two later migrations after tasks.md was written).
+- [X] T008 [P] Migration test in `tests/test_fts_migration.py`: upgrade→downgrade→upgrade round-trips cleanly on SQLite; asserts the FTS table/triggers exist after upgrade and are gone after downgrade; asserts backfill populated existing rows. (Postgres leg runs when the matrix fixture from T009 is active.)
+- [X] T009 [P] Stand up the cross-dialect test matrix fixture: a parametrized `db_dialect_matrix` fixture (plus `postgres_db`) that provides a Postgres-backed session when a Postgres test DB is available and is `skip`-marked otherwise (SQLite leg always runs). This enables the Postgres leg of every parametrized FTS test (T008 migration, T010 ranking, T016 snippet, T024 fallback) from US1 onward (SC-005). Ref: research.md Decision 7, FR-017.
+  - Note: implemented in `tests/conftest.py`, not `tests/conftest_db.py` — `conftest_db.py` is not wired in as a pytest plugin (only `conftest.py` is auto-loaded) and already has its own superseding fixture set with the same names, so the matrix fixture lives where it's actually usable; `conftest_db.py` documents the redirect.
 
 **Checkpoint**: Legacy path removed, FTS schema live on both dialects, shared helpers and cross-dialect matrix ready. User stories can begin.
 
