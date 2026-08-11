@@ -24,6 +24,7 @@ from src.web.routing_setup import configure_routing, _warn_if_auth_disabled  # n
 from src.web.startup import register_lifecycle_events
 from src.config.auth_config import auth_settings
 from src.web.utils.manifest import load_manifest, get_asset_path, is_production
+from src.web.utils.version import get_app_version
 from src.web.dependencies.auth import has_valid_auth_cookie
 
 # ============================================================================
@@ -140,6 +141,7 @@ templates.env.globals["is_dev"] = (
 templates.env.globals["use_vite_assets"] = (
     lambda: os.getenv("USE_VITE_ASSETS", "false").lower() == "true"
 )
+templates.env.globals["app_version"] = get_app_version()
 
 
 def _resolve_data_locations(
