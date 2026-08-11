@@ -279,6 +279,119 @@ def db_dialect_matrix(request) -> Session:
     return request.getfixturevalue(fixture_name)
 
 
+# --- FTS-enabled sessions (US1+) --------------------------------------------
+#
+# db_dialect_matrix/test_db_session provision schema via Base.metadata.create_all(),
+# which does NOT create the prompts_fts virtual table/triggers (SQLite) or the
+# search_vector generated column (Postgres) — those only exist after the FTS
+# Alembic migration runs. Ranking/snippet/fallback tests need the real FTS
+# objects live, so these fixtures build the schema via `alembic upgrade head`
+# instead, mirroring tests/test_fts_migration.py's approach.
+
+FTS_TARGET_REVISION = "c3d4e5f6a7b8"
+FTS_PRE_REVISION = "b2c3d4e5f6a7"  # add_prompt_legacy_public (just before FTS)
+
+
+def _fts_alembic_config(db_url: str):
+    import os as _os
+    from alembic.config import Config
+
+    repo_root = _os.path.abspath(_os.path.join(_os.path.dirname(__file__), ".."))
+    cfg = Config(_os.path.join(repo_root, "alembic.ini"))
+    cfg.set_main_option("script_location", _os.path.join(repo_root, "alembic"))
+    cfg.set_main_option("sqlalchemy.url", db_url)
+    return cfg
+
+
+def _fts_upgrade(db_url: str) -> None:
+    """Apply just the FTS migration on top of ORM-created schema.
+
+    Replaying the full Alembic history from empty fails on SQLite (an
+    unrelated earlier migration uses Postgres-only DDL) — same issue solved
+    in tests/test_fts_migration.py. So the schema is built via
+    Base.metadata.create_all() (matches the app's own SQLite provisioning),
+    Alembic is stamped at the pre-FTS revision, and only the FTS migration
+    is actually replayed.
+    """
+    from alembic import command
+    from src.db.config import db_settings
+
+    cfg = _fts_alembic_config(db_url)
+    original_url = db_settings.DATABASE_URL
+    db_settings.DATABASE_URL = db_url
+    try:
+        engine = create_engine(db_url)
+        Base.metadata.create_all(bind=engine)
+        engine.dispose()
+        command.stamp(cfg, FTS_PRE_REVISION)
+        command.upgrade(cfg, FTS_TARGET_REVISION)
+    finally:
+        db_settings.DATABASE_URL = original_url
+
+
+@pytest.fixture(scope="function")
+def fts_db_session() -> Generator[Session, None, None]:
+    """File-based SQLite session with the FTS migration actually applied.
+
+    In-memory SQLite can't be shared with Alembic's own connection, so this
+    uses a temporary file-based database (mirrors
+    test_fts_migration.py's approach) and upgrades it via `alembic upgrade`
+    rather than `Base.metadata.create_all()`.
+    """
+    import uuid
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        db_path = os.path.join(tmp_dir, f"fts_test_{uuid.uuid4().hex}.db")
+        db_url = f"sqlite:///{db_path}"
+        _fts_upgrade(db_url)
+
+        engine = create_engine(db_url, connect_args={"check_same_thread": False})
+        SessionLocal = sessionmaker(bind=engine)
+        session = SessionLocal()
+        try:
+            yield session
+        finally:
+            session.rollback()
+            session.close()
+            engine.dispose()
+
+
+@pytest.fixture(scope="function")
+def fts_postgres_db() -> Generator[Session, None, None]:
+    """PostgreSQL session with the FTS migration applied (search_vector + GIN).
+
+    Skipped automatically when DATABASE_URL is not a postgresql:// URL.
+    """
+    if not PG_AVAILABLE:
+        pytest.skip("DATABASE_URL is not a PostgreSQL URL")
+
+    _fts_upgrade(PG_DATABASE_URL)
+
+    engine = create_engine(PG_DATABASE_URL, echo=False)
+    SessionLocal = sessionmaker(bind=engine)
+    session = SessionLocal()
+
+    try:
+        yield session
+    finally:
+        session.rollback()
+        session.close()
+        Base.metadata.drop_all(engine)
+        engine.dispose()
+
+
+@pytest.fixture(params=["sqlite", pytest.param("postgresql", marks=requires_postgres)])
+def fts_dialect_matrix(request) -> Session:
+    """Like db_dialect_matrix, but with the FTS migration actually applied.
+
+    Use this (not db_dialect_matrix) for any test that queries prompts_fts
+    or search_vector directly or exercises PromptRepository.search()'s
+    ranked FTS branch.
+    """
+    fixture_name = "fts_db_session" if request.param == "sqlite" else "fts_postgres_db"
+    return request.getfixturevalue(fixture_name)
+
+
 # ============================================================================
 # MODEL FIXTURES
 # ============================================================================

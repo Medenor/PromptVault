@@ -119,7 +119,8 @@ async def list_prompts(
     )
     # Use search() rather than get_all() so results are stably ordered
     # (get_all() has no ORDER BY, which makes OFFSET/LIMIT pagination
-    # non-deterministic across pages).
+    # non-deterministic across pages). No search query here, so search()
+    # takes the plain-listing path regardless of `ranked`.
     prompts = prompt_repo.search(
         limit=limit,
         offset=(page - 1) * limit,
@@ -128,7 +129,7 @@ async def list_prompts(
     )
 
     prompts_dict = {}
-    for prompt in prompts:
+    for prompt, _match_context in prompts:
         prompt_dict = _prompt_to_dict(prompt, viewer=user, session=db)
         prompt_dict.pop("semantic_version", None)
         prompts_dict[str(prompt.id)] = prompt_dict
@@ -175,6 +176,7 @@ async def search_prompts(
     tag: str = "",
     favorites: bool = False,
     case_sensitive: bool = False,
+    ranked: bool = True,
     page: int = 1,
     limit: int = DEFAULT_PAGE_SIZE,
     filter: Optional[str] = None,
@@ -188,7 +190,9 @@ async def search_prompts(
         category: Category filter
         tag: Tag filter
         favorites: Filter by favorites (requires auth)
-        case_sensitive: Case-sensitive search
+        case_sensitive: Case-sensitive search (disables ranking/snippets)
+        ranked: Order by relevance (title > body > note) instead of the
+            legacy updated_at-desc ordering; default True
         page: Page number, 1-indexed
         limit: Page size
         filter: 'shared-with-me' narrows to explicit grants only (excludes
@@ -230,6 +234,7 @@ async def search_prompts(
         case_sensitive=case_sensitive,
         visible_to_user_id=visible_to_user_id,
         shared_only=shared_only,
+        ranked=ranked,
     )
     prompts = prompt_repo.search(
         query=search_query,
@@ -241,10 +246,14 @@ async def search_prompts(
         case_sensitive=case_sensitive,
         visible_to_user_id=visible_to_user_id,
         shared_only=shared_only,
+        ranked=ranked,
     )
 
     prompts_dict = {}
-    for prompt in prompts:
-        prompts_dict[str(prompt.id)] = _prompt_to_dict(prompt, viewer=user, session=db)
+    for prompt, match_context in prompts:
+        prompt_dict = _prompt_to_dict(prompt, viewer=user, session=db)
+        if match_context is not None:
+            prompt_dict["match_context"] = match_context
+        prompts_dict[str(prompt.id)] = prompt_dict
 
     return _build_pagination_envelope(prompts_dict, page, limit, total_count)
