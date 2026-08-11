@@ -44,7 +44,7 @@ COMPOSE          := docker compose
         install install-backend install-frontend \
         dev \
         test test-backend test-frontend \
-        lint lint-backend lint-frontend lint-fix check-file-sizes \
+        lint lint-backend lint-frontend lint-fix check-file-sizes check-sw-cache-version \
         build build-frontend build-image
 
 .DEFAULT_GOAL := help
@@ -206,7 +206,34 @@ check-file-sizes: ## Warn (non-blocking) on source files exceeding 600 lines, to
 		echo "$$_over" | awk '{printf "  %6d  %s\n", $$1, $$2}'; \
 	fi
 
-lint: lint-backend lint-frontend check-file-sizes ## Run all lint/format checks across both stacks (read-only)
+check-sw-cache-version: ## Fail if static assets changed without bumping sw.ts CACHE_VERSION (see docs/agents/frontend.md)
+	@_base="$${CI_MERGE_BASE:-main}"; \
+	if ! git rev-parse --verify --quiet "$$_base" >/dev/null; then \
+		echo "check-sw-cache-version: base ref '$$_base' not found, skipping (not enough git history)."; \
+		exit 0; \
+	fi; \
+	_merge_base=$$(git merge-base "$$_base" HEAD 2>/dev/null) || { \
+		echo "check-sw-cache-version: no merge base with '$$_base', skipping."; \
+		exit 0; \
+	}; \
+	_changed=$$(git diff --name-only "$$_merge_base"...HEAD -- src/web/static/ ':!src/web/static/ts/sw.ts'); \
+	if [ -z "$$_changed" ]; then \
+		exit 0; \
+	fi; \
+	if git diff --name-only "$$_merge_base"...HEAD -- src/web/static/ts/sw.ts | grep -q . && \
+	   git diff "$$_merge_base"...HEAD -- src/web/static/ts/sw.ts | grep -qE '^[+-]const CACHE_VERSION'; then \
+		exit 0; \
+	fi; \
+	echo "ERROR: static assets changed without bumping CACHE_VERSION in src/web/static/ts/sw.ts:"; \
+	echo "$$_changed" | sed 's/^/  /'; \
+	echo ""; \
+	echo "The Service Worker caches everything under /static/ cache-first, keyed only by CACHE_VERSION."; \
+	echo "Without a bump, users with an installed Service Worker keep serving the old cached content"; \
+	echo "indefinitely (see Codeberg #74). Bump CACHE_VERSION in sw.ts, or if this change genuinely"; \
+	echo "doesn't affect anything served under /static/, ignore/override this check."; \
+	exit 1
+
+lint: lint-backend lint-frontend check-file-sizes check-sw-cache-version ## Run all lint/format checks across both stacks (read-only)
 
 lint-fix: ## Auto-fix formatting and lint issues in place
 	$(PYTHON) -m black src tests

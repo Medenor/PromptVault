@@ -173,3 +173,12 @@ Tailwind utility classes only; no custom CSS unless truly unavoidable (animation
 - Languages: English (en), French (fr), Spanish (es), German (de).
 - Files: JSON in [`src/web/static/locales/`](../../src/web/static/locales/).
 - Users can switch language without restarting.
+
+## Service Worker cache versioning
+
+- [`src/web/static/ts/sw.ts`](../../src/web/static/ts/sw.ts) caches everything under `/static/`
+  (including locale files) cache-first, keyed only by the `CACHE_VERSION` constant. A browser with
+  an already-installed Service Worker keeps serving old cached assets indefinitely until that
+  constant changes — there is no other invalidation signal.
+- Any change under `src/web/static/` (locales, CSS, JS, images) must bump `CACHE_VERSION` in the
+  same change. `make lint` / CI enforce this via the `check-sw-cache-version` target (Codeberg #74).
