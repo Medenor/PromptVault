@@ -58,7 +58,7 @@ _Global analysis performed 2026-07-31 against the current `main` codebase. Compl
   - Tests: per-user isolation (user A throttled ≠ user B), header correctness, env-var overrides, exemption of health/static routes.
   - Document the budgets in `docs/AUTHENTICATION_SECURITY.md` and `.env.example`.
 
-### 4. Prompt Sharing & Team Collaboration (Feature — flagship) - 🔄 Ongoing on branch `007-prompt-sharing`
+### 4. Prompt Sharing & Team Collaboration (Feature — flagship) - ✅ Done 2026-08-11 on branch `007-prompt-sharing`
 
 - **Description**: Per-prompt (and per-collection) sharing grants between users with read/edit permission levels, "shared with me" listing, and share badges — the middle ground between "own" and "admin-sees-all" that RBAC currently lacks.
 - **Rationale**: Confirmed absent (no share concept in `src/db/models/`). This remains the single biggest gap between the README's "ready for team deployments" claim and the implementation. Builds directly on existing RBAC, `User`, and the repository pattern. Carried from ROADMAP 2026 item #1 (Codeberg issues #23, #17) — still the top feature priority; plan refined below.
