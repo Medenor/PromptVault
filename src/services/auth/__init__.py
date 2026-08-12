@@ -26,12 +26,12 @@ Usage:
         result = auth_service.login("alice", "password", "192.168.1.1", "Mozilla/5.0")
 """
 
-from src.services.auth.password_service import PasswordService
+from src.services.auth.auth_service import AuthService
 from src.services.auth.jwt_service import JWTService
 from src.services.auth.lockout_service import LockoutService
-from src.services.auth.session_service import SessionService
-from src.services.auth.auth_service import AuthService
 from src.services.auth.password_reset_service import PasswordResetService
+from src.services.auth.password_service import PasswordService
+from src.services.auth.session_service import SessionService
 
 __all__ = [
     "PasswordService",

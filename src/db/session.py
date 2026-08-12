@@ -25,12 +25,12 @@ Usage:
         return db.query(Prompt).all()
 """
 
-from sqlalchemy import create_engine, event
-from sqlalchemy.orm import sessionmaker, Session
-from sqlalchemy.pool import StaticPool
-from contextlib import contextmanager
-from typing import Generator
 import logging
+from collections.abc import Generator
+from contextlib import contextmanager
+
+from sqlalchemy import create_engine, event
+from sqlalchemy.orm import Session, sessionmaker
 
 from src.db.config import db_settings
 
@@ -71,7 +71,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
 @contextmanager
-def get_db_session() -> Generator[Session, None, None]:
+def get_db_session() -> Generator[Session]:
     """Context manager for database sessions with automatic transaction management.
 
     This is the recommended approach for service layer code. It automatically
@@ -104,7 +104,7 @@ def get_db_session() -> Generator[Session, None, None]:
         logger.debug("Database session closed")
 
 
-def get_db() -> Generator[Session, None, None]:
+def get_db() -> Generator[Session]:
     """FastAPI dependency for database sessions.
 
     This function is designed to be used with FastAPI's Depends() injection.

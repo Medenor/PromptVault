@@ -61,10 +61,9 @@ Example:
     12
 """
 
-import os
 from pathlib import Path
-from typing import Optional
-from pydantic import ConfigDict, field_validator, Field
+
+from pydantic import ConfigDict, Field, field_validator
 from pydantic_settings import BaseSettings
 
 
@@ -542,7 +541,7 @@ class AuthConfig(BaseSettings):
         return 0
 
     @property
-    def redis_password(self) -> Optional[str]:
+    def redis_password(self) -> str | None:
         """Extract Redis password from URL if present.
 
         Returns:

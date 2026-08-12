@@ -8,17 +8,12 @@ Integration-style tests for FastAPI endpoints covering CRUD, filters, and import
 
 import io
 import json
-from pathlib import Path
-from datetime import datetime, timedelta, timezone
-from typing import Dict, Any
+from datetime import UTC
 
 import pytest
-from sqlalchemy.orm import Session
 
-from src.web import app as web_app
 from src.config.auth_config import auth_settings
-from src.db.models.user import User
-from src.db.models.user_session import UserSession
+from src.web import app as web_app
 
 
 @pytest.fixture
@@ -34,12 +29,11 @@ def api_data_service(api_client_context):
 
 
 @pytest.fixture
-def api_auth_headers(api_client_context) -> Dict[str, str]:
+def api_auth_headers(api_client_context) -> dict[str, str]:
     """Create authentication headers with valid API user access token."""
-    from src.services.auth.jwt_service import JWTService
-
     # Use the patched auth_settings from the module
     from src.config import auth_config
+    from src.services.auth.jwt_service import JWTService
 
     jwt_service = JWTService(auth_config.auth_settings)
 
@@ -55,15 +49,16 @@ def api_auth_headers(api_client_context) -> Dict[str, str]:
 
 
 @pytest.fixture
-def api_admin_auth_headers(api_client_context) -> Dict[str, str]:
+def api_admin_auth_headers(api_client_context) -> dict[str, str]:
     """Create authentication headers with admin role access token."""
-    from src.services.auth.jwt_service import JWTService
-    from src.services.auth.password_service import PasswordService
+    from datetime import datetime, timedelta
+
     from src.config.auth_config import auth_settings
     from src.db.models.user import User
     from src.db.models.user_session import UserSession
     from src.db.session import SessionLocal
-    from datetime import datetime, timezone, timedelta
+    from src.services.auth.jwt_service import JWTService
+    from src.services.auth.password_service import PasswordService
 
     # Create admin user in database
     password_service = PasswordService(auth_settings)
@@ -84,8 +79,8 @@ def api_admin_auth_headers(api_client_context) -> Dict[str, str]:
                 role="admin",
                 is_active=True,
                 email_verified=True,
-                created_at=datetime.now(timezone.utc),
-                updated_at=datetime.now(timezone.utc),
+                created_at=datetime.now(UTC),
+                updated_at=datetime.now(UTC),
             )
             test_session.add(admin_user)
             test_session.flush()
@@ -97,8 +92,8 @@ def api_admin_auth_headers(api_client_context) -> Dict[str, str]:
                 refresh_token_jti="api-admin-test-jti",
                 ip_address="127.0.0.1",
                 device_info="Test Agent",
-                created_at=datetime.now(timezone.utc),
-                expires_at=datetime.now(timezone.utc) + timedelta(days=30),
+                created_at=datetime.now(UTC),
+                expires_at=datetime.now(UTC) + timedelta(days=30),
                 is_revoked=False,
             )
             test_session.add(admin_session)
@@ -731,8 +726,8 @@ class TestImportEndpoints:
     ):
         """REPLACE-mode import cascade-deletes prompt_shares; operators must be
         warned via a dedicated audit event carrying the destroyed count."""
-        from src.db.session import get_db_session
         from src.db.repositories.sharing_repository import SharingRepository
+        from src.db.session import get_db_session
         from src.services import logging_service as logging_service_module
 
         api_data_service.load_prompts()
@@ -856,8 +851,8 @@ class TestImportExportStats:
     def test_get_import_export_stats_reflects_active_shares_count(
         self, api_client, api_data_service
     ):
-        from src.db.session import get_db_session
         from src.db.repositories.sharing_repository import SharingRepository
+        from src.db.session import get_db_session
 
         api_data_service.load_prompts()
         prompt_id = next(iter(api_data_service.prompts.keys()))
@@ -1000,13 +995,13 @@ class TestImportMarkdownAndJson:
 
     def test_import_markdown_file(self, api_client, api_data_service):
         markdown_content = (
-            "# Markdown Prompt\n\n"
-            "**Category:** Markdown\n"
-            "**Tags:** md, test\n"
-            "**Favorite:** Yes\n\n"
-            "## Prompt\n"
-            "Markdown body\n\n"
-        ).encode("utf-8")
+            b"# Markdown Prompt\n\n"
+            b"**Category:** Markdown\n"
+            b"**Tags:** md, test\n"
+            b"**Favorite:** Yes\n\n"
+            b"## Prompt\n"
+            b"Markdown body\n\n"
+        )
         files = {"file": ("prompts.md", io.BytesIO(markdown_content), "text/markdown")}
 
         response = api_client.post("/api/import", data={"mode": "append"}, files=files)

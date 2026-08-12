@@ -8,7 +8,7 @@ This model implements Git-like branching for prompt version control.
 Each prompt can have multiple branches pointing to different versions.
 """
 
-from sqlalchemy import Column, Integer, String, ForeignKey, UniqueConstraint
+from sqlalchemy import Column, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from src.db.base import Base

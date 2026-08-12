@@ -10,10 +10,11 @@ This model tracks password reset tokens sent via email. Tokens are:
 - Securely hashed before storage
 """
 
-from sqlalchemy import Column, String, DateTime, Boolean, ForeignKey, Index
+import uuid
+
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Index, String
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-import uuid
 
 from src.db.base import Base
 

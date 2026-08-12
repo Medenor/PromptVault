@@ -6,8 +6,6 @@
 
 import os
 import sqlite3
-import shutil
-import tempfile
 
 import pytest
 

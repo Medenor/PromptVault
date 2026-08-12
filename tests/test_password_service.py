@@ -20,15 +20,14 @@ Tests cover:
 Target: 100% code coverage of PasswordService
 """
 
-import re
 import time
-import pytest
-from unittest.mock import Mock, patch, MagicMock
-from argon2 import PasswordHasher, Type
-from argon2.exceptions import VerifyMismatchError, VerificationError, InvalidHashError
+from unittest.mock import patch
 
-from src.services.auth.password_service import PasswordService, COMMON_PASSWORDS
+import pytest
+from argon2 import PasswordHasher, Type
+
 from src.config.auth_config import AuthConfig
+from src.services.auth.password_service import COMMON_PASSWORDS, PasswordService
 
 # ============================================================================
 # FIXTURES
@@ -912,7 +911,7 @@ class TestEdgeCases:
         assert len(hashes) == len(set(hashes))
 
         # Verify each password with its hash
-        for pwd, pwd_hash in zip(passwords, hashes):
+        for pwd, pwd_hash in zip(passwords, hashes, strict=True):
             assert password_service.verify_password(pwd, pwd_hash)
 
     def test_memory_efficiency_multiple_hashes(self, password_service):

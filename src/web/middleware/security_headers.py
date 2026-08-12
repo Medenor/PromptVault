@@ -22,11 +22,12 @@ Example:
     >>> app.add_middleware(SecurityHeadersMiddleware)
 """
 
+import logging
+import os
+
 from fastapi import Request
 from fastapi.responses import Response
 from starlette.middleware.base import BaseHTTPMiddleware
-import logging
-import os
 
 logger = logging.getLogger(__name__)
 

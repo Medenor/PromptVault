@@ -41,17 +41,17 @@ Available Endpoints:
 
 from fastapi import APIRouter
 
-from src.web.routers.auth_registration_router import router as _registration_router
-from src.web.routers.auth_session_router import router as _session_router
 from src.web.routers.auth_password_router import router as _password_router
 from src.web.routers.auth_profile_router import router as _profile_router
+from src.web.routers.auth_registration_router import router as _registration_router
+from src.web.routers.auth_session_router import router as _session_router
 
 # Re-export shared DI providers for backward compatibility with any code that
 # imported them from this module.
 from src.web.routers.auth_shared import (  # noqa: F401
     get_auth_service,
-    get_password_reset_service,
     get_jwt_service,
+    get_password_reset_service,
 )
 
 # Aggregate the split routers into a single router exported as ``router``.

@@ -41,22 +41,23 @@ Example Usage:
     >>> # Returns users.html template
 """
 
-from fastapi import APIRouter, Request, Depends, HTTPException, status
+import os
+
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-import os
 
 from src.config.auth_config import auth_settings
 from src.db.models.user import User
-from typing import Optional
-
 from src.web.dependencies.auth import (
-    get_current_active_user,
     get_admin_user,
+    get_current_active_user,
     get_current_user_or_none,
+)
+from src.web.dependencies.auth import (
     has_valid_auth_cookie as _has_valid_auth_cookie,
 )
-from src.web.utils.manifest import load_manifest, get_asset_path, is_production
+from src.web.utils.manifest import get_asset_path, is_production, load_manifest
 from src.web.utils.version import get_app_version
 
 # ============================================================================
@@ -269,8 +270,8 @@ async def profile_page_alias(
 
 
 def _require_auth_unless_disabled(
-    user: Optional[User] = Depends(get_current_user_or_none),
-) -> Optional[User]:
+    user: User | None = Depends(get_current_user_or_none),
+) -> User | None:
     """Require an authenticated user, unless auth is disabled entirely.
 
     Mirrors the API-side anonymous-mode bypass so page routes stay consistent
@@ -288,7 +289,7 @@ def _require_auth_unless_disabled(
 
 @router.get("/manage-categories", response_class=HTMLResponse)
 async def manage_categories_page(
-    request: Request, user: Optional[User] = Depends(_require_auth_unless_disabled)
+    request: Request, user: User | None = Depends(_require_auth_unless_disabled)
 ):
     """Serve the category management page (accessible without auth when disabled)."""
     return templates.TemplateResponse(
@@ -300,7 +301,7 @@ async def manage_categories_page(
 
 @router.get("/manage-tags", response_class=HTMLResponse)
 async def manage_tags_page(
-    request: Request, user: Optional[User] = Depends(_require_auth_unless_disabled)
+    request: Request, user: User | None = Depends(_require_auth_unless_disabled)
 ):
     """Serve the tag management page (accessible without auth when disabled)."""
     return templates.TemplateResponse(
@@ -322,8 +323,6 @@ async def import_export_page(request: Request):
 
     data_service = web_app.data_service
     prompts = data_service.load_prompts()
-    categories = data_service.get_categories()
-    tags = data_service.get_tags()
 
     # Calculate statistics
     total_prompts = len(prompts)

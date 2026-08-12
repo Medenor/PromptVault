@@ -19,21 +19,26 @@ Fixture Categories:
 """
 
 import os
+import shutil
 import sys
 import tempfile
-import shutil
+from collections.abc import Callable, Generator
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from typing import Generator, Callable, Dict, Any, List
-from datetime import datetime, timedelta, timezone
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from src.db.repositories.backup_repository import BackupRepository
+    from src.db.repositories.sharing_repository import SharingRepository
 
 # Ensure AUTH_ENABLED=true before any src.* imports so that auth routes
 # (including /api/admin/*) are mounted when the app module is loaded.
 os.environ.setdefault("AUTH_ENABLED", "true")
 
 import pytest
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
 from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, sessionmaker
 
 # Add project root to Python path
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -41,34 +46,27 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 # Import database components
 from src.db.base import Base
 from src.db.models import (
-    User,
     Category,
-    Tag,
     Prompt,
-    PromptVersion,
-    PromptBranch,
     PromptShare,
-    Backup,
-    BackupSchedule,
-    BackupStorageProvider,
-    AuditLogEntry,
-    EncryptionKeyConfig,
-    prompt_tags,
+    PromptVersion,
+    Tag,
+    User,
 )
 from src.db.repositories import (
-    PromptRepository,
-    VersionRepository,
     CategoryRepository,
+    PromptRepository,
     TagRepository,
+    VersionRepository,
 )
+from src.services.backup_audit_service import BackupAuditService
+from src.services.backup_cloud_service import BackupCloudService
+from src.services.backup_encryption_service import BackupEncryptionService
+from src.services.backup_scheduler_service import BackupSchedulerService
+from src.services.backup_service_db import BackupService
 
 # Import services
 from src.services.prompt_data_service_db import PromptDataService
-from src.services.backup_service_db import BackupService
-from src.services.backup_encryption_service import BackupEncryptionService
-from src.services.backup_cloud_service import BackupCloudService
-from src.services.backup_scheduler_service import BackupSchedulerService
-from src.services.backup_audit_service import BackupAuditService
 from src.services.prompt_import_export_service import PromptImportExportService
 
 # ============================================================================
@@ -117,27 +115,12 @@ def reset_database(request):
         return
 
     # Only reset for tests using the persistent database
-    from src.db.session import drop_all_tables, create_all_tables
-    from src.db.models import (
-        User,
-        Category,
-        Tag,
-        Prompt,
-        PromptVersion,
-        PromptBranch,
-        PromptShare,
-        Backup,
-        BackupSchedule,
-        BackupStorageProvider,
-        AuditLogEntry,
-        EncryptionKeyConfig,
-        prompt_tags,
-    )
+    from src.db.session import create_all_tables, drop_all_tables
 
     try:
         drop_all_tables()
         create_all_tables()
-    except Exception as e:
+    except Exception:
         # Silently skip if database operations fail
         pass
 
@@ -175,21 +158,6 @@ def test_db_engine(request):
     import uuid
 
     # Ensure all models are imported before creating tables
-    from src.db.models import (
-        User,
-        Category,
-        Tag,
-        Prompt,
-        PromptVersion,
-        PromptBranch,
-        PromptShare,
-        Backup,
-        BackupSchedule,
-        BackupStorageProvider,
-        AuditLogEntry,
-        EncryptionKeyConfig,
-        prompt_tags,
-    )
 
     db_name = f"test_db_{uuid.uuid4().hex}"
 
@@ -205,7 +173,7 @@ def test_db_engine(request):
 
 
 @pytest.fixture(scope="function")
-def test_db_session(test_db_engine) -> Generator[Session, None, None]:
+def test_db_session(test_db_engine) -> Generator[Session]:
     """Create test database session with automatic rollback.
 
     Uses in-memory SQLite for fast, isolated tests.
@@ -241,7 +209,7 @@ requires_postgres = pytest.mark.skipif(
 
 
 @pytest.fixture(scope="function")
-def postgres_db() -> Generator[Session, None, None]:
+def postgres_db() -> Generator[Session]:
     """Session-backed PostgreSQL fixture for the FTS cross-dialect matrix.
 
     Skipped automatically when DATABASE_URL is not a postgresql:// URL.
@@ -294,6 +262,7 @@ FTS_PRE_REVISION = "b2c3d4e5f6a7"  # add_prompt_legacy_public (just before FTS)
 
 def _fts_alembic_config(db_url: str):
     import os as _os
+
     from alembic.config import Config
 
     repo_root = _os.path.abspath(_os.path.join(_os.path.dirname(__file__), ".."))
@@ -330,7 +299,7 @@ def _fts_upgrade(db_url: str) -> None:
 
 
 @pytest.fixture(scope="function")
-def fts_db_session() -> Generator[Session, None, None]:
+def fts_db_session() -> Generator[Session]:
     """File-based SQLite session with the FTS migration actually applied.
 
     In-memory SQLite can't be shared with Alembic's own connection, so this
@@ -357,7 +326,7 @@ def fts_db_session() -> Generator[Session, None, None]:
 
 
 @pytest.fixture(scope="function")
-def fts_postgres_db() -> Generator[Session, None, None]:
+def fts_postgres_db() -> Generator[Session]:
     """PostgreSQL session with the FTS migration applied (search_vector + GIN).
 
     Skipped automatically when DATABASE_URL is not a postgresql:// URL.
@@ -471,7 +440,7 @@ def test_category(test_db_session: Session) -> Category:
 
 
 @pytest.fixture
-def test_tags(test_db_session: Session) -> List[Tag]:
+def test_tags(test_db_session: Session) -> list[Tag]:
     """Create multiple test tags.
 
     Returns:
@@ -492,7 +461,7 @@ def test_prompt(
     test_db_session: Session,
     test_user: User,
     test_category: Category,
-    test_tags: List[Tag],
+    test_tags: list[Tag],
 ) -> Prompt:
     """Create a test prompt with relationships.
 
@@ -525,7 +494,7 @@ def shared_prompt(
     test_db_session: Session,
     test_prompt: Prompt,
     second_user: User,
-) -> Callable[..., "PromptShare"]:
+) -> Callable[..., PromptShare]:
     """Factory: grant second_user access to test_prompt at a given level.
 
     Args:
@@ -540,7 +509,7 @@ def shared_prompt(
     """
     from src.db.repositories.sharing_repository import SharingRepository
 
-    def _make(permission: str = "read", grantee: User = None) -> "PromptShare":
+    def _make(permission: str = "read", grantee: User = None) -> PromptShare:
         repo = SharingRepository(test_db_session)
         share = repo.upsert(
             prompt_id=test_prompt.id,
@@ -592,7 +561,7 @@ def legacy_public_prompt(
 @pytest.fixture
 def test_prompt_with_versions(
     test_db_session: Session, test_prompt: Prompt, test_user: User
-) -> tuple[Prompt, List[PromptVersion]]:
+) -> tuple[Prompt, list[PromptVersion]]:
     """Create a prompt with multiple versions for version control testing.
 
     Args:
@@ -646,7 +615,7 @@ def prompt_repo(test_db_session: Session) -> PromptRepository:
 
 
 @pytest.fixture
-def sharing_repo(test_db_session: Session) -> "SharingRepository":
+def sharing_repo(test_db_session: Session) -> SharingRepository:
     """Create a SharingRepository instance.
 
     Args:
@@ -687,7 +656,7 @@ def category_repo(test_db_session: Session) -> CategoryRepository:
 
 
 @pytest.fixture
-def backup_repo(test_db_session: Session) -> "BackupRepository":
+def backup_repo(test_db_session: Session) -> BackupRepository:
     """Create a BackupRepository instance.
 
     Args:
@@ -734,11 +703,11 @@ def db_data_service(test_db_engine, monkeypatch) -> PromptDataService:
         PromptDataService: Data service instance
     """
     # Patch the SessionLocal to use test engine
-    from src.db import session as session_module
     from contextlib import contextmanager
 
+    from src.db import session as session_module
+
     # Store original SessionLocal
-    original_session_local = session_module.SessionLocal
 
     # Create test session factory
     TestSessionLocal = sessionmaker(bind=test_db_engine)
@@ -802,6 +771,7 @@ def db_backup_service(temp_data_dir: str, test_db_engine, monkeypatch) -> Backup
 
     # Create the test database file
     from sqlalchemy import create_engine
+
     from src.db.base import Base
 
     engine = create_engine(test_db_url)
@@ -809,9 +779,11 @@ def db_backup_service(temp_data_dir: str, test_db_engine, monkeypatch) -> Backup
     engine.dispose()
 
     # Patch get_db_session to use test engine with isolation
-    from src.db import session as session_module
-    from sqlalchemy.orm import sessionmaker
     from contextlib import contextmanager
+
+    from sqlalchemy.orm import sessionmaker
+
+    from src.db import session as session_module
 
     # Use the shared test_db_engine to ensure proper isolation
     TestSessionLocal = sessionmaker(bind=test_db_engine)
@@ -864,8 +836,9 @@ def patched_db_session(test_db_engine, monkeypatch):
 
     Returns the TestSessionLocal factory for direct session creation.
     """
-    from src.db import session as session_module
     from contextlib import contextmanager
+
+    from src.db import session as session_module
 
     TestSessionLocal = sessionmaker(bind=test_db_engine)
 
@@ -963,7 +936,7 @@ def import_export_service() -> PromptImportExportService:
 
 
 @pytest.fixture
-def sample_prompt_data() -> Callable[..., Dict[str, Any]]:
+def sample_prompt_data() -> Callable[..., dict[str, Any]]:
     """Factory fixture for generating sample prompt data dictionaries.
 
     This is useful for creating prompt data in the format expected by
@@ -982,9 +955,9 @@ def sample_prompt_data() -> Callable[..., Dict[str, Any]]:
         prompt: str = "This is a test prompt content",
         note: str = "Test note",
         category: str = "Test Category",
-        tags: List[str] = None,
+        tags: list[str] = None,
         favorite: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         if tags is None:
             tags = ["test", "sample"]
 
@@ -1001,7 +974,7 @@ def sample_prompt_data() -> Callable[..., Dict[str, Any]]:
 
 
 @pytest.fixture
-def sample_version_data() -> Callable[..., Dict[str, Any]]:
+def sample_version_data() -> Callable[..., dict[str, Any]]:
     """Factory fixture for generating sample version data dictionaries.
 
     Returns:
@@ -1013,9 +986,9 @@ def sample_version_data() -> Callable[..., Dict[str, Any]]:
         timestamp: str = "2024-01-01T12:00:00Z",
         author: str = "test_user",
         message: str = "Test commit",
-        data: Dict[str, Any] = None,
-        parents: List[str] = None,
-    ) -> Dict[str, Any]:
+        data: dict[str, Any] = None,
+        parents: list[str] = None,
+    ) -> dict[str, Any]:
         if data is None:
             data = {
                 "title": "Test",
@@ -1097,7 +1070,7 @@ Test note 2
 @pytest.fixture
 def populated_db_service(
     db_data_service: PromptDataService,
-    sample_prompt_data: Callable[..., Dict[str, Any]],
+    sample_prompt_data: Callable[..., dict[str, Any]],
 ) -> PromptDataService:
     """Create a database-backed service with pre-populated test data.
 
@@ -1158,7 +1131,7 @@ def populated_db_service(
 
 
 @pytest.fixture
-def temp_data_dir() -> Generator[str, None, None]:
+def temp_data_dir() -> Generator[str]:
     """Create a temporary directory for testing with automatic cleanup.
 
     Yields:
@@ -1172,7 +1145,7 @@ def temp_data_dir() -> Generator[str, None, None]:
 @pytest.fixture
 def api_client(
     test_db_engine, temp_data_dir: str, monkeypatch
-) -> Generator[TestClient, None, None]:
+) -> Generator[TestClient]:
     """FastAPI TestClient with database backend.
 
     This fixture configures the FastAPI app to use an in-memory test database
@@ -1190,9 +1163,9 @@ def api_client(
     os.environ["DISABLE_RATE_LIMITING"] = "true"
 
     # Import here to avoid circular imports
-    from src.web import app as web_app
-    from src.db import session as session_module
     from src.db import config as config_module
+    from src.db import session as session_module
+    from src.web import app as web_app
     from src.web.middleware import rate_limit
 
     # Reinitialize the limiter with rate limiting disabled
@@ -1212,6 +1185,7 @@ def api_client(
     # open the raw sqlite file, so it must also point at a throwaway path —
     # otherwise a restore-path test would overwrite the developer's real DB.
     from sqlalchemy import create_engine as _create_engine
+
     from src.db.base import Base as _Base
 
     test_db_path = os.path.join(temp_data_dir, "api_client_test.db")
@@ -1240,9 +1214,9 @@ def api_client(
 def api_client_context(
     test_db_engine,
     temp_data_dir: str,
-    sample_prompt_data: Callable[..., Dict[str, Any]],
+    sample_prompt_data: Callable[..., dict[str, Any]],
     monkeypatch,
-) -> Generator[Dict[str, Any], None, None]:
+) -> Generator[dict[str, Any]]:
     """FastAPI TestClient with database backend and data service access (backward compatibility).
 
     This fixture provides the same interface as the old api_client_context fixture
@@ -1258,16 +1232,17 @@ def api_client_context(
         dict: Dictionary with 'client', 'data_service', and 'temp_dir' keys
     """
     # Import here to avoid circular imports
-    from src.web import app as web_app
-    from src.db import session as session_module
-    from src.db import config as config_module
     from contextlib import contextmanager
 
     # Backup restore reads DATABASE_URL directly (bypassing SessionLocal) to
     # open the raw sqlite file, so it must also point at a throwaway path —
     # otherwise a restore-path test would overwrite the developer's real DB.
     from sqlalchemy import create_engine as _create_engine
+
+    from src.db import config as config_module
+    from src.db import session as session_module
     from src.db.base import Base as _Base
+    from src.web import app as web_app
 
     test_db_path = os.path.join(temp_data_dir, "api_client_context_test.db")
     monkeypatch.setattr(
@@ -1286,9 +1261,9 @@ def api_client_context(
     )
 
     # Generate test JWT keys
-    from cryptography.hazmat.primitives.asymmetric import ec
-    from cryptography.hazmat.primitives import serialization
     from cryptography.hazmat.backends import default_backend
+    from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.primitives.asymmetric import ec
 
     # Generate test private key
     private_key = ec.generate_private_key(ec.SECP256R1(), default_backend())
@@ -1354,8 +1329,9 @@ def api_client_context(
     session_module.get_db_session = mock_get_db_session
 
     # Force reload of auth config before configuring services
-    from src.config import auth_config
     import importlib
+
+    from src.config import auth_config
 
     importlib.reload(auth_config)
 
@@ -1366,10 +1342,10 @@ def api_client_context(
     data_service = web_app.data_service
 
     # Create test user for authenticated API tests
-    from src.services.auth.password_service import PasswordService
     from src.config.auth_config import auth_settings
     from src.db.models.user import User
     from src.db.models.user_session import UserSession
+    from src.services.auth.password_service import PasswordService
 
     password_service = PasswordService(auth_settings)
     password_hash = password_service.hash_password("ApiUserP@ssw0rd123")
@@ -1385,8 +1361,8 @@ def api_client_context(
             role="editor",
             is_active=True,
             email_verified=True,
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
         )
         test_session.add(test_user)
         test_session.flush()
@@ -1398,8 +1374,8 @@ def api_client_context(
             refresh_token_jti="api-test-jti",
             ip_address="127.0.0.1",
             device_info="Test Agent",
-            created_at=datetime.now(timezone.utc),
-            expires_at=datetime.now(timezone.utc) + timedelta(days=30),
+            created_at=datetime.now(UTC),
+            expires_at=datetime.now(UTC) + timedelta(days=30),
             is_revoked=False,
         )
         test_session.add(user_session)
@@ -1458,12 +1434,12 @@ def api_client_context(
 @pytest.fixture
 def api_client_with_data(
     api_client: TestClient,
-    sample_prompt_data: Callable[..., Dict[str, Any]],
+    sample_prompt_data: Callable[..., dict[str, Any]],
     test_db_session: Session,
     test_user: User,
     test_category: Category,
-    test_tags: List[Tag],
-) -> Dict[str, Any]:
+    test_tags: list[Tag],
+) -> dict[str, Any]:
     """FastAPI TestClient with pre-populated test data.
 
     Creates a test client and populates it with sample prompts for

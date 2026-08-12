@@ -38,19 +38,13 @@ Target: ≥90% endpoint coverage
 Execution time: < 20 seconds
 """
 
-import time
-from datetime import datetime, timedelta, timezone
-from typing import Dict, Any
+from datetime import UTC
+from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import text
 from sqlalchemy.orm import Session
-
-from src.config.auth_config import AuthConfig
-from src.db.models.user import User
-from src.db.models.user_session import UserSession
-from src.db.models.password_reset_token import PasswordResetToken
 
 # ============================================================================
 # FIXTURES
@@ -68,12 +62,14 @@ def auth_client(test_db_engine, temp_data_dir: str):
     Yields:
         TestClient: Configured test client for API testing
     """
-    from fastapi import FastAPI
     import importlib.util
     import sys
     from pathlib import Path
-    from src.db import session as session_module
+
+    from fastapi import FastAPI
     from sqlalchemy.orm import sessionmaker
+
+    from src.db import session as session_module
 
     # Import auth router directly without going through __init__.py
     auth_module_path = (
@@ -112,7 +108,7 @@ def auth_client(test_db_engine, temp_data_dir: str):
 
 
 @pytest.fixture
-def test_user_credentials() -> Dict[str, str]:
+def test_user_credentials() -> dict[str, str]:
     """Test user credentials for authentication.
 
     Returns:
@@ -127,8 +123,8 @@ def test_user_credentials() -> Dict[str, str]:
 
 @pytest.fixture
 def registered_user(
-    auth_client: TestClient, test_user_credentials: Dict[str, str]
-) -> Dict[str, Any]:
+    auth_client: TestClient, test_user_credentials: dict[str, str]
+) -> dict[str, Any]:
     """Create a registered user and return user data with tokens.
 
     Args:
@@ -152,7 +148,7 @@ def registered_user(
 
 
 @pytest.fixture
-def auth_headers(registered_user: Dict[str, Any]) -> Dict[str, str]:
+def auth_headers(registered_user: dict[str, Any]) -> dict[str, str]:
     """Create authentication headers with valid access token.
 
     Args:
@@ -204,7 +200,7 @@ class TestRegisterEndpoint:
         assert "created_at" in user
 
     def test_register_duplicate_username(
-        self, auth_client: TestClient, registered_user: Dict[str, Any]
+        self, auth_client: TestClient, registered_user: dict[str, Any]
     ):
         """Test registration with duplicate username returns 409."""
         response = auth_client.post(
@@ -221,7 +217,7 @@ class TestRegisterEndpoint:
         assert "username" in response.json()["detail"].lower()
 
     def test_register_duplicate_email(
-        self, auth_client: TestClient, registered_user: Dict[str, Any]
+        self, auth_client: TestClient, registered_user: dict[str, Any]
     ):
         """Test registration with duplicate email returns 409."""
         response = auth_client.post(
@@ -311,8 +307,8 @@ class TestLoginEndpoint:
     def test_login_success_with_username(
         self,
         auth_client: TestClient,
-        test_user_credentials: Dict[str, str],
-        registered_user: Dict[str, Any],
+        test_user_credentials: dict[str, str],
+        registered_user: dict[str, Any],
     ):
         """Test successful login with username."""
         response = auth_client.post(
@@ -335,8 +331,8 @@ class TestLoginEndpoint:
     def test_login_success_with_email(
         self,
         auth_client: TestClient,
-        test_user_credentials: Dict[str, str],
-        registered_user: Dict[str, Any],
+        test_user_credentials: dict[str, str],
+        registered_user: dict[str, Any],
     ):
         """Test successful login with email."""
         response = auth_client.post(
@@ -352,7 +348,7 @@ class TestLoginEndpoint:
         assert "access_token" in data
 
     def test_login_invalid_credentials(
-        self, auth_client: TestClient, registered_user: Dict[str, Any]
+        self, auth_client: TestClient, registered_user: dict[str, Any]
     ):
         """Test login with invalid password returns 401."""
         response = auth_client.post(
@@ -381,8 +377,8 @@ class TestLoginEndpoint:
     def test_login_account_lockout(
         self,
         auth_client: TestClient,
-        registered_user: Dict[str, Any],
-        test_user_credentials: Dict[str, str],
+        registered_user: dict[str, Any],
+        test_user_credentials: dict[str, str],
     ):
         """Test account locks after max failed login attempts."""
         # Attempt login with wrong password 5 times
@@ -418,7 +414,7 @@ class TestRefreshEndpoint:
     """Tests for POST /api/auth/refresh endpoint."""
 
     def test_refresh_success(
-        self, auth_client: TestClient, registered_user: Dict[str, Any]
+        self, auth_client: TestClient, registered_user: dict[str, Any]
     ):
         """Test successful token refresh."""
         response = auth_client.post(
@@ -440,7 +436,7 @@ class TestRefreshEndpoint:
         assert data["refresh_token"] != registered_user["refresh_token"]
 
     def test_refresh_token_rotation(
-        self, auth_client: TestClient, registered_user: Dict[str, Any]
+        self, auth_client: TestClient, registered_user: dict[str, Any]
     ):
         """Test refresh tokens are rotated with same family."""
         # First refresh
@@ -485,7 +481,7 @@ class TestRefreshEndpoint:
         assert response.status_code == 401
 
     def test_refresh_token_reuse_detection(
-        self, auth_client: TestClient, registered_user: Dict[str, Any]
+        self, auth_client: TestClient, registered_user: dict[str, Any]
     ):
         """Test token reuse is detected and family is revoked."""
         # Get new token
@@ -523,7 +519,7 @@ class TestLogoutEndpoint:
     """Tests for POST /api/auth/logout endpoint."""
 
     def test_logout_success(
-        self, auth_client: TestClient, registered_user: Dict[str, Any]
+        self, auth_client: TestClient, registered_user: dict[str, Any]
     ):
         """Test successful logout."""
         response = auth_client.post(
@@ -537,7 +533,7 @@ class TestLogoutEndpoint:
         assert "logged out" in data["message"].lower()
 
     def test_logout_session_revoked(
-        self, auth_client: TestClient, registered_user: Dict[str, Any]
+        self, auth_client: TestClient, registered_user: dict[str, Any]
     ):
         """Test logout revokes session."""
         # Logout
@@ -555,7 +551,7 @@ class TestLogoutEndpoint:
         assert response.status_code == 401
 
     def test_logout_idempotent(
-        self, auth_client: TestClient, registered_user: Dict[str, Any]
+        self, auth_client: TestClient, registered_user: dict[str, Any]
     ):
         """Test logout with invalid token doesn't error (idempotent)."""
         # First logout
@@ -585,8 +581,8 @@ class TestMeEndpoint:
     def test_me_success(
         self,
         auth_client: TestClient,
-        auth_headers: Dict[str, str],
-        registered_user: Dict[str, Any],
+        auth_headers: dict[str, str],
+        registered_user: dict[str, Any],
     ):
         """Test getting current user with valid token."""
         response = auth_client.get("/api/auth/me", headers=auth_headers)
@@ -637,8 +633,8 @@ class TestChangePasswordEndpoint:
     def test_change_password_success(
         self,
         auth_client: TestClient,
-        auth_headers: Dict[str, str],
-        test_user_credentials: Dict[str, str],
+        auth_headers: dict[str, str],
+        test_user_credentials: dict[str, str],
     ):
         """Test successful password change."""
         new_password = "NewSecureP@ssw0rd456"
@@ -669,7 +665,7 @@ class TestChangePasswordEndpoint:
         assert login_response.status_code == 200
 
     def test_change_password_incorrect_old(
-        self, auth_client: TestClient, auth_headers: Dict[str, str]
+        self, auth_client: TestClient, auth_headers: dict[str, str]
     ):
         """Test change password with incorrect old password returns 401."""
         response = auth_client.post(
@@ -687,8 +683,8 @@ class TestChangePasswordEndpoint:
     def test_change_password_policy_violation(
         self,
         auth_client: TestClient,
-        auth_headers: Dict[str, str],
-        test_user_credentials: Dict[str, str],
+        auth_headers: dict[str, str],
+        test_user_credentials: dict[str, str],
     ):
         """Test change password with weak new password returns 400."""
         response = auth_client.post(
@@ -706,8 +702,8 @@ class TestChangePasswordEndpoint:
     def test_change_password_confirmation_mismatch(
         self,
         auth_client: TestClient,
-        auth_headers: Dict[str, str],
-        test_user_credentials: Dict[str, str],
+        auth_headers: dict[str, str],
+        test_user_credentials: dict[str, str],
     ):
         """Test change password with mismatched confirmation returns 422."""
         response = auth_client.post(
@@ -745,7 +741,7 @@ class TestSessionsEndpoint:
     """Tests for GET /api/auth/sessions endpoint."""
 
     def test_sessions_list_success(
-        self, auth_client: TestClient, auth_headers: Dict[str, str]
+        self, auth_client: TestClient, auth_headers: dict[str, str]
     ):
         """Test listing user sessions."""
         response = auth_client.get("/api/auth/sessions", headers=auth_headers)
@@ -769,7 +765,7 @@ class TestSessionsEndpoint:
             assert "is_revoked" in session
 
     def test_sessions_empty_list(
-        self, auth_client: TestClient, registered_user: Dict[str, Any]
+        self, auth_client: TestClient, registered_user: dict[str, Any]
     ):
         """Test listing sessions when all are revoked."""
         # Logout (revoke session)
@@ -800,8 +796,8 @@ class TestSessionsEndpoint:
     def test_sessions_multiple(
         self,
         auth_client: TestClient,
-        test_user_credentials: Dict[str, str],
-        registered_user: Dict[str, Any],
+        test_user_credentials: dict[str, str],
+        registered_user: dict[str, Any],
     ):
         """Test listing multiple sessions."""
         # Create second session by logging in again
@@ -842,8 +838,8 @@ class TestRevokeSessionEndpoint:
     def test_revoke_session_success(
         self,
         auth_client: TestClient,
-        auth_headers: Dict[str, str],
-        test_user_credentials: Dict[str, str],
+        auth_headers: dict[str, str],
+        test_user_credentials: dict[str, str],
     ):
         """Test revoking specific session."""
         # Create second session
@@ -872,7 +868,7 @@ class TestRevokeSessionEndpoint:
         assert data["revoked_count"] == 1
 
     def test_revoke_session_not_found(
-        self, auth_client: TestClient, auth_headers: Dict[str, str]
+        self, auth_client: TestClient, auth_headers: dict[str, str]
     ):
         """Test revoking non-existent session returns 404."""
         fake_session_id = "00000000-0000-0000-0000-000000000000"
@@ -903,8 +899,8 @@ class TestRevokeAllSessionsEndpoint:
     def test_revoke_all_sessions_success(
         self,
         auth_client: TestClient,
-        auth_headers: Dict[str, str],
-        test_user_credentials: Dict[str, str],
+        auth_headers: dict[str, str],
+        test_user_credentials: dict[str, str],
     ):
         """Test revoking all sessions except current."""
         # Create multiple sessions
@@ -929,8 +925,8 @@ class TestRevokeAllSessionsEndpoint:
     def test_revoke_all_sessions_count(
         self,
         auth_client: TestClient,
-        test_user_credentials: Dict[str, str],
-        registered_user: Dict[str, Any],
+        test_user_credentials: dict[str, str],
+        registered_user: dict[str, Any],
     ):
         """Test revoke all returns correct count."""
         # Create 2 additional sessions
@@ -978,8 +974,8 @@ class TestPasswordResetRequestEndpoint:
     def test_password_reset_request_success(
         self,
         auth_client: TestClient,
-        test_user_credentials: Dict[str, str],
-        registered_user: Dict[str, Any],
+        test_user_credentials: dict[str, str],
+        registered_user: dict[str, Any],
     ):
         """Test successful password reset request."""
         response = auth_client.post(
@@ -1074,13 +1070,13 @@ class TestPasswordResetService:
     @pytest.fixture
     def password_reset_service(self, test_db_session: Session):
         """Create PasswordResetService instance with test dependencies."""
-        from src.services.auth.password_reset_service import PasswordResetService
-        from src.services.auth.password_service import PasswordService
+        from src.config.auth_config import auth_settings
         from src.db.repositories.password_reset_token_repository import (
             PasswordResetTokenRepository,
         )
         from src.db.repositories.user_repository import UserRepository
-        from src.config.auth_config import auth_settings
+        from src.services.auth.password_reset_service import PasswordResetService
+        from src.services.auth.password_service import PasswordService
 
         password_service = PasswordService(auth_settings)
         token_repo = PasswordResetTokenRepository(test_db_session)
@@ -1096,10 +1092,11 @@ class TestPasswordResetService:
     @pytest.fixture
     def test_user_for_reset(self, test_db_session: Session):
         """Create a test user for password reset testing."""
+        from datetime import datetime
+
+        from src.config.auth_config import auth_settings
         from src.db.models.user import User
         from src.services.auth.password_service import PasswordService
-        from src.config.auth_config import auth_settings
-        from datetime import datetime, timezone
 
         password_service = PasswordService(auth_settings)
         password_hash = password_service.hash_password("OldP@ssw0rd123")
@@ -1112,8 +1109,8 @@ class TestPasswordResetService:
             role="viewer",
             is_active=True,
             email_verified=True,
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
         )
         test_db_session.add(user)
         test_db_session.flush()
@@ -1132,7 +1129,7 @@ class TestPasswordResetService:
         email = test_user_for_reset.email
 
         # Make 3 successful requests (should work)
-        for i in range(3):
+        for _i in range(3):
             token = password_reset_service.request_password_reset(
                 email=email, ip_address="192.168.1.1"
             )
@@ -1157,7 +1154,7 @@ class TestPasswordResetService:
         email = test_user_for_reset.email
 
         # Exhaust rate limit
-        for i in range(3):
+        for _i in range(3):
             password_reset_service.request_password_reset(
                 email=email, ip_address="192.168.1.1"
             )
@@ -1198,7 +1195,7 @@ class TestPasswordResetService:
         assert not token_record1.is_used
 
         # Create second token
-        token2 = password_reset_service.request_password_reset(
+        password_reset_service.request_password_reset(
             email=email, ip_address="192.168.1.2"
         )
         test_db_session.commit()
@@ -1219,13 +1216,13 @@ class TestPasswordResetService:
         self, password_reset_service, test_user_for_reset, test_db_session: Session
     ):
         """Test that expired token is rejected."""
+
         from src.db.repositories.password_reset_token_repository import (
             PasswordResetTokenRepository,
         )
-        from datetime import datetime, timezone, timedelta
 
         email = test_user_for_reset.email
-        token_repo = PasswordResetTokenRepository(test_db_session)
+        PasswordResetTokenRepository(test_db_session)
 
         # Create a valid token using the service
         token = password_reset_service.request_password_reset(
@@ -1286,7 +1283,7 @@ class TestPasswordResetService:
         from src.db.repositories.user_repository import UserRepository
 
         email = test_user_for_reset.email
-        user_repo = UserRepository(test_db_session)
+        UserRepository(test_db_session)
 
         # Create token using the service
         token = password_reset_service.request_password_reset(
@@ -1352,8 +1349,8 @@ class TestPasswordResetService:
         self, password_reset_service, test_user_for_reset, test_db_session: Session
     ):
         """Test successful password reset."""
-        from src.services.auth.password_service import PasswordService
         from src.config.auth_config import auth_settings
+        from src.services.auth.password_service import PasswordService
 
         email = test_user_for_reset.email
         new_password = "NewSecureP@ssw0rd456"
@@ -1443,7 +1440,7 @@ class TestPasswordResetService:
         new_password = "NewSecureP@ssw0rd456"
 
         # Request two password resets
-        token1 = password_reset_service.request_password_reset(
+        password_reset_service.request_password_reset(
             email=email, ip_address="192.168.1.1"
         )
         test_db_session.commit()
@@ -1583,7 +1580,7 @@ class TestPasswordResetService:
 
         # Create 3 tokens
         tokens = []
-        for i in range(3):
+        for _i in range(3):
             token = password_reset_service.request_password_reset(
                 email=email, ip_address="192.168.1.1"
             )
@@ -1833,7 +1830,7 @@ class TestAuthenticationFlow:
         assert me_response.json()["username"] == "flowtest"
 
     def test_token_refresh_flow(
-        self, auth_client: TestClient, registered_user: Dict[str, Any]
+        self, auth_client: TestClient, registered_user: dict[str, Any]
     ):
         """Test complete token refresh flow."""
         # Refresh token
@@ -1853,7 +1850,7 @@ class TestAuthenticationFlow:
         assert me_response.status_code == 200
 
     def test_logout_flow(
-        self, auth_client: TestClient, registered_user: Dict[str, Any]
+        self, auth_client: TestClient, registered_user: dict[str, Any]
     ):
         """Test complete logout flow."""
         # Logout
@@ -1864,7 +1861,7 @@ class TestAuthenticationFlow:
         assert logout_response.status_code == 200
 
         # Try to use tokens after logout
-        me_response = auth_client.get(
+        auth_client.get(
             "/api/auth/me",
             headers={"Authorization": f"Bearer {registered_user['access_token']}"},
         )

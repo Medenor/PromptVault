@@ -13,17 +13,17 @@ import logging
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from src.services.auth.auth_service import AuthService
 from src.db.models.user import User
+from src.services.auth.auth_service import AuthService
+from src.services.exceptions import (
+    EmailAlreadyExistsError,
+    UserNotFoundError,
+)
 from src.web.dependencies.auth import get_current_active_user
 from src.web.models.auth_requests import UpdateProfileRequest
 from src.web.models.auth_responses import (
     UserResponse,
     UserStatsResponse,
-)
-from src.services.exceptions import (
-    EmailAlreadyExistsError,
-    UserNotFoundError,
 )
 from src.web.routers.auth_shared import get_auth_service
 
@@ -123,21 +123,21 @@ def update_profile(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=e.user_message,
-        )
+        ) from e
 
     except UserNotFoundError as e:
         logger.error(f"Profile update failed - user not found: {current_user.id}")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=e.user_message,
-        )
+        ) from e
 
     except Exception as e:
         logger.error(f"Unexpected error during profile update: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred while updating profile. Please try again.",
-        )
+        ) from e
 
 
 @router.get(
@@ -215,11 +215,11 @@ def get_user_stats(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=e.user_message,
-        )
+        ) from e
 
     except Exception as e:
         logger.error(f"Error retrieving user stats: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred while retrieving statistics. Please try again.",
-        )
+        ) from e

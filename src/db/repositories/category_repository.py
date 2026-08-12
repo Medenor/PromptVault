@@ -8,10 +8,9 @@ This module provides data access layer for Category model with
 lookup and management operations.
 """
 
-from typing import List, Optional
-from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
 
 from src.db.models import Category
 from src.db.repositories.base import BaseRepository
@@ -34,7 +33,7 @@ class CategoryRepository(BaseRepository[Category]):
         """
         super().__init__(Category, session)
 
-    def get_by_name(self, name: str) -> Optional[Category]:
+    def get_by_name(self, name: str) -> Category | None:
         """Get category by name.
 
         Args:
@@ -45,7 +44,7 @@ class CategoryRepository(BaseRepository[Category]):
         """
         return self.session.query(Category).filter(Category.name == name).first()
 
-    def get_by_name_case_insensitive(self, name: str) -> Optional[Category]:
+    def get_by_name_case_insensitive(self, name: str) -> Category | None:
         """Get category by name (case-insensitive)."""
         return (
             self.session.query(Category)
@@ -78,14 +77,15 @@ class CategoryRepository(BaseRepository[Category]):
             self.session.rollback()
             return self.get_by_name(name)
 
-    def list_all_with_counts(self) -> List[tuple]:
+    def list_all_with_counts(self) -> list[tuple]:
         """Get all categories with prompt counts.
 
         Returns:
             List of tuples (category, prompt_count) ordered by name
         """
-        from src.db.models import Prompt
         from sqlalchemy import func
+
+        from src.db.models import Prompt
 
         results = (
             self.session.query(Category, func.count(Prompt.id).label("prompt_count"))
@@ -114,7 +114,6 @@ class CategoryRepository(BaseRepository[Category]):
         Returns:
             True if deleted, False if has prompts or not found
         """
-        from src.db.models import Prompt
 
         category = self.get_by_id(category_id)
         if not category:
@@ -128,7 +127,7 @@ class CategoryRepository(BaseRepository[Category]):
 
         return self.delete(category_id)
 
-    def rename(self, category_id: int, new_name: str) -> Optional[Category]:
+    def rename(self, category_id: int, new_name: str) -> Category | None:
         """Rename a category.
 
         Args:
@@ -143,7 +142,7 @@ class CategoryRepository(BaseRepository[Category]):
         """
         return self.update(category_id, name=new_name)
 
-    def get_prompt_ids(self, category_id: int) -> List[int]:
+    def get_prompt_ids(self, category_id: int) -> list[int]:
         """Return IDs of prompts assigned to the category."""
         from src.db.models import Prompt
 
@@ -174,7 +173,7 @@ class CategoryRepository(BaseRepository[Category]):
             synchronize_session=False,
         )
 
-    def bulk_clear_from_prompts(self, category_ids: List[int]) -> None:
+    def bulk_clear_from_prompts(self, category_ids: list[int]) -> None:
         """Unset category_id on all prompts referencing any of these categories."""
         from src.db.models import Prompt
 
@@ -183,7 +182,7 @@ class CategoryRepository(BaseRepository[Category]):
             synchronize_session=False,
         )
 
-    def bulk_clear_from_prompt_versions(self, category_ids: List[int]) -> None:
+    def bulk_clear_from_prompt_versions(self, category_ids: list[int]) -> None:
         """Unset category_id on historical prompt versions referencing any of these categories."""
         from src.db.models import PromptVersion
 
@@ -194,7 +193,7 @@ class CategoryRepository(BaseRepository[Category]):
             synchronize_session=False,
         )
 
-    def get_orphan_prompt_ids(self) -> List[int]:
+    def get_orphan_prompt_ids(self) -> list[int]:
         """Return IDs of prompts with no category assigned."""
         from src.db.models import Prompt
 
@@ -205,7 +204,7 @@ class CategoryRepository(BaseRepository[Category]):
             .all()
         ]
 
-    def get_orphan_prompts(self) -> List[tuple]:
+    def get_orphan_prompts(self) -> list[tuple]:
         """Return (id, title) tuples for prompts with no category assigned."""
         from src.db.models import Prompt
 
@@ -215,7 +214,7 @@ class CategoryRepository(BaseRepository[Category]):
             .all()
         )
 
-    def assign_prompts(self, prompt_ids: List[int], category_id: int) -> int:
+    def assign_prompts(self, prompt_ids: list[int], category_id: int) -> int:
         """Assign the given prompts to a category, returning matched count.
 
         Loads prompts individually (rather than a bulk UPDATE) so callers can
@@ -229,7 +228,7 @@ class CategoryRepository(BaseRepository[Category]):
         self.session.flush()
         return len(prompts)
 
-    def restore_prompts_category(self, prompt_ids: List[int], category_id: int) -> None:
+    def restore_prompts_category(self, prompt_ids: list[int], category_id: int) -> None:
         """Bulk-set category_id on the given prompts (used by undo restore)."""
         if not prompt_ids:
             return
@@ -241,7 +240,7 @@ class CategoryRepository(BaseRepository[Category]):
         )
 
     def merge_categories(
-        self, source_category_ids: List[int], target_category_id: int
+        self, source_category_ids: list[int], target_category_id: int
     ) -> int:
         """Merge source categories into target category.
 

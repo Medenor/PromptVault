@@ -10,14 +10,13 @@ is unchanged.
 """
 
 import logging
-from typing import List, Optional
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
-from src.db.models.user import User
-from src.db.models.prompt import Prompt
 from src.config.auth_config import auth_settings
+from src.db.models.prompt import Prompt
+from src.db.models.user import User
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -36,8 +35,8 @@ _PERMISSION_RANK = {"read": 0, "edit": 1, "owner": 2}
 
 
 def effective_permission(
-    prompt: Prompt, user: Optional[User], session: Session
-) -> Optional[str]:
+    prompt: Prompt, user: User | None, session: Session
+) -> str | None:
     """Resolve a user's effective permission level on a prompt.
 
     Resolution order (data-model.md "Effective Permission Resolution"):
@@ -79,7 +78,7 @@ def effective_permission(
 
 
 def check_prompt_access(
-    prompt: Prompt, user: Optional[User], level: str, session: Session
+    prompt: Prompt, user: User | None, level: str, session: Session
 ) -> None:
     """Check that user has at least the given permission level on a prompt.
 
@@ -135,7 +134,7 @@ def check_prompt_ownership(prompt: Prompt, user: User, session: Session = None) 
         )
 
 
-def _parse_tags_field(tags: str) -> List[str]:
+def _parse_tags_field(tags: str) -> list[str]:
     """Normalize a comma-delimited tag string into a list with trimmed entries.
 
     Args:
@@ -178,8 +177,8 @@ def _log_prompt_action(
 
 def _prompt_to_dict(
     prompt: Prompt,
-    viewer: Optional[User] = None,
-    session: Optional[Session] = None,
+    viewer: User | None = None,
+    session: Session | None = None,
 ) -> dict:
     """Convert Prompt model to dictionary for API response.
 
@@ -223,9 +222,7 @@ def _prompt_to_dict(
     return result
 
 
-def _has_explicit_grant(
-    prompt: Prompt, viewer: Optional[User], session: Session
-) -> bool:
+def _has_explicit_grant(prompt: Prompt, viewer: User | None, session: Session) -> bool:
     """True only when an explicit PromptShare names this viewer.
 
     Never true for owner/admin access or legacy_public-only visibility —

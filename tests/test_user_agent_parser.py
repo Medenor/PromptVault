@@ -11,6 +11,7 @@ Tests unitaires pour vérifier que:
 """
 
 import pytest
+
 from src.services.user_agent_parser import UserAgentParser
 
 

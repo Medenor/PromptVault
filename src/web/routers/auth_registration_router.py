@@ -13,22 +13,22 @@ import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 
+from src.services.auth.auth_service import AuthService
+from src.services.exceptions import (
+    EmailAlreadyExistsError,
+    PasswordPolicyError,
+    UsernameAlreadyExistsError,
+)
 from src.web.dependencies.auth import (
     get_client_ip,
     get_user_agent,
 )
+from src.web.middleware.rate_limit import (
+    auth_register_limit,
+    limiter,
+)
 from src.web.models.auth_requests import RegisterRequest
 from src.web.models.auth_responses import TokenResponse, UserResponse
-from src.services.auth.auth_service import AuthService
-from src.services.exceptions import (
-    EmailAlreadyExistsError,
-    UsernameAlreadyExistsError,
-    PasswordPolicyError,
-)
-from src.web.middleware.rate_limit import (
-    limiter,
-    auth_register_limit,
-)
 from src.web.routers.auth_shared import get_auth_service
 
 # Configure logger
@@ -131,10 +131,6 @@ def register(
 
         user_payload = result["user"]
         user_response = UserResponse.model_validate(user_payload)
-        username = getattr(user_payload, "username", None) or user_payload.get(
-            "username", "unknown"
-        )
-        user_id = getattr(user_payload, "id", None) or user_payload.get("id", "unknown")
 
         # Log successful registration (without sensitive data)
         logger.info(
@@ -193,7 +189,7 @@ def register(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=e.user_message,
-        )
+        ) from e
 
     except UsernameAlreadyExistsError as e:
         logger.warning(
@@ -202,7 +198,7 @@ def register(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=e.user_message,
-        )
+        ) from e
 
     except PasswordPolicyError as e:
         logger.warning(
@@ -211,11 +207,11 @@ def register(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=e.user_message,
-        )
+        ) from e
 
     except Exception as e:
         logger.error(f"Unexpected error during registration: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred during registration. Please try again.",
-        )
+        ) from e

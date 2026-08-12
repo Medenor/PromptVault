@@ -222,8 +222,8 @@ class TestPgRestoreDispatch:
     def test_restore_pg_backup_invokes_psql_with_expected_args(
         self, db_backup_service, patched_db_session, temp_data_dir, monkeypatch
     ):
-        from src.db.models import Backup
         from src.db import config as config_module
+        from src.db.models import Backup
 
         monkeypatch.setattr(
             config_module.db_settings,

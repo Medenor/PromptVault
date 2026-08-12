@@ -16,8 +16,9 @@ import uuid
 
 import pytest
 import sqlalchemy as sa
-from alembic import command
 from alembic.config import Config
+
+from alembic import command
 
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
@@ -97,8 +98,8 @@ def _seed_pre_legacy_public_schema(db_url: str, cfg: Config) -> None:
     models already declare, then stamp Alembic at a1b2c3d4e5f6 so upgrade()/
     downgrade() only exercise the migration under test.
     """
-    from src.db.base import Base
     import src.db.models  # noqa: F401 -- populate Base.metadata
+    from src.db.base import Base
 
     engine = sa.create_engine(db_url)
     Base.metadata.create_all(bind=engine)

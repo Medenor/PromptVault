@@ -6,15 +6,14 @@
 DumpStrategy, then records its metadata (and optionally encrypts it)."""
 
 import os
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 
-from src.db.session import get_db_session
 from src.db.models.prompt import Prompt
-from src.services.exceptions import BackupError
-from src.services.logging_service import logging_service
+from src.db.session import get_db_session
 from src.services.backup_dump_strategy import get_dump_strategy
 from src.services.backup_metadata_store import BackupMetadataStore
+from src.services.exceptions import BackupError
+from src.services.logging_service import logging_service
 
 logger = logging_service.get_logger(__name__)
 
@@ -26,13 +25,13 @@ class BackupCreationService:
 
     def create_backup(
         self,
-        custom_name: Optional[str],
-        created_by: Optional[str],
+        custom_name: str | None,
+        created_by: str | None,
         get_current_user,
         encrypt: bool = False,
-        passphrase: Optional[str] = None,
+        passphrase: str | None = None,
         backup_kind: str = "full",
-    ) -> Optional[str]:
+    ) -> str | None:
         from src.services.backup_audit_service import BackupAuditService
 
         audit_service = BackupAuditService()
@@ -63,7 +62,7 @@ class BackupCreationService:
             backup_size = os.path.getsize(backup_path)
             prompt_count = self._get_prompt_count()
             created_by_name = created_by or get_current_user()
-            timestamp = datetime.now(timezone.utc).isoformat()
+            timestamp = datetime.now(UTC).isoformat()
 
             metadata = {
                 "backup_id": backup_id,
@@ -159,9 +158,9 @@ class BackupCreationService:
             )
             raise BackupError("Failed to create backup.", context={}) from exc
 
-    def _generate_backup_id(self, custom_name: Optional[str]) -> str:
+    def _generate_backup_id(self, custom_name: str | None) -> str:
         # Include microseconds, truncate to milliseconds, for uniqueness.
-        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")[:21]
+        timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S_%f")[:21]
         if custom_name:
             safe_suffix = self._sanitize_backup_name(custom_name)
             return (

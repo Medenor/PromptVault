@@ -28,8 +28,8 @@ def register_lifecycle_events(app: FastAPI) -> None:
         global _session_cleanup_scheduler
 
         try:
-            from src.db.session import SessionLocal
             from src.config.auth_config import auth_settings
+            from src.db.session import SessionLocal
             from src.scheduler.session_cleanup import SessionCleanupScheduler
             from src.web.routers.scheduler import set_scheduler
 

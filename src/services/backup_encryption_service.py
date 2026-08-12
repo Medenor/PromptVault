@@ -9,18 +9,17 @@ The passphrase is never stored — only per-backup salt and nonce are persisted.
 """
 
 import base64
+import logging
 import os
 import uuid
-import logging
-from datetime import datetime, timezone
-from typing import Optional, Dict, Any, Tuple
+from datetime import UTC, datetime
+from typing import Any
 
+from argon2.low_level import Type, hash_secret_raw
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-from argon2.low_level import hash_secret_raw, Type
 
-from src.db.session import get_db_session
-from src.db.repositories.base import BaseRepository
 from src.db.models.encryption_key_config import EncryptionKeyConfig
+from src.db.session import get_db_session
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +41,7 @@ class BackupEncryptionService:
         None — all state is in the database.
     """
 
-    def get_config(self) -> Optional[Dict[str, Any]]:
+    def get_config(self) -> dict[str, Any] | None:
         """Get the current encryption configuration.
 
         Returns:
@@ -54,7 +53,7 @@ class BackupEncryptionService:
                 return None
             return self._serialize_config(config)
 
-    def enable(self, passphrase: str) -> Dict[str, Any]:
+    def enable(self, passphrase: str) -> dict[str, Any]:
         """Enable encryption with the given passphrase.
 
         Creates or updates the EncryptionKeyConfig. The passphrase is not stored.
@@ -92,7 +91,7 @@ class BackupEncryptionService:
             session.commit()
             return self._serialize_config(config)
 
-    def disable(self) -> Optional[Dict[str, Any]]:
+    def disable(self) -> dict[str, Any] | None:
         """Disable encryption for new backups.
 
         Returns:
@@ -106,7 +105,7 @@ class BackupEncryptionService:
             session.commit()
             return self._serialize_config(config)
 
-    def rotate_key(self, old_passphrase: str, new_passphrase: str) -> Dict[str, Any]:
+    def rotate_key(self, old_passphrase: str, new_passphrase: str) -> dict[str, Any]:
         """Rotate the encryption key by incrementing key_version.
 
         Existing backups retain their original salt/nonce and remain accessible
@@ -147,14 +146,14 @@ class BackupEncryptionService:
                 new_passphrase
             )
             config.key_version += 1
-            config.rotated_at = datetime.now(timezone.utc)
+            config.rotated_at = datetime.now(UTC)
             config.verification_salt = v_salt
             config.verification_nonce = v_nonce
             config.verification_ciphertext = v_ciphertext
             session.commit()
             return self._serialize_config(config)
 
-    def encrypt_file(self, file_path: str, passphrase: str) -> Tuple[str, str]:
+    def encrypt_file(self, file_path: str, passphrase: str) -> tuple[str, str]:
         """Encrypt a backup file using AES-256-GCM.
 
         Args:
@@ -251,7 +250,7 @@ class BackupEncryptionService:
         )
 
     @staticmethod
-    def _make_verification_sentinel(passphrase: str) -> Tuple[str, str, str]:
+    def _make_verification_sentinel(passphrase: str) -> tuple[str, str, str]:
         """Encrypt a fixed probe under passphrase; returns (salt_hex, nonce_hex, b64_ciphertext).
 
         Used to verify the passphrase during key rotation without storing the passphrase itself.
@@ -279,7 +278,7 @@ class BackupEncryptionService:
             raise ValueError("old_passphrase verification failed") from exc
 
     @staticmethod
-    def _serialize_config(config: EncryptionKeyConfig) -> Dict[str, Any]:
+    def _serialize_config(config: EncryptionKeyConfig) -> dict[str, Any]:
         """Serialize an EncryptionKeyConfig to a dict (never includes passphrase)."""
         return {
             "is_enabled": config.is_enabled,

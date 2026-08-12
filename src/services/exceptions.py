@@ -6,7 +6,7 @@
 Custom exception hierarchy for PromptVault services.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 
 class PromptVaultException(Exception):
@@ -25,10 +25,10 @@ class PromptVaultException(Exception):
         self,
         message: str,
         *,
-        user_message: Optional[str] = None,
+        user_message: str | None = None,
         http_status: int = 500,
         log_level: str = "error",
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> None:
         super().__init__(message)
         self.message = message
@@ -37,7 +37,7 @@ class PromptVaultException(Exception):
         self.log_level = log_level
         self.context = context or {}
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Return a JSON-serializable representation for API responses."""
         return {
             "error": self.user_message,
@@ -52,8 +52,8 @@ class DataPersistenceError(PromptVaultException):
         self,
         message: str,
         *,
-        user_message: Optional[str] = None,
-        context: Optional[Dict[str, Any]] = None,
+        user_message: str | None = None,
+        context: dict[str, Any] | None = None,
     ) -> None:
         super().__init__(
             message,
@@ -71,8 +71,8 @@ class BackupError(PromptVaultException):
         self,
         message: str,
         *,
-        user_message: Optional[str] = None,
-        context: Optional[Dict[str, Any]] = None,
+        user_message: str | None = None,
+        context: dict[str, Any] | None = None,
         http_status: int = 500,
     ) -> None:
         super().__init__(
@@ -91,8 +91,8 @@ class ImportExportError(PromptVaultException):
         self,
         message: str,
         *,
-        user_message: Optional[str] = None,
-        context: Optional[Dict[str, Any]] = None,
+        user_message: str | None = None,
+        context: dict[str, Any] | None = None,
     ) -> None:
         super().__init__(
             message,
@@ -111,7 +111,7 @@ class ValidationMonitorError(PromptVaultException):
         self,
         message: str,
         *,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> None:
         super().__init__(
             message,
@@ -132,8 +132,8 @@ class AuthenticationError(PromptVaultException):
         self,
         message: str,
         *,
-        user_message: Optional[str] = None,
-        context: Optional[Dict[str, Any]] = None,
+        user_message: str | None = None,
+        context: dict[str, Any] | None = None,
     ) -> None:
         super().__init__(
             message,
@@ -151,7 +151,7 @@ class InvalidCredentialsError(AuthenticationError):
         self,
         message: str = "Invalid username or password",
         *,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> None:
         super().__init__(
             message,
@@ -167,8 +167,8 @@ class AccountLockedError(AuthenticationError):
         self,
         message: str,
         *,
-        locked_until: Optional[str] = None,
-        context: Optional[Dict[str, Any]] = None,
+        locked_until: str | None = None,
+        context: dict[str, Any] | None = None,
     ) -> None:
         user_message = (
             "Account is temporarily locked due to multiple failed login attempts."
@@ -190,7 +190,7 @@ class AccountInactiveError(AuthenticationError):
         self,
         message: str = "Account is not active",
         *,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> None:
         super().__init__(
             message,
@@ -206,7 +206,7 @@ class EmailNotVerifiedError(AuthenticationError):
         self,
         message: str = "Email not verified",
         *,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> None:
         super().__init__(
             message,
@@ -222,7 +222,7 @@ class EmailAlreadyExistsError(PromptVaultException):
         self,
         message: str = "Email already registered",
         *,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> None:
         super().__init__(
             message,
@@ -240,7 +240,7 @@ class UsernameAlreadyExistsError(PromptVaultException):
         self,
         message: str = "Username already taken",
         *,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> None:
         super().__init__(
             message,
@@ -258,8 +258,8 @@ class PasswordPolicyError(PromptVaultException):
         self,
         message: str,
         *,
-        errors: Optional[list] = None,
-        context: Optional[Dict[str, Any]] = None,
+        errors: list | None = None,
+        context: dict[str, Any] | None = None,
     ) -> None:
         ctx = context or {}
         if errors:
@@ -281,7 +281,7 @@ class InvalidTokenError(AuthenticationError):
         self,
         message: str = "Invalid or expired token",
         *,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> None:
         super().__init__(
             message,
@@ -297,7 +297,7 @@ class TokenReuseDetectedError(AuthenticationError):
         self,
         message: str = "Token reuse detected",
         *,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> None:
         super().__init__(
             message,
@@ -314,7 +314,7 @@ class SessionLimitExceededError(PromptVaultException):
         message: str,
         *,
         max_sessions: int,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> None:
         ctx = context or {}
         ctx["max_sessions"] = max_sessions
@@ -335,7 +335,7 @@ class SessionNotFoundError(AuthenticationError):
         self,
         message: str = "Session not found or revoked",
         *,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> None:
         super().__init__(
             message,
@@ -351,8 +351,8 @@ class UnauthorizedError(PromptVaultException):
         self,
         message: str = "Unauthorized operation",
         *,
-        user_message: Optional[str] = None,
-        context: Optional[Dict[str, Any]] = None,
+        user_message: str | None = None,
+        context: dict[str, Any] | None = None,
     ) -> None:
         super().__init__(
             message,
@@ -374,7 +374,7 @@ class TokenExpiredError(AuthenticationError):
         self,
         message: str = "Password reset token has expired",
         *,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> None:
         super().__init__(
             message,
@@ -390,7 +390,7 @@ class TokenAlreadyUsedError(AuthenticationError):
         self,
         message: str = "Password reset token has already been used",
         *,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> None:
         super().__init__(
             message,
@@ -406,7 +406,7 @@ class TokenNotFoundError(AuthenticationError):
         self,
         message: str = "Password reset token not found",
         *,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> None:
         super().__init__(
             message,
@@ -422,9 +422,9 @@ class RateLimitExceededError(PromptVaultException):
         self,
         message: str,
         *,
-        user_message: Optional[str] = None,
-        retry_after: Optional[int] = None,
-        context: Optional[Dict[str, Any]] = None,
+        user_message: str | None = None,
+        retry_after: int | None = None,
+        context: dict[str, Any] | None = None,
     ) -> None:
         ctx = context or {}
         if retry_after:
@@ -452,7 +452,7 @@ class ShareGrantError(PromptVaultException):
         self,
         message: str = "Unable to grant share",
         *,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> None:
         super().__init__(
             message,
@@ -470,7 +470,7 @@ class UserNotFoundError(PromptVaultException):
         self,
         message: str = "User not found",
         *,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> None:
         super().__init__(
             message,

@@ -11,8 +11,7 @@ checks) before Phase 1 moves those writes behind repository methods. The goal
 is regression coverage, not new behavior.
 """
 
-from datetime import datetime, timedelta, timezone
-from typing import Dict
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -23,10 +22,10 @@ def api_client(api_client_context):
 
 
 @pytest.fixture
-def api_auth_headers(api_client_context) -> Dict[str, str]:
+def api_auth_headers(api_client_context) -> dict[str, str]:
     """Access token for the seeded owner user ('apiuser')."""
-    from src.services.auth.jwt_service import JWTService
     from src.config import auth_config
+    from src.services.auth.jwt_service import JWTService
 
     jwt_service = JWTService(auth_config.auth_settings)
     access_token = jwt_service.generate_access_token(
@@ -39,15 +38,15 @@ def api_auth_headers(api_client_context) -> Dict[str, str]:
 
 
 @pytest.fixture
-def other_user_auth_headers(api_client_context) -> Dict[str, str]:
+def other_user_auth_headers(api_client_context) -> dict[str, str]:
     """Access token for a second, non-owner user created on the fly."""
-    from src.services.auth.jwt_service import JWTService
-    from src.services.auth.password_service import PasswordService
     from src.config import auth_config
     from src.config.auth_config import auth_settings
     from src.db.models.user import User
     from src.db.models.user_session import UserSession
     from src.db.session import SessionLocal
+    from src.services.auth.jwt_service import JWTService
+    from src.services.auth.password_service import PasswordService
 
     password_service = PasswordService(auth_settings)
     password_hash = password_service.hash_password("OtherUserP@ssw0rd123")
@@ -64,8 +63,8 @@ def other_user_auth_headers(api_client_context) -> Dict[str, str]:
                 role="editor",
                 is_active=True,
                 email_verified=True,
-                created_at=datetime.now(timezone.utc),
-                updated_at=datetime.now(timezone.utc),
+                created_at=datetime.now(UTC),
+                updated_at=datetime.now(UTC),
             )
             session.add(other_user)
             session.flush()
@@ -76,8 +75,8 @@ def other_user_auth_headers(api_client_context) -> Dict[str, str]:
                 refresh_token_jti="api-other-test-jti",
                 ip_address="127.0.0.1",
                 device_info="Test Agent",
-                created_at=datetime.now(timezone.utc),
-                expires_at=datetime.now(timezone.utc) + timedelta(days=30),
+                created_at=datetime.now(UTC),
+                expires_at=datetime.now(UTC) + timedelta(days=30),
                 is_revoked=False,
             )
             session.add(other_session)
@@ -326,13 +325,13 @@ class TestCreatePromptAnonymous:
         # no grant, and is not legacy_public — it is invisible to everyone
         # (including a later anonymous request), per 007-prompt-sharing's
         # visibility scoping. The admin role always sees it (existence check).
-        from datetime import datetime, timezone
+        from datetime import datetime
 
-        from src.services.auth.jwt_service import JWTService
-        from src.services.auth.password_service import PasswordService
         from src.config import auth_config
         from src.db.models.user import User
         from src.db.session import SessionLocal
+        from src.services.auth.jwt_service import JWTService
+        from src.services.auth.password_service import PasswordService
 
         session = SessionLocal()
         try:
@@ -349,8 +348,8 @@ class TestCreatePromptAnonymous:
                         role="admin",
                         is_active=True,
                         email_verified=True,
-                        created_at=datetime.now(timezone.utc),
-                        updated_at=datetime.now(timezone.utc),
+                        created_at=datetime.now(UTC),
+                        updated_at=datetime.now(UTC),
                     )
                 )
                 session.commit()

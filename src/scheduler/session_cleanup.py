@@ -22,17 +22,17 @@ Example:
 """
 
 import logging
-from datetime import datetime, timedelta
-from typing import Optional, Callable
+from collections.abc import Callable
+from datetime import datetime
+
+from apscheduler.job import Job
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
-from apscheduler.job import Job
 from sqlalchemy import text
 
-from src.db.session import SessionLocal
-from src.db.models.user_session import UserSession
 from src.config.auth_config import AuthConfig
-from src.services.logging_service import LoggingService
+from src.db.models.user_session import UserSession
+from src.db.session import SessionLocal
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +67,7 @@ class SessionCleanupScheduler:
     def __init__(
         self,
         session_factory: Callable = SessionLocal,
-        config: Optional[AuthConfig] = None,
+        config: AuthConfig | None = None,
         cleanup_interval_hours: int = DEFAULT_CLEANUP_INTERVAL_HOURS,
         batch_size: int = DEFAULT_BATCH_SIZE,
     ):
@@ -84,7 +84,7 @@ class SessionCleanupScheduler:
         self.cleanup_interval_hours = cleanup_interval_hours
         self.batch_size = batch_size
         self.is_running = False
-        self.current_job: Optional[Job] = None
+        self.current_job: Job | None = None
 
         # Initialize scheduler
         self.scheduler = BackgroundScheduler(daemon=True)
@@ -128,7 +128,7 @@ class SessionCleanupScheduler:
         except Exception as e:
             logger.error(f"Failed to start cleanup scheduler: {e}", exc_info=True)
             self.is_running = False
-            raise RuntimeError(f"Failed to start scheduler: {e}")
+            raise RuntimeError(f"Failed to start scheduler: {e}") from e
 
     def stop(self) -> None:
         """Stop the session cleanup scheduler.
@@ -218,7 +218,7 @@ class SessionCleanupScheduler:
             if session:
                 session.close()
 
-    def get_job_info(self) -> Optional[dict]:
+    def get_job_info(self) -> dict | None:
         """Get information about the current cleanup job.
 
         Returns:

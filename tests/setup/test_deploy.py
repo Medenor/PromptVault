@@ -20,19 +20,18 @@ Tests cover:
 - State persistence
 """
 
-import os
 import sys
-from pathlib import Path
-from datetime import datetime
-from unittest.mock import Mock, MagicMock, patch, call
-from click.testing import CliRunner
 import tempfile
+from pathlib import Path
+from unittest.mock import MagicMock, Mock, patch
+
+from click.testing import CliRunner
 
 # Add project root to path
 project_root = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(project_root))
 
-from scripts.setup.deploy import DeploymentOrchestrator, main
+from scripts.setup.deploy import DeploymentOrchestrator, main  # noqa: E402
 
 
 class TestDeploymentOrchestratorInit:

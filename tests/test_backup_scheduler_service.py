@@ -4,8 +4,7 @@
 
 """Tests for BackupSchedulerService."""
 
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 from src.services.backup_scheduler_service import BackupSchedulerService
 
@@ -325,10 +324,10 @@ class TestUnregisterJob:
 
 class TestLazyBackupService:
     def test_lazy_loads_backup_service(self, patched_db_session):
-        svc = BackupSchedulerService()
+        BackupSchedulerService()
         with patch(
             "src.services.backup_scheduler_service.BackupSchedulerService.backup_service"
-        ) as mock_prop:
+        ):
             pass
 
     def test_uses_provided_backup_service(self, scheduler_service, db_backup_service):

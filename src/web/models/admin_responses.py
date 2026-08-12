@@ -16,9 +16,8 @@ All response models include:
 """
 
 from datetime import datetime
-from typing import Optional, Dict
 
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from src.web.models.auth_responses import UserResponse
 
@@ -62,7 +61,7 @@ class UserDetailResponse(UserResponse):
         ... )
     """
 
-    last_login: Optional[datetime] = Field(
+    last_login: datetime | None = Field(
         default=None,
         description="Last successful login timestamp",
         examples=["2025-12-02T10:30:00Z"],
@@ -72,12 +71,12 @@ class UserDetailResponse(UserResponse):
         description="Number of failed login attempts",
         examples=[0, 1, 5],
     )
-    locked_until: Optional[datetime] = Field(
+    locked_until: datetime | None = Field(
         default=None,
         description="Account lockout expiration timestamp",
         examples=[None, "2025-12-02T11:30:00Z"],
     )
-    password_changed_at: Optional[datetime] = Field(
+    password_changed_at: datetime | None = Field(
         default=None,
         description="Last password change timestamp",
         examples=["2025-12-02T10:30:00Z"],
@@ -231,7 +230,7 @@ class AdminStatsResponse(BaseModel):
         description="Number of active (non-expired, non-revoked) sessions",
         examples=[0, 120, 1800],
     )
-    users_by_role: Dict[str, int] = Field(
+    users_by_role: dict[str, int] = Field(
         ...,
         description="Count of users by role",
         examples=[{"viewer": 60, "editor": 30, "admin": 10}],

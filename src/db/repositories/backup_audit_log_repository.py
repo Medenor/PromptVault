@@ -7,12 +7,10 @@
 Provides append-only data access for audit log entries.
 """
 
-from typing import Optional, List, Tuple
-
 from sqlalchemy.orm import Session
 
-from src.db.repositories.base import BaseRepository
 from src.db.models.backup_audit_log import AuditLogEntry
+from src.db.repositories.base import BaseRepository
 
 
 class BackupAuditLogRepository(BaseRepository[AuditLogEntry]):
@@ -45,11 +43,11 @@ class BackupAuditLogRepository(BaseRepository[AuditLogEntry]):
 
     def list_entries(
         self,
-        operation: Optional[str] = None,
-        outcome: Optional[str] = None,
+        operation: str | None = None,
+        outcome: str | None = None,
         limit: int = 50,
         offset: int = 0,
-    ) -> List[AuditLogEntry]:
+    ) -> list[AuditLogEntry]:
         """List audit log entries with optional filters.
 
         Args:
@@ -74,8 +72,8 @@ class BackupAuditLogRepository(BaseRepository[AuditLogEntry]):
 
     def count_with_filters(
         self,
-        operation: Optional[str] = None,
-        outcome: Optional[str] = None,
+        operation: str | None = None,
+        outcome: str | None = None,
     ) -> int:
         """Count audit log entries matching filters.
 

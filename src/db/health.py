@@ -8,13 +8,14 @@ This module provides functions to check database connectivity and health status.
 Used for application startup validation and monitoring endpoints.
 """
 
+import logging
+from typing import Any
+
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
-import logging
-from typing import Dict, Any
 
-from src.db.session import engine
 from src.db.config import db_settings
+from src.db.session import engine
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +48,7 @@ def check_database_health() -> bool:
         return False
 
 
-def get_database_info() -> Dict[str, Any]:
+def get_database_info() -> dict[str, Any]:
     """Get database connection information and status.
 
     Returns diagnostic information about the database connection,
@@ -81,7 +82,7 @@ def get_database_info() -> Dict[str, Any]:
     return info
 
 
-def check_tables_exist() -> Dict[str, bool]:
+def check_tables_exist() -> dict[str, bool]:
     """Check if all expected database tables exist.
 
     Verifies that the database schema has been properly initialized

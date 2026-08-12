@@ -7,7 +7,7 @@
 Tracks scheduled backup configuration. At most one active schedule per system.
 """
 
-from sqlalchemy import Column, String, Integer, Boolean, DateTime, ForeignKey
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.sql import func
 
 from src.db.base import Base

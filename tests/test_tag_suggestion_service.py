@@ -5,11 +5,12 @@
 """Unit tests for tag suggestion service."""
 
 import pytest
+
 from src.services.tag_suggestion_service import (
-    suggest_tags,
+    _equivalent_tokens,
     _normalize,
     _tokenize,
-    _equivalent_tokens,
+    suggest_tags,
 )
 
 
@@ -196,7 +197,7 @@ class TestSynonymMatching:
 
         # Should match "testing" even though content has "test"
         # Should match "database" even though content has "basededonnees"
-        tag_names = [tag for tag, _ in results]
+        [tag for tag, _ in results]
 
         # At least one synonym-based match should occur
         assert len(results) > 0

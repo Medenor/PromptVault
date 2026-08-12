@@ -16,9 +16,9 @@ All response models include:
 """
 
 from datetime import datetime
-from typing import Literal, Optional
+from typing import Literal
 
-from pydantic import BaseModel, Field, ConfigDict, field_serializer
+from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
 
 class UserResponse(BaseModel):
@@ -68,7 +68,7 @@ class UserResponse(BaseModel):
         description="User's email address",
         examples=["alice@example.com"],
     )
-    display_name: Optional[str] = Field(
+    display_name: str | None = Field(
         default=None,
         description="User's display name",
         examples=["Alice Smith", "Bob Johnson"],
@@ -98,7 +98,7 @@ class UserResponse(BaseModel):
         description="Account last update timestamp",
         examples=["2025-12-02T10:30:00Z"],
     )
-    last_login: Optional[datetime] = Field(
+    last_login: datetime | None = Field(
         None,
         description="Last login timestamp",
         examples=["2025-12-02T10:30:00Z", None],
@@ -109,7 +109,7 @@ class UserResponse(BaseModel):
     )
 
     @field_serializer("created_at", "updated_at", "last_login", when_used="json")
-    def _serialize_datetime(self, value: Optional[datetime]) -> Optional[str]:
+    def _serialize_datetime(self, value: datetime | None) -> str | None:
         return value.isoformat() if value else None
 
 
@@ -227,7 +227,7 @@ class SessionResponse(BaseModel):
         description="Session creation timestamp",
         examples=["2025-12-02T10:30:00Z"],
     )
-    last_used_at: Optional[datetime] = Field(
+    last_used_at: datetime | None = Field(
         default=None,
         description="Last token refresh timestamp",
         examples=["2025-12-02T11:45:00Z"],
@@ -237,12 +237,12 @@ class SessionResponse(BaseModel):
         description="Session expiration timestamp",
         examples=["2025-12-09T10:30:00Z"],
     )
-    ip_address: Optional[str] = Field(
+    ip_address: str | None = Field(
         default=None,
         description="Client IP address",
         examples=["192.168.1.1", "2001:0db8:85a3:0000:0000:8a2e:0370:7334"],
     )
-    user_agent: Optional[str] = Field(
+    user_agent: str | None = Field(
         default=None,
         description="Client user agent string",
         examples=["Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"],
@@ -257,17 +257,17 @@ class SessionResponse(BaseModel):
         description="Whether this is the current session",
         examples=[True, False],
     )
-    device: Optional[str] = Field(
+    device: str | None = Field(
         default=None,
         description="Parsed device type (Desktop, iPhone, etc.)",
         examples=["Desktop", "iPhone 12", "Samsung Galaxy S21"],
     )
-    browser: Optional[str] = Field(
+    browser: str | None = Field(
         default=None,
         description="Parsed browser name and version",
         examples=["Chrome 91.0", "Safari 14.1.1", "Firefox 89.0"],
     )
-    os: Optional[str] = Field(
+    os: str | None = Field(
         default=None,
         description="Parsed operating system",
         examples=["Mac OS X 10.15.7", "Windows 10", "iOS 14.6"],
@@ -298,7 +298,7 @@ class MessageResponse(BaseModel):
         description="Human-readable message",
         examples=["Operation completed successfully", "Password changed successfully"],
     )
-    detail: Optional[str] = Field(
+    detail: str | None = Field(
         default=None,
         description="Optional additional details",
         examples=["All sessions remain active", "Check your email for reset link"],
@@ -526,11 +526,11 @@ class UserStatsResponse(BaseModel):
         ...,
         description="Account creation date and time",
     )
-    last_login: Optional[datetime] = Field(
+    last_login: datetime | None = Field(
         default=None,
         description="Last successful login date and time",
     )
-    password_changed_at: Optional[datetime] = Field(
+    password_changed_at: datetime | None = Field(
         default=None,
         description="Last password change date and time",
     )
@@ -556,7 +556,7 @@ class UserStatsResponse(BaseModel):
         default=False,
         description="Whether account is currently locked out",
     )
-    locked_until: Optional[datetime] = Field(
+    locked_until: datetime | None = Field(
         default=None,
         description="Account lockout expiration time (if locked)",
     )
@@ -566,7 +566,7 @@ class UserStatsResponse(BaseModel):
         description="Number of days since account creation",
         examples=[1, 45, 365],
     )
-    days_since_last_login: Optional[int] = Field(
+    days_since_last_login: int | None = Field(
         default=None,
         ge=0,
         description="Number of days since last login",

@@ -4,19 +4,18 @@
 
 """Unit tests for Docker utility functions."""
 
-import pytest
-import time
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
+
 from scripts.setup.utils.docker_utils import (
+    check_docker_compose_installed,
     check_docker_installed,
     check_docker_running,
-    check_docker_compose_installed,
-    check_port_available,
-    run_docker_compose,
-    get_container_status,
-    wait_for_healthy,
-    get_container_logs,
     check_image_exists,
+    check_port_available,
+    get_container_logs,
+    get_container_status,
+    run_docker_compose,
+    wait_for_healthy,
 )
 
 

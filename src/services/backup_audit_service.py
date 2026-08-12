@@ -8,22 +8,22 @@ Provides audit logging and monitoring dashboard statistics for all
 backup-related operations.
 """
 
-import uuid
 import logging
-from datetime import datetime, timezone, timedelta
-from typing import Optional, Dict, Any, List
+import uuid
+from datetime import UTC, datetime, timedelta
+from typing import Any
 
 from sqlalchemy import func
 
-from src.db.session import get_db_session
 from src.db.models import Backup
 from src.db.models.backup_audit_log import AuditLogEntry
 from src.db.repositories.backup_audit_log_repository import BackupAuditLogRepository
+from src.db.session import get_db_session
 
 logger = logging.getLogger(__name__)
 
 
-def _isoformat_utc(dt: Optional[datetime]) -> Optional[str]:
+def _isoformat_utc(dt: datetime | None) -> str | None:
     """Serialize a datetime as ISO-8601 with explicit UTC offset.
 
     SQLite's func.now() (and DateTime(timezone=True) columns generally on
@@ -34,7 +34,7 @@ def _isoformat_utc(dt: Optional[datetime]) -> Optional[str]:
     if dt is None:
         return None
     if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
+        dt = dt.replace(tzinfo=UTC)
     return dt.isoformat()
 
 
@@ -48,9 +48,9 @@ class BackupAuditService:
         self,
         operation: str,
         outcome: str,
-        backup_id: Optional[str] = None,
-        performed_by: Optional[str] = None,
-        detail: Optional[Dict[str, Any]] = None,
+        backup_id: str | None = None,
+        performed_by: str | None = None,
+        detail: dict[str, Any] | None = None,
     ) -> None:
         """Record an audit log entry.
 
@@ -82,11 +82,11 @@ class BackupAuditService:
 
     def get_log(
         self,
-        operation: Optional[str] = None,
-        outcome: Optional[str] = None,
+        operation: str | None = None,
+        outcome: str | None = None,
         limit: int = 50,
         offset: int = 0,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Get paginated audit log entries.
 
         Args:
@@ -110,7 +110,7 @@ class BackupAuditService:
                 "total": total,
             }
 
-    def get_dashboard_stats(self) -> Dict[str, Any]:
+    def get_dashboard_stats(self) -> dict[str, Any]:
         """Compute monitoring dashboard statistics.
 
         Returns:
@@ -125,7 +125,7 @@ class BackupAuditService:
                 or 0
             )
 
-            thirty_days_ago = datetime.now(timezone.utc) - timedelta(days=30)
+            thirty_days_ago = datetime.now(UTC) - timedelta(days=30)
             recent = (
                 session.query(Backup).filter(Backup.created_at >= thirty_days_ago).all()
             )
@@ -159,9 +159,9 @@ class BackupAuditService:
             }
 
     @staticmethod
-    def _compute_history(session) -> List[Dict[str, Any]]:
+    def _compute_history(session) -> list[dict[str, Any]]:
         """Compute per-day backup history for last 30 days."""
-        thirty_days_ago = datetime.now(timezone.utc) - timedelta(days=30)
+        thirty_days_ago = datetime.now(UTC) - timedelta(days=30)
         backups = (
             session.query(Backup)
             .filter(Backup.created_at >= thirty_days_ago)
@@ -169,7 +169,7 @@ class BackupAuditService:
             .all()
         )
 
-        day_map: Dict[str, Dict[str, Any]] = {}
+        day_map: dict[str, dict[str, Any]] = {}
         for b in backups:
             if b.created_at:
                 day_key = b.created_at.strftime("%Y-%m-%d")
@@ -191,7 +191,7 @@ class BackupAuditService:
         return sorted(day_map.values(), key=lambda x: x["date"])
 
     @staticmethod
-    def _serialize_entry(entry: AuditLogEntry) -> Dict[str, Any]:
+    def _serialize_entry(entry: AuditLogEntry) -> dict[str, Any]:
         """Serialize an audit log entry to dict."""
         return {
             "id": entry.id,

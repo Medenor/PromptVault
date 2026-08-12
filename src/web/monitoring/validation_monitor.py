@@ -12,7 +12,6 @@ and regression risk.
 import json
 import os
 import time
-from typing import Dict, List, Optional
 
 from src.services.logging_service import logging_service
 
@@ -54,7 +53,7 @@ class ValidationMonitor:
             return
 
         try:
-            with open(self.metrics_file, "r", encoding="utf-8") as f:
+            with open(self.metrics_file, encoding="utf-8") as f:
                 data = json.load(f)
                 if isinstance(data, dict):
                     self.metrics.update(data)
@@ -92,8 +91,8 @@ class ValidationMonitor:
         self,
         endpoint: str,
         success: bool,
-        errors: Optional[List[str]] = None,
-        client: Optional[str] = None,
+        errors: list[str] | None = None,
+        client: str | None = None,
     ) -> None:
         """
         Record a validation result.
@@ -129,7 +128,7 @@ class ValidationMonitor:
 
         self._persist()
 
-    def snapshot(self) -> Dict[str, object]:
+    def snapshot(self) -> dict[str, object]:
         """
         Return a snapshot of metrics augmented with failure rate.
 

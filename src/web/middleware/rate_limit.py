@@ -52,15 +52,13 @@ Environment Variables:
 import logging
 import os
 import time
-from typing import Optional, Callable
-from functools import wraps
 
 from fastapi import Request, Response
+from redis import Redis
+from redis.exceptions import RedisError
 from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
-from redis import Redis
-from redis.exceptions import RedisError
 
 from src.config.auth_config import auth_settings
 from src.services.exceptions import RateLimitExceededError
@@ -71,7 +69,7 @@ _TRUE_VALUES = ("true", "1", "yes", "y", "on")
 _FALSE_VALUES = ("false", "0", "no", "n", "off")
 
 
-def _parse_bool_env(name: str) -> Optional[bool]:
+def _parse_bool_env(name: str) -> bool | None:
     """Parse an environment variable as a boolean.
 
     Returns:
@@ -126,7 +124,7 @@ def is_rate_limiting_disabled() -> bool:
     return False
 
 
-def _jwt_subject_from_request(request: Request) -> Optional[str]:
+def _jwt_subject_from_request(request: Request) -> str | None:
     """Extract the JWT subject (user id) from a request without a DB hit.
 
     Decodes the ``access_token`` from either the ``Authorization: Bearer``
@@ -148,7 +146,7 @@ def _jwt_subject_from_request(request: Request) -> Optional[str]:
     except Exception:  # pragma: no cover - misconfiguration guard
         return None
 
-    token: Optional[str] = None
+    token: str | None = None
     auth_header = request.headers.get("Authorization")
     if auth_header and auth_header.startswith("Bearer "):
         token = auth_header.split(" ", 1)[1]
@@ -206,7 +204,7 @@ def get_rate_limit_key(request: Request) -> str:
     return f"ip:{ip}"
 
 
-def create_redis_client() -> Optional[Redis]:
+def create_redis_client() -> Redis | None:
     """Create Redis client for rate limiting storage.
 
     Attempts to connect to Redis using configuration from auth_settings.

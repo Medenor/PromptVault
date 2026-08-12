@@ -11,43 +11,41 @@ original file.
 """
 
 import logging
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status, Form
+from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
-from src.web.middleware.rate_limit import limiter, write_limit, bulk_limit
 from src.config.auth_config import auth_settings
-
-from src.db.session import get_db
 from src.db.models.user import User
-from src.db.repositories.prompt_repository import PromptRepository
 from src.db.repositories.category_repository import CategoryRepository
+from src.db.repositories.prompt_repository import PromptRepository
 from src.db.repositories.tag_repository import TagRepository
 from src.db.repositories.version_repository import VersionRepository
+from src.db.session import get_db
+from src.services.exceptions import ShareGrantError
 from src.web.dependencies.auth import (
-    get_optional_user,
-    get_current_user_or_none,
-    get_current_user_or_default,
     get_admin_or_bypass,
+    get_current_user_or_default,
+    get_current_user_or_none,
+    get_optional_user,
 )
+from src.web.middleware.rate_limit import bulk_limit, limiter, write_limit
 from src.web.models.requests import (
+    BulkDeleteRequest,
     PromptCreateRequest,
     PromptUpdateRequest,
-    BulkDeleteRequest,
 )
 from src.web.models.sharing_requests import PromptVisibilityUpdateRequest
-from src.services.exceptions import ShareGrantError
 from src.web.routers.prompts_shared import (
-    _parse_semver,
-    check_prompt_ownership,
-    check_prompt_access,
-    effective_permission,
-    _parse_tags_field,
     _log_prompt_action,
+    _parse_semver,
+    _parse_tags_field,
     _prompt_to_dict,
+    check_prompt_access,
+    check_prompt_ownership,
+    effective_permission,
 )
 
 # Configure logging
@@ -82,7 +80,7 @@ router = APIRouter(
 )
 async def get_prompt(
     prompt_id: int,
-    user: Optional[User] = Depends(get_current_user_or_none),
+    user: User | None = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
     """Get a specific prompt by ID (read-level access).
@@ -192,7 +190,7 @@ async def create_prompt(
     tags: str = Form(""),
     commit_message: str = Form("Initial commit"),
     semantic_version: str = Form(""),
-    user: Optional[User] = Depends(get_current_user_or_none),
+    user: User | None = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
     """Create a new prompt (authenticated).
@@ -250,7 +248,7 @@ async def create_prompt(
         favorite=False,
         semantic_version=validated_data.semantic_version,
         user_id=user.id if user else None,
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )
     db.commit()
 
@@ -415,7 +413,7 @@ async def update_prompt(
         "title": validated_data.title,
         "prompt": validated_data.prompt,
         "category_id": category_obj.id if category_obj else None,
-        "updated_at": datetime.now(timezone.utc),
+        "updated_at": datetime.now(UTC),
     }
     if validated_data.semantic_version is not None:
         update_fields["semantic_version"] = validated_data.semantic_version
@@ -539,7 +537,7 @@ async def update_prompt_visibility(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=exc.user_message,
-        )
+        ) from exc
 
     db.refresh(existing_prompt)
     return _prompt_to_dict(existing_prompt, viewer=user, session=db)
@@ -576,7 +574,7 @@ async def update_prompt_visibility(
 async def bulk_delete_prompts(
     request: Request,
     body: BulkDeleteRequest,
-    admin: Optional[User] = Depends(get_admin_or_bypass),
+    admin: User | None = Depends(get_admin_or_bypass),
     db: Session = Depends(get_db),
 ):
     """Bulk delete prompts (admin only).
@@ -810,7 +808,7 @@ async def toggle_favorite(
     prompt_repo.update(
         prompt_id,
         favorite=new_favorite_status,
-        updated_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(UTC),
     )
 
     db.commit()
@@ -849,7 +847,7 @@ async def toggle_favorite(
 )
 async def copy_prompt_with_version(
     prompt_id: int,
-    user: Optional[User] = Depends(get_optional_user),
+    user: User | None = Depends(get_optional_user),
     db: Session = Depends(get_db),
 ):
     """Return prompt content with version metadata line.

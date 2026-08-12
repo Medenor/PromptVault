@@ -3,8 +3,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import csv
-import os
-from typing import List, Dict, Any, Tuple
+from typing import Any
 
 from src.services.exceptions import ImportExportError
 from src.services.logging_service import logging_service
@@ -20,7 +19,7 @@ class PromptImportExportService:
         pass
 
     def export_to_csv(
-        self, file_path: str, prompts: List[Tuple[int, Dict[str, Any]]]
+        self, file_path: str, prompts: list[tuple[int, dict[str, Any]]]
     ) -> bool:
         """
         Export prompts to CSV format.
@@ -38,7 +37,7 @@ class PromptImportExportService:
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
                 writer.writeheader()
 
-                for prompt_id, prompt_info in prompts:
+                for _prompt_id, prompt_info in prompts:
                     data = prompt_info["data"]
                     row = {
                         "title": data.get("title", ""),
@@ -62,7 +61,7 @@ class PromptImportExportService:
             ) from exc
 
     def export_to_markdown(
-        self, file_path: str, prompts: List[Tuple[int, Dict[str, Any]]]
+        self, file_path: str, prompts: list[tuple[int, dict[str, Any]]]
     ) -> bool:
         """
         Export prompts to Markdown format.
@@ -76,7 +75,7 @@ class PromptImportExportService:
         """
         try:
             with open(file_path, "w", encoding="utf-8") as mdfile:
-                for prompt_id, prompt_info in prompts:
+                for _prompt_id, prompt_info in prompts:
                     data = prompt_info["data"]
                     mdfile.write(f"# {data.get('title', 'Untitled')}\n\n")
                     mdfile.write(
@@ -107,7 +106,7 @@ class PromptImportExportService:
                 context={"file_path": file_path},
             ) from exc
 
-    def import_from_csv(self, file_path: str) -> List[Dict[str, Any]]:
+    def import_from_csv(self, file_path: str) -> list[dict[str, Any]]:
         """
         Import prompts from CSV format.
 
@@ -119,7 +118,7 @@ class PromptImportExportService:
         """
         prompts = []
         try:
-            with open(file_path, "r", newline="", encoding="utf-8") as csvfile:
+            with open(file_path, newline="", encoding="utf-8") as csvfile:
                 reader = csv.DictReader(csvfile)
                 for row in reader:
                     try:
@@ -185,7 +184,7 @@ class PromptImportExportService:
             ) from exc
         return prompts
 
-    def import_from_markdown(self, file_path: str) -> List[Dict[str, Any]]:
+    def import_from_markdown(self, file_path: str) -> list[dict[str, Any]]:
         """
         Import prompts from Markdown format.
 
@@ -197,7 +196,7 @@ class PromptImportExportService:
         """
         prompts = []
         try:
-            with open(file_path, "r", encoding="utf-8") as mdfile:
+            with open(file_path, encoding="utf-8") as mdfile:
                 content = mdfile.read()
                 # Split by '---' separator, then process each block
                 blocks = content.split("---")

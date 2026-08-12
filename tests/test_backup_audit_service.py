@@ -4,11 +4,9 @@
 
 """Tests for BackupAuditService."""
 
-import pytest
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
 
 from src.db.models import Backup
-from src.services.backup_audit_service import BackupAuditService
 
 
 class TestLog:
@@ -87,7 +85,7 @@ class TestGetLog:
         assert result["total"] == 0
 
     def test_pagination(self, audit_service):
-        for i in range(5):
+        for _i in range(5):
             audit_service.log(operation="backup.create", outcome="success")
 
         result = audit_service.get_log(limit=2, offset=0)
@@ -172,7 +170,7 @@ class TestGetDashboardStats:
         assert stats["storage_quota_bytes"] == 10 * 1024 * 1024 * 1024
 
     def test_dashboard_with_backups(self, audit_service, patched_db_session):
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         with patched_db_session() as session:
             for i in range(3):
                 backup = Backup(
@@ -211,7 +209,7 @@ class TestGetDashboardStats:
         assert stats["quota_warning"] is True
 
     def test_dashboard_mixed_success_rate(self, audit_service, patched_db_session):
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         with patched_db_session() as session:
             session.add(
                 Backup(
@@ -239,7 +237,7 @@ class TestGetDashboardStats:
         assert stats["success_rate_30d"] == 0.5
 
     def test_dashboard_history(self, audit_service, patched_db_session):
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         with patched_db_session() as session:
             session.add(
                 Backup(
@@ -284,7 +282,7 @@ class TestGetDashboardStats:
                     filename="f.db",
                     storage_path="/tmp/f.db",
                     succeeded=False,
-                    created_at=datetime.now(timezone.utc),
+                    created_at=datetime.now(UTC),
                 )
             )
             session.commit()

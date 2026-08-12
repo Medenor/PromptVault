@@ -10,12 +10,12 @@ prompt, made by its owner (or an admin) to another user.
 
 from sqlalchemy import (
     Column,
-    Integer,
-    String,
-    Enum,
     DateTime,
+    Enum,
     ForeignKey,
     Index,
+    Integer,
+    String,
     UniqueConstraint,
 )
 from sqlalchemy.orm import relationship

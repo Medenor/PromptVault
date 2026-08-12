@@ -7,9 +7,9 @@
 Tracks cloud storage provider configurations for backup upload/download.
 """
 
-from sqlalchemy import Column, String, Text, Boolean, DateTime
-from sqlalchemy.sql import func
+from sqlalchemy import Boolean, Column, DateTime, String, Text
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
 
 from src.db.base import Base
 

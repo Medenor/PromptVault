@@ -11,24 +11,23 @@ This module provides security-focused validation for file uploads including:
 - Secure temporary file creation
 """
 
+import mimetypes
 import os
 import tempfile
-import mimetypes
-from typing import Optional, Tuple
 from pathlib import Path
+
 from fastapi import UploadFile
 
 from .constraints import (
     ALLOWED_IMPORT_EXTENSIONS,
     ALLOWED_MIME_TYPES,
     MAX_FILE_SIZE_BYTES,
-    MAX_FILE_SIZE_MB,
 )
 
 
 def validate_file_extension(
     filename: str, allowed_extensions: set = None
-) -> Tuple[bool, str]:
+) -> tuple[bool, str]:
     """Validate that file has an allowed extension.
 
     Args:
@@ -61,7 +60,7 @@ def validate_file_extension(
 
 def validate_file_size(
     file_size: int, max_size: int = MAX_FILE_SIZE_BYTES
-) -> Tuple[bool, str]:
+) -> tuple[bool, str]:
     """Validate that file size is within allowed limits.
 
     Args:
@@ -91,7 +90,7 @@ def validate_file_size(
     return True, ""
 
 
-def validate_mime_type(content_type: Optional[str], filename: str) -> Tuple[bool, str]:
+def validate_mime_type(content_type: str | None, filename: str) -> tuple[bool, str]:
     """Validate MIME type of uploaded file.
 
     Checks both the Content-Type header and inferred type from filename extension.
@@ -133,7 +132,7 @@ async def validate_upload_file(
     file: UploadFile,
     max_size: int = MAX_FILE_SIZE_BYTES,
     allowed_extensions: set = None,
-) -> Tuple[bool, str]:
+) -> tuple[bool, str]:
     """Comprehensive validation of uploaded file.
 
     Performs all upload validation checks:
@@ -196,7 +195,7 @@ async def validate_upload_file(
 
 
 def create_secure_temp_file(
-    filename: str, suffix: Optional[str] = None, dir: Optional[str] = None
+    filename: str, suffix: str | None = None, dir: str | None = None
 ) -> str:
     """Create a secure temporary file for upload processing.
 

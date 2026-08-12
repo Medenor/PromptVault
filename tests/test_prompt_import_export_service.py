@@ -7,11 +7,10 @@ Comprehensive unit tests for PromptImportExportService.
 Tests import/export in CSV and Markdown formats with various edge cases.
 """
 
-import pytest
-import os
 from pathlib import Path
 
-from src.services.prompt_import_export_service import PromptImportExportService
+import pytest
+
 from src.services.exceptions import ImportExportError
 
 

@@ -4,9 +4,10 @@
 
 """Unit tests for POST /api/prompts/{id}/copy-with-version endpoint."""
 
+from datetime import UTC, datetime
+
 import pytest
-from datetime import datetime, timezone
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import sessionmaker
 
 from src.db.models.prompt import Prompt
 from src.db.models.prompt_version import PromptVersion
@@ -23,7 +24,7 @@ def _insert_prompt(engine, semantic_version=None) -> int:
             note="",
             favorite=False,
             semantic_version=semantic_version,
-            created_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
         )
         session.add(prompt)
         session.flush()
@@ -40,7 +41,7 @@ def _insert_prompt(engine, semantic_version=None) -> int:
             semantic_version=semantic_version,
             author="test",
             message="Initial commit",
-            created_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
         )
         session.add(version)
         session.commit()

@@ -8,10 +8,9 @@ This model stores undo operations for tags and categories to support
 persistence across server restarts and user-scoped undo functionality.
 """
 
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Index
+from sqlalchemy import Column, DateTime, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-from datetime import timedelta
 
 from src.db.base import Base
 

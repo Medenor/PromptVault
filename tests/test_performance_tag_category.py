@@ -12,24 +12,23 @@ for listing tags and categories with usage counts, including:
 - Performance baseline generation
 """
 
-import os
 import sys
-import json
 import time
 import tracemalloc
+from collections.abc import Generator
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import List, Dict, Any, Generator
-from datetime import datetime, timezone
+from typing import Any
 
 import pytest
-from sqlalchemy import event, create_engine
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy import event
 from sqlalchemy.engine import Engine
+from sqlalchemy.orm import Session
 
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.db.models import User, Category, Tag, Prompt
+from src.db.models import Category, Prompt, Tag, User
 from src.db.repositories import CategoryRepository, TagRepository
 
 # ============================================================================
@@ -42,7 +41,7 @@ class QueryCounter:
 
     def __init__(self, engine: Engine):
         self.engine = engine
-        self.queries: List[str] = []
+        self.queries: list[str] = []
         self.query_count = 0
         self.enabled = False
 
@@ -70,7 +69,7 @@ class QueryCounter:
         """Get total query count."""
         return self.query_count
 
-    def get_queries(self) -> List[str]:
+    def get_queries(self) -> list[str]:
         """Get list of executed queries."""
         return self.queries
 
@@ -81,7 +80,7 @@ class QueryCounter:
 
 
 @pytest.fixture
-def query_counter(test_db_engine) -> Generator[QueryCounter, None, None]:
+def query_counter(test_db_engine) -> Generator[QueryCounter]:
     """Create a query counter for detecting N+1 queries."""
     counter = QueryCounter(test_db_engine)
     yield counter
@@ -98,7 +97,7 @@ class MemoryTracker:
     """Track memory usage during tests."""
 
     def __init__(self):
-        self.snapshots: List[tuple] = []
+        self.snapshots: list[tuple] = []
         self.peak_memory = 0
         self.tracking = False
 
@@ -116,7 +115,7 @@ class MemoryTracker:
             self.peak_memory = max(self.peak_memory, peak)
             self.snapshots.append((label, current, peak))
 
-    def stop(self) -> Dict[str, Any]:
+    def stop(self) -> dict[str, Any]:
         """Stop tracking and return statistics."""
         if self.tracking:
             current, peak = tracemalloc.get_traced_memory()
@@ -133,7 +132,7 @@ class MemoryTracker:
 
 
 @pytest.fixture
-def memory_tracker() -> Generator[MemoryTracker, None, None]:
+def memory_tracker() -> Generator[MemoryTracker]:
     """Create a memory tracker for monitoring memory usage."""
     tracker = MemoryTracker()
     yield tracker
@@ -164,7 +163,7 @@ def test_user_for_perf(test_db_session: Session) -> User:
 
 def generate_categories(
     session: Session, count: int, base_name: str = "PerfCat"
-) -> List[Category]:
+) -> list[Category]:
     """Generate test categories.
 
     Args:
@@ -192,7 +191,7 @@ def generate_categories(
 
 def generate_tags_with_hierarchy(
     session: Session, count: int, max_depth: int = 10, base_name: str = "PerfTag"
-) -> List[Tag]:
+) -> list[Tag]:
     """Generate test tags with hierarchical relationships.
 
     Args:
@@ -239,11 +238,11 @@ def generate_tags_with_hierarchy(
 def generate_prompts_with_associations(
     session: Session,
     user: User,
-    categories: List[Category],
-    tags: List[Tag],
+    categories: list[Category],
+    tags: list[Tag],
     prompt_count: int,
     tags_per_prompt_range: tuple = (1, 10),
-) -> List[Prompt]:
+) -> list[Prompt]:
     """Generate prompts with category and tag associations.
 
     Args:
@@ -292,7 +291,7 @@ def generate_prompts_with_associations(
 @pytest.fixture
 def small_category_dataset(
     test_db_session: Session, test_user_for_perf: User
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Generate small dataset: 10 categories, 100 prompts."""
     categories = generate_categories(test_db_session, 10, "SmallCat")
     tags = generate_tags_with_hierarchy(test_db_session, 20, 3, "SmallTag")
@@ -306,7 +305,7 @@ def small_category_dataset(
 @pytest.fixture
 def medium_category_dataset(
     test_db_session: Session, test_user_for_perf: User
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Generate medium dataset: 100 categories, 1000 prompts."""
     categories = generate_categories(test_db_session, 100, "MediumCat")
     tags = generate_tags_with_hierarchy(test_db_session, 200, 5, "MediumTag")
@@ -320,7 +319,7 @@ def medium_category_dataset(
 @pytest.fixture
 def large_category_dataset(
     test_db_session: Session, test_user_for_perf: User
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Generate large dataset: 1000 categories, 5000 prompts."""
     categories = generate_categories(test_db_session, 1000, "LargeCat")
     tags = generate_tags_with_hierarchy(test_db_session, 500, 8, "LargeTag")
@@ -334,7 +333,7 @@ def large_category_dataset(
 @pytest.fixture
 def small_tag_dataset(
     test_db_session: Session, test_user_for_perf: User
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Generate small tag dataset: 100 tags, 500 prompts."""
     categories = generate_categories(test_db_session, 20, "TagSmallCat")
     tags = generate_tags_with_hierarchy(test_db_session, 100, 5, "TagSmall")
@@ -348,7 +347,7 @@ def small_tag_dataset(
 @pytest.fixture
 def medium_tag_dataset(
     test_db_session: Session, test_user_for_perf: User
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Generate medium tag dataset: 500 tags, 2000 prompts."""
     categories = generate_categories(test_db_session, 50, "TagMediumCat")
     tags = generate_tags_with_hierarchy(test_db_session, 500, 7, "TagMedium")
@@ -362,7 +361,7 @@ def medium_tag_dataset(
 @pytest.fixture
 def large_tag_dataset(
     test_db_session: Session, test_user_for_perf: User
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Generate large tag dataset: 1000 tags with deep hierarchy, 10000 prompts."""
     categories = generate_categories(test_db_session, 100, "TagLargeCat")
     tags = generate_tags_with_hierarchy(test_db_session, 1000, 10, "TagLarge")
@@ -376,7 +375,7 @@ def large_tag_dataset(
 @pytest.fixture
 def heavy_association_dataset(
     test_db_session: Session, test_user_for_perf: User
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Generate dataset with heavy prompt associations: 50 tags, 5000 prompts, many tags per prompt."""
     categories = generate_categories(test_db_session, 20, "HeavyCat")
     tags = generate_tags_with_hierarchy(test_db_session, 50, 3, "HeavyTag")
@@ -394,7 +393,7 @@ def heavy_association_dataset(
 
 def test_list_all_categories_small_dataset(
     test_db_session: Session,
-    small_category_dataset: Dict[str, Any],
+    small_category_dataset: dict[str, Any],
     query_counter: QueryCounter,
     memory_tracker: MemoryTracker,
 ):
@@ -418,9 +417,9 @@ def test_list_all_categories_small_dataset(
     assert elapsed_time < 1.0  # Should complete in under 1 second
 
     # Report
-    print(f"\n=== Small Category Dataset Performance ===")
-    print(f"Categories: 10")
-    print(f"Prompts: 100")
+    print("\n=== Small Category Dataset Performance ===")
+    print("Categories: 10")
+    print("Prompts: 100")
     print(f"Time: {elapsed_time:.4f}s")
     print(f"Queries: {query_counter.get_count()}")
     print(f"Memory Peak: {mem_stats['peak_mb']:.2f} MB")
@@ -428,7 +427,7 @@ def test_list_all_categories_small_dataset(
 
 def test_list_all_categories_medium_dataset(
     test_db_session: Session,
-    medium_category_dataset: Dict[str, Any],
+    medium_category_dataset: dict[str, Any],
     query_counter: QueryCounter,
     memory_tracker: MemoryTracker,
 ):
@@ -448,9 +447,9 @@ def test_list_all_categories_medium_dataset(
     assert len(results) == 100
     assert elapsed_time < 2.0
 
-    print(f"\n=== Medium Category Dataset Performance ===")
-    print(f"Categories: 100")
-    print(f"Prompts: 1000")
+    print("\n=== Medium Category Dataset Performance ===")
+    print("Categories: 100")
+    print("Prompts: 1000")
     print(f"Time: {elapsed_time:.4f}s")
     print(f"Queries: {query_counter.get_count()}")
     print(f"Memory Peak: {mem_stats['peak_mb']:.2f} MB")
@@ -458,7 +457,7 @@ def test_list_all_categories_medium_dataset(
 
 def test_list_all_categories_large_dataset(
     test_db_session: Session,
-    large_category_dataset: Dict[str, Any],
+    large_category_dataset: dict[str, Any],
     query_counter: QueryCounter,
     memory_tracker: MemoryTracker,
 ):
@@ -478,9 +477,9 @@ def test_list_all_categories_large_dataset(
     assert len(results) == 1000
     assert elapsed_time < 5.0
 
-    print(f"\n=== Large Category Dataset Performance ===")
-    print(f"Categories: 1000")
-    print(f"Prompts: 5000")
+    print("\n=== Large Category Dataset Performance ===")
+    print("Categories: 1000")
+    print("Prompts: 5000")
     print(f"Time: {elapsed_time:.4f}s")
     print(f"Queries: {query_counter.get_count()}")
     print(f"Memory Peak: {mem_stats['peak_mb']:.2f} MB")
@@ -493,7 +492,7 @@ def test_list_all_categories_large_dataset(
 
 def test_list_all_tags_small_dataset(
     test_db_session: Session,
-    small_tag_dataset: Dict[str, Any],
+    small_tag_dataset: dict[str, Any],
     query_counter: QueryCounter,
     memory_tracker: MemoryTracker,
 ):
@@ -513,9 +512,9 @@ def test_list_all_tags_small_dataset(
     assert len(results) == 100
     assert elapsed_time < 1.0
 
-    print(f"\n=== Small Tag Dataset Performance ===")
-    print(f"Tags: 100")
-    print(f"Prompts: 500")
+    print("\n=== Small Tag Dataset Performance ===")
+    print("Tags: 100")
+    print("Prompts: 500")
     print(f"Time: {elapsed_time:.4f}s")
     print(f"Queries: {query_counter.get_count()}")
     print(f"Memory Peak: {mem_stats['peak_mb']:.2f} MB")
@@ -523,7 +522,7 @@ def test_list_all_tags_small_dataset(
 
 def test_list_all_tags_medium_dataset(
     test_db_session: Session,
-    medium_tag_dataset: Dict[str, Any],
+    medium_tag_dataset: dict[str, Any],
     query_counter: QueryCounter,
     memory_tracker: MemoryTracker,
 ):
@@ -543,9 +542,9 @@ def test_list_all_tags_medium_dataset(
     assert len(results) == 500
     assert elapsed_time < 2.0
 
-    print(f"\n=== Medium Tag Dataset Performance ===")
-    print(f"Tags: 500")
-    print(f"Prompts: 2000")
+    print("\n=== Medium Tag Dataset Performance ===")
+    print("Tags: 500")
+    print("Prompts: 2000")
     print(f"Time: {elapsed_time:.4f}s")
     print(f"Queries: {query_counter.get_count()}")
     print(f"Memory Peak: {mem_stats['peak_mb']:.2f} MB")
@@ -553,7 +552,7 @@ def test_list_all_tags_medium_dataset(
 
 def test_list_all_tags_large_dataset(
     test_db_session: Session,
-    large_tag_dataset: Dict[str, Any],
+    large_tag_dataset: dict[str, Any],
     query_counter: QueryCounter,
     memory_tracker: MemoryTracker,
 ):
@@ -573,9 +572,9 @@ def test_list_all_tags_large_dataset(
     assert len(results) == 1000
     assert elapsed_time < 5.0
 
-    print(f"\n=== Large Tag Dataset Performance ===")
-    print(f"Tags: 1000 (up to 10 levels deep)")
-    print(f"Prompts: 10000")
+    print("\n=== Large Tag Dataset Performance ===")
+    print("Tags: 1000 (up to 10 levels deep)")
+    print("Prompts: 10000")
     print(f"Time: {elapsed_time:.4f}s")
     print(f"Queries: {query_counter.get_count()}")
     print(f"Memory Peak: {mem_stats['peak_mb']:.2f} MB")
@@ -583,7 +582,7 @@ def test_list_all_tags_large_dataset(
 
 def test_list_with_complex_tag_hierarchy(
     test_db_session: Session,
-    large_tag_dataset: Dict[str, Any],
+    large_tag_dataset: dict[str, Any],
     query_counter: QueryCounter,
 ):
     """Test tag listing with deeply nested hierarchy (10 levels)."""
@@ -599,17 +598,17 @@ def test_list_with_complex_tag_hierarchy(
     tags_with_parents = [tag for tag, count in results if tag.parent_tag_id is not None]
     assert len(tags_with_parents) > 0
 
-    print(f"\n=== Complex Tag Hierarchy Test ===")
+    print("\n=== Complex Tag Hierarchy Test ===")
     print(f"Total tags: {len(results)}")
     print(f"Tags with parents: {len(tags_with_parents)}")
     print(f"Time: {elapsed_time:.4f}s")
     print(f"Queries: {query_counter.get_count()}")
-    print(f"Note: Hierarchy depth up to 10 levels")
+    print("Note: Hierarchy depth up to 10 levels")
 
 
 def test_list_with_heavy_prompt_associations(
     test_db_session: Session,
-    heavy_association_dataset: Dict[str, Any],
+    heavy_association_dataset: dict[str, Any],
     query_counter: QueryCounter,
     memory_tracker: MemoryTracker,
 ):
@@ -629,9 +628,9 @@ def test_list_with_heavy_prompt_associations(
     # Verify high usage counts
     high_usage_tags = [count for tag, count in results if count > 100]
 
-    print(f"\n=== Heavy Prompt Association Test ===")
+    print("\n=== Heavy Prompt Association Test ===")
     print(f"Tags: {len(results)}")
-    print(f"Prompts: 5000 (20-40 tags each)")
+    print("Prompts: 5000 (20-40 tags each)")
     print(f"Tags with 100+ prompts: {len(high_usage_tags)}")
     print(f"Time: {elapsed_time:.4f}s")
     print(f"Queries: {query_counter.get_count()}")
@@ -681,7 +680,7 @@ class TestQueryOptimization:
         count_100 = query_counter.get_count()
         query_counter.stop()
 
-        print(f"\n=== Category Query Count Analysis ===")
+        print("\n=== Category Query Count Analysis ===")
         print(f"Query count (10 categories): {count_10}")
         print(f"Query count (100 categories): {count_100}")
         print(f"Growth factor: {count_100 / count_10 if count_10 > 0 else 'N/A'}")
@@ -727,7 +726,7 @@ class TestQueryOptimization:
         count_500 = query_counter.get_count()
         query_counter.stop()
 
-        print(f"\n=== Tag Query Count Analysis ===")
+        print("\n=== Tag Query Count Analysis ===")
         print(f"Query count (50 tags): {count_50}")
         print(f"Query count (500 tags): {count_500}")
         print(f"Growth factor: {count_500 / count_50 if count_50 > 0 else 'N/A'}")
@@ -739,7 +738,7 @@ class TestQueryOptimization:
     def test_query_patterns_analysis(
         self,
         test_db_session: Session,
-        medium_category_dataset: Dict[str, Any],
+        medium_category_dataset: dict[str, Any],
         query_counter: QueryCounter,
     ):
         """Analyze query patterns for optimization opportunities."""
@@ -759,7 +758,7 @@ class TestQueryOptimization:
         tag_queries = query_counter.get_queries()
         query_counter.stop()
 
-        print(f"\n=== Query Pattern Analysis ===")
+        print("\n=== Query Pattern Analysis ===")
         print(f"\nCategory queries ({len(cat_queries)}):")
         for i, query in enumerate(cat_queries, 1):
             print(f"{i}. {query[:100]}...")
@@ -804,7 +803,7 @@ def test_category_memory_usage_scaling(
         # Cleanup for next iteration
         test_db_session.rollback()
 
-    print(f"\n=== Category Memory Scaling ===")
+    print("\n=== Category Memory Scaling ===")
     for result in results:
         print(
             f"Size: {result['size']:4d} categories -> Memory: {result['memory_mb']:.2f} MB"
@@ -848,7 +847,7 @@ def test_tag_memory_usage_with_associations(
 
         test_db_session.rollback()
 
-    print(f"\n=== Tag Memory with Associations ===")
+    print("\n=== Tag Memory with Associations ===")
     for result in results:
         print(
             f"Prompts: {result['prompts']:5d} -> Memory: {result['memory_mb']:.2f} MB"
@@ -867,13 +866,13 @@ def performance_results():
         "categories": [],
         "tags": [],
         "metadata": {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "platform": sys.platform,
         },
     }
 
 
-def generate_performance_baseline_report(results: Dict[str, Any]):
+def generate_performance_baseline_report(results: dict[str, Any]):
     """Generate performance baseline report."""
     report_path = Path(__file__).parent / "PERFORMANCE_BASELINE.md"
 
@@ -951,7 +950,7 @@ def test_generate_baseline_report(
         "categories": [],
         "tags": [],
         "metadata": {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "platform": sys.platform,
         },
     }

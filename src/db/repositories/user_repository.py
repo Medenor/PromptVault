@@ -6,11 +6,10 @@
 
 import logging
 import uuid
-from datetime import datetime, timezone
-from typing import Optional, List
-from sqlalchemy.orm import Session
+from datetime import UTC, datetime
+
 from sqlalchemy import or_
-from sqlalchemy.sql import func
+from sqlalchemy.orm import Session
 
 from src.db.models.user import User
 from src.db.repositories.base import BaseRepository
@@ -36,7 +35,7 @@ class UserRepository(BaseRepository[User]):
         """
         super().__init__(User, session)
 
-    def get_by_email(self, email: str) -> Optional[User]:
+    def get_by_email(self, email: str) -> User | None:
         """Find user by email address.
 
         Args:
@@ -47,7 +46,7 @@ class UserRepository(BaseRepository[User]):
         """
         return self.session.query(User).filter(User.email == email).first()
 
-    def get_by_username(self, username: str) -> Optional[User]:
+    def get_by_username(self, username: str) -> User | None:
         """Find user by username.
 
         Args:
@@ -58,7 +57,7 @@ class UserRepository(BaseRepository[User]):
         """
         return self.session.query(User).filter(User.username == username).first()
 
-    def get_by_email_or_username(self, identifier: str) -> Optional[User]:
+    def get_by_email_or_username(self, identifier: str) -> User | None:
         """Find user by either email or username.
 
         Args:
@@ -200,7 +199,7 @@ class UserRepository(BaseRepository[User]):
         """
         user = self.get_by_id(user_id)
         if user:
-            user.last_login = datetime.now(timezone.utc)
+            user.last_login = datetime.now(UTC)
             self.session.flush()
 
     def verify_email(self, user_id: str) -> None:
@@ -246,12 +245,10 @@ class UserRepository(BaseRepository[User]):
         user = self.get_by_id(user_id)
         if user:
             user.password_hash = password_hash
-            user.password_changed_at = datetime.now(timezone.utc)
+            user.password_changed_at = datetime.now(UTC)
             self.session.flush()
 
-    def get_active_users(
-        self, skip: int = 0, limit: Optional[int] = None
-    ) -> List[User]:
+    def get_active_users(self, skip: int = 0, limit: int | None = None) -> list[User]:
         """Get all active users with optional pagination.
 
         Args:
@@ -268,7 +265,7 @@ class UserRepository(BaseRepository[User]):
 
         return query.all()
 
-    def search_active_by_prefix(self, prefix: str, limit: int = 10) -> List[User]:
+    def search_active_by_prefix(self, prefix: str, limit: int = 10) -> list[User]:
         """Find active users whose username or email starts with a prefix.
 
         Used by the sharing typeahead — callers must expose only the
@@ -294,8 +291,8 @@ class UserRepository(BaseRepository[User]):
         )
 
     def get_users_by_role(
-        self, role: str, skip: int = 0, limit: Optional[int] = None
-    ) -> List[User]:
+        self, role: str, skip: int = 0, limit: int | None = None
+    ) -> list[User]:
         """Get users by role with optional pagination.
 
         Args:

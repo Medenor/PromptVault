@@ -5,7 +5,7 @@
 """Tests for BackupRepository."""
 
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -29,7 +29,7 @@ def _make_backup(session, *, created_at, tag=None, kind="full"):
 
 @pytest.fixture
 def seeded_backups(test_db_session):
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     backups = {
         "oldest": _make_backup(
             test_db_session,
@@ -74,7 +74,7 @@ class TestListBackups:
     def test_list_backups_with_start_date_filter_excludes_older(
         self, backup_repo, seeded_backups
     ):
-        cutoff = datetime.now(timezone.utc) - timedelta(days=6)
+        cutoff = datetime.now(UTC) - timedelta(days=6)
         result = backup_repo.list_backups(start_date=cutoff)
         ids = {b.id for b in result}
         assert ids == {seeded_backups["middle"].id, seeded_backups["newest"].id}
@@ -82,7 +82,7 @@ class TestListBackups:
     def test_list_backups_with_end_date_filter_excludes_newer(
         self, backup_repo, seeded_backups
     ):
-        cutoff = datetime.now(timezone.utc) - timedelta(days=6)
+        cutoff = datetime.now(UTC) - timedelta(days=6)
         result = backup_repo.list_backups(end_date=cutoff)
         assert [b.id for b in result] == [seeded_backups["oldest"].id]
 
@@ -128,7 +128,7 @@ class TestCountWithFilters:
         assert backup_repo.count_with_filters(tag="daily") == 2
 
     def test_count_with_filters_with_date_range(self, backup_repo, seeded_backups):
-        cutoff = datetime.now(timezone.utc) - timedelta(days=6)
+        cutoff = datetime.now(UTC) - timedelta(days=6)
         assert backup_repo.count_with_filters(start_date=cutoff) == 2
 
     def test_count_with_filters_with_kind_filter(self, backup_repo, seeded_backups):

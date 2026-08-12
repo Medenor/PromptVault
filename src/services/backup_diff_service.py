@@ -7,14 +7,14 @@ backup file without touching the live database."""
 
 import os
 import shutil
-from typing import Dict, Any, Optional
+from typing import Any
 
-from src.db.session import get_db_session
-from src.db.models.prompt import Prompt
 from src.db.models import Backup
+from src.db.models.prompt import Prompt
+from src.db.session import get_db_session
+from src.services.backup_restore_service import _maybe_decompress
 from src.services.exceptions import BackupError
 from src.services.logging_service import logging_service
-from src.services.backup_restore_service import _maybe_decompress
 
 logger = logging_service.get_logger(__name__)
 
@@ -66,8 +66,8 @@ class BackupDiffService:
         self._ensure_local_backup_file = ensure_local_backup_file
 
     def compute_restore_diff(
-        self, backup_id: str, passphrase: Optional[str] = None
-    ) -> Dict[str, Any]:
+        self, backup_id: str, passphrase: str | None = None
+    ) -> dict[str, Any]:
         metadata = self.metadata_store.get_backup_info(backup_id)
         if not metadata:
             raise BackupError(
@@ -107,12 +107,12 @@ class BackupDiffService:
             shutil.copy2(working_path, decrypted_path)
             try:
                 enc_service.decrypt_file(decrypted_path, passphrase, salt, nonce)
-            except ValueError:
+            except ValueError as e:
                 if os.path.exists(decrypted_path):
                     os.remove(decrypted_path)
                 if decompressed and os.path.exists(working_path):
                     os.remove(working_path)
-                raise BackupError("Decryption failed", http_status=400)
+                raise BackupError("Decryption failed", http_status=400) from e
             if decompressed and os.path.exists(working_path):
                 os.remove(working_path)
             working_path = decrypted_path

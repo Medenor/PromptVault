@@ -15,26 +15,25 @@ import json
 import logging
 import os
 import uuid
-from datetime import datetime, timezone
-from typing import Optional, Dict, Any
+from datetime import UTC, datetime
+from typing import Any
 from urllib.parse import urlparse
 
 import boto3
+from argon2.low_level import Type, hash_secret_raw
 from botocore.exceptions import ClientError, EndpointConnectionError
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-from argon2.low_level import hash_secret_raw, Type
 
-from src.db.session import get_db_session
 from src.db.models.backup_storage_provider import BackupStorageProvider
 from src.db.repositories.backup_storage_provider_repository import (
     BackupStorageProviderRepository,
 )
+from src.db.session import get_db_session
 from src.services.backup_encryption_service import (
-    BackupEncryptionService,
-    ARGON2_TIME_COST,
+    ARGON2_HASH_LEN,
     ARGON2_MEMORY_COST,
     ARGON2_PARALLELISM,
-    ARGON2_HASH_LEN,
+    ARGON2_TIME_COST,
 )
 
 logger = logging.getLogger(__name__)
@@ -209,7 +208,7 @@ class BackupCloudService:
                 if backup:
                     backup.cloud_provider_id = provider_id
                     backup.cloud_path = remote_key
-                    backup.cloud_uploaded_at = datetime.now(timezone.utc)
+                    backup.cloud_uploaded_at = datetime.now(UTC)
                     session.commit()
 
             logger.info(
@@ -234,7 +233,7 @@ class BackupCloudService:
             )
             return False
 
-    def test_connectivity(self, provider: BackupStorageProvider) -> Dict[str, Any]:
+    def test_connectivity(self, provider: BackupStorageProvider) -> dict[str, Any]:
         """Test connectivity to the cloud storage provider.
 
         Args:
@@ -266,10 +265,10 @@ class BackupCloudService:
         bucket_name: str,
         access_key: str,
         secret_key: str,
-        endpoint_url: Optional[str] = None,
+        endpoint_url: str | None = None,
         prefix: str = "",
-        region: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        region: str | None = None,
+    ) -> dict[str, Any]:
         """Create a new storage provider with encrypted credentials.
 
         Args:
@@ -358,7 +357,7 @@ class BackupCloudService:
             session.commit()
             return deleted
 
-    def _decrypt_credentials(self, provider: BackupStorageProvider) -> Dict[str, str]:
+    def _decrypt_credentials(self, provider: BackupStorageProvider) -> dict[str, str]:
         """Decrypt stored credentials for a provider.
 
         Args:
@@ -408,7 +407,7 @@ class BackupCloudService:
         return salt.hex(), nonce.hex(), base64.b64encode(ciphertext).decode("utf-8")
 
     @staticmethod
-    def _get_client(provider: BackupStorageProvider, creds: Dict[str, str]):
+    def _get_client(provider: BackupStorageProvider, creds: dict[str, str]):
         """Create a boto3 S3 client for the provider.
 
         Args:
@@ -418,7 +417,7 @@ class BackupCloudService:
         Returns:
             boto3 S3 client
         """
-        kwargs: Dict[str, Any] = {
+        kwargs: dict[str, Any] = {
             "aws_access_key_id": creds["access_key"],
             "aws_secret_access_key": creds["secret_key"],
         }
@@ -430,7 +429,7 @@ class BackupCloudService:
         return boto3.client("s3", **kwargs)
 
     @staticmethod
-    def _serialize_provider(provider: BackupStorageProvider) -> Dict[str, Any]:
+    def _serialize_provider(provider: BackupStorageProvider) -> dict[str, Any]:
         """Serialize a provider to dict (never includes credentials)."""
         return {
             "id": provider.id,

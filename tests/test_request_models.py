@@ -4,8 +4,6 @@
 
 """Tests for request model validation and sanitization."""
 
-from datetime import datetime
-
 import pytest
 from pydantic import ValidationError
 

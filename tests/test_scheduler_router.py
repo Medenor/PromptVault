@@ -4,7 +4,7 @@
 
 """Tests for scheduler admin endpoints."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 from fastapi import HTTPException
@@ -18,7 +18,7 @@ class FakeScheduler:
 
     def __init__(self) -> None:
         self.is_running = False
-        self._next_run = datetime(2026, 1, 21, 12, 0, 0, tzinfo=timezone.utc)
+        self._next_run = datetime(2026, 1, 21, 12, 0, 0, tzinfo=UTC)
 
     def start(self) -> None:
         self.is_running = True
@@ -35,9 +35,7 @@ class FakeScheduler:
         return {
             "success": True,
             "expired_found": 3,
-            "timestamp": datetime(
-                2026, 1, 21, 12, 30, 0, tzinfo=timezone.utc
-            ).isoformat(),
+            "timestamp": datetime(2026, 1, 21, 12, 30, 0, tzinfo=UTC).isoformat(),
         }
 
 
@@ -80,8 +78,8 @@ def admin_headers(api_client):
                 role="admin",
                 is_active=True,
                 email_verified=True,
-                created_at=datetime.now(timezone.utc),
-                updated_at=datetime.now(timezone.utc),
+                created_at=datetime.now(UTC),
+                updated_at=datetime.now(UTC),
             )
             session.add(admin)
             session.flush()
@@ -92,8 +90,8 @@ def admin_headers(api_client):
                 refresh_token_jti="scheduler-admin-jti",
                 ip_address="127.0.0.1",
                 device_info="Test Agent",
-                created_at=datetime.now(timezone.utc),
-                expires_at=datetime.now(timezone.utc) + timedelta(days=30),
+                created_at=datetime.now(UTC),
+                expires_at=datetime.now(UTC) + timedelta(days=30),
                 is_revoked=False,
             )
             session.add(admin_session)

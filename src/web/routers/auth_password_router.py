@@ -14,35 +14,35 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
+from src.db.models.user import User
 from src.db.session import get_db
 from src.services.auth.auth_service import AuthService
 from src.services.auth.password_reset_service import PasswordResetService
-from src.db.models.user import User
-from src.web.dependencies.auth import (
-    get_current_active_user,
-    get_client_ip,
-)
-from src.web.models.auth_requests import (
-    ChangePasswordRequest,
-    PasswordResetRequestRequest,
-    PasswordResetConfirmRequest,
-)
-from src.web.models.auth_responses import (
-    MessageResponse,
-    PasswordResetRequestResponse,
-)
 from src.services.exceptions import (
     InvalidCredentialsError,
     PasswordPolicyError,
-    UserNotFoundError,
-    TokenExpiredError,
-    TokenAlreadyUsedError,
-    TokenNotFoundError,
     RateLimitExceededError,
+    TokenAlreadyUsedError,
+    TokenExpiredError,
+    TokenNotFoundError,
+    UserNotFoundError,
+)
+from src.web.dependencies.auth import (
+    get_client_ip,
+    get_current_active_user,
 )
 from src.web.middleware.rate_limit import (
     limiter,
     password_reset_limit,
+)
+from src.web.models.auth_requests import (
+    ChangePasswordRequest,
+    PasswordResetConfirmRequest,
+    PasswordResetRequestRequest,
+)
+from src.web.models.auth_responses import (
+    MessageResponse,
+    PasswordResetRequestResponse,
 )
 from src.web.routers.auth_shared import get_auth_service, get_password_reset_service
 
@@ -146,7 +146,7 @@ def change_password(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=e.user_message,
-        )
+        ) from e
 
     except PasswordPolicyError as e:
         logger.warning(
@@ -155,7 +155,7 @@ def change_password(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=e.user_message,
-        )
+        ) from e
 
     except Exception as e:
         logger.error(
@@ -164,7 +164,7 @@ def change_password(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred while changing password. Please try again.",
-        )
+        ) from e
 
 
 # ============================================================================
@@ -390,7 +390,7 @@ def confirm_password_reset(
         # Commit the session to persist password and token changes
         session.commit()
 
-        logger.info(f"Password reset successfully completed using token")
+        logger.info("Password reset successfully completed using token")
 
         return MessageResponse(
             message="Password reset successful",
@@ -402,25 +402,25 @@ def confirm_password_reset(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=e.user_message,
-        )
+        ) from e
 
     except PasswordPolicyError as e:
-        logger.warning(f"Password reset failed - policy violation")
+        logger.warning("Password reset failed - policy violation")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=e.user_message,
-        )
+        ) from e
 
     except UserNotFoundError as e:
-        logger.error(f"Password reset failed - user not found (orphaned token)")
+        logger.error("Password reset failed - user not found (orphaned token)")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid password reset token. Please request a new one.",
-        )
+        ) from e
 
     except Exception as e:
         logger.error(f"Unexpected error during password reset: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred during password reset. Please try again.",
-        )
+        ) from e

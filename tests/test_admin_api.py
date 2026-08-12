@@ -33,9 +33,8 @@ Target: ≥90% endpoint coverage
 Execution time: < 15 seconds
 """
 
-import time
-from datetime import datetime, timedelta, timezone
-from typing import Dict, Any
+from datetime import UTC, datetime, timedelta
+from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
@@ -60,10 +59,12 @@ def admin_client(test_db_engine, temp_data_dir: str, monkeypatch):
         TestClient: Configured test client for API testing
     """
     import os
-    from src.web import app as web_app
-    from src.db import session as session_module
-    from src.db import config as config_module
+
     from sqlalchemy.orm import sessionmaker
+
+    from src.db import config as config_module
+    from src.db import session as session_module
+    from src.web import app as web_app
 
     # Store original session factory
     original_session_local = session_module.SessionLocal
@@ -78,6 +79,7 @@ def admin_client(test_db_engine, temp_data_dir: str, monkeypatch):
     # open the raw sqlite file, so it must also point at a throwaway path —
     # otherwise a restore-path test would overwrite the developer's real DB.
     from sqlalchemy import create_engine as _create_engine
+
     from src.db.base import Base as _Base
 
     test_db_path = os.path.join(temp_data_dir, "admin_client_test.db")
@@ -109,8 +111,8 @@ def test_db_session_admin(test_db_engine):
     Yields:
         Session: SQLAlchemy session object
     """
-    from sqlalchemy.orm import sessionmaker
     from sqlalchemy.exc import ProgrammingError
+    from sqlalchemy.orm import sessionmaker
 
     SessionLocal = sessionmaker(bind=test_db_engine)
     session = SessionLocal()
@@ -128,15 +130,15 @@ def test_db_session_admin(test_db_engine):
 
 
 @pytest.fixture
-def admin_user(test_db_session_admin: Session) -> Dict[str, Any]:
+def admin_user(test_db_session_admin: Session) -> dict[str, Any]:
     """Create an admin user with password and return user data.
 
     Returns:
         dict: Admin user data with id, username, email, role, and plain password
     """
-    from src.services.auth.password_service import PasswordService
     from src.config.auth_config import auth_settings
     from src.db.models.user_session import UserSession
+    from src.services.auth.password_service import PasswordService
 
     password_service = PasswordService(auth_settings)
     password_hash = password_service.hash_password("AdminP@ssw0rd123")
@@ -149,8 +151,8 @@ def admin_user(test_db_session_admin: Session) -> Dict[str, Any]:
         role="admin",
         is_active=True,
         email_verified=True,
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
     )
     test_db_session_admin.add(user)
     test_db_session_admin.flush()
@@ -162,8 +164,8 @@ def admin_user(test_db_session_admin: Session) -> Dict[str, Any]:
         refresh_token_jti="test-jti",
         ip_address="127.0.0.1",
         device_info="Test Agent",
-        created_at=datetime.now(timezone.utc),
-        expires_at=datetime.now(timezone.utc) + timedelta(days=30),
+        created_at=datetime.now(UTC),
+        expires_at=datetime.now(UTC) + timedelta(days=30),
         is_revoked=False,
     )
     test_db_session_admin.add(session)
@@ -180,7 +182,7 @@ def admin_user(test_db_session_admin: Session) -> Dict[str, Any]:
 
 
 @pytest.fixture
-def admin_auth_headers(admin_user: Dict[str, Any]) -> Dict[str, str]:
+def admin_auth_headers(admin_user: dict[str, Any]) -> dict[str, str]:
     """Create authentication headers with valid admin access token.
 
     Args:
@@ -206,15 +208,15 @@ def admin_auth_headers(admin_user: Dict[str, Any]) -> Dict[str, str]:
 
 
 @pytest.fixture
-def editor_user(test_db_session_admin: Session) -> Dict[str, Any]:
+def editor_user(test_db_session_admin: Session) -> dict[str, Any]:
     """Create an editor user for RBAC testing.
 
     Returns:
         dict: Editor user data
     """
-    from src.services.auth.password_service import PasswordService
     from src.config.auth_config import auth_settings
     from src.db.models.user_session import UserSession
+    from src.services.auth.password_service import PasswordService
 
     password_service = PasswordService(auth_settings)
     password_hash = password_service.hash_password("EditorP@ssw0rd123")
@@ -227,8 +229,8 @@ def editor_user(test_db_session_admin: Session) -> Dict[str, Any]:
         role="editor",
         is_active=True,
         email_verified=True,
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
     )
     test_db_session_admin.add(user)
     test_db_session_admin.flush()
@@ -240,8 +242,8 @@ def editor_user(test_db_session_admin: Session) -> Dict[str, Any]:
         refresh_token_jti="editor-test-jti",
         ip_address="127.0.0.1",
         device_info="Test Agent",
-        created_at=datetime.now(timezone.utc),
-        expires_at=datetime.now(timezone.utc) + timedelta(days=30),
+        created_at=datetime.now(UTC),
+        expires_at=datetime.now(UTC) + timedelta(days=30),
         is_revoked=False,
     )
     test_db_session_admin.add(session)
@@ -257,7 +259,7 @@ def editor_user(test_db_session_admin: Session) -> Dict[str, Any]:
 
 
 @pytest.fixture
-def editor_auth_headers(editor_user: Dict[str, Any]) -> Dict[str, str]:
+def editor_auth_headers(editor_user: dict[str, Any]) -> dict[str, str]:
     """Create authentication headers for editor user.
 
     Args:
@@ -282,15 +284,15 @@ def editor_auth_headers(editor_user: Dict[str, Any]) -> Dict[str, str]:
 
 
 @pytest.fixture
-def viewer_user(test_db_session_admin: Session) -> Dict[str, Any]:
+def viewer_user(test_db_session_admin: Session) -> dict[str, Any]:
     """Create a viewer user for RBAC testing.
 
     Returns:
         dict: Viewer user data
     """
-    from src.services.auth.password_service import PasswordService
     from src.config.auth_config import auth_settings
     from src.db.models.user_session import UserSession
+    from src.services.auth.password_service import PasswordService
 
     password_service = PasswordService(auth_settings)
     password_hash = password_service.hash_password("ViewerP@ssw0rd123")
@@ -303,8 +305,8 @@ def viewer_user(test_db_session_admin: Session) -> Dict[str, Any]:
         role="viewer",
         is_active=True,
         email_verified=True,
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
     )
     test_db_session_admin.add(user)
     test_db_session_admin.flush()
@@ -316,8 +318,8 @@ def viewer_user(test_db_session_admin: Session) -> Dict[str, Any]:
         refresh_token_jti="viewer-test-jti",
         ip_address="127.0.0.1",
         device_info="Test Agent",
-        created_at=datetime.now(timezone.utc),
-        expires_at=datetime.now(timezone.utc) + timedelta(days=30),
+        created_at=datetime.now(UTC),
+        expires_at=datetime.now(UTC) + timedelta(days=30),
         is_revoked=False,
     )
     test_db_session_admin.add(session)
@@ -333,7 +335,7 @@ def viewer_user(test_db_session_admin: Session) -> Dict[str, Any]:
 
 
 @pytest.fixture
-def viewer_auth_headers(viewer_user: Dict[str, Any]) -> Dict[str, str]:
+def viewer_auth_headers(viewer_user: dict[str, Any]) -> dict[str, str]:
     """Create authentication headers for viewer user.
 
     Args:
@@ -358,14 +360,14 @@ def viewer_auth_headers(viewer_user: Dict[str, Any]) -> Dict[str, str]:
 
 
 @pytest.fixture
-def regular_user(test_db_session_admin: Session) -> Dict[str, Any]:
+def regular_user(test_db_session_admin: Session) -> dict[str, Any]:
     """Create a regular (non-admin) user for negative testing.
 
     Returns:
         dict: Regular user data
     """
-    from src.services.auth.password_service import PasswordService
     from src.config.auth_config import auth_settings
+    from src.services.auth.password_service import PasswordService
 
     password_service = PasswordService(auth_settings)
     password_hash = password_service.hash_password("RegularP@ssw0rd123")
@@ -378,8 +380,8 @@ def regular_user(test_db_session_admin: Session) -> Dict[str, Any]:
         role="viewer",
         is_active=True,
         email_verified=True,
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
     )
     test_db_session_admin.add(user)
     test_db_session_admin.commit()
@@ -394,14 +396,14 @@ def regular_user(test_db_session_admin: Session) -> Dict[str, Any]:
 
 
 @pytest.fixture
-def multiple_test_users(test_db_session_admin: Session) -> list[Dict[str, Any]]:
+def multiple_test_users(test_db_session_admin: Session) -> list[dict[str, Any]]:
     """Create multiple test users for list/filter testing.
 
     Returns:
         list: List of user data dictionaries
     """
-    from src.services.auth.password_service import PasswordService
     from src.config.auth_config import auth_settings
+    from src.services.auth.password_service import PasswordService
 
     password_service = PasswordService(auth_settings)
     users_data = []
@@ -419,8 +421,8 @@ def multiple_test_users(test_db_session_admin: Session) -> list[Dict[str, Any]]:
             role=role,
             is_active=is_active,
             email_verified=True,
-            created_at=datetime.now(timezone.utc) - timedelta(days=i),
-            updated_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC) - timedelta(days=i),
+            updated_at=datetime.now(UTC),
         )
         test_db_session_admin.add(user)
         users_data.append(
@@ -438,14 +440,14 @@ def multiple_test_users(test_db_session_admin: Session) -> list[Dict[str, Any]]:
 
 
 @pytest.fixture
-def user_with_sessions(test_db_session_admin: Session) -> Dict[str, Any]:
+def user_with_sessions(test_db_session_admin: Session) -> dict[str, Any]:
     """Create a user with multiple sessions for session testing.
 
     Returns:
         dict: User data with session information
     """
-    from src.services.auth.password_service import PasswordService
     from src.config.auth_config import auth_settings
+    from src.services.auth.password_service import PasswordService
 
     password_service = PasswordService(auth_settings)
     password_hash = password_service.hash_password("SessionP@ssw0rd123")
@@ -459,8 +461,8 @@ def user_with_sessions(test_db_session_admin: Session) -> Dict[str, Any]:
         role="viewer",
         is_active=True,
         email_verified=True,
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
     )
     test_db_session_admin.add(user)
     test_db_session_admin.flush()
@@ -474,8 +476,8 @@ def user_with_sessions(test_db_session_admin: Session) -> Dict[str, Any]:
             refresh_token_jti=f"jti-{i}",
             ip_address="127.0.0.1",
             device_info="Test Agent",
-            created_at=datetime.now(timezone.utc) - timedelta(days=i),
-            expires_at=datetime.now(timezone.utc) + timedelta(days=30),
+            created_at=datetime.now(UTC) - timedelta(days=i),
+            expires_at=datetime.now(UTC) + timedelta(days=30),
             is_revoked=(i == 2),  # Third session is revoked
         )
         test_db_session_admin.add(session)
@@ -504,8 +506,8 @@ class TestListUsers:
     def test_list_users_success(
         self,
         admin_client: TestClient,
-        admin_auth_headers: Dict[str, str],
-        admin_user: Dict[str, Any],
+        admin_auth_headers: dict[str, str],
+        admin_user: dict[str, Any],
     ):
         """Test successful user listing with admin auth."""
         response = admin_client.get(
@@ -530,8 +532,8 @@ class TestListUsers:
     def test_list_users_pagination(
         self,
         admin_client: TestClient,
-        admin_auth_headers: Dict[str, str],
-        multiple_test_users: list[Dict[str, Any]],
+        admin_auth_headers: dict[str, str],
+        multiple_test_users: list[dict[str, Any]],
     ):
         """Test pagination parameters."""
         # Test page 1 with page_size=5
@@ -560,8 +562,8 @@ class TestListUsers:
     def test_list_users_filter_by_role(
         self,
         admin_client: TestClient,
-        admin_auth_headers: Dict[str, str],
-        multiple_test_users: list[Dict[str, Any]],
+        admin_auth_headers: dict[str, str],
+        multiple_test_users: list[dict[str, Any]],
     ):
         """Test filtering by role."""
         # Filter by viewer role
@@ -580,8 +582,8 @@ class TestListUsers:
     def test_list_users_filter_by_is_active(
         self,
         admin_client: TestClient,
-        admin_auth_headers: Dict[str, str],
-        multiple_test_users: list[Dict[str, Any]],
+        admin_auth_headers: dict[str, str],
+        multiple_test_users: list[dict[str, Any]],
     ):
         """Test filtering by active status."""
         # Filter by active users
@@ -613,8 +615,8 @@ class TestListUsers:
     def test_list_users_search_by_username(
         self,
         admin_client: TestClient,
-        admin_auth_headers: Dict[str, str],
-        multiple_test_users: list[Dict[str, Any]],
+        admin_auth_headers: dict[str, str],
+        multiple_test_users: list[dict[str, Any]],
     ):
         """Test search by username."""
         response = admin_client.get(
@@ -633,8 +635,8 @@ class TestListUsers:
     def test_list_users_search_by_email(
         self,
         admin_client: TestClient,
-        admin_auth_headers: Dict[str, str],
-        multiple_test_users: list[Dict[str, Any]],
+        admin_auth_headers: dict[str, str],
+        multiple_test_users: list[dict[str, Any]],
     ):
         """Test search by email."""
         response = admin_client.get(
@@ -661,8 +663,8 @@ class TestListUsers:
     def test_list_users_forbidden_non_admin(
         self,
         admin_client: TestClient,
-        editor_auth_headers: Dict[str, str],
-        editor_user: Dict[str, Any],
+        editor_auth_headers: dict[str, str],
+        editor_user: dict[str, Any],
     ):
         """Test listing users with non-admin role (editor)."""
         response = admin_client.get(
@@ -685,8 +687,8 @@ class TestGetUser:
     def test_get_user_success(
         self,
         admin_client: TestClient,
-        admin_auth_headers: Dict[str, str],
-        regular_user: Dict[str, Any],
+        admin_auth_headers: dict[str, str],
+        regular_user: dict[str, Any],
     ):
         """Test getting user details with admin auth."""
         response = admin_client.get(
@@ -714,7 +716,7 @@ class TestGetUser:
     def test_get_user_not_found(
         self,
         admin_client: TestClient,
-        admin_auth_headers: Dict[str, str],
+        admin_auth_headers: dict[str, str],
     ):
         """Test getting non-existent user."""
         response = admin_client.get(
@@ -728,7 +730,7 @@ class TestGetUser:
     def test_get_user_unauthorized(
         self,
         admin_client: TestClient,
-        regular_user: Dict[str, Any],
+        regular_user: dict[str, Any],
     ):
         """Test getting user without token."""
         response = admin_client.get(f"/api/admin/users/{regular_user['id']}")
@@ -738,9 +740,9 @@ class TestGetUser:
     def test_get_user_forbidden_non_admin(
         self,
         admin_client: TestClient,
-        viewer_auth_headers: Dict[str, str],
-        viewer_user: Dict[str, Any],
-        regular_user: Dict[str, Any],
+        viewer_auth_headers: dict[str, str],
+        viewer_user: dict[str, Any],
+        regular_user: dict[str, Any],
     ):
         """Test getting user with non-admin role."""
         response = admin_client.get(
@@ -762,8 +764,8 @@ class TestUpdateUser:
     def test_update_user_role(
         self,
         admin_client: TestClient,
-        admin_auth_headers: Dict[str, str],
-        regular_user: Dict[str, Any],
+        admin_auth_headers: dict[str, str],
+        regular_user: dict[str, Any],
     ):
         """Test updating user role."""
         response = admin_client.put(
@@ -781,8 +783,8 @@ class TestUpdateUser:
     def test_update_user_is_active(
         self,
         admin_client: TestClient,
-        admin_auth_headers: Dict[str, str],
-        regular_user: Dict[str, Any],
+        admin_auth_headers: dict[str, str],
+        regular_user: dict[str, Any],
     ):
         """Test updating user active status."""
         response = admin_client.put(
@@ -799,8 +801,8 @@ class TestUpdateUser:
     def test_update_user_email_verified(
         self,
         admin_client: TestClient,
-        admin_auth_headers: Dict[str, str],
-        regular_user: Dict[str, Any],
+        admin_auth_headers: dict[str, str],
+        regular_user: dict[str, Any],
     ):
         """Test updating email verification status."""
         response = admin_client.put(
@@ -817,8 +819,8 @@ class TestUpdateUser:
     def test_update_user_multiple_fields(
         self,
         admin_client: TestClient,
-        admin_auth_headers: Dict[str, str],
-        regular_user: Dict[str, Any],
+        admin_auth_headers: dict[str, str],
+        regular_user: dict[str, Any],
     ):
         """Test updating multiple fields at once."""
         response = admin_client.put(
@@ -841,8 +843,8 @@ class TestUpdateUser:
     def test_update_user_self_deactivate_prevention(
         self,
         admin_client: TestClient,
-        admin_auth_headers: Dict[str, str],
-        admin_user: Dict[str, Any],
+        admin_auth_headers: dict[str, str],
+        admin_user: dict[str, Any],
     ):
         """Test admin cannot deactivate their own account."""
         response = admin_client.put(
@@ -857,7 +859,7 @@ class TestUpdateUser:
     def test_update_user_not_found(
         self,
         admin_client: TestClient,
-        admin_auth_headers: Dict[str, str],
+        admin_auth_headers: dict[str, str],
     ):
         """Test updating non-existent user."""
         response = admin_client.put(
@@ -871,9 +873,9 @@ class TestUpdateUser:
     def test_update_user_forbidden_non_admin(
         self,
         admin_client: TestClient,
-        editor_auth_headers: Dict[str, str],
-        editor_user: Dict[str, Any],
-        regular_user: Dict[str, Any],
+        editor_auth_headers: dict[str, str],
+        editor_user: dict[str, Any],
+        regular_user: dict[str, Any],
     ):
         """Test updating user with non-admin role."""
         response = admin_client.put(
@@ -896,8 +898,8 @@ class TestDeleteUser:
     def test_delete_user_soft_delete(
         self,
         admin_client: TestClient,
-        admin_auth_headers: Dict[str, str],
-        regular_user: Dict[str, Any],
+        admin_auth_headers: dict[str, str],
+        regular_user: dict[str, Any],
     ):
         """Test soft delete (default behavior)."""
         response = admin_client.delete(
@@ -914,8 +916,8 @@ class TestDeleteUser:
     def test_delete_user_hard_delete(
         self,
         admin_client: TestClient,
-        admin_auth_headers: Dict[str, str],
-        regular_user: Dict[str, Any],
+        admin_auth_headers: dict[str, str],
+        regular_user: dict[str, Any],
     ):
         """Test hard delete with query parameter."""
         response = admin_client.delete(
@@ -931,8 +933,8 @@ class TestDeleteUser:
     def test_delete_user_self_prevention(
         self,
         admin_client: TestClient,
-        admin_auth_headers: Dict[str, str],
-        admin_user: Dict[str, Any],
+        admin_auth_headers: dict[str, str],
+        admin_user: dict[str, Any],
     ):
         """Test admin cannot delete their own account."""
         response = admin_client.delete(
@@ -946,7 +948,7 @@ class TestDeleteUser:
     def test_delete_user_not_found(
         self,
         admin_client: TestClient,
-        admin_auth_headers: Dict[str, str],
+        admin_auth_headers: dict[str, str],
     ):
         """Test deleting non-existent user."""
         response = admin_client.delete(
@@ -959,8 +961,8 @@ class TestDeleteUser:
     def test_delete_user_sessions_revoked(
         self,
         admin_client: TestClient,
-        admin_auth_headers: Dict[str, str],
-        user_with_sessions: Dict[str, Any],
+        admin_auth_headers: dict[str, str],
+        user_with_sessions: dict[str, Any],
     ):
         """Test that sessions are revoked on delete."""
         response = admin_client.delete(
@@ -977,9 +979,9 @@ class TestDeleteUser:
     def test_delete_user_forbidden_non_admin(
         self,
         admin_client: TestClient,
-        viewer_auth_headers: Dict[str, str],
-        viewer_user: Dict[str, Any],
-        regular_user: Dict[str, Any],
+        viewer_auth_headers: dict[str, str],
+        viewer_user: dict[str, Any],
+        regular_user: dict[str, Any],
     ):
         """Test deleting user with non-admin role."""
         response = admin_client.delete(
@@ -1001,8 +1003,8 @@ class TestGetUserSessions:
     def test_get_user_sessions_success(
         self,
         admin_client: TestClient,
-        admin_auth_headers: Dict[str, str],
-        user_with_sessions: Dict[str, Any],
+        admin_auth_headers: dict[str, str],
+        user_with_sessions: dict[str, Any],
     ):
         """Test getting user's sessions."""
         response = admin_client.get(
@@ -1021,8 +1023,8 @@ class TestGetUserSessions:
     def test_get_user_sessions_includes_revoked(
         self,
         admin_client: TestClient,
-        admin_auth_headers: Dict[str, str],
-        user_with_sessions: Dict[str, Any],
+        admin_auth_headers: dict[str, str],
+        user_with_sessions: dict[str, Any],
     ):
         """Test that revoked sessions are included."""
         response = admin_client.get(
@@ -1040,8 +1042,8 @@ class TestGetUserSessions:
     def test_get_user_sessions_empty_list(
         self,
         admin_client: TestClient,
-        admin_auth_headers: Dict[str, str],
-        regular_user: Dict[str, Any],
+        admin_auth_headers: dict[str, str],
+        regular_user: dict[str, Any],
     ):
         """Test getting sessions for user with no sessions."""
         response = admin_client.get(
@@ -1058,7 +1060,7 @@ class TestGetUserSessions:
     def test_get_user_sessions_not_found(
         self,
         admin_client: TestClient,
-        admin_auth_headers: Dict[str, str],
+        admin_auth_headers: dict[str, str],
     ):
         """Test getting sessions for non-existent user."""
         response = admin_client.get(
@@ -1071,9 +1073,9 @@ class TestGetUserSessions:
     def test_get_user_sessions_forbidden_non_admin(
         self,
         admin_client: TestClient,
-        editor_auth_headers: Dict[str, str],
-        editor_user: Dict[str, Any],
-        user_with_sessions: Dict[str, Any],
+        editor_auth_headers: dict[str, str],
+        editor_user: dict[str, Any],
+        user_with_sessions: dict[str, Any],
     ):
         """Test getting sessions with non-admin role."""
         response = admin_client.get(
@@ -1095,8 +1097,8 @@ class TestRevokeUserSessions:
     def test_revoke_user_sessions_success(
         self,
         admin_client: TestClient,
-        admin_auth_headers: Dict[str, str],
-        user_with_sessions: Dict[str, Any],
+        admin_auth_headers: dict[str, str],
+        user_with_sessions: dict[str, Any],
     ):
         """Test revoking all user sessions."""
         response = admin_client.delete(
@@ -1113,8 +1115,8 @@ class TestRevokeUserSessions:
     def test_revoke_user_sessions_returns_count(
         self,
         admin_client: TestClient,
-        admin_auth_headers: Dict[str, str],
-        user_with_sessions: Dict[str, Any],
+        admin_auth_headers: dict[str, str],
+        user_with_sessions: dict[str, Any],
     ):
         """Test that revoke returns count of revoked sessions."""
         response = admin_client.delete(
@@ -1131,7 +1133,7 @@ class TestRevokeUserSessions:
     def test_revoke_user_sessions_not_found(
         self,
         admin_client: TestClient,
-        admin_auth_headers: Dict[str, str],
+        admin_auth_headers: dict[str, str],
     ):
         """Test revoking sessions for non-existent user."""
         response = admin_client.delete(
@@ -1144,9 +1146,9 @@ class TestRevokeUserSessions:
     def test_revoke_user_sessions_forbidden_non_admin(
         self,
         admin_client: TestClient,
-        viewer_auth_headers: Dict[str, str],
-        viewer_user: Dict[str, Any],
-        user_with_sessions: Dict[str, Any],
+        viewer_auth_headers: dict[str, str],
+        viewer_user: dict[str, Any],
+        user_with_sessions: dict[str, Any],
     ):
         """Test revoking sessions with non-admin role."""
         response = admin_client.delete(
@@ -1168,8 +1170,8 @@ class TestGetStats:
     def test_get_stats_success(
         self,
         admin_client: TestClient,
-        admin_auth_headers: Dict[str, str],
-        admin_user: Dict[str, Any],
+        admin_auth_headers: dict[str, str],
+        admin_user: dict[str, Any],
     ):
         """Test getting system statistics."""
         response = admin_client.get(
@@ -1202,8 +1204,8 @@ class TestGetStats:
     def test_get_stats_includes_role_breakdown(
         self,
         admin_client: TestClient,
-        admin_auth_headers: Dict[str, str],
-        multiple_test_users: list[Dict[str, Any]],
+        admin_auth_headers: dict[str, str],
+        multiple_test_users: list[dict[str, Any]],
     ):
         """Test that stats include role breakdown."""
         response = admin_client.get(
@@ -1222,8 +1224,8 @@ class TestGetStats:
     def test_get_stats_user_counts_consistent(
         self,
         admin_client: TestClient,
-        admin_auth_headers: Dict[str, str],
-        admin_user: Dict[str, Any],
+        admin_auth_headers: dict[str, str],
+        admin_user: dict[str, Any],
     ):
         """Test that user counts are consistent."""
         response = admin_client.get(
@@ -1240,8 +1242,8 @@ class TestGetStats:
     def test_get_stats_forbidden_non_admin(
         self,
         admin_client: TestClient,
-        editor_auth_headers: Dict[str, str],
-        editor_user: Dict[str, Any],
+        editor_auth_headers: dict[str, str],
+        editor_user: dict[str, Any],
     ):
         """Test getting stats with non-admin role."""
         response = admin_client.get(
@@ -1272,9 +1274,9 @@ class TestRBACCoverage:
     def test_all_endpoints_require_admin_role(
         self,
         admin_client: TestClient,
-        viewer_auth_headers: Dict[str, str],
-        viewer_user: Dict[str, Any],
-        regular_user: Dict[str, Any],
+        viewer_auth_headers: dict[str, str],
+        viewer_user: dict[str, Any],
+        regular_user: dict[str, Any],
     ):
         """Test that viewer role cannot access any admin endpoint."""
         endpoints = [
@@ -1304,9 +1306,9 @@ class TestRBACCoverage:
     def test_editor_cannot_access_admin_endpoints(
         self,
         admin_client: TestClient,
-        editor_auth_headers: Dict[str, str],
-        editor_user: Dict[str, Any],
-        regular_user: Dict[str, Any],
+        editor_auth_headers: dict[str, str],
+        editor_user: dict[str, Any],
+        regular_user: dict[str, Any],
     ):
         """Test that editor role cannot access any admin endpoint."""
         endpoints = [
@@ -1336,7 +1338,7 @@ class TestRBACCoverage:
     def test_all_endpoints_require_authentication(
         self,
         admin_client: TestClient,
-        regular_user: Dict[str, Any],
+        regular_user: dict[str, Any],
     ):
         """Test that all endpoints return 401 without token."""
         endpoints = [

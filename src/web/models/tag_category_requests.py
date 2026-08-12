@@ -4,7 +4,6 @@
 
 """Pydantic request models for tag/category management."""
 
-from typing import List, Optional
 import re
 
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -18,7 +17,7 @@ def _normalize_name(value: str) -> str:
     return value.strip()
 
 
-def _validate_color(value: Optional[str]) -> Optional[str]:
+def _validate_color(value: str | None) -> str | None:
     if value is None or value == "":
         return None
     if _COLOR_HEX_PATTERN.match(value) or _COLOR_TOKEN_PATTERN.match(value):
@@ -36,11 +35,11 @@ class CategoryCreateRequest(BaseModel):
     """Request model for creating a category."""
 
     name: str = Field(..., min_length=1, max_length=100, description="Category name")
-    description: Optional[str] = Field(
+    description: str | None = Field(
         default=None, max_length=500, description="Category description"
     )
-    color: Optional[str] = Field(default=None, description="Color token or hex")
-    sort_order: Optional[int] = Field(default=None, description="Custom sort order")
+    color: str | None = Field(default=None, description="Color token or hex")
+    sort_order: int | None = Field(default=None, description="Custom sort order")
 
     @field_validator("name")
     @classmethod
@@ -52,21 +51,21 @@ class CategoryCreateRequest(BaseModel):
 
     @field_validator("color")
     @classmethod
-    def validate_color(cls, value: Optional[str]) -> Optional[str]:
+    def validate_color(cls, value: str | None) -> str | None:
         return _validate_color(value)
 
 
 class CategoryUpdateRequest(BaseModel):
     """Request model for updating a category."""
 
-    name: Optional[str] = Field(default=None, min_length=1, max_length=100)
-    description: Optional[str] = Field(default=None, max_length=500)
-    color: Optional[str] = Field(default=None)
-    sort_order: Optional[int] = Field(default=None)
+    name: str | None = Field(default=None, min_length=1, max_length=100)
+    description: str | None = Field(default=None, max_length=500)
+    color: str | None = Field(default=None)
+    sort_order: int | None = Field(default=None)
 
     @field_validator("name")
     @classmethod
-    def normalize_name(cls, value: Optional[str]) -> Optional[str]:
+    def normalize_name(cls, value: str | None) -> str | None:
         if value is None:
             return None
         normalized = _normalize_name(value)
@@ -76,7 +75,7 @@ class CategoryUpdateRequest(BaseModel):
 
     @field_validator("color")
     @classmethod
-    def validate_color(cls, value: Optional[str]) -> Optional[str]:
+    def validate_color(cls, value: str | None) -> str | None:
         return _validate_color(value)
 
     @model_validator(mode="after")
@@ -95,11 +94,11 @@ class TagCreateRequest(BaseModel):
     """Request model for creating a tag."""
 
     name: str = Field(..., min_length=1, max_length=50, description="Tag name")
-    description: Optional[str] = Field(
+    description: str | None = Field(
         default=None, max_length=500, description="Tag description"
     )
-    color: Optional[str] = Field(default=None, description="Color token or hex")
-    parent_tag_id: Optional[int] = Field(default=None, description="Parent tag ID")
+    color: str | None = Field(default=None, description="Color token or hex")
+    parent_tag_id: int | None = Field(default=None, description="Parent tag ID")
 
     @field_validator("name")
     @classmethod
@@ -111,21 +110,21 @@ class TagCreateRequest(BaseModel):
 
     @field_validator("color")
     @classmethod
-    def validate_color(cls, value: Optional[str]) -> Optional[str]:
+    def validate_color(cls, value: str | None) -> str | None:
         return _validate_color(value)
 
 
 class TagUpdateRequest(BaseModel):
     """Request model for updating a tag."""
 
-    name: Optional[str] = Field(default=None, min_length=1, max_length=50)
-    description: Optional[str] = Field(default=None, max_length=500)
-    color: Optional[str] = Field(default=None)
-    parent_tag_id: Optional[int] = Field(default=None)
+    name: str | None = Field(default=None, min_length=1, max_length=50)
+    description: str | None = Field(default=None, max_length=500)
+    color: str | None = Field(default=None)
+    parent_tag_id: int | None = Field(default=None)
 
     @field_validator("name")
     @classmethod
-    def normalize_name(cls, value: Optional[str]) -> Optional[str]:
+    def normalize_name(cls, value: str | None) -> str | None:
         if value is None:
             return None
         normalized = _normalize_name(value)
@@ -135,7 +134,7 @@ class TagUpdateRequest(BaseModel):
 
     @field_validator("color")
     @classmethod
-    def validate_color(cls, value: Optional[str]) -> Optional[str]:
+    def validate_color(cls, value: str | None) -> str | None:
         return _validate_color(value)
 
     @model_validator(mode="after")
@@ -154,7 +153,7 @@ class MergeRequest(BaseModel):
     """Request model for merge operations."""
 
     target_id: int = Field(..., description="Target entity ID")
-    source_ids: List[int] = Field(..., min_length=1, description="Source entity IDs")
+    source_ids: list[int] = Field(..., min_length=1, description="Source entity IDs")
     confirm: bool = Field(default=False, description="Confirmation flag")
 
     @model_validator(mode="after")
@@ -167,7 +166,7 @@ class MergeRequest(BaseModel):
 class BulkDeleteRequest(BaseModel):
     """Request model for bulk delete operations."""
 
-    ids: List[int] = Field(..., min_length=1, description="Entity IDs to delete")
+    ids: list[int] = Field(..., min_length=1, description="Entity IDs to delete")
     force: bool = Field(default=False, description="Force delete even if in use")
     confirm: bool = Field(default=False, description="Confirmation flag")
 
@@ -225,7 +224,7 @@ class TagFindReplaceRequest(BaseModel):
 class ReorderRequest(BaseModel):
     """Request model for reorder operations."""
 
-    ordered_ids: List[int] = Field(..., min_length=1, description="Ordered entity IDs")
+    ordered_ids: list[int] = Field(..., min_length=1, description="Ordered entity IDs")
 
     @model_validator(mode="after")
     def validate_unique(self):
@@ -237,14 +236,14 @@ class ReorderRequest(BaseModel):
 class BulkTagUpdateRequest(BaseModel):
     """Request model for bulk tag updates on prompts."""
 
-    prompt_ids: List[int] = Field(..., min_length=1, description="Prompt IDs to update")
-    add: List[str] = Field(default_factory=list, description="Tags to add")
-    remove: List[str] = Field(default_factory=list, description="Tags to remove")
+    prompt_ids: list[int] = Field(..., min_length=1, description="Prompt IDs to update")
+    add: list[str] = Field(default_factory=list, description="Tags to add")
+    remove: list[str] = Field(default_factory=list, description="Tags to remove")
     confirm: bool = Field(default=False, description="Confirmation flag")
 
     @field_validator("add", "remove")
     @classmethod
-    def normalize_tags(cls, value: List[str]) -> List[str]:
+    def normalize_tags(cls, value: list[str]) -> list[str]:
         normalized = [tag.strip() for tag in value if tag and tag.strip()]
         if len(normalized) > 50:
             raise ValueError("Maximum 50 tags allowed")
@@ -263,8 +262,8 @@ class BulkTagUpdateRequest(BaseModel):
 class TagSuggestRequest(BaseModel):
     """Request model for tag suggestion."""
 
-    prompt_id: Optional[int] = Field(default=None, description="Prompt ID to analyze")
-    content: Optional[str] = Field(
+    prompt_id: int | None = Field(default=None, description="Prompt ID to analyze")
+    content: str | None = Field(
         default=None, min_length=1, description="Prompt content"
     )
     limit: int = Field(default=10, ge=1, le=50, description="Maximum suggestions")
@@ -280,9 +279,9 @@ class CategoryImportItem(BaseModel):
     """Single category import item."""
 
     name: str = Field(..., min_length=1, max_length=100)
-    description: Optional[str] = Field(default=None, max_length=500)
-    color: Optional[str] = Field(default=None)
-    sort_order: Optional[int] = Field(default=None)
+    description: str | None = Field(default=None, max_length=500)
+    color: str | None = Field(default=None)
+    sort_order: int | None = Field(default=None)
 
     @field_validator("name")
     @classmethod
@@ -294,7 +293,7 @@ class CategoryImportItem(BaseModel):
 
     @field_validator("color")
     @classmethod
-    def validate_color(cls, value: Optional[str]) -> Optional[str]:
+    def validate_color(cls, value: str | None) -> str | None:
         return _validate_color(value)
 
 
@@ -302,9 +301,9 @@ class TagImportItem(BaseModel):
     """Single tag import item."""
 
     name: str = Field(..., min_length=1, max_length=50)
-    description: Optional[str] = Field(default=None, max_length=500)
-    color: Optional[str] = Field(default=None)
-    parent_tag_id: Optional[int] = Field(default=None)
+    description: str | None = Field(default=None, max_length=500)
+    color: str | None = Field(default=None)
+    parent_tag_id: int | None = Field(default=None)
 
     @field_validator("name")
     @classmethod
@@ -316,26 +315,26 @@ class TagImportItem(BaseModel):
 
     @field_validator("color")
     @classmethod
-    def validate_color(cls, value: Optional[str]) -> Optional[str]:
+    def validate_color(cls, value: str | None) -> str | None:
         return _validate_color(value)
 
 
 class CategoryImportRequest(BaseModel):
     """Request model for importing categories."""
 
-    items: List[CategoryImportItem] = Field(..., min_length=1)
+    items: list[CategoryImportItem] = Field(..., min_length=1)
 
 
 class TagImportRequest(BaseModel):
     """Request model for importing tags."""
 
-    items: List[TagImportItem] = Field(..., min_length=1)
+    items: list[TagImportItem] = Field(..., min_length=1)
 
 
 class CategoryAssignOrphansRequest(BaseModel):
     """Request model for assigning orphan prompts to a category."""
 
-    prompt_ids: List[int] = Field(..., min_length=1, description="Prompt IDs to update")
+    prompt_ids: list[int] = Field(..., min_length=1, description="Prompt IDs to update")
     category: str = Field(
         ..., min_length=1, max_length=100, description="Category name to assign"
     )

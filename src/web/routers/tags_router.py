@@ -10,39 +10,38 @@ unchanged.
 """
 
 import logging
-from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from src.db.session import get_db
-from src.db.repositories.tag_repository import TagRepository
+from src.db.models.user import User
 from src.db.repositories.prompt_repository import PromptRepository
+from src.db.repositories.tag_repository import TagRepository
+from src.db.session import get_db
+from src.services.undo_service import UndoService
 from src.web.dependencies.auth import get_current_user_or_none
+from src.web.dependencies.undo import get_undo_service
 from src.web.models.auth_responses import MessageResponse
 from src.web.models.tag_category_requests import (
-    TagCreateRequest,
-    TagUpdateRequest,
-    MergeRequest,
     BulkDeleteRequest,
-    TagFindReplaceRequest,
     BulkTagUpdateRequest,
-    TagSuggestRequest,
+    MergeRequest,
+    TagCreateRequest,
+    TagFindReplaceRequest,
     TagImportRequest,
+    TagSuggestRequest,
+    TagUpdateRequest,
 )
 from src.web.models.tag_category_responses import (
-    TagResponse,
-    TagListResponse,
     BulkActionResponse,
-    OrphanPromptsResponse,
     OrphanPromptDetailsResponse,
     OrphanPromptItem,
-    TagSuggestionResponse,
+    OrphanPromptsResponse,
+    TagListResponse,
+    TagResponse,
     TagSuggestionItem,
+    TagSuggestionResponse,
 )
-from src.db.models.user import User
-from src.services.undo_service import UndoService
-from src.web.dependencies.undo import get_undo_service
 
 logger = logging.getLogger(__name__)
 
@@ -100,8 +99,8 @@ def _is_descendant(
 async def get_tags():
     """Get all tags with usage counts (legacy compatibility endpoint)."""
     try:
-        from src.db.session import get_db_session
         from src.db.repositories.tag_repository import TagRepository
+        from src.db.session import get_db_session
 
         with get_db_session() as session:
             tag_repo = TagRepository(session)
@@ -123,7 +122,7 @@ async def get_tags():
     summary="List tags with metadata and usage counts",
 )
 async def list_tags_manage(
-    user: Optional[User] = Depends(get_current_user_or_none),
+    user: User | None = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
     tag_repo = TagRepository(db)
@@ -140,7 +139,7 @@ async def list_tags_manage(
 )
 async def create_tag(
     payload: TagCreateRequest,
-    user: Optional[User] = Depends(get_current_user_or_none),
+    user: User | None = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
     tag_repo = TagRepository(db)
@@ -179,7 +178,7 @@ async def create_tag(
 async def update_tag(
     tag_id: int,
     payload: TagUpdateRequest,
-    user: Optional[User] = Depends(get_current_user_or_none),
+    user: User | None = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
     undo_service: UndoService = Depends(get_undo_service),
 ):
@@ -242,7 +241,7 @@ async def delete_tag(
     tag_id: int,
     force: bool = False,
     confirm: bool = False,
-    user: Optional[User] = Depends(get_current_user_or_none),
+    user: User | None = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
     undo_service: UndoService = Depends(get_undo_service),
 ):
@@ -288,7 +287,7 @@ async def delete_tag(
 )
 async def merge_tags(
     payload: MergeRequest,
-    user: Optional[User] = Depends(get_current_user_or_none),
+    user: User | None = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
     undo_service: UndoService = Depends(get_undo_service),
 ):
@@ -356,7 +355,7 @@ async def merge_tags(
 )
 async def bulk_delete_tags(
     payload: BulkDeleteRequest,
-    user: Optional[User] = Depends(get_current_user_or_none),
+    user: User | None = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
     undo_service: UndoService = Depends(get_undo_service),
 ):
@@ -366,7 +365,7 @@ async def bulk_delete_tags(
             detail="Confirmation required",
         )
     tag_repo = TagRepository(db)
-    blocked: List[int] = []
+    blocked: list[int] = []
 
     for tag_id in payload.ids:
         usage_count = tag_repo.count_usage(tag_id)
@@ -413,7 +412,7 @@ async def bulk_delete_tags(
 )
 async def find_replace_tags(
     payload: TagFindReplaceRequest,
-    user: Optional[User] = Depends(get_current_user_or_none),
+    user: User | None = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
     undo_service: UndoService = Depends(get_undo_service),
 ):
@@ -468,7 +467,7 @@ async def find_replace_tags(
     summary="List unused tags",
 )
 async def tag_orphans(
-    user: Optional[User] = Depends(get_current_user_or_none),
+    user: User | None = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
     tag_repo = TagRepository(db)
@@ -483,7 +482,7 @@ async def tag_orphans(
     summary="List prompts without tags",
 )
 async def tag_orphan_prompts(
-    user: Optional[User] = Depends(get_current_user_or_none),
+    user: User | None = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
     tag_repo = TagRepository(db)
@@ -497,7 +496,7 @@ async def tag_orphan_prompts(
     summary="List prompts without tags (detailed)",
 )
 async def tag_orphan_prompts_details(
-    user: Optional[User] = Depends(get_current_user_or_none),
+    user: User | None = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
     tag_repo = TagRepository(db)
@@ -511,7 +510,7 @@ async def tag_orphan_prompts_details(
     summary="Tag usage analytics",
 )
 async def tag_analytics(
-    user: Optional[User] = Depends(get_current_user_or_none),
+    user: User | None = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
     tag_repo = TagRepository(db)
@@ -532,6 +531,7 @@ async def tag_analytics(
     co_occurrence = []
     try:
         from sqlalchemy.orm import joinedload
+
         from src.db.models import Prompt
 
         prompts = db.query(Prompt).options(joinedload(Prompt.tags)).all()
@@ -564,7 +564,7 @@ async def tag_analytics(
     summary="Undo last tag management operation",
 )
 async def undo_tag_operation(
-    user: Optional[User] = Depends(get_current_user_or_none),
+    user: User | None = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
     undo_service: UndoService = Depends(get_undo_service),
 ):
@@ -648,7 +648,7 @@ async def undo_tag_operation(
 )
 async def bulk_update_tags(
     payload: BulkTagUpdateRequest,
-    user: Optional[User] = Depends(get_current_user_or_none),
+    user: User | None = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
     if not payload.confirm:
@@ -693,7 +693,7 @@ async def bulk_update_tags(
 )
 async def suggest_tags(
     payload: TagSuggestRequest,
-    user: Optional[User] = Depends(get_current_user_or_none),
+    user: User | None = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
     from src.db.models import Prompt
@@ -722,7 +722,7 @@ async def suggest_tags(
     summary="Export tag definitions",
 )
 async def export_tags(
-    user: Optional[User] = Depends(get_current_user_or_none),
+    user: User | None = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
     tag_repo = TagRepository(db)
@@ -748,7 +748,7 @@ async def export_tags(
 )
 async def import_tags(
     payload: TagImportRequest,
-    user: Optional[User] = Depends(get_current_user_or_none),
+    user: User | None = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
     tag_repo = TagRepository(db)

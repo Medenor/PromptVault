@@ -10,37 +10,36 @@ are unchanged.
 """
 
 import logging
-from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from src.db.session import get_db
+from src.db.models.user import User
 from src.db.repositories.category_repository import CategoryRepository
 from src.db.repositories.prompt_repository import PromptRepository
+from src.db.session import get_db
+from src.services.undo_service import UndoService
 from src.web.dependencies.auth import get_current_user_or_none
+from src.web.dependencies.undo import get_undo_service
 from src.web.models.auth_responses import MessageResponse
 from src.web.models.tag_category_requests import (
+    BulkDeleteRequest,
+    CategoryAssignOrphansRequest,
     CategoryCreateRequest,
+    CategoryFindReplaceRequest,
+    CategoryImportRequest,
     CategoryUpdateRequest,
     MergeRequest,
-    BulkDeleteRequest,
-    CategoryFindReplaceRequest,
     ReorderRequest,
-    CategoryImportRequest,
-    CategoryAssignOrphansRequest,
 )
 from src.web.models.tag_category_responses import (
-    CategoryResponse,
-    CategoryListResponse,
     BulkActionResponse,
-    OrphanPromptsResponse,
+    CategoryListResponse,
+    CategoryResponse,
     OrphanPromptDetailsResponse,
     OrphanPromptItem,
+    OrphanPromptsResponse,
 )
-from src.db.models.user import User
-from src.services.undo_service import UndoService
-from src.web.dependencies.undo import get_undo_service
 
 logger = logging.getLogger(__name__)
 
@@ -92,7 +91,7 @@ async def get_categories():
     summary="List categories with metadata and usage counts",
 )
 async def list_categories_manage(
-    user: Optional[User] = Depends(get_current_user_or_none),
+    user: User | None = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
     category_repo = CategoryRepository(db)
@@ -109,7 +108,7 @@ async def list_categories_manage(
 )
 async def create_category(
     payload: CategoryCreateRequest,
-    user: Optional[User] = Depends(get_current_user_or_none),
+    user: User | None = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
     category_repo = CategoryRepository(db)
@@ -140,7 +139,7 @@ async def create_category(
 async def update_category(
     category_id: int,
     payload: CategoryUpdateRequest,
-    user: Optional[User] = Depends(get_current_user_or_none),
+    user: User | None = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
     undo_service: UndoService = Depends(get_undo_service),
 ):
@@ -184,7 +183,7 @@ async def delete_category(
     category_id: int,
     force: bool = False,
     confirm: bool = False,
-    user: Optional[User] = Depends(get_current_user_or_none),
+    user: User | None = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
     undo_service: UndoService = Depends(get_undo_service),
 ):
@@ -235,7 +234,7 @@ async def delete_category(
 )
 async def merge_categories(
     payload: MergeRequest,
-    user: Optional[User] = Depends(get_current_user_or_none),
+    user: User | None = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
     undo_service: UndoService = Depends(get_undo_service),
 ):
@@ -297,7 +296,7 @@ async def merge_categories(
 )
 async def bulk_delete_categories(
     payload: BulkDeleteRequest,
-    user: Optional[User] = Depends(get_current_user_or_none),
+    user: User | None = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
     undo_service: UndoService = Depends(get_undo_service),
 ):
@@ -307,7 +306,7 @@ async def bulk_delete_categories(
             detail="Confirmation required",
         )
     category_repo = CategoryRepository(db)
-    blocked: List[int] = []
+    blocked: list[int] = []
 
     for category_id in payload.ids:
         usage_count = category_repo.count_usage(category_id)
@@ -357,7 +356,7 @@ async def bulk_delete_categories(
 )
 async def find_replace_categories(
     payload: CategoryFindReplaceRequest,
-    user: Optional[User] = Depends(get_current_user_or_none),
+    user: User | None = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
     undo_service: UndoService = Depends(get_undo_service),
 ):
@@ -407,7 +406,7 @@ async def find_replace_categories(
 )
 async def reorder_categories(
     payload: ReorderRequest,
-    user: Optional[User] = Depends(get_current_user_or_none),
+    user: User | None = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
     category_repo = CategoryRepository(db)
@@ -437,7 +436,7 @@ async def reorder_categories(
     summary="List prompts without categories",
 )
 async def category_orphans(
-    user: Optional[User] = Depends(get_current_user_or_none),
+    user: User | None = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
     category_repo = CategoryRepository(db)
@@ -451,7 +450,7 @@ async def category_orphans(
     summary="List prompts without categories (detailed)",
 )
 async def category_orphans_details(
-    user: Optional[User] = Depends(get_current_user_or_none),
+    user: User | None = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
     category_repo = CategoryRepository(db)
@@ -466,7 +465,7 @@ async def category_orphans_details(
     summary="List unused categories",
 )
 async def category_unused(
-    user: Optional[User] = Depends(get_current_user_or_none),
+    user: User | None = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
     category_repo = CategoryRepository(db)
@@ -486,7 +485,7 @@ async def category_unused(
 )
 async def assign_category_orphans(
     payload: CategoryAssignOrphansRequest,
-    user: Optional[User] = Depends(get_current_user_or_none),
+    user: User | None = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
     if not payload.confirm:
@@ -523,7 +522,7 @@ async def assign_category_orphans(
     summary="Category usage analytics",
 )
 async def category_analytics(
-    user: Optional[User] = Depends(get_current_user_or_none),
+    user: User | None = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
     category_repo = CategoryRepository(db)
@@ -556,7 +555,7 @@ async def category_analytics(
     summary="Undo last category management operation",
 )
 async def undo_category_operation(
-    user: Optional[User] = Depends(get_current_user_or_none),
+    user: User | None = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
     undo_service: UndoService = Depends(get_undo_service),
 ):
@@ -619,7 +618,7 @@ async def undo_category_operation(
     summary="Export category definitions",
 )
 async def export_categories(
-    user: Optional[User] = Depends(get_current_user_or_none),
+    user: User | None = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
     category_repo = CategoryRepository(db)
@@ -646,7 +645,7 @@ async def export_categories(
 )
 async def import_categories(
     payload: CategoryImportRequest,
-    user: Optional[User] = Depends(get_current_user_or_none),
+    user: User | None = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
     category_repo = CategoryRepository(db)

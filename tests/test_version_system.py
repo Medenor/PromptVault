@@ -19,13 +19,6 @@ Test Categories:
 Target: 90%+ coverage of version control functionality
 """
 
-import pytest
-from datetime import datetime, timedelta
-import uuid
-import json
-
-from src.db.models import Prompt, PromptVersion, Category, Tag, User
-
 # ============================================================================
 # VERSION CREATION TESTS
 # ============================================================================
@@ -923,9 +916,7 @@ class TestVersionIntegration:
         assert len(versions) == 11
 
         # Each should have incremental version numbers
-        version_numbers = [
-            v.get("version_number", i) for i, v in enumerate(reversed(versions))
-        ]
+        [v.get("version_number", i) for i, v in enumerate(reversed(versions))]
         # We can't verify version_number in dict format, so just check count
         assert len(versions) == 11
 

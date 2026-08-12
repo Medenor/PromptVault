@@ -4,19 +4,18 @@
 
 """Unit tests for validation utility functions."""
 
-import pytest
-import tempfile
 import os
-from pathlib import Path
+import tempfile
+
 from scripts.setup.utils.validators import (
     validate_database_url,
-    validate_password_strength,
-    validate_port,
-    validate_hostname,
     validate_email,
-    validate_path,
-    validate_jwt_key,
     validate_env_file,
+    validate_hostname,
+    validate_jwt_key,
+    validate_password_strength,
+    validate_path,
+    validate_port,
 )
 
 

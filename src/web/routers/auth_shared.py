@@ -13,15 +13,15 @@ from fastapi import Depends
 from sqlalchemy.orm import Session
 
 from src.config.auth_config import AuthConfig
-from src.db.session import get_db
-from src.services.auth.auth_service import AuthService
-from src.services.auth.password_reset_service import PasswordResetService
-from src.services.auth.password_service import PasswordService
-from src.services.auth.jwt_service import JWTService
-from src.db.repositories.user_repository import UserRepository
 from src.db.repositories.password_reset_token_repository import (
     PasswordResetTokenRepository,
 )
+from src.db.repositories.user_repository import UserRepository
+from src.db.session import get_db
+from src.services.auth.auth_service import AuthService
+from src.services.auth.jwt_service import JWTService
+from src.services.auth.password_reset_service import PasswordResetService
+from src.services.auth.password_service import PasswordService
 from src.web.dependencies.auth import get_auth_config
 
 # ============================================================================

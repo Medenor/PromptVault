@@ -7,7 +7,7 @@
 Append-only audit log for all backup-related operations.
 """
 
-from sqlalchemy import Column, String, DateTime, ForeignKey, JSON
+from sqlalchemy import JSON, Column, DateTime, ForeignKey, String
 from sqlalchemy.sql import func
 
 from src.db.base import Base

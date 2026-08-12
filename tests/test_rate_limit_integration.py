@@ -20,8 +20,6 @@ mirroring the production wiring (``app.state.limiter`` + the exception handler),
 and drive it with real JWTs minted by ``JWTService``.
 """
 
-from typing import Dict
-
 import pytest
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
@@ -57,7 +55,7 @@ def _override_write_budget(monkeypatch, attempts: int, window_seconds: int = 60)
     monkeypatch.setattr(rl, "auth_settings", override)
 
 
-def _auth_headers(user_id: str, username: str) -> Dict[str, str]:
+def _auth_headers(user_id: str, username: str) -> dict[str, str]:
     """Mint a real Bearer token for the given user."""
     from src.config import auth_config
 

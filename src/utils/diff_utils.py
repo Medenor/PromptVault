@@ -4,13 +4,12 @@
 
 """Utilities for computing text differences at character level."""
 
-from typing import List, Dict, Optional
 import diff_match_patch as dmp_module
 
 
 def compute_character_diff(
-    old_text: Optional[str], new_text: Optional[str]
-) -> List[Dict[str, str]]:
+    old_text: str | None, new_text: str | None
+) -> list[dict[str, str]]:
     """Compute character-level differences between two text strings.
 
     Uses the diff-match-patch algorithm to compute precise character-level

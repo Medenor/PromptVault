@@ -6,9 +6,9 @@
 
 import json
 import os
-import tempfile
 import shutil
-from unittest.mock import patch, MagicMock
+import tempfile
+from unittest.mock import MagicMock, patch
 
 import pytest
 from botocore.exceptions import ClientError, EndpointConnectionError
@@ -17,7 +17,6 @@ from src.services.backup_cloud_service import (
     BackupCloudService,
     _get_credentials_passphrase,
 )
-from src.services.backup_encryption_service import BackupEncryptionService
 
 
 class TestGetCredentialsPassphrase:
@@ -201,9 +200,10 @@ class TestEncryptDecryptCredentials:
             creds, passphrase
         )
 
-        from argon2.low_level import hash_secret_raw, Type
-        from cryptography.hazmat.primitives.ciphers.aead import AESGCM
         import base64
+
+        from argon2.low_level import Type, hash_secret_raw
+        from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
         key = hash_secret_raw(
             secret=passphrase.encode("utf-8"),
@@ -443,8 +443,8 @@ class TestGetClient:
 
 class TestUploadBackupById:
     def test_uploads_and_records_cloud_metadata(self, cloud_service, db_backup_service):
-        from src.db.models.backup import Backup
         from src.db import session as session_module
+        from src.db.models.backup import Backup
 
         provider = cloud_service.create_provider(
             name="Target",
@@ -495,8 +495,8 @@ class TestUploadBackupById:
     def test_returns_false_when_provider_disabled(
         self, cloud_service, db_backup_service
     ):
-        from src.db.models.backup_storage_provider import BackupStorageProvider
         from src.db import session as session_module
+        from src.db.models.backup_storage_provider import BackupStorageProvider
 
         provider = cloud_service.create_provider(
             name="Disabled Target",

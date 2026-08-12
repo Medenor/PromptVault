@@ -4,11 +4,10 @@
 
 """Integration tests asserting semantic_version is present in prompt and version history responses."""
 
-from datetime import datetime, timezone
-from typing import Dict
+from datetime import UTC, datetime
 
 import pytest
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import sessionmaker
 
 from src.db.models.prompt import Prompt
 from src.db.models.prompt_version import PromptVersion
@@ -25,7 +24,7 @@ def _insert_prompt(engine, semantic_version=None, user_id=None) -> int:
             favorite=False,
             semantic_version=semantic_version,
             user_id=user_id,
-            created_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
         )
         session.add(prompt)
         session.flush()
@@ -42,7 +41,7 @@ def _insert_prompt(engine, semantic_version=None, user_id=None) -> int:
             semantic_version=semantic_version,
             author="e2e-test",
             message="Initial",
-            created_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
         )
         session.add(version)
         session.commit()
@@ -57,17 +56,17 @@ def client(api_client_context):
 
 
 @pytest.fixture
-def auth_headers(api_client_context) -> Dict[str, str]:
+def auth_headers(api_client_context) -> dict[str, str]:
     """Bearer token for a seeded user — GET /versions now enforces read-level
     access (contract §6), so anonymous requests against these ownerless test
     fixtures 404. The prompts here have no owner and aren't legacy_public,
     so any authenticated user works for the read-only assertions in this file."""
-    from datetime import datetime as _dt, timezone as _tz
+    from datetime import datetime as _dt
 
-    from src.services.auth.jwt_service import JWTService
     from src.config import auth_config
     from src.db.models.user import User
     from src.db.session import SessionLocal
+    from src.services.auth.jwt_service import JWTService
 
     session = SessionLocal()
     try:
@@ -81,8 +80,8 @@ def auth_headers(api_client_context) -> Dict[str, str]:
                 role="editor",
                 is_active=True,
                 email_verified=True,
-                created_at=_dt.now(_tz.utc),
-                updated_at=_dt.now(_tz.utc),
+                created_at=_dt.now(UTC),
+                updated_at=_dt.now(UTC),
             )
             session.add(user)
             session.commit()
@@ -141,7 +140,7 @@ class TestSemanticVersionInVersionHistory:
                 favorite=False,
                 semantic_version="1.0.0",
                 user_id="e2e-history-user-id",
-                created_at=datetime.now(timezone.utc),
+                created_at=datetime.now(UTC),
             )
             session.add(prompt)
             session.flush()
@@ -158,7 +157,7 @@ class TestSemanticVersionInVersionHistory:
                 semantic_version="1.0.0",
                 author="test",
                 message="v1",
-                created_at=datetime.now(timezone.utc),
+                created_at=datetime.now(UTC),
             )
             v2 = PromptVersion(
                 prompt_id=prompt.id,
@@ -172,7 +171,7 @@ class TestSemanticVersionInVersionHistory:
                 semantic_version="1.1.0",
                 author="test",
                 message="v2",
-                created_at=datetime.now(timezone.utc),
+                created_at=datetime.now(UTC),
                 parent_version_id=f"hist-v1-{prompt.id}",
             )
             session.add_all([v1, v2])

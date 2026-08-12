@@ -12,23 +12,24 @@ import logging
 import logging.config
 import os
 import uuid
+from collections.abc import Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
-from datetime import datetime, timezone
-from typing import Any, Dict, Iterator, Optional, Tuple
+from datetime import UTC, datetime
+from typing import Any
 
 # pylint: disable=too-many-instance-attributes
 
 
 def _utc_timestamp() -> str:
     """Return the current UTC timestamp with Z suffix."""
-    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    return datetime.now(UTC).isoformat().replace("+00:00", "Z")
 
 
-REQUEST_ID_VAR: ContextVar[Optional[str]] = ContextVar(
+REQUEST_ID_VAR: ContextVar[str | None] = ContextVar(
     "promptvault_request_id", default=None
 )
-ACTOR_VAR: ContextVar[Optional[str]] = ContextVar("promptvault_actor", default=None)
+ACTOR_VAR: ContextVar[str | None] = ContextVar("promptvault_actor", default=None)
 
 
 class JsonLogFormatter(logging.Formatter):
@@ -67,7 +68,7 @@ class JsonLogFormatter(logging.Formatter):
         Returns:
             str: JSON-encoded log line.
         """
-        payload: Dict[str, Optional[str]] = {
+        payload: dict[str, str | None] = {
             "timestamp": _utc_timestamp(),
             "level": record.levelname.lower(),
             "logger": record.name,
@@ -160,15 +161,15 @@ class LoggingService:
     def __init__(self) -> None:
         """Initialize the logging service."""
         self._configured = False
-        self._log_dir: Optional[str] = None
+        self._log_dir: str | None = None
 
     def configure_logging(
         self,
-        log_dir: Optional[str] = None,
+        log_dir: str | None = None,
         *,
-        environment: Optional[str] = None,
-        log_level: Optional[str] = None,
-        audit_log_level: Optional[str] = None,
+        environment: str | None = None,
+        log_level: str | None = None,
+        audit_log_level: str | None = None,
         force: bool = False,
     ) -> None:
         """
@@ -250,7 +251,7 @@ class LoggingService:
         self._configured = True
         self._log_dir = resolved_dir
 
-    def get_logger(self, name: Optional[str] = None) -> logging.Logger:
+    def get_logger(self, name: str | None = None) -> logging.Logger:
         """
         Retrieve a logger rooted under the PromptVault namespace.
 
@@ -290,7 +291,7 @@ class LoggingService:
 
     @contextmanager
     def request_context(
-        self, *, request_id: Optional[str] = None, actor: Optional[str] = None
+        self, *, request_id: str | None = None, actor: str | None = None
     ) -> Iterator[None]:
         """
         Bind request context variables for the duration of the context manager.
@@ -299,7 +300,7 @@ class LoggingService:
             request_id: Correlation identifier to bind.
             actor: Actor identifier associated with the operation.
         """
-        tokens: Tuple[Tuple[ContextVar[Optional[str]], object], ...] = tuple()
+        tokens: tuple[tuple[ContextVar[str | None], object], ...] = tuple()
         if request_id or actor:
             collected = []
             if request_id is not None:
@@ -313,7 +314,7 @@ class LoggingService:
             for var, token in reversed(tokens):
                 var.reset(token)
 
-    def get_request_id(self) -> Optional[str]:
+    def get_request_id(self) -> str | None:
         """
         Return the currently bound request ID, if any.
 
@@ -322,7 +323,7 @@ class LoggingService:
         """
         return REQUEST_ID_VAR.get()
 
-    def get_actor(self) -> Optional[str]:
+    def get_actor(self) -> str | None:
         """
         Return the currently bound actor identifier, if any.
 
@@ -338,8 +339,8 @@ class LoggingService:
         resource_type: str,
         resource_id: str,
         status: str = "success",
-        event: Optional[str] = None,
-        message: Optional[str] = None,
+        event: str | None = None,
+        message: str | None = None,
         **context: Any,
     ) -> None:
         """
@@ -355,7 +356,7 @@ class LoggingService:
             **context: Additional metadata fields to include in the log entry.
         """
         audit_logger = self.get_audit_logger()
-        payload: Dict[str, Any] = {
+        payload: dict[str, Any] = {
             "event": event or f"audit.{resource_type}",
             "action": action,
             "resource_type": resource_type,

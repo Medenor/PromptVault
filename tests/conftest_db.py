@@ -9,37 +9,36 @@ This module provides pytest fixtures for testing with the database backend,
 including in-memory SQLite for fast, isolated tests.
 """
 
-import pytest
-import tempfile
 import shutil
-from pathlib import Path
-from typing import Generator
 import sys
+import tempfile
+from collections.abc import Generator
+from pathlib import Path
+
+import pytest
 
 # Add the parent directory to the Python path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import Session, sessionmaker
 
 from src.db.base import Base
 from src.db.models import (
-    User,
     Category,
-    Tag,
     Prompt,
     PromptVersion,
-    PromptBranch,
-    Backup,
+    Tag,
+    User,
 )
 from src.db.repositories import (
-    PromptRepository,
-    VersionRepository,
     CategoryRepository,
+    PromptRepository,
     TagRepository,
+    VersionRepository,
 )
-from src.services.prompt_data_service_db import PromptDataService
 from src.services.backup_service_db import BackupService
+from src.services.prompt_data_service_db import PromptDataService
 
 
 @pytest.fixture(scope="function")
@@ -56,7 +55,7 @@ def test_db_engine():
 
 
 @pytest.fixture(scope="function")
-def test_db_session(test_db_engine) -> Generator[Session, None, None]:
+def test_db_session(test_db_engine) -> Generator[Session]:
     """Create a test database session.
 
     Uses in-memory SQLite for fast, isolated tests.
@@ -241,8 +240,8 @@ def db_data_service(temp_data_dir, monkeypatch):
     reload(db_config_module)
 
     # Create engine and tables
-    from src.db.session import engine
     from src.db.base import Base
+    from src.db.session import engine
 
     Base.metadata.create_all(bind=engine)
 

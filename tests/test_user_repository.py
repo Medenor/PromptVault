@@ -19,14 +19,15 @@ Target: 90%+ repository coverage
 Uses in-memory SQLite for fast, isolated tests
 """
 
+from datetime import UTC, datetime, timedelta
+
 import pytest
-from datetime import datetime, timezone, timedelta
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from src.db.models.password_reset_token import PasswordResetToken
 from src.db.models.user import User
 from src.db.models.user_session import UserSession
-from src.db.models.password_reset_token import PasswordResetToken
 from src.db.repositories.user_repository import UserRepository
 
 # ============================================================================
@@ -178,24 +179,24 @@ class TestUserCreation:
 
     def test_create_user_timestamps(self, user_repository: UserRepository):
         """Test that timestamps are automatically set."""
-        before_create = datetime.now(timezone.utc)
+        before_create = datetime.now(UTC)
 
         user = user_repository.create(
             username="timeuser", email="time@example.com", password_hash="hash"
         )
 
-        after_create = datetime.now(timezone.utc)
+        datetime.now(UTC)
 
         assert user.created_at is not None
         assert user.updated_at is not None
         # SQLite may store timestamps without microseconds, so we compare with some tolerance
         created_with_tz = (
-            user.created_at.replace(tzinfo=timezone.utc)
+            user.created_at.replace(tzinfo=UTC)
             if user.created_at.tzinfo is None
             else user.created_at
         )
         updated_with_tz = (
-            user.updated_at.replace(tzinfo=timezone.utc)
+            user.updated_at.replace(tzinfo=UTC)
             if user.updated_at.tzinfo is None
             else user.updated_at
         )
@@ -368,7 +369,6 @@ class TestUserUpdate:
         test_db_session: Session,
     ):
         """Test that updated_at timestamp changes on update."""
-        original_updated_at = sample_user.updated_at
 
         # Small delay to ensure timestamp difference
         import time
@@ -453,7 +453,7 @@ class TestUserDeletion:
             user_id=sample_user.id,
             family_id="family-123",
             refresh_token_jti="jti-123",
-            expires_at=datetime.now(timezone.utc) + timedelta(days=7),
+            expires_at=datetime.now(UTC) + timedelta(days=7),
         )
         test_db_session.add(session)
         test_db_session.flush()
@@ -479,7 +479,7 @@ class TestUserDeletion:
         token = PasswordResetToken(
             user_id=sample_user.id,
             token="hashed-token-123",
-            expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+            expires_at=datetime.now(UTC) + timedelta(hours=1),
         )
         test_db_session.add(token)
         test_db_session.flush()
@@ -540,22 +540,20 @@ class TestAuthenticationMethods:
 
     def test_lock_account(self, user_repository: UserRepository, sample_user: User):
         """Test locking user account."""
-        lock_time = datetime.now(timezone.utc) + timedelta(minutes=15)
+        lock_time = datetime.now(UTC) + timedelta(minutes=15)
         user_repository.lock_account(sample_user.id, lock_time)
 
         assert sample_user.locked_until is not None
         # Compare timestamps allowing small difference due to precision
         diff = abs(
-            (
-                sample_user.locked_until.replace(tzinfo=timezone.utc) - lock_time
-            ).total_seconds()
+            (sample_user.locked_until.replace(tzinfo=UTC) - lock_time).total_seconds()
         )
         assert diff < 1
 
     def test_unlock_account(self, user_repository: UserRepository, sample_user: User):
         """Test unlocking user account."""
         # Lock the account first
-        sample_user.locked_until = datetime.now(timezone.utc) + timedelta(minutes=15)
+        sample_user.locked_until = datetime.now(UTC) + timedelta(minutes=15)
         sample_user.failed_login_attempts = 5
 
         user_repository.unlock_account(sample_user.id)
@@ -567,15 +565,13 @@ class TestAuthenticationMethods:
         self, user_repository: UserRepository, sample_user: User
     ):
         """Test updating last login timestamp."""
-        before_update = datetime.now(timezone.utc)
+        before_update = datetime.now(UTC)
         user_repository.update_last_login(sample_user.id)
-        after_update = datetime.now(timezone.utc)
+        after_update = datetime.now(UTC)
 
         assert sample_user.last_login is not None
         assert (
-            before_update
-            <= sample_user.last_login.replace(tzinfo=timezone.utc)
-            <= after_update
+            before_update <= sample_user.last_login.replace(tzinfo=UTC) <= after_update
         )
 
     def test_update_password_hash(
@@ -583,17 +579,17 @@ class TestAuthenticationMethods:
     ):
         """Test updating password hash and password_changed_at."""
         new_hash = "$argon2id$v=19$m=65536,t=3,p=4$newpassword"
-        before_update = datetime.now(timezone.utc)
+        before_update = datetime.now(UTC)
 
         user_repository.update_password_hash(sample_user.id, new_hash)
 
-        after_update = datetime.now(timezone.utc)
+        after_update = datetime.now(UTC)
 
         assert sample_user.password_hash == new_hash
         assert sample_user.password_changed_at is not None
         assert (
             before_update
-            <= sample_user.password_changed_at.replace(tzinfo=timezone.utc)
+            <= sample_user.password_changed_at.replace(tzinfo=UTC)
             <= after_update
         )
 
@@ -748,13 +744,13 @@ class TestRelationshipLoading:
             user_id=sample_user.id,
             family_id="family-1",
             refresh_token_jti="jti-1",
-            expires_at=datetime.now(timezone.utc) + timedelta(days=7),
+            expires_at=datetime.now(UTC) + timedelta(days=7),
         )
         session2 = UserSession(
             user_id=sample_user.id,
             family_id="family-2",
             refresh_token_jti="jti-2",
-            expires_at=datetime.now(timezone.utc) + timedelta(days=7),
+            expires_at=datetime.now(UTC) + timedelta(days=7),
         )
         test_db_session.add_all([session1, session2])
         test_db_session.flush()
@@ -777,12 +773,12 @@ class TestRelationshipLoading:
         token1 = PasswordResetToken(
             user_id=sample_user.id,
             token="token-1",
-            expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+            expires_at=datetime.now(UTC) + timedelta(hours=1),
         )
         token2 = PasswordResetToken(
             user_id=sample_user.id,
             token="token-2",
-            expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+            expires_at=datetime.now(UTC) + timedelta(hours=1),
         )
         test_db_session.add_all([token1, token2])
         test_db_session.flush()
@@ -819,7 +815,7 @@ class TestEdgeCases:
         # Should not raise exceptions, just no-op
         user_repository.increment_failed_login(fake_id)
         user_repository.reset_failed_login(fake_id)
-        user_repository.lock_account(fake_id, datetime.now(timezone.utc))
+        user_repository.lock_account(fake_id, datetime.now(UTC))
         user_repository.unlock_account(fake_id)
         user_repository.update_last_login(fake_id)
         user_repository.verify_email(fake_id)

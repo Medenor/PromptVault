@@ -24,7 +24,6 @@ Example:
     }
 """
 
-from typing import Dict, Optional
 import logging
 
 logger = logging.getLogger(__name__)
@@ -46,7 +45,7 @@ class UserAgentParser:
     """
 
     @staticmethod
-    def parse_user_agent(user_agent: Optional[str]) -> Dict[str, any]:
+    def parse_user_agent(user_agent: str | None) -> dict[str, any]:
         """Parse User-Agent string et extrait les informations.
 
         Args:
@@ -138,7 +137,7 @@ class UserAgentParser:
             }
 
     @staticmethod
-    def format_session_display(user_agent: Optional[str]) -> str:
+    def format_session_display(user_agent: str | None) -> str:
         """Format User-Agent pour affichage UI simple.
 
         Retourne une string formatée comme "Chrome 91.0 on Mac OS X 10.15"

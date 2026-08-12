@@ -10,28 +10,26 @@ unchanged.
 """
 
 import logging
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from src.db.session import get_db
+from src.config.auth_config import auth_settings
 from src.db.models.user import User
 from src.db.repositories.prompt_repository import PromptRepository
-from src.config.auth_config import auth_settings
+from src.db.session import get_db
 from src.web.dependencies.auth import (
-    get_optional_user,
     get_current_user_or_none,
 )
 from src.web.routers.prompts_shared import (
     DEFAULT_PAGE_SIZE,
+    _build_pagination_envelope,
     _prompt_to_dict,
     normalize_pagination,
-    _build_pagination_envelope,
 )
 
 
-def _visibility_scope(user: Optional[User]) -> Optional[str]:
+def _visibility_scope(user: User | None) -> str | None:
     """Resolve the visible_to_user_id argument for PromptRepository scoping.
 
     Admins and anonymous-mode (user=None with auth disabled) see everything
@@ -93,8 +91,8 @@ router = APIRouter(
 async def list_prompts(
     page: int = 1,
     limit: int = DEFAULT_PAGE_SIZE,
-    filter: Optional[str] = None,
-    user: Optional[User] = Depends(get_current_user_or_none),
+    filter: str | None = None,
+    user: User | None = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
     """List prompts with offset pagination (public access with optional personalization).
@@ -199,8 +197,8 @@ async def search_prompts(
     ranked: bool = True,
     page: int = 1,
     limit: int = DEFAULT_PAGE_SIZE,
-    filter: Optional[str] = None,
-    user: Optional[User] = Depends(get_current_user_or_none),
+    filter: str | None = None,
+    user: User | None = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
     """Search and filter prompts with offset pagination.

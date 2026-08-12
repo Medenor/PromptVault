@@ -8,7 +8,7 @@ Tags provide flexible categorization and labeling for prompts.
 Multiple tags can be associated with each prompt via many-to-many relationship.
 """
 
-from sqlalchemy import Column, Integer, String, Text, DateTime, Index, ForeignKey
+from sqlalchemy import Column, DateTime, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 

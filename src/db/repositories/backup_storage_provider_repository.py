@@ -7,12 +7,10 @@
 Provides data access for cloud storage provider configurations.
 """
 
-from typing import Optional, List
-
 from sqlalchemy.orm import Session
 
-from src.db.repositories.base import BaseRepository
 from src.db.models.backup_storage_provider import BackupStorageProvider
+from src.db.repositories.base import BaseRepository
 
 
 class BackupStorageProviderRepository(BaseRepository[BackupStorageProvider]):
@@ -26,7 +24,7 @@ class BackupStorageProviderRepository(BaseRepository[BackupStorageProvider]):
         """
         super().__init__(BackupStorageProvider, session)
 
-    def list_all(self) -> List[BackupStorageProvider]:
+    def list_all(self) -> list[BackupStorageProvider]:
         """List all configured storage providers.
 
         Returns:

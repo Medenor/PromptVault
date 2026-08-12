@@ -20,31 +20,28 @@ This module provides integration tests covering critical security features:
 Target: Comprehensive coverage of security features
 """
 
-import uuid
-from datetime import datetime, timedelta, timezone
-from unittest.mock import Mock, patch
+from datetime import UTC, datetime, timedelta
+from unittest.mock import Mock
 
 import pytest
-from jwt.exceptions import InvalidTokenError as JWTInvalidTokenError
 
-from src.services.auth.auth_service import AuthService
-from src.services.auth.password_service import PasswordService
-from src.services.auth.jwt_service import JWTService
-from src.services.auth.password_reset_service import PasswordResetService
-from src.services.auth.lockout_service import LockoutService
-from src.services.auth.session_service import SessionService
 from src.config.auth_config import AuthConfig
 from src.db.models.user import User
 from src.db.models.user_session import UserSession
-from src.db.models.password_reset_token import PasswordResetToken
+from src.services.auth.auth_service import AuthService
+from src.services.auth.jwt_service import JWTService
+from src.services.auth.lockout_service import LockoutService
+from src.services.auth.password_reset_service import PasswordResetService
+from src.services.auth.password_service import PasswordService
+from src.services.auth.session_service import SessionService
 from src.services.exceptions import (
     AccountLockedError,
     InvalidCredentialsError,
     PasswordPolicyError,
-    TokenReuseDetectedError,
     RateLimitExceededError,
-    TokenExpiredError,
     TokenAlreadyUsedError,
+    TokenExpiredError,
+    TokenReuseDetectedError,
 )
 
 # ============================================================================
@@ -200,8 +197,8 @@ def sample_user():
     user.failed_login_attempts = 0
     user.locked_until = None
     user.last_login = None
-    user.created_at = datetime.now(timezone.utc)
-    user.updated_at = datetime.now(timezone.utc)
+    user.created_at = datetime.now(UTC)
+    user.updated_at = datetime.now(UTC)
     return user
 
 
@@ -220,9 +217,9 @@ def sample_session():
     session.is_revoked = False
     session.device_info = "Mozilla/5.0"
     session.ip_address = "192.168.1.1"
-    session.created_at = datetime.now(timezone.utc)
-    session.last_used_at = datetime.now(timezone.utc)
-    session.expires_at = datetime.now(timezone.utc) + timedelta(days=7)
+    session.created_at = datetime.now(UTC)
+    session.last_used_at = datetime.now(UTC)
+    session.expires_at = datetime.now(UTC) + timedelta(days=7)
     return session
 
 
@@ -346,7 +343,7 @@ class TestAccountLockout:
         # Verify lockout duration
         lock_call = mock_user_repository.lock_account.call_args
         locked_until = lock_call[0][1]
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         duration = (locked_until - now).total_seconds()
         assert 895 <= duration <= 905  # Allow 5 second tolerance
 
@@ -375,7 +372,7 @@ class TestAccountLockout:
     ):
         """Test locked account cannot login even with correct password."""
         # Arrange
-        sample_user.locked_until = datetime.now(timezone.utc) + timedelta(minutes=10)
+        sample_user.locked_until = datetime.now(UTC) + timedelta(minutes=10)
         mock_user_repository.get_by_email_or_username.return_value = sample_user
 
         # Act & Assert
@@ -394,7 +391,7 @@ class TestAccountLockout:
     ):
         """Test account auto-unlocks after lockout period expires."""
         # Arrange
-        sample_user.locked_until = datetime.now(timezone.utc) - timedelta(minutes=1)
+        sample_user.locked_until = datetime.now(UTC) - timedelta(minutes=1)
         mock_user_repository.get_by_email_or_username.return_value = sample_user
         auth_service.password_service.verify_password = Mock(return_value=True)
 
@@ -668,7 +665,7 @@ class TestSessionLimits:
         mock_session_repository.count_user_sessions.return_value = 5
         oldest_session = Mock()
         oldest_session.family_id = "oldest_family"
-        oldest_session.created_at = datetime.now(timezone.utc) - timedelta(days=5)
+        oldest_session.created_at = datetime.now(UTC) - timedelta(days=5)
         mock_session_repository.get_oldest_user_session.return_value = oldest_session
         auth_service.password_service.verify_password = Mock(return_value=True)
 
@@ -766,9 +763,6 @@ class TestPasswordResetRateLimiting:
         self, password_reset_service, mock_token_repository
     ):
         """Test rate limit window is 1 hour (3600 seconds)."""
-        # Act
-        password_reset_service.config.rate_limit_password_reset_window_seconds
-
         # Assert
         assert (
             password_reset_service.config.rate_limit_password_reset_window_seconds
@@ -796,7 +790,7 @@ class TestPasswordResetTokenSingleUse:
         token_record = Mock()
         token_record.id = "token_id"
         token_record.user_id = sample_user.id
-        token_record.expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
+        token_record.expires_at = datetime.now(UTC) + timedelta(hours=1)
         token_record.is_used = False
 
         mock_token_repository.get_by_token.return_value = token_record
@@ -819,7 +813,7 @@ class TestPasswordResetTokenSingleUse:
         token_record = Mock()
         token_record.id = "token_id"
         token_record.is_used = True
-        token_record.expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
+        token_record.expires_at = datetime.now(UTC) + timedelta(hours=1)
 
         mock_token_repository.get_by_token.return_value = token_record
 
@@ -837,7 +831,7 @@ class TestPasswordResetTokenSingleUse:
         token_record = Mock()
         token_record.id = "token_id"
         token_record.is_used = False
-        token_record.expires_at = datetime.now(timezone.utc) - timedelta(hours=1)
+        token_record.expires_at = datetime.now(UTC) - timedelta(hours=1)
 
         mock_token_repository.get_by_token.return_value = token_record
 
@@ -1088,7 +1082,7 @@ class TestSecurityIntegrationScenarios:
             auth_service.login("testuser", "wrong", "192.168.1.1", "Mozilla/5.0")
 
         # Phase 2: Lockout expired, should unlock
-        sample_user.locked_until = datetime.now(timezone.utc) - timedelta(seconds=1)
+        sample_user.locked_until = datetime.now(UTC) - timedelta(seconds=1)
         auth_service.password_service.verify_password = Mock(return_value=True)
 
         result = auth_service.login("testuser", "correct", "192.168.1.1", "Mozilla/5.0")

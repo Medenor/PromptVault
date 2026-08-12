@@ -28,28 +28,27 @@ Quick Start:
 """
 
 # Configuration
+# Base and models
+from src.db.base import Base
 from src.db.config import DatabaseSettings, db_settings
-
-# Session management
-from src.db.session import (
-    engine,
-    SessionLocal,
-    get_db_session,
-    get_db,
-    create_all_tables,
-    drop_all_tables,
-)
 
 # Health checks
 from src.db.health import (
     check_database_health,
-    get_database_info,
     check_tables_exist,
+    get_database_info,
     validate_database_schema,
 )
 
-# Base and models
-from src.db.base import Base
+# Session management
+from src.db.session import (
+    SessionLocal,
+    create_all_tables,
+    drop_all_tables,
+    engine,
+    get_db,
+    get_db_session,
+)
 
 __all__ = [
     # Configuration

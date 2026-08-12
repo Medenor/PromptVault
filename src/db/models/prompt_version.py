@@ -9,18 +9,18 @@ is an immutable snapshot with complete prompt data at that point in time.
 """
 
 from sqlalchemy import (
-    Column,
-    Integer,
-    String,
-    Text,
     Boolean,
+    Column,
     DateTime,
     ForeignKey,
     Index,
+    Integer,
+    String,
+    Text,
     UniqueConstraint,
 )
-from sqlalchemy.types import JSON
 from sqlalchemy.orm import relationship
+from sqlalchemy.types import JSON
 
 from src.db.base import Base
 

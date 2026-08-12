@@ -8,9 +8,11 @@ This module defines request validation schemas for all API endpoints,
 implementing the constraints specified in the Phase 0 specification.
 """
 
-from pydantic import BaseModel, Field, field_validator, model_validator
-from typing import Any, Dict, List, Optional, Literal
 import re
+from typing import Any, Literal
+
+from pydantic import BaseModel, Field, field_validator
+
 from .enums import ExportFormat, ImportMode
 
 
@@ -36,16 +38,16 @@ class PromptCreateRequest(BaseModel):
         max_length=50000,
         description="Prompt content",
     )
-    category: Optional[str] = Field(
+    category: str | None = Field(
         default="",
         max_length=100,
         description="Category name",
     )
-    tags: Optional[str] = Field(
+    tags: str | None = Field(
         default="",
         description="Comma-separated tags",
     )
-    semantic_version: Optional[str] = Field(
+    semantic_version: str | None = Field(
         default=None,
         description="Semantic version label (MAJOR.MINOR.PATCH)",
     )
@@ -101,7 +103,7 @@ class PromptCreateRequest(BaseModel):
 
     @field_validator("semantic_version")
     @classmethod
-    def validate_semantic_version(cls, v: Optional[str]) -> Optional[str]:
+    def validate_semantic_version(cls, v: str | None) -> str | None:
         if v is None:
             return None
         v = v.strip()
@@ -132,12 +134,12 @@ class PromptUpdateRequest(BaseModel):
         max_length=50000,
         description="Prompt content",
     )
-    category: Optional[str] = Field(
+    category: str | None = Field(
         default="",
         max_length=100,
         description="Category name",
     )
-    tags: Optional[str] = Field(
+    tags: str | None = Field(
         default="",
         description="Comma-separated tags",
     )
@@ -147,7 +149,7 @@ class PromptUpdateRequest(BaseModel):
         max_length=500,
         description="Version control commit message",
     )
-    semantic_version: Optional[str] = Field(
+    semantic_version: str | None = Field(
         default=None,
         description="Semantic version label (MAJOR.MINOR.PATCH)",
     )
@@ -189,7 +191,7 @@ class PromptUpdateRequest(BaseModel):
 
     @field_validator("semantic_version")
     @classmethod
-    def validate_semantic_version(cls, v: Optional[str]) -> Optional[str]:
+    def validate_semantic_version(cls, v: str | None) -> str | None:
         if v is None:
             return None
         v = v.strip()
@@ -282,7 +284,7 @@ class BackupCreateRequest(BaseModel):
     - name: Optional, 1-64 characters, alphanumeric + underscore/hyphen only
     """
 
-    name: Optional[str] = Field(
+    name: str | None = Field(
         default=None,
         max_length=64,
         description="Custom backup name",
@@ -290,7 +292,7 @@ class BackupCreateRequest(BaseModel):
 
     @field_validator("name")
     @classmethod
-    def validate_backup_name(cls, v: Optional[str]) -> Optional[str]:
+    def validate_backup_name(cls, v: str | None) -> str | None:
         """Validate backup name contains only safe characters.
 
         Allowed: A-Z, a-z, 0-9, underscore, hyphen
@@ -376,13 +378,13 @@ class FrontendLogEntry(BaseModel):
     action: str = Field(..., min_length=1, max_length=100)
     message: str = Field(..., min_length=1, max_length=500)
     severity: Literal["error", "warning", "info"] = "error"
-    stack: Optional[str] = Field(default=None, max_length=2000)
-    url: Optional[str] = Field(default=None, max_length=500)
-    context: Dict[str, Any] = Field(default_factory=dict)
+    stack: str | None = Field(default=None, max_length=2000)
+    url: str | None = Field(default=None, max_length=500)
+    context: dict[str, Any] = Field(default_factory=dict)
 
     @field_validator("component", "action", "message", "stack", "url")
     @classmethod
-    def strip_strings(cls, v: Optional[str]) -> Optional[str]:
+    def strip_strings(cls, v: str | None) -> str | None:
         if v is None:
             return v
         return v.strip()
@@ -396,7 +398,7 @@ class BulkDeleteRequest(BaseModel):
     - No duplicate IDs allowed
     """
 
-    prompt_ids: List[int] = Field(
+    prompt_ids: list[int] = Field(
         ...,
         min_length=1,
         max_length=1000,
@@ -405,7 +407,7 @@ class BulkDeleteRequest(BaseModel):
 
     @field_validator("prompt_ids")
     @classmethod
-    def validate_unique_ids(cls, v: List[int]) -> List[int]:
+    def validate_unique_ids(cls, v: list[int]) -> list[int]:
         """Ensure all IDs are unique.
 
         Args:

@@ -4,8 +4,8 @@
 
 """SQLAlchemy Base configuration for PromptVault database models."""
 
-from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy import MetaData
+from sqlalchemy.orm import DeclarativeBase
 
 # Naming convention for database constraints
 # This ensures consistent naming across PostgreSQL and SQLite
