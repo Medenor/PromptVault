@@ -86,15 +86,15 @@ Web application, existing layout: backend `src/`, frontend `src/web/static/ts/`,
 
 ### Tests for User Story 2 ⚠️
 
-- [ ] T016 [P] [US2] Backend snippet tests in `tests/test_fts_snippet.py`: `search()` returns `match_context` with `[[MATCH]]…[[/MATCH]]` sentinels for body matches; `None` for title-only match; both dialects (FR-005/FR-006).
-- [ ] T017 [P] [US2] Frontend safe-render test in `src/web/static/ts/app/__tests__/prompt-card.test.ts`: a `match_context` containing `<script>`/markup renders escaped, with sentinels converted to `<mark>` only, and no `innerHTML` of raw content (FR-007/SC-006).
+- [X] T016 [P] [US2] Backend snippet tests in `tests/test_fts_snippet.py`: `search()` returns `match_context` with `[[MATCH]]…[[/MATCH]]` sentinels for body matches; `None` for title-only match; both dialects (FR-005/FR-006).
+- [X] T017 [P] [US2] Frontend safe-render test in `src/web/static/ts/app/__tests__/prompt-card.test.ts`: a `match_context` containing `<script>`/markup renders escaped, with sentinels converted to `<mark>` only, and no `innerHTML` of raw content (FR-007/SC-006).
 
 ### Implementation for User Story 2
 
-- [ ] T018 [US2] Return `match_context` from the FTS branch of `PromptRepository.search()` in `src/db/repositories/prompt_repository.py` via `snippet()`/`ts_headline` using the sentinel helpers from T006 (`None` when no body snippet). (depends on T012, T006)
-- [ ] T019 [US2] Surface `match_context` in the response in `src/web/routers/prompts_search_router.py` and `src/web/routers/prompts_shared.py` (extend `_prompt_to_dict`/envelope to carry the optional field). (depends on T018)
-- [ ] T020 [P] [US2] Add optional `match_context?: string` to `PromptResponse` in `src/web/static/ts/types/api/responses.ts`.
-- [ ] T021 [US2] Render the snippet under the card title in `src/web/static/ts/app/prompt-card.ts`: `escapeHtml(match_context)` first, then replace `[[MATCH]]`/`[[/MATCH]]` with `<mark>`/`</mark>` (reuse existing `escapeHtml` from `./shared`). (depends on T020)
+- [X] T018 [US2] Return `match_context` from the FTS branch of `PromptRepository.search()` in `src/db/repositories/prompt_repository.py` via `snippet()`/`ts_headline` using the sentinel helpers from T006 (`None` when no body snippet). (depends on T012, T006)
+- [X] T019 [US2] Surface `match_context` in the response in `src/web/routers/prompts_search_router.py` and `src/web/routers/prompts_shared.py` (extend `_prompt_to_dict`/envelope to carry the optional field). (depends on T018)
+- [X] T020 [P] [US2] Add optional `match_context?: string` to `PromptResponse` in `src/web/static/ts/types/api/responses.ts`.
+- [X] T021 [US2] Render the snippet under the card title in `src/web/static/ts/app/prompt-card.ts`: `escapeHtml(match_context)` first, then replace `[[MATCH]]`/`[[/MATCH]]` with `<mark>`/`</mark>` (reuse existing `escapeHtml` from `./shared`). (depends on T020)
 
 **Checkpoint**: Ranked results now show safe, highlighted snippets in the UI.
 
