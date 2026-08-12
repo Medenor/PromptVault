@@ -79,7 +79,9 @@ def _make_prompt(
 class TestMatchContextSnippets:
     """T016: search() returns match_context with sentinels for body hits, None for title-only."""
 
-    def test_body_match_returns_sentinel_wrapped_snippet(self, fts_dialect_matrix: Session):
+    def test_body_match_returns_sentinel_wrapped_snippet(
+        self, fts_dialect_matrix: Session
+    ):
         session = fts_dialect_matrix
         user = _make_user(session)
         category = _make_category(session)
@@ -124,7 +126,9 @@ class TestMatchContextSnippets:
         _, match_context = results[0]
         assert match_context is None
 
-    def test_case_sensitive_search_has_no_match_context(self, fts_dialect_matrix: Session):
+    def test_case_sensitive_search_has_no_match_context(
+        self, fts_dialect_matrix: Session
+    ):
         session = fts_dialect_matrix
         user = _make_user(session)
         category = _make_category(session)

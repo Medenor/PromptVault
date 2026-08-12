@@ -73,7 +73,9 @@ class BackupCreationService:
                 "storage_path": backup_path,
                 "size_bytes": backup_size,
                 "prompt_count": prompt_count,
-                "database_type": "sqlite" if backup_type == "sqlite_copy" else "postgresql",
+                "database_type": (
+                    "sqlite" if backup_type == "sqlite_copy" else "postgresql"
+                ),
                 "created_by": created_by_name,
                 "compressed": False,
                 "timestamp": timestamp,
@@ -162,7 +164,11 @@ class BackupCreationService:
         timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")[:21]
         if custom_name:
             safe_suffix = self._sanitize_backup_name(custom_name)
-            return f"backup_{safe_suffix}_{timestamp}" if safe_suffix else f"backup_{timestamp}"
+            return (
+                f"backup_{safe_suffix}_{timestamp}"
+                if safe_suffix
+                else f"backup_{timestamp}"
+            )
         return f"backup_{timestamp}"
 
     @staticmethod

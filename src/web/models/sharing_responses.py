@@ -49,13 +49,17 @@ class ShareResponse(BaseModel):
 
     prompt_id: int = Field(..., description="The shared prompt's id")
     grantee: ShareGranteeInfo = Field(..., description="The user granted access")
-    permission: Literal["read", "edit"] = Field(..., description="Effective access level")
+    permission: Literal["read", "edit"] = Field(
+        ..., description="Effective access level"
+    )
     granted_by: Optional[str] = Field(
         default=None,
         description="Username of the granting user, or None if deleted",
     )
     created_at: datetime = Field(..., description="Grant creation timestamp")
-    updated_at: datetime = Field(..., description="Last permission-level change timestamp")
+    updated_at: datetime = Field(
+        ..., description="Last permission-level change timestamp"
+    )
 
 
 class ShareListResponse(BaseModel):

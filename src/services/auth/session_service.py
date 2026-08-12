@@ -35,7 +35,9 @@ class SessionService:
         session_repo: Session repository for token rotation tracking
     """
 
-    def __init__(self, db: Session, config: AuthConfig, session_repo: SessionRepository):
+    def __init__(
+        self, db: Session, config: AuthConfig, session_repo: SessionRepository
+    ):
         """Initialize the session service.
 
         Args:

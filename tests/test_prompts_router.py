@@ -302,9 +302,7 @@ class TestCopyPromptWithVersion:
                 "semantic_version": "1.0.0",
             },
         )
-        response = api_client.post(
-            f"/api/prompts/{owned_prompt_id}/copy-with-version"
-        )
+        response = api_client.post(f"/api/prompts/{owned_prompt_id}/copy-with-version")
         assert response.status_code == 200
 
 
@@ -345,7 +343,9 @@ class TestCreatePromptAnonymous:
                         id="anon-check-admin-id",
                         username="anon_check_admin",
                         email="anon_check_admin@example.com",
-                        password_hash=password_service.hash_password("AdminP@ssw0rd123"),
+                        password_hash=password_service.hash_password(
+                            "AdminP@ssw0rd123"
+                        ),
                         role="admin",
                         is_active=True,
                         email_verified=True,

@@ -93,9 +93,9 @@ class TestTemplateSnapshots:
         else:
             response = api_client.get(route, follow_redirects=False)
 
-        assert response.status_code == 200, (
-            f"{route} returned {response.status_code}, expected 200"
-        )
+        assert (
+            response.status_code == 200
+        ), f"{route} returned {response.status_code}, expected 200"
 
         actual = _normalize(response.text)
         snapshot_path = SNAPSHOT_DIR / snapshot_name

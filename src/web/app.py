@@ -20,7 +20,10 @@ from src.web.monitoring import ValidationMonitor
 from src.web.routers.backup import init_backup_router
 from src.web.factory import create_app
 from src.web.middleware_setup import configure_middleware
-from src.web.routing_setup import configure_routing, _warn_if_auth_disabled  # noqa: F401
+from src.web.routing_setup import (
+    configure_routing,
+    _warn_if_auth_disabled,
+)  # noqa: F401
 from src.web.startup import register_lifecycle_events
 from src.config.auth_config import auth_settings
 from src.web.utils.manifest import load_manifest, get_asset_path, is_production
@@ -86,6 +89,7 @@ logger = logging_service.get_logger(__name__)
 
 configure_routing(app)
 register_lifecycle_events(app)
+
 
 # ============================================================================
 # HEALTH CHECK ENDPOINT
@@ -440,4 +444,3 @@ async def home(request: Request):
             "auth_enabled": True,
         },
     )
-

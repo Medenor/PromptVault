@@ -483,7 +483,9 @@ async def update_prompt(
     """,
     responses={
         200: {"description": "Prompt un-grandfathered"},
-        400: {"description": "legacy_public: true submitted (one-way) or prompt already private"},
+        400: {
+            "description": "legacy_public: true submitted (one-way) or prompt already private"
+        },
         403: {"description": "Requester is neither owner nor admin"},
         404: {"description": "Prompt not found or invisible"},
         422: {"description": "Validation failed"},

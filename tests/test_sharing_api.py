@@ -67,7 +67,9 @@ def _seed_user(user_id: str, username: str, email: str, role: str = "editor"):
 @pytest.fixture
 def owner_auth_headers(api_client_context) -> Dict[str, str]:
     _seed_user("share-owner-id", "share_owner", "share_owner@example.com")
-    return _make_auth_headers("share-owner-id", "share_owner", "share_owner@example.com")
+    return _make_auth_headers(
+        "share-owner-id", "share_owner", "share_owner@example.com"
+    )
 
 
 @pytest.fixture

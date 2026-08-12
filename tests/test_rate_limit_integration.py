@@ -218,9 +218,7 @@ class TestKeyFunctionJwtDecode:
         headers = _auth_headers("sub-xyz", "subuser")
         scope = {
             "type": "http",
-            "headers": [
-                (k.lower().encode(), v.encode()) for k, v in headers.items()
-            ],
+            "headers": [(k.lower().encode(), v.encode()) for k, v in headers.items()],
             "state": {},
             "client": ("127.0.0.1", 0),
         }

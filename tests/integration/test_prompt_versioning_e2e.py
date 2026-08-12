@@ -181,9 +181,7 @@ class TestSemanticVersionInVersionHistory:
         finally:
             session.close()
 
-        resp = client.get(
-            f"/api/prompts/{prompt_id}/versions", headers=auth_headers
-        )
+        resp = client.get(f"/api/prompts/{prompt_id}/versions", headers=auth_headers)
         assert resp.status_code == 200
         versions = resp.json()["versions"]
         assert len(versions) == 2

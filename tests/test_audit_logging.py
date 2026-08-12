@@ -27,7 +27,9 @@ def _read_audit_events(log_dir: Path):
     return events
 
 
-def test_prompt_creation_emits_audit_record(tmp_path, db_data_service, sample_prompt_data):
+def test_prompt_creation_emits_audit_record(
+    tmp_path, db_data_service, sample_prompt_data
+):
     log_dir = configure_logging(tmp_path)
 
     prompt_id = db_data_service.add_new_prompt(sample_prompt_data(title="Audit Prompt"))

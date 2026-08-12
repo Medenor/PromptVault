@@ -49,6 +49,7 @@ def _visibility_scope(user: Optional[User]) -> Optional[str]:
         return None
     return user.id
 
+
 # Configure logging
 logger = logging.getLogger(__name__)
 
