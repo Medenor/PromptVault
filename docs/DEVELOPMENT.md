@@ -73,10 +73,10 @@ Override ports: `BACKEND_PORT=9000 make dev` or `FRONTEND_PORT=3000 make dev`.
 
 | Target          | Description                                                                              |
 | --------------- | ---------------------------------------------------------------------------------------- |
-| `lint`          | Check backend (Black + import sanity) and frontend (ESLint + tsc + Prettier). Read-only. |
-| `lint-backend`  | `black --check src tests` + `pytest --collect-only -q`.                                  |
+| `lint`          | Check backend (Black + ruff + import sanity) and frontend (ESLint + tsc + Prettier). Read-only. |
+| `lint-backend`  | `black --check src tests` + `ruff check src tests` + `pytest --collect-only -q`.          |
 | `lint-frontend` | `npm run lint` + `npm run typecheck` + `npm run format:check`.                           |
-| `lint-fix`      | Auto-fix: `black src tests` + `npm run lint:fix` + `npm run format`.                     |
+| `lint-fix`      | Auto-fix: `black src tests` + `ruff check --fix src tests` + `npm run lint:fix` + `npm run format`. |
 
 ### Production Build (US4)
 
