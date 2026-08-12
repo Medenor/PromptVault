@@ -207,3 +207,85 @@ class TestSortPrecedenceAndPagination:
         total = repo.count(query="doohickey")
 
         assert total == len(results) == 4
+
+
+class TestFallbackSanitizationAndPhrases:
+    """T024: case-sensitive behavior/pagination, operator-only fallback, quoted phrases."""
+
+    def test_case_sensitive_matching_unchanged(self, fts_dialect_matrix: Session):
+        session = fts_dialect_matrix
+        user = _make_user(session)
+        category = _make_category(session)
+
+        exact_case = _make_prompt(session, user, category, title="Widget", prompt="Gadget content")
+        wrong_case = _make_prompt(session, user, category, title="widget", prompt="gadget content")
+        session.commit()
+
+        repo = PromptRepository(session)
+        results = repo.search(query="Gadget", case_sensitive=True)
+        result_ids = {p.id for p, _ in results}
+
+        assert result_ids == {exact_case.id}
+        assert wrong_case.id not in result_ids
+        assert all(context is None for _, context in results)
+
+    def test_case_sensitive_pagination_no_duplicates_or_skips(self, fts_dialect_matrix: Session):
+        session = fts_dialect_matrix
+        user = _make_user(session)
+        category = _make_category(session)
+
+        created = [
+            _make_prompt(session, user, category, title=f"Sprocket {i}", prompt="Sprocket body")
+            for i in range(5)
+        ]
+        # Distractor with the wrong case: must never appear in case-sensitive results.
+        _make_prompt(session, user, category, title="sprocket lower", prompt="sprocket body")
+        session.commit()
+
+        repo = PromptRepository(session)
+        page1 = repo.search(query="Sprocket", case_sensitive=True, limit=2, offset=0)
+        page2 = repo.search(query="Sprocket", case_sensitive=True, limit=2, offset=2)
+        page3 = repo.search(query="Sprocket", case_sensitive=True, limit=2, offset=4)
+
+        all_ids = [p.id for p, _ in page1] + [p.id for p, _ in page2] + [p.id for p, _ in page3]
+        assert len(all_ids) == len(set(all_ids)) == 5
+        assert set(all_ids) == {p.id for p in created}
+
+        total = repo.count(query="Sprocket", case_sensitive=True)
+        assert total == 5
+
+    def test_operator_only_query_falls_back_without_error(self, fts_dialect_matrix: Session):
+        session = fts_dialect_matrix
+        user = _make_user(session)
+        category = _make_category(session)
+
+        _make_prompt(session, user, category, title="Anything", prompt="body text")
+        session.commit()
+
+        repo = PromptRepository(session)
+        # Punctuation/operator-only input sanitizes to empty (FR-011); must not raise.
+        results = repo.search(query='*** :: -- "" ()')
+        total = repo.count(query='*** :: -- "" ()')
+
+        assert results == []
+        assert total == 0
+
+    def test_quoted_phrase_matches_as_a_unit(self, fts_dialect_matrix: Session):
+        session = fts_dialect_matrix
+        user = _make_user(session)
+        category = _make_category(session)
+
+        phrase_hit = _make_prompt(
+            session, user, category, title="Doc", prompt="please quick brown fox jumps"
+        )
+        words_out_of_order = _make_prompt(
+            session, user, category, title="Doc2", prompt="a fox that is brown and quick"
+        )
+        session.commit()
+
+        repo = PromptRepository(session)
+        results = repo.search(query='"quick brown fox"')
+        result_ids = {p.id for p, _ in results}
+
+        assert phrase_hit.id in result_ids
+        assert words_out_of_order.id not in result_ids
