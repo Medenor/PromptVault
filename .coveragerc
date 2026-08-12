@@ -9,6 +9,10 @@ omit =
     */db/health.py
     # Response model shims
     */web/models/prompt_responses.py
+    # Non-Python assets under src (coverage.py's ast-based HTML reporter
+    # crashes if these are treated as measured source files)
+    */templates/*
+    */static/*
 
 [report]
 exclude_lines =
