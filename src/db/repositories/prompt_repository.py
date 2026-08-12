@@ -17,7 +17,13 @@ from sqlalchemy.exc import OperationalError, ProgrammingError
 
 from src.db.models import Prompt, PromptShare, Tag, Category, PromptBranch
 from src.db.repositories.base import BaseRepository
-from src.db.search.fts import active_dialect, sanitize_fts_query, fts5_snippet_args, ts_headline_options
+from src.db.search.fts import (
+    MATCH_START,
+    active_dialect,
+    sanitize_fts_query,
+    fts5_snippet_args,
+    ts_headline_options,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -132,7 +138,11 @@ class PromptRepository(BaseRepository[Prompt]):
                 },
             )
             for row in rows:
-                matches[row.id] = (row.rank, row.snippet)
+                # snippet() always returns an excerpt of the body column even
+                # when the match was only in title/note; only surface it as
+                # match_context when it actually contains a highlighted hit.
+                snippet = row.snippet if row.snippet and MATCH_START in row.snippet else None
+                matches[row.id] = (row.rank, snippet)
             return matches
 
         if dialect == "postgresql":
@@ -153,9 +163,13 @@ class PromptRepository(BaseRepository[Prompt]):
                 {"tsquery": tsquery, "headline_opts": ts_headline_options()},
             )
             for row in rows:
+                # ts_headline always returns an excerpt of the body column
+                # even when the match was only in title/note; only surface
+                # it when it actually contains a highlighted hit.
+                snippet = row.snippet if row.snippet and MATCH_START in row.snippet else None
                 # ts_rank is higher-is-better; negate so both dialects sort
                 # ascending by "rank" (lower = more relevant) downstream.
-                matches[row.id] = (-row.rank, row.snippet)
+                matches[row.id] = (-row.rank, snippet)
             return matches
 
         return None

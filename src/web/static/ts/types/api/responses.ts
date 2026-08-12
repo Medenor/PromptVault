@@ -116,6 +116,12 @@ export interface PromptResponse {
   shared?: boolean;
   legacy_public?: boolean;
   permission?: 'owner' | 'edit' | 'read' | null;
+  /**
+   * Ranked-search snippet with [[MATCH]]/[[/MATCH]] sentinels around hits
+   * (008-full-text-search, US2). Present only on search results with a body
+   * match; absent otherwise.
+   */
+  match_context?: string;
 }
 
 // ============================================
