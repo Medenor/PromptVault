@@ -7,7 +7,10 @@
 Stores per-system encryption configuration metadata. Never stores the passphrase.
 """
 
-from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text
+from datetime import datetime
+
+from sqlalchemy import DateTime, String, Text
+from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import func
 
 from src.db.base import Base
@@ -34,23 +37,27 @@ class EncryptionKeyConfig(Base):
 
     __tablename__ = "encryption_key_configs"
 
-    id = Column(String(36), primary_key=True)
-    is_enabled = Column(Boolean, nullable=False, default=False)
-    algorithm = Column(String(20), nullable=False, default="AES-256-GCM")
-    kdf = Column(String(20), nullable=False, default="argon2id")
-    kdf_time_cost = Column(Integer, nullable=False, default=3)
-    kdf_memory_cost = Column(Integer, nullable=False, default=65536)
-    kdf_parallelism = Column(Integer, nullable=False, default=1)
-    key_version = Column(Integer, nullable=False, default=1)
-    rotated_at = Column(DateTime(timezone=True), nullable=True)
-    created_at = Column(
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    is_enabled: Mapped[bool] = mapped_column(nullable=False, default=False)
+    algorithm: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="AES-256-GCM"
+    )
+    kdf: Mapped[str] = mapped_column(String(20), nullable=False, default="argon2id")
+    kdf_time_cost: Mapped[int] = mapped_column(nullable=False, default=3)
+    kdf_memory_cost: Mapped[int] = mapped_column(nullable=False, default=65536)
+    kdf_parallelism: Mapped[int] = mapped_column(nullable=False, default=1)
+    key_version: Mapped[int] = mapped_column(nullable=False, default=1)
+    rotated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
     # Stored sentinel for passphrase verification during key rotation.
     # Encrypted with the active passphrase; never contains the passphrase itself.
-    verification_salt = Column(String(32), nullable=True)
-    verification_nonce = Column(String(24), nullable=True)
-    verification_ciphertext = Column(Text, nullable=True)
+    verification_salt: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    verification_nonce: Mapped[str | None] = mapped_column(String(24), nullable=True)
+    verification_ciphertext: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     def __repr__(self):
         return f"<EncryptionKeyConfig(id='{self.id[:8]}...', enabled={self.is_enabled}, version={self.key_version})>"

@@ -609,8 +609,8 @@ class PasswordService:
                 "Avoid repeating the same character multiple times",
             ),
         ]
-        for triggered, message in pattern_rules:
-            if triggered:
+        for match, message in pattern_rules:
+            if match:
                 feedback.append(message)
 
         return {

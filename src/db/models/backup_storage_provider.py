@@ -7,11 +7,17 @@
 Tracks cloud storage provider configurations for backup upload/download.
 """
 
-from sqlalchemy import Boolean, Column, DateTime, String, Text
-from sqlalchemy.orm import relationship
+from datetime import datetime
+from typing import TYPE_CHECKING
+
+from sqlalchemy import DateTime, String, Text
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
 from src.db.base import Base
+
+if TYPE_CHECKING:
+    from src.db.models.backup import Backup
 
 
 class BackupStorageProvider(Base):
@@ -36,22 +42,22 @@ class BackupStorageProvider(Base):
 
     __tablename__ = "backup_storage_providers"
 
-    id = Column(String(36), primary_key=True)
-    name = Column(String(100), nullable=False)
-    provider_type = Column(String(20), nullable=False)
-    endpoint_url = Column(Text, nullable=True)
-    bucket_name = Column(String(255), nullable=False)
-    prefix = Column(String(512), nullable=True, default="")
-    region = Column(String(50), nullable=True)
-    credentials_encrypted = Column(Text, nullable=False)
-    credentials_salt = Column(String(32), nullable=False)
-    credentials_nonce = Column(String(24), nullable=False)
-    enabled = Column(Boolean, nullable=False, default=True)
-    created_at = Column(
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    provider_type: Mapped[str] = mapped_column(String(20), nullable=False)
+    endpoint_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    bucket_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    prefix: Mapped[str | None] = mapped_column(String(512), nullable=True, default="")
+    region: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    credentials_encrypted: Mapped[str] = mapped_column(Text, nullable=False)
+    credentials_salt: Mapped[str] = mapped_column(String(32), nullable=False)
+    credentials_nonce: Mapped[str] = mapped_column(String(24), nullable=False)
+    enabled: Mapped[bool] = mapped_column(nullable=False, default=True)
+    created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
 
-    backups = relationship(
+    backups: Mapped[list["Backup"]] = relationship(
         "Backup",
         back_populates="storage_provider",
         foreign_keys="Backup.cloud_provider_id",

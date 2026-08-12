@@ -7,6 +7,7 @@ DumpStrategy, then records its metadata (and optionally encrypts it)."""
 
 import os
 from datetime import UTC, datetime
+from typing import Any
 
 from src.db.models.prompt import Prompt
 from src.db.session import get_db_session
@@ -64,7 +65,7 @@ class BackupCreationService:
             created_by_name = created_by or get_current_user()
             timestamp = datetime.now(UTC).isoformat()
 
-            metadata = {
+            metadata: dict[str, Any] = {
                 "backup_id": backup_id,
                 "backup_type": backup_type,
                 "backup_kind": backup_kind,

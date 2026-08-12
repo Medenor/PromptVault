@@ -52,6 +52,8 @@ Environment Variables:
 import logging
 import os
 import time
+from collections.abc import Callable
+from typing import Any
 
 from fastapi import Request, Response
 from redis import Redis
@@ -330,17 +332,18 @@ class DynamicLimiter:
         """Check if rate limiting is disabled."""
         return is_rate_limiting_disabled()
 
-    def limit(self, limit_string: str):
+    def limit(self, limit_string: str | Callable[..., str]):
         """Decorator for rate limiting that respects DISABLE_RATE_LIMITING.
 
         Args:
-            limit_string: Rate limit string (e.g., "5/minute")
+            limit_string: Rate limit string (e.g., "5/minute") or a callable
+                returning one, as accepted by slowapi's Limiter.limit.
 
         Returns:
             Decorator function
         """
 
-        def decorator(func):
+        def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
             if self._is_disabled():
                 # If rate limiting is disabled, return the function unchanged
                 return func
@@ -350,7 +353,7 @@ class DynamicLimiter:
 
         return decorator
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> Any:
         """Proxy other attributes to the actual limiter."""
         return getattr(self._actual_limiter, name)
 

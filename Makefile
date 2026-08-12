@@ -183,9 +183,10 @@ test: ## Run all test suites (backend + frontend) with coverage gates
 # US3 — Lint and Format
 # ==============================================================================
 
-lint-backend: ## Check backend formatting (black --check) + lint (ruff) + import sanity + no print()
+lint-backend: ## Check backend formatting (black --check) + lint (ruff) + typecheck (mypy) + import sanity + no print()
 	$(PYTHON) -m black --check src tests
 	$(PYTHON) -m ruff check src tests
+	$(PYTHON) -m mypy src
 	$(PYTEST) --collect-only -q
 	@if rg -n "print\(" src run_web.py; then \
 		echo "Error: print() calls are not allowed in src/ or run_web.py — use the structured logger instead."; \

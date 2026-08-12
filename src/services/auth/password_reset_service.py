@@ -301,6 +301,7 @@ class PasswordResetService:
             # Check if token has expired
             now = datetime.now(UTC)
             expires_at = self._ensure_tz_aware(token_record.expires_at)
+            assert expires_at is not None
             if expires_at < now:
                 logger.warning(
                     "Expired password reset token used",
@@ -398,6 +399,7 @@ class PasswordResetService:
         # Check expiration
         now = datetime.now(UTC)
         expires_at = self._ensure_tz_aware(token_record.expires_at)
+        assert expires_at is not None
         if expires_at < now:
             logger.warning(
                 "Password reset attempted with expired token",

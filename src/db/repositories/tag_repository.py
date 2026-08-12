@@ -8,7 +8,10 @@ This module provides data access layer for Tag model with
 lookup and management operations.
 """
 
-from sqlalchemy import func
+from collections.abc import Sequence
+from typing import Any
+
+from sqlalchemy import Row, func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -74,7 +77,10 @@ class TagRepository(BaseRepository[Tag]):
         except IntegrityError:
             # Race condition: another transaction created it
             self.session.rollback()
-            return self.get_by_name(name)
+            tag = self.get_by_name(name)
+            if tag is None:
+                raise
+            return tag
 
     def get_by_names(self, names: list[str]) -> list[Tag]:
         """Get multiple tags by name.
@@ -102,7 +108,7 @@ class TagRepository(BaseRepository[Tag]):
             tags.append(tag)
         return tags
 
-    def list_all_with_counts(self) -> list[tuple]:
+    def list_all_with_counts(self) -> Sequence[Row[Any]]:
         """Get all tags with usage counts.
 
         Returns:
@@ -122,7 +128,7 @@ class TagRepository(BaseRepository[Tag]):
 
         return results
 
-    def get_popular_tags(self, limit: int = 10) -> list[tuple]:
+    def get_popular_tags(self, limit: int = 10) -> Sequence[Row[Any]]:
         """Get most popular tags by usage count.
 
         Args:
@@ -201,7 +207,7 @@ class TagRepository(BaseRepository[Tag]):
         )
         return [row[0] for row in results]
 
-    def get_orphan_prompts(self) -> list[tuple]:
+    def get_orphan_prompts(self) -> Sequence[Row[Any]]:
         """Return (id, title) tuples for prompts with no tags assigned."""
         from src.db.models.associations import prompt_tags
 

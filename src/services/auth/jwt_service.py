@@ -220,7 +220,7 @@ class JWTService:
         username: str,
         email: str,
         role: str,
-        family_id: str = None,
+        family_id: str | None = None,
     ) -> str:
         """Generate JWT access token with user claims.
 

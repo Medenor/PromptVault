@@ -21,6 +21,8 @@ Data access goes through the module-level ``data_service`` global on
 routers), so test fixtures that reconfigure services at runtime are honored.
 """
 
+from typing import Any
+
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
@@ -138,8 +140,8 @@ async def get_version_history(
 @router.get("/{prompt_id}/versions/compare")
 async def compare_versions(
     prompt_id: str,
-    v1: str = None,
-    v2: str = None,
+    v1: str | None = None,
+    v2: str | None = None,
     user: User | None = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
@@ -181,7 +183,7 @@ async def compare_versions(
     data1 = version1.get("data", {})
     data2 = version2.get("data", {})
 
-    diff = {"v1_id": v1, "v2_id": v2, "changes": {}}
+    diff: dict[str, Any] = {"v1_id": v1, "v2_id": v2, "changes": {}}
 
     # String fields that get character-level diffs
     string_fields = ["title", "prompt", "note"]

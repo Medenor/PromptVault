@@ -25,6 +25,7 @@ Example:
 """
 
 import logging
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +46,7 @@ class UserAgentParser:
     """
 
     @staticmethod
-    def parse_user_agent(user_agent: str | None) -> dict[str, any]:
+    def parse_user_agent(user_agent: str | None) -> dict[str, Any]:
         """Parse User-Agent string et extrait les informations.
 
         Args:

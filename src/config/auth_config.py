@@ -63,8 +63,8 @@ Example:
 
 from pathlib import Path
 
-from pydantic import ConfigDict, Field, field_validator
-from pydantic_settings import BaseSettings
+from pydantic import Field, field_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class AuthConfig(BaseSettings):
@@ -314,7 +314,7 @@ class AuthConfig(BaseSettings):
         default=100, gt=0, description="Number of expired sessions to cleanup per batch"
     )
 
-    model_config = ConfigDict(
+    model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
         case_sensitive=False,  # Allow case-insensitive env var matching

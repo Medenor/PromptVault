@@ -8,10 +8,16 @@ This model implements Git-like branching for prompt version control.
 Each prompt can have multiple branches pointing to different versions.
 """
 
-from sqlalchemy import Column, ForeignKey, Integer, String, UniqueConstraint
-from sqlalchemy.orm import relationship
+from typing import TYPE_CHECKING
+
+from sqlalchemy import ForeignKey, String, UniqueConstraint
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.db.base import Base
+
+if TYPE_CHECKING:
+    from src.db.models.prompt import Prompt
+    from src.db.models.prompt_version import PromptVersion
 
 
 class PromptBranch(Base):
@@ -31,16 +37,20 @@ class PromptBranch(Base):
 
     __tablename__ = "prompt_branches"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    prompt_id = Column(
-        Integer, ForeignKey("prompts.id", ondelete="CASCADE"), nullable=False
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    prompt_id: Mapped[int] = mapped_column(
+        ForeignKey("prompts.id", ondelete="CASCADE"), nullable=False
     )
-    branch_name = Column(String(50), nullable=False, default="main")
-    current_version_id = Column(String(36), ForeignKey("prompt_versions.version_id"))
+    branch_name: Mapped[str] = mapped_column(String(50), nullable=False, default="main")
+    current_version_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("prompt_versions.version_id")
+    )
 
     # Relationships
-    prompt = relationship("Prompt", back_populates="branches")
-    current_version = relationship("PromptVersion", foreign_keys=[current_version_id])
+    prompt: Mapped["Prompt"] = relationship("Prompt", back_populates="branches")
+    current_version: Mapped["PromptVersion | None"] = relationship(
+        "PromptVersion", foreign_keys=[current_version_id]
+    )
 
     # Unique constraint: one branch name per prompt
     __table_args__ = (

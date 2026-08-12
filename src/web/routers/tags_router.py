@@ -78,7 +78,7 @@ def _is_descendant(
 ) -> bool:
     """Return True if potential_parent_id is a descendant of tag_id."""
     seen = set()
-    current_id = potential_parent_id
+    current_id: int | None = potential_parent_id
     while current_id is not None and current_id not in seen:
         seen.add(current_id)
         if current_id == tag_id:
@@ -535,7 +535,7 @@ async def tag_analytics(
         from src.db.models import Prompt
 
         prompts = db.query(Prompt).options(joinedload(Prompt.tags)).all()
-        pair_counts = {}
+        pair_counts: dict[tuple[str, str], int] = {}
         for prompt in prompts:
             tag_names = sorted({tag.name for tag in prompt.tags})
             for i, tag_a in enumerate(tag_names):

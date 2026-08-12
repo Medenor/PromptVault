@@ -59,7 +59,7 @@ class PromptDataService:
     - IDs are managed by database sequences (except during migration)
     """
 
-    def __init__(self, data_file_path: str = None):
+    def __init__(self, data_file_path: str | None = None):
         """Initialize the PromptDataService.
 
         Args:
@@ -77,7 +77,7 @@ class PromptDataService:
         self.data_file = data_file_path
 
         # Cache properties (populated from database)
-        self._prompts_cache = None
+        self._prompts_cache: dict[int, dict[str, Any]] | None = None
         self._categories_cache = None
         self._tags_cache = None
 

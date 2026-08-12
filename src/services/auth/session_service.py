@@ -14,6 +14,7 @@ Security Features:
 """
 
 import logging
+from typing import Any
 
 from sqlalchemy.orm import Session
 
@@ -100,7 +101,7 @@ class SessionService:
 
     def get_user_sessions(
         self, user_id: str, current_family_id: str | None = None
-    ) -> list[dict[str, any]]:
+    ) -> list[dict[str, Any]]:
         """Get all active sessions for a user.
 
         Args:
@@ -132,7 +133,9 @@ class SessionService:
                 "user_agent": session.device_info,
                 "device_info": getattr(session, "device_info", None),
                 "ip_address": session.ip_address,
-                "created_at": session.created_at.isoformat(),
+                "created_at": (
+                    session.created_at.isoformat() if session.created_at else None
+                ),
                 "last_used_at": (
                     session.last_used_at.isoformat() if session.last_used_at else None
                 ),

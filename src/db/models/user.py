@@ -9,12 +9,20 @@ and authorization support, including JWT-based authentication and RBAC.
 """
 
 import uuid
+from datetime import datetime
+from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, Column, DateTime, Integer, String
-from sqlalchemy.orm import relationship
+from sqlalchemy import DateTime, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
 from src.db.base import Base
+
+if TYPE_CHECKING:
+    from src.db.models.password_reset_token import PasswordResetToken
+    from src.db.models.prompt import Prompt
+    from src.db.models.prompt_share import PromptShare
+    from src.db.models.user_session import UserSession
 
 
 class User(Base):
@@ -41,36 +49,50 @@ class User(Base):
     __tablename__ = "users"
 
     # Use UUID for PostgreSQL, String for SQLite compatibility
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    username = Column(String(100), unique=True, nullable=False, index=True)
-    display_name = Column(String(200))
-    email = Column(String(255), unique=True, nullable=False, index=True)
-    password_hash = Column(String(255), nullable=False)
-    role = Column(String(50), default="viewer")
+    id: Mapped[str] = mapped_column(
+        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
+    )
+    username: Mapped[str] = mapped_column(
+        String(100), unique=True, nullable=False, index=True
+    )
+    display_name: Mapped[str | None] = mapped_column(String(200))
+    email: Mapped[str] = mapped_column(
+        String(255), unique=True, nullable=False, index=True
+    )
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    role: Mapped[str | None] = mapped_column(String(50), default="viewer")
 
     # Authentication and security fields
-    email_verified = Column(Boolean, default=False)
-    is_active = Column(Boolean, default=True)
-    last_login = Column(DateTime(timezone=True), nullable=True)
-    failed_login_attempts = Column(Integer, default=0)
-    locked_until = Column(DateTime(timezone=True), nullable=True)
-    password_changed_at = Column(DateTime(timezone=True), server_default=func.now())
+    email_verified: Mapped[bool | None] = mapped_column(default=False)
+    is_active: Mapped[bool | None] = mapped_column(default=True)
+    last_login: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    failed_login_attempts: Mapped[int | None] = mapped_column(default=0)
+    locked_until: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    password_changed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
 
     # Timestamps
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(
+    created_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
 
     # Relationships
-    prompts = relationship("Prompt", back_populates="user")
-    sessions = relationship(
+    prompts: Mapped[list["Prompt"]] = relationship("Prompt", back_populates="user")
+    sessions: Mapped[list["UserSession"]] = relationship(
         "UserSession", back_populates="user", cascade="all, delete-orphan"
     )
-    password_reset_tokens = relationship(
+    password_reset_tokens: Mapped[list["PasswordResetToken"]] = relationship(
         "PasswordResetToken", back_populates="user", cascade="all, delete-orphan"
     )
-    received_shares = relationship(
+    received_shares: Mapped[list["PromptShare"]] = relationship(
         "PromptShare",
         foreign_keys="PromptShare.grantee_user_id",
         back_populates="grantee",

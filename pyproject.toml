@@ -96,15 +96,17 @@ ignore = [
     "E712",  # `== True`/`== False` is required (not `is`) for SQLAlchemy column filter expressions
     "UP046", # PEP 695 generic syntax: skip for now, ModelType TypeVar is shared across repository subclasses
     "B017",  # pytest.raises(Exception) is broad but narrowing requires per-call domain knowledge; future cleanup
+    "UP037", # Mapped["X"] quotes are load-bearing: X is only imported under TYPE_CHECKING (no
+             # `from __future__ import annotations`), and Mapped[] is evaluated at class-body time.
 ]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["F811"]  # pytest fixture redefinition/shadowing is idiomatic
 
-# Not yet wired into `make lint-backend` (see #79 follow-up: SQLAlchemy models
-# use legacy Column() declarative style, which produces ~350 false-positive
-# arg-type/assignment/union-attr errors against Mapped[T]-shaped expectations;
-# needs a model migration to Mapped[T] before mypy can gate CI meaningfully).
+# Wired into `make lint-backend` (see #82: SQLAlchemy models migrated from
+# legacy Column() declarative style to Mapped[T]/mapped_column(), eliminating
+# the ~350 false-positive arg-type/assignment/union-attr errors that blocked
+# gating mypy in CI).
 [tool.mypy]
 python_version = "3.14"
 plugins = ["sqlalchemy.ext.mypy.plugin"]

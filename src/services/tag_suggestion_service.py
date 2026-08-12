@@ -89,7 +89,7 @@ _SYNONYMS = {
     "final": {"finale"},
 }
 
-_REVERSE_SYNONYMS = {}
+_REVERSE_SYNONYMS: dict[str, set[str]] = {}
 for key, values in _SYNONYMS.items():
     for value in values:
         _REVERSE_SYNONYMS.setdefault(value, set()).add(key)

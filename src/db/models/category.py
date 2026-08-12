@@ -8,11 +8,17 @@ Categories provide organizational grouping for prompts.
 Each category has a unique name and optional description.
 """
 
-from sqlalchemy import Column, DateTime, Index, Integer, String, Text
-from sqlalchemy.orm import relationship
+from datetime import datetime
+from typing import TYPE_CHECKING
+
+from sqlalchemy import DateTime, Index, String, Text
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
 from src.db.base import Base
+
+if TYPE_CHECKING:
+    from src.db.models.prompt import Prompt
 
 
 class Category(Base):
@@ -31,18 +37,22 @@ class Category(Base):
 
     __tablename__ = "categories"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(String(100), unique=True, nullable=False, index=True)
-    description = Column(Text)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(
+        String(100), unique=True, nullable=False, index=True
+    )
+    description: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
-    color = Column(String(20))
-    sort_order = Column(Integer)
+    color: Mapped[str | None] = mapped_column(String(20))
+    sort_order: Mapped[int | None] = mapped_column()
 
     # Relationships
-    prompts = relationship("Prompt", back_populates="category")
+    prompts: Mapped[list["Prompt"]] = relationship("Prompt", back_populates="category")
 
     __table_args__ = (Index("ix_categories_name_lower", func.lower(name), unique=True),)
 

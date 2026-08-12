@@ -337,6 +337,7 @@ class BackupMetadataStore:
                 backup = session.query(Backup).filter_by(id=backup_id).first()
                 metadata = None
 
+                storage_path: str | None
                 if backup:
                     metadata = backup.backup_metadata or {}
                     storage_path = backup.storage_path
