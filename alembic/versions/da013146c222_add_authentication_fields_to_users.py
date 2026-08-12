@@ -25,7 +25,8 @@ depends_on: Union[str, Sequence[str], None] = None
 def upgrade() -> None:
     """Upgrade schema."""
     bind = op.get_bind()
-    
+    dialect = bind.dialect.name
+
     # Create password_reset_tokens table if it doesn't exist
     inspector = sa.inspect(bind)
 
@@ -70,13 +71,16 @@ def upgrade() -> None:
         op.create_index('ix_user_sessions_user_active', 'user_sessions', ['user_id', 'is_revoked'], unique=False)
         op.create_index(op.f('ix_user_sessions_user_id'), 'user_sessions', ['user_id'], unique=False)
 
-    # Handle constraint drop for prompt_versions using raw PostgreSQL SQL
-    # Drop dependent foreign key constraints first
-    op.execute('ALTER TABLE prompt_versions DROP CONSTRAINT IF EXISTS fk_prompt_versions_parent_version_id_prompt_versions CASCADE')
-    op.execute('ALTER TABLE prompt_branches DROP CONSTRAINT IF EXISTS fk_prompt_branches_current_version_id_prompt_versions CASCADE')
-    # Now drop the unique constraint and create index instead
-    op.execute('ALTER TABLE prompt_versions DROP CONSTRAINT IF EXISTS uq_version_id CASCADE')
-    op.execute('CREATE UNIQUE INDEX IF NOT EXISTS ix_prompt_versions_version_id ON prompt_versions(version_id)   ')
+    # Handle constraint drop for prompt_versions (PostgreSQL only — these
+    # tables/constraints only exist on pre-existing Postgres deployments at
+    # this point in the chain; a fresh SQLite install has neither yet).
+    if dialect != 'sqlite':
+        # Drop dependent foreign key constraints first
+        op.execute('ALTER TABLE prompt_versions DROP CONSTRAINT IF EXISTS fk_prompt_versions_parent_version_id_prompt_versions CASCADE')
+        op.execute('ALTER TABLE prompt_branches DROP CONSTRAINT IF EXISTS fk_prompt_branches_current_version_id_prompt_versions CASCADE')
+        # Now drop the unique constraint and create index instead
+        op.execute('ALTER TABLE prompt_versions DROP CONSTRAINT IF EXISTS uq_version_id CASCADE')
+        op.execute('CREATE UNIQUE INDEX IF NOT EXISTS ix_prompt_versions_version_id ON prompt_versions(version_id)   ')
 
     # Update existing NULL emails before making email NOT NULL
     # Set a placeholder email for system/service accounts
@@ -88,47 +92,81 @@ def upgrade() -> None:
         """
     )
 
-    # Add authentication fields to users table using raw SQL for PostgreSQL
-    op.execute('ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash VARCHAR(255)')
-    op.execute('ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT false')
-    op.execute('ALTER TABLE users ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true')
-    op.execute('ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login TIMESTAMP WITH TIME ZONE')
-    op.execute('ALTER TABLE users ADD COLUMN IF NOT EXISTS failed_login_attempts INTEGER DEFAULT 0')
-    op.execute('ALTER TABLE users ADD COLUMN IF NOT EXISTS locked_until TIMESTAMP WITH TIME ZONE')
-    op.execute('ALTER TABLE users ADD COLUMN IF NOT EXISTS password_changed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP')
-    op.execute('ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP')
-    
-    # Alter email column to be not nullable and add indexes
-    op.execute('ALTER TABLE users ALTER COLUMN email SET NOT NULL')
-    op.execute('CREATE UNIQUE INDEX IF NOT EXISTS ix_users_email ON users(email)')
-    op.execute('CREATE INDEX IF NOT EXISTS ix_users_is_active ON users(is_active)')
-    op.execute('CREATE INDEX IF NOT EXISTS ix_users_email_verified ON users(email_verified)')
+    if dialect == 'sqlite':
+        with op.batch_alter_table('users') as batch_op:
+            batch_op.add_column(sa.Column('password_hash', sa.String(length=255), nullable=True))
+            batch_op.add_column(sa.Column('email_verified', sa.Boolean(), server_default=sa.false(), nullable=True))
+            batch_op.add_column(sa.Column('is_active', sa.Boolean(), server_default=sa.true(), nullable=True))
+            batch_op.add_column(sa.Column('last_login', sa.DateTime(timezone=True), nullable=True))
+            batch_op.add_column(sa.Column('failed_login_attempts', sa.Integer(), server_default='0', nullable=True))
+            batch_op.add_column(sa.Column('locked_until', sa.DateTime(timezone=True), nullable=True))
+            batch_op.add_column(sa.Column('password_changed_at', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True))
+            batch_op.add_column(sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True))
+            batch_op.alter_column('email', existing_type=sa.String(length=255), nullable=False)
+
+        op.create_index(op.f('ix_users_email'), 'users', ['email'], unique=True)
+        op.create_index(op.f('ix_users_is_active'), 'users', ['is_active'], unique=False)
+        op.create_index(op.f('ix_users_email_verified'), 'users', ['email_verified'], unique=False)
+    else:
+        # Add authentication fields to users table using raw SQL for PostgreSQL
+        op.execute('ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash VARCHAR(255)')
+        op.execute('ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT false')
+        op.execute('ALTER TABLE users ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true')
+        op.execute('ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login TIMESTAMP WITH TIME ZONE')
+        op.execute('ALTER TABLE users ADD COLUMN IF NOT EXISTS failed_login_attempts INTEGER DEFAULT 0')
+        op.execute('ALTER TABLE users ADD COLUMN IF NOT EXISTS locked_until TIMESTAMP WITH TIME ZONE')
+        op.execute('ALTER TABLE users ADD COLUMN IF NOT EXISTS password_changed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP')
+        op.execute('ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP')
+
+        # Alter email column to be not nullable and add indexes
+        op.execute('ALTER TABLE users ALTER COLUMN email SET NOT NULL')
+        op.execute('CREATE UNIQUE INDEX IF NOT EXISTS ix_users_email ON users(email)')
+        op.execute('CREATE INDEX IF NOT EXISTS ix_users_is_active ON users(is_active)')
+        op.execute('CREATE INDEX IF NOT EXISTS ix_users_email_verified ON users(email_verified)')
 
 
 def downgrade() -> None:
     """Downgrade schema."""
-    # Drop authentication fields from users table using raw SQL
-    op.execute('ALTER TABLE users DROP INDEX IF EXISTS ix_users_email_verified')
-    op.execute('ALTER TABLE users DROP INDEX IF EXISTS ix_users_is_active')
-    op.execute('ALTER TABLE users DROP INDEX IF EXISTS ix_users_email')
-    
-    op.execute('ALTER TABLE users ALTER COLUMN email DROP NOT NULL')
-    
-    op.execute('ALTER TABLE users DROP COLUMN IF EXISTS updated_at')
-    op.execute('ALTER TABLE users DROP COLUMN IF EXISTS password_changed_at')
-    op.execute('ALTER TABLE users DROP COLUMN IF EXISTS locked_until')
-    op.execute('ALTER TABLE users DROP COLUMN IF EXISTS failed_login_attempts')
-    op.execute('ALTER TABLE users DROP COLUMN IF EXISTS last_login')
-    op.execute('ALTER TABLE users DROP COLUMN IF EXISTS is_active')
-    op.execute('ALTER TABLE users DROP COLUMN IF EXISTS email_verified')
-    op.execute('ALTER TABLE users DROP COLUMN IF EXISTS password_hash')
+    dialect = op.get_bind().dialect.name
 
-    # Handle constraint recreation for prompt_versions
-    op.execute('ALTER TABLE prompt_versions DROP CONSTRAINT IF EXISTS fk_prompt_versions_parent_version_id_prompt_versions CASCADE')
-    op.execute('ALTER TABLE prompt_branches DROP CONSTRAINT IF EXISTS fk_prompt_branches_current_version_id_prompt_versions CASCADE')
-    op.execute('DROP INDEX IF EXISTS ix_prompt_versions_version_id CASCADE')
-    op.execute('ALTER TABLE prompt_versions ADD CONSTRAINT uq_version_id UNIQUE (version_id)')
-    
+    if dialect == 'sqlite':
+        op.drop_index(op.f('ix_users_email_verified'), table_name='users')
+        op.drop_index(op.f('ix_users_is_active'), table_name='users')
+        op.drop_index(op.f('ix_users_email'), table_name='users')
+
+        with op.batch_alter_table('users') as batch_op:
+            batch_op.alter_column('email', existing_type=sa.String(length=255), nullable=True)
+            batch_op.drop_column('updated_at')
+            batch_op.drop_column('password_changed_at')
+            batch_op.drop_column('locked_until')
+            batch_op.drop_column('failed_login_attempts')
+            batch_op.drop_column('last_login')
+            batch_op.drop_column('is_active')
+            batch_op.drop_column('email_verified')
+            batch_op.drop_column('password_hash')
+    else:
+        # Drop authentication fields from users table using raw SQL
+        op.execute('ALTER TABLE users DROP INDEX IF EXISTS ix_users_email_verified')
+        op.execute('ALTER TABLE users DROP INDEX IF EXISTS ix_users_is_active')
+        op.execute('ALTER TABLE users DROP INDEX IF EXISTS ix_users_email')
+
+        op.execute('ALTER TABLE users ALTER COLUMN email DROP NOT NULL')
+
+        op.execute('ALTER TABLE users DROP COLUMN IF EXISTS updated_at')
+        op.execute('ALTER TABLE users DROP COLUMN IF EXISTS password_changed_at')
+        op.execute('ALTER TABLE users DROP COLUMN IF EXISTS locked_until')
+        op.execute('ALTER TABLE users DROP COLUMN IF EXISTS failed_login_attempts')
+        op.execute('ALTER TABLE users DROP COLUMN IF EXISTS last_login')
+        op.execute('ALTER TABLE users DROP COLUMN IF EXISTS is_active')
+        op.execute('ALTER TABLE users DROP COLUMN IF EXISTS email_verified')
+        op.execute('ALTER TABLE users DROP COLUMN IF EXISTS password_hash')
+
+        # Handle constraint recreation for prompt_versions
+        op.execute('ALTER TABLE prompt_versions DROP CONSTRAINT IF EXISTS fk_prompt_versions_parent_version_id_prompt_versions CASCADE')
+        op.execute('ALTER TABLE prompt_branches DROP CONSTRAINT IF EXISTS fk_prompt_branches_current_version_id_prompt_versions CASCADE')
+        op.execute('DROP INDEX IF EXISTS ix_prompt_versions_version_id CASCADE')
+        op.execute('ALTER TABLE prompt_versions ADD CONSTRAINT uq_version_id UNIQUE (version_id)')
+
     op.drop_index(op.f('ix_user_sessions_user_id'), table_name='user_sessions')
     op.drop_index('ix_user_sessions_user_active', table_name='user_sessions')
     op.drop_index(op.f('ix_user_sessions_refresh_token_jti'), table_name='user_sessions')

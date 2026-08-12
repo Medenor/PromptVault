@@ -48,7 +48,7 @@ def _insert_prompt(engine, title: str, prompt_body: str = "content") -> None:
         conn.execute(
             sa.text(
                 "INSERT INTO prompts (title, prompt, favorite, user_id, legacy_public) "
-                "VALUES (:title, :prompt_body, 0, :user_id, 0)"
+                "VALUES (:title, :prompt_body, false, :user_id, false)"
             ),
             {"title": title, "prompt_body": prompt_body, "user_id": user_id},
         )

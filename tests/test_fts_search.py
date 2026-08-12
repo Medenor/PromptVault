@@ -270,6 +270,22 @@ class TestFallbackSanitizationAndPhrases:
         assert results == []
         assert total == 0
 
+    def test_embedded_operator_char_in_token_does_not_error(self, fts_dialect_matrix: Session):
+        session = fts_dialect_matrix
+        user = _make_user(session)
+        category = _make_category(session)
+
+        _make_prompt(session, user, category, title="Foobar widget", prompt="body text")
+        session.commit()
+
+        repo = PromptRepository(session)
+        # Operator characters embedded mid-token (not just at the edges) must be
+        # stripped before reaching FTS5 MATCH / to_tsquery, per FR-011.
+        results = repo.search(query="foo&bar")
+        total = repo.count(query="foo&bar")
+
+        assert total == len(results)
+
     def test_quoted_phrase_matches_as_a_unit(self, fts_dialect_matrix: Session):
         session = fts_dialect_matrix
         user = _make_user(session)

@@ -63,7 +63,7 @@ class PromptVersion(Base):
     prompt_id = Column(
         Integer, ForeignKey("prompts.id", ondelete="CASCADE"), nullable=False
     )
-    version_id = Column(String(36), unique=True, nullable=False, index=True)
+    version_id = Column(String(36), nullable=False, index=True)
     version_number = Column(Integer, nullable=False)
 
     # Denormalized snapshot data
@@ -98,6 +98,7 @@ class PromptVersion(Base):
         UniqueConstraint(
             "prompt_id", "version_number", name="uq_prompt_version_number"
         ),
+        UniqueConstraint("version_id", name="uq_version_id"),
         Index("idx_versions_prompt", "prompt_id"),
         Index("idx_versions_created", "created_at"),
         Index("idx_versions_parent", "parent_version_id"),

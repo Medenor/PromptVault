@@ -73,7 +73,12 @@ def active_dialect(session: Session) -> str:
 
 
 def _clean_token(token: str) -> str:
-    return token.strip(''.join(_OPERATOR_CHARS))
+    """Strip operator/punctuation characters anywhere in the token, not just
+    at the ends — a mid-token operator (e.g. ``foo&bar``, ``a|b``) would
+    otherwise reach ``to_tsquery``/FTS5 MATCH unescaped and can raise a
+    syntax error there, which FR-011 requires never happens.
+    """
+    return "".join(ch for ch in token if ch not in _OPERATOR_CHARS)
 
 
 def sanitize_fts_query(raw: str | None) -> SafeQuery | None:
