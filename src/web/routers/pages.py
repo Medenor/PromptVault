@@ -59,7 +59,6 @@ from src.web.dependencies.auth import (
 from src.web.utils.manifest import load_manifest, get_asset_path, is_production
 from src.web.utils.version import get_app_version
 
-
 # ============================================================================
 # Router Configuration
 # ============================================================================

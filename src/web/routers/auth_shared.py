@@ -24,7 +24,6 @@ from src.db.repositories.password_reset_token_repository import (
 )
 from src.web.dependencies.auth import get_auth_config
 
-
 # ============================================================================
 # Dependency Injection
 # ============================================================================

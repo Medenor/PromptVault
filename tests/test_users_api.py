@@ -137,7 +137,9 @@ class TestUserSearch:
 
     def test_results_capped_at_ten(self, api_client, searcher_auth_headers):
         for i in range(15):
-            _seed_user(f"search-many-{i}", f"manymatch_{i}", f"manymatch_{i}@example.com")
+            _seed_user(
+                f"search-many-{i}", f"manymatch_{i}", f"manymatch_{i}@example.com"
+            )
 
         response = api_client.get(
             "/api/users/search?q=manymatch", headers=searcher_auth_headers

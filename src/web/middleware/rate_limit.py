@@ -614,7 +614,7 @@ async def rate_limit_exceeded_handler(
                     if "minute" in part and i > 0:
                         try:
                             retry_after = int(parts[i - 1]) * 60
-                        except (ValueError, IndexError):
+                        except ValueError, IndexError:
                             pass
             elif "second" in limit_str:
                 parts = limit_str.split()
@@ -622,7 +622,7 @@ async def rate_limit_exceeded_handler(
                     if "second" in part and i > 0:
                         try:
                             retry_after = int(parts[i - 1])
-                        except (ValueError, IndexError):
+                        except ValueError, IndexError:
                             pass
     except Exception as e:
         logger.warning(f"Failed to calculate retry_after from rate limit: {e}")

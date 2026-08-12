@@ -162,7 +162,9 @@ class TestFTSBenchmark:
         assert len(matched_ids) == expected_hits
         assert elapsed < 1.0, f"FTS query took {elapsed:.3f}s, expected < 1s at 5k rows"
 
-    def test_fts_beats_substring_baseline_with_equal_matches(self, fts_db_session: Session):
+    def test_fts_beats_substring_baseline_with_equal_matches(
+        self, fts_db_session: Session
+    ):
         """SC-002: FTS wall-clock beats ilike on the same data, same matches."""
         session = fts_db_session
         user = _make_user(session)
@@ -181,7 +183,9 @@ class TestFTSBenchmark:
             f"({substring_elapsed:.4f}s) at 5k rows"
         )
 
-    def test_fts_scales_sublinearly_vs_linear_substring_baseline(self, fts_db_session: Session):
+    def test_fts_scales_sublinearly_vs_linear_substring_baseline(
+        self, fts_db_session: Session
+    ):
         """FR-016: FTS latency grows sub-linearly with corpus size; ilike grows ~linearly.
 
         Isolates *lookup* cost from *result-materialization* cost by holding

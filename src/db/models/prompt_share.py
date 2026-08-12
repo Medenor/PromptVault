@@ -48,7 +48,11 @@ class PromptShare(Base):
     )
     grantee_user_id = Column(
         String(36),
-        ForeignKey("users.id", ondelete="CASCADE", name="fk_prompt_shares_grantee_user_id_users"),
+        ForeignKey(
+            "users.id",
+            ondelete="CASCADE",
+            name="fk_prompt_shares_grantee_user_id_users",
+        ),
         nullable=False,
     )
     permission = Column(
@@ -63,10 +67,14 @@ class PromptShare(Base):
     )
     granted_by = Column(
         String(36),
-        ForeignKey("users.id", ondelete="SET NULL", name="fk_prompt_shares_granted_by_users"),
+        ForeignKey(
+            "users.id", ondelete="SET NULL", name="fk_prompt_shares_granted_by_users"
+        ),
         nullable=True,
     )
-    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    created_at = Column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
     updated_at = Column(
         DateTime(timezone=True),
         server_default=func.now(),

@@ -766,7 +766,10 @@ class TestImportEndpoints:
             "Replacement Prompt,Body,,Docs,,No\n"
         )
         self._post_import(
-            api_client, "replace_with_shares.csv", csv_content.encode("utf-8"), mode="replace"
+            api_client,
+            "replace_with_shares.csv",
+            csv_content.encode("utf-8"),
+            mode="replace",
         )
 
         matching = [
@@ -805,7 +808,10 @@ class TestImportEndpoints:
             "Replacement Prompt,Body,,Docs,,No\n"
         )
         self._post_import(
-            api_client, "replace_no_shares.csv", csv_content.encode("utf-8"), mode="replace"
+            api_client,
+            "replace_no_shares.csv",
+            csv_content.encode("utf-8"),
+            mode="replace",
         )
 
         matching = [

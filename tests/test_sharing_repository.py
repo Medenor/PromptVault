@@ -289,7 +289,9 @@ def test_grantee_deactivation_leaves_share_untouched(
 # ---------------------------------------------------------------------------
 
 
-def _make_prompt(session: Session, category, owner_id, title, legacy_public=False, favorite=False):
+def _make_prompt(
+    session: Session, category, owner_id, title, legacy_public=False, favorite=False
+):
     prompt = Prompt(
         title=title,
         prompt="content",
@@ -314,10 +316,18 @@ class TestPromptVisibilityScoping:
         second_user: User,
         third_user: User,
     ):
-        owned = _make_prompt(test_db_session, test_category, second_user.id, "Owned by second")
-        shared = _make_prompt(test_db_session, test_category, third_user.id, "Shared with second")
+        owned = _make_prompt(
+            test_db_session, test_category, second_user.id, "Owned by second"
+        )
+        shared = _make_prompt(
+            test_db_session, test_category, third_user.id, "Shared with second"
+        )
         legacy = _make_prompt(
-            test_db_session, test_category, third_user.id, "Legacy public", legacy_public=True
+            test_db_session,
+            test_category,
+            third_user.id,
+            "Legacy public",
+            legacy_public=True,
         )
         private_other = _make_prompt(
             test_db_session, test_category, third_user.id, "Private, not shared"
@@ -349,7 +359,9 @@ class TestPromptVisibilityScoping:
         )
         sharing_repo.upsert(shared.id, second_user.id, "read", third_user.id)
 
-        results = prompt_repo.search(visible_to_user_id=second_user.id, shared_only=True)
+        results = prompt_repo.search(
+            visible_to_user_id=second_user.id, shared_only=True
+        )
         result_ids = {p.id for p, _ in results}
 
         assert result_ids == {shared.id}
@@ -391,7 +403,9 @@ class TestPromptVisibilityScoping:
         third_user: User,
     ):
         for i in range(5):
-            p = _make_prompt(test_db_session, test_category, third_user.id, f"Page prompt {i}")
+            p = _make_prompt(
+                test_db_session, test_category, third_user.id, f"Page prompt {i}"
+            )
             sharing_repo.upsert(p.id, second_user.id, "read", third_user.id)
 
         page1 = prompt_repo.search(visible_to_user_id=second_user.id, limit=2, offset=0)
@@ -411,16 +425,22 @@ class TestPromptVisibilityScoping:
         third_user: User,
     ):
         owned_favorite = _make_prompt(
-            test_db_session, test_category, second_user.id, "Owned favorite", favorite=True
+            test_db_session,
+            test_category,
+            second_user.id,
+            "Owned favorite",
+            favorite=True,
         )
         shared_favorite = _make_prompt(
-            test_db_session, test_category, third_user.id, "Shared favorite", favorite=True
+            test_db_session,
+            test_category,
+            third_user.id,
+            "Shared favorite",
+            favorite=True,
         )
         sharing_repo.upsert(shared_favorite.id, second_user.id, "read", third_user.id)
 
-        results = prompt_repo.search(
-            favorite=True, visible_to_user_id=second_user.id
-        )
+        results = prompt_repo.search(favorite=True, visible_to_user_id=second_user.id)
         result_ids = {p.id for p, _ in results}
 
         assert result_ids == {owned_favorite.id}
@@ -436,7 +456,9 @@ class TestPromptVisibilityScoping:
         third_user: User,
     ):
         for i in range(3):
-            p = _make_prompt(test_db_session, test_category, third_user.id, f"Count prompt {i}")
+            p = _make_prompt(
+                test_db_session, test_category, third_user.id, f"Count prompt {i}"
+            )
             sharing_repo.upsert(p.id, second_user.id, "edit", third_user.id)
 
         search_results = prompt_repo.search(visible_to_user_id=second_user.id)

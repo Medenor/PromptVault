@@ -137,9 +137,7 @@ class BackupRestoreService:
                 backup_path = decrypted_path
 
             try:
-                timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")[
-                    :21
-                ]
+                timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")[:21]
                 logger.info(
                     "Creating pre-restore backup",
                     extra={"event": "backup.restore.pre_backup"},

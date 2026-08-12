@@ -178,9 +178,7 @@ class CategoryRepository(BaseRepository[Category]):
         """Unset category_id on all prompts referencing any of these categories."""
         from src.db.models import Prompt
 
-        self.session.query(Prompt).filter(
-            Prompt.category_id.in_(category_ids)
-        ).update(
+        self.session.query(Prompt).filter(Prompt.category_id.in_(category_ids)).update(
             {Prompt.category_id: None},
             synchronize_session=False,
         )
@@ -225,9 +223,7 @@ class CategoryRepository(BaseRepository[Category]):
         """
         from src.db.models import Prompt
 
-        prompts = (
-            self.session.query(Prompt).filter(Prompt.id.in_(prompt_ids)).all()
-        )
+        prompts = self.session.query(Prompt).filter(Prompt.id.in_(prompt_ids)).all()
         for prompt in prompts:
             prompt.category_id = category_id
         self.session.flush()

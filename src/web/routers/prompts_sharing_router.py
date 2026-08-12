@@ -119,9 +119,7 @@ async def grant_share(
         )
 
     response = ShareResponse(**result)
-    status_code = (
-        status.HTTP_200_OK if existing_permission else status.HTTP_201_CREATED
-    )
+    status_code = status.HTTP_200_OK if existing_permission else status.HTTP_201_CREATED
     return JSONResponse(
         status_code=status_code, content=response.model_dump(mode="json")
     )

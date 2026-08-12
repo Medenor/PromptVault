@@ -43,7 +43,11 @@ def _insert_prompt(engine, title: str) -> int:
                 "INSERT INTO users (id, username, email, password_hash, role) "
                 "VALUES (:id, :username, :email, 'x', 'user')"
             ),
-            {"id": user_id, "username": f"user_{user_id[:8]}", "email": f"{user_id[:8]}@example.com"},
+            {
+                "id": user_id,
+                "username": f"user_{user_id[:8]}",
+                "email": f"{user_id[:8]}@example.com",
+            },
         )
         result = conn.execute(
             sa.text(

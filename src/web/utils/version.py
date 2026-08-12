@@ -19,7 +19,7 @@ def get_app_version() -> str:
     try:
         with open(PYPROJECT_PATH, "rb") as file:
             return tomllib.load(file)["project"]["version"]
-    except (OSError, KeyError, tomllib.TOMLDecodeError):
+    except OSError, KeyError, tomllib.TOMLDecodeError:
         pass
 
     try:

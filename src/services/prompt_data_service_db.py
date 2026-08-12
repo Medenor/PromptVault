@@ -806,7 +806,9 @@ class PromptDataService:
             bool: True if successful, False otherwise
         """
         # Reuse update_prompt with reverted data
-        return self.update_prompt(prompt_id, reverted_data, commit_message, author=author)
+        return self.update_prompt(
+            prompt_id, reverted_data, commit_message, author=author
+        )
 
     def create_prompt(self, data: Dict[str, Any]) -> int:
         """Create a new prompt (alias for add_new_prompt).
@@ -994,9 +996,7 @@ class PromptDataService:
                 permission=permission,
             )
 
-            granter = (
-                user_repo.get_by_id(acting_user.id) if acting_user.id else None
-            )
+            granter = user_repo.get_by_id(acting_user.id) if acting_user.id else None
 
             return {
                 "prompt_id": prompt_id,
@@ -1030,9 +1030,7 @@ class PromptDataService:
             granter_ids = {share.granted_by for share in shares if share.granted_by}
             users_by_id = {
                 u.id: u
-                for u in (
-                    user_repo.get_by_id(uid) for uid in grantee_ids | granter_ids
-                )
+                for u in (user_repo.get_by_id(uid) for uid in grantee_ids | granter_ids)
                 if u is not None
             }
 
@@ -1076,9 +1074,7 @@ class PromptDataService:
         with get_db_session() as session:
             sharing_repo = SharingRepository(session)
 
-            revoked_permission = sharing_repo.permission_for(
-                prompt_id, grantee_user_id
-            )
+            revoked_permission = sharing_repo.permission_for(prompt_id, grantee_user_id)
             removed = sharing_repo.revoke(prompt_id, grantee_user_id)
 
             if removed:

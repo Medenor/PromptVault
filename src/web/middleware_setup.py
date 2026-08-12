@@ -59,9 +59,7 @@ def configure_middleware(app: FastAPI, record_validation_event) -> None:
     """
     # Security headers on all responses (HSTS, CSP, X-Frame-Options, etc.)
     app.add_middleware(SecurityHeadersMiddleware)
-    logger.info(
-        "Security headers middleware added (HSTS, CSP, X-Frame-Options, etc.)"
-    )
+    logger.info("Security headers middleware added (HSTS, CSP, X-Frame-Options, etc.)")
 
     # Rate limiting (Redis-backed with slowapi, falls back to in-memory)
     app.state.limiter = limiter
@@ -143,8 +141,7 @@ def configure_middleware(app: FastAPI, record_validation_event) -> None:
     async def request_logging_middleware(request: Request, call_next):
         """Attach request IDs and emit structured request logs."""
         request_id = (
-            request.headers.get("X-Request-ID")
-            or logging_service.generate_request_id()
+            request.headers.get("X-Request-ID") or logging_service.generate_request_id()
         )
 
         # Try to extract actor from JWT token
