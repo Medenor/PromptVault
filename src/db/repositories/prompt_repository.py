@@ -122,16 +122,14 @@ class PromptRepository(BaseRepository[Prompt]):
             # Snippet from the "prompt" body column (index 1 of title,prompt,note).
             snippet_col, start_sel, end_sel, ellipsis, tokens = fts5_snippet_args(1)
             rows = self.session.execute(
-                text(
-                    """
+                text("""
                     SELECT
                         prompts_fts.rowid AS id,
                         bm25(prompts_fts, :w_title, :w_prompt, :w_note) AS rank,
                         snippet(prompts_fts, :snippet_col, :start_sel, :end_sel, :ellipsis, :tokens) AS snippet
                     FROM prompts_fts
                     WHERE prompts_fts MATCH :match_expr
-                    """
-                ),
+                    """),
                 {
                     "w_title": _RANK_WEIGHT_TITLE,
                     "w_prompt": _RANK_WEIGHT_PROMPT,
@@ -148,15 +146,16 @@ class PromptRepository(BaseRepository[Prompt]):
                 # snippet() always returns an excerpt of the body column even
                 # when the match was only in title/note; only surface it as
                 # match_context when it actually contains a highlighted hit.
-                snippet = row.snippet if row.snippet and MATCH_START in row.snippet else None
+                snippet = (
+                    row.snippet if row.snippet and MATCH_START in row.snippet else None
+                )
                 matches[row.id] = RankedMatch(row.rank, snippet)
             return matches
 
         if dialect == "postgresql":
             tsquery = safe_query.to_tsquery()
             rows = self.session.execute(
-                text(
-                    """
+                text("""
                     SELECT
                         id,
                         ts_rank(search_vector, to_tsquery('simple', :tsquery)) AS rank,
@@ -165,15 +164,16 @@ class PromptRepository(BaseRepository[Prompt]):
                         ) AS snippet
                     FROM prompts
                     WHERE search_vector @@ to_tsquery('simple', :tsquery)
-                    """
-                ),
+                    """),
                 {"tsquery": tsquery, "headline_opts": ts_headline_options()},
             )
             for row in rows:
                 # ts_headline always returns an excerpt of the body column
                 # even when the match was only in title/note; only surface
                 # it when it actually contains a highlighted hit.
-                snippet = row.snippet if row.snippet and MATCH_START in row.snippet else None
+                snippet = (
+                    row.snippet if row.snippet and MATCH_START in row.snippet else None
+                )
                 # ts_rank is higher-is-better; negate so both dialects sort
                 # ascending by "rank" (lower = more relevant) downstream.
                 matches[row.id] = RankedMatch(-row.rank, snippet)
@@ -308,7 +308,9 @@ class PromptRepository(BaseRepository[Prompt]):
         if query:
             q = self._apply_substring_query_filter(q, query, case_sensitive)
 
-        q = self._apply_common_filters(q, category, tags, favorite, visible_to_user_id, shared_only)
+        q = self._apply_common_filters(
+            q, category, tags, favorite, visible_to_user_id, shared_only
+        )
 
         # Order by most recently updated (must come before limit/offset)
         q = q.order_by(Prompt.updated_at.desc().nullslast(), Prompt.created_at.desc())
@@ -338,8 +340,10 @@ class PromptRepository(BaseRepository[Prompt]):
         """
         try:
             matches = self._fts_matches(query)
-        except (OperationalError, ProgrammingError):
-            logger.warning("FTS query failed; falling back to substring search", exc_info=True)
+        except OperationalError, ProgrammingError:
+            logger.warning(
+                "FTS query failed; falling back to substring search", exc_info=True
+            )
             return None
 
         if matches is None:
@@ -348,7 +352,9 @@ class PromptRepository(BaseRepository[Prompt]):
             return []
 
         q = self.session.query(Prompt).filter(Prompt.id.in_(matches.keys()))
-        q = self._apply_common_filters(q, category, tags, favorite, visible_to_user_id, shared_only)
+        q = self._apply_common_filters(
+            q, category, tags, favorite, visible_to_user_id, shared_only
+        )
 
         prompts = q.all()
         # Deterministic order: relevance (lower rank = more relevant), then id
@@ -399,8 +405,10 @@ class PromptRepository(BaseRepository[Prompt]):
         if use_fts:
             try:
                 matches = self._fts_matches(query)
-            except (OperationalError, ProgrammingError):
-                logger.warning("FTS count failed; falling back to substring count", exc_info=True)
+            except OperationalError, ProgrammingError:
+                logger.warning(
+                    "FTS count failed; falling back to substring count", exc_info=True
+                )
                 matches = None
 
             if matches is not None:
@@ -418,7 +426,9 @@ class PromptRepository(BaseRepository[Prompt]):
         if query:
             q = self._apply_substring_query_filter(q, query, case_sensitive)
 
-        q = self._apply_common_filters(q, category, tags, favorite, visible_to_user_id, shared_only)
+        q = self._apply_common_filters(
+            q, category, tags, favorite, visible_to_user_id, shared_only
+        )
 
         return q.count()
 

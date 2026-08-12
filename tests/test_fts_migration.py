@@ -43,7 +43,11 @@ def _insert_prompt(engine, title: str, prompt_body: str = "content") -> None:
                 "INSERT INTO users (id, username, email, password_hash, role) "
                 "VALUES (:id, :username, :email, 'x', 'user')"
             ),
-            {"id": user_id, "username": f"user_{user_id[:8]}", "email": f"{user_id[:8]}@example.com"},
+            {
+                "id": user_id,
+                "username": f"user_{user_id[:8]}",
+                "email": f"{user_id[:8]}@example.com",
+            },
         )
         conn.execute(
             sa.text(
@@ -97,7 +101,9 @@ def _run_roundtrip_body(cfg: Config, db_url: str) -> None:
 
     # Seed a row before the FTS migration runs, to prove the backfill step.
     engine = sa.create_engine(db_url)
-    _insert_prompt(engine, "pre-existing-title", "pre-existing unique_backfill_token body")
+    _insert_prompt(
+        engine, "pre-existing-title", "pre-existing unique_backfill_token body"
+    )
     engine.dispose()
 
     # Upgrade through the FTS migration.

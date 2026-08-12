@@ -84,10 +84,18 @@ class TestRankingCorrectness:
         category = _make_category(session)
 
         title_hit = _make_prompt(
-            session, user, category, title="Special Widget", prompt="unrelated body text"
+            session,
+            user,
+            category,
+            title="Special Widget",
+            prompt="unrelated body text",
         )
         body_hit = _make_prompt(
-            session, user, category, title="Unrelated Title", prompt="contains widget in body"
+            session,
+            user,
+            category,
+            title="Unrelated Title",
+            prompt="contains widget in body",
         )
         session.commit()
 
@@ -99,7 +107,9 @@ class TestRankingCorrectness:
         assert body_hit.id in result_ids
         assert result_ids.index(title_hit.id) < result_ids.index(body_hit.id)
 
-    def test_all_words_match_ranks_above_partial_match(self, fts_dialect_matrix: Session):
+    def test_all_words_match_ranks_above_partial_match(
+        self, fts_dialect_matrix: Session
+    ):
         session = fts_dialect_matrix
         user = _make_user(session)
         category = _make_category(session)
@@ -110,7 +120,11 @@ class TestRankingCorrectness:
         )
         # Matches only one of the two terms (still included: OR semantics).
         one_word = _make_prompt(
-            session, user, category, title="Doc B", prompt="alpha only, no second term here"
+            session,
+            user,
+            category,
+            title="Doc B",
+            prompt="alpha only, no second term here",
         )
         session.commit()
 
@@ -124,13 +138,19 @@ class TestRankingCorrectness:
         # All-words match ranks above the partial match.
         assert result_ids.index(both_words.id) < result_ids.index(one_word.id)
 
-    def test_word_query_matches_same_prompts_as_substring(self, fts_dialect_matrix: Session):
+    def test_word_query_matches_same_prompts_as_substring(
+        self, fts_dialect_matrix: Session
+    ):
         session = fts_dialect_matrix
         user = _make_user(session)
         category = _make_category(session)
 
         matching = _make_prompt(
-            session, user, category, title="Guide", prompt="this mentions gizmo explicitly"
+            session,
+            user,
+            category,
+            title="Guide",
+            prompt="this mentions gizmo explicitly",
         )
         non_matching = _make_prompt(
             session, user, category, title="Other", prompt="nothing relevant here"
@@ -158,8 +178,12 @@ class TestSortPrecedenceAndPagination:
         # Title match would rank first under FTS; body-only match would rank
         # second. With ranked=False, relevance must NOT determine order —
         # only that both are still returned via the substring path.
-        title_hit = _make_prompt(session, user, category, title="Term", prompt="unrelated")
-        body_hit = _make_prompt(session, user, category, title="Unrelated", prompt="term body")
+        title_hit = _make_prompt(
+            session, user, category, title="Term", prompt="unrelated"
+        )
+        body_hit = _make_prompt(
+            session, user, category, title="Unrelated", prompt="term body"
+        )
         session.commit()
 
         repo = PromptRepository(session)
@@ -170,15 +194,21 @@ class TestSortPrecedenceAndPagination:
         assert ranked_ids.index(title_hit.id) < ranked_ids.index(body_hit.id)
         # Legacy substring path returns the same set without relevance ranking.
         assert set(legacy_ids) == {title_hit.id, body_hit.id}
-        assert all(context is None for _, context in repo.search(query="term", ranked=False))
+        assert all(
+            context is None for _, context in repo.search(query="term", ranked=False)
+        )
 
-    def test_ranked_pagination_no_duplicates_or_skips(self, fts_dialect_matrix: Session):
+    def test_ranked_pagination_no_duplicates_or_skips(
+        self, fts_dialect_matrix: Session
+    ):
         session = fts_dialect_matrix
         user = _make_user(session)
         category = _make_category(session)
 
         created = [
-            _make_prompt(session, user, category, title=f"Widget {i}", prompt="widget body")
+            _make_prompt(
+                session, user, category, title=f"Widget {i}", prompt="widget body"
+            )
             for i in range(5)
         ]
         session.commit()
@@ -188,7 +218,11 @@ class TestSortPrecedenceAndPagination:
         page2 = repo.search(query="widget", limit=2, offset=2)
         page3 = repo.search(query="widget", limit=2, offset=4)
 
-        all_ids = [p.id for p, _ in page1] + [p.id for p, _ in page2] + [p.id for p, _ in page3]
+        all_ids = (
+            [p.id for p, _ in page1]
+            + [p.id for p, _ in page2]
+            + [p.id for p, _ in page3]
+        )
         assert len(all_ids) == len(set(all_ids)) == 5
         assert set(all_ids) == {p.id for p in created}
 
@@ -198,8 +232,12 @@ class TestSortPrecedenceAndPagination:
         category = _make_category(session)
 
         for i in range(4):
-            _make_prompt(session, user, category, title=f"Doohickey {i}", prompt="doohickey body")
-        _make_prompt(session, user, category, title="Unrelated", prompt="nothing to do with it")
+            _make_prompt(
+                session, user, category, title=f"Doohickey {i}", prompt="doohickey body"
+            )
+        _make_prompt(
+            session, user, category, title="Unrelated", prompt="nothing to do with it"
+        )
         session.commit()
 
         repo = PromptRepository(session)
@@ -217,8 +255,12 @@ class TestFallbackSanitizationAndPhrases:
         user = _make_user(session)
         category = _make_category(session)
 
-        exact_case = _make_prompt(session, user, category, title="Widget", prompt="Gadget content")
-        wrong_case = _make_prompt(session, user, category, title="widget", prompt="gadget content")
+        exact_case = _make_prompt(
+            session, user, category, title="Widget", prompt="Gadget content"
+        )
+        wrong_case = _make_prompt(
+            session, user, category, title="widget", prompt="gadget content"
+        )
         session.commit()
 
         repo = PromptRepository(session)
@@ -229,17 +271,23 @@ class TestFallbackSanitizationAndPhrases:
         assert wrong_case.id not in result_ids
         assert all(context is None for _, context in results)
 
-    def test_case_sensitive_pagination_no_duplicates_or_skips(self, fts_dialect_matrix: Session):
+    def test_case_sensitive_pagination_no_duplicates_or_skips(
+        self, fts_dialect_matrix: Session
+    ):
         session = fts_dialect_matrix
         user = _make_user(session)
         category = _make_category(session)
 
         created = [
-            _make_prompt(session, user, category, title=f"Sprocket {i}", prompt="Sprocket body")
+            _make_prompt(
+                session, user, category, title=f"Sprocket {i}", prompt="Sprocket body"
+            )
             for i in range(5)
         ]
         # Distractor with the wrong case: must never appear in case-sensitive results.
-        _make_prompt(session, user, category, title="sprocket lower", prompt="sprocket body")
+        _make_prompt(
+            session, user, category, title="sprocket lower", prompt="sprocket body"
+        )
         session.commit()
 
         repo = PromptRepository(session)
@@ -247,14 +295,20 @@ class TestFallbackSanitizationAndPhrases:
         page2 = repo.search(query="Sprocket", case_sensitive=True, limit=2, offset=2)
         page3 = repo.search(query="Sprocket", case_sensitive=True, limit=2, offset=4)
 
-        all_ids = [p.id for p, _ in page1] + [p.id for p, _ in page2] + [p.id for p, _ in page3]
+        all_ids = (
+            [p.id for p, _ in page1]
+            + [p.id for p, _ in page2]
+            + [p.id for p, _ in page3]
+        )
         assert len(all_ids) == len(set(all_ids)) == 5
         assert set(all_ids) == {p.id for p in created}
 
         total = repo.count(query="Sprocket", case_sensitive=True)
         assert total == 5
 
-    def test_operator_only_query_falls_back_without_error(self, fts_dialect_matrix: Session):
+    def test_operator_only_query_falls_back_without_error(
+        self, fts_dialect_matrix: Session
+    ):
         session = fts_dialect_matrix
         user = _make_user(session)
         category = _make_category(session)
@@ -270,7 +324,9 @@ class TestFallbackSanitizationAndPhrases:
         assert results == []
         assert total == 0
 
-    def test_embedded_operator_char_in_token_does_not_error(self, fts_dialect_matrix: Session):
+    def test_embedded_operator_char_in_token_does_not_error(
+        self, fts_dialect_matrix: Session
+    ):
         session = fts_dialect_matrix
         user = _make_user(session)
         category = _make_category(session)
@@ -295,7 +351,11 @@ class TestFallbackSanitizationAndPhrases:
             session, user, category, title="Doc", prompt="please quick brown fox jumps"
         )
         words_out_of_order = _make_prompt(
-            session, user, category, title="Doc2", prompt="a fox that is brown and quick"
+            session,
+            user,
+            category,
+            title="Doc2",
+            prompt="a fox that is brown and quick",
         )
         session.commit()
 
