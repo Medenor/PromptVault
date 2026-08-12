@@ -10,7 +10,7 @@ search, filtering, and relationship management capabilities.
 
 import logging
 import re
-from typing import List, Optional, Dict, Any, Tuple
+from typing import List, NamedTuple, Optional, Dict, Any, Tuple
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import or_, and_, func, select, text
 from sqlalchemy.exc import OperationalError, ProgrammingError
@@ -31,6 +31,13 @@ logger = logging.getLogger(__name__)
 _RANK_WEIGHT_TITLE = 10.0
 _RANK_WEIGHT_PROMPT = 4.0
 _RANK_WEIGHT_NOTE = 1.0
+
+
+class RankedMatch(NamedTuple):
+    """One FTS hit: relevance rank (lower = more relevant) and its snippet."""
+
+    rank: float
+    match_context: Optional[str]
 
 
 class PromptRepository(BaseRepository[Prompt]):
@@ -91,7 +98,7 @@ class PromptRepository(BaseRepository[Prompt]):
             )
         )
 
-    def _fts_matches(self, query: str) -> Optional[Dict[int, Tuple[float, Optional[str]]]]:
+    def _fts_matches(self, query: str) -> Optional[Dict[int, RankedMatch]]:
         """Run the dialect-native FTS lookup for ``query``.
 
         Returns a mapping of prompt id -> (rank, match_context) covering every
@@ -108,7 +115,7 @@ class PromptRepository(BaseRepository[Prompt]):
             return None
 
         dialect = active_dialect(self.session)
-        matches: Dict[int, Tuple[float, Optional[str]]] = {}
+        matches: Dict[int, RankedMatch] = {}
 
         if dialect == "sqlite":
             match_expr = safe_query.to_fts5_match()
@@ -142,7 +149,7 @@ class PromptRepository(BaseRepository[Prompt]):
                 # when the match was only in title/note; only surface it as
                 # match_context when it actually contains a highlighted hit.
                 snippet = row.snippet if row.snippet and MATCH_START in row.snippet else None
-                matches[row.id] = (row.rank, snippet)
+                matches[row.id] = RankedMatch(row.rank, snippet)
             return matches
 
         if dialect == "postgresql":
@@ -169,7 +176,7 @@ class PromptRepository(BaseRepository[Prompt]):
                 snippet = row.snippet if row.snippet and MATCH_START in row.snippet else None
                 # ts_rank is higher-is-better; negate so both dialects sort
                 # ascending by "rank" (lower = more relevant) downstream.
-                matches[row.id] = (-row.rank, snippet)
+                matches[row.id] = RankedMatch(-row.rank, snippet)
             return matches
 
         return None
@@ -221,6 +228,19 @@ class PromptRepository(BaseRepository[Prompt]):
             Prompt.title.like(f"%{query}%"),
             Prompt.prompt.like(f"%{query}%"),
             Prompt.note.like(f"%{query}%"),
+        )
+
+    def _apply_substring_query_filter(self, q, query: str, case_sensitive: bool):
+        """Apply the non-FTS substring predicate for ``query`` (shared by search()/count())."""
+        if case_sensitive:
+            return q.filter(self._case_sensitive_predicate(query))
+        search_pattern = f"%{query}%"
+        return q.filter(
+            or_(
+                Prompt.title.ilike(search_pattern),
+                Prompt.prompt.ilike(search_pattern),
+                Prompt.note.ilike(search_pattern),
+            )
         )
 
     def search(
@@ -286,17 +306,7 @@ class PromptRepository(BaseRepository[Prompt]):
         q = self.session.query(Prompt)
 
         if query:
-            if case_sensitive:
-                q = q.filter(self._case_sensitive_predicate(query))
-            else:
-                search_pattern = f"%{query}%"
-                q = q.filter(
-                    or_(
-                        Prompt.title.ilike(search_pattern),
-                        Prompt.prompt.ilike(search_pattern),
-                        Prompt.note.ilike(search_pattern),
-                    )
-                )
+            q = self._apply_substring_query_filter(q, query, case_sensitive)
 
         q = self._apply_common_filters(q, category, tags, favorite, visible_to_user_id, shared_only)
 
@@ -343,13 +353,13 @@ class PromptRepository(BaseRepository[Prompt]):
         prompts = q.all()
         # Deterministic order: relevance (lower rank = more relevant), then id
         # as a tiebreaker so OFFSET/LIMIT pagination is stable (FR-014).
-        prompts.sort(key=lambda p: (matches[p.id][0], p.id))
+        prompts.sort(key=lambda p: (matches[p.id].rank, p.id))
 
         page = prompts[offset:]
         if limit:
             page = page[:limit]
 
-        return [(prompt, matches[prompt.id][1]) for prompt in page]
+        return [(prompt, matches[prompt.id].match_context) for prompt in page]
 
     def count(
         self,
@@ -406,17 +416,7 @@ class PromptRepository(BaseRepository[Prompt]):
         q = self.session.query(Prompt)
 
         if query:
-            if case_sensitive:
-                q = q.filter(self._case_sensitive_predicate(query))
-            else:
-                search_pattern = f"%{query}%"
-                q = q.filter(
-                    or_(
-                        Prompt.title.ilike(search_pattern),
-                        Prompt.prompt.ilike(search_pattern),
-                        Prompt.note.ilike(search_pattern),
-                    )
-                )
+            q = self._apply_substring_query_filter(q, query, case_sensitive)
 
         q = self._apply_common_filters(q, category, tags, favorite, visible_to_user_id, shared_only)
 
