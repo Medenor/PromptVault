@@ -152,12 +152,31 @@ async def list_prompts(
     - Anyone can search prompts
     - No authentication required
 
+    **Full-text ranking:**
+    - `search` runs against a full-text index (SQLite FTS5 / PostgreSQL
+      tsvector+GIN), ranked title > prompt body > note. Bare multi-word
+      queries are OR-joined, so partial-word matches are still returned,
+      just ranked below all-words matches. `"quoted phrases"` match as a
+      unit. An unparseable/operator-only query never errors — it falls
+      back to a plain substring search and still returns `200`.
+    - Each result may include an optional `match_context` field: a snippet
+      of the matched body/note text with the match wrapped in
+      `[[MATCH]]...[[/MATCH]]` sentinels (not HTML). Present when the
+      ranked engine produced a body/note snippet; absent for title-only
+      matches, `ranked=false`, or `case_sensitive=true`. Clients must
+      HTML-escape the string first, then replace the sentinels with
+      `<mark>`/`</mark>` — never render it as raw HTML.
+
     **Query Parameters:**
     - search: Text to search for in title, prompt content, or notes
     - category: Filter by specific category
     - tag: Filter by specific tag
     - favorites: Show only favorite prompts (requires authentication)
-    - case_sensitive: Enable case-sensitive search
+    - case_sensitive: Enable case-sensitive search (exact substring match;
+      disables ranking and `match_context` snippets)
+    - ranked: Order results by relevance instead of `updated_at desc`
+      (default `true`); explicit `sort` selections, when supported, still
+      override relevance. Set `false` to restore the legacy ordering.
     - page: Page number, 1-indexed (default 1; values <1 normalize to 1)
     - limit: Page size (default 50; clamped to a maximum of 100)
 
@@ -201,7 +220,10 @@ async def search_prompts(
         db: Database session
 
     Returns:
-        dict: Pagination envelope with filtered prompts
+        dict: Pagination envelope with filtered prompts; each prompt gains
+            an optional `match_context` field (sentinel-wrapped snippet,
+            see contracts/search-api.md) when the ranked engine produced
+            a body/note match.
 
     Raises:
         HTTPException: 401 if favorites filter used without authentication

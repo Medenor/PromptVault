@@ -440,6 +440,47 @@ class TestPaginationListPrompts:
         assert payload["total_pages"] == 0
         assert payload["has_next"] is False
 
+    def test_list_ordering_and_pagination_via_repository_path(
+        self, api_client, api_auth_headers, api_data_service, sample_prompt_data
+    ):
+        """Regression for the T004 dual-path collapse (Codeberg #72).
+
+        GET /api/prompts must go through PromptRepository.search() (not the
+        legacy data_service.load_prompts() path), which orders by
+        updated_at desc, created_at desc, giving a deterministic, stable
+        order for OFFSET/LIMIT pagination. Confirms pages are internally
+        consistent (correct sizes, no duplicates/gaps across pages, correct
+        total) now that both list_prompts halves share one code path.
+        """
+        for pid in list(api_data_service.load_prompts().keys()):
+            api_data_service.delete_prompt(pid)
+
+        created_ids = []
+        for i in range(5):
+            prompt_id = api_data_service.add_new_prompt(
+                sample_prompt_data(title=f"Order Prompt {i}", prompt=f"Content {i}"),
+                user_id="api-test-user-id",
+            )
+            created_ids.append(prompt_id)
+
+        page1 = api_client.get(
+            "/api/prompts", params={"page": 1, "limit": 3}, headers=api_auth_headers
+        ).json()
+        page2 = api_client.get(
+            "/api/prompts", params={"page": 2, "limit": 3}, headers=api_auth_headers
+        ).json()
+
+        assert len(page1["prompts"]) == 3
+        assert len(page2["prompts"]) == 2
+        assert page1["total_count"] == 5
+        assert page2["total_count"] == 5
+        assert page1["has_next"] is True
+        assert page2["has_next"] is False
+
+        combined_ids = set(page1["prompts"].keys()) | set(page2["prompts"].keys())
+        assert combined_ids == {str(pid) for pid in created_ids}
+        assert set(page1["prompts"].keys()).isdisjoint(page2["prompts"].keys())
+
 
 class TestPaginationSearchPrompts:
     """Pagination coverage for GET /api/prompts/search (US2)."""
