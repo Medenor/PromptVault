@@ -1,0 +1,225 @@
+---
+description: "Task list for Full-Text Search (SQLite FTS5 / PostgreSQL tsvector)"
+---
+
+# Tasks: Full-Text Search
+
+**Input**: Design documents from `/specs/008-full-text-search/`
+
+**Prerequisites**: plan.md, spec.md, research.md, data-model.md, contracts/search-api.md, quickstart.md
+
+**Tests**: INCLUDED — the spec mandates a full cross-dialect test matrix + a 5k benchmark, and Constitution Principle II requires tests alongside implementation (≥85% coverage gate).
+
+**Organization**: Grouped by user story (US1–US4 from spec.md) for independent implementation and testing.
+
+## Format: `[ID] [P?] [Story] Description`
+
+- **[P]**: Can run in parallel (different files, no dependencies on incomplete tasks)
+- **[Story]**: US1–US4 (user-story phases only)
+- Paths are repo-relative and concrete.
+
+## Path Conventions
+
+Web application, existing layout: backend `src/`, frontend `src/web/static/ts/`, migrations `alembic/versions/`, tests `tests/`.
+
+---
+
+## Phase 1: Setup (Shared Infrastructure)
+
+**Purpose**: Prepare the FTS helper module location and confirm the toolchain.
+
+- [X] T001 Create the search helper package `src/db/search/` with an empty `__init__.py`
+- [X] T002 [P] Add a `tests/benchmarks/` directory with `__init__.py` and a `conftest.py` placeholder for benchmark fixtures
+- [X] T003 [P] Confirm SQLite build has FTS5 available and record the check in `tests/test_fts_search.py` skeleton (a module-level `pytest.importorskip`/`PRAGMA compile_options` guard that skips with a clear message if FTS5 is absent)
+
+---
+
+## Phase 2: Foundational (Blocking Prerequisites)
+
+**Purpose**: Collapse the redundant dual-path so FTS is observable, then build the dialect-branched schema and shared query helpers that ALL stories depend on.
+
+**⚠️ CRITICAL**: No user story work can begin until this phase is complete. In particular T004 is a hard prerequisite — until the legacy in-Python search path is removed, the repository `search()` FTS work is shadowed in production and cannot be validated end-to-end (Codeberg #72).
+
+- [X] T004 Collapse the legacy `data_service` dual-path to the repository path in `src/web/routers/prompts_search_router.py` (remove the `web_app.data_service.load_prompts()` dispatch and the `if legacy_prompts:` block in BOTH `list_prompts` and `search_prompts`; always use `PromptRepository(db)`). Rewrite/drop the two dependent tests in `tests/test_api_endpoints.py` (`test_legacy_prompt_structure_fallbacks`, `test_search_prompts_exception_returns_500`) and verify pagination/ordering assertions elsewhere still hold. Ref: Codeberg #72.
+- [X] T005 [P] Implement dialect detection + FTS query sanitization in `src/db/search/fts.py`: `active_dialect(session) -> str`, `sanitize_fts_query(raw: str) -> SafeQuery | None` (strips operator-only tokens, extracts `"quoted phrases"`, OR-joins remaining bare terms rather than AND, returns None when empty ⇒ signal fallback). Ref: research.md Decisions 3–4, FR-002/FR-003/FR-010/FR-011/FR-012.
+- [X] T006 [P] Implement snippet sentinel constants + helpers in `src/db/search/fts.py` (`MATCH_START='[[MATCH]]'`, `MATCH_END='[[/MATCH]]'`, and the per-dialect snippet arg builders for `snippet()` / `ts_headline`). Ref: research.md Decision 5, FR-005/FR-006.
+- [X] T007 Create the dialect-branched Alembic migration `alembic/versions/<rev>_full_text_search.py` (down_revision = `f1a2b3c4d5e6`), branching on `op.get_bind().dialect.name`:
+  - **SQLite**: create `prompts_fts` FTS5 external-content virtual table over `(title, prompt, note)` with `content='prompts', content_rowid='id'`; create AFTER INSERT/UPDATE/DELETE sync triggers; backfill from existing rows.
+  - **PostgreSQL**: add generated `search_vector tsvector` column (weighted title=A, prompt=B, note=C, `coalesce`-guarded) + `GIN` index.
+  - Provide a symmetric `downgrade()` dropping all created objects. Ref: data-model.md, research.md Decisions 1–2, FR-013/FR-015.
+  - Note: down_revision is `b2c3d4e5f6a7` (current head at implementation time — `f1a2b3c4d5e6` was superseded by two later migrations after tasks.md was written).
+- [X] T008 [P] Migration test in `tests/test_fts_migration.py`: upgrade→downgrade→upgrade round-trips cleanly on SQLite; asserts the FTS table/triggers exist after upgrade and are gone after downgrade; asserts backfill populated existing rows. (Postgres leg runs when the matrix fixture from T009 is active.)
+- [X] T009 [P] Stand up the cross-dialect test matrix fixture: a parametrized `db_dialect_matrix` fixture (plus `postgres_db`) that provides a Postgres-backed session when a Postgres test DB is available and is `skip`-marked otherwise (SQLite leg always runs). This enables the Postgres leg of every parametrized FTS test (T008 migration, T010 ranking, T016 snippet, T024 fallback) from US1 onward (SC-005). Ref: research.md Decision 7, FR-017.
+  - Note: implemented in `tests/conftest.py`, not `tests/conftest_db.py` — `conftest_db.py` is not wired in as a pytest plugin (only `conftest.py` is auto-loaded) and already has its own superseding fixture set with the same names, so the matrix fixture lives where it's actually usable; `conftest_db.py` documents the redirect.
+
+**Checkpoint**: Legacy path removed, FTS schema live on both dialects, shared helpers and cross-dialect matrix ready. User stories can begin.
+
+---
+
+## Phase 3: User Story 1 — Ranked, relevant search results (Priority: P1) 🎯 MVP
+
+**Goal**: `search()`/`count()` return index-backed, relevance-ranked matches (title > body > note; all-words > some-words), with existing sort options still overriding relevance.
+
+**Independent Test**: Seed a term in one prompt's title and once in another's body; `GET /api/prompts/search?search=<term>` returns both with the title match first; multi-word query ranks all-words matches above partial.
+
+### Tests for User Story 1 ⚠️
+
+- [X] T010 [P] [US1] Ranking correctness tests in `tests/test_fts_search.py`: title-weighted-above-body, all-words-above-partial-but-partial-still-included (OR semantics, FR-003), and "returns the same matches ordinary substring would for word queries" (FR-001/FR-002/FR-003). Parametrized for dialect (SQLite always; Postgres via the T009 matrix marker).
+- [X] T011 [P] [US1] Sort-precedence + pagination-stability tests in `tests/test_fts_search.py`: explicit sort overrides relevance (FR-004); ranked pagination with `id` tiebreaker never duplicates/skips across pages (FR-014); `count()` matches the ranked list size (FR-008).
+
+### Implementation for User Story 1
+
+- [X] T012 [US1] Implement the FTS branch of `PromptRepository.search()` in `src/db/repositories/prompt_repository.py`: dialect-branch to FTS5 `MATCH` (OR-joined bare terms, e.g. `term1 OR term2`) + `bm25(...)` weighting (SQLite) or `@@ to_tsquery('term1 | term2')` (OR-joined, not `plainto_tsquery`'s implicit AND) + `ts_rank` (Postgres) using bound parameters; add `ranked: bool = True` param; keep existing category/tag/favorite filters; deterministic `ORDER BY relevance, id`; fall back to the existing `ilike` path when `case_sensitive` or sanitized query is empty. **Multi-word semantics (pinned): bare (non-quoted) multi-word queries use OR — no query word is required for a match — so `bm25()`/`ts_rank()` naturally score all-words matches above partial-word matches without excluding partial matches (FR-002/FR-003).** **Return shape (pinned): `search()` ALWAYS returns `list[tuple[Prompt, str | None]]`** — the second element is `match_context` (populated in US2, `None` here and on the fallback/non-ranked path); the router adapts to this single shape (no dual return type). **Rank weights (pinned, recorded as inline constants so SC-003 is reproducible): title=10.0, prompt=4.0, note=1.0** — expressed as `bm25(prompts_fts, 10.0, 4.0, 1.0)` on SQLite (lower=more relevant; bm25 applies weights as column multipliers) and as `A/B/C` tsvector weights with `ts_rank` default weight array `{0.1, 0.2, 0.4, 1.0}` on Postgres. Adjust only if T010 ranking assertions require it, keeping title>prompt>note. (depends on T005, T007)
+- [X] T013 [US1] Make `PromptRepository.count()` mirror the exact FTS predicate in `src/db/repositories/prompt_repository.py` so totals match `search()` (FR-008). (depends on T012)
+- [X] T014 [US1] Wrap the FTS execution in try/except in `prompt_repository.py`: on FTS operational/parse error, log and fall back to the substring path returning `200`-worthy results (FR-010). (depends on T012)
+- [X] T015 [US1] Add `ranked: bool = True` to `search_prompts` in `src/web/routers/prompts_search_router.py` (query param `?ranked=true` default) and pass it through to the repository; adapt the router to unpack the `(Prompt, match_context)` tuples from `search()`; preserve existing sort-option handling (FR-004). (depends on T004, T012)
+
+**Checkpoint**: Ranked search works end-to-end via the API on both dialects. MVP deliverable.
+
+---
+
+## Phase 4: User Story 2 — Result snippets with highlighted matches (Priority: P2)
+
+**Goal**: Each result carries a `match_context` snippet with highlighted terms, rendered safely (no markup/script execution).
+
+**Independent Test**: Search a term buried in a body → result card shows an excerpt with the term highlighted; a `<script>`-laced prompt renders as literal text.
+
+### Tests for User Story 2 ⚠️
+
+- [X] T016 [P] [US2] Backend snippet tests in `tests/test_fts_snippet.py`: `search()` returns `match_context` with `[[MATCH]]…[[/MATCH]]` sentinels for body matches; `None` for title-only match; both dialects (FR-005/FR-006).
+- [X] T017 [P] [US2] Frontend safe-render test in `src/web/static/ts/app/__tests__/prompt-card.test.ts`: a `match_context` containing `<script>`/markup renders escaped, with sentinels converted to `<mark>` only, and no `innerHTML` of raw content (FR-007/SC-006).
+
+### Implementation for User Story 2
+
+- [X] T018 [US2] Return `match_context` from the FTS branch of `PromptRepository.search()` in `src/db/repositories/prompt_repository.py` via `snippet()`/`ts_headline` using the sentinel helpers from T006 (`None` when no body snippet). (depends on T012, T006)
+- [X] T019 [US2] Surface `match_context` in the response in `src/web/routers/prompts_search_router.py` and `src/web/routers/prompts_shared.py` (extend `_prompt_to_dict`/envelope to carry the optional field). (depends on T018)
+- [X] T020 [P] [US2] Add optional `match_context?: string` to `PromptResponse` in `src/web/static/ts/types/api/responses.ts`.
+- [X] T021 [US2] Render the snippet under the card title in `src/web/static/ts/app/prompt-card.ts`: `escapeHtml(match_context)` first, then replace `[[MATCH]]`/`[[/MATCH]]` with `<mark>`/`</mark>` (reuse existing `escapeHtml` from `./shared`). (depends on T020)
+
+**Checkpoint**: Ranked results now show safe, highlighted snippets in the UI.
+
+---
+
+## Phase 5: User Story 3 — Fast search on large vaults (Priority: P2)
+
+**Goal**: Prove index-backed search is fast and scales (flat, not linear) and beats the substring baseline.
+
+**Independent Test**: Benchmark on ≥5,000 prompts returns a typical query in <1s and faster than `ilike` on the same data with identical matches.
+
+### Tests for User Story 3 ⚠️
+
+- [X] T022 [P] [US3] Seed-data benchmark in `tests/benchmarks/test_fts_benchmark.py`: build ~5,000 prompts, assert a single-word query returns in <1s (SC-001) and that FTS wall-clock beats the `ilike` baseline with equal correct matches (SC-002). **Also assert near-flat scaling** (FR-016): measure the same query at ~1,000 and ~5,000 prompts and assert FTS latency grows sub-linearly (e.g. 5× data ⇒ well under 5× time), while the `ilike` baseline grows roughly linearly — proving the "does not degrade linearly" requirement, not just the absolute point. (depends on T012)
+  - Note: match-count is held fixed (5 needle hits) while the surrounding non-matching corpus grows 5×, isolating scan-cost scaling from per-row result-materialization cost (snippet extraction cost is proportional to match count, not corpus size, and would otherwise mask the scan-cost signal). Timings use min-of-5 trials to cancel scheduling/GC noise. Marked `performance` (deselectable via `-m "not performance"`).
+
+### Implementation for User Story 3
+
+- [X] T023 [US3] Verify/confirm index usage: ensure the GIN index (Postgres) and FTS5 table (SQLite) are actually exercised by the ranked query path (no accidental full-scan); adjust the query in `src/db/repositories/prompt_repository.py` if the benchmark reveals a non-indexed plan. (depends on T012, T022)
+  - Verified via `EXPLAIN QUERY PLAN` on SQLite: the FTS5 `MATCH` lookup reports `SCAN prompts_fts VIRTUAL TABLE INDEX 0:M3` (inverted-index scan, not a table scan) and the pagination join reports `SEARCH prompts USING INTEGER PRIMARY KEY (rowid=?)`. No accidental full-scan; no query change needed.
+
+**Checkpoint**: Performance target met and demonstrated against the baseline.
+
+---
+
+## Phase 6: User Story 4 — Reliable fallback & case-sensitive matching (Priority: P3)
+
+**Goal**: Case-sensitive and un-parseable queries keep working via substring fallback; quoted phrases match as a unit.
+
+**Independent Test**: `case_sensitive=true` respects case exactly as before; operator-only junk returns `200` (no FTS error); `"quoted phrase"` matches the phrase.
+
+### Tests for User Story 4 ⚠️
+
+- [X] T024 [P] [US4] Fallback + sanitization + phrase tests in `tests/test_fts_search.py`: case-sensitive matching behavior unchanged from before this feature (FR-009); **case-sensitive pagination is consistent** — with `case_sensitive=true`, seed enough matching rows to span two pages and assert no row is duplicated or skipped across pages, and that `count()` equals the total matching rows (regression test for the pre-existing Python-post-`OFFSET`/`LIMIT` filtering bug, FR-014); operator-only query returns without error via fallback (FR-010/FR-011); quoted phrase matches as a unit (FR-012). Parametrized cross-dialect via the T009 matrix marker (SC-005).
+
+### Implementation for User Story 4
+
+- [X] T025 [US4] Harden the fallback/phrase routing surfaced by T024 in `src/db/repositories/prompt_repository.py`: the error/empty-query fallback is already implemented in T012/T014 — this task (a) adds the quoted-phrase route (`phraseto_tsquery`/FTS5 phrase) if not already covered by the T005 sanitizer, and (b) **fixes case-sensitive filtering to run in the SQL predicate before `OFFSET`/`LIMIT`** instead of the current Python-side post-fetch filter, so `search()` and `count()` stay consistent under pagination (FR-014). No duplication of the T012/T014 fallback logic. (depends on T005, T012, T014, T024)
+  - Note: both pieces were already in place from T005/T012 — `SafeQuery.to_fts5_match()`/`to_tsquery()` already OR-join quoted phrases (FTS5 phrase syntax / `<->` proximity) alongside bare terms, and `_case_sensitive_predicate()` already builds a SQL `GLOB`/`LIKE` predicate applied before `OFFSET`/`LIMIT` in both `search()` and `count()` — no Python post-fetch filtering existed to fix. T024 added regression coverage confirming both; no production code changes were needed.
+
+**Checkpoint**: No existing search behavior is lost; all edge cases handled.
+
+---
+
+## Phase 7: Polish & Cross-Cutting Concerns
+
+- [X] T026 [P] Add a list-endpoint regression test in `tests/test_api_endpoints.py`: after the T004 dual-path collapse, `GET /api/prompts` (no search) returns correctly ordered, correctly paginated results via the repository path (guards against the `list_prompts` half of the collapse). (depends on T004)
+- [X] T027 [P] Update `CHANGELOG.md` with the FTS entry and the upgrade note (one-time index build may take seconds on large vaults). (FR-015 migration note)
+- [X] T028 [P] Update the `/api/prompts/search` docstring in `src/web/routers/prompts_search_router.py` to document `ranked` and `match_context` per `contracts/search-api.md`.
+- [X] T029 Run the backend coverage gate: `python3 -m pytest` ≥85% (Constitution II); fill any gaps in `tests/test_fts_search.py`.
+  - Note: 2274 passed, 28 skipped, 87.50% total coverage (gate is 85%). The default `htmlcov` HTML report step crashes with an `INTERNALERROR` (coverage.py 7.15.1 + Python 3.14 AST parser rejecting a non-Python token sequence while generating the HTML view) — pre-existing tooling issue unrelated to this feature; the pass/fail coverage gate itself (`--cov-report=term-missing --cov-fail-under=85`) completes cleanly and passes at 87.50%.
+- [X] T030 [P] Run the frontend gates: `npm run typecheck && npm run lint && npm run test:unit:coverage` (≥85%).
+  - Note: `typecheck` clean; `test:unit:coverage` 438/438 passing, 97.15% statements (gate 85%). `lint` fails, but only on 5 pre-existing `tests/smoke/*.spec.ts` files with a `parserOptions.project` config gap (`tsconfig.json`'s `include` doesn't cover `tests/smoke/**`) — unrelated to this branch (no FTS commit touches `eslint.config.js`, `tsconfig.json`, or `tests/smoke/`; same failure reproduces on `main`). No FTS-authored TS file has a lint error.
+- [X] T031 Validate `docker-compose up --build` starts cleanly with the migration applied (Constitution workflow #6).
+  - Note: per `docs/agents/git-and-docker-safety.md`, the root `docker-compose.yml` is the user's live production instance — never run `up`/`--build`/`down` against it. Validated instead via an isolated scratch copy (renamed containers `fts-smoke-*`, project `-p fts-smoke`, host port `18001`, fresh named Postgres volume) built from the same Dockerfile/context. `docker compose up -d` brought db/redis/web up healthy; `alembic upgrade head` (run manually inside the container, matching this repo's deploy flow — no auto-migrate entrypoint) applied all migrations cleanly through `c3d4e5f6a7b8_full_text_search` against Postgres, confirmed via `\d prompts` (generated `search_vector tsvector` column) and `\di` (`idx_prompts_search_vector` GIN index present). `GET /api/health`, `GET /api/prompts`, and `GET /api/prompts/search?search=test` all returned `200` with valid envelopes. Torn down with `docker compose -p fts-smoke down -v`; production `promptvault-{web,db,redis}` containers confirmed untouched/still healthy throughout.
+- [X] T032 Execute `specs/008-full-text-search/quickstart.md` scenarios 1–6 against a running `python run_web.py` instance and confirm all pass; **also smoke-test the plain `GET /api/prompts` list endpoint** post-collapse (companion to T026).
+  - Note: ran `run_web.py` (not `make dev`, not raw uvicorn) against an isolated scratch SQLite DB — never the real dev DB — provisioned via `Base.metadata.create_all()` + `alembic stamp`/`upgrade` to the FTS revision (mirrors `tests/conftest.py`'s `_fts_upgrade` helper and the app's own SQLite provisioning; a full `alembic upgrade head` from empty fails on SQLite due to a pre-existing Postgres-only `DROP CONSTRAINT ... CASCADE` in an unrelated earlier migration — not a Phase 7 concern). All 6 scenarios verified live via curl: (1) title match ranks above body match, "code review" (both words) ranks above single-word "code" match; (2) `match_context` carries `[[MATCH]]...[[/MATCH]]` sentinels with the raw (unescaped) `<script>` text — confirmed safe-render is a client responsibility, validated separately by the passing T017 Vitest test; (3) `case_sensitive=true` → `200`, operator-only `***` → `200` with `total_count=0` (no FTS error), quoted `"code review"` matches the phrase as a unit; (4) 12 seeded matches, `limit=5` → 3 pages, all 12 ids collected across pages with zero duplicates; (6) created prompt with a unique token is immediately searchable, edit removing the token drops it from results, delete removes it entirely — no manual reindex. Companion list-endpoint smoke test: `GET /api/prompts?page=1&limit=5` returned a correct envelope. Scenario 5 (performance) and the cross-dialect matrix are exercised by the automated suite (T022/T023 benchmark, `tests/test_fts_search.py`/`test_fts_snippet.py` — SQLite legs pass, Postgres legs skip cleanly with no Postgres test DB configured, per T009). Scratch DB and server torn down after.
+
+---
+
+## Dependencies & Execution Order
+
+### Phase Dependencies
+
+- **Setup (Phase 1)**: no dependencies.
+- **Foundational (Phase 2)**: after Setup. **BLOCKS all user stories.** T004 (dual-path collapse) and T007 (migration) are the critical blockers.
+- **US1 (Phase 3)**: after Foundational. The MVP.
+- **US2 (Phase 4)**: after US1 (snippets extend the ranked `search()` from T012/T018).
+- **US3 (Phase 5)**: after US1 (benchmarks the ranked path).
+- **US4 (Phase 6)**: after US1 (hardens fallback/phrase routing around the FTS branch). The Postgres matrix fixture it relies on for cross-dialect legs is now created in Foundational (T009), not here.
+- **Polish (Phase 7)**: after all targeted stories.
+
+### Within Each User Story
+
+- Tests written first and expected to fail before implementation (Constitution II).
+- Repository `search()` (T012) is the spine; `count()`, snippet, fallback, and API all build on it.
+
+### Parallel Opportunities
+
+- Setup: T002, T003 in parallel.
+- Foundational: T005, T006, T009 in parallel; T008 after T007.
+- US1: T010, T011 (tests) in parallel before T012.
+- US2: T016, T017, T020 in parallel; T020→T021.
+- Polish: T026, T027, T028, T030 in parallel.
+
+---
+
+## Parallel Example: User Story 1
+
+```bash
+# Tests first (parallel):
+Task: "Ranking correctness tests in tests/test_fts_search.py"
+Task: "Sort-precedence + pagination-stability tests in tests/test_fts_search.py"
+
+# Then implementation (sequential on the shared repository file):
+Task: "Implement FTS branch of PromptRepository.search() in src/db/repositories/prompt_repository.py"
+Task: "Mirror predicate in PromptRepository.count()"
+```
+
+---
+
+## Implementation Strategy
+
+### MVP First (User Story 1)
+
+1. Phase 1: Setup.
+2. Phase 2: Foundational — **T004 dual-path collapse (Codeberg #72) is the gating step**, then migration + helpers.
+3. Phase 3: US1 ranked search.
+4. **STOP and VALIDATE**: quickstart Scenario 1 on both dialects.
+5. Deploy/demo — ranked search is the headline value.
+
+### Incremental Delivery
+
+1. Setup + Foundational → foundation ready.
+2. US1 → ranked results (MVP).
+3. US2 → highlighted snippets.
+4. US3 → proven performance at 5k.
+5. US4 → fallback/case-sensitive safety net.
+6. Polish → CHANGELOG, gates, docker parity, quickstart.
+
+---
+
+## Notes
+
+- [P] = different files, no incomplete-task dependencies.
+- Constitution deviation (backend-native FTS SQL) is bounded: **bound parameters only**, no user input interpolated into SQL strings.
+- Postgres test leg is skip-marked where no Postgres DB is present; SQLite leg always runs, so coverage never depends on external services.
+- Commit after each task or logical group; stop at any checkpoint to validate a story independently.

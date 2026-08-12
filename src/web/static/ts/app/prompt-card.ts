@@ -31,6 +31,17 @@ export interface PromptElementHandlers {
 let promptElementHandlers: PromptElementHandlers | null = null;
 let lastSelectedPromptIdSetter: (id: number) => void = () => {};
 
+// Sentinels the backend wraps FTS matches in (src/db/search/fts.py
+// MATCH_START/MATCH_END, 008-full-text-search US2). Escaped as literal text
+// first, then swapped for <mark> — raw match_context is never trusted as HTML.
+const SNIPPET_MATCH_START = '[[MATCH]]';
+const SNIPPET_MATCH_END = '[[/MATCH]]';
+
+function buildSnippetHTML(matchContext: string): string {
+  const escaped = escapeHtml(matchContext);
+  return escaped.split(SNIPPET_MATCH_START).join('<mark>').split(SNIPPET_MATCH_END).join('</mark>');
+}
+
 export function setPromptElementHandlers(handlers: PromptElementHandlers): void {
   promptElementHandlers = handlers;
 }
@@ -142,6 +153,13 @@ export function createPromptElement(id: string, prompt: PromptResponse): HTMLDiv
                 </button>`
     : '';
 
+  // Ranked-search snippet (008-full-text-search, US2): only present on
+  // search results with a body/note match; escaped before sentinels become
+  // <mark> so a <script>-laced prompt can never execute (FR-007/SC-006).
+  const matchContextHTML = prompt.match_context
+    ? `<p class="prompt-match-context text-prompt-body text-gray-500 dark:text-gray-400 mb-2 italic">${buildSnippetHTML(prompt.match_context)}</p>`
+    : '';
+
   // eslint-disable-next-line no-restricted-properties -- every interpolation is wrapped in escapeHtml()
   div.innerHTML = `
 	        <div class="flex items-start justify-between mb-3">
@@ -150,6 +168,7 @@ export function createPromptElement(id: string, prompt: PromptResponse): HTMLDiv
 	                ${favoriteButtonHTML}
 	            </div>
 	        </div>
+        ${matchContextHTML}
         <div class="flex flex-wrap gap-2 mb-3">
             <span class="px-2 py-1 text-xs font-semibold rounded-md bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200" data-category-pill="true" data-category-name="${escapeHtml(prompt.category)}"${categoryStyle}>
               ${escapeHtml(prompt.category) || t('categories.noCategory')}

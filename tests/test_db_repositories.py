@@ -132,7 +132,7 @@ class TestPromptRepository:
 
         results = prompt_repo.search(query="Python")
         assert len(results) == 1
-        assert results[0].title == "Python Best Practices"
+        assert results[0][0].title == "Python Best Practices"
 
     def test_search_by_text_in_content(self, prompt_repo, test_user, test_category):
         """Test searching by text in prompt content."""
@@ -151,7 +151,7 @@ class TestPromptRepository:
 
         results = prompt_repo.search(query="machine learning")
         assert len(results) == 1
-        assert "machine learning" in results[0].prompt
+        assert "machine learning" in results[0][0].prompt
 
     def test_search_by_text_in_note(self, prompt_repo, test_user, test_category):
         """Test searching by text in notes."""
@@ -172,7 +172,7 @@ class TestPromptRepository:
 
         results = prompt_repo.search(query="database")
         assert len(results) == 1
-        assert "database" in results[0].note
+        assert "database" in results[0][0].note
 
     def test_search_by_category(self, prompt_repo, test_user, test_db_session):
         """Test filtering by category."""
@@ -196,7 +196,7 @@ class TestPromptRepository:
 
         results = prompt_repo.search(category="Programming")
         assert len(results) == 1
-        assert results[0].title == "Code Prompt"
+        assert results[0][0].title == "Code Prompt"
 
     def test_search_by_tags(
         self, prompt_repo, test_user, test_category, test_db_session
@@ -227,7 +227,7 @@ class TestPromptRepository:
 
         results = prompt_repo.search(tags=["python"])
         assert len(results) == 1
-        assert results[0].title == "Python Prompt"
+        assert results[0][0].title == "Python Prompt"
 
     def test_search_by_multiple_tags(
         self, prompt_repo, test_user, test_category, test_db_session
@@ -279,7 +279,7 @@ class TestPromptRepository:
 
         results = prompt_repo.search(favorite=True)
         assert len(results) == 1
-        assert results[0].title == "Favorite Prompt"
+        assert results[0][0].title == "Favorite Prompt"
 
     def test_search_combined_filters(self, prompt_repo, test_user, test_db_session):
         """Test combining multiple search filters."""
@@ -318,7 +318,7 @@ class TestPromptRepository:
             query="Python", category="Programming", tags=["python"], favorite=True
         )
         assert len(results) == 1
-        assert results[0].title == "Python Best Practices"
+        assert results[0][0].title == "Python Best Practices"
 
     def test_get_favorites(self, prompt_repo, test_user, test_category):
         """Test getting all favorited prompts."""

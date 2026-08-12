@@ -325,7 +325,7 @@ class TestPromptVisibilityScoping:
         sharing_repo.upsert(shared.id, second_user.id, "read", third_user.id)
 
         results = prompt_repo.search(visible_to_user_id=second_user.id)
-        result_ids = {p.id for p in results}
+        result_ids = {p.id for p, _ in results}
 
         assert owned.id in result_ids
         assert shared.id in result_ids
@@ -350,7 +350,7 @@ class TestPromptVisibilityScoping:
         sharing_repo.upsert(shared.id, second_user.id, "read", third_user.id)
 
         results = prompt_repo.search(visible_to_user_id=second_user.id, shared_only=True)
-        result_ids = {p.id for p in results}
+        result_ids = {p.id for p, _ in results}
 
         assert result_ids == {shared.id}
         assert owned.id not in result_ids
@@ -377,7 +377,7 @@ class TestPromptVisibilityScoping:
         results = prompt_repo.search(
             query="Findable", visible_to_user_id=second_user.id
         )
-        result_ids = {p.id for p in results}
+        result_ids = {p.id for p, _ in results}
 
         assert result_ids == {matching.id}
 
@@ -399,7 +399,7 @@ class TestPromptVisibilityScoping:
 
         assert len(page1) == 2
         assert len(page2) == 2
-        assert {p.id for p in page1}.isdisjoint({p.id for p in page2})
+        assert {p.id for p, _ in page1}.isdisjoint({p.id for p, _ in page2})
 
     def test_favorite_filter_restricted_to_owned_when_visibility_scoped(
         self,
@@ -421,7 +421,7 @@ class TestPromptVisibilityScoping:
         results = prompt_repo.search(
             favorite=True, visible_to_user_id=second_user.id
         )
-        result_ids = {p.id for p in results}
+        result_ids = {p.id for p, _ in results}
 
         assert result_ids == {owned_favorite.id}
         assert shared_favorite.id not in result_ids
@@ -456,6 +456,6 @@ class TestPromptVisibilityScoping:
         )
 
         results = prompt_repo.search(visible_to_user_id=None)
-        result_ids = {p.id for p in results}
+        result_ids = {p.id for p, _ in results}
 
         assert private_prompt.id in result_ids

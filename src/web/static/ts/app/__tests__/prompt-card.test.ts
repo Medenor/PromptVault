@@ -253,6 +253,50 @@ describe('permission-gated controls (007-prompt-sharing, US2)', () => {
   });
 });
 
+describe('match_context snippet rendering (008-full-text-search, US2)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+    selectedPromptIds.clear();
+    setLastSelectedPromptIdSetter(() => {});
+    setPromptElementHandlers(makeHandlers());
+  });
+
+  it('renders no snippet element when match_context is absent', () => {
+    const el = createPromptElement('1', makePrompt());
+    expect(el.querySelector('.prompt-match-context')).toBeNull();
+  });
+
+  it('converts [[MATCH]]/[[/MATCH]] sentinels into <mark> tags', () => {
+    const el = createPromptElement(
+      '1',
+      makePrompt({ match_context: 'a [[MATCH]]gizmo[[/MATCH]] appears here' })
+    );
+    const snippet = el.querySelector('.prompt-match-context');
+    expect(snippet).not.toBeNull();
+    expect(snippet?.querySelector('mark')?.textContent).toBe('gizmo');
+    expect(snippet?.innerHTML).not.toContain('[[MATCH]]');
+    expect(snippet?.innerHTML).not.toContain('[[/MATCH]]');
+  });
+
+  it('escapes markup embedded in match_context so it renders as literal text, not executes', () => {
+    const el = createPromptElement(
+      '1',
+      makePrompt({
+        match_context: '<script>window.pwned = true</script> [[MATCH]]term[[/MATCH]]',
+      })
+    );
+    const snippet = el.querySelector('.prompt-match-context');
+    expect(snippet).not.toBeNull();
+    // No live <script> element was created from the payload.
+    expect(snippet?.querySelector('script')).toBeNull();
+    // The tag text survives only as escaped, inert text content.
+    expect(snippet?.textContent).toContain('<script>');
+    expect(snippet?.innerHTML).toContain('&lt;script&gt;');
+    // The real sentinel still became a <mark>.
+    expect(snippet?.querySelector('mark')?.textContent).toBe('term');
+  });
+});
+
 describe('setFavoriteButtonA11y', () => {
   it('sets aria-pressed and label for a favorited prompt', () => {
     const button = document.createElement('button');

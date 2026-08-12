@@ -440,6 +440,47 @@ class TestPaginationListPrompts:
         assert payload["total_pages"] == 0
         assert payload["has_next"] is False
 
+    def test_list_ordering_and_pagination_via_repository_path(
+        self, api_client, api_auth_headers, api_data_service, sample_prompt_data
+    ):
+        """Regression for the T004 dual-path collapse (Codeberg #72).
+
+        GET /api/prompts must go through PromptRepository.search() (not the
+        legacy data_service.load_prompts() path), which orders by
+        updated_at desc, created_at desc, giving a deterministic, stable
+        order for OFFSET/LIMIT pagination. Confirms pages are internally
+        consistent (correct sizes, no duplicates/gaps across pages, correct
+        total) now that both list_prompts halves share one code path.
+        """
+        for pid in list(api_data_service.load_prompts().keys()):
+            api_data_service.delete_prompt(pid)
+
+        created_ids = []
+        for i in range(5):
+            prompt_id = api_data_service.add_new_prompt(
+                sample_prompt_data(title=f"Order Prompt {i}", prompt=f"Content {i}"),
+                user_id="api-test-user-id",
+            )
+            created_ids.append(prompt_id)
+
+        page1 = api_client.get(
+            "/api/prompts", params={"page": 1, "limit": 3}, headers=api_auth_headers
+        ).json()
+        page2 = api_client.get(
+            "/api/prompts", params={"page": 2, "limit": 3}, headers=api_auth_headers
+        ).json()
+
+        assert len(page1["prompts"]) == 3
+        assert len(page2["prompts"]) == 2
+        assert page1["total_count"] == 5
+        assert page2["total_count"] == 5
+        assert page1["has_next"] is True
+        assert page2["has_next"] is False
+
+        combined_ids = set(page1["prompts"].keys()) | set(page2["prompts"].keys())
+        assert combined_ids == {str(pid) for pid in created_ids}
+        assert set(page1["prompts"].keys()).isdisjoint(page2["prompts"].keys())
+
 
 class TestPaginationSearchPrompts:
     """Pagination coverage for GET /api/prompts/search (US2)."""
@@ -829,26 +870,22 @@ class TestImportExportStats:
 
 
 class TestLegacyDataFallbacks:
-    """Ensure endpoints gracefully handle legacy prompt structures without a 'data' wrapper."""
+    """Ensure endpoints gracefully handle legacy prompt structures without a 'data' wrapper.
+
+    list_prompts()/search_prompts() no longer consult the legacy
+    data_service.load_prompts() dict fallback — that dual-path was
+    collapsed in favor of always using PromptRepository (Codeberg #72), so
+    this only exercises get_prompt()'s (crud_router) remaining legacy path.
+    """
 
     def test_legacy_prompt_structure_fallbacks(
-        self, api_client, api_data_service, api_auth_headers, monkeypatch
+        self, api_client, api_data_service, monkeypatch
     ):
-        # The legacy data_service.load_prompts() dict fallback in
-        # list_prompts()/search_prompts()/get_prompt() is now only consulted
-        # when auth is disabled (007-prompt-sharing: visibility scoping must
-        # be enforced once auth is on, and that legacy path has no scoping
-        # concept) — so this legacy-structure-tolerance test needs auth off
-        # to reach it in all three routers. auth_settings is a frozen
-        # pydantic model (can't mutate an attribute), so swap the
-        # module-level name each router resolves each request instead.
-        import src.web.routers.prompts_search_router as search_router
         import src.web.routers.prompts_crud_router as crud_router
 
         class _Disabled:
             auth_enabled = False
 
-        monkeypatch.setattr(search_router, "auth_settings", _Disabled())
         monkeypatch.setattr(crud_router, "auth_settings", _Disabled())
 
         legacy_prompt = {
@@ -867,57 +904,13 @@ class TestLegacyDataFallbacks:
         )
         monkeypatch.setattr(api_data_service, "get_tags", lambda: ["legacy", "old"])
 
-        prompts_response = api_client.get("/api/prompts")
-        assert prompts_response.status_code == 200
-        prompts_payload = prompts_response.json()["prompts"]
-        assert prompts_payload["0"]["title"] == "Legacy Title"
-
-        search_response = api_client.get(
-            "/api/prompts/search",
-            params={"favorites": True},
-            headers=api_auth_headers,
-        )
-        assert search_response.status_code == 200
-        search_results = search_response.json()["prompts"]
-        assert list(search_results.keys()) == ["0"]
-        assert search_results["0"]["favorite"] is True
-
         prompt_response = api_client.get("/api/prompts/0")
         assert prompt_response.status_code == 200
         assert prompt_response.json()["note"] == "Legacy note"
 
-        stats_response = api_client.get("/api/import-export/stats")
-        assert stats_response.status_code == 200
-        stats_payload = stats_response.json()
-        assert stats_payload["total_prompts"] == 1
-        assert "Legacy Category" in stats_payload["categories"]
-
 
 class TestApiErrorPaths:
     """Exercise error-handling branches."""
-
-    def test_search_prompts_exception_returns_500(
-        self, api_client, api_data_service, monkeypatch
-    ):
-        # As in test_legacy_prompt_structure_fallbacks: the legacy
-        # data_service.load_prompts() call in search_prompts() is only
-        # reached when auth is disabled (007-prompt-sharing scoping).
-        import src.web.routers.prompts_search_router as search_router
-
-        class _Disabled:
-            auth_enabled = False
-
-        monkeypatch.setattr(search_router, "auth_settings", _Disabled())
-
-        def _explode():
-            raise RuntimeError("unexpected failure")
-
-        monkeypatch.setattr(api_data_service, "load_prompts", _explode)
-
-        response = api_client.get("/api/prompts/search")
-        assert response.status_code == 500
-        payload = response.json()
-        assert payload["error"].startswith("Search failed")
 
     def test_update_prompt_failure_returns_500(
         self, api_client, api_auth_headers, seeded_prompt_id
