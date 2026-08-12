@@ -22,7 +22,7 @@ The fix ensures:
   auth state during history navigation.
 """
 
-from typing import Dict, Any
+from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
@@ -40,7 +40,7 @@ require_auth = pytest.mark.skipif(
 @pytest.fixture
 def registered_user_with_client(
     api_client: TestClient,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Register a user via the API and return credentials and tokens.
 
     Args:
@@ -86,7 +86,7 @@ class TestLoginPageRedirectsAuthenticatedUsers:
     """Tests that the login page redirects users with a valid session."""
 
     def test_login_page_redirects_when_cookie_present(
-        self, registered_user_with_client: Dict[str, Any]
+        self, registered_user_with_client: dict[str, Any]
     ):
         """GET /auth/login with a valid access_token cookie should redirect to /."""
         client: TestClient = registered_user_with_client["client"]
@@ -130,7 +130,7 @@ class TestHomeRouteRedirectCacheHeaders:
         assert "no-cache" in cache_control
 
     def test_home_serves_app_when_authenticated(
-        self, registered_user_with_client: Dict[str, Any]
+        self, registered_user_with_client: dict[str, Any]
     ):
         """GET / with an access_token cookie should serve the main app."""
         client: TestClient = registered_user_with_client["client"]

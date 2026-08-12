@@ -20,7 +20,8 @@ Security Features:
     - Proper HTTP status codes (403)
 """
 
-from typing import Callable
+from collections.abc import Callable
+
 from fastapi import Depends, HTTPException, status
 
 from src.db.models.user import User

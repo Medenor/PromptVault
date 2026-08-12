@@ -7,8 +7,7 @@
 GET /api/users/search — recipient picker for the share modal (US1).
 """
 
-from datetime import datetime, timezone
-from typing import Dict
+from datetime import UTC, datetime
 
 import pytest
 
@@ -19,10 +18,10 @@ def api_client(api_client_context):
 
 
 def _seed_user(user_id: str, username: str, email: str, is_active: bool = True):
-    from src.services.auth.password_service import PasswordService
     from src.config.auth_config import auth_settings
     from src.db.models.user import User
     from src.db.session import SessionLocal
+    from src.services.auth.password_service import PasswordService
 
     password_service = PasswordService(auth_settings)
     password_hash = password_service.hash_password("SeedUserP@ssw0rd123")
@@ -39,8 +38,8 @@ def _seed_user(user_id: str, username: str, email: str, is_active: bool = True):
                 role="editor",
                 is_active=is_active,
                 email_verified=True,
-                created_at=datetime.now(timezone.utc),
-                updated_at=datetime.now(timezone.utc),
+                created_at=datetime.now(UTC),
+                updated_at=datetime.now(UTC),
             )
             session.add(user)
             session.commit()
@@ -49,9 +48,9 @@ def _seed_user(user_id: str, username: str, email: str, is_active: bool = True):
 
 
 @pytest.fixture
-def searcher_auth_headers(api_client_context) -> Dict[str, str]:
-    from src.services.auth.jwt_service import JWTService
+def searcher_auth_headers(api_client_context) -> dict[str, str]:
     from src.config import auth_config
+    from src.services.auth.jwt_service import JWTService
 
     _seed_user("search-user-id", "searcher", "searcher@example.com")
     jwt_service = JWTService(auth_config.auth_settings)

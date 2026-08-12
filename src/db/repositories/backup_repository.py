@@ -7,13 +7,12 @@
 Provides data access layer for Backup entities with filtering support.
 """
 
-from typing import Optional, List, Dict, Any
 from datetime import datetime
 
 from sqlalchemy.orm import Session
 
-from src.db.repositories.base import BaseRepository
 from src.db.models.backup import Backup
+from src.db.repositories.base import BaseRepository
 
 
 class BackupRepository(BaseRepository[Backup]):
@@ -33,13 +32,13 @@ class BackupRepository(BaseRepository[Backup]):
 
     def list_backups(
         self,
-        tag: Optional[str] = None,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
-        kind: Optional[str] = None,
+        tag: str | None = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
+        kind: str | None = None,
         limit: int = 50,
         offset: int = 0,
-    ) -> List[Backup]:
+    ) -> list[Backup]:
         """List backups with optional filters.
 
         Args:
@@ -69,7 +68,7 @@ class BackupRepository(BaseRepository[Backup]):
 
         return query.offset(offset).limit(limit).all()
 
-    def get_all_for_cleanup(self) -> List[Backup]:
+    def get_all_for_cleanup(self) -> list[Backup]:
         """Get all backups for retention cleanup processing.
 
         Returns:
@@ -79,10 +78,10 @@ class BackupRepository(BaseRepository[Backup]):
 
     def count_with_filters(
         self,
-        tag: Optional[str] = None,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
-        kind: Optional[str] = None,
+        tag: str | None = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
+        kind: str | None = None,
     ) -> int:
         """Count backups matching filters.
 

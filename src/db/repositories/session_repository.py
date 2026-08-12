@@ -4,10 +4,10 @@
 
 """SessionRepository for JWT refresh token session management."""
 
-from datetime import datetime, timezone
-from typing import Optional, List
-from sqlalchemy.orm import Session
+from datetime import UTC, datetime
+
 from sqlalchemy import and_
+from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
 
 from src.db.models.user_session import UserSession
@@ -35,8 +35,8 @@ class SessionRepository(BaseRepository[UserSession]):
         family_id: str,
         refresh_token_jti: str,
         expires_at: datetime,
-        device_info: Optional[str] = None,
-        ip_address: Optional[str] = None,
+        device_info: str | None = None,
+        ip_address: str | None = None,
     ) -> UserSession:
         """Create a new user session.
 
@@ -60,7 +60,7 @@ class SessionRepository(BaseRepository[UserSession]):
             ip_address=ip_address,
         )
 
-    def get_by_family_id(self, family_id: str) -> Optional[UserSession]:
+    def get_by_family_id(self, family_id: str) -> UserSession | None:
         """Find session by family ID.
 
         Args:
@@ -75,7 +75,7 @@ class SessionRepository(BaseRepository[UserSession]):
             .first()
         )
 
-    def get_by_jti(self, refresh_token_jti: str) -> Optional[UserSession]:
+    def get_by_jti(self, refresh_token_jti: str) -> UserSession | None:
         """Find session by current JTI.
 
         Args:
@@ -90,7 +90,7 @@ class SessionRepository(BaseRepository[UserSession]):
             .first()
         )
 
-    def get_by_id(self, session_id: str) -> Optional[UserSession]:
+    def get_by_id(self, session_id: str) -> UserSession | None:
         """Find session by session ID.
 
         Args:
@@ -105,7 +105,7 @@ class SessionRepository(BaseRepository[UserSession]):
 
     def get_user_sessions(
         self, user_id: str, active_only: bool = True
-    ) -> List[UserSession]:
+    ) -> list[UserSession]:
         """Get all sessions for a user.
 
         Args:
@@ -139,9 +139,7 @@ class SessionRepository(BaseRepository[UserSession]):
 
         return query.count()
 
-    def update_session_token(
-        self, family_id: str, new_jti: str
-    ) -> Optional[UserSession]:
+    def update_session_token(self, family_id: str, new_jti: str) -> UserSession | None:
         """Rotate token (update JTI and last_used_at).
 
         Args:
@@ -154,7 +152,7 @@ class SessionRepository(BaseRepository[UserSession]):
         session = self.get_by_family_id(family_id)
         if session:
             session.refresh_token_jti = new_jti
-            session.last_used_at = datetime.now(timezone.utc)
+            session.last_used_at = datetime.now(UTC)
             self.session.flush()
         return session
 
@@ -261,7 +259,7 @@ class SessionRepository(BaseRepository[UserSession]):
         self.session.flush()
         return count
 
-    def get_expired_sessions(self, limit: int = 100) -> List[UserSession]:
+    def get_expired_sessions(self, limit: int = 100) -> list[UserSession]:
         """Get expired sessions for cleanup.
 
         Args:
@@ -291,7 +289,7 @@ class SessionRepository(BaseRepository[UserSession]):
         self.session.flush()
         return count
 
-    def get_oldest_user_session(self, user_id: str) -> Optional[UserSession]:
+    def get_oldest_user_session(self, user_id: str) -> UserSession | None:
         """Get oldest active session for a user.
 
         Args:

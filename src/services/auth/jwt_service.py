@@ -61,9 +61,8 @@ Security Notes:
 
 import secrets
 import uuid
-from datetime import datetime, timedelta, timezone
-from pathlib import Path
-from typing import Any, Dict, Optional
+from datetime import UTC, datetime, timedelta
+from typing import Any
 
 import jwt
 from jwt.exceptions import (
@@ -112,8 +111,8 @@ class JWTService:
         """
         self.config = config
         self.algorithm = "ES256"  # ECDSA with P-256 curve and SHA-256
-        self._private_key: Optional[bytes] = None
-        self._public_key: Optional[bytes] = None
+        self._private_key: bytes | None = None
+        self._public_key: bytes | None = None
 
     def _load_private_key(self) -> bytes:
         """Load ES256 private key from filesystem.
@@ -143,9 +142,11 @@ class JWTService:
             raise PermissionError(
                 f"Cannot read JWT private key at {key_path}. "
                 f"Check file permissions (should be 0600): {e}"
-            )
+            ) from e
         except Exception as e:
-            raise ValueError(f"Failed to load JWT private key from {key_path}: {e}")
+            raise ValueError(
+                f"Failed to load JWT private key from {key_path}: {e}"
+            ) from e
 
         if not self._private_key or len(self._private_key) < 50:
             raise ValueError(
@@ -182,9 +183,11 @@ class JWTService:
             raise PermissionError(
                 f"Cannot read JWT public key at {key_path}. "
                 f"Check file permissions: {e}"
-            )
+            ) from e
         except Exception as e:
-            raise ValueError(f"Failed to load JWT public key from {key_path}: {e}")
+            raise ValueError(
+                f"Failed to load JWT public key from {key_path}: {e}"
+            ) from e
 
         if not self._public_key or len(self._public_key) < 50:
             raise ValueError(
@@ -255,7 +258,7 @@ class JWTService:
             ...     family_id="family-uuid"
             ... )
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         expiry = now + timedelta(seconds=self.config.jwt_access_token_expire_seconds)
 
         claims = {
@@ -289,7 +292,7 @@ class JWTService:
         user_id: str,
         family_id: str,
         jti: str,
-        expires_in_seconds: Optional[int] = None,
+        expires_in_seconds: int | None = None,
     ) -> str:
         """Generate JWT refresh token with minimal claims.
 
@@ -333,7 +336,7 @@ class JWTService:
             ... )
             >>> # Store jti in database for revocation checking
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         expiry_seconds = (
             expires_in_seconds or self.config.jwt_refresh_token_expire_seconds
         )
@@ -360,7 +363,7 @@ class JWTService:
             algorithm=self.algorithm,
         )
 
-    def validate_access_token(self, token: str) -> Dict[str, Any]:
+    def validate_access_token(self, token: str) -> dict[str, Any]:
         """Validate and decode access token.
 
         Performs comprehensive validation including signature verification,
@@ -438,9 +441,9 @@ class JWTService:
         except MissingRequiredClaimError:
             raise  # Re-raise for caller to handle
         except (DecodeError, InvalidTokenError) as e:
-            raise InvalidTokenError(f"Invalid token: {str(e)}")
+            raise InvalidTokenError(f"Invalid token: {str(e)}") from e
 
-    def validate_refresh_token(self, token: str) -> Dict[str, Any]:
+    def validate_refresh_token(self, token: str) -> dict[str, Any]:
         """Validate and decode refresh token.
 
         Performs comprehensive validation specifically for refresh tokens,
@@ -518,9 +521,9 @@ class JWTService:
         except MissingRequiredClaimError:
             raise  # Re-raise for caller to handle
         except (DecodeError, InvalidTokenError) as e:
-            raise InvalidTokenError(f"Invalid refresh token: {str(e)}")
+            raise InvalidTokenError(f"Invalid refresh token: {str(e)}") from e
 
-    def decode_token_unsafe(self, token: str) -> Dict[str, Any]:
+    def decode_token_unsafe(self, token: str) -> dict[str, Any]:
         """Decode token without validation (inspection only).
 
         Decodes JWT token without verifying signature or validating claims.
@@ -562,9 +565,9 @@ class JWTService:
                 options={"verify_signature": False, "verify_exp": False},
             )
         except (DecodeError, InvalidTokenError) as e:
-            raise InvalidTokenError(f"Cannot decode token: {str(e)}")
+            raise InvalidTokenError(f"Cannot decode token: {str(e)}") from e
 
-    def decode_token(self, token: str) -> Dict[str, Any]:
+    def decode_token(self, token: str) -> dict[str, Any]:
         """Decode and validate JWT token (access or refresh).
 
         Validates token signature, expiration, and claims.
@@ -599,7 +602,7 @@ class JWTService:
                 return claims
             except Exception:
                 # If both fail, raise original access token error
-                raise InvalidTokenError("Invalid token format")
+                raise InvalidTokenError("Invalid token format") from None
 
     def get_token_expiry(self, token: str) -> datetime:
         """Get token expiration datetime.
@@ -634,12 +637,14 @@ class JWTService:
             if exp_timestamp is None:
                 raise InvalidTokenError("Token missing exp claim")
 
-            return datetime.fromtimestamp(exp_timestamp, tz=timezone.utc)
+            return datetime.fromtimestamp(exp_timestamp, tz=UTC)
 
         except InvalidTokenError:
             raise
         except Exception as e:
-            raise InvalidTokenError(f"Cannot extract expiry from token: {str(e)}")
+            raise InvalidTokenError(
+                f"Cannot extract expiry from token: {str(e)}"
+            ) from e
 
     def is_token_expired(self, token: str) -> bool:
         """Check if token is expired.
@@ -671,7 +676,7 @@ class JWTService:
         """
         try:
             expiry = self.get_token_expiry(token)
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             return now >= expiry
 
         except InvalidTokenError:

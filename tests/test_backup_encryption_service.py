@@ -5,19 +5,16 @@
 """Tests for BackupEncryptionService."""
 
 import os
-import tempfile
 import shutil
+import tempfile
 
 import pytest
 
 from src.services.backup_encryption_service import (
-    BackupEncryptionService,
-    ARGON2_TIME_COST,
-    ARGON2_MEMORY_COST,
-    ARGON2_PARALLELISM,
     ARGON2_HASH_LEN,
-    SALT_BYTES,
     NONCE_BYTES,
+    SALT_BYTES,
+    BackupEncryptionService,
 )
 
 
@@ -106,8 +103,9 @@ class TestRotateKey:
     def test_rotate_key_raises_without_sentinel(
         self, encryption_service, patched_db_session
     ):
-        from src.db.models.encryption_key_config import EncryptionKeyConfig
         import uuid
+
+        from src.db.models.encryption_key_config import EncryptionKeyConfig
 
         with patched_db_session() as session:
             config = EncryptionKeyConfig(

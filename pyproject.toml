@@ -60,6 +60,8 @@ test = [
 ]
 dev = [
   "black>=24.0.0",
+  "ruff>=0.8.0",
+  "mypy>=1.13.0",
 ]
 setup = [
   "click>=8.1.0",
@@ -78,6 +80,44 @@ package-dir = { "" = "." }
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["src*"]
+
+[tool.ruff]
+target-version = "py314"
+line-length = 88
+
+[tool.ruff.lint]
+# F=pyflakes, E/W=pycodestyle, UP=pyupgrade, I=isort, B=bugbear.
+# Deliberately not enabling BLE/TRY/S/G/SIM/ASYNC/PERF/PLW/C4/FURB/RUF(misc):
+# opinionated/pedantic rule families left for a future, separately-scoped pass.
+select = ["F", "E", "W", "UP", "I", "B"]
+ignore = [
+    "B008",  # FastAPI Depends()/Header()/Cookie() call-in-default is the intended idiom
+    "E501",  # line length is black's job; black doesn't wrap comments/docstrings/strings
+    "E712",  # `== True`/`== False` is required (not `is`) for SQLAlchemy column filter expressions
+    "UP046", # PEP 695 generic syntax: skip for now, ModelType TypeVar is shared across repository subclasses
+    "B017",  # pytest.raises(Exception) is broad but narrowing requires per-call domain knowledge; future cleanup
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["F811"]  # pytest fixture redefinition/shadowing is idiomatic
+
+# Not yet wired into `make lint-backend` (see #79 follow-up: SQLAlchemy models
+# use legacy Column() declarative style, which produces ~350 false-positive
+# arg-type/assignment/union-attr errors against Mapped[T]-shaped expectations;
+# needs a model migration to Mapped[T] before mypy can gate CI meaningfully).
+[tool.mypy]
+python_version = "3.14"
+plugins = ["sqlalchemy.ext.mypy.plugin"]
+
+[[tool.mypy.overrides]]
+module = [
+    "diff_match_patch",
+    "user_agents",
+    "apscheduler.*",
+    "boto3",
+    "botocore.*",
+]
+ignore_missing_imports = true
 
 [tool.coverage.run]
 source = ["src"]

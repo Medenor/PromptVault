@@ -8,28 +8,29 @@ This module contains unit tests for the rate limiting functionality,
 including Redis backend, rate limit key generation, and exception handling.
 """
 
+from unittest.mock import MagicMock, Mock, patch
+
 import pytest
-from unittest.mock import Mock, patch, MagicMock
-from fastapi import Request, FastAPI
+from fastapi import FastAPI, Request
 from fastapi.testclient import TestClient
 from slowapi.errors import RateLimitExceeded
 
 from src.web.middleware.rate_limit import (
-    get_rate_limit_key,
-    create_redis_client,
+    add_rate_limit_headers,
+    auth_login_limit,
+    auth_register_limit,
+    bulk_limit,
     create_limiter,
+    create_redis_client,
+    expensive_limit,
     get_auth_login_limit,
     get_auth_register_limit,
     get_password_reset_limit,
-    auth_login_limit,
-    auth_register_limit,
+    get_rate_limit_key,
     password_reset_limit,
+    rate_limit_exceeded_handler,
     read_limit,
     write_limit,
-    expensive_limit,
-    bulk_limit,
-    rate_limit_exceeded_handler,
-    add_rate_limit_headers,
 )
 
 
@@ -214,8 +215,9 @@ class TestLimiterIntegration:
     @pytest.mark.asyncio
     async def test_rate_limit_integration_with_fastapi(self):
         """Should integrate with FastAPI application."""
-        from src.web.middleware.rate_limit import create_limiter
         from fastapi.responses import JSONResponse
+
+        from src.web.middleware.rate_limit import create_limiter
 
         # Create a fresh limiter for testing
         limiter = create_limiter()

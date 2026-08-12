@@ -4,18 +4,13 @@
 
 """Tests for new backup router endpoints (spec 003)."""
 
-import json
 import os
 import sqlite3
-from datetime import datetime, timedelta, timezone
-from typing import Dict
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
 from src.db.models import Backup
-from src.db.models.backup_schedule import BackupSchedule
-from src.db.models.backup_storage_provider import BackupStorageProvider
-from src.db.models.encryption_key_config import EncryptionKeyConfig
 
 
 @pytest.fixture
@@ -24,9 +19,9 @@ def api_client(api_client_context):
 
 
 @pytest.fixture
-def api_auth_headers(api_client_context) -> Dict[str, str]:
-    from src.services.auth.jwt_service import JWTService
+def api_auth_headers(api_client_context) -> dict[str, str]:
     from src.config import auth_config
+    from src.services.auth.jwt_service import JWTService
 
     jwt_service = JWTService(auth_config.auth_settings)
     access_token = jwt_service.generate_access_token(
@@ -39,13 +34,13 @@ def api_auth_headers(api_client_context) -> Dict[str, str]:
 
 
 @pytest.fixture
-def api_admin_auth_headers(api_client_context) -> Dict[str, str]:
-    from src.services.auth.jwt_service import JWTService
-    from src.services.auth.password_service import PasswordService
+def api_admin_auth_headers(api_client_context) -> dict[str, str]:
     from src.config.auth_config import auth_settings
     from src.db.models.user import User
     from src.db.models.user_session import UserSession
     from src.db.session import SessionLocal
+    from src.services.auth.jwt_service import JWTService
+    from src.services.auth.password_service import PasswordService
 
     password_service = PasswordService(auth_settings)
     password_hash = password_service.hash_password("AdminP@ssw0rd123")
@@ -64,8 +59,8 @@ def api_admin_auth_headers(api_client_context) -> Dict[str, str]:
                 role="admin",
                 is_active=True,
                 email_verified=True,
-                created_at=datetime.now(timezone.utc),
-                updated_at=datetime.now(timezone.utc),
+                created_at=datetime.now(UTC),
+                updated_at=datetime.now(UTC),
             )
             test_session.add(admin_user)
             test_session.flush()
@@ -76,8 +71,8 @@ def api_admin_auth_headers(api_client_context) -> Dict[str, str]:
                 refresh_token_jti="api-admin-backup-test-jti",
                 ip_address="127.0.0.1",
                 device_info="Test Agent",
-                created_at=datetime.now(timezone.utc),
-                expires_at=datetime.now(timezone.utc) + timedelta(days=30),
+                created_at=datetime.now(UTC),
+                expires_at=datetime.now(UTC) + timedelta(days=30),
                 is_revoked=False,
             )
             test_session.add(admin_session)

@@ -20,24 +20,25 @@ Dependencies:
     - has_valid_auth_cookie(): Best-effort stateless cookie check
 """
 
-from typing import Callable, Optional
+from collections.abc import Callable
+
 from fastapi import Cookie, Depends, Header, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from src.config.auth_config import auth_settings
-from src.services.auth.jwt_service import JWTService
-from src.db.session import get_db
 from src.db.models.user import User
 from src.db.repositories.user_repository import UserRepository
+from src.db.session import get_db
+from src.services.auth.jwt_service import JWTService
 from src.web.dependencies.token import _extract_bearer_or_cookie_token, get_jwt_service
 
 
 async def get_current_user_or_none(
-    authorization: Optional[str] = Header(None, description="Optional Bearer token"),
-    access_token_cookie: Optional[str] = Cookie(None, alias="access_token"),
+    authorization: str | None = Header(None, description="Optional Bearer token"),
+    access_token_cookie: str | None = Cookie(None, alias="access_token"),
     jwt_service: JWTService = Depends(get_jwt_service),
     session: Session = Depends(get_db),
-) -> Optional[User]:
+) -> User | None:
     """Get the current active user, or None when auth is disabled/unauthenticated.
 
     This is the bypass-friendly variant of :func:`get_current_active_user` used
@@ -85,7 +86,7 @@ async def get_current_user_or_none(
 
 
 async def get_current_user_or_default(
-    user: Optional[User] = Depends(get_current_user_or_none),
+    user: User | None = Depends(get_current_user_or_none),
     session: Session = Depends(get_db),
 ) -> User:
     """Get the current user, falling back to the shared system user.
@@ -116,7 +117,7 @@ async def get_current_user_or_default(
     return user_repo.get_or_create_default_user()
 
 
-def require_role_or_bypass(allowed_roles: Optional[list[str]] = None) -> Callable:
+def require_role_or_bypass(allowed_roles: list[str] | None = None) -> Callable:
     """Create a dependency requiring role(s) when auth is enabled; bypass (None) when disabled.
 
     Mirrors :func:`src.web.dependencies.roles.require_role`, but short-circuits
@@ -135,8 +136,8 @@ def require_role_or_bypass(allowed_roles: Optional[list[str]] = None) -> Callabl
     """
 
     async def check_user_role_or_bypass(
-        user: Optional[User] = Depends(get_current_user_or_none),
-    ) -> Optional[User]:
+        user: User | None = Depends(get_current_user_or_none),
+    ) -> User | None:
         if not auth_settings.auth_enabled:
             return None
         if not user:
@@ -161,8 +162,8 @@ def require_role_or_bypass(allowed_roles: Optional[list[str]] = None) -> Callabl
 
 
 async def get_user_or_bypass(
-    user: Optional[User] = Depends(get_current_user_or_none),
-) -> Optional[User]:
+    user: User | None = Depends(get_current_user_or_none),
+) -> User | None:
     """Require any authenticated user when auth is enabled; bypass (None) when disabled.
 
     For read endpoints over sensitive data (backups, schedules, audit logs)
@@ -207,8 +208,8 @@ def has_valid_auth_cookie(request: Request) -> bool:
 
 
 async def get_admin_or_bypass(
-    user: Optional[User] = Depends(get_current_user_or_none),
-) -> Optional[User]:
+    user: User | None = Depends(get_current_user_or_none),
+) -> User | None:
     """Require admin when auth is enabled; bypass (None) when disabled.
 
     Replaces :func:`src.web.dependencies.roles.get_admin_user` on admin-only
@@ -223,8 +224,8 @@ async def get_admin_or_bypass(
 
 
 async def get_editor_or_admin_or_bypass(
-    user: Optional[User] = Depends(get_current_user_or_none),
-) -> Optional[User]:
+    user: User | None = Depends(get_current_user_or_none),
+) -> User | None:
     """Require editor/admin when auth is enabled; bypass (None) when disabled.
 
     Replaces :func:`src.web.dependencies.roles.get_editor_or_admin_user` on

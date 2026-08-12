@@ -12,24 +12,17 @@ This module provides thorough coverage for:
 Target: 90%+ coverage of the service layer
 """
 
-import os
 import json
-import gzip
-import shutil
-import tempfile
+import os
 import uuid
-from pathlib import Path
-from datetime import datetime, timedelta, timezone
-from unittest.mock import patch, MagicMock, Mock
-from typing import Dict, Any, List
+from datetime import UTC, datetime
+from unittest.mock import patch
 
 import pytest
-from sqlalchemy.orm import Session
 
-from src.services.prompt_data_service_db import PromptDataService
 from src.services.backup_service_db import BackupService
-from src.services.exceptions import DataPersistenceError, BackupError
-from src.db.models import Prompt, PromptVersion, Category, Tag, User, Backup
+from src.services.exceptions import BackupError
+from src.services.prompt_data_service_db import PromptDataService
 
 # ============================================================================
 # TEST PROMPT DATA SERVICE
@@ -680,13 +673,15 @@ class TestBackupService:
         # Create a fresh backup service with clean temp dir and completely isolated DB
         import os
         import shutil
+        from contextlib import contextmanager
+
+        from sqlalchemy import create_engine
+        from sqlalchemy.orm import sessionmaker
+
         from src.db import config as config_module
         from src.db import session as session_module
-        from src.services import backup_service_db as backup_service_module
-        from sqlalchemy.orm import sessionmaker
-        from sqlalchemy import create_engine
         from src.db.base import Base
-        from contextlib import contextmanager
+        from src.services import backup_service_db as backup_service_module
 
         # Clean the backups directory to ensure no metadata files from previous tests
         backups_dir = os.path.join(temp_data_dir, "backups")
@@ -723,12 +718,12 @@ class TestBackupService:
         monkeypatch.setattr(
             backup_service_module, "get_db_session", mock_get_db_session
         )
-        from src.services import backup_metadata_store as backup_metadata_store_module
         from src.services import (
             backup_creation_service as backup_creation_service_module,
         )
-        from src.services import backup_restore_service as backup_restore_service_module
         from src.services import backup_diff_service as backup_diff_service_module
+        from src.services import backup_metadata_store as backup_metadata_store_module
+        from src.services import backup_restore_service as backup_restore_service_module
 
         monkeypatch.setattr(
             backup_metadata_store_module, "get_db_session", mock_get_db_session
@@ -911,7 +906,7 @@ class TestBackupService:
         backup_id = db_backup_service.create_backup(f"recent_{uuid.uuid4().hex[:8]}")
 
         # Try to clean up with 30 day retention
-        removed = db_backup_service.cleanup_old_backups(retention_days=30)
+        db_backup_service.cleanup_old_backups(retention_days=30)
 
         # Should not delete recent backup (verify it still exists)
         info = db_backup_service.get_backup_info(backup_id)
@@ -936,13 +931,15 @@ class TestBackupService:
         # Create a fresh backup service with clean temp dir and completely isolated DB
         import os
         import shutil
+        from contextlib import contextmanager
+
+        from sqlalchemy import create_engine
+        from sqlalchemy.orm import sessionmaker
+
         from src.db import config as config_module
         from src.db import session as session_module
-        from src.services import backup_service_db as backup_service_module
-        from sqlalchemy.orm import sessionmaker
-        from sqlalchemy import create_engine
         from src.db.base import Base
-        from contextlib import contextmanager
+        from src.services import backup_service_db as backup_service_module
 
         # Clean the backups directory to ensure no metadata files from previous tests
         backups_dir = os.path.join(temp_data_dir, "backups")
@@ -979,12 +976,12 @@ class TestBackupService:
         monkeypatch.setattr(
             backup_service_module, "get_db_session", mock_get_db_session
         )
-        from src.services import backup_metadata_store as backup_metadata_store_module
         from src.services import (
             backup_creation_service as backup_creation_service_module,
         )
-        from src.services import backup_restore_service as backup_restore_service_module
         from src.services import backup_diff_service as backup_diff_service_module
+        from src.services import backup_metadata_store as backup_metadata_store_module
+        from src.services import backup_restore_service as backup_restore_service_module
 
         monkeypatch.setattr(
             backup_metadata_store_module, "get_db_session", mock_get_db_session
@@ -1033,7 +1030,7 @@ class TestBackupService:
         backup_id = db_backup_service.create_backup(f"recent_{uuid.uuid4().hex[:8]}")
 
         # Try to compress with 30 day threshold
-        compressed = db_backup_service.compress_old_backups(days_threshold=30)
+        db_backup_service.compress_old_backups(days_threshold=30)
 
         # Verify our backup is not compressed
         info = db_backup_service.get_backup_info(backup_id)
@@ -1110,7 +1107,7 @@ class TestBackupService:
         assert os.path.exists(metadata_path)
 
         # Verify metadata content
-        with open(metadata_path, "r") as f:
+        with open(metadata_path) as f:
             metadata = json.load(f)
 
         assert metadata["backup_id"] == backup_id
@@ -1154,7 +1151,7 @@ class TestBackupService:
         db_backup_service.compress_old_backups(days_threshold=0)
 
         # Try to compress again
-        compressed = db_backup_service.compress_old_backups(days_threshold=0)
+        db_backup_service.compress_old_backups(days_threshold=0)
 
         # Should skip already compressed (our specific backup is already compressed)
         info = db_backup_service.get_backup_info(backup_id)
@@ -1183,7 +1180,7 @@ class TestBackupService:
             "database_type": "sqlite",
             "created_by": "test",
             "compressed": True,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
         db_backup_service._update_backup_record(backup_id, new_metadata)
@@ -1227,7 +1224,7 @@ class TestBackupService:
             "backup_type": "sqlite_copy",
             "filename": "test.db",
             "storage_path": "/path/to/test.db",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "size_bytes": 1024,
             "database_type": "sqlite",
             "created_by": "test",
@@ -1241,7 +1238,7 @@ class TestBackupService:
         assert os.path.exists(metadata_path)
 
         # Verify content
-        with open(metadata_path, "r") as f:
+        with open(metadata_path) as f:
             loaded = json.load(f)
 
         assert loaded["backup_id"] == "test_write"

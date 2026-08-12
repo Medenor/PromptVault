@@ -4,9 +4,6 @@
 
 """Tests for tag/category management endpoints."""
 
-from typing import Dict
-
-
 import pytest
 
 
@@ -16,10 +13,10 @@ def api_client(api_client_context):
 
 
 @pytest.fixture
-def api_auth_headers(api_client_context) -> Dict[str, str]:
+def api_auth_headers(api_client_context) -> dict[str, str]:
     """Create authentication headers with valid API user access token."""
-    from src.services.auth.jwt_service import JWTService
     from src.config import auth_config
+    from src.services.auth.jwt_service import JWTService
 
     jwt_service = JWTService(auth_config.auth_settings)
     access_token = jwt_service.generate_access_token(
@@ -567,7 +564,7 @@ def test_merge_categories_target_equals_source_422(api_client, api_auth_headers)
         json={"name": "SelfMerge"},
     ).json()
 
-    response = api_client.post(
+    api_client.post(
         "/api/categories/merge",
         headers=api_auth_headers,
         json={"target_id": cat["id"], "source_ids": [cat["id"]], "confirm": True},
@@ -582,7 +579,7 @@ def test_merge_tags_target_equals_source_422(api_client, api_auth_headers):
         json={"name": "SelfMergeTag"},
     ).json()
 
-    response = api_client.post(
+    api_client.post(
         "/api/tags/merge",
         headers=api_auth_headers,
         json={"target_id": tag["id"], "source_ids": [tag["id"]], "confirm": True},
@@ -1354,7 +1351,7 @@ def test_reorder_categories_all_ids(api_client, api_auth_headers):
 
 
 def test_reorder_categories_partial_ids(api_client, api_auth_headers):
-    cat1 = api_client.post(
+    api_client.post(
         "/api/categories",
         headers=api_auth_headers,
         json={"name": "ReorderPartial1"},

@@ -7,8 +7,6 @@
 Data access layer for PromptShare — per-prompt sharing grants between users.
 """
 
-from typing import List, Optional
-
 from sqlalchemy.orm import Session
 
 from src.db.models import PromptShare
@@ -36,7 +34,7 @@ class SharingRepository(BaseRepository[PromptShare]):
         prompt_id: int,
         grantee_user_id: str,
         permission: str,
-        granted_by: Optional[str],
+        granted_by: str | None,
     ) -> PromptShare:
         """Create a grant, or update its permission in place if one exists.
 
@@ -97,7 +95,7 @@ class SharingRepository(BaseRepository[PromptShare]):
         self.session.flush()
         return True
 
-    def list_for_prompt(self, prompt_id: int) -> List[PromptShare]:
+    def list_for_prompt(self, prompt_id: int) -> list[PromptShare]:
         """List all grants on a prompt (grant review).
 
         Args:
@@ -112,7 +110,7 @@ class SharingRepository(BaseRepository[PromptShare]):
             .all()
         )
 
-    def list_for_grantee(self, user_id: str) -> List[PromptShare]:
+    def list_for_grantee(self, user_id: str) -> list[PromptShare]:
         """List all grants made to a user.
 
         Args:
@@ -138,7 +136,7 @@ class SharingRepository(BaseRepository[PromptShare]):
         """
         return self.session.query(PromptShare).count()
 
-    def permission_for(self, prompt_id: int, user_id: str) -> Optional[str]:
+    def permission_for(self, prompt_id: int, user_id: str) -> str | None:
         """Get the effective grant permission for a (prompt, user) pair.
 
         Hot path for authorization checks.

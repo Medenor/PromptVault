@@ -5,18 +5,18 @@
 """Backup restore: validate -> prepare (decompress/decrypt) -> apply
 (DumpStrategy.restore) -> verify, plus selective (per-prompt) restore."""
 
+import gzip
 import os
 import shutil
-import gzip
-from datetime import datetime, timezone
-from typing import Dict, Any, Optional
+from datetime import UTC, datetime
+from typing import Any
 
-from src.db.session import get_db_session
-from src.db.models.prompt import Prompt
 from src.db.models import Backup
+from src.db.models.prompt import Prompt
+from src.db.session import get_db_session
+from src.services.backup_dump_strategy import PostgresDumpStrategy, SqliteDumpStrategy
 from src.services.exceptions import BackupError
 from src.services.logging_service import logging_service
-from src.services.backup_dump_strategy import SqliteDumpStrategy, PostgresDumpStrategy
 
 logger = logging_service.get_logger(__name__)
 
@@ -47,10 +47,10 @@ class BackupRestoreService:
     def _decrypt_for_prepare(
         self,
         backup_id: str,
-        metadata: Dict[str, Any],
+        metadata: dict[str, Any],
         working_path: str,
         decompressed: bool,
-        passphrase: Optional[str],
+        passphrase: str | None,
         suffix: str,
     ) -> str:
         """Decrypt working_path in place (to a sibling file) if the backup is
@@ -103,9 +103,9 @@ class BackupRestoreService:
     def restore_backup(
         self,
         backup_id: str,
-        created_by: Optional[str],
+        created_by: str | None,
         get_current_user,
-        passphrase: Optional[str] = None,
+        passphrase: str | None = None,
     ) -> bool:
         try:
             metadata = self.metadata_store.get_backup_info(backup_id)
@@ -137,7 +137,7 @@ class BackupRestoreService:
                 backup_path = decrypted_path
 
             try:
-                timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")[:21]
+                timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S_%f")[:21]
                 logger.info(
                     "Creating pre-restore backup",
                     extra={"event": "backup.restore.pre_backup"},
@@ -233,11 +233,11 @@ class BackupRestoreService:
         self,
         backup_id: str,
         prompt_ids: list,
-        created_by: Optional[str],
+        created_by: str | None,
         get_current_user,
         extract_prompts_fn,
-        passphrase: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        passphrase: str | None = None,
+    ) -> dict[str, Any]:
         from src.services.backup_audit_service import BackupAuditService
 
         audit_service = BackupAuditService()
@@ -252,7 +252,7 @@ class BackupRestoreService:
                 )
 
             pre_restore_id = self._create_backup_fn(
-                custom_name=f"pre_selective_restore_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}",
+                custom_name=f"pre_selective_restore_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}",
                 created_by=created_by,
             )
 

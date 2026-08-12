@@ -15,12 +15,13 @@ This test suite verifies:
 """
 
 import json
+from datetime import UTC, datetime, timedelta
+
 import pytest
-from datetime import datetime, timedelta, timezone
 from sqlalchemy.orm import Session
 
-from src.services.undo_service import UndoService
 from src.db.models.undo_operation import UndoOperation
+from src.services.undo_service import UndoService
 from src.web.dependencies.undo import get_undo_service
 
 
@@ -354,7 +355,7 @@ class TestUndoServiceExpiration:
         service = UndoService(test_db_session, expiration_days=30)
 
         # Create operation with expired timestamp
-        expired_time = datetime.now(timezone.utc) - timedelta(days=31)
+        expired_time = datetime.now(UTC) - timedelta(days=31)
         op = UndoOperation(
             user_id="user-expired",
             entity_type="category",
@@ -394,7 +395,7 @@ class TestUndoServiceExpiration:
         service = UndoService(test_db_session)
 
         # Create 5 expired operations
-        expired_time = datetime.now(timezone.utc) - timedelta(days=35)
+        expired_time = datetime.now(UTC) - timedelta(days=35)
         for i in range(5):
             op = UndoOperation(
                 user_id=f"user-{i}",
@@ -415,10 +416,10 @@ class TestUndoServiceExpiration:
         """Test that expires_at is set to created_at + expiration_days."""
         service = UndoService(test_db_session, expiration_days=45)
 
-        before_push = datetime.now(timezone.utc)
+        datetime.now(UTC)
         service.push("user-expire-check", "category", "create", {"id": 1})
         test_db_session.commit()
-        after_push = datetime.now(timezone.utc)
+        datetime.now(UTC)
 
         op = (
             test_db_session.query(UndoOperation)
@@ -630,8 +631,8 @@ class TestUndoServiceJSONHandling:
             entity_type="category",
             operation="update",
             payload="{ invalid json !!!",
-            created_at=datetime.now(timezone.utc),
-            expires_at=datetime.now(timezone.utc) + timedelta(days=30),
+            created_at=datetime.now(UTC),
+            expires_at=datetime.now(UTC) + timedelta(days=30),
         )
         test_db_session.add(corrupted_op)
         test_db_session.commit()

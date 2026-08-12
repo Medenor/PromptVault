@@ -8,9 +8,9 @@ This module provides a generic base repository with common CRUD operations
 that can be inherited by specific model repositories.
 """
 
-from typing import Generic, TypeVar, Type, List, Optional, Any, Dict
+from typing import Any, Generic, TypeVar
+
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import SQLAlchemyError
 
 from src.db.base import Base
 
@@ -32,7 +32,7 @@ class BaseRepository(Generic[ModelType]):
         session: The database session
     """
 
-    def __init__(self, model: Type[ModelType], session: Session):
+    def __init__(self, model: type[ModelType], session: Session):
         """Initialize repository.
 
         Args:
@@ -42,7 +42,7 @@ class BaseRepository(Generic[ModelType]):
         self.model = model
         self.session = session
 
-    def get_by_id(self, id: Any) -> Optional[ModelType]:
+    def get_by_id(self, id: Any) -> ModelType | None:
         """Get a single record by ID.
 
         Args:
@@ -53,7 +53,7 @@ class BaseRepository(Generic[ModelType]):
         """
         return self.session.query(self.model).filter(self.model.id == id).first()
 
-    def get_all(self, skip: int = 0, limit: Optional[int] = None) -> List[ModelType]:
+    def get_all(self, skip: int = 0, limit: int | None = None) -> list[ModelType]:
         """Get all records with optional pagination.
 
         Args:
@@ -85,7 +85,7 @@ class BaseRepository(Generic[ModelType]):
         self.session.flush()
         return instance
 
-    def update(self, id: Any, **kwargs) -> Optional[ModelType]:
+    def update(self, id: Any, **kwargs) -> ModelType | None:
         """Update an existing record.
 
         Args:
@@ -119,7 +119,7 @@ class BaseRepository(Generic[ModelType]):
             return True
         return False
 
-    def delete_many(self, ids: List[Any]) -> int:
+    def delete_many(self, ids: list[Any]) -> int:
         """Delete multiple records by ID.
 
         Args:

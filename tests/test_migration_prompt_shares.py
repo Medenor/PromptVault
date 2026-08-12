@@ -14,8 +14,9 @@ import tempfile
 
 import pytest
 import sqlalchemy as sa
-from alembic import command
 from alembic.config import Config
+
+from alembic import command
 
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
@@ -65,8 +66,8 @@ def _run_roundtrip_body(cfg: Config, db_url: str) -> None:
     # existence too; drop/undo them immediately so the migrations under test
     # have real work to do, without mutating the shared Base.metadata object
     # (which other tests in the same process rely on).
-    from src.db.base import Base
     import src.db.models  # noqa: F401 — populate Base.metadata
+    from src.db.base import Base
 
     engine = sa.create_engine(db_url)
     Base.metadata.create_all(bind=engine)

@@ -11,14 +11,13 @@ and error translation can be reasoned about independently from routing
 
 import os
 import time
-from typing import Optional
 
+import pydantic_core
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import ValidationError
-import pydantic_core
 from slowapi.errors import RateLimitExceeded
 
 from src.services.exceptions import PromptVaultException
@@ -36,8 +35,8 @@ def _init_jwt_service_for_logging():
     (e.g. keys not configured), in which case actors fall back to headers.
     """
     try:
-        from src.services.auth.jwt_service import JWTService
         from src.config.auth_config import auth_settings
+        from src.services.auth.jwt_service import JWTService
 
         jwt_service = JWTService(auth_settings)
         logger.info("JWT service initialized for logging middleware")

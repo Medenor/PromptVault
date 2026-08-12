@@ -45,11 +45,9 @@ References:
 
 import math
 import re
-import secrets
-from typing import Optional
 
 from argon2 import PasswordHasher, Type
-from argon2.exceptions import VerifyMismatchError, VerificationError, InvalidHashError
+from argon2.exceptions import InvalidHashError, VerificationError, VerifyMismatchError
 
 from src.config.auth_config import AuthConfig
 

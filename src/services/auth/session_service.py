@@ -14,7 +14,6 @@ Security Features:
 """
 
 import logging
-from typing import Dict, List, Optional
 
 from sqlalchemy.orm import Session
 
@@ -100,8 +99,8 @@ class SessionService:
                         break  # Can't revoke more without affecting current session
 
     def get_user_sessions(
-        self, user_id: str, current_family_id: Optional[str] = None
-    ) -> List[Dict[str, any]]:
+        self, user_id: str, current_family_id: str | None = None
+    ) -> list[dict[str, any]]:
         """Get all active sessions for a user.
 
         Args:
@@ -190,7 +189,7 @@ class SessionService:
         return revoked
 
     def revoke_all_sessions(
-        self, user_id: str, except_family_id: Optional[str] = None
+        self, user_id: str, except_family_id: str | None = None
     ) -> int:
         """Revoke all user sessions except optionally current one.
 

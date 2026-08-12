@@ -21,8 +21,6 @@ Data access goes through the module-level ``data_service`` global on
 routers), so test fixtures that reconfigure services at runtime are honored.
 """
 
-from typing import Optional
-
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
@@ -32,14 +30,14 @@ from src.config.auth_config import auth_settings
 from src.db.models.user import User
 from src.db.repositories.prompt_repository import PromptRepository
 from src.db.session import get_db
+from src.utils.diff_utils import compute_character_diff
 from src.web.dependencies.bypass import (
     get_current_user_or_default,
     get_current_user_or_none,
 )
 from src.web.middleware.rate_limit import limiter, write_limit
 from src.web.models import VersionRevertRequest
-from src.web.routers.prompts_shared import check_prompt_access, effective_permission
-from src.utils.diff_utils import compute_character_diff
+from src.web.routers.prompts_shared import effective_permission
 
 router = APIRouter(
     prefix="/prompts",
@@ -60,7 +58,7 @@ def _record_validation_event(*args, **kwargs):
     web_app.record_validation_event(*args, **kwargs)
 
 
-def _check_read_access(prompt_id_int: int, user: Optional[User], db: Session) -> bool:
+def _check_read_access(prompt_id_int: int, user: User | None, db: Session) -> bool:
     """Return False (caller should 404) when the prompt is invisible to user.
 
     Looks the prompt up via the ORM (not data_service's legacy dict shape)
@@ -77,7 +75,7 @@ def _check_read_access(prompt_id_int: int, user: Optional[User], db: Session) ->
     return effective_permission(prompt, user, db) is not None
 
 
-def _check_edit_access(prompt_id_int: int, user: Optional[User], db: Session) -> bool:
+def _check_edit_access(prompt_id_int: int, user: User | None, db: Session) -> bool:
     """Return False (caller should 403) when user lacks 'edit' level.
 
     Revert requires 'edit' (owner, admin, or an edit-grantee) — a
@@ -97,7 +95,7 @@ def _check_edit_access(prompt_id_int: int, user: Optional[User], db: Session) ->
 @router.get("/{prompt_id}/versions")
 async def get_version_history(
     prompt_id: str,
-    user: Optional[User] = Depends(get_current_user_or_none),
+    user: User | None = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
     """Get version history for a specific prompt"""
@@ -142,7 +140,7 @@ async def compare_versions(
     prompt_id: str,
     v1: str = None,
     v2: str = None,
-    user: Optional[User] = Depends(get_current_user_or_none),
+    user: User | None = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
     """Compare two versions of a prompt"""
@@ -237,7 +235,7 @@ async def compare_versions(
 async def get_specific_version(
     prompt_id: str,
     version_id: str,
-    user: Optional[User] = Depends(get_current_user_or_none),
+    user: User | None = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
     """Get a specific version of a prompt"""

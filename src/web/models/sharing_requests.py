@@ -4,7 +4,7 @@
 
 """Pydantic request validation models for the prompt sharing API."""
 
-from typing import Literal, Optional
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -18,7 +18,7 @@ class PromptVisibilityUpdateRequest(BaseModel):
             route handler with a 400 (there is no re-publish action).
     """
 
-    legacy_public: Optional[bool] = Field(
+    legacy_public: bool | None = Field(
         default=None,
         description="Set to false to un-grandfather a legacy-public prompt",
     )

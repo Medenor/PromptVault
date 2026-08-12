@@ -5,7 +5,6 @@
 """Pydantic response models for tag/category management."""
 
 from datetime import datetime
-from typing import List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -17,11 +16,11 @@ class CategoryResponse(BaseModel):
 
     id: int
     name: str
-    description: Optional[str] = None
-    color: Optional[str] = None
-    sort_order: Optional[int] = None
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    description: str | None = None
+    color: str | None = None
+    sort_order: int | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
     usage_count: int = Field(
         default=0, description="Number of prompts using this category"
     )
@@ -34,24 +33,24 @@ class TagResponse(BaseModel):
 
     id: int
     name: str
-    description: Optional[str] = None
-    color: Optional[str] = None
-    parent_tag_id: Optional[int] = None
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    description: str | None = None
+    color: str | None = None
+    parent_tag_id: int | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
     usage_count: int = Field(default=0, description="Number of prompts using this tag")
 
 
 class CategoryListResponse(BaseModel):
     """List response for categories."""
 
-    items: List[CategoryResponse]
+    items: list[CategoryResponse]
 
 
 class TagListResponse(BaseModel):
     """List response for tags."""
 
-    items: List[TagResponse]
+    items: list[TagResponse]
 
 
 class BulkActionResponse(BaseModel):
@@ -64,7 +63,7 @@ class BulkActionResponse(BaseModel):
 class OrphanPromptsResponse(BaseModel):
     """Response for prompts without a category."""
 
-    prompt_ids: List[int]
+    prompt_ids: list[int]
     count: int
 
 
@@ -78,7 +77,7 @@ class OrphanPromptItem(BaseModel):
 class OrphanPromptDetailsResponse(BaseModel):
     """Response for orphan prompt details."""
 
-    items: List[OrphanPromptItem]
+    items: list[OrphanPromptItem]
     count: int
 
 
@@ -92,4 +91,4 @@ class TagSuggestionItem(BaseModel):
 class TagSuggestionResponse(BaseModel):
     """Response for tag suggestions."""
 
-    suggestions: List[TagSuggestionItem]
+    suggestions: list[TagSuggestionItem]

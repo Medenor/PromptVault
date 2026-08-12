@@ -9,10 +9,11 @@ Each refresh token belongs to a family, and token reuse detection revokes
 the entire family to prevent token theft.
 """
 
-from sqlalchemy import Column, String, DateTime, Boolean, ForeignKey, Index
+import uuid
+
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Index, String
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-import uuid
 
 from src.db.base import Base
 

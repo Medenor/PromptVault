@@ -8,12 +8,11 @@ This module provides data access layer for Tag model with
 lookup and management operations.
 """
 
-from typing import List, Optional
-from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
 
-from src.db.models import Tag, Prompt
+from src.db.models import Prompt, Tag
 from src.db.repositories.base import BaseRepository
 
 
@@ -35,7 +34,7 @@ class TagRepository(BaseRepository[Tag]):
         """
         super().__init__(Tag, session)
 
-    def get_by_name(self, name: str) -> Optional[Tag]:
+    def get_by_name(self, name: str) -> Tag | None:
         """Get tag by name.
 
         Args:
@@ -46,7 +45,7 @@ class TagRepository(BaseRepository[Tag]):
         """
         return self.session.query(Tag).filter(Tag.name == name).first()
 
-    def get_by_name_case_insensitive(self, name: str) -> Optional[Tag]:
+    def get_by_name_case_insensitive(self, name: str) -> Tag | None:
         """Get tag by name (case-insensitive)."""
         return (
             self.session.query(Tag).filter(func.lower(Tag.name) == name.lower()).first()
@@ -77,7 +76,7 @@ class TagRepository(BaseRepository[Tag]):
             self.session.rollback()
             return self.get_by_name(name)
 
-    def get_by_names(self, names: List[str]) -> List[Tag]:
+    def get_by_names(self, names: list[str]) -> list[Tag]:
         """Get multiple tags by name.
 
         Args:
@@ -88,7 +87,7 @@ class TagRepository(BaseRepository[Tag]):
         """
         return self.session.query(Tag).filter(Tag.name.in_(names)).all()
 
-    def get_or_create_many(self, names: List[str]) -> List[Tag]:
+    def get_or_create_many(self, names: list[str]) -> list[Tag]:
         """Get or create multiple tags.
 
         Args:
@@ -103,7 +102,7 @@ class TagRepository(BaseRepository[Tag]):
             tags.append(tag)
         return tags
 
-    def list_all_with_counts(self) -> List[tuple]:
+    def list_all_with_counts(self) -> list[tuple]:
         """Get all tags with usage counts.
 
         Returns:
@@ -123,7 +122,7 @@ class TagRepository(BaseRepository[Tag]):
 
         return results
 
-    def get_popular_tags(self, limit: int = 10) -> List[tuple]:
+    def get_popular_tags(self, limit: int = 10) -> list[tuple]:
         """Get most popular tags by usage count.
 
         Args:
@@ -144,7 +143,6 @@ class TagRepository(BaseRepository[Tag]):
         Returns:
             True if deleted, False if in use or not found
         """
-        from src.db.models.associations import prompt_tags
 
         tag = self.get_by_id(tag_id)
         if not tag:
@@ -168,9 +166,10 @@ class TagRepository(BaseRepository[Tag]):
             .count()
         )
 
-    def get_prompt_ids(self, tag_id: int) -> List[int]:
+    def get_prompt_ids(self, tag_id: int) -> list[int]:
         """Return IDs of prompts associated with the tag."""
         from sqlalchemy import select
+
         from src.db.models.associations import prompt_tags
 
         return [
@@ -180,18 +179,18 @@ class TagRepository(BaseRepository[Tag]):
             ).all()
         ]
 
-    def clear_associations(self, tag_ids: List[int]) -> None:
+    def clear_associations(self, tag_ids: list[int]) -> None:
         """Remove all prompt-tag associations for the given tags."""
         from sqlalchemy import delete
+
         from src.db.models.associations import prompt_tags
 
         self.session.execute(
             delete(prompt_tags).where(prompt_tags.c.tag_id.in_(tag_ids))
         )
 
-    def get_orphan_prompt_ids(self) -> List[int]:
+    def get_orphan_prompt_ids(self) -> list[int]:
         """Return IDs of prompts with no tags assigned."""
-        from src.db.models import Prompt
         from src.db.models.associations import prompt_tags
 
         results = (
@@ -202,9 +201,8 @@ class TagRepository(BaseRepository[Tag]):
         )
         return [row[0] for row in results]
 
-    def get_orphan_prompts(self) -> List[tuple]:
+    def get_orphan_prompts(self) -> list[tuple]:
         """Return (id, title) tuples for prompts with no tags assigned."""
-        from src.db.models import Prompt
         from src.db.models.associations import prompt_tags
 
         return (
@@ -214,7 +212,7 @@ class TagRepository(BaseRepository[Tag]):
             .all()
         )
 
-    def rename(self, tag_id: int, new_name: str) -> Optional[Tag]:
+    def rename(self, tag_id: int, new_name: str) -> Tag | None:
         """Rename a tag.
 
         Args:
@@ -265,7 +263,7 @@ class TagRepository(BaseRepository[Tag]):
 
         return True
 
-    def merge_tags_bulk(self, source_tag_ids: List[int], target_tag_id: int) -> int:
+    def merge_tags_bulk(self, source_tag_ids: list[int], target_tag_id: int) -> int:
         """Merge multiple source tags into the target tag.
 
         Args:

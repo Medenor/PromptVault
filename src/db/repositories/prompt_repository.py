@@ -10,18 +10,19 @@ search, filtering, and relationship management capabilities.
 
 import logging
 import re
-from typing import List, NamedTuple, Optional, Dict, Any, Tuple
-from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import or_, and_, func, select, text
-from sqlalchemy.exc import OperationalError, ProgrammingError
+from typing import NamedTuple
 
-from src.db.models import Prompt, PromptShare, Tag, Category, PromptBranch
+from sqlalchemy import or_, select, text
+from sqlalchemy.exc import OperationalError, ProgrammingError
+from sqlalchemy.orm import Session, joinedload
+
+from src.db.models import Category, Prompt, PromptBranch, PromptShare, Tag
 from src.db.repositories.base import BaseRepository
 from src.db.search.fts import (
     MATCH_START,
     active_dialect,
-    sanitize_fts_query,
     fts5_snippet_args,
+    sanitize_fts_query,
     ts_headline_options,
 )
 
@@ -37,7 +38,7 @@ class RankedMatch(NamedTuple):
     """One FTS hit: relevance rank (lower = more relevant) and its snippet."""
 
     rank: float
-    match_context: Optional[str]
+    match_context: str | None
 
 
 class PromptRepository(BaseRepository[Prompt]):
@@ -62,7 +63,7 @@ class PromptRepository(BaseRepository[Prompt]):
     def _apply_visibility_filter(
         self,
         q,
-        visible_to_user_id: Optional[str],
+        visible_to_user_id: str | None,
         shared_only: bool,
     ):
         """Apply the owned/shared/legacy-public visibility scope to a query.
@@ -98,7 +99,7 @@ class PromptRepository(BaseRepository[Prompt]):
             )
         )
 
-    def _fts_matches(self, query: str) -> Optional[Dict[int, RankedMatch]]:
+    def _fts_matches(self, query: str) -> dict[int, RankedMatch] | None:
         """Run the dialect-native FTS lookup for ``query``.
 
         Returns a mapping of prompt id -> (rank, match_context) covering every
@@ -115,7 +116,7 @@ class PromptRepository(BaseRepository[Prompt]):
             return None
 
         dialect = active_dialect(self.session)
-        matches: Dict[int, RankedMatch] = {}
+        matches: dict[int, RankedMatch] = {}
 
         if dialect == "sqlite":
             match_expr = safe_query.to_fts5_match()
@@ -184,10 +185,10 @@ class PromptRepository(BaseRepository[Prompt]):
     def _apply_common_filters(
         self,
         q,
-        category: Optional[str],
-        tags: Optional[List[str]],
-        favorite: Optional[bool],
-        visible_to_user_id: Optional[str],
+        category: str | None,
+        tags: list[str] | None,
+        favorite: bool | None,
+        visible_to_user_id: str | None,
         shared_only: bool,
     ):
         """Apply category/tags/favorite/visibility filters shared by search() and count()."""
@@ -245,17 +246,17 @@ class PromptRepository(BaseRepository[Prompt]):
 
     def search(
         self,
-        query: Optional[str] = None,
-        category: Optional[str] = None,
-        tags: Optional[List[str]] = None,
-        favorite: Optional[bool] = None,
-        limit: Optional[int] = None,
+        query: str | None = None,
+        category: str | None = None,
+        tags: list[str] | None = None,
+        favorite: bool | None = None,
+        limit: int | None = None,
         offset: int = 0,
         case_sensitive: bool = False,
-        visible_to_user_id: Optional[str] = None,
+        visible_to_user_id: str | None = None,
         shared_only: bool = False,
         ranked: bool = True,
-    ) -> List[Tuple[Prompt, Optional[str]]]:
+    ) -> list[tuple[Prompt, str | None]]:
         """Search prompts with multiple filters.
 
         Args:
@@ -324,14 +325,14 @@ class PromptRepository(BaseRepository[Prompt]):
     def _try_fts_search(
         self,
         query: str,
-        category: Optional[str],
-        tags: Optional[List[str]],
-        favorite: Optional[bool],
-        limit: Optional[int],
+        category: str | None,
+        tags: list[str] | None,
+        favorite: bool | None,
+        limit: int | None,
         offset: int,
-        visible_to_user_id: Optional[str],
+        visible_to_user_id: str | None,
         shared_only: bool,
-    ) -> Optional[List[Tuple[Prompt, Optional[str]]]]:
+    ) -> list[tuple[Prompt, str | None]] | None:
         """Attempt the ranked FTS path; returns None to signal fallback.
 
         None means either the sanitized query was empty (FR-010/FR-011) or
@@ -369,12 +370,12 @@ class PromptRepository(BaseRepository[Prompt]):
 
     def count(
         self,
-        query: Optional[str] = None,
-        category: Optional[str] = None,
-        tags: Optional[List[str]] = None,
-        favorite: Optional[bool] = None,
+        query: str | None = None,
+        category: str | None = None,
+        tags: list[str] | None = None,
+        favorite: bool | None = None,
         case_sensitive: bool = False,
-        visible_to_user_id: Optional[str] = None,
+        visible_to_user_id: str | None = None,
         shared_only: bool = False,
         ranked: bool = True,
     ) -> int:
@@ -432,7 +433,7 @@ class PromptRepository(BaseRepository[Prompt]):
 
         return q.count()
 
-    def get_with_relationships(self, prompt_id: int) -> Optional[Prompt]:
+    def get_with_relationships(self, prompt_id: int) -> Prompt | None:
         """Get a prompt with all relationships eagerly loaded.
 
         This method eagerly loads category, tags, versions, branches, and user
@@ -457,7 +458,7 @@ class PromptRepository(BaseRepository[Prompt]):
             .first()
         )
 
-    def get_by_category(self, category_name: str) -> List[Prompt]:
+    def get_by_category(self, category_name: str) -> list[Prompt]:
         """Get all prompts in a specific category.
 
         Args:
@@ -473,7 +474,7 @@ class PromptRepository(BaseRepository[Prompt]):
             .all()
         )
 
-    def get_by_tag(self, tag_name: str) -> List[Prompt]:
+    def get_by_tag(self, tag_name: str) -> list[Prompt]:
         """Get all prompts with a specific tag.
 
         Args:
@@ -489,7 +490,7 @@ class PromptRepository(BaseRepository[Prompt]):
             .all()
         )
 
-    def get_favorites(self, limit: Optional[int] = None) -> List[Prompt]:
+    def get_favorites(self, limit: int | None = None) -> list[Prompt]:
         """Get all favorited prompts.
 
         Args:
@@ -503,7 +504,7 @@ class PromptRepository(BaseRepository[Prompt]):
             q = q.limit(limit)
         return q.all()
 
-    def set_favorite(self, prompt_id: int, favorite: bool) -> Optional[Prompt]:
+    def set_favorite(self, prompt_id: int, favorite: bool) -> Prompt | None:
         """Set favorite status for a prompt.
 
         Args:
@@ -515,7 +516,7 @@ class PromptRepository(BaseRepository[Prompt]):
         """
         return self.update(prompt_id, favorite=favorite)
 
-    def add_tag(self, prompt_id: int, tag: Tag) -> Optional[Prompt]:
+    def add_tag(self, prompt_id: int, tag: Tag) -> Prompt | None:
         """Add a tag to a prompt.
 
         Args:
@@ -531,7 +532,7 @@ class PromptRepository(BaseRepository[Prompt]):
             self.session.flush()
         return prompt
 
-    def remove_tag(self, prompt_id: int, tag: Tag) -> Optional[Prompt]:
+    def remove_tag(self, prompt_id: int, tag: Tag) -> Prompt | None:
         """Remove a tag from a prompt.
 
         Args:
@@ -547,7 +548,7 @@ class PromptRepository(BaseRepository[Prompt]):
             self.session.flush()
         return prompt
 
-    def create_with_tags(self, tags: List[Tag], **kwargs) -> Prompt:
+    def create_with_tags(self, tags: list[Tag], **kwargs) -> Prompt:
         """Create a prompt and attach tags in one flush.
 
         Args:
@@ -563,7 +564,7 @@ class PromptRepository(BaseRepository[Prompt]):
         self.session.flush()
         return prompt
 
-    def apply_update(self, instance: Prompt, tags: List[Tag], **kwargs) -> Prompt:
+    def apply_update(self, instance: Prompt, tags: list[Tag], **kwargs) -> Prompt:
         """Apply field updates and tag assignment to an existing prompt, then flush.
 
         Args:
@@ -598,7 +599,7 @@ class PromptRepository(BaseRepository[Prompt]):
         self.session.add(branch)
         return branch
 
-    def get_by_ids(self, prompt_ids: List[int]) -> List[Prompt]:
+    def get_by_ids(self, prompt_ids: list[int]) -> list[Prompt]:
         """Get multiple prompts by ID.
 
         Args:
@@ -611,9 +612,9 @@ class PromptRepository(BaseRepository[Prompt]):
 
     def bulk_update_tags(
         self,
-        prompts: List[Prompt],
-        tags_to_add: Optional[List[Tag]] = None,
-        tags_to_remove: Optional[List[Tag]] = None,
+        prompts: list[Prompt],
+        tags_to_add: list[Tag] | None = None,
+        tags_to_remove: list[Tag] | None = None,
     ) -> None:
         """Add and/or remove tags across multiple prompts in one pass.
 
@@ -633,7 +634,7 @@ class PromptRepository(BaseRepository[Prompt]):
                     prompt.tags.remove(tag)
         self.session.flush()
 
-    def get_statistics(self) -> Dict[str, int]:
+    def get_statistics(self) -> dict[str, int]:
         """Get prompt statistics.
 
         Returns:

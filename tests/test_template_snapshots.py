@@ -18,7 +18,6 @@ baseline is written on first run instead of compared.
 
 import re
 from pathlib import Path
-from typing import Dict
 
 import pytest
 from fastapi.testclient import TestClient
@@ -26,7 +25,7 @@ from fastapi.testclient import TestClient
 SNAPSHOT_DIR = Path(__file__).parent / "snapshots"
 
 # Each entry: snapshot filename -> (route, requires_auth)
-ROUTES: Dict[str, tuple] = {
+ROUTES: dict[str, tuple] = {
     "index.html.snapshot": ("/", True),
     "manage_tags.html.snapshot": ("/manage-tags", True),
     "manage_categories.html.snapshot": ("/manage-categories", True),
@@ -46,7 +45,7 @@ def _normalize(html: str) -> str:
 
 
 @pytest.fixture
-def registered_user_with_client(api_client: TestClient) -> Dict[str, object]:
+def registered_user_with_client(api_client: TestClient) -> dict[str, object]:
     """Register a fresh user and return the client plus its access token.
 
     Mirrors the pattern in tests/test_history_navigation_auth.py: the
@@ -80,7 +79,7 @@ class TestTemplateSnapshots:
         route: str,
         requires_auth: bool,
         api_client: TestClient,
-        registered_user_with_client: Dict[str, object],
+        registered_user_with_client: dict[str, object],
     ) -> None:
         if requires_auth:
             client: TestClient = registered_user_with_client["client"]  # type: ignore[assignment]

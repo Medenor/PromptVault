@@ -22,15 +22,14 @@ Tests cover:
 - Error handling
 """
 
-import os
-import sys
-import tempfile
 import shutil
 import string
+import tempfile
 from pathlib import Path
-from unittest.mock import Mock, MagicMock, patch, call, mock_open
-from click.testing import CliRunner
+from unittest.mock import Mock, patch
+
 import pytest
+from click.testing import CliRunner
 
 # Import the module to test
 from scripts.setup.setup_env import (
@@ -314,7 +313,7 @@ class TestPromptDatabase:
             with patch.object(
                 configurator, "generate_secure_password", return_value="pass"
             ):
-                config = configurator.prompt_database()
+                configurator.prompt_database()
 
         self.console.error.assert_called()
 
@@ -344,7 +343,7 @@ class TestPromptDatabase:
             with patch.object(
                 configurator, "generate_secure_password", return_value="pass"
             ):
-                config = configurator.prompt_database()
+                configurator.prompt_database()
 
         self.console.error.assert_called()
 
@@ -595,7 +594,7 @@ class TestPromptEmail:
             with patch(
                 "scripts.setup.setup_env.validate_email", return_value=(True, None)
             ):
-                config = configurator.prompt_email(optional=True)
+                configurator.prompt_email(optional=True)
 
         self.console.error.assert_called()
 
@@ -624,7 +623,7 @@ class TestPromptEmail:
                     (False, "Invalid email"),
                     (True, None),
                 ]
-                config = configurator.prompt_email(optional=True)
+                configurator.prompt_email(optional=True)
 
         assert self.console.error.call_count == 2
 
@@ -765,7 +764,7 @@ class TestGenerateSecurePassword:
                 "Abc123!@#" * 10
             )  # Enough chars with all types
 
-            password = configurator.generate_secure_password(length=10)
+            configurator.generate_secure_password(length=10)
 
             # Should have called secrets.choice
             assert mock_choice.called

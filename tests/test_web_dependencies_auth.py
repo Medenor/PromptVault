@@ -12,29 +12,30 @@ This test suite verifies the FastAPI dependency functions for:
 - IP address and user agent extraction
 """
 
-import pytest
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from unittest.mock import Mock, patch
+
+import pytest
 from fastapi import HTTPException, Request
 from sqlalchemy.orm import Session
 
+from src.config.auth_config import AuthConfig
+from src.db.models.user import User
+from src.services.auth.jwt_service import JWTService
 from src.web.dependencies.auth import (
+    get_admin_user,
     get_auth_config,
-    get_jwt_service,
-    get_current_user_token,
-    get_current_user,
+    get_client_ip,
     get_current_active_user,
+    get_current_user,
+    get_current_user_token,
+    get_editor_or_admin_user,
+    get_jwt_service,
     get_optional_user,
+    get_user_agent,
     require_role,
     require_verified_email,
-    get_client_ip,
-    get_user_agent,
-    get_admin_user,
-    get_editor_or_admin_user,
 )
-from src.config.auth_config import AuthConfig
-from src.services.auth.jwt_service import JWTService
-from src.db.models.user import User
 
 
 class TestConfigurationDependencies:
@@ -213,7 +214,7 @@ class TestUserRetrieval:
 
     def test_get_current_active_user_locked(self):
         """Test error when user account is locked."""
-        future_time = datetime.now(timezone.utc) + timedelta(minutes=10)
+        future_time = datetime.now(UTC) + timedelta(minutes=10)
         self.user.locked_until = future_time
 
         with pytest.raises(HTTPException) as exc_info:
@@ -224,7 +225,7 @@ class TestUserRetrieval:
 
     def test_get_current_active_user_lock_expired(self):
         """Test successful access when lock has expired."""
-        past_time = datetime.now(timezone.utc) - timedelta(minutes=10)
+        past_time = datetime.now(UTC) - timedelta(minutes=10)
         self.user.locked_until = past_time
 
         user = get_current_active_user(self.user)

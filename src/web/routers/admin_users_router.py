@@ -30,26 +30,28 @@ Available Endpoints:
     DELETE /admin/users/{user_id}/sessions/{session_id} Revoke a session
 """
 
-import math
 import logging
+import math
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy.orm import Session
-from sqlalchemy import or_, func
+from sqlalchemy import func, or_
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
 
 from src.config.auth_config import AuthConfig
-from src.services.auth.password_service import PasswordService
-from src.web.dependencies.auth import get_auth_config
-
-from src.db.session import get_db
 from src.db.models.user import User
-from src.db.repositories.user_repository import UserRepository
 from src.db.repositories.session_repository import SessionRepository
-from src.web.dependencies.auth import require_role
+from src.db.repositories.user_repository import UserRepository
+from src.db.session import get_db
+from src.services.auth.password_service import PasswordService
+from src.services.exceptions import (
+    EmailAlreadyExistsError,
+    UsernameAlreadyExistsError,
+)
+from src.web.dependencies.auth import get_auth_config, require_role
 from src.web.models.admin_requests import (
     CreateUserRequest,
     UpdateUserRequest,
@@ -59,15 +61,11 @@ from src.web.models.admin_responses import (
     UserDetailResponse,
     UserListResponse,
 )
-from src.services.exceptions import (
-    EmailAlreadyExistsError,
-    UsernameAlreadyExistsError,
-)
 from src.web.models.auth_responses import (
     MessageResponse,
-    SessionResponse,
-    SessionListResponse,
     RevokeSessionResponse,
+    SessionListResponse,
+    SessionResponse,
 )
 from src.web.routers.admin_shared import (
     _log_admin_action,
@@ -184,7 +182,6 @@ async def list_users(
     Returns:
         UserListResponse with paginated user list
     """
-    user_repo = UserRepository(db)
     session_repo = SessionRepository(db)
 
     # Build query
@@ -316,7 +313,7 @@ async def create_user(
             role=request_data.role,
             email_verified=request_data.email_verified,
             is_active=True,
-            created_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
         )
 
         db.add(new_user)
@@ -346,8 +343,8 @@ async def create_user(
             f"username={request_data.username}, email={request_data.email} (race: already exists)",
         )
         if user_repo.username_exists(request_data.username):
-            raise UsernameAlreadyExistsError()
-        raise EmailAlreadyExistsError()
+            raise UsernameAlreadyExistsError() from e
+        raise EmailAlreadyExistsError() from e
 
     except Exception as e:
         db.rollback()
@@ -362,7 +359,7 @@ async def create_user(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to create user. Please try again.",
-        )
+        ) from e
 
 
 @router.get(
@@ -521,7 +518,7 @@ async def update_user(
         )
 
     # Update timestamp
-    user.updated_at = datetime.now(timezone.utc)
+    user.updated_at = datetime.now(UTC)
 
     # Commit changes
     db.flush()

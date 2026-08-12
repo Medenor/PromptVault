@@ -12,8 +12,7 @@ US2 and US3 classes are appended in later phases (visibility scoping,
 list/revoke grants, un-grandfathering) — see tasks.md T031/T040/T041.
 """
 
-from datetime import datetime, timedelta, timezone
-from typing import Dict
+from datetime import UTC, datetime
 
 import pytest
 
@@ -24,8 +23,8 @@ def api_client(api_client_context):
 
 
 def _make_auth_headers(user_id: str, username: str, email: str, role: str = "editor"):
-    from src.services.auth.jwt_service import JWTService
     from src.config import auth_config
+    from src.services.auth.jwt_service import JWTService
 
     jwt_service = JWTService(auth_config.auth_settings)
     access_token = jwt_service.generate_access_token(
@@ -35,10 +34,10 @@ def _make_auth_headers(user_id: str, username: str, email: str, role: str = "edi
 
 
 def _seed_user(user_id: str, username: str, email: str, role: str = "editor"):
-    from src.services.auth.password_service import PasswordService
     from src.config.auth_config import auth_settings
     from src.db.models.user import User
     from src.db.session import SessionLocal
+    from src.services.auth.password_service import PasswordService
 
     password_service = PasswordService(auth_settings)
     password_hash = password_service.hash_password("SeedUserP@ssw0rd123")
@@ -55,8 +54,8 @@ def _seed_user(user_id: str, username: str, email: str, role: str = "editor"):
                 role=role,
                 is_active=True,
                 email_verified=True,
-                created_at=datetime.now(timezone.utc),
-                updated_at=datetime.now(timezone.utc),
+                created_at=datetime.now(UTC),
+                updated_at=datetime.now(UTC),
             )
             session.add(user)
             session.commit()
@@ -65,7 +64,7 @@ def _seed_user(user_id: str, username: str, email: str, role: str = "editor"):
 
 
 @pytest.fixture
-def owner_auth_headers(api_client_context) -> Dict[str, str]:
+def owner_auth_headers(api_client_context) -> dict[str, str]:
     _seed_user("share-owner-id", "share_owner", "share_owner@example.com")
     return _make_auth_headers(
         "share-owner-id", "share_owner", "share_owner@example.com"
@@ -73,7 +72,7 @@ def owner_auth_headers(api_client_context) -> Dict[str, str]:
 
 
 @pytest.fixture
-def grantee_auth_headers(api_client_context) -> Dict[str, str]:
+def grantee_auth_headers(api_client_context) -> dict[str, str]:
     _seed_user("share-grantee-id", "share_grantee", "share_grantee@example.com")
     return _make_auth_headers(
         "share-grantee-id", "share_grantee", "share_grantee@example.com"
@@ -81,7 +80,7 @@ def grantee_auth_headers(api_client_context) -> Dict[str, str]:
 
 
 @pytest.fixture
-def stranger_auth_headers(api_client_context) -> Dict[str, str]:
+def stranger_auth_headers(api_client_context) -> dict[str, str]:
     _seed_user("share-stranger-id", "share_stranger", "share_stranger@example.com")
     return _make_auth_headers(
         "share-stranger-id", "share_stranger", "share_stranger@example.com"
@@ -295,7 +294,7 @@ class TestGrantShare:
 
 
 @pytest.fixture
-def admin_auth_headers(api_client_context) -> Dict[str, str]:
+def admin_auth_headers(api_client_context) -> dict[str, str]:
     _seed_user("share-admin-id", "share_admin", "share_admin@example.com", role="admin")
     return _make_auth_headers(
         "share-admin-id", "share_admin", "share_admin@example.com", role="admin"

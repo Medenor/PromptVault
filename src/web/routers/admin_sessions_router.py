@@ -17,16 +17,16 @@ Available Endpoints:
 """
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
-from fastapi import APIRouter, Depends, status
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends
 from sqlalchemy import and_
+from sqlalchemy.orm import Session
 
-from src.db.session import get_db
 from src.db.models.user import User
 from src.db.models.user_session import UserSession
 from src.db.repositories.session_repository import SessionRepository
+from src.db.session import get_db
 from src.web.dependencies.auth import require_role
 from src.web.models.admin_responses import AdminStatsResponse
 from src.web.models.auth_responses import RevokeSessionResponse
@@ -102,7 +102,7 @@ async def revoke_all_sessions(
     )
 
     return RevokeSessionResponse(
-        message=f"All sessions revoked system-wide",
+        message="All sessions revoked system-wide",
         revoked_count=revoked_count,
     )
 
@@ -166,7 +166,7 @@ async def get_stats(
         .filter(
             and_(
                 UserSession.is_revoked == False,
-                UserSession.expires_at > datetime.now(timezone.utc),
+                UserSession.expires_at > datetime.now(UTC),
             )
         )
         .count()

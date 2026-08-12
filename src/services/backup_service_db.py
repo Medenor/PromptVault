@@ -22,23 +22,23 @@ Key features:
 - Gzip compression support
 """
 
+import getpass
+import gzip
 import os
 import shutil
-import gzip
-import getpass
-from datetime import datetime, timedelta, timezone
-from typing import Dict, List, Any, Optional
+from datetime import UTC, datetime, timedelta
+from typing import Any
 
 from src.db.session import get_db_session
-from src.services.exceptions import BackupError
-from src.services.logging_service import logging_service
-from src.services.backup_metadata_store import BackupMetadataStore
 from src.services.backup_creation_service import BackupCreationService
-from src.services.backup_restore_service import BackupRestoreService
 from src.services.backup_diff_service import (
     BackupDiffService,
     extract_prompts_from_backup,
 )
+from src.services.backup_metadata_store import BackupMetadataStore
+from src.services.backup_restore_service import BackupRestoreService
+from src.services.exceptions import BackupError
+from src.services.logging_service import logging_service
 
 logger = logging_service.get_logger(__name__)
 
@@ -84,12 +84,12 @@ class BackupService:
 
     def create_backup(
         self,
-        custom_name: Optional[str] = None,
-        created_by: Optional[str] = None,
+        custom_name: str | None = None,
+        created_by: str | None = None,
         encrypt: bool = False,
-        passphrase: Optional[str] = None,
+        passphrase: str | None = None,
         backup_kind: str = "full",
-    ) -> Optional[str]:
+    ) -> str | None:
         """Create a backup of the database."""
         return self._creation_service.create_backup(
             custom_name,
@@ -105,8 +105,8 @@ class BackupService:
     def restore_backup(
         self,
         backup_id: str,
-        created_by: Optional[str] = None,
-        passphrase: Optional[str] = None,
+        created_by: str | None = None,
+        passphrase: str | None = None,
     ) -> bool:
         """Restore database from a backup.
 
@@ -120,9 +120,9 @@ class BackupService:
         self,
         backup_id: str,
         prompt_ids: list,
-        created_by: Optional[str] = None,
-        passphrase: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        created_by: str | None = None,
+        passphrase: str | None = None,
+    ) -> dict[str, Any]:
         """Restore only specific prompts from a backup."""
         return self._restore_service.selective_restore(
             backup_id,
@@ -136,8 +136,8 @@ class BackupService:
     # -- Diff / preview ------------------------------------------------------
 
     def compute_restore_diff(
-        self, backup_id: str, passphrase: Optional[str] = None
-    ) -> Dict[str, Any]:
+        self, backup_id: str, passphrase: str | None = None
+    ) -> dict[str, Any]:
         """Compute a diff of what would change if this backup were restored."""
         return self._diff_service.compute_restore_diff(backup_id, passphrase=passphrase)
 
@@ -146,11 +146,11 @@ class BackupService:
 
     # -- Listing / metadata ----------------------------------------------------
 
-    def list_backups(self) -> List[Dict[str, Any]]:
+    def list_backups(self) -> list[dict[str, Any]]:
         """Get list of available backups from database."""
         return self._metadata_store.list_backups()
 
-    def get_backup_info(self, backup_id: str) -> Optional[Dict[str, Any]]:
+    def get_backup_info(self, backup_id: str) -> dict[str, Any] | None:
         """Get detailed information about a specific backup."""
         return self._metadata_store.get_backup_info(backup_id)
 
@@ -158,7 +158,7 @@ class BackupService:
         """Delete a backup and its files."""
         return self._metadata_store.delete_backup(backup_id, self._get_current_user)
 
-    def get_backup_stats(self) -> Dict[str, Any]:
+    def get_backup_stats(self) -> dict[str, Any]:
         """Get statistics about backups."""
         try:
             backups = self.list_backups()
@@ -206,7 +206,7 @@ class BackupService:
         removed_count = 0
 
         try:
-            cutoff_date = datetime.now(timezone.utc) - timedelta(days=retention_days)
+            cutoff_date = datetime.now(UTC) - timedelta(days=retention_days)
             backups = self.list_backups()
 
             for backup in backups:
@@ -257,7 +257,7 @@ class BackupService:
         compressed_count = 0
 
         try:
-            cutoff_date = datetime.now(timezone.utc) - timedelta(days=days_threshold)
+            cutoff_date = datetime.now(UTC) - timedelta(days=days_threshold)
             backups = self.list_backups()
 
             for backup in backups:
@@ -334,7 +334,7 @@ class BackupService:
     # -- Cloud fallback --------------------------------------------------------
 
     def _ensure_local_backup_file(
-        self, backup_id: str, metadata: Dict[str, Any]
+        self, backup_id: str, metadata: dict[str, Any]
     ) -> str:
         """Ensure the backup file exists locally, downloading from cloud if needed.
 
@@ -355,8 +355,8 @@ class BackupService:
                 http_status=404,
             )
 
-        from src.services.backup_cloud_service import BackupCloudService
         from src.db.models.backup_storage_provider import BackupStorageProvider
+        from src.services.backup_cloud_service import BackupCloudService
 
         with get_db_session() as session:
             provider = (
@@ -420,7 +420,7 @@ class BackupService:
         """Return timezone-aware datetime for backup metadata."""
         parsed = datetime.fromisoformat(raw.replace("Z", "+00:00"))
         if parsed.tzinfo is None:
-            parsed = parsed.replace(tzinfo=timezone.utc)
+            parsed = parsed.replace(tzinfo=UTC)
         return parsed
 
     def _validate_backup_id(self, backup_id: str) -> None:
@@ -435,19 +435,19 @@ class BackupService:
         """Return on-disk path for backup metadata file."""
         return self._metadata_store.metadata_file_path(backup_id)
 
-    def _write_metadata_file(self, metadata: Dict[str, Any]) -> None:
+    def _write_metadata_file(self, metadata: dict[str, Any]) -> None:
         """Persist metadata alongside backup for DB-restore resilience."""
         self._metadata_store.write_metadata_file(metadata)
 
-    def _load_metadata_from_file(self, backup_id: str) -> Optional[Dict[str, Any]]:
+    def _load_metadata_from_file(self, backup_id: str) -> dict[str, Any] | None:
         """Load metadata from disk if the database record is unavailable."""
         return self._metadata_store.load_metadata_from_file(backup_id)
 
-    def _load_all_metadata_files(self) -> Dict[str, Dict[str, Any]]:
+    def _load_all_metadata_files(self) -> dict[str, dict[str, Any]]:
         """Return metadata for all backups stored on disk."""
         return self._metadata_store.load_all_metadata_files()
 
-    def _ensure_metadata_file(self, metadata: Dict[str, Any]) -> None:
+    def _ensure_metadata_file(self, metadata: dict[str, Any]) -> None:
         """Ensure a metadata JSON file exists for the given backup."""
         self._metadata_store.ensure_metadata_file(metadata)
 
@@ -455,7 +455,7 @@ class BackupService:
         """Delete metadata JSON file if present."""
         self._metadata_store.remove_metadata_file(backup_id)
 
-    def _update_backup_record(self, backup_id: str, metadata: Dict[str, Any]) -> None:
+    def _update_backup_record(self, backup_id: str, metadata: dict[str, Any]) -> None:
         """Update an existing backup record with refreshed metadata."""
         self._metadata_store.update_backup_record(backup_id, metadata)
 

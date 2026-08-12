@@ -17,16 +17,16 @@ Tests cover:
 - Integration tests
 """
 
-import os
-import sys
 import json
-import pytest
-import tempfile
+import os
 import shutil
+import sys
+import tempfile
 from pathlib import Path
-from unittest.mock import Mock, MagicMock, patch, call
+from unittest.mock import MagicMock, Mock, patch
+
+import pytest
 from click.testing import CliRunner
-from datetime import datetime
 
 # Import the module to test
 from scripts.setup.setup import (
@@ -119,7 +119,7 @@ class TestSetupStateLoadSave:
         """Test that save() includes last_updated timestamp."""
         self.state.save()
 
-        with open(self.state_file, "r") as f:
+        with open(self.state_file) as f:
             data = json.load(f)
 
         assert "last_updated" in data
@@ -133,7 +133,7 @@ class TestSetupStateLoadSave:
         self.state.state["config"] = {"db_type": "postgresql"}
         self.state.save()
 
-        with open(self.state_file, "r") as f:
+        with open(self.state_file) as f:
             data = json.load(f)
 
         assert data["mode"] == "advanced"
@@ -889,7 +889,7 @@ class TestStateResumption:
             assert state_file.exists()
 
             # Parse and verify state file contents
-            with open(state_file, "r") as f:
+            with open(state_file) as f:
                 saved_state = json.load(f)
 
             # Verify structure
@@ -1085,7 +1085,7 @@ class TestStateResumption:
             assert wizard.state.is_complete("deploy")
 
             # Verify state file shows all completed
-            with open(state_file, "r") as f:
+            with open(state_file) as f:
                 saved_state = json.load(f)
 
             expected_steps = ["jwt", "env", "database", "admin", "deploy"]

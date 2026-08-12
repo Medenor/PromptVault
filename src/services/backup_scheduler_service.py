@@ -9,21 +9,21 @@ for crash recovery. Supports daily/weekly/monthly schedules with configurable
 retention policies.
 """
 
-import os
-import uuid
 import logging
+import os
 import threading
-from datetime import datetime, timezone
-from typing import Optional, Dict, Any
+import uuid
+from datetime import UTC, datetime
+from typing import Any
 
+from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
-from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 
 from src.db.config import db_settings
-from src.db.session import get_db_session
-from src.db.repositories.backup_schedule_repository import BackupScheduleRepository
 from src.db.models.backup_schedule import BackupSchedule
+from src.db.repositories.backup_schedule_repository import BackupScheduleRepository
+from src.db.session import get_db_session
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +39,7 @@ class BackupSchedulerService:
     background scheduler thread and the same lock.
     """
 
-    _class_scheduler: Optional[BackgroundScheduler] = None
+    _class_scheduler: BackgroundScheduler | None = None
     _class_lock: threading.Lock = threading.Lock()
     _scheduler_lock: threading.Lock = threading.Lock()
 
@@ -105,7 +105,7 @@ class BackupSchedulerService:
                     )
         return BackupSchedulerService._class_scheduler
 
-    def get_schedule(self) -> Optional[Dict[str, Any]]:
+    def get_schedule(self) -> dict[str, Any] | None:
         """Get the current backup schedule configuration.
 
         Returns:
@@ -118,7 +118,7 @@ class BackupSchedulerService:
                 return None
             return self._serialize_schedule(schedule)
 
-    def upsert_schedule(self, **kwargs) -> Dict[str, Any]:
+    def upsert_schedule(self, **kwargs) -> dict[str, Any]:
         """Create or update the backup schedule.
 
         Args:
@@ -147,7 +147,7 @@ class BackupSchedulerService:
 
         return result
 
-    def enable(self) -> Optional[Dict[str, Any]]:
+    def enable(self) -> dict[str, Any] | None:
         """Enable the backup schedule.
 
         Returns:
@@ -159,14 +159,14 @@ class BackupSchedulerService:
             if schedule is None:
                 return None
             schedule.enabled = True
-            schedule.updated_at = datetime.now(timezone.utc)
+            schedule.updated_at = datetime.now(UTC)
             session.commit()
             result = self._serialize_schedule(schedule)
 
         self._register_job(result)
         return result
 
-    def disable(self) -> Optional[Dict[str, Any]]:
+    def disable(self) -> dict[str, Any] | None:
         """Disable the backup schedule.
 
         Returns:
@@ -178,7 +178,7 @@ class BackupSchedulerService:
             if schedule is None:
                 return None
             schedule.enabled = False
-            schedule.updated_at = datetime.now(timezone.utc)
+            schedule.updated_at = datetime.now(UTC)
             session.commit()
             result = self._serialize_schedule(schedule)
 
@@ -237,7 +237,7 @@ class BackupSchedulerService:
                 repo = BackupScheduleRepository(session)
                 schedule = repo.get_active()
                 if schedule:
-                    schedule.last_run_at = datetime.now(timezone.utc)
+                    schedule.last_run_at = datetime.now(UTC)
                     schedule.last_run_status = "success" if backup_id else "failure"
                     session.commit()
 
@@ -257,7 +257,7 @@ class BackupSchedulerService:
                 repo = BackupScheduleRepository(session)
                 schedule = repo.get_active()
                 if schedule:
-                    schedule.last_run_at = datetime.now(timezone.utc)
+                    schedule.last_run_at = datetime.now(UTC)
                     schedule.last_run_status = "failure"
                     session.commit()
         finally:
@@ -275,7 +275,7 @@ class BackupSchedulerService:
             self.backup_service, backup_id, provider_id, log_prefix="backup.scheduled"
         )
 
-    def _register_job(self, schedule: Dict[str, Any]) -> None:
+    def _register_job(self, schedule: dict[str, Any]) -> None:
         """Register the backup job with APScheduler.
 
         Args:
@@ -287,7 +287,7 @@ class BackupSchedulerService:
             hour = schedule.get("hour", 2)
             minute = schedule.get("minute", 0)
 
-            trigger_kwargs: Dict[str, Any] = {
+            trigger_kwargs: dict[str, Any] = {
                 "hour": hour,
                 "minute": minute,
             }
@@ -341,7 +341,7 @@ class BackupSchedulerService:
             pass
 
     @staticmethod
-    def _serialize_schedule(schedule: BackupSchedule) -> Dict[str, Any]:
+    def _serialize_schedule(schedule: BackupSchedule) -> dict[str, Any]:
         """Serialize a BackupSchedule ORM object to a dict.
 
         Args:

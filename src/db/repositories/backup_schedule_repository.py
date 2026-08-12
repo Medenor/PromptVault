@@ -7,12 +7,10 @@
 Provides data access for BackupSchedule with singleton pattern enforcement.
 """
 
-from typing import Optional, List
-
 from sqlalchemy.orm import Session
 
-from src.db.repositories.base import BaseRepository
 from src.db.models.backup_schedule import BackupSchedule
+from src.db.repositories.base import BaseRepository
 
 
 class BackupScheduleRepository(BaseRepository[BackupSchedule]):
@@ -29,7 +27,7 @@ class BackupScheduleRepository(BaseRepository[BackupSchedule]):
         """
         super().__init__(BackupSchedule, session)
 
-    def get_active(self) -> Optional[BackupSchedule]:
+    def get_active(self) -> BackupSchedule | None:
         """Get the currently active schedule (if any).
 
         Returns:

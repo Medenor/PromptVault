@@ -15,8 +15,8 @@ All request models include:
     - Security-focused validation rules
 """
 
-from typing import Optional, Literal
 import re
+from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -207,17 +207,17 @@ class UpdateUserRequest(BaseModel):
         ... )
     """
 
-    role: Optional[Literal["viewer", "editor", "admin"]] = Field(
+    role: Literal["viewer", "editor", "admin"] | None = Field(
         default=None,
         description="User role (viewer, editor, admin)",
         examples=["viewer", "editor", "admin"],
     )
-    is_active: Optional[bool] = Field(
+    is_active: bool | None = Field(
         default=None,
         description="Account active status",
         examples=[True, False],
     )
-    email_verified: Optional[bool] = Field(
+    email_verified: bool | None = Field(
         default=None,
         description="Email verification status",
         examples=[True, False],
@@ -225,7 +225,7 @@ class UpdateUserRequest(BaseModel):
 
     @field_validator("role")
     @classmethod
-    def validate_role(cls, v: Optional[str]) -> Optional[str]:
+    def validate_role(cls, v: str | None) -> str | None:
         """Validate role value.
 
         Args:
@@ -277,17 +277,17 @@ class UserListParams(BaseModel):
         description="Number of items per page (1-100)",
         examples=[10, 20, 50, 100],
     )
-    role: Optional[Literal["viewer", "editor", "admin"]] = Field(
+    role: Literal["viewer", "editor", "admin"] | None = Field(
         default=None,
         description="Filter by role",
         examples=["viewer", "editor", "admin"],
     )
-    is_active: Optional[bool] = Field(
+    is_active: bool | None = Field(
         default=None,
         description="Filter by active status",
         examples=[True, False],
     )
-    search: Optional[str] = Field(
+    search: str | None = Field(
         default=None,
         max_length=255,
         description="Search by username or email (case-insensitive)",
@@ -296,7 +296,7 @@ class UserListParams(BaseModel):
 
     @field_validator("search")
     @classmethod
-    def validate_search(cls, v: Optional[str]) -> Optional[str]:
+    def validate_search(cls, v: str | None) -> str | None:
         """Validate and sanitize search query.
 
         Args:
@@ -313,7 +313,7 @@ class UserListParams(BaseModel):
 
     @field_validator("role")
     @classmethod
-    def validate_role(cls, v: Optional[str]) -> Optional[str]:
+    def validate_role(cls, v: str | None) -> str | None:
         """Validate role filter value.
 
         Args:

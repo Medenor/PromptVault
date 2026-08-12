@@ -8,15 +8,13 @@ This module provides functions to sanitize and clean user input
 to prevent security vulnerabilities and ensure data integrity.
 """
 
-import re
 import os
-from typing import Optional
+import re
+
 from .constraints import (
-    SAFE_FILENAME_PATTERN,
-    SAFE_BACKUP_NAME_PATTERN,
-    MAX_FILENAME_LENGTH,
-    MAX_BACKUP_NAME_LENGTH,
     CONTROL_CHARACTERS,
+    MAX_BACKUP_NAME_LENGTH,
+    MAX_FILENAME_LENGTH,
 )
 
 
@@ -63,7 +61,7 @@ def sanitize_filename(filename: str, max_length: int = MAX_FILENAME_LENGTH) -> s
     return sanitized
 
 
-def sanitize_backup_name(name: Optional[str]) -> Optional[str]:
+def sanitize_backup_name(name: str | None) -> str | None:
     """Sanitize a backup name for safe filesystem storage.
 
     Args:
@@ -193,7 +191,7 @@ def normalize_whitespace(text: str) -> str:
 
 
 def sanitize_text_field(
-    text: str, max_length: Optional[int] = None, allow_newlines: bool = True
+    text: str, max_length: int | None = None, allow_newlines: bool = True
 ) -> str:
     """Comprehensive sanitization for text fields.
 

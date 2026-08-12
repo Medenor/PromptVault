@@ -11,8 +11,8 @@ stored in the database, allowing undo history to persist across server restarts.
 
 import json
 import logging
-from datetime import datetime, timedelta, timezone
-from typing import Optional, List, Dict, Any
+from datetime import UTC, datetime, timedelta
+from typing import Any
 
 from sqlalchemy import and_, desc, func
 from sqlalchemy.orm import Session
@@ -54,10 +54,10 @@ class UndoService:
 
     def push(
         self,
-        user_id: Optional[str],
+        user_id: str | None,
         entity_type: str,
         operation: str,
-        payload: Dict[str, Any],
+        payload: dict[str, Any],
     ) -> None:
         """Store an undo operation in the database.
 
@@ -91,10 +91,10 @@ class UndoService:
             payload_json = json.dumps(payload)
         except (TypeError, ValueError) as e:
             logger.error(f"Failed to serialize undo payload: {e}")
-            raise ValueError(f"Payload must be JSON-serializable: {e}")
+            raise ValueError(f"Payload must be JSON-serializable: {e}") from e
 
         # Calculate expiration timestamp
-        created_at = datetime.now(timezone.utc)
+        created_at = datetime.now(UTC)
         expires_at = created_at + timedelta(days=self.expiration_days)
 
         # Create new undo operation
@@ -150,7 +150,7 @@ class UndoService:
             f"Pushed undo operation for user {user_id}: {entity_type}.{operation}"
         )
 
-    def pop(self, user_id: str, entity_type: str) -> Optional[Dict[str, Any]]:
+    def pop(self, user_id: str, entity_type: str) -> dict[str, Any] | None:
         """Retrieve and remove the most recent undo operation.
 
         This method returns the most recent undo operation for the specified
@@ -218,8 +218,8 @@ class UndoService:
         return result
 
     def get_history(
-        self, user_id: str, entity_type: Optional[str] = None, limit: int = 10
-    ) -> List[Dict[str, Any]]:
+        self, user_id: str, entity_type: str | None = None, limit: int = 10
+    ) -> list[dict[str, Any]]:
         """Retrieve undo history for a user.
 
         Returns recent undo operations without removing them from the database.
@@ -306,7 +306,7 @@ class UndoService:
             >>> deleted = service.cleanup_expired()
             >>> deleted
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         deleted_count = (
             self.db.query(UndoOperation)

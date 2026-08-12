@@ -20,8 +20,9 @@ Target: 90%+ repository coverage
 Uses in-memory SQLite for fast, isolated tests
 """
 
+from datetime import UTC, datetime, timedelta
+
 import pytest
-from datetime import datetime, timezone, timedelta
 from sqlalchemy.orm import Session
 
 from src.db.models.user import User
@@ -85,7 +86,7 @@ def sample_session(test_db_session: Session, test_user: User) -> UserSession:
         refresh_token_jti="jti-xyz-456",
         device_info="Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
         ip_address="192.168.1.100",
-        expires_at=datetime.now(timezone.utc) + timedelta(days=7),
+        expires_at=datetime.now(UTC) + timedelta(days=7),
         is_revoked=False,
     )
     test_db_session.add(session)
@@ -108,7 +109,7 @@ def multiple_sessions(test_db_session: Session, test_user: User) -> list[UserSes
     Returns:
         list[UserSession]: List of 4 sessions with various configurations
     """
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     sessions = [
         UserSession(
             user_id=test_user.id,
@@ -164,7 +165,7 @@ class TestSessionCreation:
         self, session_repository: SessionRepository, test_user: User
     ):
         """Test basic session creation with required fields."""
-        expires_at = datetime.now(timezone.utc) + timedelta(days=7)
+        expires_at = datetime.now(UTC) + timedelta(days=7)
 
         session = session_repository.create_session(
             user_id=test_user.id,
@@ -183,7 +184,7 @@ class TestSessionCreation:
         self, session_repository: SessionRepository, test_user: User
     ):
         """Test session creation with all optional fields."""
-        expires_at = datetime.now(timezone.utc) + timedelta(days=7)
+        expires_at = datetime.now(UTC) + timedelta(days=7)
 
         session = session_repository.create_session(
             user_id=test_user.id,
@@ -205,7 +206,7 @@ class TestSessionCreation:
         self, session_repository: SessionRepository, test_user: User
     ):
         """Test that default values are applied correctly."""
-        expires_at = datetime.now(timezone.utc) + timedelta(days=7)
+        expires_at = datetime.now(UTC) + timedelta(days=7)
 
         session = session_repository.create_session(
             user_id=test_user.id,
@@ -223,8 +224,8 @@ class TestSessionCreation:
         self, session_repository: SessionRepository, test_user: User
     ):
         """Test that timestamps are automatically set."""
-        before_create = datetime.now(timezone.utc)
-        expires_at = datetime.now(timezone.utc) + timedelta(days=7)
+        before_create = datetime.now(UTC)
+        expires_at = datetime.now(UTC) + timedelta(days=7)
 
         session = session_repository.create_session(
             user_id=test_user.id,
@@ -233,19 +234,19 @@ class TestSessionCreation:
             expires_at=expires_at,
         )
 
-        after_create = datetime.now(timezone.utc)
+        datetime.now(UTC)
 
         assert session.created_at is not None
         assert session.last_used_at is not None
 
         # Handle timezone-naive timestamps from SQLite
         created_with_tz = (
-            session.created_at.replace(tzinfo=timezone.utc)
+            session.created_at.replace(tzinfo=UTC)
             if session.created_at.tzinfo is None
             else session.created_at
         )
         last_used_with_tz = (
-            session.last_used_at.replace(tzinfo=timezone.utc)
+            session.last_used_at.replace(tzinfo=UTC)
             if session.last_used_at.tzinfo is None
             else session.last_used_at
         )
@@ -258,7 +259,7 @@ class TestSessionCreation:
         self, session_repository: SessionRepository, test_user: User
     ):
         """Test that session ID is automatically generated as UUID."""
-        expires_at = datetime.now(timezone.utc) + timedelta(days=7)
+        expires_at = datetime.now(UTC) + timedelta(days=7)
 
         session1 = session_repository.create_session(
             user_id=test_user.id,
@@ -281,7 +282,7 @@ class TestSessionCreation:
         self, session_repository: SessionRepository, test_user: User
     ):
         """Test storing IPv4 address."""
-        expires_at = datetime.now(timezone.utc) + timedelta(days=7)
+        expires_at = datetime.now(UTC) + timedelta(days=7)
 
         session = session_repository.create_session(
             user_id=test_user.id,
@@ -297,7 +298,7 @@ class TestSessionCreation:
         self, session_repository: SessionRepository, test_user: User
     ):
         """Test storing IPv6 address."""
-        expires_at = datetime.now(timezone.utc) + timedelta(days=7)
+        expires_at = datetime.now(UTC) + timedelta(days=7)
 
         session = session_repository.create_session(
             user_id=test_user.id,
@@ -510,12 +511,12 @@ class TestTokenRotation:
         # SQLite might not have microsecond precision, so check it's >= old value
         if old_last_used is not None:
             old_with_tz = (
-                old_last_used.replace(tzinfo=timezone.utc)
+                old_last_used.replace(tzinfo=UTC)
                 if old_last_used.tzinfo is None
                 else old_last_used
             )
             new_with_tz = (
-                updated.last_used_at.replace(tzinfo=timezone.utc)
+                updated.last_used_at.replace(tzinfo=UTC)
                 if updated.last_used_at.tzinfo is None
                 else updated.last_used_at
             )
@@ -535,19 +536,19 @@ class TestTokenRotation:
         self, session_repository: SessionRepository, sample_session: UserSession
     ):
         """Test that update_session_token updates last_used_at timestamp."""
-        before_update = datetime.now(timezone.utc)
+        before_update = datetime.now(UTC)
 
         updated = session_repository.update_session_token(
             sample_session.family_id, "rotated-jti"
         )
 
-        after_update = datetime.now(timezone.utc)
+        datetime.now(UTC)
 
         assert updated is not None
         assert updated.last_used_at is not None
 
         last_used_with_tz = (
-            updated.last_used_at.replace(tzinfo=timezone.utc)
+            updated.last_used_at.replace(tzinfo=UTC)
             if updated.last_used_at.tzinfo is None
             else updated.last_used_at
         )
@@ -733,7 +734,7 @@ class TestExpiredSessions:
         test_db_session: Session,
     ):
         """Test retrieving expired sessions."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         # Create expired sessions
         expired1 = UserSession(
@@ -775,7 +776,7 @@ class TestExpiredSessions:
         test_db_session: Session,
     ):
         """Test retrieving expired sessions with limit."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         # Create multiple expired sessions
         for i in range(5):
@@ -800,7 +801,7 @@ class TestExpiredSessions:
         test_db_session: Session,
     ):
         """Test cleanup_expired_sessions (alias for delete_expired_sessions)."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         # Create expired and active sessions
         expired = UserSession(
@@ -839,7 +840,7 @@ class TestExpiredSessions:
         test_db_session: Session,
     ):
         """Test deleting all expired sessions."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         # Create multiple expired sessions
         for i in range(3):
@@ -873,7 +874,7 @@ class TestGetOldestSession:
         test_db_session: Session,
     ):
         """Test retrieving oldest active session by created_at."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         # Create sessions with different created_at times
         # Note: We can't directly set created_at (it's server_default)
@@ -915,7 +916,7 @@ class TestGetOldestSession:
         test_db_session: Session,
     ):
         """Test that oldest session excludes revoked sessions."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         # Create oldest session but revoked
         revoked = UserSession(
@@ -1039,7 +1040,7 @@ class TestEdgeCases:
         self, session_repository: SessionRepository, test_user: User
     ):
         """Test creating session with maximum length device info."""
-        expires_at = datetime.now(timezone.utc) + timedelta(days=7)
+        expires_at = datetime.now(UTC) + timedelta(days=7)
         long_device_info = "a" * 500  # Max length from model
 
         session = session_repository.create_session(
@@ -1056,7 +1057,7 @@ class TestEdgeCases:
         self, session_repository: SessionRepository, test_user: User
     ):
         """Test creating session with far future expiration."""
-        far_future = datetime.now(timezone.utc) + timedelta(days=365)
+        far_future = datetime.now(UTC) + timedelta(days=365)
 
         session = session_repository.create_session(
             user_id=test_user.id,
@@ -1067,7 +1068,7 @@ class TestEdgeCases:
 
         assert session.expires_at is not None
         expires_with_tz = (
-            session.expires_at.replace(tzinfo=timezone.utc)
+            session.expires_at.replace(tzinfo=UTC)
             if session.expires_at.tzinfo is None
             else session.expires_at
         )
@@ -1095,14 +1096,14 @@ class TestEdgeCases:
         test_db_session.flush()
 
         # Create sessions for each user
-        expires_at = datetime.now(timezone.utc) + timedelta(days=7)
-        session1 = session_repository.create_session(
+        expires_at = datetime.now(UTC) + timedelta(days=7)
+        session_repository.create_session(
             user_id=user1.id,
             family_id="family-user1",
             refresh_token_jti="jti-user1",
             expires_at=expires_at,
         )
-        session2 = session_repository.create_session(
+        session_repository.create_session(
             user_id=user2.id,
             family_id="family-user2",
             refresh_token_jti="jti-user2",

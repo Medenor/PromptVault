@@ -4,8 +4,8 @@
 
 """Unit tests for SetupConsole utility class."""
 
-import pytest
-from unittest.mock import Mock, MagicMock, patch, call
+from unittest.mock import MagicMock, Mock, patch
+
 from scripts.setup.utils.console import SetupConsole
 
 

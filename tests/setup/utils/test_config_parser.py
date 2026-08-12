@@ -4,18 +4,20 @@
 
 """Unit tests for configuration parsing utilities."""
 
-import pytest
-import tempfile
 import os
 import stat
+import tempfile
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
+
+import pytest
+
 from scripts.setup.utils.config_parser import (
+    load_env_template,
+    merge_configs,
     parse_env_file,
     parse_yaml_config,
-    merge_configs,
     substitute_env_vars,
-    load_env_template,
     write_env_file,
 )
 

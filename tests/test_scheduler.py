@@ -11,16 +11,17 @@ Tests the SessionCleanupScheduler class including:
 - Error handling
 """
 
-import pytest
 from datetime import datetime, timedelta
-from unittest.mock import Mock, MagicMock, patch, call
+from unittest.mock import Mock
+
+import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from src.scheduler.session_cleanup import SessionCleanupScheduler
 from src.config.auth_config import AuthConfig
 from src.db.models.user import User
 from src.db.models.user_session import UserSession
+from src.scheduler.session_cleanup import SessionCleanupScheduler
 
 
 class TestSessionCleanupScheduler:

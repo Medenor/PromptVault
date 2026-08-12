@@ -14,19 +14,19 @@ from fastapi import FastAPI
 from src.config.auth_config import auth_settings
 from src.services.logging_service import logging_service
 from src.web.routers import (
-    auth_router,
-    admin_users_router,
     admin_sessions_router,
-    prompts_router,
-    prompts_versions_router,
-    prompts_sharing_router,
-    users_router,
+    admin_users_router,
+    auth_router,
     import_export_router,
-    tag_category_router,
     pages_router,
+    prompts_router,
+    prompts_sharing_router,
+    prompts_versions_router,
+    tag_category_router,
+    users_router,
 )
-from src.web.routers.scheduler import router as scheduler_router
 from src.web.routers.backup import router as backup_router
+from src.web.routers.scheduler import router as scheduler_router
 
 logger = logging_service.get_logger(__name__)
 

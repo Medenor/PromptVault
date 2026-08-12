@@ -8,28 +8,24 @@ Provides admin endpoints for managing background schedulers like session cleanup
 """
 
 import logging
-from typing import Optional, Dict, Any
 from datetime import datetime
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
-from src.config.auth_config import AuthConfig
-from src.web.dependencies.auth import (
-    get_current_active_user,
-    get_admin_user,
-    get_admin_or_bypass,
-    get_auth_config,
-)
 from src.db.models.user import User
 from src.scheduler.session_cleanup import SessionCleanupScheduler
+from src.web.dependencies.auth import (
+    get_admin_or_bypass,
+)
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/admin/scheduler", tags=["admin", "scheduler"])
 
 # Global scheduler instance (will be initialized by app)
-_session_cleanup_scheduler: Optional[SessionCleanupScheduler] = None
+_session_cleanup_scheduler: SessionCleanupScheduler | None = None
 
 
 def get_scheduler() -> SessionCleanupScheduler:
@@ -54,16 +50,16 @@ class SchedulerStatusResponse(BaseModel):
     is_running: bool = Field(
         ..., description="Whether scheduler is currently running", example=True
     )
-    next_run_time: Optional[datetime] = Field(
+    next_run_time: datetime | None = Field(
         default=None,
         description="Timestamp of next scheduled cleanup",
         example="2025-12-06T14:00:00",
     )
-    last_run_time: Optional[datetime] = Field(
+    last_run_time: datetime | None = Field(
         default=None,
         description="Timestamp of last cleanup run",
     )
-    job_info: Optional[Dict[str, Any]] = Field(
+    job_info: dict[str, Any] | None = Field(
         default=None, description="Detailed job information"
     )
 
@@ -72,16 +68,16 @@ class CleanupResultResponse(BaseModel):
     """Response model for cleanup operation result."""
 
     success: bool = Field(..., description="Whether cleanup succeeded", example=True)
-    expired_found: Optional[int] = Field(
+    expired_found: int | None = Field(
         default=None, description="Number of expired sessions found", example=42
     )
-    deleted: Optional[int] = Field(
+    deleted: int | None = Field(
         default=None, description="Number of sessions deleted", example=42
     )
     timestamp: datetime = Field(
         ..., description="When cleanup was performed", example="2025-12-06T13:00:00"
     )
-    error: Optional[str] = Field(
+    error: str | None = Field(
         default=None, description="Error message if cleanup failed"
     )
 
@@ -93,7 +89,7 @@ class CleanupResultResponse(BaseModel):
     description="Get current status of session cleanup scheduler",
 )
 def get_scheduler_status(
-    current_user: Optional[User] = Depends(get_admin_or_bypass),
+    current_user: User | None = Depends(get_admin_or_bypass),
     scheduler: SessionCleanupScheduler = Depends(get_scheduler),
 ) -> SchedulerStatusResponse:
     """Get session cleanup scheduler status.
@@ -124,7 +120,7 @@ def get_scheduler_status(
     description="Start the session cleanup scheduler",
 )
 def start_scheduler(
-    current_user: Optional[User] = Depends(get_admin_or_bypass),
+    current_user: User | None = Depends(get_admin_or_bypass),
     scheduler: SessionCleanupScheduler = Depends(get_scheduler),
 ) -> SchedulerStatusResponse:
     """Start the session cleanup scheduler.
@@ -164,7 +160,7 @@ def start_scheduler(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to start scheduler: {str(e)}",
-        )
+        ) from e
 
 
 @router.post(
@@ -174,7 +170,7 @@ def start_scheduler(
     description="Stop the session cleanup scheduler",
 )
 def stop_scheduler(
-    current_user: Optional[User] = Depends(get_admin_or_bypass),
+    current_user: User | None = Depends(get_admin_or_bypass),
     scheduler: SessionCleanupScheduler = Depends(get_scheduler),
 ) -> SchedulerStatusResponse:
     """Stop the session cleanup scheduler.
@@ -213,7 +209,7 @@ def stop_scheduler(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to stop scheduler: {str(e)}",
-        )
+        ) from e
 
 
 @router.post(
@@ -223,7 +219,7 @@ def stop_scheduler(
     description="Run session cleanup immediately (bypasses schedule)",
 )
 def run_cleanup_now(
-    current_user: Optional[User] = Depends(get_admin_or_bypass),
+    current_user: User | None = Depends(get_admin_or_bypass),
     scheduler: SessionCleanupScheduler = Depends(get_scheduler),
 ) -> CleanupResultResponse:
     """Run session cleanup immediately.

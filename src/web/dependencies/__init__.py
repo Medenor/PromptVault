@@ -9,25 +9,24 @@ providing authentication, authorization, and request context utilities.
 """
 
 from src.web.dependencies.auth import (
+    # Composite dependencies
+    get_admin_user,
     # Configuration
     get_auth_config,
-    get_jwt_service,
+    # Request metadata
+    get_client_ip,
+    get_current_active_user,
+    get_current_user,
     # Authentication
     get_current_user_token,
-    get_current_user,
-    get_current_active_user,
+    get_editor_or_admin_user,
+    get_jwt_service,
     get_optional_user,
+    get_user_agent,
     # Authorization (RBAC)
     require_role,
     require_verified_email,
-    # Request metadata
-    get_client_ip,
-    get_user_agent,
-    # Composite dependencies
-    get_admin_user,
-    get_editor_or_admin_user,
 )
-
 from src.web.dependencies.undo import (
     get_undo_service,
 )

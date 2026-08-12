@@ -15,30 +15,30 @@ Tests cover:
 - Error handling
 """
 
-import os
-import sys
-import pytest
-import tempfile
-import shutil
 import datetime
+import os
+import shutil
+import sys
+import tempfile
 from pathlib import Path
-from unittest.mock import Mock, MagicMock, patch, call, mock_open
-from click.testing import CliRunner
+from unittest.mock import Mock, patch
 
 import jwt
+import pytest
+from click.testing import CliRunner
+from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import ec
-from cryptography.hazmat.backends import default_backend
 
 # Import the module to test
 from scripts.setup.setup_jwt import (
-    generate_key_pair,
-    validate_key_pair,
     backup_keys,
     ensure_gitignore,
-    set_file_permissions,
-    write_keys,
+    generate_key_pair,
     main,
+    set_file_permissions,
+    validate_key_pair,
+    write_keys,
 )
 
 
@@ -799,7 +799,7 @@ class TestErrorHandling:
 
         # Mock shutil.copy2 to raise IOError
         with patch(
-            "scripts.setup.setup_jwt.shutil.copy2", side_effect=IOError("Disk full")
+            "scripts.setup.setup_jwt.shutil.copy2", side_effect=OSError("Disk full")
         ):
             with pytest.raises(IOError):
                 backup_keys(self.temp_dir, self.console)
@@ -859,7 +859,7 @@ class TestJWTKeyRegeneration:
             first_public = (output_dir / "public_key.pem").read_bytes()
 
             # Regenerate multiple times
-            for i in range(3):
+            for _i in range(3):
                 result = self.runner.invoke(
                     main,
                     ["--output-dir", str(output_dir), "--force", "--non-interactive"],

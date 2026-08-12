@@ -5,7 +5,7 @@
 """Pydantic response models for the prompt sharing API."""
 
 from datetime import datetime
-from typing import List, Literal, Optional
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -52,7 +52,7 @@ class ShareResponse(BaseModel):
     permission: Literal["read", "edit"] = Field(
         ..., description="Effective access level"
     )
-    granted_by: Optional[str] = Field(
+    granted_by: str | None = Field(
         default=None,
         description="Username of the granting user, or None if deleted",
     )
@@ -71,7 +71,7 @@ class ShareListResponse(BaseModel):
     """
 
     prompt_id: int = Field(..., description="The prompt whose grants are listed")
-    shares: List[ShareResponse] = Field(
+    shares: list[ShareResponse] = Field(
         default_factory=list, description="All active grants on the prompt"
     )
 
@@ -83,6 +83,6 @@ class UserSearchResponse(BaseModel):
         users: Matching active users (usernames only).
     """
 
-    users: List[UserSuggestion] = Field(
+    users: list[UserSuggestion] = Field(
         default_factory=list, description="Matching active users"
     )

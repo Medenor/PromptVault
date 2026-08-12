@@ -2,33 +2,33 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+import os
+import time
+from collections import defaultdict, deque
+from datetime import datetime
+from typing import Any
+
 from fastapi import Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
-import os
-import time
-from datetime import datetime
-from typing import List, Optional, Tuple, Dict, Deque, Any
-from collections import defaultdict, deque
 
-from src.services.prompt_data_service_db import PromptDataService
-from src.services.prompt_import_export_service import PromptImportExportService
+from src.config.auth_config import auth_settings
 from src.services.backup_service_db import BackupService
 from src.services.logging_service import logging_service
+from src.services.prompt_data_service_db import PromptDataService
+from src.services.prompt_import_export_service import PromptImportExportService
+from src.web.dependencies.auth import has_valid_auth_cookie
+from src.web.factory import create_app
+from src.web.middleware_setup import configure_middleware
 from src.web.models import FrontendLogEntry
 from src.web.monitoring import ValidationMonitor
 from src.web.routers.backup import init_backup_router
-from src.web.factory import create_app
-from src.web.middleware_setup import configure_middleware
 from src.web.routing_setup import (
     configure_routing,
-    _warn_if_auth_disabled,
 )  # noqa: F401
 from src.web.startup import register_lifecycle_events
-from src.config.auth_config import auth_settings
-from src.web.utils.manifest import load_manifest, get_asset_path, is_production
+from src.web.utils.manifest import get_asset_path, is_production, load_manifest
 from src.web.utils.version import get_app_version
-from src.web.dependencies.auth import has_valid_auth_cookie
 
 # ============================================================================
 # APPLICATION INITIALIZATION
@@ -84,10 +84,10 @@ from src.web.dependencies.auth import has_valid_auth_cookie
 
 app = create_app()
 
-data_service: Optional[PromptDataService] = None
-import_export_service: Optional[PromptImportExportService] = None
-backup_service: Optional[BackupService] = None
-validation_monitor: Optional[ValidationMonitor] = None
+data_service: PromptDataService | None = None
+import_export_service: PromptImportExportService | None = None
+backup_service: BackupService | None = None
+validation_monitor: ValidationMonitor | None = None
 logger = logging_service.get_logger(__name__)
 
 configure_routing(app)
@@ -135,7 +135,7 @@ async def get_validation_stats():
 
 FRONTEND_LOG_WINDOW = 60.0
 FRONTEND_LOG_LIMIT = 10
-frontend_log_rate: Dict[str, Deque[float]] = defaultdict(deque)
+frontend_log_rate: dict[str, deque[float]] = defaultdict(deque)
 
 # Templates
 templates = Jinja2Templates(directory="src/web/templates")
@@ -152,8 +152,8 @@ templates.env.globals["app_version"] = get_app_version()
 
 
 def _resolve_data_locations(
-    override_file: Optional[str] = None, override_dir: Optional[str] = None
-) -> Tuple[Optional[str], Optional[str]]:
+    override_file: str | None = None, override_dir: str | None = None
+) -> tuple[str | None, str | None]:
     """
     Determine data file and directory locations, allowing environment overrides.
 
@@ -167,8 +167,8 @@ def _resolve_data_locations(
     data_file_env = override_file or os.getenv("PROMPTVAULT_DATA_FILE")
     data_dir_env = override_dir or os.getenv("PROMPTVAULT_DATA_DIR")
 
-    data_file: Optional[str] = None
-    data_dir: Optional[str] = None
+    data_file: str | None = None
+    data_dir: str | None = None
 
     if data_file_env:
         data_file = os.path.abspath(data_file_env.strip())
@@ -222,7 +222,7 @@ def _warn_if_backup_dir_database_mismatch(backups_dir: str) -> None:
 
 
 def configure_services(
-    data_file: Optional[str] = None, data_dir: Optional[str] = None
+    data_file: str | None = None, data_dir: str | None = None
 ) -> None:
     """
     Initialize global service instances, honoring optional overrides.
@@ -289,8 +289,8 @@ def _is_frontend_rate_limited(client_ip: str) -> bool:
 def record_validation_event(
     endpoint: str,
     success: bool,
-    errors: Optional[List[str]] = None,
-    client: Optional[str] = None,
+    errors: list[str] | None = None,
+    client: str | None = None,
 ) -> None:
     """
     Record a validation success or failure for monitoring.
@@ -329,7 +329,7 @@ init_backup_router(backup_service, validation_monitor, record_validation_event)
 configure_middleware(app, record_validation_event)
 
 
-def _sanitize_text(value: Optional[str], max_length: int) -> Optional[str]:
+def _sanitize_text(value: str | None, max_length: int) -> str | None:
     if not value:
         return None
     return value.strip()[:max_length]
@@ -345,7 +345,7 @@ async def log_frontend_error(entry: FrontendLogEntry, request: Request):
             content={"error": "Too many error reports. Please slow down."},
         )
 
-    context_payload: Dict[str, Any] = {}
+    context_payload: dict[str, Any] = {}
     for key, value in entry.context.items():
         if isinstance(value, str):
             context_payload[key] = value[:200]

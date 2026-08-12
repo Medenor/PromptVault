@@ -12,7 +12,7 @@ Security Features:
     - Automatic unlock once the lockout period has elapsed
 """
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy.orm import Session
 
@@ -68,8 +68,8 @@ class LockoutService:
         if user.locked_until:
             locked_until = user.locked_until
             if locked_until.tzinfo is None:
-                locked_until = locked_until.replace(tzinfo=timezone.utc)
-            now = datetime.now(timezone.utc)
+                locked_until = locked_until.replace(tzinfo=UTC)
+            now = datetime.now(UTC)
             if now < locked_until:
                 locked_until_str = user.locked_until.strftime("%Y-%m-%d %H:%M:%S UTC")
                 raise AccountLockedError(
@@ -104,7 +104,7 @@ class LockoutService:
             # Check if we should lock the account
             failed_attempts = (user.failed_login_attempts or 0) + 1
             if failed_attempts >= self.config.max_login_attempts:
-                locked_until = datetime.now(timezone.utc) + timedelta(
+                locked_until = datetime.now(UTC) + timedelta(
                     seconds=self.config.account_lockout_duration_seconds
                 )
                 self.user_repo.lock_account(user.id, locked_until)

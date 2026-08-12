@@ -46,35 +46,32 @@ Example Usage:
     ...     return {"deleted": user_id}
 """
 
-from src.web.dependencies.token import (
-    get_auth_config,
-    get_jwt_service,
-    _extract_bearer_or_cookie_token,
-    _validate_access_token_claims,
-    _resolve_active_user,
-    get_current_user_token,
-    get_current_user,
-    get_current_active_user,
-    get_optional_user,
-)
-from src.web.dependencies.roles import (
-    require_role,
-    require_verified_email,
-    get_admin_user,
-    get_editor_or_admin_user,
+from src.web.dependencies.bypass import (
+    get_admin_or_bypass,
+    get_current_user_or_default,
+    get_current_user_or_none,
+    get_editor_or_admin_or_bypass,
+    get_user_or_bypass,
+    has_valid_auth_cookie,
+    require_role_or_bypass,
 )
 from src.web.dependencies.request_context import (
     get_client_ip,
     get_user_agent,
 )
-from src.web.dependencies.bypass import (
-    get_current_user_or_none,
-    get_current_user_or_default,
-    require_role_or_bypass,
-    get_user_or_bypass,
-    has_valid_auth_cookie,
-    get_admin_or_bypass,
-    get_editor_or_admin_or_bypass,
+from src.web.dependencies.roles import (
+    get_admin_user,
+    get_editor_or_admin_user,
+    require_role,
+    require_verified_email,
+)
+from src.web.dependencies.token import (
+    get_auth_config,
+    get_current_active_user,
+    get_current_user,
+    get_current_user_token,
+    get_jwt_service,
+    get_optional_user,
 )
 
 __all__ = [

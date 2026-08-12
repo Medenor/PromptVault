@@ -7,7 +7,7 @@
 Stores per-system encryption configuration metadata. Never stores the passphrase.
 """
 
-from sqlalchemy import Column, String, Integer, Boolean, DateTime, Text
+from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text
 from sqlalchemy.sql import func
 
 from src.db.base import Base

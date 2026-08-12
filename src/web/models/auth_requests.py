@@ -17,7 +17,6 @@ All request models include:
 """
 
 import re
-from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
@@ -330,7 +329,7 @@ class RefreshTokenRequest(BaseModel):
 class LogoutRequest(BaseModel):
     """Request model for logout endpoint (all fields optional — token may come from cookie)."""
 
-    refresh_token: Optional[str] = Field(
+    refresh_token: str | None = Field(
         None,
         min_length=10,
         description="JWT refresh token (optional if sent via cookie)",
@@ -566,7 +565,7 @@ class RevokeSessionRequest(BaseModel):
         >>> request = RevokeSessionRequest()
     """
 
-    session_id: Optional[str] = Field(
+    session_id: str | None = Field(
         default=None,
         min_length=36,
         max_length=36,
@@ -576,7 +575,7 @@ class RevokeSessionRequest(BaseModel):
 
     @field_validator("session_id")
     @classmethod
-    def validate_session_id(cls, v: Optional[str]) -> Optional[str]:
+    def validate_session_id(cls, v: str | None) -> str | None:
         """Validate session ID format (UUID).
 
         Args:
@@ -621,14 +620,14 @@ class UpdateProfileRequest(BaseModel):
         ... )
     """
 
-    display_name: Optional[str] = Field(
+    display_name: str | None = Field(
         default=None,
         min_length=1,
         max_length=200,
         description="Display name (1-200 characters)",
         examples=["Alice Smith", "Bob Johnson"],
     )
-    email: Optional[str] = Field(
+    email: str | None = Field(
         default=None,
         min_length=5,
         max_length=255,
@@ -638,7 +637,7 @@ class UpdateProfileRequest(BaseModel):
 
     @field_validator("display_name")
     @classmethod
-    def validate_display_name(cls, v: Optional[str]) -> Optional[str]:
+    def validate_display_name(cls, v: str | None) -> str | None:
         """Validate and normalize display name.
 
         Args:
@@ -659,7 +658,7 @@ class UpdateProfileRequest(BaseModel):
 
     @field_validator("email")
     @classmethod
-    def validate_email(cls, v: Optional[str]) -> Optional[str]:
+    def validate_email(cls, v: str | None) -> str | None:
         """Validate email format and normalize.
 
         Args:

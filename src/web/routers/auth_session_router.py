@@ -14,13 +14,27 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.responses import JSONResponse
 
+from src.db.models.user import User
 from src.services.auth.auth_service import AuthService
 from src.services.auth.jwt_service import JWTService
-from src.db.models.user import User
+from src.services.exceptions import (
+    AccountInactiveError,
+    AccountLockedError,
+    InvalidCredentialsError,
+    InvalidTokenError,
+    SessionLimitExceededError,
+    SessionNotFoundError,
+    TokenReuseDetectedError,
+    UnauthorizedError,
+)
 from src.web.dependencies.auth import (
-    get_current_active_user,
     get_client_ip,
+    get_current_active_user,
     get_user_agent,
+)
+from src.web.middleware.rate_limit import (
+    auth_login_limit,
+    limiter,
 )
 from src.web.models.auth_requests import (
     LoginRequest,
@@ -28,26 +42,12 @@ from src.web.models.auth_requests import (
     RefreshTokenRequest,
 )
 from src.web.models.auth_responses import (
-    TokenResponse,
-    UserResponse,
     MessageResponse,
+    RevokeSessionResponse,
     SessionListResponse,
     SessionResponse,
-    RevokeSessionResponse,
-)
-from src.services.exceptions import (
-    InvalidCredentialsError,
-    AccountLockedError,
-    AccountInactiveError,
-    InvalidTokenError,
-    TokenReuseDetectedError,
-    SessionLimitExceededError,
-    SessionNotFoundError,
-    UnauthorizedError,
-)
-from src.web.middleware.rate_limit import (
-    limiter,
-    auth_login_limit,
+    TokenResponse,
+    UserResponse,
 )
 from src.web.routers.auth_shared import get_auth_service, get_jwt_service
 
@@ -206,7 +206,7 @@ def login(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid credentials",
-        )
+        ) from e
 
     except AccountLockedError as e:
         logger.warning(
@@ -216,7 +216,7 @@ def login(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=e.user_message,
-        )
+        ) from e
 
     except AccountInactiveError as e:
         logger.warning(
@@ -225,7 +225,7 @@ def login(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=e.user_message,
-        )
+        ) from e
 
     except SessionLimitExceededError as e:
         logger.warning(
@@ -234,14 +234,14 @@ def login(
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail=e.user_message,
-        )
+        ) from e
 
     except Exception as e:
         logger.error(f"Unexpected error during login: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred during login. Please try again.",
-        )
+        ) from e
 
 
 @router.post(
@@ -379,7 +379,7 @@ def refresh(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=e.user_message,
-        )
+        ) from e
 
     except TokenReuseDetectedError as e:
         logger.error(
@@ -388,21 +388,21 @@ def refresh(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token reuse detected. All sessions have been revoked. Please log in again.",
-        )
+        ) from e
 
     except SessionNotFoundError as e:
         logger.warning(f"Token refresh failed - session not found from {ip_address}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=e.user_message,
-        )
+        ) from e
 
     except Exception as e:
         logger.error(f"Unexpected error during token refresh: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred during token refresh. Please try again.",
-        )
+        ) from e
 
 
 @router.post(
@@ -480,7 +480,7 @@ def logout(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred during logout. Please try again.",
-        )
+        ) from e
 
     json_response = JSONResponse(
         content={
@@ -665,7 +665,7 @@ def get_user_sessions(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred while retrieving sessions. Please try again.",
-        )
+        ) from e
 
 
 @router.delete(
@@ -751,12 +751,6 @@ def revoke_session(
                 revoked_count=1,
             )
         raise SessionNotFoundError("Session not found")
-    except SessionNotFoundError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=exc.user_message,
-        )
-
     except SessionNotFoundError as e:
         logger.warning(
             f"Session revocation failed - session not found: {session_id} "
@@ -765,7 +759,7 @@ def revoke_session(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=e.user_message,
-        )
+        ) from e
 
     except UnauthorizedError as e:
         logger.warning(
@@ -775,7 +769,7 @@ def revoke_session(
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=e.user_message,
-        )
+        ) from e
 
     except Exception as e:
         logger.error(
@@ -784,7 +778,7 @@ def revoke_session(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred while revoking session. Please try again.",
-        )
+        ) from e
 
 
 @router.delete(
@@ -884,4 +878,4 @@ def revoke_all_sessions(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred while revoking sessions. Please try again.",
-        )
+        ) from e

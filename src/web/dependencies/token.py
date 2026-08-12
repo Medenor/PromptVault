@@ -25,21 +25,21 @@ Security Features:
     - WWW-Authenticate headers for 401 responses
 """
 
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
+
 from fastapi import Cookie, Depends, Header, HTTPException, status
-from sqlalchemy.orm import Session
 from jwt.exceptions import (
     ExpiredSignatureError,
     InvalidSignatureError,
     InvalidTokenError,
 )
+from sqlalchemy.orm import Session
 
 from src.config.auth_config import AuthConfig
-from src.services.auth.jwt_service import JWTService
-from src.db.session import get_db
 from src.db.models.user import User
 from src.db.repositories.user_repository import UserRepository
+from src.db.session import get_db
+from src.services.auth.jwt_service import JWTService
 
 # ============================================================================
 # Configuration Dependencies
@@ -117,8 +117,8 @@ def get_jwt_service(config: AuthConfig = Depends(get_auth_config)) -> JWTService
 
 
 def _extract_bearer_or_cookie_token(
-    authorization: Optional[str], access_token_cookie: Optional[str]
-) -> Optional[str]:
+    authorization: str | None, access_token_cookie: str | None
+) -> str | None:
     """Parse a Bearer token from an Authorization header or a cookie fallback.
 
     Returns None if neither source yields a token. Raises 401 if an
@@ -145,38 +145,38 @@ def _validate_access_token_claims(jwt_service: JWTService, token: str) -> dict:
     try:
         return jwt_service.validate_access_token(token)
 
-    except ExpiredSignatureError:
+    except ExpiredSignatureError as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Authentication token has expired",
             headers={
                 "WWW-Authenticate": 'Bearer error="invalid_token", error_description="Token expired"'
             },
-        )
+        ) from e
 
-    except InvalidSignatureError:
+    except InvalidSignatureError as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid token signature",
             headers={
                 "WWW-Authenticate": 'Bearer error="invalid_token", error_description="Invalid signature"'
             },
-        )
+        ) from e
 
     except InvalidTokenError as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"Invalid authentication token: {str(e)}",
             headers={"WWW-Authenticate": 'Bearer error="invalid_token"'},
-        )
+        ) from e
 
-    except Exception:
+    except Exception as e:
         # Catch-all for unexpected errors
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Authentication token validation failed",
             headers={"WWW-Authenticate": "Bearer"},
-        )
+        ) from e
 
 
 def _resolve_active_user(session: Session, user_id: str) -> User:
@@ -217,10 +217,10 @@ def _resolve_active_user(session: Session, user_id: str) -> User:
 
 
 def get_current_user_token(
-    authorization: Optional[str] = Header(
+    authorization: str | None = Header(
         None, description="Bearer token in format: Bearer <token>"
     ),
-    access_token_cookie: Optional[str] = Cookie(None, alias="access_token"),
+    access_token_cookie: str | None = Cookie(None, alias="access_token"),
     jwt_service: JWTService = Depends(get_jwt_service),
 ) -> dict:
     """Extract and validate access token from Authorization header or cookie.
@@ -375,7 +375,7 @@ def get_current_active_user(user: User = Depends(get_current_user)) -> User:
 
     # Check if account is locked
     if user.locked_until:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         if now < user.locked_until:
             # Account is still locked
             remaining = (user.locked_until - now).total_seconds()
@@ -394,10 +394,10 @@ def get_current_active_user(user: User = Depends(get_current_user)) -> User:
 
 
 def get_optional_user(
-    authorization: Optional[str] = Header(None, description="Optional Bearer token"),
+    authorization: str | None = Header(None, description="Optional Bearer token"),
     jwt_service: JWTService = Depends(get_jwt_service),
     session: Session = Depends(get_db),
-) -> Optional[User]:
+) -> User | None:
     """Get user if authenticated, None otherwise (optional authentication).
 
     This dependency allows routes to support both authenticated and anonymous
@@ -466,10 +466,10 @@ def get_optional_user(
     except HTTPException:
         # Invalid token - re-raise the exception
         raise
-    except Exception:
+    except Exception as e:
         # Any validation failure -> treat as invalid token for optional flows
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid token",
             headers={"WWW-Authenticate": "Bearer"},
-        )
+        ) from e

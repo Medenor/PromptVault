@@ -4,7 +4,6 @@
 
 """Unit tests for diff utility functions."""
 
-import pytest
 from src.utils.diff_utils import compute_character_diff
 
 

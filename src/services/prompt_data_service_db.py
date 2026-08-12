@@ -13,32 +13,33 @@ import json
 import os
 import uuid
 import warnings
-from datetime import datetime, timezone
-from typing import Dict, Any, Set, List, Optional, Iterable
+from collections.abc import Iterable
+from datetime import UTC
+from typing import Any
 
-from src.db.session import get_db_session
+from src.db.models import Category, Prompt, PromptVersion, User
 from src.db.repositories import (
-    PromptRepository,
-    VersionRepository,
     CategoryRepository,
+    PromptRepository,
     TagRepository,
+    VersionRepository,
 )
 from src.db.repositories.sharing_repository import SharingRepository
 from src.db.repositories.user_repository import UserRepository
-from src.db.models import Prompt, PromptVersion, Category, Tag, User
+from src.db.session import get_db_session
 from src.services.exceptions import DataPersistenceError, ShareGrantError
 from src.services.logging_service import logging_service
 
 # Import sanitization utilities from validators
 from src.web.validators import (
-    sanitize_text_field,
-    sanitize_tags,
-    MAX_TITLE_LENGTH,
-    MAX_PROMPT_LENGTH,
     MAX_CATEGORY_LENGTH,
     MAX_NOTE_LENGTH,
+    MAX_PROMPT_LENGTH,
     MAX_TAG_COUNT,
     MAX_TAG_LENGTH,
+    MAX_TITLE_LENGTH,
+    sanitize_tags,
+    sanitize_text_field,
 )
 
 logger = logging_service.get_logger(__name__)
@@ -121,7 +122,7 @@ class PromptDataService:
                 user = self._ensure_default_user()
             return user
 
-    def _normalize_tags(self, tags: Iterable[Any]) -> List[str]:
+    def _normalize_tags(self, tags: Iterable[Any]) -> list[str]:
         """Normalize a collection of tags by trimming whitespace and dropping blanks.
 
         Args:
@@ -130,7 +131,7 @@ class PromptDataService:
         Returns:
             List[str]: Cleaned tag strings preserving input order.
         """
-        normalized: List[str] = []
+        normalized: list[str] = []
         for tag in tags or []:
             if not isinstance(tag, str):
                 continue
@@ -139,7 +140,7 @@ class PromptDataService:
                 normalized.append(cleaned)
         return normalized
 
-    def _normalize_prompt_payload(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _normalize_prompt_payload(self, data: dict[str, Any]) -> dict[str, Any]:
         """Normalize prompt payload fields such as tags prior to persistence.
 
         This provides defense-in-depth by sanitizing data at the service layer,
@@ -244,7 +245,7 @@ class PromptDataService:
                 context={"data_file": self.data_file},
             ) from exc
 
-    def load_prompts(self) -> Dict[int, Dict]:
+    def load_prompts(self) -> dict[int, dict]:
         """Load prompts from database.
 
         Converts ORM objects to dict format for backward compatibility.
@@ -287,7 +288,7 @@ class PromptDataService:
             )
             return {}
 
-    def _prompt_to_dict(self, prompt: Prompt) -> Dict[str, Any]:
+    def _prompt_to_dict(self, prompt: Prompt) -> dict[str, Any]:
         """Convert Prompt ORM object to legacy dict format.
 
         Args:
@@ -313,7 +314,7 @@ class PromptDataService:
             },
         }
 
-    def _version_to_dict(self, version: PromptVersion) -> Dict[str, Any]:
+    def _version_to_dict(self, version: PromptVersion) -> dict[str, Any]:
         """Convert PromptVersion ORM object to legacy dict format.
 
         Args:
@@ -326,9 +327,7 @@ class PromptDataService:
         if version.created_at.tzinfo is not None:
             # Timezone-aware (PostgreSQL): convert to UTC
             timestamp = (
-                version.created_at.astimezone(timezone.utc)
-                .isoformat()
-                .replace("+00:00", "Z")
+                version.created_at.astimezone(UTC).isoformat().replace("+00:00", "Z")
             )
         else:
             # Naive datetime (SQLite): assume UTC
@@ -363,7 +362,7 @@ class PromptDataService:
         }
 
     @property
-    def prompts(self) -> Dict[int, Dict]:
+    def prompts(self) -> dict[int, dict]:
         """Get prompts dict for backward compatibility."""
         if self._prompts_cache is None:
             self._prompts_cache = self.load_prompts()
@@ -390,18 +389,16 @@ class PromptDataService:
         pass
 
     @property
-    def categories(self) -> List[str]:
+    def categories(self) -> list[str]:
         """Get all categories."""
         return self.get_categories()
 
     @property
-    def global_tags(self) -> Set[str]:
+    def global_tags(self) -> set[str]:
         """Get all tags as a set."""
         return set(self.get_tags())
 
-    def add_new_prompt(
-        self, data: Dict[str, Any], user_id: Optional[str] = None
-    ) -> int:
+    def add_new_prompt(self, data: dict[str, Any], user_id: str | None = None) -> int:
         """Add a new prompt with initial version.
 
         Args:
@@ -495,9 +492,9 @@ class PromptDataService:
     def update_prompt(
         self,
         prompt_id: int,
-        data: Dict[str, Any],
+        data: dict[str, Any],
         commit_message: str = "Update",
-        author: Optional[str] = None,
+        author: str | None = None,
     ) -> bool:
         """Update an existing prompt with a new version.
 
@@ -628,7 +625,7 @@ class PromptDataService:
             )
             return False
 
-    def delete_prompts_bulk(self, prompt_ids: List[int]) -> Dict[str, Any]:
+    def delete_prompts_bulk(self, prompt_ids: list[int]) -> dict[str, Any]:
         """Delete multiple prompts in a single operation.
 
         Args:
@@ -723,7 +720,7 @@ class PromptDataService:
                 "Unable to clear prompt storage.", context={}
             ) from exc
 
-    def get_prompt_data(self, prompt_id: int) -> Dict[str, Any]:
+    def get_prompt_data(self, prompt_id: int) -> dict[str, Any]:
         """Get the current data for a prompt.
 
         Args:
@@ -759,7 +756,7 @@ class PromptDataService:
             )
             return {}
 
-    def get_prompt_versions(self, prompt_id: int) -> List[Dict[str, Any]]:
+    def get_prompt_versions(self, prompt_id: int) -> list[dict[str, Any]]:
         """Get the version history for a prompt.
 
         Args:
@@ -789,9 +786,9 @@ class PromptDataService:
     def revert_prompt_to_version(
         self,
         prompt_id: int,
-        reverted_data: Dict[str, Any],
+        reverted_data: dict[str, Any],
         commit_message: str,
-        author: Optional[str] = None,
+        author: str | None = None,
     ) -> bool:
         """Revert a prompt to a specific version.
 
@@ -810,7 +807,7 @@ class PromptDataService:
             prompt_id, reverted_data, commit_message, author=author
         )
 
-    def create_prompt(self, data: Dict[str, Any]) -> int:
+    def create_prompt(self, data: dict[str, Any]) -> int:
         """Create a new prompt (alias for add_new_prompt).
 
         Args:
@@ -821,7 +818,7 @@ class PromptDataService:
         """
         return self.add_new_prompt(data)
 
-    def get_categories(self) -> List[str]:
+    def get_categories(self) -> list[str]:
         """Get all categories.
 
         Returns:
@@ -842,7 +839,7 @@ class PromptDataService:
             )
             return []
 
-    def get_tags(self) -> List[str]:
+    def get_tags(self) -> list[str]:
         """Get all tags.
 
         Returns:
@@ -860,8 +857,13 @@ class PromptDataService:
             )
             return []
 
-    def get_tags_with_counts(self) -> List[Dict[str, Any]]:
-        """Return tags with usage counts for legacy endpoints/tests."""
+    def get_tags_with_counts(self) -> list[dict[str, Any]]:
+        """Get all tags with their usage counts.
+
+        Returns:
+            List[Dict[str, Any]]: List of dictionaries with 'name' and 'count' keys,
+                                  sorted by tag name
+        """
         try:
             with get_db_session() as session:
                 tag_repo = TagRepository(session)
@@ -877,29 +879,7 @@ class PromptDataService:
             )
             return []
 
-    def get_tags_with_counts(self) -> List[Dict[str, Any]]:
-        """Get all tags with their usage counts.
-
-        Returns:
-            List[Dict[str, Any]]: List of dictionaries with 'name' and 'count' keys,
-                                  sorted by tag name
-        """
-        try:
-            with get_db_session() as session:
-                tag_repo = TagRepository(session)
-                results = tag_repo.list_all_with_counts()
-
-                return [{"name": tag.name, "count": count} for tag, count in results]
-
-        except Exception as exc:
-            logger.error(
-                "Failed to get tags with counts",
-                extra={"event": "tags.get_counts.failure"},
-                exc_info=exc,
-            )
-            return []
-
-    def get_all_tags_from_prompts(self) -> Set[str]:
+    def get_all_tags_from_prompts(self) -> set[str]:
         """Get all unique tags from all prompts.
 
         Returns:
@@ -927,7 +907,7 @@ class PromptDataService:
         identifier: str,
         permission: str,
         acting_user: User,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Grant (or update) a prompt share to another user.
 
         Resolves ``identifier`` as a username or email of an active user,
@@ -1007,7 +987,7 @@ class PromptDataService:
                 "updated_at": share.updated_at,
             }
 
-    def list_shares(self, prompt_id: int) -> Dict[str, Any]:
+    def list_shares(self, prompt_id: int) -> dict[str, Any]:
         """List all grants on a prompt (grant review, US3).
 
         Callers are expected to have already checked owner-level access

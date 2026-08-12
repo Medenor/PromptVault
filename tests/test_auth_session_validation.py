@@ -7,7 +7,6 @@
 Tests the user session management metadata and parsing.
 """
 
-import pytest
 from src.services.user_agent_parser import UserAgentParser
 
 

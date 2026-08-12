@@ -17,24 +17,24 @@ Tests cover:
 """
 
 import os
-import sys
-import tempfile
 import shutil
 import subprocess
+import tempfile
 from pathlib import Path
-from unittest.mock import Mock, MagicMock, patch, call, mock_open
-from click.testing import CliRunner
+from unittest.mock import MagicMock, Mock, patch
+
 import pytest
+from click.testing import CliRunner
 
 # Import the module to test
 from scripts.setup.setup_database import (
     PostgreSQLSetup,
     SQLiteSetup,
-    update_env_file,
+    create_admin_user,
     main,
     setup_postgresql,
     setup_sqlite,
-    create_admin_user,
+    update_env_file,
 )
 
 
@@ -712,7 +712,7 @@ class TestUpdateEnvFile:
             env_path = Path(self.temp_dir) / ".env"
             assert env_path.exists()
 
-            with open(env_path, "r") as f:
+            with open(env_path) as f:
                 content = f.read()
             assert "DATABASE_URL=postgresql://user:pass@localhost/db" in content
         finally:
@@ -735,7 +735,7 @@ class TestUpdateEnvFile:
             new_url = "postgresql://user:pass@localhost/newdb"
             update_env_file(new_url)
 
-            with open(env_path, "r") as f:
+            with open(env_path) as f:
                 content = f.read()
 
             assert f"DATABASE_URL={new_url}" in content
@@ -759,7 +759,7 @@ class TestUpdateEnvFile:
             new_url = "sqlite:///data/test.db"
             update_env_file(new_url)
 
-            with open(env_path, "r") as f:
+            with open(env_path) as f:
                 content = f.read()
 
             assert f"DATABASE_URL={new_url}" in content
@@ -817,7 +817,7 @@ class TestMainCLI:
         """Test main with --type postgresql."""
         mock_db_settings.database_type = "postgresql"
 
-        result = self.runner.invoke(
+        self.runner.invoke(
             main, ["--type", "postgresql", "--non-interactive", "--migrate-only"]
         )
 
@@ -829,7 +829,7 @@ class TestMainCLI:
         """Test main with --type sqlite."""
         mock_db_settings.database_type = "sqlite"
 
-        result = self.runner.invoke(
+        self.runner.invoke(
             main, ["--type", "sqlite", "--non-interactive", "--migrate-only"]
         )
 
@@ -841,7 +841,7 @@ class TestMainCLI:
         mock_db_settings.database_type = "postgresql"
 
         with patch("scripts.setup.setup_database.setup_postgresql") as mock_setup:
-            result = self.runner.invoke(main, ["--migrate-only"])
+            self.runner.invoke(main, ["--migrate-only"])
             mock_setup.assert_called_once()
 
     def test_main_non_interactive_requires_type(self):
@@ -868,7 +868,7 @@ class TestMainCLI:
         """Test main with custom host, port, database, and user."""
         mock_db_settings.database_type = "postgresql"
 
-        result = self.runner.invoke(
+        self.runner.invoke(
             main,
             [
                 "--type",
@@ -899,7 +899,7 @@ class TestMainCLI:
         """Test main with --create-admin flag."""
         mock_db_settings.database_type = "postgresql"
 
-        result = self.runner.invoke(
+        self.runner.invoke(
             main, ["--type", "postgresql", "--migrate-only", "--create-admin"]
         )
 

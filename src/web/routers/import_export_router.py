@@ -23,22 +23,21 @@ runtime are honored.
 import json
 import os
 from datetime import datetime
-from typing import List, Tuple
 
-from fastapi import APIRouter, Form, File, Request, UploadFile
-from fastapi.responses import JSONResponse, FileResponse
+from fastapi import APIRouter, File, Form, Request, UploadFile
+from fastapi.responses import FileResponse, JSONResponse
 from pydantic import ValidationError
 
 from src.db.repositories.sharing_repository import SharingRepository
 from src.db.session import get_db_session
 from src.services.logging_service import logging_service
-from src.web.middleware.rate_limit import limiter, expensive_limit
-from src.web.models import ExportRequest, ImportRequest, ExportFormat, ImportMode
+from src.web.middleware.rate_limit import expensive_limit, limiter
+from src.web.models import ExportFormat, ExportRequest, ImportMode, ImportRequest
 from src.web.validators import (
-    sanitize_filename,
-    validate_upload_file,
     create_secure_temp_file,
     get_file_extension_from_format,
+    sanitize_filename,
+    validate_upload_file,
 )
 
 router = APIRouter(tags=["Legacy"])
@@ -55,7 +54,7 @@ def _app():
 # ---------------------------------------------------------------------------
 
 
-def _parse_import_file(temp_file_path: str, filename: str) -> List[dict]:
+def _parse_import_file(temp_file_path: str, filename: str) -> list[dict]:
     """Parse an uploaded import file into a list of prompt-data dicts.
 
     Supports CSV, Markdown, and JSON payloads. JSON may be a PromptVault export
@@ -69,8 +68,8 @@ def _parse_import_file(temp_file_path: str, filename: str) -> List[dict]:
     if filename.endswith((".md", ".markdown")):
         return import_export_service.import_from_markdown(temp_file_path)
     if filename.endswith(".json"):
-        imported_prompts: List[dict] = []
-        with open(temp_file_path, "r", encoding="utf-8") as f:
+        imported_prompts: list[dict] = []
+        with open(temp_file_path, encoding="utf-8") as f:
             data = json.load(f)
             if "prompts" in data:
                 for _, prompt_info in data["prompts"].items():
@@ -86,7 +85,7 @@ def _parse_import_file(temp_file_path: str, filename: str) -> List[dict]:
     return []
 
 
-def _filter_valid_prompts(imported_prompts: List[dict]) -> List[dict]:
+def _filter_valid_prompts(imported_prompts: list[dict]) -> list[dict]:
     """Keep only prompts that have both a title and a prompt body."""
     valid_prompts = []
     for prompt in imported_prompts:
@@ -95,7 +94,7 @@ def _filter_valid_prompts(imported_prompts: List[dict]) -> List[dict]:
     return valid_prompts
 
 
-def _ingest_prompts(imported_prompts: List[dict], mode: ImportMode) -> int:
+def _ingest_prompts(imported_prompts: list[dict], mode: ImportMode) -> int:
     """Persist imported prompts according to the requested import mode.
 
     Returns the number of prompts actually added. In REPLACE mode an automatic
@@ -203,7 +202,7 @@ async def export_prompts(
                 if v.get("data", {}).get("favorite", False)
             }
 
-        prompt_list: List[Tuple[int, dict]] = [(int(k), v) for k, v in prompts.items()]
+        prompt_list: list[tuple[int, dict]] = [(int(k), v) for k, v in prompts.items()]
 
         safe_filename = sanitize_filename(validated_data.filename)
         file_extension = get_file_extension_from_format(validated_data.format.value)
@@ -364,8 +363,6 @@ async def get_import_export_stats():
     data_service = _app().data_service
     try:
         prompts = data_service.load_prompts()
-        categories = data_service.get_categories()
-        tags = data_service.get_tags()
 
         total_prompts = len(prompts)
         favorite_prompts = 0

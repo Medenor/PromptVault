@@ -23,14 +23,10 @@ Target: 90%+ repository coverage
 """
 
 import pytest
-from datetime import datetime
 from sqlalchemy.exc import IntegrityError
 
-from src.db.models import Prompt, PromptVersion, Category, Tag
+from src.db.models import Category, Tag
 from src.db.repositories import (
-    PromptRepository,
-    VersionRepository,
-    CategoryRepository,
     TagRepository,
 )
 
@@ -387,7 +383,7 @@ class TestPromptRepository:
         )
         version_repo.create_version(p1, "test", "v1")
 
-        p2 = prompt_repo.create(
+        prompt_repo.create(
             title="Fav without Version",
             prompt="Content",
             category_id=test_category.id,
@@ -723,9 +719,9 @@ class TestVersionRepository:
 
     def test_get_versions_for_prompt(self, version_repo, test_prompt, test_user):
         """Test retrieving all versions for a prompt."""
-        v1 = version_repo.create_version(test_prompt, test_user.username, "v1")
-        v2 = version_repo.create_version(test_prompt, test_user.username, "v2")
-        v3 = version_repo.create_version(test_prompt, test_user.username, "v3")
+        version_repo.create_version(test_prompt, test_user.username, "v1")
+        version_repo.create_version(test_prompt, test_user.username, "v2")
+        version_repo.create_version(test_prompt, test_user.username, "v3")
 
         versions = version_repo.get_versions_for_prompt(test_prompt.id)
         assert len(versions) == 3
@@ -734,9 +730,9 @@ class TestVersionRepository:
         self, version_repo, test_prompt, test_user
     ):
         """Test that versions are ordered by version number descending."""
-        v1 = version_repo.create_version(test_prompt, test_user.username, "v1")
-        v2 = version_repo.create_version(test_prompt, test_user.username, "v2")
-        v3 = version_repo.create_version(test_prompt, test_user.username, "v3")
+        version_repo.create_version(test_prompt, test_user.username, "v1")
+        version_repo.create_version(test_prompt, test_user.username, "v2")
+        version_repo.create_version(test_prompt, test_user.username, "v3")
 
         versions = version_repo.get_versions_for_prompt(test_prompt.id)
         assert versions[0].version_number == 3
@@ -745,9 +741,9 @@ class TestVersionRepository:
 
     def test_get_latest_version(self, version_repo, test_prompt, test_user):
         """Test getting the most recent version."""
-        v1 = version_repo.create_version(test_prompt, test_user.username, "v1")
-        v2 = version_repo.create_version(test_prompt, test_user.username, "v2")
-        v3 = version_repo.create_version(test_prompt, test_user.username, "v3")
+        version_repo.create_version(test_prompt, test_user.username, "v1")
+        version_repo.create_version(test_prompt, test_user.username, "v2")
+        version_repo.create_version(test_prompt, test_user.username, "v3")
 
         latest = version_repo.get_latest_version(test_prompt.id)
         assert latest.version_number == 3
@@ -874,7 +870,7 @@ class TestVersionRepository:
 
         # Update and create another version
         prompt_repo.update(test_prompt.id, title="V2 Title", prompt="V2 Content")
-        v2 = version_repo.create_version(test_prompt, test_user.username, "v2")
+        version_repo.create_version(test_prompt, test_user.username, "v2")
 
         # Revert to v1
         revert_version = version_repo.revert_to_version(
@@ -891,9 +887,7 @@ class TestVersionRepository:
         v1 = version_repo.create_version(test_prompt, test_user.username, "v1")
 
         # Revert should create new version
-        revert_version = version_repo.revert_to_version(
-            test_prompt, v1.version_id, test_user.username
-        )
+        version_repo.revert_to_version(test_prompt, v1.version_id, test_user.username)
 
         # Should have 2 versions total
         versions = version_repo.get_versions_for_prompt(test_prompt.id)
@@ -1749,7 +1743,7 @@ class TestTagRepository:
     def test_rename_tag_to_existing_name_raises_error(self, tag_repo, test_db_session):
         """Test renaming to existing name raises IntegrityError."""
         tag1 = tag_repo.create(name="tag1")
-        tag2 = tag_repo.create(name="tag2")
+        tag_repo.create(name="tag2")
         test_db_session.flush()
 
         with pytest.raises(IntegrityError):

@@ -4,10 +4,10 @@
 
 """Lightweight tag suggestion service."""
 
-from collections import Counter
 import re
 import unicodedata
-from typing import Iterable, List, Tuple
+from collections import Counter
+from collections.abc import Iterable
 
 _TOKEN_PATTERN = re.compile(r"[A-Za-z0-9]+")
 
@@ -102,12 +102,12 @@ def _normalize(text: str) -> str:
     return "".join(ch for ch in normalized if not unicodedata.combining(ch)).lower()
 
 
-def _tokenize(text: str) -> List[str]:
+def _tokenize(text: str) -> list[str]:
     normalized = _normalize(text)
     return [token for token in _TOKEN_PATTERN.findall(normalized)]
 
 
-def _equivalent_tokens(token: str) -> List[str]:
+def _equivalent_tokens(token: str) -> list[str]:
     equivalents = {token}
     if token in _SYNONYMS:
         equivalents.update(_SYNONYMS[token])
@@ -120,7 +120,7 @@ def suggest_tags(
     content: str,
     existing_tags: Iterable[str],
     limit: int = 10,
-) -> List[Tuple[str, float]]:
+) -> list[tuple[str, float]]:
     """Suggest tags based on existing taxonomy and content.
 
     Args:
@@ -140,7 +140,7 @@ def suggest_tags(
         return []
 
     token_counts = Counter(tokens)
-    suggestions: List[Tuple[str, float]] = []
+    suggestions: list[tuple[str, float]] = []
 
     for tag in existing_tags:
         if not tag:

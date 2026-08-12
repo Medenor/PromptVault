@@ -6,13 +6,13 @@
 JSON sidecar file (used as a fallback when the DB record is unavailable).
 """
 
+import json
 import os
 import re
-import json
-from typing import Dict, Any, Optional
+from typing import Any
 
-from src.db.session import get_db_session
 from src.db.models import Backup
+from src.db.session import get_db_session
 from src.services.exceptions import BackupError
 from src.services.logging_service import logging_service
 
@@ -49,7 +49,7 @@ class BackupMetadataStore:
             )
         return resolved
 
-    def write_metadata_file(self, metadata: Dict[str, Any]) -> None:
+    def write_metadata_file(self, metadata: dict[str, Any]) -> None:
         """Persist metadata alongside backup for DB-restore resilience."""
         try:
             path = self.metadata_file_path(metadata["backup_id"])
@@ -65,13 +65,13 @@ class BackupMetadataStore:
                 exc_info=exc,
             )
 
-    def load_metadata_from_file(self, backup_id: str) -> Optional[Dict[str, Any]]:
+    def load_metadata_from_file(self, backup_id: str) -> dict[str, Any] | None:
         """Load metadata from disk if the database record is unavailable."""
         path = self.metadata_file_path(backup_id)
         if not os.path.exists(path):
             return None
         try:
-            with open(path, "r", encoding="utf-8") as handle:
+            with open(path, encoding="utf-8") as handle:
                 return json.load(handle)
         except Exception as exc:
             logger.warning(
@@ -84,16 +84,16 @@ class BackupMetadataStore:
             )
             return None
 
-    def load_all_metadata_files(self) -> Dict[str, Dict[str, Any]]:
+    def load_all_metadata_files(self) -> dict[str, dict[str, Any]]:
         """Return metadata for all backups stored on disk."""
-        found: Dict[str, Dict[str, Any]] = {}
+        found: dict[str, dict[str, Any]] = {}
         try:
             for filename in os.listdir(self.backups_dir):
                 if not filename.endswith("_metadata.json"):
                     continue
                 path = os.path.join(self.backups_dir, filename)
                 try:
-                    with open(path, "r", encoding="utf-8") as handle:
+                    with open(path, encoding="utf-8") as handle:
                         data = json.load(handle)
                         backup_id = data.get("backup_id")
                         if backup_id:
@@ -111,7 +111,7 @@ class BackupMetadataStore:
             return found
         return found
 
-    def ensure_metadata_file(self, metadata: Dict[str, Any]) -> None:
+    def ensure_metadata_file(self, metadata: dict[str, Any]) -> None:
         """Ensure a metadata JSON file exists for the given backup."""
         path = self.metadata_file_path(metadata["backup_id"])
         if not os.path.exists(path):
@@ -136,10 +136,10 @@ class BackupMetadataStore:
     def save_metadata_to_db(
         self,
         backup_id: str,
-        metadata: Dict[str, Any],
+        metadata: dict[str, Any],
         is_encrypted: bool = False,
-        encryption_salt: Optional[str] = None,
-        encryption_nonce: Optional[str] = None,
+        encryption_salt: str | None = None,
+        encryption_nonce: str | None = None,
         backup_kind: str = "full",
     ) -> None:
         """Save backup metadata to database."""
@@ -170,7 +170,7 @@ class BackupMetadataStore:
             )
             raise
 
-    def update_backup_record(self, backup_id: str, metadata: Dict[str, Any]) -> None:
+    def update_backup_record(self, backup_id: str, metadata: dict[str, Any]) -> None:
         """Update an existing backup record with refreshed metadata."""
         try:
             with get_db_session() as session:
@@ -217,7 +217,7 @@ class BackupMetadataStore:
             backup.encryption_salt = encryption_salt
             backup.encryption_nonce = encryption_nonce
 
-    def get_backup_info(self, backup_id: str) -> Optional[Dict[str, Any]]:
+    def get_backup_info(self, backup_id: str) -> dict[str, Any] | None:
         """Get detailed information about a specific backup."""
         self.validate_backup_id(backup_id)
         try:

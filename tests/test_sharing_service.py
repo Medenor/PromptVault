@@ -44,6 +44,7 @@ def admin_user(test_db_session: Session) -> User:
 def db_data_service_unpatched(monkeypatch, test_db_engine) -> PromptDataService:
     """PromptDataService pointed at the test engine (grant_share only)."""
     from sqlalchemy.orm import sessionmaker
+
     from src.db import session as session_module
 
     TestSessionLocal = sessionmaker(bind=test_db_engine)
@@ -152,8 +153,8 @@ class TestGrantShareValidation:
         )
         assert second["permission"] == "edit"
 
-        from src.db.session import SessionLocal
         from src.db.models import PromptShare
+        from src.db.session import SessionLocal
 
         session = SessionLocal()
         try:

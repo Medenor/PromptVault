@@ -13,7 +13,7 @@ so it stays identical across engines.
 
 import os
 import subprocess
-from typing import Protocol, Tuple
+from typing import Protocol
 
 from src.db.config import db_settings
 from src.services.exceptions import BackupError
@@ -78,6 +78,7 @@ class SqliteDumpStrategy:
     def restore(self, backup_id: str, backup_path: str) -> bool:
         try:
             import sqlite3
+
             from src.db.session import engine
 
             db_path = _resolve_sqlite_db_path()
@@ -174,7 +175,7 @@ class PostgresDumpStrategy:
             ) from exc
 
 
-def get_dump_strategy() -> Tuple[str, "DumpStrategy"]:
+def get_dump_strategy() -> tuple[str, DumpStrategy]:
     """Return (backup_type, strategy) for the currently configured database."""
     if db_settings.is_sqlite:
         return "sqlite_copy", SqliteDumpStrategy()

@@ -9,8 +9,6 @@ ensuring consistent and type-safe API responses.
 """
 
 from pydantic import BaseModel, Field
-from typing import List, Optional, Dict
-from datetime import datetime
 
 
 class PromptResponse(BaseModel):
@@ -33,25 +31,23 @@ class PromptResponse(BaseModel):
     title: str = Field(..., description="Prompt title")
     prompt: str = Field(..., description="Prompt content")
     category: str = Field(..., description="Category name")
-    tags: List[str] = Field(..., description="List of tags")
-    category_color: Optional[str] = Field(
+    tags: list[str] = Field(..., description="List of tags")
+    category_color: str | None = Field(
         None,
         description="Category color (token or hex)",
     )
-    tag_colors: Dict[str, Optional[str]] = Field(
+    tag_colors: dict[str, str | None] = Field(
         default_factory=dict,
         description="Tag name -> color (token or hex)",
     )
     note: str = Field(..., description="Optional note")
     favorite: bool = Field(..., description="Favorite status")
-    semantic_version: Optional[str] = Field(
+    semantic_version: str | None = Field(
         None, description="Semantic version label (MAJOR.MINOR.PATCH)"
     )
     user_id: str = Field(..., description="Owner's user ID")
-    created_at: Optional[str] = Field(
-        None, description="Creation timestamp (ISO format)"
-    )
-    updated_at: Optional[str] = Field(None, description="Update timestamp (ISO format)")
+    created_at: str | None = Field(None, description="Creation timestamp (ISO format)")
+    updated_at: str | None = Field(None, description="Update timestamp (ISO format)")
 
     model_config = {
         "json_schema_extra": {
@@ -84,7 +80,7 @@ class PromptListResponse(BaseModel):
         has_previous: Whether a previous page is available
     """
 
-    prompts: Dict[str, PromptResponse] = Field(
+    prompts: dict[str, PromptResponse] = Field(
         ..., description="Dictionary of prompts keyed by ID"
     )
     page: int = Field(..., description="Current page number (post-normalization)")
@@ -191,7 +187,7 @@ class BulkDeleteResponse(BaseModel):
     success: bool = Field(..., description="Operation success status")
     deleted_count: int = Field(..., description="Number of prompts deleted")
     failed_count: int = Field(..., description="Number of failed deletions")
-    failed_ids: List[int] = Field(..., description="List of failed prompt IDs")
+    failed_ids: list[int] = Field(..., description="List of failed prompt IDs")
 
     model_config = {
         "json_schema_extra": {

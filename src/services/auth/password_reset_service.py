@@ -63,22 +63,21 @@ References:
 import hashlib
 import logging
 import secrets
-from datetime import datetime, timezone, timedelta
-from typing import Optional, Tuple
+from datetime import UTC, datetime, timedelta
 
 from src.config.auth_config import AuthConfig
-from src.services.auth.password_service import PasswordService
 from src.db.repositories.password_reset_token_repository import (
     PasswordResetTokenRepository,
 )
 from src.db.repositories.user_repository import UserRepository
+from src.services.auth.password_service import PasswordService
 from src.services.exceptions import (
-    TokenExpiredError,
-    TokenAlreadyUsedError,
-    TokenNotFoundError,
-    RateLimitExceededError,
-    UserNotFoundError,
     PasswordPolicyError,
+    RateLimitExceededError,
+    TokenAlreadyUsedError,
+    TokenExpiredError,
+    TokenNotFoundError,
+    UserNotFoundError,
 )
 
 # Configure logger
@@ -130,9 +129,7 @@ class PasswordResetService:
         self.token_repository = token_repository
         self.user_repository = user_repository
 
-    def request_password_reset(
-        self, email: str, ip_address: Optional[str] = None
-    ) -> str:
+    def request_password_reset(self, email: str, ip_address: str | None = None) -> str:
         """Generate and send password reset token via email.
 
         This method generates a secure password reset token, hashes it for
@@ -230,7 +227,7 @@ class PasswordResetService:
         hashed_token = self._hash_token(plain_token)
 
         # Calculate expiration time
-        expires_at = datetime.now(timezone.utc) + timedelta(
+        expires_at = datetime.now(UTC) + timedelta(
             seconds=self.config.password_reset_token_expire_seconds
         )
 
@@ -259,7 +256,7 @@ class PasswordResetService:
         # In production API, this would not be returned - only sent via email
         return plain_token
 
-    def verify_reset_token(self, token: str) -> Tuple[bool, str]:
+    def verify_reset_token(self, token: str) -> tuple[bool, str]:
         """Verify password reset token validity.
 
         This method checks if a token is valid by verifying:
@@ -302,11 +299,11 @@ class PasswordResetService:
                 return False, "Invalid or expired password reset token"
 
             # Check if token has expired
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             expires_at = self._ensure_tz_aware(token_record.expires_at)
             if expires_at < now:
                 logger.warning(
-                    f"Expired password reset token used",
+                    "Expired password reset token used",
                     extra={"token_id": token_record.id},
                 )
                 return False, "Password reset token has expired"
@@ -314,7 +311,7 @@ class PasswordResetService:
             # Check if token has already been used
             if token_record.is_used:
                 logger.warning(
-                    f"Already-used password reset token attempted",
+                    "Already-used password reset token attempted",
                     extra={"token_id": token_record.id},
                 )
                 return False, "Password reset token has already been used"
@@ -323,7 +320,7 @@ class PasswordResetService:
             user = self.user_repository.get_by_id(token_record.user_id)
             if not user:
                 logger.error(
-                    f"Password reset token references non-existent user",
+                    "Password reset token references non-existent user",
                     extra={
                         "token_id": token_record.id,
                         "user_id": token_record.user_id,
@@ -333,14 +330,14 @@ class PasswordResetService:
 
             if not user.is_active:
                 logger.warning(
-                    f"Password reset attempted for inactive user",
+                    "Password reset attempted for inactive user",
                     extra={"token_id": token_record.id, "user_id": user.id},
                 )
                 return False, "Account is not active"
 
             # Token is valid
             logger.info(
-                f"Password reset token verified successfully",
+                "Password reset token verified successfully",
                 extra={"token_id": token_record.id, "user_id": user.id},
             )
             return True, user.id
@@ -399,11 +396,11 @@ class PasswordResetService:
             raise TokenNotFoundError()
 
         # Check expiration
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         expires_at = self._ensure_tz_aware(token_record.expires_at)
         if expires_at < now:
             logger.warning(
-                f"Password reset attempted with expired token",
+                "Password reset attempted with expired token",
                 extra={"token_id": token_record.id},
             )
             raise TokenExpiredError(context={"token_id": token_record.id})
@@ -411,7 +408,7 @@ class PasswordResetService:
         # Check if already used
         if token_record.is_used:
             logger.warning(
-                f"Password reset attempted with already-used token",
+                "Password reset attempted with already-used token",
                 extra={"token_id": token_record.id},
             )
             raise TokenAlreadyUsedError(context={"token_id": token_record.id})
@@ -420,7 +417,7 @@ class PasswordResetService:
         user = self.user_repository.get_by_id(token_record.user_id)
         if not user:
             logger.error(
-                f"Password reset token references non-existent user",
+                "Password reset token references non-existent user",
                 extra={"token_id": token_record.id, "user_id": token_record.user_id},
             )
             raise UserNotFoundError(
@@ -432,7 +429,7 @@ class PasswordResetService:
         is_valid, errors = self.password_service.validate_password_policy(new_password)
         if not is_valid:
             logger.warning(
-                f"Password reset failed: password policy violation",
+                "Password reset failed: password policy violation",
                 extra={"user_id": user.id, "errors": errors},
             )
             raise PasswordPolicyError(
@@ -487,7 +484,7 @@ class PasswordResetService:
 
         return deleted_count
 
-    def _ensure_tz_aware(self, dt: Optional[datetime]) -> Optional[datetime]:
+    def _ensure_tz_aware(self, dt: datetime | None) -> datetime | None:
         """Convert timezone-naive datetime to UTC-aware.
 
         SQLite does not preserve timezone information even when DateTime(timezone=True)
@@ -507,7 +504,7 @@ class PasswordResetService:
         if dt is None:
             return None
         if dt.tzinfo is None:
-            return dt.replace(tzinfo=timezone.utc)
+            return dt.replace(tzinfo=UTC)
         return dt
 
     def _hash_token(self, token: str) -> str:
@@ -573,7 +570,7 @@ class PasswordResetService:
 
         # Log the email content (for development/testing)
         logger.info(
-            f"Password reset email (STUB - not actually sent)",
+            "Password reset email (STUB - not actually sent)",
             extra={
                 "recipient": email,
                 "username": username,

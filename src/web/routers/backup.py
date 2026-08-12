@@ -10,16 +10,15 @@ cloud storage, restore preview, monitoring, and audit operations.
 
 import json
 import uuid
-from datetime import datetime, timedelta, timezone
-from typing import Optional
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import JSONResponse
 
 from src.db.models.user import User
 from src.web.dependencies.auth import get_admin_or_bypass, get_user_or_bypass
-from src.web.middleware.rate_limit import limiter, expensive_limit, bulk_limit
-from src.web.models import BackupCreateRequest, BackupCompressRequest
+from src.web.middleware.rate_limit import bulk_limit, expensive_limit, limiter
+from src.web.models import BackupCompressRequest, BackupCreateRequest
 
 router = APIRouter(tags=["backups"])
 
@@ -52,10 +51,10 @@ def _get_backup_service():
 
 @router.get("/api/backups", dependencies=[Depends(get_user_or_bypass)])
 async def get_backups(
-    tag: Optional[str] = None,
-    start_date: Optional[str] = None,
-    end_date: Optional[str] = None,
-    kind: Optional[str] = None,
+    tag: str | None = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
+    kind: str | None = None,
     limit: int = 50,
     offset: int = 0,
 ):
@@ -86,7 +85,7 @@ async def create_manual_backup(
     encrypt: bool = Form(False),
     passphrase: str = Form(None),
     cloud_provider_id: str = Form(None),
-    current_user: Optional[User] = Depends(get_admin_or_bypass),
+    current_user: User | None = Depends(get_admin_or_bypass),
 ):
     """Create a manual backup with validation."""
     service = _get_backup_service()
@@ -173,7 +172,7 @@ async def restore_preview(
 async def restore_backup(
     backup_id: str,
     request: Request,
-    current_user: Optional[User] = Depends(get_admin_or_bypass),
+    current_user: User | None = Depends(get_admin_or_bypass),
 ):
     """Restore from a specific backup. Supports selective restore via prompt_ids."""
     service = _get_backup_service()
@@ -520,7 +519,7 @@ async def create_backup_provider(request: Request):
             region=body.get("region"),
         )
     except ValueError as exc:
-        raise HTTPException(status_code=422, detail=str(exc))
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @router.delete(
@@ -548,9 +547,9 @@ async def delete_backup_provider(provider_id: str):
 async def test_backup_provider(provider_id: str):
     """Test connectivity to a cloud storage provider."""
 
-    from src.services.backup_cloud_service import BackupCloudService
-    from src.db.session import get_db_session
     from src.db.models.backup_storage_provider import BackupStorageProvider
+    from src.db.session import get_db_session
+    from src.services.backup_cloud_service import BackupCloudService
 
     with get_db_session() as session:
         provider = (
@@ -576,8 +575,8 @@ async def get_backup_monitoring():
 
 @router.get("/api/backup-audit-log", dependencies=[Depends(get_user_or_bypass)])
 async def get_backup_audit_log(
-    operation: Optional[str] = None,
-    outcome: Optional[str] = None,
+    operation: str | None = None,
+    outcome: str | None = None,
     limit: int = 50,
     offset: int = 0,
 ):
@@ -600,9 +599,10 @@ async def verify_backup(backup_id: str, request: Request):
     """Verify backup integrity by recomputing SHA-256 checksum."""
 
     import hashlib
-    from datetime import datetime, timezone
-    from src.db.session import get_db_session
+    from datetime import datetime
+
     from src.db.models import Backup
+    from src.db.session import get_db_session
 
     service = _get_backup_service()
     metadata = service.get_backup_info(backup_id)
@@ -625,29 +625,29 @@ async def verify_backup(backup_id: str, request: Request):
 
         if stored_checksum and stored_checksum == actual_checksum:
             if backup:
-                backup.integrity_verified_at = datetime.now(timezone.utc)
+                backup.integrity_verified_at = datetime.now(UTC)
                 session.commit()
             return {
                 "valid": True,
                 "checksum": actual_checksum,
-                "verified_at": datetime.now(timezone.utc).isoformat(),
+                "verified_at": datetime.now(UTC).isoformat(),
             }
         elif stored_checksum:
             return {
                 "valid": False,
                 "expected": stored_checksum,
                 "actual": actual_checksum,
-                "verified_at": datetime.now(timezone.utc).isoformat(),
+                "verified_at": datetime.now(UTC).isoformat(),
             }
         else:
             if backup:
                 backup.checksum = actual_checksum
-                backup.integrity_verified_at = datetime.now(timezone.utc)
+                backup.integrity_verified_at = datetime.now(UTC)
                 session.commit()
             return {
                 "valid": True,
                 "checksum": actual_checksum,
-                "verified_at": datetime.now(timezone.utc).isoformat(),
+                "verified_at": datetime.now(UTC).isoformat(),
             }
 
 
@@ -657,8 +657,8 @@ async def verify_backup(backup_id: str, request: Request):
 async def update_backup_tags(backup_id: str, request: Request):
     """Add or replace tags on a backup."""
 
-    from src.db.session import get_db_session
     from src.db.models import Backup
+    from src.db.session import get_db_session
 
     body = await request.json()
     tags = body.get("tags", [])
@@ -690,17 +690,17 @@ async def update_backup_tags(backup_id: str, request: Request):
 @limiter.limit(bulk_limit)
 async def cleanup_backups_retention(
     request: Request,
-    retention_days: Optional[int] = Form(None),
+    retention_days: int | None = Form(None),
     dry_run: bool = Form(True),
 ):
     """Delete backups older than the retention period (or dry-run)."""
     service = _get_backup_service()
 
     if retention_days is None:
-        from src.db.session import get_db_session
         from src.db.repositories.backup_schedule_repository import (
             BackupScheduleRepository,
         )
+        from src.db.session import get_db_session
 
         with get_db_session() as session:
             repo = BackupScheduleRepository(session)
@@ -721,7 +721,7 @@ async def cleanup_backups_retention(
             status_code=422, detail="retention_days must be a positive integer"
         )
 
-    cutoff = datetime.now(timezone.utc) - timedelta(days=retention_days)
+    cutoff = datetime.now(UTC) - timedelta(days=retention_days)
     backups = service.list_backups()
     would_delete = [
         b["backup_id"]

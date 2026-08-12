@@ -9,14 +9,14 @@ Version history is stored separately in PromptVersion model.
 """
 
 from sqlalchemy import (
-    Column,
-    Integer,
-    String,
-    Text,
     Boolean,
+    Column,
     DateTime,
     ForeignKey,
     Index,
+    Integer,
+    String,
+    Text,
 )
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func

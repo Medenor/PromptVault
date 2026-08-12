@@ -4,11 +4,10 @@
 
 """PasswordResetTokenRepository for secure password reset flow."""
 
-from datetime import datetime, timezone, timedelta
-from typing import Optional, List
-from sqlalchemy.orm import Session
+from datetime import UTC, datetime, timedelta
+
 from sqlalchemy import and_
-from sqlalchemy.sql import func
+from sqlalchemy.orm import Session
 
 from src.db.models.password_reset_token import PasswordResetToken
 from src.db.repositories.base import BaseRepository
@@ -34,7 +33,7 @@ class PasswordResetTokenRepository(BaseRepository[PasswordResetToken]):
         user_id: str,
         token: str,
         expires_at: datetime,
-        ip_address: Optional[str] = None,
+        ip_address: str | None = None,
     ) -> PasswordResetToken:
         """Create a new password reset token.
 
@@ -51,7 +50,7 @@ class PasswordResetTokenRepository(BaseRepository[PasswordResetToken]):
             user_id=user_id, token=token, expires_at=expires_at, ip_address=ip_address
         )
 
-    def get_by_token(self, token: str) -> Optional[PasswordResetToken]:
+    def get_by_token(self, token: str) -> PasswordResetToken | None:
         """Find token by token string.
 
         Args:
@@ -66,7 +65,7 @@ class PasswordResetTokenRepository(BaseRepository[PasswordResetToken]):
             .first()
         )
 
-    def get_valid_token(self, token: str) -> Optional[PasswordResetToken]:
+    def get_valid_token(self, token: str) -> PasswordResetToken | None:
         """Get token if valid (unused and not expired).
 
         Args:
@@ -75,7 +74,7 @@ class PasswordResetTokenRepository(BaseRepository[PasswordResetToken]):
         Returns:
             PasswordResetToken instance if valid, None otherwise
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         return (
             self.session.query(PasswordResetToken)
             .filter(
@@ -100,14 +99,14 @@ class PasswordResetTokenRepository(BaseRepository[PasswordResetToken]):
         token = self.get_by_id(token_id)
         if token:
             token.is_used = True
-            token.used_at = datetime.now(timezone.utc)
+            token.used_at = datetime.now(UTC)
             self.session.flush()
             return True
         return False
 
     def get_user_tokens(
         self, user_id: str, unused_only: bool = False
-    ) -> List[PasswordResetToken]:
+    ) -> list[PasswordResetToken]:
         """Get all tokens for a user.
 
         Args:
@@ -144,7 +143,7 @@ class PasswordResetTokenRepository(BaseRepository[PasswordResetToken]):
                 )
             )
             .update(
-                {"is_used": True, "used_at": datetime.now(timezone.utc)},
+                {"is_used": True, "used_at": datetime.now(UTC)},
                 synchronize_session=False,
             )
         )
@@ -157,7 +156,7 @@ class PasswordResetTokenRepository(BaseRepository[PasswordResetToken]):
         Returns:
             Number of tokens deleted
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         count = (
             self.session.query(PasswordResetToken)
             .filter(PasswordResetToken.expires_at < now)
@@ -166,7 +165,7 @@ class PasswordResetTokenRepository(BaseRepository[PasswordResetToken]):
         self.session.flush()
         return count
 
-    def get_expired_tokens(self, limit: int = 100) -> List[PasswordResetToken]:
+    def get_expired_tokens(self, limit: int = 100) -> list[PasswordResetToken]:
         """Get expired tokens for cleanup.
 
         Args:
@@ -175,7 +174,7 @@ class PasswordResetTokenRepository(BaseRepository[PasswordResetToken]):
         Returns:
             List of expired PasswordResetToken instances
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         return (
             self.session.query(PasswordResetToken)
             .filter(PasswordResetToken.expires_at < now)
@@ -193,7 +192,7 @@ class PasswordResetTokenRepository(BaseRepository[PasswordResetToken]):
         Returns:
             Number of tokens created within the time window
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         time_threshold = now - timedelta(minutes=minutes)
 
         return (

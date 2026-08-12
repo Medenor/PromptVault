@@ -97,11 +97,12 @@ Security Notes:
 
 import logging
 import uuid
-from datetime import datetime, timedelta, timezone
-from typing import Dict, List, Optional
+from datetime import UTC, datetime, timedelta
 
 from jwt.exceptions import (
     ExpiredSignatureError,
+)
+from jwt.exceptions import (
     InvalidTokenError as JWTInvalidTokenError,
 )
 from sqlalchemy.orm import Session
@@ -122,8 +123,8 @@ from src.services.exceptions import (
     PasswordPolicyError,
     SessionNotFoundError,
     TokenReuseDetectedError,
-    UserNotFoundError,
     UsernameAlreadyExistsError,
+    UserNotFoundError,
 )
 
 logger = logging.getLogger(__name__)
@@ -170,7 +171,7 @@ class AuthService:
         ip_address: str,
         user_agent: str,
         role: str = "viewer",
-    ) -> Dict[str, any]:
+    ) -> dict[str, any]:
         """Register new user and return authentication tokens.
 
         This method creates a new user account with secure password hashing,
@@ -264,7 +265,7 @@ class AuthService:
         ip_address: str,
         user_agent: str,
         remember_me: bool = False,
-    ) -> Dict[str, any]:
+    ) -> dict[str, any]:
         """Authenticate user and return tokens.
 
         This method authenticates a user by username or email, verifies their
@@ -354,7 +355,7 @@ class AuthService:
         refresh_token: str,
         ip_address: str,
         user_agent: str,
-    ) -> Dict[str, any]:
+    ) -> dict[str, any]:
         """Refresh access token using refresh token.
 
         This method implements secure token rotation with reuse detection.
@@ -456,7 +457,7 @@ class AuthService:
             },
         }
 
-    def _validate_refresh_token(self, refresh_token: str) -> Dict[str, any]:
+    def _validate_refresh_token(self, refresh_token: str) -> dict[str, any]:
         """Validate a refresh token JWT and return its decoded claims.
 
         Args:
@@ -470,16 +471,16 @@ class AuthService:
         """
         try:
             return self.jwt_service.validate_refresh_token(refresh_token)
-        except ExpiredSignatureError:
+        except ExpiredSignatureError as e:
             raise InvalidTokenError(
                 "Refresh token has expired",
                 context={"reason": "expired"},
-            )
+            ) from e
         except JWTInvalidTokenError as e:
             raise InvalidTokenError(
                 f"Invalid refresh token: {str(e)}",
                 context={"reason": "invalid_token"},
-            )
+            ) from e
 
     def _load_active_session_for_refresh(self, family_id: str, token_jti: str):
         """Load the session for a refresh, detecting reuse of a rotated token.
@@ -579,9 +580,9 @@ class AuthService:
         """
         session_expires_at = session.expires_at
         if session_expires_at.tzinfo is None:
-            session_expires_at = session_expires_at.replace(tzinfo=timezone.utc)
+            session_expires_at = session_expires_at.replace(tzinfo=UTC)
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         remaining_seconds = int((session_expires_at - now).total_seconds())
         if remaining_seconds <= 0:
             self.session_repo.revoke_session(session.family_id)
@@ -596,8 +597,8 @@ class AuthService:
     def update_user_profile(
         self,
         user_id: str,
-        display_name: Optional[str] = None,
-        email: Optional[str] = None,
+        display_name: str | None = None,
+        email: str | None = None,
     ) -> User:
         """Update user profile (email and/or display_name).
 
@@ -620,7 +621,7 @@ class AuthService:
             ...     email="newemail@example.com"
             ... )
         """
-        from datetime import datetime, timezone
+        from datetime import datetime
 
         user = self.user_repo.get_by_id(user_id)
         if not user:
@@ -640,14 +641,14 @@ class AuthService:
             user.display_name = display_name
 
         # Update timestamp
-        user.updated_at = datetime.now(timezone.utc)
+        user.updated_at = datetime.now(UTC)
         self.db.flush()
         self.db.commit()
         self.db.refresh(user)
 
         return user
 
-    def get_user_stats(self, user_id: str) -> Dict[str, any]:
+    def get_user_stats(self, user_id: str) -> dict[str, any]:
         """Get account statistics for a user.
 
         Provides comprehensive statistics including:
@@ -668,7 +669,7 @@ class AuthService:
             >>> stats = auth_service.get_user_stats("user-uuid")
             >>> stats['active_sessions_count']
         """
-        from datetime import datetime, timezone
+        from datetime import datetime
 
         user = self.user_repo.get_by_id(user_id)
         if not user:
@@ -681,10 +682,10 @@ class AuthService:
         all_sessions = self.session_repo.count_user_sessions(user_id, active_only=False)
 
         # Calculate days since account creation
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         created_at = user.created_at
         if created_at.tzinfo is None:
-            created_at = created_at.replace(tzinfo=timezone.utc)
+            created_at = created_at.replace(tzinfo=UTC)
         days_since_creation = (now - created_at).days
 
         # Calculate days since last login
@@ -692,7 +693,7 @@ class AuthService:
         if user.last_login:
             last_login = user.last_login
             if last_login.tzinfo is None:
-                last_login = last_login.replace(tzinfo=timezone.utc)
+                last_login = last_login.replace(tzinfo=UTC)
             days_since_last_login = (now - last_login).days
 
         # Check if locked
@@ -700,7 +701,7 @@ class AuthService:
         if user.locked_until:
             locked_until = user.locked_until
             if locked_until.tzinfo is None:
-                locked_until = locked_until.replace(tzinfo=timezone.utc)
+                locked_until = locked_until.replace(tzinfo=UTC)
             is_locked = now < locked_until
 
         return {
@@ -744,7 +745,7 @@ class AuthService:
                 raise InvalidTokenError(
                     f"Cannot decode token for logout: {str(e)}",
                     context={"reason": "invalid_token"},
-                )
+                ) from e
 
         family_id = claims.get("family_id")
         if not family_id:
@@ -824,8 +825,8 @@ class AuthService:
         return True
 
     def get_user_sessions(
-        self, user_id: str, current_family_id: Optional[str] = None
-    ) -> List[Dict[str, any]]:
+        self, user_id: str, current_family_id: str | None = None
+    ) -> list[dict[str, any]]:
         """Get all active sessions for a user.
 
         Args:
@@ -877,7 +878,7 @@ class AuthService:
         return self.session_service.revoke_session(session_id, user_id)
 
     def revoke_all_sessions(
-        self, user_id: str, except_family_id: Optional[str] = None
+        self, user_id: str, except_family_id: str | None = None
     ) -> int:
         """Revoke all user sessions except optionally current one.
 
@@ -907,7 +908,7 @@ class AuthService:
         ip_address: str,
         user_agent: str,
         remember_me: bool = False,
-    ) -> Dict[str, any]:
+    ) -> dict[str, any]:
         """Generate token pair and create session (internal helper).
 
         Args:
@@ -944,9 +945,7 @@ class AuthService:
         )
 
         # Create session
-        expires_at = datetime.now(timezone.utc) + timedelta(
-            seconds=refresh_expiry_seconds
-        )
+        expires_at = datetime.now(UTC) + timedelta(seconds=refresh_expiry_seconds)
         self.session_repo.create_session(
             user_id=user.id,
             family_id=family_id,

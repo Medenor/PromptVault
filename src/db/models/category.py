@@ -8,7 +8,7 @@ Categories provide organizational grouping for prompts.
 Each category has a unique name and optional description.
 """
 
-from sqlalchemy import Column, Integer, String, Text, DateTime, Index
+from sqlalchemy import Column, DateTime, Index, Integer, String, Text
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 

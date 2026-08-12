@@ -8,7 +8,7 @@ This module defines junction tables for many-to-many relationships.
 Currently includes the prompt_tags association table.
 """
 
-from sqlalchemy import Table, Column, Integer, ForeignKey, Index
+from sqlalchemy import Column, ForeignKey, Index, Integer, Table
 
 from src.db.base import Base
 

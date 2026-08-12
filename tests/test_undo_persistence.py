@@ -15,9 +15,9 @@ This test suite verifies:
 """
 
 import json
+from datetime import UTC, datetime, timedelta
+
 import pytest
-from typing import Dict
-from datetime import datetime, timedelta, timezone
 from sqlalchemy.orm import Session
 
 from src.db.models.undo_operation import UndoOperation
@@ -35,10 +35,10 @@ def api_client(api_client_context):
 
 
 @pytest.fixture
-def api_auth_headers(api_client_context) -> Dict[str, str]:
+def api_auth_headers(api_client_context) -> dict[str, str]:
     """Create authentication headers for primary test user."""
-    from src.services.auth.jwt_service import JWTService
     from src.config import auth_config
+    from src.services.auth.jwt_service import JWTService
 
     jwt_service = JWTService(auth_config.auth_settings)
     access_token = jwt_service.generate_access_token(
@@ -51,10 +51,10 @@ def api_auth_headers(api_client_context) -> Dict[str, str]:
 
 
 @pytest.fixture
-def user_a_headers() -> Dict[str, str]:
+def user_a_headers() -> dict[str, str]:
     """Create authentication headers for user A."""
-    from src.services.auth.jwt_service import JWTService
     from src.config import auth_config
+    from src.services.auth.jwt_service import JWTService
 
     jwt_service = JWTService(auth_config.auth_settings)
     access_token = jwt_service.generate_access_token(
@@ -67,10 +67,10 @@ def user_a_headers() -> Dict[str, str]:
 
 
 @pytest.fixture
-def user_b_headers() -> Dict[str, str]:
+def user_b_headers() -> dict[str, str]:
     """Create authentication headers for user B."""
-    from src.services.auth.jwt_service import JWTService
     from src.config import auth_config
+    from src.services.auth.jwt_service import JWTService
 
     jwt_service = JWTService(auth_config.auth_settings)
     access_token = jwt_service.generate_access_token(
@@ -83,10 +83,10 @@ def user_b_headers() -> Dict[str, str]:
 
 
 @pytest.fixture
-def user_c_headers() -> Dict[str, str]:
+def user_c_headers() -> dict[str, str]:
     """Create authentication headers for user C."""
-    from src.services.auth.jwt_service import JWTService
     from src.config import auth_config
+    from src.services.auth.jwt_service import JWTService
 
     jwt_service = JWTService(auth_config.auth_settings)
     access_token = jwt_service.generate_access_token(
@@ -101,9 +101,9 @@ def user_c_headers() -> Dict[str, str]:
 @pytest.fixture
 def setup_test_users(test_db_session: Session):
     """Create test users in database for multi-user testing."""
+    from src.config.auth_config import auth_settings
     from src.db.models.user import User
     from src.services.auth.password_service import PasswordService
-    from src.config.auth_config import auth_settings
 
     password_service = PasswordService(auth_settings)
     password_hash = password_service.hash_password("TestP@ssw0rd123")
@@ -495,7 +495,7 @@ class TestRelationshipAwareUndo:
         ).json()
 
         # Create child tag
-        child = api_client.post(
+        api_client.post(
             "/api/tags",
             headers=api_auth_headers,
             json={"name": "ChildTag", "parent_tag_id": parent["id"]},
@@ -537,10 +537,10 @@ class TestRelationshipAwareUndo:
         ).json()
 
         # Create prompts with source tags
-        prompt_a = _create_prompt(
+        _create_prompt(
             api_client, api_auth_headers, title="With A", tags="MergeSourceA"
         )
-        prompt_b = _create_prompt(
+        _create_prompt(
             api_client, api_auth_headers, title="With B", tags="MergeSourceB"
         )
 
@@ -655,8 +655,8 @@ class TestUndoEdgeCases:
             entity_type="category",
             operation="update",
             payload="{ invalid json !!!",
-            created_at=datetime.now(timezone.utc),
-            expires_at=datetime.now(timezone.utc) + timedelta(days=30),
+            created_at=datetime.now(UTC),
+            expires_at=datetime.now(UTC) + timedelta(days=30),
         )
         test_db_session.add(corrupted_op)
         test_db_session.commit()
@@ -984,8 +984,8 @@ class TestUndoCleanup:
             entity_type="category",
             operation="delete",
             payload=json.dumps({"category": {"name": "Expired"}}),
-            created_at=datetime.now(timezone.utc) - timedelta(days=31),
-            expires_at=datetime.now(timezone.utc) - timedelta(days=1),
+            created_at=datetime.now(UTC) - timedelta(days=31),
+            expires_at=datetime.now(UTC) - timedelta(days=1),
         )
         test_db_session.add(expired_op)
 
@@ -995,8 +995,8 @@ class TestUndoCleanup:
             entity_type="category",
             operation="delete",
             payload=json.dumps({"category": {"name": "Valid"}}),
-            created_at=datetime.now(timezone.utc),
-            expires_at=datetime.now(timezone.utc) + timedelta(days=30),
+            created_at=datetime.now(UTC),
+            expires_at=datetime.now(UTC) + timedelta(days=30),
         )
         test_db_session.add(valid_op)
         test_db_session.commit()

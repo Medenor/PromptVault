@@ -4,10 +4,10 @@
 
 """Enumeration types for API validation."""
 
-from enum import Enum
+from enum import StrEnum
 
 
-class ExportFormat(str, Enum):
+class ExportFormat(StrEnum):
     """Allowed export formats."""
 
     CSV = "csv"
@@ -15,7 +15,7 @@ class ExportFormat(str, Enum):
     JSON = "json"
 
 
-class ImportMode(str, Enum):
+class ImportMode(StrEnum):
     """Import modes for handling existing data."""
 
     APPEND = "append"

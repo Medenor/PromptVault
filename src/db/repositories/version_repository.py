@@ -8,13 +8,13 @@ This module provides data access layer for PromptVersion model with
 version history, comparison, and revert operations.
 """
 
-from typing import List, Optional, Tuple
-from sqlalchemy.orm import Session
-from sqlalchemy import desc
-from datetime import datetime
 import uuid
+from datetime import datetime
 
-from src.db.models import PromptVersion, Prompt
+from sqlalchemy import desc
+from sqlalchemy.orm import Session
+
+from src.db.models import Prompt, PromptVersion
 from src.db.repositories.base import BaseRepository
 from src.db.repositories.tag_repository import TagRepository
 
@@ -38,8 +38,8 @@ class VersionRepository(BaseRepository[PromptVersion]):
         super().__init__(PromptVersion, session)
 
     def get_versions_for_prompt(
-        self, prompt_id: int, limit: Optional[int] = None
-    ) -> List[PromptVersion]:
+        self, prompt_id: int, limit: int | None = None
+    ) -> list[PromptVersion]:
         """Get all versions for a specific prompt.
 
         Args:
@@ -60,7 +60,7 @@ class VersionRepository(BaseRepository[PromptVersion]):
 
         return q.all()
 
-    def get_by_version_id(self, version_id: str) -> Optional[PromptVersion]:
+    def get_by_version_id(self, version_id: str) -> PromptVersion | None:
         """Get a version by its UUID version_id.
 
         Args:
@@ -75,7 +75,7 @@ class VersionRepository(BaseRepository[PromptVersion]):
             .first()
         )
 
-    def get_latest_version(self, prompt_id: int) -> Optional[PromptVersion]:
+    def get_latest_version(self, prompt_id: int) -> PromptVersion | None:
         """Get the latest version for a prompt.
 
         Args:
@@ -96,8 +96,8 @@ class VersionRepository(BaseRepository[PromptVersion]):
         prompt: Prompt,
         author: str,
         message: str,
-        parent_version_id: Optional[str] = None,
-        semantic_version: Optional[str] = None,
+        parent_version_id: str | None = None,
+        semantic_version: str | None = None,
     ) -> PromptVersion:
         """Create a new version from current prompt state.
 
@@ -144,7 +144,7 @@ class VersionRepository(BaseRepository[PromptVersion]):
 
     def compare_versions(
         self, version_id_a: str, version_id_b: str
-    ) -> Optional[Tuple[PromptVersion, PromptVersion]]:
+    ) -> tuple[PromptVersion, PromptVersion] | None:
         """Get two versions for comparison.
 
         Args:
@@ -163,7 +163,7 @@ class VersionRepository(BaseRepository[PromptVersion]):
 
     def get_version_chain(
         self, version_id: str, max_depth: int = 100
-    ) -> List[PromptVersion]:
+    ) -> list[PromptVersion]:
         """Get the parent chain for a version (Git-like history).
 
         Args:
@@ -197,8 +197,8 @@ class VersionRepository(BaseRepository[PromptVersion]):
         prompt: Prompt,
         version_id: str,
         author: str,
-        message: Optional[str] = None,
-    ) -> Optional[PromptVersion]:
+        message: str | None = None,
+    ) -> PromptVersion | None:
         """Revert prompt to a previous version (creates new version).
 
         This follows Git-like revert: creates a new version with content

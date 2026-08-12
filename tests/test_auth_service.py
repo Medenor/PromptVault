@@ -21,22 +21,23 @@ Tests cover:
 Target: ≥95% code coverage of AuthService
 """
 
-import uuid
-from datetime import datetime, timedelta, timezone
-from unittest.mock import Mock, MagicMock, patch, call
+from datetime import UTC, datetime, timedelta
+from unittest.mock import Mock
 
 import pytest
 from jwt.exceptions import (
     ExpiredSignatureError,
+)
+from jwt.exceptions import (
     InvalidTokenError as JWTInvalidTokenError,
 )
 
-from src.services.auth.auth_service import AuthService
-from src.services.auth.lockout_service import LockoutService
-from src.services.auth.session_service import SessionService
 from src.config.auth_config import AuthConfig
 from src.db.models.user import User
 from src.db.models.user_session import UserSession
+from src.services.auth.auth_service import AuthService
+from src.services.auth.lockout_service import LockoutService
+from src.services.auth.session_service import SessionService
 from src.services.exceptions import (
     AccountInactiveError,
     AccountLockedError,
@@ -181,8 +182,8 @@ def sample_user():
     user.failed_login_attempts = 0
     user.locked_until = None
     user.last_login = None
-    user.created_at = datetime.now(timezone.utc)
-    user.updated_at = datetime.now(timezone.utc)
+    user.created_at = datetime.now(UTC)
+    user.updated_at = datetime.now(UTC)
     return user
 
 
@@ -201,9 +202,9 @@ def sample_session():
     session.is_revoked = False
     session.device_info = "Mozilla/5.0"
     session.ip_address = "192.168.1.1"
-    session.created_at = datetime.now(timezone.utc)
-    session.last_used_at = datetime.now(timezone.utc)
-    session.expires_at = datetime.now(timezone.utc) + timedelta(days=7)
+    session.created_at = datetime.now(UTC)
+    session.last_used_at = datetime.now(UTC)
+    session.expires_at = datetime.now(UTC) + timedelta(days=7)
     return session
 
 
@@ -339,7 +340,7 @@ class TestRegister:
         mock_user_repository.create.return_value = sample_user
 
         # Act
-        result = auth_service.register(
+        auth_service.register(
             username="testuser",
             email="test@example.com",
             password="SecureP@ssw0rd123",
@@ -553,7 +554,7 @@ class TestLogin:
     ):
         """Test login fails when account is locked."""
         # Arrange
-        sample_user.locked_until = datetime.now(timezone.utc) + timedelta(minutes=10)
+        sample_user.locked_until = datetime.now(UTC) + timedelta(minutes=10)
         mock_user_repository.get_by_email_or_username.return_value = sample_user
 
         # Act & Assert
@@ -572,9 +573,7 @@ class TestLogin:
     ):
         """Test account auto-unlocks after lockout period expires."""
         # Arrange
-        sample_user.locked_until = datetime.now(timezone.utc) - timedelta(
-            minutes=1
-        )  # Expired
+        sample_user.locked_until = datetime.now(UTC) - timedelta(minutes=1)  # Expired
         mock_user_repository.get_by_email_or_username.return_value = sample_user
 
         # Act
@@ -1230,9 +1229,9 @@ class TestGetUserSessions:
         session1.family_id = "family_1"
         session1.device_info = "Chrome"
         session1.ip_address = "192.168.1.1"
-        session1.created_at = datetime(2025, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
-        session1.last_used_at = datetime(2025, 1, 1, 13, 0, 0, tzinfo=timezone.utc)
-        session1.expires_at = datetime(2025, 1, 8, 12, 0, 0, tzinfo=timezone.utc)
+        session1.created_at = datetime(2025, 1, 1, 12, 0, 0, tzinfo=UTC)
+        session1.last_used_at = datetime(2025, 1, 1, 13, 0, 0, tzinfo=UTC)
+        session1.expires_at = datetime(2025, 1, 8, 12, 0, 0, tzinfo=UTC)
 
         mock_session_repository.get_user_sessions.return_value = [session1]
 
@@ -1267,9 +1266,9 @@ class TestGetUserSessions:
         session.family_id = "family_1"
         session.device_info = "Firefox"
         session.ip_address = "10.0.0.1"
-        session.created_at = datetime(2025, 1, 1, tzinfo=timezone.utc)
-        session.last_used_at = datetime(2025, 1, 2, tzinfo=timezone.utc)
-        session.expires_at = datetime(2025, 1, 8, tzinfo=timezone.utc)
+        session.created_at = datetime(2025, 1, 1, tzinfo=UTC)
+        session.last_used_at = datetime(2025, 1, 2, tzinfo=UTC)
+        session.expires_at = datetime(2025, 1, 8, tzinfo=UTC)
 
         mock_session_repository.get_user_sessions.return_value = [session]
 
@@ -1303,9 +1302,9 @@ class TestGetUserSessions:
         session.family_id = "family_1"
         session.device_info = "Safari"
         session.ip_address = "192.168.1.1"
-        session.created_at = datetime(2025, 1, 1, tzinfo=timezone.utc)
+        session.created_at = datetime(2025, 1, 1, tzinfo=UTC)
         session.last_used_at = None  # Never used
-        session.expires_at = datetime(2025, 1, 8, tzinfo=timezone.utc)
+        session.expires_at = datetime(2025, 1, 8, tzinfo=UTC)
 
         mock_session_repository.get_user_sessions.return_value = [session]
 
@@ -1652,7 +1651,7 @@ class TestEdgeCases:
     ):
         """Test login fails during active lockout period."""
         # Arrange
-        sample_user.locked_until = datetime.now(timezone.utc) + timedelta(minutes=5)
+        sample_user.locked_until = datetime.now(UTC) + timedelta(minutes=5)
         mock_user_repository.get_by_email_or_username.return_value = sample_user
 
         # Act & Assert
@@ -1817,7 +1816,7 @@ class TestGenerateTokensAndSession:
         assert "expires_at" in call_args.kwargs
         # Verify expires_at is in the future
         expires_at = call_args.kwargs["expires_at"]
-        assert expires_at > datetime.now(timezone.utc)
+        assert expires_at > datetime.now(UTC)
 
     def test_response_format(self, auth_service, sample_user):
         """Test response contains all required fields."""

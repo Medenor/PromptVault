@@ -18,17 +18,17 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
-from src.db.session import get_db
 from src.db.models.user import User
 from src.db.repositories.prompt_repository import PromptRepository
 from src.db.repositories.sharing_repository import SharingRepository
 from src.db.repositories.user_repository import UserRepository
+from src.db.session import get_db
 from src.services.exceptions import ShareGrantError
 from src.services.logging_service import logging_service
 from src.web.dependencies.bypass import get_current_user_or_default
-from src.web.middleware.rate_limit import limiter, write_limit, read_limit
+from src.web.middleware.rate_limit import limiter, read_limit, write_limit
 from src.web.models.sharing_requests import ShareGrantRequest
-from src.web.models.sharing_responses import ShareResponse, ShareListResponse
+from src.web.models.sharing_responses import ShareListResponse, ShareResponse
 from src.web.routers.prompts_shared import check_prompt_access, effective_permission
 
 router = APIRouter(
@@ -116,7 +116,7 @@ async def grant_share(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=exc.user_message,
-        )
+        ) from exc
 
     response = ShareResponse(**result)
     status_code = status.HTTP_200_OK if existing_permission else status.HTTP_201_CREATED

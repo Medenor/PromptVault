@@ -23,16 +23,19 @@ Tests cover:
 Target: 100% code coverage of JWTService
 """
 
+import shutil
+import tempfile
 import time
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
-import tempfile
-import shutil
+from unittest.mock import MagicMock, patch
 
-import pytest
 import jwt
+import pytest
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import ec
 from jwt.exceptions import (
     DecodeError,
     ExpiredSignatureError,
@@ -43,12 +46,9 @@ from jwt.exceptions import (
     InvalidTokenError,
     MissingRequiredClaimError,
 )
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric import ec
-from cryptography.hazmat.backends import default_backend
 
-from src.services.auth.jwt_service import JWTService
 from src.config.auth_config import AuthConfig
+from src.services.auth.jwt_service import JWTService
 
 # ============================================================================
 # FIXTURES
@@ -398,7 +398,7 @@ class TestKeyLoading:
         service = JWTService(mock_config)
 
         # Mock to raise a generic exception
-        with patch.object(Path, "read_bytes", side_effect=IOError("Disk error")):
+        with patch.object(Path, "read_bytes", side_effect=OSError("Disk error")):
             with pytest.raises(ValueError) as exc_info:
                 service._load_private_key()
 
@@ -415,7 +415,7 @@ class TestKeyLoading:
         service = JWTService(mock_config)
 
         # Mock to raise a generic exception
-        with patch.object(Path, "read_bytes", side_effect=IOError("Disk error")):
+        with patch.object(Path, "read_bytes", side_effect=OSError("Disk error")):
             with pytest.raises(ValueError) as exc_info:
                 service._load_public_key()
 
@@ -520,16 +520,16 @@ class TestAccessTokenGeneration:
 
     def test_access_token_expiration_time(self, jwt_service, sample_user_data):
         """Test that access token has correct expiration time (15 minutes)."""
-        before_generation = datetime.now(timezone.utc)
+        datetime.now(UTC)
         token = jwt_service.generate_access_token(**sample_user_data)
-        after_generation = datetime.now(timezone.utc)
+        datetime.now(UTC)
 
         claims = jwt_service.decode_token_unsafe(token)
 
         # Calculate expected expiration
         expected_expire_seconds = jwt_service.config.jwt_access_token_expire_seconds
-        exp_time = datetime.fromtimestamp(claims["exp"], tz=timezone.utc)
-        iat_time = datetime.fromtimestamp(claims["iat"], tz=timezone.utc)
+        exp_time = datetime.fromtimestamp(claims["exp"], tz=UTC)
+        iat_time = datetime.fromtimestamp(claims["iat"], tz=UTC)
 
         # Verify expiration is approximately 15 minutes (900 seconds) from issued time
         time_diff = (exp_time - iat_time).total_seconds()
@@ -684,8 +684,8 @@ class TestRefreshTokenGeneration:
 
         # Calculate expected expiration
         expected_expire_seconds = jwt_service.config.jwt_refresh_token_expire_seconds
-        exp_time = datetime.fromtimestamp(claims["exp"], tz=timezone.utc)
-        iat_time = datetime.fromtimestamp(claims["iat"], tz=timezone.utc)
+        exp_time = datetime.fromtimestamp(claims["exp"], tz=UTC)
+        iat_time = datetime.fromtimestamp(claims["iat"], tz=UTC)
 
         # Verify expiration is approximately 7 days (604800 seconds) from issued time
         time_diff = (exp_time - iat_time).total_seconds()
@@ -835,7 +835,7 @@ class TestAccessTokenValidation:
         # Create token without required 'sub' claim
         claims = {
             "username": sample_user_data["username"],
-            "exp": datetime.now(timezone.utc) + timedelta(minutes=15),
+            "exp": datetime.now(UTC) + timedelta(minutes=15),
         }
 
         token = jwt.encode(claims, private_key, algorithm="ES256")
@@ -847,7 +847,7 @@ class TestAccessTokenValidation:
         """Test validation fails with invalid issuer."""
         # Create token with wrong issuer
         private_key = jwt_service._load_private_key()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         claims = {
             "sub": sample_user_data["user_id"],
@@ -872,7 +872,7 @@ class TestAccessTokenValidation:
         """Test validation fails with invalid audience."""
         # Create token with wrong audience
         private_key = jwt_service._load_private_key()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         claims = {
             "sub": sample_user_data["user_id"],
@@ -896,7 +896,7 @@ class TestAccessTokenValidation:
     ):
         """Test that HS256 token is rejected (algorithm confusion attack)."""
         # Try to create token with HS256 (symmetric) algorithm
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         claims = {
             "sub": sample_user_data["user_id"],
             "username": sample_user_data["username"],
@@ -920,7 +920,7 @@ class TestAccessTokenValidation:
 
     def test_validate_access_token_none_algorithm(self, jwt_service, sample_user_data):
         """Test that 'none' algorithm token is rejected."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         claims = {
             "sub": sample_user_data["user_id"],
             "username": sample_user_data["username"],
@@ -1036,7 +1036,7 @@ class TestRefreshTokenValidation:
         """Test validation fails when type claim is missing."""
         # Manually create token without type claim
         private_key = jwt_service._load_private_key()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         claims = {
             "sub": "user_123",
@@ -1089,7 +1089,7 @@ class TestRefreshTokenValidation:
     def test_validate_refresh_token_missing_family_id(self, jwt_service):
         """Test validation fails when family_id claim is missing."""
         private_key = jwt_service._load_private_key()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         claims = {
             "sub": "user_123",
@@ -1109,7 +1109,7 @@ class TestRefreshTokenValidation:
     def test_validate_refresh_token_invalid_algorithm_error(self, jwt_service):
         """Test that InvalidAlgorithmError is raised for wrong algorithm in refresh token."""
         # Create an HS256 token
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         claims = {
             "sub": "user_123",
             "family_id": str(uuid.uuid4()),
@@ -1131,7 +1131,7 @@ class TestRefreshTokenValidation:
     def test_validate_refresh_token_invalid_audience(self, jwt_service):
         """Test validation fails with invalid audience in refresh token."""
         private_key = jwt_service._load_private_key()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         claims = {
             "sub": "user_123",
@@ -1152,7 +1152,7 @@ class TestRefreshTokenValidation:
     def test_validate_refresh_token_invalid_issuer(self, jwt_service):
         """Test validation fails with invalid issuer in refresh token."""
         private_key = jwt_service._load_private_key()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         claims = {
             "sub": "user_123",
@@ -1260,14 +1260,14 @@ class TestGetTokenExpiry:
 
     def test_get_token_expiry_success(self, jwt_service, sample_user_data):
         """Test successful expiration time extraction."""
-        before = datetime.now(timezone.utc)
+        before = datetime.now(UTC)
         token = jwt_service.generate_access_token(**sample_user_data)
-        after = datetime.now(timezone.utc)
+        datetime.now(UTC)
 
         expiry = jwt_service.get_token_expiry(token)
 
         assert isinstance(expiry, datetime)
-        assert expiry.tzinfo == timezone.utc
+        assert expiry.tzinfo == UTC
 
         # Should be approximately 15 minutes from now
         expected_expiry = before + timedelta(
@@ -1281,7 +1281,7 @@ class TestGetTokenExpiry:
         token = jwt_service.generate_access_token(**sample_user_data)
         expiry = jwt_service.get_token_expiry(token)
 
-        assert expiry.tzinfo == timezone.utc
+        assert expiry.tzinfo == UTC
 
     def test_get_token_expiry_invalid_token(self, jwt_service):
         """Test error handling for invalid token."""
@@ -1295,7 +1295,7 @@ class TestGetTokenExpiry:
 
         claims = {
             "sub": "user_123",
-            "iat": datetime.now(timezone.utc),
+            "iat": datetime.now(UTC),
         }
 
         token = jwt.encode(claims, private_key, algorithm="ES256")
@@ -1313,7 +1313,7 @@ class TestGetTokenExpiry:
         claims = {
             "sub": "user_123",
             "exp": "invalid_timestamp",  # String instead of int
-            "iat": datetime.now(timezone.utc),
+            "iat": datetime.now(UTC),
         }
 
         token = jwt.encode(claims, private_key, algorithm="ES256")
@@ -1400,7 +1400,7 @@ class TestIsTokenExpired:
 
         claims = {
             "sub": "user_123",
-            "iat": datetime.now(timezone.utc),
+            "iat": datetime.now(UTC),
         }
 
         token = jwt.encode(claims, private_key, algorithm="ES256")
@@ -1777,7 +1777,7 @@ class TestIntegration:
         assert service._public_key is None
 
         # Validate token (loads public key)
-        claims = service.validate_access_token(token)
+        service.validate_access_token(token)
 
         # Both keys now loaded
         assert service._private_key is not None

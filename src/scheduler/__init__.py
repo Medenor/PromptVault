@@ -8,7 +8,7 @@ Contains schedulers for periodic maintenance tasks like session cleanup
 and automated backups.
 """
 
-from src.scheduler.session_cleanup import SessionCleanupScheduler
 from src.scheduler.backup_scheduler import register_backup_jobs
+from src.scheduler.session_cleanup import SessionCleanupScheduler
 
 __all__ = ["SessionCleanupScheduler", "register_backup_jobs"]
