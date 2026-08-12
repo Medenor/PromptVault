@@ -84,6 +84,9 @@ from src.web.dependencies.auth import has_valid_auth_cookie
 
 app = create_app()
 
+data_service: Optional[PromptDataService] = None
+import_export_service: Optional[PromptImportExportService] = None
+backup_service: Optional[BackupService] = None
 validation_monitor: Optional[ValidationMonitor] = None
 logger = logging_service.get_logger(__name__)
 

@@ -122,6 +122,7 @@ from src.services.exceptions import (
     PasswordPolicyError,
     SessionNotFoundError,
     TokenReuseDetectedError,
+    UserNotFoundError,
     UsernameAlreadyExistsError,
 )
 

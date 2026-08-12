@@ -19,10 +19,8 @@ from sqlalchemy import (
     Index,
     UniqueConstraint,
 )
-from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.types import JSON
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql import func
 
 from src.db.base import Base
 
