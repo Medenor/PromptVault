@@ -9,21 +9,24 @@ SQLite (file copy) backup operations, with support for encryption,
 cloud storage, incremental backups, and integrity verification.
 """
 
+from datetime import datetime
+from typing import TYPE_CHECKING, Any
+
 from sqlalchemy import (
     BigInteger,
-    Boolean,
-    Column,
     DateTime,
     ForeignKey,
-    Integer,
     String,
     Text,
 )
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 from sqlalchemy.types import JSON
 
 from src.db.base import Base
+
+if TYPE_CHECKING:
+    from src.db.models.backup_storage_provider import BackupStorageProvider
 
 
 class Backup(Base):
@@ -62,34 +65,44 @@ class Backup(Base):
 
     __tablename__ = "backups"
 
-    id = Column(String(36), primary_key=True)
-    backup_type = Column(String(50), nullable=False)
-    filename = Column(String(255), nullable=False)
-    storage_path = Column(Text, nullable=False)
-    size_bytes = Column(BigInteger)
-    prompt_count = Column(Integer)
-    created_by = Column(String(100))
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    succeeded = Column(Boolean, default=True)
-    backup_metadata = Column(JSON)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    backup_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    filename: Mapped[str] = mapped_column(String(255), nullable=False)
+    storage_path: Mapped[str] = mapped_column(Text, nullable=False)
+    size_bytes: Mapped[int | None] = mapped_column(BigInteger)
+    prompt_count: Mapped[int | None] = mapped_column()
+    created_by: Mapped[str | None] = mapped_column(String(100))
+    created_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    succeeded: Mapped[bool | None] = mapped_column(default=True)
+    backup_metadata: Mapped[Any | None] = mapped_column(JSON)
 
-    backup_kind = Column(String(20), nullable=False, default="full")
-    parent_backup_id = Column(String(36), ForeignKey("backups.id"), nullable=True)
-    checksum = Column(String(64), nullable=True)
-    integrity_verified_at = Column(DateTime(timezone=True), nullable=True)
-    is_encrypted = Column(Boolean, nullable=False, default=False)
-    encryption_salt = Column(String(32), nullable=True)
-    encryption_nonce = Column(String(24), nullable=True)
-    cloud_provider_id = Column(
+    backup_kind: Mapped[str] = mapped_column(String(20), nullable=False, default="full")
+    parent_backup_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("backups.id"), nullable=True
+    )
+    checksum: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    integrity_verified_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    is_encrypted: Mapped[bool] = mapped_column(nullable=False, default=False)
+    encryption_salt: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    encryption_nonce: Mapped[str | None] = mapped_column(String(24), nullable=True)
+    cloud_provider_id: Mapped[str | None] = mapped_column(
         String(36), ForeignKey("backup_storage_providers.id"), nullable=True
     )
-    cloud_path = Column(Text, nullable=True)
-    cloud_uploaded_at = Column(DateTime(timezone=True), nullable=True)
-    tags = Column(JSON, nullable=True, default=list)
-    delta_payload = Column(JSON, nullable=True)
+    cloud_path: Mapped[str | None] = mapped_column(Text, nullable=True)
+    cloud_uploaded_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    tags: Mapped[Any | None] = mapped_column(JSON, nullable=True, default=list)
+    delta_payload: Mapped[Any | None] = mapped_column(JSON, nullable=True)
 
-    parent_backup = relationship("Backup", remote_side=[id], backref="child_backups")
-    storage_provider = relationship(
+    parent_backup: Mapped["Backup | None"] = relationship(
+        "Backup", remote_side=[id], backref="child_backups"
+    )
+    storage_provider: Mapped["BackupStorageProvider | None"] = relationship(
         "BackupStorageProvider",
         back_populates="backups",
         foreign_keys=[cloud_provider_id],

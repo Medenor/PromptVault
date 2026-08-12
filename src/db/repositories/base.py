@@ -8,14 +8,19 @@ This module provides a generic base repository with common CRUD operations
 that can be inherited by specific model repositories.
 """
 
-from typing import Any, Generic, TypeVar
+from typing import Any, Generic, Protocol, TypeVar
 
 from sqlalchemy.orm import Session
 
-from src.db.base import Base
 
-# Generic type for SQLAlchemy models
-ModelType = TypeVar("ModelType", bound=Base)
+class _HasId(Protocol):
+    """Structural type for models with an ``id`` primary key column."""
+
+    id: Any
+
+
+# Generic type for SQLAlchemy models with an `id` primary key
+ModelType = TypeVar("ModelType", bound=_HasId)
 
 
 class BaseRepository(Generic[ModelType]):

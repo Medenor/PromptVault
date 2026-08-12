@@ -7,7 +7,11 @@
 Append-only audit log for all backup-related operations.
 """
 
-from sqlalchemy import JSON, Column, DateTime, ForeignKey, String
+from datetime import datetime
+from typing import Any
+
+from sqlalchemy import JSON, DateTime, ForeignKey, String
+from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import func
 
 from src.db.base import Base
@@ -31,15 +35,17 @@ class AuditLogEntry(Base):
 
     __tablename__ = "backup_audit_log"
 
-    id = Column(String(36), primary_key=True)
-    occurred_at = Column(
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    occurred_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
-    operation = Column(String(50), nullable=False)
-    outcome = Column(String(20), nullable=False)
-    backup_id = Column(String(36), ForeignKey("backups.id"), nullable=True)
-    performed_by = Column(String(100), nullable=True)
-    detail = Column(JSON, nullable=True)
+    operation: Mapped[str] = mapped_column(String(50), nullable=False)
+    outcome: Mapped[str] = mapped_column(String(20), nullable=False)
+    backup_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("backups.id"), nullable=True
+    )
+    performed_by: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    detail: Mapped[Any | None] = mapped_column(JSON, nullable=True)
 
     def __repr__(self):
         return f"<AuditLogEntry(id='{self.id[:8]}...', op='{self.operation}', outcome='{self.outcome}')>"

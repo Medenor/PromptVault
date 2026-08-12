@@ -11,12 +11,17 @@ This model tracks password reset tokens sent via email. Tokens are:
 """
 
 import uuid
+from datetime import datetime
+from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Index, String
-from sqlalchemy.orm import relationship
+from sqlalchemy import DateTime, ForeignKey, Index, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
 from src.db.base import Base
+
+if TYPE_CHECKING:
+    from src.db.models.user import User
 
 
 class PasswordResetToken(Base):
@@ -40,10 +45,12 @@ class PasswordResetToken(Base):
     __tablename__ = "password_reset_tokens"
 
     # Primary key
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    id: Mapped[str] = mapped_column(
+        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
+    )
 
     # Foreign key to users
-    user_id = Column(
+    user_id: Mapped[str] = mapped_column(
         String(36),
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
@@ -51,19 +58,27 @@ class PasswordResetToken(Base):
     )
 
     # Token data
-    token = Column(String(255), unique=True, nullable=False, index=True)
-    is_used = Column(Boolean, default=False, index=True)
+    token: Mapped[str] = mapped_column(
+        String(255), unique=True, nullable=False, index=True
+    )
+    is_used: Mapped[bool | None] = mapped_column(default=False, index=True)
 
     # Timestamps
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    expires_at = Column(DateTime(timezone=True), nullable=False, index=True)
-    used_at = Column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, index=True
+    )
+    used_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
     # Metadata
-    ip_address = Column(String(45), nullable=True)
+    ip_address: Mapped[str | None] = mapped_column(String(45), nullable=True)
 
     # Relationships
-    user = relationship("User", back_populates="password_reset_tokens")
+    user: Mapped["User"] = relationship("User", back_populates="password_reset_tokens")
 
     # Composite indexes
     __table_args__ = (

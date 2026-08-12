@@ -205,7 +205,7 @@ class PromptImportExportService:
                         continue
 
                     lines = block.strip().split("\n")
-                    current_prompt = {
+                    current_prompt: dict[str, Any] = {
                         "title": "",
                         "prompt": "",
                         "note": "",

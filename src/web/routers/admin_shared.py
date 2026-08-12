@@ -28,6 +28,11 @@ def _user_to_detail_response(user: User, session_count: int) -> UserDetailRespon
     Returns:
         UserDetailResponse with all fields populated
     """
+    assert user.role is not None
+    assert user.is_active is not None
+    assert user.email_verified is not None
+    assert user.created_at is not None
+    assert user.updated_at is not None
     return UserDetailResponse(
         id=user.id,
         username=user.username,

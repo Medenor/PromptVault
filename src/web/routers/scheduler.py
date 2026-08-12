@@ -48,12 +48,12 @@ class SchedulerStatusResponse(BaseModel):
     """Response model for scheduler status."""
 
     is_running: bool = Field(
-        ..., description="Whether scheduler is currently running", example=True
+        ..., description="Whether scheduler is currently running", examples=[True]
     )
     next_run_time: datetime | None = Field(
         default=None,
         description="Timestamp of next scheduled cleanup",
-        example="2025-12-06T14:00:00",
+        examples=["2025-12-06T14:00:00"],
     )
     last_run_time: datetime | None = Field(
         default=None,
@@ -67,15 +67,15 @@ class SchedulerStatusResponse(BaseModel):
 class CleanupResultResponse(BaseModel):
     """Response model for cleanup operation result."""
 
-    success: bool = Field(..., description="Whether cleanup succeeded", example=True)
+    success: bool = Field(..., description="Whether cleanup succeeded", examples=[True])
     expired_found: int | None = Field(
-        default=None, description="Number of expired sessions found", example=42
+        default=None, description="Number of expired sessions found", examples=[42]
     )
     deleted: int | None = Field(
-        default=None, description="Number of sessions deleted", example=42
+        default=None, description="Number of sessions deleted", examples=[42]
     )
     timestamp: datetime = Field(
-        ..., description="When cleanup was performed", example="2025-12-06T13:00:00"
+        ..., description="When cleanup was performed", examples=["2025-12-06T13:00:00"]
     )
     error: str | None = Field(
         default=None, description="Error message if cleanup failed"

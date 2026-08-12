@@ -217,7 +217,11 @@ class VersionRepository(BaseRepository[PromptVersion]):
         if not target_version or target_version.prompt_id != prompt.id:
             return None
 
-        # Update prompt to target version's data
+        # Update prompt to target version's data. title/prompt are nullable on
+        # PromptVersion (denormalized snapshot column) but NOT NULL on Prompt;
+        # application logic always populates them when creating a version.
+        assert target_version.title is not None
+        assert target_version.prompt is not None
         prompt.title = target_version.title
         prompt.prompt = target_version.prompt
         prompt.category_id = target_version.category_id

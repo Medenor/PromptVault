@@ -20,8 +20,9 @@ Example URLs:
     PostgreSQL: postgresql://user:password@localhost:5432/promptvault
 """
 
-from pydantic import ConfigDict
-from pydantic_settings import BaseSettings
+from typing import Any
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class DatabaseSettings(BaseSettings):
@@ -41,7 +42,7 @@ class DatabaseSettings(BaseSettings):
     DB_POOL_RECYCLE: int = 3600
     DB_ECHO: bool = False
 
-    model_config = ConfigDict(
+    model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", case_sensitive=True, extra="allow"
     )
 
@@ -76,7 +77,7 @@ class DatabaseSettings(BaseSettings):
             return "postgresql"
         return "unknown"
 
-    def get_engine_kwargs(self) -> dict:
+    def get_engine_kwargs(self) -> dict[str, Any]:
         """Get SQLAlchemy engine configuration kwargs.
 
         Returns appropriate engine configuration based on database type.
@@ -85,7 +86,7 @@ class DatabaseSettings(BaseSettings):
         Returns:
             dict: Engine configuration kwargs for create_engine()
         """
-        base_kwargs = {
+        base_kwargs: dict[str, Any] = {
             "echo": self.DB_ECHO,
             "pool_pre_ping": True,  # Verify connections before using
         }

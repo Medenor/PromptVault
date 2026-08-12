@@ -50,7 +50,7 @@ class BackupService:
     backup strategies for each.
     """
 
-    def __init__(self, data_dir: str = None):
+    def __init__(self, data_dir: str | None = None):
         """Initialize the BackupService.
 
         Args:

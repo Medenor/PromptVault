@@ -11,7 +11,7 @@ behavior are unchanged.
 
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
 
 from src.db.models.user import User
@@ -234,7 +234,7 @@ def request_password_reset(
     ip_address: str = Depends(get_client_ip),
     password_reset_service: PasswordResetService = Depends(get_password_reset_service),
     session: Session = Depends(get_db),
-) -> PasswordResetRequestResponse:
+) -> Response:
     """Request password reset email.
 
     Args:

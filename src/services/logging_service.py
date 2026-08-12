@@ -14,7 +14,7 @@ import os
 import uuid
 from collections.abc import Iterator
 from contextlib import contextmanager
-from contextvars import ContextVar
+from contextvars import ContextVar, Token
 from datetime import UTC, datetime
 from typing import Any
 
@@ -139,9 +139,9 @@ class ConsoleFormatter(logging.Formatter):
         if actor:
             extras.append(f"actor={actor}")
         if getattr(record, "event", None):
-            extras.append(f"event={record.event}")
+            extras.append(f"event={record.event}")  # type: ignore[attr-defined]
         if getattr(record, "status", None):
-            extras.append(f"status={record.status}")
+            extras.append(f"status={record.status}")  # type: ignore[attr-defined]
 
         extra_str = f" ({', '.join(extras)})" if extras else ""
         base = f"[{record.levelname}] {record.getMessage()}{extra_str}"
@@ -185,12 +185,22 @@ class LoggingService:
         if self._configured and not force:
             return
 
-        env = (environment or os.getenv("ENVIRONMENT", "development")).strip()
+        env = (
+            environment
+            if environment is not None
+            else os.getenv("ENVIRONMENT", "development")
+        ).strip()
         resolved_dir = log_dir or os.path.join(os.getcwd(), "data", "logs")
         os.makedirs(resolved_dir, exist_ok=True)
 
-        app_level = (log_level or os.getenv("LOG_LEVEL", "INFO")).upper()
-        audit_level = (audit_log_level or os.getenv("AUDIT_LOG_LEVEL", "INFO")).upper()
+        app_level = (
+            log_level if log_level is not None else os.getenv("LOG_LEVEL", "INFO")
+        ).upper()
+        audit_level = (
+            audit_log_level
+            if audit_log_level is not None
+            else os.getenv("AUDIT_LOG_LEVEL", "INFO")
+        ).upper()
         console_level = "DEBUG" if env == "development" else app_level
 
         config = {
@@ -300,9 +310,9 @@ class LoggingService:
             request_id: Correlation identifier to bind.
             actor: Actor identifier associated with the operation.
         """
-        tokens: tuple[tuple[ContextVar[str | None], object], ...] = tuple()
+        tokens: tuple[tuple[ContextVar[str | None], Token[str | None]], ...] = tuple()
         if request_id or actor:
-            collected = []
+            collected: list[tuple[ContextVar[str | None], Token[str | None]]] = []
             if request_id is not None:
                 collected.append((REQUEST_ID_VAR, REQUEST_ID_VAR.set(request_id)))
             if actor is not None:

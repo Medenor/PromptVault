@@ -10,12 +10,17 @@ the entire family to prevent token theft.
 """
 
 import uuid
+from datetime import datetime
+from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Index, String
-from sqlalchemy.orm import relationship
+from sqlalchemy import DateTime, ForeignKey, Index, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
 from src.db.base import Base
+
+if TYPE_CHECKING:
+    from src.db.models.user import User
 
 
 class UserSession(Base):
@@ -41,10 +46,12 @@ class UserSession(Base):
     __tablename__ = "user_sessions"
 
     # Primary key
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    id: Mapped[str] = mapped_column(
+        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
+    )
 
     # Foreign key to users
-    user_id = Column(
+    user_id: Mapped[str] = mapped_column(
         String(36),
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
@@ -52,25 +59,33 @@ class UserSession(Base):
     )
 
     # Token family tracking
-    family_id = Column(String(36), unique=True, nullable=False, index=True)
-    refresh_token_jti = Column(String(36), unique=True, nullable=False, index=True)
+    family_id: Mapped[str] = mapped_column(
+        String(36), unique=True, nullable=False, index=True
+    )
+    refresh_token_jti: Mapped[str] = mapped_column(
+        String(36), unique=True, nullable=False, index=True
+    )
 
     # Session metadata
-    device_info = Column(String(500), nullable=True)
-    ip_address = Column(String(45), nullable=True)
+    device_info: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    ip_address: Mapped[str | None] = mapped_column(String(45), nullable=True)
 
     # Session status
-    is_revoked = Column(Boolean, default=False, index=True)
+    is_revoked: Mapped[bool | None] = mapped_column(default=False, index=True)
 
     # Timestamps
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    last_used_at = Column(
+    created_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    last_used_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
-    expires_at = Column(DateTime(timezone=True), nullable=False, index=True)
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, index=True
+    )
 
     # Relationships
-    user = relationship("User", back_populates="sessions")
+    user: Mapped["User"] = relationship("User", back_populates="sessions")
 
     # Composite indexes for efficient queries
     __table_args__ = (

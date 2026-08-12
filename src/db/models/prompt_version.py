@@ -8,21 +8,24 @@ This model implements Git-like version control for prompts. Each version
 is an immutable snapshot with complete prompt data at that point in time.
 """
 
+from datetime import datetime
+from typing import TYPE_CHECKING, Any
+
 from sqlalchemy import (
-    Boolean,
-    Column,
     DateTime,
     ForeignKey,
     Index,
-    Integer,
     String,
     Text,
     UniqueConstraint,
 )
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import JSON
 
 from src.db.base import Base
+
+if TYPE_CHECKING:
+    from src.db.models.prompt import Prompt
 
 
 class PromptVersion(Base):
@@ -57,34 +60,40 @@ class PromptVersion(Base):
 
     __tablename__ = "prompt_versions"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    prompt_id = Column(
-        Integer, ForeignKey("prompts.id", ondelete="CASCADE"), nullable=False
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    prompt_id: Mapped[int] = mapped_column(
+        ForeignKey("prompts.id", ondelete="CASCADE"), nullable=False
     )
-    version_id = Column(String(36), nullable=False, index=True)
-    version_number = Column(Integer, nullable=False)
+    version_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    version_number: Mapped[int] = mapped_column(nullable=False)
 
     # Denormalized snapshot data
-    title = Column(String(200))
-    prompt = Column(Text)
-    category_id = Column(Integer, ForeignKey("categories.id"))
-    note = Column(Text)
-    tags = Column(JSON)  # Stored as JSON array for historical accuracy
-    favorite = Column(Boolean)
+    title: Mapped[str | None] = mapped_column(String(200))
+    prompt: Mapped[str | None] = mapped_column(Text)
+    category_id: Mapped[int | None] = mapped_column(ForeignKey("categories.id"))
+    note: Mapped[str | None] = mapped_column(Text)
+    tags: Mapped[Any | None] = mapped_column(
+        JSON
+    )  # Stored as JSON array for historical accuracy
+    favorite: Mapped[bool | None] = mapped_column()
 
-    semantic_version = Column(String(20), nullable=True)
+    semantic_version: Mapped[str | None] = mapped_column(String(20), nullable=True)
 
     # Version metadata
-    author = Column(String(100))
-    message = Column(String(500))
-    created_at = Column(DateTime(timezone=True), nullable=False, index=True)
+    author: Mapped[str | None] = mapped_column(String(100))
+    message: Mapped[str | None] = mapped_column(String(500))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, index=True
+    )
 
     # Version graph (Git-like parent-child relationship)
-    parent_version_id = Column(String(36), ForeignKey("prompt_versions.version_id"))
+    parent_version_id: Mapped[str | None] = mapped_column(
+        ForeignKey("prompt_versions.version_id")
+    )
 
     # Relationships
-    parent_prompt = relationship("Prompt", back_populates="versions")
-    parent_version = relationship(
+    parent_prompt: Mapped["Prompt"] = relationship("Prompt", back_populates="versions")
+    parent_version: Mapped["PromptVersion | None"] = relationship(
         "PromptVersion",
         remote_side=[version_id],
         foreign_keys=[parent_version_id],

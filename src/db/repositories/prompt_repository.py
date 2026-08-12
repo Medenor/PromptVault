@@ -287,9 +287,9 @@ class PromptRepository(BaseRepository[Prompt]):
             # Search for favorited marketing prompts
             repo.search(query="email", category="Marketing", favorite=True)
         """
-        use_fts = bool(query) and ranked and not case_sensitive
+        use_fts = query is not None and bool(query) and ranked and not case_sensitive
 
-        if use_fts:
+        if use_fts and query is not None:
             fts_result = self._try_fts_search(
                 query=query,
                 category=category,
@@ -401,9 +401,9 @@ class PromptRepository(BaseRepository[Prompt]):
         Returns:
             Total number of matching prompts
         """
-        use_fts = bool(query) and ranked and not case_sensitive
+        use_fts = query is not None and bool(query) and ranked and not case_sensitive
 
-        if use_fts:
+        if use_fts and query is not None:
             try:
                 matches = self._fts_matches(query)
             except OperationalError, ProgrammingError:

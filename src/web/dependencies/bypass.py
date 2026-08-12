@@ -78,8 +78,9 @@ async def get_current_user_or_none(
         if not user or not user.is_active:
             return None
 
-        # Attach family_id from token for session identification
-        user.family_id = claims.get("family_id")
+        # Attach family_id from token for session identification (request-scoped,
+        # not a persisted column on the User model).
+        user.family_id = claims.get("family_id")  # type: ignore[attr-defined]
         return user
     except Exception:
         return None

@@ -26,7 +26,7 @@ from .constraints import (
 
 
 def validate_file_extension(
-    filename: str, allowed_extensions: set = None
+    filename: str, allowed_extensions: set | None = None
 ) -> tuple[bool, str]:
     """Validate that file has an allowed extension.
 
@@ -131,7 +131,7 @@ def validate_mime_type(content_type: str | None, filename: str) -> tuple[bool, s
 async def validate_upload_file(
     file: UploadFile,
     max_size: int = MAX_FILE_SIZE_BYTES,
-    allowed_extensions: set = None,
+    allowed_extensions: set | None = None,
 ) -> tuple[bool, str]:
     """Comprehensive validation of uploaded file.
 

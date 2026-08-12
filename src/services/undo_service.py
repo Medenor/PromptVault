@@ -150,14 +150,15 @@ class UndoService:
             f"Pushed undo operation for user {user_id}: {entity_type}.{operation}"
         )
 
-    def pop(self, user_id: str, entity_type: str) -> dict[str, Any] | None:
+    def pop(self, user_id: str | None, entity_type: str) -> dict[str, Any] | None:
         """Retrieve and remove the most recent undo operation.
 
         This method returns the most recent undo operation for the specified
         user and entity type, and removes it from the database.
 
         Args:
-            user_id: ID of the user
+            user_id: ID of the user, or None for an anonymous caller (always
+                returns None, since push() never stores anonymous operations)
             entity_type: Type of entity ('tag' or 'category')
 
         Returns:
@@ -169,6 +170,9 @@ class UndoService:
             ...     op['operation'], op['entity_type']
             ...     # Use op['payload'] to perform undo
         """
+        if user_id is None:
+            return None
+
         # Query for the most recent operation
         undo_op = (
             self.db.query(UndoOperation)

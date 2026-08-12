@@ -8,20 +8,28 @@ This is the core model representing a prompt with its current state.
 Version history is stored separately in PromptVersion model.
 """
 
+from datetime import datetime
+from typing import TYPE_CHECKING
+
 from sqlalchemy import (
-    Boolean,
-    Column,
     DateTime,
     ForeignKey,
     Index,
-    Integer,
     String,
     Text,
 )
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
 from src.db.base import Base
+
+if TYPE_CHECKING:
+    from src.db.models.category import Category
+    from src.db.models.prompt_branch import PromptBranch
+    from src.db.models.prompt_share import PromptShare
+    from src.db.models.prompt_version import PromptVersion
+    from src.db.models.tag import Tag
+    from src.db.models.user import User
 
 
 class Prompt(Base):
@@ -51,32 +59,40 @@ class Prompt(Base):
     __tablename__ = "prompts"
 
     # Integer IDs with autoincrement (migration can override with explicit IDs)
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    title = Column(String(200), nullable=False)
-    prompt = Column(Text, nullable=False)
-    category_id = Column(Integer, ForeignKey("categories.id"))
-    note = Column(Text)
-    favorite = Column(Boolean, default=False, index=True)
-    semantic_version = Column(String(20), nullable=True)
-    legacy_public = Column(Boolean, nullable=False, default=False)
-    user_id = Column(String(36), ForeignKey("users.id"))
-    created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    prompt: Mapped[str] = mapped_column(Text, nullable=False)
+    category_id: Mapped[int | None] = mapped_column(ForeignKey("categories.id"))
+    note: Mapped[str | None] = mapped_column(Text)
+    favorite: Mapped[bool | None] = mapped_column(default=False, index=True)
+    semantic_version: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    legacy_public: Mapped[bool] = mapped_column(nullable=False, default=False)
+    user_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("users.id"))
+    created_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), index=True
+    )
+    updated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), onupdate=func.now()
+    )
 
     # Relationships
-    category = relationship("Category", back_populates="prompts")
-    tags = relationship("Tag", secondary="prompt_tags", back_populates="prompts")
-    versions = relationship(
+    category: Mapped["Category | None"] = relationship(
+        "Category", back_populates="prompts"
+    )
+    tags: Mapped[list["Tag"]] = relationship(
+        "Tag", secondary="prompt_tags", back_populates="prompts"
+    )
+    versions: Mapped[list["PromptVersion"]] = relationship(
         "PromptVersion",
         back_populates="parent_prompt",
         cascade="all, delete-orphan",
         order_by="PromptVersion.version_number",
     )
-    branches = relationship(
+    branches: Mapped[list["PromptBranch"]] = relationship(
         "PromptBranch", back_populates="prompt", cascade="all, delete-orphan"
     )
-    user = relationship("User", back_populates="prompts")
-    shares = relationship(
+    user: Mapped["User | None"] = relationship("User", back_populates="prompts")
+    shares: Mapped[list["PromptShare"]] = relationship(
         "PromptShare", back_populates="prompt", cascade="all, delete-orphan"
     )
 

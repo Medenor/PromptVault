@@ -98,6 +98,7 @@ Security Notes:
 import logging
 import uuid
 from datetime import UTC, datetime, timedelta
+from typing import Any
 
 from jwt.exceptions import (
     ExpiredSignatureError,
@@ -171,7 +172,7 @@ class AuthService:
         ip_address: str,
         user_agent: str,
         role: str = "viewer",
-    ) -> dict[str, any]:
+    ) -> dict[str, Any]:
         """Register new user and return authentication tokens.
 
         This method creates a new user account with secure password hashing,
@@ -265,7 +266,7 @@ class AuthService:
         ip_address: str,
         user_agent: str,
         remember_me: bool = False,
-    ) -> dict[str, any]:
+    ) -> dict[str, Any]:
         """Authenticate user and return tokens.
 
         This method authenticates a user by username or email, verifies their
@@ -355,7 +356,7 @@ class AuthService:
         refresh_token: str,
         ip_address: str,
         user_agent: str,
-    ) -> dict[str, any]:
+    ) -> dict[str, Any]:
         """Refresh access token using refresh token.
 
         This method implements secure token rotation with reuse detection.
@@ -420,7 +421,7 @@ class AuthService:
             user_id=user.id,
             username=user.username,
             email=user.email,
-            role=user.role,
+            role=user.role or "viewer",
             family_id=family_id,  # Same family for session identification
         )
         new_refresh_token = self.jwt_service.generate_refresh_token(
@@ -457,7 +458,7 @@ class AuthService:
             },
         }
 
-    def _validate_refresh_token(self, refresh_token: str) -> dict[str, any]:
+    def _validate_refresh_token(self, refresh_token: str) -> dict[str, Any]:
         """Validate a refresh token JWT and return its decoded claims.
 
         Args:
@@ -648,7 +649,7 @@ class AuthService:
 
         return user
 
-    def get_user_stats(self, user_id: str) -> dict[str, any]:
+    def get_user_stats(self, user_id: str) -> dict[str, Any]:
         """Get account statistics for a user.
 
         Provides comprehensive statistics including:
@@ -683,6 +684,7 @@ class AuthService:
 
         # Calculate days since account creation
         now = datetime.now(UTC)
+        assert user.created_at is not None, "created_at is set at row creation"
         created_at = user.created_at
         if created_at.tzinfo is None:
             created_at = created_at.replace(tzinfo=UTC)
@@ -826,7 +828,7 @@ class AuthService:
 
     def get_user_sessions(
         self, user_id: str, current_family_id: str | None = None
-    ) -> list[dict[str, any]]:
+    ) -> list[dict[str, Any]]:
         """Get all active sessions for a user.
 
         Args:
@@ -908,7 +910,7 @@ class AuthService:
         ip_address: str,
         user_agent: str,
         remember_me: bool = False,
-    ) -> dict[str, any]:
+    ) -> dict[str, Any]:
         """Generate token pair and create session (internal helper).
 
         Args:
@@ -934,7 +936,7 @@ class AuthService:
             user_id=user.id,
             username=user.username,
             email=user.email,
-            role=user.role,
+            role=user.role or "viewer",
             family_id=family_id,  # Include family_id for session identification
         )
         refresh_token = self.jwt_service.generate_refresh_token(

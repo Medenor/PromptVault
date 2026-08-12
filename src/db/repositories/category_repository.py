@@ -8,7 +8,10 @@ This module provides data access layer for Category model with
 lookup and management operations.
 """
 
-from sqlalchemy import func
+from collections.abc import Sequence
+from typing import Any
+
+from sqlalchemy import Row, func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -75,9 +78,12 @@ class CategoryRepository(BaseRepository[Category]):
         except IntegrityError:
             # Race condition: another transaction created it
             self.session.rollback()
-            return self.get_by_name(name)
+            category = self.get_by_name(name)
+            if category is None:
+                raise
+            return category
 
-    def list_all_with_counts(self) -> list[tuple]:
+    def list_all_with_counts(self) -> Sequence[Row[Any]]:
         """Get all categories with prompt counts.
 
         Returns:
@@ -204,7 +210,7 @@ class CategoryRepository(BaseRepository[Category]):
             .all()
         ]
 
-    def get_orphan_prompts(self) -> list[tuple]:
+    def get_orphan_prompts(self) -> Sequence[Row[Any]]:
         """Return (id, title) tuples for prompts with no category assigned."""
         from src.db.models import Prompt
 

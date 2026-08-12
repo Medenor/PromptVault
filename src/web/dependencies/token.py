@@ -326,8 +326,9 @@ def get_current_user(
 
     user = _resolve_active_user(session, user_id)
 
-    # Attach family_id from token for session identification
-    user.family_id = token_data.get("family_id")
+    # Attach family_id from token for session identification (request-scoped,
+    # not a persisted column on the User model).
+    user.family_id = token_data.get("family_id")  # type: ignore[attr-defined]
 
     return user
 
@@ -442,6 +443,7 @@ def get_optional_user(
     # Token provided - must be valid
     try:
         token = _extract_bearer_or_cookie_token(authorization, None)
+        assert token is not None, "authorization is truthy, so a token was extracted"
 
         # Validate JWT token
         claims = jwt_service.validate_access_token(token)

@@ -388,6 +388,7 @@ async def home(request: Request):
 
     # In anonymous mode, serve the app directly without requiring authentication.
     if not auth_settings.auth_enabled:
+        assert data_service is not None, "configure_services() must run before requests"
         prompts = data_service.load_prompts()
         categories = data_service.get_categories()
         tags = data_service.get_tags()
@@ -433,6 +434,7 @@ async def home(request: Request):
     # check (see index.ts checkAdminAccess) still runs to catch
     # admin-revoked-but-unexpired sessions; until it resolves, the prompt
     # grid shows a skeleton placeholder rather than real data.
+    assert data_service is not None, "configure_services() must run before requests"
     prompts = data_service.load_prompts()
     categories = data_service.get_categories()
     tags = data_service.get_tags()

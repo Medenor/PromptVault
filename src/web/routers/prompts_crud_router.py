@@ -108,6 +108,8 @@ async def get_prompt(
         try:
             from src.web import app as web_app
 
+            if web_app.data_service is None:
+                raise RuntimeError("data_service not initialized")
             legacy_prompts = web_app.data_service.load_prompts()
             if legacy_prompts and prompt_id in legacy_prompts:
                 info = legacy_prompts[prompt_id]
@@ -531,6 +533,9 @@ async def update_prompt_visibility(
 
     from src.web import app as web_app
 
+    assert (
+        web_app.data_service is not None
+    ), "configure_services() must run before requests"
     try:
         web_app.data_service.set_legacy_public(prompt_id, acting_user=user)
     except ShareGrantError as exc:

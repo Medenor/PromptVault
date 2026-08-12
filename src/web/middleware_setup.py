@@ -62,7 +62,12 @@ def configure_middleware(app: FastAPI, record_validation_event) -> None:
 
     # Rate limiting (Redis-backed with slowapi, falls back to in-memory)
     app.state.limiter = limiter
-    app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
+    # Starlette's add_exception_handler is typed for Callable[[Request, Exception], ...],
+    # but handlers are safely dispatched by the registered exception type at runtime.
+    app.add_exception_handler(
+        RateLimitExceeded,
+        rate_limit_exceeded_handler,  # type: ignore[arg-type]
+    )
     logger.info("Rate limiting initialized successfully")
 
     jwt_service_for_logging = _init_jwt_service_for_logging()

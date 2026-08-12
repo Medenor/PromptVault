@@ -12,6 +12,7 @@ and regression risk.
 import json
 import os
 import time
+from typing import Any
 
 from src.services.logging_service import logging_service
 
@@ -30,7 +31,7 @@ class ValidationMonitor:
         """
         self.metrics_file = metrics_file
         self._ensure_directory()
-        self.metrics = {
+        self.metrics: dict[str, Any] = {
             "total_events": 0,
             "successes": 0,
             "failures": 0,

@@ -118,7 +118,7 @@ def login(
     ip_address: str = Depends(get_client_ip),
     user_agent: str = Depends(get_user_agent),
     auth_service: AuthService = Depends(get_auth_service),
-) -> TokenResponse:
+) -> Response:
     """Login with username/email and password.
 
     Args:
@@ -293,7 +293,7 @@ def refresh(
     ip_address: str = Depends(get_client_ip),
     user_agent: str = Depends(get_user_agent),
     auth_service: AuthService = Depends(get_auth_service),
-) -> TokenResponse:
+) -> Response:
     """Refresh access token using refresh token.
 
     Args:

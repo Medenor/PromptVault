@@ -299,6 +299,8 @@ async def import_prompts(
                 content={"error": error_message},
             )
 
+        # validate_upload_file() above already rejects a missing filename.
+        assert file.filename is not None
         temp_file_path = create_secure_temp_file(file.filename)
 
         content = await file.read()

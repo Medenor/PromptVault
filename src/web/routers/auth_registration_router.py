@@ -11,7 +11,7 @@ unchanged.
 
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 
 from src.services.auth.auth_service import AuthService
 from src.services.exceptions import (
@@ -103,7 +103,7 @@ def register(
     ip_address: str = Depends(get_client_ip),
     user_agent: str = Depends(get_user_agent),
     auth_service: AuthService = Depends(get_auth_service),
-) -> TokenResponse:
+) -> Response:
     """Register new user account.
 
     Args:

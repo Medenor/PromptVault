@@ -322,6 +322,7 @@ async def import_export_page(request: Request):
     from src.web import app as web_app
 
     data_service = web_app.data_service
+    assert data_service is not None, "configure_services() must run before requests"
     prompts = data_service.load_prompts()
 
     # Calculate statistics
@@ -355,7 +356,9 @@ async def backup_management_page(request: Request):
     """Backup management page"""
     from src.web import app as web_app
 
-    stats = web_app.backup_service.get_backup_stats()
+    backup_service = web_app.backup_service
+    assert backup_service is not None, "configure_services() must run before requests"
+    stats = backup_service.get_backup_stats()
 
     return templates.TemplateResponse(
         request,

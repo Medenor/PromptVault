@@ -107,7 +107,9 @@ def check_prompt_access(
         )
 
 
-def check_prompt_ownership(prompt: Prompt, user: User, session: Session = None) -> None:
+def check_prompt_ownership(
+    prompt: Prompt, user: User, session: Session | None = None
+) -> None:
     """Check if user owns the prompt or is an admin.
 
     Kept as the owner-level entry point for existing callers; delegates to
@@ -134,7 +136,7 @@ def check_prompt_ownership(prompt: Prompt, user: User, session: Session = None) 
         )
 
 
-def _parse_tags_field(tags: str) -> list[str]:
+def _parse_tags_field(tags: str | None) -> list[str]:
     """Normalize a comma-delimited tag string into a list with trimmed entries.
 
     Args:
@@ -156,7 +158,7 @@ def _parse_tags_field(tags: str) -> list[str]:
 def _log_prompt_action(
     action: str,
     prompt_id: int,
-    user_id: str,
+    user_id: str | None,
     username: str,
     details: str = "",
 ):

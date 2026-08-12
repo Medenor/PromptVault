@@ -8,20 +8,25 @@ One row per (prompt, grantee) pair — a grant of read or edit access to a
 prompt, made by its owner (or an admin) to another user.
 """
 
+from datetime import datetime
+from typing import TYPE_CHECKING
+
 from sqlalchemy import (
-    Column,
     DateTime,
     Enum,
     ForeignKey,
     Index,
-    Integer,
     String,
     UniqueConstraint,
 )
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
 from src.db.base import Base
+
+if TYPE_CHECKING:
+    from src.db.models.prompt import Prompt
+    from src.db.models.user import User
 
 
 class PromptShare(Base):
@@ -40,13 +45,12 @@ class PromptShare(Base):
 
     __tablename__ = "prompt_shares"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    prompt_id = Column(
-        Integer,
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    prompt_id: Mapped[int] = mapped_column(
         ForeignKey("prompts.id", ondelete="CASCADE"),
         nullable=False,
     )
-    grantee_user_id = Column(
+    grantee_user_id: Mapped[str] = mapped_column(
         String(36),
         ForeignKey(
             "users.id",
@@ -55,7 +59,7 @@ class PromptShare(Base):
         ),
         nullable=False,
     )
-    permission = Column(
+    permission: Mapped[str] = mapped_column(
         Enum(
             "read",
             "edit",
@@ -65,28 +69,30 @@ class PromptShare(Base):
         ),
         nullable=False,
     )
-    granted_by = Column(
+    granted_by: Mapped[str | None] = mapped_column(
         String(36),
         ForeignKey(
             "users.id", ondelete="SET NULL", name="fk_prompt_shares_granted_by_users"
         ),
         nullable=True,
     )
-    created_at = Column(
+    created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
-    updated_at = Column(
+    updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
         onupdate=func.now(),
         nullable=False,
     )
 
-    prompt = relationship("Prompt", back_populates="shares")
-    grantee = relationship(
+    prompt: Mapped["Prompt"] = relationship("Prompt", back_populates="shares")
+    grantee: Mapped["User"] = relationship(
         "User", foreign_keys=[grantee_user_id], back_populates="received_shares"
     )
-    granted_by_user = relationship("User", foreign_keys=[granted_by])
+    granted_by_user: Mapped["User | None"] = relationship(
+        "User", foreign_keys=[granted_by]
+    )
 
     __table_args__ = (
         UniqueConstraint(
