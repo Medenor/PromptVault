@@ -108,11 +108,13 @@ Web application, existing layout: backend `src/`, frontend `src/web/static/ts/`,
 
 ### Tests for User Story 3 ⚠️
 
-- [ ] T022 [P] [US3] Seed-data benchmark in `tests/benchmarks/test_fts_benchmark.py`: build ~5,000 prompts, assert a single-word query returns in <1s (SC-001) and that FTS wall-clock beats the `ilike` baseline with equal correct matches (SC-002). **Also assert near-flat scaling** (FR-016): measure the same query at ~1,000 and ~5,000 prompts and assert FTS latency grows sub-linearly (e.g. 5× data ⇒ well under 5× time), while the `ilike` baseline grows roughly linearly — proving the "does not degrade linearly" requirement, not just the absolute point. (depends on T012)
+- [X] T022 [P] [US3] Seed-data benchmark in `tests/benchmarks/test_fts_benchmark.py`: build ~5,000 prompts, assert a single-word query returns in <1s (SC-001) and that FTS wall-clock beats the `ilike` baseline with equal correct matches (SC-002). **Also assert near-flat scaling** (FR-016): measure the same query at ~1,000 and ~5,000 prompts and assert FTS latency grows sub-linearly (e.g. 5× data ⇒ well under 5× time), while the `ilike` baseline grows roughly linearly — proving the "does not degrade linearly" requirement, not just the absolute point. (depends on T012)
+  - Note: match-count is held fixed (5 needle hits) while the surrounding non-matching corpus grows 5×, isolating scan-cost scaling from per-row result-materialization cost (snippet extraction cost is proportional to match count, not corpus size, and would otherwise mask the scan-cost signal). Timings use min-of-5 trials to cancel scheduling/GC noise. Marked `performance` (deselectable via `-m "not performance"`).
 
 ### Implementation for User Story 3
 
-- [ ] T023 [US3] Verify/confirm index usage: ensure the GIN index (Postgres) and FTS5 table (SQLite) are actually exercised by the ranked query path (no accidental full-scan); adjust the query in `src/db/repositories/prompt_repository.py` if the benchmark reveals a non-indexed plan. (depends on T012, T022)
+- [X] T023 [US3] Verify/confirm index usage: ensure the GIN index (Postgres) and FTS5 table (SQLite) are actually exercised by the ranked query path (no accidental full-scan); adjust the query in `src/db/repositories/prompt_repository.py` if the benchmark reveals a non-indexed plan. (depends on T012, T022)
+  - Verified via `EXPLAIN QUERY PLAN` on SQLite: the FTS5 `MATCH` lookup reports `SCAN prompts_fts VIRTUAL TABLE INDEX 0:M3` (inverted-index scan, not a table scan) and the pagination join reports `SEARCH prompts USING INTEGER PRIMARY KEY (rowid=?)`. No accidental full-scan; no query change needed.
 
 **Checkpoint**: Performance target met and demonstrated against the baseline.
 
