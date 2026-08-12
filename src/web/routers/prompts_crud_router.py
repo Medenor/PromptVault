@@ -98,40 +98,6 @@ async def get_prompt(
     """
     prompt_repo = PromptRepository(db)
 
-    # Legacy compatibility: consult data_service when present. Once auth is
-    # enabled, sharing visibility must be enforced, so this unscoped legacy
-    # path (which has no concept of ownership/grants — see
-    # PromptRepository.get_all()) is skipped entirely, same as the search
-    # router. Anonymous mode (AUTH_ENABLED=false) keeps the original
-    # legacy-first behavior.
-    if not auth_settings.auth_enabled:
-        try:
-            from src.web import app as web_app
-
-            if web_app.data_service is None:
-                raise RuntimeError("data_service not initialized")
-            legacy_prompts = web_app.data_service.load_prompts()
-            if legacy_prompts and prompt_id in legacy_prompts:
-                info = legacy_prompts[prompt_id]
-                data = info["data"] if "data" in info else info
-                return {
-                    "id": prompt_id,
-                    "title": data.get("title", ""),
-                    "prompt": data.get("prompt", ""),
-                    "category": data.get("category", ""),
-                    "category_color": None,
-                    "tags": data.get("tags", []),
-                    "tag_colors": {},
-                    "note": data.get("note", ""),
-                    "favorite": data.get("favorite", False),
-                    "user_id": data.get("user_id"),
-                    "created_at": data.get("created_at"),
-                    "updated_at": data.get("updated_at"),
-                    "semantic_version": data.get("semantic_version"),
-                }
-        except Exception:
-            pass
-
     prompt = prompt_repo.get_with_relationships(prompt_id)
 
     if not prompt:
@@ -774,39 +740,6 @@ async def toggle_favorite(
 
     # Check ownership (only owner can toggle favorite)
     check_prompt_ownership(existing_prompt, user)
-
-    # Legacy failure injection support (tests may monkeypatch data_service.update_prompt)
-    try:
-        from src.web import app as web_app
-
-        legacy_ds = getattr(web_app, "data_service", None)
-        if legacy_ds and hasattr(legacy_ds, "update_prompt"):
-            legacy_result = legacy_ds.update_prompt(
-                prompt_id,
-                {
-                    "title": existing_prompt.title,
-                    "prompt": existing_prompt.prompt,
-                    "category": (
-                        existing_prompt.category.name
-                        if existing_prompt.category
-                        else ""
-                    ),
-                    "tags": (
-                        [t.name for t in existing_prompt.tags]
-                        if existing_prompt.tags
-                        else []
-                    ),
-                    "favorite": not existing_prompt.favorite,
-                },
-                "Toggle favorite",
-            )
-            if legacy_result is False:
-                return JSONResponse(
-                    status_code=500,
-                    content={"error": "Failed to update favorite status"},
-                )
-    except Exception:
-        pass
 
     # Toggle favorite
     new_favorite_status = not existing_prompt.favorite
