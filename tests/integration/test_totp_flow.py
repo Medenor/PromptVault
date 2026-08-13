@@ -406,7 +406,10 @@ class TestDisableAndRegenerateFlow:
         old_challenge = old_login.json()["challenge_token"]
         old_exchange = auth_client.post(
             "/api/auth/login/2fa",
-            json={"challenge_token": old_challenge, "code": enrolled["recovery_codes"][0]},
+            json={
+                "challenge_token": old_challenge,
+                "code": enrolled["recovery_codes"][0],
+            },
         )
         assert old_exchange.status_code == 401
 
@@ -517,7 +520,9 @@ class TestAdminEnforcedPolicyFlow:
     def test_required_role_non_enrolled_user_routed_to_enrollment(
         self, policy_client: TestClient, test_db_engine
     ):
-        admin_data = _register_named(policy_client, "policyadmin", "policyadmin@example.com")
+        admin_data = _register_named(
+            policy_client, "policyadmin", "policyadmin@example.com"
+        )
         _promote_to_admin(test_db_engine, admin_data["user"]["id"])
         admin_headers = {"Authorization": f"Bearer {admin_data['access_token']}"}
 
@@ -541,7 +546,9 @@ class TestAdminEnforcedPolicyFlow:
     def test_enrolled_admin_logs_in_normally(
         self, policy_client: TestClient, test_db_engine
     ):
-        admin_data = _register_named(policy_client, "policyadmin2", "policyadmin2@example.com")
+        admin_data = _register_named(
+            policy_client, "policyadmin2", "policyadmin2@example.com"
+        )
         _promote_to_admin(test_db_engine, admin_data["user"]["id"])
         admin_login = self._login(policy_client, "policyadmin2")
         admin_headers = {"Authorization": f"Bearer {admin_login['access_token']}"}
@@ -575,8 +582,12 @@ class TestAdminEnforcedPolicyFlow:
         assert "challenge_token" in data
         assert "enrollment_required" not in data or not data.get("enrollment_required")
 
-    def test_non_required_role_unaffected(self, policy_client: TestClient, test_db_engine):
-        admin_data = _register_named(policy_client, "policyadmin3", "policyadmin3@example.com")
+    def test_non_required_role_unaffected(
+        self, policy_client: TestClient, test_db_engine
+    ):
+        admin_data = _register_named(
+            policy_client, "policyadmin3", "policyadmin3@example.com"
+        )
         _promote_to_admin(test_db_engine, admin_data["user"]["id"])
         admin_login = self._login(policy_client, "policyadmin3")
         admin_headers = {"Authorization": f"Bearer {admin_login['access_token']}"}
@@ -587,7 +598,7 @@ class TestAdminEnforcedPolicyFlow:
             headers=admin_headers,
         )
 
-        viewer_data = _register_named(policy_client, "policyviewer", "policyviewer@example.com")
+        _register_named(policy_client, "policyviewer", "policyviewer@example.com")
         viewer_login = self._login(policy_client, "policyviewer")
 
         assert viewer_login.get("enrollment_required", False) is False
@@ -596,7 +607,9 @@ class TestAdminEnforcedPolicyFlow:
     def test_unset_policy_removes_enforcement(
         self, policy_client: TestClient, test_db_engine
     ):
-        admin_data = _register_named(policy_client, "policyadmin4", "policyadmin4@example.com")
+        admin_data = _register_named(
+            policy_client, "policyadmin4", "policyadmin4@example.com"
+        )
         _promote_to_admin(test_db_engine, admin_data["user"]["id"])
         admin_login = self._login(policy_client, "policyadmin4")
         admin_headers = {"Authorization": f"Bearer {admin_login['access_token']}"}

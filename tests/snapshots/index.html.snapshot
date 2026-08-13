@@ -25,7 +25,7 @@ document.documentElement.classList.add('dark');
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 <meta name="theme-color" content="#3B82F6" />
-<link rel="stylesheet" href="/static/dist/assets/telemetry.BmpFa9Fo.css" />
+<link rel="stylesheet" href="/static/dist/assets/telemetry.DqIuQT_K.css" />
 <style>
 @keyframes spin {
 0% {
@@ -1629,11 +1629,11 @@ Apply Tags
 </div>
 </div>
 <script>window.__AUTH_ENABLED__ = true;</script>
-<script type="module" src="/static/dist/js/telemetry.BLXRjqRv.js"></script>
+<script type="module" src="/static/dist/js/telemetry.EPiPJniG.js"></script>
 <script type="module" src="/static/dist/js/globalShortcuts.DQUq0I4I.js"></script>
 <script
 type="module"
-src="/static/dist/js/app.Pfc65NwX.js"
+src="/static/dist/js/app.BXslLJi6.js"
 ></script>
 </body>
 </html>

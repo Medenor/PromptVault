@@ -140,5 +140,5 @@ An administrator wants certain roles (e.g., admins themselves) to be required to
 - "Second factor" in v1 means TOTP only (RFC 6238-style app-based codes); WebAuthn/hardware keys and SMS-based codes are out of scope.
 - Recovery codes are generated in a fixed-size batch (a standard count, e.g. 8–10 codes) at enrollment and regeneration; the exact count is an implementation detail, not a user-facing configuration.
 - The mandatory-enrollment interstitial for policy-required roles blocks navigation but does not revoke or otherwise affect any other in-progress session state.
-- Auth UI remains English-only for this feature, consistent with current auth screens; other application surfaces keep their existing i18n behavior.
+- Auth UI (including all new 2FA screens) is translated into all four supported locales (EN/FR/ES/DE), consistent with the rest of the application's i18n behavior.
 - Admins can disable 2FA on behalf of a locked-out user via existing user-management capabilities; this spec does not introduce a new self-service account-recovery channel beyond recovery codes.

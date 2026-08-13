@@ -10,12 +10,14 @@ absent row is equivalent to ``required=False`` (data-model.md, contracts
 """
 
 import logging
+from typing import Literal, cast, get_args
 
 from src.db.repositories.totp_repository import TotpRepository
 
 logger = logging.getLogger(__name__)
 
-VALID_ROLES = ("viewer", "editor", "admin")
+Role = Literal["viewer", "editor", "admin"]
+VALID_ROLES: tuple[Role, ...] = get_args(Role)
 
 
 class TotpRolePolicyEntry:
@@ -26,7 +28,7 @@ class TotpRolePolicyEntry:
         required: Whether members of this role must have 2FA enabled
     """
 
-    def __init__(self, role: str, required: bool) -> None:
+    def __init__(self, role: Role, required: bool) -> None:
         self.role = role
         self.required = required
 
@@ -64,9 +66,7 @@ class TotpPolicyService:
             for role in VALID_ROLES
         ]
 
-    def set(
-        self, role: str, required: bool, admin_user_id: str
-    ) -> TotpRolePolicyEntry:
+    def set(self, role: str, required: bool, admin_user_id: str) -> TotpRolePolicyEntry:
         """Set the 2FA-required policy for a role.
 
         Args:
@@ -90,7 +90,11 @@ class TotpPolicyService:
             required,
             admin_user_id,
         )
-        return TotpRolePolicyEntry(role=policy.role, required=bool(policy.required))
+        # policy.role is the DB row's plain str column; validated against
+        # VALID_ROLES above, so narrowing here is a runtime-true invariant.
+        return TotpRolePolicyEntry(
+            role=cast(Role, policy.role), required=bool(policy.required)
+        )
 
     def is_required_for(self, role: str) -> bool:
         """Check whether 2FA is required for a given role.

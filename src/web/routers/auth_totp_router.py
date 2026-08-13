@@ -289,7 +289,9 @@ def disable_totp(
 
     except TotpReauthFailedError as e:
         session.rollback()
-        logger.info(f"2FA disable failed - re-auth failed for user: {current_user.username}")
+        logger.info(
+            f"2FA disable failed - re-auth failed for user: {current_user.username}"
+        )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=e.user_message,

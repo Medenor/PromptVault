@@ -299,7 +299,9 @@ class TotpService:
             TotpReauthFailedError: Password or code incorrect (401)
         """
         if not self.password_service.verify_password(password, user.password_hash):
-            logger.info("TOTP re-authentication failed (bad password) for user_id=%s", user.id)
+            logger.info(
+                "TOTP re-authentication failed (bad password) for user_id=%s", user.id
+            )
             raise TotpReauthFailedError(context={"user_id": user.id})
 
         try:

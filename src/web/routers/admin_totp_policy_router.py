@@ -121,9 +121,7 @@ def set_totp_policy(
     Returns:
         TotpRolePolicyItem: The updated policy entry
     """
-    entry = totp_policy_service.set(
-        request_data.role, request_data.required, admin.id
-    )
+    entry = totp_policy_service.set(request_data.role, request_data.required, admin.id)
     session.commit()
 
     _log_admin_action(

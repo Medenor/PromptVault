@@ -466,7 +466,22 @@
       "accountInactive": "Votre compte est inactif. Veuillez contacter le support.",
       "usernameRequired": "Le nom d'utilisateur ou l'email est requis",
       "passwordRequired": "Le mot de passe est requis",
-      "success": "Connexion réussie !"
+      "success": "Connexion réussie !",
+      "twoFactorTitle": "Authentification à deux facteurs",
+      "twoFactorInstructions": "Entrez le code à 6 chiffres de votre application d'authentification, ou l'un de vos codes de récupération.",
+      "twoFactorCodeLabel": "Code d'authentification",
+      "twoFactorCodePlaceholder": "123456",
+      "twoFactorCodeRequired": "Veuillez entrer votre code d'authentification",
+      "twoFactorVerifyButton": "Vérifier",
+      "twoFactorBackButton": "Retour à la connexion",
+      "twoFactorInvalidCode": "Code incorrect. Veuillez réessayer.",
+      "twoFactorExpired": "Votre session a expiré. Veuillez vous reconnecter.",
+      "twoFactorSuccess": "Connexion réussie !",
+      "enrollmentRequired": {
+        "title": "Authentification à deux facteurs requise",
+        "instructions": "Le rôle de votre compte requiert l'authentification à deux facteurs. Terminez la configuration ci-dessous avant de continuer.",
+        "success": "L'authentification à deux facteurs est maintenant activée."
+      }
     },
     "register": {
       "title": "Créer un compte",
@@ -502,7 +517,8 @@
       "success": "Inscription réussie !",
       "strengthWeak": "Mot de passe faible",
       "strengthMedium": "Mot de passe moyen",
-      "strengthStrong": "Mot de passe fort"
+      "strengthStrong": "Mot de passe fort",
+      "loginLink": "Se connecter"
     },
     "forgotPassword": {
       "title": "Mot de passe oublié",
@@ -556,7 +572,51 @@
       "sessions": "Sessions actives",
       "revokeSession": "Révoquer",
       "confirmRevokeSession": "Êtes-vous sûr de vouloir révoquer cette session ?",
-      "sessionRevoked": "Session révoquée avec succès"
+      "sessionRevoked": "Session révoquée avec succès",
+      "twoFactor": {
+        "title": "Authentification à deux facteurs",
+        "description": "Ajoutez une couche de sécurité supplémentaire à votre compte en exigeant un code provenant d'une application d'authentification lors de la connexion.",
+        "startButton": "Configurer l'authentification à deux facteurs",
+        "startError": "Échec du démarrage de la configuration de l'authentification à deux facteurs. Veuillez réessayer.",
+        "alreadyEnabled": "L'authentification à deux facteurs est déjà activée.",
+        "scanTitle": "Scannez ce QR code",
+        "scanInstructions": "Scannez le QR code ci-dessous avec votre application d'authentification (par ex. Google Authenticator, Authy, 1Password).",
+        "manualEntryTitle": "Impossible de scanner le code ?",
+        "manualEntryInstructions": "Entrez cette clé de configuration manuellement dans votre application d'authentification :",
+        "manualSecretLabel": "Clé de configuration manuelle",
+        "copySecret": "Copier la clé de configuration",
+        "secretCopied": "Clé de configuration copiée dans le presse-papiers",
+        "codeLabel": "Entrez le code à 6 chiffres",
+        "codePlaceholder": "123456",
+        "codeRequired": "Veuillez entrer le code à 6 chiffres de votre application d'authentification",
+        "confirmButton": "Vérifier et activer",
+        "confirmError": "Échec de la vérification du code. Veuillez réessayer.",
+        "invalidCode": "Code incorrect. Vérifiez votre application d'authentification et réessayez.",
+        "noPendingEnrollment": "La session de configuration a expiré. Veuillez recommencer la configuration.",
+        "cancelButton": "Annuler",
+        "enabledSuccess": "L'authentification à deux facteurs est maintenant activée.",
+        "recoveryCodesTitle": "Enregistrez vos codes de récupération",
+        "recoveryCodesWarning": "Ces codes ne sont affichés qu'une seule fois. Conservez-les en lieu sûr — chaque code peut être utilisé une fois si vous perdez l'accès à votre application d'authentification.",
+        "recoveryCodesInstructions": "Chaque code ne peut être utilisé qu'une seule fois pour vous connecter si vous perdez l'accès à votre application d'authentification.",
+        "copyRecoveryCodes": "Copier les codes",
+        "recoveryCodesCopied": "Codes de récupération copiés dans le presse-papiers",
+        "downloadRecoveryCodes": "Télécharger en fichier texte",
+        "doneButton": "Terminé",
+        "statusEnabled": "Activée",
+        "statusDisabled": "Non activée",
+        "disableButton": "Désactiver l'authentification à deux facteurs",
+        "disableConfirmTitle": "Désactiver l'authentification à deux facteurs",
+        "disabledSuccess": "L'authentification à deux facteurs a été désactivée.",
+        "disableError": "Échec de la désactivation de l'authentification à deux facteurs. Veuillez réessayer.",
+        "regenerateButton": "Régénérer les codes de récupération",
+        "regenerateConfirmTitle": "Régénérer les codes de récupération",
+        "regeneratedSuccess": "Codes de récupération régénérés.",
+        "regenerateError": "Échec de la régénération des codes de récupération. Veuillez réessayer.",
+        "reauthInstructions": "Confirmez votre mot de passe et un code d'authentification actuel (ou un code de récupération) pour continuer.",
+        "reauthRequired": "Veuillez entrer votre mot de passe et votre code d'authentification",
+        "reauthFailed": "Mot de passe ou code d'authentification incorrect.",
+        "passwordLabel": "Mot de passe actuel"
+      }
     }
   },
   "admin": {
@@ -607,7 +667,14 @@
       "userCreated": "Utilisateur créé avec succès",
       "userExists": "L'utilisateur existe déjà",
       "confirmDelete": "Confirmer la suppression",
-      "deleteWarning": "Êtes-vous sûr de vouloir supprimer définitivement cet utilisateur ? Cette action ne peut pas être annulée et supprimera toutes les données de l'utilisateur de la base de données."
+      "deleteWarning": "Êtes-vous sûr de vouloir supprimer définitivement cet utilisateur ? Cette action ne peut pas être annulée et supprimera toutes les données de l'utilisateur de la base de données.",
+      "twoFactorPolicy": {
+        "title": "Politique d'authentification à deux facteurs",
+        "description": "Exigez que les membres d'un rôle aient l'authentification à deux facteurs activée. Les utilisateurs non inscrits dans un rôle requis sont dirigés vers une inscription obligatoire après la connexion.",
+        "updateSuccess": "Politique d'authentification à deux facteurs mise à jour.",
+        "updateError": "Échec de la mise à jour de la politique d'authentification à deux facteurs.",
+        "loadError": "Échec du chargement de la politique d'authentification à deux facteurs."
+      }
     },
     "sessions": {
       "title": "Gestion des sessions",

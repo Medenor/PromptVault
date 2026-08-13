@@ -19,6 +19,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import ValidationError
 from slowapi.errors import RateLimitExceeded
+from starlette.types import Scope
 
 from src.services.exceptions import PromptVaultException
 from src.services.logging_service import logging_service
@@ -27,6 +28,22 @@ from src.web.middleware.security_headers import SecurityHeadersMiddleware
 
 logger = logging_service.get_logger(__name__)
 audit_logger = logging_service.get_audit_logger()
+
+
+class RevalidatingStaticFiles(StaticFiles):
+    """StaticFiles that forces revalidation instead of heuristic caching.
+
+    Files under this mount (locales, images, etc.) are not content-hashed
+    like /static/dist, so browsers otherwise cache them indefinitely based
+    on Last-Modified with no signal that content changed. `no-cache` still
+    lets the browser cache the response but forces an ETag/Last-Modified
+    revalidation request on every use.
+    """
+
+    async def get_response(self, path: str, scope: Scope):
+        response = await super().get_response(path, scope)
+        response.headers["Cache-Control"] = "no-cache"
+        return response
 
 
 def _init_jwt_service_for_logging():
@@ -72,10 +89,15 @@ def configure_middleware(app: FastAPI, record_validation_event) -> None:
 
     jwt_service_for_logging = _init_jwt_service_for_logging()
 
-    # Mount built assets first (higher priority for production builds)
+    # Mount built assets first (higher priority for production builds).
+    # /static/dist is content-hashed (filename changes when content does), so
+    # it's safe to let the browser cache aggressively. /static is not
+    # content-hashed (locales, images), so it must force revalidation.
     if os.path.exists("dist/static"):
         app.mount("/static/dist", StaticFiles(directory="dist/static"), name="dist")
-    app.mount("/static", StaticFiles(directory="src/web/static"), name="static")
+    app.mount(
+        "/static", RevalidatingStaticFiles(directory="src/web/static"), name="static"
+    )
 
     @app.get("/sw.js", include_in_schema=False)
     async def service_worker():

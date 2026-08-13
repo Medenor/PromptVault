@@ -74,7 +74,7 @@ Single-project web app layout per plan.md: `src/` (backend), `src/web/static/ts/
 - [X] T022 [US1] Create `src/web/routers/auth_totp_router.py` with `POST /api/auth/2fa/enroll` and `POST /api/auth/2fa/verify`, authenticated, rate-limited on the expensive tier (T014), audit-logging enable events (FR-017)
 - [X] T023 [US1] Register `auth_totp_router` in the FastAPI app router includes (wherever other `auth_*_router` modules are registered)
 - [X] T024 [US1] [P] Create `src/web/static/ts/profile-2fa.ts`: enrollment card UI — start enrollment, render QR SVG + manual secret, code-confirmation form, recovery-codes display with copy/download, typed i18n strings via `t()`
-- [X] T025 [US1] [P] Add profile-2fa translation keys (English; other locales follow existing "auth UI is English-only" convention per spec Assumptions) and wire `profile-2fa.ts` into the profile page template
+- [X] T025 [US1] [P] Add profile-2fa translation keys for all four supported locales (EN/FR/ES/DE) and wire `profile-2fa.ts` into the profile page template
 - [X] T026 [US1] [P] Frontend unit tests for `profile-2fa.ts` enrollment flow in `src/web/static/ts/__tests__/profile-2fa.test.ts`
 
 **Checkpoint**: Enrollment is fully functional and independently testable (login enforcement comes in US2)
@@ -166,14 +166,14 @@ Single-project web app layout per plan.md: `src/` (backend), `src/web/static/ts/
 
 **Purpose**: Coverage gate, dialect portability, docs, and full-suite validation
 
-- [ ] T060 [P] Run the full backend suite and confirm ≥85% coverage on all new modules (`python3 -m pytest`)
-- [ ] T061 [P] Run the full frontend suite and confirm ≥85% coverage (`npm run test`)
-- [ ] T062 Run the migration round-trip against both SQLite (default dev db) and a throwaway Postgres container per `docs/agents/testing.md` / `docs/agents/git-and-docker-safety.md` conventions — never the production compose file
-- [ ] T063 [P] Add a changelog entry for the TOTP 2FA feature (Improvement Plan 2026-08 item #7) following the repo's existing changelog convention (see recent commits like "docs: add #86 coverage HTML report fix to changelog")
-- [ ] T064 Run `make lint` (formatting, lint, typecheck across both stacks) and fix any violations
-- [ ] T065 Execute the full quickstart.md validation guide end-to-end manually (all 6 sections) against `make dev`; while running §2 (enrollment), self-time the scan→confirm→recovery-codes flow and confirm it completes in under 2 minutes (SC-001)
-- [ ] T066 [P] Verify no TOTP secrets, codes, or recovery codes appear in application logs across all new code paths (grep-audit `src/services/auth/totp_*.py` and `src/web/routers/auth_totp_router.py` for logging statements)
-- [ ] T067 [P] Keyboard-navigation and screen-reader smoke test of the enrollment card (profile-2fa.ts), login challenge step (auth.ts), and mandatory-enrollment interstitial — verify all controls are reachable via Tab/Shift+Tab, form fields have accessible labels, and QR fallback (manual-entry secret) is announced (FR-019)
+- [X] T060 [P] Run the full backend suite and confirm ≥85% coverage on all new modules (`python3 -m pytest`)
+- [X] T061 [P] Run the full frontend suite and confirm ≥85% coverage (`npm run test`)
+- [X] T062 Run the migration round-trip against both SQLite (default dev db) and a throwaway Postgres container per `docs/agents/testing.md` / `docs/agents/git-and-docker-safety.md` conventions — never the production compose file
+- [X] T063 [P] Add a changelog entry for the TOTP 2FA feature (Improvement Plan 2026-08 item #7) following the repo's existing changelog convention (see recent commits like "docs: add #86 coverage HTML report fix to changelog")
+- [X] T064 Run `make lint` (formatting, lint, typecheck across both stacks) and fix any violations
+- [X] T065 Execute the full quickstart.md validation guide end-to-end manually (all 6 sections) against `make dev`; while running §2 (enrollment), self-time the scan→confirm→recovery-codes flow and confirm it completes in under 2 minutes (SC-001)
+- [X] T066 [P] Verify no TOTP secrets, codes, or recovery codes appear in application logs across all new code paths (grep-audit `src/services/auth/totp_*.py` and `src/web/routers/auth_totp_router.py` for logging statements)
+- [X] T067 [P] Keyboard-navigation and screen-reader smoke test of the enrollment card (profile-2fa.ts), login challenge step (auth.ts), and mandatory-enrollment interstitial — verify all controls are reachable via Tab/Shift+Tab, form fields have accessible labels, and QR fallback (manual-entry secret) is announced (FR-019)
 
 ---
 
