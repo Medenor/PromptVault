@@ -277,6 +277,140 @@ function renderErrorSummary(summaryId: string, errors: FormValidationError[]): v
   }
 }
 
+let pendingChallengeToken: string | null = null;
+let pendingRememberMe = false;
+
+function showTwoFactorChallengeStep(challengeToken: string, rememberMe: boolean): void {
+  pendingChallengeToken = challengeToken;
+  pendingRememberMe = rememberMe;
+
+  const loginForm = document.getElementById('login-form');
+  const challengeForm = document.getElementById('totp-challenge-form');
+  hideElement(loginForm);
+  showElement(challengeForm);
+
+  const codeInput = document.getElementById('totp-challenge-code') as HTMLInputElement | null;
+  codeInput?.focus();
+
+  announce(t('auth.login.twoFactorTitle') || 'Two-factor authentication', {
+    id: 'validation-announcer',
+    politeness: 'polite',
+  });
+}
+
+function resetToPasswordStep(): void {
+  pendingChallengeToken = null;
+  pendingRememberMe = false;
+
+  const loginForm = document.getElementById('login-form');
+  const challengeForm = document.getElementById('totp-challenge-form') as HTMLFormElement | null;
+  showElement(loginForm);
+  hideElement(challengeForm);
+  challengeForm?.reset();
+  showError(document.getElementById('totp-challenge-code-error'), '');
+}
+
+function storeAuthTokens(accessToken: string, refreshToken: string, rememberMe: boolean): void {
+  const preferredStorage = rememberMe ? localStorage : sessionStorage;
+  const secondaryStorage = rememberMe ? sessionStorage : localStorage;
+
+  preferredStorage.setItem('access_token', accessToken);
+  preferredStorage.setItem('refresh_token', refreshToken);
+
+  secondaryStorage.removeItem('access_token');
+  secondaryStorage.removeItem('refresh_token');
+}
+
+async function handleTwoFactorChallengeSubmit(event: Event): Promise<void> {
+  event.preventDefault();
+  showError(document.getElementById('totp-challenge-code-error'), '');
+
+  const code = getInputValue('totp-challenge-code').trim();
+  const challengeToken = pendingChallengeToken;
+
+  if (!challengeToken) {
+    resetToPasswordStep();
+    return;
+  }
+
+  if (!code) {
+    showError(
+      document.getElementById('totp-challenge-code-error'),
+      t('auth.login.twoFactorCodeRequired') || 'Please enter your authentication code'
+    );
+    return;
+  }
+
+  const form = document.getElementById('totp-challenge-form') as HTMLFormElement | null;
+  const submitButton = form?.querySelector('button[type="submit"]') as HTMLButtonElement | null;
+  if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.textContent = t('messages.loading') || 'Loading...';
+  }
+
+  try {
+    const response = await fetch(`${API_BASE}/login/2fa`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ challenge_token: challengeToken, code }),
+    });
+
+    const data = (await response.json()) as {
+      access_token?: string;
+      refresh_token?: string;
+      detail?: string;
+    };
+
+    if (response.ok && data.access_token && data.refresh_token) {
+      storeAuthTokens(data.access_token, data.refresh_token, pendingRememberMe);
+      showNotification(t('auth.login.twoFactorSuccess') || 'Login successful!', 'success');
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 1000);
+      return;
+    }
+
+    if (response.status === 410) {
+      showNotification(
+        data.detail ||
+          t('auth.login.twoFactorExpired') ||
+          'Your session expired. Please log in again.',
+        'error'
+      );
+      resetToPasswordStep();
+      return;
+    }
+
+    showError(
+      document.getElementById('totp-challenge-code-error'),
+      data.detail || t('auth.login.twoFactorInvalidCode') || 'Incorrect code. Please try again.'
+    );
+    const codeInput = document.getElementById('totp-challenge-code') as HTMLInputElement | null;
+    codeInput?.focus();
+  } catch (error) {
+    reportError('auth', '2fa-challenge', error);
+    showError(
+      document.getElementById('totp-challenge-code-error'),
+      t('messages.error') || 'An error occurred'
+    );
+  } finally {
+    if (submitButton) {
+      submitButton.disabled = false;
+      submitButton.textContent = t('auth.login.twoFactorVerifyButton') || 'Verify';
+    }
+  }
+}
+
+function setupTwoFactorChallengeForm(): void {
+  const form = document.getElementById('totp-challenge-form');
+  if (!form) return;
+
+  form.addEventListener('submit', handleTwoFactorChallengeSubmit);
+  document.getElementById('totp-challenge-back')?.addEventListener('click', () => {
+    resetToPasswordStep();
+  });
+}
+
 async function handleLoginSubmit(event: Event): Promise<void> {
   event.preventDefault();
   clearAllErrors();
@@ -333,22 +467,22 @@ async function handleLoginSubmit(event: Event): Promise<void> {
     const data = (await response.json()) as {
       access_token?: string;
       refresh_token?: string;
+      challenge_token?: string;
       detail?: string;
     };
 
-    if (response.ok) {
-      const preferredStorage = rememberMe ? localStorage : sessionStorage;
-      const secondaryStorage = rememberMe ? sessionStorage : localStorage;
+    if (response.ok && data.challenge_token) {
+      // 2FA-enabled account: no session yet, complete via the challenge step.
+      showTwoFactorChallengeStep(data.challenge_token, rememberMe);
+      return;
+    }
 
+    if (response.ok) {
       if (!data.access_token || !data.refresh_token) {
         showNotification(t('messages.error') || 'An error occurred', 'error');
         return;
       }
-      preferredStorage.setItem('access_token', data.access_token);
-      preferredStorage.setItem('refresh_token', data.refresh_token);
-
-      secondaryStorage.removeItem('access_token');
-      secondaryStorage.removeItem('refresh_token');
+      storeAuthTokens(data.access_token, data.refresh_token, rememberMe);
 
       showNotification(t('auth.login.success') || 'Login successful!', 'success');
 
@@ -538,6 +672,7 @@ function setupLoginForm(): void {
 
   setupPasswordToggle('toggle-password', 'password');
   form.addEventListener('submit', handleLoginSubmit);
+  setupTwoFactorChallengeForm();
 
   // Live validation (T-ACC025): required fields.
   attachRequiredLiveValidation(
@@ -677,6 +812,16 @@ function initializeAuthPage(): void {
 
   hideElement(document.getElementById('account-locked-message'));
 }
+
+// Exposed for tests / debugging in non-module contexts.
+export const __internal = {
+  showTwoFactorChallengeStep,
+  resetToPasswordStep,
+  handleTwoFactorChallengeSubmit,
+  handleLoginSubmit,
+  setupLoginForm,
+  getPendingChallengeToken: () => pendingChallengeToken,
+};
 
 initI18n(() => {
   try {

@@ -89,22 +89,22 @@ Single-project web app layout per plan.md: `src/` (backend), `src/web/static/ts/
 
 ### Tests for User Story 2 ⚠️
 
-- [ ] T027 [P] [US2] Contract test `POST /api/auth/login` challenge-issuance branch (200 challenge shape when `totp_enabled=True`, unchanged 200/401/423/429 otherwise) in `tests/contract/test_totp_endpoints.py`
-- [ ] T028 [P] [US2] Contract test `POST /api/auth/login/2fa` (200 success, 401 wrong code + lockout counting, 410 expired/consumed, 423 locked, 429) in `tests/contract/test_totp_endpoints.py`
-- [ ] T029 [P] [US2] Unit tests for `TotpService.verify_login_code` / `consume_recovery_code` (replay guard via `last_used_step`, recovery-code single-use, expiry) in `tests/unit/services/auth/test_totp_service.py`
-- [ ] T030 [P] [US2] Integration test: password → challenge → wrong code retry → correct code → tokens; separate case for recovery-code exchange; separate case for expired challenge; separate case for code replay in `tests/integration/test_totp_flow.py`
+- [X] T027 [P] [US2] Contract test `POST /api/auth/login` challenge-issuance branch (200 challenge shape when `totp_enabled=True`, unchanged 200/401/423/429 otherwise) in `tests/contract/test_totp_endpoints.py`
+- [X] T028 [P] [US2] Contract test `POST /api/auth/login/2fa` (200 success, 401 wrong code + lockout counting, 410 expired/consumed, 423 locked, 429) in `tests/contract/test_totp_endpoints.py`
+- [X] T029 [P] [US2] Unit tests for `TotpService.verify_login_code` / `consume_recovery_code` (replay guard via `last_used_step`, recovery-code single-use, expiry) in `tests/unit/services/auth/test_totp_service.py`
+- [X] T030 [P] [US2] Integration test: password → challenge → wrong code retry → correct code → tokens; separate case for recovery-code exchange; separate case for expired challenge; separate case for code replay in `tests/integration/test_totp_flow.py`
 
 ### Implementation for User Story 2
 
-- [ ] T031 [US2] Extend `JwtService` (`src/services/auth/jwt_service.py`) with a distinct `typ: "2fa_challenge"` short-lived (2 min) token issuance/validation helper, per research.md §5
-- [ ] T032 [US2] Implement `TotpService.issue_login_challenge(user)` (creates `TotpLoginChallenge` row + signs challenge JWT) and `TotpService.exchange_challenge(challenge_token, code)` (validates single-use via `consumed_at`/`expires_at`, accepts TOTP or recovery code, marks challenge consumed atomically) in `src/services/auth/totp_service.py`
-- [ ] T033 [US2] Modify `AuthService.login()` in `src/services/auth/auth_service.py`: after password validation succeeds, branch on `user.totp_enabled` — issue challenge (T032) instead of tokens when true
-- [ ] T034 [US2] Extend `LockoutService` (`src/services/auth/lockout_service.py`) so failed 2FA-challenge attempts increment the same failed-attempt counter used for password failures (FR-010)
-- [ ] T035 [US2] Add `TotpChallengeIssuedResponse`, `TotpChallengeExchangeRequest` Pydantic models to `src/web/models/auth_requests.py` / `auth_responses.py`
-- [ ] T036 [US2] Modify `src/web/routers/auth_session_router.py`: `/api/auth/login` response branches per T033; add new `POST /api/auth/login/2fa` endpoint calling `TotpService.exchange_challenge`, rate-limited, audit-logging challenge success/failure and recovery-code-used events (FR-017)
-- [ ] T037 [US2] [P] Modify `src/web/static/ts/auth.ts`: after password submit, detect challenge-shaped response and render a code-entry step (reusing `profile-2fa.ts` code-input component where practical) instead of treating it as a completed login
-- [ ] T038 [US2] [P] Modify `src/web/templates/auth/login.html` to include the challenge-step markup/container
-- [ ] T039 [US2] [P] Frontend unit tests for the login challenge step in `src/web/static/ts/__tests__/auth.test.ts`
+- [X] T031 [US2] Extend `JwtService` (`src/services/auth/jwt_service.py`) with a distinct `typ: "2fa_challenge"` short-lived (2 min) token issuance/validation helper, per research.md §5
+- [X] T032 [US2] Implement `TotpService.issue_login_challenge(user)` (creates `TotpLoginChallenge` row + signs challenge JWT) and `TotpService.exchange_challenge(challenge_token, code)` (validates single-use via `consumed_at`/`expires_at`, accepts TOTP or recovery code, marks challenge consumed atomically) in `src/services/auth/totp_service.py`
+- [X] T033 [US2] Modify `AuthService.login()` in `src/services/auth/auth_service.py`: after password validation succeeds, branch on `user.totp_enabled` — issue challenge (T032) instead of tokens when true
+- [X] T034 [US2] Extend `LockoutService` (`src/services/auth/lockout_service.py`) so failed 2FA-challenge attempts increment the same failed-attempt counter used for password failures (FR-010)
+- [X] T035 [US2] Add `TotpChallengeIssuedResponse`, `TotpChallengeExchangeRequest` Pydantic models to `src/web/models/auth_requests.py` / `auth_responses.py`
+- [X] T036 [US2] Modify `src/web/routers/auth_session_router.py`: `/api/auth/login` response branches per T033; add new `POST /api/auth/login/2fa` endpoint calling `TotpService.exchange_challenge`, rate-limited, audit-logging challenge success/failure and recovery-code-used events (FR-017)
+- [X] T037 [US2] [P] Modify `src/web/static/ts/auth.ts`: after password submit, detect challenge-shaped response and render a code-entry step (reusing `profile-2fa.ts` code-input component where practical) instead of treating it as a completed login
+- [X] T038 [US2] [P] Modify `src/web/templates/auth/login.html` to include the challenge-step markup/container
+- [X] T039 [US2] [P] Frontend unit tests for the login challenge step in `src/web/static/ts/__tests__/auth.test.ts`
 
 **Checkpoint**: User Stories 1 AND 2 together deliver the full MVP — opt-in 2FA that actually gates login
 

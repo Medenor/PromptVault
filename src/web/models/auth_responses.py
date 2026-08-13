@@ -552,6 +552,42 @@ class TotpConfirmResponse(BaseModel):
     )
 
 
+class TotpChallengeIssuedResponse(BaseModel):
+    """Response model for the password step when 2FA is required (contract §5).
+
+    Returned by POST /api/auth/login in place of TokenResponse when the
+    account has ``totp_enabled=True`` — no access/refresh tokens are issued
+    at this step (FR-005).
+
+    Attributes:
+        challenge_token: Short-lived JWT identifying the pending challenge
+        expires_in: Challenge lifetime in seconds
+
+    Example:
+        >>> response = TotpChallengeIssuedResponse(
+        ...     challenge_token="eyJhbGciOi...",
+        ...     expires_in=120,
+        ... )
+    """
+
+    challenge_token: str = Field(
+        ...,
+        description="Short-lived JWT identifying the pending 2FA challenge",
+        examples=["eyJhbGciOi..."],
+    )
+    expires_in: int = Field(
+        ...,
+        description="Challenge lifetime in seconds",
+        examples=[120],
+    )
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {"challenge_token": "eyJhbGciOi...", "expires_in": 120}
+        }
+    )
+
+
 class UserStatsResponse(BaseModel):
     """Response model for user account statistics.
 

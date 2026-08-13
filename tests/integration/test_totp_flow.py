@@ -2,17 +2,22 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-"""Integration test: full TOTP 2FA enroll -> confirm -> recovery-codes flow
-(User Story 1).
+"""Integration test: full TOTP 2FA flow (User Stories 1 and 2).
 
-Exercises the enrollment endpoints end-to-end against a real in-memory
-database, verifying the full lifecycle described in data-model.md and
-contracts/totp-api.md §1-2: register -> enroll -> confirm -> recovery codes
-issued exactly once -> re-enrollment is blocked while active.
+Exercises the enrollment and login-enforcement endpoints end-to-end against
+a real in-memory database, verifying the full lifecycle described in
+data-model.md and contracts/totp-api.md §1-2, §5-6:
+    - register -> enroll -> confirm -> recovery codes issued exactly once
+      -> re-enrollment is blocked while active (US1)
+    - password -> challenge -> wrong code retry -> correct code -> tokens
+    - recovery-code exchange (single-use)
+    - expired challenge
+    - code replay (US2)
 """
 
 import importlib.util
 import sys
+import time
 from pathlib import Path
 
 import pyotp
@@ -152,3 +157,177 @@ class TestFullEnrollmentFlow:
         # A fresh enroll attempt is still allowed (2FA was never activated).
         retry_enroll = auth_client.post("/api/auth/2fa/enroll", headers=headers)
         assert retry_enroll.status_code == 201
+
+
+def _next_window_code(secret: str) -> str:
+    """A TOTP code for a step guaranteed later than the one confirm() used."""
+    totp = pyotp.totp.TOTP(secret)
+    return totp.at(time.time() + totp.interval)
+
+
+class TestLoginEnforcementFlow:
+    """Integration coverage for User Story 2: 2FA-gated login."""
+
+    LOGIN_PASSWORD = "SecureP@ssw0rd123"
+
+    def _register_and_enroll(self, auth_client: TestClient) -> dict:
+        user_data = _register(auth_client)
+        headers = {"Authorization": f"Bearer {user_data['access_token']}"}
+
+        enroll_response = auth_client.post("/api/auth/2fa/enroll", headers=headers)
+        secret = enroll_response.json()["secret"]
+        code = pyotp.totp.TOTP(secret).now()
+        confirm_response = auth_client.post(
+            "/api/auth/2fa/verify", json={"code": code}, headers=headers
+        )
+        assert confirm_response.status_code == 200
+
+        return {
+            "username": "integrationuser",
+            "secret": secret,
+            "recovery_codes": confirm_response.json()["recovery_codes"],
+        }
+
+    def test_password_challenge_wrong_then_correct_code_then_tokens(
+        self, auth_client: TestClient
+    ):
+        enrolled = self._register_and_enroll(auth_client)
+
+        login_response = auth_client.post(
+            "/api/auth/login",
+            json={
+                "username_or_email": enrolled["username"],
+                "password": self.LOGIN_PASSWORD,
+            },
+        )
+        assert login_response.status_code == 200
+        login_data = login_response.json()
+        assert "challenge_token" in login_data
+        assert "access_token" not in login_data
+        challenge_token = login_data["challenge_token"]
+
+        # Wrong code first — challenge stays open for retry.
+        wrong_response = auth_client.post(
+            "/api/auth/login/2fa",
+            json={"challenge_token": challenge_token, "code": "000000"},
+        )
+        assert wrong_response.status_code == 401
+
+        # Correct code on the SAME challenge succeeds.
+        correct_code = _next_window_code(enrolled["secret"])
+        success_response = auth_client.post(
+            "/api/auth/login/2fa",
+            json={"challenge_token": challenge_token, "code": correct_code},
+        )
+        assert success_response.status_code == 200
+        success_data = success_response.json()
+        assert "access_token" in success_data
+        assert "refresh_token" in success_data
+        assert success_data["user"]["username"] == enrolled["username"]
+
+    def test_recovery_code_exchange(self, auth_client: TestClient):
+        enrolled = self._register_and_enroll(auth_client)
+
+        login_response = auth_client.post(
+            "/api/auth/login",
+            json={
+                "username_or_email": enrolled["username"],
+                "password": self.LOGIN_PASSWORD,
+            },
+        )
+        challenge_token = login_response.json()["challenge_token"]
+
+        response = auth_client.post(
+            "/api/auth/login/2fa",
+            json={
+                "challenge_token": challenge_token,
+                "code": enrolled["recovery_codes"][0],
+            },
+        )
+        assert response.status_code == 200
+        assert "access_token" in response.json()
+
+        # The consumed recovery code cannot be reused on a fresh challenge.
+        second_login = auth_client.post(
+            "/api/auth/login",
+            json={
+                "username_or_email": enrolled["username"],
+                "password": self.LOGIN_PASSWORD,
+            },
+        )
+        second_challenge = second_login.json()["challenge_token"]
+        replay = auth_client.post(
+            "/api/auth/login/2fa",
+            json={
+                "challenge_token": second_challenge,
+                "code": enrolled["recovery_codes"][0],
+            },
+        )
+        assert replay.status_code == 401
+
+    def test_expired_challenge_rejected(self, auth_client: TestClient, monkeypatch):
+        enrolled = self._register_and_enroll(auth_client)
+
+        # Force newly-issued challenges to already be expired by patching
+        # the TTL used at issuance to a negative window.
+        import src.services.auth.totp_service as totp_service_module
+
+        monkeypatch.setattr(totp_service_module, "LOGIN_CHALLENGE_TTL_SECONDS", -10)
+
+        login_response = auth_client.post(
+            "/api/auth/login",
+            json={
+                "username_or_email": enrolled["username"],
+                "password": self.LOGIN_PASSWORD,
+            },
+        )
+        challenge_token = login_response.json()["challenge_token"]
+
+        code = _next_window_code(enrolled["secret"])
+        response = auth_client.post(
+            "/api/auth/login/2fa",
+            json={"challenge_token": challenge_token, "code": code},
+        )
+        assert response.status_code == 410
+
+    def test_challenge_replay_after_success_rejected(self, auth_client: TestClient):
+        enrolled = self._register_and_enroll(auth_client)
+
+        login_response = auth_client.post(
+            "/api/auth/login",
+            json={
+                "username_or_email": enrolled["username"],
+                "password": self.LOGIN_PASSWORD,
+            },
+        )
+        challenge_token = login_response.json()["challenge_token"]
+
+        first_code = _next_window_code(enrolled["secret"])
+        first = auth_client.post(
+            "/api/auth/login/2fa",
+            json={"challenge_token": challenge_token, "code": first_code},
+        )
+        assert first.status_code == 200
+
+        second_code = pyotp.totp.TOTP(enrolled["secret"]).at(
+            time.time() + 2 * pyotp.totp.TOTP(enrolled["secret"]).interval
+        )
+        replay = auth_client.post(
+            "/api/auth/login/2fa",
+            json={"challenge_token": challenge_token, "code": second_code},
+        )
+        assert replay.status_code == 410
+
+    def test_non_enrolled_user_login_unaffected(self, auth_client: TestClient):
+        _register(auth_client)
+        login_response = auth_client.post(
+            "/api/auth/login",
+            json={
+                "username_or_email": "integrationuser",
+                "password": self.LOGIN_PASSWORD,
+            },
+        )
+        assert login_response.status_code == 200
+        data = login_response.json()
+        assert "access_token" in data
+        assert "challenge_token" not in data

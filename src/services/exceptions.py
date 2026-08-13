@@ -467,6 +467,24 @@ class TotpCodeInvalidError(AuthenticationError):
         )
 
 
+class TotpChallengeExpiredError(PromptVaultException):
+    """Raised when a 2FA login-challenge token is expired, consumed, or unknown."""
+
+    def __init__(
+        self,
+        message: str = "2FA login challenge is expired or already used",
+        *,
+        context: dict[str, Any] | None = None,
+    ) -> None:
+        super().__init__(
+            message,
+            user_message="Your two-factor authentication challenge has expired. Please log in again.",
+            http_status=410,
+            log_level="info",
+            context=context,
+        )
+
+
 class RateLimitExceededError(PromptVaultException):
     """Raised when rate limit is exceeded."""
 

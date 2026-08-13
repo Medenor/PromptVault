@@ -98,31 +98,62 @@ class LockoutService:
             AccountLockedError: If this failure triggers an account lockout
         """
         if not self.password_service.verify_password(password, user.password_hash):
-            # Increment failed login attempts
-            self.user_repo.increment_failed_login(user.id)
-
-            # Check if we should lock the account
-            failed_attempts = (user.failed_login_attempts or 0) + 1
-            if failed_attempts >= self.config.max_login_attempts:
-                locked_until = datetime.now(UTC) + timedelta(
-                    seconds=self.config.account_lockout_duration_seconds
-                )
-                self.user_repo.lock_account(user.id, locked_until)
-                self.db.commit()
-
-                locked_until_str = locked_until.strftime("%Y-%m-%d %H:%M:%S UTC")
-                raise AccountLockedError(
-                    f"Account locked after {failed_attempts} failed attempts",
-                    locked_until=locked_until_str,
-                    context={
-                        "user_id": user.id,
-                        "failed_attempts": failed_attempts,
-                        "locked_until": locked_until_str,
-                    },
-                )
-
-            self.db.commit()
+            self._record_failure_and_maybe_lock(user)
             raise InvalidCredentialsError(
                 "Invalid password",
-                context={"user_id": user.id, "failed_attempts": failed_attempts},
+                context={
+                    "user_id": user.id,
+                    "failed_attempts": (user.failed_login_attempts or 0) + 1,
+                },
             )
+
+    def record_2fa_challenge_failure(self, user: User) -> None:
+        """Record a failed 2FA-challenge attempt against the shared counter.
+
+        A wrong TOTP/recovery code at the login-challenge step (FR-010)
+        increments the same failed-attempt counter used for password
+        failures and locks the account once the shared threshold is reached,
+        so an attacker can't bypass lockout by pivoting to 2FA guesses after
+        a valid password.
+
+        Args:
+            user: User attempting to exchange a 2FA login challenge
+
+        Raises:
+            AccountLockedError: If this failure triggers an account lockout
+        """
+        self._record_failure_and_maybe_lock(user)
+
+    def _record_failure_and_maybe_lock(self, user: User) -> None:
+        """Increment the failed-attempt counter, locking the account if needed.
+
+        Args:
+            user: User whose failed-attempt counter should be incremented
+
+        Raises:
+            AccountLockedError: If this failure triggers an account lockout
+        """
+        # Increment failed login attempts
+        self.user_repo.increment_failed_login(user.id)
+
+        # Check if we should lock the account
+        failed_attempts = (user.failed_login_attempts or 0) + 1
+        if failed_attempts >= self.config.max_login_attempts:
+            locked_until = datetime.now(UTC) + timedelta(
+                seconds=self.config.account_lockout_duration_seconds
+            )
+            self.user_repo.lock_account(user.id, locked_until)
+            self.db.commit()
+
+            locked_until_str = locked_until.strftime("%Y-%m-%d %H:%M:%S UTC")
+            raise AccountLockedError(
+                f"Account locked after {failed_attempts} failed attempts",
+                locked_until=locked_until_str,
+                context={
+                    "user_id": user.id,
+                    "failed_attempts": failed_attempts,
+                    "locked_until": locked_until_str,
+                },
+            )
+
+        self.db.commit()

@@ -2,11 +2,13 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-"""Contract tests for TOTP 2FA enrollment endpoints (User Story 1).
+"""Contract tests for TOTP 2FA endpoints (User Stories 1 and 2).
 
 Covers:
     POST /api/auth/2fa/enroll  - 201, 409 (already enabled), 429
     POST /api/auth/2fa/verify  - 200 with recovery codes, 400, 401, 429
+    POST /api/auth/login       - challenge-issuance branch (US2)
+    POST /api/auth/login/2fa   - 200, 401 (+lockout counting), 410, 423, 429
 
 Mirrors tests/test_auth_api.py's auth_client fixture pattern: mounts a
 fresh FastAPI app with just the auth router, swaps session_module.SessionLocal
@@ -16,6 +18,7 @@ TotpEncryptionService raises ValueError without it.
 
 import importlib.util
 import sys
+import time
 from pathlib import Path
 from typing import Any
 
@@ -24,6 +27,19 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import sessionmaker
+
+
+def _next_window_code(secret: str) -> str:
+    """Generate a TOTP code for a time-step guaranteed later than "now".
+
+    Enrollment confirmation (totp_enrolled_user) already consumes the
+    current time-step as its last_used_step (FR-007 replay guard). Tests
+    that need a *fresh* valid code afterwards must use one from a later
+    step, or the replay guard correctly (and confusingly, for a naive test)
+    rejects it.
+    """
+    totp = pyotp.totp.TOTP(secret)
+    return totp.at(time.time() + totp.interval)
 
 
 @pytest.fixture
@@ -213,3 +229,238 @@ class TestVerifyEndpoint:
 
         me_response = auth_client.get("/api/auth/me", headers=auth_headers)
         assert me_response.status_code == 200
+
+
+@pytest.fixture
+def totp_enrolled_user(
+    auth_client: TestClient,
+    test_user_credentials: dict[str, str],
+    auth_headers: dict[str, str],
+) -> dict[str, Any]:
+    """Enroll and confirm 2FA for the registered user, returning recovery codes."""
+    enroll_resp = auth_client.post("/api/auth/2fa/enroll", headers=auth_headers)
+    secret = enroll_resp.json()["secret"]
+    code = pyotp.totp.TOTP(secret).now()
+    confirm_resp = auth_client.post(
+        "/api/auth/2fa/verify", json={"code": code}, headers=auth_headers
+    )
+    assert confirm_resp.status_code == 200
+    return {
+        "secret": secret,
+        "recovery_codes": confirm_resp.json()["recovery_codes"],
+    }
+
+
+class TestLoginChallengeIssuance:
+    """Contract tests for the POST /api/auth/login challenge-issuance branch (US2)."""
+
+    def test_login_returns_challenge_shape_when_2fa_enabled(
+        self,
+        auth_client: TestClient,
+        test_user_credentials: dict[str, str],
+        totp_enrolled_user: dict[str, Any],
+    ):
+        response = auth_client.post(
+            "/api/auth/login",
+            json={
+                "username_or_email": test_user_credentials["username"],
+                "password": test_user_credentials["password"],
+            },
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert "challenge_token" in data
+        assert data["expires_in"] == 120
+        assert "access_token" not in data
+        assert "refresh_token" not in data
+
+    def test_login_unchanged_when_2fa_not_enabled(
+        self,
+        auth_client: TestClient,
+        test_user_credentials: dict[str, str],
+        registered_user: dict[str, Any],
+    ):
+        response = auth_client.post(
+            "/api/auth/login",
+            json={
+                "username_or_email": test_user_credentials["username"],
+                "password": test_user_credentials["password"],
+            },
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert "access_token" in data
+        assert "refresh_token" in data
+        assert "challenge_token" not in data
+
+    def test_login_401_on_bad_password_unaffected_by_2fa(
+        self,
+        auth_client: TestClient,
+        test_user_credentials: dict[str, str],
+        totp_enrolled_user: dict[str, Any],
+    ):
+        response = auth_client.post(
+            "/api/auth/login",
+            json={
+                "username_or_email": test_user_credentials["username"],
+                "password": "WrongPassword123!",
+            },
+        )
+        assert response.status_code == 401
+
+
+class TestLoginTwoFactorExchange:
+    """Contract tests for POST /api/auth/login/2fa (US2)."""
+
+    def _get_challenge_token(
+        self, auth_client: TestClient, test_user_credentials: dict[str, str]
+    ) -> str:
+        response = auth_client.post(
+            "/api/auth/login",
+            json={
+                "username_or_email": test_user_credentials["username"],
+                "password": test_user_credentials["password"],
+            },
+        )
+        assert response.status_code == 200
+        return response.json()["challenge_token"]
+
+    def test_exchange_with_valid_totp_code_returns_tokens(
+        self,
+        auth_client: TestClient,
+        test_user_credentials: dict[str, str],
+        totp_enrolled_user: dict[str, Any],
+    ):
+        challenge_token = self._get_challenge_token(auth_client, test_user_credentials)
+        code = _next_window_code(totp_enrolled_user["secret"])
+
+        response = auth_client.post(
+            "/api/auth/login/2fa",
+            json={"challenge_token": challenge_token, "code": code},
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert "access_token" in data
+        assert "refresh_token" in data
+        assert data["user"]["username"] == test_user_credentials["username"]
+
+    def test_exchange_with_valid_recovery_code_returns_tokens(
+        self,
+        auth_client: TestClient,
+        test_user_credentials: dict[str, str],
+        totp_enrolled_user: dict[str, Any],
+    ):
+        challenge_token = self._get_challenge_token(auth_client, test_user_credentials)
+        recovery_code = totp_enrolled_user["recovery_codes"][0]
+
+        response = auth_client.post(
+            "/api/auth/login/2fa",
+            json={"challenge_token": challenge_token, "code": recovery_code},
+        )
+
+        assert response.status_code == 200
+        assert "access_token" in response.json()
+
+    def test_recovery_code_is_single_use(
+        self,
+        auth_client: TestClient,
+        test_user_credentials: dict[str, str],
+        totp_enrolled_user: dict[str, Any],
+    ):
+        recovery_code = totp_enrolled_user["recovery_codes"][0]
+
+        first_challenge = self._get_challenge_token(auth_client, test_user_credentials)
+        first_response = auth_client.post(
+            "/api/auth/login/2fa",
+            json={"challenge_token": first_challenge, "code": recovery_code},
+        )
+        assert first_response.status_code == 200
+
+        second_challenge = self._get_challenge_token(auth_client, test_user_credentials)
+        second_response = auth_client.post(
+            "/api/auth/login/2fa",
+            json={"challenge_token": second_challenge, "code": recovery_code},
+        )
+        assert second_response.status_code == 401
+
+    def test_exchange_wrong_code_returns_401(
+        self,
+        auth_client: TestClient,
+        test_user_credentials: dict[str, str],
+        totp_enrolled_user: dict[str, Any],
+    ):
+        challenge_token = self._get_challenge_token(auth_client, test_user_credentials)
+
+        response = auth_client.post(
+            "/api/auth/login/2fa",
+            json={"challenge_token": challenge_token, "code": "000000"},
+        )
+
+        assert response.status_code == 401
+
+    def test_exchange_wrong_code_counts_toward_lockout(
+        self,
+        auth_client: TestClient,
+        test_user_credentials: dict[str, str],
+        totp_enrolled_user: dict[str, Any],
+    ):
+        # Per spec Acceptance Scenario 3, a wrong code leaves the challenge
+        # open for retry (until expiry/lockout) — so exhaust the shared
+        # max_login_attempts=5 counter by retrying the SAME challenge.
+        # Logging in again with the correct password would reset the
+        # counter (reset_failed_login on password success), which is not
+        # what we're testing here.
+        challenge_token = self._get_challenge_token(auth_client, test_user_credentials)
+
+        last_response = None
+        for _ in range(5):
+            last_response = auth_client.post(
+                "/api/auth/login/2fa",
+                json={"challenge_token": challenge_token, "code": "000000"},
+            )
+
+        assert last_response.status_code == 401
+
+        # Even a correct password now reports the account as locked.
+        login_response = auth_client.post(
+            "/api/auth/login",
+            json={
+                "username_or_email": test_user_credentials["username"],
+                "password": test_user_credentials["password"],
+            },
+        )
+        assert login_response.status_code == 401
+
+    def test_exchange_consumed_challenge_returns_410(
+        self,
+        auth_client: TestClient,
+        test_user_credentials: dict[str, str],
+        totp_enrolled_user: dict[str, Any],
+    ):
+        challenge_token = self._get_challenge_token(auth_client, test_user_credentials)
+        code = _next_window_code(totp_enrolled_user["secret"])
+
+        first = auth_client.post(
+            "/api/auth/login/2fa",
+            json={"challenge_token": challenge_token, "code": code},
+        )
+        assert first.status_code == 200
+
+        second_code = pyotp.totp.TOTP(totp_enrolled_user["secret"]).now()
+        replay = auth_client.post(
+            "/api/auth/login/2fa",
+            json={"challenge_token": challenge_token, "code": second_code},
+        )
+        assert replay.status_code == 410
+
+    def test_exchange_malformed_challenge_token_returns_410(
+        self, auth_client: TestClient
+    ):
+        response = auth_client.post(
+            "/api/auth/login/2fa",
+            json={"challenge_token": "not-a-real-token", "code": "123456"},
+        )
+        assert response.status_code == 410

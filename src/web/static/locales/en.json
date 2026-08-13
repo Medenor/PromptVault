@@ -586,7 +586,17 @@
       "accountInactive": "Your account is inactive. Please contact support.",
       "usernameRequired": "Username or email is required",
       "passwordRequired": "Password is required",
-      "success": "Login successful!"
+      "success": "Login successful!",
+      "twoFactorTitle": "Two-factor authentication",
+      "twoFactorInstructions": "Enter the 6-digit code from your authenticator app, or one of your recovery codes.",
+      "twoFactorCodeLabel": "Authentication code",
+      "twoFactorCodePlaceholder": "123456",
+      "twoFactorCodeRequired": "Please enter your authentication code",
+      "twoFactorVerifyButton": "Verify",
+      "twoFactorBackButton": "Back to login",
+      "twoFactorInvalidCode": "Incorrect code. Please try again.",
+      "twoFactorExpired": "Your session expired. Please log in again.",
+      "twoFactorSuccess": "Login successful!"
     },
     "register": {
       "title": "Create Account",

@@ -644,6 +644,51 @@ class TotpVerifyRequest(BaseModel):
         return v
 
 
+class TotpChallengeExchangeRequest(BaseModel):
+    """Request model for exchanging a 2FA login challenge (contract §6).
+
+    Field constraints:
+        - challenge_token: The challenge JWT returned by POST /api/auth/login, required
+        - code: TOTP code or recovery code, required
+
+    Example:
+        >>> request = TotpChallengeExchangeRequest(
+        ...     challenge_token="eyJhbGciOi...",
+        ...     code="123456",
+        ... )
+    """
+
+    challenge_token: str = Field(
+        ...,
+        min_length=10,
+        description="Challenge JWT returned by POST /api/auth/login",
+        examples=["eyJhbGciOi..."],
+    )
+    code: str = Field(
+        ...,
+        min_length=6,
+        max_length=32,
+        description="TOTP code (6 digits) or recovery code (xxxx-xxxx format)",
+        examples=["123456", "ab12-cd34"],
+    )
+
+    @field_validator("challenge_token")
+    @classmethod
+    def validate_challenge_token_not_empty(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("Challenge token cannot be empty")
+        return v
+
+    @field_validator("code")
+    @classmethod
+    def validate_code_not_empty(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("Code cannot be empty")
+        return v
+
+
 class UpdateProfileRequest(BaseModel):
     """Request model for updating user profile.
 

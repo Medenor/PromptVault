@@ -114,4 +114,7 @@ def get_totp_service(
     totp_repository = TotpRepository(session)
     encryption_service = TotpEncryptionService(config)
     password_service = PasswordService(config)
-    return TotpService(totp_repository, encryption_service, password_service)
+    jwt_service = JWTService(config)
+    return TotpService(
+        totp_repository, encryption_service, password_service, jwt_service
+    )
