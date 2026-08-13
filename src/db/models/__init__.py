@@ -22,6 +22,10 @@ Models exported:
     - PromptBranch: Branch pointers for version control
     - Backup: Backup metadata
     - UndoOperation: Undo operation history for tags and categories
+    - TotpCredential: Encrypted TOTP 2FA secret per user
+    - TotpRecoveryCode: 2FA recovery codes
+    - TotpLoginChallenge: Short-lived login-challenge records for 2FA
+    - TotpRolePolicy: Admin-configured per-role 2FA enforcement
     - prompt_tags: Association table for many-to-many prompt-tag relationship
 """
 
@@ -38,6 +42,10 @@ from src.db.models.prompt_branch import PromptBranch
 from src.db.models.prompt_share import PromptShare
 from src.db.models.prompt_version import PromptVersion
 from src.db.models.tag import Tag
+from src.db.models.totp_credential import TotpCredential
+from src.db.models.totp_login_challenge import TotpLoginChallenge
+from src.db.models.totp_recovery_code import TotpRecoveryCode
+from src.db.models.totp_role_policy import TotpRolePolicy
 from src.db.models.undo_operation import UndoOperation
 from src.db.models.user import User
 from src.db.models.user_session import UserSession
@@ -58,5 +66,9 @@ __all__ = [
     "AuditLogEntry",
     "EncryptionKeyConfig",
     "UndoOperation",
+    "TotpCredential",
+    "TotpRecoveryCode",
+    "TotpLoginChallenge",
+    "TotpRolePolicy",
     "prompt_tags",
 ]

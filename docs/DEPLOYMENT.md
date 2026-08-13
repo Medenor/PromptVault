@@ -763,6 +763,40 @@ tar czf /secure/backup/jwt_keys_$(date +%Y%m%d_%H%M%S).tar.gz secrets/jwt/
 
 ---
 
+## TOTP 2FA Encryption Key
+
+Two-factor authentication (TOTP) secrets are encrypted at rest with AES-256-GCM,
+using a key derived from `TOTP_ENCRYPTION_KEY`. This is a server-held secret
+(not a user passphrase) — required if any user enables 2FA.
+
+### Security Warning ⚠️
+
+**NEVER commit `TOTP_ENCRYPTION_KEY` to Git!** Treat it like `JWT_PRIVATE_KEY_PATH`:
+
+- ✅ Generated locally on each deployment
+- ✅ Stored only in `.env` / your secrets manager
+- ✅ Backed up in a secure location
+- ❌ NEVER committed to version control
+- ❌ NEVER exposed in logs or error messages
+- ❌ NEVER rotated without a migration plan — rotating this key invalidates all existing TOTP enrollments (see below)
+
+### Generate the Key
+
+```bash
+python3 -c "import secrets; print(secrets.token_urlsafe(32))"
+echo "TOTP_ENCRYPTION_KEY=<generated-value>" >> .env
+```
+
+### Rotate Key (Emergency)
+
+Rotating `TOTP_ENCRYPTION_KEY` makes existing `totp_credentials` rows
+undecryptable. There is no in-place re-encryption path in v1 — rotation
+requires disabling 2FA for all currently-enrolled users (deleting their
+`totp_credentials`/`totp_recovery_codes` rows) before the key changes, then
+asking them to re-enroll.
+
+---
+
 ## Docker Deployment
 
 ### Build Image

@@ -17,6 +17,9 @@ Environment Variables:
         JWT_ISSUER: JWT token issuer identifier
         JWT_AUDIENCE: JWT token audience identifier
 
+    TOTP 2FA Configuration:
+        TOTP_ENCRYPTION_KEY: Server-held symmetric key for encrypting TOTP secrets at rest
+
     Password Policy:
         PASSWORD_MIN_LENGTH: Minimum password length
         PASSWORD_REQUIRE_UPPERCASE: Require uppercase letters
@@ -166,6 +169,16 @@ class AuthConfig(BaseSettings):
     )
     jwt_audience: str = Field(
         default="promptvault-api", description="JWT token audience identifier"
+    )
+
+    # TOTP 2FA Configuration
+    totp_encryption_key: str = Field(
+        default="",
+        description=(
+            "Server-held symmetric key used to derive the AES-256-GCM key that "
+            "encrypts TOTP secrets at rest. Required when any user has 2FA "
+            "enabled; analogous to jwt_private_key_path for JWT signing."
+        ),
     )
 
     # Password Policy

@@ -22,6 +22,9 @@ if TYPE_CHECKING:
     from src.db.models.password_reset_token import PasswordResetToken
     from src.db.models.prompt import Prompt
     from src.db.models.prompt_share import PromptShare
+    from src.db.models.totp_credential import TotpCredential
+    from src.db.models.totp_login_challenge import TotpLoginChallenge
+    from src.db.models.totp_recovery_code import TotpRecoveryCode
     from src.db.models.user_session import UserSession
 
 
@@ -61,6 +64,7 @@ class User(Base):
     )
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[str | None] = mapped_column(String(50), default="viewer")
+    totp_enabled: Mapped[bool | None] = mapped_column(default=False)
 
     # Authentication and security fields
     email_verified: Mapped[bool | None] = mapped_column(default=False)
@@ -97,6 +101,15 @@ class User(Base):
         foreign_keys="PromptShare.grantee_user_id",
         back_populates="grantee",
         cascade="all, delete-orphan",
+    )
+    totp_credential: Mapped["TotpCredential | None"] = relationship(
+        "TotpCredential", back_populates="user", cascade="all, delete-orphan"
+    )
+    totp_recovery_codes: Mapped[list["TotpRecoveryCode"]] = relationship(
+        "TotpRecoveryCode", back_populates="user", cascade="all, delete-orphan"
+    )
+    totp_login_challenges: Mapped[list["TotpLoginChallenge"]] = relationship(
+        "TotpLoginChallenge", back_populates="user", cascade="all, delete-orphan"
     )
 
     def __repr__(self):
