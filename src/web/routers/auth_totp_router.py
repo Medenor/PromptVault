@@ -2,14 +2,18 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-"""TOTP two-factor authentication router (User Story 1: enrollment).
+"""TOTP two-factor authentication router (User Stories 1 and 3).
 
 Contains the enrollment endpoints:
     POST /api/auth/2fa/enroll  - start (or restart) enrollment
     POST /api/auth/2fa/verify  - confirm enrollment with a TOTP code
 
-Later phases (login enforcement, disable/regenerate, admin policy) extend
-this router — see specs/009-totp-2fa/tasks.md T027 onward.
+And the account-lifecycle endpoints (User Story 3):
+    POST /api/auth/2fa/disable                      - disable 2FA
+    POST /api/auth/2fa/recovery-codes/regenerate     - regenerate recovery codes
+
+Later phases (admin policy) extend this router — see
+specs/009-totp-2fa/tasks.md T049 onward.
 """
 
 import logging
@@ -24,11 +28,12 @@ from src.services.exceptions import (
     TotpAlreadyEnabledError,
     TotpCodeInvalidError,
     TotpEnrollmentNotFoundError,
+    TotpReauthFailedError,
 )
 from src.services.logging_service import logging_service
 from src.web.dependencies.auth import get_current_active_user
 from src.web.middleware.rate_limit import expensive_limit, limiter
-from src.web.models.auth_requests import TotpVerifyRequest
+from src.web.models.auth_requests import TotpDisableRequest, TotpVerifyRequest
 from src.web.models.auth_responses import TotpConfirmResponse, TotpEnrollResponse
 from src.web.routers.auth_shared import get_totp_service
 
@@ -229,4 +234,157 @@ def verify_totp(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred while confirming 2FA. Please try again.",
+        ) from e
+
+
+@router.post(
+    "/2fa/disable",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Disable TOTP 2FA",
+    description="""
+    Disable two-factor authentication, re-authenticated with the current
+    password plus a current TOTP or recovery code.
+
+    On success, the TOTP credential and all recovery codes are deleted.
+    Failures are reported generically (does not reveal which factor was
+    wrong).
+    """,
+    responses={
+        204: {"description": "2FA disabled"},
+        401: {"description": "Incorrect password or authentication code"},
+    },
+)
+@limiter.limit(expensive_limit)
+def disable_totp(
+    request: Request,
+    request_data: TotpDisableRequest,
+    current_user: User = Depends(get_current_active_user),
+    totp_service: TotpService = Depends(get_totp_service),
+    session: Session = Depends(get_db),
+) -> None:
+    """Disable TOTP 2FA for the current user.
+
+    Args:
+        request: FastAPI request object (for rate limiting)
+        request_data: Current password and TOTP/recovery code
+        current_user: Authenticated active user (injected)
+        totp_service: TOTP 2FA service instance (injected)
+        session: Database session (injected)
+
+    Raises:
+        HTTPException: 401 if password or code is incorrect
+    """
+    try:
+        totp_service.disable(current_user, request_data.password, request_data.code)
+
+        session.commit()
+
+        logging_service.log_audit_event(
+            action="2fa.disabled",
+            resource_type="user",
+            resource_id=current_user.id,
+        )
+
+        logger.info(f"2FA disabled successfully for user: {current_user.username}")
+
+    except TotpReauthFailedError as e:
+        session.rollback()
+        logger.info(f"2FA disable failed - re-auth failed for user: {current_user.username}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=e.user_message,
+        ) from e
+
+    except Exception as e:
+        session.rollback()
+        logger.error(f"Unexpected error while disabling 2FA: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred while disabling 2FA. Please try again.",
+        ) from e
+
+
+@router.post(
+    "/2fa/recovery-codes/regenerate",
+    response_model=TotpConfirmResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Regenerate TOTP recovery codes",
+    description="""
+    Regenerate recovery codes, re-authenticated with the current password
+    plus a current TOTP or recovery code.
+
+    All previously issued codes are invalidated in the same transaction.
+    Failures are reported generically (does not reveal which factor was
+    wrong).
+    """,
+    responses={
+        200: {
+            "description": "New recovery codes issued",
+            "model": TotpConfirmResponse,
+        },
+        401: {"description": "Incorrect password or authentication code"},
+    },
+)
+@limiter.limit(expensive_limit)
+def regenerate_totp_recovery_codes(
+    request: Request,
+    request_data: TotpDisableRequest,
+    current_user: User = Depends(get_current_active_user),
+    totp_service: TotpService = Depends(get_totp_service),
+    session: Session = Depends(get_db),
+) -> TotpConfirmResponse:
+    """Regenerate TOTP recovery codes for the current user.
+
+    Args:
+        request: FastAPI request object (for rate limiting)
+        request_data: Current password and TOTP/recovery code
+        current_user: Authenticated active user (injected)
+        totp_service: TOTP 2FA service instance (injected)
+        session: Database session (injected)
+
+    Returns:
+        TotpConfirmResponse: New one-time plaintext recovery codes
+
+    Raises:
+        HTTPException: 401 if password or code is incorrect
+    """
+    try:
+        result = totp_service.regenerate_recovery_codes(
+            current_user, request_data.password, request_data.code
+        )
+
+        session.commit()
+
+        logging_service.log_audit_event(
+            action="2fa.recovery_codes_regenerated",
+            resource_type="user",
+            resource_id=current_user.id,
+        )
+
+        logger.info(f"2FA recovery codes regenerated for user: {current_user.username}")
+
+        return TotpConfirmResponse(
+            enabled=True,
+            recovery_codes=result.recovery_codes,
+        )
+
+    except TotpReauthFailedError as e:
+        session.rollback()
+        logger.info(
+            f"2FA recovery-code regeneration failed - re-auth failed for user: {current_user.username}"
+        )
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=e.user_message,
+        ) from e
+
+    except Exception as e:
+        session.rollback()
+        logger.error(
+            f"Unexpected error while regenerating 2FA recovery codes: {str(e)}",
+            exc_info=True,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred while regenerating recovery codes. Please try again.",
         ) from e

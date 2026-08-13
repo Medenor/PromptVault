@@ -331,3 +331,96 @@ class TestLoginEnforcementFlow:
         data = login_response.json()
         assert "access_token" in data
         assert "challenge_token" not in data
+
+
+class TestDisableAndRegenerateFlow:
+    """Integration coverage for User Story 3: disable 2FA and regenerate codes."""
+
+    LOGIN_PASSWORD = "SecureP@ssw0rd123"
+
+    def _register_and_enroll(self, auth_client: TestClient) -> dict:
+        user_data = _register(auth_client)
+        headers = {"Authorization": f"Bearer {user_data['access_token']}"}
+
+        enroll_response = auth_client.post("/api/auth/2fa/enroll", headers=headers)
+        secret = enroll_response.json()["secret"]
+        code = pyotp.totp.TOTP(secret).now()
+        confirm_response = auth_client.post(
+            "/api/auth/2fa/verify", json={"code": code}, headers=headers
+        )
+        assert confirm_response.status_code == 200
+
+        return {
+            "username": "integrationuser",
+            "headers": headers,
+            "secret": secret,
+            "recovery_codes": confirm_response.json()["recovery_codes"],
+        }
+
+    def test_enroll_disable_login_shows_no_challenge(self, auth_client: TestClient):
+        enrolled = self._register_and_enroll(auth_client)
+        code = _next_window_code(enrolled["secret"])
+
+        disable_response = auth_client.post(
+            "/api/auth/2fa/disable",
+            json={"password": self.LOGIN_PASSWORD, "code": code},
+            headers=enrolled["headers"],
+        )
+        assert disable_response.status_code == 204
+
+        login_response = auth_client.post(
+            "/api/auth/login",
+            json={
+                "username_or_email": enrolled["username"],
+                "password": self.LOGIN_PASSWORD,
+            },
+        )
+        assert login_response.status_code == 200
+        data = login_response.json()
+        assert "access_token" in data
+        assert "challenge_token" not in data
+
+    def test_enroll_regenerate_old_code_fails_new_code_works(
+        self, auth_client: TestClient
+    ):
+        enrolled = self._register_and_enroll(auth_client)
+        code = _next_window_code(enrolled["secret"])
+
+        regen_response = auth_client.post(
+            "/api/auth/2fa/recovery-codes/regenerate",
+            json={"password": self.LOGIN_PASSWORD, "code": code},
+            headers=enrolled["headers"],
+        )
+        assert regen_response.status_code == 200
+        new_codes = regen_response.json()["recovery_codes"]
+        assert set(new_codes).isdisjoint(enrolled["recovery_codes"])
+
+        # Old recovery code no longer works.
+        old_login = auth_client.post(
+            "/api/auth/login",
+            json={
+                "username_or_email": enrolled["username"],
+                "password": self.LOGIN_PASSWORD,
+            },
+        )
+        old_challenge = old_login.json()["challenge_token"]
+        old_exchange = auth_client.post(
+            "/api/auth/login/2fa",
+            json={"challenge_token": old_challenge, "code": enrolled["recovery_codes"][0]},
+        )
+        assert old_exchange.status_code == 401
+
+        # New recovery code works.
+        new_login = auth_client.post(
+            "/api/auth/login",
+            json={
+                "username_or_email": enrolled["username"],
+                "password": self.LOGIN_PASSWORD,
+            },
+        )
+        new_challenge = new_login.json()["challenge_token"]
+        new_exchange = auth_client.post(
+            "/api/auth/login/2fa",
+            json={"challenge_token": new_challenge, "code": new_codes[0]},
+        )
+        assert new_exchange.status_code == 200

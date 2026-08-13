@@ -42,6 +42,7 @@ from src.services.exceptions import (
     TotpChallengeExpiredError,
     TotpCodeInvalidError,
     TotpEnrollmentNotFoundError,
+    TotpReauthFailedError,
 )
 
 logger = logging.getLogger(__name__)
@@ -224,6 +225,87 @@ class TotpService:
         logger.info("TOTP 2FA enabled for user_id=%s", user.id)
 
         return TotpConfirmResult(recovery_codes=plaintext_codes)
+
+    def disable(self, user: User, password: str, code: str) -> None:
+        """Disable TOTP 2FA for a user, re-authenticated with password + code.
+
+        Verifies the current password and a current TOTP-or-recovery code
+        before deleting the credential and all recovery codes and flipping
+        ``users.totp_enabled=False`` (FR-012). Failures are reported
+        generically (neither factor's failure is distinguished) per
+        contracts/totp-api.md §3.
+
+        Args:
+            user: The authenticated user requesting to disable 2FA
+            password: The user's current password
+            code: A current TOTP code or an unused recovery code
+
+        Raises:
+            TotpReauthFailedError: Password or code incorrect (401)
+        """
+        self._reauth(user, password, code)
+
+        self.totp_repository.delete_credential(user.id)
+        self.totp_repository.delete_all_recovery_codes(user.id)
+        user.totp_enabled = False
+
+        logger.info("TOTP 2FA disabled for user_id=%s", user.id)
+
+    def regenerate_recovery_codes(
+        self, user: User, password: str, code: str
+    ) -> TotpConfirmResult:
+        """Regenerate recovery codes, invalidating all previously issued codes.
+
+        Verifies the current password and a current TOTP-or-recovery code,
+        then deletes the existing recovery-code batch and issues a fresh
+        batch of 10 (FR-013). Failures are reported generically per
+        contracts/totp-api.md §4.
+
+        Args:
+            user: The authenticated user requesting regeneration
+            password: The user's current password
+            code: A current TOTP code or an unused recovery code
+
+        Returns:
+            TotpConfirmResult with the new plaintext recovery codes
+
+        Raises:
+            TotpReauthFailedError: Password or code incorrect (401)
+        """
+        self._reauth(user, password, code)
+
+        self.totp_repository.delete_all_recovery_codes(user.id)
+        plaintext_codes = self._generate_recovery_codes()
+        hashes = [self.password_service.hash_password(c) for c in plaintext_codes]
+        self.totp_repository.insert_recovery_code_batch(user.id, hashes)
+
+        logger.info("TOTP recovery codes regenerated for user_id=%s", user.id)
+
+        return TotpConfirmResult(recovery_codes=plaintext_codes)
+
+    def _reauth(self, user: User, password: str, code: str) -> None:
+        """Verify password + TOTP-or-recovery code, raising generically on failure.
+
+        Shared by disable/regenerate (contracts/totp-api.md §3-4): neither
+        endpoint reveals which factor was wrong, to avoid leaking which
+        credential an attacker got right.
+
+        Args:
+            user: The authenticated user re-authenticating
+            password: The user's current password
+            code: A current TOTP code or an unused recovery code
+
+        Raises:
+            TotpReauthFailedError: Password or code incorrect (401)
+        """
+        if not self.password_service.verify_password(password, user.password_hash):
+            logger.info("TOTP re-authentication failed (bad password) for user_id=%s", user.id)
+            raise TotpReauthFailedError(context={"user_id": user.id})
+
+        try:
+            self._verify_totp_or_recovery_code(user.id, code)
+        except TotpCodeInvalidError as e:
+            raise TotpReauthFailedError(context={"user_id": user.id}) from e
 
     def issue_login_challenge(self, user: User) -> TotpChallengeResult:
         """Issue a short-lived 2FA login challenge for a totp_enabled user.

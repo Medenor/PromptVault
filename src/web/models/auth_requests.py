@@ -689,6 +689,52 @@ class TotpChallengeExchangeRequest(BaseModel):
         return v
 
 
+class TotpDisableRequest(BaseModel):
+    """Request model for disabling 2FA or regenerating recovery codes (contracts §3/§4).
+
+    Shared shape for both ``POST /api/auth/2fa/disable`` and
+    ``POST /api/auth/2fa/recovery-codes/regenerate`` — both re-authenticate
+    with the current password plus a current TOTP or recovery code.
+
+    Field constraints:
+        - password: Current password, required
+        - code: TOTP code (6 digits) or recovery code (xxxx-xxxx), required
+
+    Example:
+        >>> request = TotpDisableRequest(password="SecureP@ssw0rd123", code="123456")
+    """
+
+    password: str = Field(
+        ...,
+        min_length=1,
+        max_length=128,
+        description="Current password for re-authentication",
+        examples=["SecureP@ssw0rd123"],
+    )
+    code: str = Field(
+        ...,
+        min_length=6,
+        max_length=32,
+        description="TOTP code (6 digits) or recovery code (xxxx-xxxx format)",
+        examples=["123456", "ab12-cd34"],
+    )
+
+    @field_validator("password")
+    @classmethod
+    def validate_password_not_empty(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("Password cannot be empty or whitespace only")
+        return v
+
+    @field_validator("code")
+    @classmethod
+    def validate_code_not_empty(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("Code cannot be empty")
+        return v
+
+
 class UpdateProfileRequest(BaseModel):
     """Request model for updating user profile.
 

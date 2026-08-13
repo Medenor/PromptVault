@@ -464,3 +464,167 @@ class TestLoginTwoFactorExchange:
             json={"challenge_token": "not-a-real-token", "code": "123456"},
         )
         assert response.status_code == 410
+
+
+class TestDisableEndpoint:
+    """Contract tests for POST /api/auth/2fa/disable."""
+
+    def test_disable_with_valid_password_and_code_returns_204(
+        self,
+        auth_client: TestClient,
+        auth_headers: dict[str, str],
+        test_user_credentials: dict[str, str],
+        totp_enrolled_user: dict[str, Any],
+    ):
+        code = _next_window_code(totp_enrolled_user["secret"])
+
+        response = auth_client.post(
+            "/api/auth/2fa/disable",
+            json={"password": test_user_credentials["password"], "code": code},
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 204
+
+    def test_disable_requires_authentication(self, auth_client: TestClient):
+        response = auth_client.post(
+            "/api/auth/2fa/disable", json={"password": "x", "code": "123456"}
+        )
+        assert response.status_code == 401
+
+    def test_disable_with_wrong_password_returns_401(
+        self,
+        auth_client: TestClient,
+        auth_headers: dict[str, str],
+        totp_enrolled_user: dict[str, Any],
+    ):
+        code = _next_window_code(totp_enrolled_user["secret"])
+
+        response = auth_client.post(
+            "/api/auth/2fa/disable",
+            json={"password": "WrongPassword123!", "code": code},
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 401
+
+    def test_disable_with_wrong_code_returns_401(
+        self,
+        auth_client: TestClient,
+        auth_headers: dict[str, str],
+        test_user_credentials: dict[str, str],
+        totp_enrolled_user: dict[str, Any],
+    ):
+        response = auth_client.post(
+            "/api/auth/2fa/disable",
+            json={"password": test_user_credentials["password"], "code": "000000"},
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 401
+
+    def test_disable_removes_2fa_and_login_no_longer_challenges(
+        self,
+        auth_client: TestClient,
+        auth_headers: dict[str, str],
+        test_user_credentials: dict[str, str],
+        totp_enrolled_user: dict[str, Any],
+    ):
+        code = _next_window_code(totp_enrolled_user["secret"])
+        disable_resp = auth_client.post(
+            "/api/auth/2fa/disable",
+            json={"password": test_user_credentials["password"], "code": code},
+            headers=auth_headers,
+        )
+        assert disable_resp.status_code == 204
+
+        login_resp = auth_client.post(
+            "/api/auth/login",
+            json={
+                "username_or_email": test_user_credentials["username"],
+                "password": test_user_credentials["password"],
+            },
+        )
+        assert login_resp.status_code == 200
+        assert "access_token" in login_resp.json()
+        assert "challenge_token" not in login_resp.json()
+
+
+class TestRegenerateRecoveryCodesEndpoint:
+    """Contract tests for POST /api/auth/2fa/recovery-codes/regenerate."""
+
+    def test_regenerate_with_valid_password_and_code_returns_new_codes(
+        self,
+        auth_client: TestClient,
+        auth_headers: dict[str, str],
+        test_user_credentials: dict[str, str],
+        totp_enrolled_user: dict[str, Any],
+    ):
+        code = _next_window_code(totp_enrolled_user["secret"])
+
+        response = auth_client.post(
+            "/api/auth/2fa/recovery-codes/regenerate",
+            json={"password": test_user_credentials["password"], "code": code},
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["recovery_codes"]) == 10
+        assert set(data["recovery_codes"]).isdisjoint(
+            totp_enrolled_user["recovery_codes"]
+        )
+
+    def test_regenerate_requires_authentication(self, auth_client: TestClient):
+        response = auth_client.post(
+            "/api/auth/2fa/recovery-codes/regenerate",
+            json={"password": "x", "code": "123456"},
+        )
+        assert response.status_code == 401
+
+    def test_regenerate_with_wrong_password_returns_401(
+        self,
+        auth_client: TestClient,
+        auth_headers: dict[str, str],
+        totp_enrolled_user: dict[str, Any],
+    ):
+        code = _next_window_code(totp_enrolled_user["secret"])
+
+        response = auth_client.post(
+            "/api/auth/2fa/recovery-codes/regenerate",
+            json={"password": "WrongPassword123!", "code": code},
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 401
+
+    def test_regenerate_invalidates_old_codes(
+        self,
+        auth_client: TestClient,
+        auth_headers: dict[str, str],
+        test_user_credentials: dict[str, str],
+        totp_enrolled_user: dict[str, Any],
+    ):
+        code = _next_window_code(totp_enrolled_user["secret"])
+        regen_resp = auth_client.post(
+            "/api/auth/2fa/recovery-codes/regenerate",
+            json={"password": test_user_credentials["password"], "code": code},
+            headers=auth_headers,
+        )
+        assert regen_resp.status_code == 200
+
+        login_resp = auth_client.post(
+            "/api/auth/login",
+            json={
+                "username_or_email": test_user_credentials["username"],
+                "password": test_user_credentials["password"],
+            },
+        )
+        challenge_token = login_resp.json()["challenge_token"]
+
+        old_code = totp_enrolled_user["recovery_codes"][0]
+        exchange_resp = auth_client.post(
+            "/api/auth/login/2fa",
+            json={"challenge_token": challenge_token, "code": old_code},
+        )
+        assert exchange_resp.status_code == 401

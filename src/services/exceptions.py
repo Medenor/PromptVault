@@ -485,6 +485,26 @@ class TotpChallengeExpiredError(PromptVaultException):
         )
 
 
+class TotpReauthFailedError(AuthenticationError):
+    """Raised when password+code re-authentication fails for disable/regenerate.
+
+    Deliberately generic (does not reveal whether the password or the code
+    was wrong) per contracts/totp-api.md §3-4.
+    """
+
+    def __init__(
+        self,
+        message: str = "TOTP re-authentication failed (password or code incorrect)",
+        *,
+        context: dict[str, Any] | None = None,
+    ) -> None:
+        super().__init__(
+            message,
+            user_message="Incorrect password or authentication code.",
+            context=context,
+        )
+
+
 class RateLimitExceededError(PromptVaultException):
     """Raised when rate limit is exceeded."""
 

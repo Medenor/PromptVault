@@ -103,6 +103,11 @@ class UserResponse(BaseModel):
         description="Last login timestamp",
         examples=["2025-12-02T10:30:00Z", None],
     )
+    totp_enabled: bool = Field(
+        default=False,
+        description="Whether two-factor authentication (TOTP) is enabled",
+        examples=[False, True],
+    )
 
     model_config = ConfigDict(
         from_attributes=True,  # Allow creation from ORM models

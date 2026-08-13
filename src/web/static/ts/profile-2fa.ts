@@ -5,14 +5,14 @@
  */
 
 /**
- * TOTP two-factor authentication enrollment card (User Story 1).
+ * TOTP two-factor authentication enrollment card (User Stories 1 and 3).
  *
  * Renders on the profile page's Security section. Flow:
  *   1. "Start enrollment" -> POST /api/auth/2fa/enroll -> QR + manual secret
  *   2. 6-digit code form -> POST /api/auth/2fa/verify -> recovery codes
  *   3. One-time recovery-codes display (copy / download), shown exactly once
- *
- * Later phases (disable/regenerate, T044-T048) extend this module.
+ *   4. Once enabled: "manage" view with disable / regenerate-codes actions,
+ *      both re-authenticated with password + a current code (User Story 3)
  */
 
 import { reportError } from '@/telemetry';
@@ -35,10 +35,17 @@ interface TotpConfirmResponse {
   recovery_codes: string[];
 }
 
-type EnrollmentStep = 'idle' | 'scanning' | 'recovery-codes';
+type EnrollmentStep =
+  | 'idle'
+  | 'scanning'
+  | 'recovery-codes'
+  | 'manage'
+  | 'reauth-disable'
+  | 'reauth-regenerate';
 
 let currentStep: EnrollmentStep = 'idle';
 let pendingSecret: string | null = null;
+let is2faEnabled = false;
 
 function getContainer(): HTMLElement | null {
   return document.getElementById('totp-2fa-card');
@@ -50,6 +57,10 @@ function render(): void {
 
   if (currentStep === 'idle') {
     renderIdle(container);
+  } else if (currentStep === 'manage') {
+    renderManage(container);
+  } else if (currentStep === 'reauth-disable' || currentStep === 'reauth-regenerate') {
+    renderReauthForm(container, currentStep);
   }
 }
 
@@ -257,10 +268,272 @@ function renderRecoveryCodes(container: HTMLElement, codes: string[]): void {
     downloadRecoveryCodes(codes);
   });
   document.getElementById('totp-recovery-codes-done')?.addEventListener('click', () => {
-    currentStep = 'idle';
+    currentStep = 'manage';
     pendingSecret = null;
+    is2faEnabled = true;
     render();
   });
+}
+
+function renderManage(container: HTMLElement): void {
+  // eslint-disable-next-line no-restricted-properties -- structurally escaped via html`` tagged template (utils/safe-html.ts)
+  container.innerHTML = html`
+    <div class="space-y-4">
+      <p class="text-sm text-gray-700 dark:text-gray-300">
+        <span
+          class="inline-block px-2 py-0.5 text-xs font-medium bg-green-100 text-green-800 rounded-md dark:bg-green-900 dark:text-green-200"
+        >
+          ${t('auth.profile.twoFactor.statusEnabled') || 'Enabled'}
+        </span>
+      </p>
+      <div class="flex flex-wrap gap-3">
+        <button
+          type="button"
+          id="totp-regenerate-start"
+          class="px-4 py-2 text-sm bg-gray-200 dark:bg-gray-700 dark:text-gray-100 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600"
+        >
+          ${t('auth.profile.twoFactor.regenerateButton') || 'Regenerate recovery codes'}
+        </button>
+        <button
+          type="button"
+          id="totp-disable-start"
+          class="px-4 py-2 text-sm bg-red-100 text-red-800 rounded-md hover:bg-red-200 dark:bg-red-950 dark:text-red-300 dark:hover:bg-red-900 font-medium"
+        >
+          ${t('auth.profile.twoFactor.disableButton') || 'Disable two-factor authentication'}
+        </button>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('totp-disable-start')?.addEventListener('click', () => {
+    currentStep = 'reauth-disable';
+    render();
+  });
+  document.getElementById('totp-regenerate-start')?.addEventListener('click', () => {
+    currentStep = 'reauth-regenerate';
+    render();
+  });
+}
+
+function renderReauthForm(
+  container: HTMLElement,
+  step: 'reauth-disable' | 'reauth-regenerate'
+): void {
+  const isDisable = step === 'reauth-disable';
+  const title = isDisable
+    ? t('auth.profile.twoFactor.disableConfirmTitle') || 'Disable two-factor authentication'
+    : t('auth.profile.twoFactor.regenerateConfirmTitle') || 'Regenerate recovery codes';
+  const submitLabel = isDisable
+    ? t('auth.profile.twoFactor.disableButton') || 'Disable two-factor authentication'
+    : t('auth.profile.twoFactor.regenerateButton') || 'Regenerate recovery codes';
+
+  // eslint-disable-next-line no-restricted-properties -- structurally escaped via html`` tagged template (utils/safe-html.ts)
+  container.innerHTML = html`
+    <div class="space-y-4">
+      <h3 class="text-sm font-medium text-gray-900 dark:text-gray-100">${title}</h3>
+      <p class="text-sm text-gray-700 dark:text-gray-300">
+        ${t('auth.profile.twoFactor.reauthInstructions') ||
+        'Confirm your password and a current authentication code (or a recovery code) to continue.'}
+      </p>
+      <form id="totp-reauth-form" class="space-y-3" novalidate>
+        <div>
+          <label
+            for="totp-reauth-password"
+            class="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2"
+          >
+            ${t('auth.profile.twoFactor.passwordLabel') || 'Current password'}
+          </label>
+          <input
+            type="password"
+            id="totp-reauth-password"
+            name="password"
+            autocomplete="current-password"
+            required
+            aria-required="true"
+            class="w-full max-w-xs px-3 py-2 text-sm text-gray-900 border border-gray-600 rounded-md dark:text-gray-100 dark:border-gray-500 dark:bg-gray-800"
+          />
+        </div>
+        <div>
+          <label
+            for="totp-reauth-code"
+            class="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2"
+          >
+            ${t('auth.profile.twoFactor.codeLabel') || 'Enter the 6-digit code'}
+          </label>
+          <input
+            type="text"
+            id="totp-reauth-code"
+            name="code"
+            inputmode="numeric"
+            autocomplete="one-time-code"
+            maxlength="9"
+            required
+            aria-required="true"
+            aria-describedby="totp-reauth-error"
+            class="w-full max-w-xs px-3 py-2 text-sm text-gray-900 border border-gray-600 rounded-md dark:text-gray-100 dark:border-gray-500 dark:bg-gray-800"
+            placeholder="${t('auth.profile.twoFactor.codePlaceholder') || '123456'}"
+          />
+          <p
+            id="totp-reauth-error"
+            class="text-red-700 text-xs mt-1 hidden"
+            role="alert"
+            aria-live="assertive"
+          ></p>
+        </div>
+        <div class="flex gap-3">
+          <button
+            type="submit"
+            class="px-4 py-2 bg-blue-800 text-white rounded-md hover:bg-blue-900 font-medium"
+          >
+            ${submitLabel}
+          </button>
+          <button
+            type="button"
+            id="totp-reauth-cancel"
+            class="px-4 py-2 bg-gray-300 text-gray-900 rounded-md hover:bg-gray-400 font-medium dark:text-gray-100"
+          >
+            ${t('auth.profile.twoFactor.cancelButton') || 'Cancel'}
+          </button>
+        </div>
+      </form>
+    </div>
+  `;
+
+  document.getElementById('totp-reauth-cancel')?.addEventListener('click', () => {
+    currentStep = 'manage';
+    render();
+  });
+
+  const form = document.getElementById('totp-reauth-form') as HTMLFormElement | null;
+  form?.addEventListener('submit', (event) => {
+    event.preventDefault();
+    if (isDisable) {
+      void submitDisable();
+    } else {
+      void submitRegenerate();
+    }
+  });
+}
+
+async function submitReauth(): Promise<{ password: string; code: string } | null> {
+  const passwordInput = document.getElementById('totp-reauth-password') as HTMLInputElement | null;
+  const codeInput = document.getElementById('totp-reauth-code') as HTMLInputElement | null;
+  const errorEl = document.getElementById('totp-reauth-error');
+  const password = passwordInput?.value ?? '';
+  const code = codeInput?.value.trim() ?? '';
+
+  if (errorEl) {
+    errorEl.textContent = '';
+    errorEl.classList.add('hidden');
+  }
+
+  if (!password || !code) {
+    if (errorEl) {
+      errorEl.textContent =
+        t('auth.profile.twoFactor.reauthRequired') ||
+        'Please enter your password and authentication code';
+      errorEl.classList.remove('hidden');
+    }
+    return null;
+  }
+
+  return { password, code };
+}
+
+function showReauthError(message: string): void {
+  const errorEl = document.getElementById('totp-reauth-error');
+  if (errorEl) {
+    errorEl.textContent = message;
+    errorEl.classList.remove('hidden');
+  }
+  announce(message, { id: 'validation-announcer', politeness: 'assertive' });
+}
+
+async function submitDisable(): Promise<void> {
+  const credentials = await submitReauth();
+  if (!credentials) return;
+
+  const submitButton = document
+    .getElementById('totp-reauth-form')
+    ?.querySelector('button[type="submit"]') as HTMLButtonElement | null;
+  if (submitButton) submitButton.disabled = true;
+
+  try {
+    await apiPost<void>(`${API_BASE}/disable`, credentials);
+
+    is2faEnabled = false;
+    currentStep = 'idle';
+    render();
+    showNotification(
+      t('auth.profile.twoFactor.disabledSuccess') || 'Two-factor authentication has been disabled.',
+      'success'
+    );
+  } catch (error) {
+    if (error instanceof APIRequestError) {
+      const message =
+        error.status === 401
+          ? t('auth.profile.twoFactor.reauthFailed') || 'Incorrect password or authentication code.'
+          : error.message ||
+            t('auth.profile.twoFactor.disableError') ||
+            'Failed to disable two-factor authentication. Please try again.';
+      showReauthError(message);
+    } else {
+      reportError('profile-2fa', 'submitDisable', error);
+      showNotification(
+        t('auth.profile.twoFactor.disableError') ||
+          'Failed to disable two-factor authentication. Please try again.',
+        'error'
+      );
+    }
+  } finally {
+    if (submitButton) submitButton.disabled = false;
+  }
+}
+
+async function submitRegenerate(): Promise<void> {
+  const credentials = await submitReauth();
+  if (!credentials) return;
+
+  const submitButton = document
+    .getElementById('totp-reauth-form')
+    ?.querySelector('button[type="submit"]') as HTMLButtonElement | null;
+  if (submitButton) submitButton.disabled = true;
+
+  try {
+    const data = await apiPost<TotpConfirmResponse>(
+      `${API_BASE}/recovery-codes/regenerate`,
+      credentials
+    );
+
+    currentStep = 'recovery-codes';
+    const container = getContainer();
+    if (container) {
+      renderRecoveryCodes(container, data.recovery_codes);
+    }
+    showNotification(
+      t('auth.profile.twoFactor.regeneratedSuccess') || 'Recovery codes regenerated.',
+      'success'
+    );
+  } catch (error) {
+    if (error instanceof APIRequestError) {
+      const message =
+        error.status === 401
+          ? t('auth.profile.twoFactor.reauthFailed') || 'Incorrect password or authentication code.'
+          : error.message ||
+            t('auth.profile.twoFactor.regenerateError') ||
+            'Failed to regenerate recovery codes. Please try again.';
+      showReauthError(message);
+    } else {
+      reportError('profile-2fa', 'submitRegenerate', error);
+      showNotification(
+        t('auth.profile.twoFactor.regenerateError') ||
+          'Failed to regenerate recovery codes. Please try again.',
+        'error'
+      );
+    }
+  } finally {
+    if (submitButton) submitButton.disabled = false;
+  }
 }
 
 async function startEnrollment(): Promise<void> {
@@ -408,10 +681,11 @@ function downloadRecoveryCodes(codes: string[]): void {
   URL.revokeObjectURL(url);
 }
 
-export function initProfileTwoFactor(): void {
+export function initProfileTwoFactor(enabled = false): void {
   const container = getContainer();
   if (!container) return;
-  currentStep = 'idle';
+  is2faEnabled = enabled;
+  currentStep = enabled ? 'manage' : 'idle';
   render();
 }
 
@@ -419,5 +693,8 @@ export function initProfileTwoFactor(): void {
 export const __internal = {
   startEnrollment,
   confirmEnrollment,
+  submitDisable,
+  submitRegenerate,
   getPendingSecret: () => pendingSecret,
+  isEnabled: () => is2faEnabled,
 };

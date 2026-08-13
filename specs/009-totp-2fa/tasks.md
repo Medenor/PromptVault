@@ -118,18 +118,18 @@ Single-project web app layout per plan.md: `src/` (backend), `src/web/static/ts/
 
 ### Tests for User Story 3 ⚠️
 
-- [ ] T040 [P] [US3] Contract test `POST /api/auth/2fa/disable` (204, 401 wrong password/code, 429) in `tests/contract/test_totp_endpoints.py`
-- [ ] T041 [P] [US3] Contract test `POST /api/auth/2fa/recovery-codes/regenerate` (200 new codes, 401, 429; old codes invalidated) in `tests/contract/test_totp_endpoints.py`
-- [ ] T042 [P] [US3] Unit tests for `TotpService.disable` / `regenerate_recovery_codes` (password+code re-auth, cascade delete on disable, old-batch invalidation on regenerate) in `tests/unit/services/auth/test_totp_service.py`
-- [ ] T043 [P] [US3] Integration test: enroll → disable → login shows no challenge; enroll → regenerate → old code fails, new code works in `tests/integration/test_totp_flow.py`
+- [X] T040 [P] [US3] Contract test `POST /api/auth/2fa/disable` (204, 401 wrong password/code, 429) in `tests/contract/test_totp_endpoints.py`
+- [X] T041 [P] [US3] Contract test `POST /api/auth/2fa/recovery-codes/regenerate` (200 new codes, 401, 429; old codes invalidated) in `tests/contract/test_totp_endpoints.py`
+- [X] T042 [P] [US3] Unit tests for `TotpService.disable` / `regenerate_recovery_codes` (password+code re-auth, cascade delete on disable, old-batch invalidation on regenerate) in `tests/unit/services/auth/test_totp_service.py`
+- [X] T043 [P] [US3] Integration test: enroll → disable → login shows no challenge; enroll → regenerate → old code fails, new code works in `tests/integration/test_totp_flow.py`
 
 ### Implementation for User Story 3
 
-- [ ] T044 [US3] Implement `TotpService.disable(user, password, code)` and `TotpService.regenerate_recovery_codes(user, password, code)` in `src/services/auth/totp_service.py`: verify password via `PasswordService`, verify code via TOTP-or-recovery check (reuse T032's code-acceptance logic), then delete/replace rows per data-model.md lifecycle
-- [ ] T045 [US3] Add `TotpDisableRequest` Pydantic model to `src/web/models/auth_requests.py` (shared shape for disable + regenerate per contracts/totp-api.md)
-- [ ] T046 [US3] Add `POST /api/auth/2fa/disable` and `POST /api/auth/2fa/recovery-codes/regenerate` to `src/web/routers/auth_totp_router.py`, rate-limited, audit-logging disable events (FR-017)
-- [ ] T047 [US3] [P] Extend `src/web/static/ts/profile-2fa.ts` with disable and regenerate UI (password + code re-auth form, confirmation before disabling, new-codes display reusing the enrollment recovery-code component)
-- [ ] T048 [US3] [P] Frontend unit tests for disable/regenerate flows in `src/web/static/ts/__tests__/profile-2fa.test.ts`
+- [X] T044 [US3] Implement `TotpService.disable(user, password, code)` and `TotpService.regenerate_recovery_codes(user, password, code)` in `src/services/auth/totp_service.py`: verify password via `PasswordService`, verify code via TOTP-or-recovery check (reuse T032's code-acceptance logic), then delete/replace rows per data-model.md lifecycle
+- [X] T045 [US3] Add `TotpDisableRequest` Pydantic model to `src/web/models/auth_requests.py` (shared shape for disable + regenerate per contracts/totp-api.md)
+- [X] T046 [US3] Add `POST /api/auth/2fa/disable` and `POST /api/auth/2fa/recovery-codes/regenerate` to `src/web/routers/auth_totp_router.py`, rate-limited, audit-logging disable events (FR-017)
+- [X] T047 [US3] [P] Extend `src/web/static/ts/profile-2fa.ts` with disable and regenerate UI (password + code re-auth form, confirmation before disabling, new-codes display reusing the enrollment recovery-code component)
+- [X] T048 [US3] [P] Frontend unit tests for disable/regenerate flows in `src/web/static/ts/__tests__/profile-2fa.test.ts`
 
 **Checkpoint**: User Stories 1–3 fully functional; account lifecycle for 2FA is complete
 

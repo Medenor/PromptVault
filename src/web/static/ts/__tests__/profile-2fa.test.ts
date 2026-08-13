@@ -255,4 +255,164 @@ describe('profile-2fa', () => {
     expect(document.getElementById('totp-start-enrollment')).not.toBeNull();
     expect(__internal.getPendingSecret()).toBeNull();
   });
+
+  it('completing enrollment transitions to the manage view after Done', async () => {
+    mockedApiPost.mockResolvedValueOnce({
+      secret: 'JBSWY3DPEHPK3PXP',
+      provisioning_uri:
+        'otpauth://totp/PromptVault:alice?secret=JBSWY3DPEHPK3PXP&issuer=PromptVault',
+      qr_svg: '<svg></svg>',
+    });
+    initProfileTwoFactor();
+    await __internal.startEnrollment();
+
+    (document.getElementById('totp-confirm-code') as HTMLInputElement).value = '123456';
+    mockedApiPost.mockResolvedValueOnce({
+      enabled: true,
+      recovery_codes: ['ab12-cd34', 'ef56-gh78'],
+    });
+    await __internal.confirmEnrollment();
+
+    document.getElementById('totp-recovery-codes-done')?.dispatchEvent(new Event('click'));
+
+    expect(__internal.isEnabled()).toBe(true);
+    expect(document.getElementById('totp-disable-start')).not.toBeNull();
+    expect(document.getElementById('totp-regenerate-start')).not.toBeNull();
+  });
+
+  describe('manage view (2FA already enabled)', () => {
+    beforeEach(() => {
+      initProfileTwoFactor(true);
+    });
+
+    it('renders disable and regenerate actions', () => {
+      expect(document.getElementById('totp-disable-start')).not.toBeNull();
+      expect(document.getElementById('totp-regenerate-start')).not.toBeNull();
+      expect(document.getElementById('totp-start-enrollment')).toBeNull();
+    });
+
+    it('disable start shows the re-auth form', () => {
+      document.getElementById('totp-disable-start')?.dispatchEvent(new Event('click'));
+
+      expect(document.getElementById('totp-reauth-form')).not.toBeNull();
+      expect(document.getElementById('totp-reauth-password')).not.toBeNull();
+      expect(document.getElementById('totp-reauth-code')).not.toBeNull();
+    });
+
+    it('disable cancel returns to the manage view', () => {
+      document.getElementById('totp-disable-start')?.dispatchEvent(new Event('click'));
+      document.getElementById('totp-reauth-cancel')?.dispatchEvent(new Event('click'));
+
+      expect(document.getElementById('totp-disable-start')).not.toBeNull();
+      expect(document.getElementById('totp-reauth-form')).toBeNull();
+    });
+
+    it('disable with valid password and code disables 2FA', async () => {
+      document.getElementById('totp-disable-start')?.dispatchEvent(new Event('click'));
+      (document.getElementById('totp-reauth-password') as HTMLInputElement).value =
+        'SecureP@ssw0rd123';
+      (document.getElementById('totp-reauth-code') as HTMLInputElement).value = '123456';
+
+      mockedApiPost.mockResolvedValueOnce({});
+
+      await __internal.submitDisable();
+
+      expect(mockedApiPost).toHaveBeenCalledWith('/api/auth/2fa/disable', {
+        password: 'SecureP@ssw0rd123',
+        code: '123456',
+      });
+      expect(__internal.isEnabled()).toBe(false);
+      expect(document.getElementById('totp-start-enrollment')).not.toBeNull();
+    });
+
+    it('disable with wrong password/code shows an inline error and stays on the form', async () => {
+      document.getElementById('totp-disable-start')?.dispatchEvent(new Event('click'));
+      (document.getElementById('totp-reauth-password') as HTMLInputElement).value = 'wrong';
+      (document.getElementById('totp-reauth-code') as HTMLInputElement).value = '000000';
+
+      mockedApiPost.mockRejectedValueOnce(
+        new APIRequestError(401, { detail: 'Incorrect password or authentication code.' })
+      );
+
+      await __internal.submitDisable();
+
+      const errorEl = document.getElementById('totp-reauth-error');
+      expect(errorEl?.classList.contains('hidden')).toBe(false);
+      expect(errorEl?.textContent).not.toBe('');
+      expect(document.getElementById('totp-reauth-form')).not.toBeNull();
+      expect(__internal.isEnabled()).toBe(true);
+    });
+
+    it('disable with empty fields shows a validation error without calling the API', async () => {
+      document.getElementById('totp-disable-start')?.dispatchEvent(new Event('click'));
+      mockedApiPost.mockClear();
+
+      await __internal.submitDisable();
+
+      expect(mockedApiPost).not.toHaveBeenCalled();
+      const errorEl = document.getElementById('totp-reauth-error');
+      expect(errorEl?.classList.contains('hidden')).toBe(false);
+    });
+
+    it('regenerate start shows the re-auth form', () => {
+      document.getElementById('totp-regenerate-start')?.dispatchEvent(new Event('click'));
+
+      expect(document.getElementById('totp-reauth-form')).not.toBeNull();
+    });
+
+    it('regenerate with valid password and code shows new recovery codes', async () => {
+      document.getElementById('totp-regenerate-start')?.dispatchEvent(new Event('click'));
+      (document.getElementById('totp-reauth-password') as HTMLInputElement).value =
+        'SecureP@ssw0rd123';
+      (document.getElementById('totp-reauth-code') as HTMLInputElement).value = '123456';
+
+      mockedApiPost.mockResolvedValueOnce({
+        enabled: true,
+        recovery_codes: ['zz11-zz22', 'yy33-yy44'],
+      });
+
+      await __internal.submitRegenerate();
+
+      expect(mockedApiPost).toHaveBeenCalledWith('/api/auth/2fa/recovery-codes/regenerate', {
+        password: 'SecureP@ssw0rd123',
+        code: '123456',
+      });
+      const list = document.getElementById('totp-recovery-codes-list');
+      expect(list).not.toBeNull();
+      expect(list?.textContent).toContain('zz11-zz22');
+    });
+
+    it('regenerate with wrong password/code shows an inline error and stays on the form', async () => {
+      document.getElementById('totp-regenerate-start')?.dispatchEvent(new Event('click'));
+      (document.getElementById('totp-reauth-password') as HTMLInputElement).value = 'wrong';
+      (document.getElementById('totp-reauth-code') as HTMLInputElement).value = '000000';
+
+      mockedApiPost.mockRejectedValueOnce(
+        new APIRequestError(401, { detail: 'Incorrect password or authentication code.' })
+      );
+
+      await __internal.submitRegenerate();
+
+      const errorEl = document.getElementById('totp-reauth-error');
+      expect(errorEl?.classList.contains('hidden')).toBe(false);
+      expect(document.getElementById('totp-reauth-form')).not.toBeNull();
+    });
+
+    it('after regenerate, Done returns to the manage view', async () => {
+      document.getElementById('totp-regenerate-start')?.dispatchEvent(new Event('click'));
+      (document.getElementById('totp-reauth-password') as HTMLInputElement).value =
+        'SecureP@ssw0rd123';
+      (document.getElementById('totp-reauth-code') as HTMLInputElement).value = '123456';
+
+      mockedApiPost.mockResolvedValueOnce({
+        enabled: true,
+        recovery_codes: ['zz11-zz22'],
+      });
+      await __internal.submitRegenerate();
+
+      document.getElementById('totp-recovery-codes-done')?.dispatchEvent(new Event('click'));
+
+      expect(document.getElementById('totp-disable-start')).not.toBeNull();
+    });
+  });
 });

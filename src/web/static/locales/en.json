@@ -718,7 +718,19 @@
         "downloadRecoveryCodes": "Download as text file",
         "doneButton": "Done",
         "statusEnabled": "Enabled",
-        "statusDisabled": "Not enabled"
+        "statusDisabled": "Not enabled",
+        "disableButton": "Disable two-factor authentication",
+        "disableConfirmTitle": "Disable two-factor authentication",
+        "disabledSuccess": "Two-factor authentication has been disabled.",
+        "disableError": "Failed to disable two-factor authentication. Please try again.",
+        "regenerateButton": "Regenerate recovery codes",
+        "regenerateConfirmTitle": "Regenerate recovery codes",
+        "regeneratedSuccess": "Recovery codes regenerated.",
+        "regenerateError": "Failed to regenerate recovery codes. Please try again.",
+        "reauthInstructions": "Confirm your password and a current authentication code (or a recovery code) to continue.",
+        "reauthRequired": "Please enter your password and authentication code",
+        "reauthFailed": "Incorrect password or authentication code.",
+        "passwordLabel": "Current password"
       }
     }
   },

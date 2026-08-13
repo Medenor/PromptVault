@@ -33,6 +33,7 @@ from src.services.exceptions import (
     TotpChallengeExpiredError,
     TotpCodeInvalidError,
     TotpEnrollmentNotFoundError,
+    TotpReauthFailedError,
 )
 
 
@@ -107,6 +108,15 @@ class FakeTotpRepository:
 
         code.used_at = datetime.now(UTC)
         return code
+
+    def delete_credential(self, user_id):
+        existed = self.credentials.pop(user_id, None) is not None
+        return existed
+
+    def delete_all_recovery_codes(self, user_id):
+        count = len(self.recovery_codes.get(user_id, []))
+        self.recovery_codes[user_id] = []
+        return count
 
     def create_login_challenge(self, challenge_id, user_id, expires_at):
         challenge = _FakeChallenge(
@@ -219,12 +229,13 @@ def make_user(
     email="alice@example.com",
     totp_enabled=False,
     repository: FakeTotpRepository | None = None,
+    password_hash: str = "irrelevant",
 ) -> User:
     user = User(
         id=user_id,
         username="alice",
         email=email,
-        password_hash="irrelevant",
+        password_hash=password_hash,
         role="viewer",
         totp_enabled=totp_enabled,
     )
@@ -544,3 +555,154 @@ class TestExchangeChallenge:
 
         with pytest.raises(RuntimeError):
             service.exchange_challenge("token", "123456")
+
+
+PASSWORD = "SecureP@ssw0rd123"
+
+
+def _make_enrolled_user(totp_service, totp_repository, password_service):
+    """Register, enroll, and confirm 2FA for a user with a real password hash."""
+    user = make_user(
+        repository=totp_repository,
+        password_hash=password_service.hash_password(PASSWORD),
+    )
+    secret, recovery_codes = _enroll_and_confirm(totp_service, totp_repository, user)
+    return user, secret, recovery_codes
+
+
+class TestDisable:
+    def test_disable_with_valid_password_and_code_disables_2fa(
+        self, totp_service, totp_repository, password_service
+    ):
+        user, secret, _ = _make_enrolled_user(
+            totp_service, totp_repository, password_service
+        )
+        code = _next_window_code(secret)
+
+        totp_service.disable(user, PASSWORD, code)
+
+        assert user.totp_enabled is False
+
+    def test_disable_deletes_credential_and_recovery_codes(
+        self, totp_service, totp_repository, password_service
+    ):
+        user, secret, _ = _make_enrolled_user(
+            totp_service, totp_repository, password_service
+        )
+        code = _next_window_code(secret)
+
+        totp_service.disable(user, PASSWORD, code)
+
+        assert totp_repository.get_credential(user.id) is None
+        assert totp_repository.get_latest_batch_codes(user.id) == []
+
+    def test_disable_with_recovery_code_also_works(
+        self, totp_service, totp_repository, password_service
+    ):
+        user, _secret, recovery_codes = _make_enrolled_user(
+            totp_service, totp_repository, password_service
+        )
+
+        totp_service.disable(user, PASSWORD, recovery_codes[0])
+
+        assert user.totp_enabled is False
+
+    def test_disable_with_wrong_password_raises_generic_error(
+        self, totp_service, totp_repository, password_service
+    ):
+        user, secret, _ = _make_enrolled_user(
+            totp_service, totp_repository, password_service
+        )
+        code = _next_window_code(secret)
+
+        with pytest.raises(TotpReauthFailedError):
+            totp_service.disable(user, "WrongPassword123!", code)
+
+        assert user.totp_enabled is True
+
+    def test_disable_with_wrong_code_raises_generic_error(
+        self, totp_service, totp_repository, password_service
+    ):
+        user, _secret, _ = _make_enrolled_user(
+            totp_service, totp_repository, password_service
+        )
+
+        with pytest.raises(TotpReauthFailedError):
+            totp_service.disable(user, PASSWORD, "000000")
+
+        assert user.totp_enabled is True
+        assert totp_repository.get_credential(user.id) is not None
+
+
+class TestRegenerateRecoveryCodes:
+    def test_regenerate_with_valid_password_and_code_returns_new_codes(
+        self, totp_service, totp_repository, password_service
+    ):
+        user, secret, old_codes = _make_enrolled_user(
+            totp_service, totp_repository, password_service
+        )
+        code = _next_window_code(secret)
+
+        result = totp_service.regenerate_recovery_codes(user, PASSWORD, code)
+
+        assert len(result.recovery_codes) == 10
+        assert len(set(result.recovery_codes)) == 10
+        assert set(result.recovery_codes).isdisjoint(old_codes)
+
+    def test_regenerate_invalidates_old_codes(
+        self, totp_service, totp_repository, password_service
+    ):
+        user, secret, old_codes = _make_enrolled_user(
+            totp_service, totp_repository, password_service
+        )
+        code = _next_window_code(secret)
+
+        totp_service.regenerate_recovery_codes(user, PASSWORD, code)
+
+        challenge = totp_service.issue_login_challenge(user)
+        with pytest.raises(TotpCodeInvalidError):
+            totp_service.exchange_challenge(challenge.challenge_token, old_codes[0])
+
+    def test_regenerate_new_codes_work(
+        self, totp_service, totp_repository, password_service
+    ):
+        user, secret, _old_codes = _make_enrolled_user(
+            totp_service, totp_repository, password_service
+        )
+        code = _next_window_code(secret)
+
+        result = totp_service.regenerate_recovery_codes(user, PASSWORD, code)
+
+        challenge = totp_service.issue_login_challenge(user)
+        exchange_result = totp_service.exchange_challenge(
+            challenge.challenge_token, result.recovery_codes[0]
+        )
+        assert exchange_result.user.id == user.id
+
+    def test_regenerate_with_wrong_password_raises_generic_error(
+        self, totp_service, totp_repository, password_service
+    ):
+        user, secret, old_codes = _make_enrolled_user(
+            totp_service, totp_repository, password_service
+        )
+        code = _next_window_code(secret)
+
+        with pytest.raises(TotpReauthFailedError):
+            totp_service.regenerate_recovery_codes(user, "WrongPassword123!", code)
+
+        # Old codes remain valid since regeneration never happened.
+        challenge = totp_service.issue_login_challenge(user)
+        exchange_result = totp_service.exchange_challenge(
+            challenge.challenge_token, old_codes[0]
+        )
+        assert exchange_result.user.id == user.id
+
+    def test_regenerate_with_wrong_code_raises_generic_error(
+        self, totp_service, totp_repository, password_service
+    ):
+        user, _secret, _old_codes = _make_enrolled_user(
+            totp_service, totp_repository, password_service
+        )
+
+        with pytest.raises(TotpReauthFailedError):
+            totp_service.regenerate_recovery_codes(user, PASSWORD, "000000")

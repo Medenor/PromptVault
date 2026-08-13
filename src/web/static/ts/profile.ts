@@ -47,6 +47,7 @@ interface UserInfo {
   role: string;
   created_at?: string | null;
   last_login?: string | null;
+  totp_enabled?: boolean;
 }
 
 interface FormValidationError {
@@ -433,6 +434,8 @@ async function loadUserInfo(): Promise<void> {
     if (createdEl) createdEl.textContent = formatDate(user.created_at);
     if (lastLoginEl) lastLoginEl.textContent = formatDate(user.last_login);
 
+    initProfileTwoFactor(user.totp_enabled ?? false);
+
     await loadSessions();
   } catch (error) {
     reportError('profile', 'loadUserInfo', error);
@@ -634,7 +637,6 @@ function initializeProfilePage(): void {
 
   void loadUserInfo();
   setupChangePasswordForm();
-  initProfileTwoFactor();
 }
 
 (window as Window & { revokeSession?: (sessionId: string) => Promise<void> }).revokeSession =
