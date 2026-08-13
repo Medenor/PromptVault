@@ -81,7 +81,7 @@ Role (string, not a table) ── (0..1) TotpRolePolicy
 ## Validation rules (from Functional Requirements)
 
 - `TotpCredential.confirmed=False` rows never satisfy a login challenge or set `users.totp_enabled=True` (FR-002).
-- `TotpCredential` insert/replace on repeated enrollment start only affects the unconfirmed row; an already-`confirmed=True` credential blocks a new enrollment start (FR-021 — see spec User Story 1, scenario 5; the service must reject re-enrollment while `totp_enabled=True`).
+- `TotpCredential` insert/replace on repeated enrollment start only affects the unconfirmed row; an already-`confirmed=True` credential blocks a new enrollment start (spec User Story 1, Acceptance Scenario 5; the service must reject re-enrollment while `totp_enabled=True`).
 - `last_used_step` must be strictly greater than any previously accepted step for that credential to accept a new code (FR-007 replay guard).
 - `TotpRecoveryCode.used_at` is set exactly once, atomically (guard against double-spend races) (FR-008).
 - `TotpLoginChallenge` rows are checked for `consumed_at IS NULL AND expires_at > now()` before accepting an exchange; a matching row's `consumed_at` is set in the same transaction as success to prevent replay (FR-009, Edge Cases).

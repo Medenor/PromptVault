@@ -171,8 +171,9 @@ Single-project web app layout per plan.md: `src/` (backend), `src/web/static/ts/
 - [ ] T062 Run the migration round-trip against both SQLite (default dev db) and a throwaway Postgres container per `docs/agents/testing.md` / `docs/agents/git-and-docker-safety.md` conventions — never the production compose file
 - [ ] T063 [P] Add a changelog entry for the TOTP 2FA feature (Improvement Plan 2026-08 item #7) following the repo's existing changelog convention (see recent commits like "docs: add #86 coverage HTML report fix to changelog")
 - [ ] T064 Run `make lint` (formatting, lint, typecheck across both stacks) and fix any violations
-- [ ] T065 Execute the full quickstart.md validation guide end-to-end manually (all 6 sections) against `make dev`
+- [ ] T065 Execute the full quickstart.md validation guide end-to-end manually (all 6 sections) against `make dev`; while running §2 (enrollment), self-time the scan→confirm→recovery-codes flow and confirm it completes in under 2 minutes (SC-001)
 - [ ] T066 [P] Verify no TOTP secrets, codes, or recovery codes appear in application logs across all new code paths (grep-audit `src/services/auth/totp_*.py` and `src/web/routers/auth_totp_router.py` for logging statements)
+- [ ] T067 [P] Keyboard-navigation and screen-reader smoke test of the enrollment card (profile-2fa.ts), login challenge step (auth.ts), and mandatory-enrollment interstitial — verify all controls are reachable via Tab/Shift+Tab, form fields have accessible labels, and QR fallback (manual-entry secret) is announced (FR-019)
 
 ---
 

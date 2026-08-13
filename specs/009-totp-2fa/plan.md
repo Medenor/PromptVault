@@ -60,7 +60,7 @@ specs/009-totp-2fa/
 src/
 ├── db/
 │   ├── models/
-│   │   ├── user.py                     # MODIFIED: totp_enabled, totp_secret_encrypted, totp_secret_nonce columns (secret itself in new table, see data-model.md)
+│   │   ├── user.py                     # MODIFIED: totp_enabled column only (secret lives in new totp_credentials table, see data-model.md)
 │   │   ├── totp_credential.py          # NEW: encrypted secret, confirmed flag, last-used step (replay guard)
 │   │   ├── totp_recovery_code.py       # NEW: per-code Argon2 hash, used flag, batch id
 │   │   └── totp_role_policy.py         # NEW: role -> required bool
