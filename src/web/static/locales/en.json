@@ -596,7 +596,12 @@
       "twoFactorBackButton": "Back to login",
       "twoFactorInvalidCode": "Incorrect code. Please try again.",
       "twoFactorExpired": "Your session expired. Please log in again.",
-      "twoFactorSuccess": "Login successful!"
+      "twoFactorSuccess": "Login successful!",
+      "enrollmentRequired": {
+        "title": "Two-factor authentication required",
+        "instructions": "Your account role requires two-factor authentication. Complete setup below before continuing.",
+        "success": "Two-factor authentication is now enabled."
+      }
     },
     "register": {
       "title": "Create Account",
@@ -782,7 +787,14 @@
       "userCreated": "User created successfully",
       "userExists": "User already exists",
       "confirmDelete": "Confirm Delete",
-      "deleteWarning": "Are you sure you want to permanently delete this user? This action cannot be undone and will remove all user data from the database."
+      "deleteWarning": "Are you sure you want to permanently delete this user? This action cannot be undone and will remove all user data from the database.",
+      "twoFactorPolicy": {
+        "title": "Two-Factor Authentication Policy",
+        "description": "Require members of a role to have two-factor authentication enabled. Non-enrolled users in a required role are routed into mandatory enrollment after login.",
+        "updateSuccess": "Two-factor authentication policy updated.",
+        "updateError": "Failed to update two-factor authentication policy.",
+        "loadError": "Failed to load two-factor authentication policy."
+      }
     },
     "sessions": {
       "title": "Session Management",

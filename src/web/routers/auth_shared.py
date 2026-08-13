@@ -24,6 +24,7 @@ from src.services.auth.jwt_service import JWTService
 from src.services.auth.password_reset_service import PasswordResetService
 from src.services.auth.password_service import PasswordService
 from src.services.auth.totp_encryption_service import TotpEncryptionService
+from src.services.auth.totp_policy_service import TotpPolicyService
 from src.services.auth.totp_service import TotpService
 from src.web.dependencies.auth import get_auth_config
 
@@ -118,3 +119,17 @@ def get_totp_service(
     return TotpService(
         totp_repository, encryption_service, password_service, jwt_service
     )
+
+
+def get_totp_policy_service(
+    session: Session = Depends(get_db),
+) -> TotpPolicyService:
+    """Provide TotpPolicyService instance with dependencies.
+
+    Args:
+        session: Database session (injected)
+
+    Returns:
+        TotpPolicyService: Configured admin 2FA role-policy service instance
+    """
+    return TotpPolicyService(TotpRepository(session))

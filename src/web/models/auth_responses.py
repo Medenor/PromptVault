@@ -168,6 +168,16 @@ class TokenResponse(BaseModel):
         ...,
         description="User information",
     )
+    enrollment_required: bool = Field(
+        default=False,
+        description=(
+            "True when an admin-configured role policy requires 2FA and this "
+            "account is not yet enrolled (contract §7). Clients must route the "
+            "user into the mandatory-enrollment interstitial before allowing "
+            "access to other functionality."
+        ),
+        examples=[False],
+    )
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -186,6 +196,7 @@ class TokenResponse(BaseModel):
                     "created_at": "2025-12-02T10:30:00Z",
                     "updated_at": "2025-12-02T10:30:00Z",
                 },
+                "enrollment_required": False,
             }
         }
     )
@@ -589,6 +600,58 @@ class TotpChallengeIssuedResponse(BaseModel):
     model_config = ConfigDict(
         json_schema_extra={
             "example": {"challenge_token": "eyJhbGciOi...", "expires_in": 120}
+        }
+    )
+
+
+class TotpRolePolicyItem(BaseModel):
+    """A single role's 2FA-required policy entry (contract §7).
+
+    Attributes:
+        role: Role name
+        required: Whether members of this role must have 2FA enabled
+    """
+
+    role: Literal["viewer", "editor", "admin"] = Field(
+        ..., description="Role name", examples=["admin"]
+    )
+    required: bool = Field(
+        ...,
+        description="Whether members of this role must have 2FA enabled",
+        examples=[True],
+    )
+
+
+class TotpPolicyResponse(BaseModel):
+    """Response model for GET/PUT /api/admin/2fa/policy (contract §7).
+
+    Attributes:
+        roles: Policy entry for every known role
+
+    Example:
+        >>> response = TotpPolicyResponse(
+        ...     roles=[
+        ...         {"role": "admin", "required": True},
+        ...         {"role": "editor", "required": False},
+        ...         {"role": "viewer", "required": False},
+        ...     ]
+        ... )
+    """
+
+    roles: list[TotpRolePolicyItem] = Field(
+        ...,
+        description="2FA-required policy for every role",
+    )
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "roles": [
+                    {"role": "admin", "required": True},
+                    {"role": "editor", "required": False},
+                    {"role": "viewer", "required": False},
+                ]
+            }
         }
     )
 

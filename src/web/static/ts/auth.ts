@@ -16,6 +16,7 @@ import { showNotification } from '@/utils/notifications';
 import { announce } from '@/utils/a11y';
 import { initSecondaryNav } from '@/utils/secondary-nav';
 import { clearStoredTokens, refreshTokens } from '@/utils/api';
+import { initProfileTwoFactor } from './profile-2fa';
 
 const API_BASE = '/api/auth';
 
@@ -310,6 +311,26 @@ function resetToPasswordStep(): void {
   showError(document.getElementById('totp-challenge-code-error'), '');
 }
 
+function showEnrollmentRequiredInterstitial(): void {
+  const modal = document.getElementById('totp-enrollment-required-modal');
+  if (!modal) return;
+
+  showElement(modal);
+  initProfileTwoFactor(false, () => {
+    hideElement(modal);
+    showNotification(
+      t('auth.login.enrollmentRequired.success') || 'Two-factor authentication is now enabled.',
+      'success'
+    );
+    window.location.href = '/';
+  });
+
+  announce(t('auth.login.enrollmentRequired.title') || 'Two-factor authentication required', {
+    id: 'validation-announcer',
+    politeness: 'assertive',
+  });
+}
+
 function storeAuthTokens(accessToken: string, refreshToken: string, rememberMe: boolean): void {
   const preferredStorage = rememberMe ? localStorage : sessionStorage;
   const secondaryStorage = rememberMe ? sessionStorage : localStorage;
@@ -468,6 +489,7 @@ async function handleLoginSubmit(event: Event): Promise<void> {
       access_token?: string;
       refresh_token?: string;
       challenge_token?: string;
+      enrollment_required?: boolean;
       detail?: string;
     };
 
@@ -483,6 +505,13 @@ async function handleLoginSubmit(event: Event): Promise<void> {
         return;
       }
       storeAuthTokens(data.access_token, data.refresh_token, rememberMe);
+
+      if (data.enrollment_required) {
+        // Admin-enforced 2FA policy (US4): a session exists, but the user
+        // must complete enrollment before reaching the rest of the app.
+        showEnrollmentRequiredInterstitial();
+        return;
+      }
 
       showNotification(t('auth.login.success') || 'Login successful!', 'success');
 
@@ -820,6 +849,7 @@ export const __internal = {
   handleTwoFactorChallengeSubmit,
   handleLoginSubmit,
   setupLoginForm,
+  showEnrollmentRequiredInterstitial,
   getPendingChallengeToken: () => pendingChallengeToken,
 };
 

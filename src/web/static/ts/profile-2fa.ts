@@ -46,6 +46,7 @@ type EnrollmentStep =
 let currentStep: EnrollmentStep = 'idle';
 let pendingSecret: string | null = null;
 let is2faEnabled = false;
+let onEnrolledCallback: (() => void) | null = null;
 
 function getContainer(): HTMLElement | null {
   return document.getElementById('totp-2fa-card');
@@ -271,6 +272,7 @@ function renderRecoveryCodes(container: HTMLElement, codes: string[]): void {
     currentStep = 'manage';
     pendingSecret = null;
     is2faEnabled = true;
+    onEnrolledCallback?.();
     render();
   });
 }
@@ -681,11 +683,12 @@ function downloadRecoveryCodes(codes: string[]): void {
   URL.revokeObjectURL(url);
 }
 
-export function initProfileTwoFactor(enabled = false): void {
+export function initProfileTwoFactor(enabled = false, onEnrolled?: () => void): void {
   const container = getContainer();
   if (!container) return;
   is2faEnabled = enabled;
   currentStep = enabled ? 'manage' : 'idle';
+  onEnrolledCallback = onEnrolled ?? null;
   render();
 }
 

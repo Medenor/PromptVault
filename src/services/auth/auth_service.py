@@ -118,6 +118,7 @@ from src.services.auth.lockout_service import LockoutService
 from src.services.auth.password_service import PasswordService
 from src.services.auth.session_service import SessionService
 from src.services.auth.totp_encryption_service import TotpEncryptionService
+from src.services.auth.totp_policy_service import TotpPolicyService
 from src.services.auth.totp_service import TotpChallengeResult, TotpService
 from src.services.exceptions import (
     AccountInactiveError,
@@ -168,6 +169,7 @@ class AuthService:
         )
         self.session_service = SessionService(db, config, self.session_repo)
         self._totp_service: TotpService | None = None
+        self._totp_policy_service: TotpPolicyService | None = None
 
     @property
     def totp_service(self) -> TotpService:
@@ -187,6 +189,17 @@ class AuthService:
                 self.jwt_service,
             )
         return self._totp_service
+
+    @property
+    def totp_policy_service(self) -> TotpPolicyService:
+        """Lazily construct the admin 2FA role-policy service.
+
+        Deferred for the same reason as ``totp_service`` — AuthService must
+        stay usable for deployments that never touch 2FA policy.
+        """
+        if self._totp_policy_service is None:
+            self._totp_policy_service = TotpPolicyService(TotpRepository(self.db))
+        return self._totp_policy_service
 
     def register(
         self,
@@ -375,12 +388,20 @@ class AuthService:
         self.session_service.enforce_login_session_limit(user)
 
         # Generate tokens and create session
-        return self._generate_tokens_and_session(
+        result = self._generate_tokens_and_session(
             user,
             ip_address,
             user_agent,
             remember_me=remember_me,
         )
+
+        # Admin-enforced 2FA policy (FR-014/FR-015, US4): a full session is
+        # still issued, but the client must route the user into mandatory
+        # enrollment before granting access to other functionality.
+        if self.totp_policy_service.is_required_for(user.role or "viewer"):
+            result["enrollment_required"] = True
+
+        return result
 
     def exchange_2fa_challenge(
         self,

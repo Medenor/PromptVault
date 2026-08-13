@@ -179,6 +179,7 @@ def login(
             token_type="Bearer",
             expires_in=result["expires_in"],
             user=user_response,
+            enrollment_required=result.get("enrollment_required", False),
         )
 
         # Set HTTP-only cookies for web clients

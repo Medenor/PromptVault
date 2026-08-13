@@ -628,3 +628,162 @@ class TestRegenerateRecoveryCodesEndpoint:
             json={"challenge_token": challenge_token, "code": old_code},
         )
         assert exchange_resp.status_code == 401
+
+
+@pytest.fixture
+def admin_client(test_db_engine, temp_data_dir: str, monkeypatch):
+    """FastAPI TestClient with both the auth router and the admin 2FA policy
+    router mounted, for exercising GET/PUT /api/admin/2fa/policy (US4).
+    """
+    import src.config.auth_config as auth_config_module
+    from src.config.auth_config import AuthConfig
+
+    patched_config = AuthConfig(
+        **{
+            **auth_config_module.auth_settings.model_dump(),
+            "totp_encryption_key": "test-server-secret-value-12345",
+        }
+    )
+    monkeypatch.setattr(auth_config_module, "auth_settings", patched_config)
+
+    from src.db import session as session_module
+
+    auth_module_path = (
+        Path(__file__).parent.parent.parent / "src" / "web" / "routers" / "auth.py"
+    )
+    spec = importlib.util.spec_from_file_location(
+        "auth_router_module_totp_policy_contract", auth_module_path
+    )
+    auth_router_module = importlib.util.module_from_spec(spec)
+    sys.modules["auth_router_module_totp_policy_contract"] = auth_router_module
+    spec.loader.exec_module(auth_router_module)
+    auth_router = auth_router_module.router
+
+    from src.web.routers.admin_totp_policy_router import (
+        router as admin_totp_policy_router,
+    )
+
+    original_session_local = session_module.SessionLocal
+    TestSessionLocal = sessionmaker(bind=test_db_engine)
+    session_module.SessionLocal = TestSessionLocal
+
+    app = FastAPI(title="PromptVault Auth TOTP Policy Test")
+    app.include_router(auth_router, prefix="/api")
+    app.include_router(admin_totp_policy_router, prefix="/api")
+
+    client = TestClient(app)
+
+    try:
+        yield client
+    finally:
+        client.close()
+        session_module.SessionLocal = original_session_local
+
+
+def _promote_to_admin(test_db_engine, user_id: str) -> None:
+    """Directly flip a test user's role to admin (bypassing the API)."""
+    from src.db.models.user import User
+
+    TestSessionLocal = sessionmaker(bind=test_db_engine)
+    with TestSessionLocal() as session:
+        user = session.get(User, user_id)
+        user.role = "admin"
+        session.commit()
+
+
+class TestAdminTotpPolicyEndpoint:
+    """Contract tests for GET/PUT /api/admin/2fa/policy (User Story 4)."""
+
+    def test_get_policy_returns_all_roles_default_false(
+        self,
+        admin_client: TestClient,
+        test_db_engine,
+        registered_user: dict[str, Any],
+        auth_headers: dict[str, str],
+    ):
+        _promote_to_admin(test_db_engine, registered_user["user"]["id"])
+        # Role changed after token issuance; re-login to get an admin-scoped token.
+        login_resp = admin_client.post(
+            "/api/auth/login",
+            json={
+                "username_or_email": registered_user["user"]["username"],
+                "password": "SecureP@ssw0rd123",
+            },
+        )
+        headers = {"Authorization": f"Bearer {login_resp.json()['access_token']}"}
+
+        response = admin_client.get("/api/admin/2fa/policy", headers=headers)
+
+        assert response.status_code == 200
+        data = response.json()
+        roles = {entry["role"]: entry["required"] for entry in data["roles"]}
+        assert roles == {"viewer": False, "editor": False, "admin": False}
+
+    def test_get_policy_requires_admin_role(
+        self, admin_client: TestClient, auth_headers: dict[str, str]
+    ):
+        response = admin_client.get("/api/admin/2fa/policy", headers=auth_headers)
+        assert response.status_code == 403
+
+    def test_put_policy_updates_role(
+        self,
+        admin_client: TestClient,
+        test_db_engine,
+        registered_user: dict[str, Any],
+    ):
+        _promote_to_admin(test_db_engine, registered_user["user"]["id"])
+        login_resp = admin_client.post(
+            "/api/auth/login",
+            json={
+                "username_or_email": registered_user["user"]["username"],
+                "password": "SecureP@ssw0rd123",
+            },
+        )
+        headers = {"Authorization": f"Bearer {login_resp.json()['access_token']}"}
+
+        response = admin_client.put(
+            "/api/admin/2fa/policy",
+            json={"role": "admin", "required": True},
+            headers=headers,
+        )
+
+        assert response.status_code == 200
+        assert response.json() == {"role": "admin", "required": True}
+
+        get_resp = admin_client.get("/api/admin/2fa/policy", headers=headers)
+        roles = {entry["role"]: entry["required"] for entry in get_resp.json()["roles"]}
+        assert roles["admin"] is True
+
+    def test_put_policy_requires_admin_role(
+        self, admin_client: TestClient, auth_headers: dict[str, str]
+    ):
+        response = admin_client.put(
+            "/api/admin/2fa/policy",
+            json={"role": "admin", "required": True},
+            headers=auth_headers,
+        )
+        assert response.status_code == 403
+
+    def test_put_policy_unknown_role_returns_422(
+        self,
+        admin_client: TestClient,
+        test_db_engine,
+        registered_user: dict[str, Any],
+    ):
+        _promote_to_admin(test_db_engine, registered_user["user"]["id"])
+        login_resp = admin_client.post(
+            "/api/auth/login",
+            json={
+                "username_or_email": registered_user["user"]["username"],
+                "password": "SecureP@ssw0rd123",
+            },
+        )
+        headers = {"Authorization": f"Bearer {login_resp.json()['access_token']}"}
+
+        response = admin_client.put(
+            "/api/admin/2fa/policy",
+            json={"role": "superadmin", "required": True},
+            headers=headers,
+        )
+
+        assert response.status_code == 422

@@ -235,6 +235,21 @@
           </div>
         </div>
 
+        <!-- 2FA Enforcement Policy (User Story 4) -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6 dark:bg-gray-800">
+          <h2
+            class="text-lg font-bold text-gray-900 mb-1 dark:text-gray-100"
+            data-i18n="admin.users.twoFactorPolicy.title"
+          >
+            Two-Factor Authentication Policy
+          </h2>
+          <p class="text-sm text-gray-700 mb-4 dark:text-gray-300" data-i18n="admin.users.twoFactorPolicy.description">
+            Require members of a role to have two-factor authentication enabled. Non-enrolled
+            users in a required role are routed into mandatory enrollment after login.
+          </p>
+          <div id="totp-2fa-policy-card"></div>
+        </div>
+
         <!-- Users Table -->
         <div class="bg-white rounded-lg shadow overflow-hidden dark:bg-gray-800">
           <div class="overflow-x-auto">

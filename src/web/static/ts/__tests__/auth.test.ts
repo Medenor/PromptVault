@@ -33,6 +33,11 @@ vi.mock('@/utils/api', () => ({
   refreshTokens: vi.fn().mockResolvedValue(false),
 }));
 
+const mockInitProfileTwoFactor = vi.fn();
+vi.mock('../profile-2fa', () => ({
+  initProfileTwoFactor: (...args: unknown[]) => mockInitProfileTwoFactor(...args),
+}));
+
 function createStorage() {
   const store = new Map<string, string>();
   return {
@@ -65,6 +70,9 @@ function setupLoginPageDom(): void {
       <button type="submit">Verify</button>
       <button type="button" id="totp-challenge-back">Back</button>
     </form>
+    <div id="totp-enrollment-required-modal" class="hidden">
+      <div id="totp-2fa-card"></div>
+    </div>
   `;
 }
 
@@ -200,5 +208,84 @@ describe('auth.ts login challenge step', () => {
     expect(globalThis.fetch).not.toHaveBeenCalled();
     expect(document.getElementById('login-form')?.classList.contains('hidden')).toBe(false);
     expect(__internal.getPendingChallengeToken()).toBeNull();
+  });
+});
+
+describe('auth.ts mandatory enrollment interstitial', () => {
+  beforeEach(() => {
+    setupLoginPageDom();
+    vi.stubGlobal('localStorage', createStorage());
+    vi.stubGlobal('sessionStorage', createStorage());
+    mockInitProfileTwoFactor.mockReset();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+    document.body.innerHTML = '';
+  });
+
+  it('shows the interstitial and mounts the 2FA card when login returns enrollment_required', async () => {
+    const { __internal } = await import('../auth');
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        access_token: 'a',
+        refresh_token: 'r',
+        enrollment_required: true,
+      }),
+    });
+
+    (document.getElementById('username-or-email') as HTMLInputElement).value = 'alice';
+    (document.getElementById('password') as HTMLInputElement).value = 'Sup3rSecret!23';
+
+    const event = { preventDefault: vi.fn() } as unknown as Event;
+    await __internal.handleLoginSubmit(event);
+
+    expect(
+      document.getElementById('totp-enrollment-required-modal')?.classList.contains('hidden')
+    ).toBe(false);
+    expect(mockInitProfileTwoFactor).toHaveBeenCalledWith(false, expect.any(Function));
+    // Tokens are still stored — a real session exists while enrollment is pending.
+    expect(sessionStorage.getItem('access_token')).toBe('a');
+  });
+
+  it('does not show the interstitial for a normal login', async () => {
+    const { __internal } = await import('../auth');
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ access_token: 'a', refresh_token: 'r' }),
+    });
+
+    (document.getElementById('username-or-email') as HTMLInputElement).value = 'alice';
+    (document.getElementById('password') as HTMLInputElement).value = 'Sup3rSecret!23';
+
+    const event = { preventDefault: vi.fn() } as unknown as Event;
+    await __internal.handleLoginSubmit(event);
+
+    expect(
+      document.getElementById('totp-enrollment-required-modal')?.classList.contains('hidden')
+    ).toBe(true);
+    expect(mockInitProfileTwoFactor).not.toHaveBeenCalled();
+  });
+
+  it('hides the interstitial once enrollment completes', async () => {
+    const { __internal } = await import('../auth');
+
+    __internal.showEnrollmentRequiredInterstitial();
+
+    expect(
+      document.getElementById('totp-enrollment-required-modal')?.classList.contains('hidden')
+    ).toBe(false);
+    expect(mockInitProfileTwoFactor).toHaveBeenCalledTimes(1);
+
+    const onEnrolled = mockInitProfileTwoFactor.mock.calls[0]?.[1] as () => void;
+    onEnrolled();
+
+    expect(
+      document.getElementById('totp-enrollment-required-modal')?.classList.contains('hidden')
+    ).toBe(true);
   });
 });

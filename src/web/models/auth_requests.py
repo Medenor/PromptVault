@@ -17,6 +17,7 @@ All request models include:
 """
 
 import re
+from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
@@ -733,6 +734,29 @@ class TotpDisableRequest(BaseModel):
         if not v:
             raise ValueError("Code cannot be empty")
         return v
+
+
+class TotpPolicyUpdateRequest(BaseModel):
+    """Request model for setting a role's 2FA-required policy (contract §7).
+
+    Field constraints:
+        - role: One of "viewer", "editor", "admin"
+        - required: Whether members of this role must have 2FA enabled
+
+    Example:
+        >>> request = TotpPolicyUpdateRequest(role="admin", required=True)
+    """
+
+    role: Literal["viewer", "editor", "admin"] = Field(
+        ...,
+        description="Role to configure",
+        examples=["admin"],
+    )
+    required: bool = Field(
+        ...,
+        description="Whether members of this role must have 2FA enabled",
+        examples=[True],
+    )
 
 
 class UpdateProfileRequest(BaseModel):

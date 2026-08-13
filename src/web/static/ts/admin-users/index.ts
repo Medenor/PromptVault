@@ -13,6 +13,7 @@ import { reportError } from '@/telemetry';
 import { initI18n, updateStaticTranslations } from '@/utils/i18n';
 import { initMobileNav } from '@/mobile-nav';
 import { debounce } from '@/utils/debounce';
+import { initAdminTotpPolicy } from '../admin-2fa-policy';
 import {
   closeConfirmDeleteModal,
   closeEditUserModal,
@@ -147,6 +148,7 @@ function initializeAdminUsersPage(): void {
   setupPagination();
   setupCreateUserForm();
   void refreshUsers();
+  void initAdminTotpPolicy();
 }
 
 // Export all window functions

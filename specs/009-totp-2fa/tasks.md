@@ -143,20 +143,20 @@ Single-project web app layout per plan.md: `src/` (backend), `src/web/static/ts/
 
 ### Tests for User Story 4 ⚠️
 
-- [ ] T049 [P] [US4] Contract test `GET/PUT /api/admin/2fa/policy` (200, 403 non-admin, 422 unknown role) in `tests/contract/test_totp_endpoints.py`
-- [ ] T050 [P] [US4] Unit tests for `TotpPolicyService.get_policy` / `set_policy` / `is_required_for(role)` in `tests/unit/services/auth/test_totp_policy_service.py`
-- [ ] T051 [P] [US4] Integration test: set `admin` role required → non-enrolled admin login is routed to mandatory enrollment and blocked elsewhere; enrolled admin logs in normally; non-required role unaffected; unset policy removes enforcement in `tests/integration/test_totp_flow.py`
+- [X] T049 [P] [US4] Contract test `GET/PUT /api/admin/2fa/policy` (200, 403 non-admin, 422 unknown role) in `tests/contract/test_totp_endpoints.py`
+- [X] T050 [P] [US4] Unit tests for `TotpPolicyService.get_policy` / `set_policy` / `is_required_for(role)` in `tests/unit/services/auth/test_totp_policy_service.py`
+- [X] T051 [P] [US4] Integration test: set `admin` role required → non-enrolled admin login is routed to mandatory enrollment and blocked elsewhere; enrolled admin logs in normally; non-required role unaffected; unset policy removes enforcement in `tests/integration/test_totp_flow.py`
 
 ### Implementation for User Story 4
 
-- [ ] T052 [US4] Implement `TotpPolicyService` in `src/services/auth/totp_policy_service.py`: `get_all()`, `set(role, required, admin_user)`, `is_required_for(role) -> bool`, backed by `TotpRolePolicy` via `TotpRepository`
-- [ ] T053 [US4] Modify `AuthService.login()` / `src/web/routers/auth_session_router.py` password-step response: when `TotpPolicyService.is_required_for(user.role)` is true and `user.totp_enabled` is false, include the `enrollment_required: true` discriminator per contracts/totp-api.md §7 instead of a normal session
-- [ ] T054 [US4] Add `TotpPolicyResponse`, `TotpPolicyUpdateRequest` Pydantic models to `src/web/models/auth_requests.py` / `auth_responses.py`
-- [ ] T055 [US4] Create `src/web/routers/admin_totp_policy_router.py` with `GET`/`PUT /api/admin/2fa/policy`, admin-only, audit-logging policy changes
-- [ ] T056 [US4] Register `admin_totp_policy_router` in the FastAPI app router includes
-- [ ] T057 [US4] [P] Frontend: mandatory-enrollment interstitial in `src/web/static/ts/auth.ts` (or a new `enrollment-required.ts`) that intercepts the `enrollment_required` response and blocks navigation until `profile-2fa.ts` enrollment completes
-- [ ] T058 [US4] [P] Frontend: admin policy management screen (role list + required toggle) — new `src/web/static/ts/admin-2fa-policy.ts` + template hook in the existing admin users page
-- [ ] T059 [US4] [P] Frontend unit tests for the interstitial and admin policy screen in `src/web/static/ts/__tests__/`
+- [X] T052 [US4] Implement `TotpPolicyService` in `src/services/auth/totp_policy_service.py`: `get_all()`, `set(role, required, admin_user)`, `is_required_for(role) -> bool`, backed by `TotpRolePolicy` via `TotpRepository`
+- [X] T053 [US4] Modify `AuthService.login()` / `src/web/routers/auth_session_router.py` password-step response: when `TotpPolicyService.is_required_for(user.role)` is true and `user.totp_enabled` is false, include the `enrollment_required: true` discriminator per contracts/totp-api.md §7 instead of a normal session
+- [X] T054 [US4] Add `TotpPolicyResponse`, `TotpPolicyUpdateRequest` Pydantic models to `src/web/models/auth_requests.py` / `auth_responses.py`
+- [X] T055 [US4] Create `src/web/routers/admin_totp_policy_router.py` with `GET`/`PUT /api/admin/2fa/policy`, admin-only, audit-logging policy changes
+- [X] T056 [US4] Register `admin_totp_policy_router` in the FastAPI app router includes
+- [X] T057 [US4] [P] Frontend: mandatory-enrollment interstitial in `src/web/static/ts/auth.ts` (or a new `enrollment-required.ts`) that intercepts the `enrollment_required` response and blocks navigation until `profile-2fa.ts` enrollment completes
+- [X] T058 [US4] [P] Frontend: admin policy management screen (role list + required toggle) — new `src/web/static/ts/admin-2fa-policy.ts` + template hook in the existing admin users page
+- [X] T059 [US4] [P] Frontend unit tests for the interstitial and admin policy screen in `src/web/static/ts/__tests__/`
 
 **Checkpoint**: All four user stories independently functional
 

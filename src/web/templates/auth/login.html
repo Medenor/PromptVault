@@ -313,6 +313,37 @@
 
     {{ page_footer.site_footer() }}
 
+    <!-- Mandatory 2FA Enrollment Interstitial (User Story 4): shown after a
+         successful login when the admin-configured role policy requires
+         2FA and this account is not yet enrolled. Blocks navigation until
+         enrollment completes. -->
+    <div
+      id="totp-enrollment-required-modal"
+      aria-modal="true"
+      aria-labelledby="totp-enrollment-required-title"
+      role="dialog"
+      class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+    >
+      <div class="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto dark:bg-gray-800">
+        <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+          <h2
+            id="totp-enrollment-required-title"
+            class="text-xl font-bold text-gray-900 dark:text-gray-100"
+            data-i18n="auth.login.enrollmentRequired.title"
+          >
+            Two-factor authentication required
+          </h2>
+          <p class="mt-2 text-sm text-gray-700 dark:text-gray-300" data-i18n="auth.login.enrollmentRequired.instructions">
+            Your account role requires two-factor authentication. Complete setup below before
+            continuing.
+          </p>
+        </div>
+        <div class="p-6">
+          <div id="totp-2fa-card"></div>
+        </div>
+      </div>
+    </div>
+
     {{ scripts.load_scripts('auth', true) }}
   </body>
 </html>
