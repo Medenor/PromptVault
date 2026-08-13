@@ -603,6 +603,47 @@ class RevokeSessionRequest(BaseModel):
         return v.lower()
 
 
+class TotpVerifyRequest(BaseModel):
+    """Request model for confirming TOTP enrollment (or, in later endpoints,
+    exchanging a login challenge / re-authenticating for disable/regenerate).
+
+    Field constraints:
+        - code: Non-empty string, required. Kept permissive (not strictly
+          6-digit) since the same shape is reused where recovery codes
+          (``xxxx-xxxx`` format) are also accepted (contracts §3/§4/§6).
+
+    Example:
+        >>> request = TotpVerifyRequest(code="123456")
+    """
+
+    code: str = Field(
+        ...,
+        min_length=6,
+        max_length=32,
+        description="TOTP code (6 digits) or recovery code (xxxx-xxxx format)",
+        examples=["123456", "ab12-cd34"],
+    )
+
+    @field_validator("code")
+    @classmethod
+    def validate_code_not_empty(cls, v: str) -> str:
+        """Ensure code is not empty or whitespace only.
+
+        Args:
+            v: Code to validate
+
+        Returns:
+            Stripped code
+
+        Raises:
+            ValueError: If code is empty or whitespace only
+        """
+        v = v.strip()
+        if not v:
+            raise ValueError("Code cannot be empty")
+        return v
+
+
 class UpdateProfileRequest(BaseModel):
     """Request model for updating user profile.
 

@@ -17,6 +17,7 @@ import { apiGet, apiPost, apiDelete, APIRequestError } from '@/utils/api';
 import { announce } from '@/utils/a11y';
 import { initSecondaryNav } from '@/utils/secondary-nav';
 import { html, raw } from '@/utils/safe-html';
+import { initProfileTwoFactor } from './profile-2fa';
 
 const API_BASE = '/api/auth';
 
@@ -633,6 +634,7 @@ function initializeProfilePage(): void {
 
   void loadUserInfo();
   setupChangePasswordForm();
+  initProfileTwoFactor();
 }
 
 (window as Window & { revokeSession?: (sessionId: string) => Promise<void> }).revokeSession =

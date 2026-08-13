@@ -132,9 +132,7 @@ class TotpRepository:
 
     # -- TotpRecoveryCode -----------------------------------------------
 
-    def insert_recovery_code_batch(
-        self, user_id: str, code_hashes: list[str]
-    ) -> str:
+    def insert_recovery_code_batch(self, user_id: str, code_hashes: list[str]) -> str:
         """Insert a fresh batch of recovery codes for a user.
 
         Args:
@@ -259,9 +257,7 @@ class TotpRepository:
             .first()
         )
 
-    def consume_challenge(
-        self, challenge: TotpLoginChallenge
-    ) -> TotpLoginChallenge:
+    def consume_challenge(self, challenge: TotpLoginChallenge) -> TotpLoginChallenge:
         """Mark a login challenge as consumed (single-use).
 
         Args:

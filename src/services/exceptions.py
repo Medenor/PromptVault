@@ -415,6 +415,58 @@ class TokenNotFoundError(AuthenticationError):
         )
 
 
+class TotpAlreadyEnabledError(PromptVaultException):
+    """Raised when a user with 2FA already enabled attempts to re-enroll."""
+
+    def __init__(
+        self,
+        message: str = "TOTP 2FA is already enabled for this account",
+        *,
+        context: dict[str, Any] | None = None,
+    ) -> None:
+        super().__init__(
+            message,
+            user_message="Two-factor authentication is already enabled.",
+            http_status=409,
+            log_level="info",
+            context=context,
+        )
+
+
+class TotpEnrollmentNotFoundError(PromptVaultException):
+    """Raised when confirming 2FA without a pending enrollment."""
+
+    def __init__(
+        self,
+        message: str = "No pending TOTP enrollment found",
+        *,
+        context: dict[str, Any] | None = None,
+    ) -> None:
+        super().__init__(
+            message,
+            user_message="No pending two-factor authentication enrollment found. Please start enrollment again.",
+            http_status=400,
+            log_level="info",
+            context=context,
+        )
+
+
+class TotpCodeInvalidError(AuthenticationError):
+    """Raised when a TOTP or recovery code fails verification."""
+
+    def __init__(
+        self,
+        message: str = "TOTP code is invalid or expired",
+        *,
+        context: dict[str, Any] | None = None,
+    ) -> None:
+        super().__init__(
+            message,
+            user_message="Invalid or expired authentication code.",
+            context=context,
+        )
+
+
 class RateLimitExceededError(PromptVaultException):
     """Raised when rate limit is exceeded."""
 

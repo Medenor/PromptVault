@@ -475,6 +475,83 @@ class RevokeSessionResponse(BaseModel):
     )
 
 
+class TotpEnrollResponse(BaseModel):
+    """Response model for starting TOTP enrollment.
+
+    Attributes:
+        secret: Plaintext base32 TOTP secret (manual-entry fallback, FR-019)
+        provisioning_uri: otpauth:// URI encoded in the QR code
+        qr_svg: Inline SVG QR code for scanning with an authenticator app
+
+    Security Note:
+        The plaintext secret is returned only in this response; it is never
+        retrievable again and never stored in plaintext server-side.
+
+    Example:
+        >>> response = TotpEnrollResponse(
+        ...     secret="JBSWY3DPEHPK3PXP",
+        ...     provisioning_uri="otpauth://totp/PromptVault:alice?secret=...&issuer=PromptVault",
+        ...     qr_svg="<svg>...</svg>",
+        ... )
+    """
+
+    secret: str = Field(
+        ...,
+        description="Plaintext base32 TOTP secret (manual-entry fallback)",
+        examples=["JBSWY3DPEHPK3PXP"],
+    )
+    provisioning_uri: str = Field(
+        ...,
+        description="otpauth:// provisioning URI encoded in the QR code",
+        examples=[
+            "otpauth://totp/PromptVault:alice?secret=JBSWY3DPEHPK3PXP&issuer=PromptVault"
+        ],
+    )
+    qr_svg: str = Field(
+        ...,
+        description="Inline SVG QR code markup for scanning with an authenticator app",
+    )
+
+
+class TotpConfirmResponse(BaseModel):
+    """Response model for confirming TOTP enrollment (or regenerating recovery codes).
+
+    Attributes:
+        enabled: Whether 2FA is now active (True after successful confirm)
+        recovery_codes: One-time list of plaintext recovery codes
+
+    Security Note:
+        recovery_codes are shown exactly once — they cannot be retrieved
+        again after this response (FR-003).
+
+    Example:
+        >>> response = TotpConfirmResponse(
+        ...     enabled=True,
+        ...     recovery_codes=["ab12-cd34", "ef56-gh78"],
+        ... )
+    """
+
+    enabled: bool = Field(
+        default=True,
+        description="Whether two-factor authentication is now active",
+        examples=[True],
+    )
+    recovery_codes: list[str] = Field(
+        ...,
+        description="One-time list of plaintext recovery codes (shown only once)",
+        examples=[["ab12-cd34", "ef56-gh78"]],
+    )
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "enabled": True,
+                "recovery_codes": ["ab12-cd34", "ef56-gh78"],
+            }
+        }
+    )
+
+
 class UserStatsResponse(BaseModel):
     """Response model for user account statistics.
 

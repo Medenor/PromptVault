@@ -53,6 +53,7 @@ from src.web.routers.auth_shared import (  # noqa: F401
     get_jwt_service,
     get_password_reset_service,
 )
+from src.web.routers.auth_totp_router import router as _totp_router
 
 # Aggregate the split routers into a single router exported as ``router``.
 #
@@ -67,3 +68,4 @@ router.include_router(_registration_router)
 router.include_router(_session_router)
 router.include_router(_password_router)
 router.include_router(_profile_router)
+router.include_router(_totp_router)

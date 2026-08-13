@@ -71,7 +71,9 @@ class TestTamperDetection:
         ciphertext_b64, nonce_hex = encryption_service.encrypt_secret(
             "JBSWY3DPEHPK3PXP"
         )
-        tampered = ciphertext_b64[:-4] + ("AAAA" if ciphertext_b64[-4:] != "AAAA" else "BBBB")
+        tampered = ciphertext_b64[:-4] + (
+            "AAAA" if ciphertext_b64[-4:] != "AAAA" else "BBBB"
+        )
         with pytest.raises(ValueError, match="decryption failed"):
             encryption_service.decrypt_secret(tampered, nonce_hex)
 

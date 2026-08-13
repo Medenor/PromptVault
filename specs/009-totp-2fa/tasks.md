@@ -23,9 +23,9 @@ Single-project web app layout per plan.md: `src/` (backend), `src/web/static/ts/
 
 **Purpose**: Dependencies and config needed before any 2FA code can be written
 
-- [ ] T001 Add `pyotp>=2.9.0` and `qrcode>=7.4.2` to `pyproject.toml` dependencies; run `uv sync` (or project's dependency install command)
-- [ ] T002 Add `totp_encryption_key: str` field to `AuthConfig` in `src/config/auth_config.py` (required when any user has `totp_enabled=True`; documented in `.env.example`), following the existing `jwt_private_key_path` field-definition style
-- [ ] T003 [P] Document `TOTP_ENCRYPTION_KEY` in `.env.example` and `docs/DEPLOYMENT.md`
+- [X] T001 Add `pyotp>=2.9.0` and `qrcode>=7.4.2` to `pyproject.toml` dependencies; run `uv sync` (or project's dependency install command)
+- [X] T002 Add `totp_encryption_key: str` field to `AuthConfig` in `src/config/auth_config.py` (required when any user has `totp_enabled=True`; documented in `.env.example`), following the existing `jwt_private_key_path` field-definition style
+- [X] T003 [P] Document `TOTP_ENCRYPTION_KEY` in `.env.example` and `docs/DEPLOYMENT.md`
 
 **Checkpoint**: Dependencies installed, config surface ready
 
@@ -37,17 +37,17 @@ Single-project web app layout per plan.md: `src/` (backend), `src/web/static/ts/
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T004 Add `totp_enabled: Mapped[bool | None]` column (`default=False`) to `User` model in `src/db/models/user.py`
-- [ ] T005 [P] Create `TotpCredential` model in `src/db/models/totp_credential.py` (id, user_id FK unique, secret_ciphertext, secret_nonce, confirmed, last_used_step, created_at, confirmed_at) per data-model.md
-- [ ] T006 [P] Create `TotpRecoveryCode` model in `src/db/models/totp_recovery_code.py` (id, user_id FK, batch_id, code_hash, used_at, created_at) per data-model.md
-- [ ] T007 [P] Create `TotpLoginChallenge` model in `src/db/models/totp_login_challenge.py` (id, user_id FK, expires_at, consumed_at, created_at) per data-model.md
-- [ ] T008 [P] Create `TotpRolePolicy` model in `src/db/models/totp_role_policy.py` (role PK, required, updated_at, updated_by_user_id FK) per data-model.md
-- [ ] T009 Wire new models into `src/db/base.py` / model registry and add relationships on `User` (mirroring existing `sessions`/`password_reset_tokens` relationships) in `src/db/models/user.py`
-- [ ] T010 Generate portable Alembic migration `src/db/migrations/versions/XXXX_add_totp_2fa.py` for the new column + 4 tables, using `sa.true()`/`sa.false()` for boolean defaults and no dialect-specific introspection (per repo Alembic-portability convention); verify with `alembic upgrade head` / `alembic downgrade -1` on SQLite
-- [ ] T011 [P] Create `TotpRepository` in `src/db/repositories/totp_repository.py` with CRUD methods: get/upsert credential, get/insert recovery-code batch, mark code used, get/create/consume login challenge, get/set role policy
-- [ ] T012 [P] Create `TotpEncryptionService` in `src/services/auth/totp_encryption_service.py`: HKDF-derive an AES-256-GCM key from `AuthConfig.totp_encryption_key` at construction; `encrypt_secret(plaintext: str) -> tuple[str, str]` (ciphertext_b64, nonce_hex) and `decrypt_secret(ciphertext_b64, nonce_hex) -> str`, mirroring `BackupEncryptionService`'s AES-GCM usage but keyed from the server secret, not a passphrase (research.md §3)
-- [ ] T013 [P] Unit tests for `TotpEncryptionService` round-trip and tamper-detection in `tests/unit/services/auth/test_totp_encryption_service.py`
-- [ ] T014 Add `expensive` rate-limit tier wiring confirmation for the new 2FA router (reuse existing `rate_limit_expensive_attempts`/`rate_limit_expensive_window_seconds` from `AuthConfig`, no new keys) — verify limiter dependency import path used by `auth_password_router.py` is reusable as-is
+- [X] T004 Add `totp_enabled: Mapped[bool | None]` column (`default=False`) to `User` model in `src/db/models/user.py`
+- [X] T005 [P] Create `TotpCredential` model in `src/db/models/totp_credential.py` (id, user_id FK unique, secret_ciphertext, secret_nonce, confirmed, last_used_step, created_at, confirmed_at) per data-model.md
+- [X] T006 [P] Create `TotpRecoveryCode` model in `src/db/models/totp_recovery_code.py` (id, user_id FK, batch_id, code_hash, used_at, created_at) per data-model.md
+- [X] T007 [P] Create `TotpLoginChallenge` model in `src/db/models/totp_login_challenge.py` (id, user_id FK, expires_at, consumed_at, created_at) per data-model.md
+- [X] T008 [P] Create `TotpRolePolicy` model in `src/db/models/totp_role_policy.py` (role PK, required, updated_at, updated_by_user_id FK) per data-model.md
+- [X] T009 Wire new models into `src/db/base.py` / model registry and add relationships on `User` (mirroring existing `sessions`/`password_reset_tokens` relationships) in `src/db/models/user.py`
+- [X] T010 Generate portable Alembic migration `src/db/migrations/versions/XXXX_add_totp_2fa.py` for the new column + 4 tables, using `sa.true()`/`sa.false()` for boolean defaults and no dialect-specific introspection (per repo Alembic-portability convention); verify with `alembic upgrade head` / `alembic downgrade -1` on SQLite
+- [X] T011 [P] Create `TotpRepository` in `src/db/repositories/totp_repository.py` with CRUD methods: get/upsert credential, get/insert recovery-code batch, mark code used, get/create/consume login challenge, get/set role policy
+- [X] T012 [P] Create `TotpEncryptionService` in `src/services/auth/totp_encryption_service.py`: HKDF-derive an AES-256-GCM key from `AuthConfig.totp_encryption_key` at construction; `encrypt_secret(plaintext: str) -> tuple[str, str]` (ciphertext_b64, nonce_hex) and `decrypt_secret(ciphertext_b64, nonce_hex) -> str`, mirroring `BackupEncryptionService`'s AES-GCM usage but keyed from the server secret, not a passphrase (research.md §3)
+- [X] T013 [P] Unit tests for `TotpEncryptionService` round-trip and tamper-detection in `tests/unit/services/auth/test_totp_encryption_service.py`
+- [X] T014 Add `expensive` rate-limit tier wiring confirmation for the new 2FA router (reuse existing `rate_limit_expensive_attempts`/`rate_limit_expensive_window_seconds` from `AuthConfig`, no new keys) — verify limiter dependency import path used by `auth_password_router.py` is reusable as-is
 
 **Checkpoint**: Schema, migration, encryption, and repository ready — user story implementation can now begin
 
@@ -61,21 +61,21 @@ Single-project web app layout per plan.md: `src/` (backend), `src/web/static/ts/
 
 ### Tests for User Story 1 ⚠️
 
-- [ ] T015 [P] [US1] Contract test `POST /api/auth/2fa/enroll` (201, 409 when already enabled, 429) in `tests/contract/test_totp_endpoints.py`
-- [ ] T016 [P] [US1] Contract test `POST /api/auth/2fa/verify` (200 with recovery codes, 400 no pending enrollment, 401 wrong code, 429) in `tests/contract/test_totp_endpoints.py`
-- [ ] T017 [P] [US1] Unit tests for `TotpService.enroll` / `confirm` (secret generation, QR SVG, replacing pending enrollment, refusing re-enroll when already active, recovery-code batch issuance) in `tests/unit/services/auth/test_totp_service.py`
-- [ ] T018 [P] [US1] Integration test: full enroll → confirm → recovery codes flow in `tests/integration/test_totp_flow.py`
+- [X] T015 [P] [US1] Contract test `POST /api/auth/2fa/enroll` (201, 409 when already enabled, 429) in `tests/contract/test_totp_endpoints.py`
+- [X] T016 [P] [US1] Contract test `POST /api/auth/2fa/verify` (200 with recovery codes, 400 no pending enrollment, 401 wrong code, 429) in `tests/contract/test_totp_endpoints.py`
+- [X] T017 [P] [US1] Unit tests for `TotpService.enroll` / `confirm` (secret generation, QR SVG, replacing pending enrollment, refusing re-enroll when already active, recovery-code batch issuance) in `tests/unit/services/auth/test_totp_service.py`
+- [X] T018 [P] [US1] Integration test: full enroll → confirm → recovery codes flow in `tests/integration/test_totp_flow.py`
 
 ### Implementation for User Story 1
 
-- [ ] T019 [US1] Implement `TotpService.enroll(user)` and `TotpService.confirm(user, code)` in `src/services/auth/totp_service.py`: generate base32 secret via `pyotp.random_base32()`, build `provisioning_uri` via `pyotp.totp.TOTP`, encrypt with `TotpEncryptionService`, upsert pending `TotpCredential` (T005/T011); on confirm, verify with `valid_window=1`, set `confirmed=True`/`confirmed_at`, flip `users.totp_enabled=True`, generate 10 recovery codes, hash each with the existing `PasswordService` Argon2id hasher, persist as a new batch (T006/T011), return plaintext codes once
-- [ ] T020 [US1] Render QR as inline SVG (no Pillow) for the enroll response — helper in `src/services/auth/totp_service.py` or a small `totp_qr.py` util, using the `qrcode` package's SVG factory
-- [ ] T021 [US1] Add `TotpEnrollResponse`, `TotpVerifyRequest`, `TotpConfirmResponse` Pydantic models to `src/web/models/auth_requests.py` / `auth_responses.py` per contracts/totp-api.md
-- [ ] T022 [US1] Create `src/web/routers/auth_totp_router.py` with `POST /api/auth/2fa/enroll` and `POST /api/auth/2fa/verify`, authenticated, rate-limited on the expensive tier (T014), audit-logging enable events (FR-017)
-- [ ] T023 [US1] Register `auth_totp_router` in the FastAPI app router includes (wherever other `auth_*_router` modules are registered)
-- [ ] T024 [US1] [P] Create `src/web/static/ts/profile-2fa.ts`: enrollment card UI — start enrollment, render QR SVG + manual secret, code-confirmation form, recovery-codes display with copy/download, typed i18n strings via `t()`
-- [ ] T025 [US1] [P] Add profile-2fa translation keys (English; other locales follow existing "auth UI is English-only" convention per spec Assumptions) and wire `profile-2fa.ts` into the profile page template
-- [ ] T026 [US1] [P] Frontend unit tests for `profile-2fa.ts` enrollment flow in `src/web/static/ts/__tests__/profile-2fa.test.ts`
+- [X] T019 [US1] Implement `TotpService.enroll(user)` and `TotpService.confirm(user, code)` in `src/services/auth/totp_service.py`: generate base32 secret via `pyotp.random_base32()`, build `provisioning_uri` via `pyotp.totp.TOTP`, encrypt with `TotpEncryptionService`, upsert pending `TotpCredential` (T005/T011); on confirm, verify with `valid_window=1`, set `confirmed=True`/`confirmed_at`, flip `users.totp_enabled=True`, generate 10 recovery codes, hash each with the existing `PasswordService` Argon2id hasher, persist as a new batch (T006/T011), return plaintext codes once
+- [X] T020 [US1] Render QR as inline SVG (no Pillow) for the enroll response — helper in `src/services/auth/totp_service.py` or a small `totp_qr.py` util, using the `qrcode` package's SVG factory
+- [X] T021 [US1] Add `TotpEnrollResponse`, `TotpVerifyRequest`, `TotpConfirmResponse` Pydantic models to `src/web/models/auth_requests.py` / `auth_responses.py` per contracts/totp-api.md
+- [X] T022 [US1] Create `src/web/routers/auth_totp_router.py` with `POST /api/auth/2fa/enroll` and `POST /api/auth/2fa/verify`, authenticated, rate-limited on the expensive tier (T014), audit-logging enable events (FR-017)
+- [X] T023 [US1] Register `auth_totp_router` in the FastAPI app router includes (wherever other `auth_*_router` modules are registered)
+- [X] T024 [US1] [P] Create `src/web/static/ts/profile-2fa.ts`: enrollment card UI — start enrollment, render QR SVG + manual secret, code-confirmation form, recovery-codes display with copy/download, typed i18n strings via `t()`
+- [X] T025 [US1] [P] Add profile-2fa translation keys (English; other locales follow existing "auth UI is English-only" convention per spec Assumptions) and wire `profile-2fa.ts` into the profile page template
+- [X] T026 [US1] [P] Frontend unit tests for `profile-2fa.ts` enrollment flow in `src/web/static/ts/__tests__/profile-2fa.test.ts`
 
 **Checkpoint**: Enrollment is fully functional and independently testable (login enforcement comes in US2)
 
