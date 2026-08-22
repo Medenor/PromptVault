@@ -27,7 +27,7 @@ Security Features:
 
 from datetime import UTC, datetime
 
-from fastapi import Cookie, Depends, Header, HTTPException, status
+from fastapi import Cookie, Depends, Header, HTTPException, Request, status
 from jwt.exceptions import (
     ExpiredSignatureError,
     InvalidSignatureError,
@@ -37,9 +37,26 @@ from sqlalchemy.orm import Session
 
 from src.config.auth_config import AuthConfig
 from src.db.models.user import User
+from src.db.repositories.totp_repository import TotpRepository
 from src.db.repositories.user_repository import UserRepository
 from src.db.session import get_db
 from src.services.auth.jwt_service import JWTService
+from src.services.auth.totp_policy_service import TotpPolicyService
+
+# Paths a user who is required to enroll in 2FA (by admin policy) but hasn't
+# yet enrolled must still be able to reach, so the frontend can route them
+# into the mandatory-enrollment interstitial and let them complete it.
+_TOTP_ENROLLMENT_EXEMPT_PATHS = frozenset(
+    {
+        "/api/auth/me",
+        "/api/auth/logout",
+        "/api/auth/2fa/enroll",
+        "/api/auth/2fa/verify",
+        "/api/admin/2fa/policy",
+        "/auth/profile",
+        "/profile",
+    }
+)
 
 # ============================================================================
 # Configuration Dependencies
@@ -333,21 +350,32 @@ def get_current_user(
     return user
 
 
-def get_current_active_user(user: User = Depends(get_current_user)) -> User:
+def get_current_active_user(
+    request: Request,
+    user: User = Depends(get_current_user),
+    session: Session = Depends(get_db),
+) -> User:
     """Get current active user with account status validation.
 
     This dependency extends get_current_user by adding validation for:
     - Account active status (is_active = True)
     - Account lockout status (locked_until has expired or is None)
+    - Admin-enforced 2FA enrollment (if the user's role requires 2FA and
+      they haven't enrolled, only a small set of self-service paths are
+      reachable — see _TOTP_ENROLLMENT_EXEMPT_PATHS)
 
     Args:
+        request: Current request (used to check the enrollment-exempt path
+            allowlist)
         user: Authenticated user (injected)
+        session: Database session (injected)
 
     Returns:
         User: Active user model instance
 
     Raises:
-        HTTPException: 401 if account is inactive or locked
+        HTTPException: 401 if account is inactive or locked, 403 if 2FA
+            enrollment is required by policy but not yet completed
 
     Example:
         >>> @router.post("/prompts")
@@ -361,6 +389,10 @@ def get_current_active_user(user: User = Depends(get_current_user)) -> User:
     Security Notes:
         - Enforces account suspension (is_active = False)
         - Enforces account lockout (locked_until)
+        - Enforces admin-mandated 2FA enrollment server-side (not just via
+          a client-visible response flag) — closes the bypass where a
+          non-enrolled user in a required role could otherwise use a full
+          session token on any endpoint
         - Provides clear error messages for each failure type
         - This is the recommended dependency for most protected routes
     """
@@ -390,6 +422,15 @@ def get_current_active_user(user: User = Depends(get_current_user)) -> User:
             )
         # Lock has expired, but we don't clear it here (that's the auth service's job)
         # Still allow access since the lock period has passed
+
+    if not user.totp_enabled and request.url.path not in _TOTP_ENROLLMENT_EXEMPT_PATHS:
+        policy_service = TotpPolicyService(TotpRepository(session))
+        if policy_service.is_required_for(user.role or "viewer"):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Two-factor authentication enrollment is required for your role "
+                "before you can access this resource.",
+            )
 
     return user
 

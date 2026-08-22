@@ -629,3 +629,50 @@ class TestAdminEnforcedPolicyFlow:
         )
         unenforced_login = self._login(policy_client, "policyadmin4")
         assert unenforced_login.get("enrollment_required", False) is False
+
+    def test_non_enrolled_required_role_blocked_from_protected_endpoints(
+        self, policy_client: TestClient, test_db_engine
+    ):
+        """The enrollment_required flag must be enforced server-side, not
+        just relied on by the client: a non-enrolled user in a
+        2FA-required role must not be able to use their access token
+        against ordinary protected endpoints.
+        """
+        admin_data = _register_named(
+            policy_client, "policyadmin5", "policyadmin5@example.com"
+        )
+        _promote_to_admin(test_db_engine, admin_data["user"]["id"])
+        admin_login = self._login(policy_client, "policyadmin5")
+        admin_headers = {"Authorization": f"Bearer {admin_login['access_token']}"}
+
+        policy_client.put(
+            "/api/admin/2fa/policy",
+            json={"role": "admin", "required": True},
+            headers=admin_headers,
+        )
+
+        login_data = self._login(policy_client, "policyadmin5")
+        assert login_data["enrollment_required"] is True
+        headers = {"Authorization": f"Bearer {login_data['access_token']}"}
+
+        # Ordinary protected endpoints must reject the token until enrolled.
+        sessions_resp = policy_client.get("/api/auth/sessions", headers=headers)
+        assert sessions_resp.status_code == 403
+
+        # But the self-service paths needed to complete enrollment (or bail
+        # out via logout) must remain reachable.
+        me_resp = policy_client.get("/api/auth/me", headers=headers)
+        assert me_resp.status_code == 200
+
+        enroll_resp = policy_client.post("/api/auth/2fa/enroll", headers=headers)
+        assert enroll_resp.status_code == 201
+        secret = enroll_resp.json()["secret"]
+        code = pyotp.totp.TOTP(secret).now()
+        confirm_resp = policy_client.post(
+            "/api/auth/2fa/verify", json={"code": code}, headers=headers
+        )
+        assert confirm_resp.status_code == 200
+
+        # Once enrolled, the same token is no longer restricted.
+        sessions_resp_after = policy_client.get("/api/auth/sessions", headers=headers)
+        assert sessions_resp_after.status_code == 200
