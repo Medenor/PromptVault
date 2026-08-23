@@ -22,7 +22,6 @@ Commit convention:
     matching the session-per-request pattern used throughout the codebase.
 """
 
-import logging
 import secrets
 import time
 import uuid
@@ -44,8 +43,9 @@ from src.services.exceptions import (
     TotpEnrollmentNotFoundError,
     TotpReauthFailedError,
 )
+from src.services.logging_service import logging_service
 
-logger = logging.getLogger(__name__)
+logger = logging_service.get_logger(__name__)
 
 ISSUER_NAME = "PromptVault"
 RECOVERY_CODE_COUNT = 10

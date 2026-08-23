@@ -11,21 +11,20 @@ Available Endpoints:
 All endpoints require the admin role and are audit logged.
 """
 
-import logging
-
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from src.db.models.user import User
 from src.db.session import get_db
 from src.services.auth.totp_policy_service import TotpPolicyService
+from src.services.logging_service import logging_service
 from src.web.dependencies.auth import require_role
 from src.web.models.auth_requests import TotpPolicyUpdateRequest
 from src.web.models.auth_responses import TotpPolicyResponse, TotpRolePolicyItem
 from src.web.routers.admin_shared import _log_admin_action
 from src.web.routers.auth_shared import get_totp_policy_service
 
-logger = logging.getLogger(__name__)
+logger = logging_service.get_logger(__name__)
 
 router = APIRouter(
     prefix="/admin",

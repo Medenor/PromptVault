@@ -422,7 +422,10 @@ class TestLoginTwoFactorExchange:
                 json={"challenge_token": challenge_token, "code": "000000"},
             )
 
-        assert last_response.status_code == 401
+        # Once the shared lockout threshold is reached, the account is
+        # locked and the response switches from 401 (invalid code) to
+        # 423 (locked) per contracts/totp-api.md.
+        assert last_response.status_code == 423
 
         # Even a correct password now reports the account as locked.
         login_response = auth_client.post(

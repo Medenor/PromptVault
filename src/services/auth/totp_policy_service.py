@@ -9,12 +9,12 @@ absent row is equivalent to ``required=False`` (data-model.md, contracts
 §7).
 """
 
-import logging
 from typing import Literal, cast, get_args
 
 from src.db.repositories.totp_repository import TotpRepository
+from src.services.logging_service import logging_service
 
-logger = logging.getLogger(__name__)
+logger = logging_service.get_logger(__name__)
 
 Role = Literal["viewer", "editor", "admin"]
 VALID_ROLES: tuple[Role, ...] = get_args(Role)

@@ -16,8 +16,6 @@ Later phases (admin policy) extend this router — see
 specs/009-totp-2fa/tasks.md T049 onward.
 """
 
-import logging
-
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
@@ -37,7 +35,7 @@ from src.web.models.auth_requests import TotpDisableRequest, TotpVerifyRequest
 from src.web.models.auth_responses import TotpConfirmResponse, TotpEnrollResponse
 from src.web.routers.auth_shared import get_totp_service
 
-logger = logging.getLogger(__name__)
+logger = logging_service.get_logger(__name__)
 
 router = APIRouter(
     prefix="/auth",
@@ -292,6 +290,12 @@ def disable_totp(
         logger.info(
             f"2FA disable failed - re-auth failed for user: {current_user.username}"
         )
+        logging_service.log_audit_event(
+            action="2fa.disable_failed",
+            resource_type="user",
+            resource_id=current_user.id,
+            status="failure",
+        )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=e.user_message,
@@ -374,6 +378,12 @@ def regenerate_totp_recovery_codes(
         session.rollback()
         logger.info(
             f"2FA recovery-code regeneration failed - re-auth failed for user: {current_user.username}"
+        )
+        logging_service.log_audit_event(
+            action="2fa.recovery_codes_regenerate_failed",
+            resource_type="user",
+            resource_id=current_user.id,
+            status="failure",
         )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

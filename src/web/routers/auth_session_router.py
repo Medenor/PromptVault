@@ -405,7 +405,7 @@ def exchange_2fa_challenge(
             f"2FA challenge exchange failed - account locked from {ip_address}"
         )
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
+            status_code=status.HTTP_423_LOCKED,
             detail=e.user_message,
         ) from e
 
