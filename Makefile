@@ -29,8 +29,8 @@ endif
 PYTHON           := .venv/bin/python
 PIP              := .venv/bin/pip
 VENV_DIR         := .venv
-BACKEND_PORT     ?= 8003
-FRONTEND_PORT    ?= 5173
+BACKEND_PORT     ?= 7870
+FRONTEND_PORT    ?= 7873
 PYTEST           := $(PYTHON) -m pytest
 BACKEND_TEST_CMD  = $(PYTEST)
 FRONTEND_TEST_CMD = npm run test:unit:coverage
@@ -146,7 +146,7 @@ dev: ## Start backend + frontend dev servers concurrently (Ctrl-C to stop)
 	echo "  Frontend: http://localhost:$(FRONTEND_PORT) (asset server only)"; \
 	echo "  App:      http://localhost:$(BACKEND_PORT)/"; \
 	echo ""; \
-	$(PYTHON) run_web.py & \
+	PORT=$(BACKEND_PORT) $(PYTHON) run_web.py & \
 	_pids="$$!"; \
 	npm run dev & \
 	_pids="$$_pids $$!"; \
