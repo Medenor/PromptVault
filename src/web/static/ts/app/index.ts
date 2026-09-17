@@ -11,6 +11,7 @@
 import '../../css/tailwind-globals.css';
 import '@/form-validation';
 import { initI18n, t, updateStaticTranslations } from '@/utils/i18n';
+import { initializeDocsPortalLinks } from '@/utils/docs-portal';
 import { setupScrollIndicators } from '@/utils/dom';
 import { html, raw } from '@/utils/safe-html';
 import { showNotification } from '@/utils/notifications';
@@ -289,6 +290,8 @@ window.fetch = async function (...args: Parameters<typeof fetch>) {
 };
 
 function setupEventListeners(): void {
+  initializeDocsPortalLinks();
+
   // Unified mobile navigation drawer (hamburger triggers, close button,
   // backdrop, outside-tap/Escape close, focus trap) — see mobile-nav.ts
   initMobileNav();

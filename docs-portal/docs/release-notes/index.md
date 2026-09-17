@@ -9,6 +9,7 @@ Highlights from recent PromptVault releases. For the complete, unabridged histor
 
 ## Unreleased
 
+- **Documentation portal link**: the application menu now links to the documentation portal. The deployment URL is configured with `VITE_DOCS_PORTAL_URL`; local development uses `http://localhost:7876`.
 - **Full-text search with relevance ranking**: search now runs against a real full-text index instead of a plain substring scan, with results ranked by relevance and highlighted match snippets.
 - **App version shown in the footer**.
 - Various backend reliability fixes (coverage report crash on templates, migration portability, dead-code cleanup).

@@ -45,7 +45,8 @@ COMPOSE          := docker compose
         dev \
         test test-backend test-frontend \
         lint lint-backend lint-frontend lint-fix check-file-sizes check-sw-cache-version \
-        build build-frontend build-image
+        build build-frontend build-image \
+        docs
 
 .DEFAULT_GOAL := help
 

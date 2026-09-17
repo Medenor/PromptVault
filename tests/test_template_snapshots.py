@@ -103,7 +103,7 @@ class TestTemplateSnapshots:
             snapshot_path.write_text(actual, encoding="utf-8")
             pytest.skip(f"Baseline snapshot written for {route}: {snapshot_path}")
 
-        expected = snapshot_path.read_text(encoding="utf-8")
+        expected = _normalize(snapshot_path.read_text(encoding="utf-8"))
         assert actual == expected, (
             f"Rendered output for {route} no longer matches the stored "
             f"snapshot at {snapshot_path}. If this change is intentional, "

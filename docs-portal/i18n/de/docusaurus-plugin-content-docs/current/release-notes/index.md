@@ -9,6 +9,7 @@ Highlights der letzten PromptVault-Releases. Die vollständige, ungekürzte Hist
 
 ## Unreleased
 
+- **Link zum Dokumentationsportal**: Das Anwendungsmenü verlinkt nun auf das Dokumentationsportal. Die Deployment-URL wird mit `VITE_DOCS_PORTAL_URL` konfiguriert; die lokale Entwicklung verwendet `http://localhost:7876`.
 - **Volltextsuche mit Relevanzsortierung**: Die Suche läuft nun gegen einen echten Volltextindex statt gegen einen einfachen Teilstring-Scan, mit nach Relevanz sortierten Ergebnissen und hervorgehobenen Treffer-Ausschnitten.
 - **App-Version in der Fußzeile angezeigt**.
 - Diverse Backend-Zuverlässigkeitskorrekturen (Absturz des Coverage-Berichts bei Templates, Portabilität von Migrationen, Bereinigung von totem Code).

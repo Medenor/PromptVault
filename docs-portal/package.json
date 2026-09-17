@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "docs:start": "docusaurus start",
+    "docs:start": "docusaurus start --port 7876",
     "docs:build": "docusaurus build",
     "docs:check-parity": "tsx scripts/check-i18n-parity.ts",
-    "start": "docusaurus start",
+    "start": "docusaurus start --port 7876",
     "build": "docusaurus build",
     "clear": "docusaurus clear",
     "typecheck": "tsc --noEmit",

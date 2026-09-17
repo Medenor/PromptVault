@@ -9,6 +9,7 @@ Points forts des versions récentes de PromptVault. Pour l'historique complet et
 
 ## Non publié
 
+- **Lien vers le portail documentaire** : le menu de l’application pointe désormais vers le portail documentaire. L’URL de déploiement est configurée avec `VITE_DOCS_PORTAL_URL` ; le développement local utilise `http://localhost:7876`.
 - **Recherche en texte intégral avec classement par pertinence** : la recherche s'appuie désormais sur un véritable index de texte intégral plutôt que sur un simple balayage de sous-chaîne, avec des résultats classés par pertinence et des extraits de correspondance mis en évidence.
 - **Version de l'application affichée dans le pied de page**.
 - Diverses corrections de fiabilité backend (plantage du rapport de couverture sur les templates, portabilité des migrations, nettoyage de code mort).
