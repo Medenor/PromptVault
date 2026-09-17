@@ -254,3 +254,10 @@ build-image: ## Build production Docker image via Compose
 	$(COMPOSE) build web
 
 build: build-frontend build-image ## Build all production artifacts (frontend + Docker image)
+
+# ==============================================================================
+# Documentation Portal
+# ==============================================================================
+
+docs: ## Run the docs-portal dev server (installation, config, user guide, i18n EN/FR/DE/ES)
+	cd docs-portal && npm install && npm run docs:start

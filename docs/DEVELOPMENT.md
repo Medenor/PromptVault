@@ -88,6 +88,20 @@ Override ports: `BACKEND_PORT=9000 make dev` or `FRONTEND_PORT=3000 make dev`.
 
 ---
 
+## Documentation Portal
+
+`docs-portal/` is a standalone Docusaurus 3.x site (installation, configuration, user guide, troubleshooting, release notes) published in English, French, German, and Spanish. It has its own `package.json`/lockfile — fully isolated from the root `npm install`/`make install` and from the main app's build/test/lint pipeline.
+
+| Command                             | Description                                                        |
+| ------------------------------------ | ------------------------------------------------------------------- |
+| `make docs`                         | Install deps and start the docs-portal dev server (`localhost:3000`). |
+| `cd docs-portal && npm run docs:build` | Build the static site (`docs-portal/build/`).                    |
+| `cd docs-portal && npm run docs:check-parity` | Verify every non-English locale has the same pages and section structure as English; fails the build on drift. |
+
+**i18n parity**: every English page under `docs-portal/docs/` must have a mirrored translation at the same relative path under `docs-portal/i18n/{fr,de,es}/docusaurus-plugin-content-docs/current/`, with a matching `##`/`###` heading count. A page can opt out via `translation_exempt: true` in its frontmatter. `.forgejo/workflows/docs-portal.yml` (triggered only on `docs-portal/**` changes) runs this check plus a full build on every push/PR to `main` — **it must be configured as a required status check on `main`'s branch protection rules** (a one-time repo-admin setting in Forgejo, not something in the codebase) for the check to actually block a merge rather than just report.
+
+---
+
 ## Writing Alembic Migrations
 
 Migrations are authored and tested against **SQLite** in dev, but run against **PostgreSQL** in production (see [DEPLOYMENT.md](DEPLOYMENT.md)). A migration that only works on one dialect will pass local testing and then break the production upgrade — this happened in `f1a2b3c4d5e6_enhanced_backup_tables` (fixed in v1.10.1). When writing or reviewing a migration:
