@@ -5,7 +5,9 @@ sidebar_position: 2
 
 # Referencia de configuración
 
-PromptVault se configura completamente mediante variables de entorno, normalmente definidas en un archivo `.env` en la raíz del repositorio (copie `.env.example` como punto de partida). Esta página cubre los ajustes que más probablemente necesite.
+PromptVault se configura mediante variables de entorno, normalmente definidas en el archivo `.env` en la raíz del repositorio. Empiece copiando `.env.example`. Esta es una referencia para administradores: cambie un valor solo cuando conozca el resultado que necesita, reinicie el servicio afectado y confirme que se inicia correctamente.
+
+Términos utilizados: una URL es una dirección para conectarse a un servicio; SQL es el lenguaje de consultas de la base de datos; Redis es el servicio que aplica los límites de tasa; SMTP es el protocolo para enviar correo electrónico.
 
 ## Base de datos
 
@@ -31,7 +33,7 @@ PromptVault se configura completamente mediante variables de entorno, normalment
 | Variable | Predeterminado | Propósito |
 |---|---|---|
 | `AUTH_ENABLED` | `true` | Establézcalo en `false` solo para una implementación de un único usuario, de confianza y sin red — esto desactiva el inicio de sesión y hace que todos los endpoints sean públicamente accesibles. |
-| `JWT_PRIVATE_KEY_PATH` / `JWT_PUBLIC_KEY_PATH` | — | Rutas al par de claves ES256 usado para firmar/verificar los JWT. Genérelo con `openssl ecparam`/`openssl ec` como se muestra en [Instalación](../installation/index.md). |
+| `JWT_PRIVATE_KEY_PATH` / `JWT_PUBLIC_KEY_PATH` | — | Rutas al par de claves ES256 usado para firmar y verificar JSON Web Tokens (JWT). Genérelo con los comandos de [Instalación](../installation/index.md). |
 | `JWT_ACCESS_TOKEN_EXPIRE_SECONDS` | `900` (15 min) | Duración del token de acceso. |
 | `JWT_REFRESH_TOKEN_EXPIRE_SECONDS` | `604800` (7 días) | Duración del token de actualización. |
 | `MAX_LOGIN_ATTEMPTS` | `5` | Intentos fallidos antes del bloqueo de la cuenta. |
@@ -39,7 +41,7 @@ PromptVault se configura completamente mediante variables de entorno, normalment
 | `MAX_SESSIONS_PER_USER` | `5` | Límite de sesiones simultáneas (`0` = ilimitado). |
 | `SESSION_INACTIVE_TIMEOUT_SECONDS` | `2592000` (30 días) | Expiración por inactividad. |
 
-La política de contraseñas (`PASSWORD_MIN_LENGTH`, `PASSWORD_REQUIRE_UPPERCASE`, `PASSWORD_REQUIRE_LOWERCASE`, `PASSWORD_REQUIRE_DIGIT`, `PASSWORD_REQUIRE_SPECIAL`) también es configurable — los valores predeterminados exigen un mínimo de 12 caracteres con las cuatro clases de caracteres.
+Las variables de política de contraseñas `PASSWORD_MIN_LENGTH`, `PASSWORD_REQUIRE_UPPERCASE`, `PASSWORD_REQUIRE_LOWERCASE`, `PASSWORD_REQUIRE_DIGIT` y `PASSWORD_REQUIRE_SPECIAL` también son configurables. De forma predeterminada, exigen al menos 12 caracteres y las cuatro clases de caracteres.
 
 ## Límite de tasa
 
@@ -52,7 +54,7 @@ Los límites de tasa son por usuario (con reserva por IP para solicitudes anóni
 | Costosas (importar/exportar, crear/restaurar/verificar copias de seguridad) | 10/min | `RATE_LIMIT_EXPENSIVE_*` |
 | Masivas (eliminación masiva, eliminar todas las copias de seguridad, comprimir) | 5/min | `RATE_LIMIT_BULK_*` |
 
-Cada categoría tiene variables `_ATTEMPTS` y `_WINDOW_SECONDS`, por ejemplo `RATE_LIMIT_WRITE_ATTEMPTS=60` / `RATE_LIMIT_WRITE_WINDOW_SECONDS=60`. Los endpoints específicos de autenticación (inicio de sesión, registro, restablecimiento de contraseña) tienen sus propios límites independientes (`RATE_LIMIT_LOGIN_*`, `RATE_LIMIT_REGISTER_*`, `RATE_LIMIT_PASSWORD_RESET_*`). El límite de tasa requiere que `REDIS_URL` sea accesible.
+Cada categoría tiene variables `_ATTEMPTS` y `_WINDOW_SECONDS`, por ejemplo `RATE_LIMIT_WRITE_ATTEMPTS=60` y `RATE_LIMIT_WRITE_WINDOW_SECONDS=60`. Los endpoints de autenticación tienen límites separados: `RATE_LIMIT_LOGIN_*`, `RATE_LIMIT_REGISTER_*` y `RATE_LIMIT_PASSWORD_RESET_*`. El límite de tasa funciona solo cuando el servicio Redis indicado por `REDIS_URL` es accesible. Si no ejecuta Redis, no suponga que estos límites están activos.
 
 ## Correo electrónico (restablecimiento de contraseña)
 

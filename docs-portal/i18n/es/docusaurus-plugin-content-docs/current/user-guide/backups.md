@@ -5,11 +5,11 @@ sidebar_position: 2
 
 # Copias de seguridad
 
-PromptVault incluye un sistema de copias de seguridad y restauración que cubre programación, verificación de integridad, cifrado y almacenamiento en la nube opcional.
+PromptVault incluye funciones de copia de seguridad y restauración para copias programadas, verificación de integridad, cifrado y almacenamiento opcional en la nube. Una copia de seguridad ayuda a recuperar datos; una exportación no la sustituye cuando se deben conservar los permisos de compartición.
 
 ## Copias de seguridad programadas
 
-Los administradores pueden configurar copias de seguridad automáticas con una periodicidad diaria, semanal o mensual a una hora elegida. El programa se puede activar o desactivar en cualquier momento. Si una copia de seguridad programada fuera a iniciarse mientras otra sigue en ejecución, el nuevo disparo se omite en lugar de ejecutarse simultáneamente, y la omisión queda registrada.
+Los administradores configuran las copias de seguridad automáticas desde la página de gestión de copias de seguridad. Elija una programación diaria, semanal o mensual y una hora; después active la programación. Si una copia programada se iniciara mientras otra sigue en ejecución, PromptVault omite la nueva ejecución y registra esa decisión.
 
 La primera copia de seguridad de una instalación (o la primera después de que una copia anterior deje de ser utilizable) siempre es una copia completa; las copias de seguridad programadas posteriores son incrementales, almacenando solo lo que cambió desde la última copia completa para mantener bajo el uso de almacenamiento.
 
@@ -29,7 +29,7 @@ Las credenciales del proveedor de la nube (clave de acceso/clave secreta) se cif
 
 ## Vista previa de restauración y restauración selectiva
 
-Antes de aplicar una restauración, PromptVault muestra una vista previa exacta de lo que cambiará — prompts que se añadirán, actualizarán o eliminarán — en lugar de restaurar a ciegas. Desde esa vista previa también puede seleccionar un subconjunto de prompts para restaurar en lugar de restaurar toda la copia de seguridad.
+Antes de aplicar una restauración, revise la vista previa: enumera los prompts que se añadirán, actualizarán o eliminarán. Seleccione solo los prompts que pretende restaurar, o restaure la copia de seguridad completa. No aplique la restauración hasta entender los cambios indicados.
 
 ## Retención
 

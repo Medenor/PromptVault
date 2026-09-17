@@ -5,7 +5,7 @@ sidebar_position: 4
 
 # Dépannage
 
-Cette page couvre les problèmes les plus fréquemment rencontrés lors de l'installation ou de l'exécution de PromptVault. Pour une couverture exhaustive, consultez `docs/TROUBLESHOOTING.md` dans le dépôt.
+Utilisez cette page pour identifier le symptôme, effectuer le plus petit changement sûr, puis réessayer. Ne supprimez pas une base de données ou un volume Docker lors du dépannage d'une installation existante. Pour une couverture exhaustive, consultez `docs/TROUBLESHOOTING.md` dans le dépôt.
 
 ## Port déjà utilisé
 
@@ -19,16 +19,16 @@ Les commandes `docker-compose` échouent avec une erreur de connexion si Docker 
 
 Si PromptVault ne parvient pas à joindre PostgreSQL au démarrage :
 
-- Vérifiez que le conteneur/service est bien en cours d'exécution (`docker-compose ps`).
+- Vérifiez que le conteneur ou le service est en cours d'exécution avec `docker-compose ps`.
 - Vérifiez que `DATABASE_URL` dans `.env` correspond bien aux identifiants et à l'hôte/port sur lesquels PostgreSQL écoute réellement.
-- Si vous venez de changer `POSTGRES_PASSWORD`, notez que les conteneurs existants avec un volume de données déjà initialisé ne prendront pas automatiquement en compte le nouveau mot de passe — il peut être nécessaire de recréer le volume pour une installation propre, ou de mettre à jour le mot de passe directement dans la base existante.
+- Si vous avez modifié `POSTGRES_PASSWORD`, un volume de données existant déjà initialisé ne change pas automatiquement de mot de passe. Pour une installation existante, mettez à jour le mot de passe dans la base de données selon votre procédure établie. Recréez un volume uniquement pour une nouvelle installation sans données à conserver.
 
 ## Échecs de migration
 
 Si `alembic upgrade head` échoue en cours de route :
 
 - Relancez-la — la plupart des migrations sont conçues pour être idempotentes.
-- Si une migration échoue spécifiquement sur une base SQLite neuve avec une erreur SQL propre à PostgreSQL, vous utilisez probablement une version obsolète — des versions récentes ont corrigé des migrations utilisant du SQL spécifique à un dialecte non portable, assurez-vous donc de ne pas exécuter un commit plus ancien.
+- Si une migration sur une base SQLite neuve renvoie une erreur SQL propre à PostgreSQL, vérifiez que vous utilisez une version récente avant d'essayer une autre solution.
 - Ne modifiez jamais le schéma de la base de données à la main pour contourner un échec de migration — ouvrez plutôt un ticket avec l'erreur exacte, car des modifications manuelles du schéma rendent les migrations futures imprévisibles.
 
 ## Erreurs de clé JWT
@@ -44,11 +44,11 @@ Des clés générées avec une autre courbe ou un autre algorithme ne fonctionne
 
 ## Verrouillage après échecs de connexion
 
-Des tentatives de connexion échouées répétées déclenchent un verrouillage temporaire du compte (`MAX_LOGIN_ATTEMPTS`, 5 tentatives par défaut, `ACCOUNT_LOCKOUT_DURATION_SECONDS`, 15 minutes par défaut). Attendez la fin de la période de verrouillage, ou demandez à un administrateur de la réinitialiser, plutôt que de réessayer sans cesse — réessayer pendant un verrouillage ne réinitialise pas le minuteur plus tôt.
+Des tentatives de connexion échouées répétées verrouillent temporairement votre compte. Par défaut, cela se produit après cinq tentatives (`MAX_LOGIN_ATTEMPTS`) et dure 15 minutes (`ACCOUNT_LOCKOUT_DURATION_SECONDS`). Attendez la fin du verrouillage. Si vous êtes le seul administrateur, attendez plutôt que d'essayer d'autres mots de passe : les nouvelles tentatives ne raccourcissent pas le délai.
 
 ## Erreurs de limitation de débit (429)
 
-Si des opérations en masse, des imports/exports ou des actions de sauvegarde renvoient `429 Too Many Requests`, vous avez atteint l'une des catégories de limitation de débit par utilisateur décrites dans [Configuration](../configuration/index.md#limitation-de-débit). La réponse inclut un en-tête `Retry-After` ; attendez ce délai, ou demandez à un administrateur d'augmenter la variable `RATE_LIMIT_*` correspondante si la valeur par défaut est réellement trop basse pour votre usage.
+Si des opérations en masse, des imports, des exports ou des actions de sauvegarde renvoient `429 Too Many Requests`, vous avez atteint une limite de débit par utilisateur. La réponse fournit une valeur `Retry-After`. Attendez ce délai, puis réessayez une fois. Si cette limite bloque régulièrement un usage légitime, un administrateur peut ajuster le paramètre `RATE_LIMIT_*` correspondant décrit dans [Configuration](../configuration/index.md#limitation-de-débit).
 
 ## L'import/export ne restaure pas le partage
 

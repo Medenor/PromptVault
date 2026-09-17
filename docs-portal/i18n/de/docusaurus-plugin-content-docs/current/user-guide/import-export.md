@@ -5,7 +5,7 @@ sidebar_position: 7
 
 # Import & Export
 
-Prompts können in eine Datei exportiert und später wieder importiert werden — entweder als portables Backup Ihrer eigenen Bibliothek oder um Prompts zwischen Instanzen zu verschieben.
+Exportieren Sie Prompts, um Prompt-Inhalte zwischen Instanzen zu verschieben oder eine portable Kopie Ihrer Bibliothek zu behalten. Ein Export ist kein vollständiges Backup: Er enthält keine Freigabeberechtigungen. Verwenden Sie ein vollständiges Backup, wenn der Zugriffszustand erhalten bleiben muss.
 
 ## Exportformate
 
@@ -13,11 +13,11 @@ Prompts werden als **CSV**, **Markdown** oder **JSON** exportiert. Der JSON-Expo
 
 ## Importmodi
 
-Beim Importieren einer Datei wählen Sie, wie sie mit Ihren vorhandenen Prompts interagiert:
+Bestimmen Sie vor dem Import den Modus, der dem gewünschten Ergebnis entspricht. Wählen Sie **Ersetzen** nur, wenn Sie die gesamte Bibliothek ersetzen möchten.
 
 - **Anhängen** — jeder Prompt aus der Datei wird hinzugefügt, auch wenn bereits ein Prompt mit demselben Titel existiert (kann Duplikate erzeugen).
 - **Zusammenführen** — ein Prompt aus der Datei wird nur hinzugefügt, wenn kein vorhandener Prompt bereits genau diesen Titel trägt; andernfalls wird er übersprungen.
-- **Ersetzen** — Ihre gesamte vorhandene Prompt-Bibliothek wird zuerst geleert, dann wird jeder Prompt aus der Datei hinzugefügt. PromptVault erstellt vor einem Ersetzen-Import automatisch ein Backup, damit der vorherige Zustand nicht verloren geht.
+- **Ersetzen** — Ihre gesamte vorhandene Prompt-Bibliothek wird zuerst geleert, dann wird jeder Prompt aus der Datei hinzugefügt. PromptVault erstellt vor dem Import ein Backup. Prüfen Sie, dass dieses Backup abgeschlossen ist, bevor Sie sich darauf verlassen, die vorherige Bibliothek wiederherstellen zu können.
 
 ## Freigabestatus ist nicht portabel
 

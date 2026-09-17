@@ -5,7 +5,7 @@ sidebar_position: 7
 
 # Import et export
 
-Les prompts peuvent être exportés dans un fichier puis réimportés plus tard, que ce soit comme sauvegarde portable de votre propre bibliothèque ou pour déplacer des prompts entre instances.
+Exportez des prompts pour déplacer leur contenu entre instances ou conserver une copie portable de votre bibliothèque. Un export n'est pas une sauvegarde complète : il ne conserve pas les droits de partage. Utilisez une sauvegarde complète lorsque vous devez préserver l'état de contrôle d'accès.
 
 ## Formats d'export
 
@@ -13,11 +13,11 @@ Les prompts s'exportent en **CSV**, **Markdown** ou **JSON**. L'export JSON prod
 
 ## Modes d'import
 
-Lors de l'import d'un fichier, vous choisissez comment il interagit avec vos prompts existants :
+Avant l'import, identifiez le mode correspondant au résultat attendu. Choisissez **Remplacement** uniquement si vous voulez remplacer toute la bibliothèque.
 
 - **Ajout** — chaque prompt du fichier est ajouté, même si un prompt portant le même titre existe déjà (peut créer des doublons).
 - **Fusion** — un prompt du fichier n'est ajouté que si aucun prompt existant ne porte déjà exactement ce titre ; sinon il est ignoré.
-- **Remplacement** — toute votre bibliothèque de prompts existante est d'abord vidée, puis chaque prompt du fichier est ajouté. PromptVault crée automatiquement une sauvegarde avant l'exécution d'un import en remplacement, afin que l'état précédent ne soit pas perdu.
+- **Remplacement** — toute votre bibliothèque de prompts existante est d'abord vidée, puis chaque prompt du fichier est ajouté. PromptVault crée une sauvegarde avant l'import. Vérifiez que cette sauvegarde est terminée avant de compter sur elle pour récupérer la bibliothèque précédente.
 
 ## L'état de partage n'est pas portable
 

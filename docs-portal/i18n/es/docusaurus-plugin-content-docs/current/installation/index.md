@@ -5,7 +5,7 @@ sidebar_position: 1
 
 # Instalación
 
-PromptVault es una aplicación autoalojada. Esta página cubre las dos formas admitidas de ponerla en marcha: el asistente de configuración automatizado y una implementación manual con Docker Compose.
+PromptVault es una aplicación autoalojada: se ejecuta en una infraestructura que usted controla. Elija el asistente de configuración si quiere que la aplicación cree la configuración necesaria de forma interactiva. Elija la vía manual solo si sabe editar variables de entorno y ejecutar comandos de Docker.
 
 ## Requisitos previos
 
@@ -16,7 +16,7 @@ PromptVault es una aplicación autoalojada. Esta página cubre las dos formas ad
 
 ## Inicio rápido con el asistente de configuración
 
-La forma más rápida de obtener una instancia funcional es el asistente de configuración incluido, que gestiona de forma interactiva la generación de claves JWT, la configuración del entorno, la creación de la base de datos y la creación del usuario administrador.
+La forma más rápida de obtener una instancia funcional es el asistente de configuración incluido. Crea claves de firma JSON Web Token (JWT), configura el entorno, prepara la base de datos y crea una cuenta de administrador.
 
 ```bash
 git clone https://codeberg.org/medenor/promptvault.git
@@ -24,11 +24,11 @@ cd PromptVault
 python scripts/setup/setup.py
 ```
 
-Siga las indicaciones. Al finalizar, PromptVault estará implementado y listo para usarse.
+Siga las indicaciones. Al finalizar, abra la dirección que se muestra e inicie sesión con las credenciales de administrador creadas.
 
 ## Configuración manual con Docker Compose
 
-Si prefiere configurar cada paso usted mismo:
+Use esta vía solo si necesita controlar cada ajuste. Ejecute los comandos en orden: los comandos posteriores usan los archivos y servicios creados en los pasos anteriores.
 
 ```bash
 # Clonar el repositorio
@@ -60,7 +60,7 @@ docker-compose exec web python scripts/create_admin_user.py
 docker-compose exec web python scripts/migrate_json_to_db.py
 ```
 
-Una vez que los contenedores estén en ejecución, abra `http://localhost:8001` e inicie sesión con las credenciales de administrador recién creadas.
+Cuando los contenedores estén en ejecución, abra `http://localhost:8001` e inicie sesión con las credenciales de administrador creadas. Si la página no se abre, consulte [Solución de problemas](../troubleshooting/index.md) antes de cambiar datos o volúmenes de Docker.
 
 ## Compilar desde el código fuente
 

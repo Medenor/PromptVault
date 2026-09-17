@@ -5,11 +5,11 @@ sidebar_position: 2
 
 # Backups
 
-PromptVault enthält ein Backup- und Wiederherstellungssystem mit Zeitplanung, Integritätsprüfung, Verschlüsselung und optionalem Cloud-Speicher.
+PromptVault enthält Funktionen für Backup und Wiederherstellung mit Zeitplanung, Integritätsprüfung, Verschlüsselung und optionalem Cloud-Speicher. Ein Backup hilft bei der Wiederherstellung von Daten; ein Export ersetzt es nicht, wenn Freigabeberechtigungen erhalten bleiben müssen.
 
 ## Geplante Backups
 
-Administratoren können automatische Backups mit täglichem, wöchentlichem oder monatlichem Rhythmus zu einer gewählten Uhrzeit konfigurieren. Der Zeitplan kann jederzeit aktiviert oder deaktiviert werden. Würde ein geplantes Backup starten, während ein anderes noch läuft, wird der neue Auslöser übersprungen statt parallel ausgeführt, und das Überspringen wird protokolliert.
+Administratoren konfigurieren automatische Backups auf der Backup-Verwaltungsseite. Wählen Sie einen täglichen, wöchentlichen oder monatlichen Zeitplan und eine Uhrzeit, und aktivieren Sie dann den Zeitplan. Würde ein geplantes Backup starten, während ein anderes noch läuft, überspringt PromptVault den neuen Lauf und protokolliert diese Entscheidung.
 
 Das erste Backup einer Installation (oder das erste nach einem unbrauchbar gewordenen vorherigen Backup) ist immer ein vollständiges Backup; nachfolgende geplante Backups sind inkrementell und speichern nur, was sich seit dem letzten vollständigen Backup geändert hat, um den Speicherverbrauch gering zu halten.
 
@@ -29,7 +29,7 @@ Zugangsdaten für Cloud-Anbieter (Access-Key/Secret-Key) werden mit `PROMPTVAULT
 
 ## Wiederherstellungsvorschau und selektive Wiederherstellung
 
-Bevor eine Wiederherstellung angewendet wird, zeigt PromptVault eine Vorschau-Differenz genau dessen, was sich ändern wird — hinzuzufügende, zu aktualisierende oder zu löschende Prompts —, statt blind wiederherzustellen. Aus dieser Vorschau können Sie auch eine Teilmenge der Prompts auswählen, die wiederhergestellt werden sollen, statt das gesamte Backup wiederherzustellen.
+Prüfen Sie vor einer Wiederherstellung die Vorschau: Sie listet Prompts auf, die hinzugefügt, aktualisiert oder gelöscht werden. Wählen Sie nur die wiederherzustellenden Prompts aus, oder stellen Sie das vollständige Backup wieder her. Wenden Sie die Wiederherstellung erst an, wenn Sie die aufgelisteten Änderungen verstehen.
 
 ## Aufbewahrung
 

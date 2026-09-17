@@ -5,7 +5,9 @@ sidebar_position: 2
 
 # Référence de configuration
 
-PromptVault se configure entièrement via des variables d'environnement, généralement définies dans un fichier `.env` à la racine du dépôt (copiez `.env.example` comme point de départ). Cette page couvre les paramètres dont vous aurez le plus probablement besoin.
+PromptVault se configure par des variables d'environnement, généralement définies dans le fichier `.env` à la racine du dépôt. Commencez par copier `.env.example`. Cette page est une référence pour les administrateurs : modifiez une valeur seulement si vous connaissez le résultat recherché, puis redémarrez le service concerné et vérifiez qu'il démarre correctement.
+
+Termes utilisés ci-dessous : une URL est une adresse permettant de joindre un service ; SQL est le langage de requête de la base de données ; Redis est le service qui applique les limites de débit ; SMTP est le protocole d'envoi d'e-mails.
 
 ## Base de données
 
@@ -31,7 +33,7 @@ PromptVault se configure entièrement via des variables d'environnement, génér
 | Variable | Valeur par défaut | Rôle |
 |---|---|---|
 | `AUTH_ENABLED` | `true` | À définir sur `false` uniquement pour un déploiement mono-utilisateur de confiance et non exposé au réseau — cela désactive la connexion et rend chaque point de terminaison public. |
-| `JWT_PRIVATE_KEY_PATH` / `JWT_PUBLIC_KEY_PATH` | — | Chemins vers la paire de clés ES256 utilisée pour signer/vérifier les JWT. Générez-la avec `openssl ecparam`/`openssl ec` comme indiqué dans l'[Installation](../installation/index.md). |
+| `JWT_PRIVATE_KEY_PATH` / `JWT_PUBLIC_KEY_PATH` | — | Chemins vers la paire de clés ES256 utilisée pour signer et vérifier les JSON Web Tokens (JWT). Générez-la avec les commandes indiquées dans l'[Installation](../installation/index.md). |
 | `JWT_ACCESS_TOKEN_EXPIRE_SECONDS` | `900` (15 min) | Durée de vie du jeton d'accès. |
 | `JWT_REFRESH_TOKEN_EXPIRE_SECONDS` | `604800` (7 jours) | Durée de vie du jeton de rafraîchissement. |
 | `MAX_LOGIN_ATTEMPTS` | `5` | Nombre de tentatives échouées avant verrouillage du compte. |
@@ -39,7 +41,7 @@ PromptVault se configure entièrement via des variables d'environnement, génér
 | `MAX_SESSIONS_PER_USER` | `5` | Nombre maximal de sessions simultanées (`0` = illimité). |
 | `SESSION_INACTIVE_TIMEOUT_SECONDS` | `2592000` (30 jours) | Expiration d'une session inactive. |
 
-La politique de mot de passe (`PASSWORD_MIN_LENGTH`, `PASSWORD_REQUIRE_UPPERCASE`, `PASSWORD_REQUIRE_LOWERCASE`, `PASSWORD_REQUIRE_DIGIT`, `PASSWORD_REQUIRE_SPECIAL`) est également configurable — par défaut, une longueur minimale de 12 caractères avec les quatre classes de caractères est exigée.
+Les variables de politique de mot de passe `PASSWORD_MIN_LENGTH`, `PASSWORD_REQUIRE_UPPERCASE`, `PASSWORD_REQUIRE_LOWERCASE`, `PASSWORD_REQUIRE_DIGIT` et `PASSWORD_REQUIRE_SPECIAL` sont également configurables. Par défaut, elles exigent au moins 12 caractères et les quatre classes de caractères.
 
 ## Limitation de débit
 
@@ -52,7 +54,7 @@ Les limites de débit sont appliquées par utilisateur (avec repli par IP pour l
 | Coûteuses (import/export, création/restauration/vérification de sauvegarde) | 10/min | `RATE_LIMIT_EXPENSIVE_*` |
 | En masse (suppression en masse, suppression de toutes les sauvegardes, compression) | 5/min | `RATE_LIMIT_BULK_*` |
 
-Chaque catégorie possède des variables `_ATTEMPTS` et `_WINDOW_SECONDS`, par exemple `RATE_LIMIT_WRITE_ATTEMPTS=60` / `RATE_LIMIT_WRITE_WINDOW_SECONDS=60`. Les points de terminaison propres à l'authentification (connexion, inscription, réinitialisation de mot de passe) ont leurs propres limites distinctes (`RATE_LIMIT_LOGIN_*`, `RATE_LIMIT_REGISTER_*`, `RATE_LIMIT_PASSWORD_RESET_*`). La limitation de débit nécessite que `REDIS_URL` soit accessible.
+Chaque catégorie possède des variables `_ATTEMPTS` et `_WINDOW_SECONDS`, par exemple `RATE_LIMIT_WRITE_ATTEMPTS=60` et `RATE_LIMIT_WRITE_WINDOW_SECONDS=60`. Les points de terminaison d'authentification (connexion, inscription et réinitialisation de mot de passe) ont des limites distinctes : `RATE_LIMIT_LOGIN_*`, `RATE_LIMIT_REGISTER_*` et `RATE_LIMIT_PASSWORD_RESET_*`. La limitation de débit fonctionne uniquement si le service Redis indiqué par `REDIS_URL` est accessible. Si vous n'exécutez pas Redis, ne supposez pas que ces limites sont actives.
 
 ## E-mail (réinitialisation du mot de passe)
 

@@ -5,7 +5,7 @@ sidebar_position: 4
 
 # Solución de problemas
 
-Esta página cubre los problemas más comunes al instalar o ejecutar PromptVault. Para una cobertura exhaustiva, consulte `docs/TROUBLESHOOTING.md` del proyecto.
+Use esta página para identificar el síntoma, realizar el cambio seguro más pequeño y volver a intentarlo. No elimine una base de datos ni un volumen de Docker al resolver problemas de una instalación existente. Para una cobertura exhaustiva, consulte `docs/TROUBLESHOOTING.md` del proyecto.
 
 ## Puerto ya en uso
 
@@ -21,7 +21,7 @@ Si PromptVault no puede conectarse a PostgreSQL al iniciar:
 
 - Confirme que el contenedor/servicio realmente está en ejecución (`docker-compose ps`).
 - Verifique que `DATABASE_URL` en `.env` coincida con las credenciales y el host/puerto en el que PostgreSQL realmente está escuchando.
-- Si acaba de cambiar `POSTGRES_PASSWORD`, recuerde que los contenedores existentes con un volumen de datos ya inicializado no adoptarán automáticamente la nueva contraseña — es posible que deba recrear el volumen para una instalación limpia, o actualizar la contraseña dentro de la base de datos existente en su lugar.
+- Si cambió `POSTGRES_PASSWORD`, un volumen de datos existente ya inicializado no adopta la nueva contraseña automáticamente. Para una instalación existente, actualice la contraseña en la base de datos mediante el procedimiento establecido. Recree un volumen solo para una instalación nueva sin datos que conservar.
 
 ## Fallos de migración
 
@@ -44,7 +44,7 @@ Las claves generadas con una curva o algoritmo diferente no funcionarán — Pro
 
 ## Bloqueado tras inicios de sesión fallidos
 
-Los intentos de inicio de sesión fallidos repetidos activan un bloqueo temporal de la cuenta (`MAX_LOGIN_ATTEMPTS`, 5 intentos por defecto, `ACCOUNT_LOCKOUT_DURATION_SECONDS`, 15 minutos por defecto). Espere a que termine la ventana de bloqueo, o pida a un administrador que la reinicie, en lugar de volver a intentarlo repetidamente — reintentar durante un bloqueo no reinicia el temporizador antes de tiempo.
+Los intentos de inicio de sesión fallidos repetidos bloquean su cuenta temporalmente. De forma predeterminada, ocurre después de cinco intentos (`MAX_LOGIN_ATTEMPTS`) y dura 15 minutos (`ACCOUNT_LOCKOUT_DURATION_SECONDS`). Espere a que termine el bloqueo. Si es el único administrador, espere en lugar de probar más contraseñas: los reintentos no acortan el tiempo.
 
 ## Errores de límite de tasa (429)
 

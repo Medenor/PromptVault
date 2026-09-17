@@ -5,7 +5,7 @@ sidebar_position: 1
 
 # Installation
 
-PromptVault is a self-hosted application. This page covers the two supported ways to get it running: the automated setup wizard, and a manual Docker Compose deployment.
+PromptVault is a self-hosted application: you run it on infrastructure you control. Choose the setup wizard if you want the application to create the required configuration interactively. Choose the manual path only if you are comfortable editing environment variables and running Docker commands.
 
 ## Prerequisites
 
@@ -16,7 +16,7 @@ PromptVault is a self-hosted application. This page covers the two supported way
 
 ## Quick Start with the Setup Wizard
 
-The fastest way to get a working instance is the bundled setup wizard, which handles JWT key generation, environment configuration, database setup, and admin user creation interactively.
+The fastest way to get a working instance is the bundled setup wizard. It creates JSON Web Token (JWT) signing keys, configures the environment, sets up the database, and creates an administrator account.
 
 ```bash
 git clone https://codeberg.org/medenor/promptvault.git
@@ -24,11 +24,11 @@ cd PromptVault
 python scripts/setup/setup.py
 ```
 
-Follow the prompts. When it finishes, PromptVault is deployed and ready to log into.
+Follow the prompts. When it finishes, open the address it displays and sign in with the administrator credentials you created.
 
 ## Manual Docker Compose Setup
 
-If you prefer to configure each step yourself:
+Use this path only when you need to control each setting yourself. Complete the commands in order; later commands use the files and services created by earlier ones.
 
 ```bash
 # Clone the repository
@@ -60,7 +60,7 @@ docker-compose exec web python scripts/create_admin_user.py
 docker-compose exec web python scripts/migrate_json_to_db.py
 ```
 
-Once the containers are up, open `http://localhost:8001` and log in with the admin credentials you just created.
+When the containers are running, open `http://localhost:8001` and sign in with the administrator credentials you created. If the page does not open, use [Troubleshooting](../troubleshooting/index.md) before changing any data or Docker volumes.
 
 ## Building from Source
 
@@ -86,7 +86,7 @@ docker-compose exec web python scripts/create_admin_user.py
 python scripts/create_admin_user.py
 ```
 
-The script prompts for username, email, and password, validates the password against the configured policy, and creates a user with full admin permissions. Keep these credentials secure.
+The script asks for a username, email address, and password. It checks the password against the configured policy, then creates a user with full administrator permissions. Store these credentials securely.
 
 ## Next Steps
 

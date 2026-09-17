@@ -5,7 +5,7 @@ sidebar_position: 4
 
 # Troubleshooting
 
-This page covers the issues most people hit when installing or running PromptVault. For exhaustive coverage, see the project's `docs/TROUBLESHOOTING.md`.
+Use this page to identify the symptom, make the smallest safe change, and try again. Do not delete a database or Docker volume while troubleshooting an existing installation. For exhaustive coverage, see the project's `docs/TROUBLESHOOTING.md`.
 
 ## Port Already in Use
 
@@ -19,16 +19,16 @@ If port `8001` (web), `5432` (PostgreSQL), or `6379` (Redis) is already bound by
 
 If PromptVault can't reach PostgreSQL on startup:
 
-- Confirm the container/service is actually running (`docker-compose ps`).
+- Confirm that the container or service is running with `docker-compose ps`.
 - Double-check `DATABASE_URL` in `.env` matches the credentials and host/port PostgreSQL is actually listening on.
-- If you just changed `POSTGRES_PASSWORD`, remember existing containers with an already-initialized data volume won't pick up the new password automatically — you may need to recreate the volume for a fresh install, or update the password inside the existing database instead.
+- If you changed `POSTGRES_PASSWORD`, an existing initialized data volume does not change its password automatically. For an existing installation, update the password in the database using your established database procedure. Recreate a volume only for a new installation with no data to keep.
 
 ## Migration Failures
 
 If `alembic upgrade head` fails partway through:
 
 - Re-run it — most migrations are written to be idempotent.
-- If a migration fails specifically on a fresh SQLite database with a PostgreSQL-specific SQL error, you're likely on an outdated version — recent releases fixed migrations that used non-portable dialect-specific SQL, so make sure you're not running an older commit.
+- If a migration on a new SQLite database reports a PostgreSQL-specific SQL error, check that you are running a current release before trying another workaround.
 - Never edit the database schema by hand to work around a migration failure — open an issue with the exact error instead, since manual schema edits make future migrations unpredictable.
 
 ## JWT Key Errors
@@ -44,11 +44,11 @@ Keys generated with a different curve or algorithm will not work — PromptVault
 
 ## Locked Out After Failed Logins
 
-Repeated failed login attempts trigger a temporary account lockout (`MAX_LOGIN_ATTEMPTS`, default 5 attempts, `ACCOUNT_LOCKOUT_DURATION_SECONDS`, default 15 minutes). Wait out the lockout window, or have an admin reset it, rather than repeatedly retrying — retrying during a lockout does not reset the timer early.
+Repeated failed login attempts temporarily lock your account. By default, this happens after five attempts (`MAX_LOGIN_ATTEMPTS`) and lasts 15 minutes (`ACCOUNT_LOCKOUT_DURATION_SECONDS`). Wait for the lockout to end. If you are the only administrator, wait rather than trying further passwords: retries do not shorten the timer.
 
 ## Rate Limit Errors (429)
 
-If bulk operations, imports/exports, or backup actions return `429 Too Many Requests`, you've hit one of the per-user rate-limit buckets described in [Configuration](../configuration/index.md#rate-limiting). The response includes a `Retry-After` header; wait for that window, or ask an admin to raise the relevant `RATE_LIMIT_*` variable if the default is genuinely too low for your workflow.
+If bulk operations, imports, exports, or backup actions return `429 Too Many Requests`, you have reached a per-user rate limit. The response gives a `Retry-After` value. Wait for that period, then try once more. If the limit prevents a legitimate recurring workflow, an administrator can adjust the matching `RATE_LIMIT_*` setting described in [Configuration](../configuration/index.md#rate-limiting).
 
 ## Import/Export Doesn't Restore Sharing
 

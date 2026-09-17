@@ -5,11 +5,11 @@ sidebar_position: 2
 
 # Sauvegardes
 
-PromptVault inclut un système de sauvegarde et de restauration couvrant la planification, la vérification d'intégrité, le chiffrement et le stockage cloud optionnel.
+PromptVault inclut des fonctions de sauvegarde et de restauration pour les copies planifiées, la vérification d'intégrité, le chiffrement et le stockage cloud optionnel. Une sauvegarde aide à récupérer des données ; un export ne la remplace pas lorsque vous devez préserver les droits de partage.
 
 ## Sauvegardes planifiées
 
-Les administrateurs peuvent configurer des sauvegardes automatiques selon une fréquence quotidienne, hebdomadaire ou mensuelle, à une heure choisie. La planification peut être activée ou désactivée à tout moment. Si une sauvegarde planifiée devait démarrer alors qu'une autre est déjà en cours, le nouveau déclenchement est ignoré plutôt qu'exécuté en parallèle, et cet abandon est journalisé.
+Les administrateurs configurent les sauvegardes automatiques depuis la page de gestion des sauvegardes. Choisissez une fréquence quotidienne, hebdomadaire ou mensuelle, ainsi qu'une heure, puis activez la planification. Si une sauvegarde planifiée doit démarrer alors qu'une autre est déjà en cours, PromptVault ignore la nouvelle exécution et enregistre cette décision.
 
 La première sauvegarde d'une installation (ou la première après qu'une sauvegarde précédente devienne inutilisable) est toujours une sauvegarde complète ; les sauvegardes planifiées suivantes sont incrémentales, ne stockant que ce qui a changé depuis la dernière sauvegarde complète afin de limiter l'espace de stockage utilisé.
 
@@ -23,13 +23,13 @@ Les sauvegardes peuvent être chiffrées avec une clé que vous fournissez avant
 
 ## Stockage cloud
 
-Vous pouvez configurer un fournisseur compatible S3, Google Drive ou Dropbox comme destination de sauvegarde depuis l'interface d'administration. Une copie locale est toujours conservée même lorsque l'envoi vers le cloud est configuré, et vous pouvez restaurer directement depuis le stockage cloud, pas uniquement depuis des sauvegardes locales.
+Depuis la page de gestion des sauvegardes, configurez un fournisseur compatible S3, Google Drive ou Dropbox comme destination. PromptVault conserve une copie locale même lorsque l'envoi vers le cloud est configuré, et vous pouvez restaurer directement depuis le stockage cloud.
 
 Les identifiants du fournisseur cloud (clé d'accès / clé secrète) sont chiffrés au repos à l'aide de `PROMPTVAULT_CLOUD_CREDS_PASSPHRASE` — voir [Configuration](../configuration/index.md#sauvegardes). Cette variable est requise avant de pouvoir ajouter un fournisseur cloud.
 
 ## Aperçu de restauration et restauration sélective
 
-Avant qu'une restauration ne soit appliquée, PromptVault affiche un aperçu détaillé de ce qui va exactement changer — prompts ajoutés, modifiés ou supprimés — plutôt que de restaurer à l'aveugle. Depuis cet aperçu, vous pouvez également sélectionner un sous-ensemble de prompts à restaurer plutôt que de restaurer l'intégralité de la sauvegarde.
+Avant d'appliquer une restauration, consultez l'aperçu : il liste les prompts qui seront ajoutés, modifiés ou supprimés. Sélectionnez uniquement les prompts à restaurer, ou restaurez la sauvegarde complète. N'appliquez pas la restauration avant de comprendre les changements listés.
 
 ## Rétention
 
@@ -38,4 +38,4 @@ Une période de rétention configurable (en jours) détermine quand les sauvegar
 ## Remarques pratiques
 
 - Gardez `PROMPTVAULT_DATA_DIR` distinct par environnement (dev/staging/prod) — partager un répertoire de données entre environnements peut faire entrer en collision les sauvegardes et restaurations planifiées, puisqu'elles sont stockées relativement à ce répertoire.
-- Testez occasionnellement une restauration, pas seulement une sauvegarde — la vérification d'intégrité confirme que le fichier de sauvegarde est lisible, mais un aperçu de restauration complet confirme que les données qu'il contient sont réellement celles attendues.
+- Testez occasionnellement une restauration, pas uniquement une sauvegarde. La vérification d'intégrité confirme que le fichier de sauvegarde est lisible ; un aperçu de restauration confirme qu'il contient les données attendues.

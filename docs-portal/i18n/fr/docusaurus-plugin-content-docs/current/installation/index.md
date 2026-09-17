@@ -5,7 +5,7 @@ sidebar_position: 1
 
 # Installation
 
-PromptVault est une application auto-hébergée. Cette page couvre les deux méthodes prises en charge pour la mettre en route : l'assistant de configuration automatisé et un déploiement manuel via Docker Compose.
+PromptVault est une application auto-hébergée : vous l'exécutez sur une infrastructure que vous contrôlez. Choisissez l'assistant de configuration s'il doit créer les éléments requis de manière interactive. Choisissez le parcours manuel uniquement si vous savez modifier des variables d'environnement et exécuter des commandes Docker.
 
 ## Prérequis
 
@@ -16,7 +16,7 @@ PromptVault est une application auto-hébergée. Cette page couvre les deux mét
 
 ## Démarrage rapide avec l'assistant de configuration
 
-Le moyen le plus rapide d'obtenir une instance fonctionnelle est l'assistant de configuration intégré, qui gère de façon interactive la génération des clés JWT, la configuration de l'environnement, la mise en place de la base de données et la création de l'utilisateur administrateur.
+Le moyen le plus rapide d'obtenir une instance fonctionnelle est l'assistant de configuration intégré. Il crée les clés de signature JSON Web Token (JWT), configure l'environnement, initialise la base de données et crée un compte administrateur.
 
 ```bash
 git clone https://codeberg.org/medenor/promptvault.git
@@ -24,11 +24,11 @@ cd PromptVault
 python scripts/setup/setup.py
 ```
 
-Suivez les instructions. Une fois terminé, PromptVault est déployé et prêt à l'emploi.
+Suivez les instructions. Une fois terminé, ouvrez l'adresse affichée et connectez-vous avec les identifiants administrateur créés.
 
 ## Configuration manuelle avec Docker Compose
 
-Si vous préférez configurer chaque étape vous-même :
+Utilisez ce parcours uniquement si vous devez contrôler chaque paramètre. Exécutez les commandes dans l'ordre : les suivantes utilisent les fichiers et services créés par les précédentes.
 
 ```bash
 # Cloner le dépôt
@@ -60,7 +60,7 @@ docker-compose exec web python scripts/create_admin_user.py
 docker-compose exec web python scripts/migrate_json_to_db.py
 ```
 
-Une fois les conteneurs démarrés, ouvrez `http://localhost:8001` et connectez-vous avec les identifiants administrateur que vous venez de créer.
+Une fois les conteneurs démarrés, ouvrez `http://localhost:8001` et connectez-vous avec les identifiants administrateur créés. Si la page ne s'ouvre pas, consultez [Dépannage](../troubleshooting/index.md) avant de modifier des données ou des volumes Docker.
 
 ## Compiler depuis les sources
 
@@ -86,7 +86,7 @@ docker-compose exec web python scripts/create_admin_user.py
 python scripts/create_admin_user.py
 ```
 
-Le script demande un nom d'utilisateur, une adresse e-mail et un mot de passe, vérifie que le mot de passe respecte la politique configurée, puis crée un utilisateur avec tous les droits administrateur. Conservez ces identifiants en lieu sûr.
+Le script demande un nom d'utilisateur, une adresse e-mail et un mot de passe. Il vérifie que le mot de passe respecte la politique configurée, puis crée un utilisateur avec tous les droits administrateur. Conservez ces identifiants en lieu sûr.
 
 ## Étapes suivantes
 

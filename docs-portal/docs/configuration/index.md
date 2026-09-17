@@ -5,7 +5,9 @@ sidebar_position: 2
 
 # Configuration Reference
 
-PromptVault is configured entirely through environment variables, typically set in a `.env` file at the repository root (copy `.env.example` as a starting point). This page covers the settings you're most likely to need.
+PromptVault is configured through environment variables, usually set in the `.env` file at the repository root. Start by copying `.env.example`. This is an administrator reference: change a value only when you know the outcome you need, then restart the affected service and confirm that it starts successfully.
+
+Terms used below: a URL is an address used to connect to a service; SQL is the database query language; Redis is the service that applies rate limits; SMTP is the protocol used to send email.
 
 ## Database
 
@@ -31,7 +33,7 @@ PromptVault is configured entirely through environment variables, typically set 
 | Variable | Default | Purpose |
 |---|---|---|
 | `AUTH_ENABLED` | `true` | Set to `false` only for a trusted, single-user, non-networked deployment — this disables login and makes every endpoint publicly accessible. |
-| `JWT_PRIVATE_KEY_PATH` / `JWT_PUBLIC_KEY_PATH` | — | Paths to the ES256 keypair used to sign/verify JWTs. Generate with `openssl ecparam`/`openssl ec` as shown in [Installation](../installation/index.md). |
+| `JWT_PRIVATE_KEY_PATH` / `JWT_PUBLIC_KEY_PATH` | — | Paths to the ES256 key pair used to sign and verify JSON Web Tokens (JWTs). Generate it with the commands in [Installation](../installation/index.md). |
 | `JWT_ACCESS_TOKEN_EXPIRE_SECONDS` | `900` (15 min) | Access token lifetime. |
 | `JWT_REFRESH_TOKEN_EXPIRE_SECONDS` | `604800` (7 days) | Refresh token lifetime. |
 | `MAX_LOGIN_ATTEMPTS` | `5` | Failed attempts before account lockout. |
@@ -39,7 +41,7 @@ PromptVault is configured entirely through environment variables, typically set 
 | `MAX_SESSIONS_PER_USER` | `5` | Concurrent session cap (`0` = unlimited). |
 | `SESSION_INACTIVE_TIMEOUT_SECONDS` | `2592000` (30 days) | Idle session expiry. |
 
-Password policy (`PASSWORD_MIN_LENGTH`, `PASSWORD_REQUIRE_UPPERCASE`, `PASSWORD_REQUIRE_LOWERCASE`, `PASSWORD_REQUIRE_DIGIT`, `PASSWORD_REQUIRE_SPECIAL`) is also configurable — defaults enforce a 12-character minimum with all four character classes.
+The password-policy variables `PASSWORD_MIN_LENGTH`, `PASSWORD_REQUIRE_UPPERCASE`, `PASSWORD_REQUIRE_LOWERCASE`, `PASSWORD_REQUIRE_DIGIT`, and `PASSWORD_REQUIRE_SPECIAL` are also configurable. By default, they require at least 12 characters and all four character classes.
 
 ## Rate Limiting
 
@@ -52,7 +54,7 @@ Rate limits are per-user (falling back to per-IP for anonymous requests) and gro
 | Expensive (import/export, backup create/restore/verify) | 10/min | `RATE_LIMIT_EXPENSIVE_*` |
 | Bulk (bulk delete, delete-all-backups, compress) | 5/min | `RATE_LIMIT_BULK_*` |
 
-Each bucket has `_ATTEMPTS` and `_WINDOW_SECONDS` variables, e.g. `RATE_LIMIT_WRITE_ATTEMPTS=60` / `RATE_LIMIT_WRITE_WINDOW_SECONDS=60`. Auth-specific endpoints (login, register, password reset) have their own separate limits (`RATE_LIMIT_LOGIN_*`, `RATE_LIMIT_REGISTER_*`, `RATE_LIMIT_PASSWORD_RESET_*`). Rate limiting requires `REDIS_URL` to be reachable.
+Each bucket has `_ATTEMPTS` and `_WINDOW_SECONDS` variables, for example `RATE_LIMIT_WRITE_ATTEMPTS=60` and `RATE_LIMIT_WRITE_WINDOW_SECONDS=60`. Authentication endpoints (login, register, and password reset) have separate limits: `RATE_LIMIT_LOGIN_*`, `RATE_LIMIT_REGISTER_*`, and `RATE_LIMIT_PASSWORD_RESET_*`. Rate limiting works only when the Redis service at `REDIS_URL` is reachable. If you do not run Redis, do not assume these limits are active.
 
 ## Email (Password Reset)
 

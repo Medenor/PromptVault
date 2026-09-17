@@ -5,7 +5,7 @@ sidebar_position: 4
 
 # Fehlerbehebung
 
-Diese Seite behandelt die häufigsten Probleme bei Installation oder Betrieb von PromptVault. Für eine ausführliche Behandlung siehe `docs/TROUBLESHOOTING.md` des Projekts.
+Verwenden Sie diese Seite, um das Symptom zu bestimmen, die kleinste sichere Änderung vorzunehmen und es erneut zu versuchen. Löschen Sie beim Beheben eines Problems in einer bestehenden Installation keine Datenbank und kein Docker-Volume. Für eine ausführliche Behandlung siehe `docs/TROUBLESHOOTING.md` des Projekts.
 
 ## Port bereits belegt
 
@@ -21,7 +21,7 @@ Wenn PromptVault beim Start keine Verbindung zu PostgreSQL herstellen kann:
 
 - Bestätigen Sie, dass der Container/Dienst tatsächlich läuft (`docker-compose ps`).
 - Prüfen Sie, ob `DATABASE_URL` in `.env` mit den Zugangsdaten und dem Host/Port übereinstimmt, auf dem PostgreSQL tatsächlich lauscht.
-- Wenn Sie gerade `POSTGRES_PASSWORD` geändert haben: Bestehende Container mit einem bereits initialisierten Datenvolume übernehmen das neue Passwort nicht automatisch — Sie müssen das Volume für eine Neuinstallation eventuell neu anlegen oder stattdessen das Passwort innerhalb der bestehenden Datenbank ändern.
+- Wenn Sie `POSTGRES_PASSWORD` geändert haben, übernimmt ein bestehendes initialisiertes Datenvolume das neue Passwort nicht automatisch. Aktualisieren Sie bei einer bestehenden Installation das Passwort in der Datenbank nach Ihrem festgelegten Verfahren. Erstellen Sie ein Volume nur für eine neue Installation ohne zu behaltende Daten neu.
 
 ## Migrationsfehler
 
@@ -44,7 +44,7 @@ Mit einer anderen Kurve oder einem anderen Algorithmus erzeugte Schlüssel funkt
 
 ## Nach fehlgeschlagenen Anmeldungen ausgesperrt
 
-Wiederholte fehlgeschlagene Anmeldeversuche lösen eine temporäre Kontosperrung aus (`MAX_LOGIN_ATTEMPTS`, Standard 5 Versuche, `ACCOUNT_LOCKOUT_DURATION_SECONDS`, Standard 15 Minuten). Warten Sie das Sperrfenster ab, oder lassen Sie es von einem Administrator zurücksetzen, statt es wiederholt erneut zu versuchen — wiederholte Versuche während einer Sperrung setzen den Timer nicht vorzeitig zurück.
+Wiederholte fehlgeschlagene Anmeldeversuche sperren Ihr Konto vorübergehend. Standardmäßig geschieht dies nach fünf Versuchen (`MAX_LOGIN_ATTEMPTS`) für 15 Minuten (`ACCOUNT_LOCKOUT_DURATION_SECONDS`). Warten Sie, bis die Sperre endet. Wenn Sie der einzige Administrator sind, warten Sie, statt weitere Passwörter zu versuchen: Weitere Versuche verkürzen den Zeitraum nicht.
 
 ## Ratenlimit-Fehler (429)
 

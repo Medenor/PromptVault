@@ -5,7 +5,7 @@ sidebar_position: 1
 
 # Installation
 
-PromptVault ist eine selbst gehostete Anwendung. Diese Seite behandelt die beiden unterstützten Wege, sie zum Laufen zu bringen: den automatisierten Einrichtungsassistenten und eine manuelle Docker-Compose-Bereitstellung.
+PromptVault ist eine selbst gehostete Anwendung: Sie betreiben sie auf einer Infrastruktur, die Sie kontrollieren. Wählen Sie den Einrichtungsassistenten, wenn die Anwendung die erforderliche Konfiguration interaktiv erstellen soll. Wählen Sie den manuellen Weg nur, wenn Sie Umgebungsvariablen bearbeiten und Docker-Befehle ausführen können.
 
 ## Voraussetzungen
 
@@ -16,7 +16,7 @@ PromptVault ist eine selbst gehostete Anwendung. Diese Seite behandelt die beide
 
 ## Schnellstart mit dem Einrichtungsassistenten
 
-Der schnellste Weg zu einer funktionierenden Instanz ist der mitgelieferte Einrichtungsassistent, der JWT-Schlüsselerzeugung, Umgebungskonfiguration, Datenbankeinrichtung und Admin-Benutzererstellung interaktiv übernimmt.
+Der schnellste Weg zu einer funktionierenden Instanz ist der mitgelieferte Einrichtungsassistent. Er erstellt JSON-Web-Token-(JWT-)Signaturschlüssel, konfiguriert die Umgebung, richtet die Datenbank ein und erstellt ein Administratorkonto.
 
 ```bash
 git clone https://codeberg.org/medenor/promptvault.git
@@ -24,11 +24,11 @@ cd PromptVault
 python scripts/setup/setup.py
 ```
 
-Folgen Sie den Anweisungen. Am Ende ist PromptVault bereitgestellt und einsatzbereit.
+Folgen Sie den Anweisungen. Öffnen Sie am Ende die angezeigte Adresse und melden Sie sich mit den erstellten Administrator-Zugangsdaten an.
 
 ## Manuelle Einrichtung mit Docker Compose
 
-Wenn Sie jeden Schritt lieber selbst konfigurieren möchten:
+Verwenden Sie diesen Weg nur, wenn Sie jede Einstellung selbst steuern müssen. Führen Sie die Befehle der Reihe nach aus: Spätere Befehle verwenden die Dateien und Dienste aus den vorherigen Schritten.
 
 ```bash
 # Repository klonen
@@ -60,7 +60,7 @@ docker-compose exec web python scripts/create_admin_user.py
 docker-compose exec web python scripts/migrate_json_to_db.py
 ```
 
-Sobald die Container laufen, öffnen Sie `http://localhost:8001` und melden Sie sich mit den soeben erstellten Admin-Zugangsdaten an.
+Sobald die Container laufen, öffnen Sie `http://localhost:8001` und melden Sie sich mit den erstellten Administrator-Zugangsdaten an. Wenn die Seite nicht geöffnet wird, verwenden Sie zuerst die [Fehlerbehebung](../troubleshooting/index.md), bevor Sie Daten oder Docker-Volumes ändern.
 
 ## Aus dem Quellcode bauen
 

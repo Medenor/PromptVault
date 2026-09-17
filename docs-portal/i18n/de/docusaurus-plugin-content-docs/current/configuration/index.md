@@ -5,7 +5,9 @@ sidebar_position: 2
 
 # Konfigurationsreferenz
 
-PromptVault wird vollständig über Umgebungsvariablen konfiguriert, typischerweise in einer `.env`-Datei im Repository-Root gesetzt (kopieren Sie `.env.example` als Ausgangspunkt). Diese Seite behandelt die Einstellungen, die Sie am wahrscheinlichsten benötigen.
+PromptVault wird über Umgebungsvariablen konfiguriert, die normalerweise in der `.env`-Datei im Repository-Root stehen. Beginnen Sie mit einer Kopie von `.env.example`. Dies ist eine Administratorreferenz: Ändern Sie einen Wert nur, wenn Sie das gewünschte Ergebnis kennen. Starten Sie anschließend den betroffenen Dienst neu und prüfen Sie, dass er erfolgreich startet.
+
+Begriffe: Eine URL ist die Adresse für die Verbindung zu einem Dienst; SQL ist die Abfragesprache der Datenbank; Redis ist der Dienst für Ratenbegrenzungen; SMTP ist das Protokoll zum Versenden von E-Mails.
 
 ## Datenbank
 
@@ -31,7 +33,7 @@ PromptVault wird vollständig über Umgebungsvariablen konfiguriert, typischerwe
 | Variable | Standard | Zweck |
 |---|---|---|
 | `AUTH_ENABLED` | `true` | Nur bei einer vertrauenswürdigen, netzwerklosen Einzelbenutzer-Bereitstellung auf `false` setzen — dies deaktiviert den Login und macht jeden Endpunkt öffentlich zugänglich. |
-| `JWT_PRIVATE_KEY_PATH` / `JWT_PUBLIC_KEY_PATH` | — | Pfade zum ES256-Schlüsselpaar zum Signieren/Verifizieren von JWTs. Erzeugen Sie es mit `openssl ecparam`/`openssl ec`, wie unter [Installation](../installation/index.md) gezeigt. |
+| `JWT_PRIVATE_KEY_PATH` / `JWT_PUBLIC_KEY_PATH` | — | Pfade zum ES256-Schlüsselpaar zum Signieren und Verifizieren von JSON Web Tokens (JWTs). Erzeugen Sie es mit den Befehlen unter [Installation](../installation/index.md). |
 | `JWT_ACCESS_TOKEN_EXPIRE_SECONDS` | `900` (15 Min.) | Lebensdauer des Zugriffstokens. |
 | `JWT_REFRESH_TOKEN_EXPIRE_SECONDS` | `604800` (7 Tage) | Lebensdauer des Refresh-Tokens. |
 | `MAX_LOGIN_ATTEMPTS` | `5` | Fehlgeschlagene Versuche vor Kontosperrung. |
@@ -39,7 +41,7 @@ PromptVault wird vollständig über Umgebungsvariablen konfiguriert, typischerwe
 | `MAX_SESSIONS_PER_USER` | `5` | Obergrenze gleichzeitiger Sitzungen (`0` = unbegrenzt). |
 | `SESSION_INACTIVE_TIMEOUT_SECONDS` | `2592000` (30 Tage) | Ablauf bei Inaktivität. |
 
-Die Passwortrichtlinie (`PASSWORD_MIN_LENGTH`, `PASSWORD_REQUIRE_UPPERCASE`, `PASSWORD_REQUIRE_LOWERCASE`, `PASSWORD_REQUIRE_DIGIT`, `PASSWORD_REQUIRE_SPECIAL`) ist ebenfalls konfigurierbar — die Standardwerte erzwingen mindestens 12 Zeichen mit allen vier Zeichenklassen.
+Die Passwortrichtlinienvariablen `PASSWORD_MIN_LENGTH`, `PASSWORD_REQUIRE_UPPERCASE`, `PASSWORD_REQUIRE_LOWERCASE`, `PASSWORD_REQUIRE_DIGIT` und `PASSWORD_REQUIRE_SPECIAL` sind ebenfalls konfigurierbar. Standardmäßig verlangen sie mindestens 12 Zeichen und alle vier Zeichenklassen.
 
 ## Ratenbegrenzung
 
@@ -52,7 +54,7 @@ Ratenlimits gelten pro Benutzer (bei anonymen Anfragen als Fallback pro IP-Adres
 | Aufwendig (Import/Export, Backup erstellen/wiederherstellen/prüfen) | 10/Min | `RATE_LIMIT_EXPENSIVE_*` |
 | Massenoperationen (Massenlöschung, alle Backups löschen, komprimieren) | 5/Min | `RATE_LIMIT_BULK_*` |
 
-Jede Kategorie besitzt `_ATTEMPTS`- und `_WINDOW_SECONDS`-Variablen, z. B. `RATE_LIMIT_WRITE_ATTEMPTS=60` / `RATE_LIMIT_WRITE_WINDOW_SECONDS=60`. Auth-spezifische Endpunkte (Login, Registrierung, Passwort-Reset) haben eigene, separate Limits (`RATE_LIMIT_LOGIN_*`, `RATE_LIMIT_REGISTER_*`, `RATE_LIMIT_PASSWORD_RESET_*`). Ratenbegrenzung erfordert eine erreichbare `REDIS_URL`.
+Jede Kategorie besitzt `_ATTEMPTS`- und `_WINDOW_SECONDS`-Variablen, zum Beispiel `RATE_LIMIT_WRITE_ATTEMPTS=60` und `RATE_LIMIT_WRITE_WINDOW_SECONDS=60`. Authentifizierungsendpunkte haben separate Limits: `RATE_LIMIT_LOGIN_*`, `RATE_LIMIT_REGISTER_*` und `RATE_LIMIT_PASSWORD_RESET_*`. Ratenbegrenzung funktioniert nur, wenn der Redis-Dienst unter `REDIS_URL` erreichbar ist. Wenn Sie Redis nicht betreiben, dürfen Sie nicht davon ausgehen, dass diese Limits aktiv sind.
 
 ## E-Mail (Passwort-Reset)
 
