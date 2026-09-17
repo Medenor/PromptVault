@@ -47,7 +47,7 @@ All new files live under the new top-level `docs-portal/` directory (isolated fr
 - [X] T005 Create the English content-tree skeleton in `docs-portal/docs/` per plan.md's Project Structure: `installation/`, `configuration/`, `user-guide/` (with `versioning.md`, `backups.md`, `sharing.md`, `search.md`, `two-factor-auth.md` placeholders), `troubleshooting/`, `release-notes/index.md`
 - [X] T006 Create the mirrored empty locale trees at `docs-portal/i18n/{fr,de,es}/docusaurus-plugin-content-docs/current/` matching T005's structure exactly
 - [X] T007 Document the frontmatter schema (`title`, `sidebar_position`, `translation_exempt`) from contracts/page-frontmatter-schema.md as a comment template / example page authors copy, e.g. `docs-portal/docs/_template.md` (excluded from the sidebar)
-- [X] T008 [P] Configure the "translation not yet available" fallback banner (FR-006) via Docusaurus's untranslated-content banner customization in `docs-portal/docusaurus.config.ts` / theme override
+- [X] T008 [P] Configure the "translation not yet available" fallback banner (FR-006) via a swizzled `DocItem/Content` wrapper (`docs-portal/src/theme/DocItem/Content/index.tsx`) — Docusaurus has no built-in config option for this (only a versioned-docs banner exists out of the box), so the banner is rendered client/SSR-side by detecting when `useDoc().metadata.source` still points at the English `docs/` tree while `currentLocale !== defaultLocale`, which only happens on i18n fallback
 
 **Checkpoint**: Foundation ready — content authoring (US1) and the parity checker (US2) can now proceed in parallel
 
