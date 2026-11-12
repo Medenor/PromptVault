@@ -13,6 +13,7 @@ This test suite verifies the FastAPI dependency functions for:
 """
 
 from datetime import UTC, datetime, timedelta
+from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
 import pytest
@@ -150,6 +151,9 @@ class TestUserRetrieval:
         self.session = Mock(spec=Session)
         self.request = Mock(spec=Request)
         self.request.url = Mock(path="/api/prompts")
+        # Real requests always carry an ASGI scope and a state object.
+        self.request.scope = {}
+        self.request.state = SimpleNamespace()
         self.user = User(
             id="user123",
             username="alice",

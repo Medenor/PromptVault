@@ -22,6 +22,7 @@ Commit convention:
     matching the session-per-request pattern used throughout the codebase.
 """
 
+import re
 import secrets
 import time
 import uuid
@@ -33,6 +34,7 @@ from jwt.exceptions import InvalidTokenError as JWTInvalidTokenError
 from src.db.models.user import User
 from src.db.repositories.totp_repository import TotpRepository
 from src.services.auth.jwt_service import JWTService
+from src.services.auth.lockout_service import LockoutService
 from src.services.auth.password_service import PasswordService
 from src.services.auth.totp_encryption_service import TotpEncryptionService
 from src.services.auth.totp_qr import render_qr_svg
@@ -51,6 +53,10 @@ ISSUER_NAME = "PromptVault"
 RECOVERY_CODE_COUNT = 10
 RECOVERY_CODE_ALPHABET = "abcdefghijklmnopqrstuvwxyz0123456789"
 LOGIN_CHALLENGE_TTL_SECONDS = 120
+# Recovery codes are ``xxxx-xxxx`` (lowercase alphanumerics). Only input of
+# this shape is checked against the Argon2 hashes, so a wrong 6-digit TOTP
+# code costs no hash verifications.
+RECOVERY_CODE_PATTERN = re.compile(r"^[a-z0-9]{4}-[a-z0-9]{4}$")
 
 
 class TotpEnrollResult:
@@ -99,11 +105,16 @@ class TotpCodeVerificationResult:
         user: The user the code belongs to
         used_recovery_code: True if verified via a recovery code rather than
             a live TOTP code (used for audit-log event naming, FR-017)
+        remember_me: The "remember me" choice carried by the login challenge
+            (False outside a login exchange)
     """
 
-    def __init__(self, user: User, used_recovery_code: bool) -> None:
+    def __init__(
+        self, user: User, used_recovery_code: bool, remember_me: bool = False
+    ) -> None:
         self.user = user
         self.used_recovery_code = used_recovery_code
+        self.remember_me = remember_me
 
 
 class TotpService:
@@ -122,6 +133,7 @@ class TotpService:
         encryption_service: TotpEncryptionService,
         password_service: PasswordService,
         jwt_service: JWTService | None = None,
+        lockout_service: LockoutService | None = None,
     ) -> None:
         """Initialize TotpService.
 
@@ -132,11 +144,15 @@ class TotpService:
             jwt_service: Service for 2FA login-challenge tokens (required for
                 issue_login_challenge / exchange_challenge; optional so
                 enrollment-only callers/tests need not construct one)
+            lockout_service: Service whose shared failed-attempt counter is
+                advanced when disable/regenerate re-authentication fails
+                (FR-010); when omitted, failures are not counted
         """
         self.totp_repository = totp_repository
         self.encryption_service = encryption_service
         self.password_service = password_service
         self.jwt_service = jwt_service
+        self.lockout_service = lockout_service
 
     def enroll(self, user: User) -> TotpEnrollResult:
         """Start (or restart) TOTP enrollment for a user.
@@ -295,21 +311,39 @@ class TotpService:
             password: The user's current password
             code: A current TOTP code or an unused recovery code
 
+        Failures advance the shared failed-attempt counter (FR-010), so an
+        attacker holding only an access token cannot guess codes here past
+        the account lockout threshold.
+
         Raises:
             TotpReauthFailedError: Password or code incorrect (401)
+            AccountLockedError: If this failure triggers an account lockout
         """
         if not self.password_service.verify_password(password, user.password_hash):
             logger.info(
                 "TOTP re-authentication failed (bad password) for user_id=%s", user.id
             )
+            self._record_reauth_failure(user)
             raise TotpReauthFailedError(context={"user_id": user.id})
 
         try:
             self._verify_totp_or_recovery_code(user.id, code)
         except TotpCodeInvalidError as e:
+            self._record_reauth_failure(user)
             raise TotpReauthFailedError(context={"user_id": user.id}) from e
 
-    def issue_login_challenge(self, user: User) -> TotpChallengeResult:
+    def _record_reauth_failure(self, user: User) -> None:
+        """Advance the shared lockout counter for a failed re-authentication.
+
+        Commits the increment (the router rolls back on re-auth failure) and
+        raises ``AccountLockedError`` when the threshold is reached.
+        """
+        if self.lockout_service is not None:
+            self.lockout_service.record_2fa_challenge_failure(user)
+
+    def issue_login_challenge(
+        self, user: User, remember_me: bool = False
+    ) -> TotpChallengeResult:
         """Issue a short-lived 2FA login challenge for a totp_enabled user.
 
         Called after password validation succeeds for a user with
@@ -317,8 +351,11 @@ class TotpService:
         tokens. Creates a server-side ``TotpLoginChallenge`` row (single-use
         tracking) and signs a matching JWT whose ``jti`` is the row's id.
 
+        Expired challenge rows are purged here so the table stays bounded.
+
         Args:
             user: The user who just passed password validation
+            remember_me: The "remember me" choice, carried in the signed token
 
         Returns:
             TotpChallengeResult with the signed challenge token and its TTL
@@ -329,6 +366,8 @@ class TotpService:
         if self.jwt_service is None:
             raise RuntimeError("TotpService requires a JWTService to issue challenges")
 
+        self.totp_repository.delete_expired_challenges()
+
         challenge_id = str(uuid.uuid4())
         expires_at = datetime.now(UTC) + timedelta(seconds=LOGIN_CHALLENGE_TTL_SECONDS)
         self.totp_repository.create_login_challenge(challenge_id, user.id, expires_at)
@@ -337,6 +376,7 @@ class TotpService:
             user_id=user.id,
             challenge_id=challenge_id,
             expires_in_seconds=LOGIN_CHALLENGE_TTL_SECONDS,
+            remember_me=remember_me,
         )
 
         logger.info("2FA login challenge issued for user_id=%s", user.id)
@@ -388,7 +428,12 @@ class TotpService:
 
         result = self._verify_totp_or_recovery_code(user_id, code)
 
-        self.totp_repository.consume_challenge(challenge)
+        # Compare-and-set: of two concurrent exchanges of one challenge, only
+        # the first consumes it (FR-009); the other must not obtain a session.
+        if not self.totp_repository.consume_challenge(challenge):
+            raise TotpChallengeExpiredError(context={"challenge_id": challenge_id})
+
+        result.remember_me = bool(claims.get("remember_me", False))
 
         logger.info("2FA login challenge exchanged for user_id=%s", user_id)
 
@@ -414,6 +459,7 @@ class TotpService:
             TotpCodeInvalidError: Neither a valid TOTP code nor an unused
                 recovery code matched
         """
+        code = code.strip()
         credential = self.totp_repository.get_credential(user_id)
         if credential is not None and credential.confirmed:
             secret = self.encryption_service.decrypt_secret(
@@ -423,20 +469,31 @@ class TotpService:
             matched_step = self._matching_totp_step(
                 totp, code, credential.last_used_step
             )
-            if matched_step is not None:
-                self.totp_repository.update_last_used_step(credential, matched_step)
+            # Compare-and-set the replay guard: a concurrent request that
+            # presented the same code loses here and is rejected (FR-007).
+            if (
+                matched_step is not None
+                and self.totp_repository.advance_last_used_step(
+                    credential, matched_step
+                )
+            ):
                 return TotpCodeVerificationResult(
                     user=credential.user, used_recovery_code=False
                 )
 
-        for recovery_code in self.totp_repository.get_latest_batch_codes(user_id):
-            if recovery_code.used_at is not None:
-                continue
-            if self.password_service.verify_password(code, recovery_code.code_hash):
-                self.totp_repository.mark_recovery_code_used(recovery_code)
-                return TotpCodeVerificationResult(
-                    user=recovery_code.user, used_recovery_code=True
-                )
+        # Only recovery-code-shaped input is checked against the Argon2
+        # hashes (case-insensitive), so wrong TOTP codes stay cheap.
+        recovery_candidate = code.lower()
+        if RECOVERY_CODE_PATTERN.match(recovery_candidate):
+            for recovery_code in self.totp_repository.get_latest_batch_codes(user_id):
+                if recovery_code.used_at is not None:
+                    continue
+                if self.password_service.verify_password(
+                    recovery_candidate, recovery_code.code_hash
+                ) and self.totp_repository.claim_recovery_code(recovery_code):
+                    return TotpCodeVerificationResult(
+                        user=recovery_code.user, used_recovery_code=True
+                    )
 
         logger.info("TOTP/recovery code verification failed for user_id=%s", user_id)
         raise TotpCodeInvalidError(context={"user_id": user_id})
@@ -468,7 +525,10 @@ class TotpService:
         for step in (current_step - 1, current_step, current_step + 1):
             if last_used_step is not None and step <= last_used_step:
                 continue
-            if secrets.compare_digest(totp.at(step * totp.interval), code):
+            # Compare as bytes: compare_digest raises TypeError on non-ASCII str.
+            if secrets.compare_digest(
+                totp.at(step * totp.interval).encode(), code.encode()
+            ):
                 return step
         return None
 

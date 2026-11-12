@@ -24,6 +24,7 @@ from src.db.models.user import User
 from src.db.session import get_db
 from src.services.auth.totp_service import TotpService
 from src.services.exceptions import (
+    AccountLockedError,
     TotpAlreadyEnabledError,
     TotpCodeInvalidError,
     TotpEnrollmentNotFoundError,
@@ -318,6 +319,21 @@ def disable_totp(
             detail=e.user_message,
         ) from e
 
+    except AccountLockedError as e:
+        # The failed attempt reached the lockout threshold (FR-010); the
+        # counter and lock were committed by the lockout service.
+        session.rollback()
+        logging_service.log_audit_event(
+            action="2fa.disable_failed",
+            resource_type="user",
+            resource_id=current_user.id,
+            status="failure",
+        )
+        raise HTTPException(
+            status_code=status.HTTP_423_LOCKED,
+            detail=e.user_message,
+        ) from e
+
     except Exception as e:
         session.rollback()
         logger.error(f"Unexpected error while disabling 2FA: {str(e)}", exc_info=True)
@@ -405,6 +421,21 @@ def regenerate_totp_recovery_codes(
         )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=e.user_message,
+        ) from e
+
+    except AccountLockedError as e:
+        # The failed attempt reached the lockout threshold (FR-010); the
+        # counter and lock were committed by the lockout service.
+        session.rollback()
+        logging_service.log_audit_event(
+            action="2fa.recovery_codes_regenerate_failed",
+            resource_type="user",
+            resource_id=current_user.id,
+            status="failure",
+        )
+        raise HTTPException(
+            status_code=status.HTTP_423_LOCKED,
             detail=e.user_message,
         ) from e
 

@@ -187,6 +187,7 @@ class AuthService:
                 TotpEncryptionService(self.config),
                 self.password_service,
                 self.jwt_service,
+                self.lockout_service,
             )
         return self._totp_service
 
@@ -374,9 +375,10 @@ class AuthService:
         # every wrong code and never reach the lockout threshold.
         if not user.totp_enabled:
             self.user_repo.reset_failed_login(user.id)
-
-        # Update last login timestamp
-        self.user_repo.update_last_login(user.id)
+            # Update last login timestamp. For 2FA accounts this is deferred
+            # until the second factor succeeds, so a password-only attacker
+            # cannot make the victim's "last login" move.
+            self.user_repo.update_last_login(user.id)
 
         # Commit before generating tokens/challenge
         self.db.commit()
@@ -385,7 +387,9 @@ class AuthService:
         # 2FA-enabled accounts get a short-lived challenge instead of tokens;
         # no session is created until the challenge is exchanged (FR-005).
         if user.totp_enabled:
-            challenge = self.totp_service.issue_login_challenge(user)
+            challenge = self.totp_service.issue_login_challenge(
+                user, remember_me=remember_me
+            )
             self.db.commit()
             return self._challenge_response(challenge)
 
@@ -442,9 +446,11 @@ class AuthService:
         """
         try:
             verification = self.totp_service.exchange_challenge(challenge_token, code)
-        except TotpCodeInvalidError:
-            challenge_claims = self.jwt_service.decode_token_unsafe(challenge_token)
-            user_id = challenge_claims.get("sub")
+        except TotpCodeInvalidError as e:
+            # The challenge token was already signature-verified inside
+            # exchange_challenge(); take the user id from the exception
+            # context rather than re-decoding the token unverified.
+            user_id = e.context.get("user_id")
             failing_user = self.user_repo.get_by_id(user_id) if user_id else None
             if failing_user is not None:
                 self.lockout_service.enforce_account_lockout(failing_user)
@@ -465,12 +471,19 @@ class AuthService:
         # Both factors verified: clear the shared failed-attempt counter
         # (deferred from login() for 2FA-enabled accounts).
         self.user_repo.reset_failed_login(user.id)
+        self.user_repo.update_last_login(user.id)
 
         self.db.commit()
         self.db.refresh(user)
 
-        result = self._generate_tokens_and_session(user, ip_address, user_agent)
+        result = self._generate_tokens_and_session(
+            user,
+            ip_address,
+            user_agent,
+            remember_me=verification.remember_me,
+        )
         result["used_recovery_code"] = verification.used_recovery_code
+        result["remember_me"] = verification.remember_me
         return result
 
     def _challenge_response(self, challenge: TotpChallengeResult) -> dict[str, Any]:

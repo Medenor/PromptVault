@@ -11,7 +11,7 @@ TotpLoginChallenge, and TotpRolePolicy.
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import and_
+from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 
 from src.db.models.totp_credential import TotpCredential
@@ -114,6 +114,37 @@ class TotpRepository:
         self.session.flush()
         return credential
 
+    def advance_last_used_step(self, credential: TotpCredential, step: int) -> bool:
+        """Atomically advance the replay guard to ``step`` if it is newer.
+
+        Issues a compare-and-set ``UPDATE ... WHERE last_used_step IS NULL OR
+        last_used_step < :step`` so two concurrent requests presenting the
+        same code cannot both pass the replay check (FR-007): the loser sees
+        zero affected rows.
+
+        Args:
+            credential: The TotpCredential being verified
+            step: The matched time-step counter
+
+        Returns:
+            True if this call advanced the step, False if it was already
+            used (a concurrent request or replay won the race)
+        """
+        updated = (
+            self.session.query(TotpCredential)
+            .filter(
+                TotpCredential.id == credential.id,
+                or_(
+                    TotpCredential.last_used_step.is_(None),
+                    TotpCredential.last_used_step < step,
+                ),
+            )
+            .update({TotpCredential.last_used_step: step}, synchronize_session=False)
+        )
+        self.session.flush()
+        self.session.expire(credential, ["last_used_step"])
+        return updated == 1
+
     def delete_credential(self, user_id: str) -> bool:
         """Delete a user's TOTP credential.
 
@@ -196,6 +227,32 @@ class TotpRepository:
         self.session.flush()
         return code
 
+    def claim_recovery_code(self, code: TotpRecoveryCode) -> bool:
+        """Atomically mark a recovery code used, if it is still unused.
+
+        Compare-and-set ``UPDATE ... WHERE used_at IS NULL`` so a code cannot
+        be spent twice by concurrent requests (FR-009).
+
+        Args:
+            code: The TotpRecoveryCode row to claim
+
+        Returns:
+            True if this call consumed the code, False if it was already used
+        """
+        updated = (
+            self.session.query(TotpRecoveryCode)
+            .filter(
+                TotpRecoveryCode.id == code.id,
+                TotpRecoveryCode.used_at.is_(None),
+            )
+            .update(
+                {TotpRecoveryCode.used_at: datetime.now(UTC)}, synchronize_session=False
+            )
+        )
+        self.session.flush()
+        self.session.expire(code, ["used_at"])
+        return updated == 1
+
     def delete_all_recovery_codes(self, user_id: str) -> int:
         """Delete all recovery codes for a user (disable or regenerate).
 
@@ -257,18 +314,51 @@ class TotpRepository:
             .first()
         )
 
-    def consume_challenge(self, challenge: TotpLoginChallenge) -> TotpLoginChallenge:
-        """Mark a login challenge as consumed (single-use).
+    def consume_challenge(self, challenge: TotpLoginChallenge) -> bool:
+        """Atomically mark a login challenge as consumed (single-use).
+
+        Compare-and-set ``UPDATE ... WHERE consumed_at IS NULL`` so two
+        concurrent exchanges of the same challenge cannot both succeed
+        (FR-009): the loser sees zero affected rows.
 
         Args:
             challenge: The TotpLoginChallenge to consume
 
         Returns:
-            The updated TotpLoginChallenge instance
+            True if this call consumed the challenge, False if it had already
+            been consumed
         """
-        challenge.consumed_at = datetime.now(UTC)
+        updated = (
+            self.session.query(TotpLoginChallenge)
+            .filter(
+                TotpLoginChallenge.id == challenge.id,
+                TotpLoginChallenge.consumed_at.is_(None),
+            )
+            .update(
+                {TotpLoginChallenge.consumed_at: datetime.now(UTC)},
+                synchronize_session=False,
+            )
+        )
         self.session.flush()
-        return challenge
+        self.session.expire(challenge, ["consumed_at"])
+        return updated == 1
+
+    def delete_expired_challenges(self) -> int:
+        """Delete login challenges that have expired (consumed or not).
+
+        Keeps ``totp_login_challenges`` from growing without bound, since one
+        row is created per password-validated login of a 2FA account.
+
+        Returns:
+            Number of rows deleted
+        """
+        count = (
+            self.session.query(TotpLoginChallenge)
+            .filter(TotpLoginChallenge.expires_at <= datetime.now(UTC))
+            .delete(synchronize_session=False)
+        )
+        self.session.flush()
+        return count
 
     # -- TotpRolePolicy -----------------------------------------------
 

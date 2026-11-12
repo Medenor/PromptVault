@@ -21,6 +21,7 @@ from src.db.repositories.user_repository import UserRepository
 from src.db.session import get_db
 from src.services.auth.auth_service import AuthService
 from src.services.auth.jwt_service import JWTService
+from src.services.auth.lockout_service import LockoutService
 from src.services.auth.password_reset_service import PasswordResetService
 from src.services.auth.password_service import PasswordService
 from src.services.auth.totp_encryption_service import TotpEncryptionService
@@ -116,8 +117,15 @@ def get_totp_service(
     encryption_service = TotpEncryptionService(config)
     password_service = PasswordService(config)
     jwt_service = JWTService(config)
+    lockout_service = LockoutService(
+        session, config, password_service, UserRepository(session)
+    )
     return TotpService(
-        totp_repository, encryption_service, password_service, jwt_service
+        totp_repository,
+        encryption_service,
+        password_service,
+        jwt_service,
+        lockout_service,
     )
 
 

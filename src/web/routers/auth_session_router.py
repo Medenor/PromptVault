@@ -353,7 +353,11 @@ def exchange_2fa_challenge(
         )
 
         json_response = JSONResponse(content=response.model_dump(mode="json"))
-        refresh_max_age = auth_service.config.jwt_refresh_token_expire_seconds
+        refresh_max_age = (
+            auth_service.config.jwt_refresh_token_remember_me_expire_seconds
+            if result.get("remember_me")
+            else auth_service.config.jwt_refresh_token_expire_seconds
+        )
 
         json_response.set_cookie(
             key="access_token",

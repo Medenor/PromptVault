@@ -890,3 +890,184 @@ class TestAdminTotpPolicyEndpoint:
         )
 
         assert response.status_code == 422
+
+
+class TestCodeReviewRegressions:
+    """Regression tests for the post-review hardening of the 2FA flow."""
+
+    @staticmethod
+    def _login(
+        auth_client: TestClient,
+        creds: dict[str, str],
+        remember_me: bool = False,
+    ):
+        return auth_client.post(
+            "/api/auth/login",
+            json={
+                "username_or_email": creds["username"],
+                "password": creds["password"],
+                "remember_me": remember_me,
+            },
+        )
+
+    def test_challenge_token_is_not_accepted_as_bearer_token(
+        self,
+        auth_client: TestClient,
+        test_user_credentials: dict[str, str],
+        totp_enrolled_user: dict[str, Any],
+    ):
+        # A password-only login yields a challenge token; it must not
+        # authenticate any request (it shares key, issuer and audience with
+        # access tokens, so only the type check keeps it out).
+        challenge_token = self._login(auth_client, test_user_credentials).json()[
+            "challenge_token"
+        ]
+
+        response = auth_client.get(
+            "/api/auth/me", headers={"Authorization": f"Bearer {challenge_token}"}
+        )
+
+        assert response.status_code == 401
+
+    def test_password_step_does_not_update_last_login_for_2fa_account(
+        self,
+        auth_client: TestClient,
+        test_db_engine,
+        test_user_credentials: dict[str, str],
+        totp_enrolled_user: dict[str, Any],
+    ):
+        from src.db.models.user import User
+
+        Session = sessionmaker(bind=test_db_engine)
+
+        def last_login():
+            with Session() as session:
+                return (
+                    session.query(User)
+                    .filter(User.username == test_user_credentials["username"])
+                    .one()
+                    .last_login
+                )
+
+        before = last_login()
+        challenge_token = self._login(auth_client, test_user_credentials).json()[
+            "challenge_token"
+        ]
+        assert last_login() == before
+
+        code = _next_window_code(totp_enrolled_user["secret"])
+        exchange = auth_client.post(
+            "/api/auth/login/2fa",
+            json={"challenge_token": challenge_token, "code": code},
+        )
+        assert exchange.status_code == 200
+        assert last_login() != before
+
+    def test_remember_me_survives_the_2fa_exchange(
+        self,
+        auth_client: TestClient,
+        test_user_credentials: dict[str, str],
+        totp_enrolled_user: dict[str, Any],
+    ):
+        import src.config.auth_config as auth_config_module
+
+        settings = auth_config_module.auth_settings
+        challenge_token = self._login(
+            auth_client, test_user_credentials, remember_me=True
+        ).json()["challenge_token"]
+        code = _next_window_code(totp_enrolled_user["secret"])
+
+        response = auth_client.post(
+            "/api/auth/login/2fa",
+            json={"challenge_token": challenge_token, "code": code},
+        )
+
+        assert response.status_code == 200
+        cookies = " ".join(response.headers.get_list("set-cookie"))
+        assert (
+            f"Max-Age={settings.jwt_refresh_token_remember_me_expire_seconds}"
+            in cookies
+        )
+
+    def test_non_ascii_code_returns_401_not_500(
+        self,
+        auth_client: TestClient,
+        test_user_credentials: dict[str, str],
+        totp_enrolled_user: dict[str, Any],
+    ):
+        challenge_token = self._login(auth_client, test_user_credentials).json()[
+            "challenge_token"
+        ]
+
+        response = auth_client.post(
+            "/api/auth/login/2fa",
+            json={"challenge_token": challenge_token, "code": "１２３４５６"},
+        )
+
+        assert response.status_code == 401
+
+    def test_uppercase_recovery_code_is_accepted(
+        self,
+        auth_client: TestClient,
+        test_user_credentials: dict[str, str],
+        totp_enrolled_user: dict[str, Any],
+    ):
+        challenge_token = self._login(auth_client, test_user_credentials).json()[
+            "challenge_token"
+        ]
+        recovery_code = totp_enrolled_user["recovery_codes"][0].upper()
+
+        response = auth_client.post(
+            "/api/auth/login/2fa",
+            json={"challenge_token": challenge_token, "code": recovery_code},
+        )
+
+        assert response.status_code == 200
+
+    def test_failed_disable_attempts_count_toward_lockout(
+        self,
+        auth_client: TestClient,
+        auth_headers: dict[str, str],
+        test_user_credentials: dict[str, str],
+        totp_enrolled_user: dict[str, Any],
+    ):
+        # FR-010: an attacker holding only an access token must not be able to
+        # guess codes at the disable endpoint without ever locking the account.
+        statuses: list[int] = []
+        for _ in range(8):
+            response = auth_client.post(
+                "/api/auth/2fa/disable",
+                json={
+                    "password": test_user_credentials["password"],
+                    "code": "000000",
+                },
+                headers=auth_headers,
+            )
+            statuses.append(response.status_code)
+            if response.status_code != 401:
+                break
+
+        assert statuses[-1] != 401, f"account never locked: {statuses}"
+
+    def test_failed_regenerate_attempts_count_toward_lockout(
+        self,
+        auth_client: TestClient,
+        auth_headers: dict[str, str],
+        test_user_credentials: dict[str, str],
+        totp_enrolled_user: dict[str, Any],
+    ):
+        statuses: list[int] = []
+        for _ in range(8):
+            response = auth_client.post(
+                "/api/auth/2fa/recovery-codes/regenerate",
+                json={
+                    "password": test_user_credentials["password"],
+                    "code": "000000",
+                },
+                headers=auth_headers,
+            )
+            statuses.append(response.status_code)
+            if response.status_code != 401:
+                break
+
+        assert statuses[-1] != 401, f"account never locked: {statuses}"

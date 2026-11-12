@@ -178,3 +178,82 @@ class TestStrictDependencyUnchanged:
                 session=test_db_session,
             )
         assert exc.value.status_code == 403
+
+
+class TestEnrollmentExemptionPathMatching:
+    """The enrollment allowlist must survive harmless path variations."""
+
+    @pytest.mark.asyncio
+    async def test_trailing_slash_on_exempt_path_stays_reachable(
+        self, auth_enabled, test_db_session, viewer_required
+    ):
+        user = await get_current_user_or_none(
+            request=_request("/api/auth/me/"),
+            authorization="Bearer t",
+            access_token_cookie=None,
+            jwt_service=_jwt_for(viewer_required),
+            session=test_db_session,
+        )
+        assert user is not None
+
+    @pytest.mark.asyncio
+    async def test_root_path_prefix_does_not_break_the_exemption(
+        self, auth_enabled, test_db_session, viewer_required
+    ):
+        request = Request(
+            {
+                "type": "http",
+                "method": "POST",
+                "path": "/promptvault/api/auth/2fa/enroll",
+                "root_path": "/promptvault",
+                "headers": [],
+                "query_string": b"",
+            }
+        )
+        user = await get_current_user_or_none(
+            request=request,
+            authorization="Bearer t",
+            access_token_cookie=None,
+            jwt_service=_jwt_for(viewer_required),
+            session=test_db_session,
+        )
+        assert user is not None
+
+    @pytest.mark.asyncio
+    async def test_non_exempt_path_is_still_blocked_with_trailing_slash(
+        self, auth_enabled, test_db_session, viewer_required
+    ):
+        with pytest.raises(HTTPException) as exc:
+            await get_current_user_or_none(
+                request=_request("/api/prompts/"),
+                authorization="Bearer t",
+                access_token_cookie=None,
+                jwt_service=_jwt_for(viewer_required),
+                session=test_db_session,
+            )
+        assert exc.value.status_code == 403
+
+
+class TestEnrollmentPolicyLookupIsMemoised:
+    def test_policy_is_queried_once_per_request(
+        self, test_db_session, viewer_required, monkeypatch
+    ):
+        from src.web.dependencies import token
+
+        calls = []
+        original = token.TotpPolicyService.is_required_for
+
+        def counting(self, role):
+            calls.append(role)
+            return original(self, role)
+
+        monkeypatch.setattr(token.TotpPolicyService, "is_required_for", counting)
+        request = _request("/api/prompts")
+
+        for _ in range(3):
+            with pytest.raises(HTTPException):
+                token.enforce_totp_enrollment_policy(
+                    viewer_required, request, test_db_session
+                )
+
+        assert calls == [ROLE]

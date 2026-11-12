@@ -352,6 +352,20 @@ def get_current_user(
     return user
 
 
+def _is_enrollment_exempt_path(request: Request) -> bool:
+    """Whether the request targets a path reachable before 2FA enrollment.
+
+    Normalises the path first so a trailing slash or a deployment under a
+    ``root_path`` prefix cannot lock a required-role user out of enrollment.
+    """
+    path = request.url.path
+    root_path = request.scope.get("root_path") or ""
+    if root_path and path.startswith(root_path):
+        path = path[len(root_path) :]
+    path = path.rstrip("/") or "/"
+    return path in _TOTP_ENROLLMENT_EXEMPT_PATHS
+
+
 def enforce_totp_enrollment_policy(
     user: User, request: Request, session: Session
 ) -> None:
@@ -365,11 +379,19 @@ def enforce_totp_enrollment_policy(
     Raises:
         HTTPException: 403 when enrollment is required by policy but missing.
     """
-    if user.totp_enabled or request.url.path in _TOTP_ENROLLMENT_EXEMPT_PATHS:
+    if user.totp_enabled or _is_enrollment_exempt_path(request):
         return
 
-    policy_service = TotpPolicyService(TotpRepository(session))
-    if policy_service.is_required_for(user.role or "viewer"):
+    # Several dependencies can run for one request (bypass variants wrap the
+    # strict ones), so the policy lookup is memoised on the request.
+    role = user.role or "viewer"
+    cache: dict[str, bool] | None = getattr(request.state, "totp_policy_cache", None)
+    if cache is None:
+        cache = {}
+        request.state.totp_policy_cache = cache
+    if role not in cache:
+        cache[role] = TotpPolicyService(TotpRepository(session)).is_required_for(role)
+    if cache[role]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Two-factor authentication enrollment is required for your role "

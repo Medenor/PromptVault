@@ -91,6 +91,12 @@ class FakeTotpRepository:
         credential.last_used_step = step
         return credential
 
+    def advance_last_used_step(self, credential, step):
+        if credential.last_used_step is not None and credential.last_used_step >= step:
+            return False
+        credential.last_used_step = step
+        return True
+
     def insert_recovery_code_batch(self, user_id, code_hashes):
         batch_id = f"batch-{len(self.batches) + 1}"
         self.batches[batch_id] = code_hashes
@@ -108,6 +114,14 @@ class FakeTotpRepository:
 
         code.used_at = datetime.now(UTC)
         return code
+
+    def claim_recovery_code(self, code):
+        from datetime import UTC, datetime
+
+        if code.used_at is not None:
+            return False
+        code.used_at = datetime.now(UTC)
+        return True
 
     def delete_credential(self, user_id):
         existed = self.credentials.pop(user_id, None) is not None
@@ -140,8 +154,19 @@ class FakeTotpRepository:
     def consume_challenge(self, challenge):
         from datetime import UTC, datetime
 
+        if challenge.consumed_at is not None:
+            return False
         challenge.consumed_at = datetime.now(UTC)
-        return challenge
+        return True
+
+    def delete_expired_challenges(self):
+        from datetime import UTC, datetime
+
+        now = datetime.now(UTC)
+        expired = [k for k, c in self.challenges.items() if c.expires_at <= now]
+        for key in expired:
+            del self.challenges[key]
+        return len(expired)
 
 
 class _FakeCredential:
@@ -706,3 +731,195 @@ class TestRegenerateRecoveryCodes:
 
         with pytest.raises(TotpReauthFailedError):
             totp_service.regenerate_recovery_codes(user, PASSWORD, "000000")
+
+
+class TestSingleUseGuardsHoldUnderRaces:
+    """A lost compare-and-set (a concurrent request won) must be rejected."""
+
+    def test_lost_totp_step_race_is_rejected_as_invalid_code(
+        self, totp_service, totp_repository
+    ):
+        user = make_user(repository=totp_repository)
+        secret, _ = _enroll_and_confirm(totp_service, totp_repository, user)
+        challenge = totp_service.issue_login_challenge(user)
+        code = _next_window_code(secret)
+
+        with patch.object(
+            totp_repository, "advance_last_used_step", return_value=False
+        ):
+            with pytest.raises(TotpCodeInvalidError):
+                totp_service.exchange_challenge(challenge.challenge_token, code)
+
+        (stored,) = totp_repository.challenges.values()
+        assert stored.consumed_at is None
+
+    def test_lost_challenge_consume_race_returns_no_session(
+        self, totp_service, totp_repository
+    ):
+        user = make_user(repository=totp_repository)
+        secret, _ = _enroll_and_confirm(totp_service, totp_repository, user)
+        challenge = totp_service.issue_login_challenge(user)
+        code = _next_window_code(secret)
+
+        with patch.object(totp_repository, "consume_challenge", return_value=False):
+            with pytest.raises(TotpChallengeExpiredError):
+                totp_service.exchange_challenge(challenge.challenge_token, code)
+
+    def test_lost_recovery_code_claim_is_rejected(self, totp_service, totp_repository):
+        user = make_user(repository=totp_repository)
+        _secret, recovery_codes = _enroll_and_confirm(
+            totp_service, totp_repository, user
+        )
+        challenge = totp_service.issue_login_challenge(user)
+
+        with patch.object(totp_repository, "claim_recovery_code", return_value=False):
+            with pytest.raises(TotpCodeInvalidError):
+                totp_service.exchange_challenge(
+                    challenge.challenge_token, recovery_codes[0]
+                )
+
+
+class TestCodeInputHandling:
+    def test_non_ascii_code_is_rejected_not_a_type_error(
+        self, totp_service, totp_repository
+    ):
+        user = make_user(repository=totp_repository)
+        _enroll_and_confirm(totp_service, totp_repository, user)
+        challenge = totp_service.issue_login_challenge(user)
+
+        with pytest.raises(TotpCodeInvalidError):
+            totp_service.exchange_challenge(challenge.challenge_token, "１２３４５６")
+
+    def test_recovery_code_matching_is_case_insensitive(
+        self, totp_service, totp_repository
+    ):
+        user = make_user(repository=totp_repository)
+        _secret, recovery_codes = _enroll_and_confirm(
+            totp_service, totp_repository, user
+        )
+        challenge = totp_service.issue_login_challenge(user)
+
+        result = totp_service.exchange_challenge(
+            challenge.challenge_token, f"  {recovery_codes[0].upper()} "
+        )
+
+        assert result.used_recovery_code is True
+
+    def test_wrong_totp_code_does_not_trigger_argon2_verifications(
+        self, totp_service, totp_repository, password_service
+    ):
+        user = make_user(repository=totp_repository)
+        _enroll_and_confirm(totp_service, totp_repository, user)
+        challenge = totp_service.issue_login_challenge(user)
+
+        with patch.object(
+            password_service, "verify_password", wraps=password_service.verify_password
+        ) as verify:
+            with pytest.raises(TotpCodeInvalidError):
+                totp_service.exchange_challenge(challenge.challenge_token, "000000")
+
+        verify.assert_not_called()
+
+
+class TestRememberMeAndChallengePurge:
+    def test_remember_me_is_carried_through_the_challenge(
+        self, totp_service, totp_repository
+    ):
+        user = make_user(repository=totp_repository)
+        secret, _ = _enroll_and_confirm(totp_service, totp_repository, user)
+        challenge = totp_service.issue_login_challenge(user, remember_me=True)
+
+        result = totp_service.exchange_challenge(
+            challenge.challenge_token, _next_window_code(secret)
+        )
+
+        assert result.remember_me is True
+
+    def test_remember_me_defaults_to_false(self, totp_service, totp_repository):
+        user = make_user(repository=totp_repository)
+        secret, _ = _enroll_and_confirm(totp_service, totp_repository, user)
+        challenge = totp_service.issue_login_challenge(user)
+
+        result = totp_service.exchange_challenge(
+            challenge.challenge_token, _next_window_code(secret)
+        )
+
+        assert result.remember_me is False
+
+    def test_issuing_a_challenge_purges_expired_ones(
+        self, totp_service, totp_repository
+    ):
+        from datetime import UTC, datetime, timedelta
+
+        user = make_user(repository=totp_repository)
+        _enroll_and_confirm(totp_service, totp_repository, user)
+        totp_repository.create_login_challenge(
+            "stale", user.id, datetime.now(UTC) - timedelta(minutes=5)
+        )
+
+        totp_service.issue_login_challenge(user)
+
+        assert "stale" not in totp_repository.challenges
+
+
+class TestReauthFailuresCountTowardLockout:
+    def _service_with_lockout(
+        self, totp_repository, encryption_service, password_service, jwt_service
+    ):
+        from unittest.mock import MagicMock
+
+        lockout = MagicMock()
+        service = TotpService(
+            totp_repository,
+            encryption_service,
+            password_service,
+            jwt_service,
+            lockout,
+        )
+        return service, lockout
+
+    def test_wrong_code_records_a_failure(
+        self, totp_repository, encryption_service, password_service, jwt_service
+    ):
+        service, lockout = self._service_with_lockout(
+            totp_repository, encryption_service, password_service, jwt_service
+        )
+        user, _secret, _ = _make_enrolled_user(
+            service, totp_repository, password_service
+        )
+
+        with pytest.raises(TotpReauthFailedError):
+            service.disable(user, PASSWORD, "000000")
+
+        lockout.record_2fa_challenge_failure.assert_called_once_with(user)
+
+    def test_wrong_password_records_a_failure(
+        self, totp_repository, encryption_service, password_service, jwt_service
+    ):
+        service, lockout = self._service_with_lockout(
+            totp_repository, encryption_service, password_service, jwt_service
+        )
+        user, secret, _ = _make_enrolled_user(
+            service, totp_repository, password_service
+        )
+
+        with pytest.raises(TotpReauthFailedError):
+            service.regenerate_recovery_codes(
+                user, "WrongPassword123!", _next_window_code(secret)
+            )
+
+        lockout.record_2fa_challenge_failure.assert_called_once_with(user)
+
+    def test_successful_reauth_records_nothing(
+        self, totp_repository, encryption_service, password_service, jwt_service
+    ):
+        service, lockout = self._service_with_lockout(
+            totp_repository, encryption_service, password_service, jwt_service
+        )
+        user, secret, _ = _make_enrolled_user(
+            service, totp_repository, password_service
+        )
+
+        service.disable(user, PASSWORD, _next_window_code(secret))
+
+        lockout.record_2fa_challenge_failure.assert_not_called()
