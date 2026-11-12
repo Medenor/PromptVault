@@ -437,6 +437,44 @@ class TestLoginTwoFactorExchange:
         )
         assert login_response.status_code == 401
 
+    def test_wrong_codes_across_fresh_logins_still_lock_account(
+        self,
+        auth_client: TestClient,
+        test_user_credentials: dict[str, str],
+        totp_enrolled_user: dict[str, Any],
+    ):
+        # FR-010 regression: a correct password must not reset the shared
+        # counter for a 2FA-enabled account. An attacker who knows the
+        # password could otherwise re-login before every guess and never
+        # reach the lockout threshold.
+        statuses: list[int] = []
+        for _ in range(6):
+            login_response = auth_client.post(
+                "/api/auth/login",
+                json={
+                    "username_or_email": test_user_credentials["username"],
+                    "password": test_user_credentials["password"],
+                },
+            )
+            if login_response.status_code != 200:
+                statuses.append(login_response.status_code)
+                break
+            response = auth_client.post(
+                "/api/auth/login/2fa",
+                json={
+                    "challenge_token": login_response.json()["challenge_token"],
+                    "code": "000000",
+                },
+            )
+            statuses.append(response.status_code)
+            if response.status_code == 423:
+                break
+
+        # The loop only exits early once the account is locked (423 from the
+        # exchange, or a refused password login); exhausting all 6 rounds
+        # means the counter kept getting reset.
+        assert len(statuses) < 6, f"account never locked: {statuses}"
+
     def test_exchange_consumed_challenge_returns_410(
         self,
         auth_client: TestClient,

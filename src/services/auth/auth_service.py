@@ -367,8 +367,13 @@ class AuthService:
         # Verify password, handling failed-attempt tracking and lockout
         self.lockout_service.verify_login_password(user, password)
 
-        # Reset failed login attempts
-        self.user_repo.reset_failed_login(user.id)
+        # Reset failed login attempts. For 2FA-enabled accounts the counter is
+        # shared with second-factor failures (FR-010), so a correct password
+        # must not clear it: it is reset only after the 2FA exchange succeeds.
+        # Otherwise an attacker holding the password could re-login between
+        # every wrong code and never reach the lockout threshold.
+        if not user.totp_enabled:
+            self.user_repo.reset_failed_login(user.id)
 
         # Update last login timestamp
         self.user_repo.update_last_login(user.id)
@@ -456,6 +461,10 @@ class AuthService:
             )
 
         self.session_service.enforce_login_session_limit(user)
+
+        # Both factors verified: clear the shared failed-attempt counter
+        # (deferred from login() for 2FA-enabled accounts).
+        self.user_repo.reset_failed_login(user.id)
 
         self.db.commit()
         self.db.refresh(user)
