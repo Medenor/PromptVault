@@ -169,8 +169,14 @@ describe('auth.ts login challenge step', () => {
     const event = { preventDefault: vi.fn() } as unknown as Event;
     await __internal.handleTwoFactorChallengeSubmit(event);
 
-    expect(document.getElementById('totp-challenge-code-error')?.textContent).toContain(
-      'Invalid or expired authentication code.'
+    const errorEl = document.getElementById('totp-challenge-code-error');
+    // Translated message (the i18n mock returns the key), not the English
+    // server detail, and the element must actually be shown: `hidden` hides it
+    // from sighted users and from screen readers alike.
+    expect(errorEl?.textContent).toBe('auth.login.twoFactorInvalidCode');
+    expect(errorEl?.classList.contains('hidden')).toBe(false);
+    expect(document.getElementById('totp-challenge-code')?.getAttribute('aria-invalid')).toBe(
+      'true'
     );
     expect(document.getElementById('totp-challenge-form')?.classList.contains('hidden')).toBe(
       false
@@ -269,6 +275,32 @@ describe('auth.ts mandatory enrollment interstitial', () => {
       document.getElementById('totp-enrollment-required-modal')?.classList.contains('hidden')
     ).toBe(true);
     expect(mockInitProfileTwoFactor).not.toHaveBeenCalled();
+  });
+
+  it('moves focus into the interstitial and keeps Tab inside it', async () => {
+    const { __internal } = await import('../auth');
+    const card = document.getElementById('totp-2fa-card') as HTMLElement;
+    card.innerHTML =
+      '<button id="first-in-modal">One</button><button id="last-in-modal">Two</button>';
+    const modal = document.getElementById('totp-enrollment-required-modal') as HTMLElement;
+    (document.getElementById('username-or-email') as HTMLInputElement).focus();
+
+    __internal.showEnrollmentRequiredInterstitial();
+
+    expect(modal.contains(document.activeElement)).toBe(true);
+    expect(document.activeElement?.id).toBe('first-in-modal');
+
+    // Tab from the last control must wrap to the first, not escape to the
+    // login form behind the dialog.
+    (document.getElementById('last-in-modal') as HTMLElement).focus();
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
+    expect(document.activeElement?.id).toBe('first-in-modal');
+
+    // Shift+Tab from the first control wraps to the last.
+    document.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true })
+    );
+    expect(document.activeElement?.id).toBe('last-in-modal');
   });
 
   it('hides the interstitial once enrollment completes', async () => {

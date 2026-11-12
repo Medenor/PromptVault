@@ -203,6 +203,28 @@ export async function refreshTokens(): Promise<boolean> {
 }
 
 /**
+ * Response header set by the server when admin policy requires the user to
+ * enroll in 2FA before using the app (see enforce_totp_enrollment_policy).
+ */
+const TOTP_ENROLLMENT_REQUIRED_HEADER = 'X-TOTP-Enrollment-Required';
+const TOTP_ENROLLMENT_PATH = '/auth/profile';
+
+/**
+ * Send a user whose role requires 2FA (but who has not enrolled) to the
+ * profile page, where the enrollment card is reachable, instead of leaving
+ * them on a page whose data requests all fail with 403 (FR-015).
+ */
+function redirectIfEnrollmentRequired(response: Response): void {
+  if (
+    response.status === 403 &&
+    response.headers.get(TOTP_ENROLLMENT_REQUIRED_HEADER) === 'true' &&
+    !window.location.pathname.startsWith(TOTP_ENROLLMENT_PATH)
+  ) {
+    window.location.assign(TOTP_ENROLLMENT_PATH);
+  }
+}
+
+/**
  * Type-safe fetch wrapper for JSON API calls with automatic token refresh
  */
 export async function apiFetch<T>(url: string, options: FetchOptions = {}): Promise<T> {
@@ -246,6 +268,8 @@ export async function apiFetch<T>(url: string, options: FetchOptions = {}): Prom
           throw new APIRequestError(response.status, error);
         }
       }
+
+      redirectIfEnrollmentRequired(response);
 
       // Handle 429 rate limiting: for idempotent GETs, back off once and retry;
       // for mutations, surface a toast and let the caller handle the failure
@@ -378,6 +402,8 @@ export async function apiPostForm<T>(
         throw new APIRequestError(response.status, error);
       }
     }
+
+    redirectIfEnrollmentRequired(response);
 
     // Handle 429 rate limiting: form posts are always mutations (imports,
     // uploads), so never auto-retry — toast and throw with the wait time.

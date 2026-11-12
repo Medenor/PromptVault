@@ -95,6 +95,20 @@ function renderIdle(container: HTMLElement): void {
   });
 }
 
+/**
+ * Move keyboard focus into the step that was just rendered. Each step swaps the
+ * card's innerHTML, which destroys the control that had focus and would
+ * otherwise drop focus to <body> (FR-019).
+ */
+function moveFocusIntoStep(container: HTMLElement, selector: string): void {
+  const target = container.querySelector<HTMLElement>(selector);
+  if (!target) return;
+  if (!target.hasAttribute('tabindex') && !['BUTTON', 'INPUT', 'A'].includes(target.tagName)) {
+    target.setAttribute('tabindex', '-1');
+  }
+  target.focus();
+}
+
 function renderScanning(container: HTMLElement, data: TotpEnrollResponse): void {
   pendingSecret = data.secret;
 
@@ -213,6 +227,7 @@ function renderScanning(container: HTMLElement, data: TotpEnrollResponse): void 
     currentStep = 'idle';
     pendingSecret = null;
     render();
+    document.getElementById('totp-start-enrollment')?.focus();
   });
 
   const form = document.getElementById('totp-confirm-form') as HTMLFormElement | null;
@@ -226,6 +241,8 @@ function renderScanning(container: HTMLElement, data: TotpEnrollResponse): void 
     `${tf('auth.profile.twoFactor.manualSecretLabel', 'Manual setup key')}: ${data.secret}`,
     { id: 'validation-announcer', politeness: 'polite' }
   );
+
+  moveFocusIntoStep(container, 'h3');
 }
 
 function renderRecoveryCodes(container: HTMLElement, codes: string[]): void {
@@ -292,7 +309,10 @@ function renderRecoveryCodes(container: HTMLElement, codes: string[]): void {
     is2faEnabled = true;
     onEnrolledCallback?.();
     render();
+    document.getElementById('totp-disable-start')?.focus();
   });
+
+  moveFocusIntoStep(container, '[role="alert"]');
 }
 
 function renderManage(container: HTMLElement): void {
@@ -567,9 +587,14 @@ async function submitRegenerate(): Promise<void> {
   }
 }
 
+// Guards against double-activation (double-click, key repeat): two concurrent
+// enroll calls race on the single pending credential per user.
+let enrollmentInFlight = false;
+
 async function startEnrollment(): Promise<void> {
   const container = getContainer();
-  if (!container) return;
+  if (!container || enrollmentInFlight) return;
+  enrollmentInFlight = true;
 
   try {
     const data = await apiPost<TotpEnrollResponse>(`${API_BASE}/enroll`);
@@ -605,6 +630,8 @@ async function startEnrollment(): Promise<void> {
         'error'
       );
     }
+  } finally {
+    enrollmentInFlight = false;
   }
 }
 

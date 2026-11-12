@@ -80,6 +80,39 @@ describe('profile-2fa', () => {
     expect(__internal.getPendingSecret()).toBe('JBSWY3DPEHPK3PXP');
   });
 
+  it('ignores a second start while the first enroll request is in flight', async () => {
+    let resolveEnroll: (value: unknown) => void = () => {};
+    mockedApiPost.mockImplementationOnce(
+      () => new Promise((resolve) => (resolveEnroll = resolve)) as never
+    );
+
+    initProfileTwoFactor();
+    const first = __internal.startEnrollment();
+    const second = __internal.startEnrollment(); // double-click / key repeat
+    resolveEnroll({ secret: 'JBSWY3DPEHPK3PXP', provisioning_uri: 'x', qr_svg: '<svg></svg>' });
+    await Promise.all([first, second]);
+
+    expect(mockedApiPost).toHaveBeenCalledTimes(1);
+  });
+
+  it('moves focus to the scan step heading, and back to Start on cancel', async () => {
+    mockedApiPost.mockResolvedValueOnce({
+      secret: 'JBSWY3DPEHPK3PXP',
+      provisioning_uri: 'x',
+      qr_svg: '<svg></svg>',
+    });
+    initProfileTwoFactor();
+    document.getElementById('totp-start-enrollment')?.focus();
+
+    await __internal.startEnrollment();
+
+    // The start button is gone; focus must not fall back to <body>.
+    expect(document.activeElement?.tagName).toBe('H3');
+
+    document.getElementById('totp-cancel-enrollment')?.dispatchEvent(new Event('click'));
+    expect(document.activeElement?.id).toBe('totp-start-enrollment');
+  });
+
   it('shows an info notification and stays idle on 409 (already enabled)', async () => {
     mockedApiPost.mockRejectedValueOnce(
       new APIRequestError(409, { detail: 'Two-factor authentication is already enabled.' })

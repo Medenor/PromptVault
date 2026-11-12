@@ -14,6 +14,7 @@ import { initI18n, t, updateStaticTranslations } from '@/utils/i18n';
 import { clearAllErrors, hideElement, showElement, showError } from '@/utils/dom';
 import { showNotification } from '@/utils/notifications';
 import { announce } from '@/utils/a11y';
+import { createFocusTrap } from '@/utils/keyboard-nav';
 import { initSecondaryNav } from '@/utils/secondary-nav';
 import { clearStoredTokens, refreshTokens } from '@/utils/api';
 import { initProfileTwoFactor } from './profile-2fa';
@@ -299,6 +300,27 @@ function showTwoFactorChallengeStep(challengeToken: string, rememberMe: boolean)
   });
 }
 
+/**
+ * Show or clear the inline error under the 2FA challenge code input.
+ *
+ * The error <p> starts with Tailwind's `hidden`, which outranks the
+ * `validation-error-visible` class that showError() adds, so the `hidden`
+ * class must be toggled explicitly or the message is never displayed (nor
+ * announced: live regions inside display:none stay silent).
+ */
+function setChallengeError(message: string): void {
+  const errorEl = document.getElementById('totp-challenge-code-error');
+  const codeInput = document.getElementById('totp-challenge-code');
+  showError(errorEl, message);
+  if (message) {
+    showElement(errorEl);
+    codeInput?.setAttribute('aria-invalid', 'true');
+  } else {
+    hideElement(errorEl);
+    codeInput?.setAttribute('aria-invalid', 'false');
+  }
+}
+
 function resetToPasswordStep(): void {
   pendingChallengeToken = null;
   pendingRememberMe = false;
@@ -308,7 +330,7 @@ function resetToPasswordStep(): void {
   showElement(loginForm);
   hideElement(challengeForm);
   challengeForm?.reset();
-  showError(document.getElementById('totp-challenge-code-error'), '');
+  setChallengeError('');
 }
 
 function showEnrollmentRequiredInterstitial(): void {
@@ -316,7 +338,12 @@ function showEnrollmentRequiredInterstitial(): void {
   if (!modal) return;
 
   showElement(modal);
+  // The dialog is mandatory and modal: move focus into it and keep Tab inside
+  // so keyboard users cannot reach the login form hidden behind it (FR-019).
+  const focusTrap = createFocusTrap(modal);
+  focusTrap.activate();
   initProfileTwoFactor(false, () => {
+    focusTrap.deactivate();
     hideElement(modal);
     showNotification(
       t('auth.login.enrollmentRequired.success') || 'Two-factor authentication is now enabled.',
@@ -344,7 +371,7 @@ function storeAuthTokens(accessToken: string, refreshToken: string, rememberMe: 
 
 async function handleTwoFactorChallengeSubmit(event: Event): Promise<void> {
   event.preventDefault();
-  showError(document.getElementById('totp-challenge-code-error'), '');
+  setChallengeError('');
 
   const code = getInputValue('totp-challenge-code').trim();
   const challengeToken = pendingChallengeToken;
@@ -355,8 +382,7 @@ async function handleTwoFactorChallengeSubmit(event: Event): Promise<void> {
   }
 
   if (!code) {
-    showError(
-      document.getElementById('totp-challenge-code-error'),
+    setChallengeError(
       t('auth.login.twoFactorCodeRequired') || 'Please enter your authentication code'
     );
     return;
@@ -402,18 +428,16 @@ async function handleTwoFactorChallengeSubmit(event: Event): Promise<void> {
       return;
     }
 
-    showError(
-      document.getElementById('totp-challenge-code-error'),
-      data.detail || t('auth.login.twoFactorInvalidCode') || 'Incorrect code. Please try again.'
+    setChallengeError(
+      (response.status === 401 ? undefined : data.detail) ||
+        t('auth.login.twoFactorInvalidCode') ||
+        'Incorrect code. Please try again.'
     );
     const codeInput = document.getElementById('totp-challenge-code') as HTMLInputElement | null;
     codeInput?.focus();
   } catch (error) {
     reportError('auth', '2fa-challenge', error);
-    showError(
-      document.getElementById('totp-challenge-code-error'),
-      t('messages.error') || 'An error occurred'
-    );
+    setChallengeError(t('messages.error') || 'An error occurred');
   } finally {
     if (submitButton) {
       submitButton.disabled = false;

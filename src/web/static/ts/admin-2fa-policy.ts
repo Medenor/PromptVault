@@ -80,6 +80,9 @@ async function handleToggle(toggle: HTMLInputElement): Promise<void> {
   if (!role) return;
 
   const required = toggle.checked;
+  // A disabled control drops keyboard focus to <body>; remember it so focus
+  // can be put back once the request settles (FR-019).
+  const hadFocus = document.activeElement === toggle;
   toggle.disabled = true;
 
   try {
@@ -98,6 +101,7 @@ async function handleToggle(toggle: HTMLInputElement): Promise<void> {
     );
   } finally {
     toggle.disabled = false;
+    if (hadFocus) toggle.focus();
   }
 }
 

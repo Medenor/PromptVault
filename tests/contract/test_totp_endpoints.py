@@ -820,6 +820,43 @@ class TestAdminTotpPolicyEndpoint:
         roles = {entry["role"]: entry["required"] for entry in get_resp.json()["roles"]}
         assert roles["admin"] is True
 
+    def test_put_policy_emits_audit_event(
+        self,
+        admin_client: TestClient,
+        test_db_engine,
+        registered_user: dict[str, Any],
+        monkeypatch,
+    ):
+        from src.services import logging_service as logging_service_module
+
+        events: list[dict[str, Any]] = []
+        monkeypatch.setattr(
+            logging_service_module.logging_service,
+            "log_audit_event",
+            lambda **kwargs: events.append(kwargs),
+        )
+        _promote_to_admin(test_db_engine, registered_user["user"]["id"])
+        login_resp = admin_client.post(
+            "/api/auth/login",
+            json={
+                "username_or_email": registered_user["user"]["username"],
+                "password": "SecureP@ssw0rd123",
+            },
+        )
+        headers = {"Authorization": f"Bearer {login_resp.json()['access_token']}"}
+        events.clear()
+
+        response = admin_client.put(
+            "/api/admin/2fa/policy",
+            json={"role": "editor", "required": True},
+            headers=headers,
+        )
+
+        assert response.status_code == 200
+        assert [e["action"] for e in events] == ["2fa.policy_updated"]
+        assert events[0]["resource_id"] == "editor"
+        assert events[0]["required"] is True
+
     def test_put_policy_requires_admin_role(
         self, admin_client: TestClient, auth_headers: dict[str, str]
     ):

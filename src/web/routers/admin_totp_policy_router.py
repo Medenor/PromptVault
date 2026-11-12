@@ -130,5 +130,13 @@ def set_totp_policy(
         "N/A",
         f"role={request_data.role}, required={request_data.required}",
     )
+    # Structured audit trail (audit.log): changing which roles must use 2FA is
+    # an access-control change, so it is recorded alongside the 2FA user events.
+    logging_service.log_audit_event(
+        action="2fa.policy_updated",
+        resource_type="totp_role_policy",
+        resource_id=entry.role,
+        required=entry.required,
+    )
 
     return TotpRolePolicyItem(role=entry.role, required=entry.required)
