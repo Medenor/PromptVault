@@ -350,6 +350,31 @@ def get_current_user(
     return user
 
 
+def enforce_totp_enrollment_policy(
+    user: User, request: Request, session: Session
+) -> None:
+    """Raise 403 if the user's role requires 2FA and they have not enrolled.
+
+    Called by every authenticated dependency, strict and bypass variants
+    alike, so the admin-mandated policy cannot be skipped by using a
+    different dependency. Paths in ``_TOTP_ENROLLMENT_EXEMPT_PATHS`` stay
+    reachable so the user can finish enrolling.
+
+    Raises:
+        HTTPException: 403 when enrollment is required by policy but missing.
+    """
+    if user.totp_enabled or request.url.path in _TOTP_ENROLLMENT_EXEMPT_PATHS:
+        return
+
+    policy_service = TotpPolicyService(TotpRepository(session))
+    if policy_service.is_required_for(user.role or "viewer"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Two-factor authentication enrollment is required for your role "
+            "before you can access this resource.",
+        )
+
+
 def get_current_active_user(
     request: Request,
     user: User = Depends(get_current_user),
@@ -423,19 +448,13 @@ def get_current_active_user(
         # Lock has expired, but we don't clear it here (that's the auth service's job)
         # Still allow access since the lock period has passed
 
-    if not user.totp_enabled and request.url.path not in _TOTP_ENROLLMENT_EXEMPT_PATHS:
-        policy_service = TotpPolicyService(TotpRepository(session))
-        if policy_service.is_required_for(user.role or "viewer"):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Two-factor authentication enrollment is required for your role "
-                "before you can access this resource.",
-            )
+    enforce_totp_enrollment_policy(user, request, session)
 
     return user
 
 
 def get_optional_user(
+    request: Request,
     authorization: str | None = Header(None, description="Optional Bearer token"),
     jwt_service: JWTService = Depends(get_jwt_service),
     session: Session = Depends(get_db),
@@ -504,6 +523,7 @@ def get_optional_user(
         if not user.is_active:
             return None  # Treat inactive users as unauthenticated
 
+        enforce_totp_enrollment_policy(user, request, session)
         return user
 
     except HTTPException:

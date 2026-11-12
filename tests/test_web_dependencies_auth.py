@@ -275,7 +275,7 @@ class TestOptionalAuthentication:
 
     def test_get_optional_user_no_token(self):
         """Test None returned when no token provided."""
-        result = get_optional_user(None, self.jwt_service, self.session)
+        result = get_optional_user(Mock(), None, self.jwt_service, self.session)
         assert result is None
 
     def test_get_optional_user_invalid_token(self):
@@ -285,7 +285,7 @@ class TestOptionalAuthentication:
         self.jwt_service.validate_access_token.side_effect = InvalidTokenError()
 
         with pytest.raises(HTTPException):
-            get_optional_user("Bearer invalid", self.jwt_service, self.session)
+            get_optional_user(Mock(), "Bearer invalid", self.jwt_service, self.session)
 
 
 class TestRoleBasedAccessControl:
