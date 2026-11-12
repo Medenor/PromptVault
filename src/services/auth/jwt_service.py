@@ -270,6 +270,7 @@ class JWTService:
             "aud": self.config.jwt_audience,  # Audience
             "jti": self._generate_jti(),  # JWT ID for tracking
             # Custom claims
+            "type": "access",  # Distinguish from refresh and 2FA challenge tokens
             "username": username,
             "email": email,
             "role": role,
@@ -363,6 +364,105 @@ class JWTService:
             algorithm=self.algorithm,
         )
 
+    def generate_2fa_challenge_token(
+        self,
+        user_id: str,
+        challenge_id: str,
+        expires_in_seconds: int = 120,
+        remember_me: bool = False,
+    ) -> str:
+        """Generate a short-lived 2FA login-challenge token.
+
+        Issued after password validation succeeds for a user with
+        ``totp_enabled=True``, in place of full access/refresh tokens. Carries
+        a distinct ``typ: "2fa_challenge"`` claim so it cannot be mistaken for
+        an access or refresh token, and a ``jti`` matching a server-side
+        ``TotpLoginChallenge`` row for single-use enforcement (research.md §5).
+
+        Args:
+            user_id: Unique user identifier
+            challenge_id: UUID matching the TotpLoginChallenge row's id (used as jti)
+            expires_in_seconds: Challenge lifetime in seconds (default: 2 minutes)
+            remember_me: Whether the user ticked "remember me" at the password
+                step; carried in the signed token so the long-lived session
+                lifetime survives the second-factor exchange
+
+        Returns:
+            Signed JWT challenge token string
+
+        Security:
+            - Short-lived (2 minutes by default)
+            - typ="2fa_challenge" is rejected by validate_access_token() and
+              validate_refresh_token(), so it cannot be used as a bearer token
+            - jti tracked server-side for single-use enforcement
+        """
+        now = datetime.now(UTC)
+        expiry = now + timedelta(seconds=expires_in_seconds)
+
+        claims = {
+            "sub": user_id,
+            "exp": expiry,
+            "iat": now,
+            "iss": self.config.jwt_issuer,
+            "aud": self.config.jwt_audience,
+            "jti": challenge_id,
+            "typ": "2fa_challenge",
+            "remember_me": remember_me,
+        }
+
+        private_key = self._load_private_key()
+
+        return jwt.encode(
+            claims,
+            private_key,
+            algorithm=self.algorithm,
+        )
+
+    def validate_2fa_challenge_token(self, token: str) -> dict[str, Any]:
+        """Validate and decode a 2FA login-challenge token.
+
+        Args:
+            token: JWT challenge token string to validate
+
+        Returns:
+            Dictionary of token claims if valid
+
+        Raises:
+            ExpiredSignatureError: If the challenge has expired
+            InvalidTokenError: If the token is malformed, invalid, or not a
+                2FA challenge token (wrong ``typ`` claim)
+            MissingRequiredClaimError: If required claims are missing
+        """
+        public_key = self._load_public_key()
+
+        try:
+            claims = jwt.decode(
+                token,
+                public_key,
+                algorithms=[self.algorithm],
+                issuer=self.config.jwt_issuer,
+                audience=self.config.jwt_audience,
+                options={
+                    "verify_signature": True,
+                    "verify_exp": True,
+                    "verify_iat": True,
+                    "verify_iss": True,
+                    "verify_aud": True,
+                    "require": ["sub", "exp", "iat", "iss", "aud", "jti"],
+                },
+            )
+        except ExpiredSignatureError:
+            raise  # Re-raise for caller to handle
+        except (DecodeError, InvalidTokenError) as e:
+            raise InvalidTokenError(f"Invalid challenge token: {str(e)}") from e
+
+        if claims.get("typ") != "2fa_challenge":
+            raise InvalidTokenError(
+                "Token is not a valid 2FA challenge token (missing typ='2fa_challenge')"
+            )
+
+        return claims
+
     def validate_access_token(self, token: str) -> dict[str, Any]:
         """Validate and decode access token.
 
@@ -422,9 +522,22 @@ class JWTService:
                 },
             )
 
-            # Additional validation: ensure it's not a refresh token
+            # Additional validation: only genuine access tokens are accepted.
+            # Challenge tokens (typ="2fa_challenge") share the signing key,
+            # issuer and audience, so they must be rejected explicitly or a
+            # password-only login would yield a usable bearer token.
+            if claims.get("typ") == "2fa_challenge":
+                raise InvalidTokenError(
+                    "2FA challenge token cannot be used as access token"
+                )
             if claims.get("type") == "refresh":
                 raise InvalidTokenError("Refresh token cannot be used as access token")
+            # Tokens issued before the "type" claim existed carry none.
+            if claims.get("type") not in (None, "access"):
+                raise InvalidTokenError(
+                    f"Token of type {claims.get('type')!r} cannot be used as "
+                    "access token"
+                )
 
             return claims
 

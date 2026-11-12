@@ -13,6 +13,7 @@ This test suite verifies the FastAPI dependency functions for:
 """
 
 from datetime import UTC, datetime, timedelta
+from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
 import pytest
@@ -148,6 +149,11 @@ class TestUserRetrieval:
     def setup_method(self):
         """Set up test fixtures."""
         self.session = Mock(spec=Session)
+        self.request = Mock(spec=Request)
+        self.request.url = Mock(path="/api/prompts")
+        # Real requests always carry an ASGI scope and a state object.
+        self.request.scope = {}
+        self.request.state = SimpleNamespace()
         self.user = User(
             id="user123",
             username="alice",
@@ -156,6 +162,11 @@ class TestUserRetrieval:
             role="viewer",
             is_active=True,
             email_verified=True,
+            # 2FA-related checks in get_current_active_user() are exercised
+            # separately in test_totp_policy_service.py / test_totp_flow.py;
+            # enrolled=True here keeps these tests focused on account
+            # active/lockout status.
+            totp_enabled=True,
         )
 
     def test_get_current_user_success(self):
@@ -199,7 +210,7 @@ class TestUserRetrieval:
 
     def test_get_current_active_user_success(self):
         """Test successful active user validation."""
-        user = get_current_active_user(self.user)
+        user = get_current_active_user(self.request, self.user, self.session)
         assert user == self.user
 
     def test_get_current_active_user_inactive(self):
@@ -207,7 +218,7 @@ class TestUserRetrieval:
         self.user.is_active = False
 
         with pytest.raises(HTTPException) as exc_info:
-            get_current_active_user(self.user)
+            get_current_active_user(self.request, self.user, self.session)
 
         assert exc_info.value.status_code == 401
         assert "deactivated" in exc_info.value.detail.lower()
@@ -218,7 +229,7 @@ class TestUserRetrieval:
         self.user.locked_until = future_time
 
         with pytest.raises(HTTPException) as exc_info:
-            get_current_active_user(self.user)
+            get_current_active_user(self.request, self.user, self.session)
 
         assert exc_info.value.status_code == 401
         assert "locked" in exc_info.value.detail.lower()
@@ -228,7 +239,33 @@ class TestUserRetrieval:
         past_time = datetime.now(UTC) - timedelta(minutes=10)
         self.user.locked_until = past_time
 
-        user = get_current_active_user(self.user)
+        user = get_current_active_user(self.request, self.user, self.session)
+        assert user == self.user
+
+    def test_get_current_active_user_enrollment_required_blocked(self):
+        """A non-enrolled user in a 2FA-required role is blocked outside
+        the enrollment-exempt paths, even with an otherwise valid token."""
+        self.user.totp_enabled = False
+
+        with patch("src.web.dependencies.token.TotpPolicyService") as mock_policy_cls:
+            mock_policy_cls.return_value.is_required_for.return_value = True
+
+            with pytest.raises(HTTPException) as exc_info:
+                get_current_active_user(self.request, self.user, self.session)
+
+        assert exc_info.value.status_code == 403
+
+    def test_get_current_active_user_enrollment_required_exempt_path(self):
+        """The enrollment-exempt paths remain reachable for a non-enrolled
+        user in a 2FA-required role."""
+        self.user.totp_enabled = False
+        self.request.url = Mock(path="/api/auth/2fa/enroll")
+
+        with patch("src.web.dependencies.token.TotpPolicyService") as mock_policy_cls:
+            mock_policy_cls.return_value.is_required_for.return_value = True
+
+            user = get_current_active_user(self.request, self.user, self.session)
+
         assert user == self.user
 
 
@@ -242,7 +279,7 @@ class TestOptionalAuthentication:
 
     def test_get_optional_user_no_token(self):
         """Test None returned when no token provided."""
-        result = get_optional_user(None, self.jwt_service, self.session)
+        result = get_optional_user(Mock(), None, self.jwt_service, self.session)
         assert result is None
 
     def test_get_optional_user_invalid_token(self):
@@ -252,7 +289,7 @@ class TestOptionalAuthentication:
         self.jwt_service.validate_access_token.side_effect = InvalidTokenError()
 
         with pytest.raises(HTTPException):
-            get_optional_user("Bearer invalid", self.jwt_service, self.session)
+            get_optional_user(Mock(), "Bearer invalid", self.jwt_service, self.session)
 
 
 class TestRoleBasedAccessControl:

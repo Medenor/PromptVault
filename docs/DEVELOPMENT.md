@@ -55,11 +55,11 @@ make build        # produce production artifacts (frontend + Docker image)
 
 | Target | Description                                                                                    |
 | ------ | ---------------------------------------------------------------------------------------------- |
-| `dev`  | Start backend (port 8003) + Vite frontend (port 5173) concurrently. Ctrl-C stops both cleanly. |
+| `dev`  | Start backend (port 7870) + Vite frontend (port 7873) concurrently. Ctrl-C stops both cleanly. |
 
 Override ports: `BACKEND_PORT=9000 make dev` or `FRONTEND_PORT=3000 make dev`.
 
-**Access the app at `http://localhost:8003/`** — the Vite server at port 5173 is an asset dev server only (hot-reload for static files), not the application itself.
+**Access the app at `http://localhost:7870/`** — the Vite server at port 7873 is an asset dev server only (hot-reload for static files), not the application itself.
 
 ### Testing (US2)
 
@@ -119,8 +119,8 @@ Migrations are authored and tested against **SQLite** in dev, but run against **
 
 | Variable        | Default | Purpose                  |
 | --------------- | ------- | ------------------------ |
-| `PORT`          | `8003`  | Backend dev server port. |
-| `FRONTEND_PORT` | `5173`  | Vite dev server port.    |
+| `BACKEND_PORT`  | `7870`  | Backend dev server port. |
+| `FRONTEND_PORT` | `7873`  | Vite dev server port.    |
 
 ---
 
@@ -133,8 +133,8 @@ Migrations are authored and tested against **SQLite** in dev, but run against **
 | `ERROR: node is not installed`         | Missing Node.js            | Install Node.js 20+                                   |
 | `ERROR: Virtual environment not found` | Dependencies not installed | Run `make install`                                    |
 | `ERROR: node_modules/ not found`       | Dependencies not installed | Run `make install`                                    |
-| `WARNING: Port 8003 is already in use` | Port conflict              | Stop other process or `PORT=<port> make dev`          |
-| `WARNING: Port 5173 is already in use` | Port conflict              | Stop other process or `FRONTEND_PORT=<port> make dev` |
+| `WARNING: Port 7870 is already in use` | Port conflict              | Stop other process or `BACKEND_PORT=<port> make dev`  |
+| `WARNING: Port 7873 is already in use` | Port conflict              | Stop other process or `FRONTEND_PORT=<port> make dev` |
 
 ---
 

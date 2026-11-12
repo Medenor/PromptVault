@@ -103,6 +103,11 @@ class UserResponse(BaseModel):
         description="Last login timestamp",
         examples=["2025-12-02T10:30:00Z", None],
     )
+    totp_enabled: bool = Field(
+        default=False,
+        description="Whether two-factor authentication (TOTP) is enabled",
+        examples=[False, True],
+    )
 
     model_config = ConfigDict(
         from_attributes=True,  # Allow creation from ORM models
@@ -163,6 +168,16 @@ class TokenResponse(BaseModel):
         ...,
         description="User information",
     )
+    enrollment_required: bool = Field(
+        default=False,
+        description=(
+            "True when an admin-configured role policy requires 2FA and this "
+            "account is not yet enrolled (contract §7). Clients must route the "
+            "user into the mandatory-enrollment interstitial before allowing "
+            "access to other functionality."
+        ),
+        examples=[False],
+    )
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -181,6 +196,7 @@ class TokenResponse(BaseModel):
                     "created_at": "2025-12-02T10:30:00Z",
                     "updated_at": "2025-12-02T10:30:00Z",
                 },
+                "enrollment_required": False,
             }
         }
     )
@@ -471,6 +487,171 @@ class RevokeSessionResponse(BaseModel):
     model_config = ConfigDict(
         json_schema_extra={
             "example": {"message": "Session revoked successfully", "revoked_count": 1}
+        }
+    )
+
+
+class TotpEnrollResponse(BaseModel):
+    """Response model for starting TOTP enrollment.
+
+    Attributes:
+        secret: Plaintext base32 TOTP secret (manual-entry fallback, FR-019)
+        provisioning_uri: otpauth:// URI encoded in the QR code
+        qr_svg: Inline SVG QR code for scanning with an authenticator app
+
+    Security Note:
+        The plaintext secret is returned only in this response; it is never
+        retrievable again and never stored in plaintext server-side.
+
+    Example:
+        >>> response = TotpEnrollResponse(
+        ...     secret="JBSWY3DPEHPK3PXP",
+        ...     provisioning_uri="otpauth://totp/PromptVault:alice?secret=...&issuer=PromptVault",
+        ...     qr_svg="<svg>...</svg>",
+        ... )
+    """
+
+    secret: str = Field(
+        ...,
+        description="Plaintext base32 TOTP secret (manual-entry fallback)",
+        examples=["JBSWY3DPEHPK3PXP"],
+    )
+    provisioning_uri: str = Field(
+        ...,
+        description="otpauth:// provisioning URI encoded in the QR code",
+        examples=[
+            "otpauth://totp/PromptVault:alice?secret=JBSWY3DPEHPK3PXP&issuer=PromptVault"
+        ],
+    )
+    qr_svg: str = Field(
+        ...,
+        description="Inline SVG QR code markup for scanning with an authenticator app",
+    )
+
+
+class TotpConfirmResponse(BaseModel):
+    """Response model for confirming TOTP enrollment (or regenerating recovery codes).
+
+    Attributes:
+        enabled: Whether 2FA is now active (True after successful confirm)
+        recovery_codes: One-time list of plaintext recovery codes
+
+    Security Note:
+        recovery_codes are shown exactly once — they cannot be retrieved
+        again after this response (FR-003).
+
+    Example:
+        >>> response = TotpConfirmResponse(
+        ...     enabled=True,
+        ...     recovery_codes=["ab12-cd34", "ef56-gh78"],
+        ... )
+    """
+
+    enabled: bool = Field(
+        default=True,
+        description="Whether two-factor authentication is now active",
+        examples=[True],
+    )
+    recovery_codes: list[str] = Field(
+        ...,
+        description="One-time list of plaintext recovery codes (shown only once)",
+        examples=[["ab12-cd34", "ef56-gh78"]],
+    )
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "enabled": True,
+                "recovery_codes": ["ab12-cd34", "ef56-gh78"],
+            }
+        }
+    )
+
+
+class TotpChallengeIssuedResponse(BaseModel):
+    """Response model for the password step when 2FA is required (contract §5).
+
+    Returned by POST /api/auth/login in place of TokenResponse when the
+    account has ``totp_enabled=True`` — no access/refresh tokens are issued
+    at this step (FR-005).
+
+    Attributes:
+        challenge_token: Short-lived JWT identifying the pending challenge
+        expires_in: Challenge lifetime in seconds
+
+    Example:
+        >>> response = TotpChallengeIssuedResponse(
+        ...     challenge_token="eyJhbGciOi...",
+        ...     expires_in=120,
+        ... )
+    """
+
+    challenge_token: str = Field(
+        ...,
+        description="Short-lived JWT identifying the pending 2FA challenge",
+        examples=["eyJhbGciOi..."],
+    )
+    expires_in: int = Field(
+        ...,
+        description="Challenge lifetime in seconds",
+        examples=[120],
+    )
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {"challenge_token": "eyJhbGciOi...", "expires_in": 120}
+        }
+    )
+
+
+class TotpRolePolicyItem(BaseModel):
+    """A single role's 2FA-required policy entry (contract §7).
+
+    Attributes:
+        role: Role name
+        required: Whether members of this role must have 2FA enabled
+    """
+
+    role: Literal["viewer", "editor", "admin"] = Field(
+        ..., description="Role name", examples=["admin"]
+    )
+    required: bool = Field(
+        ...,
+        description="Whether members of this role must have 2FA enabled",
+        examples=[True],
+    )
+
+
+class TotpPolicyResponse(BaseModel):
+    """Response model for GET/PUT /api/admin/2fa/policy (contract §7).
+
+    Attributes:
+        roles: Policy entry for every known role
+
+    Example:
+        >>> response = TotpPolicyResponse(
+        ...     roles=[
+        ...         {"role": "admin", "required": True},
+        ...         {"role": "editor", "required": False},
+        ...         {"role": "viewer", "required": False},
+        ...     ]
+        ... )
+    """
+
+    roles: list[TotpRolePolicyItem] = Field(
+        ...,
+        description="2FA-required policy for every role",
+    )
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "roles": [
+                    {"role": "admin", "required": True},
+                    {"role": "editor", "required": False},
+                    {"role": "viewer", "required": False},
+                ]
+            }
         }
     )
 

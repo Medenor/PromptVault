@@ -25,8 +25,11 @@ from src.services.exceptions import (
     SessionLimitExceededError,
     SessionNotFoundError,
     TokenReuseDetectedError,
+    TotpChallengeExpiredError,
+    TotpCodeInvalidError,
     UnauthorizedError,
 )
+from src.services.logging_service import logging_service
 from src.web.dependencies.auth import (
     get_client_ip,
     get_current_active_user,
@@ -40,6 +43,7 @@ from src.web.models.auth_requests import (
     LoginRequest,
     LogoutRequest,
     RefreshTokenRequest,
+    TotpChallengeExchangeRequest,
 )
 from src.web.models.auth_responses import (
     MessageResponse,
@@ -47,6 +51,7 @@ from src.web.models.auth_responses import (
     SessionListResponse,
     SessionResponse,
     TokenResponse,
+    TotpChallengeIssuedResponse,
     UserResponse,
 )
 from src.web.routers.auth_shared import get_auth_service, get_jwt_service
@@ -144,6 +149,20 @@ def login(
             remember_me=request_data.remember_me,
         )
 
+        # 2FA-enabled accounts get a challenge instead of tokens (FR-005) —
+        # no session/cookies are set until POST /api/auth/login/2fa succeeds.
+        if "challenge_token" in result:
+            logger.info(
+                f"2FA challenge issued for: {request_data.username_or_email} "
+                f"from {ip_address}"
+            )
+            return JSONResponse(
+                content=TotpChallengeIssuedResponse(
+                    challenge_token=result["challenge_token"],
+                    expires_in=result["expires_in"],
+                ).model_dump(mode="json")
+            )
+
         # Convert User model to UserResponse
         user_response = UserResponse.model_validate(result["user"])
 
@@ -160,11 +179,10 @@ def login(
             token_type="Bearer",
             expires_in=result["expires_in"],
             user=user_response,
+            enrollment_required=result.get("enrollment_required", False),
         )
 
         # Set HTTP-only cookies for web clients
-        from fastapi.responses import JSONResponse
-
         json_response = JSONResponse(content=response.model_dump(mode="json"))
         refresh_max_age = (
             auth_service.config.jwt_refresh_token_remember_me_expire_seconds
@@ -241,6 +259,185 @@ def login(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred during login. Please try again.",
+        ) from e
+
+
+@router.post(
+    "/login/2fa",
+    response_model=TokenResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Exchange a 2FA login challenge for tokens",
+    description="""
+    Complete login for a 2FA-enabled account by exchanging the challenge
+    token issued by POST /api/auth/login for a full session.
+
+    This endpoint:
+    - Validates the challenge token (signature, expiry, single-use)
+    - Accepts either a current TOTP code or an unused recovery code
+    - Issues access/refresh tokens and creates a session on success
+    - Counts wrong codes toward the shared account-lockout counter (FR-010)
+
+    A consumed or expired challenge cannot be reused — the client must
+    restart from POST /api/auth/login.
+    """,
+    responses={
+        200: {
+            "description": "2FA verified, login complete",
+            "model": TokenResponse,
+        },
+        401: {
+            "description": "Invalid code (counts toward lockout) or account locked",
+        },
+        410: {
+            "description": "Challenge expired or already consumed",
+        },
+        429: {
+            "description": "Too many attempts - rate limited",
+        },
+    },
+)
+@limiter.limit(auth_login_limit)
+def exchange_2fa_challenge(
+    request_data: TotpChallengeExchangeRequest,
+    request: Request,
+    ip_address: str = Depends(get_client_ip),
+    user_agent: str = Depends(get_user_agent),
+    auth_service: AuthService = Depends(get_auth_service),
+) -> Response:
+    """Exchange a 2FA login challenge for authentication tokens.
+
+    Args:
+        request_data: Challenge token and TOTP/recovery code
+        request: FastAPI request object (for rate limiting)
+        ip_address: Client IP address (injected)
+        user_agent: Client User-Agent string (injected)
+        auth_service: Authentication service instance (injected)
+
+    Returns:
+        TokenResponse: JWT tokens and user information
+
+    Raises:
+        HTTPException: 401 if code invalid/account locked, 410 if challenge
+            expired or already consumed
+    """
+    try:
+        result = auth_service.exchange_2fa_challenge(
+            challenge_token=request_data.challenge_token,
+            code=request_data.code,
+            ip_address=ip_address,
+            user_agent=user_agent,
+        )
+
+        user_response = UserResponse.model_validate(result["user"])
+
+        logger.info(
+            f"2FA challenge exchanged successfully for user: {user_response.username} "
+            f"(ID: {user_response.id}) from {ip_address}"
+        )
+        logging_service.log_audit_event(
+            action=(
+                "2fa.recovery_code_used"
+                if result.get("used_recovery_code")
+                else "2fa.challenge_succeeded"
+            ),
+            resource_type="user",
+            resource_id=user_response.id,
+        )
+
+        response = TokenResponse(
+            access_token=result["access_token"],
+            refresh_token=result["refresh_token"],
+            token_type="Bearer",
+            expires_in=result["expires_in"],
+            user=user_response,
+        )
+
+        json_response = JSONResponse(content=response.model_dump(mode="json"))
+        refresh_max_age = (
+            auth_service.config.jwt_refresh_token_remember_me_expire_seconds
+            if result.get("remember_me")
+            else auth_service.config.jwt_refresh_token_expire_seconds
+        )
+
+        json_response.set_cookie(
+            key="access_token",
+            value=result["access_token"],
+            httponly=True,
+            secure=False,  # Set to True in production with HTTPS
+            samesite="lax",
+            max_age=refresh_max_age,
+            path="/",
+        )
+        json_response.set_cookie(
+            key="refresh_token",
+            value=result["refresh_token"],
+            httponly=True,
+            secure=False,  # Set to True in production with HTTPS
+            samesite="lax",
+            max_age=refresh_max_age,
+            path="/api/auth",
+        )
+
+        return json_response
+
+    except TotpChallengeExpiredError as e:
+        logger.info(
+            f"2FA challenge exchange failed - expired/consumed from {ip_address}"
+        )
+        raise HTTPException(
+            status_code=status.HTTP_410_GONE,
+            detail=e.user_message,
+        ) from e
+
+    except TotpCodeInvalidError as e:
+        logger.warning(
+            f"2FA challenge exchange failed - invalid code from {ip_address}"
+        )
+        logging_service.log_audit_event(
+            action="2fa.challenge_failed",
+            resource_type="user",
+            resource_id=e.context.get("user_id") or "unknown",
+            status="failure",
+        )
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=e.user_message,
+        ) from e
+
+    except AccountLockedError as e:
+        logger.warning(
+            f"2FA challenge exchange failed - account locked from {ip_address}"
+        )
+        raise HTTPException(
+            status_code=status.HTTP_423_LOCKED,
+            detail=e.user_message,
+        ) from e
+
+    except AccountInactiveError as e:
+        logger.warning(
+            f"2FA challenge exchange failed - account inactive from {ip_address}"
+        )
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=e.user_message,
+        ) from e
+
+    except SessionLimitExceededError as e:
+        logger.warning(
+            f"2FA challenge exchange failed - session limit from {ip_address}"
+        )
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=e.user_message,
+        ) from e
+
+    except Exception as e:
+        logger.error(
+            f"Unexpected error during 2FA challenge exchange: {str(e)}", exc_info=True
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred during 2FA verification. Please try again.",
         ) from e
 
 

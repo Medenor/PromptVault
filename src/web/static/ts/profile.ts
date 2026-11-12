@@ -17,6 +17,7 @@ import { apiGet, apiPost, apiDelete, APIRequestError } from '@/utils/api';
 import { announce } from '@/utils/a11y';
 import { initSecondaryNav } from '@/utils/secondary-nav';
 import { html, raw } from '@/utils/safe-html';
+import { initProfileTwoFactor } from './profile-2fa';
 
 const API_BASE = '/api/auth';
 
@@ -46,6 +47,7 @@ interface UserInfo {
   role: string;
   created_at?: string | null;
   last_login?: string | null;
+  totp_enabled?: boolean;
 }
 
 interface FormValidationError {
@@ -431,6 +433,8 @@ async function loadUserInfo(): Promise<void> {
     const lastLoginEl = document.getElementById('user-last-login');
     if (createdEl) createdEl.textContent = formatDate(user.created_at);
     if (lastLoginEl) lastLoginEl.textContent = formatDate(user.last_login);
+
+    initProfileTwoFactor(user.totp_enabled ?? false);
 
     await loadSessions();
   } catch (error) {

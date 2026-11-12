@@ -459,7 +459,22 @@
       "accountInactive": "Su cuenta está inactiva. Por favor, contacte al soporte.",
       "usernameRequired": "Se requiere nombre de usuario o correo electrónico",
       "passwordRequired": "Se requiere contraseña",
-      "success": "¡Inicio de sesión exitoso!"
+      "success": "¡Inicio de sesión exitoso!",
+      "twoFactorTitle": "Autenticación de dos factores",
+      "twoFactorInstructions": "Ingrese el código de 6 dígitos de su aplicación de autenticación, o uno de sus códigos de recuperación.",
+      "twoFactorCodeLabel": "Código de autenticación",
+      "twoFactorCodePlaceholder": "123456",
+      "twoFactorCodeRequired": "Por favor ingrese su código de autenticación",
+      "twoFactorVerifyButton": "Verificar",
+      "twoFactorBackButton": "Volver al inicio de sesión",
+      "twoFactorInvalidCode": "Código incorrecto. Inténtelo de nuevo.",
+      "twoFactorExpired": "Su sesión ha expirado. Por favor inicie sesión de nuevo.",
+      "twoFactorSuccess": "¡Inicio de sesión exitoso!",
+      "enrollmentRequired": {
+        "title": "Se requiere autenticación de dos factores",
+        "instructions": "El rol de su cuenta requiere autenticación de dos factores. Complete la configuración a continuación antes de continuar.",
+        "success": "La autenticación de dos factores ya está activada."
+      }
     },
     "register": {
       "title": "Crear cuenta",
@@ -495,7 +510,8 @@
       "success": "¡Registro exitoso!",
       "strengthWeak": "Contraseña débil",
       "strengthMedium": "Contraseña media",
-      "strengthStrong": "Contraseña fuerte"
+      "strengthStrong": "Contraseña fuerte",
+      "loginLink": "Iniciar sesión"
     },
     "forgotPassword": {
       "title": "Olvidé mi contraseña",
@@ -549,7 +565,51 @@
       "sessions": "Sesiones activas",
       "revokeSession": "Revocar",
       "confirmRevokeSession": "¿Está seguro de que desea revocar esta sesión?",
-      "sessionRevoked": "Sesión revocada exitosamente"
+      "sessionRevoked": "Sesión revocada exitosamente",
+      "twoFactor": {
+        "title": "Autenticación de dos factores",
+        "description": "Añada una capa adicional de seguridad a su cuenta exigiendo un código de una aplicación de autenticación al iniciar sesión.",
+        "startButton": "Configurar autenticación de dos factores",
+        "startError": "Error al iniciar la configuración de la autenticación de dos factores. Inténtelo de nuevo.",
+        "alreadyEnabled": "La autenticación de dos factores ya está activada.",
+        "scanTitle": "Escanee este código QR",
+        "scanInstructions": "Escanee el código QR a continuación con su aplicación de autenticación (por ejemplo, Google Authenticator, Authy, 1Password).",
+        "manualEntryTitle": "¿No puede escanear el código?",
+        "manualEntryInstructions": "Ingrese esta clave de configuración manualmente en su aplicación de autenticación:",
+        "manualSecretLabel": "Clave de configuración manual",
+        "copySecret": "Copiar clave de configuración",
+        "secretCopied": "Clave de configuración copiada al portapapeles",
+        "codeLabel": "Ingrese el código de 6 dígitos",
+        "codePlaceholder": "123456",
+        "codeRequired": "Por favor ingrese el código de 6 dígitos de su aplicación de autenticación",
+        "confirmButton": "Verificar y activar",
+        "confirmError": "Error al verificar el código. Inténtelo de nuevo.",
+        "invalidCode": "Código incorrecto. Verifique su aplicación de autenticación e inténtelo de nuevo.",
+        "noPendingEnrollment": "La sesión de configuración ha expirado. Por favor inicie la configuración de nuevo.",
+        "cancelButton": "Cancelar",
+        "enabledSuccess": "La autenticación de dos factores ya está activada.",
+        "recoveryCodesTitle": "Guarde sus códigos de recuperación",
+        "recoveryCodesWarning": "Estos códigos se muestran solo una vez. Guárdelos en un lugar seguro; cada código se puede usar una vez si pierde el acceso a su aplicación de autenticación.",
+        "recoveryCodesInstructions": "Cada código solo se puede usar una vez para iniciar sesión si pierde el acceso a su aplicación de autenticación.",
+        "copyRecoveryCodes": "Copiar códigos",
+        "recoveryCodesCopied": "Códigos de recuperación copiados al portapapeles",
+        "downloadRecoveryCodes": "Descargar como archivo de texto",
+        "doneButton": "Listo",
+        "statusEnabled": "Activada",
+        "statusDisabled": "No activada",
+        "disableButton": "Desactivar autenticación de dos factores",
+        "disableConfirmTitle": "Desactivar autenticación de dos factores",
+        "disabledSuccess": "La autenticación de dos factores ha sido desactivada.",
+        "disableError": "Error al desactivar la autenticación de dos factores. Inténtelo de nuevo.",
+        "regenerateButton": "Regenerar códigos de recuperación",
+        "regenerateConfirmTitle": "Regenerar códigos de recuperación",
+        "regeneratedSuccess": "Códigos de recuperación regenerados.",
+        "regenerateError": "Error al regenerar los códigos de recuperación. Inténtelo de nuevo.",
+        "reauthInstructions": "Confirme su contraseña y un código de autenticación actual (o un código de recuperación) para continuar.",
+        "reauthRequired": "Por favor ingrese su contraseña y código de autenticación",
+        "reauthFailed": "Contraseña o código de autenticación incorrecto.",
+        "passwordLabel": "Contraseña actual"
+      }
     }
   },
   "admin": {
@@ -601,7 +661,14 @@
       "confirmDelete": "Confirmar eliminación",
       "deleteWarning": "¿Está seguro de que desea desactivar este usuario? Esta acción se puede revertir reactivando la cuenta.",
       "roleViewer": "Visor",
-      "roleEditor": "Editor"
+      "roleEditor": "Editor",
+      "twoFactorPolicy": {
+        "title": "Política de autenticación de dos factores",
+        "description": "Exija que los miembros de un rol tengan la autenticación de dos factores activada. Los usuarios no inscritos en un rol requerido son dirigidos a la inscripción obligatoria después de iniciar sesión.",
+        "updateSuccess": "Política de autenticación de dos factores actualizada.",
+        "updateError": "Error al actualizar la política de autenticación de dos factores.",
+        "loadError": "Error al cargar la política de autenticación de dos factores."
+      }
     },
     "sessions": {
       "title": "Gestión de sesiones",

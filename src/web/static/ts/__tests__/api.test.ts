@@ -590,6 +590,55 @@ describe('api utils', () => {
     });
   });
 
+  describe('2FA enrollment required', () => {
+    const enrollmentRequired = () => ({
+      ok: false,
+      status: 403,
+      statusText: 'Forbidden',
+      headers: new Headers({ 'X-TOTP-Enrollment-Required': 'true' }),
+      json: vi
+        .fn()
+        .mockResolvedValue({ detail: 'Two-factor authentication enrollment is required' }),
+    });
+
+    it('redirects to the profile page when the server requires 2FA enrollment', async () => {
+      const assign = vi.fn();
+      (window.location as unknown as Record<string, unknown>).assign = assign;
+      (globalThis.fetch as unknown as Mock).mockResolvedValueOnce(enrollmentRequired());
+
+      await expect(apiGet('/api/prompts')).rejects.toBeInstanceOf(APIRequestError);
+
+      expect(assign).toHaveBeenCalledWith('/auth/profile');
+    });
+
+    it('does not redirect when already on the profile page', async () => {
+      const assign = vi.fn();
+      (window.location as unknown as Record<string, unknown>).assign = assign;
+      window.location.pathname = '/auth/profile';
+      (globalThis.fetch as unknown as Mock).mockResolvedValueOnce(enrollmentRequired());
+
+      await expect(apiGet('/api/prompts')).rejects.toBeInstanceOf(APIRequestError);
+
+      expect(assign).not.toHaveBeenCalled();
+    });
+
+    it('does not redirect for an ordinary 403', async () => {
+      const assign = vi.fn();
+      (window.location as unknown as Record<string, unknown>).assign = assign;
+      (globalThis.fetch as unknown as Mock).mockResolvedValueOnce({
+        ok: false,
+        status: 403,
+        statusText: 'Forbidden',
+        headers: new Headers(),
+        json: vi.fn().mockResolvedValue({ detail: 'Admin only' }),
+      });
+
+      await expect(apiGet('/api/admin/x')).rejects.toBeInstanceOf(APIRequestError);
+
+      expect(assign).not.toHaveBeenCalled();
+    });
+  });
+
   describe('429 rate limiting', () => {
     it('backs off once and retries an idempotent GET within budget', async () => {
       const fetchMock = globalThis.fetch as unknown as Mock;

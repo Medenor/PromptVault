@@ -459,7 +459,22 @@
       "accountInactive": "Ihr Konto ist inaktiv. Bitte kontaktieren Sie den Support.",
       "usernameRequired": "Benutzername oder E-Mail ist erforderlich",
       "passwordRequired": "Passwort ist erforderlich",
-      "success": "Anmeldung erfolgreich!"
+      "success": "Anmeldung erfolgreich!",
+      "twoFactorTitle": "Zwei-Faktor-Authentifizierung",
+      "twoFactorInstructions": "Geben Sie den 6-stelligen Code aus Ihrer Authenticator-App ein oder einen Ihrer Wiederherstellungscodes.",
+      "twoFactorCodeLabel": "Authentifizierungscode",
+      "twoFactorCodePlaceholder": "123456",
+      "twoFactorCodeRequired": "Bitte geben Sie Ihren Authentifizierungscode ein",
+      "twoFactorVerifyButton": "Bestätigen",
+      "twoFactorBackButton": "Zurück zur Anmeldung",
+      "twoFactorInvalidCode": "Falscher Code. Bitte versuchen Sie es erneut.",
+      "twoFactorExpired": "Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.",
+      "twoFactorSuccess": "Anmeldung erfolgreich!",
+      "enrollmentRequired": {
+        "title": "Zwei-Faktor-Authentifizierung erforderlich",
+        "instructions": "Ihre Kontorolle erfordert eine Zwei-Faktor-Authentifizierung. Schließen Sie die Einrichtung unten ab, bevor Sie fortfahren.",
+        "success": "Die Zwei-Faktor-Authentifizierung ist jetzt aktiviert."
+      }
     },
     "register": {
       "title": "Konto erstellen",
@@ -495,7 +510,8 @@
       "success": "Registrierung erfolgreich!",
       "strengthWeak": "Schwaches Passwort",
       "strengthMedium": "Mittleres Passwort",
-      "strengthStrong": "Starkes Passwort"
+      "strengthStrong": "Starkes Passwort",
+      "loginLink": "Anmelden"
     },
     "forgotPassword": {
       "title": "Passwort vergessen",
@@ -549,7 +565,51 @@
       "sessions": "Aktive Sitzungen",
       "revokeSession": "Widerrufen",
       "confirmRevokeSession": "Sind Sie sicher, dass Sie diese Sitzung widerrufen möchten?",
-      "sessionRevoked": "Sitzung erfolgreich widerrufen"
+      "sessionRevoked": "Sitzung erfolgreich widerrufen",
+      "twoFactor": {
+        "title": "Zwei-Faktor-Authentifizierung",
+        "description": "Fügen Sie Ihrem Konto eine zusätzliche Sicherheitsebene hinzu, indem Sie bei der Anmeldung einen Code aus einer Authenticator-App verlangen.",
+        "startButton": "Zwei-Faktor-Authentifizierung einrichten",
+        "startError": "Einrichtung der Zwei-Faktor-Authentifizierung fehlgeschlagen. Bitte versuchen Sie es erneut.",
+        "alreadyEnabled": "Die Zwei-Faktor-Authentifizierung ist bereits aktiviert.",
+        "scanTitle": "Diesen QR-Code scannen",
+        "scanInstructions": "Scannen Sie den QR-Code unten mit Ihrer Authenticator-App (z. B. Google Authenticator, Authy, 1Password).",
+        "manualEntryTitle": "Können Sie den Code nicht scannen?",
+        "manualEntryInstructions": "Geben Sie diesen Einrichtungsschlüssel manuell in Ihrer Authenticator-App ein:",
+        "manualSecretLabel": "Manueller Einrichtungsschlüssel",
+        "copySecret": "Einrichtungsschlüssel kopieren",
+        "secretCopied": "Einrichtungsschlüssel in die Zwischenablage kopiert",
+        "codeLabel": "Geben Sie den 6-stelligen Code ein",
+        "codePlaceholder": "123456",
+        "codeRequired": "Bitte geben Sie den 6-stelligen Code aus Ihrer Authenticator-App ein",
+        "confirmButton": "Bestätigen und aktivieren",
+        "confirmError": "Überprüfung des Codes fehlgeschlagen. Bitte versuchen Sie es erneut.",
+        "invalidCode": "Falscher Code. Überprüfen Sie Ihre Authenticator-App und versuchen Sie es erneut.",
+        "noPendingEnrollment": "Die Einrichtungssitzung ist abgelaufen. Bitte starten Sie die Einrichtung erneut.",
+        "cancelButton": "Abbrechen",
+        "enabledSuccess": "Die Zwei-Faktor-Authentifizierung ist jetzt aktiviert.",
+        "recoveryCodesTitle": "Speichern Sie Ihre Wiederherstellungscodes",
+        "recoveryCodesWarning": "Diese Codes werden nur einmal angezeigt. Bewahren Sie sie sicher auf — jeder Code kann einmal verwendet werden, wenn Sie den Zugriff auf Ihre Authenticator-App verlieren.",
+        "recoveryCodesInstructions": "Jeder Code kann nur einmal zur Anmeldung verwendet werden, wenn Sie den Zugriff auf Ihre Authenticator-App verlieren.",
+        "copyRecoveryCodes": "Codes kopieren",
+        "recoveryCodesCopied": "Wiederherstellungscodes in die Zwischenablage kopiert",
+        "downloadRecoveryCodes": "Als Textdatei herunterladen",
+        "doneButton": "Fertig",
+        "statusEnabled": "Aktiviert",
+        "statusDisabled": "Nicht aktiviert",
+        "disableButton": "Zwei-Faktor-Authentifizierung deaktivieren",
+        "disableConfirmTitle": "Zwei-Faktor-Authentifizierung deaktivieren",
+        "disabledSuccess": "Die Zwei-Faktor-Authentifizierung wurde deaktiviert.",
+        "disableError": "Deaktivierung der Zwei-Faktor-Authentifizierung fehlgeschlagen. Bitte versuchen Sie es erneut.",
+        "regenerateButton": "Wiederherstellungscodes neu generieren",
+        "regenerateConfirmTitle": "Wiederherstellungscodes neu generieren",
+        "regeneratedSuccess": "Wiederherstellungscodes neu generiert.",
+        "regenerateError": "Neugenerierung der Wiederherstellungscodes fehlgeschlagen. Bitte versuchen Sie es erneut.",
+        "reauthInstructions": "Bestätigen Sie Ihr Passwort und einen aktuellen Authentifizierungscode (oder einen Wiederherstellungscode), um fortzufahren.",
+        "reauthRequired": "Bitte geben Sie Ihr Passwort und Ihren Authentifizierungscode ein",
+        "reauthFailed": "Falsches Passwort oder falscher Authentifizierungscode.",
+        "passwordLabel": "Aktuelles Passwort"
+      }
     }
   },
   "admin": {
@@ -601,7 +661,14 @@
       "confirmDelete": "Löschen bestätigen",
       "deleteWarning": "Sind Sie sicher, dass Sie diesen Benutzer deaktivieren möchten? Diese Aktion kann durch Reaktivierung des Kontos rückgängig gemacht werden.",
       "roleViewer": "Betrachter",
-      "roleEditor": "Bearbeiter"
+      "roleEditor": "Bearbeiter",
+      "twoFactorPolicy": {
+        "title": "Zwei-Faktor-Authentifizierungsrichtlinie",
+        "description": "Verlangen Sie, dass Mitglieder einer Rolle die Zwei-Faktor-Authentifizierung aktiviert haben. Nicht registrierte Benutzer in einer erforderlichen Rolle werden nach der Anmeldung zur obligatorischen Registrierung weitergeleitet.",
+        "updateSuccess": "Zwei-Faktor-Authentifizierungsrichtlinie aktualisiert.",
+        "updateError": "Aktualisierung der Zwei-Faktor-Authentifizierungsrichtlinie fehlgeschlagen.",
+        "loadError": "Laden der Zwei-Faktor-Authentifizierungsrichtlinie fehlgeschlagen."
+      }
     },
     "sessions": {
       "title": "Sitzungsverwaltung",

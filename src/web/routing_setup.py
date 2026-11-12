@@ -15,6 +15,7 @@ from src.config.auth_config import auth_settings
 from src.services.logging_service import logging_service
 from src.web.routers import (
     admin_sessions_router,
+    admin_totp_policy_router,
     admin_users_router,
     auth_router,
     import_export_router,
@@ -67,6 +68,7 @@ def configure_routing(app: FastAPI) -> None:
         app.include_router(auth_router, prefix="/api")
         app.include_router(admin_users_router, prefix="/api")
         app.include_router(admin_sessions_router, prefix="/api")
+        app.include_router(admin_totp_policy_router, prefix="/api")
         app.include_router(prompts_sharing_router, prefix="/api")
         app.include_router(users_router, prefix="/api")
         logger.info(

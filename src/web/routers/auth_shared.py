@@ -16,12 +16,17 @@ from src.config.auth_config import AuthConfig
 from src.db.repositories.password_reset_token_repository import (
     PasswordResetTokenRepository,
 )
+from src.db.repositories.totp_repository import TotpRepository
 from src.db.repositories.user_repository import UserRepository
 from src.db.session import get_db
 from src.services.auth.auth_service import AuthService
 from src.services.auth.jwt_service import JWTService
+from src.services.auth.lockout_service import LockoutService
 from src.services.auth.password_reset_service import PasswordResetService
 from src.services.auth.password_service import PasswordService
+from src.services.auth.totp_encryption_service import TotpEncryptionService
+from src.services.auth.totp_policy_service import TotpPolicyService
+from src.services.auth.totp_service import TotpService
 from src.web.dependencies.auth import get_auth_config
 
 # ============================================================================
@@ -90,3 +95,49 @@ def get_jwt_service(
         JWTService: Configured JWT service instance
     """
     return JWTService(config)
+
+
+def get_totp_service(
+    session: Session = Depends(get_db),
+    config: AuthConfig = Depends(get_auth_config),
+) -> TotpService:
+    """Provide TotpService instance with dependencies.
+
+    This dependency creates a TotpService instance with all required
+    repositories and services injected.
+
+    Args:
+        session: Database session (injected)
+        config: Authentication configuration (injected)
+
+    Returns:
+        TotpService: Configured TOTP 2FA service instance
+    """
+    totp_repository = TotpRepository(session)
+    encryption_service = TotpEncryptionService(config)
+    password_service = PasswordService(config)
+    jwt_service = JWTService(config)
+    lockout_service = LockoutService(
+        session, config, password_service, UserRepository(session)
+    )
+    return TotpService(
+        totp_repository,
+        encryption_service,
+        password_service,
+        jwt_service,
+        lockout_service,
+    )
+
+
+def get_totp_policy_service(
+    session: Session = Depends(get_db),
+) -> TotpPolicyService:
+    """Provide TotpPolicyService instance with dependencies.
+
+    Args:
+        session: Database session (injected)
+
+    Returns:
+        TotpPolicyService: Configured admin 2FA role-policy service instance
+    """
+    return TotpPolicyService(TotpRepository(session))

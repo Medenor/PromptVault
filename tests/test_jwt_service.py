@@ -1782,3 +1782,70 @@ class TestIntegration:
         # Both keys now loaded
         assert service._private_key is not None
         assert service._public_key is not None
+
+
+class TestTokenTypeSeparation:
+    """Access, refresh and 2FA-challenge tokens must not be interchangeable.
+
+    All three share the signing key, issuer and audience, so the claims that
+    distinguish them are the only thing keeping a password-only login (which
+    yields a challenge token) from authenticating API requests.
+    """
+
+    def test_challenge_token_is_rejected_as_access_token(self, jwt_service):
+        challenge = jwt_service.generate_2fa_challenge_token("user_123", "challenge-1")
+
+        with pytest.raises(InvalidTokenError) as exc_info:
+            jwt_service.validate_access_token(challenge)
+
+        assert "challenge" in str(exc_info.value).lower()
+
+    def test_challenge_token_is_rejected_as_refresh_token(self, jwt_service):
+        challenge = jwt_service.generate_2fa_challenge_token("user_123", "challenge-1")
+
+        with pytest.raises(InvalidTokenError):
+            jwt_service.validate_refresh_token(challenge)
+
+    def test_access_token_is_rejected_as_challenge_token(
+        self, jwt_service, sample_user_data
+    ):
+        access = jwt_service.generate_access_token(**sample_user_data)
+
+        with pytest.raises(InvalidTokenError):
+            jwt_service.validate_2fa_challenge_token(access)
+
+    def test_access_token_carries_the_access_type(self, jwt_service, sample_user_data):
+        access = jwt_service.generate_access_token(**sample_user_data)
+
+        assert jwt_service.decode_token_unsafe(access)["type"] == "access"
+        assert jwt_service.validate_access_token(access)["sub"] == "user_123456"
+
+    def test_access_token_without_type_claim_is_still_accepted(self, jwt_service):
+        # Tokens issued before the "type" claim existed must keep working
+        # until they expire.
+        import jwt as pyjwt
+
+        now = datetime.now(UTC)
+        legacy = pyjwt.encode(
+            {
+                "sub": "user_123",
+                "exp": now + timedelta(minutes=5),
+                "iat": now,
+                "iss": jwt_service.config.jwt_issuer,
+                "aud": jwt_service.config.jwt_audience,
+                "jti": str(uuid.uuid4()),
+            },
+            jwt_service._load_private_key(),
+            algorithm=jwt_service.algorithm,
+        )
+
+        assert jwt_service.validate_access_token(legacy)["sub"] == "user_123"
+
+    def test_challenge_token_carries_remember_me(self, jwt_service):
+        remembered = jwt_service.generate_2fa_challenge_token(
+            "user_123", "c1", remember_me=True
+        )
+        default = jwt_service.generate_2fa_challenge_token("user_123", "c2")
+
+        assert jwt_service.validate_2fa_challenge_token(remembered)["remember_me"]
+        assert not jwt_service.validate_2fa_challenge_token(default)["remember_me"]

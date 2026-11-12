@@ -17,6 +17,7 @@ All request models include:
 """
 
 import re
+from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
@@ -601,6 +602,161 @@ class RevokeSessionRequest(BaseModel):
             raise ValueError("Invalid session ID format (must be UUID)")
 
         return v.lower()
+
+
+class TotpVerifyRequest(BaseModel):
+    """Request model for confirming TOTP enrollment (or, in later endpoints,
+    exchanging a login challenge / re-authenticating for disable/regenerate).
+
+    Field constraints:
+        - code: Non-empty string, required. Kept permissive (not strictly
+          6-digit) since the same shape is reused where recovery codes
+          (``xxxx-xxxx`` format) are also accepted (contracts §3/§4/§6).
+
+    Example:
+        >>> request = TotpVerifyRequest(code="123456")
+    """
+
+    code: str = Field(
+        ...,
+        min_length=6,
+        max_length=32,
+        description="TOTP code (6 digits) or recovery code (xxxx-xxxx format)",
+        examples=["123456", "ab12-cd34"],
+    )
+
+    @field_validator("code")
+    @classmethod
+    def validate_code_not_empty(cls, v: str) -> str:
+        """Ensure code is not empty or whitespace only.
+
+        Args:
+            v: Code to validate
+
+        Returns:
+            Stripped code
+
+        Raises:
+            ValueError: If code is empty or whitespace only
+        """
+        v = v.strip()
+        if not v:
+            raise ValueError("Code cannot be empty")
+        return v
+
+
+class TotpChallengeExchangeRequest(BaseModel):
+    """Request model for exchanging a 2FA login challenge (contract §6).
+
+    Field constraints:
+        - challenge_token: The challenge JWT returned by POST /api/auth/login, required
+        - code: TOTP code or recovery code, required
+
+    Example:
+        >>> request = TotpChallengeExchangeRequest(
+        ...     challenge_token="eyJhbGciOi...",
+        ...     code="123456",
+        ... )
+    """
+
+    challenge_token: str = Field(
+        ...,
+        min_length=10,
+        description="Challenge JWT returned by POST /api/auth/login",
+        examples=["eyJhbGciOi..."],
+    )
+    code: str = Field(
+        ...,
+        min_length=6,
+        max_length=32,
+        description="TOTP code (6 digits) or recovery code (xxxx-xxxx format)",
+        examples=["123456", "ab12-cd34"],
+    )
+
+    @field_validator("challenge_token")
+    @classmethod
+    def validate_challenge_token_not_empty(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("Challenge token cannot be empty")
+        return v
+
+    @field_validator("code")
+    @classmethod
+    def validate_code_not_empty(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("Code cannot be empty")
+        return v
+
+
+class TotpDisableRequest(BaseModel):
+    """Request model for disabling 2FA or regenerating recovery codes (contracts §3/§4).
+
+    Shared shape for both ``POST /api/auth/2fa/disable`` and
+    ``POST /api/auth/2fa/recovery-codes/regenerate`` — both re-authenticate
+    with the current password plus a current TOTP or recovery code.
+
+    Field constraints:
+        - password: Current password, required
+        - code: TOTP code (6 digits) or recovery code (xxxx-xxxx), required
+
+    Example:
+        >>> request = TotpDisableRequest(password="SecureP@ssw0rd123", code="123456")
+    """
+
+    password: str = Field(
+        ...,
+        min_length=1,
+        max_length=128,
+        description="Current password for re-authentication",
+        examples=["SecureP@ssw0rd123"],
+    )
+    code: str = Field(
+        ...,
+        min_length=6,
+        max_length=32,
+        description="TOTP code (6 digits) or recovery code (xxxx-xxxx format)",
+        examples=["123456", "ab12-cd34"],
+    )
+
+    @field_validator("password")
+    @classmethod
+    def validate_password_not_empty(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("Password cannot be empty or whitespace only")
+        return v
+
+    @field_validator("code")
+    @classmethod
+    def validate_code_not_empty(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("Code cannot be empty")
+        return v
+
+
+class TotpPolicyUpdateRequest(BaseModel):
+    """Request model for setting a role's 2FA-required policy (contract §7).
+
+    Field constraints:
+        - role: One of "viewer", "editor", "admin"
+        - required: Whether members of this role must have 2FA enabled
+
+    Example:
+        >>> request = TotpPolicyUpdateRequest(role="admin", required=True)
+    """
+
+    role: Literal["viewer", "editor", "admin"] = Field(
+        ...,
+        description="Role to configure",
+        examples=["admin"],
+    )
+    required: bool = Field(
+        ...,
+        description="Whether members of this role must have 2FA enabled",
+        examples=[True],
+    )
 
 
 class UpdateProfileRequest(BaseModel):

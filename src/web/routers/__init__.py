@@ -5,6 +5,9 @@
 """FastAPI routers package for PromptVault API endpoints."""
 
 from src.web.routers.admin_sessions_router import router as admin_sessions_router
+from src.web.routers.admin_totp_policy_router import (
+    router as admin_totp_policy_router,
+)
 from src.web.routers.admin_users_router import router as admin_users_router
 from src.web.routers.auth import router as auth_router
 from src.web.routers.import_export_router import router as import_export_router
@@ -19,6 +22,7 @@ __all__ = [
     "auth_router",
     "admin_users_router",
     "admin_sessions_router",
+    "admin_totp_policy_router",
     "prompts_router",
     "prompts_versions_router",
     "prompts_sharing_router",

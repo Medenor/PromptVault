@@ -586,7 +586,22 @@
       "accountInactive": "Your account is inactive. Please contact support.",
       "usernameRequired": "Username or email is required",
       "passwordRequired": "Password is required",
-      "success": "Login successful!"
+      "success": "Login successful!",
+      "twoFactorTitle": "Two-factor authentication",
+      "twoFactorInstructions": "Enter the 6-digit code from your authenticator app, or one of your recovery codes.",
+      "twoFactorCodeLabel": "Authentication code",
+      "twoFactorCodePlaceholder": "123456",
+      "twoFactorCodeRequired": "Please enter your authentication code",
+      "twoFactorVerifyButton": "Verify",
+      "twoFactorBackButton": "Back to login",
+      "twoFactorInvalidCode": "Incorrect code. Please try again.",
+      "twoFactorExpired": "Your session expired. Please log in again.",
+      "twoFactorSuccess": "Login successful!",
+      "enrollmentRequired": {
+        "title": "Two-factor authentication required",
+        "instructions": "Your account role requires two-factor authentication. Complete setup below before continuing.",
+        "success": "Two-factor authentication is now enabled."
+      }
     },
     "register": {
       "title": "Create Account",
@@ -677,7 +692,51 @@
       "sessions": "Active Sessions",
       "revokeSession": "Revoke",
       "confirmRevokeSession": "Are you sure you want to revoke this session?",
-      "sessionRevoked": "Session revoked successfully"
+      "sessionRevoked": "Session revoked successfully",
+      "twoFactor": {
+        "title": "Two-Factor Authentication",
+        "description": "Add an extra layer of security to your account by requiring a code from an authenticator app when you log in.",
+        "startButton": "Set up two-factor authentication",
+        "startError": "Failed to start two-factor authentication setup. Please try again.",
+        "alreadyEnabled": "Two-factor authentication is already enabled.",
+        "scanTitle": "Scan this QR code",
+        "scanInstructions": "Scan the QR code below with your authenticator app (e.g. Google Authenticator, Authy, 1Password).",
+        "manualEntryTitle": "Can't scan the code?",
+        "manualEntryInstructions": "Enter this setup key manually in your authenticator app:",
+        "manualSecretLabel": "Manual setup key",
+        "copySecret": "Copy setup key",
+        "secretCopied": "Setup key copied to clipboard",
+        "codeLabel": "Enter the 6-digit code",
+        "codePlaceholder": "123456",
+        "codeRequired": "Please enter the 6-digit code from your authenticator app",
+        "confirmButton": "Verify and enable",
+        "confirmError": "Failed to verify code. Please try again.",
+        "invalidCode": "Incorrect code. Please check your authenticator app and try again.",
+        "noPendingEnrollment": "Enrollment session expired. Please start setup again.",
+        "cancelButton": "Cancel",
+        "enabledSuccess": "Two-factor authentication is now enabled.",
+        "recoveryCodesTitle": "Save your recovery codes",
+        "recoveryCodesWarning": "These codes are shown only once. Store them somewhere safe — each code can be used once if you lose access to your authenticator app.",
+        "recoveryCodesInstructions": "Each code can only be used once to sign in if you lose access to your authenticator app.",
+        "copyRecoveryCodes": "Copy codes",
+        "recoveryCodesCopied": "Recovery codes copied to clipboard",
+        "downloadRecoveryCodes": "Download as text file",
+        "doneButton": "Done",
+        "statusEnabled": "Enabled",
+        "statusDisabled": "Not enabled",
+        "disableButton": "Disable two-factor authentication",
+        "disableConfirmTitle": "Disable two-factor authentication",
+        "disabledSuccess": "Two-factor authentication has been disabled.",
+        "disableError": "Failed to disable two-factor authentication. Please try again.",
+        "regenerateButton": "Regenerate recovery codes",
+        "regenerateConfirmTitle": "Regenerate recovery codes",
+        "regeneratedSuccess": "Recovery codes regenerated.",
+        "regenerateError": "Failed to regenerate recovery codes. Please try again.",
+        "reauthInstructions": "Confirm your password and a current authentication code (or a recovery code) to continue.",
+        "reauthRequired": "Please enter your password and authentication code",
+        "reauthFailed": "Incorrect password or authentication code.",
+        "passwordLabel": "Current password"
+      }
     }
   },
   "admin": {
@@ -728,7 +787,14 @@
       "userCreated": "User created successfully",
       "userExists": "User already exists",
       "confirmDelete": "Confirm Delete",
-      "deleteWarning": "Are you sure you want to permanently delete this user? This action cannot be undone and will remove all user data from the database."
+      "deleteWarning": "Are you sure you want to permanently delete this user? This action cannot be undone and will remove all user data from the database.",
+      "twoFactorPolicy": {
+        "title": "Two-Factor Authentication Policy",
+        "description": "Require members of a role to have two-factor authentication enabled. Non-enrolled users in a required role are routed into mandatory enrollment after login.",
+        "updateSuccess": "Two-factor authentication policy updated.",
+        "updateError": "Failed to update two-factor authentication policy.",
+        "loadError": "Failed to load two-factor authentication policy."
+      }
     },
     "sessions": {
       "title": "Session Management",

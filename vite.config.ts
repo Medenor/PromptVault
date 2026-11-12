@@ -66,18 +66,19 @@ export default defineConfig({
   },
 
   server: {
-    port: 5173,
+    port: Number(process.env.FRONTEND_PORT ?? 7873),
+    strictPort: false,
     proxy: {
       '/api': {
-        target: 'http://localhost:8003',
+        target: `http://localhost:${process.env.BACKEND_PORT ?? 7870}`,
         changeOrigin: true,
       },
       '/auth': {
-        target: 'http://localhost:8003',
+        target: `http://localhost:${process.env.BACKEND_PORT ?? 7870}`,
         changeOrigin: true,
       },
       '/static/locales': {
-        target: 'http://localhost:8003',
+        target: `http://localhost:${process.env.BACKEND_PORT ?? 7870}`,
         changeOrigin: true,
       },
     },

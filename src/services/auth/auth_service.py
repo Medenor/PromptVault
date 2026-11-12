@@ -111,11 +111,15 @@ from sqlalchemy.orm import Session
 from src.config.auth_config import AuthConfig
 from src.db.models.user import User
 from src.db.repositories.session_repository import SessionRepository
+from src.db.repositories.totp_repository import TotpRepository
 from src.db.repositories.user_repository import UserRepository
 from src.services.auth.jwt_service import JWTService
 from src.services.auth.lockout_service import LockoutService
 from src.services.auth.password_service import PasswordService
 from src.services.auth.session_service import SessionService
+from src.services.auth.totp_encryption_service import TotpEncryptionService
+from src.services.auth.totp_policy_service import TotpPolicyService
+from src.services.auth.totp_service import TotpChallengeResult, TotpService
 from src.services.exceptions import (
     AccountInactiveError,
     EmailAlreadyExistsError,
@@ -124,6 +128,7 @@ from src.services.exceptions import (
     PasswordPolicyError,
     SessionNotFoundError,
     TokenReuseDetectedError,
+    TotpCodeInvalidError,
     UsernameAlreadyExistsError,
     UserNotFoundError,
 )
@@ -163,6 +168,39 @@ class AuthService:
             db, config, self.password_service, self.user_repo
         )
         self.session_service = SessionService(db, config, self.session_repo)
+        self._totp_service: TotpService | None = None
+        self._totp_policy_service: TotpPolicyService | None = None
+
+    @property
+    def totp_service(self) -> TotpService:
+        """Lazily construct the TOTP 2FA service.
+
+        Deferred because TotpEncryptionService raises eagerly when
+        ``totp_encryption_key`` is unset (US1 design) — AuthService must
+        stay usable for accounts/deployments that never touch 2FA, so this
+        is only built the first time 2FA is actually exercised
+        (login() branching, exchange_2fa_challenge()).
+        """
+        if self._totp_service is None:
+            self._totp_service = TotpService(
+                TotpRepository(self.db),
+                TotpEncryptionService(self.config),
+                self.password_service,
+                self.jwt_service,
+                self.lockout_service,
+            )
+        return self._totp_service
+
+    @property
+    def totp_policy_service(self) -> TotpPolicyService:
+        """Lazily construct the admin 2FA role-policy service.
+
+        Deferred for the same reason as ``totp_service`` — AuthService must
+        stay usable for deployments that never touch 2FA policy.
+        """
+        if self._totp_policy_service is None:
+            self._totp_policy_service = TotpPolicyService(TotpRepository(self.db))
+        return self._totp_policy_service
 
     def register(
         self,
@@ -330,26 +368,138 @@ class AuthService:
         # Verify password, handling failed-attempt tracking and lockout
         self.lockout_service.verify_login_password(user, password)
 
-        # Check session limits
-        self.session_service.enforce_login_session_limit(user)
+        # Reset failed login attempts. For 2FA-enabled accounts the counter is
+        # shared with second-factor failures (FR-010), so a correct password
+        # must not clear it: it is reset only after the 2FA exchange succeeds.
+        # Otherwise an attacker holding the password could re-login between
+        # every wrong code and never reach the lockout threshold.
+        if not user.totp_enabled:
+            self.user_repo.reset_failed_login(user.id)
+            # Update last login timestamp. For 2FA accounts this is deferred
+            # until the second factor succeeds, so a password-only attacker
+            # cannot make the victim's "last login" move.
+            self.user_repo.update_last_login(user.id)
 
-        # Reset failed login attempts
-        self.user_repo.reset_failed_login(user.id)
-
-        # Update last login timestamp
-        self.user_repo.update_last_login(user.id)
-
-        # Commit before generating tokens
+        # Commit before generating tokens/challenge
         self.db.commit()
         self.db.refresh(user)
 
+        # 2FA-enabled accounts get a short-lived challenge instead of tokens;
+        # no session is created until the challenge is exchanged (FR-005).
+        if user.totp_enabled:
+            challenge = self.totp_service.issue_login_challenge(
+                user, remember_me=remember_me
+            )
+            self.db.commit()
+            return self._challenge_response(challenge)
+
+        # Check session limits
+        self.session_service.enforce_login_session_limit(user)
+
         # Generate tokens and create session
-        return self._generate_tokens_and_session(
+        result = self._generate_tokens_and_session(
             user,
             ip_address,
             user_agent,
             remember_me=remember_me,
         )
+
+        # Admin-enforced 2FA policy (FR-014/FR-015, US4): a full session is
+        # still issued, but the client must route the user into mandatory
+        # enrollment before granting access to other functionality.
+        if self.totp_policy_service.is_required_for(user.role or "viewer"):
+            result["enrollment_required"] = True
+
+        return result
+
+    def exchange_2fa_challenge(
+        self,
+        challenge_token: str,
+        code: str,
+        ip_address: str,
+        user_agent: str,
+    ) -> dict[str, Any]:
+        """Exchange a 2FA login challenge for full authentication tokens.
+
+        Args:
+            challenge_token: The challenge JWT issued by login()
+            code: A 6-digit TOTP code or an ``xxxx-xxxx`` recovery code
+            ip_address: Client IP address for session tracking
+            user_agent: Client user agent string for session tracking
+
+        Returns:
+            Dictionary with the same shape as login()'s full-session response
+
+        Raises:
+            TotpChallengeExpiredError: Challenge is malformed, unknown,
+                expired, or already consumed (410)
+            TotpCodeInvalidError: The code is wrong (401); counts toward the
+                shared lockout counter (FR-010)
+            AccountLockedError: If this failure triggers an account lockout,
+                or the account is already locked
+            AccountInactiveError: If the account is deactivated
+
+        Security:
+            - Wrong codes increment the same failed-attempt counter as
+              password failures and can trigger account lockout (FR-010)
+            - The challenge is consumed atomically on success (single-use)
+        """
+        try:
+            verification = self.totp_service.exchange_challenge(challenge_token, code)
+        except TotpCodeInvalidError as e:
+            # The challenge token was already signature-verified inside
+            # exchange_challenge(); take the user id from the exception
+            # context rather than re-decoding the token unverified.
+            user_id = e.context.get("user_id")
+            failing_user = self.user_repo.get_by_id(user_id) if user_id else None
+            if failing_user is not None:
+                self.lockout_service.enforce_account_lockout(failing_user)
+                self.lockout_service.record_2fa_challenge_failure(failing_user)
+            raise
+
+        user = verification.user
+        self.lockout_service.enforce_account_lockout(user)
+
+        if not user.is_active:
+            raise AccountInactiveError(
+                f"Account is not active: {user.id}",
+                context={"user_id": user.id},
+            )
+
+        self.session_service.enforce_login_session_limit(user)
+
+        # Both factors verified: clear the shared failed-attempt counter
+        # (deferred from login() for 2FA-enabled accounts).
+        self.user_repo.reset_failed_login(user.id)
+        self.user_repo.update_last_login(user.id)
+
+        self.db.commit()
+        self.db.refresh(user)
+
+        result = self._generate_tokens_and_session(
+            user,
+            ip_address,
+            user_agent,
+            remember_me=verification.remember_me,
+        )
+        result["used_recovery_code"] = verification.used_recovery_code
+        result["remember_me"] = verification.remember_me
+        return result
+
+    def _challenge_response(self, challenge: TotpChallengeResult) -> dict[str, Any]:
+        """Build the login() response shape for a 2FA challenge issuance.
+
+        Args:
+            challenge: The issued TotpChallengeResult
+
+        Returns:
+            Dictionary carrying the challenge token/TTL, distinguishable from
+            a full-session response by the presence of "challenge_token"
+        """
+        return {
+            "challenge_token": challenge.challenge_token,
+            "expires_in": challenge.expires_in,
+        }
 
     def refresh_tokens(
         self,

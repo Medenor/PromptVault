@@ -27,7 +27,7 @@ Security Features:
 
 from datetime import UTC, datetime
 
-from fastapi import Cookie, Depends, Header, HTTPException, status
+from fastapi import Cookie, Depends, Header, HTTPException, Request, status
 from jwt.exceptions import (
     ExpiredSignatureError,
     InvalidSignatureError,
@@ -37,9 +37,28 @@ from sqlalchemy.orm import Session
 
 from src.config.auth_config import AuthConfig
 from src.db.models.user import User
+from src.db.repositories.totp_repository import TotpRepository
 from src.db.repositories.user_repository import UserRepository
 from src.db.session import get_db
 from src.services.auth.jwt_service import JWTService
+from src.services.auth.totp_policy_service import TotpPolicyService
+
+# Paths a user who is required to enroll in 2FA (by admin policy) but hasn't
+# yet enrolled must still be able to reach, so the frontend can route them
+# into the mandatory-enrollment interstitial and let them complete it.
+TOTP_ENROLLMENT_REQUIRED_HEADER = "X-TOTP-Enrollment-Required"
+
+_TOTP_ENROLLMENT_EXEMPT_PATHS = frozenset(
+    {
+        "/api/auth/me",
+        "/api/auth/logout",
+        "/api/auth/2fa/enroll",
+        "/api/auth/2fa/verify",
+        "/api/admin/2fa/policy",
+        "/auth/profile",
+        "/profile",
+    }
+)
 
 # ============================================================================
 # Configuration Dependencies
@@ -333,21 +352,117 @@ def get_current_user(
     return user
 
 
-def get_current_active_user(user: User = Depends(get_current_user)) -> User:
+def _is_enrollment_exempt_path(request: Request) -> bool:
+    """Whether the request targets a path reachable before 2FA enrollment.
+
+    Normalises the path first so a trailing slash or a deployment under a
+    ``root_path`` prefix cannot lock a required-role user out of enrollment.
+    """
+    path = request.url.path
+    root_path = request.scope.get("root_path") or ""
+    if root_path and path.startswith(root_path):
+        path = path[len(root_path) :]
+    path = path.rstrip("/") or "/"
+    return path in _TOTP_ENROLLMENT_EXEMPT_PATHS
+
+
+def enforce_totp_enrollment_policy(
+    user: User, request: Request, session: Session
+) -> None:
+    """Raise 403 if the user's role requires 2FA and they have not enrolled.
+
+    Called by every authenticated dependency, strict and bypass variants
+    alike, so the admin-mandated policy cannot be skipped by using a
+    different dependency. Paths in ``_TOTP_ENROLLMENT_EXEMPT_PATHS`` stay
+    reachable so the user can finish enrolling.
+
+    Raises:
+        HTTPException: 403 when enrollment is required by policy but missing.
+    """
+    if user.totp_enabled or _is_enrollment_exempt_path(request):
+        return
+
+    # Several dependencies can run for one request (bypass variants wrap the
+    # strict ones), so the policy lookup is memoised on the request.
+    role = user.role or "viewer"
+    cache: dict[str, bool] | None = getattr(request.state, "totp_policy_cache", None)
+    if cache is None:
+        cache = {}
+        request.state.totp_policy_cache = cache
+    if role not in cache:
+        cache[role] = TotpPolicyService(TotpRepository(session)).is_required_for(role)
+    if cache[role]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Two-factor authentication enrollment is required for your role "
+            "before you can access this resource.",
+            # Machine-readable marker so the frontend can send the user to the
+            # enrollment screen instead of showing a generic 403.
+            headers={TOTP_ENROLLMENT_REQUIRED_HEADER: "true"},
+        )
+
+
+def enforce_account_not_locked(user: User) -> None:
+    """Raise 401 if the user's account is currently locked out.
+
+    Called by every authenticated dependency that resolves a user from an
+    existing token, strict and bypass variants alike. Without this, a session
+    token issued before a lockout (for example after repeated failed password
+    or 2FA attempts) would keep working until it expired, because lockout is
+    otherwise enforced only at login.
+
+    An expired lock is not cleared here (that is the auth service's job) and
+    does not block access.
+
+    Raises:
+        HTTPException: 401 when ``locked_until`` is in the future.
+    """
+    if not user.locked_until:
+        return
+
+    locked_until = user.locked_until
+    if locked_until.tzinfo is None:
+        # SQLite returns naive datetimes for timezone-aware columns.
+        locked_until = locked_until.replace(tzinfo=UTC)
+
+    now = datetime.now(UTC)
+    if now < locked_until:
+        minutes = int((locked_until - now).total_seconds() / 60)
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Account is temporarily locked due to multiple failed login attempts. Try again in {minutes} minutes.",
+            headers={
+                "WWW-Authenticate": 'Bearer error="invalid_token", error_description="Account locked"'
+            },
+        )
+
+
+def get_current_active_user(
+    request: Request,
+    user: User = Depends(get_current_user),
+    session: Session = Depends(get_db),
+) -> User:
     """Get current active user with account status validation.
 
     This dependency extends get_current_user by adding validation for:
     - Account active status (is_active = True)
     - Account lockout status (locked_until has expired or is None)
+    - Admin-enforced 2FA enrollment (if the user's role requires 2FA and
+      they haven't enrolled, only a small set of self-service paths are
+      reachable — see _TOTP_ENROLLMENT_EXEMPT_PATHS)
 
     Args:
+        request: Current request (used to check the enrollment-exempt path
+            allowlist)
         user: Authenticated user (injected)
+        session: Database session (injected)
 
     Returns:
         User: Active user model instance
 
     Raises:
-        HTTPException: 401 if account is inactive or locked
+        HTTPException: 401 if account is inactive or locked, 403 if 2FA
+            enrollment is required by policy but not yet completed
 
     Example:
         >>> @router.post("/prompts")
@@ -361,6 +476,10 @@ def get_current_active_user(user: User = Depends(get_current_user)) -> User:
     Security Notes:
         - Enforces account suspension (is_active = False)
         - Enforces account lockout (locked_until)
+        - Enforces admin-mandated 2FA enrollment server-side (not just via
+          a client-visible response flag) — closes the bypass where a
+          non-enrolled user in a required role could otherwise use a full
+          session token on any endpoint
         - Provides clear error messages for each failure type
         - This is the recommended dependency for most protected routes
     """
@@ -375,26 +494,15 @@ def get_current_active_user(user: User = Depends(get_current_user)) -> User:
         )
 
     # Check if account is locked
-    if user.locked_until:
-        now = datetime.now(UTC)
-        if now < user.locked_until:
-            # Account is still locked
-            remaining = (user.locked_until - now).total_seconds()
-            minutes = int(remaining / 60)
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=f"Account is temporarily locked due to multiple failed login attempts. Try again in {minutes} minutes.",
-                headers={
-                    "WWW-Authenticate": 'Bearer error="invalid_token", error_description="Account locked"'
-                },
-            )
-        # Lock has expired, but we don't clear it here (that's the auth service's job)
-        # Still allow access since the lock period has passed
+    enforce_account_not_locked(user)
+
+    enforce_totp_enrollment_policy(user, request, session)
 
     return user
 
 
 def get_optional_user(
+    request: Request,
     authorization: str | None = Header(None, description="Optional Bearer token"),
     jwt_service: JWTService = Depends(get_jwt_service),
     session: Session = Depends(get_db),
@@ -463,6 +571,8 @@ def get_optional_user(
         if not user.is_active:
             return None  # Treat inactive users as unauthenticated
 
+        enforce_account_not_locked(user)
+        enforce_totp_enrollment_policy(user, request, session)
         return user
 
     except HTTPException:

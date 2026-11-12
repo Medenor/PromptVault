@@ -30,32 +30,26 @@ from src.db.models.user import User
 from src.db.repositories.user_repository import UserRepository
 from src.db.session import get_db
 from src.services.auth.jwt_service import JWTService
-from src.web.dependencies.token import _extract_bearer_or_cookie_token, get_jwt_service
+from src.web.dependencies.token import (
+    _extract_bearer_or_cookie_token,
+    enforce_account_not_locked,
+    enforce_totp_enrollment_policy,
+    get_jwt_service,
+)
 
 
-async def get_current_user_or_none(
-    authorization: str | None = Header(None, description="Optional Bearer token"),
-    access_token_cookie: str | None = Cookie(None, alias="access_token"),
-    jwt_service: JWTService = Depends(get_jwt_service),
-    session: Session = Depends(get_db),
+def _active_user_from_token(
+    authorization: str | None,
+    access_token_cookie: str | None,
+    jwt_service: JWTService,
+    session: Session,
 ) -> User | None:
-    """Get the current active user, or None when auth is disabled/unauthenticated.
+    """Return the active user for a valid token, or None for any failure.
 
-    This is the bypass-friendly variant of :func:`get_current_active_user` used
-    on data endpoints that must remain accessible when ``AUTH_ENABLED=false``.
-
-    Behavior:
-        - ``AUTH_ENABLED=false``: returns ``None`` immediately (anonymous mode).
-        - ``AUTH_ENABLED=true`` with no token: returns ``None``.
-        - ``AUTH_ENABLED=true`` with a valid token: returns the active user.
-        - Invalid/expired tokens: returns ``None`` (never raises 401).
-
-    Returns:
-        Optional[User]: The authenticated user, or None.
+    Swallows every error on purpose: bypass dependencies never raise 401 for
+    bad tokens. Policy checks that must raise (e.g. 2FA enrollment) happen in
+    the caller, outside this function.
     """
-    if not auth_settings.auth_enabled:
-        return None
-
     if not authorization and not access_token_cookie:
         return None
 
@@ -84,6 +78,51 @@ async def get_current_user_or_none(
         return user
     except Exception:
         return None
+
+
+async def get_current_user_or_none(
+    request: Request,
+    authorization: str | None = Header(None, description="Optional Bearer token"),
+    access_token_cookie: str | None = Cookie(None, alias="access_token"),
+    jwt_service: JWTService = Depends(get_jwt_service),
+    session: Session = Depends(get_db),
+) -> User | None:
+    """Get the current active user, or None when auth is disabled/unauthenticated.
+
+    This is the bypass-friendly variant of :func:`get_current_active_user` used
+    on data endpoints that must remain accessible when ``AUTH_ENABLED=false``.
+
+    Behavior:
+        - ``AUTH_ENABLED=false``: returns ``None`` immediately (anonymous mode).
+        - ``AUTH_ENABLED=true`` with no token: returns ``None``.
+        - ``AUTH_ENABLED=true`` with a valid token: returns the active user.
+        - Invalid/expired tokens: returns ``None`` (never raises 401).
+        - Valid token, but the account is currently locked out: raises 401
+          (same rule as :func:`get_current_active_user`).
+        - Valid token, but the user's role requires 2FA and they have not
+          enrolled: raises 403 (same rule as :func:`get_current_active_user`).
+
+    Returns:
+        Optional[User]: The authenticated user, or None.
+
+    Raises:
+        HTTPException: 401 when the account is locked out, 403 when 2FA
+            enrollment is required by policy.
+    """
+    if not auth_settings.auth_enabled:
+        return None
+
+    user = _active_user_from_token(
+        authorization, access_token_cookie, jwt_service, session
+    )
+    if user is None:
+        return None
+
+    # Outside the swallowing helper on purpose: these 401/403 responses must
+    # reach the client rather than silently degrading to anonymous access.
+    enforce_account_not_locked(user)
+    enforce_totp_enrollment_policy(user, request, session)
+    return user
 
 
 async def get_current_user_or_default(
