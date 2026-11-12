@@ -36,6 +36,7 @@ Begriffe: Eine URL ist die Adresse für die Verbindung zu einem Dienst; SQL ist 
 | `JWT_PRIVATE_KEY_PATH` / `JWT_PUBLIC_KEY_PATH` | — | Pfade zum ES256-Schlüsselpaar zum Signieren und Verifizieren von JSON Web Tokens (JWTs). Erzeugen Sie es mit den Befehlen unter [Installation](../installation/index.md). |
 | `JWT_ACCESS_TOKEN_EXPIRE_SECONDS` | `900` (15 Min.) | Lebensdauer des Zugriffstokens. |
 | `JWT_REFRESH_TOKEN_EXPIRE_SECONDS` | `604800` (7 Tage) | Lebensdauer des Refresh-Tokens. |
+| `TOTP_ENCRYPTION_KEY` | — | Serverseitiges Geheimnis, das TOTP-Geheimnisse der Zwei-Faktor-Authentifizierung im Ruhezustand verschlüsselt. Erforderlich, sobald ein Nutzer 2FA aktiviert. Erzeugen Sie ihn mit `python3 -c "import secrets; print(secrets.token_urlsafe(32))"`. Ändern Sie ihn nie ohne Migrationsplan: Eine Änderung macht bestehende 2FA-Einrichtungen ungültig. |
 | `MAX_LOGIN_ATTEMPTS` | `5` | Fehlgeschlagene Versuche vor Kontosperrung. |
 | `ACCOUNT_LOCKOUT_DURATION_SECONDS` | `900` | Dauer der Sperrung. |
 | `MAX_SESSIONS_PER_USER` | `5` | Obergrenze gleichzeitiger Sitzungen (`0` = unbegrenzt). |

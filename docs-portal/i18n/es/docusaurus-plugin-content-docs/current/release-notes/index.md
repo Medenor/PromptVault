@@ -7,8 +7,9 @@ sidebar_position: 1
 
 Aspectos destacados de las versiones recientes de PromptVault. Para el historial completo y sin resumir, consulte `docs/CHANGELOG.md` en el repositorio.
 
-## Unreleased
+## 1.13.0
 
+- **Autenticación de dos factores (contraseña de un solo uso basada en tiempo, TOTP), opcional**: los usuarios pueden activar una app de autenticación desde su perfil y recibir códigos de recuperación de un solo uso. Los administradores pueden exigir 2FA por rol.
 - **Enlace al portal de documentación**: el menú de la aplicación ahora enlaza al portal de documentación. La URL de despliegue se configura mediante `VITE_DOCS_PORTAL_URL`; el desarrollo local utiliza `http://localhost:7876`.
 - **Búsqueda de texto completo con clasificación por relevancia**: la búsqueda ahora se ejecuta contra un índice de texto completo real en lugar de un simple escaneo de subcadenas, con resultados clasificados por relevancia y fragmentos de coincidencia resaltados.
 - **Versión de la aplicación mostrada en el pie de página**.

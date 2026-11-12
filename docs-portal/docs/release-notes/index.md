@@ -7,8 +7,9 @@ sidebar_position: 1
 
 Highlights from recent PromptVault releases. For the complete, unabridged history, see `docs/CHANGELOG.md` in the repository.
 
-## Unreleased
+## 1.13.0
 
+- **Optional two-factor authentication (time-based one-time password, TOTP)**: users can enroll an authenticator app from their profile and get single-use recovery codes. Admins can require 2FA per role.
 - **Documentation portal link**: the application menu now links to the documentation portal. The deployment URL is configured with `VITE_DOCS_PORTAL_URL`; local development uses `http://localhost:7876`.
 - **Full-text search with relevance ranking**: search now runs against a real full-text index instead of a plain substring scan, with results ranked by relevance and highlighted match snippets.
 - **App version shown in the footer**.

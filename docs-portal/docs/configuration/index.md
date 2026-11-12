@@ -36,6 +36,7 @@ Terms used below: a URL is an address used to connect to a service; SQL is the d
 | `JWT_PRIVATE_KEY_PATH` / `JWT_PUBLIC_KEY_PATH` | — | Paths to the ES256 key pair used to sign and verify JSON Web Tokens (JWTs). Generate it with the commands in [Installation](../installation/index.md). |
 | `JWT_ACCESS_TOKEN_EXPIRE_SECONDS` | `900` (15 min) | Access token lifetime. |
 | `JWT_REFRESH_TOKEN_EXPIRE_SECONDS` | `604800` (7 days) | Refresh token lifetime. |
+| `TOTP_ENCRYPTION_KEY` | — | Server-held secret that encrypts two-factor (TOTP) secrets at rest. Required once any user enables 2FA. Generate it with `python3 -c "import secrets; print(secrets.token_urlsafe(32))"`. Never rotate it without a migration plan: rotating it invalidates existing 2FA enrollments. |
 | `MAX_LOGIN_ATTEMPTS` | `5` | Failed attempts before account lockout. |
 | `ACCOUNT_LOCKOUT_DURATION_SECONDS` | `900` | Lockout duration. |
 | `MAX_SESSIONS_PER_USER` | `5` | Concurrent session cap (`0` = unlimited). |

@@ -36,6 +36,7 @@ Términos utilizados: una URL es una dirección para conectarse a un servicio; S
 | `JWT_PRIVATE_KEY_PATH` / `JWT_PUBLIC_KEY_PATH` | — | Rutas al par de claves ES256 usado para firmar y verificar JSON Web Tokens (JWT). Genérelo con los comandos de [Instalación](../installation/index.md). |
 | `JWT_ACCESS_TOKEN_EXPIRE_SECONDS` | `900` (15 min) | Duración del token de acceso. |
 | `JWT_REFRESH_TOKEN_EXPIRE_SECONDS` | `604800` (7 días) | Duración del token de actualización. |
+| `TOTP_ENCRYPTION_KEY` | — | Secreto del servidor que cifra en reposo los secretos de autenticación de dos factores (TOTP). Obligatorio en cuanto algún usuario activa la 2FA. Genéralo con `python3 -c "import secrets; print(secrets.token_urlsafe(32))"`. Nunca lo rotes sin un plan de migración: al cambiarlo, las configuraciones de 2FA existentes dejan de funcionar. |
 | `MAX_LOGIN_ATTEMPTS` | `5` | Intentos fallidos antes del bloqueo de la cuenta. |
 | `ACCOUNT_LOCKOUT_DURATION_SECONDS` | `900` | Duración del bloqueo. |
 | `MAX_SESSIONS_PER_USER` | `5` | Límite de sesiones simultáneas (`0` = ilimitado). |
