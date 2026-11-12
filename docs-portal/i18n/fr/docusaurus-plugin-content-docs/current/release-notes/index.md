@@ -7,8 +7,9 @@ sidebar_position: 1
 
 Points forts des versions récentes de PromptVault. Pour l'historique complet et intégral, consultez `docs/CHANGELOG.md` dans le dépôt.
 
-## Non publié
+## 1.13.0
 
+- **Authentification à deux facteurs (mot de passe à usage unique temporel, TOTP), facultative** : les utilisateurs peuvent activer une application d'authentification depuis leur profil et recevoir des codes de récupération à usage unique. Les administrateurs peuvent imposer le 2FA par rôle.
 - **Lien vers le portail documentaire** : le menu de l’application pointe désormais vers le portail documentaire. L’URL de déploiement est configurée avec `VITE_DOCS_PORTAL_URL` ; le développement local utilise `http://localhost:7876`.
 - **Recherche en texte intégral avec classement par pertinence** : la recherche s'appuie désormais sur un véritable index de texte intégral plutôt que sur un simple balayage de sous-chaîne, avec des résultats classés par pertinence et des extraits de correspondance mis en évidence.
 - **Version de l'application affichée dans le pied de page**.
