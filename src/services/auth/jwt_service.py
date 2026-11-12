@@ -270,6 +270,7 @@ class JWTService:
             "aud": self.config.jwt_audience,  # Audience
             "jti": self._generate_jti(),  # JWT ID for tracking
             # Custom claims
+            "type": "access",  # Distinguish from refresh and 2FA challenge tokens
             "username": username,
             "email": email,
             "role": role,
@@ -364,7 +365,11 @@ class JWTService:
         )
 
     def generate_2fa_challenge_token(
-        self, user_id: str, challenge_id: str, expires_in_seconds: int = 120
+        self,
+        user_id: str,
+        challenge_id: str,
+        expires_in_seconds: int = 120,
+        remember_me: bool = False,
     ) -> str:
         """Generate a short-lived 2FA login-challenge token.
 
@@ -378,13 +383,17 @@ class JWTService:
             user_id: Unique user identifier
             challenge_id: UUID matching the TotpLoginChallenge row's id (used as jti)
             expires_in_seconds: Challenge lifetime in seconds (default: 2 minutes)
+            remember_me: Whether the user ticked "remember me" at the password
+                step; carried in the signed token so the long-lived session
+                lifetime survives the second-factor exchange
 
         Returns:
             Signed JWT challenge token string
 
         Security:
             - Short-lived (2 minutes by default)
-            - typ="2fa_challenge" prevents use as an access/refresh token
+            - typ="2fa_challenge" is rejected by validate_access_token() and
+              validate_refresh_token(), so it cannot be used as a bearer token
             - jti tracked server-side for single-use enforcement
         """
         now = datetime.now(UTC)
@@ -398,6 +407,7 @@ class JWTService:
             "aud": self.config.jwt_audience,
             "jti": challenge_id,
             "typ": "2fa_challenge",
+            "remember_me": remember_me,
         }
 
         private_key = self._load_private_key()
@@ -512,9 +522,22 @@ class JWTService:
                 },
             )
 
-            # Additional validation: ensure it's not a refresh token
+            # Additional validation: only genuine access tokens are accepted.
+            # Challenge tokens (typ="2fa_challenge") share the signing key,
+            # issuer and audience, so they must be rejected explicitly or a
+            # password-only login would yield a usable bearer token.
+            if claims.get("typ") == "2fa_challenge":
+                raise InvalidTokenError(
+                    "2FA challenge token cannot be used as access token"
+                )
             if claims.get("type") == "refresh":
                 raise InvalidTokenError("Refresh token cannot be used as access token")
+            # Tokens issued before the "type" claim existed carry none.
+            if claims.get("type") not in (None, "access"):
+                raise InvalidTokenError(
+                    f"Token of type {claims.get('type')!r} cannot be used as "
+                    "access token"
+                )
 
             return claims
 
