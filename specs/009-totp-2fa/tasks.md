@@ -187,6 +187,13 @@ Single-project web app layout per plan.md: `src/` (backend), `src/web/static/ts/
 - [X] T071 Accessibility: focus trap on the login challenge, visible wrong-code error (the `hidden` class outranked the visible-error class), in-flight enrollment guard, focus kept on the admin policy toggle (FR-019) — `auth.ts`, `profile-2fa.ts`, `admin-2fa-policy.ts`, `templates/admin/users.html`
 - [X] T072 Emit a `2fa.policy_updated` audit event from `PUT` of the admin policy — `src/web/routers/admin_totp_policy_router.py`
 - [X] T073 Use boolean literals in the spec 007 `legacy_public` migration test insert so it runs on PostgreSQL — `tests/test_migration_prompt_legacy_public.py`
+- [X] T074 Security review: reject 2FA challenge tokens as access tokens (`type=access` claim, `typ=2fa_challenge` rejected by `validate_access_token`) — `src/services/auth/jwt_service.py`, `tests/test_jwt_service.py`, `tests/contract/test_totp_endpoints.py`
+- [X] T075 Make the single-use guards compare-and-set UPDATEs (challenge consume, TOTP step, recovery code) so concurrent requests cannot both succeed (FR-007/FR-009) — `src/db/repositories/totp_repository.py`, `tests/unit/test_totp_repository_atomicity.py`
+- [X] T076 Count failed `/2fa/disable` and `/2fa/recovery-codes/regenerate` re-authentication toward lockout, returning 423 at the threshold (FR-010) — `totp_service.py`, `auth_totp_router.py`
+- [X] T077 Input handling: reject non-ASCII codes without a 500; match recovery codes case-insensitively and only hash-check recovery-code-shaped input — `totp_service.py`
+- [X] T078 Carry `remember_me` through the signed challenge and apply it at the 2FA exchange; defer `last_login` until the second factor succeeds; purge expired challenges — `jwt_service.py`, `auth_service.py`, `auth_session_router.py`
+- [X] T079 Take the failing user id from the exception context instead of re-decoding the token unverified — `auth_service.py`
+- [X] T080 Enrollment exemption tolerates trailing slashes and `root_path`; the role-policy lookup is memoised per request — `src/web/dependencies/token.py`
 
 ---
 
