@@ -177,6 +177,19 @@ Single-project web app layout per plan.md: `src/` (backend), `src/web/static/ts/
 
 ---
 
+## Phase 8: Post-Verification Fixes
+
+**Purpose**: Defects found during live verification (rate limiting enabled, lockout, browser/a11y, Postgres round-trip). Each fix has a regression test that fails without it.
+
+- [X] T068 Keep the shared lockout counter across the 2FA password step so wrong codes on fresh logins still lock the account (FR-010) — `src/services/auth/auth_service.py`, `tests/contract/test_totp_endpoints.py`
+- [X] T069 Enforce account lockout on bypass/anonymous-capable dependencies (`enforce_account_not_locked`) and mark the enrollment-required 403 with `X-TOTP-Enrollment-Required`, so the frontend redirects to `/auth/profile` instead of stalling — `src/web/dependencies/token.py`, `bypass.py`, `src/web/static/ts/utils/api.ts`
+- [X] T070 Add the `response: Response` parameter to the rate-limited 2FA handlers (slowapi 500 with limiter enabled) and map the concurrent-enroll `IntegrityError` to 409 — `src/web/routers/auth_totp_router.py`
+- [X] T071 Accessibility: focus trap on the login challenge, visible wrong-code error (the `hidden` class outranked the visible-error class), in-flight enrollment guard, focus kept on the admin policy toggle (FR-019) — `auth.ts`, `profile-2fa.ts`, `admin-2fa-policy.ts`, `templates/admin/users.html`
+- [X] T072 Emit a `2fa.policy_updated` audit event from `PUT` of the admin policy — `src/web/routers/admin_totp_policy_router.py`
+- [X] T073 Use boolean literals in the spec 007 `legacy_public` migration test insert so it runs on PostgreSQL — `tests/test_migration_prompt_legacy_public.py`
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
