@@ -46,6 +46,8 @@ from src.services.auth.totp_policy_service import TotpPolicyService
 # Paths a user who is required to enroll in 2FA (by admin policy) but hasn't
 # yet enrolled must still be able to reach, so the frontend can route them
 # into the mandatory-enrollment interstitial and let them complete it.
+TOTP_ENROLLMENT_REQUIRED_HEADER = "X-TOTP-Enrollment-Required"
+
 _TOTP_ENROLLMENT_EXEMPT_PATHS = frozenset(
     {
         "/api/auth/me",
@@ -372,6 +374,44 @@ def enforce_totp_enrollment_policy(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Two-factor authentication enrollment is required for your role "
             "before you can access this resource.",
+            # Machine-readable marker so the frontend can send the user to the
+            # enrollment screen instead of showing a generic 403.
+            headers={TOTP_ENROLLMENT_REQUIRED_HEADER: "true"},
+        )
+
+
+def enforce_account_not_locked(user: User) -> None:
+    """Raise 401 if the user's account is currently locked out.
+
+    Called by every authenticated dependency that resolves a user from an
+    existing token, strict and bypass variants alike. Without this, a session
+    token issued before a lockout (for example after repeated failed password
+    or 2FA attempts) would keep working until it expired, because lockout is
+    otherwise enforced only at login.
+
+    An expired lock is not cleared here (that is the auth service's job) and
+    does not block access.
+
+    Raises:
+        HTTPException: 401 when ``locked_until`` is in the future.
+    """
+    if not user.locked_until:
+        return
+
+    locked_until = user.locked_until
+    if locked_until.tzinfo is None:
+        # SQLite returns naive datetimes for timezone-aware columns.
+        locked_until = locked_until.replace(tzinfo=UTC)
+
+    now = datetime.now(UTC)
+    if now < locked_until:
+        minutes = int((locked_until - now).total_seconds() / 60)
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Account is temporarily locked due to multiple failed login attempts. Try again in {minutes} minutes.",
+            headers={
+                "WWW-Authenticate": 'Bearer error="invalid_token", error_description="Account locked"'
+            },
         )
 
 
@@ -432,21 +472,7 @@ def get_current_active_user(
         )
 
     # Check if account is locked
-    if user.locked_until:
-        now = datetime.now(UTC)
-        if now < user.locked_until:
-            # Account is still locked
-            remaining = (user.locked_until - now).total_seconds()
-            minutes = int(remaining / 60)
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=f"Account is temporarily locked due to multiple failed login attempts. Try again in {minutes} minutes.",
-                headers={
-                    "WWW-Authenticate": 'Bearer error="invalid_token", error_description="Account locked"'
-                },
-            )
-        # Lock has expired, but we don't clear it here (that's the auth service's job)
-        # Still allow access since the lock period has passed
+    enforce_account_not_locked(user)
 
     enforce_totp_enrollment_policy(user, request, session)
 
@@ -523,6 +549,7 @@ def get_optional_user(
         if not user.is_active:
             return None  # Treat inactive users as unauthenticated
 
+        enforce_account_not_locked(user)
         enforce_totp_enrollment_policy(user, request, session)
         return user
 

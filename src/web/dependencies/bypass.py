@@ -32,6 +32,7 @@ from src.db.session import get_db
 from src.services.auth.jwt_service import JWTService
 from src.web.dependencies.token import (
     _extract_bearer_or_cookie_token,
+    enforce_account_not_locked,
     enforce_totp_enrollment_policy,
     get_jwt_service,
 )
@@ -96,6 +97,8 @@ async def get_current_user_or_none(
         - ``AUTH_ENABLED=true`` with no token: returns ``None``.
         - ``AUTH_ENABLED=true`` with a valid token: returns the active user.
         - Invalid/expired tokens: returns ``None`` (never raises 401).
+        - Valid token, but the account is currently locked out: raises 401
+          (same rule as :func:`get_current_active_user`).
         - Valid token, but the user's role requires 2FA and they have not
           enrolled: raises 403 (same rule as :func:`get_current_active_user`).
 
@@ -103,7 +106,8 @@ async def get_current_user_or_none(
         Optional[User]: The authenticated user, or None.
 
     Raises:
-        HTTPException: 403 when 2FA enrollment is required by policy.
+        HTTPException: 401 when the account is locked out, 403 when 2FA
+            enrollment is required by policy.
     """
     if not auth_settings.auth_enabled:
         return None
@@ -114,7 +118,9 @@ async def get_current_user_or_none(
     if user is None:
         return None
 
-    # Outside the swallowing helper on purpose: this 403 must reach the client.
+    # Outside the swallowing helper on purpose: these 401/403 responses must
+    # reach the client rather than silently degrading to anonymous access.
+    enforce_account_not_locked(user)
     enforce_totp_enrollment_policy(user, request, session)
     return user
 

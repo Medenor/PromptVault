@@ -86,6 +86,8 @@ class TestBypassDependencyEnforcesEnrollment:
                 session=test_db_session,
             )
         assert exc.value.status_code == 403
+        # The frontend keys off this header to route the user to enrollment.
+        assert exc.value.headers == {"X-TOTP-Enrollment-Required": "true"}
 
     @pytest.mark.asyncio
     async def test_exempt_enrollment_path_is_still_reachable(
