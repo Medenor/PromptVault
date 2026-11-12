@@ -58,7 +58,7 @@ services:
       redis:
         condition: service_healthy
     ports:
-      - '7871:8001'
+      - '8001:8001'
     volumes:
       - ./data:/app/data:rw
       - ./assets:/app/assets:ro

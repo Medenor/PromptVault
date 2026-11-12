@@ -11,7 +11,7 @@ PromptVault is a FastAPI web app for organizing, versioning, and managing AI pro
 Use the `Makefile` at the repo root as the canonical command surface (details: [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md)):
 
 ```bash
-make dev          # backend (:8003) + frontend (:5173) dev servers
+make dev          # backend (:7870) + frontend (:7873) dev servers
 make test         # backend + frontend test suites with coverage gates
 make lint         # formatting, lint, and typecheck across both stacks
 make lint-fix     # auto-fix formatting and lint issues
