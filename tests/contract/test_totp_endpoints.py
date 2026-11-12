@@ -159,6 +159,31 @@ class TestEnrollEndpoint:
 
         assert response.status_code == 409
 
+    def test_enroll_race_returns_409_not_500(
+        self,
+        auth_client: TestClient,
+        auth_headers: dict[str, str],
+        monkeypatch,
+    ):
+        # Two concurrent enroll requests (double-click) race on the single
+        # pending credential per user; the loser's UNIQUE violation must map
+        # to 409 rather than a generic 500.
+        from sqlalchemy.exc import IntegrityError
+
+        from src.services.auth.totp_service import TotpService
+
+        def _raise_integrity_error(self, user):
+            raise IntegrityError(
+                "INSERT INTO totp_credentials", {}, Exception("unique")
+            )
+
+        monkeypatch.setattr(TotpService, "enroll", _raise_integrity_error)
+
+        response = auth_client.post("/api/auth/2fa/enroll", headers=auth_headers)
+
+        assert response.status_code == 409
+        assert "in progress" in response.json()["detail"].lower()
+
     def test_enroll_restart_replaces_pending_secret(
         self, auth_client: TestClient, auth_headers: dict[str, str]
     ):

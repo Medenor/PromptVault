@@ -16,7 +16,8 @@ Later phases (admin policy) extend this router — see
 specs/009-totp-2fa/tasks.md T049 onward.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from src.db.models.user import User
@@ -79,6 +80,7 @@ router = APIRouter(
 @limiter.limit(expensive_limit)
 def enroll_totp(
     request: Request,
+    response: Response,
     current_user: User = Depends(get_current_active_user),
     totp_service: TotpService = Depends(get_totp_service),
     session: Session = Depends(get_db),
@@ -124,6 +126,19 @@ def enroll_totp(
             detail=e.user_message,
         ) from e
 
+    except IntegrityError as e:
+        # Two enroll requests raced (double-click / key repeat) and the other
+        # one created the pending credential first. Do not retry: replacing
+        # its secret would invalidate the QR code the user already received.
+        session.rollback()
+        logger.info(
+            f"2FA enrollment already in progress for user: {current_user.username}"
+        )
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Two-factor enrollment is already in progress.",
+        ) from e
+
     except Exception as e:
         session.rollback()
         logger.error(f"Unexpected error during 2FA enrollment: {str(e)}", exc_info=True)
@@ -166,6 +181,7 @@ def enroll_totp(
 @limiter.limit(expensive_limit)
 def verify_totp(
     request: Request,
+    response: Response,
     request_data: TotpVerifyRequest,
     current_user: User = Depends(get_current_active_user),
     totp_service: TotpService = Depends(get_totp_service),
@@ -255,6 +271,7 @@ def verify_totp(
 @limiter.limit(expensive_limit)
 def disable_totp(
     request: Request,
+    response: Response,
     request_data: TotpDisableRequest,
     current_user: User = Depends(get_current_active_user),
     totp_service: TotpService = Depends(get_totp_service),
@@ -334,6 +351,7 @@ def disable_totp(
 @limiter.limit(expensive_limit)
 def regenerate_totp_recovery_codes(
     request: Request,
+    response: Response,
     request_data: TotpDisableRequest,
     current_user: User = Depends(get_current_active_user),
     totp_service: TotpService = Depends(get_totp_service),
