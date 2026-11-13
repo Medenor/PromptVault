@@ -100,7 +100,7 @@ _Global analysis performed 2026-07-31 against the current `main` codebase. Compl
   - Each split lands as its own small PR with `npm run typecheck && npm run test:unit` and `python3 -m pytest` green; coverage thresholds unchanged.
   - Add a soft CI warning (not gate) for source files > 600 lines to prevent regrowth.
 
-### 7. Two-Factor Authentication (TOTP) (Security)
+### 7. Two-Factor Authentication (TOTP) (Security) - ✅ Done 2026-11-12 on branch `009-totp-2fa`
 
 - **Description**: Optional TOTP 2FA with QR enrollment, single-use recovery codes, and an admin policy to require 2FA per role.
 - **Rationale**: Confirmed absent (zero TOTP references). The auth stack (Argon2id, ES256, rotation, lockout, session cap) makes this the natural next hardening step and a common team-deployment compliance ask. Well-bounded extension of the existing login flow. Carried from ROADMAP 2026 #5; plan refined.
