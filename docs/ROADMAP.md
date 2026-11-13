@@ -1,6 +1,6 @@
 # PromptVault Roadmap
 
-_Rebuilt 2026-11-13 from the current `main` (v1.13.1). Replaces the 2025 and 2026-07 reports, whose completed items are recorded in `docs/CHANGELOG.md` and in git history. Detailed to-do lists for the items below live in `docs/IMPROVEMENT_PLAN_2026-08.md` and in the linked Codeberg issues._
+_Rebuilt 2026-11-13 from the current `main` (v1.13.1). Replaces the 2025 and 2026-07 reports, whose completed items are recorded in `docs/CHANGELOG.md` and in git history. Detailed to-do lists for the items below live in `docs/archives/IMPROVEMENT_PLAN_2026-08.md` and in the linked Codeberg issues._
 
 ## Shipped
 
@@ -11,11 +11,11 @@ _Rebuilt 2026-11-13 from the current `main` (v1.13.1). Replaces the 2025 and 202
 | Authentication and RBAC | Argon2id, ES256 tokens with rotation, lockout, session cap, roles | `docs/AUTHENTICATION_SECURITY.md` |
 | Database | SQLAlchemy and Alembic, SQLite and PostgreSQL | `docs/SPECS/SPEC_DATABASE.md` |
 | Legacy JSON services removed | Retired in PR #63 | `docs/CHANGELOG.md` |
-| XSS hardening | `innerHTML` elimination, lint enforcement | `docs/IMPROVEMENT_PLAN_2026-08.md` item 1 |
+| XSS hardening | `innerHTML` elimination, lint enforcement | `docs/archives/IMPROVEMENT_PLAN_2026-08.md` item 1 |
 | Rate limiting beyond auth | Per-user buckets on prompt, import, export and backup routes | `docs/RATE_LIMITING.md` |
 | Prompt sharing | Read and edit grants, shared-with-me filter | `specs/007-prompt-sharing/` |
 | Full-text search | FTS5 on SQLite, tsvector on PostgreSQL | `specs/008-full-text-search/` |
-| God-file decomposition | Frontend and backend splits | `docs/IMPROVEMENT_PLAN_2026-08.md` item 6 |
+| God-file decomposition | Frontend and backend splits | `docs/archives/IMPROVEMENT_PLAN_2026-08.md` item 6 |
 | Two-factor authentication | TOTP, recovery codes, admin-enforced policy | `specs/009-totp-2fa/` |
 | Documentation portal | Docusaurus, EN/FR/DE/ES, served from Docker | `docs-portal/` |
 | Tag and category management, bulk delete, mobile layout, accessibility pass | Shipped in the 2025 cycle (issues #16, #24, #25, #21) | `docs/CHANGELOG.md` |
@@ -61,6 +61,6 @@ These are not roadmap items, but they block or affect trust in the build.
 
 ## Relationship to other documents
 
-- `docs/IMPROVEMENT_PLAN_2026-08.md` holds the detailed to-do lists and per-item status for the August 2026 plan.
+- `docs/archives/IMPROVEMENT_PLAN_2026-08.md` holds the detailed to-do lists and per-item status for the August 2026 plan.
 - `docs/CHANGELOG.md` records what shipped in each release.
 - This roadmap is the single prioritized view. When an item moves, update this file and the linked issue together.
