@@ -7,6 +7,11 @@ sidebar_position: 1
 
 Points forts des versions récentes de PromptVault. Pour l'historique complet et intégral, consultez `docs/CHANGELOG.md` dans le dépôt.
 
+## 1.13.1
+
+- **Correction** : la reconstruction de l'image Docker sans cache n'échoue plus avec `No module named 'psycopg'` (la dépendance SQLAlchemy est désormais limitée à une version inférieure à 2.1).
+- **Correction** : le lien Documentation du menu de l'application fonctionne désormais dans les déploiements Docker. La pile Docker inclut un service `docs` qui sert le portail sur le port 7876. Après la mise à jour, reconstruisez les deux images : `docker-compose build web docs && docker-compose up -d docs web`.
+
 ## 1.13.0
 
 - **Authentification à deux facteurs (mot de passe à usage unique temporel, TOTP), facultative** : les utilisateurs peuvent activer une application d'authentification depuis leur profil et recevoir des codes de récupération à usage unique. Les administrateurs peuvent imposer le 2FA par rôle.
