@@ -48,9 +48,26 @@ services:
       timeout: 5s
       retries: 5
 
+  # Documentation portal (static Docusaurus site, EN/FR/DE/ES)
+  # The in-app Documentation link points to VITE_DOCS_PORTAL_URL (baked into
+  # the web image at build time). Default: http://localhost:7876
+  docs:
+    build: ./docs-portal
+    container_name: promptvault-docs
+    ports:
+      - '7876:8080'
+    restart: always
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
   # PromptVault Web Application
   web:
-    build: .
+    build:
+      context: .
+      args:
+        VITE_DOCS_PORTAL_URL: ${VITE_DOCS_PORTAL_URL:-http://localhost:7876}
     container_name: promptvault-web
     depends_on:
       db:

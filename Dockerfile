@@ -20,6 +20,10 @@ COPY tsconfig.json vite.config.ts postcss.config.js tailwind.config.ts ./
 COPY src/web/static/ ./src/web/static/
 COPY src/web/templates/ ./src/web/templates/
 
+# Public URL of the documentation portal, baked into the bundle by Vite
+ARG VITE_DOCS_PORTAL_URL
+ENV VITE_DOCS_PORTAL_URL=$VITE_DOCS_PORTAL_URL
+
 # Build frontend (TypeScript -> JavaScript, bundled with Vite)
 RUN npm run build
 
