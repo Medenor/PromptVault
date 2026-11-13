@@ -7,6 +7,11 @@ sidebar_position: 1
 
 Aspectos destacados de las versiones recientes de PromptVault. Para el historial completo y sin resumir, consulte `docs/CHANGELOG.md` en el repositorio.
 
+## 1.13.1
+
+- **Corrección**: reconstruir la imagen de Docker sin caché ya no falla con `No module named 'psycopg'` (la dependencia de SQLAlchemy ahora está limitada a versiones inferiores a 2.1).
+- **Corrección**: el enlace de Documentación del menú de la aplicación ahora funciona en los despliegues con Docker. La pila de Docker incluye un servicio `docs` que sirve el portal en el puerto 7876. Tras actualizar, reconstruya ambas imágenes: `docker-compose build web docs && docker-compose up -d docs web`.
+
 ## 1.13.0
 
 - **Autenticación de dos factores (contraseña de un solo uso basada en tiempo, TOTP), opcional**: los usuarios pueden activar una app de autenticación desde su perfil y recibir códigos de recuperación de un solo uso. Los administradores pueden exigir 2FA por rol.

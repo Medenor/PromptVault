@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.13.1] - 2026-11-13
+
+### 🐛 Fixed
+
+- **Docker rebuild crashed with `No module named 'psycopg'`** (Codeberg #94): `sqlalchemy` was unbounded (`>=2.0.25`), so a cache-less image rebuild installed SQLAlchemy 2.1, where a plain `postgresql://` URL selects the `psycopg` (v3) driver instead of `psycopg2`. Only `psycopg2-binary` is installed, so the web container failed at import. SQLAlchemy is now pinned to `>=2.0.25,<2.1`. Moving to psycopg v3 is left for a dedicated change.
+- **In-app Documentation link unreachable in Docker deployments** (Codeberg #94): the link targeted `http://localhost:7876`, the Docusaurus dev server, which the Docker stack did not run. `docker-compose.yml` now includes a `docs` service (static portal served by non-root nginx on port 7876, built from `docs-portal/Dockerfile`), and `VITE_DOCS_PORTAL_URL` is passed to the `web` image as a build arg (default `http://localhost:7876`). **Upgrade note**: rebuild both images with `docker-compose build web docs && docker-compose up -d docs web`. To serve the portal from another URL, set `VITE_DOCS_PORTAL_URL` in `.env` and rebuild `web`.
+
 ## [1.13.0] - 2026-11-12
 
 ### ✨ Added
