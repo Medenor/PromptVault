@@ -41,7 +41,9 @@ Every 400 and 413 above also writes the audit event `skill.import.rejected` or `
 ## Shared response objects
 
 ```jsonc
-// SkillSummary: embedded in list and search results through item_type
+// SkillSummary: embedded in list and search results through item_type.
+// It deliberately has no `prompt` field: clients fetch SkillDetail from
+// /api/skills/{id} before showing instructions.
 {
   "id": 42, "item_type": "skill", "title": "pdf-tools",
   "skill_identifier": "pdf-tools", "description": "Fill PDF forms…",
@@ -106,8 +108,8 @@ Every 400 and 413 above also writes the audit event `skill.import.rejected` or `
 
 | Endpoint | Change |
 |---|---|
-| `GET /api/prompts`, `GET /api/prompts/search` | New query parameter `item_type` = `all` (default), `prompt` or `skill` (FR-002). Every result gains `item_type`. Skill results also carry `skill_identifier`, `description`, `file_count`, `total_bytes` and `format_warnings`. Full-text matches on the `SKILL.md` text return the usual `match_context` snippet (FR-024). |
-| `GET /api/prompts/{id}` | Includes `item_type`. For a skill it returns the summary fields and tells the client to use `/api/skills/{id}` for the detail view. |
+| `GET /api/prompts`, `GET /api/prompts/search` | New query parameter `item_type` = `all` (default), `prompt` or `skill` (FR-002). Every result gains `item_type`. A prompt result retains its required `prompt` body; a skill result is a `SkillSummary` and deliberately omits `prompt`. Skill results carry `skill_identifier`, `description`, `file_count`, `total_bytes` and `format_warnings`. Full-text matches on the `SKILL.md` text return the usual `match_context` snippet (FR-024). |
+| `GET /api/prompts/{id}` | Includes `item_type`. For a skill it returns `SkillSummary` (without `prompt`); the client uses `/api/skills/{id}` for the detail view. |
 | `PUT`/`PATCH /api/prompts/{id}`, version, branch, revert, `copy-with-version` and sharing endpoints | **409 `ITEM_IS_SKILL`** when the target is a skill (FR-003) |
 | `PUT /api/prompts/{id}/favorite` | Works for skills unchanged |
 | `DELETE /api/prompts/{id}` and `DELETE /api/prompts/bulk` | Work for skills (cascade). Write one `skill.delete` audit event per skill. |

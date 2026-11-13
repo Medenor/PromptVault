@@ -50,7 +50,7 @@ printf -- '---\nname: pdf-tools\ndescription: Fill PDF forms and extract tables.
 echo 'print("hi")' > /tmp/pv-skill/pdf-tools/scripts/fill.py
 head -c 2048 /dev/urandom > /tmp/pv-skill/pdf-tools/references/sample.bin
 (cd /tmp/pv-skill && zip -qr pdf-tools.zip pdf-tools/)
-curl -s -F archive=@/tmp/pv-skill/pdf-tools.zip http://localhost:8003/api/skills/import | python3 -m json.tool
+curl -s -F archive=@/tmp/pv-skill/pdf-tools.zip http://localhost:7870/api/skills/import | python3 -m json.tool
 ```
 
 **Expected**: 201, `title` = `pdf-tools`, `file_count` = 3, `warnings` = `[]`. In the interface, the item appears in the list with a **Skill** badge. The detail view shows the rendered instructions with `${CLAUDE_SKILL_DIR}` left as literal text (no placeholder form), a tree containing `references/` and `scripts/` folders then `SKILL.md`, readable text for `fill.py`, and size plus download for `sample.bin`.
@@ -64,7 +64,7 @@ Zip a `SKILL.md` that has no frontmatter, placed at the archive root.
 ## Scenario 3 — Round trip and validator (Story 3, SC-002, SC-008)
 
 ```bash
-curl -s -o /tmp/pv-skill/out.zip http://localhost:8003/api/skills/<id>/download
+curl -s -o /tmp/pv-skill/out.zip http://localhost:7870/api/skills/<id>/download
 unzip -l /tmp/pv-skill/out.zip           # every entry starts with pdf-tools/
 mkdir -p /tmp/pv-skill/out && unzip -qo /tmp/pv-skill/out.zip -d /tmp/pv-skill/out
 diff -r /tmp/pv-skill/pdf-tools /tmp/pv-skill/out/pdf-tools && echo IDENTICAL

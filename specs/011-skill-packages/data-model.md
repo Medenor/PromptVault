@@ -86,7 +86,7 @@ A rejected replacement leaves the skill in its previous `Stored` state, unchange
 
 ## Migration `d4e5f6a7b8c9_add_skill_packages`
 
-- `down_revision = 'c3d4e5f6a7b8'` (008 full-text search, the current head on `main`). If `009-totp-2fa` merges first and adds its own migration, re-point `down_revision` to the new head before merging.
+- `down_revision = 'd80fb5792dda'` (009 TOTP 2FA, the current Alembic head). Re-check `alembic heads` immediately before creating the migration; if a later migration has merged, use that sole head instead.
 - Follows the rules in `docs/agents/python-style.md`:
   - checks for existing tables and columns with `sa.inspect(conn)`;
   - adds the column with `op.add_column('prompts', sa.Column('item_type', sa.String(16), nullable=False, server_default='prompt'))`;

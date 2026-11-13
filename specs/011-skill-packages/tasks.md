@@ -14,7 +14,7 @@ description: "Task list for 011-skill-packages"
 **Organization**: Tasks are grouped by user story so each story can be built and tested on its own.
 
 > [!IMPORTANT]
-> **Sequencing**: implementation starts only after `009-totp-2fa` and `010-docs-portal-i18n` are finalized and merged into `main`. Phase 1 (T001–T004) syncs this branch with that `main` before any code is written.
+> **Sequencing**: 009 (TOTP 2FA) and 010 (docs portal i18n) are merged into the baseline. Phase 1 verifies this branch against the current `main` before any code is written.
 
 ## Format: `[ID] [P?] [Story] Description`
 
@@ -26,11 +26,11 @@ description: "Task list for 011-skill-packages"
 
 ## Phase 1: Setup (Resume & Shared Infrastructure)
 
-**Purpose**: Line the branch up with `main` after 009 and 010 merge, and add dependencies and configuration.
+**Purpose**: Line the branch up with the current `main`, then add dependencies and configuration.
 
-- [ ] T001 Rebase branch `011-skill-packages` onto the current `main`, after 009 and 010 are merged, and confirm a clean `make test` baseline before any change
-- [ ] T002 Run `alembic heads` and record the current head revision in `specs/011-skill-packages/data-model.md` (section "Migration"), replacing `c3d4e5f6a7b8` if 009 or 010 added migrations
-- [ ] T003 Search for every query that reads all prompts (`grep -rn "PromptRepository(\|query(Prompt)\|select(Prompt)" src/`) and add any path introduced by 009 or 010 to the guard table in `specs/011-skill-packages/research.md` (Decision 7)
+- [ ] T001 Rebase branch `011-skill-packages` onto the current `main`, and confirm a clean `make test` baseline before any change
+- [ ] T002 Run `alembic heads` and record the current head revision in `specs/011-skill-packages/data-model.md` (section "Migration"). The recorded baseline is `d80fb5792dda` from 009; replace it only if a newer migration has merged.
+- [ ] T003 Search for every query that reads all prompts (`rg -n "PromptRepository\\(|query\\(Prompt\\)|select\\(Prompt\\)" src/`) and add any uncovered path to the guard table in `specs/011-skill-packages/research.md` (Decision 7).
 - [ ] T004 Add `PyYAML`, `markdown-it-py` and `nh3` to `[project].dependencies` in `pyproject.toml` and install them in the dev environment
 - [ ] T005 [P] Create `SkillSettings(BaseSettings)` with the limits from research.md Decision 9 (`SKILL_MAX_UPLOAD_BYTES`, `SKILL_MAX_TOTAL_BYTES`, `SKILL_MAX_FILES`, `SKILL_MAX_DEPTH`, `SKILL_MAX_FILE_BYTES`, `SKILL_MAX_COMPRESSION_RATIO`, `SKILL_TEXT_PREVIEW_BYTES`, `SKILL_MAX_SKILL_MD_BYTES`) and a cached `get_skill_settings()` in `src/config/skill_config.py`
 - [ ] T006 [P] Document the new `SKILL_*` variables with their defaults in `.env.example` and `docs/DEPLOYMENT.md`
@@ -65,7 +65,7 @@ description: "Task list for 011-skill-packages"
 - [ ] T019 Add a guard `_ensure_prompt_item(prompt)` that raises `ItemIsSkillError` (from T018) to `src/services/prompt_data_service_db.py`. Apply it in `update_prompt`, `revert_prompt_to_version` and `copy-with-version` handling. Restrict `clear_all_prompts` and `load_prompts` to `item_type='prompt'`. Make `add_new_prompt` always set `item_type='prompt'`.
 - [ ] T020 [P] Return 409 `ITEM_IS_SKILL` for skill targets in the version, branch and revert endpoints in `src/web/routers/prompts_versions_router.py`
 - [ ] T021 [P] Return 409 `ITEM_IS_SKILL` for skill targets in every endpoint of `src/web/routers/prompts_sharing_router.py`
-- [ ] T022 Add `item_type` to every prompt response model, and the optional skill summary fields (`skill_identifier`, `description`, `file_count`, `total_bytes`, `format_warnings`), in `src/web/models/prompt_responses.py`. Fill them in `_prompt_to_dict` in `src/services/prompt_data_service_db.py`.
+- [ ] T022 Model mixed list responses explicitly in `src/web/models/prompt_responses.py` and `src/web/static/ts/types/api/responses.ts`: a prompt item has required `item_type='prompt'` and `prompt`; a skill item has required `item_type='skill'`, `skill_identifier`, `description`, `file_count`, `total_bytes` and `format_warnings`, and omits `prompt`. Update `_prompt_to_dict` (or split it into prompt/skill serializers) in `src/services/prompt_data_service_db.py`, and all list/search consumers, so a 1 MB `SKILL.md` is never sent or rendered as a card preview.
 - [ ] T023 Add the `item_type` query parameter (`all`, `prompt` or `skill`, default `all`) to the list and search endpoints in `src/web/routers/prompts_search_router.py` and `src/web/routers/prompts_crud_router.py`, passed through to the repository
 - [ ] T024 Make the undo service skip skill rows when capturing and restoring deletions, in `src/services/undo_service.py`
 - [ ] T025 Make bulk export prompts-only, return `skills_excluded: int` in the export response, and add `skill_count` to the stats endpoint, in `src/services/prompt_import_export_service.py` and `src/web/routers/import_export_router.py`
@@ -142,7 +142,7 @@ description: "Task list for 011-skill-packages"
   - on success, open the new skill.
 
   Add an "Import skill" entry point next to the create-prompt action in `src/web/templates/index.html`.
-- [ ] T040 [P] [US1] Add a type badge (Prompt or Skill, with an `aria-label`) to cards in `src/web/static/ts/app/prompt-card.ts`, and hide the placeholder, version and share actions for `item_type === 'skill'` in `src/web/static/ts/app/prompt-crud.ts` and `src/web/static/ts/app/prompt-card.ts`
+- [ ] T040 [P] [US1] Add a type badge (Prompt or Skill, with an `aria-label`) to cards in `src/web/static/ts/app/prompt-card.ts`. For `item_type === 'skill'`, render the escaped `description` rather than a prompt-body preview, and hide copy, placeholder, version and share actions. Extend the card handler type with an explicit skill-open callback; do not route skill clicks, swipes or keyboard activation through prompt editing.
 - [ ] T041 [P] [US1] Add the `skills.import.*`, `skills.badge.*`, `skills.warnings.<code>` and `skills.errors.<code>` keys to `src/web/static/locales/en.json`, `fr.json`, `es.json` and `de.json`
 - [ ] T042 [P] [US1] Write Vitest tests in `src/web/static/ts/skills/__tests__/skill-api.test.ts`, `skill-import.test.ts` and `src/web/static/ts/app/__tests__/prompt-card.skill.test.ts`. They cover: the form upload, the error and warning rendering (all through `textContent`), the badge, and the prompt-only actions being hidden.
 
@@ -171,7 +171,7 @@ description: "Task list for 011-skill-packages"
 - [ ] T047 [US2] Add `GET /{id}`, `GET /{id}/files/content` and `GET /{id}/files/raw` to `src/web/routers/skills_router.py`. The raw endpoint uses a `Response` with the headers from the contract and an RFC 5987 `filename*`.
 - [ ] T048 [P] [US2] Build the file tree in `src/web/static/ts/skills/skill-file-tree.ts`. It builds a nested tree from the flat `files[]` list (folders first, then by `localeCompare`), uses `role="tree"`, `role="treeitem"` and `aria-expanded`, has arrow-key navigation through `utils/keyboard-nav.ts`, and emits `onSelect(path)`.
 - [ ] T049 [P] [US2] Build the file viewer in `src/web/static/ts/skills/skill-file-viewer.ts`. It shows text in a `<pre>` through `textContent` with a truncation notice, and name, size and download link for binary files and truncated files.
-- [ ] T050 [US2] Build the detail view in `src/web/static/ts/skills/skill-detail.ts`. It shows the header (title, description, category, tags, note, file count, readable total size, format warnings), the instructions through `raw()` from `utils/safe-html.ts`, and the tree and viewer in a two-column layout on large screens and stacked on mobile (Tailwind). Opening a skill card in `src/web/static/ts/app/prompt-list.ts` routes here instead of the prompt form.
+- [ ] T050 [US2] Build the detail view in `src/web/static/ts/skills/skill-detail.ts`. It shows the header (title, description, category, tags, note, file count, readable total size, format warnings), the instructions through `raw()` from `utils/safe-html.ts`, and the tree and viewer in a two-column layout on large screens and stacked on mobile (Tailwind). Wire the skill-open callback from `prompt-card.ts` through `src/web/static/ts/app/index.ts` to this view; `prompt-list.ts` only renders cards and is not the interaction owner.
 - [ ] T051 [P] [US2] Add the `skills.detail.*`, `skills.tree.*` and `skills.viewer.*` keys to all four locale files in `src/web/static/locales/`
 - [ ] T052 [P] [US2] Write Vitest tests in `src/web/static/ts/skills/__tests__/skill-file-tree.test.ts`, `skill-file-viewer.test.ts` and `skill-detail.test.ts`. They cover tree order and nesting, keyboard navigation, text and binary rendering, XSS-shaped file text shown as text, and routing from the card.
 
@@ -261,7 +261,7 @@ description: "Task list for 011-skill-packages"
   - **Download**: fetch `https://codeload.github.com/anthropics/skills/zip/<sha>` once into the cache folder `.cache/skill-corpus/<sha>/` (git-ignored), check the archive's sha256 recorded in the same JSON, then zip each `skills/<name>/` folder in memory and import it through `SkillService`.
 - [ ] T074 Bump `CACHE_VERSION` in `src/web/static/ts/sw.ts` (required by `make lint` / `check-sw-cache-version`)
 - [ ] T075 [P] Document the skill tables, the `item_type` discriminator, the guard list and the `/api/skills/*` endpoints in `docs/agents/architecture.md` and `docs/agents/api.md`
-- [ ] T076 [P] Add a user-facing "Skills" page to the docs portal (from 010) in every shipped locale: `docs-portal/docs/` plus the `i18n/<locale>/` folders. It covers import, warnings, limits, export, and that skills are never run.
+- [ ] T076 [P] Add a user-facing `docs-portal/docs/user-guide/skills.md` page plus mirrored FR/DE/ES files at `docs-portal/i18n/<locale>/docusaurus-plugin-content-docs/current/user-guide/skills.md`. Add `user-guide/skills` to the static User Guide list in `docs-portal/sidebars.ts`. Cover import, warnings, limits, export, and that skills are never run; run `cd docs-portal && npm run docs:check-parity && npm run docs:build`.
 - [ ] T077 Run all quickstart scenarios (1–9) from `specs/011-skill-packages/quickstart.md`, including the PostgreSQL leg of T014, T059 and T068 against a local container (never the root `docker-compose.yml`)
 - [ ] T078 Run `make lint` and `make test`, confirm both coverage gates are at or above 85 %, and add the "Constitution Check" section to the PR description (Governance)
 
@@ -271,7 +271,7 @@ description: "Task list for 011-skill-packages"
 
 ```mermaid
 flowchart LR
-  S[Phase 1 Setup<br/>after 009 + 010 merge] --> F[Phase 2 Foundational]
+  S[Phase 1 Setup<br/>current main baseline] --> F[Phase 2 Foundational]
   F --> U1[US1 Import P1]
   U1 --> U2[US2 Browse P1]
   U1 --> U3[US3 Export P2]

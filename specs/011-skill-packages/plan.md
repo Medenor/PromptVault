@@ -162,7 +162,7 @@ tests/
 | Risk | Mitigation |
 |---|---|
 | A code path that reads every row from `prompts` treats a skill as a prompt | Guard table in research.md Decision 7, plus `test_skill_prompt_guards.py`. Before implementing, `grep` for `PromptRepository(` and `session.query(Prompt)` uses and decide on each. |
-| Migration ordering with the unmerged `009-totp-2fa` branch | Re-point `down_revision` to whichever head is current at merge time (data-model.md). |
+| Migration ordering with a newer merged feature | Re-check `alembic heads` immediately before creating the migration and use its sole current head (data-model.md). The 009 TOTP migration is already the current baseline. |
 | Large `BYTEA` values make `pg_dump` and restore slower | Bounded by the limits. Documented in the deployment docs. Revisit storage only if the limits are raised a lot. |
 | The full-text index on SQLite grows with large `SKILL.md` files | `SKILL.md` is usually under 500 lines. Its file size is still capped by `SKILL_MAX_FILE_BYTES`. |
 
