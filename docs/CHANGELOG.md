@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### ⚙️ Changed
 
-- The service worker cache moved to `v6`; a reload may be needed once to pick up new translations.
+- The service worker cache moved to `v7`; a reload may be needed once to pick up new translations.
 
 **Upgrade note**: run the Alembic migration (`alembic upgrade head`) and reinstall dependencies (`PyYAML`, `markdown-it-py`, `nh3`). Existing prompts are unaffected and keep `item_type = 'prompt'`.
 
