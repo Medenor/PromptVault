@@ -7,6 +7,10 @@ sidebar_position: 1
 
 Highlights der letzten PromptVault-Releases. Die vollständige, ungekürzte Historie finden Sie in `docs/CHANGELOG.md` im Repository.
 
+## 1.14.1
+
+- **Fix**: Die Dialoge zum Importieren und Bearbeiten von Skills folgen jetzt dem Dunkelmodus, statt auf weißem Hintergrund zu erscheinen.
+
 ## 1.14.0
 
 - **Skills**: PromptVault speichert jetzt Skills (eine `SKILL.md` mit Skripten, Referenzen und weiteren Dateien) neben Ihren Prompts. Importieren Sie einen Skill aus einer `.zip`-Datei über **Neu ▾ → Skill importieren**, durchsuchen Sie die gerenderten Anweisungen und den Dateibaum, bearbeiten Sie die Details, ersetzen Sie die Dateien, laden Sie ihn als `.zip` herunter oder löschen Sie ihn. Skills sind durchsuchbar, nach Typ filterbar und in Datenbank-Backups enthalten. Versionsverlauf, Freigabe, Platzhalter und Massenimport/-export gelten für Skills noch nicht. Siehe die neue Seite „Skills“ im Benutzerhandbuch.
