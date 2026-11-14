@@ -33,7 +33,7 @@ from src.services.exceptions import (
     ShareGrantError,
 )
 from src.services.logging_service import logging_service
-from src.services.skills.skill_service import audit_skill_deleted
+from src.services.skills.skill_service import prepare_skill_deleted_audit
 
 # Import sanitization utilities from validators
 from src.web.validators import (
@@ -629,8 +629,11 @@ class PromptDataService:
                 prompt_repo = PromptRepository(session)
                 existing = prompt_repo.get_by_id(prompt_id)
                 is_skill = existing is not None and existing.item_type == "skill"
-                if existing is not None:
-                    audit_skill_deleted(existing)
+                emit_skill_audit = (
+                    prepare_skill_deleted_audit(existing)
+                    if existing is not None
+                    else None
+                )
                 success = prompt_repo.delete(prompt_id)
 
                 if success and not is_skill:
@@ -642,7 +645,10 @@ class PromptDataService:
                     # Invalidate cache
                     self._prompts_cache = None
 
-                return success
+            # Skill audit events are written only after the commit (FR-025a).
+            if success and emit_skill_audit is not None:
+                emit_skill_audit()
+            return success
 
         except Exception as exc:
             logger.error(
@@ -667,6 +673,7 @@ class PromptDataService:
         """
         deleted_ids = []
         failed_ids = []
+        pending_audits = []
 
         try:
             with get_db_session() as session:
@@ -675,11 +682,16 @@ class PromptDataService:
                 for prompt_id in prompt_ids:
                     existing = prompt_repo.get_by_id(prompt_id)
                     is_skill = existing is not None and existing.item_type == "skill"
-                    if existing is not None:
-                        audit_skill_deleted(existing)
+                    emit_skill_audit = (
+                        prepare_skill_deleted_audit(existing)
+                        if existing is not None
+                        else None
+                    )
                     success = prompt_repo.delete(prompt_id)
 
                     if success:
+                        if emit_skill_audit is not None:
+                            pending_audits.append(emit_skill_audit)
                         deleted_ids.append(prompt_id)
                         if not is_skill:
                             logging_service.log_audit_event(
@@ -700,6 +712,10 @@ class PromptDataService:
 
                 # Invalidate cache
                 self._prompts_cache = None
+
+            # Skill audit events are written only after the commit (FR-025a).
+            for emit_skill_audit in pending_audits:
+                emit_skill_audit()
 
         except Exception as exc:
             logger.error(

@@ -365,3 +365,10 @@ Recorded while implementing, so the plan and the code stay honest about each oth
 - **SC-008**: the `skills-ref` validator is not installed here, so its test is skipped. `docs/TESTING.md` says how to enable it.
 - **T077**: scenarios 1 to 9 are covered by the automated tests above. The PostgreSQL leg (migration, full-text search and a `pg_dump`/`psql` round trip) was run against a throwaway PostgreSQL 14 cluster on a scratch port, not the root `docker-compose.yml`.
 
+
+---
+
+## Phase 9: Convergence
+
+- [X] T079 Emit the `skill.import` and `skill.replace` audit events in `src/services/skills/skill_service.py` only after the transaction has committed (today `logging_service.log_audit_event(...)` runs inside the `with get_db_session()` block, before the commit on exit), so a failed commit cannot leave a success event for a skill that was never stored. Apply the same ordering to the skill deletions in `audit_skill_deleted` callers (`SkillService.delete_skill`, `DELETE /api/prompts/{id}` and `bulk_delete_prompts` in `src/web/routers/prompts_crud_router.py`), which audit before `session.delete` / `prompt_repo.delete` and the final commit. per FR-025a (partial)
+- [X] T080 [P] Add `tests/unit/test_skill_service.py`, the unit test file named in plan.md for `SkillService`. Cover the rejected-upload audit path, the not-owner 404 and the commit-failure case from T079 (no success audit event when the commit raises), without going through HTTP. per plan: Project Structure / Constitution II (partial)

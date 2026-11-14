@@ -25,7 +25,7 @@ from src.db.repositories.tag_repository import TagRepository
 from src.db.repositories.version_repository import VersionRepository
 from src.db.session import get_db
 from src.services.exceptions import ShareGrantError
-from src.services.skills.skill_service import audit_skill_deleted
+from src.services.skills.skill_service import prepare_skill_deleted_audit
 from src.web.dependencies.auth import (
     get_admin_or_bypass,
     get_current_user_or_default,
@@ -581,14 +581,18 @@ async def bulk_delete_prompts(
     deleted_count = 0
     failed_count = 0
     failed_ids = []
+    pending_audits = []
 
     for prompt_id in body.prompt_ids:
         try:
             # Check if prompt exists
             prompt = prompt_repo.get_by_id(prompt_id)
             if prompt:
-                audit_skill_deleted(prompt, actor=admin.username if admin else None)
+                emit_audit = prepare_skill_deleted_audit(
+                    prompt, actor=admin.username if admin else None
+                )
                 prompt_repo.delete(prompt_id)
+                pending_audits.append(emit_audit)
                 deleted_count += 1
             else:
                 failed_count += 1
@@ -599,6 +603,10 @@ async def bulk_delete_prompts(
             failed_ids.append(prompt_id)
 
     db.commit()
+
+    # Skill audit events are written only after the commit (FR-025a).
+    for emit_audit in pending_audits:
+        emit_audit()
 
     # Log action
     _log_prompt_action(
@@ -677,11 +685,12 @@ async def delete_prompt(
     check_prompt_ownership(existing_prompt, user)
 
     # A skill is audited as skill.delete (FR-025a); prompts are unaffected.
-    audit_skill_deleted(existing_prompt, actor=user.username)
+    emit_audit = prepare_skill_deleted_audit(existing_prompt, actor=user.username)
 
     # Delete prompt (cascade deletes versions, tags associations)
     prompt_repo.delete(prompt_id)
     db.commit()
+    emit_audit()
 
     # Log action
     _log_prompt_action(

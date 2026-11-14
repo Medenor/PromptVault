@@ -13,6 +13,7 @@ file contents go straight into the database inside one transaction.
 """
 
 import re
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import IO, Any
@@ -106,25 +107,39 @@ def split_tags(tags: str | list[str] | None) -> list[str]:
     )
 
 
-def audit_skill_deleted(prompt: Prompt, actor: str | None = None) -> None:
-    """Write the ``skill.delete`` audit event for a skill row being removed.
+def prepare_skill_deleted_audit(
+    prompt: Prompt, actor: str | None = None
+) -> Callable[[], None]:
+    """Capture the ``skill.delete`` audit event for a skill row about to be removed.
 
     Used by every delete path (skill endpoint, ``DELETE /api/prompts/{id}`` and
     bulk delete) so a skill is audited once however it is deleted (FR-025a).
-    Does nothing for a prompt. File contents and names are never logged.
+    The details are read now, while the row still exists, but nothing is logged
+    until the returned callable runs. Call it only after the transaction has
+    committed, so a failed commit never leaves a success event (FR-025a).
+
+    Returns a no-op for a prompt. File contents and names are never logged.
     """
     if prompt.item_type != "skill":
-        return
+        return lambda: None
     package = prompt.skill_package
-    logging_service.log_audit_event(
-        action="skill.delete",
-        resource_type="skill",
-        resource_id=str(prompt.id),
-        actor=actor,
-        skill_identifier=package.skill_identifier if package else None,
-        file_count=package.file_count if package else None,
-        total_bytes=package.total_bytes if package else None,
-    )
+    resource_id = str(prompt.id)
+    identifier = package.skill_identifier if package else None
+    file_count = package.file_count if package else None
+    total_bytes = package.total_bytes if package else None
+
+    def emit() -> None:
+        logging_service.log_audit_event(
+            action="skill.delete",
+            resource_type="skill",
+            resource_id=resource_id,
+            actor=actor,
+            skill_identifier=identifier,
+            file_count=file_count,
+            total_bytes=total_bytes,
+        )
+
+    return emit
 
 
 class SkillService:
@@ -315,16 +330,19 @@ class SkillService:
                 session, prompt, archive, meta, archive_name, replace=False
             )
             detail = self._detail(session, prompt)
-            logging_service.log_audit_event(
-                action="skill.import",
-                resource_type="skill",
-                resource_id=str(prompt.id),
-                actor=user.username if user else None,
-                skill_identifier=meta.identifier,
-                file_count=len(archive.files),
-                total_bytes=detail["total_bytes"],
-            )
-            return detail
+            skill_id = prompt.id
+
+        # Audit only once the transaction has committed (FR-025a).
+        logging_service.log_audit_event(
+            action="skill.import",
+            resource_type="skill",
+            resource_id=str(skill_id),
+            actor=user.username if user else None,
+            skill_identifier=meta.identifier,
+            file_count=len(archive.files),
+            total_bytes=detail["total_bytes"],
+        )
+        return detail
 
     # -------------------------------------------------------------------- read
 
@@ -480,20 +498,27 @@ class SkillService:
             session.flush()
             session.refresh(prompt)
             detail = self._detail(session, prompt)
-            logging_service.log_audit_event(
-                action="skill.replace",
-                resource_type="skill",
-                resource_id=str(prompt.id),
-                actor=user.username if user else None,
-                skill_identifier=meta.identifier,
-                file_count=len(archive.files),
-                total_bytes=detail["total_bytes"],
-            )
-            return detail
+
+        # Audit only once the transaction has committed (FR-025a).
+        logging_service.log_audit_event(
+            action="skill.replace",
+            resource_type="skill",
+            resource_id=str(skill_id),
+            actor=user.username if user else None,
+            skill_identifier=meta.identifier,
+            file_count=len(archive.files),
+            total_bytes=detail["total_bytes"],
+        )
+        return detail
 
     def delete_skill(self, skill_id: int, user: User | None) -> None:
         """Delete a skill and, by cascade, its package and files (FR-023)."""
         with get_db_session() as session:
             prompt = self._load_skill(session, skill_id, user, "delete")
-            audit_skill_deleted(prompt, actor=user.username if user else None)
+            emit_audit = prepare_skill_deleted_audit(
+                prompt, actor=user.username if user else None
+            )
             session.delete(prompt)
+
+        # Audit only once the transaction has committed (FR-025a).
+        emit_audit()

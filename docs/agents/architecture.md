@@ -71,5 +71,5 @@ A skill (a `SKILL.md` with bundled files, imported from a `.zip`) is a second it
   - `POST /api/prompts` always creates `item_type='prompt'`.
   - Bulk import (Replace mode clears prompts only), bulk export and `load_prompts` cover prompts only. Export reports `X-Skills-Excluded`, and `/api/import-export/stats` adds `skill_count`.
   - Selective backup restore skips skill rows (their text must stay in step with their files), and the restore diff leaves them out.
-  - Delete paths write one `skill.delete` audit event per skill (`audit_skill_deleted`). Deleting a skill is permanent (no undo).
+  - Delete paths write one `skill.delete` audit event per skill (`prepare_skill_deleted_audit`, emitted after the commit). Deleting a skill is permanent (no undo).
 - **Auth**: skills are owner-only. Administrators can read, download and delete every skill but cannot edit or replace another user's skill (404). Skills are never shared and never `legacy_public`.
