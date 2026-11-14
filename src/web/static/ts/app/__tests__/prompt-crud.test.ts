@@ -100,7 +100,7 @@ describe('copyPrompt', () => {
     await copyPrompt('1');
 
     expect(apiGetMock).toHaveBeenCalledWith('/api/prompts/1');
-    expect(promptCache['1']?.prompt).toBe('fetched body');
+    expect((promptCache['1'] as PromptResponse | undefined)?.prompt).toBe('fetched body');
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith('fetched body');
   });
 

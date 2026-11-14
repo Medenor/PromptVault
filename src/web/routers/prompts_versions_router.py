@@ -39,7 +39,7 @@ from src.web.dependencies.bypass import (
 )
 from src.web.middleware.rate_limit import limiter, write_limit
 from src.web.models import VersionRevertRequest
-from src.web.routers.prompts_shared import effective_permission
+from src.web.routers.prompts_shared import effective_permission, reject_if_skill
 
 router = APIRouter(
     prefix="/prompts",
@@ -106,6 +106,8 @@ async def get_version_history(
     except ValueError:
         return JSONResponse(status_code=400, content={"error": "Invalid prompt ID"})
 
+    reject_if_skill(PromptRepository(db).get_by_id(prompt_id_int), user, db)
+
     data_service = _data_service()
     prompts = data_service.load_prompts()
     if prompt_id_int not in prompts:
@@ -156,6 +158,8 @@ async def compare_versions(
             status_code=400,
             content={"error": "Both v1 and v2 version IDs are required"},
         )
+
+    reject_if_skill(PromptRepository(db).get_by_id(prompt_id_int), user, db)
 
     data_service = _data_service()
     prompts = data_service.load_prompts()
@@ -246,6 +250,8 @@ async def get_specific_version(
     except ValueError:
         return JSONResponse(status_code=400, content={"error": "Invalid prompt ID"})
 
+    reject_if_skill(PromptRepository(db).get_by_id(prompt_id_int), user, db)
+
     data_service = _data_service()
     prompts = data_service.load_prompts()
     if prompt_id_int not in prompts:
@@ -293,6 +299,8 @@ async def revert_to_version(
             status_code=422,
             content={"error": "Validation failed", "details": e.errors()},
         )
+
+    reject_if_skill(PromptRepository(db).get_by_id(prompt_id_int), user, db)
 
     data_service = _data_service()
     prompts = data_service.load_prompts()

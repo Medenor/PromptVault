@@ -27,8 +27,13 @@ from src.db.repositories import (
 from src.db.repositories.sharing_repository import SharingRepository
 from src.db.repositories.user_repository import UserRepository
 from src.db.session import get_db_session
-from src.services.exceptions import DataPersistenceError, ShareGrantError
+from src.services.exceptions import (
+    DataPersistenceError,
+    ItemIsSkillError,
+    ShareGrantError,
+)
 from src.services.logging_service import logging_service
+from src.services.skills.skill_service import audit_skill_deleted
 
 # Import sanitization utilities from validators
 from src.web.validators import (
@@ -121,6 +126,19 @@ class PromptDataService:
             if not user:
                 user = self._ensure_default_user()
             return user
+
+    @staticmethod
+    def _ensure_prompt_item(prompt: Prompt) -> None:
+        """Refuse prompt-only operations on a skill (FR-003).
+
+        Args:
+            prompt: The row about to be changed.
+
+        Raises:
+            ItemIsSkillError: If the row is a skill.
+        """
+        if prompt.item_type == "skill":
+            raise ItemIsSkillError(context={"prompt_id": prompt.id})
 
     def _normalize_tags(self, tags: Iterable[Any]) -> list[str]:
         """Normalize a collection of tags by trimming whitespace and dropping blanks.
@@ -263,7 +281,8 @@ class PromptDataService:
         try:
             with get_db_session() as session:
                 prompt_repo = PromptRepository(session)
-                prompts = prompt_repo.get_all()
+                # Skills are not prompts: export and the legacy dict API never see them
+                prompts = [p for p in prompt_repo.get_all() if p.item_type != "skill"]
 
                 # Convert to legacy dict format
                 result = {}
@@ -440,6 +459,7 @@ class PromptDataService:
                     note=data.get("note", ""),
                     favorite=data.get("favorite", False),
                     user_id=user.id if user else None,
+                    item_type="prompt",
                 )
 
                 # Add tags
@@ -520,6 +540,7 @@ class PromptDataService:
                 prompt = prompt_repo.get_by_id(prompt_id)
                 if not prompt:
                     return False
+                self._ensure_prompt_item(prompt)
 
                 # Get or create category
                 category_name = data.get("category", "No category")
@@ -584,6 +605,8 @@ class PromptDataService:
 
                 return True
 
+        except ItemIsSkillError:
+            raise
         except Exception as exc:
             logger.error(
                 "Failed to update prompt",
@@ -604,9 +627,13 @@ class PromptDataService:
         try:
             with get_db_session() as session:
                 prompt_repo = PromptRepository(session)
+                existing = prompt_repo.get_by_id(prompt_id)
+                is_skill = existing is not None and existing.item_type == "skill"
+                if existing is not None:
+                    audit_skill_deleted(existing)
                 success = prompt_repo.delete(prompt_id)
 
-                if success:
+                if success and not is_skill:
                     logging_service.log_audit_event(
                         action="prompt.delete",
                         resource_type="prompt",
@@ -646,16 +673,21 @@ class PromptDataService:
                 prompt_repo = PromptRepository(session)
 
                 for prompt_id in prompt_ids:
+                    existing = prompt_repo.get_by_id(prompt_id)
+                    is_skill = existing is not None and existing.item_type == "skill"
+                    if existing is not None:
+                        audit_skill_deleted(existing)
                     success = prompt_repo.delete(prompt_id)
 
                     if success:
                         deleted_ids.append(prompt_id)
-                        logging_service.log_audit_event(
-                            action="prompt.delete",
-                            resource_type="prompt",
-                            resource_id=str(prompt_id),
-                            status="success",
-                        )
+                        if not is_skill:
+                            logging_service.log_audit_event(
+                                action="prompt.delete",
+                                resource_type="prompt",
+                                resource_id=str(prompt_id),
+                                status="success",
+                            )
                     else:
                         failed_ids.append(prompt_id)
                         logging_service.log_audit_event(
@@ -692,7 +724,7 @@ class PromptDataService:
         try:
             with get_db_session() as session:
                 prompt_repo = PromptRepository(session)
-                prompts = prompt_repo.get_all()
+                prompts = [p for p in prompt_repo.get_all() if p.item_type != "skill"]
 
                 for prompt in prompts:
                     prompt_repo.delete(prompt.id)

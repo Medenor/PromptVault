@@ -29,7 +29,11 @@ from src.web.dependencies.bypass import get_current_user_or_default
 from src.web.middleware.rate_limit import limiter, read_limit, write_limit
 from src.web.models.sharing_requests import ShareGrantRequest
 from src.web.models.sharing_responses import ShareListResponse, ShareResponse
-from src.web.routers.prompts_shared import check_prompt_access, effective_permission
+from src.web.routers.prompts_shared import (
+    check_prompt_access,
+    effective_permission,
+    reject_if_skill,
+)
 
 router = APIRouter(
     prefix="/prompts",
@@ -88,6 +92,7 @@ async def grant_share(
             detail=f"Prompt with ID {prompt_id} not found",
         )
 
+    reject_if_skill(prompt, user, db)
     check_prompt_access(prompt, user, "owner", db)
 
     existing_permission = None
@@ -158,6 +163,7 @@ async def list_shares(
             detail=f"Prompt with ID {prompt_id} not found",
         )
 
+    reject_if_skill(prompt, user, db)
     check_prompt_access(prompt, user, "owner", db)
 
     result = _data_service().list_shares(prompt_id)
@@ -196,6 +202,7 @@ async def revoke_share(
             detail=f"Prompt with ID {prompt_id} not found",
         )
 
+    reject_if_skill(prompt, user, db)
     check_prompt_access(prompt, user, "owner", db)
 
     removed = _data_service().revoke_share(prompt_id, user_id, acting_user=user)

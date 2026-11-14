@@ -89,9 +89,12 @@ The only risk of using one table is that existing code treats every row as a pro
 | `clear_all_prompts` (bulk import, Replace mode) | Deletes every row | Deletes only `item_type = 'prompt'` rows (FR-024a) |
 | `load_prompts` and bulk export | Every row | Filtered to `item_type = 'prompt'` (FR-024a) |
 | `PromptRepository.get_statistics` | Counts every row | Returns counts per type |
-| Undo service (`undo_operations`) | Snapshots deleted prompts to restore them | Deleting a skill is not undoable in v1. The delete endpoint asks for confirmation (FR-023), and the undo service skips skill rows. |
+| Undo service (`undo_operations`) | Records tag and category operations (rename, merge, delete) with the ids of affected items; it never snapshots a deleted prompt | No change needed (T024 review). Deleting a skill is not undoable in v1 because deleting a prompt is not undoable either. The delete endpoint asks for confirmation (FR-023). Tag and category undo applies to skills like any item, which is correct (FR-021). |
 | Bulk delete `DELETE /api/prompts/bulk` | Deletes rows | Allowed for skills; `skill_files` and `skill_packages` are removed by cascade. Audited per skill (FR-025a). |
 | Placeholder detection (006, frontend) | Scans `prompt` text | Never run for `item_type = 'skill'` (FR-012b; `${CLAUDE_SKILL_DIR}` is not a PromptVault placeholder) |
+| Selective prompt restore (`backup_restore_service`, `restore_prompts` by id) | Overwrites `title`, `prompt`, `note` and `favorite` of any matching row | Skips live rows with `item_type = 'skill'` and backup rows that were skills (the `prompt` text would drift from `skill_files`, or a bare prompt would be created from a deleted skill). Added by T003. |
+| Backup diff (`backup_diff_service`) | Compares `title`/`prompt` of every row; the extractor reads a fixed column list | The extractor also reads `item_type` (`'prompt'` for backups taken before this feature) and the diff leaves skills out on both sides, so it never offers a skill for prompt-style restore. Added by T003. |
+| Tag co-occurrence stats, tag/category counts and bulk tag/category moves | Operate on every `prompts` row | No change: tags and categories apply to skills (FR-021). None of them create versions. Reviewed by T003. |
 
 ## Decision 8 — Restoring old backups (FR-027)
 
@@ -113,8 +116,8 @@ The only risk of using one table is that existing code treats every row as a pro
 | `SKILL_MAX_SKILL_MD_BYTES` | 1 MB (1_048_576) |
 
 - **Enforcing the upload limit (fixes analysis finding U1)**: FastAPI's `UploadFile` is a `SpooledTemporaryFile` that moves to a temporary file on disk once it passes 1 MB. Multipart parsing happens before the route handler runs, so checking the size inside the handler is too late. Three layers make the limit hold:
-  1. **Reject by `Content-Length`**: a route dependency `enforce_skill_upload_size` reads the `Content-Length` header and returns 413 `LIMIT_UPLOAD_SIZE` before the body is read, when the header is present and exceeds `SKILL_MAX_UPLOAD_BYTES` plus 64 KB for multipart overhead.
-  2. **Count the streamed body**: a small ASGI middleware, `RequestBodyLimitMiddleware`, is applied only to `POST /api/skills/import` and `PUT /api/skills/{id}/archive`. It counts the bytes received and stops with 413 once the same limit is passed. This covers chunked uploads with no `Content-Length`.
+  1. **Reject by `Content-Length`**: `RequestBodyLimitMiddleware` reads the `Content-Length` header and returns 413 `LIMIT_UPLOAD_SIZE` before the body is read, when the header is present and exceeds `SKILL_MAX_UPLOAD_BYTES` plus 64 KB for multipart overhead. The route dependency `enforce_skill_upload_size` repeats the same check. *Implementation finding (T036)*: FastAPI parses a form body before it solves route dependencies, so the dependency alone cannot stop a large body from being received. The middleware is the layer that does; the dependency guarantees the handler and `SkillService` are never reached even if the middleware is not installed.
+  2. **Count the streamed body**: the same middleware, applied only to `POST /api/skills/import` and `PUT /api/skills/{id}/archive`, counts the bytes received and answers 413 itself once the limit is passed, then reports a disconnect to the app and drops anything the app tries to send. (Raising from `receive` would not work: FastAPI turns any error while reading the body into a 400.) This covers chunked uploads with no `Content-Length`, and a `Content-Length` that lies.
   3. **Clean up**: `UploadFile.close()` runs in a `finally` block, so the spooled temporary file is always deleted.
 - **Scope of the "no disk" rule**: archive *entries* are never extracted to disk. The raw upload may be spooled to the system temporary folder by the framework, with a bounded size, deleted at the end of the request, and never written under `PROMPTVAULT_DATA_DIR`.
 

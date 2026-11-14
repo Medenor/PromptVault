@@ -104,7 +104,10 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
                 "connect-src 'self' https://fonts.gstatic.com;",
                 "connect-src 'self' https://fonts.gstatic.com http://localhost:5173 ws://localhost:5173;",
             )
-        response.headers["Content-Security-Policy"] = csp_header
+        # A route may set a stricter policy of its own (the skill raw-file
+        # download uses ``sandbox``); never overwrite it with the app default.
+        if "Content-Security-Policy" not in response.headers:
+            response.headers["Content-Security-Policy"] = csp_header
 
         # Referrer-Policy
         # Only send referrer when navigating to same site (stricter than default)

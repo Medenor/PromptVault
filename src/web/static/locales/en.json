@@ -28,7 +28,8 @@
     "language": "Language",
     "account": "Account",
     "data": "Data",
-    "perPage": "Per page:"
+    "perPage": "Per page:",
+    "importSkill": "Import skill"
   },
   "actions": {
     "add": "Add",
@@ -318,7 +319,8 @@
     "validationPassed": "All data validated successfully",
     "operationCancelled": "Operation cancelled",
     "clearBtn": "Clear",
-    "settingsCleared": "Export settings cleared"
+    "settingsCleared": "Export settings cleared",
+    "skillsExcluded": "Skills are not included; export them one at a time from each skill"
   },
   "search": {
     "emptyState": "No prompts found. Create your first prompt to get started!",
@@ -336,7 +338,8 @@
       "category": "category: {{category}}",
       "tag": "tag: {{tag}}",
       "favorites": "favorites only",
-      "caseSensitive": "case sensitive"
+      "caseSensitive": "case sensitive",
+      "type": "type: {{type}}"
     }
   },
   "emptyStates": {
@@ -885,5 +888,133 @@
     "no_shares": "This prompt hasn't been shared with anyone yet.",
     "make_private": "Make private",
     "make_private_confirm": "Make this prompt private? Anyone who could view it because it was public will lose access unless you share it with them directly."
+  },
+  "skills": {
+    "badge": {
+      "prompt": "Prompt",
+      "skill": "Skill"
+    },
+    "import": {
+      "action": "Import skill",
+      "title": "Import a skill",
+      "description": "Upload a .zip archive that contains a SKILL.md at its root or in one top-level folder. Nothing in the archive is ever run.",
+      "fileLabel": "Skill archive (.zip)",
+      "categoryLabel": "Category (optional)",
+      "tagsLabel": "Tags (optional, comma-separated)",
+      "submit": "Import",
+      "cancel": "Cancel",
+      "uploading": "Importing…",
+      "selectFile": "Choose a .zip file first.",
+      "onlyZip": "Only .zip archives are accepted.",
+      "success": "Skill imported.",
+      "warningsTitle": "Imported with format warnings",
+      "warningsIntro": "The skill was saved. It does not fully follow the Agent Skills format:",
+      "errorTitle": "The archive was rejected",
+      "offendingEntry": "Entry: {{entry}}"
+    },
+    "warnings": {
+      "frontmatter_missing": "SKILL.md has no frontmatter block.",
+      "frontmatter_malformed": "The frontmatter of SKILL.md is not valid YAML.",
+      "name_missing": "The frontmatter has no name.",
+      "name_invalid": "The name must use lowercase letters, digits and hyphens, and be at most 64 characters.",
+      "name_folder_mismatch": "The name differs from the folder name in the archive.",
+      "description_missing": "The frontmatter has no description.",
+      "description_too_long": "The description is longer than 1,024 characters.",
+      "no_wrapping_folder": "SKILL.md is at the archive root instead of inside a folder.",
+      "skill_md_not_utf8": "SKILL.md is not valid UTF-8 text."
+    },
+    "errors": {
+      "ARCHIVE_INVALID": "This is not a valid zip archive, or it is empty or corrupt.",
+      "ARCHIVE_ENCRYPTED": "Password-protected archives are not supported.",
+      "SKILL_MD_MISSING": "No SKILL.md was found at the archive root or in a single top-level folder.",
+      "ENTRY_PATH_UNSAFE": "The archive contains a path that leaves the skill folder.",
+      "ENTRY_LINK": "The archive contains a symbolic link, which is not allowed.",
+      "ENTRY_NAME_INVALID": "The archive contains a file name that is not valid on common systems.",
+      "ENTRY_DUPLICATE": "The archive contains the same path twice (letter case is ignored).",
+      "LIMIT_DEPTH": "The archive has folders nested deeper than the allowed limit.",
+      "LIMIT_FILE_COUNT": "The archive has more files than the allowed limit.",
+      "LIMIT_FILE_SIZE": "A file in the archive is larger than the allowed limit.",
+      "LIMIT_TOTAL_SIZE": "The archive is larger than the allowed limit once unpacked.",
+      "ARCHIVE_SUSPICIOUS_RATIO": "The archive is compressed in a suspicious way and was refused.",
+      "LIMIT_SKILL_MD_SIZE": "SKILL.md is larger than the allowed limit.",
+      "LIMIT_UPLOAD_SIZE": "The upload is larger than the allowed limit.",
+      "SKILL_NOT_FOUND": "This skill no longer exists, or you do not have access to it.",
+      "FILE_NOT_FOUND": "This file is not part of the skill.",
+      "ITEM_IS_SKILL": "This action is not available for skills.",
+      "ITEM_IS_PROMPT": "This item is a prompt, not a skill.",
+      "unknown": "Something went wrong. Please try again."
+    },
+    "detail": {
+      "close": "Close skill",
+      "loading": "Loading skill…",
+      "loadError": "The skill could not be loaded.",
+      "identifier": "Identifier",
+      "category": "Category",
+      "tags": "Tags",
+      "note": "Note",
+      "noDescription": "No description.",
+      "files": "{{count}} files",
+      "files_one": "{{count}} file",
+      "totalSize": "Total size {{size}}",
+      "instructions": "Instructions (SKILL.md)",
+      "filesHeading": "Files",
+      "warnings": "Format warnings",
+      "managing": "Manage"
+    },
+    "tree": {
+      "label": "Skill files",
+      "folder": "Folder",
+      "file": "File"
+    },
+    "viewer": {
+      "empty": "Select a file to view it.",
+      "loading": "Loading file…",
+      "error": "The file could not be loaded.",
+      "truncated": "Showing the first part of this file only.",
+      "binary": "This is a binary file and cannot be shown as text.",
+      "size": "Size: {{size}}",
+      "download": "Download file",
+      "region": "File contents"
+    },
+    "download": {
+      "button": "Download skill",
+      "aria": "Download this skill as a .zip archive"
+    },
+    "edit": {
+      "button": "Edit details",
+      "title": "Edit skill details",
+      "titleLabel": "Title",
+      "categoryLabel": "Category",
+      "tagsLabel": "Tags (comma-separated)",
+      "noteLabel": "Note",
+      "favoriteLabel": "Favorite",
+      "save": "Save",
+      "cancel": "Cancel",
+      "saved": "Skill updated.",
+      "error": "The skill could not be updated."
+    },
+    "replace": {
+      "button": "Replace files",
+      "title": "Replace the skill files",
+      "description": "Upload a new .zip. The title, note, tags, category and favorite are kept; the description and identifier come from the new SKILL.md. If the archive is rejected, nothing changes.",
+      "submit": "Replace",
+      "success": "Skill files replaced."
+    },
+    "delete": {
+      "button": "Delete skill",
+      "confirmTitle": "Delete this skill?",
+      "confirmPermanent": "This permanently deletes the skill and all of its files. It cannot be undone.",
+      "confirmButton": "Delete",
+      "success": "Skill deleted.",
+      "error": "The skill could not be deleted."
+    }
+  },
+  "filters": {
+    "itemType": {
+      "label": "Type",
+      "all": "All",
+      "prompt": "Prompts",
+      "skill": "Skills"
+    }
   }
 }

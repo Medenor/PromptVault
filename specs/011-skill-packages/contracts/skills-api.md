@@ -114,5 +114,5 @@ Every 400 and 413 above also writes the audit event `skill.import.rejected` or `
 | `PUT /api/prompts/{id}/favorite` | Works for skills unchanged |
 | `DELETE /api/prompts/{id}` and `DELETE /api/prompts/bulk` | Work for skills (cascade). Write one `skill.delete` audit event per skill. |
 | `POST /api/prompts` | Always creates `item_type = 'prompt'`. An `item_type` field in the request body is ignored. |
-| `POST /export`, `POST /import` (bulk) | Prompts only. Replace clears prompts only (FR-024a). The export response gains `skills_excluded: <count>` so the interface can show the notice. |
+| `POST /export`, `POST /import` (bulk) | Prompts only. Replace clears prompts only (FR-024a). The export is a file download, so the count is returned in the `X-Skills-Excluded: <count>` response header, and as a `skills_excluded` key in the JSON export, so the interface can show the notice. |
 | `GET /import-export/stats` | Adds `skill_count` |

@@ -21,7 +21,7 @@ import { initSearchOverlay } from '@/search-overlay';
 import { initOfflineIndicator, registerServiceWorker } from '@/sw-register';
 import { attachPullToRefresh } from '@/gestures';
 import { logout, hideAuthOnlyElements, fetchRoleAndRevealAdmin } from '@/utils/auth-nav';
-import { APP_COMPONENT, reportAppIssue } from './shared';
+import { APP_COMPONENT, guardOnlineOnly, reportAppIssue } from './shared';
 import { addTooltips, initializeFilterListKeyboardNavigation } from './keyboard-nav';
 import {
   lastSelectedPromptId,
@@ -33,12 +33,15 @@ import {
   setPaginationPageSize,
 } from './prompt-list';
 import { createShareModal } from '@/components/share-modal';
+import { openSkillDetail } from '@/skills/skill-detail';
+import { openSkillImportDialog } from '@/skills/skill-import';
 import { isAnyFilterActive, loadCategories, loadTags } from './prompt-filters';
 import { setPromptElementHandlers } from './prompt-card';
 import {
   clearAllFilters,
   handleCategoryFilter,
   handleFavoritesFilter,
+  handleItemTypeFilter,
   handleSharedWithMeFilter,
   handleTagFilter,
   setupSearchEventListeners,
@@ -115,6 +118,31 @@ async function checkAdminAccess(): Promise<void> {
     // content leaks during this redirect.
     window.location.href = '/auth/login';
   }
+}
+
+/** Reload the list and the sidebar counts after a skill changed. */
+function refreshAfterSkillChange(): void {
+  if (isAnyFilterActive()) {
+    void performSearch();
+  } else {
+    void loadPrompts();
+  }
+  void loadTags();
+  void loadCategories();
+}
+
+/** Open a skill's detail view (never the prompt editor). */
+function openSkill(id: number): void {
+  openSkillDetail(id, { onChanged: refreshAfterSkillChange });
+}
+
+/** Import dialog, then straight into the new skill. */
+function importSkill(): void {
+  if (!guardOnlineOnly()) return;
+  openSkillImportDialog((skill) => {
+    refreshAfterSkillChange();
+    openSkillDetail(skill.id, { initial: skill, onChanged: refreshAfterSkillChange });
+  });
 }
 
 function hideModal(): void {
@@ -363,6 +391,20 @@ function setupEventListeners(): void {
   newPromptBtnMobile?.addEventListener('click', () => {
     showNewPromptForm();
     closeMobileDrawer();
+  });
+
+  // Import skill buttons (011-skill-packages)
+  const importSkillBtn = document.getElementById('import-skill-btn');
+  importSkillBtn?.addEventListener('click', importSkill);
+  const importSkillBtnMobile = document.getElementById('import-skill-btn-mobile');
+  importSkillBtnMobile?.addEventListener('click', () => {
+    importSkill();
+    closeMobileDrawer();
+  });
+
+  // Type filter (Prompts / Skills)
+  document.querySelectorAll<HTMLSelectElement>('.item-type-filter').forEach((select) => {
+    select.addEventListener('change', handleItemTypeFilter);
   });
 
   // New prompt floating action button (mobile, FR-006)
@@ -650,6 +692,9 @@ setPromptElementHandlers({
   },
   onShare: (id: PromptId) => {
     openShareModal(id);
+  },
+  onOpenSkill: (id: number) => {
+    openSkill(id);
   },
 });
 

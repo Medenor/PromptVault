@@ -28,6 +28,7 @@ from fastapi import APIRouter, File, Form, Request, UploadFile
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import ValidationError
 
+from src.db.repositories.prompt_repository import PromptRepository
 from src.db.repositories.sharing_repository import SharingRepository
 from src.db.session import get_db_session
 from src.services.logging_service import logging_service
@@ -41,6 +42,14 @@ from src.web.validators import (
 )
 
 router = APIRouter(tags=["Legacy"])
+
+SKILLS_EXCLUDED_HEADER = "X-Skills-Excluded"
+
+
+def _count_skills() -> int:
+    """Return how many skills exist; bulk import/export never touch them (FR-024a)."""
+    with get_db_session() as session:
+        return PromptRepository(session).count(item_type="skill")
 
 
 def _app():
@@ -194,7 +203,8 @@ async def export_prompts(
             include_metadata=include_metadata,
         )
 
-        prompts = data_service.load_prompts()
+        prompts = data_service.load_prompts()  # prompts only: skills are excluded
+        skills_excluded = _count_skills()
         if validated_data.include_favorites:
             prompts = {
                 k: v
@@ -219,6 +229,7 @@ async def export_prompts(
             export_data = {
                 "export_timestamp": datetime.now().isoformat(),
                 "total_prompts": len(prompt_list),
+                "skills_excluded": skills_excluded,
                 "prompts": {k: v for k, v in prompt_list},
             }
             with open(temp_file, "w", encoding="utf-8") as f:
@@ -234,12 +245,14 @@ async def export_prompts(
                 prompt_count=len(prompt_list),
                 include_favorites=validated_data.include_favorites,
                 include_metadata=validated_data.include_metadata,
+                skills_excluded=skills_excluded,
             )
             record_validation_event(endpoint="/api/export", success=True)
             return FileResponse(
                 temp_file,
                 media_type="application/octet-stream",
                 filename=final_filename,
+                headers={SKILLS_EXCLUDED_HEADER: str(skills_excluded)},
             )
 
         if temp_file and os.path.exists(temp_file):
@@ -382,10 +395,12 @@ async def get_import_export_stats():
 
         with get_db_session() as session:
             active_shares_count = SharingRepository(session).count_all()
+            skill_count = PromptRepository(session).count(item_type="skill")
 
         return JSONResponse(
             content={
                 "total_prompts": total_prompts,
+                "skill_count": skill_count,
                 "favorite_prompts": favorite_prompts,
                 "total_categories": len(unique_categories),
                 "total_tags": len(all_tags),

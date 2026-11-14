@@ -15,6 +15,7 @@ from src.web.routers.pages import router as pages_router
 from src.web.routers.prompts import router as prompts_router
 from src.web.routers.prompts_sharing_router import router as prompts_sharing_router
 from src.web.routers.prompts_versions_router import router as prompts_versions_router
+from src.web.routers.skills_router import router as skills_router
 from src.web.routers.tag_category import router as tag_category_router
 from src.web.routers.users_router import router as users_router
 
@@ -26,6 +27,7 @@ __all__ = [
     "prompts_router",
     "prompts_versions_router",
     "prompts_sharing_router",
+    "skills_router",
     "users_router",
     "import_export_router",
     "tag_category_router",

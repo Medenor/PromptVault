@@ -14,6 +14,7 @@ Repositories available:
     - PasswordResetTokenRepository: Password reset token management
     - PromptRepository: Advanced prompt search and filtering
     - SharingRepository: Per-prompt sharing grants (upsert/revoke/list)
+    - SkillRepository: Skill packages and their stored files
     - VersionRepository: Version control operations
     - CategoryRepository: Category management with statistics
     - TagRepository: Tag management with usage tracking
@@ -41,6 +42,7 @@ from src.db.repositories.password_reset_token_repository import (
 from src.db.repositories.prompt_repository import PromptRepository
 from src.db.repositories.session_repository import SessionRepository
 from src.db.repositories.sharing_repository import SharingRepository
+from src.db.repositories.skill_repository import SkillRepository
 from src.db.repositories.tag_repository import TagRepository
 from src.db.repositories.user_repository import UserRepository
 from src.db.repositories.version_repository import VersionRepository
@@ -52,6 +54,7 @@ __all__ = [
     "PasswordResetTokenRepository",
     "PromptRepository",
     "SharingRepository",
+    "SkillRepository",
     "VersionRepository",
     "CategoryRepository",
     "TagRepository",

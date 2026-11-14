@@ -5,6 +5,7 @@
  */
 
 import type { PromptResponse } from '@/types';
+import { deleteSkill, isSkillItem } from '@/skills/skill-api';
 import { t, tUnsafe } from '@/utils/i18n';
 import { apiFetch, apiGet } from '@/utils/api';
 import { showNotification } from '@/utils/notifications';
@@ -344,7 +345,7 @@ export async function copyPromptWithVersion(id: PromptId): Promise<void> {
 export async function copyPrompt(id: PromptId): Promise<void> {
   const cachedPrompt = promptCache[id];
 
-  if (cachedPrompt && typeof cachedPrompt.prompt === 'string') {
+  if (cachedPrompt && !isSkillItem(cachedPrompt) && typeof cachedPrompt.prompt === 'string') {
     copyPromptContent(cachedPrompt.prompt, id);
     return;
   }
@@ -489,16 +490,34 @@ export async function editPrompt(id: PromptId): Promise<void> {
 export async function deletePrompt(id: PromptId): Promise<void> {
   if (!guardOnlineOnly()) return;
 
-  const confirmed = await confirmAsync({
-    title: t('actions.confirmDelete') || 'Confirm',
-    message: t('messages.confirmDelete') || 'Are you sure?',
-    confirmLabel: t('actions.delete') || 'Delete',
-    cancelLabel: t('actions.cancel') || 'Cancel',
-  });
+  // A skill is deleted permanently (no undo), so it gets its own wording
+  // (FR-023) and goes through the skills endpoint.
+  const cached = promptCache[id];
+  const isSkill = cached !== undefined && isSkillItem(cached);
+
+  const confirmed = await confirmAsync(
+    isSkill
+      ? {
+          title: t('skills.delete.confirmTitle'),
+          message: t('skills.delete.confirmPermanent'),
+          confirmLabel: t('skills.delete.confirmButton'),
+          cancelLabel: t('actions.cancel') || 'Cancel',
+        }
+      : {
+          title: t('actions.confirmDelete') || 'Confirm',
+          message: t('messages.confirmDelete') || 'Are you sure?',
+          confirmLabel: t('actions.delete') || 'Delete',
+          cancelLabel: t('actions.cancel') || 'Cancel',
+        }
+  );
   if (!confirmed) return;
 
   try {
-    await apiFetch<void>(`/api/prompts/${id}`, { method: 'DELETE' });
+    if (isSkill) {
+      await deleteSkill(parseInt(id, 10));
+    } else {
+      await apiFetch<void>(`/api/prompts/${id}`, { method: 'DELETE' });
+    }
     // If we get here, delete succeeded (apiFetch throws on error)
     const callbacks = requireCallbacks();
     // Preserve filter state when refreshing the list

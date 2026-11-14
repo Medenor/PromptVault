@@ -8,7 +8,11 @@ This module defines response schemas for prompt operations,
 ensuring consistent and type-safe API responses.
 """
 
+from typing import Literal
+
 from pydantic import BaseModel, Field
+
+from src.web.models.skill_responses import SkillSummary
 
 
 class PromptResponse(BaseModel):
@@ -16,6 +20,7 @@ class PromptResponse(BaseModel):
 
     Attributes:
         id: Prompt ID
+        item_type: Always ``'prompt'`` (skills use ``SkillSummary``)
         title: Prompt title
         prompt: Prompt content
         category: Category name (empty string if no category)
@@ -28,6 +33,7 @@ class PromptResponse(BaseModel):
     """
 
     id: int = Field(..., description="Prompt ID")
+    item_type: Literal["prompt"] = Field(..., description="Always 'prompt'")
     title: str = Field(..., description="Prompt title")
     prompt: str = Field(..., description="Prompt content")
     category: str = Field(..., description="Category name")
@@ -53,6 +59,7 @@ class PromptResponse(BaseModel):
         "json_schema_extra": {
             "example": {
                 "id": 1,
+                "item_type": "prompt",
                 "title": "Marketing Email Template",
                 "prompt": "Write a marketing email about...",
                 "category": "Marketing",
@@ -80,8 +87,13 @@ class PromptListResponse(BaseModel):
         has_previous: Whether a previous page is available
     """
 
-    prompts: dict[str, PromptResponse] = Field(
-        ..., description="Dictionary of prompts keyed by ID"
+    prompts: dict[str, PromptResponse | SkillSummary] = Field(
+        ...,
+        description=(
+            "Items keyed by ID. A prompt item (item_type='prompt') carries "
+            "`prompt`; a skill item (item_type='skill') is a SkillSummary and "
+            "omits `prompt`."
+        ),
     )
     page: int = Field(..., description="Current page number (post-normalization)")
     limit: int = Field(..., description="Page size used (post-clamping)")
@@ -96,6 +108,7 @@ class PromptListResponse(BaseModel):
                 "prompts": {
                     "1": {
                         "id": 1,
+                        "item_type": "prompt",
                         "title": "Marketing Email",
                         "prompt": "Write a marketing email...",
                         "category": "Marketing",

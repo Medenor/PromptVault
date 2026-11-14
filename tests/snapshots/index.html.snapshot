@@ -173,6 +173,15 @@ data-i18n="nav.newPrompt"
 >
 New Prompt
 </button>
+<!-- Desktop-only: Import skill (011-skill-packages) -->
+<button
+type="button"
+id="import-skill-btn"
+class="hidden md:block px-4 py-2 text-sm font-medium rounded-lg bg-white text-blue-700 border border-blue-200 hover:bg-blue-50 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
+data-i18n="nav.importSkill"
+>
+Import skill
+</button>
 <!-- Desktop-only buttons -->
 <button
 type="button"
@@ -464,6 +473,14 @@ class="w-full min-h-[44px] text-left px-4 py-2 text-sm font-semibold rounded-lg 
 data-i18n="nav.newPrompt"
 >
 New Prompt
+</button>
+<button
+type="button"
+id="import-skill-btn-mobile"
+class="w-full min-h-[44px] text-left px-4 py-2 text-sm font-semibold rounded-lg text-blue-700 hover:bg-blue-50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-inset"
+data-i18n="nav.importSkill"
+>
+Import skill
 </button>
 </nav>
 <!-- Data Section -->
@@ -785,6 +802,17 @@ class="px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 dark:bg-gray-700 tex
 <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">
 <span data-i18n="nav.prompts">Prompts</span>
 </h1>
+<div id="item-type-control" class="flex items-center gap-2 ml-auto mr-4">
+<label for="item-type-filter" class="text-sm text-gray-700 dark:text-gray-300" data-i18n="filters.itemType.label">Type</label>
+<select
+id="item-type-filter"
+class="item-type-filter text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 py-1.5 px-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
+>
+<option value="all" selected data-i18n="filters.itemType.all">All</option>
+<option value="prompt" data-i18n="filters.itemType.prompt">Prompts</option>
+<option value="skill" data-i18n="filters.itemType.skill">Skills</option>
+</select>
+</div>
 <div id="page-size-control" class="flex items-center gap-2">
 <label for="page-size-select" class="text-sm text-gray-700 dark:text-gray-300" data-i18n="nav.perPage">Per page:</label>
 <select

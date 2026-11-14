@@ -15,6 +15,7 @@ const noFilters: PaginationFilters = {
   tag: 'all',
   favorites: false,
   sharedWithMe: false,
+  itemType: 'all' as const,
   caseSensitive: false,
 };
 

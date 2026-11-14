@@ -9,7 +9,7 @@ import { closeSearchOverlay, isSearchOverlayOpen } from '@/search-overlay';
 import { hideElement, toggleElement } from './shared';
 import { syncFilterListsRovingTabindex } from './keyboard-nav';
 import { loadPrompts, performSearch } from './prompt-list';
-import { searchState } from './prompt-filters';
+import { isAnyFilterActive, searchState } from './prompt-filters';
 
 // How long the search overlay stays open, with no typing, after results load
 // before auto-closing (FR-016). Kept well above the search debounce so the
@@ -281,6 +281,28 @@ export function handleFavoritesFilter(event: Event): void {
 }
 
 /**
+ * Prompts / Skills type filter (011-skill-packages). Composes with every
+ * other filter: it is one more param folded into buildSearchUrl().
+ */
+export function handleItemTypeFilter(event: Event): void {
+  const target = event.target as HTMLSelectElement | null;
+  if (!target) return;
+  const value = target.value;
+  searchState.itemType = value === 'prompt' || value === 'skill' ? value : 'all';
+
+  // Keep every type selector (desktop header, mobile drawer) in step.
+  document.querySelectorAll<HTMLSelectElement>('.item-type-filter').forEach((select) => {
+    select.value = searchState.itemType;
+  });
+
+  if (isAnyFilterActive()) {
+    void performSearch();
+  } else {
+    void loadPrompts();
+  }
+}
+
+/**
  * "Shared with me" sidebar filter chip (007-prompt-sharing, US2). Composes
  * with the other filters (search/category/tag/favorites) the same way the
  * favorites checkbox does: it's just another param folded into
@@ -319,9 +341,14 @@ export function clearAllFilters(): void {
   searchState.favorites = false;
   searchState.sharedWithMe = false;
   searchState.caseSensitive = false;
+  searchState.itemType = 'all';
   searchState.isLoading = false;
 
   // Reset UI elements (desktop)
+  document.querySelectorAll<HTMLSelectElement>('.item-type-filter').forEach((select) => {
+    select.value = 'all';
+  });
+
   const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
   if (searchInput) {
     searchInput.value = '';

@@ -22,6 +22,8 @@ export interface PaginationFilters {
   /** 007-prompt-sharing (US2): "Shared with me" sidebar filter chip. */
   sharedWithMe: boolean;
   caseSensitive: boolean;
+  /** 011-skill-packages: 'all', 'prompt' or 'skill' type filter. */
+  itemType: 'all' | 'prompt' | 'skill';
 }
 
 export interface PaginationState {
@@ -54,7 +56,8 @@ export function filtersChanged(state: PaginationState, filters: PaginationFilter
     prev.tag !== filters.tag ||
     prev.favorites !== filters.favorites ||
     prev.sharedWithMe !== filters.sharedWithMe ||
-    prev.caseSensitive !== filters.caseSensitive
+    prev.caseSensitive !== filters.caseSensitive ||
+    prev.itemType !== filters.itemType
   );
 }
 

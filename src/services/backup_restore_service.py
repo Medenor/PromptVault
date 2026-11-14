@@ -293,6 +293,12 @@ class BackupRestoreService:
                         continue
                     bp = backup_map[pid]
                     existing = session.query(Prompt).filter_by(id=pid).first()
+                    if bp.get("item_type") == "skill" or (
+                        existing is not None and existing.item_type == "skill"
+                    ):
+                        # A skill's text must stay in step with its stored files,
+                        # so a selective prompt restore never overwrites it.
+                        continue
                     if existing:
                         existing.title = bp.get("title", existing.title)
                         existing.prompt = bp.get("prompt", existing.prompt)
