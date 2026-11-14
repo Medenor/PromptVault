@@ -7,6 +7,13 @@ sidebar_position: 1
 
 Points forts des versions récentes de PromptVault. Pour l'historique complet et intégral, consultez `docs/CHANGELOG.md` dans le dépôt.
 
+## 1.14.0
+
+- **Skills** : PromptVault stocke désormais des skills (un fichier `SKILL.md` avec scripts, références et autres fichiers) à côté de vos prompts. Importez un skill depuis un `.zip` avec **Nouveau ▾ → Importer un skill**, parcourez ses instructions rendues et son arborescence, modifiez ses détails, remplacez ses fichiers, téléchargez-le en `.zip` ou supprimez-le. Les skills sont recherchables, filtrables par type et inclus dans les sauvegardes de la base. L'historique des versions, le partage, les placeholders et l'import/export en masse ne s'appliquent pas encore aux skills. Consultez la nouvelle page Skills du guide utilisateur.
+- **Menus de l'en-tête** : « Nouveau prompt » et « Importer un skill » partagent désormais un menu **Nouveau ▾**, et les liens secondaires passent dans un menu **Plus ▾** sur les écrans de largeur moyenne, pour que la navigation tienne sur une ligne.
+- **Correctif de sécurité** : la mise à jour groupée des tags vérifie désormais que vous êtes propriétaire (ou administrateur) de chaque élément sélectionné.
+- **Mise à jour** : appliquez la migration de la base et reconstruisez les images. Un rechargement de la page peut être nécessaire une fois pour obtenir les nouvelles traductions.
+
 ## 1.13.1
 
 - **Correction** : la reconstruction de l'image Docker sans cache n'échoue plus avec `No module named 'psycopg'` (la dépendance SQLAlchemy est désormais limitée à une version inférieure à 2.1).

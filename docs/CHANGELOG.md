@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.14.0] - 2026-11-14
+
 ### ✨ Added
 
 - **Skills: a second content type next to prompts** (spec `011-skill-packages`): import, browse, download and manage multi-file skill packages (a `SKILL.md` with frontmatter plus optional scripts, references, templates and assets).
