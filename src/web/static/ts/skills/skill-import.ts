@@ -24,6 +24,7 @@ import {
   type SkillDetail,
   type SkillImportResult,
 } from './skill-api';
+import { SKILL_MODAL_CLASS } from './skill-modal';
 import { describeSkillError, describeWarnings } from './skill-messages';
 
 export type ImportedCallback = (skill: SkillDetail, warnings: string[]) => void;
@@ -210,7 +211,7 @@ function openArchiveDialog(options: ArchiveDialogOptions): void {
   const cancel = document.createElement('button');
   cancel.type = 'button';
   cancel.className =
-    'px-4 py-2 text-sm font-medium rounded-md bg-gray-200 text-gray-900 hover:bg-gray-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-500';
+    'px-4 py-2 text-sm font-medium rounded-md bg-gray-200 text-gray-900 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-500';
   cancel.textContent = t('skills.import.cancel');
   const submit = document.createElement('button');
   submit.type = 'submit';
@@ -220,7 +221,12 @@ function openArchiveDialog(options: ArchiveDialogOptions): void {
   buttons.append(cancel, submit);
   form.appendChild(buttons);
 
-  const modal = createModal({ title: options.title, content: form, size: 'md' });
+  const modal = createModal({
+    title: options.title,
+    content: form,
+    size: 'md',
+    className: SKILL_MODAL_CLASS,
+  });
   const dispose = (): void => {
     modal.close();
     modal.element.remove();

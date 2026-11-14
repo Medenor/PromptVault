@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.14.1] - 2026-11-14
+
+### 🐛 Fixed
+
+- **Skill import and edit dialogs ignored dark mode**: the shared modal card, title and close button are light-only, so the dark-styled skill forms appeared on a white card in night mode. The dark styling is now scoped to the skill dialogs (`SKILL_MODAL_CLASS`); other dialogs are unchanged.
+
 ## [1.14.0] - 2026-11-14
 
 ### ✨ Added

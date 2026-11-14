@@ -7,6 +7,10 @@ sidebar_position: 1
 
 Points forts des versions récentes de PromptVault. Pour l'historique complet et intégral, consultez `docs/CHANGELOG.md` dans le dépôt.
 
+## 1.14.1
+
+- **Correctif** : les fenêtres d'import et de modification de skill respectent désormais le mode nuit au lieu de s'afficher sur fond blanc.
+
 ## 1.14.0
 
 - **Skills** : PromptVault stocke désormais des skills (un fichier `SKILL.md` avec scripts, références et autres fichiers) à côté de vos prompts. Importez un skill depuis un `.zip` avec **Nouveau ▾ → Importer un skill**, parcourez ses instructions rendues et son arborescence, modifiez ses détails, remplacez ses fichiers, téléchargez-le en `.zip` ou supprimez-le. Les skills sont recherchables, filtrables par type et inclus dans les sauvegardes de la base. L'historique des versions, le partage, les placeholders et l'import/export en masse ne s'appliquent pas encore aux skills. Consultez la nouvelle page Skills du guide utilisateur.
