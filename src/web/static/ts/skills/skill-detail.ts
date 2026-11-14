@@ -34,6 +34,7 @@ import { createFileTree } from './skill-file-tree';
 import { createFileViewer } from './skill-file-viewer';
 import { describeSkillError, describeWarnings, formatBytes } from './skill-messages';
 import { openSkillReplaceDialog } from './skill-import';
+import { SKILL_MODAL_CLASS } from './skill-modal';
 
 export interface SkillDetailOptions {
   /** Called after the skill was edited, replaced or deleted, so lists can refresh. */
@@ -203,7 +204,12 @@ export function openSkillDetail(
     buttons.append(cancel, save);
     form.appendChild(buttons);
 
-    const modal = createModal({ title: t('skills.edit.title'), content: form, size: 'md' });
+    const modal = createModal({
+      title: t('skills.edit.title'),
+      content: form,
+      size: 'md',
+      className: SKILL_MODAL_CLASS,
+    });
     const dispose = (): void => {
       modal.close();
       modal.element.remove();
