@@ -236,7 +236,7 @@
     "operationCancelled": "Opération annulée",
     "clearBtn": "Effacer",
     "settingsCleared": "Paramètres d'exportation effacés",
-    "skillsExcluded": "Les skills ne sont pas inclus ; exportez-les un par un depuis chaque skill"
+    "skillsExcluded": "Cette page ne concerne que les prompts. Les skills ne sont ni exportés ni importés ici : importez un skill depuis Nouveau ▾ → Importer un skill, et téléchargez-le depuis sa propre fiche."
   },
   "search": {
     "emptyState": "Aucun prompt trouvé. Créez votre premier prompt pour commencer !",

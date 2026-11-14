@@ -235,7 +235,7 @@
     "operationCancelled": "Vorgang abgebrochen",
     "clearBtn": "Löschen",
     "settingsCleared": "Exporteinstellungen gelöscht",
-    "skillsExcluded": "Skills sind nicht enthalten; exportiere sie einzeln aus dem jeweiligen Skill"
+    "skillsExcluded": "Diese Seite betrifft nur Prompts. Skills werden hier weder exportiert noch importiert: Importiere einen Skill über Neu ▾ → Skill importieren und lade ihn in seiner eigenen Detailansicht herunter."
   },
   "search": {
     "emptyState": "Keine Prompts gefunden. Erstellen Sie Ihren ersten Prompt, um zu starten!",
