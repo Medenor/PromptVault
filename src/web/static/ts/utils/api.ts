@@ -368,15 +368,19 @@ export function apiPatch<T>(url: string, body?: unknown, options?: FetchOptions)
 }
 
 /**
- * POST with FormData (for file uploads) with automatic token refresh
+ * Send FormData (file uploads) with the given method, with automatic token
+ * refresh. No Content-Type header is set so the browser adds the multipart
+ * boundary itself (apiFetch would force application/json and break
+ * FastAPI's Form()/File() parsing).
  */
-export async function apiPostForm<T>(
+async function sendForm<T>(
+  method: 'POST' | 'PUT',
   url: string,
   formData: FormData,
   _isRetry = false
 ): Promise<T> {
   const response = await fetch(url, {
-    method: 'POST',
+    method,
     credentials: 'include',
     body: formData,
   });
@@ -395,7 +399,7 @@ export async function apiPostForm<T>(
 
       if (refreshSuccess) {
         // Retry the original request with new token
-        return apiPostForm<T>(url, formData, true);
+        return sendForm<T>(method, url, formData, true);
       } else {
         // Refresh failed - clear tokens and redirect to login
         clearTokensAndRedirect();
@@ -405,8 +409,8 @@ export async function apiPostForm<T>(
 
     redirectIfEnrollmentRequired(response);
 
-    // Handle 429 rate limiting: form posts are always mutations (imports,
-    // uploads), so never auto-retry — toast and throw with the wait time.
+    // Handle 429 rate limiting: form uploads are always mutations (imports,
+    // replacements), so never auto-retry — toast and throw with the wait time.
     if (response.status === 429) {
       const retryAfter = parseRetryAfter(response);
       notifyRateLimited(retryAfter);
@@ -417,6 +421,20 @@ export async function apiPostForm<T>(
   }
 
   return (await response.json()) as T;
+}
+
+/**
+ * POST with FormData (for file uploads) with automatic token refresh
+ */
+export function apiPostForm<T>(url: string, formData: FormData, _isRetry = false): Promise<T> {
+  return sendForm<T>('POST', url, formData, _isRetry);
+}
+
+/**
+ * PUT with FormData (for file uploads) with automatic token refresh
+ */
+export function apiPutForm<T>(url: string, formData: FormData, _isRetry = false): Promise<T> {
+  return sendForm<T>('PUT', url, formData, _isRetry);
 }
 
 /**

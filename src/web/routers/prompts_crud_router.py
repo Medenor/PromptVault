@@ -25,6 +25,7 @@ from src.db.repositories.tag_repository import TagRepository
 from src.db.repositories.version_repository import VersionRepository
 from src.db.session import get_db
 from src.services.exceptions import ShareGrantError
+from src.services.skills.skill_service import prepare_skill_deleted_audit
 from src.web.dependencies.auth import (
     get_admin_or_bypass,
     get_current_user_or_default,
@@ -46,6 +47,7 @@ from src.web.routers.prompts_shared import (
     check_prompt_access,
     check_prompt_ownership,
     effective_permission,
+    reject_if_skill,
 )
 
 # Configure logging
@@ -341,6 +343,8 @@ async def update_prompt(
             detail=f"Prompt with ID {prompt_id} not found",
         )
 
+    reject_if_skill(existing_prompt, user, db)
+
     # Content/category/tags are editable at 'edit' level (owner, admin, or
     # an edit-grantee); a read-only grant or legacy_public-only visibility
     # is insufficient (data-model.md's action table).
@@ -495,6 +499,7 @@ async def update_prompt_visibility(
             detail=f"Prompt with ID {prompt_id} not found",
         )
 
+    reject_if_skill(existing_prompt, user, db)
     check_prompt_access(existing_prompt, user, "owner", db)
 
     from src.web import app as web_app
@@ -576,13 +581,18 @@ async def bulk_delete_prompts(
     deleted_count = 0
     failed_count = 0
     failed_ids = []
+    pending_audits = []
 
     for prompt_id in body.prompt_ids:
         try:
             # Check if prompt exists
             prompt = prompt_repo.get_by_id(prompt_id)
             if prompt:
+                emit_audit = prepare_skill_deleted_audit(
+                    prompt, actor=admin.username if admin else None
+                )
                 prompt_repo.delete(prompt_id)
+                pending_audits.append(emit_audit)
                 deleted_count += 1
             else:
                 failed_count += 1
@@ -593,6 +603,10 @@ async def bulk_delete_prompts(
             failed_ids.append(prompt_id)
 
     db.commit()
+
+    # Skill audit events are written only after the commit (FR-025a).
+    for emit_audit in pending_audits:
+        emit_audit()
 
     # Log action
     _log_prompt_action(
@@ -670,9 +684,13 @@ async def delete_prompt(
 
     check_prompt_ownership(existing_prompt, user)
 
+    # A skill is audited as skill.delete (FR-025a); prompts are unaffected.
+    emit_audit = prepare_skill_deleted_audit(existing_prompt, actor=user.username)
+
     # Delete prompt (cascade deletes versions, tags associations)
     prompt_repo.delete(prompt_id)
     db.commit()
+    emit_audit()
 
     # Log action
     _log_prompt_action(
@@ -737,6 +755,10 @@ async def toggle_favorite(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Prompt with ID {prompt_id} not found",
         )
+
+    # Skills change favorite through PATCH /api/skills/{id}, which applies the
+    # owner-only skill policy (FR-003).
+    reject_if_skill(existing_prompt, user, db)
 
     # Check ownership (only owner can toggle favorite)
     check_prompt_ownership(existing_prompt, user)
@@ -806,6 +828,8 @@ async def copy_prompt_with_version(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Prompt with ID {prompt_id} not found",
         )
+
+    reject_if_skill(prompt, user, db)
 
     if not prompt.semantic_version:
         return JSONResponse(

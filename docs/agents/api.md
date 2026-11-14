@@ -2,13 +2,27 @@
 
 ## Prompt Management
 
-- `GET /api/prompts` — List all prompts
+- `GET /api/prompts` — List all items. `?item_type=all|prompt|skill` (default `all`); every item carries `item_type`. A skill item is a `SkillSummary` and has no `prompt` body
 - `POST /api/prompts` — Create new prompt
 - `GET /api/prompts/{id}` — Get specific prompt (requires `read` access: owner, admin, any grantee, or a `legacy_public` prompt; 404 if invisible)
 - `PUT /api/prompts/{id}` — Update prompt, creates new version (requires `edit` access — owner, admin, or an edit-grantee; `favorite` and `legacy_public: true` are rejected for non-owners)
 - `DELETE /api/prompts/{id}` — Delete prompt (owner/admin only)
-- `GET /api/prompts/search` — Search with filters (default scope: owned ∪ shared-with-me ∪ legacy-public; `?filter=shared-with-me` narrows to explicit grants only; admins see all)
-- `PUT /api/prompts/{id}/favorite` — Toggle favorite status (owner/admin only)
+- `GET /api/prompts/search` — Search with filters (default scope: owned ∪ shared-with-me ∪ legacy-public; `?filter=shared-with-me` narrows to explicit grants only; admins see all; `?item_type=` as above; a skill matches on its `SKILL.md` text only)
+- `PUT /api/prompts/{id}/favorite` — Toggle favorite status (owner/admin only; `409 ITEM_IS_SKILL` for skills, which use `PATCH /api/skills/{id}`)
+
+## Skills
+
+Full contract: [`specs/011-skill-packages/contracts/skills-api.md`](../../specs/011-skill-packages/contracts/skills-api.md). Errors use `{"detail": {"code", "message", "offending_entry"}}`.
+
+- `POST /api/skills/import` — Create a skill from a `.zip` (`multipart/form-data`: `archive`, optional `category`, `tags`). 201 `{skill, warnings}`; 400 with an error code for a rejected archive (nothing is stored); 413 `LIMIT_UPLOAD_SIZE`. Rate-limited, audit-logged (`skill.import` / `skill.import.rejected`)
+- `GET /api/skills/{id}` — Metadata, sanitised `instructions_html` and the file list
+- `GET /api/skills/{id}/files/content?path=` — Text preview of one file (cut to `SKILL_TEXT_PREVIEW_BYTES`; `text` is null for binary files)
+- `GET /api/skills/{id}/files/raw?path=` — Exact bytes of one file (`attachment`, `nosniff`, `CSP: sandbox`)
+- `GET /api/skills/{id}/download` — `<skill-identifier>.zip` in the standard layout, built per request
+- `PATCH /api/skills/{id}` — Edit `title`, `category`, `tags`, `note`, `favorite` (never creates a version; other fields are 422)
+- `PUT /api/skills/{id}/archive` — Replace every file (all or nothing; title and user metadata are kept; `skill.replace` / `skill.replace.rejected`)
+- `DELETE /api/skills/{id}` — Permanent delete, 204 (`skill.delete`)
+- Access: owner only (404 for everyone else). Administrators can read, download and delete any skill but not edit or replace another user's. A prompt id on these endpoints is 409 `ITEM_IS_PROMPT`; a skill id on prompt-only endpoints (update, versions, revert, sharing, `copy-with-version`) is 409 `ITEM_IS_SKILL`
 
 ## Categorization
 
@@ -34,9 +48,9 @@
 ## Import/Export
 
 - `GET /import-export` — Management page
-- `POST /api/export` — Export prompts (CSV/Markdown/JSON)
-- `POST /api/import` — Import prompts
-- `GET /api/import-export/stats` — Import/export statistics
+- `POST /api/export` — Export prompts (CSV/Markdown/JSON). Prompts only: skills are left out and counted in the `X-Skills-Excluded` header (and a `skills_excluded` key in JSON exports)
+- `POST /api/import` — Import prompts (Replace mode clears prompts only; skills are kept)
+- `GET /api/import-export/stats` — Import/export statistics (includes `skill_count`)
 - Export/import is grant-blind by design: `prompt_shares` grants and the `legacy_public` flag are never included in export payloads or restored on import, since they're runtime access-control state tied to this instance's user accounts. Full database backup/restore is the only path that preserves them.
 
 ## Backup Management

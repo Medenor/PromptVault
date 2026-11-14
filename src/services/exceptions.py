@@ -569,3 +569,56 @@ class UserNotFoundError(PromptVaultException):
             log_level="warning",
             context=context,
         )
+
+
+class ItemTypeMismatchError(PromptVaultException):
+    """Raised when an endpoint for one item type is called on the other.
+
+    Attributes:
+        error_code: Stable machine-readable code returned in the API body.
+    """
+
+    error_code = "ITEM_TYPE_MISMATCH"
+    default_message = "Item type mismatch."
+
+    def __init__(
+        self,
+        message: str | None = None,
+        *,
+        user_message: str | None = None,
+        context: dict[str, Any] | None = None,
+    ) -> None:
+        super().__init__(
+            message or self.default_message,
+            user_message=user_message or self.default_message,
+            http_status=409,
+            log_level="info",
+            context=context,
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        """Return the standard error body plus the contract's ``detail`` object."""
+        body = super().to_dict()
+        body["detail"] = {
+            "code": self.error_code,
+            "message": self.user_message,
+            "offending_entry": None,
+        }
+        return body
+
+
+class ItemIsSkillError(ItemTypeMismatchError):
+    """A prompt-only operation was attempted on a skill (409 ``ITEM_IS_SKILL``)."""
+
+    error_code = "ITEM_IS_SKILL"
+    default_message = (
+        "This item is a skill. Versions, sharing and prompt editing "
+        "do not apply to skills."
+    )
+
+
+class ItemIsPromptError(ItemTypeMismatchError):
+    """A skill-only operation was attempted on a prompt (409 ``ITEM_IS_PROMPT``)."""
+
+    error_code = "ITEM_IS_PROMPT"
+    default_message = "This item is a prompt, not a skill."

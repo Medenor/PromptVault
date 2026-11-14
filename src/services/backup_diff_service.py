@@ -26,8 +26,15 @@ def extract_prompts_from_backup(backup_path: str, backup_type: str) -> list:
 
         try:
             conn = sqlite3.connect(backup_path)
+            # Backups taken before skills existed have no item_type column.
+            has_item_type = any(
+                col[1] == "item_type"
+                for col in conn.execute("PRAGMA table_info(prompts)")
+            )
+            type_column = "item_type" if has_item_type else "'prompt'"
             cursor = conn.execute(
-                "SELECT id, title, prompt, note, favorite, category_id, semantic_version FROM prompts"
+                "SELECT id, title, prompt, note, favorite, category_id, "
+                f"semantic_version, {type_column} FROM prompts"
             )
             prompts = []
             for row in cursor:
@@ -40,6 +47,7 @@ def extract_prompts_from_backup(backup_path: str, backup_type: str) -> list:
                         "favorite": bool(row[4]),
                         "category_id": row[5],
                         "semantic_version": row[6],
+                        "item_type": row[7],
                     }
                 )
             conn.close()
@@ -131,12 +139,20 @@ class BackupDiffService:
                 os.remove(working_path)
 
         with get_db_session() as session:
-            current_prompts = session.query(Prompt).all()
+            # Skills are restored with their files, not as prompt text, so the
+            # prompt diff leaves them out on both sides.
+            current_prompts = (
+                session.query(Prompt).filter(Prompt.item_type != "skill").all()
+            )
             current_map = {
                 p.id: {"title": p.title, "prompt": p.prompt} for p in current_prompts
             }
 
-        backup_map = {p["id"]: p for p in backup_prompts if "id" in p}
+        backup_map = {
+            p["id"]: p
+            for p in backup_prompts
+            if "id" in p and p.get("item_type", "prompt") != "skill"
+        }
 
         added = []
         updated = []

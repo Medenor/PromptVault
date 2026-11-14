@@ -29,6 +29,7 @@ test.describe('Prompt management functional smoke tests', () => {
   test('creating a prompt adds it to the list', async ({ authenticatedPage: page }) => {
     const title = uniqueTitle('Smoke Prompt');
 
+    await page.locator('#new-menu-btn').click();
     await page.locator('#new-prompt-btn').click();
     await expect(page.locator('#prompt-editor')).toBeVisible();
 
@@ -50,6 +51,7 @@ test.describe('Prompt management functional smoke tests', () => {
     const originalTitle = uniqueTitle('Smoke Edit Prompt');
     const updatedTitle = uniqueTitle('Smoke Edited Prompt');
 
+    await page.locator('#new-menu-btn').click();
     await page.locator('#new-prompt-btn').click();
     await page.locator('#prompt-title').fill(originalTitle);
     await page.locator('#prompt-content').fill('Original body content.');
@@ -84,6 +86,7 @@ test.describe('Prompt management functional smoke tests', () => {
   test('deleting a prompt removes it from the list', async ({ authenticatedPage: page }) => {
     const title = uniqueTitle('Smoke Delete Prompt');
 
+    await page.locator('#new-menu-btn').click();
     await page.locator('#new-prompt-btn').click();
     await page.locator('#prompt-title').fill(title);
     await page.locator('#prompt-content').fill('To be deleted.');
@@ -100,7 +103,10 @@ test.describe('Prompt management functional smoke tests', () => {
 
     const dialog = page.locator('[role="dialog"]:visible').last();
     await expect(dialog).toBeVisible({ timeout: 5000 });
-    await dialog.getByRole('button', { name: /delete/i }).last().click();
+    await dialog
+      .getByRole('button', { name: /delete/i })
+      .last()
+      .click();
 
     await expect(card).toHaveCount(0, { timeout: 10000 });
   });
@@ -108,6 +114,7 @@ test.describe('Prompt management functional smoke tests', () => {
   test('creating a prompt with an empty title is blocked by the required field', async ({
     authenticatedPage: page,
   }) => {
+    await page.locator('#new-menu-btn').click();
     await page.locator('#new-prompt-btn').click();
     await expect(page.locator('#prompt-editor')).toBeVisible();
 

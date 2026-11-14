@@ -28,7 +28,10 @@
     "language": "Idioma",
     "account": "Cuenta",
     "data": "Datos",
-    "perPage": "Por página:"
+    "perPage": "Por página:",
+    "importSkill": "Importar skill",
+    "more": "Más",
+    "new": "Nuevo"
   },
   "actions": {
     "add": "Añadir",
@@ -231,7 +234,9 @@
     "validationPassed": "Todos los datos fueron validados exitosamente",
     "operationCancelled": "Operación cancelada",
     "clearBtn": "Limpiar",
-    "settingsCleared": "Configuración de exportación borrada"
+    "settingsCleared": "Configuración de exportación borrada",
+    "skillsExcludedTitle": "Solo prompts: los skills no están incluidos",
+    "skillsExcluded": "Los skills no se exportan ni se importan en esta página. Importa un skill desde Nuevo ▾ → Importar skill y descárgalo desde su propio detalle."
   },
   "search": {
     "emptyState": "No se encontraron prompts. ¡Crea tu primer prompt para comenzar!",
@@ -249,7 +254,8 @@
       "category": "categoría: {{category}}",
       "tag": "etiqueta: {{tag}}",
       "favorites": "solo favoritos",
-      "caseSensitive": "sensible a mayúsculas"
+      "caseSensitive": "sensible a mayúsculas",
+      "type": "tipo: {{type}}"
     }
   },
   "prompt": {
@@ -845,5 +851,135 @@
     "no_shares": "Este prompt aún no se ha compartido con nadie.",
     "make_private": "Hacer privado",
     "make_private_confirm": "¿Hacer privado este prompt? Cualquiera que pudiera verlo porque era público perderá el acceso, a menos que lo compartas directamente con esa persona."
+  },
+  "skills": {
+    "badge": {
+      "prompt": "Prompt",
+      "skill": "Skill"
+    },
+    "import": {
+      "action": "Importar skill",
+      "title": "Importar un skill",
+      "description": "Sube un archivo .zip que contenga un SKILL.md en su raíz o en una única carpeta de primer nivel. Nada del archivo se ejecuta nunca.",
+      "fileLabel": "Archivo del skill (.zip)",
+      "categoryLabel": "Categoría (opcional)",
+      "tagsLabel": "Etiquetas (opcional, separadas por comas)",
+      "noCategory": "Sin categoría",
+      "tagsSuggestions": "Etiquetas existentes (clic para añadir o quitar)",
+      "submit": "Importar",
+      "cancel": "Cancelar",
+      "uploading": "Importando…",
+      "selectFile": "Elige primero un archivo .zip.",
+      "onlyZip": "Solo se aceptan archivos .zip.",
+      "success": "Skill importado.",
+      "warningsTitle": "Importado con avisos de formato",
+      "warningsIntro": "El skill se guardó. No cumple del todo el formato Agent Skills:",
+      "errorTitle": "Se rechazó el archivo",
+      "offendingEntry": "Entrada: {{entry}}"
+    },
+    "warnings": {
+      "frontmatter_missing": "SKILL.md no tiene bloque de encabezado (frontmatter).",
+      "frontmatter_malformed": "El encabezado de SKILL.md no es YAML válido.",
+      "name_missing": "El encabezado no tiene nombre.",
+      "name_invalid": "El nombre debe usar minúsculas, dígitos y guiones, y tener como máximo 64 caracteres.",
+      "name_folder_mismatch": "El nombre difiere del nombre de la carpeta del archivo.",
+      "description_missing": "El encabezado no tiene descripción.",
+      "description_too_long": "La descripción supera los 1.024 caracteres.",
+      "no_wrapping_folder": "SKILL.md está en la raíz del archivo en lugar de dentro de una carpeta.",
+      "skill_md_not_utf8": "SKILL.md no es texto UTF-8 válido."
+    },
+    "errors": {
+      "ARCHIVE_INVALID": "No es un archivo zip válido, o está vacío o dañado.",
+      "ARCHIVE_ENCRYPTED": "Los archivos protegidos con contraseña no son compatibles.",
+      "SKILL_MD_MISSING": "No se encontró SKILL.md en la raíz del archivo ni en una única carpeta de primer nivel.",
+      "ENTRY_PATH_UNSAFE": "El archivo contiene una ruta que sale de la carpeta del skill.",
+      "ENTRY_LINK": "El archivo contiene un enlace simbólico, lo cual no está permitido.",
+      "ENTRY_NAME_INVALID": "El archivo contiene un nombre de fichero no válido en los sistemas habituales.",
+      "ENTRY_DUPLICATE": "El archivo contiene dos veces la misma ruta (se ignora la diferencia entre mayúsculas y minúsculas).",
+      "LIMIT_DEPTH": "El archivo tiene carpetas anidadas a más profundidad que el límite permitido.",
+      "LIMIT_FILE_COUNT": "El archivo tiene más ficheros que el límite permitido.",
+      "LIMIT_FILE_SIZE": "Un fichero del archivo supera el tamaño permitido.",
+      "LIMIT_TOTAL_SIZE": "Una vez descomprimido, el archivo supera el tamaño permitido.",
+      "ARCHIVE_SUSPICIOUS_RATIO": "El archivo está comprimido de forma sospechosa y se rechazó.",
+      "LIMIT_SKILL_MD_SIZE": "SKILL.md supera el tamaño permitido.",
+      "LIMIT_UPLOAD_SIZE": "El archivo subido supera el tamaño permitido.",
+      "SKILL_NOT_FOUND": "Este skill ya no existe, o no tienes acceso a él.",
+      "FILE_NOT_FOUND": "Este fichero no forma parte del skill.",
+      "ITEM_IS_SKILL": "Esta acción no está disponible para los skills.",
+      "ITEM_IS_PROMPT": "Este elemento es un prompt, no un skill.",
+      "unknown": "Algo salió mal. Inténtalo de nuevo."
+    },
+    "detail": {
+      "close": "Cerrar skill",
+      "loading": "Cargando skill…",
+      "loadError": "No se pudo cargar el skill.",
+      "identifier": "Identificador",
+      "category": "Categoría",
+      "tags": "Etiquetas",
+      "note": "Nota",
+      "noDescription": "Sin descripción.",
+      "files": "{{count}} ficheros",
+      "files_one": "{{count}} fichero",
+      "totalSize": "Tamaño total {{size}}",
+      "instructions": "Instrucciones (SKILL.md)",
+      "filesHeading": "Ficheros",
+      "warnings": "Avisos de formato",
+      "managing": "Gestionar"
+    },
+    "tree": {
+      "label": "Ficheros del skill",
+      "folder": "Carpeta",
+      "file": "Fichero"
+    },
+    "viewer": {
+      "empty": "Selecciona un fichero para verlo.",
+      "loading": "Cargando fichero…",
+      "error": "No se pudo cargar el fichero.",
+      "truncated": "Solo se muestra la primera parte de este fichero.",
+      "binary": "Este fichero es binario y no se puede mostrar como texto.",
+      "size": "Tamaño: {{size}}",
+      "download": "Descargar fichero",
+      "region": "Contenido del fichero"
+    },
+    "download": {
+      "button": "Descargar skill",
+      "aria": "Descargar este skill como archivo .zip"
+    },
+    "edit": {
+      "button": "Editar detalles",
+      "title": "Editar los detalles del skill",
+      "titleLabel": "Título",
+      "categoryLabel": "Categoría",
+      "tagsLabel": "Etiquetas (separadas por comas)",
+      "noteLabel": "Nota",
+      "favoriteLabel": "Favorito",
+      "save": "Guardar",
+      "cancel": "Cancelar",
+      "saved": "Skill actualizado.",
+      "error": "No se pudo actualizar el skill."
+    },
+    "replace": {
+      "button": "Reemplazar ficheros",
+      "title": "Reemplazar los ficheros del skill",
+      "description": "Sube un nuevo .zip. Se conservan el título, la nota, las etiquetas, la categoría y el favorito; la descripción y el identificador provienen del nuevo SKILL.md. Si se rechaza el archivo, no cambia nada.",
+      "submit": "Reemplazar",
+      "success": "Ficheros del skill reemplazados."
+    },
+    "delete": {
+      "button": "Eliminar skill",
+      "confirmTitle": "¿Eliminar este skill?",
+      "confirmPermanent": "Esto elimina de forma permanente el skill y todos sus ficheros. No se puede deshacer.",
+      "confirmButton": "Eliminar",
+      "success": "Skill eliminado.",
+      "error": "No se pudo eliminar el skill."
+    }
+  },
+  "filters": {
+    "itemType": {
+      "label": "Tipo",
+      "all": "Todos",
+      "prompt": "Prompts",
+      "skill": "Skills"
+    }
   }
 }

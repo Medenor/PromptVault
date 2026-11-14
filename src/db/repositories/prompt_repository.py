@@ -190,8 +190,15 @@ class PromptRepository(BaseRepository[Prompt]):
         favorite: bool | None,
         visible_to_user_id: str | None,
         shared_only: bool,
+        item_type: str | None = None,
     ):
-        """Apply category/tags/favorite/visibility filters shared by search() and count()."""
+        """Apply category/tags/favorite/visibility/type filters shared by search() and count().
+
+        ``item_type`` is ``'prompt'``, ``'skill'`` or None for every item.
+        """
+        if item_type is not None:
+            q = q.filter(Prompt.item_type == item_type)
+
         if category:
             q = q.join(Category).filter(Category.name == category)
 
@@ -256,6 +263,7 @@ class PromptRepository(BaseRepository[Prompt]):
         visible_to_user_id: str | None = None,
         shared_only: bool = False,
         ranked: bool = True,
+        item_type: str | None = None,
     ) -> list[tuple[Prompt, str | None]]:
         """Search prompts with multiple filters.
 
@@ -277,6 +285,7 @@ class PromptRepository(BaseRepository[Prompt]):
                 visible_to_user_id (excludes legacy_public and owned)
             ranked: Use index-backed relevance ranking (default True).
                 False restores the legacy substring ordering.
+            item_type: ``'prompt'``, ``'skill'`` or None for every item
 
         Returns:
             List of (Prompt, match_context) tuples. ``match_context`` is a
@@ -299,6 +308,7 @@ class PromptRepository(BaseRepository[Prompt]):
                 offset=offset,
                 visible_to_user_id=visible_to_user_id,
                 shared_only=shared_only,
+                item_type=item_type,
             )
             if fts_result is not None:
                 return fts_result
@@ -310,7 +320,7 @@ class PromptRepository(BaseRepository[Prompt]):
             q = self._apply_substring_query_filter(q, query, case_sensitive)
 
         q = self._apply_common_filters(
-            q, category, tags, favorite, visible_to_user_id, shared_only
+            q, category, tags, favorite, visible_to_user_id, shared_only, item_type
         )
 
         # Order by most recently updated (must come before limit/offset)
@@ -332,6 +342,7 @@ class PromptRepository(BaseRepository[Prompt]):
         offset: int,
         visible_to_user_id: str | None,
         shared_only: bool,
+        item_type: str | None = None,
     ) -> list[tuple[Prompt, str | None]] | None:
         """Attempt the ranked FTS path; returns None to signal fallback.
 
@@ -354,7 +365,7 @@ class PromptRepository(BaseRepository[Prompt]):
 
         q = self.session.query(Prompt).filter(Prompt.id.in_(matches.keys()))
         q = self._apply_common_filters(
-            q, category, tags, favorite, visible_to_user_id, shared_only
+            q, category, tags, favorite, visible_to_user_id, shared_only, item_type
         )
 
         prompts = q.all()
@@ -378,6 +389,7 @@ class PromptRepository(BaseRepository[Prompt]):
         visible_to_user_id: str | None = None,
         shared_only: bool = False,
         ranked: bool = True,
+        item_type: str | None = None,
     ) -> int:
         """Count prompts matching the same filters as search().
 
@@ -397,9 +409,10 @@ class PromptRepository(BaseRepository[Prompt]):
             shared_only: Narrow to prompts explicitly shared with
                 visible_to_user_id (excludes legacy_public and owned)
             ranked: Use the FTS predicate (default True); must match search()
+            item_type: ``'prompt'``, ``'skill'`` or None for every item
 
         Returns:
-            Total number of matching prompts
+            Total number of matching items
         """
         use_fts = query is not None and bool(query) and ranked and not case_sensitive
 
@@ -417,7 +430,13 @@ class PromptRepository(BaseRepository[Prompt]):
                     return 0
                 q = self.session.query(Prompt).filter(Prompt.id.in_(matches.keys()))
                 q = self._apply_common_filters(
-                    q, category, tags, favorite, visible_to_user_id, shared_only
+                    q,
+                    category,
+                    tags,
+                    favorite,
+                    visible_to_user_id,
+                    shared_only,
+                    item_type,
                 )
                 return q.count()
             # Empty-after-sanitization or FTS error: fall through to substring path.
@@ -428,7 +447,7 @@ class PromptRepository(BaseRepository[Prompt]):
             q = self._apply_substring_query_filter(q, query, case_sensitive)
 
         q = self._apply_common_filters(
-            q, category, tags, favorite, visible_to_user_id, shared_only
+            q, category, tags, favorite, visible_to_user_id, shared_only, item_type
         )
 
         return q.count()
@@ -635,18 +654,27 @@ class PromptRepository(BaseRepository[Prompt]):
         self.session.flush()
 
     def get_statistics(self) -> dict[str, int]:
-        """Get prompt statistics.
+        """Get item statistics.
 
         Returns:
             Dictionary with statistics:
-            - total: Total number of prompts
-            - favorites: Number of favorited prompts
+            - total: Total number of items (prompts and skills)
+            - prompt_count: Number of prompts
+            - skill_count: Number of skills
+            - favorites: Number of favorited items
             - with_versions: Number of prompts with version history
         """
         total = self.count()
+        skill_count = self.count(item_type="skill")
         favorites = self.session.query(Prompt).filter(Prompt.favorite == True).count()
 
         # Count prompts that have at least one version
         with_versions = self.session.query(Prompt).filter(Prompt.versions.any()).count()
 
-        return {"total": total, "favorites": favorites, "with_versions": with_versions}
+        return {
+            "total": total,
+            "prompt_count": total - skill_count,
+            "skill_count": skill_count,
+            "favorites": favorites,
+            "with_versions": with_versions,
+        }

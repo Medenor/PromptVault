@@ -1,0 +1,15 @@
+{
+  "repository": "https://github.com/anthropics/skills",
+  "commit": "2c5958ecac7cee2b583967a2c4981d0f4a75c579",
+  "committed_at": "2026-11-06T22:32:28Z",
+  "archive_url": "https://codeload.github.com/anthropics/skills/zip/2c5958ecac7cee2b583967a2c4981d0f4a75c579",
+  "archive_sha256": "e5b0c67dbfae471c013d0e03abe66db20ca70cc0c79ab6154a386c8b026e5195",
+  "skills_prefix": "skills/",
+  "expected_skill_count": 19,
+  "known_warnings": {
+    "claude-api": [
+      "description_too_long"
+    ]
+  },
+  "known_warnings_note": "Reviewed: the claude-api description is longer than the 1,024 characters the Agent Skills format allows, so the warning is correct. 18 of 19 (94.7%) import warning-free, just under SC-004's 95%."
+}

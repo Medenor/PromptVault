@@ -51,6 +51,9 @@ dependencies = [
   "boto3>=1.34.0",
   "pyotp>=2.9.0",
   "qrcode>=7.4.2",
+  "PyYAML>=6.0",
+  "markdown-it-py>=3.0.0",
+  "nh3>=0.2.18",
 ]
 
 [project.optional-dependencies]
@@ -121,6 +124,7 @@ module = [
     "boto3",
     "botocore.*",
     "qrcode.*",
+    "yaml",
 ]
 ignore_missing_imports = true
 

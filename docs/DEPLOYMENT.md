@@ -985,6 +985,23 @@ uvicorn src.web.app:app --host 0.0.0.0 --port 8003 --workers 4
 | `DATA_DIR`              | Data directory path                          | `./data`      |
 | `DISABLE_RATE_LIMITING` | Disable rate limiting (dev/test only)        | `false`       |
 
+### Skill Package Limits
+
+Skills are imported from `.zip` archives. The archive is read in memory and its entries are never extracted to disk; file contents are stored in the database, so they are part of every backup. These limits protect the server from oversized or malicious archives:
+
+| Variable                      | Description                                               | Default            |
+| ----------------------------- | --------------------------------------------------------- | ------------------ |
+| `SKILL_MAX_UPLOAD_BYTES`      | Largest accepted `.zip` upload                            | `10485760` (10 MB) |
+| `SKILL_MAX_TOTAL_BYTES`       | Largest total unpacked size of one skill                  | `52428800` (50 MB) |
+| `SKILL_MAX_FILES`             | Largest number of files in one skill                      | `500`              |
+| `SKILL_MAX_DEPTH`             | Deepest folder nesting below the skill root               | `10`               |
+| `SKILL_MAX_FILE_BYTES`        | Largest single unpacked file                              | `10485760` (10 MB) |
+| `SKILL_MAX_COMPRESSION_RATIO` | Highest compression ratio accepted for an entry over 1 MB | `100`              |
+| `SKILL_TEXT_PREVIEW_BYTES`    | Largest text excerpt returned by the file viewer          | `1048576` (1 MB)   |
+| `SKILL_MAX_SKILL_MD_BYTES`    | Largest accepted `SKILL.md`                               | `1048576` (1 MB)   |
+
+Raising the limits makes `pg_dump` and restore slower, because file contents are stored as `BYTEA`. If you serve PromptVault behind a reverse proxy, allow request bodies of at least `SKILL_MAX_UPLOAD_BYTES` plus 64 KB on `/api/skills/*`.
+
 ### Development-Only Variables
 
 #### `DISABLE_RATE_LIMITING`

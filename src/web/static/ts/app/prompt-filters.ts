@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import type { TagInfo } from '@/types';
+import type { ItemTypeFilter, TagInfo } from '@/types';
 import { apiGet } from '@/utils/api';
 import {
   applyPromptColorStyles,
@@ -30,6 +30,8 @@ export const searchState: {
    * shared with the current user (excludes legacy_public-only prompts). */
   sharedWithMe: boolean;
   caseSensitive: boolean;
+  /** 011-skill-packages: show all items, only prompts, or only skills. */
+  itemType: ItemTypeFilter;
   isLoading: boolean;
 } = {
   searchTerm: '',
@@ -38,6 +40,7 @@ export const searchState: {
   favorites: false,
   sharedWithMe: false,
   caseSensitive: false,
+  itemType: 'all',
   isLoading: false,
 };
 
@@ -49,6 +52,7 @@ export function currentFilters() {
     favorites: searchState.favorites,
     sharedWithMe: searchState.sharedWithMe,
     caseSensitive: searchState.caseSensitive,
+    itemType: searchState.itemType,
   };
 }
 
@@ -61,6 +65,7 @@ export function buildSearchUrl(page: number, pageSize: number): string {
   if (searchState.favorites) params.append('favorites', 'true');
   if (searchState.sharedWithMe) params.append('filter', 'shared-with-me');
   if (searchState.caseSensitive) params.append('case_sensitive', 'true');
+  if (searchState.itemType !== 'all') params.append('item_type', searchState.itemType);
   params.append('page', String(page));
   params.append('limit', String(pageSize));
   return `/api/prompts/search?${params.toString()}`;
@@ -82,7 +87,8 @@ export function isAnyFilterActive(): boolean {
     (favoritesFilter && favoritesFilter.checked) ||
     (sharedWithMeFilter && sharedWithMeFilter.checked) ||
     (selectedCategory && selectedCategory !== 'all') ||
-    (selectedTag && selectedTag !== 'all')
+    (selectedTag && selectedTag !== 'all') ||
+    searchState.itemType !== 'all'
   );
 }
 

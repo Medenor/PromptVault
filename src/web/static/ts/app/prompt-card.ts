@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import type { PromptResponse } from '@/types';
+import type { ItemResponse, PromptResponse } from '@/types';
 import { t, tUnsafe } from '@/utils/i18n';
 import { attachSwipeReveal } from '@/gestures';
 import {
@@ -16,6 +16,8 @@ import {
 import { escapeHtml } from './shared';
 import { selectedPromptIds, handleCheckboxChange } from './bulk-actions';
 import type { PromptId } from './types';
+import { createSkillElement, createTypeBadge } from '@/skills/skill-card';
+import { isSkillItem } from '@/skills/skill-api';
 
 export interface PromptElementHandlers {
   onCopy: (id: PromptId) => void;
@@ -26,6 +28,8 @@ export interface PromptElementHandlers {
   onCopyWithVersion: (id: PromptId) => void;
   /** Open the share modal for this prompt (owner/admin only, 007-prompt-sharing). */
   onShare: (id: PromptId) => void;
+  /** Open a skill's detail view (011-skill-packages). Skills never use onEdit. */
+  onOpenSkill?: (id: number) => void;
 }
 
 let promptElementHandlers: PromptElementHandlers | null = null;
@@ -54,11 +58,23 @@ export function setLastSelectedPromptIdSetter(setter: (id: number) => void): voi
   lastSelectedPromptIdSetter = setter;
 }
 
-export function createPromptElement(id: string, prompt: PromptResponse): HTMLDivElement {
+export function createPromptElement(id: string, item: ItemResponse): HTMLDivElement {
   const handlers = promptElementHandlers;
   if (!handlers) {
     throw new Error('Prompt element handlers not initialized');
   }
+
+  // Skills get their own card: no prompt body, no copy/version/share actions,
+  // and activation opens the skill detail view, never the prompt editor.
+  if (isSkillItem(item)) {
+    return createSkillElement(id, item, {
+      onOpen: (skillId) => handlers.onOpenSkill?.(skillId),
+      onDelete: (skillId) => handlers.onDelete(skillId),
+      onToggleFavorite: (skillId) => handlers.onToggleFavorite(skillId),
+      onSelect: (skillId) => lastSelectedPromptIdSetter(skillId),
+    });
+  }
+  const prompt: PromptResponse = item;
 
   const div = document.createElement('div');
   div.className =
@@ -186,6 +202,9 @@ export function createPromptElement(id: string, prompt: PromptResponse): HTMLDiv
             ${deleteButtonHTML}
         </div>
     `;
+
+  // Type badge (Prompt) next to the title, matching the Skill badge.
+  div.querySelector(`#${titleId}`)?.appendChild(createTypeBadge('prompt'));
 
   // Insert checkbox at the beginning of prompt-actions
   const promptActions = div.querySelector(`#prompt-actions-${id}`) as HTMLElement | null;

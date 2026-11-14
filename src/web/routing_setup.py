@@ -23,6 +23,7 @@ from src.web.routers import (
     prompts_router,
     prompts_sharing_router,
     prompts_versions_router,
+    skills_router,
     tag_category_router,
     users_router,
 )
@@ -52,6 +53,7 @@ def configure_routing(app: FastAPI) -> None:
     - /api/admin - Admin endpoints (admin role required)
     - /api/admin/scheduler - Scheduler management endpoints (admin role required)
     - /api/prompts - Prompt CRUD with authentication
+    - /api/skills - Skill packages (import, browse, export, manage)
 
     Authentication and admin routers are only mounted when auth is enabled.
     When AUTH_ENABLED=false the app runs in anonymous mode and these routes
@@ -59,6 +61,7 @@ def configure_routing(app: FastAPI) -> None:
     """
     app.include_router(prompts_router, prefix="/api")
     app.include_router(prompts_versions_router, prefix="/api")
+    app.include_router(skills_router, prefix="/api")
     app.include_router(import_export_router, prefix="/api")
     app.include_router(tag_category_router, prefix="/api")
     app.include_router(scheduler_router, prefix="/api")

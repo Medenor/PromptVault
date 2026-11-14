@@ -20,6 +20,12 @@ vi.mock('@/utils/api', () => ({
   apiGet: (...args: unknown[]) => apiGetMock(...args),
 }));
 
+const updateSkillMock = vi.fn();
+vi.mock('@/skills/skill-api', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/skills/skill-api')>();
+  return { ...actual, updateSkill: (...args: unknown[]) => updateSkillMock(...args) };
+});
+
 const confirmAsyncMock = vi.fn();
 vi.mock('@/utils/dialogs', () => ({
   confirmAsync: (...args: unknown[]) => confirmAsyncMock(...args),
@@ -100,7 +106,7 @@ describe('copyPrompt', () => {
     await copyPrompt('1');
 
     expect(apiGetMock).toHaveBeenCalledWith('/api/prompts/1');
-    expect(promptCache['1']?.prompt).toBe('fetched body');
+    expect((promptCache['1'] as PromptResponse | undefined)?.prompt).toBe('fetched body');
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith('fetched body');
   });
 
@@ -205,6 +211,20 @@ describe('toggleFavorite', () => {
 
     const btn = document.querySelector('.favorite-btn[data-id="1"]');
     expect(btn?.textContent).toBe('★');
+    expect(promptCache['1']?.favorite).toBe(true);
+  });
+
+  it('persists a skill favorite through the skill endpoint, not the prompt one', async () => {
+    updateSkillMock.mockResolvedValueOnce({});
+    promptCache['1'] = {
+      ...makePrompt({ favorite: false }),
+      item_type: 'skill',
+    } as unknown as PromptResponse;
+
+    await toggleFavorite('1');
+
+    expect(updateSkillMock).toHaveBeenCalledWith(1, { favorite: true });
+    expect(apiFetchMock).not.toHaveBeenCalled();
     expect(promptCache['1']?.favorite).toBe(true);
   });
 

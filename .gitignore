@@ -85,3 +85,6 @@ accessibility-report/
 tests/accessibility/reports/
 .setup_state.json
 tests/PERFORMANCE_BASELINE.md
+
+# Downloaded corpora for network-marked tests
+.cache/

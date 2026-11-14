@@ -696,6 +696,27 @@ The test suite was completely rewritten. Key changes:
 
 ---
 
+## Skill package tests (011-skill-packages)
+
+Skills have their own suites. Archives are built in memory by `tests/fixtures/skills/build_fixtures.py`, so no binary fixtures are committed.
+
+| Area                                                                                                       | Where                                                                               |
+| ---------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| Archive reader, frontmatter, Markdown renderer, export writer                                              | `tests/unit/test_skill_*.py`                                                        |
+| Migration, prompt-only guards, import/browse/export/manage APIs, upload limits, auth modes, search, backup | `tests/integration/test_skill*.py`                                                  |
+| Performance targets (SC-001, SC-007)                                                                       | `tests/benchmarks/test_skill_detail_perf.py`                                        |
+| Frontend                                                                                                   | `src/web/static/ts/skills/__tests__/` plus the card, filter and import/export tests |
+| End to end (import, keyboard tree, download, axe)                                                          | `tests/e2e/skills.spec.ts` (needs a running dev server)                             |
+
+Optional legs, each skipped with a reason when its prerequisite is missing:
+
+- **PostgreSQL**: set `TEST_DATABASE_URL` (or `DATABASE_URL`) to a throwaway PostgreSQL database, never a database you care about. The migration, full-text search and `pg_dump` round-trip tests then run against it. `pg_dump` and `psql` must be on `PATH` for the backup test.
+- **Reference validator (SC-008)**: install the Agent Skills `skills-ref` tool and put it on `PATH`. `tests/unit/test_skill_archive_writer.py` then checks that an exported, warning-free archive passes `skills-ref validate`.
+- **Reference corpus (SC-004)**: `tests/integration/test_skill_reference_corpus.py` is marked `network`. It downloads a pinned snapshot of `anthropics/skills` (see `tests/fixtures/skills/reference_corpus.json`) into the git-ignored `.cache/skill-corpus/` and skips when offline. Deselect it with `-m "not network"`.
+- **Anonymous mode**: `AUTH_ENABLED=false python3 -m pytest --no-cov tests/integration/test_skills_auth_modes.py` runs the tests that need auth turned off.
+
+---
+
 ## Summary
 
 The PromptVault test suite provides:

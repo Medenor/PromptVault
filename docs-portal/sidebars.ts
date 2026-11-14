@@ -25,6 +25,7 @@ const sidebars: SidebarsConfig = {
         'user-guide/pagination',
         'user-guide/import-export',
         'user-guide/sharing',
+        'user-guide/skills',
         'user-guide/versioning',
         'user-guide/backups',
         'user-guide/two-factor-auth',

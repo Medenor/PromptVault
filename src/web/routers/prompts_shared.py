@@ -17,6 +17,7 @@ from sqlalchemy.orm import Session
 from src.config.auth_config import auth_settings
 from src.db.models.prompt import Prompt
 from src.db.models.user import User
+from src.services.exceptions import ItemIsSkillError
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -107,6 +108,36 @@ def check_prompt_access(
         )
 
 
+def reject_if_skill(prompt: Prompt | None, user: User | None, session: Session) -> None:
+    """Refuse a prompt-only operation when the target is a skill (FR-003).
+
+    A skill the caller cannot see is reported as not found (existence hidden,
+    like any invisible item); a visible skill gets 409 ``ITEM_IS_SKILL``.
+    Does nothing for a missing row or a prompt, so existing 404 handling in
+    the caller is unchanged.
+
+    Args:
+        prompt: The target row, or None when it does not exist
+        user: Acting user (None in anonymous mode)
+        session: Database session, used to resolve permissions
+
+    Raises:
+        HTTPException: 404 when the skill is invisible to the caller
+        ItemIsSkillError: 409 when the skill is visible to the caller
+    """
+    if prompt is None or prompt.item_type != "skill":
+        return
+    if (
+        auth_settings.auth_enabled
+        and effective_permission(prompt, user, session) is None
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Prompt with ID {prompt.id} not found",
+        )
+    raise ItemIsSkillError(context={"prompt_id": prompt.id})
+
+
 def check_prompt_ownership(
     prompt: Prompt, user: User, session: Session | None = None
 ) -> None:
@@ -182,7 +213,11 @@ def _prompt_to_dict(
     viewer: User | None = None,
     session: Session | None = None,
 ) -> dict:
-    """Convert Prompt model to dictionary for API response.
+    """Convert a Prompt row (prompt or skill) to a dictionary for API responses.
+
+    A prompt item carries its ``prompt`` body. A skill item is a
+    ``SkillSummary`` (contracts/skills-api.md): it deliberately omits ``prompt``
+    so a large ``SKILL.md`` is never sent with a list page.
 
     When ``viewer`` and ``session`` are both provided, the payload gains the
     per-viewer sharing fields from contracts/sharing-api.md §4 (``shared``,
@@ -196,25 +231,40 @@ def _prompt_to_dict(
         session: Database session, for grant lookups (optional)
 
     Returns:
-        dict: Prompt data formatted for API response
+        dict: Item data formatted for API response
     """
-    result = {
+    is_skill = prompt.item_type == "skill"
+    result: dict = {
         "id": prompt.id,
+        "item_type": "skill" if is_skill else "prompt",
         "title": prompt.title,
-        "prompt": prompt.prompt,
         "category": prompt.category.name if prompt.category else "",
         "category_color": prompt.category.color if prompt.category else None,
         "tags": [tag.name for tag in prompt.tags] if prompt.tags else [],
         "tag_colors": (
             {tag.name: tag.color for tag in prompt.tags} if prompt.tags else {}
         ),
-        "note": prompt.note or "",
         "favorite": prompt.favorite,
         "user_id": prompt.user_id,
         "created_at": prompt.created_at.isoformat() if prompt.created_at else None,
         "updated_at": prompt.updated_at.isoformat() if prompt.updated_at else None,
-        "semantic_version": prompt.semantic_version,
     }
+
+    if is_skill:
+        package = prompt.skill_package
+        result.update(
+            {
+                "skill_identifier": package.skill_identifier if package else "",
+                "description": package.description if package else None,
+                "file_count": package.file_count if package else 0,
+                "total_bytes": package.total_bytes if package else 0,
+                "format_warnings": list(package.format_warnings) if package else [],
+            }
+        )
+    else:
+        result["prompt"] = prompt.prompt
+        result["note"] = prompt.note or ""
+        result["semantic_version"] = prompt.semantic_version
 
     if session is not None:
         result["legacy_public"] = bool(prompt.legacy_public)

@@ -20,6 +20,7 @@ function resetSearchState(): void {
   searchState.tag = 'all';
   searchState.favorites = false;
   searchState.sharedWithMe = false;
+  searchState.itemType = 'all';
   searchState.caseSensitive = false;
   searchState.isLoading = false;
 }
@@ -38,6 +39,7 @@ describe('currentFilters / buildSearchUrl', () => {
       tag: 'all',
       favorites: false,
       sharedWithMe: false,
+      itemType: 'all',
       caseSensitive: false,
     });
   });

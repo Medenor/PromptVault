@@ -7,9 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### ✨ Added
+
+- **Skills: a second content type next to prompts** (spec `011-skill-packages`): import, browse, download and manage multi-file skill packages (a `SKILL.md` with frontmatter plus optional scripts, references, templates and assets).
+  - **Import** from a `.zip` through the new **Nouveau ▾ / New ▾ → Import skill** dialog (`POST /api/skills/import`), with an optional category (chosen from your existing categories) and tags (existing tags are offered as clickable chips). The archive is read in memory only, never extracted to disk or executed, with path, link, duplicate-entry, size and compression-ratio checks. Frontmatter is checked leniently against the Agent Skills format: problems are shown as warnings, not rejections.
+  - **Browse**: skills appear in the prompt list with a "Skill" badge and an item-type filter (All / Prompts / Skills). The detail view shows the rendered `SKILL.md` instructions (sanitised Markdown), a file tree and a text/binary file viewer.
+  - **Manage**: edit details, replace the files with a new archive, delete, and download the whole skill as a standard-layout `.zip` (`/api/skills/*`). Skills are full-text searchable through the existing search, and are included in database backup and restore.
+  - **Not available for skills in this version**: version history, sharing, placeholders, bulk import/export and in-place text edits return `409 ITEM_IS_SKILL` (hidden in the UI). Replacing files overwrites the previous ones. Selective restore and restore diff skip skill rows.
+  - **Limits** are configurable with `SKILL_MAX_UPLOAD_BYTES`, `SKILL_MAX_TOTAL_BYTES`, `SKILL_MAX_FILES`, `SKILL_MAX_DEPTH`, `SKILL_MAX_FILE_BYTES`, `SKILL_MAX_COMPRESSION_RATIO`, `SKILL_TEXT_PREVIEW_BYTES` and `SKILL_MAX_SKILL_MD_BYTES` (see `.env.example`). Oversized uploads are refused with `413`, including chunked uploads.
+  - Backend: `SkillService` and the archive reader/writer in `src/services/skills/`, `SkillRepository`, `skills_router.py`. Migration `d4e5f6a7b8c9` adds `prompts.item_type` plus the `skill_packages` and `skill_files` tables, and works on SQLite and PostgreSQL without dropping the full-text sync triggers. New dependencies: `PyYAML`, `markdown-it-py`, `nh3`. User guide page added in all four languages.
+- **Header menus**: "New prompt" and "Import skill" now share one **New ▾** menu, and between 768 and 1279 px wide Import/Export, Backup and Documentation move into a **More ▾** menu, so the navigation fits on one line. Both menus are keyboard accessible.
+
+### ⚙️ Changed
+
+- The service worker cache moved to `v7`; a reload may be needed once to pick up new translations.
+
 ### 🐛 Fixed
 
 - **Documentation locale links could leak Docker's internal port**: Docusaurus emits canonical page URLs without a trailing slash. Nginx then redirected directory requests to its internal listening port (`8080`), sending visitors away from the published portal port (`7876`) and causing a 404/connection failure after switching languages. Directory redirects are now relative, so the browser retains the externally requested origin and port. The documentation container healthcheck now targets IPv4 loopback explicitly, avoiding an IPv6 `localhost` resolution failure when nginx listens only on IPv4.
+
+**Upgrade note**: run the Alembic migration (`alembic upgrade head`) and reinstall dependencies (`PyYAML`, `markdown-it-py`, `nh3`). Existing prompts are unaffected and keep `item_type = 'prompt'`.
 
 ## [1.13.1] - 2026-11-13
 

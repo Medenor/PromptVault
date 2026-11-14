@@ -44,6 +44,23 @@ from sqlalchemy.orm import Session, sessionmaker
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # Import database components
+# Skill archive fixtures (feature 011): builders live in tests/fixtures/skills/.
+from fixtures.skills.conftest import (  # noqa: E402,F401
+    make_skill_zip,
+    skill_admin,
+    skill_api,
+    skill_audit,
+    skill_other,
+    skill_owner,
+    skill_owner_session,
+    skill_zip_bad_name,
+    skill_zip_no_frontmatter,
+    skill_zip_non_utf8,
+    skill_zip_valid_root,
+    skill_zip_valid_wrapped,
+    skill_zip_with_clutter,
+)
+
 from src.db.base import Base
 from src.db.models import (
     Category,

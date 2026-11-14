@@ -24,6 +24,7 @@ from starlette.types import Scope
 from src.services.exceptions import PromptVaultException
 from src.services.logging_service import logging_service
 from src.web.middleware.rate_limit import limiter, rate_limit_exceeded_handler
+from src.web.middleware.request_body_limit import RequestBodyLimitMiddleware
 from src.web.middleware.security_headers import SecurityHeadersMiddleware
 
 logger = logging_service.get_logger(__name__)
@@ -73,6 +74,11 @@ def configure_middleware(app: FastAPI, record_validation_event) -> None:
         record_validation_event: Callback used by validation error handlers
             to log validation failures to the ValidationMonitor.
     """
+    # Skill upload size limit (413 before/while the body arrives). Added before
+    # the security-headers middleware so it sits inside it and its 413
+    # responses still get the security headers.
+    app.add_middleware(RequestBodyLimitMiddleware)
+
     # Security headers on all responses (HSTS, CSP, X-Frame-Options, etc.)
     app.add_middleware(SecurityHeadersMiddleware)
     logger.info("Security headers middleware added (HSTS, CSP, X-Frame-Options, etc.)")

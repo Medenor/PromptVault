@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import type { PromptResponse, PromptListResponse } from '@/types';
+import type { ItemResponse, PromptListResponse } from '@/types';
 import { t } from '@/utils/i18n';
 import { apiGet } from '@/utils/api';
 import { showNotification } from '@/utils/notifications';
@@ -21,7 +21,7 @@ import { initializePromptsListKeyboardNavigation } from './keyboard-nav';
 import { buildSearchUrl, currentFilters, isAnyFilterActive, searchState } from './prompt-filters';
 import { createPromptElement, setLastSelectedPromptIdSetter } from './prompt-card';
 
-export let promptCache: Record<string, PromptResponse> = {};
+export let promptCache: Record<string, ItemResponse> = {};
 export let lastSelectedPromptId: number | null = null; // Track the last selected prompt for keyboard shortcuts
 
 export function setLastSelectedPromptId(id: number | null): void {
@@ -40,6 +40,7 @@ export let paginationState: PaginationState = createInitialPaginationState({
   favorites: false,
   sharedWithMe: false,
   caseSensitive: false,
+  itemType: 'all',
 });
 
 export function updateLoadMoreControl(): void {
@@ -148,6 +149,7 @@ export async function performSearch(): Promise<void> {
         tag: searchState.tag,
         favorites: searchState.favorites,
         caseSensitive: searchState.caseSensitive,
+        itemType: searchState.itemType,
       },
     });
     showNotification(t('search.error'), 'error');
@@ -166,10 +168,7 @@ export async function performSearch(): Promise<void> {
   }
 }
 
-function updateSearchResultsInfo(
-  prompts: Record<string, PromptResponse>,
-  totalCount: number
-): void {
+function updateSearchResultsInfo(prompts: Record<string, ItemResponse>, totalCount: number): void {
   const resultCount = Object.keys(prompts || {}).length;
   const searchResultsInfo = document.getElementById('search-results-info');
   const promptsListEl = document.getElementById('prompts-list');
@@ -244,6 +243,11 @@ function updateSearchResultsInfo(
     if (searchState.caseSensitive) {
       activeFilters.push(t('search.filter.caseSensitive'));
     }
+    if (searchState.itemType !== 'all') {
+      activeFilters.push(
+        t('search.filter.type', { type: t(`filters.itemType.${searchState.itemType}`) })
+      );
+    }
 
     if (activeFilters.length > 0) {
       infoText += ` ${t('search.filteredBy', {
@@ -265,7 +269,8 @@ function updateSearchResultsInfo(
       searchState.category !== 'all' ||
       searchState.tag !== 'all' ||
       searchState.favorites ||
-      searchState.caseSensitive
+      searchState.caseSensitive ||
+      searchState.itemType !== 'all'
     ) {
       clearAllFiltersBtn.textContent = t('search.clearFiltersWithCount', { count: resultCount });
       showElement(clearAllFiltersBtn);
@@ -275,7 +280,7 @@ function updateSearchResultsInfo(
   }
 }
 
-export function renderPrompts(prompts: Record<string, PromptResponse>): void {
+export function renderPrompts(prompts: Record<string, ItemResponse>): void {
   const container = document.getElementById('prompts-list') as HTMLElement | null;
   const searchResultsInfo = document.getElementById('search-results-info');
   const promptsEmptyState = document.getElementById('prompts-empty-state');

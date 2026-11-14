@@ -182,3 +182,15 @@ Tailwind utility classes only; no custom CSS unless truly unavoidable (animation
   constant changes — there is no other invalidation signal.
 - Any change under `src/web/static/` (locales, CSS, JS, images) must bump `CACHE_VERSION` in the
   same change. `make lint` / CI enforce this via the `check-sw-cache-version` target (Codeberg #74).
+- **The gate only checks that the branch bumped `CACHE_VERSION` at least once.** It diffs the whole
+  branch against `main`, so after the first bump it stays green even if you later add locale keys,
+  CSS or JS. While iterating on a branch, **bump again after every later change under
+  `src/web/static/`**, and always before asking anyone to look at the UI. A browser that already
+  loaded the previous version keeps the old files.
+- Typical symptom of a missed bump: a new i18n key renders as its raw name (for example
+  `nav.more` or `importExport.skillsExcludedTitle`) while `curl /static/locales/<lang>.json` shows
+  the key. Emptying the browser's HTTP cache does **not** help, because the Service Worker owns
+  its own Cache Storage. Fix: bump the constant, rebuild, reload twice (install, then take over),
+  or use DevTools → Application → Clear site data.
+- Rebuild (`npm run build`) after the bump, then regenerate the template snapshots if
+  `tests/test_template_snapshots.py` fails: they embed hashed asset filenames.

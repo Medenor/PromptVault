@@ -96,6 +96,8 @@ export interface SessionListResponse {
  */
 export interface PromptResponse {
   id: number;
+  /** Always 'prompt'. Optional so older payloads and fixtures still type-check. */
+  item_type?: 'prompt';
   title: string;
   prompt: string;
   category: string;
@@ -123,6 +125,41 @@ export interface PromptResponse {
    */
   match_context?: string;
 }
+
+/**
+ * A skill in list and search results (011-skill-packages). Deliberately has
+ * no `prompt` body: the detail view fetches it from /api/skills/{id}.
+ */
+export interface SkillSummary {
+  id: number;
+  item_type: 'skill';
+  title: string;
+  skill_identifier: string;
+  description: string | null;
+  category: string;
+  category_color?: string | null;
+  tags: string[];
+  tag_colors?: Record<string, string | null>;
+  favorite: boolean | null;
+  file_count: number;
+  total_bytes: number;
+  format_warnings: string[];
+  user_id: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+  /** Per-viewer fields, as on PromptResponse. */
+  shared?: boolean;
+  legacy_public?: boolean;
+  permission?: 'owner' | 'edit' | 'read' | null;
+  /** Ranked-search snippet, as on PromptResponse. */
+  match_context?: string;
+}
+
+/** One entry of a mixed prompt/skill list. */
+export type ItemResponse = PromptResponse | SkillSummary;
+
+/** Value of the list `item_type` filter. */
+export type ItemTypeFilter = 'all' | 'prompt' | 'skill';
 
 // ============================================
 // SHARING RESPONSES
@@ -167,7 +204,7 @@ export interface ShareListResponse {
  * List of prompts (as object with ID keys)
  */
 export interface PromptListResponse {
-  prompts: Record<string, PromptResponse>;
+  prompts: Record<string, ItemResponse>;
   page: number;
   limit: number;
   total_pages: number;

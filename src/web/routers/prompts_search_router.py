@@ -10,6 +10,7 @@ unchanged.
 """
 
 import logging
+from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -48,6 +49,14 @@ def _visibility_scope(user: User | None) -> str | None:
     return user.id
 
 
+ItemTypeFilter = Literal["all", "prompt", "skill"]
+
+
+def _item_type_arg(item_type: ItemTypeFilter) -> str | None:
+    """Map the ``item_type`` query value to the repository argument (None = all)."""
+    return None if item_type == "all" else item_type
+
+
 # Configure logging
 logger = logging.getLogger(__name__)
 
@@ -83,6 +92,8 @@ router = APIRouter(
     **Query Parameters:**
     - page: Page number, 1-indexed (default 1; values <1 normalize to 1)
     - limit: Page size (default 50; clamped to a maximum of 100)
+    - item_type: `all` (default), `prompt` or `skill`. Skill items omit the
+      `prompt` body (see `SkillSummary`)
     """,
     responses={
         200: {"description": "Prompts retrieved successfully"},
@@ -92,6 +103,7 @@ async def list_prompts(
     page: int = 1,
     limit: int = DEFAULT_PAGE_SIZE,
     filter: str | None = None,
+    item_type: ItemTypeFilter = "all",
     user: User | None = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
@@ -102,19 +114,23 @@ async def list_prompts(
         limit: Page size
         filter: 'shared-with-me' narrows to explicit grants only (excludes
             legacy-public prompts); any other value is ignored
+        item_type: 'all' (default), 'prompt' or 'skill'
         user: Authenticated user (optional)
         db: Database session
 
     Returns:
-        dict: Pagination envelope with prompts dictionary keyed by ID
+        dict: Pagination envelope with items dictionary keyed by ID
     """
     page, limit = normalize_pagination(page, limit)
 
     prompt_repo = PromptRepository(db)
     visible_to_user_id = _visibility_scope(user)
     shared_only = filter == "shared-with-me"
+    type_filter = _item_type_arg(item_type)
     total_count = prompt_repo.count(
-        visible_to_user_id=visible_to_user_id, shared_only=shared_only
+        visible_to_user_id=visible_to_user_id,
+        shared_only=shared_only,
+        item_type=type_filter,
     )
     # Use search() rather than get_all() so results are stably ordered
     # (get_all() has no ORDER BY, which makes OFFSET/LIMIT pagination
@@ -125,6 +141,7 @@ async def list_prompts(
         offset=(page - 1) * limit,
         visible_to_user_id=visible_to_user_id,
         shared_only=shared_only,
+        item_type=type_filter,
     )
 
     prompts_dict = {}
@@ -178,6 +195,7 @@ async def list_prompts(
       override relevance. Set `false` to restore the legacy ordering.
     - page: Page number, 1-indexed (default 1; values <1 normalize to 1)
     - limit: Page size (default 50; clamped to a maximum of 100)
+    - item_type: `all` (default), `prompt` or `skill`
 
     **Authentication:**
     - Optional for general search
@@ -198,6 +216,7 @@ async def search_prompts(
     page: int = 1,
     limit: int = DEFAULT_PAGE_SIZE,
     filter: str | None = None,
+    item_type: ItemTypeFilter = "all",
     user: User | None = Depends(get_current_user_or_none),
     db: Session = Depends(get_db),
 ):
@@ -215,11 +234,12 @@ async def search_prompts(
         limit: Page size
         filter: 'shared-with-me' narrows to explicit grants only (excludes
             legacy-public prompts); any other value is ignored
+        item_type: 'all' (default), 'prompt' or 'skill'
         user: Authenticated user (optional)
         db: Database session
 
     Returns:
-        dict: Pagination envelope with filtered prompts; each prompt gains
+        dict: Pagination envelope with filtered items; each prompt gains
             an optional `match_context` field (sentinel-wrapped snippet,
             see contracts/search-api.md) when the ranked engine produced
             a body/note match.
@@ -256,6 +276,7 @@ async def search_prompts(
         visible_to_user_id=visible_to_user_id,
         shared_only=shared_only,
         ranked=ranked,
+        item_type=_item_type_arg(item_type),
     )
     prompts = prompt_repo.search(
         query=search_query,
@@ -268,6 +289,7 @@ async def search_prompts(
         visible_to_user_id=visible_to_user_id,
         shared_only=shared_only,
         ranked=ranked,
+        item_type=_item_type_arg(item_type),
     )
 
     prompts_dict = {}

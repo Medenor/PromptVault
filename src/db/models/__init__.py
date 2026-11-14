@@ -18,6 +18,8 @@ Models exported:
     - Tag: Flexible tags for prompts
     - Prompt: Main prompt entity with current state
     - PromptShare: Per-prompt sharing grant (read/edit) between users
+    - SkillPackage: Metadata of a skill (a prompts row with item_type='skill')
+    - SkillFile: One stored file of a skill package
     - PromptVersion: Version history (Git-like immutable snapshots)
     - PromptBranch: Branch pointers for version control
     - Backup: Backup metadata
@@ -41,6 +43,8 @@ from src.db.models.prompt import Prompt
 from src.db.models.prompt_branch import PromptBranch
 from src.db.models.prompt_share import PromptShare
 from src.db.models.prompt_version import PromptVersion
+from src.db.models.skill_file import SkillFile
+from src.db.models.skill_package import SkillPackage
 from src.db.models.tag import Tag
 from src.db.models.totp_credential import TotpCredential
 from src.db.models.totp_login_challenge import TotpLoginChallenge
@@ -60,6 +64,8 @@ __all__ = [
     "PromptShare",
     "PromptVersion",
     "PromptBranch",
+    "SkillPackage",
+    "SkillFile",
     "Backup",
     "BackupSchedule",
     "BackupStorageProvider",
