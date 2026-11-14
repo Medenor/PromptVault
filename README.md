@@ -71,6 +71,7 @@
   - [Built With](#built-with)
   - [Version Control](#version-control)
   - [Prompt Sharing & Collaboration](#prompt-sharing--collaboration)
+  - [Skills](#skills)
   - [Screenshots](#screenshots-and-gallery)
 - [Quick Start](#quick-start)
 - [Getting Started](#getting-started)
@@ -98,7 +99,7 @@
 
 ## About
 
-PromptVault is a modern web-based prompt management application designed to help users easily organize, store, and retrieve their prompts for various AI applications, software development, content marketing, and much more. Whether you are a developer, writer, marketer, or simply a user of AI-based tools, PromptVault allows you to centralize your prompts and improve your productivity through a responsive web interface accessible from any browser.
+PromptVault is a modern web-based prompt management application designed to help users easily organize, store, and retrieve their prompts for various AI applications, software development, content marketing, and much more. Besides prompts, it also stores **skills**: multi-file packages (a `SKILL.md` plus scripts, references and assets) that AI agents can load. Whether you are a developer, writer, marketer, or simply a user of AI-based tools, PromptVault allows you to centralize your prompts and improve your productivity through a responsive web interface accessible from any browser.
 
 With built-in multi-user authentication, role-based access control, and per-prompt sharing, PromptVault is ready for team deployments and production environments. Secure your prompts, manage user permissions, share individual prompts with teammates, and collaborate with confidence.
 
@@ -181,6 +182,19 @@ Prompt owners can grant individual teammates `read` or `edit` access to a specif
 **Visibility change**: prompts created from this release onward default to **private** (visible only to their owner, admins, and explicitly-granted users). Prompts that existed before this release were automatically grandfathered as **"Public (legacy)"**, remaining visible to every authenticated user until their owner or an admin makes them private — a one-way transition. Export/import does not carry sharing grants or the legacy-public flag; only a full database backup/restore preserves sharing state.
 
 For technical details, see the [007-prompt-sharing](specs/007-prompt-sharing/) spec.
+
+### Skills
+
+PromptVault stores **skills** next to your prompts. A skill is a folder of instructions and helper files that an AI agent can load for a task. It always contains a `SKILL.md` file (a short header with a name and description, then the instructions) and may include scripts, references, templates and other files, following the open Agent Skills format.
+
+- **Import** a skill from a `.zip` archive with **New ▾ → Import skill**, with an optional category and tags. The archive is read in memory only: nothing in it is ever extracted to disk or executed. Format problems are shown as warnings instead of blocking the import.
+- **Browse** skills in the prompt list (with a "Skill" badge and an All / Prompts / Skills filter): the detail view shows the rendered instructions, a file tree and a file viewer.
+- **Manage** a skill: edit its details, replace its files with a new archive, delete it, or **download** it as a standard `.zip`.
+- Skills are **full-text searchable**, tagged and categorized like prompts, and **included in database backups**.
+- Not available for skills yet: version history, sharing, placeholders, and the bulk Import/Export page (which covers prompts only).
+- Upload limits are configurable with the `SKILL_*` settings (see [`.env.example`](.env.example)).
+
+For user instructions, see the Skills page in the documentation portal; for technical details, see the [011-skill-packages](specs/011-skill-packages/) spec.
 
 ## Screenshots and gallery
 
