@@ -20,7 +20,7 @@ the MPL was not distributed with this file, You can obtain one at https://mozill
             class="h-10 w-10 md:h-14 md:w-14 border-2 border-gray-400 dark:border-gray-600 rounded-lg shadow-lg shrink-0"
           />
         </a>
-        <div class="text-2xl font-bold">PromptVault</div>
+        <div class="md:max-lg:hidden text-2xl font-bold">PromptVault</div>
       </div>
 
       <!-- Actions -->
@@ -30,32 +30,54 @@ the MPL was not distributed with this file, You can obtain one at https://mozill
         aria-label="Main navigation"
         data-i18n="[aria-label]accessibility.labels.mainNavigation"
       >
-        <!-- Desktop-only: New Prompt -->
-        <button
-          type="button"
-          id="new-prompt-btn"
-          class="hidden md:block px-4 py-2 text-sm font-semibold rounded-lg bg-white text-blue-700 border border-blue-200 hover:bg-blue-50 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
-          data-i18n="nav.newPrompt"
-        >
-          New Prompt
-        </button>
-
-        <!-- Desktop-only: Import skill (011-skill-packages) -->
-        <button
-          type="button"
-          id="import-skill-btn"
-          class="hidden md:block px-4 py-2 text-sm font-medium rounded-lg bg-white text-blue-700 border border-blue-200 hover:bg-blue-50 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
-          data-i18n="nav.importSkill"
-        >
-          Import skill
-        </button>
+        <!-- Desktop-only: "New" dropdown (New prompt / Import skill) -->
+        <div class="relative hidden md:block">
+          <button
+            type="button"
+            id="new-menu-btn"
+            aria-haspopup="menu"
+            aria-expanded="false"
+            aria-controls="new-menu"
+            class="inline-flex items-center gap-1 whitespace-nowrap px-3 py-2 text-sm font-semibold rounded-lg bg-white text-blue-700 border border-blue-200 hover:bg-blue-50 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
+          >
+            <span data-i18n="nav.new">New</span>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          <div
+            id="new-menu"
+            role="menu"
+            aria-labelledby="new-menu-btn"
+            class="hidden absolute left-0 top-full mt-2 min-w-48 z-50 rounded-lg bg-white text-gray-900 shadow-lg border border-gray-200 py-1"
+          >
+            <button
+              type="button"
+              id="new-prompt-btn"
+              role="menuitem"
+              class="block w-full whitespace-nowrap text-left text-gray-900 px-4 py-2 text-sm font-medium hover:bg-blue-50 focus:outline-none focus-visible:bg-blue-50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-700"
+              data-i18n="nav.newPrompt"
+            >
+              New Prompt
+            </button>
+            <button
+              type="button"
+              id="import-skill-btn"
+              role="menuitem"
+              class="block w-full whitespace-nowrap text-left text-gray-900 px-4 py-2 text-sm font-medium hover:bg-blue-50 focus:outline-none focus-visible:bg-blue-50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-700"
+              data-i18n="nav.importSkill"
+            >
+              Import skill
+            </button>
+          </div>
+        </div>
 
         <!-- Desktop-only buttons -->
         <button
           type="button"
           id="import-export-btn"
           onclick="if (window.__requireOnlineNav) { window.__requireOnlineNav('/import-export'); } else { window.location.href = '/import-export'; }"
-          class="hidden md:block px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
+          class="hidden xl:block whitespace-nowrap px-3 py-2 text-sm font-medium rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
           data-i18n="nav.importExport"
         >
           Import/Export
@@ -64,7 +86,7 @@ the MPL was not distributed with this file, You can obtain one at https://mozill
           type="button"
           id="backup-btn"
           onclick="if (window.__requireOnlineNav) { window.__requireOnlineNav('/backup-management'); } else { window.location.href = '/backup-management'; }"
-          class="hidden md:block px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
+          class="hidden xl:block whitespace-nowrap px-3 py-2 text-sm font-medium rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
           data-i18n="nav.backupManagement"
         >
           Backup
@@ -72,11 +94,62 @@ the MPL was not distributed with this file, You can obtain one at https://mozill
         <a
           href="http://localhost:7876"
           data-docs-portal-link
-          class="hidden md:block px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
+          class="hidden xl:block whitespace-nowrap px-3 py-2 text-sm font-medium rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
           data-i18n="nav.documentation"
         >
           Documentation
         </a>
+        <!-- md to xl only: secondary links grouped in a "More" dropdown so the header fits on one line -->
+        <div class="relative hidden md:block xl:hidden">
+          <button
+            type="button"
+            id="more-menu-btn"
+            aria-haspopup="menu"
+            aria-expanded="false"
+            aria-controls="more-menu"
+            class="inline-flex items-center gap-1 whitespace-nowrap px-3 py-2 text-sm font-medium rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
+          >
+            <span data-i18n="nav.more">More</span>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          <div
+            id="more-menu"
+            role="menu"
+            aria-labelledby="more-menu-btn"
+            class="hidden absolute left-0 top-full mt-2 min-w-48 z-50 rounded-lg bg-white text-gray-900 shadow-lg border border-gray-200 py-1"
+          >
+            <button
+              type="button"
+              role="menuitem"
+              onclick="if (window.__requireOnlineNav) { window.__requireOnlineNav('/import-export'); } else { window.location.href = '/import-export'; }"
+              class="block w-full whitespace-nowrap text-left text-gray-900 px-4 py-2 text-sm font-medium hover:bg-blue-50 focus:outline-none focus-visible:bg-blue-50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-700"
+              data-i18n="nav.importExport"
+            >
+              Import/Export
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              onclick="if (window.__requireOnlineNav) { window.__requireOnlineNav('/backup-management'); } else { window.location.href = '/backup-management'; }"
+              class="block w-full whitespace-nowrap text-left text-gray-900 px-4 py-2 text-sm font-medium hover:bg-blue-50 focus:outline-none focus-visible:bg-blue-50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-700"
+              data-i18n="nav.backupManagement"
+            >
+              Backup
+            </button>
+            <a
+              href="http://localhost:7876"
+              data-docs-portal-link
+              role="menuitem"
+              class="block w-full whitespace-nowrap text-left text-gray-900 px-4 py-2 text-sm font-medium hover:bg-blue-50 focus:outline-none focus-visible:bg-blue-50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-700"
+              data-i18n="nav.documentation"
+            >
+              Documentation
+            </a>
+          </div>
+        </div>
+
         <div class="hidden md:block">
           {% include 'macros/language_selector.html' %}
         </div>
@@ -84,7 +157,7 @@ the MPL was not distributed with this file, You can obtain one at https://mozill
           type="button"
           id="profile-btn"
           onclick="window.location.href = '/auth/profile'"
-          class="hidden md:block px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
+          class="hidden md:block whitespace-nowrap px-3 py-2 text-sm font-medium rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
           data-i18n="nav.profile"
         >
           Profile
@@ -93,7 +166,7 @@ the MPL was not distributed with this file, You can obtain one at https://mozill
           type="button"
           id="admin-btn"
           onclick="window.location.href = '/admin/users'"
-          class="hidden md:block px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
+          class="hidden md:block whitespace-nowrap px-3 py-2 text-sm font-medium rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
           data-i18n="nav.admin"
           style="display: none"
         >
@@ -136,7 +209,7 @@ the MPL was not distributed with this file, You can obtain one at https://mozill
         <button
           type="button"
           id="logout-btn"
-          class="hidden md:block px-4 py-2 text-sm font-medium rounded-lg bg-red-600 text-white hover:bg-red-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
+          class="hidden md:block whitespace-nowrap px-3 py-2 text-sm font-medium rounded-lg bg-red-600 text-white hover:bg-red-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
           data-i18n="nav.logout"
         >
           Logout

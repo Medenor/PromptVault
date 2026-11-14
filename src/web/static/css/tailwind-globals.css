@@ -883,4 +883,233 @@
       transparent
     );
   }
+
+  /* Rendered SKILL.md instructions (011-skill-packages).
+     The HTML is sanitised server-side and carries no classes, and there is no
+     typography plugin, so Preflight's reset would leave headings, lists and
+     code looking like plain paragraphs. These rules restore the structure. */
+  .skill-instructions {
+    line-height: 1.65;
+    overflow-wrap: anywhere;
+  }
+
+  .skill-instructions > :first-child {
+    margin-top: 0;
+  }
+
+  .skill-instructions > :last-child {
+    margin-bottom: 0;
+  }
+
+  .skill-instructions h1,
+  .skill-instructions h2,
+  .skill-instructions h3,
+  .skill-instructions h4,
+  .skill-instructions h5,
+  .skill-instructions h6 {
+    font-weight: 700;
+    line-height: 1.3;
+    margin: 1.5em 0 0.5em;
+    color: #111827;
+  }
+
+  .skill-instructions h1 {
+    font-size: 1.5rem;
+    padding-bottom: 0.3em;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .skill-instructions h2 {
+    font-size: 1.25rem;
+    padding-bottom: 0.25em;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .skill-instructions h3 {
+    font-size: 1.125rem;
+  }
+
+  .skill-instructions h4 {
+    font-size: 1rem;
+  }
+
+  .skill-instructions h5,
+  .skill-instructions h6 {
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .skill-instructions p,
+  .skill-instructions ul,
+  .skill-instructions ol,
+  .skill-instructions pre,
+  .skill-instructions blockquote,
+  .skill-instructions table {
+    margin: 0 0 1em;
+  }
+
+  .skill-instructions ul {
+    list-style: disc outside;
+    padding-left: 1.5rem;
+  }
+
+  .skill-instructions ol {
+    list-style: decimal outside;
+    padding-left: 1.75rem;
+  }
+
+  .skill-instructions li {
+    margin: 0.25em 0;
+  }
+
+  .skill-instructions li > p {
+    margin: 0.25em 0;
+  }
+
+  .skill-instructions li > ul,
+  .skill-instructions li > ol {
+    margin: 0.25em 0 0.25em;
+  }
+
+  .skill-instructions ul ul {
+    list-style-type: circle;
+  }
+
+  .skill-instructions ul ul ul {
+    list-style-type: square;
+  }
+
+  .skill-instructions a {
+    color: #1d4ed8;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .skill-instructions a:hover {
+    color: #1e40af;
+  }
+
+  .skill-instructions strong {
+    font-weight: 700;
+  }
+
+  .skill-instructions em {
+    font-style: italic;
+  }
+
+  .skill-instructions del,
+  .skill-instructions s {
+    text-decoration: line-through;
+  }
+
+  .skill-instructions code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.875em;
+    padding: 0.15em 0.4em;
+    border-radius: 0.25rem;
+    background: #f3f4f6;
+    color: #111827;
+  }
+
+  .skill-instructions pre {
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    background: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    overflow-x: auto;
+    line-height: 1.5;
+  }
+
+  .skill-instructions pre code {
+    padding: 0;
+    background: transparent;
+    font-size: 0.8125rem;
+    overflow-wrap: normal;
+    white-space: pre;
+  }
+
+  .skill-instructions blockquote {
+    padding: 0.25em 1em;
+    border-left: 4px solid #d1d5db;
+    color: #4b5563;
+  }
+
+  .skill-instructions hr {
+    margin: 1.5em 0;
+    border: 0;
+    border-top: 1px solid #e5e7eb;
+  }
+
+  .skill-instructions table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+  }
+
+  .skill-instructions th,
+  .skill-instructions td {
+    padding: 0.4rem 0.75rem;
+    border: 1px solid #d1d5db;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  .skill-instructions th {
+    background: #f3f4f6;
+    font-weight: 600;
+  }
+
+  .dark .skill-instructions h1,
+  .dark .skill-instructions h2,
+  .dark .skill-instructions h3,
+  .dark .skill-instructions h4,
+  .dark .skill-instructions h5,
+  .dark .skill-instructions h6 {
+    color: #f9fafb;
+  }
+
+  .dark .skill-instructions h1,
+  .dark .skill-instructions h2,
+  .dark .skill-instructions hr {
+    border-color: #374151;
+  }
+
+  .dark .skill-instructions a {
+    color: #93c5fd;
+  }
+
+  .dark .skill-instructions a:hover {
+    color: #bfdbfe;
+  }
+
+  .dark .skill-instructions code {
+    background: #1f2937;
+    color: #f3f4f6;
+  }
+
+  .dark .skill-instructions pre {
+    background: #111827;
+    border-color: #374151;
+  }
+
+  .dark .skill-instructions pre code {
+    background: transparent;
+  }
+
+  .dark .skill-instructions blockquote {
+    border-left-color: #4b5563;
+    color: #d1d5db;
+  }
+
+  .dark .skill-instructions th,
+  .dark .skill-instructions td {
+    border-color: #4b5563;
+  }
+
+  .dark .skill-instructions th {
+    background: #1f2937;
+  }
 }

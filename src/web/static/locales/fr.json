@@ -29,7 +29,9 @@
     "account": "Compte",
     "data": "Données",
     "perPage": "Par page :",
-    "importSkill": "Importer un skill"
+    "importSkill": "Importer un skill",
+    "more": "Plus",
+    "new": "Nouveau"
   },
   "actions": {
     "add": "Ajouter",
@@ -867,6 +869,8 @@
       "fileLabel": "Archive du skill (.zip)",
       "categoryLabel": "Catégorie (facultatif)",
       "tagsLabel": "Tags (facultatif, séparés par des virgules)",
+      "noCategory": "Aucune catégorie",
+      "tagsSuggestions": "Tags existants (cliquer pour ajouter ou retirer)",
       "submit": "Importer",
       "cancel": "Annuler",
       "uploading": "Import en cours…",

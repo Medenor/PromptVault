@@ -367,8 +367,7 @@ export function openSkillDetail(
     instructionsHeading.className = 'text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2';
     instructionsHeading.textContent = t('skills.detail.instructions');
     const body = document.createElement('div');
-    body.className =
-      'skill-instructions prose prose-sm max-w-none dark:prose-invert text-gray-800 dark:text-gray-100 break-words';
+    body.className = 'skill-instructions max-w-none text-sm text-gray-800 dark:text-gray-100';
     // eslint-disable-next-line no-restricted-properties -- instructions_html is sanitised server-side (markdown-it with raw HTML off, then nh3 allow-list)
     body.innerHTML = html`${raw(skill.instructions_html)}`;
     instructions.append(instructionsHeading, body);

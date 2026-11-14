@@ -29,7 +29,9 @@
     "account": "Konto",
     "data": "Daten",
     "perPage": "Pro Seite:",
-    "importSkill": "Skill importieren"
+    "importSkill": "Skill importieren",
+    "more": "Mehr",
+    "new": "Neu"
   },
   "actions": {
     "add": "Hinzufügen",
@@ -861,6 +863,8 @@
       "fileLabel": "Skill-Archiv (.zip)",
       "categoryLabel": "Kategorie (optional)",
       "tagsLabel": "Tags (optional, durch Kommas getrennt)",
+      "noCategory": "Keine Kategorie",
+      "tagsSuggestions": "Vorhandene Tags (Klick zum Hinzufügen oder Entfernen)",
       "submit": "Importieren",
       "cancel": "Abbrechen",
       "uploading": "Import läuft…",

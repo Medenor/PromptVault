@@ -36,6 +36,12 @@ vi.mock('../skill-api', async (importOriginal) => {
   };
 });
 
+const apiGetMock = vi.fn();
+vi.mock('@/utils/api', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/utils/api')>();
+  return { ...actual, apiGet: (...args: unknown[]) => apiGetMock(...args) };
+});
+
 const notifyMock = vi.fn();
 vi.mock('@/utils/notifications', () => ({
   showNotification: (...args: unknown[]) => notifyMock(...args),
@@ -72,6 +78,19 @@ beforeEach(() => {
   importMock.mockReset();
   replaceMock.mockReset();
   notifyMock.mockReset();
+  apiGetMock.mockReset();
+  apiGetMock.mockImplementation((url: string) =>
+    Promise.resolve(
+      url === '/api/categories'
+        ? { categories: ['Professionnel', 'Perso'] }
+        : {
+            tags: [
+              { name: 'gxp', count: 3 },
+              { name: 'python', count: 1 },
+            ],
+          }
+    )
+  );
 });
 
 describe('openSkillImportDialog', () => {
@@ -79,9 +98,60 @@ describe('openSkillImportDialog', () => {
     openSkillImportDialog(vi.fn());
     const input = document.querySelector<HTMLInputElement>('input[type="file"]');
     expect(input?.accept).toContain('.zip');
-    expect(document.querySelector('input[name="category"]')).not.toBeNull();
+    expect(document.querySelector('select[name="category"]')).not.toBeNull();
     expect(document.querySelector('input[name="tags"]')).not.toBeNull();
     expect(document.querySelector('[role="dialog"]')).not.toBeNull();
+  });
+
+  it('offers the existing categories, like the prompt editor does', async () => {
+    openSkillImportDialog(vi.fn());
+    await flush();
+    const options = [
+      ...document.querySelectorAll<HTMLOptionElement>('select[name="category"] option'),
+    ].map((option) => option.value);
+    expect(options).toEqual(['', 'Professionnel', 'Perso']);
+  });
+
+  it('toggles existing tags into the tags field and keeps chips in sync with typing', async () => {
+    openSkillImportDialog(vi.fn());
+    await flush();
+    const input = document.querySelector<HTMLInputElement>(
+      'input[name="tags"]'
+    ) as HTMLInputElement;
+    const chip = (name: string): HTMLButtonElement =>
+      [...document.querySelectorAll<HTMLButtonElement>('.skill-tag-chip')].find(
+        (button) => button.textContent === name
+      ) as HTMLButtonElement;
+
+    chip('gxp').click();
+    chip('python').click();
+    expect(input.value).toBe('gxp, python');
+    expect(chip('gxp').getAttribute('aria-pressed')).toBe('true');
+
+    chip('gxp').click();
+    expect(input.value).toBe('python');
+    expect(chip('gxp').getAttribute('aria-pressed')).toBe('false');
+
+    input.value = 'GXP, other';
+    input.dispatchEvent(new Event('input'));
+    expect(chip('gxp').getAttribute('aria-pressed')).toBe('true');
+    expect(chip('python').getAttribute('aria-pressed')).toBe('false');
+  });
+
+  it('stays usable when the category and tag lookups fail', async () => {
+    apiGetMock.mockRejectedValue(new Error('offline'));
+    openSkillImportDialog(vi.fn());
+    await flush();
+    expect(document.querySelectorAll('select[name="category"] option')).toHaveLength(1);
+    expect(document.querySelector('.skill-tag-chip')).toBeNull();
+    expect(document.querySelector('input[name="tags"]')).not.toBeNull();
+  });
+
+  it('does not offer category or tags when replacing files', async () => {
+    openSkillReplaceDialog(5, vi.fn());
+    await flush();
+    expect(document.querySelector('select[name="category"]')).toBeNull();
+    expect(apiGetMock).not.toHaveBeenCalled();
   });
 
   it('asks for a file before uploading', () => {
@@ -106,12 +176,14 @@ describe('openSkillImportDialog', () => {
     const onDone = vi.fn();
     openSkillImportDialog(onDone);
     chooseFile(zip());
-    (document.querySelector('input[name="category"]') as HTMLInputElement).value = ' Docs ';
+    await flush();
+    (document.querySelector('select[name="category"]') as HTMLSelectElement).value =
+      'Professionnel';
     (document.querySelector('input[name="tags"]') as HTMLInputElement).value = 'a, b';
     submit();
     await flush();
 
-    expect(importMock).toHaveBeenCalledWith(expect.any(File), 'Docs', 'a, b');
+    expect(importMock).toHaveBeenCalledWith(expect.any(File), 'Professionnel', 'a, b');
     expect(onDone).toHaveBeenCalledWith(RESULT.skill, []);
     expect(notifyMock).toHaveBeenCalledWith('skills.import.success', 'success');
     expect(document.querySelector('[role="dialog"]')).toBeNull();

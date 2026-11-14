@@ -23,9 +23,10 @@ async function login(page: Page): Promise<void> {
 }
 
 async function openNewPromptForm(page: Page): Promise<void> {
-  const desktopButton = page.locator('#new-prompt-btn');
-  if (await desktopButton.isVisible()) {
-    await desktopButton.click();
+  const desktopMenu = page.locator('#new-menu-btn');
+  if (await desktopMenu.isVisible()) {
+    await desktopMenu.click();
+    await page.locator('#new-prompt-btn').click();
     return;
   }
   await page.locator('#mobile-menu-toggle').click();

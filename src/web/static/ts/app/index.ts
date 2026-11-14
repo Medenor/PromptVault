@@ -35,6 +35,7 @@ import {
 import { createShareModal } from '@/components/share-modal';
 import { openSkillDetail } from '@/skills/skill-detail';
 import { openSkillImportDialog } from '@/skills/skill-import';
+import { initNewMenu } from './new-menu';
 import { isAnyFilterActive, loadCategories, loadTags } from './prompt-filters';
 import { setPromptElementHandlers } from './prompt-card';
 import {
@@ -381,6 +382,9 @@ function setupEventListeners(): void {
     showRefreshLoading();
     void refreshPrompts().finally(hideRefreshLoading);
   });
+
+  // Desktop "New" dropdown (New prompt / Import skill)
+  initNewMenu();
 
   // New prompt button
   const newPromptBtn = document.getElementById('new-prompt-btn');

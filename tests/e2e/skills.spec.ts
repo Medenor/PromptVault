@@ -3,6 +3,7 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import AxeBuilder from '@axe-core/playwright';
+import { readFileSync } from 'node:fs';
 import { test, expect, type Page } from '@playwright/test';
 
 /**
@@ -86,7 +87,7 @@ async function login(page: Page): Promise<void> {
       (response) =>
         response.url().includes('/api/auth/login') && response.request().method() === 'POST'
     ),
-    page.locator('button[type="submit"]').click(),
+    page.locator('button[type="submit"]').first().click(),
   ]);
 }
 
@@ -102,12 +103,13 @@ test.describe('skill packages', () => {
     await login(page);
     await page.goto('/', { waitUntil: 'networkidle' });
 
-    const importButton = page.locator('#import-skill-btn');
-    test.skip(!(await importButton.isVisible()), 'The desktop import button needs a wide viewport');
+    const newMenu = page.locator('#new-menu-btn');
+    test.skip(!(await newMenu.isVisible()), 'The desktop "New" menu needs a wide viewport');
 
     // --- import (SC-001: under 30 s from opening the dialog) -----------------
     const started = Date.now();
-    await importButton.click();
+    await newMenu.click();
+    await page.locator('#import-skill-btn').click();
     await page.locator('input[type="file"][name="archive"]').setInputFiles({
       name: `${name}.zip`,
       mimeType: 'application/zip',
@@ -181,10 +183,11 @@ test.describe('skill packages', () => {
   test('a rejected archive shows a translated reason and stores nothing', async ({ page }) => {
     await login(page);
     await page.goto('/', { waitUntil: 'networkidle' });
-    const importButton = page.locator('#import-skill-btn');
-    test.skip(!(await importButton.isVisible()), 'The desktop import button needs a wide viewport');
+    const newMenu = page.locator('#new-menu-btn');
+    test.skip(!(await newMenu.isVisible()), 'The desktop "New" menu needs a wide viewport');
 
-    await importButton.click();
+    await newMenu.click();
+    await page.locator('#import-skill-btn').click();
     await page.locator('input[type="file"][name="archive"]').setInputFiles({
       name: 'no-skill-md.zip',
       mimeType: 'application/zip',
@@ -196,5 +199,58 @@ test.describe('skill packages', () => {
     await expect(status).toBeVisible();
     await expect(status).not.toBeEmpty();
     await expect(page.locator('.skill-detail-overlay')).toHaveCount(0);
+  });
+
+  // Set E2E_SKILL_ZIP to a real skill archive (for example one made on macOS,
+  // with __MACOSX clutter and bundled PDFs) to run this extra check.
+  test('a real archive imports, drops clutter, and its files can be read', async ({ page }) => {
+    const zipPath = process.env.E2E_SKILL_ZIP;
+    test.skip(!zipPath, 'Set E2E_SKILL_ZIP to run the real-archive check');
+    const buffer = readFileSync(zipPath as string);
+
+    await login(page);
+    await page.goto('/', { waitUntil: 'networkidle' });
+    const newMenu = page.locator('#new-menu-btn');
+    test.skip(!(await newMenu.isVisible()), 'The desktop "New" menu needs a wide viewport');
+
+    await newMenu.click();
+    await page.locator('#import-skill-btn').click();
+    await page.locator('input[type="file"][name="archive"]').setInputFiles({
+      name: 'real-skill.zip',
+      mimeType: 'application/zip',
+      buffer,
+    });
+    await page.locator('form.skill-archive-form button[type="submit"]').click();
+
+    const detail = page.locator('.skill-detail-overlay');
+    await expect(detail).toBeVisible({ timeout: 60_000 });
+    const skillId = await detail.getAttribute('data-skill-id');
+    try {
+      const treeItems = detail.locator('[role="tree"] [role="treeitem"]');
+      const paths = await treeItems.evaluateAll((els) =>
+        els.map((el) => (el as HTMLElement).dataset['path'] ?? '')
+      );
+      // OS clutter never reaches the vault.
+      expect(paths.some((p) => p.includes('__MACOSX') || p.endsWith('.DS_Store'))).toBe(false);
+      expect(paths).toContain('SKILL.md');
+
+      // A bundled PDF is binary: size and download link, no text.
+      await detail.locator('[data-path="references"] > .tree-row').click();
+      await detail.locator('[data-path="references/source-pdfs"] > .tree-row').click();
+      await detail
+        .locator('[data-path="references/source-pdfs/21-cfr-part-11.pdf"] > .tree-row')
+        .click();
+      await expect(detail.locator('.viewer-size')).toBeVisible();
+      await expect(detail.locator('a.viewer-download')).toBeVisible();
+      await expect(detail.locator('.viewer-text')).toHaveCount(0);
+
+      const [download] = await Promise.all([
+        page.waitForEvent('download'),
+        detail.locator('a.skill-download-btn').click(),
+      ]);
+      expect(download.suggestedFilename()).toMatch(/\.zip$/);
+    } finally {
+      await page.request.delete(`/api/skills/${skillId}`);
+    }
   });
 });
