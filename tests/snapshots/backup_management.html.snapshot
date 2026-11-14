@@ -25,7 +25,7 @@ document.documentElement.classList.add('dark');
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 <meta name="theme-color" content="#3B82F6" />
-<link rel="stylesheet" href="/static/dist/assets/telemetry.D07yKxy9.css" />
+<link rel="stylesheet" href="/static/dist/assets/telemetry.BcVrkOIG.css" />
 <script src="https://unpkg.com/i18next@23.7.6/i18next.min.js"></script>
 <script src="https://unpkg.com/i18next-browser-languagedetector@7.2.0/i18nextBrowserLanguageDetector.min.js"></script>
 <script src="https://unpkg.com/i18next-http-backend@2.4.2/i18nextHttpBackend.min.js"></script>
@@ -1089,11 +1089,11 @@ Delete All
 </div>
 </div>
 <script>window.__AUTH_ENABLED__ = true;</script>
-<script type="module" src="/static/dist/js/telemetry.Dbvd9qCe.js"></script>
+<script type="module" src="/static/dist/js/telemetry.BNEueToC.js"></script>
 <script type="module" src="/static/dist/js/globalShortcuts.C9zDFoVF.js"></script>
 <script
 type="module"
-src="/static/dist/js/backupManagement.XHu-FxXF.js"
+src="/static/dist/js/backupManagement.Cro4MJWw.js"
 ></script>
 </body>
 </html>
