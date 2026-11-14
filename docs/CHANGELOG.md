@@ -22,6 +22,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - The service worker cache moved to `v7`; a reload may be needed once to pick up new translations.
 
+### 🐛 Fixed
+
+- **Documentation locale links could leak Docker's internal port**: Docusaurus emits canonical page URLs without a trailing slash. Nginx then redirected directory requests to its internal listening port (`8080`), sending visitors away from the published portal port (`7876`) and causing a 404/connection failure after switching languages. Directory redirects are now relative, so the browser retains the externally requested origin and port. The documentation container healthcheck now targets IPv4 loopback explicitly, avoiding an IPv6 `localhost` resolution failure when nginx listens only on IPv4.
+
 **Upgrade note**: run the Alembic migration (`alembic upgrade head`) and reinstall dependencies (`PyYAML`, `markdown-it-py`, `nh3`). Existing prompts are unaffected and keep `item_type = 'prompt'`.
 
 ## [1.13.1] - 2026-11-13
