@@ -241,12 +241,34 @@ class TestListAndGetShapes:
         assert body["item_type"] == "skill"
         assert "prompt" not in body
 
-    def test_favorite_toggle_works_for_skills(self, skill_api, skill_owner, skill_id):
+    def test_prompt_favorite_endpoint_refuses_skills(
+        self, skill_api, skill_owner, skill_id
+    ):
         response = skill_api.client.put(
             f"/api/prompts/{skill_id}/favorite", headers=skill_owner
         )
+        _assert_item_is_skill(response)
+
+    def test_skill_favorite_goes_through_the_skill_endpoint(
+        self, skill_api, skill_owner, skill_id
+    ):
+        response = skill_api.client.patch(
+            f"/api/skills/{skill_id}", headers=skill_owner, json={"favorite": True}
+        )
         assert response.status_code == 200
         assert response.json()["favorite"] is True
+
+    def test_admin_cannot_favorite_another_users_skill(
+        self, skill_api, skill_admin, skill_id
+    ):
+        by_prompt_route = skill_api.client.put(
+            f"/api/prompts/{skill_id}/favorite", headers=skill_admin
+        )
+        by_skill_route = skill_api.client.patch(
+            f"/api/skills/{skill_id}", headers=skill_admin, json={"favorite": True}
+        )
+        assert by_prompt_route.status_code == 409
+        assert by_skill_route.status_code == 404
 
     def test_delete_removes_the_skill_and_its_files(
         self, skill_api, skill_owner, skill_id
@@ -258,6 +280,40 @@ class TestListAndGetShapes:
         assert response.status_code == 200
         assert skill_api.count_rows("skill_files") == 0
         assert skill_api.count_rows("skill_packages") == 0
+
+
+class TestBulkTagUpdateOwnership:
+    """``POST /api/tags/bulk-update`` must not retag items the caller cannot modify."""
+
+    def _update(self, skill_api, headers, ids):
+        return skill_api.client.post(
+            "/api/tags/bulk-update",
+            headers=headers,
+            json={"prompt_ids": ids, "add": ["sneaky"], "confirm": True},
+        )
+
+    def test_another_user_cannot_retag_a_skill(self, skill_api, skill_other, skill_id):
+        response = self._update(skill_api, skill_other, [skill_id])
+        assert response.status_code == 403
+        listing = skill_api.client.get(
+            "/api/prompts?item_type=skill", headers=skill_other
+        )
+        assert "sneaky" not in str(listing.json())
+
+    def test_a_mixed_selection_changes_nothing(
+        self, skill_api, skill_owner, skill_other, skill_id
+    ):
+        own = skill_api.seed_skill("skill-other-id", title="Other's own skill")
+        response = self._update(skill_api, skill_other, [own, skill_id])
+        assert response.status_code == 403
+        tags = skill_api.client.get("/api/tags", headers=skill_other).json()
+        assert "sneaky" not in str(tags)
+
+    def test_owner_and_admin_can_retag(
+        self, skill_api, skill_owner, skill_admin, skill_id
+    ):
+        assert self._update(skill_api, skill_owner, [skill_id]).status_code == 200
+        assert self._update(skill_api, skill_admin, [skill_id]).status_code == 200
 
 
 class TestBulkImportExport:

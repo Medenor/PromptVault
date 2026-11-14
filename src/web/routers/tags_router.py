@@ -14,6 +14,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from src.config.auth_config import auth_settings
 from src.db.models.user import User
 from src.db.repositories.prompt_repository import PromptRepository
 from src.db.repositories.tag_repository import TagRepository
@@ -42,6 +43,7 @@ from src.web.models.tag_category_responses import (
     TagSuggestionItem,
     TagSuggestionResponse,
 )
+from src.web.routers.prompts_shared import check_prompt_ownership
 
 logger = logging.getLogger(__name__)
 
@@ -669,6 +671,17 @@ async def bulk_update_tags(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Prompts not found: {missing}",
         )
+
+    # Every item must be one the caller may modify (owner or admin); skills
+    # follow the same rule, so a skill id cannot be retagged by anyone else.
+    if auth_settings.auth_enabled:
+        if user is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Authentication required",
+            )
+        for prompt in prompts:
+            check_prompt_ownership(prompt, user)
 
     tag_repo = TagRepository(db)
     tags_to_add = tag_repo.get_or_create_many(payload.add) if payload.add else []

@@ -8,7 +8,7 @@
 - `PUT /api/prompts/{id}` — Update prompt, creates new version (requires `edit` access — owner, admin, or an edit-grantee; `favorite` and `legacy_public: true` are rejected for non-owners)
 - `DELETE /api/prompts/{id}` — Delete prompt (owner/admin only)
 - `GET /api/prompts/search` — Search with filters (default scope: owned ∪ shared-with-me ∪ legacy-public; `?filter=shared-with-me` narrows to explicit grants only; admins see all; `?item_type=` as above; a skill matches on its `SKILL.md` text only)
-- `PUT /api/prompts/{id}/favorite` — Toggle favorite status (owner/admin only)
+- `PUT /api/prompts/{id}/favorite` — Toggle favorite status (owner/admin only; `409 ITEM_IS_SKILL` for skills, which use `PATCH /api/skills/{id}`)
 
 ## Skills
 

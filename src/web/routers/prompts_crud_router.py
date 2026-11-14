@@ -756,6 +756,10 @@ async def toggle_favorite(
             detail=f"Prompt with ID {prompt_id} not found",
         )
 
+    # Skills change favorite through PATCH /api/skills/{id}, which applies the
+    # owner-only skill policy (FR-003).
+    reject_if_skill(existing_prompt, user, db)
+
     # Check ownership (only owner can toggle favorite)
     check_prompt_ownership(existing_prompt, user)
 

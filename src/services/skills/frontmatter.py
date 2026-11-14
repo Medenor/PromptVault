@@ -22,7 +22,7 @@ MAX_DESCRIPTION_LENGTH = 1024
 MAX_TITLE_LENGTH = 200
 DEFAULT_IDENTIFIER = "skill"
 
-NAME_PATTERN = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
+NAME_PATTERN = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*\Z")
 
 # Warning codes (stored in skill_packages.format_warnings, translated client-side).
 FRONTMATTER_MISSING = "frontmatter_missing"

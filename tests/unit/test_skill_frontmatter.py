@@ -118,6 +118,13 @@ def test_name_invalid(name):
     assert meta.title == name
 
 
+def test_name_with_a_trailing_newline_is_invalid():
+    # "$" would accept "foo\n"; the identifier ends up in headers and zip names.
+    meta = parse('---\nname: "foo\\n"\ndescription: d\n---\nbody', folder="foo")
+    assert fm.NAME_INVALID in meta.warnings
+    assert "\n" not in meta.identifier
+
+
 def test_name_over_64_characters_is_invalid():
     name = "a" * 65
     meta = parse(f"---\nname: {name}\ndescription: d\n---\n", folder=name)

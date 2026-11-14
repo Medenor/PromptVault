@@ -5,7 +5,7 @@
  */
 
 import type { PromptResponse } from '@/types';
-import { deleteSkill, isSkillItem } from '@/skills/skill-api';
+import { deleteSkill, isSkillItem, updateSkill } from '@/skills/skill-api';
 import { t, tUnsafe } from '@/utils/i18n';
 import { apiFetch, apiGet } from '@/utils/api';
 import { showNotification } from '@/utils/notifications';
@@ -543,6 +543,7 @@ function setFavoriteButtonA11y(button: HTMLButtonElement, isFavorite: boolean): 
 
 export async function toggleFavorite(id: PromptId): Promise<void> {
   try {
+    let nextFavorite: boolean | null = null;
     // Optimistic update - immediately toggle the UI
     const favoriteBtn = document.querySelector<HTMLButtonElement>(`.favorite-btn[data-id="${id}"]`);
     if (favoriteBtn) {
@@ -551,7 +552,7 @@ export async function toggleFavorite(id: PromptId): Promise<void> {
           ? promptCache[id].favorite
           : favoriteBtn.getAttribute('aria-pressed') === 'true' ||
             (favoriteBtn.textContent ?? '').trim() === '★';
-      const nextFavorite = !currentFavorite;
+      nextFavorite = !currentFavorite;
 
       favoriteBtn.textContent = nextFavorite ? '★' : '☆';
       setFavoriteButtonA11y(favoriteBtn, nextFavorite);
@@ -562,10 +563,16 @@ export async function toggleFavorite(id: PromptId): Promise<void> {
       }
     }
 
-    // Make API call to persist the change
-    await apiFetch<void>(`/api/prompts/${id}/favorite`, {
-      method: 'PUT',
-    });
+    // Make API call to persist the change. Skills use their own endpoint,
+    // which applies the owner-only skill policy.
+    const cached = promptCache[id];
+    if (cached && isSkillItem(cached)) {
+      await updateSkill(Number(id), { favorite: nextFavorite ?? cached.favorite !== true });
+    } else {
+      await apiFetch<void>(`/api/prompts/${id}/favorite`, {
+        method: 'PUT',
+      });
+    }
   } catch (error) {
     // Revert optimistic update on error
     const favoriteBtn = document.querySelector<HTMLButtonElement>(`.favorite-btn[data-id="${id}"]`);
