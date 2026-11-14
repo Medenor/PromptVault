@@ -18,7 +18,7 @@ async function login(page: Page): Promise<void> {
       (response) =>
         response.url().includes('/api/auth/login') && response.request().method() === 'POST'
     ),
-    page.locator('button[type="submit"]').click(),
+    page.locator('button[type="submit"]').first().click(),
   ]);
 }
 
