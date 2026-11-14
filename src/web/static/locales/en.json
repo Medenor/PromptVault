@@ -322,7 +322,8 @@
     "operationCancelled": "Operation cancelled",
     "clearBtn": "Clear",
     "settingsCleared": "Export settings cleared",
-    "skillsExcluded": "This page only covers prompts. Skills are not exported or imported here: import a skill from New ▾ → Import skill, and download it from its own detail view."
+    "skillsExcludedTitle": "Prompts only: skills are not included",
+    "skillsExcluded": "Skills are neither exported nor imported on this page. Import a skill from New ▾ → Import skill, and download it from its own detail view."
   },
   "search": {
     "emptyState": "No prompts found. Create your first prompt to get started!",

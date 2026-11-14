@@ -36,12 +36,15 @@ describe('skills notice on the import/export page', () => {
     );
     expect(template).toContain('id="skills-excluded-notice"');
     expect(template).toContain('data-i18n="importExport.skillsExcluded"');
+    expect(template).toContain('data-i18n="importExport.skillsExcludedTitle"');
   });
 
   it.each(LANGS)('has a translated notice in %s', (lang) => {
-    const text = (section(lang, 'importExport') as Record<string, string>)['skillsExcluded'];
-    expect(typeof text).toBe('string');
-    expect(text?.length).toBeGreaterThan(10);
+    const strings = section(lang, 'importExport') as Record<string, string>;
+    for (const key of ['skillsExcluded', 'skillsExcludedTitle'] as const) {
+      expect(typeof strings[key]).toBe('string');
+      expect(strings[key]?.length).toBeGreaterThan(10);
+    }
   });
 });
 
