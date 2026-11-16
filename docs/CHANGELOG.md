@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Documentation portal update guide and navigation**: Added a four-language guide for updating and restoring a Docker Compose installation. The portal now has a “Back to PromptVault” navbar link, with its target configurable through `DOCS_APP_URL` when building the docs image.
+
 ## [1.14.1] - 2026-11-14
 
 ### 🐛 Fixed

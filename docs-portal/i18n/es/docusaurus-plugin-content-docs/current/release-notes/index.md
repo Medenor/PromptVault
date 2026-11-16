@@ -9,6 +9,10 @@ Aspectos destacados de las versiones recientes de PromptVault. Para el historial
 
 Consulte [Actualizar PromptVault](../installation/update.md) para ver los pasos de actualización.
 
+## Próximamente
+
+El portal ahora incluye una guía para hacer copias de seguridad, actualizar, comprobar y restaurar una instalación de Docker Compose. Todas las páginas también tienen un enlace «Volver a PromptVault»; defina `DOCS_APP_URL` al construir la imagen de documentación para que enlace a su instancia. Consulte [Actualizar PromptVault](../installation/update.md).
+
 ## 1.14.1
 
 - **Corrección**: los diálogos de importación y edición de skills ahora respetan el modo oscuro en lugar de mostrarse sobre fondo blanco.

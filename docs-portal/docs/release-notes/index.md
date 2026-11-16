@@ -9,6 +9,10 @@ Highlights from recent PromptVault releases. For the complete, unabridged histor
 
 For upgrade steps, see [Update PromptVault](../installation/update.md).
 
+## Unreleased
+
+The portal now includes a guide for backing up, updating, verifying, and restoring a Docker Compose installation. Each page also has a “Back to PromptVault” link; set `DOCS_APP_URL` when building the docs image to point it to your instance. See [Update PromptVault](../installation/update.md).
+
 ## 1.14.1
 
 - **Fix**: the skill import and edit dialogs now follow dark mode instead of showing on a white background.
