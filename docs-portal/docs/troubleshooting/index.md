@@ -54,6 +54,8 @@ If bulk operations, imports, exports, or backup actions return `429 Too Many Req
 
 If you import a previously exported file and shared prompts come back private with no grants, this is expected — export/import intentionally does not carry sharing state (see [Sharing Prompts](../user-guide/sharing.md#exportimport-and-sharing)). Use a full backup/restore instead if you need sharing preserved.
 
+For planned upgrades, follow [Update PromptVault](../installation/update.md).
+
 ## Still Stuck?
 
 Check the full `docs/TROUBLESHOOTING.md` in the repository, or open an issue on [Codeberg](https://codeberg.org/medenor/promptvault) with the exact error message and the command you ran.

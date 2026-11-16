@@ -54,6 +54,8 @@ Si las operaciones masivas, importaciones/exportaciones o acciones de copia de s
 
 Si importa un archivo previamente exportado y los prompts compartidos vuelven a ser privados sin ninguna concesión, esto es esperado — la exportación/importación intencionalmente no transporta el estado de compartición (vea [Compartir prompts](../user-guide/sharing.md#exportaciónimportación-y-compartición)). Use una copia de seguridad/restauración completa en su lugar si necesita conservar la compartición.
 
+Para una actualización planificada, siga la guía [Actualizar PromptVault](../installation/update.md).
+
 ## ¿Sigue atascado?
 
 Consulte el `docs/TROUBLESHOOTING.md` completo en el repositorio, o abra un issue en [Codeberg](https://codeberg.org/medenor/promptvault) con el mensaje de error exacto y el comando que ejecutó.

@@ -54,6 +54,8 @@ Wenn Massenoperationen, Importe/Exporte oder Backup-Aktionen `429 Too Many Reque
 
 Wenn Sie eine zuvor exportierte Datei importieren und geteilte Prompts wieder privat und ohne Berechtigungen erscheinen, ist dies erwartet — Export/Import überträgt absichtlich keinen Freigabezustand (siehe [Prompts teilen](../user-guide/sharing.md#exportimport-und-freigabe)). Verwenden Sie stattdessen ein vollständiges Backup/eine Wiederherstellung, wenn Freigaben erhalten bleiben sollen.
 
+Für ein geplantes Update folgen Sie der Anleitung [PromptVault aktualisieren](../installation/update.md).
+
 ## Immer noch festgefahren?
 
 Prüfen Sie die vollständige `docs/TROUBLESHOOTING.md` im Repository, oder öffnen Sie ein Issue auf [Codeberg](https://codeberg.org/medenor/promptvault) mit der genauen Fehlermeldung und dem ausgeführten Befehl.

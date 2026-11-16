@@ -88,6 +88,7 @@ python scripts/create_admin_user.py
 
 The script asks for a username, email address, and password. It checks the password against the configured policy, then creates a user with full administrator permissions. Store these credentials securely.
 
+- To update an existing installation, follow [Update PromptVault](update.md).
 ## Next Steps
 
 - Review the [Configuration Reference](../configuration/index.md) for environment variables you'll likely want to tune (rate limits, session timeouts, backup storage).

@@ -7,6 +7,8 @@ sidebar_position: 1
 
 Highlights der letzten PromptVault-Releases. Die vollständige, ungekürzte Historie finden Sie in `docs/CHANGELOG.md` im Repository.
 
+Die Schritte zum Aktualisieren finden Sie unter [PromptVault aktualisieren](../installation/update.md).
+
 ## 1.14.1
 
 - **Fix**: Die Dialoge zum Importieren und Bearbeiten von Skills folgen jetzt dem Dunkelmodus, statt auf weißem Hintergrund zu erscheinen.

@@ -7,6 +7,9 @@
 # ============================================
 FROM node:20-slim AS builder
 
+ARG DOCS_APP_URL=http://localhost:8001
+ENV DOCS_APP_URL=${DOCS_APP_URL}
+
 WORKDIR /app
 
 COPY package.json package-lock.json ./

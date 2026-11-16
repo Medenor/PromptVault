@@ -54,6 +54,8 @@ Si des opérations en masse, des imports, des exports ou des actions de sauvegar
 
 Si vous importez un fichier précédemment exporté et que les prompts partagés redeviennent privés sans aucune autorisation, c'est normal — l'export/import ne conserve volontairement pas l'état de partage (voir [Partage de prompts](../user-guide/sharing.md#exportimport-et-partage)). Utilisez plutôt une sauvegarde/restauration complète si vous avez besoin de conserver le partage.
 
+Pour une mise à jour planifiée, suivez le guide [Mettre à jour PromptVault](../installation/update.md).
+
 ## Toujours bloqué ?
 
 Consultez le `docs/TROUBLESHOOTING.md` complet dans le dépôt, ou ouvrez un ticket sur [Codeberg](https://codeberg.org/medenor/promptvault) avec le message d'erreur exact et la commande exécutée.

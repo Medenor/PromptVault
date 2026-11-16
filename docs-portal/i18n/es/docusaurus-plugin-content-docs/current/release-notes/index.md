@@ -7,6 +7,8 @@ sidebar_position: 1
 
 Aspectos destacados de las versiones recientes de PromptVault. Para el historial completo y sin resumir, consulte `docs/CHANGELOG.md` en el repositorio.
 
+Consulte [Actualizar PromptVault](../installation/update.md) para ver los pasos de actualización.
+
 ## 1.14.1
 
 - **Corrección**: los diálogos de importación y edición de skills ahora respetan el modo oscuro en lugar de mostrarse sobre fondo blanco.

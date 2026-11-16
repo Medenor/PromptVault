@@ -88,6 +88,7 @@ python scripts/create_admin_user.py
 
 El script solicita nombre de usuario, dirección de correo electrónico y contraseña, valida la contraseña según la política configurada y crea un usuario con privilegios de administrador completos. Guarde estas credenciales de forma segura.
 
+- Para actualizar una instalación existente, siga la guía [Actualizar PromptVault](update.md).
 ## Próximos pasos
 
 - Consulte la [referencia de configuración](../configuration/index.md) para las variables de entorno que probablemente querrá ajustar (límites de tasa, tiempos de espera de sesión, almacenamiento de copias de seguridad).

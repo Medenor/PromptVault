@@ -52,7 +52,10 @@ services:
   # The in-app Documentation link points to VITE_DOCS_PORTAL_URL (baked into
   # the web image at build time). Default: http://localhost:7876
   docs:
-    build: ./docs-portal
+    build:
+      context: ./docs-portal
+      args:
+        DOCS_APP_URL: ${DOCS_APP_URL:-http://localhost:8001}
     container_name: promptvault-docs
     ports:
       - '7876:8080'
