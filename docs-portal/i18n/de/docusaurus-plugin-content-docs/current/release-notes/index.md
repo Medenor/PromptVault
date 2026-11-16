@@ -9,7 +9,7 @@ Highlights der letzten PromptVault-Releases. Die vollständige, ungekürzte Hist
 
 Die Schritte zum Aktualisieren finden Sie unter [PromptVault aktualisieren](../installation/update.md).
 
-## Demnächst
+## Demnächst {#unreleased}
 
 Das Portal enthält jetzt eine Anleitung zum Sichern, Aktualisieren, Prüfen und Wiederherstellen einer Docker-Compose-Installation. Jede Seite hat außerdem einen Link „Zurück zu PromptVault“. Legen Sie beim Erstellen des Doku-Images `DOCS_APP_URL` fest, damit der Link auf Ihre Instanz verweist. Siehe [PromptVault aktualisieren](../installation/update.md).
 

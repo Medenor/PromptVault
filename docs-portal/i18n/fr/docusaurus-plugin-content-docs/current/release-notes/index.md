@@ -9,7 +9,7 @@ Points forts des versions récentes de PromptVault. Pour l'historique complet et
 
 Pour les étapes de mise à jour, consultez [Mettre à jour PromptVault](../installation/update.md).
 
-## À venir
+## À venir {#unreleased}
 
 Le portail propose désormais un guide pour sauvegarder, mettre à jour, vérifier et restaurer une installation Docker Compose. Chaque page comporte aussi un lien « Retour à PromptVault » ; définissez `DOCS_APP_URL` lors de la construction de l’image de documentation pour pointer vers votre instance. Consultez [Mettre à jour PromptVault](../installation/update.md).
 

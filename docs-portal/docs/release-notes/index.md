@@ -9,7 +9,7 @@ Highlights from recent PromptVault releases. For the complete, unabridged histor
 
 For upgrade steps, see [Update PromptVault](../installation/update.md).
 
-## Unreleased
+## Unreleased {#unreleased}
 
 The portal now includes a guide for backing up, updating, verifying, and restoring a Docker Compose installation. Each page also has a “Back to PromptVault” link; set `DOCS_APP_URL` when building the docs image to point it to your instance. See [Update PromptVault](../installation/update.md).
 

@@ -7,7 +7,7 @@ description: Eine selbst gehostete PromptVault-Installation sicher aktualisieren
 
 Mit diesen Schritten aktualisieren Sie die Docker-Compose-Installation aus der [Installationsanleitung](index.md). Die Datenbank behält ihre Daten, während Sie die Dienste `web` und `docs` neu erstellen.
 
-## Vor dem Start
+## Vor dem Start {#before-you-start}
 
 1. Lesen Sie die [Versionshinweise](../release-notes/index.md) und `CHANGELOG.md` auf inkompatible Änderungen und Hinweise zu Datenbankmigrationen.
 2. Prüfen Sie, ob auf dem Server genug Speicherplatz für eine Datenbanksicherung und neue Images vorhanden ist.
@@ -15,7 +15,7 @@ Mit diesen Schritten aktualisieren Sie die Docker-Compose-Installation aus der [
 4. Planen Sie ein kurzes Wartungsfenster ein. Während des Neustarts können sich Nutzer möglicherweise nicht anmelden.
 5. Stellen Sie sicher, dass Sie auf den PromptVault-Projektordner und den Datenbank-Container zugreifen können.
 
-## 1. Datenbank sichern
+## 1. Datenbank sichern {#1-back-up-the-database}
 
 Erstellen und prüfen Sie eine komprimierte Datenbanksicherung, bevor Sie das Update herunterladen oder starten. Führen Sie diese Befehle im PromptVault-Projektordner aus:
 
@@ -29,7 +29,7 @@ gzip -t "$BACKUP_FILE"
 
 Der letzte Befehl muss ohne Fehler enden. Prüfen Sie, dass die Sicherungsdatei nicht leer ist. Lassen Sie sie für eine mögliche Wiederherstellung in `data/backups` und kopieren Sie eine zweite Datei an einen sicheren Ort außerhalb des Servers. Fahren Sie nicht fort, wenn die Sicherung fehlgeschlagen ist.
 
-## 2. Version herunterladen und neu erstellen
+## 2. Version herunterladen und neu erstellen {#2-download-and-rebuild}
 
 Wechseln Sie im PromptVault-Projektordner auf den neuesten Stand von `main`. Für eine bestimmte stabile Version verwenden Sie stattdessen deren Tag.
 
@@ -58,7 +58,7 @@ docker-compose up -d web docs
 
 Warten Sie nach dem Start von Datenbank und Redis 15 Sekunden, damit die Datenbank ihre Initialisierung abschließen kann. Das Projekt wartet außerdem auf erfolgreiche Gesundheitsprüfungen von Datenbank und Redis, bevor `web` startet.
 
-## 3. Datenbank aktualisieren
+## 3. Datenbank aktualisieren {#3-apply-database-updates}
 
 Eine Datenbankmigration passt die Datenbankstruktur an die neue PromptVault-Version an. Führen Sie die Migration aus und prüfen Sie anschließend, welche Migrationsversion aktiv ist:
 
@@ -69,7 +69,7 @@ docker-compose exec -T web alembic current
 
 Führen Sie die Migration erst aus, wenn `web` gestartet ist. Der zweite Befehl sollte die aktuelle Migrationsversion anzeigen. Wenn die Migration fehlschlägt, halten Sie hier an und lesen Sie die [Fehlerbehebung](../troubleshooting/index.md).
 
-## 4. Update prüfen
+## 4. Update prüfen {#4-check-the-update}
 
 ```bash
 docker-compose logs web | head -50
@@ -79,7 +79,7 @@ docker-compose exec -T db psql -U promptvault -d promptvault -c "SELECT COUNT(*)
 
 Die Gesundheitsprüfung sollte erfolgreich sein. Öffnen Sie PromptVault im Browser, melden Sie sich an und prüfen Sie, ob Ihre Prompts vorhanden sind. Öffnen Sie auch den Dokumentationsdienst, falls Sie ihn verwenden (Standardadresse: `http://localhost:7876`).
 
-## Bei Problemen
+## Bei Problemen {#if-something-goes-wrong}
 
 Prüfen Sie die Dienstprotokolle auf Fehlermeldungen:
 
@@ -89,7 +89,7 @@ docker-compose logs --tail=100 web docs
 
 Wenn ein Neuaufbau ohne Cache mit `No module named 'psycopg'` fehlschlägt, verwenden Sie PromptVault 1.13.1 oder neuer. Diese Version behebt das Abhängigkeitsproblem aus [Ticket #94](https://codeberg.org/medenor/promptvault/issues/94). Bei anderen Fehlern lesen Sie die [Fehlerbehebung](../troubleshooting/index.md).
 
-### Zur vorherigen Version zurückkehren
+### Zur vorherigen Version zurückkehren {#return-to-the-previous-version}
 
 Mit diesen Schritten stellen Sie die Datenbanksicherung von vor dem Update wieder her und setzen die Anwendung und Dokumentation auf die vorherige Version zurück. Die Wiederherstellung ersetzt die aktuelle Datenbank durch die frühere Sicherung. Prompts und andere Änderungen seit dieser Sicherung gehen verloren, wenn Sie die aktuelle Datenbank nicht zuerst sichern.
 
