@@ -9,7 +9,7 @@ PromptVault wird über Umgebungsvariablen konfiguriert, die normalerweise in der
 
 Begriffe: Eine URL ist die Adresse für die Verbindung zu einem Dienst; SQL ist die Abfragesprache der Datenbank; Redis ist der Dienst für Ratenbegrenzungen; SMTP ist das Protokoll zum Versenden von E-Mails.
 
-## Datenbank
+## Datenbank {#database}
 
 | Variable | Standard | Zweck |
 |---|---|---|
@@ -19,7 +19,7 @@ Begriffe: Eine URL ist die Adresse für die Verbindung zu einem Dienst; SQL ist 
 | `DB_POOL_RECYCLE` | `3600` | Sekunden, bevor eine gepoolte Verbindung erneuert wird. |
 | `DB_ECHO` | `false` | Protokolliert jede SQL-Anweisung — nützlich zum Debuggen, störend in der Produktion. |
 
-## Anwendung
+## Anwendung {#application}
 
 | Variable | Standard | Zweck |
 |---|---|---|
@@ -28,7 +28,7 @@ Begriffe: Eine URL ist die Adresse für die Verbindung zu einem Dienst; SQL ist 
 | `LOG_LEVEL` | `INFO` | `DEBUG`, `INFO`, `WARNING`, `ERROR` oder `CRITICAL`. |
 | `AUDIT_LOG_LEVEL` | `INFO` | Protokollstufe speziell für Versionskontroll- und Backup-Audit-Ereignisse. |
 
-## Authentifizierung
+## Authentifizierung {#authentication}
 
 | Variable | Standard | Zweck |
 |---|---|---|
@@ -44,7 +44,7 @@ Begriffe: Eine URL ist die Adresse für die Verbindung zu einem Dienst; SQL ist 
 
 Die Passwortrichtlinienvariablen `PASSWORD_MIN_LENGTH`, `PASSWORD_REQUIRE_UPPERCASE`, `PASSWORD_REQUIRE_LOWERCASE`, `PASSWORD_REQUIRE_DIGIT` und `PASSWORD_REQUIRE_SPECIAL` sind ebenfalls konfigurierbar. Standardmäßig verlangen sie mindestens 12 Zeichen und alle vier Zeichenklassen.
 
-## Ratenbegrenzung
+## Ratenbegrenzung {#rate-limiting}
 
 Ratenlimits gelten pro Benutzer (bei anonymen Anfragen als Fallback pro IP-Adresse) und sind in unabhängig konfigurierbare Kategorien gruppiert:
 
@@ -57,7 +57,7 @@ Ratenlimits gelten pro Benutzer (bei anonymen Anfragen als Fallback pro IP-Adres
 
 Jede Kategorie besitzt `_ATTEMPTS`- und `_WINDOW_SECONDS`-Variablen, zum Beispiel `RATE_LIMIT_WRITE_ATTEMPTS=60` und `RATE_LIMIT_WRITE_WINDOW_SECONDS=60`. Authentifizierungsendpunkte haben separate Limits: `RATE_LIMIT_LOGIN_*`, `RATE_LIMIT_REGISTER_*` und `RATE_LIMIT_PASSWORD_RESET_*`. Ratenbegrenzung funktioniert nur, wenn der Redis-Dienst unter `REDIS_URL` erreichbar ist. Wenn Sie Redis nicht betreiben, dürfen Sie nicht davon ausgehen, dass diese Limits aktiv sind.
 
-## E-Mail (Passwort-Reset)
+## E-Mail (Passwort-Reset) {#email-password-reset}
 
 | Variable | Zweck |
 |---|---|
@@ -67,7 +67,7 @@ Jede Kategorie besitzt `_ATTEMPTS`- und `_WINDOW_SECONDS`-Variablen, zum Beispie
 | `PASSWORD_RESET_TOKEN_EXPIRE_SECONDS` | Standardmäßig `3600` — wie lange ein Reset-Link gültig bleibt. |
 | `APP_BASE_URL` | Basis-URL zum Erstellen des per E-Mail versendeten Reset-Links. |
 
-## Backups
+## Backups {#backups}
 
 | Variable | Zweck |
 |---|---|
@@ -75,13 +75,13 @@ Jede Kategorie besitzt `_ATTEMPTS`- und `_WINDOW_SECONDS`-Variablen, zum Beispie
 
 Siehe [Backups](../user-guide/backups.md), wie Zeitpläne, Verschlüsselung und Cloud-Speicher zusammenwirken.
 
-## Frontend-Assets
+## Frontend-Assets {#frontend-assets}
 
 | Variable | Standard | Zweck |
 |---|---|---|
 | `USE_VITE_ASSETS` | `false` | Auf `true` setzen, um CSS/JS aus dem kompilierten Vite-Build statt aus dem Quellcode auszuliefern. |
 
-## Beispiel: PostgreSQL-Produktion
+## Beispiel: PostgreSQL-Produktion {#example-postgresql-production}
 
 ```bash
 DATABASE_URL=postgresql://promptvault_user:secure_password@localhost:5432/promptvault_prod

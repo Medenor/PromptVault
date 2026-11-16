@@ -7,6 +7,12 @@ sidebar_position: 1
 
 Points forts des versions récentes de PromptVault. Pour l'historique complet et intégral, consultez `docs/CHANGELOG.md` dans le dépôt.
 
+Pour les étapes de mise à jour, consultez [Mettre à jour PromptVault](../installation/update.md).
+
+## À venir {#unreleased}
+
+Le portail propose désormais un guide pour sauvegarder, mettre à jour, vérifier et restaurer une installation Docker Compose. Chaque page comporte aussi un lien « Retour à PromptVault » ; définissez `DOCS_APP_URL` lors de la construction de l’image de documentation pour pointer vers votre instance. Consultez [Mettre à jour PromptVault](../installation/update.md).
+
 ## 1.14.1
 
 - **Correctif** : les fenêtres d'import et de modification de skill respectent désormais le mode nuit au lieu de s'afficher sur fond blanc.

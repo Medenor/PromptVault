@@ -6,7 +6,7 @@ const sidebars: SidebarsConfig = {
     {
       type: 'category',
       label: 'Installation',
-      items: ['installation/index'],
+      items: ['installation/index', 'installation/update'],
     },
     {
       type: 'category',

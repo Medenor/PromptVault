@@ -9,7 +9,7 @@ PromptVault se configure par des variables d'environnement, généralement défi
 
 Termes utilisés ci-dessous : une URL est une adresse permettant de joindre un service ; SQL est le langage de requête de la base de données ; Redis est le service qui applique les limites de débit ; SMTP est le protocole d'envoi d'e-mails.
 
-## Base de données
+## Base de données {#database}
 
 | Variable | Valeur par défaut | Rôle |
 |---|---|---|
@@ -19,7 +19,7 @@ Termes utilisés ci-dessous : une URL est une adresse permettant de joindre un s
 | `DB_POOL_RECYCLE` | `3600` | Secondes avant qu'une connexion du pool ne soit recyclée. |
 | `DB_ECHO` | `false` | Journalise chaque instruction SQL — utile pour le débogage, bruyant en production. |
 
-## Application
+## Application {#application}
 
 | Variable | Valeur par défaut | Rôle |
 |---|---|---|
@@ -28,7 +28,7 @@ Termes utilisés ci-dessous : une URL est une adresse permettant de joindre un s
 | `LOG_LEVEL` | `INFO` | `DEBUG`, `INFO`, `WARNING`, `ERROR` ou `CRITICAL`. |
 | `AUDIT_LOG_LEVEL` | `INFO` | Niveau de journalisation spécifique aux événements d'audit de contrôle de version et de sauvegarde. |
 
-## Authentification
+## Authentification {#authentication}
 
 | Variable | Valeur par défaut | Rôle |
 |---|---|---|
@@ -44,7 +44,7 @@ Termes utilisés ci-dessous : une URL est une adresse permettant de joindre un s
 
 Les variables de politique de mot de passe `PASSWORD_MIN_LENGTH`, `PASSWORD_REQUIRE_UPPERCASE`, `PASSWORD_REQUIRE_LOWERCASE`, `PASSWORD_REQUIRE_DIGIT` et `PASSWORD_REQUIRE_SPECIAL` sont également configurables. Par défaut, elles exigent au moins 12 caractères et les quatre classes de caractères.
 
-## Limitation de débit
+## Limitation de débit {#rate-limiting}
 
 Les limites de débit sont appliquées par utilisateur (avec repli par IP pour les requêtes anonymes) et regroupées en catégories, chacune réglable indépendamment :
 
@@ -57,7 +57,7 @@ Les limites de débit sont appliquées par utilisateur (avec repli par IP pour l
 
 Chaque catégorie possède des variables `_ATTEMPTS` et `_WINDOW_SECONDS`, par exemple `RATE_LIMIT_WRITE_ATTEMPTS=60` et `RATE_LIMIT_WRITE_WINDOW_SECONDS=60`. Les points de terminaison d'authentification (connexion, inscription et réinitialisation de mot de passe) ont des limites distinctes : `RATE_LIMIT_LOGIN_*`, `RATE_LIMIT_REGISTER_*` et `RATE_LIMIT_PASSWORD_RESET_*`. La limitation de débit fonctionne uniquement si le service Redis indiqué par `REDIS_URL` est accessible. Si vous n'exécutez pas Redis, ne supposez pas que ces limites sont actives.
 
-## E-mail (réinitialisation du mot de passe)
+## E-mail (réinitialisation du mot de passe) {#email-password-reset}
 
 | Variable | Rôle |
 |---|---|
@@ -67,7 +67,7 @@ Chaque catégorie possède des variables `_ATTEMPTS` et `_WINDOW_SECONDS`, par e
 | `PASSWORD_RESET_TOKEN_EXPIRE_SECONDS` | `3600` par défaut — durée de validité d'un lien de réinitialisation. |
 | `APP_BASE_URL` | URL de base utilisée pour construire le lien de réinitialisation envoyé par e-mail. |
 
-## Sauvegardes
+## Sauvegardes {#backups}
 
 | Variable | Rôle |
 |---|---|
@@ -75,13 +75,13 @@ Chaque catégorie possède des variables `_ATTEMPTS` et `_WINDOW_SECONDS`, par e
 
 Voir [Sauvegardes](../user-guide/backups.md) pour comprendre comment planification, chiffrement et stockage cloud s'articulent.
 
-## Ressources frontend
+## Ressources frontend {#frontend-assets}
 
 | Variable | Valeur par défaut | Rôle |
 |---|---|---|
 | `USE_VITE_ASSETS` | `false` | À définir sur `true` pour servir le CSS/JS depuis les artefacts compilés par Vite plutôt que depuis les sources. |
 
-## Exemple : production PostgreSQL
+## Exemple : production PostgreSQL {#example-postgresql-production}
 
 ```bash
 DATABASE_URL=postgresql://promptvault_user:secure_password@localhost:5432/promptvault_prod

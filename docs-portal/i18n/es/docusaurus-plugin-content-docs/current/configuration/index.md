@@ -9,7 +9,7 @@ PromptVault se configura mediante variables de entorno, normalmente definidas en
 
 Términos utilizados: una URL es una dirección para conectarse a un servicio; SQL es el lenguaje de consultas de la base de datos; Redis es el servicio que aplica los límites de tasa; SMTP es el protocolo para enviar correo electrónico.
 
-## Base de datos
+## Base de datos {#database}
 
 | Variable | Predeterminado | Propósito |
 |---|---|---|
@@ -19,7 +19,7 @@ Términos utilizados: una URL es una dirección para conectarse a un servicio; S
 | `DB_POOL_RECYCLE` | `3600` | Segundos antes de reciclar una conexión del pool. |
 | `DB_ECHO` | `false` | Registra cada sentencia SQL — útil para depurar, ruidoso en producción. |
 
-## Aplicación
+## Aplicación {#application}
 
 | Variable | Predeterminado | Propósito |
 |---|---|---|
@@ -28,7 +28,7 @@ Términos utilizados: una URL es una dirección para conectarse a un servicio; S
 | `LOG_LEVEL` | `INFO` | `DEBUG`, `INFO`, `WARNING`, `ERROR` o `CRITICAL`. |
 | `AUDIT_LOG_LEVEL` | `INFO` | Nivel de registro específico para eventos de auditoría de control de versiones y copias de seguridad. |
 
-## Autenticación
+## Autenticación {#authentication}
 
 | Variable | Predeterminado | Propósito |
 |---|---|---|
@@ -44,7 +44,7 @@ Términos utilizados: una URL es una dirección para conectarse a un servicio; S
 
 Las variables de política de contraseñas `PASSWORD_MIN_LENGTH`, `PASSWORD_REQUIRE_UPPERCASE`, `PASSWORD_REQUIRE_LOWERCASE`, `PASSWORD_REQUIRE_DIGIT` y `PASSWORD_REQUIRE_SPECIAL` también son configurables. De forma predeterminada, exigen al menos 12 caracteres y las cuatro clases de caracteres.
 
-## Límite de tasa
+## Límite de tasa {#rate-limiting}
 
 Los límites de tasa son por usuario (con reserva por IP para solicitudes anónimas) y se agrupan en categorías, cada una configurable de forma independiente:
 
@@ -57,7 +57,7 @@ Los límites de tasa son por usuario (con reserva por IP para solicitudes anóni
 
 Cada categoría tiene variables `_ATTEMPTS` y `_WINDOW_SECONDS`, por ejemplo `RATE_LIMIT_WRITE_ATTEMPTS=60` y `RATE_LIMIT_WRITE_WINDOW_SECONDS=60`. Los endpoints de autenticación tienen límites separados: `RATE_LIMIT_LOGIN_*`, `RATE_LIMIT_REGISTER_*` y `RATE_LIMIT_PASSWORD_RESET_*`. El límite de tasa funciona solo cuando el servicio Redis indicado por `REDIS_URL` es accesible. Si no ejecuta Redis, no suponga que estos límites están activos.
 
-## Correo electrónico (restablecimiento de contraseña)
+## Correo electrónico (restablecimiento de contraseña) {#email-password-reset}
 
 | Variable | Propósito |
 |---|---|
@@ -67,7 +67,7 @@ Cada categoría tiene variables `_ATTEMPTS` y `_WINDOW_SECONDS`, por ejemplo `RA
 | `PASSWORD_RESET_TOKEN_EXPIRE_SECONDS` | `3600` por defecto — cuánto tiempo permanece válido un enlace de restablecimiento. |
 | `APP_BASE_URL` | URL base usada para construir el enlace de restablecimiento enviado por correo. |
 
-## Copias de seguridad
+## Copias de seguridad {#backups}
 
 | Variable | Propósito |
 |---|---|
@@ -75,13 +75,13 @@ Cada categoría tiene variables `_ATTEMPTS` y `_WINDOW_SECONDS`, por ejemplo `RA
 
 Consulte [Copias de seguridad](../user-guide/backups.md) para saber cómo encajan los programas, el cifrado y el almacenamiento en la nube.
 
-## Activos de frontend
+## Activos de frontend {#frontend-assets}
 
 | Variable | Predeterminado | Propósito |
 |---|---|---|
 | `USE_VITE_ASSETS` | `false` | Establézcalo en `true` para servir CSS/JS desde la compilación de Vite en lugar de desde el código fuente. |
 
-## Ejemplo: producción con PostgreSQL
+## Ejemplo: producción con PostgreSQL {#example-postgresql-production}
 
 ```bash
 DATABASE_URL=postgresql://promptvault_user:secure_password@localhost:5432/promptvault_prod

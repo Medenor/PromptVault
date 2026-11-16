@@ -9,7 +9,7 @@ PromptVault is configured through environment variables, usually set in the `.en
 
 Terms used below: a URL is an address used to connect to a service; SQL is the database query language; Redis is the service that applies rate limits; SMTP is the protocol used to send email.
 
-## Database
+## Database {#database}
 
 | Variable | Default | Purpose |
 |---|---|---|
@@ -19,7 +19,7 @@ Terms used below: a URL is an address used to connect to a service; SQL is the d
 | `DB_POOL_RECYCLE` | `3600` | Seconds before a pooled connection is recycled. |
 | `DB_ECHO` | `false` | Log every SQL statement — useful for debugging, noisy in production. |
 
-## Application
+## Application {#application}
 
 | Variable | Default | Purpose |
 |---|---|---|
@@ -28,7 +28,7 @@ Terms used below: a URL is an address used to connect to a service; SQL is the d
 | `LOG_LEVEL` | `INFO` | `DEBUG`, `INFO`, `WARNING`, `ERROR`, or `CRITICAL`. |
 | `AUDIT_LOG_LEVEL` | `INFO` | Log level specifically for version-control and backup audit events. |
 
-## Authentication
+## Authentication {#authentication}
 
 | Variable | Default | Purpose |
 |---|---|---|
@@ -44,7 +44,7 @@ Terms used below: a URL is an address used to connect to a service; SQL is the d
 
 The password-policy variables `PASSWORD_MIN_LENGTH`, `PASSWORD_REQUIRE_UPPERCASE`, `PASSWORD_REQUIRE_LOWERCASE`, `PASSWORD_REQUIRE_DIGIT`, and `PASSWORD_REQUIRE_SPECIAL` are also configurable. By default, they require at least 12 characters and all four character classes.
 
-## Rate Limiting
+## Rate Limiting {#rate-limiting}
 
 Rate limits are per-user (falling back to per-IP for anonymous requests) and grouped into buckets, each independently tunable:
 
@@ -57,7 +57,7 @@ Rate limits are per-user (falling back to per-IP for anonymous requests) and gro
 
 Each bucket has `_ATTEMPTS` and `_WINDOW_SECONDS` variables, for example `RATE_LIMIT_WRITE_ATTEMPTS=60` and `RATE_LIMIT_WRITE_WINDOW_SECONDS=60`. Authentication endpoints (login, register, and password reset) have separate limits: `RATE_LIMIT_LOGIN_*`, `RATE_LIMIT_REGISTER_*`, and `RATE_LIMIT_PASSWORD_RESET_*`. Rate limiting works only when the Redis service at `REDIS_URL` is reachable. If you do not run Redis, do not assume these limits are active.
 
-## Email (Password Reset)
+## Email (Password Reset) {#email-password-reset}
 
 | Variable | Purpose |
 |---|---|
@@ -67,7 +67,7 @@ Each bucket has `_ATTEMPTS` and `_WINDOW_SECONDS` variables, for example `RATE_L
 | `PASSWORD_RESET_TOKEN_EXPIRE_SECONDS` | `3600` by default — how long a reset link stays valid. |
 | `APP_BASE_URL` | Base URL used to build the reset link sent by email. |
 
-## Backups
+## Backups {#backups}
 
 | Variable | Purpose |
 |---|---|
@@ -75,13 +75,13 @@ Each bucket has `_ATTEMPTS` and `_WINDOW_SECONDS` variables, for example `RATE_L
 
 See [Backups](../user-guide/backups.md) for how schedules, encryption, and cloud storage fit together.
 
-## Frontend Assets
+## Frontend Assets {#frontend-assets}
 
 | Variable | Default | Purpose |
 |---|---|---|
 | `USE_VITE_ASSETS` | `false` | Set to `true` to serve CSS/JS from the compiled Vite build output rather than source. |
 
-## Example: PostgreSQL Production
+## Example: PostgreSQL Production {#example-postgresql-production}
 
 ```bash
 DATABASE_URL=postgresql://promptvault_user:secure_password@localhost:5432/promptvault_prod

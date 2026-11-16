@@ -50,6 +50,11 @@ const config: Config = {
       title: 'PromptVault Docs',
       items: [
         {
+          href: process.env.DOCS_APP_URL ?? 'http://localhost:8001',
+          label: 'Back to PromptVault',
+          position: 'left',
+        },
+        {
           type: 'localeDropdown',
           position: 'right',
         },

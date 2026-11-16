@@ -7,6 +7,12 @@ sidebar_position: 1
 
 Highlights der letzten PromptVault-Releases. Die vollständige, ungekürzte Historie finden Sie in `docs/CHANGELOG.md` im Repository.
 
+Die Schritte zum Aktualisieren finden Sie unter [PromptVault aktualisieren](../installation/update.md).
+
+## Demnächst {#unreleased}
+
+Das Portal enthält jetzt eine Anleitung zum Sichern, Aktualisieren, Prüfen und Wiederherstellen einer Docker-Compose-Installation. Jede Seite hat außerdem einen Link „Zurück zu PromptVault“. Legen Sie beim Erstellen des Doku-Images `DOCS_APP_URL` fest, damit der Link auf Ihre Instanz verweist. Siehe [PromptVault aktualisieren](../installation/update.md).
+
 ## 1.14.1
 
 - **Fix**: Die Dialoge zum Importieren und Bearbeiten von Skills folgen jetzt dem Dunkelmodus, statt auf weißem Hintergrund zu erscheinen.

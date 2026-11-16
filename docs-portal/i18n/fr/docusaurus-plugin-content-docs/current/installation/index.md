@@ -7,14 +7,14 @@ sidebar_position: 1
 
 PromptVault est une application auto-hébergée : vous l'exécutez sur une infrastructure que vous contrôlez. Choisissez l'assistant de configuration s'il doit créer les éléments requis de manière interactive. Choisissez le parcours manuel uniquement si vous savez modifier des variables d'environnement et exécuter des commandes Docker.
 
-## Prérequis
+## Prérequis {#prerequisites}
 
 - Python 3.14+
 - PostgreSQL 15+ (recommandé en production) ou SQLite (suffisant pour le développement/usage mono-utilisateur)
 - Docker et Docker Compose (méthode de déploiement recommandée)
 - Git
 
-## Démarrage rapide avec l'assistant de configuration
+## Démarrage rapide avec l'assistant de configuration {#quick-start-with-the-setup-wizard}
 
 Le moyen le plus rapide d'obtenir une instance fonctionnelle est l'assistant de configuration intégré. Il crée les clés de signature JSON Web Token (JWT), configure l'environnement, initialise la base de données et crée un compte administrateur.
 
@@ -26,7 +26,7 @@ python scripts/setup/setup.py
 
 Suivez les instructions. Une fois terminé, ouvrez l'adresse affichée et connectez-vous avec les identifiants administrateur créés.
 
-## Configuration manuelle avec Docker Compose
+## Configuration manuelle avec Docker Compose {#manual-docker-compose-setup}
 
 Utilisez ce parcours uniquement si vous devez contrôler chaque paramètre. Exécutez les commandes dans l'ordre : les suivantes utilisent les fichiers et services créés par les précédentes.
 
@@ -62,7 +62,7 @@ docker-compose exec web python scripts/migrate_json_to_db.py
 
 Une fois les conteneurs démarrés, ouvrez `http://localhost:8001` et connectez-vous avec les identifiants administrateur créés. Si la page ne s'ouvre pas, consultez [Dépannage](../troubleshooting/index.md) avant de modifier des données ou des volumes Docker.
 
-## Compiler depuis les sources
+## Compiler depuis les sources {#building-from-source}
 
 Si vous développez en local plutôt que de déployer via Docker, le `Makefile` du dépôt encapsule l'ensemble du flux de compilation/test/lint :
 
@@ -74,7 +74,7 @@ make build     # ressources frontend de production + image Docker
 
 Consultez le `docs/DEVELOPMENT.md` du projet pour la liste complète des cibles, les variables d'environnement et les problèmes courants si une étape ne se comporte pas comme prévu.
 
-## Créer l'utilisateur administrateur
+## Créer l'utilisateur administrateur {#creating-the-admin-user}
 
 Chaque nouvelle installation nécessite au moins un compte administrateur :
 
@@ -88,7 +88,8 @@ python scripts/create_admin_user.py
 
 Le script demande un nom d'utilisateur, une adresse e-mail et un mot de passe. Il vérifie que le mot de passe respecte la politique configurée, puis crée un utilisateur avec tous les droits administrateur. Conservez ces identifiants en lieu sûr.
 
-## Étapes suivantes
+- Pour mettre à jour une installation existante, suivez le guide [Mettre à jour PromptVault](update.md).
+## Étapes suivantes {#next-steps}
 
 - Consultez la [Référence de configuration](../configuration/index.md) pour les variables d'environnement que vous voudrez probablement ajuster (limites de débit, expiration des sessions, stockage des sauvegardes).
 - Si quelque chose ne se comporte pas comme attendu, consultez le [Dépannage](../troubleshooting/index.md).
