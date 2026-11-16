@@ -11,7 +11,7 @@ sidebar_position: 3
 
 Use this page to find existing route families. Open `/docs` on your **application**, not the documentation host, for the complete live schema. Start with [your first API calls](getting-started.md) for a walkthrough.
 
-## Authentication and access
+## Authentication and access {#authentication-and-access}
 
 Send `Authorization: Bearer <ACCESS_TOKEN>` in scripts. Login and refresh accept JSON. Prompt creation and update accept form fields.
 
@@ -19,7 +19,7 @@ Access tokens expire after 15 minutes by default. Send the latest refresh token 
 
 With authentication enabled, list/search returns only visible items; a request without credentials or with an invalid/expired token can return an empty page rather than 401. An empty page does not confirm that authentication succeeded. Owners, administrators, share grants, and legacy visibility determine access. Edit grants allow edits and reverts, not deletion or share management. See [sharing](../user-guide/sharing.md). Skills use their own rules; see [skills](../user-guide/skills.md).
 
-## Find an operation
+## Find an operation {#find-an-operation}
 
 Replace `{id}` with a prompt ID and `{version_id}` with an identifier from its history. This table is an orientation, not an exhaustive inventory of administrative operations.
 
@@ -40,13 +40,13 @@ See the live reference for administrative permissions and request formats.
 
 Creation/update form fields are `title`, `prompt`, `category`, `tags`, `commit_message`, and optional `semantic_version`. `title` and `prompt` are required for both. Tags are comma-separated. A revert accepts an optional form field `commit_message` and creates a new history entry. A deletion removes data: use it only on items you intend to delete.
 
-## Read paginated results
+## Read paginated results {#read-paginated-results}
 
 List/search defaults to `page=1` and `limit=50`; the maximum limit is 100. Continue while `has_next` is true. The `prompts` object is keyed by ID. `item_type` accepts `all`, `prompt`, or `skill`; skills omit the `prompt` body. `filter=shared-with-me` narrows results to explicit grants.
 
 Search accepts `search`, `category`, `tag`, `favorites`, `case_sensitive`, and `ranked`. Never render returned search snippets as raw HTML. See the [search guide](../user-guide/search.md) for matching behavior.
 
-## Resolve a failed call
+## Resolve a failed call {#resolve-a-failed-call}
 
 Inspect the HTTP status and body. Errors can use `detail`, `error`, or a structured message depending on the operation. For example, a missing prompt can return `{"detail":"Prompt with ID 123 not found"}`.
 

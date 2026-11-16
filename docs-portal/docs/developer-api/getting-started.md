@@ -11,11 +11,11 @@ sidebar_position: 2
 
 Read a page of prompts, then create and find a disposable prompt on your own instance.
 
-## Before you start
+## Before you start {#before-you-start}
 
 Use a test instance, Bash, and `curl` with `--json` support (7.82 or later). With authentication enabled, you need an active account and, if applicable, your authenticator. Replace angle-bracket placeholders locally. Never share passwords, tokens, or login responses. Use HTTPS for remote instances.
 
-## Set the application address
+## Set the application address {#set-the-application-address}
 
 Use your application address, not this documentation site. This example is a local deployment. Keep any deployment prefix and omit the trailing slash.
 
@@ -23,7 +23,7 @@ Use your application address, not this documentation site. This example is a loc
 BASE_URL='http://localhost:8001'
 ```
 
-## Sign in
+## Sign in {#sign-in}
 
 Skip this step only if your isolated instance is already configured with `AUTH_ENABLED=false`; omit the authorization header in later requests. Do not disable authentication to make an integration work. See [configuration](../configuration/index.md).
 
@@ -49,7 +49,7 @@ Copy the resulting `access_token`. Run this command, paste the token, then press
 read -r -s TOKEN
 ```
 
-## Read a page of prompts
+## Read a page of prompts {#read-a-page-of-prompts}
 
 ```bash
 curl --silent --show-error --fail-with-body --include \
@@ -59,7 +59,7 @@ curl --silent --show-error --fail-with-body --include \
 
 Expect HTTP 200 and fields `prompts`, `page`, `limit`, `total_count`, `total_pages`, `has_next`, and `has_previous`. `prompts` is an object keyed by item ID, not an array. An empty page is valid. With authentication enabled, results depend on your identity and access grants.
 
-## Create a disposable prompt
+## Create a disposable prompt {#create-a-disposable-prompt}
 
 This request creates data. Use a test account and synthetic content. Prompt creation accepts form fields, not JSON:
 
@@ -78,7 +78,7 @@ Expect HTTP 201 with `{"success":true,"prompt_id":...}`. Copy that `prompt_id` i
 PROMPT_ID='<PROMPT_ID>'
 ```
 
-## Search and inspect versions
+## Search and inspect versions {#search-and-inspect-versions}
 
 Search uses `search`, not `q`. Set `item_type=prompt` to exclude skills from list/search results.
 

@@ -11,12 +11,12 @@ sidebar_position: 1
 
 Use the application programming interface (API) to connect scripts and tools to PromptVault. This space is for integrators who use HTTP requests and a terminal. For everyday tasks, use the [user guide](../user-guide/prompt-management.md). For deployment and server settings, use [installation](../installation/index.md) and [configuration](../configuration/index.md).
 
-## Choose your starting point
+## Choose your starting point {#choose-your-starting-point}
 
 - [Make your first API calls](getting-started.md): read, create, and search a test prompt.
 - [API reference](reference.md): find operations, formats, access rules, and help with errors.
 
-## Open the reference on your instance
+## Open the reference on your instance {#open-the-reference-on-your-instance}
 
 The documentation site and your PromptVault application can have different addresses. On the **application** address, open:
 
@@ -30,7 +30,7 @@ For an application at `http://localhost:8001`, open `http://localhost:8001/docs`
 
 You can read these guides without a running instance. To execute a request, use a running application and the credentials it requires. **Try it out** in the live reference sends real requests. Use disposable prompts when modifying or deleting data.
 
-## Know the current boundaries
+## Know the current boundaries {#know-the-current-boundaries}
 
 Current routes use `/api/...`, without `/v1`. Authenticate script requests with the session access token described in the tutorial.
 

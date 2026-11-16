@@ -11,12 +11,12 @@ sidebar_position: 1
 
 Über die Programmierschnittstelle (API) verbinden Sie Skripte und andere Werkzeuge mit PromptVault. Dieser Bereich richtet sich an Personen, die HTTP-Anfragen und ein Terminal verwenden. Für Aufgaben in der Anwendung lesen Sie das [Benutzerhandbuch](../user-guide/prompt-management.md). Hinweise zum Server finden Sie unter [Installation](../installation/index.md) und [Konfiguration](../configuration/index.md).
 
-## Einen Einstieg wählen
+## Einen Einstieg wählen {#choose-your-starting-point}
 
 - [Erste API-Aufrufe ausführen](getting-started.md): Prompts lesen und einen Test-Prompt erstellen und suchen.
 - [API-Referenz](reference.md): Routen, Formate, Zugriffsregeln und Fehler nachschlagen.
 
-## Die Referenz Ihrer Instanz öffnen
+## Die Referenz Ihrer Instanz öffnen {#open-the-reference-on-your-instance}
 
 Dokumentation und PromptVault-Anwendung können unterschiedliche Adressen haben. Öffnen Sie diese Pfade an der Adresse der **Anwendung**:
 
@@ -30,7 +30,7 @@ Läuft die Anwendung unter `http://localhost:8001`, öffnen Sie `http://localhos
 
 Zum Lesen dieser Anleitungen brauchen Sie keine laufende Instanz. Zum Ausführen einer Anfrage brauchen Sie die Anwendung und die dort verlangten Zugangsdaten. **Try it out** sendet echte Anfragen. Verwenden Sie zum Ändern und Löschen ausschließlich Test-Prompts.
 
-## Den aktuellen Umfang kennen
+## Den aktuellen Umfang kennen {#know-the-current-boundaries}
 
 Die vorhandenen Routen beginnen mit `/api/...`, ohne `/v1`. Authentifizieren Sie Skriptanfragen mit dem im Tutorial beschriebenen Sitzungstoken.
 

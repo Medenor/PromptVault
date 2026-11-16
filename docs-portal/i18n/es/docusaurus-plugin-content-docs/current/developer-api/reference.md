@@ -11,7 +11,7 @@ sidebar_position: 3
 
 Consulte aquí las familias de rutas existentes. Abra `/docs` en su **aplicación**, no en el portal documental, para ver el esquema completo de la instancia. Para una guía práctica, empiece por [sus primeras llamadas](getting-started.md).
 
-## Autenticación y permisos
+## Autenticación y permisos {#authentication-and-access}
 
 Envíe `Authorization: Bearer <ACCESS_TOKEN>` en sus scripts. El inicio de sesión y la renovación aceptan JSON. La creación y modificación de prompts aceptan campos de formulario.
 
@@ -19,7 +19,7 @@ Los tokens de acceso caducan a los 15 minutos por defecto. Envíe el último tok
 
 Con autenticación activa, la lista y la búsqueda solo devuelven elementos visibles para usted. Sin credenciales, o con un token no válido o caducado, pueden devolver una página vacía en lugar de 401. Una página vacía no confirma que la autenticación haya tenido éxito. La propiedad, el rol de administración, los permisos compartidos y la visibilidad heredada determinan el acceso. Un permiso de edición permite modificar y restaurar, pero no eliminar ni gestionar el uso compartido. Consulte [Compartir](../user-guide/sharing.md). Los skills tienen reglas propias; consulte [Skills](../user-guide/skills.md).
 
-## Encontrar una operación
+## Encontrar una operación {#find-an-operation}
 
 Sustituya `{id}` por el identificador de un prompt y `{version_id}` por un identificador de su historial. La tabla sirve de orientación; no enumera todas las operaciones administrativas.
 
@@ -40,13 +40,13 @@ Consulte los permisos y formatos de las operaciones administrativas en la refere
 
 Los campos de formulario de creación y modificación son `title`, `prompt`, `category`, `tags`, `commit_message` y, opcionalmente, `semantic_version`. `title` y `prompt` son obligatorios en ambos casos. Separe los tags con comas. Una restauración acepta el campo opcional `commit_message` y crea una entrada de historial. La eliminación retira datos: úsela solo en elementos que quiera eliminar.
 
-## Recorrer los resultados
+## Recorrer los resultados {#read-paginated-results}
 
 La lista y la búsqueda usan `page=1` y `limit=50` por defecto, con un máximo de 100 elementos por página. Continúe mientras `has_next` sea `true`. El objeto `prompts` usa identificadores como claves. `item_type` acepta `all`, `prompt` o `skill`; los skills omiten el cuerpo `prompt`. `filter=shared-with-me` limita los resultados a los permisos compartidos explícitos.
 
 La búsqueda acepta `search`, `category`, `tag`, `favorites`, `case_sensitive` y `ranked`. No muestre fragmentos de búsqueda como HTML sin escapar. Consulte la [guía de búsqueda](../user-guide/search.md) para entender las coincidencias.
 
-## Resolver una llamada fallida
+## Resolver una llamada fallida {#resolve-a-failed-call}
 
 Examine el estado HTTP y la respuesta. Según la operación, los errores usan `detail`, `error` o un mensaje estructurado. Un prompt inexistente puede devolver `{"detail":"Prompt with ID 123 not found"}`.
 

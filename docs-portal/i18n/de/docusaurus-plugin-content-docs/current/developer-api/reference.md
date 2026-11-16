@@ -11,7 +11,7 @@ sidebar_position: 3
 
 Hier finden Sie die vorhandenen Routengruppen. Das vollständige Schema steht unter `/docs` an der Adresse Ihrer **Anwendung**, nicht auf der Dokumentationsseite. Beginnen Sie für eine Anleitung mit den [ersten API-Aufrufen](getting-started.md).
 
-## Authentifizierung und Zugriff
+## Authentifizierung und Zugriff {#authentication-and-access}
 
 Senden Sie in Skripten `Authorization: Bearer <ACCESS_TOKEN>`. Anmeldung und Token-Erneuerung erwarten JSON. Das Erstellen und Ändern von Prompts erwartet Formularfelder.
 
@@ -19,7 +19,7 @@ Zugriffstokens laufen standardmäßig nach 15 Minuten ab. Senden Sie das neueste
 
 Bei aktiver Authentifizierung liefern Liste und Suche nur sichtbare Elemente. Ohne Zugangsdaten oder mit einem ungültigen beziehungsweise abgelaufenen Token kann eine leere Seite statt 401 erscheinen. Eine leere Seite bestätigt daher keine erfolgreiche Authentifizierung. Eigentum, Administratorrechte, Freigaben und ältere Sichtbarkeitseinstellungen bestimmen den Zugriff. Eine Bearbeitungsfreigabe erlaubt Änderungen und Wiederherstellungen, aber kein Löschen oder Verwalten von Freigaben. Siehe [Freigaben](../user-guide/sharing.md). Für Skills gelten eigene Regeln; siehe [Skills](../user-guide/skills.md).
 
-## Eine Operation finden
+## Eine Operation finden {#find-an-operation}
 
 Ersetzen Sie `{id}` durch eine Prompt-ID und `{version_id}` durch eine Kennung aus dem Verlauf. Die Tabelle dient zur Orientierung und listet nicht alle Verwaltungsoperationen auf.
 
@@ -40,13 +40,13 @@ Berechtigungen und Anfrageformate für Verwaltungsoperationen stehen in der Live
 
 Formularfelder für Erstellung und Änderung: `title`, `prompt`, `category`, `tags`, `commit_message` und optional `semantic_version`. `title` und `prompt` sind in beiden Fällen erforderlich. Trennen Sie Tags durch Kommas. Eine Wiederherstellung akzeptiert das optionale Formularfeld `commit_message` und erzeugt einen neuen Verlaufseintrag. Löschen entfernt Daten; verwenden Sie diese Operation nur gezielt.
 
-## Ergebnisse seitenweise lesen
+## Ergebnisse seitenweise lesen {#read-paginated-results}
 
 Liste und Suche verwenden standardmäßig `page=1` und `limit=50`, höchstens 100 Elemente pro Seite. Lesen Sie weiter, solange `has_next` den Wert `true` hat. Das Objekt `prompts` verwendet IDs als Schlüssel. `item_type` akzeptiert `all`, `prompt` oder `skill`; Skills enthalten keinen `prompt`-Text. `filter=shared-with-me` beschränkt die Ergebnisse auf ausdrückliche Freigaben.
 
 Die Suche akzeptiert `search`, `category`, `tag`, `favorites`, `case_sensitive` und `ranked`. Geben Sie Suchausschnitte niemals als unverarbeitetes HTML aus. Weitere Hinweise stehen in der [Suchanleitung](../user-guide/search.md).
 
-## Einen fehlgeschlagenen Aufruf prüfen
+## Einen fehlgeschlagenen Aufruf prüfen {#resolve-a-failed-call}
 
 Prüfen Sie HTTP-Status und Antworttext. Je nach Operation enthalten Fehler `detail`, `error` oder eine strukturierte Meldung. Ein fehlender Prompt kann etwa `{"detail":"Prompt with ID 123 not found"}` zurückgeben.
 

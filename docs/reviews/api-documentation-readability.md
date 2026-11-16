@@ -53,3 +53,11 @@ No existing-page prose rewrite is proposed. Broader editorial changes remain out
 - All 92 method/path mentions across the new pages match the route definitions; Bash code blocks pass syntax validation. These are source-level checks, not live endpoint execution. Backend dependencies are not installed in this worktree.
 - Production build succeeds for EN/FR/DE/ES. Separate technical checks pass for language parity, TypeScript, lint, and formatting.
 - Browser checks confirm localized API sidebar labels and the overview → tutorial → reference journey in all four languages. French desktop/mobile renderings were inspected; the mobile entry page has no horizontal overflow.
+
+## Live browser review in a disposable preview
+
+- Built and served an isolated copy of the portal on a separate loopback port, without starting the application, a database, or production containers.
+- Found and fixed a cross-language navigation defect: changing language preserved the source-language fragment, but translated headings had different generated identifiers. All new API section headings now have explicit shared identifiers, and tutorial error links use the shared target.
+- Rechecked all 12 new pages through Orca's live browser. All 136 internal link targets, including fragments, resolve. Switching language from the error section retains the correct section in EN/FR/DE/ES (heading positioned below the fixed navigation).
+- Inspected the three French pages at 1440, 768, and 390 CSS pixels; no document-level horizontal overflow. Inspected desktop/mobile screenshots, dark mode, and mobile menu navigation. The copy control confirms success. Browser console is empty after the successful run.
+- Rebuilt all four locales after the anchor correction. Language parity, TypeScript, lint, changed-file formatting, and whitespace checks pass. This verifies the portal; no example request was sent to a live PromptVault API.

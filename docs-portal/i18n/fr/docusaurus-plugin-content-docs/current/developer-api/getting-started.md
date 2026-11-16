@@ -11,11 +11,11 @@ sidebar_position: 2
 
 Lisez une page de prompts, puis créez et retrouvez un prompt de test sur votre instance.
 
-## Préparer votre essai
+## Préparer votre essai {#before-you-start}
 
 Prévoyez une instance de test, Bash et `curl` avec `--json` (7.82 ou ultérieur). Si l’authentification est active, il vous faut un compte actif et, le cas échéant, votre application d’authentification. Remplacez localement les valeurs entre chevrons. Ne partagez ni mots de passe, ni jetons, ni réponses de connexion. Utilisez HTTPS pour une instance distante.
 
-## Définir l’adresse de l’application
+## Définir l’adresse de l’application {#set-the-application-address}
 
 Utilisez l’adresse de votre application, pas celle du portail. L’exemple correspond à un déploiement local. Conservez tout préfixe, sans barre oblique finale.
 
@@ -23,7 +23,7 @@ Utilisez l’adresse de votre application, pas celle du portail. L’exemple cor
 BASE_URL='http://localhost:8001'
 ```
 
-## Vous connecter
+## Vous connecter {#sign-in}
 
 Sautez cette étape uniquement si votre instance isolée est déjà configurée avec `AUTH_ENABLED=false` ; omettez alors l’en-tête d’autorisation dans la suite. Ne désactivez pas l’authentification pour faire fonctionner une intégration. Voir [Configuration](../configuration/index.md).
 
@@ -49,7 +49,7 @@ Copiez le `access_token` obtenu. Exécutez la commande suivante, collez le jeton
 read -r -s TOKEN
 ```
 
-## Lire une page de prompts
+## Lire une page de prompts {#read-a-page-of-prompts}
 
 ```bash
 curl --silent --show-error --fail-with-body --include \
@@ -59,7 +59,7 @@ curl --silent --show-error --fail-with-body --include \
 
 La réponse attendue est HTTP 200 avec `prompts`, `page`, `limit`, `total_count`, `total_pages`, `has_next` et `has_previous`. `prompts` est un objet dont les clés sont les identifiants, pas une liste. Une page vide est possible. Avec l’authentification active, les résultats dépendent de votre identité et de vos droits.
 
-## Créer un prompt de test
+## Créer un prompt de test {#create-a-disposable-prompt}
 
 Cette requête crée des données. Utilisez un compte de test et un contenu fictif. La création attend des champs de formulaire, pas du JSON :
 
@@ -78,7 +78,7 @@ La réponse attendue est HTTP 201 avec `{"success":true,"prompt_id":...}`. Repor
 PROMPT_ID='<PROMPT_ID>'
 ```
 
-## Rechercher et consulter les versions
+## Rechercher et consulter les versions {#search-and-inspect-versions}
 
 La recherche utilise `search`, pas `q`. Avec `item_type=prompt`, vous excluez les skills des résultats de liste et de recherche.
 
@@ -96,4 +96,4 @@ curl --silent --show-error --fail-with-body \
   "$BASE_URL/api/prompts/$PROMPT_ID/versions"
 ```
 
-La réponse d’historique contient `versions`. Retrouvez les routes de modification, restauration et suppression dans la [référence](reference.md). Ne supprimez que votre prompt de test. Retirez le jeton local avec `unset TOKEN` à la fin ; cela ne révoque pas la session sur le serveur. En cas d’échec, consultez les [solutions aux erreurs](reference.md#résoudre-un-échec) avant de réessayer.
+La réponse d’historique contient `versions`. Retrouvez les routes de modification, restauration et suppression dans la [référence](reference.md). Ne supprimez que votre prompt de test. Retirez le jeton local avec `unset TOKEN` à la fin ; cela ne révoque pas la session sur le serveur. En cas d’échec, consultez les [solutions aux erreurs](reference.md#resolve-a-failed-call) avant de réessayer.

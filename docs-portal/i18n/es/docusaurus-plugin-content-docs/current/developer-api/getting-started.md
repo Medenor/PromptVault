@@ -11,11 +11,11 @@ sidebar_position: 2
 
 Lea una página de prompts y después cree y busque un prompt de prueba en su instancia.
 
-## Preparar la prueba
+## Preparar la prueba {#before-you-start}
 
 Necesita una instancia de prueba, Bash y `curl` con `--json` (7.82 o posterior). Si la autenticación está activa, necesita una cuenta activa y, cuando corresponda, su aplicación de autenticación. Sustituya localmente los marcadores entre corchetes angulares. No comparta contraseñas, tokens ni respuestas de inicio de sesión. Use HTTPS para instancias remotas.
 
-## Definir la dirección de la aplicación
+## Definir la dirección de la aplicación {#set-the-application-address}
 
 Use la dirección de la aplicación, no la del portal. El ejemplo corresponde a un despliegue local. Conserve cualquier prefijo de despliegue, sin barra final.
 
@@ -23,7 +23,7 @@ Use la dirección de la aplicación, no la del portal. El ejemplo corresponde a 
 BASE_URL='http://localhost:8001'
 ```
 
-## Iniciar sesión
+## Iniciar sesión {#sign-in}
 
 Omita este paso solo si su instancia aislada ya está configurada con `AUTH_ENABLED=false`; en ese caso, omita la cabecera de autorización en las solicitudes siguientes. No desactive la autenticación para que funcione una integración. Consulte [Configuración](../configuration/index.md).
 
@@ -49,7 +49,7 @@ Copie el `access_token` obtenido. Ejecute este comando, pegue el token y pulse I
 read -r -s TOKEN
 ```
 
-## Leer una página de prompts
+## Leer una página de prompts {#read-a-page-of-prompts}
 
 ```bash
 curl --silent --show-error --fail-with-body --include \
@@ -59,7 +59,7 @@ curl --silent --show-error --fail-with-body --include \
 
 La respuesta esperada es HTTP 200 con `prompts`, `page`, `limit`, `total_count`, `total_pages`, `has_next` y `has_previous`. `prompts` es un objeto cuyas claves son los identificadores, no una lista. Una página vacía es válida. Con autenticación activa, los resultados dependen de su identidad y sus permisos.
 
-## Crear un prompt de prueba
+## Crear un prompt de prueba {#create-a-disposable-prompt}
 
 Esta solicitud crea datos. Use una cuenta de prueba y contenido ficticio. La creación acepta campos de formulario, no JSON:
 
@@ -78,7 +78,7 @@ Espere HTTP 201 con `{"success":true,"prompt_id":...}`. Copie ese `prompt_id` en
 PROMPT_ID='<PROMPT_ID>'
 ```
 
-## Buscar y consultar versiones
+## Buscar y consultar versiones {#search-and-inspect-versions}
 
 La búsqueda utiliza `search`, no `q`. Use `item_type=prompt` para excluir skills de la lista y la búsqueda.
 
@@ -96,4 +96,4 @@ curl --silent --show-error --fail-with-body \
   "$BASE_URL/api/prompts/$PROMPT_ID/versions"
 ```
 
-La respuesta del historial contiene `versions`. Consulte las rutas de modificación, restauración y eliminación en la [referencia](reference.md). Elimine únicamente su prompt de prueba. Al terminar, retire el token local con `unset TOKEN`; esto no revoca la sesión del servidor. Si una llamada falla, consulte la [ayuda para errores](reference.md#resolver-una-llamada-fallida) antes de repetirla.
+La respuesta del historial contiene `versions`. Consulte las rutas de modificación, restauración y eliminación en la [referencia](reference.md). Elimine únicamente su prompt de prueba. Al terminar, retire el token local con `unset TOKEN`; esto no revoca la sesión del servidor. Si una llamada falla, consulte la [ayuda para errores](reference.md#resolve-a-failed-call) antes de repetirla.

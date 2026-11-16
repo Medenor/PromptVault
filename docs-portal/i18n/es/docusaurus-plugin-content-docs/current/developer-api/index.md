@@ -11,12 +11,12 @@ sidebar_position: 1
 
 La interfaz de programación de aplicaciones (API) permite conectar scripts y herramientas con PromptVault. Este espacio está dirigido a quienes utilizan un terminal y solicitudes HTTP. Para trabajar en la aplicación, consulte la [guía del usuario](../user-guide/prompt-management.md). Para desplegar o configurar el servidor, siga [Instalación](../installation/index.md) y [Configuración](../configuration/index.md).
 
-## Elegir un punto de partida
+## Elegir un punto de partida {#choose-your-starting-point}
 
 - [Realizar sus primeras llamadas a la API](getting-started.md): leer, crear y buscar un prompt de prueba.
 - [Referencia de la API](reference.md): consultar operaciones, formatos, permisos y soluciones a errores.
 
-## Abrir la referencia de su instancia
+## Abrir la referencia de su instancia {#open-the-reference-on-your-instance}
 
 El portal de documentación y la aplicación pueden tener direcciones distintas. En la dirección de la **aplicación**, abra:
 
@@ -30,7 +30,7 @@ Si la aplicación está en `http://localhost:8001`, abra `http://localhost:8001/
 
 Puede leer estas guías sin una instancia en ejecución. Para enviar solicitudes necesita una aplicación disponible y las credenciales que esta exija. **Try it out** envía solicitudes reales. Use prompts de prueba para modificar o eliminar datos.
 
-## Conocer el alcance actual
+## Conocer el alcance actual {#know-the-current-boundaries}
 
 Las rutas actuales empiezan por `/api/...`, sin `/v1`. Autentique las solicitudes de sus scripts con el token de sesión explicado en el tutorial.
 

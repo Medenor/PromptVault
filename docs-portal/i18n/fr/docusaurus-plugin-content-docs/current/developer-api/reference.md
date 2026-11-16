@@ -11,7 +11,7 @@ sidebar_position: 3
 
 Retrouvez ici les familles de routes existantes. Ouvrez `/docs` sur votre **application**, pas sur le portail documentaire, pour le schéma complet de l’instance. Pour un parcours guidé, commencez par [vos premiers appels API](getting-started.md).
 
-## Authentification et droits
+## Authentification et droits {#authentication-and-access}
 
 Dans vos scripts, envoyez `Authorization: Bearer <ACCESS_TOKEN>`. La connexion et le renouvellement attendent du JSON. La création et la modification d’un prompt attendent des champs de formulaire.
 
@@ -19,7 +19,7 @@ Un jeton d’accès expire après 15 minutes par défaut. Envoyez le dernier jet
 
 Avec l’authentification active, la liste et la recherche ne renvoient que les éléments visibles pour vous. Sans identifiants, ou avec un jeton invalide ou expiré, elles peuvent renvoyer une page vide plutôt qu’une erreur 401. Une page vide ne confirme donc pas que la connexion a réussi. La propriété, le rôle administrateur, les partages et la visibilité héritée déterminent les droits. Un partage en modification autorise les modifications et restaurations, pas la suppression ou la gestion des partages. Voir [Partage](../user-guide/sharing.md). Les skills suivent leurs propres règles ; voir [Skills](../user-guide/skills.md).
 
-## Retrouver une opération
+## Retrouver une opération {#find-an-operation}
 
 Remplacez `{id}` par l’identifiant du prompt et `{version_id}` par un identifiant issu de son historique. Ce tableau donne des repères, pas une liste exhaustive des opérations d’administration.
 
@@ -40,13 +40,13 @@ Consultez la référence de l’instance pour les droits et formats des opérati
 
 Les champs de formulaire de création et modification sont `title`, `prompt`, `category`, `tags`, `commit_message` et, facultativement, `semantic_version`. `title` et `prompt` sont requis dans les deux cas. Séparez les tags par des virgules. Une restauration accepte le champ de formulaire facultatif `commit_message` et crée une entrée d’historique. Une suppression retire des données : réservez-la aux éléments que vous souhaitez supprimer.
 
-## Parcourir les résultats
+## Parcourir les résultats {#read-paginated-results}
 
 La liste et la recherche utilisent par défaut `page=1` et `limit=50`, avec un maximum de 100 éléments par page. Continuez tant que `has_next` vaut `true`. L’objet `prompts` utilise les identifiants comme clés. `item_type` accepte `all`, `prompt` ou `skill` ; un skill n’a pas de corps `prompt`. `filter=shared-with-me` limite les résultats aux partages explicites.
 
 La recherche accepte `search`, `category`, `tag`, `favorites`, `case_sensitive` et `ranked`. N’affichez jamais les extraits renvoyés comme du HTML brut. Voir le [guide de recherche](../user-guide/search.md) pour les correspondances.
 
-## Résoudre un échec
+## Résoudre un échec {#resolve-a-failed-call}
 
 Examinez le statut HTTP et la réponse. Selon l’opération, l’erreur utilise `detail`, `error` ou un message structuré. Un prompt introuvable peut par exemple renvoyer `{"detail":"Prompt with ID 123 not found"}`.
 

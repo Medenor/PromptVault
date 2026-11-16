@@ -11,11 +11,11 @@ sidebar_position: 2
 
 Lesen Sie eine Seite mit Prompts. Erstellen und suchen Sie anschließend einen Test-Prompt auf Ihrer Instanz.
 
-## Den Versuch vorbereiten
+## Den Versuch vorbereiten {#before-you-start}
 
 Sie benötigen eine Testinstanz, Bash und `curl` mit `--json` (ab Version 7.82). Bei aktiver Authentifizierung brauchen Sie ein aktives Konto und gegebenenfalls Ihre Authenticator-App. Ersetzen Sie Platzhalter in spitzen Klammern lokal. Geben Sie Passwörter, Tokens und Anmeldeantworten nicht weiter. Verwenden Sie HTTPS für entfernte Instanzen.
 
-## Die Anwendungsadresse festlegen
+## Die Anwendungsadresse festlegen {#set-the-application-address}
 
 Tragen Sie die Adresse Ihrer Anwendung ein, nicht die der Dokumentation. Das Beispiel gilt für eine lokale Installation. Behalten Sie einen vorhandenen URL-Präfix bei, ohne abschließenden Schrägstrich.
 
@@ -23,7 +23,7 @@ Tragen Sie die Adresse Ihrer Anwendung ein, nicht die der Dokumentation. Das Bei
 BASE_URL='http://localhost:8001'
 ```
 
-## Sich anmelden
+## Sich anmelden {#sign-in}
 
 Überspringen Sie diesen Schritt nur, wenn Ihre isolierte Instanz bereits mit `AUTH_ENABLED=false` läuft. Lassen Sie dann den Authorization-Header bei den folgenden Anfragen weg. Deaktivieren Sie die Authentifizierung nicht eigens für eine Integration. Siehe [Konfiguration](../configuration/index.md).
 
@@ -49,7 +49,7 @@ Kopieren Sie das erhaltene `access_token`. Führen Sie diesen Befehl aus, fügen
 read -r -s TOKEN
 ```
 
-## Eine Seite mit Prompts lesen
+## Eine Seite mit Prompts lesen {#read-a-page-of-prompts}
 
 ```bash
 curl --silent --show-error --fail-with-body --include \
@@ -59,7 +59,7 @@ curl --silent --show-error --fail-with-body --include \
 
 Erwartet werden HTTP 200 und die Felder `prompts`, `page`, `limit`, `total_count`, `total_pages`, `has_next` und `has_previous`. `prompts` ist ein Objekt mit Element-IDs als Schlüsseln, kein Array. Eine leere Seite ist möglich. Bei aktiver Authentifizierung bestimmen Ihre Identität und Berechtigungen die Ergebnisse.
 
-## Einen Test-Prompt erstellen
+## Einen Test-Prompt erstellen {#create-a-disposable-prompt}
 
 Diese Anfrage legt Daten an. Verwenden Sie ein Testkonto und Beispieldaten. Die Erstellung erwartet Formularfelder statt JSON:
 
@@ -78,7 +78,7 @@ Erwartet werden HTTP 201 und `{"success":true,"prompt_id":...}`. Übernehmen Sie
 PROMPT_ID='<PROMPT_ID>'
 ```
 
-## Suchen und Versionen lesen
+## Suchen und Versionen lesen {#search-and-inspect-versions}
 
 Die Suche verwendet `search`, nicht `q`. Mit `item_type=prompt` schließen Sie Skills aus Listen- und Suchergebnissen aus.
 
@@ -96,4 +96,4 @@ curl --silent --show-error --fail-with-body \
   "$BASE_URL/api/prompts/$PROMPT_ID/versions"
 ```
 
-Die Verlaufsantwort enthält `versions`. Routen zum Ändern, Wiederherstellen und Löschen finden Sie in der [Referenz](reference.md). Löschen Sie nur Ihren Test-Prompt. Entfernen Sie danach das lokale Token mit `unset TOKEN`; die Serversitzung bleibt bestehen. Lesen Sie bei Fehlern die [Fehlerhilfe](reference.md#einen-fehlgeschlagenen-aufruf-prüfen), bevor Sie die Anfrage wiederholen.
+Die Verlaufsantwort enthält `versions`. Routen zum Ändern, Wiederherstellen und Löschen finden Sie in der [Referenz](reference.md). Löschen Sie nur Ihren Test-Prompt. Entfernen Sie danach das lokale Token mit `unset TOKEN`; die Serversitzung bleibt bestehen. Lesen Sie bei Fehlern die [Fehlerhilfe](reference.md#resolve-a-failed-call), bevor Sie die Anfrage wiederholen.
