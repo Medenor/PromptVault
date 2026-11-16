@@ -9,7 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Documentation portal update guide and navigation**: Added a four-language guide for updating and restoring a Docker Compose installation. The portal now has a “Back to PromptVault” navbar link, with its target configurable through `DOCS_APP_URL` when building the docs image.
+- **API developer guides in the documentation portal** (#109): Added a Developer / API space in English, French, German and Spanish, with localized sidebar navigation and home-page links. It covers an overview, first calls (login with 2FA, read, create, search, history) and a reference for routes, permissions, pagination and errors. The portal now has 20 pages per locale instead of 17.
+- **Documentation portal update guide and navigation** (#108): Added a four-language guide for updating and restoring a Docker Compose installation. The portal now has a “Back to PromptVault” navbar link, with its target configurable through `DOCS_APP_URL` when building the docs image.
 
 ## [1.14.1] - 2026-11-14
 
