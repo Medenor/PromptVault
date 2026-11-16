@@ -19,3 +19,7 @@ Una vez instalado, la [Guía del usuario](user-guide/versioning.md) cubre el ver
 ## ¿Algo no funciona?
 
 Consulte [Solución de problemas](troubleshooting/index.md) para los problemas más comunes, o las [Notas de la versión](release-notes/index.md) para ver los cambios recientes.
+
+## Desarrollo / API
+
+Conecte scripts y herramientas mediante la [API existente](developer-api/index.md). Siga una solicitud guiada y consulte después la referencia de su propia instancia de PromptVault.

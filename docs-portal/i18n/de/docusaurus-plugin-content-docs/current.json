@@ -1,0 +1,10 @@
+{
+  "_license": {
+    "message": "This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0. If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.",
+    "description": "License notice for this translation file."
+  },
+  "sidebar.docsSidebar.category.Developer / API": {
+    "message": "Entwicklung / API",
+    "description": "The label for category Developer / API in sidebar docsSidebar"
+  }
+}

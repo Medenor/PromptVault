@@ -19,3 +19,7 @@ Once installed, the [User Guide](user-guide/versioning.md) covers prompt version
 ## Something Not Working?
 
 Check [Troubleshooting](troubleshooting/index.md) for the issues most people hit, or the [Release Notes](release-notes/index.md) for what changed recently.
+
+## Developer / API
+
+Connect scripts and tools using the [existing API](developer-api/index.md). Follow a guided request, then explore the reference served by your own PromptVault instance.

@@ -33,6 +33,12 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: 'category',
+      label: 'Developer / API',
+      link: { type: 'doc', id: 'developer-api/index' },
+      items: ['developer-api/getting-started', 'developer-api/reference'],
+    },
+    {
+      type: 'category',
       label: 'Troubleshooting',
       items: ['troubleshooting/index'],
     },

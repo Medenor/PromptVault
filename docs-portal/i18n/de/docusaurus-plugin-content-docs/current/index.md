@@ -19,3 +19,7 @@ Nach der Installation deckt das [Benutzerhandbuch](user-guide/versioning.md) Pro
 ## Funktioniert etwas nicht?
 
 Prüfen Sie die [Fehlerbehebung](troubleshooting/index.md) für die häufigsten Probleme oder die [Versionshinweise](release-notes/index.md) für die neuesten Änderungen.
+
+## Entwicklung / API
+
+Verbinden Sie Skripte und Werkzeuge über die [vorhandene API](developer-api/index.md). Führen Sie zuerst eine angeleitete Anfrage aus und nutzen Sie anschließend die Referenz Ihrer eigenen PromptVault-Instanz.
