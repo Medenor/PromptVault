@@ -7,7 +7,7 @@ sidebar_position: 5
 
 La autenticación de dos factores (2FA) añade una comprobación más al iniciar sesión. Tras tu contraseña, PromptVault pide un código de 6 dígitos de una app de autenticación, o uno de tus códigos de recuperación. La 2FA es opcional para la mayoría de usuarios. Los administradores pueden exigirla para roles concretos.
 
-## Activar la 2FA
+## Activar la 2FA {#enabling-2fa}
 
 1. Abre tu perfil y busca la tarjeta **Autenticación de dos factores**. Selecciona **Configurar la autenticación de dos factores**.
 2. Escanea el código QR con una app de autenticación como Google Authenticator, Authy o 1Password. Si no puedes escanearlo, despliega **¿No puedes escanear el código?** y escribe a mano la **clave de configuración** en la app.
@@ -16,7 +16,7 @@ La autenticación de dos factores (2FA) añade una comprobación más al iniciar
 
 La 2FA no se activa hasta que completes el paso 3. Si vuelves a empezar la configuración antes de confirmarla, la nueva clave de configuración sustituye a la anterior.
 
-## Iniciar sesión con 2FA
+## Iniciar sesión con 2FA {#signing-in-with-2fa}
 
 1. Introduce tu contraseña como de costumbre.
 2. En la pantalla **Autenticación de dos factores**, introduce el código de 6 dígitos de tu app y selecciona **Verificar**.
@@ -25,21 +25,21 @@ El paso de inicio de sesión caduca a los 2 minutos. Si caduca, vuelve a empezar
 
 Los códigos de la app cambian cada 30 segundos. Un código también funciona un intervalo antes o después de la hora actual, así que un reloj de teléfono ligeramente desajustado sigue sirviendo.
 
-## Iniciar sesión con un código de recuperación
+## Iniciar sesión con un código de recuperación {#signing-in-with-a-recovery-code}
 
 En la misma pantalla, introduce un código de recuperación en lugar del código de la app. Los códigos de recuperación tienen el formato `xxxx-xxxx`. Cada código funciona una sola vez. Después de usarlo, deja de funcionar para siempre.
 
 Usa un código de recuperación para volver a entrar si pierdes el teléfono. Después, regenera tus códigos.
 
-## Regenerar los códigos de recuperación
+## Regenerar los códigos de recuperación {#regenerating-recovery-codes}
 
 Desde tu perfil, selecciona **Regenerar códigos de recuperación**. Introduce tu contraseña actual y un código actual de la app o un código de recuperación. PromptVault crea 10 códigos nuevos. Todos los anteriores dejan de funcionar de inmediato.
 
-## Desactivar la 2FA
+## Desactivar la 2FA {#disabling-2fa}
 
 Desde tu perfil, selecciona **Desactivar la autenticación de dos factores**. Introduce tu contraseña actual y un código actual de la app o un código de recuperación. Al desactivarla se eliminan tu configuración de 2FA y todos los códigos de recuperación restantes. A partir de entonces, inicias sesión solo con tu contraseña.
 
-## Exigir 2FA para un rol
+## Exigir 2FA para un rol {#requiring-2fa-for-a-role}
 
 En la sección **Política de autenticación de dos factores** de la administración, elige qué roles (lector, editor, administrador) deben usar 2FA. Un cambio se aplica en el siguiente inicio de sesión de cada usuario. No cierra las sesiones existentes.
 
@@ -47,11 +47,11 @@ En la sección **Política de autenticación de dos factores** de la administrac
 - Un usuario de un rol obligatorio que ya tiene 2FA inicia sesión con el paso de código habitual.
 - Quitar un requisito no elimina la configuración de 2FA existente de nadie.
 
-## Si pierdes la app y los códigos de recuperación
+## Si pierdes la app y los códigos de recuperación {#if-you-lose-your-authenticator-and-recovery-codes}
 
 En este caso PromptVault no puede restablecer la 2FA por ti. Hoy no hay ninguna opción de administración que quite la 2FA de una cuenta. Ponte en contacto con la persona que administra tu servidor de PromptVault, y guarda tus códigos de recuperación en un lugar seguro para no llegar nunca a esta situación.
 
-## Notas de seguridad
+## Notas de seguridad {#security-notes}
 
 - Tu configuración de 2FA se guarda cifrada. Los códigos de recuperación se guardan de forma que no se pueden leer de nuevo, por lo que no pueden volver a mostrarse.
 - Los códigos incorrectos cuentan para el mismo bloqueo que las contraseñas incorrectas. Demasiados intentos fallidos bloquean la cuenta durante un breve periodo.

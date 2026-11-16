@@ -7,7 +7,7 @@ sidebar_position: 5
 
 Die Zwei-Faktor-Authentifizierung (2FA) fügt beim Anmelden eine zusätzliche Prüfung hinzu. Nach Ihrem Passwort fragt PromptVault nach einem 6-stelligen Code aus einer Authenticator-App oder nach einem Ihrer Wiederherstellungscodes. Die 2FA ist für die meisten Nutzer optional. Administratoren können sie für bestimmte Rollen verpflichtend machen.
 
-## Einrichten der 2FA
+## Einrichten der 2FA {#enabling-2fa}
 
 1. Öffnen Sie Ihr Profil und suchen Sie die Karte **Zwei-Faktor-Authentifizierung**. Wählen Sie **Zwei-Faktor-Authentifizierung einrichten**.
 2. Scannen Sie den QR-Code mit einer Authenticator-App wie Google Authenticator, Authy oder 1Password. Wenn das nicht geht, öffnen Sie **Code lässt sich nicht scannen?** und geben Sie den **Einrichtungsschlüssel** von Hand in die App ein.
@@ -16,7 +16,7 @@ Die Zwei-Faktor-Authentifizierung (2FA) fügt beim Anmelden eine zusätzliche Pr
 
 Die 2FA ist erst nach Schritt 3 aktiv. Wenn Sie die Einrichtung vor der Bestätigung neu starten, ersetzt der neue Einrichtungsschlüssel den alten.
 
-## Anmelden mit 2FA
+## Anmelden mit 2FA {#signing-in-with-2fa}
 
 1. Geben Sie Ihr Passwort wie gewohnt ein.
 2. Geben Sie auf dem Bildschirm **Zwei-Faktor-Authentifizierung** den 6-stelligen Code aus Ihrer App ein und wählen Sie **Prüfen**.
@@ -25,21 +25,21 @@ Der Anmeldeschritt läuft nach 2 Minuten ab. Danach beginnen Sie wieder beim Pas
 
 App-Codes wechseln alle 30 Sekunden. Ein Code funktioniert auch einen Zeitschritt vor oder nach der aktuellen Zeit. Eine Telefonuhr, die etwas abweicht, bleibt deshalb nutzbar.
 
-## Anmelden mit einem Wiederherstellungscode
+## Anmelden mit einem Wiederherstellungscode {#signing-in-with-a-recovery-code}
 
 Geben Sie auf demselben Bildschirm anstelle des App-Codes einen Wiederherstellungscode ein. Wiederherstellungscodes sehen so aus: `xxxx-xxxx`. Jeder Code funktioniert nur einmal. Nach der Verwendung funktioniert er nicht mehr.
 
 Verwenden Sie einen Wiederherstellungscode, um wieder Zugang zu erhalten, wenn Sie Ihr Telefon verloren haben. Erzeugen Sie danach neue Codes.
 
-## Wiederherstellungscodes neu erzeugen
+## Wiederherstellungscodes neu erzeugen {#regenerating-recovery-codes}
 
 Wählen Sie in Ihrem Profil **Wiederherstellungscodes neu erzeugen**. Geben Sie Ihr aktuelles Passwort und einen aktuellen App-Code oder Wiederherstellungscode ein. PromptVault erstellt 10 neue Codes. Alle früheren Codes funktionieren sofort nicht mehr.
 
-## 2FA deaktivieren
+## 2FA deaktivieren {#disabling-2fa}
 
 Wählen Sie in Ihrem Profil **Zwei-Faktor-Authentifizierung deaktivieren**. Geben Sie Ihr aktuelles Passwort und einen aktuellen App-Code oder Wiederherstellungscode ein. Beim Deaktivieren werden Ihre 2FA-Einrichtung und alle verbleibenden Wiederherstellungscodes entfernt. Danach melden Sie sich nur noch mit Ihrem Passwort an.
 
-## 2FA für eine Rolle verpflichtend machen
+## 2FA für eine Rolle verpflichtend machen {#requiring-2fa-for-a-role}
 
 Wählen Sie im Abschnitt **Richtlinie zur Zwei-Faktor-Authentifizierung** der Administration, welche Rollen (Betrachter, Bearbeiter, Administrator) 2FA verwenden müssen. Eine Änderung gilt ab der nächsten Anmeldung jedes Nutzers. Bestehende Sitzungen werden dadurch nicht beendet.
 
@@ -47,11 +47,11 @@ Wählen Sie im Abschnitt **Richtlinie zur Zwei-Faktor-Authentifizierung** der Ad
 - Ein Nutzer in einer verpflichtenden Rolle, der 2FA bereits eingerichtet hat, meldet sich über den üblichen Codeschritt an.
 - Wenn Sie eine Anforderung aufheben, wird die bestehende 2FA-Einrichtung niemandes entfernt.
 
-## Wenn Sie Ihre App und Ihre Wiederherstellungscodes verloren haben
+## Wenn Sie Ihre App und Ihre Wiederherstellungscodes verloren haben {#if-you-lose-your-authenticator-and-recovery-codes}
 
 PromptVault kann 2FA in diesem Fall nicht für Sie zurücksetzen. Derzeit gibt es keine Administratoroption, die 2FA aus einem Konto entfernt. Wenden Sie sich an die Person, die Ihren PromptVault-Server betreibt. Bewahren Sie Ihre Wiederherstellungscodes sicher auf, damit es nicht so weit kommt.
 
-## Sicherheitshinweise
+## Sicherheitshinweise {#security-notes}
 
 - Ihre 2FA-Einrichtung wird verschlüsselt gespeichert. Wiederherstellungscodes werden so gespeichert, dass sie nicht wieder ausgelesen werden können, und lassen sich daher nicht erneut anzeigen.
 - Falsche Codes zählen zur selben Sperre wie falsche Passwörter. Zu viele falsche Versuche sperren das Konto für kurze Zeit.

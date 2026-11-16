@@ -7,14 +7,14 @@ sidebar_position: 1
 
 PromptVault is a self-hosted application: you run it on infrastructure you control. Choose the setup wizard if you want the application to create the required configuration interactively. Choose the manual path only if you are comfortable editing environment variables and running Docker commands.
 
-## Prerequisites
+## Prerequisites {#prerequisites}
 
 - Python 3.14+
 - PostgreSQL 15+ (recommended for production) or SQLite (fine for development/single-user use)
 - Docker and Docker Compose (recommended deployment path)
 - Git
 
-## Quick Start with the Setup Wizard
+## Quick Start with the Setup Wizard {#quick-start-with-the-setup-wizard}
 
 The fastest way to get a working instance is the bundled setup wizard. It creates JSON Web Token (JWT) signing keys, configures the environment, sets up the database, and creates an administrator account.
 
@@ -26,7 +26,7 @@ python scripts/setup/setup.py
 
 Follow the prompts. When it finishes, open the address it displays and sign in with the administrator credentials you created.
 
-## Manual Docker Compose Setup
+## Manual Docker Compose Setup {#manual-docker-compose-setup}
 
 Use this path only when you need to control each setting yourself. Complete the commands in order; later commands use the files and services created by earlier ones.
 
@@ -62,7 +62,7 @@ docker-compose exec web python scripts/migrate_json_to_db.py
 
 When the containers are running, open `http://localhost:8001` and sign in with the administrator credentials you created. If the page does not open, use [Troubleshooting](../troubleshooting/index.md) before changing any data or Docker volumes.
 
-## Building from Source
+## Building from Source {#building-from-source}
 
 If you're developing locally rather than deploying via Docker, the repository's `Makefile` wraps the full build/test/lint workflow:
 
@@ -74,7 +74,7 @@ make build     # production frontend assets + Docker image
 
 See the project's `docs/DEVELOPMENT.md` for the full target reference, environment variables, and common failure modes if a step doesn't behave as expected.
 
-## Creating the Admin User
+## Creating the Admin User {#creating-the-admin-user}
 
 Every fresh installation needs at least one admin account:
 
@@ -89,7 +89,7 @@ python scripts/create_admin_user.py
 The script asks for a username, email address, and password. It checks the password against the configured policy, then creates a user with full administrator permissions. Store these credentials securely.
 
 - To update an existing installation, follow [Update PromptVault](update.md).
-## Next Steps
+## Next Steps {#next-steps}
 
 - Review the [Configuration Reference](../configuration/index.md) for environment variables you'll likely want to tune (rate limits, session timeouts, backup storage).
 - If something doesn't come up as expected, check [Troubleshooting](../troubleshooting/index.md).

@@ -7,15 +7,15 @@ sidebar_position: 3
 
 Anders als Kategorien kann ein Prompt gleichzeitig mehrere Tags tragen, was Tags besser für bereichsübergreifende Markierungen geeignet macht — wie `kundensichtbar` oder `zu-überprüfen` — als die einzelne grobe Gruppierung, die eine Kategorie bietet.
 
-## Tags erstellen und zuweisen
+## Tags erstellen und zuweisen {#creating-and-assigning-tags}
 
 Ein Tag hat einen Namen, eine optionale Beschreibung, eine optionale Farbe und kann optional einen übergeordneten Tag haben, wodurch sich eine einfache Tag-Hierarchie aufbauen lässt (ein Tag kann nicht sein eigener übergeordneter Tag sein, und Zyklen werden abgelehnt). Tags werden einem Prompt beim Erstellen oder Bearbeiten zugewiesen; die Eingabe eines noch nicht existierenden Tag-Namens erstellt ihn.
 
-## Nach Tag filtern
+## Nach Tag filtern {#filtering-by-tag}
 
 Das Haupt-Prompt-Raster kann nach Tag gefiltert werden, um die Ansicht auf Prompts mit dieser Markierung einzugrenzen.
 
-## Massen-Tag-Pflege
+## Massen-Tag-Pflege {#bulk-tag-maintenance}
 
 Die Seite Tags verwalten bietet mehrere Massenoperationen, um Ihre Tag-Liste übersichtlich zu halten:
 
@@ -26,6 +26,6 @@ Die Seite Tags verwalten bietet mehrere Massenoperationen, um Ihre Tag-Liste üb
 
 Zusammenführen, Massenlöschung und Suchen-und-Ersetzen können alle unmittelbar nach ihrer Ausführung rückgängig gemacht werden.
 
-## Tag-Analyse
+## Tag-Analyse {#tag-analytics}
 
 Eine Tag-Analyseansicht zeigt Ihre am häufigsten und am seltensten verwendeten Tags sowie die Tag-Paare, die am häufigsten gemeinsam auf demselben Prompt auftreten — nützlich, um redundante oder zu eng gefasste Tags zu erkennen.

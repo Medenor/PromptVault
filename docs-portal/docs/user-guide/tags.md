@@ -7,15 +7,15 @@ sidebar_position: 3
 
 Unlike categories, a prompt can carry many tags at once, making tags better suited to cross-cutting labels — like `client-facing` or `needs-review` — than the single broad grouping a category provides.
 
-## Creating and Assigning Tags
+## Creating and Assigning Tags {#creating-and-assigning-tags}
 
 A tag has a name, an optional description, an optional color, and can optionally have a parent tag, letting you build a simple tag hierarchy (a tag cannot be its own parent, and cycles are rejected). Tags are assigned to a prompt when creating or editing it; typing a tag name that doesn't exist yet creates it.
 
-## Filtering by Tag
+## Filtering by Tag {#filtering-by-tag}
 
 The main prompt grid can be filtered by tag to narrow the view down to prompts carrying that label.
 
-## Bulk Tag Maintenance
+## Bulk Tag Maintenance {#bulk-tag-maintenance}
 
 The Manage Tags page offers several bulk operations for keeping your tag list tidy:
 
@@ -26,6 +26,6 @@ The Manage Tags page offers several bulk operations for keeping your tag list ti
 
 Merge, bulk delete, and find-and-replace can all be undone immediately after running them.
 
-## Tag Analytics
+## Tag Analytics {#tag-analytics}
 
 A tag analytics view shows your most- and least-used tags and which tag pairs most often appear together on the same prompt, useful for spotting redundant or overly narrow tags.
