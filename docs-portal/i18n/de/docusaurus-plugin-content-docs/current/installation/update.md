@@ -9,10 +9,11 @@ Mit diesen Schritten aktualisieren Sie die Docker-Compose-Installation aus der [
 
 ## Vor dem Start
 
-1. Lesen Sie die [Versionshinweise](../release-notes/index.md) zu Änderungen, die Ihre Installation betreffen.
+1. Lesen Sie die [Versionshinweise](../release-notes/index.md) und `CHANGELOG.md` auf inkompatible Änderungen und Hinweise zu Datenbankmigrationen.
 2. Prüfen Sie, ob auf dem Server genug Speicherplatz für eine Datenbanksicherung und neue Images vorhanden ist.
-3. Planen Sie ein kurzes Wartungsfenster ein. Während des Neustarts können sich Nutzer möglicherweise nicht anmelden.
-4. Stellen Sie sicher, dass Sie auf den PromptVault-Projektordner und den Datenbank-Container zugreifen können.
+3. Testen Sie das Update zuerst auf einer Testinstallation, falls verfügbar.
+4. Planen Sie ein kurzes Wartungsfenster ein. Während des Neustarts können sich Nutzer möglicherweise nicht anmelden.
+5. Stellen Sie sicher, dass Sie auf den PromptVault-Projektordner und den Datenbank-Container zugreifen können.
 
 ## 1. Datenbank sichern
 
@@ -22,7 +23,7 @@ Erstellen und prüfen Sie eine komprimierte Datenbanksicherung, bevor Sie das Up
 set -euo pipefail
 mkdir -p data/backups
 BACKUP_FILE="data/backups/promptvault-$(date +%Y%m%d-%H%M%S).sql.gz"
-docker compose exec -T db pg_dump -U promptvault -d promptvault | gzip > "$BACKUP_FILE"
+docker-compose exec -T db pg_dump -U promptvault -d promptvault --verbose | gzip > "$BACKUP_FILE"
 gzip -t "$BACKUP_FILE"
 ```
 
@@ -30,38 +31,50 @@ Der letzte Befehl muss ohne Fehler enden. Prüfen Sie, dass die Sicherungsdatei 
 
 ## 2. Version herunterladen und neu erstellen
 
-Wählen Sie im PromptVault-Projektordner die gewünschte Version aus. Ein Release-Tag ist die Kennzeichnung einer veröffentlichten Version. Verwenden Sie ein Tag aus den Versionshinweisen:
+Wechseln Sie im PromptVault-Projektordner auf den neuesten Stand von `main`. Für eine bestimmte stabile Version verwenden Sie stattdessen deren Tag.
+
+```bash
+git checkout main
+git pull origin main
+```
+
+Um eine bestimmte veröffentlichte Version zu installieren, rufen Sie deren Tag ab und wechseln Sie dorthin:
 
 ```bash
 git fetch --tags
 git checkout <RELEASE_TAG>
 ```
 
-Erstellen und starten Sie die Anwendungs- und Dokumentationsdienste neu:
+Erstellen Sie die Images ohne Cache neu und ersetzen Sie anschließend den Web-Container. Datenbank und Redis sollen dabei weiterlaufen:
 
 ```bash
-docker compose build web docs
-docker compose up -d db redis
-docker compose up -d web docs
+docker-compose build --no-cache
+docker-compose stop web
+docker-compose rm web
+docker-compose up -d db redis
+sleep 15
+docker-compose up -d web docs
 ```
 
-Das Projekt ist so konfiguriert, dass `web` erst startet, wenn Datenbank und Redis bereit sind.
+Warten Sie nach dem Start von Datenbank und Redis 15 Sekunden, damit die Datenbank ihre Initialisierung abschließen kann. Das Projekt wartet außerdem auf erfolgreiche Gesundheitsprüfungen von Datenbank und Redis, bevor `web` startet.
 
 ## 3. Datenbank aktualisieren
 
 Eine Datenbankmigration passt die Datenbankstruktur an die neue PromptVault-Version an. Führen Sie die Migration aus und prüfen Sie anschließend, welche Migrationsversion aktiv ist:
 
 ```bash
-docker compose exec -T web alembic upgrade head
-docker compose exec -T web alembic current
+docker-compose exec -T web alembic upgrade head
+docker-compose exec -T web alembic current
 ```
 
-Der zweite Befehl sollte die aktuelle Migrationsversion anzeigen. Wenn die Migration fehlschlägt, halten Sie hier an und lesen Sie die [Fehlerbehebung](../troubleshooting/index.md).
+Führen Sie die Migration erst aus, wenn `web` gestartet ist. Der zweite Befehl sollte die aktuelle Migrationsversion anzeigen. Wenn die Migration fehlschlägt, halten Sie hier an und lesen Sie die [Fehlerbehebung](../troubleshooting/index.md).
 
 ## 4. Update prüfen
 
 ```bash
+docker-compose logs web | head -50
 curl --fail http://localhost:8001/api/health
+docker-compose exec -T db psql -U promptvault -d promptvault -c "SELECT COUNT(*) FROM prompts;"
 ```
 
 Die Gesundheitsprüfung sollte erfolgreich sein. Öffnen Sie PromptVault im Browser, melden Sie sich an und prüfen Sie, ob Ihre Prompts vorhanden sind. Öffnen Sie auch den Dokumentationsdienst, falls Sie ihn verwenden (Standardadresse: `http://localhost:7876`).
@@ -71,7 +84,7 @@ Die Gesundheitsprüfung sollte erfolgreich sein. Öffnen Sie PromptVault im Brow
 Prüfen Sie die Dienstprotokolle auf Fehlermeldungen:
 
 ```bash
-docker compose logs --tail=100 web docs
+docker-compose logs --tail=100 web docs
 ```
 
 Wenn ein Neuaufbau ohne Cache mit `No module named 'psycopg'` fehlschlägt, verwenden Sie PromptVault 1.13.1 oder neuer. Diese Version behebt das Abhängigkeitsproblem aus [Ticket #94](https://codeberg.org/medenor/promptvault/issues/94). Bei anderen Fehlern lesen Sie die [Fehlerbehebung](../troubleshooting/index.md).
@@ -80,39 +93,46 @@ Wenn ein Neuaufbau ohne Cache mit `No module named 'psycopg'` fehlschlägt, verw
 
 Mit diesen Schritten stellen Sie die Datenbanksicherung von vor dem Update wieder her und setzen die Anwendung und Dokumentation auf die vorherige Version zurück. Die Wiederherstellung ersetzt die aktuelle Datenbank durch die frühere Sicherung. Prompts und andere Änderungen seit dieser Sicherung gehen verloren, wenn Sie die aktuelle Datenbank nicht zuerst sichern.
 
+Stoppen Sie die Anwendung, bevor Sie fortfahren:
+
+```bash
+docker-compose stop web
+```
+
 Wenn Sie nach dem Update Prompts erstellt oder geändert haben, sichern Sie die aktuelle Datenbank vor der Wiederherstellung:
 
 ```bash
 set -euo pipefail
 CURRENT_BACKUP="data/backups/pre-restore-$(date +%Y%m%d-%H%M%S).sql.gz"
-docker compose exec -T db pg_dump -U promptvault -d promptvault | gzip > "$CURRENT_BACKUP"
+docker-compose exec -T db pg_dump -U promptvault -d promptvault --verbose | gzip > "$CURRENT_BACKUP"
 gzip -t "$CURRENT_BACKUP"
 ```
 
-Stoppen Sie anschließend die Anwendung, wählen Sie in den Versionshinweisen das Tag der vorherigen Version und erstellen Sie deren Images neu:
+Stellen Sie die geprüfte Sicherung von vor dem Update wieder her. Ersetzen Sie `<SICHERUNGSDATEI>` durch den Dateinamen aus Schritt 1, ohne den Ordnerpfad `data/backups/`. Diese Befehle löschen und erstellen die Datenbank neu, bevor die Sicherung geladen wird:
 
 ```bash
-docker compose stop web
+set -euo pipefail
+docker-compose exec -T db psql -U promptvault postgres -c 'DROP DATABASE promptvault;'
+docker-compose exec -T db psql -U promptvault postgres -c 'CREATE DATABASE promptvault;'
+gzip -dc "data/backups/<SICHERUNGSDATEI>" \
+  | docker-compose exec -T db psql -U promptvault -d promptvault
+```
+
+Wählen Sie anschließend die vorherige Version aus und erstellen Sie deren Images ohne Cache neu:
+
+```bash
 git fetch --tags
 git checkout <VORHERIGES_RELEASE_TAG>
-docker compose build web docs
+docker-compose build --no-cache
 ```
 
-Stellen Sie die geprüfte Sicherung von vor dem Update wieder her. Ersetzen Sie `<SICHERUNGSDATEI>` durch den Dateinamen aus Schritt 1. Der erste Befehl löscht den aktuellen Datenbankinhalt, bevor die Sicherung geladen wird:
+Starten Sie die vorherige Version und prüfen Sie die Protokolle sowie die Gesundheitsprüfung:
 
 ```bash
-docker compose exec -T db psql -U promptvault -d promptvault \
-  -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;'
-set -euo pipefail
-gzip -dc "data/backups/<SICHERUNGSDATEI>" \
-  | docker compose exec -T db psql -U promptvault -d promptvault
-```
-
-Starten Sie die vorherige Version und prüfen Sie, ob PromptVault funktioniert:
-
-```bash
-docker compose up -d web docs
+docker-compose up -d web docs
+docker-compose logs web --tail=20
 curl --fail http://localhost:8001/api/health
+docker-compose exec -T db psql -U promptvault -d promptvault -c "SELECT COUNT(*) FROM prompts;"
 ```
 
 Melden Sie sich an und prüfen Sie, ob Ihre Prompts vorhanden sind. Wenn die Wiederherstellung oder der Start fehlschlägt, halten Sie an und lesen Sie die [Fehlerbehebung](../troubleshooting/index.md).
