@@ -19,3 +19,7 @@ Une fois installé, le [Guide utilisateur](user-guide/versioning.md) couvre le v
 ## Un problème ?
 
 Consultez [Dépannage](troubleshooting/index.md) pour les problèmes les plus courants, ou les [Notes de version](release-notes/index.md) pour connaître les changements récents.
+
+## Développement / API
+
+Reliez vos scripts et outils à [l’API existante](developer-api/index.md). Commencez par un appel guidé, puis consultez la référence servie par votre propre instance PromptVault.
