@@ -5,38 +5,39 @@ description: Eine selbst gehostete PromptVault-Installation sicher aktualisieren
 
 # PromptVault aktualisieren
 
-Diese Schritte gelten für die in [Installation](index.md) beschriebene Docker-Compose-Installation. Sie aktualisieren die Dienste `web` und `docs`, während die Datenbank und ihr benanntes Volume erhalten bleiben.
+Mit diesen Schritten aktualisieren Sie die Docker-Compose-Installation aus der [Installationsanleitung](index.md). Die Datenbank behält ihre Daten, während Sie die Dienste `web` und `docs` neu erstellen.
 
 ## Vor dem Start
 
-1. Lesen Sie die [Versionshinweise](../release-notes/index.md) auf Änderungen, die Ihre Installation betreffen.
+1. Lesen Sie die [Versionshinweise](../release-notes/index.md) zu Änderungen, die Ihre Installation betreffen.
 2. Prüfen Sie, ob auf dem Server genug Speicherplatz für eine Datenbanksicherung und neue Images vorhanden ist.
 3. Planen Sie ein kurzes Wartungsfenster ein. Während des Neustarts können sich Nutzer möglicherweise nicht anmelden.
-4. Stellen Sie sicher, dass Sie auf den Projektordner auf dem Server und den Datenbank-Container zugreifen können.
+4. Stellen Sie sicher, dass Sie auf den PromptVault-Projektordner und den Datenbank-Container zugreifen können.
 
 ## 1. Datenbank sichern
 
-Erstellen und prüfen Sie einen komprimierten Datenbank-Dump, bevor Sie das Update herunterladen oder starten:
+Erstellen und prüfen Sie eine komprimierte Datenbanksicherung, bevor Sie das Update herunterladen oder starten. Führen Sie diese Befehle im PromptVault-Projektordner aus:
 
 ```bash
+set -euo pipefail
 mkdir -p data/backups
-docker compose exec -T db pg_dump -U promptvault -d promptvault \
-  | gzip > "data/backups/promptvault-$(date +%Y%m%d-%H%M%S).sql.gz"
-gzip -t data/backups/*.sql.gz
+BACKUP_FILE="data/backups/promptvault-$(date +%Y%m%d-%H%M%S).sql.gz"
+docker compose exec -T db pg_dump -U promptvault -d promptvault | gzip > "$BACKUP_FILE"
+gzip -t "$BACKUP_FILE"
 ```
 
-Prüfen Sie, dass die neueste Datei nicht leer ist und `gzip -t` ohne Fehler endet. Bewahren Sie die Sicherung sicher auf. Fahren Sie nicht fort, wenn die Sicherung fehlgeschlagen ist.
+Der letzte Befehl muss ohne Fehler enden. Prüfen Sie, dass die Sicherungsdatei nicht leer ist. Lassen Sie sie für eine mögliche Wiederherstellung in `data/backups` und kopieren Sie eine zweite Datei an einen sicheren Ort außerhalb des Servers. Fahren Sie nicht fort, wenn die Sicherung fehlgeschlagen ist.
 
-## 2. Herunterladen und neu erstellen
+## 2. Version herunterladen und neu erstellen
 
-Wechseln Sie in den PromptVault-Projektordner und holen Sie die gewünschte Version. Verwenden Sie das Release-Tag aus den Versionshinweisen, wenn Sie nicht die neueste Entwicklungsversion möchten:
+Wählen Sie im PromptVault-Projektordner die gewünschte Version aus. Ein Release-Tag ist die Kennzeichnung einer veröffentlichten Version. Verwenden Sie ein Tag aus den Versionshinweisen:
 
 ```bash
 git fetch --tags
-git checkout <release-tag>
+git checkout <RELEASE_TAG>
 ```
 
-Erstellen Sie die Images neu und starten Sie Anwendungs- und Dokumentationsdienste:
+Erstellen und starten Sie die Anwendungs- und Dokumentationsdienste neu:
 
 ```bash
 docker compose build web docs
@@ -44,18 +45,18 @@ docker compose up -d db redis
 docker compose up -d web docs
 ```
 
-Datenbank und Redis müssen gesund sein, bevor die Anwendung startet. Compose wartet auf die im Projekt konfigurierten Gesundheitsprüfungen.
+Das Projekt ist so konfiguriert, dass `web` erst startet, wenn Datenbank und Redis bereit sind.
 
-## 3. Datenbankmigrationen ausführen
+## 3. Datenbank aktualisieren
 
-Führen Sie die Migration mit dem aktualisierten Web-Image aus:
+Eine Datenbankmigration passt die Datenbankstruktur an die neue PromptVault-Version an. Führen Sie die Migration aus und prüfen Sie anschließend, welche Migrationsversion aktiv ist:
 
 ```bash
 docker compose exec -T web alembic upgrade head
 docker compose exec -T web alembic current
 ```
 
-Der zweite Befehl zeigt die aktuelle Revision. Falls die Migration fehlschlägt, halten Sie hier an und lesen Sie die [Fehlerbehebung](../troubleshooting/index.md).
+Der zweite Befehl sollte die aktuelle Migrationsversion anzeigen. Wenn die Migration fehlschlägt, halten Sie hier an und lesen Sie die [Fehlerbehebung](../troubleshooting/index.md).
 
 ## 4. Update prüfen
 
@@ -63,29 +64,55 @@ Der zweite Befehl zeigt die aktuelle Revision. Falls die Migration fehlschlägt,
 curl --fail http://localhost:8001/api/health
 ```
 
-Der Health-Endpunkt sollte erfolgreich antworten. Öffnen Sie PromptVault im Browser, melden Sie sich an und prüfen Sie, ob Ihre Prompts vorhanden sind. Öffnen Sie auch den Dokumentationsdienst, falls Sie ihn verwenden (Standard: `http://localhost:7876`).
+Die Gesundheitsprüfung sollte erfolgreich sein. Öffnen Sie PromptVault im Browser, melden Sie sich an und prüfen Sie, ob Ihre Prompts vorhanden sind. Öffnen Sie auch den Dokumentationsdienst, falls Sie ihn verwenden (Standardadresse: `http://localhost:7876`).
 
 ## Bei Problemen
 
-Prüfen Sie zuerst die Dienstprotokolle:
+Prüfen Sie die Dienstprotokolle auf Fehlermeldungen:
 
 ```bash
 docker compose logs --tail=100 web docs
 ```
 
-Ein Neuaufbau ohne Cache kann eine fehlende Python-Abhängigkeit sichtbar machen, wenn deren Version nicht korrekt festgelegt ist. Die in den Versionshinweisen zu [Ticket #94](https://codeberg.org/medenor/promptvault/issues/94) korrigierte SQLAlchemy-Versionsbeschränkung verhindert beispielsweise ein bekanntes Installationsproblem mit `psycopg`. Weitere Symptome finden Sie unter [Fehlerbehebung](../troubleshooting/index.md).
+Wenn ein Neuaufbau ohne Cache mit `No module named 'psycopg'` fehlschlägt, verwenden Sie PromptVault 1.13.1 oder neuer. Diese Version behebt das Abhängigkeitsproblem aus [Ticket #94](https://codeberg.org/medenor/promptvault/issues/94). Bei anderen Fehlern lesen Sie die [Fehlerbehebung](../troubleshooting/index.md).
 
-### Datenbanksicherung wiederherstellen
+### Zur vorherigen Version zurückkehren
 
-Wenn die neue Version nicht funktioniert, wechseln Sie zur vorherigen Anwendungsversion und stellen Sie den geprüften Dump wieder her. Dabei wird der aktuelle Datenbankinhalt ersetzt. Sichern Sie den aktuellen Stand zuerst, falls er neue Daten enthält.
+Mit diesen Schritten stellen Sie die Datenbanksicherung von vor dem Update wieder her und setzen die Anwendung und Dokumentation auf die vorherige Version zurück. Die Wiederherstellung ersetzt die aktuelle Datenbank durch die frühere Sicherung. Prompts und andere Änderungen seit dieser Sicherung gehen verloren, wenn Sie die aktuelle Datenbank nicht zuerst sichern.
+
+Wenn Sie nach dem Update Prompts erstellt oder geändert haben, sichern Sie die aktuelle Datenbank vor der Wiederherstellung:
+
+```bash
+set -euo pipefail
+CURRENT_BACKUP="data/backups/pre-restore-$(date +%Y%m%d-%H%M%S).sql.gz"
+docker compose exec -T db pg_dump -U promptvault -d promptvault | gzip > "$CURRENT_BACKUP"
+gzip -t "$CURRENT_BACKUP"
+```
+
+Stoppen Sie anschließend die Anwendung, wählen Sie in den Versionshinweisen das Tag der vorherigen Version und erstellen Sie deren Images neu:
 
 ```bash
 docker compose stop web
-# Kopieren Sie die Sicherungsdatei bei Bedarf auf den Server, dann:
+git fetch --tags
+git checkout <VORHERIGES_RELEASE_TAG>
+docker compose build web docs
+```
+
+Stellen Sie die geprüfte Sicherung von vor dem Update wieder her. Ersetzen Sie `<SICHERUNGSDATEI>` durch den Dateinamen aus Schritt 1. Der erste Befehl löscht den aktuellen Datenbankinhalt, bevor die Sicherung geladen wird:
+
+```bash
 docker compose exec -T db psql -U promptvault -d promptvault \
   -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;'
-gzip -dc data/backups/<sicherungsdatei>.sql.gz \
+set -euo pipefail
+gzip -dc "data/backups/<SICHERUNGSDATEI>" \
   | docker compose exec -T db psql -U promptvault -d promptvault
 ```
 
-Starten Sie nach der Wiederherstellung die Dienste `web` und `docs` der vorherigen Version. Hilfe finden Sie unter [Fehlerbehebung](../troubleshooting/index.md).
+Starten Sie die vorherige Version und prüfen Sie, ob PromptVault funktioniert:
+
+```bash
+docker compose up -d web docs
+curl --fail http://localhost:8001/api/health
+```
+
+Melden Sie sich an und prüfen Sie, ob Ihre Prompts vorhanden sind. Wenn die Wiederherstellung oder der Start fehlschlägt, halten Sie an und lesen Sie die [Fehlerbehebung](../troubleshooting/index.md).

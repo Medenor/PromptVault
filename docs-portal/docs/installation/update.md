@@ -5,38 +5,39 @@ description: Safely update a self-hosted PromptVault installation.
 
 # Update PromptVault
 
-These steps apply to the Docker Compose setup described in [Installation](index.md). They update the `web` and `docs` services while keeping the database and its named volume in place.
+Use these steps to update the Docker Compose installation described in [Installation](index.md). The database keeps its stored data while you rebuild the `web` and `docs` services.
 
 ## Before you start
 
 1. Read the [release notes](../release-notes/index.md) for changes that affect your setup.
-2. Make sure the host has enough free disk space for a database backup and new images.
-3. Schedule a short maintenance window. Users may be unable to sign in during the restart.
-4. Confirm you can access the server's project folder and the database container.
+2. Check that the server has enough free disk space for a database backup and new images.
+3. Schedule a short maintenance window. Users may be unable to sign in while the app restarts.
+4. Make sure you can access the PromptVault project folder and database container.
 
 ## 1. Back up the database
 
-Create and check a compressed database dump before pulling or starting the update:
+Create and verify a compressed database backup before you download or start the update. Run these commands from the PromptVault project folder:
 
 ```bash
+set -euo pipefail
 mkdir -p data/backups
-docker compose exec -T db pg_dump -U promptvault -d promptvault \
-  | gzip > "data/backups/promptvault-$(date +%Y%m%d-%H%M%S).sql.gz"
-gzip -t data/backups/promptvault-*.sql.gz
+BACKUP_FILE="data/backups/promptvault-$(date +%Y%m%d-%H%M%S).sql.gz"
+docker compose exec -T db pg_dump -U promptvault -d promptvault | gzip > "$BACKUP_FILE"
+gzip -t "$BACKUP_FILE"
 ```
 
-Check that the newest file is non-empty and that `gzip -t` exits without an error. Keep the backup somewhere safe. Do not continue if the dump failed.
+The last command must finish without an error. Check that the backup file is not empty, then copy it to a safe location outside the server. Do not continue if the backup failed.
 
 ## 2. Download and rebuild
 
-From the PromptVault project folder, get the version you intend to install. Use the release tag from the release notes if you do not want the latest development version:
+From the PromptVault project folder, choose the release you want to install. A release tag is the label for a published version. Use one listed in the release notes:
 
 ```bash
 git fetch --tags
-git checkout <release-tag>
+git checkout <RELEASE_TAG>
 ```
 
-Then rebuild and restart the application and documentation services:
+Rebuild and start the application and documentation services:
 
 ```bash
 docker compose build web docs
@@ -44,18 +45,18 @@ docker compose up -d db redis
 docker compose up -d web docs
 ```
 
-The database and Redis services should be healthy before the application starts. Compose waits for their health checks as configured in the project file.
+The project is configured to start `web` only after the database and Redis report that they are ready.
 
-## 3. Apply database migrations
+## 3. Apply database updates
 
-Run the migration command using the updated web image:
+A database migration updates the database structure for the new PromptVault version. Run the migration, then check which migration version is active:
 
 ```bash
 docker compose exec -T web alembic upgrade head
 docker compose exec -T web alembic current
 ```
 
-The second command should report the current revision. If the migration command fails, stop here and follow [Troubleshooting](../troubleshooting/index.md).
+The second command should show the current migration version. If the migration command fails, stop here and follow [Troubleshooting](../troubleshooting/index.md).
 
 ## 4. Check the update
 
@@ -63,29 +64,55 @@ The second command should report the current revision. If the migration command 
 curl --fail http://localhost:8001/api/health
 ```
 
-The health endpoint should return a successful response. Open PromptVault in a browser, sign in, and check that your prompts are present. Open the docs service too if you use it (default: `http://localhost:7876`).
+The health check should return a successful response. Open PromptVault in a browser, sign in, and check that your prompts are present. If you use the docs service, open it too (default address: `http://localhost:7876`).
 
 ## If something goes wrong
 
-Check the service output first:
+Check the service logs for an error message:
 
 ```bash
 docker compose logs --tail=100 web docs
 ```
 
-A cache-less rebuild can expose a missing Python dependency if a dependency version is not pinned correctly. For example, the SQLAlchemy version constraint fixed in release notes associated with [issue #94](https://codeberg.org/medenor/promptvault/issues/94) prevents a known `psycopg` installation problem. Use the [Troubleshooting](../troubleshooting/index.md) page for other symptoms.
+If rebuilding without cache fails with `No module named 'psycopg'`, use PromptVault 1.13.1 or later; that release fixed the dependency issue described in [issue #94](https://codeberg.org/medenor/promptvault/issues/94). For other errors, follow [Troubleshooting](../troubleshooting/index.md).
 
-### Restore the database backup
+### Return to the previous version
 
-If the new version cannot be used, switch back to the previous application release and restore the verified dump. Restoring replaces the current database contents, so preserve a copy of the current state first if it contains new data:
+These steps restore the database backup you made before the update and return the app and docs to the previous release. Restoring replaces the current database with the earlier backup. Any prompts or other changes made since that backup will be lost unless you save the current database first.
+
+If you created or changed prompts after updating, save the current database before restoring:
+
+```bash
+set -euo pipefail
+CURRENT_BACKUP="data/backups/pre-restore-$(date +%Y%m%d-%H%M%S).sql.gz"
+docker compose exec -T db pg_dump -U promptvault -d promptvault | gzip > "$CURRENT_BACKUP"
+gzip -t "$CURRENT_BACKUP"
+```
+
+Then stop the app, select the previous release tag from your release notes, and rebuild its images:
 
 ```bash
 docker compose stop web
-# Copy the backup file to the server if needed, then:
+git fetch --tags
+git checkout <PREVIOUS_RELEASE_TAG>
+docker compose build web docs
+```
+
+Restore the verified pre-update backup. Replace `<BACKUP_FILE>` with the backup filename you created in step 1. The first command deletes the current database contents before loading the backup:
+
+```bash
 docker compose exec -T db psql -U promptvault -d promptvault \
   -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;'
-gzip -dc data/backups/<backup-file>.sql.gz \
+set -euo pipefail
+gzip -dc "data/backups/<BACKUP_FILE>" \
   | docker compose exec -T db psql -U promptvault -d promptvault
 ```
 
-Start the previous release's `web` and `docs` services after the restore. For help with a failed restore, see [Troubleshooting](../troubleshooting/index.md).
+Start the previous release and verify that PromptVault works:
+
+```bash
+docker compose up -d web docs
+curl --fail http://localhost:8001/api/health
+```
+
+Sign in and check that your prompts are present. If restoration or startup fails, stop and follow [Troubleshooting](../troubleshooting/index.md).
