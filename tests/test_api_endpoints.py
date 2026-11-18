@@ -438,7 +438,7 @@ class TestPaginationListPrompts:
     def test_list_ordering_and_pagination_via_repository_path(
         self, api_client, api_auth_headers, api_data_service, sample_prompt_data
     ):
-        """Regression for the T004 dual-path collapse (Codeberg #72).
+        """Regression for the T004 dual-path collapse (GitHub #40).
 
         GET /api/prompts must go through PromptRepository.search() (not the
         legacy data_service.load_prompts() path), which orders by
@@ -901,7 +901,7 @@ class TestApiErrorPaths:
         """Test that toggle_favorite properly handles database errors.
 
         Note: Since the router no longer calls data_service.update_prompt()
-        as a legacy failure-injection hook (Codeberg #72), this test can no
+        as a legacy failure-injection hook (GitHub #40), this test can no
         longer force a 500 via that monkeypatch. Failures in the repository
         layer are covered by repository tests instead.
         """

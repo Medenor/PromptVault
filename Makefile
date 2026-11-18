@@ -232,7 +232,7 @@ check-sw-cache-version: ## Fail if static assets changed without bumping sw.ts C
 	echo ""; \
 	echo "The Service Worker caches everything under /static/ cache-first, keyed only by CACHE_VERSION."; \
 	echo "Without a bump, users with an installed Service Worker keep serving the old cached content"; \
-	echo "indefinitely (see Codeberg #74). Bump CACHE_VERSION in sw.ts, or if this change genuinely"; \
+	echo "indefinitely (see GitHub #42). Bump CACHE_VERSION in sw.ts, or if this change genuinely"; \
 	echo "doesn't affect anything served under /static/, ignore/override this check."; \
 	exit 1
 

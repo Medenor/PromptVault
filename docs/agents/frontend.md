@@ -181,7 +181,7 @@ Tailwind utility classes only; no custom CSS unless truly unavoidable (animation
   an already-installed Service Worker keeps serving old cached assets indefinitely until that
   constant changes — there is no other invalidation signal.
 - Any change under `src/web/static/` (locales, CSS, JS, images) must bump `CACHE_VERSION` in the
-  same change. `make lint` / CI enforce this via the `check-sw-cache-version` target (Codeberg #74).
+  same change. `make lint` / CI enforce this via the `check-sw-cache-version` target (GitHub #42).
 - **The gate only checks that the branch bumped `CACHE_VERSION` at least once.** It diffs the whole
   branch against `main`, so after the first bump it stays green even if you later add locale keys,
   CSS or JS. While iterating on a branch, **bump again after every later change under

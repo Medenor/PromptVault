@@ -24,40 +24,40 @@ _Rebuilt 2026-11-13 from the current `main` (v1.13.1). Replaces the 2025 and 202
 
 These items are planned for the next implementation cycle.
 
-- **AI-native prompt tooling** — live token estimate, per-prompt target model and parameters, optional Test Run panel with a user-supplied key. Codeberg [#98](https://codeberg.org/medenor/promptvault/issues/98).
-- **Pagination completion** — bounded defaults on every list endpoint, "Load more" on the prompt grid. Codeberg [#99](https://codeberg.org/medenor/promptvault/issues/99).
+- **AI-native prompt tooling** — live token estimate, per-prompt target model and parameters, optional Test Run panel with a user-supplied key. [#53](https://github.com/Medenor/PromptVault/issues/53).
+- **Pagination completion** — bounded defaults on every list endpoint, "Load more" on the prompt grid. [#54](https://github.com/Medenor/PromptVault/issues/54).
 
 ## Next
 
 Start once the "Now" items are in review.
 
-- **Dark mode completion and theme toggle** — audit `dark:` variants, WCAG AA contrast, system/light/dark preference. Codeberg [#100](https://codeberg.org/medenor/promptvault/issues/100).
-- **Prompt analytics dashboard** — owner-scoped usage stats built on the audit log and a `copy` event. Codeberg [#101](https://codeberg.org/medenor/promptvault/issues/101), related to [#22](https://codeberg.org/Medenor/promptvault/issues/22).
+- **Dark mode completion and theme toggle** — audit `dark:` variants, WCAG AA contrast, system/light/dark preference. [#55](https://github.com/Medenor/PromptVault/issues/55).
+- **Prompt analytics dashboard** — owner-scoped usage stats built on the audit log and a `copy` event. [#56](https://github.com/Medenor/PromptVault/issues/56), related to [#23](https://github.com/Medenor/PromptVault/issues/23).
 
 ## Later
 
-- **Team collaboration beyond sharing** — real-time updates, presence and edit locks. Codeberg [#17](https://codeberg.org/Medenor/promptvault/issues/17). Sharing grants already exist, so this only covers live behavior.
-- **Export and integrations** — PDF and HTML export, public links, and the other items in Codeberg [#23](https://codeberg.org/Medenor/promptvault/issues/23).
-- **Public API and developer docs** — versioned API, OpenAPI tags, API keys. Codeberg [#19](https://codeberg.org/Medenor/promptvault/issues/19).
-- **Skill packages** — multi-file skills stored alongside prompts. Codeberg [#73](https://codeberg.org/Medenor/promptvault/issues/73). On hold; branch `011-skill-packages` exists and should wait until the 2FA and docs-portal work is finalized.
-- **HTTPS and TLS support** — Codeberg [#31](https://codeberg.org/Medenor/promptvault/issues/31).
+- **Team collaboration beyond sharing** — real-time updates, presence and edit locks. [#18](https://github.com/Medenor/PromptVault/issues/18). Sharing grants already exist, so this only covers live behavior.
+- **Export and integrations** — PDF and HTML export, public links, and the other items in [#24](https://github.com/Medenor/PromptVault/issues/24).
+- **Public API and developer docs** — versioned API, OpenAPI tags, API keys. [#20](https://github.com/Medenor/PromptVault/issues/20).
+- **Skill packages** — multi-file skills stored alongside prompts. [#41](https://github.com/Medenor/PromptVault/issues/41). On hold; branch `011-skill-packages` exists and should wait until the 2FA and docs-portal work is finalized.
+- **HTTPS and TLS support** — [#28](https://github.com/Medenor/PromptVault/issues/28).
 
 ## Open bugs and hygiene
 
 These are not roadmap items, but they block or affect trust in the build.
 
-- [#88](https://codeberg.org/medenor/promptvault/issues/88) — four stale snapshot tests fail on `main`.
-- [#90](https://codeberg.org/medenor/promptvault/issues/90) — edit modal stays open after a new search or filter.
-- [#61](https://codeberg.org/Medenor/promptvault/issues/61) — password-reset email is stubbed; the link is only logged.
-- [#93](https://codeberg.org/medenor/promptvault/issues/93) — admin cannot disable 2FA for a locked-out user.
-- [#95](https://codeberg.org/medenor/promptvault/issues/95) — "Update PromptVault" page for the documentation portal.
-- [#97](https://codeberg.org/medenor/promptvault/issues/97) — `make release` and `make release-dry-run` targets.
+- [#47](https://github.com/Medenor/PromptVault/issues/47) — four stale snapshot tests fail on `main`.
+- [#49](https://github.com/Medenor/PromptVault/issues/49) — edit modal stays open after a new search or filter.
+- [#39](https://github.com/Medenor/PromptVault/issues/39) — password-reset email is stubbed; the link is only logged.
+- [#50](https://github.com/Medenor/PromptVault/issues/50) — admin cannot disable 2FA for a locked-out user.
+- [#51](https://github.com/Medenor/PromptVault/issues/51) — "Update PromptVault" page for the documentation portal.
+- [#52](https://github.com/Medenor/PromptVault/issues/52) — `make release` and `make release-dry-run` targets.
 
 ## Principles for ordering
 
 - Close security and integrity gaps before adding features that widen the attack surface.
 - Prefer additive changes that reuse existing repositories and the dual-backend migration pattern.
-- Keep every item behind a Codeberg issue so progress can be tracked in one place.
+- Keep every item behind a GitHub issue so progress can be tracked in one place.
 
 ## Relationship to other documents
 
