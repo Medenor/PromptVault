@@ -59,8 +59,8 @@ const config: Config = {
           position: 'right',
         },
         {
-          href: 'https://codeberg.org/medenor/promptvault',
-          label: 'Codeberg',
+          href: 'https://github.com/Medenor/PromptVault',
+          label: 'GitHub',
           position: 'right',
         },
       ],

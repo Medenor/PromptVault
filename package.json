@@ -1,7 +1,7 @@
 {
   "name": "promptvault",
   "version": "1.14.1",
-  "description": "<h1 align=\"center\">   <a href=\"https://codeberg.org/medenor/promptvault\">     <img src=\"docs/images/promptvault_logo.jpg\" alt=\"Logo\" width=\"250\" height=\"250\">   </a> </h1>",
+  "description": "<h1 align=\"center\">   <a href=\"https://github.com/Medenor/PromptVault\">     <img src=\"docs/images/promptvault_logo.jpg\" alt=\"Logo\" width=\"250\" height=\"250\">   </a> </h1>",
   "main": "index.js",
   "directories": {
     "doc": "docs",
@@ -70,7 +70,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://codeberg.org/Medenor/promptvault.git"
+    "url": "https://github.com/Medenor/PromptVault.git"
   },
   "keywords": [],
   "author": "",

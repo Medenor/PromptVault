@@ -87,7 +87,7 @@ Check the service logs for an error message:
 docker-compose logs --tail=100 web docs
 ```
 
-If rebuilding without cache fails with `No module named 'psycopg'`, use PromptVault 1.13.1 or later; that release fixed the dependency issue described in [issue #94](https://codeberg.org/medenor/promptvault/issues/94). For other errors, follow [Troubleshooting](../troubleshooting/index.md).
+If rebuilding without cache fails with `No module named 'psycopg'`, use PromptVault 1.13.1 or later; that release fixed the dependency issue described in [issue #94](https://github.com/Medenor/PromptVault/issues/94). For other errors, follow [Troubleshooting](../troubleshooting/index.md).
 
 ### Return to the previous version {#return-to-the-previous-version}
 

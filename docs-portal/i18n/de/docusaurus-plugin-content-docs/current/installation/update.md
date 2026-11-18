@@ -87,7 +87,7 @@ Prüfen Sie die Dienstprotokolle auf Fehlermeldungen:
 docker-compose logs --tail=100 web docs
 ```
 
-Wenn ein Neuaufbau ohne Cache mit `No module named 'psycopg'` fehlschlägt, verwenden Sie PromptVault 1.13.1 oder neuer. Diese Version behebt das Abhängigkeitsproblem aus [Ticket #94](https://codeberg.org/medenor/promptvault/issues/94). Bei anderen Fehlern lesen Sie die [Fehlerbehebung](../troubleshooting/index.md).
+Wenn ein Neuaufbau ohne Cache mit `No module named 'psycopg'` fehlschlägt, verwenden Sie PromptVault 1.13.1 oder neuer. Diese Version behebt das Abhängigkeitsproblem aus [Ticket #94](https://github.com/Medenor/PromptVault/issues/94). Bei anderen Fehlern lesen Sie die [Fehlerbehebung](../troubleshooting/index.md).
 
 ### Zur vorherigen Version zurückkehren {#return-to-the-previous-version}
 

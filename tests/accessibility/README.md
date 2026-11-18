@@ -33,7 +33,7 @@ tests/accessibility/
 │   └── generate-summary.ts         # Generate test statistics and summary
 ├── reports/                         # Test report templates and output
 │   └── report-template.json        # JSON schema for test reports
-├── .forgejo-actions-example.yml     # Forgejo Actions CI/CD workflow example
+├── .github-actions-example.yml     # GitHub Actions CI/CD workflow example
 ├── visual-regression.config.ts     # Visual regression testing configuration
 ├── *.spec.ts                       # Test files (main-page, authentication, etc.)
 ├── README.md                       # This file
@@ -491,7 +491,7 @@ Key report sections:
 - **[RUN_TESTS.md](./RUN_TESTS.md)** - Complete guide for running, debugging, and CI/CD integration
   - Commands for different browsers and test files
   - Debugging techniques and tools
-  - Forgejo Actions and GitLab CI examples
+  - GitHub Actions and GitLab CI examples
   - Troubleshooting common issues
 
 ### For Test Writers
@@ -530,8 +530,8 @@ Key report sections:
 
 ### For Configuration
 
-- **[.forgejo-actions-example.yml](./.forgejo-actions-example.yml)** - CI/CD workflow template
-  - Forgejo Actions examples
+- **[.github-actions-example.yml](./.github-actions-example.yml)** - CI/CD workflow template
+  - GitHub Actions examples
   - GitLab CI examples
   - PR commenting
   - Scheduled reports
@@ -629,9 +629,9 @@ npm run test:ui:accessibility:summary              # Statistics
 
 ## CI/CD Integration
 
-### Forgejo Actions
+### GitHub Actions
 
-Copy [.forgejo-actions-example.yml](./.forgejo-actions-example.yml) to `.forgejo/workflows/accessibility-tests.yml`
+Copy [.github-actions-example.yml](./.github-actions-example.yml) to `.github/workflows/accessibility-tests.yml`
 
 Includes:
 

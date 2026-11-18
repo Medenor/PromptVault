@@ -19,7 +19,7 @@ PromptVault est une application auto-hébergée : vous l'exécutez sur une infra
 Le moyen le plus rapide d'obtenir une instance fonctionnelle est l'assistant de configuration intégré. Il crée les clés de signature JSON Web Token (JWT), configure l'environnement, initialise la base de données et crée un compte administrateur.
 
 ```bash
-git clone https://codeberg.org/medenor/promptvault.git
+git clone https://github.com/Medenor/PromptVault.git
 cd PromptVault
 python scripts/setup/setup.py
 ```
@@ -32,7 +32,7 @@ Utilisez ce parcours uniquement si vous devez contrôler chaque paramètre. Exé
 
 ```bash
 # Cloner le dépôt
-git clone https://codeberg.org/medenor/promptvault.git
+git clone https://github.com/Medenor/PromptVault.git
 cd PromptVault
 
 # Configurer l'environnement

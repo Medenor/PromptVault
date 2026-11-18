@@ -1,5 +1,5 @@
 <h1 align="center">
-  <a href="https://codeberg.org/medenor/promptvault">
+  <a href="https://github.com/Medenor/PromptVault">
     <img src="docs/images/promptvault_logo.jpg" alt="Logo" width="50%">
   </a>
 </h1>
@@ -10,11 +10,11 @@
   <a href="#about"><strong>Explore the screenshots »</strong></a>
   <br />
   <br />
-  <a href="https://codeberg.org/medenor/promptvault/issues/new?assignees=&labels=bug&template=01_BUG_REPORT.md&title=bug%3A+">Report a Bug</a>
+  <a href="https://github.com/Medenor/PromptVault/issues/new?assignees=&labels=bug&template=01_BUG_REPORT.md&title=bug%3A+">Report a Bug</a>
   ·
-  <a href="https://codeberg.org/medenor/promptvault/issues/new?assignees=&labels=enhancement&template=02_FEATURE_REQUEST.md&title=feat%3A+">Request a Feature</a>
+  <a href="https://github.com/Medenor/PromptVault/issues/new?assignees=&labels=enhancement&template=02_FEATURE_REQUEST.md&title=feat%3A+">Request a Feature</a>
   ·
-  <a href="https://codeberg.org/medenor/promptvault/issues/new?assignees=&labels=question&template=04_SUPPORT_QUESTION.md&title=support%3A+">Ask a Question</a>
+  <a href="https://github.com/Medenor/PromptVault/issues/new?assignees=&labels=question&template=04_SUPPORT_QUESTION.md&title=support%3A+">Ask a Question</a>
 </div>
 
 <div align="center">
@@ -53,13 +53,13 @@
 <a href="https://github.com/psf/black">
   <img src="https://img.shields.io/badge/Code%20Style-Black-000000?style=for-the-badge&logo=python&logoColor=white" alt="Code style: Black">
 </a>
-<a href="https://codeberg.org/medenor/promptvault/issues">
+<a href="https://github.com/Medenor/PromptVault/issues">
   <img src="https://img.shields.io/badge/PRs-Welcome-brightgreen?style=for-the-badge&logo=git&logoColor=white" alt="Pull Requests Welcome">
 </a>
-<a href="https://codeberg.org/medenor/promptvault/">
-  <img src="https://img.shields.io/badge/Hosted%20on-Codeberg-2185D0?style=for-the-badge&logo=codeberg&logoColor=white" alt="Hosted on Codeberg">
+<a href="https://github.com/Medenor/PromptVault/">
+  <img src="https://img.shields.io/badge/Hosted%20on-GitHub-181717?style=for-the-badge&logo=github&logoColor=white" alt="Hosted on GitHub">
 </a>
-<a href="https://codeberg.org/medenor">
+<a href="https://github.com/Medenor">
   <img src="https://img.shields.io/badge/%3C%2F%3E%20with%20%E2%99%A5%20by-Medenor-ff1414?style=for-the-badge" alt="Created with love by Medenor">
 </a>
 </div>
@@ -309,7 +309,7 @@ Get PromptVault running in under 5 minutes with our automated setup wizard:
 
 ```bash
 # Clone the repository
-git clone https://codeberg.org/medenor/promptvault.git
+git clone https://github.com/Medenor/PromptVault.git
 cd PromptVault
 
 # Run the setup wizard
@@ -345,7 +345,7 @@ The fastest way to get started with full database support:
 
 ```bash
 # Clone repository
-git clone https://codeberg.org/medenor/promptvault.git
+git clone https://github.com/Medenor/PromptVault.git
 cd PromptVault
 
 # Configure environment
@@ -525,20 +525,20 @@ Application and audit logs are written to `data/logs/` as newline-delimited JSON
 
 For a comprehensive feature improvement roadmap with detailed implementation plans, see [ROADMAP.md](docs/ROADMAP.md).
 
-For proposed features and known issues, visit the [open issues](https://codeberg.org/medenor/promptvault/issues) page.
+For proposed features and known issues, visit the [open issues](https://github.com/Medenor/PromptVault/issues) page.
 
 ## Support
 
 Reach out to the maintainer at one of the following places:
 
-- [Codeberg issues](https://codeberg.org/medenor/promptvault/issues)
-- Contact options listed on [this Codeberg profile](https://codeberg.org/medenor)
+- [GitHub issues](https://github.com/Medenor/PromptVault/issues)
+- Contact options listed on [this GitHub profile](https://github.com/Medenor)
 
 ## Project assistance
 
 If you want to say **thank you** or/and support active development of PromptVault:
 
-- Add a [Star](https://codeberg.org/medenor/promptvault) to the project.
+- Add a [Star](https://github.com/Medenor/PromptVault) to the project.
 - Write interesting articles about the project on [Dev.to](https://dev.to/), [Medium](https://medium.com/) or your personal blog.
 
 Together, we can make PromptVault **better**!
@@ -553,9 +553,9 @@ Please read our contribution guidelines, and thank you for being involved!
 
 ## Authors & contributors
 
-The original setup of this repository is by [Medenor](https://codeberg.org/medenor).
+The original setup of this repository is by [Medenor](https://github.com/Medenor).
 
-For a full list of all authors and contributors, see [the contributors page](https://codeberg.org/medenor/promptvault/graphs/contributors).
+For a full list of all authors and contributors, see [the contributors page](https://github.com/Medenor/PromptVault/graphs/contributors).
 
 ## Security
 

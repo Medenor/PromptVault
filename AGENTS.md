@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Guidance for any coding agent working in this repository. Hosted on [Codeberg](https://codeberg.org/medenor/promptvault.git) (not GitHub).
+Guidance for any coding agent working in this repository. Hosted on [GitHub](https://github.com/Medenor/PromptVault.git) (not GitHub).
 
 ## Overview
 
