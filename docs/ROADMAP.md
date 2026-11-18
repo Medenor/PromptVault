@@ -46,11 +46,9 @@ Start once the "Now" items are in review.
 
 These are not roadmap items, but they block or affect trust in the build.
 
-- [#47](https://github.com/Medenor/PromptVault/issues/47) — four stale snapshot tests fail on `main`.
 - [#49](https://github.com/Medenor/PromptVault/issues/49) — edit modal stays open after a new search or filter.
 - [#39](https://github.com/Medenor/PromptVault/issues/39) — password-reset email is stubbed; the link is only logged.
 - [#50](https://github.com/Medenor/PromptVault/issues/50) — admin cannot disable 2FA for a locked-out user.
-- [#51](https://github.com/Medenor/PromptVault/issues/51) — "Update PromptVault" page for the documentation portal.
 - [#52](https://github.com/Medenor/PromptVault/issues/52) — `make release` and `make release-dry-run` targets.
 
 ## Principles for ordering
