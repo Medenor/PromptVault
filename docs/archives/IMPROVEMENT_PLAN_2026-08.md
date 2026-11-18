@@ -4,15 +4,15 @@ _Global analysis performed 2026-07-31 against the current `main` codebase. Compl
 
 ## Verified Baseline (evidence)
 
-| Claim | Reality in code |
-| --- | --- |
-| "Structured logging shipped, zero `print()`" | ✅ Done 2026-08-02: zero executable `print()` calls in `src/`/`run_web.py`; CI gate (`make lint` → `rg "print\(" src run_web.py`) enforces it |
-| "Legacy JSON services retired (PR #63)" | ✅ Done 2026-08-02: `PromptFilterService` + `PromptVersioningService` deleted along with their tests/fixtures |
-| "Don't use `innerHTML`" (AGENTS.md) | 85 `innerHTML` sites in `static/ts/`; mostly escaped, no lint enforcement |
-| Search | `LIKE`/`ilike` only; FTS explicitly deferred (`prompt_repository.py:23`) |
-| Rate limiting | ✅ Done 2026-08-03: extended beyond auth to prompt CRUD/import/export/backup/revert via a per-user four-bucket taxonomy (`security/rate-limiting-beyond-auth`) |
-| 2FA / sharing | Absent (grep-confirmed) |
-| Largest files | `auth_service.py` 1148 · `dependencies/auth.py` 1054 · `index.html` 1745 · `prompt-list.ts` 871 |
+| Claim                                        | Reality in code                                                                                                                                                |
+| -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| "Structured logging shipped, zero `print()`" | ✅ Done 2026-08-02: zero executable `print()` calls in `src/`/`run_web.py`; CI gate (`make lint` → `rg "print\(" src run_web.py`) enforces it                  |
+| "Legacy JSON services retired (PR #63)"      | ✅ Done 2026-08-02: `PromptFilterService` + `PromptVersioningService` deleted along with their tests/fixtures                                                  |
+| "Don't use `innerHTML`" (AGENTS.md)          | 85 `innerHTML` sites in `static/ts/`; mostly escaped, no lint enforcement                                                                                      |
+| Search                                       | `LIKE`/`ilike` only; FTS explicitly deferred (`prompt_repository.py:23`)                                                                                       |
+| Rate limiting                                | ✅ Done 2026-08-03: extended beyond auth to prompt CRUD/import/export/backup/revert via a per-user four-bucket taxonomy (`security/rate-limiting-beyond-auth`) |
+| 2FA / sharing                                | Absent (grep-confirmed)                                                                                                                                        |
+| Largest files                                | `auth_service.py` 1148 · `dependencies/auth.py` 1054 · `index.html` 1745 · `prompt-list.ts` 871                                                                |
 
 ---
 
@@ -166,19 +166,19 @@ _Global analysis performed 2026-07-31 against the current `main` codebase. Compl
 
 ## Implementation Priority Matrix
 
-| # | Item | Type | User Value | Complexity | Depends on |
-| - | ---- | ---- | ---------- | ---------- | ---------- |
-| 1 | XSS hardening + lint | Security | High | Low | — |
-| 2 | Legacy removal + print() | Refactor | Med (integrity) | Low | — |
-| 3 | Rate limiting everywhere | Security | High | Low | — |
-| 4 | Sharing & collaboration | Feature | Very High | High | 2, 3 |
-| 5 | Full-text search | Feature | High | Medium | 2 |
-| 6 | God-file decomposition | Refactor | Med | Medium | 2 |
-| 7 | 2FA (TOTP) | Security | High | Medium | 3 |
-| 8 | AI-native tooling | Feature | High | Medium | 3 |
-| 9 | Pagination completion | UX/Perf | Med | Low | — |
-| 10 | Dark mode + toggle | UX | Med | Low | — |
-| 11 | Analytics dashboard | Feature | Med | Medium | 5 (soft) |
+| #   | Item                     | Type     | User Value      | Complexity | Depends on |
+| --- | ------------------------ | -------- | --------------- | ---------- | ---------- |
+| 1   | XSS hardening + lint     | Security | High            | Low        | —          |
+| 2   | Legacy removal + print() | Refactor | Med (integrity) | Low        | —          |
+| 3   | Rate limiting everywhere | Security | High            | Low        | —          |
+| 4   | Sharing & collaboration  | Feature  | Very High       | High       | 2, 3       |
+| 5   | Full-text search         | Feature  | High            | Medium     | 2          |
+| 6   | God-file decomposition   | Refactor | Med             | Medium     | 2          |
+| 7   | 2FA (TOTP)               | Security | High            | Medium     | 3          |
+| 8   | AI-native tooling        | Feature  | High            | Medium     | 3          |
+| 9   | Pagination completion    | UX/Perf  | Med             | Low        | —          |
+| 10  | Dark mode + toggle       | UX       | Med             | Low        | —          |
+| 11  | Analytics dashboard      | Feature  | Med             | Medium     | 5 (soft)   |
 
 ## Suggested Execution Order
 

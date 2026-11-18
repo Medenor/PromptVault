@@ -28,14 +28,14 @@ Read [git-and-docker-safety.md](docs/agents/git-and-docker-safety.md) — branch
 
 ## Reference
 
-| Topic | File |
-| --- | --- |
-| System architecture, data model, API endpoints | [architecture.md](docs/agents/architecture.md), [api.md](docs/agents/api.md) |
-| Python conventions, logging, Alembic migrations | [python-style.md](docs/agents/python-style.md) |
-| TypeScript, components, Tailwind, i18n | [frontend.md](docs/agents/frontend.md) |
-| Testing conventions and how to run suites | [testing.md](docs/agents/testing.md) |
-| Git workflow & Docker safety (production compose file) | [git-and-docker-safety.md](docs/agents/git-and-docker-safety.md) |
-| Step-by-step workflow and common pitfalls | [workflow-and-pitfalls.md](docs/agents/workflow-and-pitfalls.md) |
+| Topic                                                  | File                                                                         |
+| ------------------------------------------------------ | ---------------------------------------------------------------------------- |
+| System architecture, data model, API endpoints         | [architecture.md](docs/agents/architecture.md), [api.md](docs/agents/api.md) |
+| Python conventions, logging, Alembic migrations        | [python-style.md](docs/agents/python-style.md)                               |
+| TypeScript, components, Tailwind, i18n                 | [frontend.md](docs/agents/frontend.md)                                       |
+| Testing conventions and how to run suites              | [testing.md](docs/agents/testing.md)                                         |
+| Git workflow & Docker safety (production compose file) | [git-and-docker-safety.md](docs/agents/git-and-docker-safety.md)             |
+| Step-by-step workflow and common pitfalls              | [workflow-and-pitfalls.md](docs/agents/workflow-and-pitfalls.md)             |
 
 Also see: [`docs/TESTING.md`](docs/TESTING.md), [`docs/VERSION_CONTROL.md`](docs/VERSION_CONTROL.md), [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) (Makefile reference), [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md), [`docs/SPECS/`](docs/SPECS/).
 

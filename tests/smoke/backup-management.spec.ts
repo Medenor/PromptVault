@@ -14,7 +14,10 @@
  */
 
 import { expect } from '@playwright/test';
-import { authenticatedAdminTest, navigateToProtectedRoute } from '../accessibility/fixtures/auth.js';
+import {
+  authenticatedAdminTest,
+  navigateToProtectedRoute,
+} from '../accessibility/fixtures/auth.js';
 
 // Backup creation requires the admin role.
 const test = authenticatedAdminTest;
@@ -45,10 +48,9 @@ test.describe('Backup management functional smoke tests', () => {
     // Real backup creation (DB dump + encryption) can take a while, especially
     // against a dev DB that has accumulated many prior smoke-test artifacts.
     await expect
-      .poll(
-        async () => await backupList.locator('[data-id][data-encrypted]').count(),
-        { timeout: 60000 }
-      )
+      .poll(async () => await backupList.locator('[data-id][data-encrypted]').count(), {
+        timeout: 60000,
+      })
       .toBeGreaterThan(initialCount);
   });
 

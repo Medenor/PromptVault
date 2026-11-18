@@ -71,11 +71,11 @@ Override ports: `BACKEND_PORT=9000 make dev` or `FRONTEND_PORT=3000 make dev`.
 
 ### Linting & Formatting (US3)
 
-| Target          | Description                                                                              |
-| --------------- | ---------------------------------------------------------------------------------------- |
-| `lint`          | Check backend (Black + ruff + import sanity) and frontend (ESLint + tsc + Prettier). Read-only. |
-| `lint-backend`  | `black --check src tests` + `ruff check src tests` + `pytest --collect-only -q`.          |
-| `lint-frontend` | `npm run lint` + `npm run typecheck` + `npm run format:check`.                           |
+| Target          | Description                                                                                         |
+| --------------- | --------------------------------------------------------------------------------------------------- |
+| `lint`          | Check backend (Black + ruff + import sanity) and frontend (ESLint + tsc + Prettier). Read-only.     |
+| `lint-backend`  | `black --check src tests` + `ruff check src tests` + `pytest --collect-only -q`.                    |
+| `lint-frontend` | `npm run lint` + `npm run typecheck` + `npm run format:check`.                                      |
 | `lint-fix`      | Auto-fix: `black src tests` + `ruff check --fix src tests` + `npm run lint:fix` + `npm run format`. |
 
 ### Production Build (US4)
@@ -92,10 +92,10 @@ Override ports: `BACKEND_PORT=9000 make dev` or `FRONTEND_PORT=3000 make dev`.
 
 `docs-portal/` is a standalone Docusaurus 3.x site (installation, configuration, user guide, troubleshooting, release notes) published in English, French, German, and Spanish. It has its own `package.json`/lockfile — fully isolated from the root `npm install`/`make install` and from the main app's build/test/lint pipeline.
 
-| Command                             | Description                                                        |
-| ------------------------------------ | ------------------------------------------------------------------- |
-| `make docs`                         | Install deps and start the docs-portal dev server (`localhost:7876`). |
-| `cd docs-portal && npm run docs:build` | Build the static site (`docs-portal/build/`).                    |
+| Command                                       | Description                                                                                                    |
+| --------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `make docs`                                   | Install deps and start the docs-portal dev server (`localhost:7876`).                                          |
+| `cd docs-portal && npm run docs:build`        | Build the static site (`docs-portal/build/`).                                                                  |
 | `cd docs-portal && npm run docs:check-parity` | Verify every non-English locale has the same pages and section structure as English; fails the build on drift. |
 
 **i18n parity**: every English page under `docs-portal/docs/` must have a mirrored translation at the same relative path under `docs-portal/i18n/{fr,de,es}/docusaurus-plugin-content-docs/current/`, with a matching `##`/`###` heading count. A page can opt out via `translation_exempt: true` in its frontmatter. `.github/workflows/docs-portal.yml` (triggered only on `docs-portal/**` changes) runs this check plus a full build on every push/PR to `main` — **it must be configured as a required status check on `main`'s branch protection rules** (a one-time repo-admin setting in GitHub, not something in the codebase) for the check to actually block a merge rather than just report.

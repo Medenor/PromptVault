@@ -5,3 +5,9 @@ src/web/templates/**/*.html
 # TypeScript syntax (interfaces) inside a .mjs file — Prettier's JS parser
 # rejects it. Pre-existing; not part of this change.
 scripts/test_analysis.mjs
+
+# Generated or independently tooled content (not formatted by the root Prettier run)
+specs/
+.specify/
+docs-portal/
+tests/fixtures/
