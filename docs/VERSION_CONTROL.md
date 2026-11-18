@@ -292,4 +292,4 @@ For the complete roadmap, see [ROADMAP.md](ROADMAP.md).
 
 ---
 
-**Need Help?** If you have questions or issues with version control, please [open an issue](https://codeberg.org/medenor/promptvault/issues) on Codeberg.
+**Need Help?** If you have questions or issues with version control, please [open an issue](https://github.com/Medenor/PromptVault/issues) on GitHub.

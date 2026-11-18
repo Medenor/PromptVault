@@ -1987,18 +1987,18 @@ sudo logrotate -d /etc/logrotate.d/promptvault
 
 ## Getting Help
 
-### Codeberg Issues
+### GitHub Issues
 
 **Before creating an issue:**
 
-1. Search existing issues: https://codeberg.org/medenor/promptvault/issues
+1. Search existing issues: https://github.com/Medenor/PromptVault/issues
 2. Check if your version is up to date
 3. Review this troubleshooting guide
 4. Collect relevant information (see below)
 
 **Creating a new issue:**
 
-1. Go to: https://codeberg.org/medenor/promptvault/issues/new
+1. Go to: https://github.com/Medenor/PromptVault/issues/new
 2. Choose appropriate template (Bug Report, Feature Request, etc.)
 3. Fill in all required information
 4. Include debug information (see next section)
@@ -2141,7 +2141,7 @@ DATABASE_URL=postgresql://promptvault:REDACTED@db:5432/promptvault
 
 **Resources:**
 
-- Documentation: https://codeberg.org/medenor/promptvault/src/branch/main/docs
+- Documentation: https://github.com/Medenor/PromptVault/tree/main/docs
 
 **Before asking:**
 

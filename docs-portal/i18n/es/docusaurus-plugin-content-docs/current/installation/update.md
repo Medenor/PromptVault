@@ -87,7 +87,7 @@ Revise los registros de los servicios para buscar mensajes de error:
 docker-compose logs --tail=100 web docs
 ```
 
-Si una reconstrucción sin caché falla con `No module named 'psycopg'`, use PromptVault 1.13.1 o una versión posterior. Esa versión corrigió el problema de dependencias descrito en el [ticket #94](https://codeberg.org/medenor/promptvault/issues/94). Para otros errores, consulte [Solución de problemas](../troubleshooting/index.md).
+Si una reconstrucción sin caché falla con `No module named 'psycopg'`, use PromptVault 1.13.1 o una versión posterior. Esa versión corrigió el problema de dependencias descrito en el [ticket #94](https://github.com/Medenor/PromptVault/issues/94). Para otros errores, consulte [Solución de problemas](../troubleshooting/index.md).
 
 ### Volver a la versión anterior {#return-to-the-previous-version}
 

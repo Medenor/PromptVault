@@ -58,4 +58,4 @@ Para una actualización planificada, siga la guía [Actualizar PromptVault](../i
 
 ## ¿Sigue atascado? {#still-stuck}
 
-Consulte el `docs/TROUBLESHOOTING.md` completo en el repositorio, o abra un issue en [Codeberg](https://codeberg.org/medenor/promptvault) con el mensaje de error exacto y el comando que ejecutó.
+Consulte el `docs/TROUBLESHOOTING.md` completo en el repositorio, o abra un issue en [GitHub](https://github.com/Medenor/PromptVault) con el mensaje de error exacto y el comando que ejecutó.

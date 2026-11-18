@@ -58,4 +58,4 @@ For planned upgrades, follow [Update PromptVault](../installation/update.md).
 
 ## Still Stuck? {#still-stuck}
 
-Check the full `docs/TROUBLESHOOTING.md` in the repository, or open an issue on [Codeberg](https://codeberg.org/medenor/promptvault) with the exact error message and the command you ran.
+Check the full `docs/TROUBLESHOOTING.md` in the repository, or open an issue on [GitHub](https://github.com/Medenor/PromptVault) with the exact error message and the command you ran.

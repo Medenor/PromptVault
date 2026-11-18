@@ -58,4 +58,4 @@ Für ein geplantes Update folgen Sie der Anleitung [PromptVault aktualisieren](.
 
 ## Immer noch festgefahren? {#still-stuck}
 
-Prüfen Sie die vollständige `docs/TROUBLESHOOTING.md` im Repository, oder öffnen Sie ein Issue auf [Codeberg](https://codeberg.org/medenor/promptvault) mit der genauen Fehlermeldung und dem ausgeführten Befehl.
+Prüfen Sie die vollständige `docs/TROUBLESHOOTING.md` im Repository, oder öffnen Sie ein Issue auf [GitHub](https://github.com/Medenor/PromptVault) mit der genauen Fehlermeldung und dem ausgeführten Befehl.

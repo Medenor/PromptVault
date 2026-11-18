@@ -75,9 +75,9 @@ setup = [
 ]
 
 [project.urls]
-Homepage = "https://codeberg.org/medenor/promptvault"
-Repository = "https://codeberg.org/medenor/promptvault"
-Issues = "https://codeberg.org/medenor/promptvault/issues"
+Homepage = "https://github.com/Medenor/PromptVault"
+Repository = "https://github.com/Medenor/PromptVault"
+Issues = "https://github.com/Medenor/PromptVault/issues"
 
 [tool.setuptools]
 package-dir = { "" = "." }

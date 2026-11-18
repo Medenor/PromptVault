@@ -1,6 +1,6 @@
 # Git Workflow
 
-- **Always work on a branch.** Never commit non-trivial changes directly to `main`. Create a feature/fix branch, push it, open a PR on Codeberg (see `.forgejo/PULL_REQUEST_TEMPLATE.md`) — even for solo work, so changes go through review and CI.
+- **Always work on a branch.** Never commit non-trivial changes directly to `main`. Create a feature/fix branch, push it, open a PR on GitHub (see `.github/PULL_REQUEST_TEMPLATE.md`) — even for solo work, so changes go through review and CI.
 - **Docs-only exception**: small, low-risk documentation-only updates (e.g. marking a roadmap item done, changelog entries for already-merged work) may go directly to `main` **only if the user explicitly says so for that specific change**; otherwise default to branch + PR.
 - **Read-only tasks stay read-only**: if a task is scoped as investigation/diagnosis only ("root-cause this failure," "find out why," anything marked read-only or "do not fix/modify"), do not commit, push, branch, or open a PR — report findings and let the requester decide on any fix. Being told to "investigate" or "look into" something is not authorization to also fix and publish it. This applies to subagents/forks too — a delegated read-only task must not escalate into a write action on its own.
 

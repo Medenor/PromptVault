@@ -177,7 +177,7 @@ For automated deployments in CI/CD pipelines:
 python scripts/setup/deploy.py --non-interactive || exit 1
 ```
 
-Example Forgejo Actions workflow:
+Example GitHub Actions workflow:
 
 ```yaml
 - name: Deploy PromptVault
@@ -371,7 +371,7 @@ For issues or questions:
 1. Check the troubleshooting section above
 2. Review Docker logs: `docker-compose logs`
 3. Run with `--dry-run` to diagnose issues
-4. Check Codeberg issues or create a new one
+4. Check GitHub issues or create a new one
 
 ## License
 
