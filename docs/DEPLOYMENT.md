@@ -314,7 +314,7 @@ docker-compose exec -T db psql -U promptvault -d promptvault -c "SELECT COUNT(*)
 
 ### Update with Docker Compose (Recommended)
 
-This is the safest approach with proper database migration handling:
+This is the safest approach with proper database migration handling. The build step rebuilds both the `web` and `docs` images, and step 6 recreates both containers, so the documentation portal (default: <http://localhost:7876>) stays in step with the application:
 
 ```bash
 # 1. Pull latest code from main branch
@@ -336,8 +336,10 @@ docker-compose rm web
 docker-compose up -d db redis
 sleep 15  # CRITICAL: Give database time to initialize
 
-# 6. Start updated web service
-docker-compose up -d web
+# 6. Start the updated web and docs services
+# The docs portal is compiled into its image, so it only shows the new
+# release notes once the docs container is recreated from the rebuilt image.
+docker-compose up -d web docs
 
 # 7. Run pending database migrations
 # NOTE: This MUST happen after starting the web service
@@ -438,6 +440,11 @@ docker-compose exec -T db psql -U promptvault -d promptvault -c "SELECT COUNT(*)
 # 5. Test basic functionality in UI
 # Visit: http://localhost:8001
 # Create/read/update a prompt to ensure everything works
+
+# 6. Check that the documentation portal is up to date
+# Visit: http://localhost:7876/release-notes/
+# The newest release must be listed first. If it is missing, the docs
+# container still runs the old image: run `docker-compose up -d docs`.
 ```
 
 ### Troubleshooting Update Issues
@@ -461,8 +468,8 @@ sleep 30  # Longer wait
 # Run migrations
 docker-compose exec web alembic upgrade head
 
-# Start web service
-docker-compose up -d web
+# Start web and docs services
+docker-compose up -d web docs
 ```
 
 #### "Column does not exist" Errors
@@ -512,8 +519,8 @@ git checkout <previous-commit-hash>
 # 4. Rebuild with old code
 docker-compose build --no-cache
 
-# 5. Restart
-docker-compose up -d web
+# 5. Restart web and docs (the docs image is rebuilt from the old code too)
+docker-compose up -d web docs
 
 # 6. Verify
 docker-compose logs web | tail -20

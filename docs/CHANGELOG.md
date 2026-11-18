@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Update procedure in `docs/DEPLOYMENT.md` left the documentation portal on the old release**: the portal is compiled into the `docs` image, but the steps only recreated `web`. They now recreate `web docs`, check `http://localhost:7876/release-notes/` after the update, and the rollback restarts both, as the portal's own update guide already did.
+
 ## [1.15.0] - 2026-11-18
 
 ### Added
