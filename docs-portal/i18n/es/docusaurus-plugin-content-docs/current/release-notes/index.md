@@ -9,9 +9,12 @@ Aspectos destacados de las versiones recientes de PromptVault. Para el historial
 
 Consulte [Actualizar PromptVault](../installation/update.md) para ver los pasos de actualización.
 
-## Próximamente {#unreleased}
+## 1.15.0
 
-El portal ahora incluye una guía para hacer copias de seguridad, actualizar, comprobar y restaurar una instalación de Docker Compose. Todas las páginas también tienen un enlace «Volver a PromptVault»; defina `DOCS_APP_URL` al construir la imagen de documentación para que enlace a su instancia. Consulte [Actualizar PromptVault](../installation/update.md).
+- **Guías para desarrolladores de la API**: un nuevo espacio Desarrollador / API explica cómo llamar a la API de PromptVault: primeras llamadas (inicio de sesión con 2FA, lectura, creación, búsqueda, historial) y una referencia de rutas, permisos, paginación y errores. Consulte [Desarrollador / API](../developer-api/index.md).
+- **Guía de actualización**: el portal ahora incluye una guía para hacer copias de seguridad, actualizar, comprobar y restaurar una instalación de Docker Compose. Consulte [Actualizar PromptVault](../installation/update.md).
+- **Volver a PromptVault**: todas las páginas tienen un enlace de vuelta a la aplicación. Defina `DOCS_APP_URL` al construir la imagen de documentación para que enlace a su instancia.
+- **Ahora en GitHub**: el código fuente, las incidencias y las versiones se han trasladado de Codeberg a https://github.com/Medenor/PromptVault, y el enlace del pie de página lo sigue.
 
 ## 1.14.1
 
