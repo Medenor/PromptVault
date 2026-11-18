@@ -34,6 +34,7 @@ ROUTES: dict[str, tuple] = {
 
 
 _ASSET_HASH_RE = re.compile(r"(/assets/[A-Za-z0-9_-]+)\.[A-Za-z0-9_-]{8}\.(css|js)\b")
+_FOOTER_VERSION_RE = re.compile(r">v\d+\.\d+\.\d+[^<]*<")
 
 
 def _normalize(html: str) -> str:
@@ -43,9 +44,12 @@ def _normalize(html: str) -> str:
     trailing whitespace on each line, without altering tag structure or
     attribute order. Vite content hashes in bundled asset filenames
     (``telemetry.BcVrkOIG.css``) are replaced by a ``HASH`` placeholder so
-    routine asset rebuilds don't invalidate the stored snapshots.
+    routine asset rebuilds don't invalidate the stored snapshots. The footer
+    version (``v1.14.1``) is replaced by ``vVERSION`` so a release does not
+    require regenerating the snapshots.
     """
     html = _ASSET_HASH_RE.sub(r"\1.HASH.\2", html)
+    html = _FOOTER_VERSION_RE.sub(">vVERSION<", html)
     lines = [re.sub(r"[ \t]+", " ", line).strip() for line in html.splitlines()]
     return "\n".join(line for line in lines if line)
 
