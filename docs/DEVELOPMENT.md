@@ -86,6 +86,25 @@ Override ports: `BACKEND_PORT=9000 make dev` or `FRONTEND_PORT=3000 make dev`.
 | `build-frontend` | `npm run build` (compiled assets in `dist/static/`).     |
 | `build-image`    | `docker compose build web` (production container image). |
 
+### Releasing
+
+A release has two steps. Neither one touches the production `docker-compose.yml` stack.
+
+| Target                                  | Description                                                                                                                                                                                                                                                                          |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `release-prepare-dry-run VERSION=X.Y.Z` | Validate the version (semver, greater than the current one, clean tree, on `main` or `release/vX.Y.Z`) and print the diff. Writes nothing.                                                                                                                                           |
+| `release-prepare VERSION=X.Y.Z`         | Bump the version in `package.json`, `package-lock.json`, `pyproject.toml`, `uv.lock`, turn `[Unreleased]` into `[X.Y.Z]` in `docs/CHANGELOG.md`, and update the four portal release notes. Then runs the docs parity check and the snapshot tests. It never commits, tags or pushes. |
+| `release-dry-run`                       | On `main`, run every pre-flight check, `make lint` and `make test`, and show the tag and release notes that would be published. Publishes nothing.                                                                                                                                   |
+| `release`                               | Create the annotated tag `vX.Y.Z` from `pyproject.toml`, push it, and create the GitHub release with the matching `docs/CHANGELOG.md` section as notes. Resumes after a failure.                                                                                                     |
+
+Procedure:
+
+1. On a `release/vX.Y.Z` branch, run `make release-prepare VERSION=X.Y.Z`.
+2. Write the changelog entries and the release notes (the script only creates the structure; a stub is inserted when a portal page has no unreleased section), then open the release PR.
+3. After the PR is merged, on an up-to-date `main`, run `make release-dry-run`, then `make release`.
+
+`make release` needs the GitHub CLI (`gh auth login`) with push access to the repository. A published tag is never moved: to fix a release, bump the version.
+
 ---
 
 ## Documentation Portal

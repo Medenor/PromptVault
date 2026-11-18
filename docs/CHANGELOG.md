@@ -9,8 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Release tooling** (#52): `make release-prepare VERSION=X.Y.Z` bumps the version in every file that carries it and prepares the changelog and the four release-notes pages; `make release-dry-run` and `make release` check, tag and publish the GitHub release from `main`. `make release-prepare-dry-run` shows the diff without writing. See `docs/DEVELOPMENT.md`.
 - **API developer guides in the documentation portal** (#109): Added a Developer / API space in English, French, German and Spanish, with localized sidebar navigation and home-page links. It covers an overview, first calls (login with 2FA, read, create, search, history) and a reference for routes, permissions, pagination and errors. The portal now has 20 pages per locale instead of 17.
 - **Documentation portal update guide and navigation** (#108): Added a four-language guide for updating and restoring a Docker Compose installation. The portal now has a “Back to PromptVault” navbar link, with its target configurable through `DOCS_APP_URL` when building the docs image.
+
+### Changed
+
+- **Repository moved from Codeberg to GitHub**: the project now lives at https://github.com/Medenor/PromptVault. CI runs on GitHub Actions as two parallel jobs (`lint` and `test`), issues were recreated there (old Codeberg numbers are mapped in PR #1), and the footer source link points to GitHub with a much lighter icon.
+- **Template snapshot tests ignore asset hashes and the footer version**, so rebuilding assets or bumping the version no longer invalidates them.
 
 ## [1.14.1] - 2026-11-14
 

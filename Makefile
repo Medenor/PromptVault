@@ -46,6 +46,7 @@ COMPOSE          := docker compose
         test test-backend test-frontend \
         lint lint-backend lint-frontend lint-fix check-file-sizes check-sw-cache-version \
         build build-frontend build-image \
+        release-prepare release-prepare-dry-run release release-dry-run \
         docs
 
 .DEFAULT_GOAL := help
@@ -255,6 +256,26 @@ build-image: ## Build production Docker image via Compose
 	$(COMPOSE) build web
 
 build: build-frontend build-image ## Build all production artifacts (frontend + Docker image)
+
+# ==============================================================================
+# Release
+# ==============================================================================
+# Two steps: `release-prepare` bumps the version in a PR, `release` publishes the
+# tag and the GitHub release from main once that PR is merged.
+
+release-prepare-dry-run: ## Show the version bump for VERSION=X.Y.Z (diff only, writes nothing)
+	@test -n "$(VERSION)" || { echo "Usage: make release-prepare-dry-run VERSION=X.Y.Z"; exit 1; }
+	$(PYTHON) scripts/release_prepare.py --version "$(VERSION)" --dry-run
+
+release-prepare: ## Bump the version everywhere for VERSION=X.Y.Z, then run parity and snapshot checks
+	@test -n "$(VERSION)" || { echo "Usage: make release-prepare VERSION=X.Y.Z"; exit 1; }
+	$(PYTHON) scripts/release_prepare.py --version "$(VERSION)"
+
+release-dry-run: ## Run every release check on main and show what would be published (publishes nothing)
+	$(PYTHON) scripts/release_publish.py --dry-run
+
+release: ## Tag the version in pyproject.toml and publish its GitHub release (run on main after the release PR)
+	$(PYTHON) scripts/release_publish.py
 
 # ==============================================================================
 # Documentation Portal
