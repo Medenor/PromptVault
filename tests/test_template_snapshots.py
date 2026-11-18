@@ -33,13 +33,19 @@ ROUTES: dict[str, tuple] = {
 }
 
 
+_ASSET_HASH_RE = re.compile(r"(/assets/[A-Za-z0-9_-]+)\.[A-Za-z0-9_-]{8}\.(css|js)\b")
+
+
 def _normalize(html: str) -> str:
     """Collapse insignificant whitespace so snapshots aren't noisy.
 
     Collapses runs of whitespace to a single space and strips leading/
     trailing whitespace on each line, without altering tag structure or
-    attribute order.
+    attribute order. Vite content hashes in bundled asset filenames
+    (``telemetry.BcVrkOIG.css``) are replaced by a ``HASH`` placeholder so
+    routine asset rebuilds don't invalidate the stored snapshots.
     """
+    html = _ASSET_HASH_RE.sub(r"\1.HASH.\2", html)
     lines = [re.sub(r"[ \t]+", " ", line).strip() for line in html.splitlines()]
     return "\n".join(line for line in lines if line)
 
