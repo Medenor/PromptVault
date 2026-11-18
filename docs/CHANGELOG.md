@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.15.0] - 2026-11-18
+
 ### Added
 
 - **Release tooling** (#52): `make release-prepare VERSION=X.Y.Z` bumps the version in every file that carries it and prepares the changelog and the four release-notes pages; `make release-dry-run` and `make release` check, tag and publish the GitHub release from `main`. `make release-prepare-dry-run` shows the diff without writing. See `docs/DEVELOPMENT.md`.
