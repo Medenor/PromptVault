@@ -7,14 +7,15 @@ on:
     branches: [main]
 
 jobs:
-  test-and-lint:
+  lint:
+    name: lint
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 0 # check-file-sizes and check-sw-cache-version diff against the merge base
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -37,6 +38,28 @@ jobs:
         env:
           CI_MERGE_BASE: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || 'HEAD~1' }}
         run: make lint
+
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+
+      - name: Install dependencies
+        run: make install
 
       - name: Build frontend (template snapshot tests read dist/static/manifest)
         run: make build-frontend
