@@ -14,7 +14,10 @@
  */
 
 import { expect } from '@playwright/test';
-import { authenticatedAdminTest, navigateToProtectedRoute } from '../accessibility/fixtures/auth.js';
+import {
+  authenticatedAdminTest,
+  navigateToProtectedRoute,
+} from '../accessibility/fixtures/auth.js';
 
 const test = authenticatedAdminTest;
 

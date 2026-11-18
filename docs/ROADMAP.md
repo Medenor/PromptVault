@@ -4,21 +4,21 @@ _Rebuilt 2026-11-13 from the current `main` (v1.13.1). Replaces the 2025 and 202
 
 ## Shipped
 
-| Area | Delivered | Where |
-| --- | --- | --- |
-| Input validation | Pydantic request models, field limits, tag rules | `src/web/models/` |
-| Structured logging and audit | No `print()` in `src/`, request IDs, audit events | `src/services/logging_service.py` |
-| Authentication and RBAC | Argon2id, ES256 tokens with rotation, lockout, session cap, roles | `docs/AUTHENTICATION_SECURITY.md` |
-| Database | SQLAlchemy and Alembic, SQLite and PostgreSQL | `docs/SPECS/SPEC_DATABASE.md` |
-| Legacy JSON services removed | Retired in PR #63 | `docs/CHANGELOG.md` |
-| XSS hardening | `innerHTML` elimination, lint enforcement | `docs/archives/IMPROVEMENT_PLAN_2026-08.md` item 1 |
-| Rate limiting beyond auth | Per-user buckets on prompt, import, export and backup routes | `docs/RATE_LIMITING.md` |
-| Prompt sharing | Read and edit grants, shared-with-me filter | `specs/007-prompt-sharing/` |
-| Full-text search | FTS5 on SQLite, tsvector on PostgreSQL | `specs/008-full-text-search/` |
-| God-file decomposition | Frontend and backend splits | `docs/archives/IMPROVEMENT_PLAN_2026-08.md` item 6 |
-| Two-factor authentication | TOTP, recovery codes, admin-enforced policy | `specs/009-totp-2fa/` |
-| Documentation portal | Docusaurus, EN/FR/DE/ES, served from Docker | `docs-portal/` |
-| Tag and category management, bulk delete, mobile layout, accessibility pass | Shipped in the 2025 cycle (issues #16, #24, #25, #21) | `docs/CHANGELOG.md` |
+| Area                                                                        | Delivered                                                         | Where                                              |
+| --------------------------------------------------------------------------- | ----------------------------------------------------------------- | -------------------------------------------------- |
+| Input validation                                                            | Pydantic request models, field limits, tag rules                  | `src/web/models/`                                  |
+| Structured logging and audit                                                | No `print()` in `src/`, request IDs, audit events                 | `src/services/logging_service.py`                  |
+| Authentication and RBAC                                                     | Argon2id, ES256 tokens with rotation, lockout, session cap, roles | `docs/AUTHENTICATION_SECURITY.md`                  |
+| Database                                                                    | SQLAlchemy and Alembic, SQLite and PostgreSQL                     | `docs/SPECS/SPEC_DATABASE.md`                      |
+| Legacy JSON services removed                                                | Retired in PR #63                                                 | `docs/CHANGELOG.md`                                |
+| XSS hardening                                                               | `innerHTML` elimination, lint enforcement                         | `docs/archives/IMPROVEMENT_PLAN_2026-08.md` item 1 |
+| Rate limiting beyond auth                                                   | Per-user buckets on prompt, import, export and backup routes      | `docs/RATE_LIMITING.md`                            |
+| Prompt sharing                                                              | Read and edit grants, shared-with-me filter                       | `specs/007-prompt-sharing/`                        |
+| Full-text search                                                            | FTS5 on SQLite, tsvector on PostgreSQL                            | `specs/008-full-text-search/`                      |
+| God-file decomposition                                                      | Frontend and backend splits                                       | `docs/archives/IMPROVEMENT_PLAN_2026-08.md` item 6 |
+| Two-factor authentication                                                   | TOTP, recovery codes, admin-enforced policy                       | `specs/009-totp-2fa/`                              |
+| Documentation portal                                                        | Docusaurus, EN/FR/DE/ES, served from Docker                       | `docs-portal/`                                     |
+| Tag and category management, bulk delete, mobile layout, accessibility pass | Shipped in the 2025 cycle (issues #16, #24, #25, #21)             | `docs/CHANGELOG.md`                                |
 
 ## Now
 

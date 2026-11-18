@@ -13,7 +13,10 @@
  */
 
 import { expect } from '@playwright/test';
-import { authenticatedAdminTest, navigateToProtectedRoute } from '../accessibility/fixtures/auth.js';
+import {
+  authenticatedAdminTest,
+  navigateToProtectedRoute,
+} from '../accessibility/fixtures/auth.js';
 
 const test = authenticatedAdminTest;
 
@@ -57,9 +60,9 @@ test.describe('Category management functional smoke tests', () => {
     await navigateToProtectedRoute(page, '/manage-categories');
     await page.waitForLoadState('networkidle');
 
-    await expect(
-      page.locator(`input[data-field="name"][value="${updatedName}"]`)
-    ).toHaveCount(1, { timeout: 10000 });
+    await expect(page.locator(`input[data-field="name"][value="${updatedName}"]`)).toHaveCount(1, {
+      timeout: 10000,
+    });
   });
 
   test('deleting a category removes it from the table', async ({ authenticatedPage: page }) => {

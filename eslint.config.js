@@ -25,6 +25,8 @@ export default [
       'data/**',
       'tests/accessibility/**',
       'tests/e2e/**',
+      'tests/smoke/**',
+      'docs-portal/**',
       'scripts/**',
       'playwright.config.ts',
       'tailwind.config.ts',

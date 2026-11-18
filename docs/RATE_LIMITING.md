@@ -16,12 +16,12 @@ All budgets are **per authenticated user**, falling back to the client IP for
 anonymous requests. Each bucket is `attempts / window` and is independently
 overridable via environment variables (defaults shown).
 
-| Bucket        | Default | Env vars                                                                 | Applies to |
-| ------------- | ------- | ------------------------------------------------------------------------ | ---------- |
-| **read**      | 300/min | `RATE_LIMIT_READ_ATTEMPTS` / `RATE_LIMIT_READ_WINDOW_SECONDS`             | GET read endpoints (opt-in helper; most reads remain unthrottled today) |
-| **write**     | 60/min  | `RATE_LIMIT_WRITE_ATTEMPTS` / `RATE_LIMIT_WRITE_WINDOW_SECONDS`           | Prompt create / update / delete, version revert |
-| **expensive** | 10/min  | `RATE_LIMIT_EXPENSIVE_ATTEMPTS` / `RATE_LIMIT_EXPENSIVE_WINDOW_SECONDS`   | `/api/import`, `/api/export`, backup create / restore / restore-preview / verify |
-| **bulk**      | 5/min   | `RATE_LIMIT_BULK_ATTEMPTS` / `RATE_LIMIT_BULK_WINDOW_SECONDS`             | Bulk delete, delete-all backups, compress, retention cleanup |
+| Bucket        | Default | Env vars                                                                | Applies to                                                                       |
+| ------------- | ------- | ----------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| **read**      | 300/min | `RATE_LIMIT_READ_ATTEMPTS` / `RATE_LIMIT_READ_WINDOW_SECONDS`           | GET read endpoints (opt-in helper; most reads remain unthrottled today)          |
+| **write**     | 60/min  | `RATE_LIMIT_WRITE_ATTEMPTS` / `RATE_LIMIT_WRITE_WINDOW_SECONDS`         | Prompt create / update / delete, version revert                                  |
+| **expensive** | 10/min  | `RATE_LIMIT_EXPENSIVE_ATTEMPTS` / `RATE_LIMIT_EXPENSIVE_WINDOW_SECONDS` | `/api/import`, `/api/export`, backup create / restore / restore-preview / verify |
+| **bulk**      | 5/min   | `RATE_LIMIT_BULK_ATTEMPTS` / `RATE_LIMIT_BULK_WINDOW_SECONDS`           | Bulk delete, delete-all backups, compress, retention cleanup                     |
 
 Defaults are defined in `src/config/auth_config.py` (`AuthConfig`) and the limit
 strings are built by `read_limit()` / `write_limit()` / `expensive_limit()` /
@@ -29,22 +29,22 @@ strings are built by `read_limit()` / `write_limit()` / `expensive_limit()` /
 
 ### Endpoints covered
 
-| Endpoint                                                     | Bucket    |
-| ----------------------------------------------------------- | --------- |
-| `POST /api/prompts`                                         | write     |
-| `PUT /api/prompts/{id}`                                     | write     |
-| `DELETE /api/prompts/{id}`                                  | write     |
-| `DELETE /api/prompts/bulk`                                  | bulk      |
-| `POST /api/prompts/{id}/versions/{version_id}/revert`      | write     |
-| `POST /api/import`                                          | expensive |
-| `POST /api/export`                                          | expensive |
-| `POST /api/backups`                                        | expensive |
-| `POST /api/backups/{id}/restore`                           | expensive |
-| `POST /api/backups/{id}/restore-preview`                   | expensive |
-| `POST /api/backups/{id}/verify`                            | expensive |
-| `DELETE /api/backups`                                      | bulk      |
-| `POST /api/backups/compress`                               | bulk      |
-| `POST /api/backups/cleanup`                                | bulk      |
+| Endpoint                                              | Bucket    |
+| ----------------------------------------------------- | --------- |
+| `POST /api/prompts`                                   | write     |
+| `PUT /api/prompts/{id}`                               | write     |
+| `DELETE /api/prompts/{id}`                            | write     |
+| `DELETE /api/prompts/bulk`                            | bulk      |
+| `POST /api/prompts/{id}/versions/{version_id}/revert` | write     |
+| `POST /api/import`                                    | expensive |
+| `POST /api/export`                                    | expensive |
+| `POST /api/backups`                                   | expensive |
+| `POST /api/backups/{id}/restore`                      | expensive |
+| `POST /api/backups/{id}/restore-preview`              | expensive |
+| `POST /api/backups/{id}/verify`                       | expensive |
+| `DELETE /api/backups`                                 | bulk      |
+| `POST /api/backups/compress`                          | bulk      |
+| `POST /api/backups/cleanup`                           | bulk      |
 
 ## Per-user keying
 

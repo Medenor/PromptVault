@@ -13,7 +13,10 @@
  */
 
 import { expect } from '@playwright/test';
-import { authenticatedAdminTest, navigateToProtectedRoute } from '../accessibility/fixtures/auth.js';
+import {
+  authenticatedAdminTest,
+  navigateToProtectedRoute,
+} from '../accessibility/fixtures/auth.js';
 
 const test = authenticatedAdminTest;
 
@@ -33,7 +36,9 @@ test.describe('Tag management functional smoke tests', () => {
     await page.locator('#tag-create-name').fill(tagName);
     await page.locator('#tag-create-form button[type="submit"]').click();
 
-    const row = page.locator('tbody tr', { has: page.locator(`input[data-field="name"][value="${tagName}"]`) });
+    const row = page.locator('tbody tr', {
+      has: page.locator(`input[data-field="name"][value="${tagName}"]`),
+    });
     await expect(row).toHaveCount(1, { timeout: 10000 });
   });
 
@@ -66,7 +71,9 @@ test.describe('Tag management functional smoke tests', () => {
     await page.locator('#tag-create-name').fill(tagName);
     await page.locator('#tag-create-form button[type="submit"]').click();
 
-    const row = page.locator('tbody tr', { has: page.locator(`input[data-field="name"][value="${tagName}"]`) });
+    const row = page.locator('tbody tr', {
+      has: page.locator(`input[data-field="name"][value="${tagName}"]`),
+    });
     await expect(row).toHaveCount(1, { timeout: 10000 });
 
     const deleteBtn = row
@@ -101,9 +108,9 @@ test.describe('Tag management functional smoke tests', () => {
 
     await page.locator('#tag-create-name').fill(tagName);
     await page.locator('#tag-create-form button[type="submit"]').click();
-    await expect(
-      page.locator(`input[data-field="name"][value="${tagName}"]`)
-    ).toHaveCount(1, { timeout: 10000 });
+    await expect(page.locator(`input[data-field="name"][value="${tagName}"]`)).toHaveCount(1, {
+      timeout: 10000,
+    });
 
     const searchInput = page.locator('#tag-search');
     await searchInput.fill(tagName);
