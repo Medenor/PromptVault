@@ -12,96 +12,96 @@
 version: 2
 updates:
   # GitHub Actions. Pin actions by full commit SHA with a version comment.
-  - package-ecosystem: "github-actions"
-    directory: "/"
+  - package-ecosystem: 'github-actions'
+    directory: '/'
     schedule:
-      interval: "monthly"
+      interval: 'monthly'
     groups:
       actions:
-        patterns: ["*"]
+        patterns: ['*']
     open-pull-requests-limit: 3
-    labels: ["dependencies"]
+    labels: ['dependencies']
     commit-message:
-      prefix: "chore(deps)"
+      prefix: 'chore(deps)'
     ignore:
-      - dependency-name: "*"
-        update-types: ["version-update:semver-major"]
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
 
   # Python (pyproject.toml + uv.lock).
-  - package-ecosystem: "uv"
-    directory: "/"
+  - package-ecosystem: 'uv'
+    directory: '/'
     schedule:
-      interval: "weekly"
+      interval: 'weekly'
     groups:
       python-minor-and-patch:
-        update-types: ["minor", "patch"]
+        update-types: ['minor', 'patch']
     open-pull-requests-limit: 5
-    labels: ["dependencies"]
+    labels: ['dependencies']
     commit-message:
-      prefix: "chore(deps)"
+      prefix: 'chore(deps)'
     ignore:
-      - dependency-name: "*"
-        update-types: ["version-update:semver-major"]
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
 
   # JavaScript, root app (package.json + package-lock.json).
-  - package-ecosystem: "npm"
-    directory: "/"
+  - package-ecosystem: 'npm'
+    directory: '/'
     schedule:
-      interval: "weekly"
+      interval: 'weekly'
     groups:
       npm-minor-and-patch:
-        update-types: ["minor", "patch"]
+        update-types: ['minor', 'patch']
     open-pull-requests-limit: 5
-    labels: ["dependencies"]
+    labels: ['dependencies']
     commit-message:
-      prefix: "chore(deps)"
+      prefix: 'chore(deps)'
     ignore:
-      - dependency-name: "*"
-        update-types: ["version-update:semver-major"]
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
 
   # JavaScript, docs portal (docs-portal/package.json + package-lock.json).
-  - package-ecosystem: "npm"
-    directory: "/docs-portal"
+  - package-ecosystem: 'npm'
+    directory: '/docs-portal'
     schedule:
-      interval: "weekly"
+      interval: 'weekly'
     groups:
       docs-portal-npm-minor-and-patch:
-        update-types: ["minor", "patch"]
+        update-types: ['minor', 'patch']
     open-pull-requests-limit: 5
-    labels: ["dependencies"]
+    labels: ['dependencies']
     commit-message:
-      prefix: "chore(deps)"
+      prefix: 'chore(deps)'
     ignore:
-      - dependency-name: "*"
-        update-types: ["version-update:semver-major"]
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
 
   # Docker base images: the app Dockerfile and the docs-portal Dockerfile.
   # Floating tags (python:3.14-slim, node:20-slim) give Dependabot little to bump;
   # pinning them is a separate decision.
-  - package-ecosystem: "docker"
+  - package-ecosystem: 'docker'
     directories:
-      - "/"
-      - "/docs-portal"
+      - '/'
+      - '/docs-portal'
     schedule:
-      interval: "monthly"
+      interval: 'monthly'
     open-pull-requests-limit: 3
-    labels: ["dependencies"]
+    labels: ['dependencies']
     commit-message:
-      prefix: "chore(deps)"
+      prefix: 'chore(deps)'
     ignore:
-      - dependency-name: "*"
-        update-types: ["version-update:semver-major"]
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
 
   # Docker Compose image tags. The root docker-compose.yml is the LIVE production
   # instance: Dependabot only edits the file in a PR and never runs compose.
-  - package-ecosystem: "docker-compose"
-    directory: "/"
+  - package-ecosystem: 'docker-compose'
+    directory: '/'
     schedule:
-      interval: "monthly"
+      interval: 'monthly'
     open-pull-requests-limit: 3
-    labels: ["dependencies"]
+    labels: ['dependencies']
     commit-message:
-      prefix: "chore(deps)"
+      prefix: 'chore(deps)'
     ignore:
-      - dependency-name: "*"
-        update-types: ["version-update:semver-major"]
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
