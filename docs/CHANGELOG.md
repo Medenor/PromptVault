@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Build tooling moved from Node.js 20 (end of life) to Node.js 22** (#79): the version now lives in `.nvmrc`, which the CI, docs portal and security-audit workflows read. Both Dockerfiles build on `node:22-slim` pinned by digest, and `engines.node` is `>=22` in the root and docs-portal `package.json`. Developers need Node.js 22 or later.
+
 ### Fixed
 
 - **Update procedure in `docs/DEPLOYMENT.md` left the documentation portal on the old release**: the portal is compiled into the `docs` image, but the steps only recreated `web`. They now recreate `web docs`, check `http://localhost:7876/release-notes/` after the update, and the rollback restarts both, as the portal's own update guide already did.

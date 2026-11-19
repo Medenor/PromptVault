@@ -11,7 +11,7 @@ unified command surface for common development tasks.
 | ------------------ | --------------------------------------- | ------------------------ |
 | **GNU/BSD Make**   | 3.81+                                   | `make --version`         |
 | **Python**         | 3.14+                                   | `python3 --version`      |
-| **Node.js**        | 20+                                     | `node --version`         |
+| **Node.js**        | 22+                                     | `node --version`         |
 | **npm**            | 10+                                     | `npm --version`          |
 | **Docker Compose** | v2 plugin (optional, for `build-image`) | `docker compose version` |
 
@@ -149,7 +149,7 @@ Migrations are authored and tested against **SQLite** in dev, but run against **
 | -------------------------------------- | -------------------------- | ----------------------------------------------------- |
 | `ERROR: python3 is not installed`      | Missing Python             | Install Python 3.14+                                  |
 | `ERROR: Python >= 3.14 is required`    | Wrong Python version       | Upgrade Python                                        |
-| `ERROR: node is not installed`         | Missing Node.js            | Install Node.js 20+                                   |
+| `ERROR: node is not installed`         | Missing Node.js            | Install Node.js 22+                                   |
 | `ERROR: Virtual environment not found` | Dependencies not installed | Run `make install`                                    |
 | `ERROR: node_modules/ not found`       | Dependencies not installed | Run `make install`                                    |
 | `WARNING: Port 7870 is already in use` | Port conflict              | Stop other process or `BACKEND_PORT=<port> make dev`  |

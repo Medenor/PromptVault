@@ -3,6 +3,9 @@
   "version": "1.15.0",
   "description": "<h1 align=\"center\">   <a href=\"https://github.com/Medenor/PromptVault\">     <img src=\"docs/images/promptvault_logo.jpg\" alt=\"Logo\" width=\"250\" height=\"250\">   </a> </h1>",
   "main": "index.js",
+  "engines": {
+    "node": ">=22"
+  },
   "directories": {
     "doc": "docs",
     "test": "tests"
@@ -17,7 +20,7 @@
     "@axe-core/playwright": "^4.11.1",
     "@playwright/test": "^1.56.1",
     "@tailwindcss/postcss": "^4.1.18",
-    "@types/node": "^20.10.0",
+    "@types/node": "^22.0.0",
     "@typescript-eslint/eslint-plugin": "^8.15.0",
     "@typescript-eslint/parser": "^8.15.0",
     "@vitest/coverage-v8": "^4.1.10",
