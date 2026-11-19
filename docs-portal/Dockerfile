@@ -5,7 +5,7 @@
 # ============================================
 # Stage 1: Build the static documentation portal (all locales)
 # ============================================
-FROM node:20-slim AS builder
+FROM node:22-slim@sha256:e9f565d32859f0cbfb52125eafe8be39390f24dac302dc3cdf566e8ba3ab21ee AS builder
 
 ARG DOCS_APP_URL=http://localhost:8001
 ENV DOCS_APP_URL=${DOCS_APP_URL}
