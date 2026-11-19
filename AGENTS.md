@@ -39,6 +39,8 @@ Read [git-and-docker-safety.md](docs/agents/git-and-docker-safety.md) — branch
 
 Also see: [`docs/TESTING.md`](docs/TESTING.md), [`docs/VERSION_CONTROL.md`](docs/VERSION_CONTROL.md), [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) (Makefile reference), [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md), [`docs/SPECS/`](docs/SPECS/).
 
+Agents driving a pull request after it is opened should follow the repo-local [`steward` skill](.claude/skills/steward/SKILL.md).
+
 ## License
 
 MPL 2.0 — always add the MPL 2.0 header to new files.
