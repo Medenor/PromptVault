@@ -1,0 +1,107 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+# Dependabot configuration, aligned on the playbook template.
+# Bump-PR policy: docs/agents/workflow.md ("Dependency bump PRs") when present.
+#
+# Defaults kept: grouped updates, PR limit, majors ignored, `dependencies` label,
+# `chore(deps)` commit prefix. Dependabot never merges: a human does.
+# No LLM SDK (anthropic, openai, ...) is declared in pyproject.toml; if one is added,
+# keep it out of the grouped updates and review its bumps by hand.
+version: 2
+updates:
+  # GitHub Actions. Pin actions by full commit SHA with a version comment.
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'monthly'
+    groups:
+      actions:
+        patterns: ['*']
+    open-pull-requests-limit: 3
+    labels: ['dependencies']
+    commit-message:
+      prefix: 'chore(deps)'
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
+
+  # Python (pyproject.toml + uv.lock).
+  - package-ecosystem: 'uv'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+    groups:
+      python-minor-and-patch:
+        update-types: ['minor', 'patch']
+    open-pull-requests-limit: 5
+    labels: ['dependencies']
+    commit-message:
+      prefix: 'chore(deps)'
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
+
+  # JavaScript, root app (package.json + package-lock.json).
+  - package-ecosystem: 'npm'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+    groups:
+      npm-minor-and-patch:
+        update-types: ['minor', 'patch']
+    open-pull-requests-limit: 5
+    labels: ['dependencies']
+    commit-message:
+      prefix: 'chore(deps)'
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
+
+  # JavaScript, docs portal (docs-portal/package.json + package-lock.json).
+  - package-ecosystem: 'npm'
+    directory: '/docs-portal'
+    schedule:
+      interval: 'weekly'
+    groups:
+      docs-portal-npm-minor-and-patch:
+        update-types: ['minor', 'patch']
+    open-pull-requests-limit: 5
+    labels: ['dependencies']
+    commit-message:
+      prefix: 'chore(deps)'
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
+
+  # Docker base images: the app Dockerfile and the docs-portal Dockerfile.
+  # Floating tags (python:3.14-slim, node:20-slim) give Dependabot little to bump;
+  # pinning them is a separate decision.
+  - package-ecosystem: 'docker'
+    directories:
+      - '/'
+      - '/docs-portal'
+    schedule:
+      interval: 'monthly'
+    open-pull-requests-limit: 3
+    labels: ['dependencies']
+    commit-message:
+      prefix: 'chore(deps)'
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
+
+  # Docker Compose image tags. The root docker-compose.yml is the LIVE production
+  # instance: Dependabot only edits the file in a PR and never runs compose.
+  - package-ecosystem: 'docker-compose'
+    directory: '/'
+    schedule:
+      interval: 'monthly'
+    open-pull-requests-limit: 3
+    labels: ['dependencies']
+    commit-message:
+      prefix: 'chore(deps)'
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
