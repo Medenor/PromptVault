@@ -624,9 +624,9 @@ function init(): void {
   // Apply focus styles to all form inputs and selects on the page
   // This ensures proper focus visibility for keyboard navigation users
   document
-    .querySelectorAll<
-      HTMLInputElement | HTMLSelectElement
-    >('input[type="text"], input[type="number"], input[type="color"], input[type="checkbox"], select')
+    .querySelectorAll<HTMLInputElement | HTMLSelectElement>(
+      'input[type="text"], input[type="number"], input[type="color"], input[type="checkbox"], select'
+    )
     .forEach((el) => {
       if (el.id !== 'tag-import-file' && el.id !== 'tag-create-color-picker') {
         applyFocusStyles(el);
