@@ -33,7 +33,9 @@ ROUTES: dict[str, tuple] = {
 }
 
 
-_ASSET_HASH_RE = re.compile(r"(/assets/[A-Za-z0-9_-]+)\.[A-Za-z0-9_-]{8}\.(css|js)\b")
+_ASSET_HASH_RE = re.compile(
+    r"(/(?:assets|js)/[A-Za-z0-9_-]+)\.[A-Za-z0-9_-]{8}\.(css|js)\b"
+)
 _FOOTER_VERSION_RE = re.compile(r">v\d+\.\d+\.\d+[^<]*<")
 
 
