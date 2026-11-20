@@ -11,7 +11,7 @@ lookup and management operations.
 from collections.abc import Sequence
 from typing import Any
 
-from sqlalchemy import Row, func
+from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -83,7 +83,7 @@ class CategoryRepository(BaseRepository[Category]):
                 raise
             return category
 
-    def list_all_with_counts(self) -> Sequence[Row[Any]]:
+    def list_all_with_counts(self) -> Sequence[Any]:
         """Get all categories with prompt counts.
 
         Returns:
@@ -210,7 +210,7 @@ class CategoryRepository(BaseRepository[Category]):
             .all()
         ]
 
-    def get_orphan_prompts(self) -> Sequence[Row[Any]]:
+    def get_orphan_prompts(self) -> Sequence[Any]:
         """Return (id, title) tuples for prompts with no category assigned."""
         from src.db.models import Prompt
 

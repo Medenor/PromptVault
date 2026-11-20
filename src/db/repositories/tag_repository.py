@@ -11,7 +11,7 @@ lookup and management operations.
 from collections.abc import Sequence
 from typing import Any
 
-from sqlalchemy import Row, func
+from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -108,7 +108,7 @@ class TagRepository(BaseRepository[Tag]):
             tags.append(tag)
         return tags
 
-    def list_all_with_counts(self) -> Sequence[Row[Any]]:
+    def list_all_with_counts(self) -> Sequence[Any]:
         """Get all tags with usage counts.
 
         Returns:
@@ -128,7 +128,7 @@ class TagRepository(BaseRepository[Tag]):
 
         return results
 
-    def get_popular_tags(self, limit: int = 10) -> Sequence[Row[Any]]:
+    def get_popular_tags(self, limit: int = 10) -> Sequence[Any]:
         """Get most popular tags by usage count.
 
         Args:
@@ -207,7 +207,7 @@ class TagRepository(BaseRepository[Tag]):
         )
         return [row[0] for row in results]
 
-    def get_orphan_prompts(self) -> Sequence[Row[Any]]:
+    def get_orphan_prompts(self) -> Sequence[Any]:
         """Return (id, title) tuples for prompts with no tags assigned."""
         from src.db.models.associations import prompt_tags
 

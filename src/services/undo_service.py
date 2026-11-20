@@ -14,7 +14,7 @@ import logging
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from sqlalchemy import and_, desc, func
+from sqlalchemy import and_, func
 from sqlalchemy.orm import Session
 
 from src.db.models.undo_operation import UndoOperation
@@ -182,7 +182,7 @@ class UndoService:
                     UndoOperation.entity_type == entity_type,
                 )
             )
-            .order_by(desc(UndoOperation.created_at))
+            .order_by(UndoOperation.created_at.desc())
             .first()
         )
 
@@ -246,7 +246,7 @@ class UndoService:
         if entity_type is not None:
             query = query.filter(UndoOperation.entity_type == entity_type)
 
-        operations = query.order_by(desc(UndoOperation.created_at)).limit(limit).all()
+        operations = query.order_by(UndoOperation.created_at.desc()).limit(limit).all()
 
         result = []
         for op in operations:
