@@ -31,7 +31,7 @@ updates:
   - package-ecosystem: 'uv'
     directory: '/'
     schedule:
-      interval: 'weekly'
+      interval: 'monthly'
     groups:
       python-minor-and-patch:
         update-types: ['minor', 'patch']
@@ -47,7 +47,7 @@ updates:
   - package-ecosystem: 'npm'
     directory: '/'
     schedule:
-      interval: 'weekly'
+      interval: 'monthly'
     groups:
       npm-minor-and-patch:
         update-types: ['minor', 'patch']
@@ -63,7 +63,7 @@ updates:
   - package-ecosystem: 'npm'
     directory: '/docs-portal'
     schedule:
-      interval: 'weekly'
+      interval: 'monthly'
     groups:
       docs-portal-npm-minor-and-patch:
         update-types: ['minor', 'patch']
