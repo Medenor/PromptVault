@@ -906,11 +906,11 @@ Delete All
 </div>
 </div>
 <script>window.__AUTH_ENABLED__ = true;</script>
-<script type="module" src="/static/dist/js/telemetry.BNEueToC.js"></script>
-<script type="module" src="/static/dist/js/globalShortcuts.C9zDFoVF.js"></script>
+<script type="module" src="/static/dist/js/telemetry.HASH.js"></script>
+<script type="module" src="/static/dist/js/globalShortcuts.HASH.js"></script>
 <script
 type="module"
-src="/static/dist/js/backupManagement.Cro4MJWw.js"
+src="/static/dist/js/backupManagement.HASH.js"
 ></script>
 </body>
 </html>
