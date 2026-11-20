@@ -11,7 +11,6 @@ version history, comparison, and revert operations.
 import uuid
 from datetime import datetime
 
-from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
 from src.db.models import Prompt, PromptVersion
@@ -52,7 +51,7 @@ class VersionRepository(BaseRepository[PromptVersion]):
         q = (
             self.session.query(PromptVersion)
             .filter(PromptVersion.prompt_id == prompt_id)
-            .order_by(desc(PromptVersion.version_number))
+            .order_by(PromptVersion.version_number.desc())
         )
 
         if limit:
@@ -87,7 +86,7 @@ class VersionRepository(BaseRepository[PromptVersion]):
         return (
             self.session.query(PromptVersion)
             .filter(PromptVersion.prompt_id == prompt_id)
-            .order_by(desc(PromptVersion.version_number))
+            .order_by(PromptVersion.version_number.desc())
             .first()
         )
 

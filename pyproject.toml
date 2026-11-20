@@ -114,7 +114,6 @@ ignore = [
 # gating mypy in CI).
 [tool.mypy]
 python_version = "3.14"
-plugins = ["sqlalchemy.ext.mypy.plugin"]
 
 [[tool.mypy.overrides]]
 module = [
