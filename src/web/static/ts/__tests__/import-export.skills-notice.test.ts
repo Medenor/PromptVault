@@ -100,9 +100,10 @@ describe('skills locale completeness', () => {
     const strings = leafKeys(section(lang, 'skills')).map((key) =>
       key
         .split('.')
-        .reduce<
-          Tree | string
-        >((node, part) => (node as Tree)[part] as Tree | string, section(lang, 'skills'))
+        .reduce<Tree | string>(
+          (node, part) => (node as Tree)[part] as Tree | string,
+          section(lang, 'skills')
+        )
     );
     expect(strings.every((value) => typeof value === 'string' && value.trim() !== '')).toBe(true);
   });

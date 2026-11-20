@@ -42,12 +42,7 @@ interface TotpConfirmResponse {
 }
 
 type EnrollmentStep =
-  | 'idle'
-  | 'scanning'
-  | 'recovery-codes'
-  | 'manage'
-  | 'reauth-disable'
-  | 'reauth-regenerate';
+  'idle' | 'scanning' | 'recovery-codes' | 'manage' | 'reauth-disable' | 'reauth-regenerate';
 
 let currentStep: EnrollmentStep = 'idle';
 let pendingSecret: string | null = null;
