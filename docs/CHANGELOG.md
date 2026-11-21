@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **Build tooling moved from Node.js 20 (end of life) to Node.js 22** (#79): the version now lives in `.nvmrc`, which the CI, docs portal and security-audit workflows read. Both Dockerfiles build on `node:22-slim` pinned by digest, and `engines.node` is `>=22` in the root and docs-portal `package.json`. Developers need Node.js 22 or later.
+- **Build tooling now requires Node.js 26 or later** (#91). CI selects Node.js 26 through `.nvmrc`, and both Docker builds use digest-pinned `node:26-slim` images.
 
 ### Fixed
 

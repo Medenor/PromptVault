@@ -76,7 +76,7 @@ updates:
         update-types: ['version-update:semver-major']
 
   # Docker base images: the app Dockerfile and the docs-portal Dockerfile.
-  # Floating tags (python:3.14-slim, node:22-slim) give Dependabot little to bump;
+  # Floating tags (python:3.14-slim, node:26-slim) give Dependabot little to bump;
   # pinning them is a separate decision.
   - package-ecosystem: 'docker'
     directories:
