@@ -1,6 +1,6 @@
 {
   "name": "promptvault",
-  "version": "1.16.0",
+  "version": "1.17.0",
   "description": "<h1 align=\"center\">   <a href=\"https://github.com/Medenor/PromptVault\">     <img src=\"docs/images/promptvault_logo.jpg\" alt=\"Logo\" width=\"250\" height=\"250\">   </a> </h1>",
   "main": "index.js",
   "engines": {
