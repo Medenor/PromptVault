@@ -26,12 +26,11 @@ Usage:
     python scripts/setup/setup_env.py --non-interactive
 """
 
-import os
 import sys
 import secrets
 import string
 from pathlib import Path
-from typing import Any, Dict, Optional, List, Tuple
+from typing import Any, Dict, Optional, List
 from urllib.parse import quote_plus, urlsplit
 
 import click
@@ -47,7 +46,6 @@ from validators import (
     validate_port,
     validate_hostname,
     validate_email,
-    validate_password_strength,
     validate_path,
 )
 from config_parser import (
@@ -56,6 +54,19 @@ from config_parser import (
     load_env_template,
     write_env_file,
 )
+
+
+# Defaults shared by the profile table and the interactive prompts
+DEFAULT_SQLITE_PATH = "./data/promptvault.db"
+DEFAULT_REDIS_URL = "redis://localhost:6379/0"
+DEFAULT_JWT_PRIVATE_KEY_PATH = "secrets/jwt/private_key.pem"
+DEFAULT_JWT_PUBLIC_KEY_PATH = "secrets/jwt/public_key.pem"
+
+# Placeholder sender used when email setup is skipped; not validated as a real address
+PLACEHOLDER_EMAIL = "noreply@example.com"
+
+# Key-name fragments whose values are hidden in the configuration diff
+SENSITIVE_KEY_PARTS = ("password", "secret", "key")
 
 
 class EnvConfigurator:
@@ -72,12 +83,12 @@ class EnvConfigurator:
     # Profile-specific defaults
     PROFILE_DEFAULTS = {
         'development': {
-            'DATABASE_URL': 'sqlite:///./data/promptvault.db',
+            'DATABASE_URL': f'sqlite:///{DEFAULT_SQLITE_PATH}',
             'ENVIRONMENT': 'development',
             'LOG_LEVEL': 'DEBUG',
             'AUDIT_LOG_LEVEL': 'INFO',
             'DB_ECHO': 'true',
-            'REDIS_URL': 'redis://localhost:6379/0',
+            'REDIS_URL': DEFAULT_REDIS_URL,
         },
         'production': {
             # No DATABASE_URL default: production requires an operator-supplied
@@ -86,7 +97,7 @@ class EnvConfigurator:
             'LOG_LEVEL': 'WARNING',
             'AUDIT_LOG_LEVEL': 'INFO',
             'DB_ECHO': 'false',
-            'REDIS_URL': 'redis://localhost:6379/0',
+            'REDIS_URL': DEFAULT_REDIS_URL,
         }
     }
 
@@ -210,7 +221,7 @@ class EnvConfigurator:
             # SQLite configuration
             db_path = self.console.prompt(
                 "SQLite database path",
-                default="./data/promptvault.db"
+                default=DEFAULT_SQLITE_PATH
             )
             config['DATABASE_URL'] = f"sqlite:///{db_path}"
 
@@ -273,8 +284,8 @@ class EnvConfigurator:
 
         # JWT keys
         self.console.info("JWT Key Configuration")
-        default_private = "secrets/jwt/private_key.pem"
-        default_public = "secrets/jwt/public_key.pem"
+        default_private = DEFAULT_JWT_PRIVATE_KEY_PATH
+        default_public = DEFAULT_JWT_PUBLIC_KEY_PATH
 
         config['JWT_PRIVATE_KEY_PATH'] = self.console.prompt(
             "JWT private key path",
@@ -364,7 +375,7 @@ class EnvConfigurator:
         self.console.info("Rate Limiting")
         config['REDIS_URL'] = self.console.prompt(
             "Redis URL for rate limiting",
-            default="redis://localhost:6379/0"
+            default=DEFAULT_REDIS_URL
         )
 
         config['RATE_LIMIT_LOGIN_ATTEMPTS'] = self.console.prompt(
@@ -416,9 +427,9 @@ class EnvConfigurator:
                 config['SMTP_HOST'] = "smtp.example.com"
                 config['SMTP_PORT'] = "587"
                 config['SMTP_USE_TLS'] = "true"
-                config['SMTP_USERNAME'] = "noreply@example.com"
+                config['SMTP_USERNAME'] = PLACEHOLDER_EMAIL
                 config['SMTP_PASSWORD'] = "changeme"
-                config['EMAIL_FROM_ADDRESS'] = "noreply@example.com"
+                config['EMAIL_FROM_ADDRESS'] = PLACEHOLDER_EMAIL
                 config['EMAIL_FROM_NAME'] = "PromptVault"
                 config['PASSWORD_RESET_TOKEN_EXPIRE_SECONDS'] = "3600"
                 return config
@@ -440,13 +451,13 @@ class EnvConfigurator:
             default=True
         )).lower()
 
-        smtp_user = self.console.prompt("SMTP username", default="noreply@example.com")
+        smtp_user = self.console.prompt("SMTP username", default=PLACEHOLDER_EMAIL)
         while True:
             is_valid, error = validate_email(smtp_user)
             if is_valid:
                 break
             self.console.error(f"Invalid email: {error}")
-            smtp_user = self.console.prompt("SMTP username", default="noreply@example.com")
+            smtp_user = self.console.prompt("SMTP username", default=PLACEHOLDER_EMAIL)
         config['SMTP_USERNAME'] = smtp_user
 
         config['SMTP_PASSWORD'] = self.console.prompt("SMTP password", password=True)
@@ -588,7 +599,7 @@ class EnvConfigurator:
             if email_key in self.config:
                 email_value = self.config[email_key]
                 # Skip validation for placeholder values
-                if email_value and email_value != "noreply@example.com":
+                if email_value and email_value != PLACEHOLDER_EMAIL:
                     is_valid, error = validate_email(email_value)
                     if not is_valid:
                         errors.append(f"{email_key}: {error}")
@@ -614,7 +625,6 @@ class EnvConfigurator:
         Returns:
             Human-readable diff string
         """
-        from rich.text import Text
         from rich.table import Table
 
         # Create table for diff
@@ -639,7 +649,7 @@ class EnvConfigurator:
                 changes_found = True
 
                 # Mask sensitive values
-                if any(sensitive in key.lower() for sensitive in ['password', 'secret', 'key']):
+                if any(sensitive in key.lower() for sensitive in SENSITIVE_KEY_PARTS):
                     if old_value != "[not set]":
                         old_value = "********"
                     if new_value != "[not set]":
