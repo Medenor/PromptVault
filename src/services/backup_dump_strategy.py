@@ -117,7 +117,7 @@ class PostgresDumpStrategy:
     """PostgreSQL backup/restore via the pg_dump/psql CLI tools."""
 
     def dump(self, backup_path: str) -> None:
-        db_url = db_settings.DATABASE_URL
+        db_url = db_settings.libpq_url
         cmd = [
             "pg_dump",
             "--file",
@@ -140,7 +140,7 @@ class PostgresDumpStrategy:
 
     def restore(self, backup_id: str, backup_path: str) -> bool:
         try:
-            db_url = db_settings.DATABASE_URL
+            db_url = db_settings.libpq_url
             cmd = ["psql", "--file", backup_path, db_url]
             subprocess.run(cmd, check=True, capture_output=True, text=True)
 
