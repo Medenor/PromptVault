@@ -752,10 +752,10 @@ def main(profile: str, from_file: Optional[str], validate_only: bool, non_intera
         for error in errors:
             console.console.print(f"  - {error}", style="red")
 
-        if not non_interactive:
-            if not console.confirm("Continue anyway?", default=False):
-                sys.exit(1)
-        else:
+        # Production never proceeds with an invalid configuration, even interactively.
+        if non_interactive or profile == 'production':
+            sys.exit(1)
+        if not console.confirm("Continue anyway?", default=False):
             sys.exit(1)
     else:
         console.success("Configuration validation passed")
