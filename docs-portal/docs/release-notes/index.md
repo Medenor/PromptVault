@@ -9,6 +9,14 @@ Highlights from recent PromptVault releases. For the complete, unabridged histor
 
 For upgrade steps, see [Update PromptVault](../installation/update.md).
 
+## 1.16.0
+
+- **Security fix**: the password reset request now gives the same answer whether or not an account exists, and the reset link is no longer written to the application logs. Reset links expire after one hour, but you may want to purge older log lines containing `reset-password?token=`.
+- **Fix**: `setup_env.py --from-file` now accepts unquoted YAML values (`true`, `20`) and keeps the default for any key missing from the file. `DB_POOL_SIZE` is checked as a positive number instead of a port.
+- **Setup wizard**: its dependencies (`click`, `rich`, `httpx`) moved to the `setup` extra, and the Docker image no longer installs them. Run `pip install -e ".[setup]"` (or `make install`) before `scripts/setup/setup.py`.
+- **Build**: building the frontend now requires Node.js 26 or later.
+- **Upgrade**: rebuild the images and restart. No database migration is needed.
+
 ## 1.15.0
 
 - **API developer guides**: a new Developer / API space explains how to call the PromptVault API: first calls (login with 2FA, read, create, search, history) and a reference for routes, permissions, pagination and errors. See [Developer / API](../developer-api/index.md).
