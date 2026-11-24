@@ -119,10 +119,13 @@ class EnvConfigurator:
             for key, value in self.PROFILE_DEFAULTS[self.profile].items():
                 template[key] = value
 
-            # .env.example carries the development database URL; production must
+            # .env.example carries the development SQLite URL; production must
             # not inherit it, so validate() demands an operator-supplied one.
-            if self.profile == 'production':
-                template.pop('DATABASE_URL', None)
+            # A non-SQLite URL supplied through the template is kept.
+            if self.profile == 'production' and urlsplit(
+                template.get('DATABASE_URL', '')
+            ).scheme.startswith('sqlite'):
+                template.pop('DATABASE_URL')
 
             return template
         except FileNotFoundError as e:
