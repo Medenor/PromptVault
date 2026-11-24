@@ -9,6 +9,14 @@ Points forts des versions récentes de PromptVault. Pour l'historique complet et
 
 Pour les étapes de mise à jour, consultez [Mettre à jour PromptVault](../installation/update.md).
 
+## 1.16.0
+
+- **Correctif de sécurité** : la demande de réinitialisation du mot de passe répond désormais de la même façon que le compte existe ou non, et le lien de réinitialisation n'est plus écrit dans les journaux de l'application. Les liens expirent après une heure, mais vous pouvez purger les anciennes lignes de journal contenant `reset-password?token=`.
+- **Correction** : `setup_env.py --from-file` accepte désormais les valeurs YAML sans guillemets (`true`, `20`) et conserve la valeur par défaut des clés absentes du fichier. `DB_POOL_SIZE` est vérifié comme un nombre positif et non plus comme un port.
+- **Assistant d'installation** : ses dépendances (`click`, `rich`, `httpx`) passent dans l'extra `setup`, et l'image Docker ne les installe plus. Exécutez `pip install -e ".[setup]"` (ou `make install`) avant `scripts/setup/setup.py`.
+- **Build** : la construction du frontend nécessite désormais Node.js 26 ou supérieur.
+- **Mise à jour** : reconstruisez les images et redémarrez. Aucune migration de base de données n'est nécessaire.
+
 ## 1.15.0
 
 - **Guides pour développeurs d'API** : un nouvel espace Développeur / API explique comment appeler l'API de PromptVault : premiers appels (connexion avec 2FA, lecture, création, recherche, historique) et référence des routes, des permissions, de la pagination et des erreurs. Consultez [Développeur / API](../developer-api/index.md).

@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.16.0] - 2026-11-24
+
 ### Changed
 
 - **Build tooling now requires Node.js 26 or later** (#91). CI selects Node.js 26 through `.nvmrc`, and both Docker builds use digest-pinned `node:26-slim` images.
