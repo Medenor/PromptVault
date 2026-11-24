@@ -31,7 +31,7 @@ import sys
 import secrets
 import string
 from pathlib import Path
-from typing import Dict, Optional, List, Tuple
+from typing import Any, Dict, Optional, List, Tuple
 from urllib.parse import quote_plus, urlsplit
 
 import click
@@ -134,6 +134,52 @@ class EnvConfigurator:
         except Exception as e:
             self.console.error(f"Error loading template: {e}")
             raise
+
+    @staticmethod
+    def _stringify_value(key: str, value: Any) -> str:
+        """
+        Convert a YAML scalar to the string form stored in a .env file.
+
+        YAML parses unquoted ``true`` / ``20`` / empty values as bool / int /
+        None; the .env writer only handles strings.
+
+        Raises:
+            ValueError: If the value is a nested mapping or list.
+        """
+        if isinstance(value, bool):
+            return 'true' if value else 'false'
+        if value is None:
+            return ''
+        if isinstance(value, (dict, list)):
+            raise ValueError(
+                f"{key}: nested values are not supported, use a flat KEY: value mapping"
+            )
+        return str(value)
+
+    def load_file_config(self, raw: Dict[str, Any]) -> Dict[str, str]:
+        """
+        Build the configuration from a parsed YAML mapping.
+
+        Values are normalised to strings and merged over the profile template
+        (``.env.example`` plus profile defaults), so keys missing from the file
+        keep their default instead of being dropped.
+
+        Args:
+            raw: Parsed YAML content, flat or keyed by profile name
+
+        Returns:
+            Complete configuration dictionary
+        """
+        selected = raw.get(self.profile, raw)
+        if not isinstance(selected, dict):
+            raise ValueError(
+                f"Section '{self.profile}' must be a mapping of KEY: value pairs"
+            )
+
+        config = self.load_template()
+        for key, value in selected.items():
+            config[key] = self._stringify_value(key, value)
+        return config
 
     def prompt_database(self) -> Dict[str, str]:
         """
@@ -523,11 +569,19 @@ class EnvConfigurator:
                 )
 
         # Validate ports
-        for port_key in ['SMTP_PORT', 'DB_POOL_SIZE']:
-            if port_key in self.config:
-                is_valid, error = validate_port(self.config[port_key])
-                if not is_valid:
-                    errors.append(f"{port_key}: {error}")
+        if 'SMTP_PORT' in self.config:
+            is_valid, error = validate_port(self.config['SMTP_PORT'])
+            if not is_valid:
+                errors.append(f"SMTP_PORT: {error}")
+
+        # Pool size is a connection count, not a port
+        if 'DB_POOL_SIZE' in self.config:
+            try:
+                pool_size = int(self.config['DB_POOL_SIZE'])
+            except (TypeError, ValueError):
+                pool_size = 0
+            if pool_size < 1:
+                errors.append("DB_POOL_SIZE: Pool size must be a positive integer")
 
         # Validate email addresses
         for email_key in ['SMTP_USERNAME', 'EMAIL_FROM_ADDRESS']:
@@ -704,12 +758,8 @@ def main(profile: str, from_file: Optional[str], validate_only: bool, non_intera
             # Create configurator and set config
             configurator = EnvConfigurator(profile, console)
 
-            # Convert YAML config to flat dict
-            # Assume flat structure or profile-based structure
-            if profile in yaml_config:
-                configurator.config = yaml_config[profile]
-            else:
-                configurator.config = yaml_config
+            # Flat or profile-keyed YAML, merged over the profile template
+            configurator.config = configurator.load_file_config(yaml_config)
 
         except Exception as e:
             console.error(f"Failed to load configuration: {e}")

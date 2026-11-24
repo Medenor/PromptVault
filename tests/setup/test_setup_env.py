@@ -1211,9 +1211,12 @@ development:
   LOG_LEVEL: DEBUG
 """)
 
-            with patch(
-                "scripts.setup.setup_env.parse_yaml_config",
-                return_value={"development": {"DATABASE_URL": "sqlite:///test.db"}},
+            with (
+                patch(
+                    "scripts.setup.setup_env.parse_yaml_config",
+                    return_value={"development": {"DATABASE_URL": "sqlite:///test.db"}},
+                ),
+                patch("scripts.setup.setup_env.load_env_template", return_value={}),
             ):
                 with patch("scripts.setup.setup_env.write_env_file"):
                     result = self.runner.invoke(
@@ -1869,3 +1872,128 @@ class TestIntegration:
                         )
 
             assert result.exit_code == 0
+
+
+class TestFromFileConfig:
+    """--from-file merges over the template and normalises YAML scalars."""
+
+    def setup_method(self):
+        self.console = Mock()
+
+    def _configurator(self, profile="development"):
+        return EnvConfigurator(profile, self.console)
+
+    def test_merges_over_template_defaults(self):
+        """Keys missing from the file keep their template/profile default."""
+        with patch(
+            "scripts.setup.setup_env.load_env_template",
+            return_value={"JWT_ISSUER": "promptvault", "LOG_LEVEL": "INFO"},
+        ):
+            config = self._configurator().load_file_config(
+                {"development": {"LOG_LEVEL": "ERROR"}}
+            )
+
+        assert config["JWT_ISSUER"] == "promptvault"  # from template
+        assert config["LOG_LEVEL"] == "ERROR"  # file wins over template
+        assert config["ENVIRONMENT"] == "development"  # profile default
+
+    def test_accepts_flat_mapping(self):
+        """A YAML without profile sections is used as-is."""
+        with patch("scripts.setup.setup_env.load_env_template", return_value={}):
+            config = self._configurator().load_file_config({"JWT_ISSUER": "acme"})
+
+        assert config["JWT_ISSUER"] == "acme"
+
+    def test_scalars_are_stringified(self):
+        """Unquoted YAML bool/int/None become .env strings."""
+        with patch("scripts.setup.setup_env.load_env_template", return_value={}):
+            config = self._configurator().load_file_config(
+                {
+                    "development": {
+                        "DB_ECHO": True,
+                        "OFF": False,
+                        "DB_POOL_SIZE": 20,
+                        "EMPTY": None,
+                    }
+                }
+            )
+
+        assert config["DB_ECHO"] == "true"
+        assert config["OFF"] == "false"
+        assert config["DB_POOL_SIZE"] == "20"
+        assert config["EMPTY"] == ""
+
+    def test_nested_value_rejected(self):
+        """Nested mappings/lists give a clear error instead of a crash."""
+        with patch("scripts.setup.setup_env.load_env_template", return_value={}):
+            with pytest.raises(ValueError, match="nested values are not supported"):
+                self._configurator().load_file_config(
+                    {"development": {"DATABASE": {"host": "x"}}}
+                )
+
+    def test_profile_section_must_be_mapping(self):
+        with patch("scripts.setup.setup_env.load_env_template", return_value={}):
+            with pytest.raises(ValueError, match="must be a mapping"):
+                self._configurator().load_file_config({"development": "oops"})
+
+    def test_production_keeps_requiring_database_url(self):
+        """A partial production file still fails validation without a DATABASE_URL."""
+        with patch("scripts.setup.setup_env.load_env_template", return_value={}):
+            configurator = self._configurator("production")
+            configurator.config = configurator.load_file_config(
+                {"production": {"LOG_LEVEL": "WARNING"}}
+            )
+
+        assert any("DATABASE_URL" in e for e in configurator.validate())
+
+    def test_cli_writes_non_string_yaml_values(self, tmp_path):
+        """End to end: unquoted YAML values no longer crash the .env writer."""
+        yaml_file = tmp_path / "cfg.yaml"
+        yaml_file.write_text(
+            "development:\n"
+            "  DATABASE_URL: sqlite:///./data/promptvault.db\n"
+            "  DB_POOL_SIZE: 20\n"
+            "  DB_ECHO: true\n"
+        )
+        output = tmp_path / ".env"
+
+        with patch(
+            "scripts.setup.setup_env.load_env_template",
+            return_value={"JWT_ISSUER": "promptvault"},
+        ):
+            result = CliRunner().invoke(
+                main,
+                [
+                    "--profile",
+                    "development",
+                    "--from-file",
+                    str(yaml_file),
+                    "--output",
+                    str(output),
+                    "--non-interactive",
+                ],
+            )
+
+        assert result.exit_code == 0, result.output
+        written = output.read_text()
+        assert "DB_ECHO=true" in written
+        assert "DB_POOL_SIZE=20" in written
+        assert "JWT_ISSUER=promptvault" in written
+
+
+class TestPoolSizeValidation:
+    """DB_POOL_SIZE is a connection count, not a port."""
+
+    def _errors(self, value):
+        configurator = EnvConfigurator("development", Mock())
+        configurator.config = {"DB_POOL_SIZE": value}
+        return configurator.validate()
+
+    @pytest.mark.parametrize("value", ["1", "20", "100000"])
+    def test_valid_sizes(self, value):
+        assert self._errors(value) == []
+
+    @pytest.mark.parametrize("value", ["0", "-5", "abc", ""])
+    def test_invalid_sizes(self, value):
+        errors = self._errors(value)
+        assert errors == ["DB_POOL_SIZE: Pool size must be a positive integer"]
