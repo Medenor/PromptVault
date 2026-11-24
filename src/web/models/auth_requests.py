@@ -21,6 +21,11 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
+# Upper bound for JWTs accepted in a JSON body. Our ES256 tokens are well under
+# 1 KB; the cap rejects oversized input (e.g. deeply nested JSON segments) with a
+# 422 before it reaches the JWT parser.
+MAX_JWT_LENGTH = 4096
+
 
 class RegisterRequest(BaseModel):
     """Request model for user registration.
@@ -297,6 +302,7 @@ class RefreshTokenRequest(BaseModel):
     refresh_token: str = Field(
         ...,
         min_length=10,
+        max_length=MAX_JWT_LENGTH,
         description="JWT refresh token",
         examples=["eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9..."],
     )
@@ -333,6 +339,7 @@ class LogoutRequest(BaseModel):
     refresh_token: str | None = Field(
         None,
         min_length=10,
+        max_length=MAX_JWT_LENGTH,
         description="JWT refresh token (optional if sent via cookie)",
     )
 
@@ -662,6 +669,7 @@ class TotpChallengeExchangeRequest(BaseModel):
     challenge_token: str = Field(
         ...,
         min_length=10,
+        max_length=MAX_JWT_LENGTH,
         description="Challenge JWT returned by POST /api/auth/login",
         examples=["eyJhbGciOi..."],
     )

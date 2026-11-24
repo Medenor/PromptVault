@@ -53,6 +53,24 @@ def test_refresh_token_request_requires_jwt_format():
         auth_requests.RefreshTokenRequest(refresh_token="not-a-jwt")
 
 
+@pytest.mark.parametrize(
+    ("model", "field", "extra"),
+    [
+        (auth_requests.RefreshTokenRequest, "refresh_token", {}),
+        (auth_requests.LogoutRequest, "refresh_token", {}),
+        (
+            auth_requests.TotpChallengeExchangeRequest,
+            "challenge_token",
+            {"code": "123456"},
+        ),
+    ],
+)
+def test_jwt_body_fields_reject_oversized_tokens(model, field, extra):
+    segment = "a" * auth_requests.MAX_JWT_LENGTH
+    with pytest.raises(ValidationError):
+        model(**{field: f"{segment}.{segment}.sig", **extra})
+
+
 def test_change_password_request_rejects_same_password():
     with pytest.raises(ValidationError):
         auth_requests.ChangePasswordRequest(
