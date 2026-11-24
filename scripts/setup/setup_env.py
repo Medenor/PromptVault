@@ -516,16 +516,10 @@ class EnvConfigurator:
 
         return password
 
-    def validate(self) -> List[str]:
-        """
-        Validate all configuration values.
-
-        Returns:
-            List of validation error messages (empty if all valid)
-        """
+    def _validate_database(self) -> List[str]:
+        """Validate DATABASE_URL, and enforce the production-specific rules."""
         errors = []
 
-        # Validate database URL
         if 'DATABASE_URL' in self.config:
             is_valid, error = validate_database_url(self.config['DATABASE_URL'])
             if not is_valid:
@@ -547,40 +541,64 @@ class EnvConfigurator:
                     "which is not allowed in production. Use your own credentials."
                 )
 
-        # Validate ports
-        if 'SMTP_PORT' in self.config:
-            is_valid, error = validate_port(self.config['SMTP_PORT'])
-            if not is_valid:
-                errors.append(f"SMTP_PORT: {error}")
+        return errors
 
-        # Pool size is a connection count, not a port
-        if 'DB_POOL_SIZE' in self.config:
-            try:
-                pool_size = int(self.config['DB_POOL_SIZE'])
-            except (TypeError, ValueError):
-                pool_size = 0
-            if pool_size < 1:
-                errors.append("DB_POOL_SIZE: Pool size must be a positive integer")
+    def _validate_smtp_port(self) -> List[str]:
+        """Validate SMTP_PORT when set."""
+        if 'SMTP_PORT' not in self.config:
+            return []
+        is_valid, error = validate_port(self.config['SMTP_PORT'])
+        return [] if is_valid else [f"SMTP_PORT: {error}"]
 
-        # Validate email addresses
+    def _validate_pool_size(self) -> List[str]:
+        """Validate DB_POOL_SIZE as a positive integer (it is a count, not a port)."""
+        if 'DB_POOL_SIZE' not in self.config:
+            return []
+        try:
+            pool_size = int(self.config['DB_POOL_SIZE'])
+        except (TypeError, ValueError):
+            pool_size = 0
+        if pool_size < 1:
+            return ["DB_POOL_SIZE: Pool size must be a positive integer"]
+        return []
+
+    def _validate_emails(self) -> List[str]:
+        """Validate the SMTP username and sender address, skipping the placeholder."""
+        errors = []
         for email_key in ['SMTP_USERNAME', 'EMAIL_FROM_ADDRESS']:
-            if email_key in self.config:
-                email_value = self.config[email_key]
-                # Skip validation for placeholder values
-                if email_value and email_value != PLACEHOLDER_EMAIL:
-                    is_valid, error = validate_email(email_value)
-                    if not is_valid:
-                        errors.append(f"{email_key}: {error}")
+            email_value = self.config.get(email_key)
+            if email_value and email_value != PLACEHOLDER_EMAIL:
+                is_valid, error = validate_email(email_value)
+                if not is_valid:
+                    errors.append(f"{email_key}: {error}")
+        return errors
 
-        # Validate JWT key paths exist (if not placeholder)
+    def _validate_key_paths(self) -> List[str]:
+        """Validate the JWT key paths (the files themselves need not exist yet)."""
+        errors = []
         for key_path_key in ['JWT_PRIVATE_KEY_PATH', 'JWT_PUBLIC_KEY_PATH']:
             if key_path_key in self.config:
-                path_value = self.config[key_path_key]
-                # Validate parent directory exists
-                is_valid, error = validate_path(path_value, must_exist=False)
+                is_valid, error = validate_path(self.config[key_path_key], must_exist=False)
                 if not is_valid:
                     errors.append(f"{key_path_key}: {error}")
+        return errors
 
+    def validate(self) -> List[str]:
+        """
+        Validate all configuration values.
+
+        Returns:
+            List of validation error messages (empty if all valid)
+        """
+        errors: List[str] = []
+        for check in (
+            self._validate_database,
+            self._validate_smtp_port,
+            self._validate_pool_size,
+            self._validate_emails,
+            self._validate_key_paths,
+        ):
+            errors.extend(check())
         return errors
 
     def diff(self, existing: Dict[str, str]) -> str:
