@@ -1002,6 +1002,72 @@ class TestPasswordResetRequestEndpoint:
         data = response.json()
         assert "message" in data
 
+    def test_password_reset_request_response_identical_for_known_and_unknown(
+        self,
+        auth_client: TestClient,
+        test_user_credentials: dict[str, str],
+        registered_user: dict[str, Any],
+    ):
+        """The response must not reveal whether an account exists.
+
+        The registered address and an unknown address that masks to the same
+        value ("t***@example.com") must produce byte-identical responses.
+        """
+        known = auth_client.post(
+            "/api/auth/password-reset/request",
+            json={"email": test_user_credentials["email"]},
+        )
+        local, _, domain = test_user_credentials["email"].partition("@")
+        unknown = auth_client.post(
+            "/api/auth/password-reset/request",
+            json={"email": f"{local[0]}nobody-here@{domain}"},
+        )
+
+        assert known.status_code == unknown.status_code == 200
+        assert known.json() == unknown.json()
+        assert known.json()["email"] == f"{local[0]}***@{domain}"
+
+    def test_password_reset_request_does_not_log_reset_token(
+        self,
+        auth_client: TestClient,
+        test_user_credentials: dict[str, str],
+        registered_user: dict[str, Any],
+        caplog: pytest.LogCaptureFixture,
+    ):
+        """The reset link is a bearer credential and must never reach the logs."""
+        import logging
+
+        with caplog.at_level(logging.DEBUG):
+            response = auth_client.post(
+                "/api/auth/password-reset/request",
+                json={"email": test_user_credentials["email"]},
+            )
+        assert response.status_code == 200
+
+        # A log record can carry the secret in its message or in extra fields.
+        captured = " ".join(
+            [record.getMessage() for record in caplog.records]
+            + [str(record.__dict__) for record in caplog.records]
+        )
+        assert "reset-password" not in captured
+        assert "reset_url" not in captured
+        assert "token=" not in captured
+
+    @pytest.mark.parametrize(
+        ("email", "expected"),
+        [
+            ("alice@example.com", "a***@example.com"),
+            ("@example.com", "***@***"),
+            ("alice@", "***@***"),
+            ("no-at-sign", "***@***"),
+            ("a@b@c", "***@***"),
+        ],
+    )
+    def test_mask_email(self, email: str, expected: str):
+        from src.web.routers.auth_password_router import _mask_email
+
+        assert _mask_email(email) == expected
+
 
 # ============================================================================
 # TEST POST /api/auth/password-reset/confirm

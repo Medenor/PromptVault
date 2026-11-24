@@ -567,16 +567,13 @@ class PasswordResetService:
             ...     server.login(self.config.smtp_username, self.config.smtp_password)
             ...     server.send_message(msg)
         """
-        # Generate reset URL
-        reset_url = self.config.get_password_reset_url(token)
-
-        # Log the email content (for development/testing)
+        # SECURITY: never log the reset URL or token. It is a bearer credential:
+        # anyone who can read the logs could reset the account's password.
         logger.info(
             "Password reset email (STUB - not actually sent)",
             extra={
                 "recipient": email,
                 "username": username,
-                "reset_url": reset_url,
                 "expires_in_seconds": self.config.password_reset_token_expire_seconds,
             },
         )
@@ -595,7 +592,7 @@ class PasswordResetService:
             f"You requested a password reset for your PromptVault account.\n"
             f"\n"
             f"Click the link below to reset your password:\n"
-            f"{reset_url}\n"
+            f"[reset link intentionally not logged]\n"
             f"\n"
             f"This link will expire in {self.config.password_reset_token_expire_seconds // 60} minutes.\n"
             f"\n"

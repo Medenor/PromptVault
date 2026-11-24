@@ -62,6 +62,18 @@ router = APIRouter(
 )
 
 
+def _mask_email(email: str) -> str:
+    """Mask an email address for display ("alice@x.com" -> "a***@x.com").
+
+    Computed only from the submitted address, so the password-reset response
+    is identical whether or not an account exists.
+    """
+    local, separator, domain = email.partition("@")
+    if separator and local and domain and "@" not in domain:
+        return f"{local[0]}***@{domain}"
+    return "***@***"
+
+
 @router.post(
     "/change-password",
     response_model=MessageResponse,
@@ -255,16 +267,18 @@ def request_password_reset(
         )
         return JSONResponse(content=payload.model_dump(mode="json"))
 
+    # Every outcome (account found or not, rate limited, error) answers with the
+    # same message and the same masking of the *submitted* address, so the
+    # response never reveals whether an account exists.
+    masked_email = _mask_email(request_data.email)
+
     try:
-        masked_email = password_reset_service.request_password_reset(
+        # The returned plain token is deliberately discarded: it must never
+        # reach the client or the response.
+        password_reset_service.request_password_reset(
             email=request_data.email,
             ip_address=ip_address,
         )
-        email_parts = masked_email.split("@")
-        if len(email_parts) == 2 and email_parts[0]:
-            masked_email = f"{email_parts[0][0]}***@{email_parts[1]}"
-        else:
-            masked_email = "***@***"
 
         logger.info(
             f"Password reset requested for email: {masked_email} from {ip_address}"
@@ -273,43 +287,22 @@ def request_password_reset(
         # Commit the session to persist the password reset token
         session.commit()
 
-        return build_response(masked_email)
-
     except UserNotFoundError:
         logger.info(
             f"Password reset requested for non-existent email: {request_data.email}"
         )
-        email_parts = request_data.email.split("@")
-        masked_email = (
-            f"{email_parts[0][0]}***@{email_parts[1]}"
-            if len(email_parts) == 2
-            else "***@***"
-        )
-        return build_response(masked_email)
 
     except RateLimitExceededError:
         logger.warning(
             f"Password reset rate limit exceeded for: {request_data.email} from {ip_address}"
         )
-        email_parts = request_data.email.split("@")
-        masked_email = (
-            f"{email_parts[0][0]}***@{email_parts[1]}"
-            if len(email_parts) == 2
-            else "***@***"
-        )
-        return build_response(masked_email)
 
     except Exception as e:
         logger.error(
             f"Unexpected error during password reset request: {str(e)}", exc_info=True
         )
-        email_parts = request_data.email.split("@")
-        masked_email = (
-            f"{email_parts[0][0]}***@{email_parts[1]}"
-            if len(email_parts) == 2
-            else "***@***"
-        )
-        return build_response(masked_email)
+
+    return build_response(masked_email)
 
 
 @router.post(
