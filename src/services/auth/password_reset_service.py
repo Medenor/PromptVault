@@ -41,16 +41,10 @@ Example:
     ... )
     >>>
     >>> # Request password reset
-    >>> token = service.request_password_reset(
+    >>> service.request_password_reset(
     ...     email="user@example.com",
     ...     ip_address="192.168.1.1"
     ... )
-    >>>
-    >>> # Verify token
-    >>> is_valid, user_id_or_error = service.verify_reset_token(token)
-    >>>
-    >>> # Reset password
-    >>> success = service.reset_password(token, "NewP@ssw0rd123")
     >>>
     >>> # Cleanup expired tokens (cron job)
     >>> count = service.cleanup_expired_tokens()
@@ -129,12 +123,12 @@ class PasswordResetService:
         self.token_repository = token_repository
         self.user_repository = user_repository
 
-    def request_password_reset(self, email: str, ip_address: str | None = None) -> str:
+    def request_password_reset(self, email: str, ip_address: str | None = None) -> None:
         """Generate and send password reset token via email.
 
         This method generates a secure password reset token, hashes it for
-        storage, sends it via email, and returns the plain token for testing
-        purposes. In production, only the email would be sent.
+        storage, and sends it via email. The plain token is never returned to
+        the caller.
 
         Security Features:
             - Rate limiting (max 3 requests per hour per user)
@@ -148,10 +142,6 @@ class PasswordResetService:
             email: User's email address
             ip_address: IP address that requested the reset (for audit trail)
 
-        Returns:
-            Plain text reset token (for testing only - in production this
-            would only be sent via email)
-
         Raises:
             UserNotFoundError: If email doesn't match any user
             RateLimitExceededError: If too many reset requests in time window
@@ -162,7 +152,7 @@ class PasswordResetService:
             is generated. The exception is only for internal handling.
 
         Example:
-            >>> token = service.request_password_reset(
+            >>> service.request_password_reset(
             ...     email="user@example.com",
             ...     ip_address="192.168.1.1"
             ... )
@@ -174,7 +164,7 @@ class PasswordResetService:
         # If user doesn't exist, log but don't reveal to caller (prevent enumeration)
         if not user:
             logger.warning(
-                f"Password reset requested for non-existent email: {email}",
+                "Password reset requested for non-existent email",
                 extra={"ip_address": ip_address},
             )
             # Still raise exception for internal handling, but API should
@@ -193,7 +183,7 @@ class PasswordResetService:
         if recent_count >= self.config.rate_limit_password_reset_attempts:
             retry_after = self.config.rate_limit_password_reset_window_seconds
             logger.warning(
-                f"Rate limit exceeded for password reset: {email}",
+                f"Rate limit exceeded for password reset user {user.id}",
                 extra={
                     "user_id": user.id,
                     "ip_address": ip_address,
@@ -251,10 +241,6 @@ class PasswordResetService:
 
         # Send reset email (currently stubbed)
         self._send_reset_email(email=email, token=plain_token, username=user.username)
-
-        # Return plain token for testing purposes
-        # In production API, this would not be returned - only sent via email
-        return plain_token
 
     def verify_reset_token(self, token: str) -> tuple[bool, str]:
         """Verify password reset token validity.

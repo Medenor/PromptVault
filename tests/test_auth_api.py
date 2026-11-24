@@ -38,13 +38,30 @@ Target: ≥90% endpoint coverage
 Execution time: < 20 seconds
 """
 
+import logging
 from datetime import UTC
 from typing import Any
+from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import text
 from sqlalchemy.orm import Session
+
+
+def _request_password_reset_and_capture_token(
+    password_reset_service, *, email: str, ip_address: str
+) -> str:
+    """Request a reset and capture the token passed to the email boundary."""
+    with patch.object(password_reset_service, "_send_reset_email") as send_email:
+        result = password_reset_service.request_password_reset(
+            email=email, ip_address=ip_address
+        )
+
+    assert result is None
+    send_email.assert_called_once()
+    return send_email.call_args.kwargs["token"]
+
 
 # ============================================================================
 # FIXTURES
@@ -1002,6 +1019,45 @@ class TestPasswordResetRequestEndpoint:
         data = response.json()
         assert "message" in data
 
+    def test_password_reset_request_masks_unknown_email_in_logs(
+        self,
+        auth_client: TestClient,
+        caplog: pytest.LogCaptureFixture,
+    ):
+        """Unknown-account logs must not expose the submitted address."""
+        email = "nonexistent@example.com"
+
+        with caplog.at_level(logging.INFO):
+            response = auth_client.post(
+                "/api/auth/password-reset/request",
+                json={"email": email},
+            )
+
+        assert response.status_code == 200
+        assert email not in caplog.text
+        assert "n***@example.com" in caplog.text
+
+    def test_password_reset_request_masks_rate_limited_email_in_logs(
+        self,
+        auth_client: TestClient,
+        test_user_credentials: dict[str, str],
+        registered_user: dict[str, Any],
+        caplog: pytest.LogCaptureFixture,
+    ):
+        """Rate-limit logs must not expose the submitted address."""
+        email = test_user_credentials["email"]
+
+        with caplog.at_level(logging.INFO):
+            for _ in range(4):
+                response = auth_client.post(
+                    "/api/auth/password-reset/request",
+                    json={"email": email},
+                )
+
+        assert response.status_code == 200
+        assert email not in caplog.text
+        assert f"{email[0]}***@{email.partition('@')[2]}" in caplog.text
+
     def test_password_reset_request_response_identical_for_known_and_unknown(
         self,
         auth_client: TestClient,
@@ -1035,8 +1091,6 @@ class TestPasswordResetRequestEndpoint:
         caplog: pytest.LogCaptureFixture,
     ):
         """The reset link is a bearer credential and must never reach the logs."""
-        import logging
-
         with caplog.at_level(logging.DEBUG):
             response = auth_client.post(
                 "/api/auth/password-reset/request",
@@ -1196,8 +1250,8 @@ class TestPasswordResetService:
 
         # Make 3 successful requests (should work)
         for _i in range(3):
-            token = password_reset_service.request_password_reset(
-                email=email, ip_address="192.168.1.1"
+            token = _request_password_reset_and_capture_token(
+                password_reset_service, email=email, ip_address="192.168.1.1"
             )
             assert token is not None
             test_db_session.commit()
@@ -1249,8 +1303,8 @@ class TestPasswordResetService:
         token_repo = PasswordResetTokenRepository(test_db_session)
 
         # Create first token
-        token1 = password_reset_service.request_password_reset(
-            email=email, ip_address="192.168.1.1"
+        token1 = _request_password_reset_and_capture_token(
+            password_reset_service, email=email, ip_address="192.168.1.1"
         )
         test_db_session.commit()
 
@@ -1291,8 +1345,8 @@ class TestPasswordResetService:
         PasswordResetTokenRepository(test_db_session)
 
         # Create a valid token using the service
-        token = password_reset_service.request_password_reset(
-            email=email, ip_address="192.168.1.1"
+        token = _request_password_reset_and_capture_token(
+            password_reset_service, email=email, ip_address="192.168.1.1"
         )
         test_db_session.commit()
 
@@ -1325,8 +1379,8 @@ class TestPasswordResetService:
         token_repo = PasswordResetTokenRepository(test_db_session)
 
         # Create token using the service
-        token = password_reset_service.request_password_reset(
-            email=email, ip_address="192.168.1.1"
+        token = _request_password_reset_and_capture_token(
+            password_reset_service, email=email, ip_address="192.168.1.1"
         )
         test_db_session.commit()
 
@@ -1352,8 +1406,8 @@ class TestPasswordResetService:
         UserRepository(test_db_session)
 
         # Create token using the service
-        token = password_reset_service.request_password_reset(
-            email=email, ip_address="192.168.1.1"
+        token = _request_password_reset_and_capture_token(
+            password_reset_service, email=email, ip_address="192.168.1.1"
         )
         test_db_session.commit()
 
@@ -1374,8 +1428,8 @@ class TestPasswordResetService:
         email = test_user_for_reset.email
 
         # Create token while user is active
-        token = password_reset_service.request_password_reset(
-            email=email, ip_address="192.168.1.1"
+        token = _request_password_reset_and_capture_token(
+            password_reset_service, email=email, ip_address="192.168.1.1"
         )
         test_db_session.commit()
 
@@ -1396,8 +1450,8 @@ class TestPasswordResetService:
         email = test_user_for_reset.email
 
         # Request password reset
-        token = password_reset_service.request_password_reset(
-            email=email, ip_address="192.168.1.1"
+        token = _request_password_reset_and_capture_token(
+            password_reset_service, email=email, ip_address="192.168.1.1"
         )
         test_db_session.commit()
 
@@ -1422,8 +1476,8 @@ class TestPasswordResetService:
         new_password = "NewSecureP@ssw0rd456"
 
         # Request password reset
-        token = password_reset_service.request_password_reset(
-            email=email, ip_address="192.168.1.1"
+        token = _request_password_reset_and_capture_token(
+            password_reset_service, email=email, ip_address="192.168.1.1"
         )
         test_db_session.commit()
 
@@ -1450,8 +1504,8 @@ class TestPasswordResetService:
         weak_password = "weak"
 
         # Request password reset
-        token = password_reset_service.request_password_reset(
-            email=email, ip_address="192.168.1.1"
+        token = _request_password_reset_and_capture_token(
+            password_reset_service, email=email, ip_address="192.168.1.1"
         )
         test_db_session.commit()
 
@@ -1474,8 +1528,8 @@ class TestPasswordResetService:
         new_password = "NewSecureP@ssw0rd456"
 
         # Request password reset
-        token = password_reset_service.request_password_reset(
-            email=email, ip_address="192.168.1.1"
+        token = _request_password_reset_and_capture_token(
+            password_reset_service, email=email, ip_address="192.168.1.1"
         )
         test_db_session.commit()
 
@@ -1515,8 +1569,8 @@ class TestPasswordResetService:
         import time
 
         time.sleep(0.1)
-        token2 = password_reset_service.request_password_reset(
-            email=email, ip_address="192.168.1.2"
+        token2 = _request_password_reset_and_capture_token(
+            password_reset_service, email=email, ip_address="192.168.1.2"
         )
         test_db_session.commit()
 
@@ -1585,8 +1639,8 @@ class TestPasswordResetService:
         token_repo = PasswordResetTokenRepository(test_db_session)
 
         # Create token
-        token = password_reset_service.request_password_reset(
-            email=email, ip_address="192.168.1.1"
+        token = _request_password_reset_and_capture_token(
+            password_reset_service, email=email, ip_address="192.168.1.1"
         )
         test_db_session.commit()
 
@@ -1621,8 +1675,8 @@ class TestPasswordResetService:
         email = test_user_for_reset.email
 
         # Create valid token
-        token = password_reset_service.request_password_reset(
-            email=email, ip_address="192.168.1.1"
+        token = _request_password_reset_and_capture_token(
+            password_reset_service, email=email, ip_address="192.168.1.1"
         )
         test_db_session.commit()
 
@@ -1647,8 +1701,8 @@ class TestPasswordResetService:
         # Create 3 tokens
         tokens = []
         for _i in range(3):
-            token = password_reset_service.request_password_reset(
-                email=email, ip_address="192.168.1.1"
+            token = _request_password_reset_and_capture_token(
+                password_reset_service, email=email, ip_address="192.168.1.1"
             )
             tokens.append(token)
             test_db_session.commit()
@@ -1699,8 +1753,8 @@ class TestPasswordResetService:
         email = test_user_for_reset.email
 
         # Request password reset
-        token = password_reset_service.request_password_reset(
-            email=email, ip_address="192.168.1.1"
+        token = _request_password_reset_and_capture_token(
+            password_reset_service, email=email, ip_address="192.168.1.1"
         )
         test_db_session.commit()
 
@@ -1726,8 +1780,8 @@ class TestPasswordResetService:
         email = test_user_for_reset.email
 
         # Create token
-        token = password_reset_service.request_password_reset(
-            email=email, ip_address="192.168.1.1"
+        token = _request_password_reset_and_capture_token(
+            password_reset_service, email=email, ip_address="192.168.1.1"
         )
         test_db_session.commit()
 
@@ -1754,8 +1808,8 @@ class TestPasswordResetService:
         email = test_user_for_reset.email
 
         # Request password reset
-        token = password_reset_service.request_password_reset(
-            email=email, ip_address="192.168.1.1"
+        token = _request_password_reset_and_capture_token(
+            password_reset_service, email=email, ip_address="192.168.1.1"
         )
         test_db_session.commit()
 

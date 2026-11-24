@@ -21,7 +21,7 @@ Target: Comprehensive coverage of security features
 """
 
 from datetime import UTC, datetime, timedelta
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -43,6 +43,21 @@ from src.services.exceptions import (
     TokenExpiredError,
     TokenReuseDetectedError,
 )
+
+
+def _request_password_reset_and_capture_token(
+    password_reset_service, *, email: str, ip_address: str
+) -> str:
+    """Request a reset and capture the token passed to the email boundary."""
+    with patch.object(password_reset_service, "_send_reset_email") as send_email:
+        result = password_reset_service.request_password_reset(
+            email=email, ip_address=ip_address
+        )
+
+    assert result is None
+    send_email.assert_called_once()
+    return send_email.call_args.kwargs["token"]
+
 
 # ============================================================================
 # FIXTURES
@@ -751,8 +766,8 @@ class TestPasswordResetRateLimiting:
         mock_token_repository.create_token.return_value = Mock(id="token_id")
 
         # Act
-        token = password_reset_service.request_password_reset(
-            email="test@example.com", ip_address="192.168.1.1"
+        token = _request_password_reset_and_capture_token(
+            password_reset_service, email="test@example.com", ip_address="192.168.1.1"
         )
 
         # Assert
