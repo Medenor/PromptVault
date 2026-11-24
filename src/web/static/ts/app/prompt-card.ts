@@ -248,7 +248,7 @@ export function createPromptElement(id: string, item: ItemResponse): HTMLDivElem
     ? `<button type="button" role="menuitem" class="delete-btn ${menuItemClass} border-t border-gray-200 dark:border-gray-700 !text-red-700 dark:!text-red-300" data-id="${id}" data-i18n="actions.delete">Delete</button>`
     : '';
   const favoriteButtonHTML = isOwner
-    ? `<button class="favorite-btn flex items-center justify-center min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 text-xl hover:scale-110 transition-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 rounded" data-id="${id}">
+    ? `<button class="favorite-btn flex items-center justify-center min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 text-xl text-gray-700 dark:text-gray-200 hover:scale-110 transition-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 rounded" data-id="${id}">
                     ${prompt.favorite ? '★' : '☆'}
                 </button>`
     : '';
