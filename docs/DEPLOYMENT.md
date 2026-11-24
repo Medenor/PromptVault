@@ -240,8 +240,8 @@ For detailed troubleshooting, see **[Troubleshooting Guide](TROUBLESHOOTING.md)*
 ### 1. **Backup Your Database** (CRITICAL)
 
 ```bash
-# PostgreSQL backup
-docker-compose exec db pg_dump -U promptvault -d promptvault --verbose | gzip > \
+# PostgreSQL backup (-T: no pseudo-terminal, which would corrupt a piped dump)
+docker-compose exec -T db pg_dump -U promptvault -d promptvault --verbose | gzip > \
   data/backups/promptvault-backup-$(date +%Y%m%d_%H%M%S).sql.gz
 
 # SQLite backup (if applicable)
@@ -251,20 +251,34 @@ cp data/promptvault.db data/backups/promptvault-backup-$(date +%Y%m%d_%H%M%S).db
 ### 2. **Verify Backup Integrity**
 
 ```bash
-# Test PostgreSQL backup restoration (on test database)
-gunzip -c data/backups/promptvault-backup-*.sql.gz | psql -U promptvault -d test_promptvault
+# Restore the newest backup into a throwaway database inside the db container
+# (no psql needed on the host, and the live database is not touched)
+BACKUP=$(ls -t data/backups/promptvault-backup-*.sql.gz | head -1)
+docker-compose exec -T db psql -U promptvault -d postgres -c "CREATE DATABASE test_promptvault;"
+gunzip -c "$BACKUP" | docker-compose exec -T db psql -U promptvault -d test_promptvault -q
+docker-compose exec -T db psql -U promptvault -d test_promptvault -tAc "SELECT COUNT(*) FROM prompts;"
+docker-compose exec -T db psql -U promptvault -d postgres -c "DROP DATABASE test_promptvault;"
 
 # Verify file size (should be reasonable, not empty)
-ls -lh data/backups/promptvault-backup-*.sql.gz | tail -1
+ls -lh "$BACKUP"
 ```
 
-### 3. **Document Current State**
+The prompt count must match the live database. `psql` inside the `db` container connects over the local socket, which the `postgres` image trusts without a password. That is convenient here, but it also means a `psql` test run inside the `db` container can never prove that a password is correct (see [Changing the Database Password](#changing-the-database-password)).
+
+### 3. **Document Current State and Tag the Running Image**
 
 ```bash
-# Save version and configuration
+# Save the running image's tag so a rollback does not need a rebuild.
+# Use the container's image ID: the `:latest` tag may already point at a newer build.
+docker tag "$(docker inspect promptvault-web --format '{{.Image}}')" promptvault-web:pre-update
+
+# Save the image list and the compose configuration
 docker-compose images > backup_images_$(date +%Y%m%d).txt
 docker-compose config > backup_compose_$(date +%Y%m%d).yml
+chmod 600 backup_compose_*.yml
 ```
+
+`docker-compose config` prints the resolved configuration, **including `POSTGRES_PASSWORD` in clear text**. Keep that file private (`chmod 600`), never commit it, and delete it once the update is verified.
 
 ### 4. **Test Migration Path**
 
@@ -315,16 +329,20 @@ docker-compose exec -T db psql -U promptvault -d promptvault -c "SELECT COUNT(*)
 
 ### Update with Docker Compose (Recommended)
 
-This is the safest approach with proper database migration handling. The build step rebuilds both the `web` and `docs` images, and step 6 recreates both containers, so the documentation portal (default: <http://localhost:7876>) stays in step with the application:
+This is the safest approach with proper database migration handling. The build step rebuilds both the `web` and `docs` images, and step 6 recreates both containers, so the documentation portal (default: <http://localhost:7876>) stays in step with the application.
+
+If your production settings live in a separate `.env.production` (recommended, see [Production Environment File](#production-environment-file)), add `--env-file .env.production` to **every** `docker-compose` command below. Without it, Compose reads `.env` and your development values (such as `ENVIRONMENT=development` or `DISABLE_RATE_LIMITING=true`) replace the production ones.
 
 ```bash
 # 1. Pull latest code from main branch
 git checkout main
 git pull origin main
 
-# 2. Create database backup (CRITICAL!)
-docker-compose exec db pg_dump -U promptvault -d promptvault --verbose | gzip > \
+# 2. Create database backup (CRITICAL!) and tag the running image for rollback
+docker-compose exec -T db pg_dump -U promptvault -d promptvault --verbose | gzip > \
   data/backups/promptvault-backup-$(date +%Y%m%d_%H%M%S).sql.gz
+# Tag by the container's image ID, not `:latest`, which may already be a newer build
+docker tag "$(docker inspect promptvault-web --format '{{.Image}}')" promptvault-web:pre-update
 
 # 3. Build new Docker image with latest code
 docker-compose build --no-cache
@@ -349,6 +367,7 @@ docker-compose exec web alembic upgrade head
 # 8. Verify update was successful
 docker-compose logs web | head -50
 curl http://localhost:8001/api/health
+docker exec promptvault-web python -c "import importlib.metadata as m; print(m.version('promptvault'))"
 ```
 
 ### Important: Database Migrations
@@ -425,12 +444,19 @@ After update completes, verify:
 # 1. Health endpoint returns 200
 curl -i http://localhost:8001/api/health
 
-# 2. Expected response
+# 2. Expected response (the timestamp differs)
 {
   "status": "healthy",
-  "database": "connected",
-  "version": "1.5.0"
+  "timestamp": "2026-11-24T18:40:10.185871",
+  "service": "PromptVault API"
 }
+# The endpoint does not report the version or the database state. Check the
+# version of the running image instead:
+docker exec promptvault-web python -c "import importlib.metadata as m; print(m.version('promptvault'))"
+
+# 2b. Check the settings the container actually runs with
+docker inspect promptvault-web --format '{{range .Config.Env}}{{println .}}{{end}}' \
+  | grep -E '^(ENVIRONMENT|LOG_LEVEL|DISABLE_RATE_LIMITING)='
 
 # 3. Check logs for errors
 docker-compose logs web | grep -i error
@@ -501,31 +527,30 @@ docker-compose exec web alembic upgrade head
 
 #### Rollback to Previous Version
 
-If the update causes critical issues:
+If the update causes critical issues, go back to the image you tagged before the update (`promptvault-web:pre-update`, see the Pre-Deployment Checklist). Do **not** roll back by checking out the old commit and rebuilding with `--no-cache`: the image installs dependencies with `pip install -e .`, which resolves them again and ignores `uv.lock`, so the result can differ from the image you ran before. Some releases cannot be rebuilt at all: any image built from the 1.16.0 source crashes on PostgreSQL with `No module named 'psycopg'` (fixed in 1.17.0).
 
 ```bash
-# 1. Stop application
-docker-compose stop web
+# 1. Put the previous web image back and recreate the container without rebuilding
+docker tag promptvault-web:pre-update promptvault-web:latest
+docker-compose up -d --no-build web
 
-# 2. Restore database from backup
+# 2. Verify
+docker-compose logs web | tail -20
+docker exec promptvault-web python -c "import importlib.metadata as m; print(m.version('promptvault'))"
+```
+
+Restore the database only if the update ran database migrations (check the release's section in `CHANGELOG.md`; many releases have none). Restoring replaces **all** data written since the backup:
+
+```bash
+docker-compose stop web
 docker-compose exec -T db psql -U promptvault postgres -c "DROP DATABASE promptvault;"
 docker-compose exec -T db psql -U promptvault postgres -c "CREATE DATABASE promptvault;"
 gunzip -c data/backups/promptvault-backup-YYYYMMDD_HHMMSS.sql.gz | \
   docker-compose exec -T db psql -U promptvault -d promptvault
-
-# 3. Checkout previous version
-git log --oneline | head -5  # Find previous version
-git checkout <previous-commit-hash>
-
-# 4. Rebuild with old code
-docker-compose build --no-cache
-
-# 5. Restart web and docs (the docs image is rebuilt from the old code too)
-docker-compose up -d web docs
-
-# 6. Verify
-docker-compose logs web | tail -20
+docker-compose up -d --no-build web
 ```
+
+If you have no tagged image, check out the previous release tag (`git checkout vX.Y.Z`, not a commit hash) and rebuild with `docker-compose build`, then check the result as in step 2. Docker's layer cache may reuse the old dependencies, but nothing guarantees it, so confirm the version and that the app starts before you rely on it.
 
 ---
 
@@ -640,9 +665,13 @@ cd PromptVault
 # Create environment file
 cp .env.example .env
 
-# Edit .env and set POSTGRES_PASSWORD
+# Add a strong database password (.env.example has no POSTGRES_PASSWORD line, and
+# Docker Compose silently falls back to "changeme" when it is missing)
+echo "POSTGRES_PASSWORD=$(openssl rand -hex 24)" >> .env
 nano .env
 ```
+
+`.env.example` is a **development** template (`ENVIRONMENT=development`). Docker Compose passes some of its values to the containers, so for a production server create a separate `.env.production` instead, see [Production Environment File](#production-environment-file).
 
 ### 2. Start Services
 
@@ -1044,6 +1073,79 @@ DISABLE_RATE_LIMITING=false PORT=8003 python run_web.py
 - API testing without throttling delays
 - Bug investigation and debugging
 
+**Check production:** Docker Compose passes this variable from `.env` to the container, so a development `.env` that sets it to `true` also disables rate limiting on a server started from the same directory. Confirm it is off:
+
+```bash
+docker inspect promptvault-web --format '{{range .Config.Env}}{{println .}}{{end}}' | grep DISABLE_RATE_LIMITING
+# Expected: DISABLE_RATE_LIMITING=false (or no output)
+```
+
+### Production Environment File
+
+Docker Compose reads the `.env` next to `docker-compose.yml` and substitutes it into the compose file. That is the same file you use for local development, so development values reach a production stack started from the same directory. Compose only takes these variables from it: `ENVIRONMENT`, `LOG_LEVEL`, `POSTGRES_PASSWORD`, `DISABLE_RATE_LIMITING`, `JWT_ACCESS_TOKEN_EXPIRE_SECONDS`, `JWT_REFRESH_TOKEN_EXPIRE_SECONDS`, `DOCS_APP_URL` and `VITE_DOCS_PORTAL_URL`. The `.env` file itself is not copied into the image (`.dockerignore` excludes it).
+
+Keep a separate file for production and pass it on every command:
+
+```bash
+# .env.production must be gitignored before it holds secrets
+echo '.env.production' >> .gitignore
+cp .env .env.production
+
+sed -i.bak \
+  -e 's/^ENVIRONMENT=.*/ENVIRONMENT=production/' \
+  -e 's/^LOG_LEVEL=.*/LOG_LEVEL=WARNING/' \
+  -e 's/^DISABLE_RATE_LIMITING=.*/DISABLE_RATE_LIMITING=false/' \
+  .env.production && rm .env.production.bak
+grep -E '^(ENVIRONMENT|LOG_LEVEL|DISABLE_RATE_LIMITING)=' .env.production
+
+# Preview what Compose will use, then start
+docker-compose --env-file .env.production config | grep -E "ENVIRONMENT|LOG_LEVEL|DISABLE_RATE|POSTGRES_PASSWORD"
+docker-compose --env-file .env.production up -d
+```
+
+Pass `--env-file .env.production` on **every** later `docker-compose` command (`up`, `build`, `ps`, `exec`), otherwise Compose goes back to `.env`. `docker-compose config` prints `POSTGRES_PASSWORD` in clear text, so do not paste its output anywhere.
+
+`ENVIRONMENT=production` can enforce stricter behavior than development (for example requirements around HTTPS and cookies). After switching, read `docker-compose logs --tail 30 web` and fix anything it reports.
+
+### Changing the Database Password
+
+If `POSTGRES_PASSWORD` was never set, Docker Compose uses the default `changeme` (`${POSTGRES_PASSWORD:-changeme}`). The database container publishes no host port, so it is only reachable from the Docker network, but you should still replace the default.
+
+Postgres reads `POSTGRES_PASSWORD` only when it first creates the data volume. Changing the variable alone does **not** change the password of an existing database, so change it inside Postgres first:
+
+```bash
+# 1. Generate a password without URL-special characters (it ends up in a connection URL)
+NEWPW=$(openssl rand -hex 24)
+
+# 2. Change it in the database (the local socket inside the container needs no password)
+docker exec promptvault-db psql -U promptvault -d promptvault -c "ALTER USER promptvault PASSWORD '$NEWPW'"
+
+# 3. Store it for Compose and recreate the containers straight away
+echo "POSTGRES_PASSWORD=$NEWPW" >> .env.production
+docker-compose --env-file .env.production up -d
+```
+
+Between steps 2 and 3 the running web container still holds the old password, so new database connections fail for a few seconds. Do it at a quiet moment, and take a fresh backup afterwards.
+
+**Verify from another container.** Do not test from inside the `db` container: the `postgres` image trusts connections from `127.0.0.1` and the local socket, so such a test accepts any password and proves nothing. Connect from the web container, which goes through the network and `scram-sha-256`:
+
+```bash
+# The old password must be rejected
+docker exec promptvault-web python -c "
+import psycopg
+try:
+    psycopg.connect('postgresql://promptvault:changeme@db:5432/promptvault', connect_timeout=5).close(); print('ACCEPTED (old password still works)')
+except Exception as e: print('REJECTED:', str(e).strip().splitlines()[0])"
+
+# The password the web container uses now must work
+docker exec promptvault-web python -c "
+import os, psycopg
+url = os.environ['DATABASE_URL'].replace('postgresql+psycopg2://','postgresql://').replace('postgresql+psycopg://','postgresql://')
+with psycopg.connect(url, connect_timeout=5) as c: print('OK, select 1 ->', c.execute('select 1').fetchone()[0], '| password is changeme:', ':changeme@' in url)"
+```
+
+Expected: `REJECTED: ... password authentication failed`, then `OK, select 1 -> 1 | password is changeme: False`. Keep `.env.production` somewhere safe (a password manager): it holds the only copy of the password outside the database.
+
 ### Database URL Examples
 
 **SQLite:**
@@ -1065,6 +1167,10 @@ DATABASE_URL=postgresql://promptvault:password@db:5432/promptvault
 # Remote
 DATABASE_URL=postgresql://user:password@remote-host:5432/dbname
 ```
+
+A plain `postgresql://` URL uses the psycopg v3 driver (installed with PromptVault since 1.17.0). The older `postgresql+psycopg2://` form is still accepted and is mapped to psycopg v3, so existing `.env` files need no change. `pg_dump` and `psql` always receive a plain `postgresql://` URI, because they reject the `+driver` suffix.
+
+With Docker Compose you do not set `DATABASE_URL` yourself: the compose file builds it from `POSTGRES_PASSWORD`.
 
 ---
 
@@ -1207,21 +1313,23 @@ PromptVault includes a health check endpoint at `/api/health`:
 # Check health
 curl http://localhost:8003/api/health
 
-# Expected response
+# Expected response (the timestamp differs)
 {
   "status": "healthy",
-  "database": "connected",
-  "version": "1.0.0"
+  "timestamp": "2026-11-24T18:40:10.185871",
+  "service": "PromptVault API"
 }
 ```
 
+The endpoint reports only that the API answers. It does not include the version or the database state; see "Verify Update Success" for how to check those.
+
 ### Docker Health Checks
 
-The Dockerfile includes automatic health checks:
+The Dockerfile includes automatic health checks (the container listens on port 8001):
 
 ```dockerfile
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:8003/api/health || exit 1
+    CMD curl -f http://localhost:8001/api/health || exit 1
 ```
 
 Check container health:
@@ -1420,9 +1528,11 @@ gunicorn src.web.app:app -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:80
 Before deploying to production:
 
 - [ ] ⚠️ **JWT keys generated locally and stored in `secrets/jwt/`** (NEVER in Git!)
-- [ ] Set strong `POSTGRES_PASSWORD`
-- [ ] Configure `DATABASE_URL` with production credentials
+- [ ] Use a separate `.env.production` (gitignored) and pass `--env-file .env.production` on every `docker-compose` command, see [Production Environment File](#production-environment-file)
+- [ ] Set a strong `POSTGRES_PASSWORD` (Compose silently uses `changeme` when it is unset), see [Changing the Database Password](#changing-the-database-password)
+- [ ] Configure `DATABASE_URL` with production credentials (outside Docker Compose)
 - [ ] Set `ENVIRONMENT=production`
+- [ ] Set `DISABLE_RATE_LIMITING=false` (or leave it unset), and confirm it on the running container
 - [ ] Set `LOG_LEVEL=WARNING` or `ERROR`
 - [ ] Enable database backups
 - [ ] Configure firewall rules
