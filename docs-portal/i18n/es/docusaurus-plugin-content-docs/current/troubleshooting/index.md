@@ -21,7 +21,14 @@ Si PromptVault no puede conectarse a PostgreSQL al iniciar:
 
 - Confirme que el contenedor/servicio realmente está en ejecución (`docker-compose ps`).
 - Verifique que `DATABASE_URL` en `.env` coincida con las credenciales y el host/puerto en el que PostgreSQL realmente está escuchando.
-- Si cambió `POSTGRES_PASSWORD`, un volumen de datos existente ya inicializado no adopta la nueva contraseña automáticamente. Para una instalación existente, actualice la contraseña en la base de datos mediante el procedimiento establecido. Recree un volumen solo para una instalación nueva sin datos que conservar.
+- Si cambió `POSTGRES_PASSWORD`, un volumen de datos existente ya inicializado no adopta la nueva contraseña automáticamente. En una instalación existente, cambie primero la contraseña en la base de datos: consulte [Contraseña de la base de datos](../installation/production-setup.md#replace-the-default-database-password). Recree un volumen solo para una instalación nueva sin datos que conservar.
+- Si inicia Docker Compose con `--env-file .env.production`, use esa opción en cada comando. Sin ella, Compose lee `.env` y puede usar un `POSTGRES_PASSWORD` distinto (o el valor predeterminado `changeme`) del que espera la base de datos.
+
+## El arranque falla con `No module named 'psycopg'` {#psycopg-missing}
+
+En PostgreSQL, el contenedor `web` se reinicia en bucle y su registro termina con `ModuleNotFoundError: No module named 'psycopg'`. El mismo error aparece al ejecutar `alembic upgrade head`. Afecta a PromptVault 1.16.0 y a las imágenes compiladas a partir de su código: usan una biblioteca de base de datos más reciente que espera el controlador psycopg v3, que esa versión no instaló. Las instalaciones con SQLite no se ven afectadas.
+
+Actualice a PromptVault 1.17.0 o posterior siguiendo [Actualizar PromptVault](../installation/update.md). No necesita cambiar `DATABASE_URL`: funcionan tanto `postgresql://` como la forma antigua `postgresql+psycopg2://`.
 
 ## Fallos de migración {#migration-failures}
 

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Deployment guide, `.env.example` and documentation portal corrected for production**: Docker Compose passes `ENVIRONMENT`, `LOG_LEVEL`, `DISABLE_RATE_LIMITING` and `POSTGRES_PASSWORD` from the same `.env` you use for development, so a development `.env` could leave a production stack in debug mode with rate limiting off. The guide now recommends a separate `.env.production` (`COMPOSE_ENV_FILES` or `--env-file`), documents the `changeme` fallback and how to replace that password on an existing database, tags the running image for rollback instead of rebuilding old code, uses `-T` on the piped `pg_dump`, and shows the real `/api/health` response. The portal gets a new page, "Set up a production environment" (English, French, German, Spanish), and a rewritten "Return to the previous version" section in "Update PromptVault".
+
 ## [1.17.0] - 2026-11-24
 
 ### Security

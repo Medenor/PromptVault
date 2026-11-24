@@ -21,7 +21,14 @@ If PromptVault can't reach PostgreSQL on startup:
 
 - Confirm that the container or service is running with `docker-compose ps`.
 - Double-check `DATABASE_URL` in `.env` matches the credentials and host/port PostgreSQL is actually listening on.
-- If you changed `POSTGRES_PASSWORD`, an existing initialized data volume does not change its password automatically. For an existing installation, update the password in the database using your established database procedure. Recreate a volume only for a new installation with no data to keep.
+- If you changed `POSTGRES_PASSWORD`, an existing initialized data volume does not change its password automatically. For an existing installation, change the password in the database first: see [Database Password](../installation/production-setup.md#replace-the-default-database-password). Recreate a volume only for a new installation with no data to keep.
+- If you start Docker Compose with `--env-file .env.production`, use that option on every command. Without it, Compose reads `.env` and may use a different `POSTGRES_PASSWORD` (or the default `changeme`) than the database expects.
+
+## Startup Fails With `No module named 'psycopg'` {#psycopg-missing}
+
+On PostgreSQL, the `web` container restarts in a loop and its log ends with `ModuleNotFoundError: No module named 'psycopg'`. The same error appears when you run `alembic upgrade head`. This affects PromptVault 1.16.0 and images built from its source: they use a newer database library that expects the psycopg v3 driver, which that release did not install. SQLite installations are not affected.
+
+Update to PromptVault 1.17.0 or later by following [Update PromptVault](../installation/update.md). You do not need to change `DATABASE_URL`: both `postgresql://` and the older `postgresql+psycopg2://` form work.
 
 ## Migration Failures {#migration-failures}
 

@@ -21,7 +21,14 @@ Wenn PromptVault beim Start keine Verbindung zu PostgreSQL herstellen kann:
 
 - Bestätigen Sie, dass der Container/Dienst tatsächlich läuft (`docker-compose ps`).
 - Prüfen Sie, ob `DATABASE_URL` in `.env` mit den Zugangsdaten und dem Host/Port übereinstimmt, auf dem PostgreSQL tatsächlich lauscht.
-- Wenn Sie `POSTGRES_PASSWORD` geändert haben, übernimmt ein bestehendes initialisiertes Datenvolume das neue Passwort nicht automatisch. Aktualisieren Sie bei einer bestehenden Installation das Passwort in der Datenbank nach Ihrem festgelegten Verfahren. Erstellen Sie ein Volume nur für eine neue Installation ohne zu behaltende Daten neu.
+- Wenn Sie `POSTGRES_PASSWORD` geändert haben, übernimmt ein bestehendes initialisiertes Datenvolume das neue Passwort nicht automatisch. Ändern Sie bei einer bestehenden Installation das Passwort zuerst in der Datenbank: siehe [Datenbankpasswort](../installation/production-setup.md#replace-the-default-database-password). Erstellen Sie ein Volume nur für eine neue Installation ohne zu behaltende Daten neu.
+- Wenn Sie Docker Compose mit `--env-file .env.production` starten, verwenden Sie diese Option bei jedem Befehl. Ohne sie liest Compose `.env` und verwendet möglicherweise ein anderes `POSTGRES_PASSWORD` (oder den Standardwert `changeme`), als die Datenbank erwartet.
+
+## Start schlägt mit `No module named 'psycopg'` fehl {#psycopg-missing}
+
+Unter PostgreSQL startet der `web`-Container in einer Schleife neu, und sein Protokoll endet mit `ModuleNotFoundError: No module named 'psycopg'`. Derselbe Fehler erscheint bei `alembic upgrade head`. Betroffen sind PromptVault 1.16.0 und daraus gebaute Images: Sie verwenden eine neuere Datenbankbibliothek, die den Treiber psycopg v3 erwartet, den diese Version nicht installiert hat. SQLite-Installationen sind nicht betroffen.
+
+Aktualisieren Sie auf PromptVault 1.17.0 oder neuer, indem Sie [PromptVault aktualisieren](../installation/update.md) folgen. Sie müssen `DATABASE_URL` nicht ändern: `postgresql://` und die ältere Form `postgresql+psycopg2://` funktionieren beide.
 
 ## Migrationsfehler {#migration-failures}
 

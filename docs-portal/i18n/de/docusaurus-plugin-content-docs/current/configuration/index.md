@@ -13,20 +13,25 @@ Begriffe: Eine URL ist die Adresse für die Verbindung zu einem Dienst; SQL ist 
 
 | Variable | Standard | Zweck |
 |---|---|---|
-| `DATABASE_URL` | `sqlite:///./data-dev/promptvault.db` | Verbindungszeichenfolge. Verwenden Sie in der Produktion eine `postgresql://`-URL. |
+| `DATABASE_URL` | `sqlite:///./data-dev/promptvault.db` | Verbindungszeichenfolge. Verwenden Sie in der Produktion eine `postgresql://`-URL. Mit Docker Compose setzen Sie sie nicht selbst: Die Compose-Datei baut sie aus `POSTGRES_PASSWORD` auf. |
 | `DB_POOL_SIZE` | `20` | Größe des Verbindungspools (bei SQLite ignoriert). |
 | `DB_POOL_TIMEOUT` | `30` | Timeout für die Pool-Auscheckung, in Sekunden. |
 | `DB_POOL_RECYCLE` | `3600` | Sekunden, bevor eine gepoolte Verbindung erneuert wird. |
 | `DB_ECHO` | `false` | Protokolliert jede SQL-Anweisung — nützlich zum Debuggen, störend in der Produktion. |
 
+Eine einfache `postgresql://`-URL verwendet den Treiber psycopg v3, den PromptVault ab Version 1.17.0 installiert. Die ältere Form `postgresql+psycopg2://` wird weiterhin akzeptiert und auf psycopg v3 abgebildet, bestehende `.env`-Dateien müssen daher nicht geändert werden.
+
 ## Anwendung {#application}
 
 | Variable | Standard | Zweck |
 |---|---|---|
-| `ENVIRONMENT` | `development` | Einer von `development`, `testing`, `production`. |
+| `ENVIRONMENT` | `development` | Einer von `development`, `testing`, `production`. Docker Compose reicht sie an den Container weiter. |
 | `PROMPTVAULT_DATA_DIR` | `./data-dev` | Verzeichnis für Datendateien, Backups und Protokolle. **Verwenden Sie pro Umgebung (Dev/Staging/Prod) einen eigenen Pfad**, selbst wenn sie sich ein Dateisystem teilen — ein gemeinsames Datenverzeichnis über Umgebungen hinweg kann dazu führen, dass geplante Backups und Wiederherstellungen kollidieren. |
-| `LOG_LEVEL` | `INFO` | `DEBUG`, `INFO`, `WARNING`, `ERROR` oder `CRITICAL`. |
+| `LOG_LEVEL` | `INFO` | `DEBUG`, `INFO`, `WARNING`, `ERROR` oder `CRITICAL`. Verwenden Sie in der Produktion `WARNING`. Docker Compose reicht sie an den Container weiter. |
 | `AUDIT_LOG_LEVEL` | `INFO` | Protokollstufe speziell für Versionskontroll- und Backup-Audit-Ereignisse. |
+| `DISABLE_RATE_LIMITING` | `false` | Schaltet die Ratenbegrenzung aus. Nur für Entwicklung und Tests: Setzen Sie sie in der Produktion niemals auf `true`. Docker Compose reicht sie an den Container weiter, daher kann eine Entwicklungs-`.env` sie auf einem Server einschalten. |
+
+Für die Produktion halten Sie `ENVIRONMENT=production`, `LOG_LEVEL=WARNING` und `DISABLE_RATE_LIMITING=false` in einer separaten Datei. Siehe [Produktionsumgebung einrichten](../installation/production-setup.md).
 
 ## Authentifizierung {#authentication}
 

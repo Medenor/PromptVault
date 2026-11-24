@@ -38,7 +38,9 @@ cd PromptVault
 
 # Configurar el entorno
 cp .env.example .env
-# Edite .env y defina POSTGRES_PASSWORD (y otros valores según sea necesario)
+# Edite .env según sea necesario y defina una contraseña segura para la base de datos.
+# Sin POSTGRES_PASSWORD, Docker Compose usa en silencio «changeme».
+echo "POSTGRES_PASSWORD=$(openssl rand -hex 24)" >> .env
 
 # Generar las claves de firma JWT para la autenticación
 openssl ecparam -name prime256v1 -genkey -noout -out es256-private.pem
@@ -60,6 +62,8 @@ docker-compose exec web python scripts/create_admin_user.py
 # (Opcional) Migrar datos JSON existentes
 docker-compose exec web python scripts/migrate_json_to_db.py
 ```
+
+`.env.example` es una plantilla de desarrollo (`ENVIRONMENT=development`) y Docker Compose pasa algunos de sus valores a los contenedores. Para un servidor de producción, cree en su lugar un `.env.production` independiente: consulte [Archivo de entorno de producción](production-setup.md).
 
 Cuando los contenedores estén en ejecución, abra `http://localhost:8001` e inicie sesión con las credenciales de administrador creadas. Si la página no se abre, consulte [Solución de problemas](../troubleshooting/index.md) antes de cambiar datos o volúmenes de Docker.
 
