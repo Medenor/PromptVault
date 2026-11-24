@@ -20,11 +20,8 @@ cd promptvault
 ### 2. Install Dependencies
 
 ```bash
-# Using pip
-pip install -r requirements.txt
-
-# Or using the project
-pip install -e .
+# The setup wizard's dependencies (click, rich, httpx) live in the `setup` extra
+pip install -e ".[setup]"
 ```
 
 ### 3. Run the Setup Wizard
@@ -236,7 +233,7 @@ After setup:
 # Quick Start (5 minutes)
 git clone <repo>
 cd promptvault
-pip install -e .
+pip install -e ".[setup]"
 python scripts/setup/setup.py --quick
 python scripts/create_admin.py
 # Open http://localhost:8001

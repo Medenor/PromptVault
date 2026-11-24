@@ -94,11 +94,8 @@ python3 scripts/setup/setup.py
 **Solutions:**
 
 ```bash
-# Install required dependencies
-pip install rich click PyYAML
-
-# Or install all project dependencies
-pip install -e .
+# Install the project with the setup wizard's extra dependencies
+pip install -e ".[setup]"
 
 # If using virtual environment, activate it first
 source venv/bin/activate  # Linux/macOS
@@ -106,7 +103,7 @@ source venv/bin/activate  # Linux/macOS
 venv\Scripts\activate  # Windows
 
 # Then install dependencies
-pip install -e .
+pip install -e ".[setup]"
 ```
 
 ### Permission Denied Errors

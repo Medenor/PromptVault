@@ -533,11 +533,8 @@ python scripts/setup/setup.py --component deploy
 Ensure dependencies are installed:
 
 ```bash
-# Install Python dependencies
-pip install -r requirements.txt
-
-# Or if using setup tools
-pip install -e .
+# Install the project with the setup wizard's extra dependencies
+pip install -e ".[setup]"
 ```
 
 ### Docker Issues

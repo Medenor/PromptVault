@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - **Build tooling now requires Node.js 26 or later** (#91). CI selects Node.js 26 through `.nvmrc`, and both Docker builds use digest-pinned `node:26-slim` images.
+- **Setup wizard dependencies moved to the `setup` extra** (#114): `click`, `rich` and `httpx` are only used by `scripts/setup/` (and `httpx` by the test client), which runs on the host, so the Docker image no longer installs them. Install them with `pip install -e ".[setup]"` before running `scripts/setup/setup.py`; `make install` does this for you. The weekly security audit now also checks the `test` and `setup` extras.
+
+### Removed
+
+- **Unused dependencies** (#114): `aiofiles`, `greenlet` and `freezegun` (Python), `jiti` and `fake-indexeddb` (npm) were declared but never used. `dotenv` moved from npm `dependencies` to `devDependencies`, since only the Playwright config uses it.
 
 ### Fixed
 
