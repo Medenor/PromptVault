@@ -13,20 +13,25 @@ Termes utilisés ci-dessous : une URL est une adresse permettant de joindre un s
 
 | Variable | Valeur par défaut | Rôle |
 |---|---|---|
-| `DATABASE_URL` | `sqlite:///./data-dev/promptvault.db` | Chaîne de connexion. Utilisez une URL `postgresql://` en production. |
+| `DATABASE_URL` | `sqlite:///./data-dev/promptvault.db` | Chaîne de connexion. Utilisez une URL `postgresql://` en production. Avec Docker Compose, vous ne la définissez pas : le fichier compose la construit à partir de `POSTGRES_PASSWORD`. |
 | `DB_POOL_SIZE` | `20` | Taille du pool de connexions (ignoré pour SQLite). |
 | `DB_POOL_TIMEOUT` | `30` | Délai d'attente pour obtenir une connexion du pool, en secondes. |
 | `DB_POOL_RECYCLE` | `3600` | Secondes avant qu'une connexion du pool ne soit recyclée. |
 | `DB_ECHO` | `false` | Journalise chaque instruction SQL — utile pour le débogage, bruyant en production. |
 
+Une URL `postgresql://` simple utilise le pilote psycopg v3, installé par PromptVault 1.17.0 et les versions ultérieures. L'ancienne forme `postgresql+psycopg2://` reste acceptée et est convertie vers psycopg v3 : les fichiers `.env` existants n'ont donc pas besoin d'être modifiés.
+
 ## Application {#application}
 
 | Variable | Valeur par défaut | Rôle |
 |---|---|---|
-| `ENVIRONMENT` | `development` | L'une des valeurs `development`, `testing`, `production`. |
+| `ENVIRONMENT` | `development` | L'une des valeurs `development`, `testing`, `production`. Docker Compose la transmet au conteneur. |
 | `PROMPTVAULT_DATA_DIR` | `./data-dev` | Répertoire des fichiers de données, sauvegardes et journaux. **Utilisez un chemin distinct par environnement** (dev/staging/prod), même s'ils partagent un système de fichiers — partager un répertoire de données entre environnements peut faire entrer en collision les sauvegardes et restaurations planifiées. |
-| `LOG_LEVEL` | `INFO` | `DEBUG`, `INFO`, `WARNING`, `ERROR` ou `CRITICAL`. |
+| `LOG_LEVEL` | `INFO` | `DEBUG`, `INFO`, `WARNING`, `ERROR` ou `CRITICAL`. Utilisez `WARNING` en production. Docker Compose la transmet au conteneur. |
 | `AUDIT_LOG_LEVEL` | `INFO` | Niveau de journalisation spécifique aux événements d'audit de contrôle de version et de sauvegarde. |
+| `DISABLE_RATE_LIMITING` | `false` | Désactive la limitation de débit. Réservé au développement et aux tests : ne la définissez jamais sur `true` en production. Docker Compose la transmet au conteneur : un `.env` de développement peut donc l'activer sur un serveur. |
+
+Pour la production, gardez `ENVIRONMENT=production`, `LOG_LEVEL=WARNING` et `DISABLE_RATE_LIMITING=false` dans un fichier distinct. Voir [Configurer un environnement de production](../installation/production-setup.md).
 
 ## Authentification {#authentication}
 

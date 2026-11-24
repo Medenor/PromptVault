@@ -13,20 +13,25 @@ Términos utilizados: una URL es una dirección para conectarse a un servicio; S
 
 | Variable | Predeterminado | Propósito |
 |---|---|---|
-| `DATABASE_URL` | `sqlite:///./data-dev/promptvault.db` | Cadena de conexión. Use una URL `postgresql://` en producción. |
+| `DATABASE_URL` | `sqlite:///./data-dev/promptvault.db` | Cadena de conexión. Use una URL `postgresql://` en producción. Con Docker Compose no la define usted: el archivo compose la construye a partir de `POSTGRES_PASSWORD`. |
 | `DB_POOL_SIZE` | `20` | Tamaño del pool de conexiones (ignorado en SQLite). |
 | `DB_POOL_TIMEOUT` | `30` | Tiempo de espera para obtener una conexión del pool, en segundos. |
 | `DB_POOL_RECYCLE` | `3600` | Segundos antes de reciclar una conexión del pool. |
 | `DB_ECHO` | `false` | Registra cada sentencia SQL — útil para depurar, ruidoso en producción. |
 
+Una URL `postgresql://` sencilla usa el controlador psycopg v3, que PromptVault instala desde la versión 1.17.0. La forma antigua `postgresql+psycopg2://` se sigue aceptando y se convierte a psycopg v3, por lo que los archivos `.env` existentes no necesitan cambios.
+
 ## Aplicación {#application}
 
 | Variable | Predeterminado | Propósito |
 |---|---|---|
-| `ENVIRONMENT` | `development` | Uno de `development`, `testing`, `production`. |
+| `ENVIRONMENT` | `development` | Uno de `development`, `testing`, `production`. Docker Compose lo pasa al contenedor. |
 | `PROMPTVAULT_DATA_DIR` | `./data-dev` | Directorio para archivos de datos, copias de seguridad y registros. **Use una ruta distinta por entorno** (dev/staging/prod) incluso si comparten sistema de archivos — compartir un directorio de datos entre entornos puede provocar que las copias de seguridad y restauraciones programadas colisionen. |
-| `LOG_LEVEL` | `INFO` | `DEBUG`, `INFO`, `WARNING`, `ERROR` o `CRITICAL`. |
+| `LOG_LEVEL` | `INFO` | `DEBUG`, `INFO`, `WARNING`, `ERROR` o `CRITICAL`. Use `WARNING` en producción. Docker Compose lo pasa al contenedor. |
 | `AUDIT_LOG_LEVEL` | `INFO` | Nivel de registro específico para eventos de auditoría de control de versiones y copias de seguridad. |
+| `DISABLE_RATE_LIMITING` | `false` | Desactiva el límite de tasa. Solo para desarrollo y pruebas: no la establezca nunca en `true` en producción. Docker Compose la pasa al contenedor, de modo que un `.env` de desarrollo puede activarla en un servidor. |
+
+Para producción, mantenga `ENVIRONMENT=production`, `LOG_LEVEL=WARNING` y `DISABLE_RATE_LIMITING=false` en un archivo independiente. Consulte [Configurar un entorno de producción](../installation/production-setup.md).
 
 ## Autenticación {#authentication}
 

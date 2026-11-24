@@ -1103,7 +1103,7 @@ docker-compose --env-file .env.production config | grep -E "ENVIRONMENT|LOG_LEVE
 docker-compose --env-file .env.production up -d
 ```
 
-Pass `--env-file .env.production` on **every** later `docker-compose` command (`up`, `build`, `ps`, `exec`), otherwise Compose goes back to `.env`. `docker-compose config` prints `POSTGRES_PASSWORD` in clear text, so do not paste its output anywhere.
+Pass `--env-file .env.production` on **every** later `docker-compose` command (`up`, `build`, `ps`, `exec`), otherwise Compose goes back to `.env`. To avoid repeating it, run `export COMPOSE_ENV_FILES=.env.production` once in each terminal window you use for production (Docker Compose 2.24 or later): every `docker-compose` command in that window then uses the file. `docker-compose config` prints `POSTGRES_PASSWORD` in clear text, so do not paste its output anywhere.
 
 `ENVIRONMENT=production` can enforce stricter behavior than development (for example requirements around HTTPS and cookies). After switching, read `docker-compose logs --tail 30 web` and fix anything it reports.
 

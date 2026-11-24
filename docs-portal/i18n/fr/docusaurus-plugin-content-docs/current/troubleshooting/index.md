@@ -21,7 +21,14 @@ Si PromptVault ne parvient pas à joindre PostgreSQL au démarrage :
 
 - Vérifiez que le conteneur ou le service est en cours d'exécution avec `docker-compose ps`.
 - Vérifiez que `DATABASE_URL` dans `.env` correspond bien aux identifiants et à l'hôte/port sur lesquels PostgreSQL écoute réellement.
-- Si vous avez modifié `POSTGRES_PASSWORD`, un volume de données existant déjà initialisé ne change pas automatiquement de mot de passe. Pour une installation existante, mettez à jour le mot de passe dans la base de données selon votre procédure établie. Recréez un volume uniquement pour une nouvelle installation sans données à conserver.
+- Si vous avez modifié `POSTGRES_PASSWORD`, un volume de données existant déjà initialisé ne change pas automatiquement de mot de passe. Pour une installation existante, changez d'abord le mot de passe dans la base de données : voir [Mot de passe de la base de données](../installation/production-setup.md#replace-the-default-database-password). Recréez un volume uniquement pour une nouvelle installation sans données à conserver.
+- Si vous démarrez Docker Compose avec `--env-file .env.production`, utilisez cette option à chaque commande. Sans elle, Compose lit `.env` et peut utiliser un `POSTGRES_PASSWORD` différent (ou la valeur par défaut `changeme`) de celui qu'attend la base de données.
+
+## Échec du démarrage avec `No module named 'psycopg'` {#psycopg-missing}
+
+Sur PostgreSQL, le conteneur `web` redémarre en boucle et son journal se termine par `ModuleNotFoundError: No module named 'psycopg'`. La même erreur apparaît avec `alembic upgrade head`. Cela concerne PromptVault 1.16.0 et les images construites à partir de son code source : elles utilisent une bibliothèque de base de données plus récente qui attend le pilote psycopg v3, que cette version n'installait pas. Les installations SQLite ne sont pas concernées.
+
+Passez à PromptVault 1.17.0 ou une version ultérieure en suivant [Mettre à jour PromptVault](../installation/update.md). Vous n'avez pas besoin de modifier `DATABASE_URL` : `postgresql://` et l'ancienne forme `postgresql+psycopg2://` fonctionnent toutes deux.
 
 ## Échecs de migration {#migration-failures}
 

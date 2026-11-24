@@ -13,20 +13,25 @@ Terms used below: a URL is an address used to connect to a service; SQL is the d
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `DATABASE_URL` | `sqlite:///./data-dev/promptvault.db` | Connection string. Use a `postgresql://` URL in production. |
+| `DATABASE_URL` | `sqlite:///./data-dev/promptvault.db` | Connection string. Use a `postgresql://` URL in production. With Docker Compose you do not set it: the compose file builds it from `POSTGRES_PASSWORD`. |
 | `DB_POOL_SIZE` | `20` | Connection pool size (ignored for SQLite). |
 | `DB_POOL_TIMEOUT` | `30` | Pool checkout timeout, in seconds. |
 | `DB_POOL_RECYCLE` | `3600` | Seconds before a pooled connection is recycled. |
 | `DB_ECHO` | `false` | Log every SQL statement — useful for debugging, noisy in production. |
 
+A plain `postgresql://` URL uses the psycopg v3 driver, which PromptVault 1.17.0 and later install. The older `postgresql+psycopg2://` form is still accepted and is mapped to psycopg v3, so existing `.env` files need no change.
+
 ## Application {#application}
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `ENVIRONMENT` | `development` | One of `development`, `testing`, `production`. |
+| `ENVIRONMENT` | `development` | One of `development`, `testing`, `production`. Docker Compose passes it to the container. |
 | `PROMPTVAULT_DATA_DIR` | `./data-dev` | Directory for data files, backups, and logs. **Use a distinct path per environment** (dev/staging/prod) even if they share a filesystem — sharing a data directory across environments can cause scheduled backups and restores to collide. |
-| `LOG_LEVEL` | `INFO` | `DEBUG`, `INFO`, `WARNING`, `ERROR`, or `CRITICAL`. |
+| `LOG_LEVEL` | `INFO` | `DEBUG`, `INFO`, `WARNING`, `ERROR`, or `CRITICAL`. Use `WARNING` in production. Docker Compose passes it to the container. |
 | `AUDIT_LOG_LEVEL` | `INFO` | Log level specifically for version-control and backup audit events. |
+| `DISABLE_RATE_LIMITING` | `false` | Turns rate limiting off. For development and testing only: never set it to `true` in production. Docker Compose passes it to the container, so a development `.env` can switch it on for a server. |
+
+To run in production, keep `ENVIRONMENT=production`, `LOG_LEVEL=WARNING` and `DISABLE_RATE_LIMITING=false` in a separate file. See [Set up a production environment](../installation/production-setup.md).
 
 ## Authentication {#authentication}
 
