@@ -192,6 +192,31 @@ class EnvConfigurator:
             config[key] = self._stringify_value(key, value)
         return config
 
+    def _prompt_validated(self, label: str, default: str, validator, kind: str) -> str:
+        """
+        Prompt until the answer passes ``validator``.
+
+        Args:
+            label: Prompt text
+            default: Default answer
+            validator: Callable returning ``(is_valid, error_message)``
+            kind: Noun used in the error message ("port" -> "Invalid port: ...")
+
+        Returns:
+            The first valid answer
+        """
+        value = self.console.prompt(label, default=default)
+        while True:
+            is_valid, error = validator(value)
+            if is_valid:
+                return value
+            self.console.error(f"Invalid {kind}: {error}")
+            value = self.console.prompt(label, default=default)
+
+    def _confirm_flag(self, label: str, default: bool = True) -> str:
+        """Ask a yes/no question and return it as a .env flag ('true'/'false')."""
+        return str(self.console.confirm(label, default=default)).lower()
+
     def prompt_database(self) -> Dict[str, str]:
         """
         Interactive prompts for database configuration.
@@ -230,21 +255,12 @@ class EnvConfigurator:
             self.console.console.print()
             self.console.info("PostgreSQL Configuration")
 
-            db_host = self.console.prompt("Database host", default="localhost")
-            while True:
-                is_valid, error = validate_hostname(db_host)
-                if is_valid:
-                    break
-                self.console.error(f"Invalid hostname: {error}")
-                db_host = self.console.prompt("Database host", default="localhost")
-
-            db_port = self.console.prompt("Database port", default="5432")
-            while True:
-                is_valid, error = validate_port(db_port)
-                if is_valid:
-                    break
-                self.console.error(f"Invalid port: {error}")
-                db_port = self.console.prompt("Database port", default="5432")
+            db_host = self._prompt_validated(
+                "Database host", "localhost", validate_hostname, "hostname"
+            )
+            db_port = self._prompt_validated(
+                "Database port", "5432", validate_port, "port"
+            )
 
             db_name = self.console.prompt("Database name", default="promptvault")
             db_user = self.console.prompt("Database user", default="promptvault")
@@ -333,22 +349,10 @@ class EnvConfigurator:
                 "Minimum password length",
                 default="12"
             )
-            config['PASSWORD_REQUIRE_UPPERCASE'] = str(self.console.confirm(
-                "Require uppercase letter?",
-                default=True
-            )).lower()
-            config['PASSWORD_REQUIRE_LOWERCASE'] = str(self.console.confirm(
-                "Require lowercase letter?",
-                default=True
-            )).lower()
-            config['PASSWORD_REQUIRE_DIGIT'] = str(self.console.confirm(
-                "Require digit?",
-                default=True
-            )).lower()
-            config['PASSWORD_REQUIRE_SPECIAL'] = str(self.console.confirm(
-                "Require special character?",
-                default=True
-            )).lower()
+            config['PASSWORD_REQUIRE_UPPERCASE'] = self._confirm_flag("Require uppercase letter?")
+            config['PASSWORD_REQUIRE_LOWERCASE'] = self._confirm_flag("Require lowercase letter?")
+            config['PASSWORD_REQUIRE_DIGIT'] = self._confirm_flag("Require digit?")
+            config['PASSWORD_REQUIRE_SPECIAL'] = self._confirm_flag("Require special character?")
 
         # Account security
         self.console.console.print()
@@ -437,41 +441,24 @@ class EnvConfigurator:
         # SMTP configuration
         config['SMTP_HOST'] = self.console.prompt("SMTP host", default="smtp.example.com")
 
-        smtp_port = self.console.prompt("SMTP port", default="587")
-        while True:
-            is_valid, error = validate_port(smtp_port)
-            if is_valid:
-                break
-            self.console.error(f"Invalid port: {error}")
-            smtp_port = self.console.prompt("SMTP port", default="587")
-        config['SMTP_PORT'] = smtp_port
+        config['SMTP_PORT'] = self._prompt_validated(
+            "SMTP port", "587", validate_port, "port"
+        )
 
-        config['SMTP_USE_TLS'] = str(self.console.confirm(
-            "Use TLS?",
-            default=True
-        )).lower()
+        config['SMTP_USE_TLS'] = self._confirm_flag("Use TLS?")
 
-        smtp_user = self.console.prompt("SMTP username", default=PLACEHOLDER_EMAIL)
-        while True:
-            is_valid, error = validate_email(smtp_user)
-            if is_valid:
-                break
-            self.console.error(f"Invalid email: {error}")
-            smtp_user = self.console.prompt("SMTP username", default=PLACEHOLDER_EMAIL)
+        smtp_user = self._prompt_validated(
+            "SMTP username", PLACEHOLDER_EMAIL, validate_email, "email"
+        )
         config['SMTP_USERNAME'] = smtp_user
 
         config['SMTP_PASSWORD'] = self.console.prompt("SMTP password", password=True)
 
         # Email sender
         self.console.console.print()
-        from_addr = self.console.prompt("From email address", default=smtp_user)
-        while True:
-            is_valid, error = validate_email(from_addr)
-            if is_valid:
-                break
-            self.console.error(f"Invalid email: {error}")
-            from_addr = self.console.prompt("From email address", default=smtp_user)
-        config['EMAIL_FROM_ADDRESS'] = from_addr
+        config['EMAIL_FROM_ADDRESS'] = self._prompt_validated(
+            "From email address", smtp_user, validate_email, "email"
+        )
 
         config['EMAIL_FROM_NAME'] = self.console.prompt(
             "From name",
