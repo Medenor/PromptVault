@@ -286,6 +286,91 @@ class EnvConfigurator:
         self.console.console.print()
         return config
 
+    def _prompt_settings(self, settings) -> Dict[str, str]:
+        """
+        Prompt for several free-text settings, in order.
+
+        Args:
+            settings: Iterable of ``(env_key, prompt_label, default)``
+
+        Returns:
+            Dictionary mapping each env key to the answer
+        """
+        return {
+            key: self.console.prompt(label, default=default)
+            for key, label, default in settings
+        }
+
+    def _prompt_jwt(self) -> Dict[str, str]:
+        """Prompt for JWT key paths, token lifetimes, issuer and audience."""
+        self.console.info("JWT Key Configuration")
+        config = self._prompt_settings([
+            ('JWT_PRIVATE_KEY_PATH', "JWT private key path", DEFAULT_JWT_PRIVATE_KEY_PATH),
+            ('JWT_PUBLIC_KEY_PATH', "JWT public key path", DEFAULT_JWT_PUBLIC_KEY_PATH),
+        ])
+
+        self.console.console.print()
+        self.console.info("JWT Token Expiration")
+        config.update(self._prompt_settings([
+            ('JWT_ACCESS_TOKEN_EXPIRE_SECONDS', "Access token expiration (seconds)", "900"),  # 15 minutes
+            ('JWT_REFRESH_TOKEN_EXPIRE_SECONDS', "Refresh token expiration (seconds)", "604800"),  # 7 days
+        ]))
+
+        config.update(self._prompt_settings([
+            ('JWT_ISSUER', "JWT issuer", "promptvault"),
+            ('JWT_AUDIENCE', "JWT audience", "promptvault-api"),
+        ]))
+        return config
+
+    def _prompt_password_policy(self) -> Dict[str, str]:
+        """Prompt for the password policy; production gets a fixed strict one."""
+        self.console.console.print()
+        self.console.info("Password Policy")
+
+        if self.profile == 'production':
+            self.console.info("Production profile: Using strict password policy")
+            return {
+                'PASSWORD_MIN_LENGTH': "16",
+                'PASSWORD_REQUIRE_UPPERCASE': "true",
+                'PASSWORD_REQUIRE_LOWERCASE': "true",
+                'PASSWORD_REQUIRE_DIGIT': "true",
+                'PASSWORD_REQUIRE_SPECIAL': "true",
+            }
+
+        config = self._prompt_settings([
+            ('PASSWORD_MIN_LENGTH', "Minimum password length", "12"),
+        ])
+        config['PASSWORD_REQUIRE_UPPERCASE'] = self._confirm_flag("Require uppercase letter?")
+        config['PASSWORD_REQUIRE_LOWERCASE'] = self._confirm_flag("Require lowercase letter?")
+        config['PASSWORD_REQUIRE_DIGIT'] = self._confirm_flag("Require digit?")
+        config['PASSWORD_REQUIRE_SPECIAL'] = self._confirm_flag("Require special character?")
+        return config
+
+    def _prompt_account_security(self) -> Dict[str, str]:
+        """Prompt for lockout and session limits."""
+        self.console.console.print()
+        self.console.info("Account Security")
+        return self._prompt_settings([
+            ('MAX_LOGIN_ATTEMPTS', "Max login attempts before lockout", "5"),
+            ('ACCOUNT_LOCKOUT_DURATION_SECONDS', "Account lockout duration (seconds)", "900"),  # 15 minutes
+            ('MAX_SESSIONS_PER_USER', "Max sessions per user (0 = unlimited)", "5"),
+            ('SESSION_INACTIVE_TIMEOUT_SECONDS', "Session inactive timeout (seconds)", "2592000"),  # 30 days
+        ])
+
+    def _prompt_rate_limits(self) -> Dict[str, str]:
+        """Prompt for the Redis URL and the rate-limit thresholds."""
+        self.console.console.print()
+        self.console.info("Rate Limiting")
+        return self._prompt_settings([
+            ('REDIS_URL', "Redis URL for rate limiting", DEFAULT_REDIS_URL),
+            ('RATE_LIMIT_LOGIN_ATTEMPTS', "Login rate limit attempts", "5"),
+            ('RATE_LIMIT_LOGIN_WINDOW_SECONDS', "Login rate limit window (seconds)", "900"),
+            ('RATE_LIMIT_REGISTER_ATTEMPTS', "Registration rate limit attempts", "3"),
+            ('RATE_LIMIT_REGISTER_WINDOW_SECONDS', "Registration rate limit window (seconds)", "3600"),
+            ('RATE_LIMIT_PASSWORD_RESET_ATTEMPTS', "Password reset rate limit attempts", "3"),
+            ('RATE_LIMIT_PASSWORD_RESET_WINDOW_SECONDS', "Password reset rate limit window (seconds)", "3600"),
+        ])
+
     def prompt_security(self) -> Dict[str, str]:
         """
         Interactive prompts for security configuration.
@@ -293,119 +378,15 @@ class EnvConfigurator:
         Returns:
             Dictionary with security configuration values
         """
-        config = {}
+        config: Dict[str, str] = {}
 
         self.console.info("Security Configuration")
         self.console.console.print()
 
-        # JWT keys
-        self.console.info("JWT Key Configuration")
-        default_private = DEFAULT_JWT_PRIVATE_KEY_PATH
-        default_public = DEFAULT_JWT_PUBLIC_KEY_PATH
-
-        config['JWT_PRIVATE_KEY_PATH'] = self.console.prompt(
-            "JWT private key path",
-            default=default_private
-        )
-        config['JWT_PUBLIC_KEY_PATH'] = self.console.prompt(
-            "JWT public key path",
-            default=default_public
-        )
-
-        # JWT token expiration
-        self.console.console.print()
-        self.console.info("JWT Token Expiration")
-        config['JWT_ACCESS_TOKEN_EXPIRE_SECONDS'] = self.console.prompt(
-            "Access token expiration (seconds)",
-            default="900"  # 15 minutes
-        )
-        config['JWT_REFRESH_TOKEN_EXPIRE_SECONDS'] = self.console.prompt(
-            "Refresh token expiration (seconds)",
-            default="604800"  # 7 days
-        )
-
-        # JWT issuer/audience
-        config['JWT_ISSUER'] = self.console.prompt(
-            "JWT issuer",
-            default="promptvault"
-        )
-        config['JWT_AUDIENCE'] = self.console.prompt(
-            "JWT audience",
-            default="promptvault-api"
-        )
-
-        # Password policy
-        self.console.console.print()
-        self.console.info("Password Policy")
-        if self.profile == 'production':
-            self.console.info("Production profile: Using strict password policy")
-            config['PASSWORD_MIN_LENGTH'] = "16"
-            config['PASSWORD_REQUIRE_UPPERCASE'] = "true"
-            config['PASSWORD_REQUIRE_LOWERCASE'] = "true"
-            config['PASSWORD_REQUIRE_DIGIT'] = "true"
-            config['PASSWORD_REQUIRE_SPECIAL'] = "true"
-        else:
-            config['PASSWORD_MIN_LENGTH'] = self.console.prompt(
-                "Minimum password length",
-                default="12"
-            )
-            config['PASSWORD_REQUIRE_UPPERCASE'] = self._confirm_flag("Require uppercase letter?")
-            config['PASSWORD_REQUIRE_LOWERCASE'] = self._confirm_flag("Require lowercase letter?")
-            config['PASSWORD_REQUIRE_DIGIT'] = self._confirm_flag("Require digit?")
-            config['PASSWORD_REQUIRE_SPECIAL'] = self._confirm_flag("Require special character?")
-
-        # Account security
-        self.console.console.print()
-        self.console.info("Account Security")
-        config['MAX_LOGIN_ATTEMPTS'] = self.console.prompt(
-            "Max login attempts before lockout",
-            default="5"
-        )
-        config['ACCOUNT_LOCKOUT_DURATION_SECONDS'] = self.console.prompt(
-            "Account lockout duration (seconds)",
-            default="900"  # 15 minutes
-        )
-        config['MAX_SESSIONS_PER_USER'] = self.console.prompt(
-            "Max sessions per user (0 = unlimited)",
-            default="5"
-        )
-        config['SESSION_INACTIVE_TIMEOUT_SECONDS'] = self.console.prompt(
-            "Session inactive timeout (seconds)",
-            default="2592000"  # 30 days
-        )
-
-        # Rate limiting
-        self.console.console.print()
-        self.console.info("Rate Limiting")
-        config['REDIS_URL'] = self.console.prompt(
-            "Redis URL for rate limiting",
-            default=DEFAULT_REDIS_URL
-        )
-
-        config['RATE_LIMIT_LOGIN_ATTEMPTS'] = self.console.prompt(
-            "Login rate limit attempts",
-            default="5"
-        )
-        config['RATE_LIMIT_LOGIN_WINDOW_SECONDS'] = self.console.prompt(
-            "Login rate limit window (seconds)",
-            default="900"
-        )
-        config['RATE_LIMIT_REGISTER_ATTEMPTS'] = self.console.prompt(
-            "Registration rate limit attempts",
-            default="3"
-        )
-        config['RATE_LIMIT_REGISTER_WINDOW_SECONDS'] = self.console.prompt(
-            "Registration rate limit window (seconds)",
-            default="3600"
-        )
-        config['RATE_LIMIT_PASSWORD_RESET_ATTEMPTS'] = self.console.prompt(
-            "Password reset rate limit attempts",
-            default="3"
-        )
-        config['RATE_LIMIT_PASSWORD_RESET_WINDOW_SECONDS'] = self.console.prompt(
-            "Password reset rate limit window (seconds)",
-            default="3600"
-        )
+        config.update(self._prompt_jwt())
+        config.update(self._prompt_password_policy())
+        config.update(self._prompt_account_security())
+        config.update(self._prompt_rate_limits())
 
         self.console.console.print()
         return config
