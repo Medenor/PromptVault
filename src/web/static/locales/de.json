@@ -43,6 +43,9 @@
     "cancel": "Abbrechen",
     "confirm": "Bestaetigen",
     "copy": "Kopieren",
+    "retry": "Erneut versuchen",
+    "loadMore": "Mehr laden",
+    "moreActions": "Weitere Aktionen",
     "favorite": "Favorit",
     "addFavorite": "Zu Favoriten hinzufugen",
     "removeFavorite": "Aus Favoriten entfernen",
@@ -88,6 +91,7 @@
   "messages": {
     "copied": "Kopiert!",
     "copyFailed": "Kopieren fehlgeschlagen",
+    "loadPromptsFailed": "Ihre Prompts konnten nicht geladen werden. Prüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
     "loading": "Wird geladen...",
     "saving": "Wird gespeichert...",
     "deleting": "Wird gelöscht...",

@@ -43,6 +43,9 @@
     "cancel": "Cancel",
     "confirm": "Confirm",
     "copy": "Copy",
+    "retry": "Try again",
+    "loadMore": "Load More",
+    "moreActions": "More actions",
     "favorite": "Favorite",
     "addFavorite": "Add to favorites",
     "removeFavorite": "Remove from favorites",
@@ -88,6 +91,7 @@
   "messages": {
     "copied": "Copied!",
     "copyFailed": "Copy failed",
+    "loadPromptsFailed": "We couldn't load your prompts. Check your connection and try again.",
     "loading": "Loading...",
     "saving": "Saving...",
     "deleting": "Deleting...",

@@ -195,6 +195,7 @@ test.describe('Dynamic prompt placeholders', () => {
     await expect(page.locator('#prompt-editor')).toBeHidden();
 
     const updatedCard = await findPromptCard(page, title);
+    await updatedCard.locator('.card-menu-btn').click();
     await updatedCard.locator('.history-btn').click();
 
     const historyModal = page.locator('#version-history-modal');

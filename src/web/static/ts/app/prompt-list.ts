@@ -51,7 +51,9 @@ export function updateLoadMoreControl(): void {
   }
   toggleElement(loadMoreContainer, paginationState.hasNext);
   loadMoreBtn.disabled = paginationState.isLoadingMore;
-  loadMoreBtn.textContent = paginationState.isLoadingMore ? 'Loading...' : 'Load More';
+  loadMoreBtn.textContent = paginationState.isLoadingMore
+    ? t('messages.loading')
+    : t('actions.loadMore');
 }
 
 export async function loadPrompts(): Promise<void> {
@@ -75,7 +77,29 @@ export async function loadPrompts(): Promise<void> {
     updateLoadMoreControl();
   } catch (error) {
     reportAppIssue('loadPrompts', error);
+    showLoadError();
   }
+}
+
+/**
+ * A failed first load must not leave the aria-hidden skeleton pulsing forever:
+ * swap it for an announced error state with a retry action.
+ */
+function showLoadError(): void {
+  document.getElementById('prompts-skeleton')?.remove();
+  const errorState = document.getElementById('prompts-error-state');
+  if (errorState) {
+    showElement(errorState);
+    document.getElementById('prompts-retry-btn')?.focus({ preventScroll: true });
+  }
+}
+
+export function initLoadErrorRetry(): void {
+  document.getElementById('prompts-retry-btn')?.addEventListener('click', () => {
+    const errorState = document.getElementById('prompts-error-state');
+    if (errorState) hideElement(errorState);
+    void loadPrompts();
+  });
 }
 
 export async function loadMorePrompts(): Promise<void> {
