@@ -23,7 +23,7 @@ jobs:
 
       - name: Python dependency audit
         run: |
-          pip install -e . pip-audit
+          pip install -e ".[test,setup]" pip-audit
           pip-audit
 
       - name: Setup Node

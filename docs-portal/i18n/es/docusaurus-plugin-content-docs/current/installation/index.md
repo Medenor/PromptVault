@@ -21,6 +21,7 @@ La forma más rápida de obtener una instancia funcional es el asistente de conf
 ```bash
 git clone https://github.com/Medenor/PromptVault.git
 cd PromptVault
+pip install -e ".[setup]"
 python scripts/setup/setup.py
 ```
 

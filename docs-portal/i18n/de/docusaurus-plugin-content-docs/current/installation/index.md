@@ -21,6 +21,7 @@ Der schnellste Weg zu einer funktionierenden Instanz ist der mitgelieferte Einri
 ```bash
 git clone https://github.com/Medenor/PromptVault.git
 cd PromptVault
+pip install -e ".[setup]"
 python scripts/setup/setup.py
 ```
 

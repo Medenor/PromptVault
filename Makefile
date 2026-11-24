@@ -93,7 +93,7 @@ install-backend: ## Install backend dependencies (create .venv if needed)
 		echo "Creating virtual environment in $(VENV_DIR)/ ..."; \
 		python3 -m venv $(VENV_DIR); \
 	fi
-	$(PIP) install -e ".[test,dev]"
+	$(PIP) install -e ".[test,dev,setup]"
 
 install-frontend: ## Install frontend dependencies (npm ci)
 	npm ci

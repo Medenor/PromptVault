@@ -42,6 +42,7 @@ The setup wizard provides three modes to match your needs:
 Perfect for development and testing. Gets you running in under 5 minutes with sensible defaults:
 
 ```bash
+pip install -e ".[setup]"   # installs the wizard's dependencies (click, rich, httpx)
 python scripts/setup/setup.py --quick
 ```
 

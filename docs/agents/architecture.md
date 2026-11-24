@@ -41,7 +41,7 @@ PromptVault is a service-oriented FastAPI app: business logic lives in `src/serv
 - Service-oriented architecture with clear data/business-logic/presentation separation.
 - RESTful design, proper HTTP methods throughout.
 - Factory pattern for service instantiation and injection.
-- Async I/O via FastAPI + `aiofiles`.
+- Async I/O via FastAPI (Starlette, on anyio).
 - i18next for internationalization; WCAG 2.1 Level AA accessibility target.
 
 ## Version Control System

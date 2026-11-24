@@ -21,6 +21,7 @@ The fastest way to get a working instance is the bundled setup wizard. It create
 ```bash
 git clone https://github.com/Medenor/PromptVault.git
 cd PromptVault
+pip install -e ".[setup]"
 python scripts/setup/setup.py
 ```
 
