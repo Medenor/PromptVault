@@ -26,15 +26,15 @@ Usage:
     python scripts/setup/setup_env.py --non-interactive
 """
 
-import os
 import sys
 import secrets
 import string
 from pathlib import Path
-from typing import Any, Dict, Optional, List, Tuple
+from typing import Any, Dict, Optional, List
 from urllib.parse import quote_plus, urlsplit
 
 import click
+from rich.table import Table
 
 # Add scripts directory to path to import utilities
 script_dir = Path(__file__).resolve().parent
@@ -47,7 +47,6 @@ from validators import (
     validate_port,
     validate_hostname,
     validate_email,
-    validate_password_strength,
     validate_path,
 )
 from config_parser import (
@@ -56,6 +55,19 @@ from config_parser import (
     load_env_template,
     write_env_file,
 )
+
+
+# Defaults shared by the profile table and the interactive prompts
+DEFAULT_SQLITE_PATH = "./data/promptvault.db"
+DEFAULT_REDIS_URL = "redis://localhost:6379/0"
+DEFAULT_JWT_PRIVATE_KEY_PATH = "secrets/jwt/private_key.pem"
+DEFAULT_JWT_PUBLIC_KEY_PATH = "secrets/jwt/public_key.pem"
+
+# Placeholder sender used when email setup is skipped; not validated as a real address
+PLACEHOLDER_EMAIL = "noreply@example.com"
+
+# Key-name fragments whose values are hidden in the configuration diff
+SENSITIVE_KEY_PARTS = ("password", "secret", "key")
 
 
 class EnvConfigurator:
@@ -72,12 +84,12 @@ class EnvConfigurator:
     # Profile-specific defaults
     PROFILE_DEFAULTS = {
         'development': {
-            'DATABASE_URL': 'sqlite:///./data/promptvault.db',
+            'DATABASE_URL': f'sqlite:///{DEFAULT_SQLITE_PATH}',
             'ENVIRONMENT': 'development',
             'LOG_LEVEL': 'DEBUG',
             'AUDIT_LOG_LEVEL': 'INFO',
             'DB_ECHO': 'true',
-            'REDIS_URL': 'redis://localhost:6379/0',
+            'REDIS_URL': DEFAULT_REDIS_URL,
         },
         'production': {
             # No DATABASE_URL default: production requires an operator-supplied
@@ -86,7 +98,7 @@ class EnvConfigurator:
             'LOG_LEVEL': 'WARNING',
             'AUDIT_LOG_LEVEL': 'INFO',
             'DB_ECHO': 'false',
-            'REDIS_URL': 'redis://localhost:6379/0',
+            'REDIS_URL': DEFAULT_REDIS_URL,
         }
     }
 
@@ -181,6 +193,31 @@ class EnvConfigurator:
             config[key] = self._stringify_value(key, value)
         return config
 
+    def _prompt_validated(self, label: str, default: str, validator, kind: str) -> str:
+        """
+        Prompt until the answer passes ``validator``.
+
+        Args:
+            label: Prompt text
+            default: Default answer
+            validator: Callable returning ``(is_valid, error_message)``
+            kind: Noun used in the error message ("port" -> "Invalid port: ...")
+
+        Returns:
+            The first valid answer
+        """
+        value = self.console.prompt(label, default=default)
+        while True:
+            is_valid, error = validator(value)
+            if is_valid:
+                return value
+            self.console.error(f"Invalid {kind}: {error}")
+            value = self.console.prompt(label, default=default)
+
+    def _confirm_flag(self, label: str, default: bool = True) -> str:
+        """Ask a yes/no question and return it as a .env flag ('true'/'false')."""
+        return str(self.console.confirm(label, default=default)).lower()
+
     def prompt_database(self) -> Dict[str, str]:
         """
         Interactive prompts for database configuration.
@@ -210,7 +247,7 @@ class EnvConfigurator:
             # SQLite configuration
             db_path = self.console.prompt(
                 "SQLite database path",
-                default="./data/promptvault.db"
+                default=DEFAULT_SQLITE_PATH
             )
             config['DATABASE_URL'] = f"sqlite:///{db_path}"
 
@@ -219,21 +256,12 @@ class EnvConfigurator:
             self.console.console.print()
             self.console.info("PostgreSQL Configuration")
 
-            db_host = self.console.prompt("Database host", default="localhost")
-            while True:
-                is_valid, error = validate_hostname(db_host)
-                if is_valid:
-                    break
-                self.console.error(f"Invalid hostname: {error}")
-                db_host = self.console.prompt("Database host", default="localhost")
-
-            db_port = self.console.prompt("Database port", default="5432")
-            while True:
-                is_valid, error = validate_port(db_port)
-                if is_valid:
-                    break
-                self.console.error(f"Invalid port: {error}")
-                db_port = self.console.prompt("Database port", default="5432")
+            db_host = self._prompt_validated(
+                "Database host", "localhost", validate_hostname, "hostname"
+            )
+            db_port = self._prompt_validated(
+                "Database port", "5432", validate_port, "port"
+            )
 
             db_name = self.console.prompt("Database name", default="promptvault")
             db_user = self.console.prompt("Database user", default="promptvault")
@@ -259,6 +287,91 @@ class EnvConfigurator:
         self.console.console.print()
         return config
 
+    def _prompt_settings(self, settings) -> Dict[str, str]:
+        """
+        Prompt for several free-text settings, in order.
+
+        Args:
+            settings: Iterable of ``(env_key, prompt_label, default)``
+
+        Returns:
+            Dictionary mapping each env key to the answer
+        """
+        return {
+            key: self.console.prompt(label, default=default)
+            for key, label, default in settings
+        }
+
+    def _prompt_jwt(self) -> Dict[str, str]:
+        """Prompt for JWT key paths, token lifetimes, issuer and audience."""
+        self.console.info("JWT Key Configuration")
+        config = self._prompt_settings([
+            ('JWT_PRIVATE_KEY_PATH', "JWT private key path", DEFAULT_JWT_PRIVATE_KEY_PATH),
+            ('JWT_PUBLIC_KEY_PATH', "JWT public key path", DEFAULT_JWT_PUBLIC_KEY_PATH),
+        ])
+
+        self.console.console.print()
+        self.console.info("JWT Token Expiration")
+        config.update(self._prompt_settings([
+            ('JWT_ACCESS_TOKEN_EXPIRE_SECONDS', "Access token expiration (seconds)", "900"),  # 15 minutes
+            ('JWT_REFRESH_TOKEN_EXPIRE_SECONDS', "Refresh token expiration (seconds)", "604800"),  # 7 days
+        ]))
+
+        config.update(self._prompt_settings([
+            ('JWT_ISSUER', "JWT issuer", "promptvault"),
+            ('JWT_AUDIENCE', "JWT audience", "promptvault-api"),
+        ]))
+        return config
+
+    def _prompt_password_policy(self) -> Dict[str, str]:
+        """Prompt for the password policy; production gets a fixed strict one."""
+        self.console.console.print()
+        self.console.info("Password Policy")
+
+        if self.profile == 'production':
+            self.console.info("Production profile: Using strict password policy")
+            return {
+                'PASSWORD_MIN_LENGTH': "16",
+                'PASSWORD_REQUIRE_UPPERCASE': "true",
+                'PASSWORD_REQUIRE_LOWERCASE': "true",
+                'PASSWORD_REQUIRE_DIGIT': "true",
+                'PASSWORD_REQUIRE_SPECIAL': "true",
+            }
+
+        config = self._prompt_settings([
+            ('PASSWORD_MIN_LENGTH', "Minimum password length", "12"),
+        ])
+        config['PASSWORD_REQUIRE_UPPERCASE'] = self._confirm_flag("Require uppercase letter?")
+        config['PASSWORD_REQUIRE_LOWERCASE'] = self._confirm_flag("Require lowercase letter?")
+        config['PASSWORD_REQUIRE_DIGIT'] = self._confirm_flag("Require digit?")
+        config['PASSWORD_REQUIRE_SPECIAL'] = self._confirm_flag("Require special character?")
+        return config
+
+    def _prompt_account_security(self) -> Dict[str, str]:
+        """Prompt for lockout and session limits."""
+        self.console.console.print()
+        self.console.info("Account Security")
+        return self._prompt_settings([
+            ('MAX_LOGIN_ATTEMPTS', "Max login attempts before lockout", "5"),
+            ('ACCOUNT_LOCKOUT_DURATION_SECONDS', "Account lockout duration (seconds)", "900"),  # 15 minutes
+            ('MAX_SESSIONS_PER_USER', "Max sessions per user (0 = unlimited)", "5"),
+            ('SESSION_INACTIVE_TIMEOUT_SECONDS', "Session inactive timeout (seconds)", "2592000"),  # 30 days
+        ])
+
+    def _prompt_rate_limits(self) -> Dict[str, str]:
+        """Prompt for the Redis URL and the rate-limit thresholds."""
+        self.console.console.print()
+        self.console.info("Rate Limiting")
+        return self._prompt_settings([
+            ('REDIS_URL', "Redis URL for rate limiting", DEFAULT_REDIS_URL),
+            ('RATE_LIMIT_LOGIN_ATTEMPTS', "Login rate limit attempts", "5"),
+            ('RATE_LIMIT_LOGIN_WINDOW_SECONDS', "Login rate limit window (seconds)", "900"),
+            ('RATE_LIMIT_REGISTER_ATTEMPTS', "Registration rate limit attempts", "3"),
+            ('RATE_LIMIT_REGISTER_WINDOW_SECONDS', "Registration rate limit window (seconds)", "3600"),
+            ('RATE_LIMIT_PASSWORD_RESET_ATTEMPTS', "Password reset rate limit attempts", "3"),
+            ('RATE_LIMIT_PASSWORD_RESET_WINDOW_SECONDS', "Password reset rate limit window (seconds)", "3600"),
+        ])
+
     def prompt_security(self) -> Dict[str, str]:
         """
         Interactive prompts for security configuration.
@@ -266,131 +379,15 @@ class EnvConfigurator:
         Returns:
             Dictionary with security configuration values
         """
-        config = {}
+        config: Dict[str, str] = {}
 
         self.console.info("Security Configuration")
         self.console.console.print()
 
-        # JWT keys
-        self.console.info("JWT Key Configuration")
-        default_private = "secrets/jwt/private_key.pem"
-        default_public = "secrets/jwt/public_key.pem"
-
-        config['JWT_PRIVATE_KEY_PATH'] = self.console.prompt(
-            "JWT private key path",
-            default=default_private
-        )
-        config['JWT_PUBLIC_KEY_PATH'] = self.console.prompt(
-            "JWT public key path",
-            default=default_public
-        )
-
-        # JWT token expiration
-        self.console.console.print()
-        self.console.info("JWT Token Expiration")
-        config['JWT_ACCESS_TOKEN_EXPIRE_SECONDS'] = self.console.prompt(
-            "Access token expiration (seconds)",
-            default="900"  # 15 minutes
-        )
-        config['JWT_REFRESH_TOKEN_EXPIRE_SECONDS'] = self.console.prompt(
-            "Refresh token expiration (seconds)",
-            default="604800"  # 7 days
-        )
-
-        # JWT issuer/audience
-        config['JWT_ISSUER'] = self.console.prompt(
-            "JWT issuer",
-            default="promptvault"
-        )
-        config['JWT_AUDIENCE'] = self.console.prompt(
-            "JWT audience",
-            default="promptvault-api"
-        )
-
-        # Password policy
-        self.console.console.print()
-        self.console.info("Password Policy")
-        if self.profile == 'production':
-            self.console.info("Production profile: Using strict password policy")
-            config['PASSWORD_MIN_LENGTH'] = "16"
-            config['PASSWORD_REQUIRE_UPPERCASE'] = "true"
-            config['PASSWORD_REQUIRE_LOWERCASE'] = "true"
-            config['PASSWORD_REQUIRE_DIGIT'] = "true"
-            config['PASSWORD_REQUIRE_SPECIAL'] = "true"
-        else:
-            config['PASSWORD_MIN_LENGTH'] = self.console.prompt(
-                "Minimum password length",
-                default="12"
-            )
-            config['PASSWORD_REQUIRE_UPPERCASE'] = str(self.console.confirm(
-                "Require uppercase letter?",
-                default=True
-            )).lower()
-            config['PASSWORD_REQUIRE_LOWERCASE'] = str(self.console.confirm(
-                "Require lowercase letter?",
-                default=True
-            )).lower()
-            config['PASSWORD_REQUIRE_DIGIT'] = str(self.console.confirm(
-                "Require digit?",
-                default=True
-            )).lower()
-            config['PASSWORD_REQUIRE_SPECIAL'] = str(self.console.confirm(
-                "Require special character?",
-                default=True
-            )).lower()
-
-        # Account security
-        self.console.console.print()
-        self.console.info("Account Security")
-        config['MAX_LOGIN_ATTEMPTS'] = self.console.prompt(
-            "Max login attempts before lockout",
-            default="5"
-        )
-        config['ACCOUNT_LOCKOUT_DURATION_SECONDS'] = self.console.prompt(
-            "Account lockout duration (seconds)",
-            default="900"  # 15 minutes
-        )
-        config['MAX_SESSIONS_PER_USER'] = self.console.prompt(
-            "Max sessions per user (0 = unlimited)",
-            default="5"
-        )
-        config['SESSION_INACTIVE_TIMEOUT_SECONDS'] = self.console.prompt(
-            "Session inactive timeout (seconds)",
-            default="2592000"  # 30 days
-        )
-
-        # Rate limiting
-        self.console.console.print()
-        self.console.info("Rate Limiting")
-        config['REDIS_URL'] = self.console.prompt(
-            "Redis URL for rate limiting",
-            default="redis://localhost:6379/0"
-        )
-
-        config['RATE_LIMIT_LOGIN_ATTEMPTS'] = self.console.prompt(
-            "Login rate limit attempts",
-            default="5"
-        )
-        config['RATE_LIMIT_LOGIN_WINDOW_SECONDS'] = self.console.prompt(
-            "Login rate limit window (seconds)",
-            default="900"
-        )
-        config['RATE_LIMIT_REGISTER_ATTEMPTS'] = self.console.prompt(
-            "Registration rate limit attempts",
-            default="3"
-        )
-        config['RATE_LIMIT_REGISTER_WINDOW_SECONDS'] = self.console.prompt(
-            "Registration rate limit window (seconds)",
-            default="3600"
-        )
-        config['RATE_LIMIT_PASSWORD_RESET_ATTEMPTS'] = self.console.prompt(
-            "Password reset rate limit attempts",
-            default="3"
-        )
-        config['RATE_LIMIT_PASSWORD_RESET_WINDOW_SECONDS'] = self.console.prompt(
-            "Password reset rate limit window (seconds)",
-            default="3600"
-        )
+        config.update(self._prompt_jwt())
+        config.update(self._prompt_password_policy())
+        config.update(self._prompt_account_security())
+        config.update(self._prompt_rate_limits())
 
         self.console.console.print()
         return config
@@ -416,9 +413,9 @@ class EnvConfigurator:
                 config['SMTP_HOST'] = "smtp.example.com"
                 config['SMTP_PORT'] = "587"
                 config['SMTP_USE_TLS'] = "true"
-                config['SMTP_USERNAME'] = "noreply@example.com"
+                config['SMTP_USERNAME'] = PLACEHOLDER_EMAIL
                 config['SMTP_PASSWORD'] = "changeme"
-                config['EMAIL_FROM_ADDRESS'] = "noreply@example.com"
+                config['EMAIL_FROM_ADDRESS'] = PLACEHOLDER_EMAIL
                 config['EMAIL_FROM_NAME'] = "PromptVault"
                 config['PASSWORD_RESET_TOKEN_EXPIRE_SECONDS'] = "3600"
                 return config
@@ -426,41 +423,24 @@ class EnvConfigurator:
         # SMTP configuration
         config['SMTP_HOST'] = self.console.prompt("SMTP host", default="smtp.example.com")
 
-        smtp_port = self.console.prompt("SMTP port", default="587")
-        while True:
-            is_valid, error = validate_port(smtp_port)
-            if is_valid:
-                break
-            self.console.error(f"Invalid port: {error}")
-            smtp_port = self.console.prompt("SMTP port", default="587")
-        config['SMTP_PORT'] = smtp_port
+        config['SMTP_PORT'] = self._prompt_validated(
+            "SMTP port", "587", validate_port, "port"
+        )
 
-        config['SMTP_USE_TLS'] = str(self.console.confirm(
-            "Use TLS?",
-            default=True
-        )).lower()
+        config['SMTP_USE_TLS'] = self._confirm_flag("Use TLS?")
 
-        smtp_user = self.console.prompt("SMTP username", default="noreply@example.com")
-        while True:
-            is_valid, error = validate_email(smtp_user)
-            if is_valid:
-                break
-            self.console.error(f"Invalid email: {error}")
-            smtp_user = self.console.prompt("SMTP username", default="noreply@example.com")
+        smtp_user = self._prompt_validated(
+            "SMTP username", PLACEHOLDER_EMAIL, validate_email, "email"
+        )
         config['SMTP_USERNAME'] = smtp_user
 
         config['SMTP_PASSWORD'] = self.console.prompt("SMTP password", password=True)
 
         # Email sender
         self.console.console.print()
-        from_addr = self.console.prompt("From email address", default=smtp_user)
-        while True:
-            is_valid, error = validate_email(from_addr)
-            if is_valid:
-                break
-            self.console.error(f"Invalid email: {error}")
-            from_addr = self.console.prompt("From email address", default=smtp_user)
-        config['EMAIL_FROM_ADDRESS'] = from_addr
+        config['EMAIL_FROM_ADDRESS'] = self._prompt_validated(
+            "From email address", smtp_user, validate_email, "email"
+        )
 
         config['EMAIL_FROM_NAME'] = self.console.prompt(
             "From name",
@@ -513,40 +493,39 @@ class EnvConfigurator:
         """
         Generate a secure random password.
 
+        Draws uniformly from letters, digits and punctuation, and redraws until
+        the result has an uppercase letter, a lowercase letter, a digit and a
+        special character (rarely needed for typical lengths).
+
         Args:
-            length: Password length (default: 32)
+            length: Password length (default: 32, minimum: 4)
 
         Returns:
             Secure random password string
+
+        Raises:
+            ValueError: If length is too short to hold one character of each class
         """
-        # Character sets for password generation
+        if length < 4:
+            raise ValueError("Password length must be at least 4")
+
         chars = string.ascii_letters + string.digits + string.punctuation
 
-        # Use secrets module for cryptographically strong random
-        password = ''.join(secrets.choice(chars) for _ in range(length))
+        while True:
+            # secrets gives a cryptographically strong draw
+            password = ''.join(secrets.choice(chars) for _ in range(length))
+            if (
+                any(c.isupper() for c in password)
+                and any(c.islower() for c in password)
+                and any(c.isdigit() for c in password)
+                and any(c in string.punctuation for c in password)
+            ):
+                return password
 
-        # Ensure password meets complexity requirements
-        has_upper = any(c.isupper() for c in password)
-        has_lower = any(c.islower() for c in password)
-        has_digit = any(c.isdigit() for c in password)
-        has_special = any(c in string.punctuation for c in password)
-
-        # Regenerate if doesn't meet requirements (very unlikely)
-        if not (has_upper and has_lower and has_digit and has_special):
-            return self.generate_secure_password(length)
-
-        return password
-
-    def validate(self) -> List[str]:
-        """
-        Validate all configuration values.
-
-        Returns:
-            List of validation error messages (empty if all valid)
-        """
+    def _validate_database(self) -> List[str]:
+        """Validate DATABASE_URL, and enforce the production-specific rules."""
         errors = []
 
-        # Validate database URL
         if 'DATABASE_URL' in self.config:
             is_valid, error = validate_database_url(self.config['DATABASE_URL'])
             if not is_valid:
@@ -568,43 +547,67 @@ class EnvConfigurator:
                     "which is not allowed in production. Use your own credentials."
                 )
 
-        # Validate ports
-        if 'SMTP_PORT' in self.config:
-            is_valid, error = validate_port(self.config['SMTP_PORT'])
-            if not is_valid:
-                errors.append(f"SMTP_PORT: {error}")
-
-        # Pool size is a connection count, not a port
-        if 'DB_POOL_SIZE' in self.config:
-            try:
-                pool_size = int(self.config['DB_POOL_SIZE'])
-            except (TypeError, ValueError):
-                pool_size = 0
-            if pool_size < 1:
-                errors.append("DB_POOL_SIZE: Pool size must be a positive integer")
-
-        # Validate email addresses
-        for email_key in ['SMTP_USERNAME', 'EMAIL_FROM_ADDRESS']:
-            if email_key in self.config:
-                email_value = self.config[email_key]
-                # Skip validation for placeholder values
-                if email_value and email_value != "noreply@example.com":
-                    is_valid, error = validate_email(email_value)
-                    if not is_valid:
-                        errors.append(f"{email_key}: {error}")
-
-        # Validate JWT key paths exist (if not placeholder)
-        for key_path_key in ['JWT_PRIVATE_KEY_PATH', 'JWT_PUBLIC_KEY_PATH']:
-            if key_path_key in self.config:
-                path_value = self.config[key_path_key]
-                # Validate parent directory exists
-                is_valid, error = validate_path(path_value, must_exist=False)
-                if not is_valid:
-                    errors.append(f"{key_path_key}: {error}")
-
         return errors
 
-    def diff(self, existing: Dict[str, str]) -> str:
+    def _validate_smtp_port(self) -> List[str]:
+        """Validate SMTP_PORT when set."""
+        if 'SMTP_PORT' not in self.config:
+            return []
+        is_valid, error = validate_port(self.config['SMTP_PORT'])
+        return [] if is_valid else [f"SMTP_PORT: {error}"]
+
+    def _validate_pool_size(self) -> List[str]:
+        """Validate DB_POOL_SIZE as a positive integer (it is a count, not a port)."""
+        if 'DB_POOL_SIZE' not in self.config:
+            return []
+        try:
+            pool_size = int(self.config['DB_POOL_SIZE'])
+        except (TypeError, ValueError):
+            pool_size = 0
+        if pool_size < 1:
+            return ["DB_POOL_SIZE: Pool size must be a positive integer"]
+        return []
+
+    def _validate_emails(self) -> List[str]:
+        """Validate the SMTP username and sender address, skipping the placeholder."""
+        errors = []
+        for email_key in ['SMTP_USERNAME', 'EMAIL_FROM_ADDRESS']:
+            email_value = self.config.get(email_key)
+            if email_value and email_value != PLACEHOLDER_EMAIL:
+                is_valid, error = validate_email(email_value)
+                if not is_valid:
+                    errors.append(f"{email_key}: {error}")
+        return errors
+
+    def _validate_key_paths(self) -> List[str]:
+        """Validate the JWT key paths (the files themselves need not exist yet)."""
+        errors = []
+        for key_path_key in ['JWT_PRIVATE_KEY_PATH', 'JWT_PUBLIC_KEY_PATH']:
+            if key_path_key in self.config:
+                is_valid, error = validate_path(self.config[key_path_key], must_exist=False)
+                if not is_valid:
+                    errors.append(f"{key_path_key}: {error}")
+        return errors
+
+    def validate(self) -> List[str]:
+        """
+        Validate all configuration values.
+
+        Returns:
+            List of validation error messages (empty if all valid)
+        """
+        errors: List[str] = []
+        for check in (
+            self._validate_database,
+            self._validate_smtp_port,
+            self._validate_pool_size,
+            self._validate_emails,
+            self._validate_key_paths,
+        ):
+            errors.extend(check())
+        return errors
+
+    def diff(self, existing: Dict[str, str]) -> Optional[Table]:
         """
         Generate diff between existing and new configuration.
 
@@ -612,11 +615,8 @@ class EnvConfigurator:
             existing: Existing configuration dictionary
 
         Returns:
-            Human-readable diff string
+            A rich Table of the changes, or None when nothing changed
         """
-        from rich.text import Text
-        from rich.table import Table
-
         # Create table for diff
         table = Table(
             title="Configuration Changes",
@@ -639,7 +639,7 @@ class EnvConfigurator:
                 changes_found = True
 
                 # Mask sensitive values
-                if any(sensitive in key.lower() for sensitive in ['password', 'secret', 'key']):
+                if any(sensitive in key.lower() for sensitive in SENSITIVE_KEY_PARTS):
                     if old_value != "[not set]":
                         old_value = "********"
                     if new_value != "[not set]":
@@ -648,7 +648,7 @@ class EnvConfigurator:
                 table.add_row(key, old_value, new_value)
 
         if not changes_found:
-            return "No changes detected"
+            return None
 
         return table
 
@@ -665,6 +665,179 @@ class EnvConfigurator:
         except Exception as e:
             self.console.error(f"Failed to write configuration: {e}")
             raise
+
+
+def _resolve_output_path(output: str) -> Path:
+    """Resolve the output path; relative paths are anchored at the project root."""
+    project_root = Path(__file__).resolve().parent.parent.parent
+    output_path = Path(output)
+    if not output_path.is_absolute():
+        output_path = project_root / output_path
+    return output_path
+
+
+def _print_errors(console: SetupConsole, errors: List[str]) -> None:
+    """Print validation errors as a red bullet list."""
+    for error in errors:
+        console.console.print(f"  - {error}", style="red")
+
+
+def _run_validate_only(console: SetupConsole, profile: str, output_path: Path) -> None:
+    """Validate an existing .env file, then exit (0 if valid, 1 otherwise)."""
+    console.step(1, 1, "Validating existing .env file")
+
+    if not output_path.exists():
+        console.error(f"File not found: {output_path}")
+        sys.exit(1)
+
+    try:
+        existing_config = parse_env_file(str(output_path))
+        console.success(f"Loaded {len(existing_config)} configuration values")
+
+        configurator = EnvConfigurator(profile, console)
+        configurator.config = existing_config
+
+        errors = configurator.validate()
+        if errors:
+            console.error("Validation errors found:")
+            _print_errors(console, errors)
+            sys.exit(1)
+        console.success("All configuration values are valid")
+        sys.exit(0)
+
+    except Exception as e:
+        console.error(f"Validation failed: {e}")
+        sys.exit(1)
+
+
+def _configure_from_file(console: SetupConsole, profile: str, from_file: str) -> EnvConfigurator:
+    """Build the configuration from a YAML file, or exit(1) if it cannot be loaded."""
+    console.step(1, 3, f"Loading configuration from {from_file}")
+
+    try:
+        yaml_config = parse_yaml_config(from_file)
+        console.success(f"Loaded configuration from {from_file}")
+
+        configurator = EnvConfigurator(profile, console)
+        # Flat or profile-keyed YAML, merged over the profile template
+        configurator.config = configurator.load_file_config(yaml_config)
+        return configurator
+
+    except Exception as e:
+        console.error(f"Failed to load configuration: {e}")
+        sys.exit(1)
+
+
+def _configure_non_interactive(console: SetupConsole, profile: str) -> EnvConfigurator:
+    """Use the profile template as-is, or exit(1) if it cannot be loaded."""
+    configurator = EnvConfigurator(profile, console)
+    console.warning("Non-interactive mode: using profile defaults")
+    try:
+        configurator.config = configurator.load_template()
+    except Exception as e:
+        console.error(f"Failed to load template: {e}")
+        sys.exit(1)
+    return configurator
+
+
+def _configure_interactively(console: SetupConsole, profile: str) -> EnvConfigurator:
+    """Prompt for every section; exit(1) if the user interrupts."""
+    configurator = EnvConfigurator(profile, console)
+
+    console.info(f"Starting interactive configuration for {profile} profile")
+    console.console.print()
+
+    try:
+        console.step(1, 4, "Database Configuration")
+        configurator.config.update(configurator.prompt_database())
+
+        console.step(2, 4, "Security Configuration")
+        configurator.config.update(configurator.prompt_security())
+
+        console.step(3, 4, "Email Configuration")
+        configurator.config.update(configurator.prompt_email(optional=True))
+
+        console.step(4, 4, "Application Configuration")
+        configurator.config.update(configurator.prompt_application())
+
+    except KeyboardInterrupt:
+        console.console.print()
+        console.warning("Configuration cancelled by user")
+        sys.exit(1)
+
+    return configurator
+
+
+def _check_configuration(
+    console: SetupConsole,
+    configurator: EnvConfigurator,
+    profile: str,
+    non_interactive: bool,
+) -> None:
+    """Validate the configuration; exit(1) unless the user chooses to continue."""
+    console.console.print()
+    console.info("Validating configuration...")
+
+    errors = configurator.validate()
+    if not errors:
+        console.success("Configuration validation passed")
+        return
+
+    console.error("Configuration validation failed:")
+    _print_errors(console, errors)
+
+    # Production never proceeds with an invalid configuration, even interactively.
+    if non_interactive or profile == 'production':
+        sys.exit(1)
+    if not console.confirm("Continue anyway?", default=False):
+        sys.exit(1)
+
+
+def _show_diff(console: SetupConsole, configurator: EnvConfigurator, output_path: Path) -> None:
+    """Show how the new configuration differs from the existing .env file."""
+    console.console.print()
+    console.info("Comparing with existing configuration...")
+
+    try:
+        existing_config = parse_env_file(str(output_path))
+        diff = configurator.diff(existing_config)
+
+        if diff is None:
+            console.info("No changes detected")
+        else:
+            console.console.print(diff)
+    except Exception as e:
+        console.warning(f"Could not load existing configuration: {e}")
+
+
+def _write_configuration(console: SetupConsole, configurator: EnvConfigurator, output_path: Path) -> None:
+    """Write the .env file, or exit(1) on failure."""
+    console.console.print()
+    console.info("Writing configuration...")
+
+    try:
+        configurator.write(output_path)
+        console.success("Configuration file created successfully!")
+    except Exception as e:
+        console.error(f"Failed to write configuration: {e}")
+        sys.exit(1)
+
+
+def _print_next_steps(console: SetupConsole) -> None:
+    """Print the success banner and what to do after the .env is written."""
+    console.console.print()
+    console.console.print("[bold green]Environment setup completed successfully![/bold green]")
+    console.console.print()
+
+    console.info("Next steps:")
+    console.console.print("  1. Review the generated .env file")
+    console.console.print("  2. Generate JWT keys: python scripts/setup/setup_jwt.py")
+    console.console.print("  3. Initialize the database: alembic upgrade head")
+    console.console.print("  4. Start the application: uvicorn app.main:app")
+    console.console.print()
+
+    console.warning("IMPORTANT: Never commit the .env file to version control")
+    console.console.print()
 
 
 @click.command()
@@ -704,170 +877,36 @@ def main(profile: str, from_file: Optional[str], validate_only: bool, non_intera
     """
     console = SetupConsole()
 
-    # Display header
     console.header(
         "PromptVault Environment Setup",
         f"Interactive configuration for {profile} deployment"
     )
 
-    # Resolve output path
-    project_root = Path(__file__).resolve().parent.parent.parent
-    output_path = Path(output)
-    if not output_path.is_absolute():
-        output_path = project_root / output_path
+    output_path = _resolve_output_path(output)
 
-    # VALIDATE-ONLY mode
     if validate_only:
-        console.step(1, 1, "Validating existing .env file")
+        _run_validate_only(console, profile, output_path)
 
-        if not output_path.exists():
-            console.error(f"File not found: {output_path}")
-            sys.exit(1)
-
-        try:
-            existing_config = parse_env_file(str(output_path))
-            console.success(f"Loaded {len(existing_config)} configuration values")
-
-            # Create configurator to use validation
-            configurator = EnvConfigurator(profile, console)
-            configurator.config = existing_config
-
-            # Validate
-            errors = configurator.validate()
-            if errors:
-                console.error("Validation errors found:")
-                for error in errors:
-                    console.console.print(f"  - {error}", style="red")
-                sys.exit(1)
-            else:
-                console.success("All configuration values are valid")
-                sys.exit(0)
-
-        except Exception as e:
-            console.error(f"Validation failed: {e}")
-            sys.exit(1)
-
-    # FROM-FILE mode
     if from_file:
-        console.step(1, 3, f"Loading configuration from {from_file}")
-
-        try:
-            yaml_config = parse_yaml_config(from_file)
-            console.success(f"Loaded configuration from {from_file}")
-
-            # Create configurator and set config
-            configurator = EnvConfigurator(profile, console)
-
-            # Flat or profile-keyed YAML, merged over the profile template
-            configurator.config = configurator.load_file_config(yaml_config)
-
-        except Exception as e:
-            console.error(f"Failed to load configuration: {e}")
-            sys.exit(1)
-
-    # INTERACTIVE mode
+        configurator = _configure_from_file(console, profile, from_file)
+    elif non_interactive:
+        configurator = _configure_non_interactive(console, profile)
     else:
-        configurator = EnvConfigurator(profile, console)
+        configurator = _configure_interactively(console, profile)
 
-        if non_interactive:
-            console.warning("Non-interactive mode: using profile defaults")
-            try:
-                configurator.config = configurator.load_template()
-            except Exception as e:
-                console.error(f"Failed to load template: {e}")
-                sys.exit(1)
-        else:
-            # Interactive prompts
-            console.info(f"Starting interactive configuration for {profile} profile")
-            console.console.print()
+    _check_configuration(console, configurator, profile, non_interactive)
 
-            try:
-                # Prompt for each section
-                console.step(1, 4, "Database Configuration")
-                configurator.config.update(configurator.prompt_database())
-
-                console.step(2, 4, "Security Configuration")
-                configurator.config.update(configurator.prompt_security())
-
-                console.step(3, 4, "Email Configuration")
-                configurator.config.update(configurator.prompt_email(optional=True))
-
-                console.step(4, 4, "Application Configuration")
-                configurator.config.update(configurator.prompt_application())
-
-            except KeyboardInterrupt:
-                console.console.print()
-                console.warning("Configuration cancelled by user")
-                sys.exit(1)
-
-    # Validate configuration
-    console.console.print()
-    console.info("Validating configuration...")
-
-    errors = configurator.validate()
-    if errors:
-        console.error("Configuration validation failed:")
-        for error in errors:
-            console.console.print(f"  - {error}", style="red")
-
-        # Production never proceeds with an invalid configuration, even interactively.
-        if non_interactive or profile == 'production':
-            sys.exit(1)
-        if not console.confirm("Continue anyway?", default=False):
-            sys.exit(1)
-    else:
-        console.success("Configuration validation passed")
-
-    # Show diff if file exists
     if output_path.exists():
-        console.console.print()
-        console.info("Comparing with existing configuration...")
+        _show_diff(console, configurator, output_path)
 
-        try:
-            existing_config = parse_env_file(str(output_path))
-            diff = configurator.diff(existing_config)
-
-            if isinstance(diff, str) and diff == "No changes detected":
-                console.info(diff)
-            else:
-                console.console.print(diff)
-        except Exception as e:
-            console.warning(f"Could not load existing configuration: {e}")
-
-    # Confirm before writing
     if not non_interactive:
         console.console.print()
         if not console.confirm("Write configuration to .env file?", default=True):
             console.info("Configuration cancelled")
             sys.exit(0)
 
-    # Write configuration
-    console.console.print()
-    console.info("Writing configuration...")
-
-    try:
-        configurator.write(output_path)
-        console.success("Configuration file created successfully!")
-    except Exception as e:
-        console.error(f"Failed to write configuration: {e}")
-        sys.exit(1)
-
-    # Success summary
-    console.console.print()
-    console.console.print("[bold green]Environment setup completed successfully![/bold green]")
-    console.console.print()
-
-    # Next steps
-    console.info("Next steps:")
-    console.console.print("  1. Review the generated .env file")
-    console.console.print("  2. Generate JWT keys: python scripts/setup/setup_jwt.py")
-    console.console.print("  3. Initialize the database: alembic upgrade head")
-    console.console.print("  4. Start the application: uvicorn app.main:app")
-    console.console.print()
-
-    console.warning("IMPORTANT: Never commit the .env file to version control")
-    console.console.print()
-
+    _write_configuration(console, configurator, output_path)
+    _print_next_steps(console)
     sys.exit(0)
 
 
