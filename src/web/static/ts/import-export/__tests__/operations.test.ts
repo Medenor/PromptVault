@@ -45,12 +45,16 @@ describe('normalizeExportFilename', () => {
     expect(normalizeExportFilename('', 'csv')).toBe('promptvault_export.csv');
   });
 
-  it('leaves an already-extensioned filename untouched', () => {
-    expect(normalizeExportFilename('my-export.json', 'csv')).toBe('my-export.json');
+  it('replaces a mismatched extension with the one matching the format', () => {
+    expect(normalizeExportFilename('test.csv', 'json')).toBe('test.json');
+  });
+
+  it('keeps a matching extension without duplicating it', () => {
+    expect(normalizeExportFilename('my-export.json', 'json')).toBe('my-export.json');
   });
 
   it('appends the format extension when missing', () => {
-    expect(normalizeExportFilename('my-export', 'md')).toBe('my-export.md');
+    expect(normalizeExportFilename('my-export', 'markdown')).toBe('my-export.md');
   });
 });
 

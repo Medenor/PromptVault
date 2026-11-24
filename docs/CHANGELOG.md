@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Export panel "Clear" button restored the wrong defaults** (#82, #111): it checked "favorites only" and set the filename to `promptvault_export.csv`, unlike the initial page. It now restores the page defaults. The client also now replaces a filename extension that does not match the selected format (`test.csv` with JSON gives `test.json`; Markdown gives `.md`), as the server does, and the export card markup (mismatched heading tags, invalid attribute, filename pattern) is fixed.
 - **Update procedure in `docs/DEPLOYMENT.md` left the documentation portal on the old release**: the portal is compiled into the `docs` image, but the steps only recreated `web`. They now recreate `web docs`, check `http://localhost:7876/release-notes/` after the update, and the rollback restarts both, as the portal's own update guide already did.
 
 ## [1.15.0] - 2026-11-18

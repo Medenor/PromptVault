@@ -201,8 +201,8 @@ function clearExportSettings(): void {
   const includeMetadata = document.getElementById('include-metadata') as HTMLInputElement | null;
 
   if (exportFormat) exportFormat.value = 'csv';
-  if (filenameInput) filenameInput.value = 'promptvault_export.csv';
-  if (includeFavorites) includeFavorites.checked = true;
+  if (filenameInput) filenameInput.value = 'promptvault_export';
+  if (includeFavorites) includeFavorites.checked = false;
   if (includeMetadata) includeMetadata.checked = true;
   resetFieldError('export-filename', 'export-filename-error');
   resetErrorSummary('export-error-summary');
