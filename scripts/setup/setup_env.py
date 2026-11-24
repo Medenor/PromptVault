@@ -119,6 +119,11 @@ class EnvConfigurator:
             for key, value in self.PROFILE_DEFAULTS[self.profile].items():
                 template[key] = value
 
+            # .env.example carries the development database URL; production must
+            # not inherit it, so validate() demands an operator-supplied one.
+            if self.profile == 'production':
+                template.pop('DATABASE_URL', None)
+
             return template
         except FileNotFoundError as e:
             self.console.error(f"Template not found: {e}")
