@@ -90,8 +90,8 @@ class TestEnvConfiguratorInitialization:
 
         # Check production defaults
         prod_defaults = EnvConfigurator.PROFILE_DEFAULTS["production"]
-        assert "DATABASE_URL" in prod_defaults
-        assert "postgresql" in prod_defaults["DATABASE_URL"].lower()
+        # No hardcoded database URL/password: production requires an operator-supplied one
+        assert "DATABASE_URL" not in prod_defaults
         assert prod_defaults["ENVIRONMENT"] == "production"
         assert prod_defaults["LOG_LEVEL"] == "WARNING"
         assert prod_defaults["DB_ECHO"] == "false"
@@ -135,7 +135,8 @@ class TestLoadTemplate:
             # Should merge production defaults
             assert template["ENVIRONMENT"] == "production"
             assert template["LOG_LEVEL"] == "WARNING"
-            assert "postgresql" in template["DATABASE_URL"].lower()
+            # No default database URL is injected for production
+            assert "DATABASE_URL" not in template
 
     def test_load_template_profile_overrides_template(self):
         """Test that profile defaults override template values."""
@@ -152,7 +153,18 @@ class TestLoadTemplate:
             # Profile defaults should override
             assert template["ENVIRONMENT"] == "production"
             assert template["LOG_LEVEL"] == "WARNING"
-            assert "postgresql" in template["DATABASE_URL"].lower()
+            # The inherited development SQLite URL is dropped for production
+            assert "DATABASE_URL" not in template
+
+    def test_load_template_production_keeps_supplied_postgresql_url(self):
+        """A non-SQLite DATABASE_URL supplied via the template is kept for production."""
+        url = "postgresql://app:S3cure-Pw@db.internal:5432/pv"
+        with patch("scripts.setup.setup_env.load_env_template") as mock_load:
+            mock_load.return_value = {"DATABASE_URL": url}
+
+            template = EnvConfigurator("production", self.console).load_template()
+
+            assert template["DATABASE_URL"] == url
 
     def test_load_template_file_not_found(self):
         """Test handling of missing template file."""
@@ -1242,7 +1254,12 @@ development:
         with self.runner.isolated_filesystem() as temp_dir:
             self.temp_dir = temp_dir
 
-            with patch("scripts.setup.setup_env.load_env_template", return_value={}):
+            with patch(
+                "scripts.setup.setup_env.load_env_template",
+                return_value={
+                    "DATABASE_URL": "postgresql://user:pass@localhost:5432/db"
+                },
+            ):
                 with patch("scripts.setup.setup_env.write_env_file"):
                     result = self.runner.invoke(
                         main,
@@ -1254,6 +1271,24 @@ development:
                     )
 
             assert result.exit_code == 0
+
+    def test_cli_profile_production_requires_database_url(self):
+        """Production non-interactive setup fails without a supplied DATABASE_URL."""
+        with self.runner.isolated_filesystem():
+            for template in (
+                {},
+                {"DATABASE_URL": "sqlite:///./data-dev/promptvault.db"},
+            ):
+                with patch(
+                    "scripts.setup.setup_env.load_env_template", return_value=template
+                ):
+                    with patch("scripts.setup.setup_env.write_env_file") as mock_write:
+                        result = self.runner.invoke(
+                            main, ["--profile", "production", "--non-interactive"]
+                        )
+
+                assert result.exit_code == 1
+                assert not mock_write.called
 
     def test_cli_custom_output_path(self):
         """Test CLI with custom output path."""
@@ -1446,14 +1481,42 @@ class TestProductionProfile:
         assert config["PASSWORD_REQUIRE_DIGIT"] == "true"
         assert config["PASSWORD_REQUIRE_SPECIAL"] == "true"
 
-    def test_production_profile_postgresql_default(self):
-        """Test that production profile defaults to PostgreSQL database."""
+    def test_production_profile_has_no_database_url_default(self):
+        """Test that production profile does not ship a default database URL."""
         configurator = EnvConfigurator("production", self.console)
 
         with patch("scripts.setup.setup_env.load_env_template", return_value={}):
             template = configurator.load_template()
 
-        assert "postgresql" in template["DATABASE_URL"].lower()
+        assert "DATABASE_URL" not in template
+
+    def test_production_validate_requires_database_url(self):
+        """validate() reports a clear error when production has no DATABASE_URL."""
+        configurator = EnvConfigurator("production", self.console)
+
+        errors = configurator.validate()
+
+        assert any("DATABASE_URL" in e and "required" in e for e in errors)
+
+    def test_production_validate_rejects_legacy_default_password(self):
+        """validate() rejects the former hardcoded 'changeme' database password."""
+        configurator = EnvConfigurator("production", self.console)
+        configurator.config["DATABASE_URL"] = (
+            "postgresql://promptvault:changeme@localhost:5432/promptvault"
+        )
+
+        errors = configurator.validate()
+
+        assert any("changeme" in e for e in errors)
+
+    def test_production_validate_accepts_supplied_database_url(self):
+        """validate() accepts an operator-supplied production DATABASE_URL."""
+        configurator = EnvConfigurator("production", self.console)
+        configurator.config["DATABASE_URL"] = (
+            "postgresql://app:S3cure-Pw@db.internal:5432/pv"
+        )
+
+        assert not [e for e in configurator.validate() if "DATABASE_URL" in e]
 
     def test_production_profile_uses_redis_for_rate_limiting(self):
         """Test that production profile includes Redis URL for rate limiting."""
@@ -1584,6 +1647,7 @@ class TestProductionProfile:
                 # Return a dict with template values that will be overridden by production defaults
                 mock_template.return_value = {
                     "SOME_OTHER_KEY": "some_value",
+                    "DATABASE_URL": "postgresql://user:pass@localhost:5432/db",
                 }
 
                 with patch("scripts.setup.setup_env.write_env_file") as mock_write:
