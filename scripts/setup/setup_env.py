@@ -32,7 +32,7 @@ import secrets
 import string
 from pathlib import Path
 from typing import Dict, Optional, List, Tuple
-from urllib.parse import quote_plus
+from urllib.parse import quote_plus, urlsplit
 
 import click
 
@@ -66,6 +66,9 @@ class EnvConfigurator:
     configuration file writing with profile-specific defaults.
     """
 
+    # Former hardcoded production database password. Rejected by validate().
+    LEGACY_DEFAULT_DB_PASSWORD = 'changeme'
+
     # Profile-specific defaults
     PROFILE_DEFAULTS = {
         'development': {
@@ -77,7 +80,8 @@ class EnvConfigurator:
             'REDIS_URL': 'redis://localhost:6379/0',
         },
         'production': {
-            'DATABASE_URL': 'postgresql://promptvault:changeme@localhost:5432/promptvault',
+            # No DATABASE_URL default: production requires an operator-supplied
+            # URL (prompted for, or provided via --from-file / .env.example).
             'ENVIRONMENT': 'production',
             'LOG_LEVEL': 'WARNING',
             'AUDIT_LOG_LEVEL': 'INFO',
@@ -134,9 +138,6 @@ class EnvConfigurator:
 
         self.console.info("Database Configuration")
         self.console.console.print()
-
-        # Get default from profile
-        default_url = self.PROFILE_DEFAULTS[self.profile]['DATABASE_URL']
 
         if self.profile == 'development':
             self.console.info("Development profile: Using SQLite database")
@@ -496,6 +497,22 @@ class EnvConfigurator:
             is_valid, error = validate_database_url(self.config['DATABASE_URL'])
             if not is_valid:
                 errors.append(f"DATABASE_URL: {error}")
+
+        # Production must carry an operator-supplied database URL, and must
+        # never accept the legacy hardcoded password default.
+        if self.profile == 'production':
+            db_url = self.config.get('DATABASE_URL', '')
+            if not db_url:
+                errors.append(
+                    "DATABASE_URL: required for the production profile. "
+                    "Provide a database URL with your own credentials "
+                    "(run interactively, or set it in the config file)."
+                )
+            elif urlsplit(db_url).password == self.LEGACY_DEFAULT_DB_PASSWORD:
+                errors.append(
+                    "DATABASE_URL: uses the legacy default password 'changeme', "
+                    "which is not allowed in production. Use your own credentials."
+                )
 
         # Validate ports
         for port_key in ['SMTP_PORT', 'DB_POOL_SIZE']:
