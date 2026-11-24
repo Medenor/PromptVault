@@ -23,6 +23,7 @@ Tests cover:
 Target: 100% code coverage of JWTService
 """
 
+import base64
 import shutil
 import tempfile
 import time
@@ -1253,6 +1254,36 @@ class TestDecodeTokenUnsafe:
 # ============================================================================
 # TEST: GET TOKEN EXPIRY
 # ============================================================================
+
+
+class TestDeeplyNestedTokens:
+    """Deeply nested JSON segments must fail as InvalidTokenError, not RecursionError.
+
+    Regression for GHSA-8wjv-2p76-3863 (header) and GHSA-42vr-xj54-vc7v
+    (payload with verify_signature=False), fixed in PyJWT 2.14.0 / 2.15.0.
+    """
+
+    DEPTH = 200_000
+
+    @staticmethod
+    def _b64(raw: bytes) -> str:
+        return base64.urlsafe_b64encode(raw).rstrip(b"=").decode()
+
+    def _nested(self) -> str:
+        return self._b64(b"[" * self.DEPTH + b"]" * self.DEPTH)
+
+    def _header(self) -> str:
+        return self._b64(b'{"alg":"ES256","typ":"JWT"}')
+
+    def test_nested_header_rejected(self, jwt_service_with_temp_keys):
+        token = f"{self._nested()}.{self._b64(b'{}')}.sig"
+        with pytest.raises(InvalidTokenError):
+            jwt_service_with_temp_keys.validate_refresh_token(token)
+
+    def test_nested_payload_rejected_by_unsafe_decode(self, jwt_service):
+        token = f"{self._header()}.{self._nested()}.sig"
+        with pytest.raises(InvalidTokenError):
+            jwt_service.decode_token_unsafe(token)
 
 
 class TestGetTokenExpiry:
