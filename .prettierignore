@@ -11,3 +11,8 @@ specs/
 .specify/
 docs-portal/
 tests/fixtures/
+
+# Local cache written by the Impeccable design hook. It is hidden from git through
+# .git/info/exclude, which Prettier does not read, so `make lint` (and therefore
+# `make release-dry-run`) failed on it. It is never committed.
+.impeccable/hook.cache.json
