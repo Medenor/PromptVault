@@ -13,6 +13,7 @@ const loadPromptsMock = vi.fn();
 vi.mock('../prompt-list', () => ({
   performSearch: (...args: unknown[]) => performSearchMock(...args),
   loadPrompts: (...args: unknown[]) => loadPromptsMock(...args),
+  closePromptEditorForListChange: vi.fn(),
 }));
 
 import { buildSearchUrl, currentFilters, isAnyFilterActive, searchState } from '../prompt-filters';

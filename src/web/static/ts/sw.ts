@@ -54,7 +54,7 @@ declare const self: {
 
 declare const caches: MinimalCacheStorage;
 
-const CACHE_VERSION = 'v8';
+const CACHE_VERSION = 'v9';
 const STATIC_CACHE = `promptvault-static-${CACHE_VERSION}`;
 const API_CACHE = `promptvault-api-${CACHE_VERSION}`;
 const CURRENT_CACHES = [STATIC_CACHE, API_CACHE];
