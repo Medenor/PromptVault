@@ -1,0 +1,212 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-24T16:22:54.709411Z",
+  "title": "Design System: PromptVault",
+  "extensions": {
+    "colorMeta": {
+      "action-blue": {
+        "role": "primary",
+        "displayName": "Action Blue",
+        "canonical": "#1d4ed8",
+        "tonalRamp": [
+          "#1e3a8a",
+          "#1e40af",
+          "#1d4ed8",
+          "#2563eb",
+          "#3b82f6",
+          "#60a5fa",
+          "#bfdbfe",
+          "#eff6ff"
+        ]
+      },
+      "skill-green": {
+        "role": "secondary",
+        "displayName": "Skill Green",
+        "canonical": "#10b981",
+        "tonalRamp": [
+          "#064e3b",
+          "#065f46",
+          "#047857",
+          "#059669",
+          "#10b981",
+          "#34d399",
+          "#a7f3d0",
+          "#ecfdf5"
+        ]
+      },
+      "amber-action": {
+        "role": "tertiary",
+        "displayName": "Amber Action",
+        "canonical": "#b45309",
+        "tonalRamp": [
+          "#78350f",
+          "#92400e",
+          "#b45309",
+          "#d97706",
+          "#f59e0b",
+          "#fbbf24",
+          "#fde68a",
+          "#fffbeb"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "#111827",
+        "tonalRamp": [
+          "#111827",
+          "#1f2937",
+          "#374151",
+          "#4b5563",
+          "#6b7280",
+          "#9ca3af",
+          "#e5e7eb",
+          "#f9fafb"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Page titles."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Buttons, nav, field labels."
+      }
+    },
+    "shadows": [
+      {
+        "name": "overlay",
+        "value": "shadow-lg / shadow-xl (Tailwind)",
+        "purpose": "Modals, menus and popovers only."
+      }
+    ],
+    "motion": [
+      {
+        "name": "standard",
+        "value": "200ms",
+        "purpose": "Default transition; collapses to ~0 under prefers-reduced-motion."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "md",
+        "value": "768px"
+      },
+      {
+        "name": "lg",
+        "value": "1024px"
+      },
+      {
+        "name": "xl",
+        "value": "1280px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The single main action in a view.",
+      "html": "<button class=\"ds-btn-primary\">Save prompt</button>",
+      "css": ".ds-btn-primary{background:#1d4ed8;color:#fff;font-weight:500;font-size:16px;padding:8px 16px;border:0;border-radius:6px;cursor:pointer;transition:all 200ms}.ds-btn-primary:hover{background:#1e40af;transform:scale(1.05)}.ds-btn-primary:focus-visible{outline:3px solid #4a90e2;outline-offset:2px}"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Supporting actions.",
+      "html": "<button class=\"ds-btn-secondary\">Cancel</button>",
+      "css": ".ds-btn-secondary{background:#e5e7eb;color:#111827;font-weight:500;font-size:16px;padding:8px 16px;border:0;border-radius:6px;cursor:pointer;transition:all 200ms}.ds-btn-secondary:hover{background:#d1d5db;transform:scale(1.05)}.ds-btn-secondary:focus-visible{outline:3px solid #4a90e2;outline-offset:2px}"
+    },
+    {
+      "name": "Danger Button",
+      "kind": "button",
+      "refersTo": "button-danger",
+      "description": "Destructive actions.",
+      "html": "<button class=\"ds-btn-danger\">Delete</button>",
+      "css": ".ds-btn-danger{background:#ef4444;color:#fff;font-weight:500;font-size:16px;padding:8px 16px;border:0;border-radius:6px;cursor:pointer;transition:all 200ms}.ds-btn-danger:hover{background:#dc2626;transform:scale(1.05)}.ds-btn-danger:focus-visible{outline:3px solid #4a90e2;outline-offset:2px}"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "Single-line field; fill turns white on focus.",
+      "html": "<input class=\"ds-input\" placeholder=\"Title\" />",
+      "css": ".ds-input{width:100%;box-sizing:border-box;background:#f3f4f6;border:2px solid #f3f4f6;border-radius:6px;padding:8px 12px;font-size:16px;color:#111827;transition:all 200ms}.ds-input:focus{background:#fff;border-color:#3b82f6;outline:3px solid #4a90e2;outline-offset:2px}"
+    },
+    {
+      "name": "Bordered Card",
+      "kind": "card",
+      "refersTo": "card-bordered",
+      "description": "Resting container: flat, hairline border.",
+      "html": "<div class=\"ds-card\"><h3>Release notes helper</h3><p>Summarizes commits into a changelog.</p></div>",
+      "css": ".ds-card{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:16px;color:#111827}.ds-card h3{margin:0 0 4px;font-size:18px;font-weight:600}.ds-card p{margin:0;font-size:14px;color:#6b7280}"
+    },
+    {
+      "name": "Tab",
+      "kind": "nav",
+      "description": "Underline tabs; blue when active.",
+      "html": "<div class=\"ds-tabs\"><button class=\"ds-tab ds-tab-on\">Prompts</button><button class=\"ds-tab\">Skills</button></div>",
+      "css": ".ds-tabs{display:flex}.ds-tab{background:none;border:0;border-bottom:2px solid transparent;padding:8px 16px;font-size:14px;font-weight:500;color:#4b5563;cursor:pointer;transition:all 200ms}.ds-tab:hover{color:#111827;border-bottom-color:#d1d5db}.ds-tab-on{border-bottom-color:#3b82f6;color:#2563eb}.ds-tab:focus-visible{outline:3px solid #4a90e2;outline-offset:2px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Quiet Archive",
+    "overview": "PromptVault looks like a well-kept library: flat, legible, and unhurried. Content leads. Chrome recedes. One blue marks what you can act on.",
+    "keyCharacteristics": [
+      "Flat surfaces separated by hairline borders and tonal fills, not shadows.",
+      "One action color (blue); green marks skills and success, amber marks secondary emphasis and warnings.",
+      "One typeface in five weights.",
+      "Visible, high-contrast keyboard focus everywhere.",
+      "Light and dark parity."
+    ],
+    "rules": [
+      {
+        "name": "The One Voice Rule",
+        "body": "Blue means action. Do not use blue as decoration, as a section color, or for large fills outside primary buttons and active states.",
+        "section": "colors"
+      },
+      {
+        "name": "The Contrast Floor Rule",
+        "body": "Text and interactive boundaries meet WCAG 2.1 AA. Reach for the 700 step on light backgrounds, not the 500 step.",
+        "section": "colors"
+      },
+      {
+        "name": "The Single Family Rule",
+        "body": "Outfit only. Never introduce a second typeface for emphasis.",
+        "section": "typography"
+      },
+      {
+        "name": "The 16px Input Rule",
+        "body": "Form controls stay at 16px so mobile browsers do not zoom on focus.",
+        "section": "typography"
+      },
+      {
+        "name": "The Overlay-Only Shadow Rule",
+        "body": "A shadow means this sits above the page. Do not put shadows on resting cards, inputs, or buttons.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do use Action Blue (#1d4ed8) for the single primary action in a view.",
+      "Do keep surfaces flat; separate them with hairline borders and tonal fills.",
+      "Do use focus-visible styling and the 3px Focus Blue outline on every interactive element.",
+      "Do ship every new UI string through i18n and check it in light and dark mode.",
+      "Do reuse the components in src/web/static/ts/components/ before writing new markup."
+    ],
+    "donts": [
+      "Don't add shadows to resting cards, inputs or buttons.",
+      "Don't use primary-500 blue (#3b82f6) for white-on-blue text; it misses contrast.",
+      "Don't introduce a second typeface or a new accent hue.",
+      "Don't use custom CSS where a Tailwind utility exists.",
+      "Don't signal state with color alone."
+    ]
+  }
+}
