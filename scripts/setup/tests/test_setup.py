@@ -264,7 +264,7 @@ class TestQuickSetup:
             state_file = Path(tmpdir) / ".setup_state.json"
 
             # Mock console to avoid user interaction
-            mock_console_instance = Mock()
+            mock_console_instance = MagicMock()
             mock_console.return_value = mock_console_instance
             mock_console_instance.confirm.return_value = True
 
@@ -290,7 +290,7 @@ class TestQuickSetup:
         with tempfile.TemporaryDirectory() as tmpdir:
             state_file = Path(tmpdir) / ".setup_state.json"
 
-            mock_console_instance = Mock()
+            mock_console_instance = MagicMock()
             mock_console.return_value = mock_console_instance
 
             wizard = SetupWizard(non_interactive=True)
@@ -349,7 +349,7 @@ class TestAdvancedSetup:
         with tempfile.TemporaryDirectory() as tmpdir:
             state_file = Path(tmpdir) / ".setup_state.json"
 
-            mock_console_instance = Mock()
+            mock_console_instance = MagicMock()
             mock_console.return_value = mock_console_instance
             mock_console_instance.confirm.return_value = True
 
