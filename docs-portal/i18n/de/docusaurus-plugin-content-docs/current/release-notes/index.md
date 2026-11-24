@@ -9,6 +9,14 @@ Highlights der letzten PromptVault-Releases. Die vollständige, ungekürzte Hist
 
 Die Schritte zum Aktualisieren finden Sie unter [PromptVault aktualisieren](../installation/update.md).
 
+## 1.17.0
+
+- **Korrektur**: PostgreSQL-Installationen mit 1.16.0 starteten nicht mehr (`No module named 'psycopg'`). PromptVault liefert jetzt den Treiber psycopg v3 mit. Ihre `DATABASE_URL` muss nicht geändert werden: `postgresql://` und `postgresql+psycopg2://` funktionieren beide. SQLite ist nicht betroffen.
+- **Sicherheitskorrektur**: PyJWT wurde auf 2.15.1 aktualisiert. Ein Token mit stark verschachteltem JSON führte bei den Endpunkten für Aktualisierung, Abmeldung und 2FA zu einem Serverfehler statt zu einem 401. Im Anfragetext gesendete Tokens sind jetzt auf 4096 Zeichen begrenzt. PromptVault akzeptiert nur ES256-Tokens, daher betreffen die übrigen PyJWT-Sicherheitshinweise Sie nicht.
+- **Härtung**: Das Zurücksetzen des Passworts gibt das Klartext-Token nicht mehr an den Aufrufer zurück und protokolliert eine maskierte statt der echten E-Mail-Adresse.
+- **Oberfläche**: Auf jeder Prompt-Karte ist Kopieren jetzt die blaue Hauptaktion und Bearbeiten die zweite. Verlauf, Kopieren + Version, Teilen und Löschen stehen im Menü „Weitere Aktionen“. Die Kopfzeile ist auf allen Seiten neutral. Der Dunkelmodus ist für Badges, Banner, Schaltflächen, Fußzeilenlinks und den Favoritenstern korrigiert. Schlägt das erste Laden der Prompt-Liste fehl, erscheint jetzt eine Fehlermeldung mit der Schaltfläche „Erneut versuchen“.
+- **Aktualisierung**: Images neu bauen und neu starten. Eine Datenbankmigration ist nicht nötig.
+
 ## 1.16.0
 
 - **Sicherheitskorrektur**: Die Anfrage zum Zurücksetzen des Passworts antwortet jetzt gleich, ob ein Konto existiert oder nicht, und der Link zum Zurücksetzen wird nicht mehr in die Anwendungsprotokolle geschrieben. Die Links laufen nach einer Stunde ab, Sie können aber ältere Protokollzeilen mit `reset-password?token=` löschen.

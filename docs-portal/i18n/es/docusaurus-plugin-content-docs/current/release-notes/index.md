@@ -9,6 +9,14 @@ Aspectos destacados de las versiones recientes de PromptVault. Para el historial
 
 Consulte [Actualizar PromptVault](../installation/update.md) para ver los pasos de actualización.
 
+## 1.17.0
+
+- **Corrección**: las instalaciones con PostgreSQL en la versión 1.16.0 no arrancaban (`No module named 'psycopg'`). PromptVault ahora incluye el controlador psycopg v3. Su `DATABASE_URL` no necesita cambios: funcionan tanto `postgresql://` como `postgresql+psycopg2://`. SQLite no se ve afectado.
+- **Corrección de seguridad**: PyJWT se actualizó a la 2.15.1. Un token con JSON muy anidado hacía que los puntos de acceso de renovación, cierre de sesión y 2FA respondieran con un error del servidor en lugar de un 401. Los tokens enviados en el cuerpo de una petición se limitan ahora a 4096 caracteres. PromptVault solo acepta tokens ES256, así que los demás avisos de seguridad de PyJWT no le afectan.
+- **Refuerzo**: el restablecimiento de contraseña ya no devuelve el token en texto claro a quien lo invoca y registra una dirección de correo enmascarada en lugar de la real.
+- **Interfaz**: en cada tarjeta de prompt, Copiar es ahora la acción principal (azul) y Editar la secundaria. Historial, Copiar + versión, Compartir y Eliminar están en un menú «Más acciones». El encabezado es neutro en todas las páginas. Se corrigió el modo oscuro en insignias, avisos, botones, enlaces del pie de página y la estrella de favoritos. Si falla la primera carga de la lista de prompts, ahora se muestra un error con un botón «Reintentar».
+- **Actualización**: reconstruya las imágenes y reinicie. No hace falta ninguna migración de base de datos.
+
 ## 1.16.0
 
 - **Corrección de seguridad**: la solicitud de restablecimiento de contraseña ahora responde igual exista o no la cuenta, y el enlace de restablecimiento ya no se escribe en los registros de la aplicación. Los enlaces caducan a la hora, pero puedes borrar las líneas de registro antiguas que contengan `reset-password?token=`.

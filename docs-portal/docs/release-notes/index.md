@@ -9,6 +9,14 @@ Highlights from recent PromptVault releases. For the complete, unabridged histor
 
 For upgrade steps, see [Update PromptVault](../installation/update.md).
 
+## 1.17.0
+
+- **Fix**: PostgreSQL installations running 1.16.0 failed to start with `No module named 'psycopg'`. PromptVault now ships the psycopg v3 driver. Your `DATABASE_URL` does not need to change: both `postgresql://` and `postgresql+psycopg2://` work. SQLite is not affected.
+- **Security fix**: PyJWT was upgraded to 2.15.1. A token with deeply nested JSON made the refresh, logout and 2FA endpoints answer with a server error instead of a 401. Tokens sent in a request body are now limited to 4096 characters. PromptVault only accepts ES256 tokens, so the other PyJWT advisories do not apply.
+- **Hardening**: the password reset flow no longer hands the plain reset token back to its caller, and it logs a masked email address instead of the raw one.
+- **Interface**: on each prompt card, Copy is now the main blue action and Edit is secondary. History, Copy+Version, Share and Delete are in a "More actions" menu. The header is neutral on every page. Dark mode is fixed for badges, banners, buttons, footer links and the favorite star. A failed first load of the prompt list now shows an error with a "Try again" button.
+- **Upgrade**: rebuild the images and restart. No database migration is needed.
+
 ## 1.16.0
 
 - **Security fix**: the password reset request now gives the same answer whether or not an account exists, and the reset link is no longer written to the application logs. Reset links expire after one hour, but you may want to purge older log lines containing `reset-password?token=`.

@@ -9,6 +9,14 @@ Points forts des versions récentes de PromptVault. Pour l'historique complet et
 
 Pour les étapes de mise à jour, consultez [Mettre à jour PromptVault](../installation/update.md).
 
+## 1.17.0
+
+- **Correction** : les installations PostgreSQL en 1.16.0 ne démarraient plus (`No module named 'psycopg'`). PromptVault embarque désormais le pilote psycopg v3. Votre `DATABASE_URL` n'a pas besoin de changer : `postgresql://` et `postgresql+psycopg2://` fonctionnent tous deux. SQLite n'est pas concerné.
+- **Correctif de sécurité** : PyJWT passe en 2.15.1. Un jeton contenant du JSON très imbriqué faisait répondre les points d'accès de rafraîchissement, de déconnexion et de double authentification par une erreur serveur au lieu d'un 401. Les jetons envoyés dans le corps d'une requête sont désormais limités à 4096 caractères. PromptVault n'accepte que les jetons ES256 : les autres avis de sécurité PyJWT ne s'appliquent pas.
+- **Renforcement** : la réinitialisation du mot de passe ne renvoie plus le jeton en clair à l'appelant et journalise une adresse e-mail masquée plutôt que l'adresse réelle.
+- **Interface** : sur chaque carte de prompt, Copier est désormais l'action principale (bleue) et Modifier l'action secondaire. Historique, Copier + version, Partager et Supprimer sont dans un menu « Plus d'actions ». L'en-tête est neutre sur toutes les pages. Le mode sombre est corrigé pour les badges, les bannières, les boutons, les liens du pied de page et l'étoile des favoris. Un premier chargement raté de la liste des prompts affiche maintenant une erreur avec un bouton « Réessayer ».
+- **Mise à jour** : reconstruisez les images et redémarrez. Aucune migration de base de données n'est nécessaire.
+
 ## 1.16.0
 
 - **Correctif de sécurité** : la demande de réinitialisation du mot de passe répond désormais de la même façon que le compte existe ou non, et le lien de réinitialisation n'est plus écrit dans les journaux de l'application. Les liens expirent après une heure, mais vous pouvez purger les anciennes lignes de journal contenant `reset-password?token=`.
