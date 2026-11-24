@@ -177,14 +177,13 @@ function updateActivityHistory(): void {
     `;
 }
 
+const EXPORT_EXTENSIONS: Record<string, string> = { csv: 'csv', markdown: 'md', json: 'json' };
+
 export function normalizeExportFilename(filename: string, format: string): string {
-  if (!filename) {
-    return `promptvault_export.${format}`;
-  }
-  if (/\.(csv|md|json)$/i.test(filename)) {
-    return filename;
-  }
-  return `${filename}.${format}`;
+  const extension = EXPORT_EXTENSIONS[format] ?? format;
+  // Mirror the server: strip any known extension, then append the one matching the format.
+  const base = filename.trim().replace(/\.(csv|md|markdown|json)$/i, '');
+  return `${base || 'promptvault_export'}.${extension}`;
 }
 
 export async function previewExport(): Promise<void> {
