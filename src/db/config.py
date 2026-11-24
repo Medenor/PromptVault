@@ -20,9 +20,14 @@ Example URLs:
     PostgreSQL: postgresql://user:password@localhost:5432/promptvault
 """
 
+import re
 from typing import Any
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+_BARE_POSTGRESQL_PREFIX = "postgresql://"
+_PSYCOPG2_PREFIX = "postgresql+psycopg2://"
+_DRIVER_SUFFIX_RE = re.compile(r"^postgresql\+\w+://")
 
 
 class DatabaseSettings(BaseSettings):
@@ -63,6 +68,30 @@ class DatabaseSettings(BaseSettings):
             True if DATABASE_URL points to PostgreSQL, False otherwise
         """
         return self.DATABASE_URL.startswith("postgresql")
+
+    @property
+    def sqlalchemy_url(self) -> str:
+        """DATABASE_URL as SQLAlchemy should load it.
+
+        SQLAlchemy 2.1 resolves a bare ``postgresql://`` URL to the psycopg v3
+        dialect, but the project ships ``psycopg2-binary``. A bare PostgreSQL
+        URL is therefore pinned to ``postgresql+psycopg2://``. A URL that
+        already names a driver is returned unchanged.
+        """
+        if self.DATABASE_URL.startswith(_BARE_POSTGRESQL_PREFIX):
+            return _PSYCOPG2_PREFIX + self.DATABASE_URL[len(_BARE_POSTGRESQL_PREFIX) :]
+        return self.DATABASE_URL
+
+    @property
+    def libpq_url(self) -> str:
+        """DATABASE_URL as libpq tools (``pg_dump``, ``psql``) accept it.
+
+        libpq rejects the ``+driver`` suffix SQLAlchemy uses, so it is removed.
+        """
+        match = _DRIVER_SUFFIX_RE.match(self.DATABASE_URL)
+        if match:
+            return "postgresql://" + self.DATABASE_URL[match.end() :]
+        return self.DATABASE_URL
 
     @property
     def database_type(self) -> str:

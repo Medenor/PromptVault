@@ -40,7 +40,7 @@ logger = logging.getLogger(__name__)
 # Create SQLAlchemy engine with appropriate configuration
 engine_kwargs = db_settings.get_engine_kwargs()
 
-engine = create_engine(db_settings.DATABASE_URL, **engine_kwargs)
+engine = create_engine(db_settings.sqlalchemy_url, **engine_kwargs)
 
 # Log database connection info
 logger.info(f"Database engine created: {db_settings.database_type}")

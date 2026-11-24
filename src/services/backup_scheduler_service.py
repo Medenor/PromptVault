@@ -89,7 +89,7 @@ class BackupSchedulerService:
             with BackupSchedulerService._scheduler_lock:
                 if BackupSchedulerService._class_scheduler is None:
                     jobstores = {
-                        "default": SQLAlchemyJobStore(url=db_settings.DATABASE_URL),
+                        "default": SQLAlchemyJobStore(url=db_settings.sqlalchemy_url),
                     }
                     BackupSchedulerService._class_scheduler = BackgroundScheduler(
                         jobstores=jobstores,
