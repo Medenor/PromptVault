@@ -110,11 +110,28 @@ export function setPaginationPageSize(size: PageSize): void {
   paginationState.pageSize = size;
 }
 
+/**
+ * Close the prompt editor if it is open and restore the list view.
+ * A new search/filter replaces the list, so an editor opened for a prompt
+ * from the previous results must not stay visible.
+ */
+export function closePromptEditorForListChange(): void {
+  const promptEditor = document.getElementById('prompt-editor');
+  if (!promptEditor || promptEditor.classList.contains('hidden')) {
+    return;
+  }
+  hideElement(promptEditor);
+  showElement(document.getElementById('prompts-list'));
+  showElement(document.getElementById('pull-refresh-toolbar'));
+  setPaginationControlsVisible(true);
+}
+
 export async function performSearch(): Promise<void> {
   if (searchState.isLoading) {
     return; // Don't start new search if one is already running
   }
 
+  closePromptEditorForListChange();
   searchState.isLoading = true;
 
   // Any filter change (this is only called on filter change or initial
