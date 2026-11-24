@@ -8,7 +8,7 @@ import { debounce } from '@/utils/debounce';
 import { closeSearchOverlay, isSearchOverlayOpen } from '@/search-overlay';
 import { hideElement, toggleElement } from './shared';
 import { syncFilterListsRovingTabindex } from './keyboard-nav';
-import { loadPrompts, performSearch } from './prompt-list';
+import { closePromptEditorForListChange, loadPrompts, performSearch } from './prompt-list';
 import { isAnyFilterActive, searchState } from './prompt-filters';
 
 // How long the search overlay stays open, with no typing, after results load
@@ -298,6 +298,7 @@ export function handleItemTypeFilter(event: Event): void {
   if (isAnyFilterActive()) {
     void performSearch();
   } else {
+    closePromptEditorForListChange();
     void loadPrompts();
   }
 }
@@ -449,5 +450,6 @@ export function clearAllFilters(): void {
   }
 
   // Load all prompts
+  closePromptEditorForListChange();
   void loadPrompts();
 }
