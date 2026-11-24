@@ -99,6 +99,7 @@ test.describe('Prompt management functional smoke tests', () => {
     const card = page.locator('.prompt-item', { hasText: title });
     await expect(card).toHaveCount(1, { timeout: 10000 });
 
+    await card.locator('.card-menu-btn').click();
     await card.locator('.delete-btn').click();
 
     const dialog = page.locator('[role="dialog"]:visible').last();

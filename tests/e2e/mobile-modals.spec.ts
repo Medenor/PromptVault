@@ -10,6 +10,7 @@ test.describe('Modal layout: full-screen on mobile, centered on desktop (FR-003)
 
     const firstCard = page.locator('.prompt-item').first();
     await expect(firstCard).toBeVisible();
+    await firstCard.locator('.card-menu-btn').click();
     await firstCard.locator('.history-btn').first().click();
 
     const modal = page.locator('#version-history-modal');
@@ -31,6 +32,7 @@ test.describe('Modal layout: full-screen on mobile, centered on desktop (FR-003)
 
     const firstCard = page.locator('.prompt-item').first();
     await expect(firstCard).toBeVisible();
+    await firstCard.locator('.card-menu-btn').click();
     await firstCard.locator('.history-btn').first().click();
 
     const modal = page.locator('#version-history-modal');

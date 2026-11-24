@@ -311,3 +311,96 @@ describe('setFavoriteButtonA11y', () => {
     expect(button.getAttribute('aria-pressed')).toBe('false');
   });
 });
+
+describe('createPromptElement overflow menu', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+    selectedPromptIds.clear();
+    setLastSelectedPromptIdSetter(() => {});
+    setPromptElementHandlers(makeHandlers());
+  });
+
+  function mount(overrides: Partial<PromptResponse> = {}): HTMLElement {
+    const card = createPromptElement('7', makePrompt({ id: 7, ...overrides }));
+    document.body.appendChild(card);
+    return card;
+  }
+
+  it('shows only Copy and Edit outside the menu; the rest live in a closed menu', () => {
+    const card = mount();
+    const menu = card.querySelector('.card-menu-list') as HTMLElement;
+    expect(menu.classList.contains('hidden')).toBe(true);
+    expect(card.querySelector('.copy-btn')?.closest('.card-menu-list')).toBeNull();
+    expect(card.querySelector('.edit-btn')?.closest('.card-menu-list')).toBeNull();
+    for (const sel of ['.history-btn', '.copy-with-version-btn', '.share-btn', '.delete-btn']) {
+      expect(menu.querySelector(sel)).not.toBeNull();
+    }
+  });
+
+  it('makes Copy the single primary action', () => {
+    const card = mount();
+    expect(card.querySelector('.copy-btn')?.className).toContain('bg-blue-700');
+    expect(card.querySelector('.edit-btn')?.className).not.toContain('bg-blue-700');
+  });
+
+  it('toggles aria-expanded and closes on Escape, restoring focus to the trigger', () => {
+    const card = mount();
+    const trigger = card.querySelector('.card-menu-btn') as HTMLButtonElement;
+    const menu = card.querySelector('.card-menu-list') as HTMLElement;
+    trigger.click();
+    expect(menu.classList.contains('hidden')).toBe(false);
+    expect(trigger.getAttribute('aria-expanded')).toBe('true');
+    menu.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(menu.classList.contains('hidden')).toBe(true);
+    expect(trigger.getAttribute('aria-expanded')).toBe('false');
+    expect(document.activeElement).toBe(trigger);
+  });
+
+  it('opens with ArrowDown focusing the first item and wraps with ArrowUp/Home/End', () => {
+    const card = mount();
+    const trigger = card.querySelector('.card-menu-btn') as HTMLButtonElement;
+    const menu = card.querySelector('.card-menu-list') as HTMLElement;
+    const items = Array.from(menu.querySelectorAll<HTMLElement>('[role="menuitem"]'));
+    trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    expect(document.activeElement).toBe(items[0]);
+    menu.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
+    expect(document.activeElement).toBe(items[items.length - 1]);
+    menu.dispatchEvent(new KeyboardEvent('keydown', { key: 'Home', bubbles: true }));
+    expect(document.activeElement).toBe(items[0]);
+    menu.dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true }));
+    expect(document.activeElement).toBe(items[items.length - 1]);
+    menu.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    expect(document.activeElement).toBe(items[0]);
+  });
+
+  it('closes after picking an item and still runs its handler', () => {
+    const handlers = makeHandlers();
+    setPromptElementHandlers(handlers);
+    const card = mount();
+    const trigger = card.querySelector('.card-menu-btn') as HTMLButtonElement;
+    trigger.click();
+    (card.querySelector('.history-btn') as HTMLButtonElement).click();
+    expect(handlers.onShowHistory).toHaveBeenCalledWith(7);
+    expect(card.querySelector('.card-menu-list')?.classList.contains('hidden')).toBe(true);
+  });
+
+  it('closes on outside click and when another card menu opens', () => {
+    const a = mount();
+    const b = createPromptElement('8', makePrompt({ id: 8 }));
+    document.body.appendChild(b);
+    (a.querySelector('.card-menu-btn') as HTMLButtonElement).click();
+    (b.querySelector('.card-menu-btn') as HTMLButtonElement).click();
+    expect(a.querySelector('.card-menu-list')?.classList.contains('hidden')).toBe(true);
+    expect(b.querySelector('.card-menu-list')?.classList.contains('hidden')).toBe(false);
+    document.body.click();
+    expect(b.querySelector('.card-menu-list')?.classList.contains('hidden')).toBe(true);
+  });
+
+  it('omits Edit, Share and Delete for read-only viewers but keeps History', () => {
+    const card = mount({ permission: 'read' });
+    expect(card.querySelector('.edit-btn')).toBeNull();
+    expect(card.querySelector('.share-btn')).toBeNull();
+    expect(card.querySelector('.delete-btn')).toBeNull();
+    expect(card.querySelector('.history-btn')).not.toBeNull();
+  });
+});

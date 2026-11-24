@@ -59,6 +59,7 @@ test.describe('Swipe gestures on prompt cards (FR-007)', () => {
 test.describe('Version-history swipeable carousel on mobile (FR-018)', () => {
   test('prev/next buttons page through versions one at a time', async ({ page }) => {
     await page.goto('/', { waitUntil: 'networkidle' });
+    await page.locator('.card-menu-btn').first().click();
     await page.locator('.history-btn').first().click();
 
     const nav = page.locator('#version-carousel-nav');
@@ -74,6 +75,7 @@ test.describe('Version-history swipeable carousel on mobile (FR-018)', () => {
 
   test('swiping left on the version list pages to the next version', async ({ page }) => {
     await page.goto('/', { waitUntil: 'networkidle' });
+    await page.locator('.card-menu-btn').first().click();
     await page.locator('.history-btn').first().click();
 
     const versionList = page.locator('#version-list');

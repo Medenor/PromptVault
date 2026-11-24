@@ -5,7 +5,7 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Accessible equivalents for gesture-driven actions (FR-020)', () => {
-  test('the prompt card has visible Edit and Delete buttons reachable without swiping', async ({
+  test('the prompt card has Edit visible and Delete reachable from the More menu without swiping', async ({
     page,
   }) => {
     await page.goto('/', { waitUntil: 'networkidle' });
@@ -15,6 +15,7 @@ test.describe('Accessible equivalents for gesture-driven actions (FR-020)', () =
     const editBtn = firstCard.locator('.edit-btn').first();
     const deleteBtn = firstCard.locator('.delete-btn').first();
     await expect(editBtn).toBeVisible();
+    await firstCard.locator('.card-menu-btn').click();
     await expect(deleteBtn).toBeVisible();
 
     // Both must be real, keyboard-focusable buttons (not gesture-only divs).

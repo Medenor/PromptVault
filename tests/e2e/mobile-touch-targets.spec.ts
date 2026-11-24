@@ -46,7 +46,14 @@ test.describe('Mobile touch target sizing (SC-002)', () => {
     const firstCard = page.locator('.prompt-item').first();
     await expect(firstCard).toBeVisible();
 
-    for (const selector of ['.history-btn', '.copy-btn', '.edit-btn', '.delete-btn']) {
+    await firstCard.locator('.card-menu-btn').click();
+    for (const selector of [
+      '.card-menu-btn',
+      '.history-btn',
+      '.copy-btn',
+      '.edit-btn',
+      '.delete-btn',
+    ]) {
       const box = await firstCard.locator(selector).first().boundingBox();
       expect(box, `${selector} should have a bounding box`).not.toBeNull();
       expect(box!.height).toBeGreaterThanOrEqual(MIN_TOUCH_TARGET);
