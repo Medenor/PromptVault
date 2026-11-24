@@ -206,18 +206,18 @@ export function createPromptElement(id: string, item: ItemResponse): HTMLDivElem
   const categoryStyle = buildPillStyleFilled(categoryColor);
 
   const semVerBadge = prompt.semantic_version
-    ? `<span class="version-badge px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-100 text-blue-700 ml-2">v${prompt.semantic_version}</span>`
+    ? `<span class="version-badge px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-100 ml-2">v${prompt.semantic_version}</span>`
     : '';
 
   // Sharing badges (007-prompt-sharing, US2): mutually exclusive — an
   // explicit grant ("shared") always implies not legacy_public-only, per
   // the backend's `shared`/`legacy_public` payload fields (contracts §4).
   const sharedBadge = prompt.shared
-    ? `<span class="shared-badge px-2 py-0.5 text-xs font-semibold rounded-full bg-green-100 text-green-700 ml-2" data-i18n="sharing.badge">Shared</span>`
+    ? `<span class="shared-badge px-2 py-0.5 text-xs font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900/60 dark:text-green-100 ml-2" data-i18n="sharing.badge">Shared</span>`
     : '';
   const legacyPublicBadge =
     !prompt.shared && prompt.legacy_public
-      ? `<span class="legacy-public-badge px-2 py-0.5 text-xs font-semibold rounded-full bg-amber-100 text-amber-700 ml-2" data-i18n="sharing.legacy_public_badge">Public (legacy)</span>`
+      ? `<span class="legacy-public-badge px-2 py-0.5 text-xs font-semibold rounded-full bg-amber-100 text-amber-900 dark:bg-amber-900/60 dark:text-amber-100 ml-2" data-i18n="sharing.legacy_public_badge">Public (legacy)</span>`
       : '';
 
   // Permission-gated controls (007-prompt-sharing, US2 — contracts §4/§4b):

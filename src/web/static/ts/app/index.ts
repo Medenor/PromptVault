@@ -24,6 +24,7 @@ import { logout, hideAuthOnlyElements, fetchRoleAndRevealAdmin } from '@/utils/a
 import { APP_COMPONENT, guardOnlineOnly, reportAppIssue } from './shared';
 import { addTooltips, initializeFilterListKeyboardNavigation } from './keyboard-nav';
 import {
+  initLoadErrorRetry,
   lastSelectedPromptId,
   loadMorePrompts,
   loadPrompts,
@@ -385,6 +386,7 @@ function setupEventListeners(): void {
 
   // Desktop "New" dropdown (New prompt / Import skill)
   initNewMenu();
+  initLoadErrorRetry();
 
   // New prompt button
   const newPromptBtn = document.getElementById('new-prompt-btn');

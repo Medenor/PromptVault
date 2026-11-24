@@ -440,6 +440,10 @@ function showCopyFeedback(id: PromptId, message: string): void {
     btn.textContent = translatedMessage;
     setTimeout(() => (btn.textContent = originalText), 2000);
   }
+  // The label swap is invisible to assistive tech; the toast is a polite live region
+  // for success and an assertive alert for failure.
+  const failed = message === 'messages.copyFailed';
+  showNotification(tUnsafe(message), failed ? 'error' : 'success', 2500);
 }
 
 export async function editPrompt(id: PromptId): Promise<void> {

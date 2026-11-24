@@ -43,6 +43,8 @@
     "cancel": "Annuler",
     "confirm": "Confirmer",
     "copy": "Copier",
+    "retry": "Réessayer",
+    "loadMore": "Charger plus",
     "moreActions": "Plus d'actions",
     "favorite": "Favori",
     "addFavorite": "Ajouter aux favoris",
@@ -89,6 +91,7 @@
   "messages": {
     "copied": "Copié!",
     "copyFailed": "Échec de la copie",
+    "loadPromptsFailed": "Impossible de charger vos prompts. Vérifiez votre connexion et réessayez.",
     "loading": "Chargement...",
     "saving": "Enregistrement...",
     "deleting": "Suppression...",

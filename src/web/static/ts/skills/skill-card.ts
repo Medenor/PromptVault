@@ -234,7 +234,7 @@ export function createSkillElement(
   buttons.appendChild(
     actionButton(
       t('actions.view'),
-      'skill-open-btn bg-blue-100 text-blue-700 hover:bg-blue-200',
+      'skill-open-btn bg-blue-100 text-blue-800 hover:bg-blue-200 dark:bg-blue-900/60 dark:text-blue-100 dark:hover:bg-blue-800',
       open
     )
   );
@@ -242,7 +242,7 @@ export function createSkillElement(
     buttons.appendChild(
       actionButton(
         t('actions.delete'),
-        'delete-btn bg-red-100 text-red-700 hover:bg-red-200',
+        'delete-btn bg-red-100 text-red-800 hover:bg-red-200 dark:bg-red-900/60 dark:text-red-100 dark:hover:bg-red-800',
         () => {
           handlers.onSelect(numericId);
           handlers.onDelete(id);
