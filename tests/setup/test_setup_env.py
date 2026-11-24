@@ -961,7 +961,7 @@ class TestDiff:
 
         result = configurator.diff(existing)
 
-        assert result == "No changes detected"
+        assert result is None
 
     def test_diff_changed_values(self):
         """Test diff detects changed values."""
@@ -1394,7 +1394,7 @@ class TestErrorHandling:
 
         result = configurator.diff({})
 
-        assert result == "No changes detected"
+        assert result is None
 
 
 class TestProductionProfile:
@@ -1997,3 +1997,33 @@ class TestPoolSizeValidation:
     def test_invalid_sizes(self, value):
         errors = self._errors(value)
         assert errors == ["DB_POOL_SIZE: Pool size must be a positive integer"]
+
+
+class TestGenerateSecurePasswordLoop:
+    """generate_secure_password redraws (no recursion) until all classes are present."""
+
+    def test_rejects_too_short_length(self):
+        configurator = EnvConfigurator("development", Mock())
+        with pytest.raises(ValueError, match="at least 4"):
+            configurator.generate_secure_password(length=3)
+
+    def test_redraws_until_all_character_classes_present(self):
+        configurator = EnvConfigurator("development", Mock())
+        # First draw is lowercase only (rejected), second has every class.
+        draws = list("abcd") + list("aB3!")
+        with patch("secrets.choice", side_effect=draws) as mock_choice:
+            password = configurator.generate_secure_password(length=4)
+
+        assert password == "aB3!"
+        assert mock_choice.call_count == 8
+
+    @pytest.mark.parametrize("length", [4, 16, 64])
+    def test_has_every_class_at_any_length(self, length):
+        password = EnvConfigurator("development", Mock()).generate_secure_password(
+            length
+        )
+        assert len(password) == length
+        assert any(c.isupper() for c in password)
+        assert any(c.islower() for c in password)
+        assert any(c.isdigit() for c in password)
+        assert any(not c.isalnum() for c in password)

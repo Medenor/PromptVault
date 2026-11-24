@@ -34,6 +34,7 @@ from typing import Any, Dict, Optional, List
 from urllib.parse import quote_plus, urlsplit
 
 import click
+from rich.table import Table
 
 # Add scripts directory to path to import utilities
 script_dir = Path(__file__).resolve().parent
@@ -492,29 +493,34 @@ class EnvConfigurator:
         """
         Generate a secure random password.
 
+        Draws uniformly from letters, digits and punctuation, and redraws until
+        the result has an uppercase letter, a lowercase letter, a digit and a
+        special character (rarely needed for typical lengths).
+
         Args:
-            length: Password length (default: 32)
+            length: Password length (default: 32, minimum: 4)
 
         Returns:
             Secure random password string
+
+        Raises:
+            ValueError: If length is too short to hold one character of each class
         """
-        # Character sets for password generation
+        if length < 4:
+            raise ValueError("Password length must be at least 4")
+
         chars = string.ascii_letters + string.digits + string.punctuation
 
-        # Use secrets module for cryptographically strong random
-        password = ''.join(secrets.choice(chars) for _ in range(length))
-
-        # Ensure password meets complexity requirements
-        has_upper = any(c.isupper() for c in password)
-        has_lower = any(c.islower() for c in password)
-        has_digit = any(c.isdigit() for c in password)
-        has_special = any(c in string.punctuation for c in password)
-
-        # Regenerate if doesn't meet requirements (very unlikely)
-        if not (has_upper and has_lower and has_digit and has_special):
-            return self.generate_secure_password(length)
-
-        return password
+        while True:
+            # secrets gives a cryptographically strong draw
+            password = ''.join(secrets.choice(chars) for _ in range(length))
+            if (
+                any(c.isupper() for c in password)
+                and any(c.islower() for c in password)
+                and any(c.isdigit() for c in password)
+                and any(c in string.punctuation for c in password)
+            ):
+                return password
 
     def _validate_database(self) -> List[str]:
         """Validate DATABASE_URL, and enforce the production-specific rules."""
@@ -601,7 +607,7 @@ class EnvConfigurator:
             errors.extend(check())
         return errors
 
-    def diff(self, existing: Dict[str, str]) -> str:
+    def diff(self, existing: Dict[str, str]) -> Optional[Table]:
         """
         Generate diff between existing and new configuration.
 
@@ -609,10 +615,8 @@ class EnvConfigurator:
             existing: Existing configuration dictionary
 
         Returns:
-            Human-readable diff string
+            A rich Table of the changes, or None when nothing changed
         """
-        from rich.table import Table
-
         # Create table for diff
         table = Table(
             title="Configuration Changes",
@@ -644,7 +648,7 @@ class EnvConfigurator:
                 table.add_row(key, old_value, new_value)
 
         if not changes_found:
-            return "No changes detected"
+            return None
 
         return table
 
@@ -798,8 +802,8 @@ def _show_diff(console: SetupConsole, configurator: EnvConfigurator, output_path
         existing_config = parse_env_file(str(output_path))
         diff = configurator.diff(existing_config)
 
-        if isinstance(diff, str) and diff == "No changes detected":
-            console.info(diff)
+        if diff is None:
+            console.info("No changes detected")
         else:
             console.console.print(diff)
     except Exception as e:
