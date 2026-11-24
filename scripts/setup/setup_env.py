@@ -663,6 +663,179 @@ class EnvConfigurator:
             raise
 
 
+def _resolve_output_path(output: str) -> Path:
+    """Resolve the output path; relative paths are anchored at the project root."""
+    project_root = Path(__file__).resolve().parent.parent.parent
+    output_path = Path(output)
+    if not output_path.is_absolute():
+        output_path = project_root / output_path
+    return output_path
+
+
+def _print_errors(console: SetupConsole, errors: List[str]) -> None:
+    """Print validation errors as a red bullet list."""
+    for error in errors:
+        console.console.print(f"  - {error}", style="red")
+
+
+def _run_validate_only(console: SetupConsole, profile: str, output_path: Path) -> None:
+    """Validate an existing .env file, then exit (0 if valid, 1 otherwise)."""
+    console.step(1, 1, "Validating existing .env file")
+
+    if not output_path.exists():
+        console.error(f"File not found: {output_path}")
+        sys.exit(1)
+
+    try:
+        existing_config = parse_env_file(str(output_path))
+        console.success(f"Loaded {len(existing_config)} configuration values")
+
+        configurator = EnvConfigurator(profile, console)
+        configurator.config = existing_config
+
+        errors = configurator.validate()
+        if errors:
+            console.error("Validation errors found:")
+            _print_errors(console, errors)
+            sys.exit(1)
+        console.success("All configuration values are valid")
+        sys.exit(0)
+
+    except Exception as e:
+        console.error(f"Validation failed: {e}")
+        sys.exit(1)
+
+
+def _configure_from_file(console: SetupConsole, profile: str, from_file: str) -> EnvConfigurator:
+    """Build the configuration from a YAML file, or exit(1) if it cannot be loaded."""
+    console.step(1, 3, f"Loading configuration from {from_file}")
+
+    try:
+        yaml_config = parse_yaml_config(from_file)
+        console.success(f"Loaded configuration from {from_file}")
+
+        configurator = EnvConfigurator(profile, console)
+        # Flat or profile-keyed YAML, merged over the profile template
+        configurator.config = configurator.load_file_config(yaml_config)
+        return configurator
+
+    except Exception as e:
+        console.error(f"Failed to load configuration: {e}")
+        sys.exit(1)
+
+
+def _configure_non_interactive(console: SetupConsole, profile: str) -> EnvConfigurator:
+    """Use the profile template as-is, or exit(1) if it cannot be loaded."""
+    configurator = EnvConfigurator(profile, console)
+    console.warning("Non-interactive mode: using profile defaults")
+    try:
+        configurator.config = configurator.load_template()
+    except Exception as e:
+        console.error(f"Failed to load template: {e}")
+        sys.exit(1)
+    return configurator
+
+
+def _configure_interactively(console: SetupConsole, profile: str) -> EnvConfigurator:
+    """Prompt for every section; exit(1) if the user interrupts."""
+    configurator = EnvConfigurator(profile, console)
+
+    console.info(f"Starting interactive configuration for {profile} profile")
+    console.console.print()
+
+    try:
+        console.step(1, 4, "Database Configuration")
+        configurator.config.update(configurator.prompt_database())
+
+        console.step(2, 4, "Security Configuration")
+        configurator.config.update(configurator.prompt_security())
+
+        console.step(3, 4, "Email Configuration")
+        configurator.config.update(configurator.prompt_email(optional=True))
+
+        console.step(4, 4, "Application Configuration")
+        configurator.config.update(configurator.prompt_application())
+
+    except KeyboardInterrupt:
+        console.console.print()
+        console.warning("Configuration cancelled by user")
+        sys.exit(1)
+
+    return configurator
+
+
+def _check_configuration(
+    console: SetupConsole,
+    configurator: EnvConfigurator,
+    profile: str,
+    non_interactive: bool,
+) -> None:
+    """Validate the configuration; exit(1) unless the user chooses to continue."""
+    console.console.print()
+    console.info("Validating configuration...")
+
+    errors = configurator.validate()
+    if not errors:
+        console.success("Configuration validation passed")
+        return
+
+    console.error("Configuration validation failed:")
+    _print_errors(console, errors)
+
+    # Production never proceeds with an invalid configuration, even interactively.
+    if non_interactive or profile == 'production':
+        sys.exit(1)
+    if not console.confirm("Continue anyway?", default=False):
+        sys.exit(1)
+
+
+def _show_diff(console: SetupConsole, configurator: EnvConfigurator, output_path: Path) -> None:
+    """Show how the new configuration differs from the existing .env file."""
+    console.console.print()
+    console.info("Comparing with existing configuration...")
+
+    try:
+        existing_config = parse_env_file(str(output_path))
+        diff = configurator.diff(existing_config)
+
+        if isinstance(diff, str) and diff == "No changes detected":
+            console.info(diff)
+        else:
+            console.console.print(diff)
+    except Exception as e:
+        console.warning(f"Could not load existing configuration: {e}")
+
+
+def _write_configuration(console: SetupConsole, configurator: EnvConfigurator, output_path: Path) -> None:
+    """Write the .env file, or exit(1) on failure."""
+    console.console.print()
+    console.info("Writing configuration...")
+
+    try:
+        configurator.write(output_path)
+        console.success("Configuration file created successfully!")
+    except Exception as e:
+        console.error(f"Failed to write configuration: {e}")
+        sys.exit(1)
+
+
+def _print_next_steps(console: SetupConsole) -> None:
+    """Print the success banner and what to do after the .env is written."""
+    console.console.print()
+    console.console.print("[bold green]Environment setup completed successfully![/bold green]")
+    console.console.print()
+
+    console.info("Next steps:")
+    console.console.print("  1. Review the generated .env file")
+    console.console.print("  2. Generate JWT keys: python scripts/setup/setup_jwt.py")
+    console.console.print("  3. Initialize the database: alembic upgrade head")
+    console.console.print("  4. Start the application: uvicorn app.main:app")
+    console.console.print()
+
+    console.warning("IMPORTANT: Never commit the .env file to version control")
+    console.console.print()
+
+
 @click.command()
 @click.option(
     '--profile',
@@ -700,170 +873,36 @@ def main(profile: str, from_file: Optional[str], validate_only: bool, non_intera
     """
     console = SetupConsole()
 
-    # Display header
     console.header(
         "PromptVault Environment Setup",
         f"Interactive configuration for {profile} deployment"
     )
 
-    # Resolve output path
-    project_root = Path(__file__).resolve().parent.parent.parent
-    output_path = Path(output)
-    if not output_path.is_absolute():
-        output_path = project_root / output_path
+    output_path = _resolve_output_path(output)
 
-    # VALIDATE-ONLY mode
     if validate_only:
-        console.step(1, 1, "Validating existing .env file")
+        _run_validate_only(console, profile, output_path)
 
-        if not output_path.exists():
-            console.error(f"File not found: {output_path}")
-            sys.exit(1)
-
-        try:
-            existing_config = parse_env_file(str(output_path))
-            console.success(f"Loaded {len(existing_config)} configuration values")
-
-            # Create configurator to use validation
-            configurator = EnvConfigurator(profile, console)
-            configurator.config = existing_config
-
-            # Validate
-            errors = configurator.validate()
-            if errors:
-                console.error("Validation errors found:")
-                for error in errors:
-                    console.console.print(f"  - {error}", style="red")
-                sys.exit(1)
-            else:
-                console.success("All configuration values are valid")
-                sys.exit(0)
-
-        except Exception as e:
-            console.error(f"Validation failed: {e}")
-            sys.exit(1)
-
-    # FROM-FILE mode
     if from_file:
-        console.step(1, 3, f"Loading configuration from {from_file}")
-
-        try:
-            yaml_config = parse_yaml_config(from_file)
-            console.success(f"Loaded configuration from {from_file}")
-
-            # Create configurator and set config
-            configurator = EnvConfigurator(profile, console)
-
-            # Flat or profile-keyed YAML, merged over the profile template
-            configurator.config = configurator.load_file_config(yaml_config)
-
-        except Exception as e:
-            console.error(f"Failed to load configuration: {e}")
-            sys.exit(1)
-
-    # INTERACTIVE mode
+        configurator = _configure_from_file(console, profile, from_file)
+    elif non_interactive:
+        configurator = _configure_non_interactive(console, profile)
     else:
-        configurator = EnvConfigurator(profile, console)
+        configurator = _configure_interactively(console, profile)
 
-        if non_interactive:
-            console.warning("Non-interactive mode: using profile defaults")
-            try:
-                configurator.config = configurator.load_template()
-            except Exception as e:
-                console.error(f"Failed to load template: {e}")
-                sys.exit(1)
-        else:
-            # Interactive prompts
-            console.info(f"Starting interactive configuration for {profile} profile")
-            console.console.print()
+    _check_configuration(console, configurator, profile, non_interactive)
 
-            try:
-                # Prompt for each section
-                console.step(1, 4, "Database Configuration")
-                configurator.config.update(configurator.prompt_database())
-
-                console.step(2, 4, "Security Configuration")
-                configurator.config.update(configurator.prompt_security())
-
-                console.step(3, 4, "Email Configuration")
-                configurator.config.update(configurator.prompt_email(optional=True))
-
-                console.step(4, 4, "Application Configuration")
-                configurator.config.update(configurator.prompt_application())
-
-            except KeyboardInterrupt:
-                console.console.print()
-                console.warning("Configuration cancelled by user")
-                sys.exit(1)
-
-    # Validate configuration
-    console.console.print()
-    console.info("Validating configuration...")
-
-    errors = configurator.validate()
-    if errors:
-        console.error("Configuration validation failed:")
-        for error in errors:
-            console.console.print(f"  - {error}", style="red")
-
-        # Production never proceeds with an invalid configuration, even interactively.
-        if non_interactive or profile == 'production':
-            sys.exit(1)
-        if not console.confirm("Continue anyway?", default=False):
-            sys.exit(1)
-    else:
-        console.success("Configuration validation passed")
-
-    # Show diff if file exists
     if output_path.exists():
-        console.console.print()
-        console.info("Comparing with existing configuration...")
+        _show_diff(console, configurator, output_path)
 
-        try:
-            existing_config = parse_env_file(str(output_path))
-            diff = configurator.diff(existing_config)
-
-            if isinstance(diff, str) and diff == "No changes detected":
-                console.info(diff)
-            else:
-                console.console.print(diff)
-        except Exception as e:
-            console.warning(f"Could not load existing configuration: {e}")
-
-    # Confirm before writing
     if not non_interactive:
         console.console.print()
         if not console.confirm("Write configuration to .env file?", default=True):
             console.info("Configuration cancelled")
             sys.exit(0)
 
-    # Write configuration
-    console.console.print()
-    console.info("Writing configuration...")
-
-    try:
-        configurator.write(output_path)
-        console.success("Configuration file created successfully!")
-    except Exception as e:
-        console.error(f"Failed to write configuration: {e}")
-        sys.exit(1)
-
-    # Success summary
-    console.console.print()
-    console.console.print("[bold green]Environment setup completed successfully![/bold green]")
-    console.console.print()
-
-    # Next steps
-    console.info("Next steps:")
-    console.console.print("  1. Review the generated .env file")
-    console.console.print("  2. Generate JWT keys: python scripts/setup/setup_jwt.py")
-    console.console.print("  3. Initialize the database: alembic upgrade head")
-    console.console.print("  4. Start the application: uvicorn app.main:app")
-    console.console.print()
-
-    console.warning("IMPORTANT: Never commit the .env file to version control")
-    console.console.print()
-
+    _write_configuration(console, configurator, output_path)
+    _print_next_steps(console)
     sys.exit(0)
 
 
