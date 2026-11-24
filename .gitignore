@@ -88,3 +88,4 @@ tests/PERFORMANCE_BASELINE.md
 
 # Downloaded corpora for network-marked tests
 .cache/
+.env.production
