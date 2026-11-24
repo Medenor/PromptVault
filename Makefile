@@ -33,6 +33,11 @@ BACKEND_PORT     ?= 7870
 FRONTEND_PORT    ?= 7873
 PYTEST           := $(PYTHON) -m pytest
 BACKEND_TEST_CMD  = $(PYTEST)
+# Test files with a PostgreSQL leg (skipped unless DATABASE_URL is a PostgreSQL URL).
+PG_TEST_FILES    := tests/test_fts_search.py tests/test_fts_snippet.py tests/test_fts_migration.py \
+                    tests/test_migration_prompt_legacy_public.py tests/test_migration_prompt_shares.py \
+                    tests/test_backup_full_roundtrip.py tests/integration/test_skill_search.py \
+                    tests/integration/test_skill_migration.py tests/integration/test_skill_backup_roundtrip.py
 FRONTEND_TEST_CMD = npm run test:unit:coverage
 COMPOSE          := docker compose
 
@@ -43,7 +48,7 @@ COMPOSE          := docker compose
         check-runtime check-deps \
         install install-backend install-frontend \
         dev \
-        test test-backend test-frontend \
+        test test-backend test-postgres test-frontend \
         lint lint-backend lint-frontend lint-fix check-file-sizes check-sw-cache-version \
         build build-frontend build-image \
         release-prepare release-prepare-dry-run release release-dry-run \
@@ -163,6 +168,14 @@ test-backend: ## Run backend test suite with coverage (python3 -m pytest)
 
 test-frontend: ## Run frontend test suite with coverage (vitest)
 	$(FRONTEND_TEST_CMD)
+
+test-postgres: ## Run the PostgreSQL legs of the backend tests (DATABASE_URL=postgresql://...test-db, resets its schema)
+	@test -n "$$DATABASE_URL" || { echo "Set DATABASE_URL to a PostgreSQL test database (its name must contain 'test')."; exit 1; }
+	@for f in $(PG_TEST_FILES); do \
+	  $(PYTHON) scripts/reset_test_postgres.py || exit 1; \
+	  echo "== $$f"; \
+	  $(PYTEST) $$f -q --no-cov -p no:cacheprovider || exit 1; \
+	done
 
 test: ## Run all test suites (backend + frontend) with coverage gates
 	@echo "=== Running full test suite ==="
