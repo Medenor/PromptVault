@@ -273,8 +273,6 @@ def request_password_reset(
     masked_email = _mask_email(request_data.email)
 
     try:
-        # The returned plain token is deliberately discarded: it must never
-        # reach the client or the response.
         password_reset_service.request_password_reset(
             email=request_data.email,
             ip_address=ip_address,
@@ -288,13 +286,11 @@ def request_password_reset(
         session.commit()
 
     except UserNotFoundError:
-        logger.info(
-            f"Password reset requested for non-existent email: {request_data.email}"
-        )
+        logger.info(f"Password reset requested for non-existent email: {masked_email}")
 
     except RateLimitExceededError:
         logger.warning(
-            f"Password reset rate limit exceeded for: {request_data.email} from {ip_address}"
+            f"Password reset rate limit exceeded for: {masked_email} from {ip_address}"
         )
 
     except Exception as e:
