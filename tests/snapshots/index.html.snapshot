@@ -129,7 +129,7 @@ pointer-events: auto !important;
 <!-- Persistent offline indicator (FR-010) -->
 <div
 id="offline-indicator"
-class="hidden bg-amber-100 text-amber-900 text-sm font-medium text-center py-2 px-4 border-b border-amber-300"
+class="hidden bg-amber-100 text-amber-900 dark:bg-amber-900 dark:text-amber-100 text-sm font-medium text-center py-2 px-4 border-b border-amber-300 dark:border-amber-700"
 role="status"
 aria-live="polite"
 data-i18n="offline.indicator"
@@ -137,14 +137,14 @@ data-i18n="offline.indicator"
 You're offline. Viewing cached prompts — changes will sync when you're back online.
 </div>
 <!-- Header -->
-<header class="bg-blue-700 text-white shadow-sm" role="banner" aria-label="Site header">
+<header class="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700" role="banner" aria-label="Site header">
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 <div class="flex items-center justify-between h-16">
 <!-- Logo and Title -->
 <div class="flex items-center gap-4">
 <a
 href="/"
-class="inline-flex focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500 rounded-lg"
+class="inline-flex focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 dark:focus-visible:ring-blue-300 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-800 rounded-lg"
 aria-label="PromptVault home"
 data-i18n="[aria-label]accessibility.labels.home"
 >
@@ -152,7 +152,7 @@ data-i18n="[aria-label]accessibility.labels.home"
 src="/static/images/promptvault_logo_frontend.webp"
 alt=""
 aria-hidden="true"
-class="h-10 w-10 md:h-14 md:w-14 border-2 border-gray-400 dark:border-gray-600 rounded-lg shadow-lg shrink-0"
+class="h-10 w-10 md:h-14 md:w-14 border-2 border-gray-400 dark:border-gray-600 rounded-lg shrink-0"
 />
 </a>
 <div class="md:max-lg:hidden text-2xl font-bold">PromptVault</div>
@@ -172,7 +172,7 @@ id="new-menu-btn"
 aria-haspopup="menu"
 aria-expanded="false"
 aria-controls="new-menu"
-class="inline-flex items-center gap-1 whitespace-nowrap px-3 py-2 text-sm font-semibold rounded-lg bg-white text-blue-700 border border-blue-200 hover:bg-blue-50 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
+class="inline-flex items-center gap-1 whitespace-nowrap px-3 py-2 text-sm font-semibold rounded-lg bg-blue-700 text-white border border-transparent hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 dark:focus-visible:ring-blue-300 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-800"
 >
 <span data-i18n="nav.new">New</span>
 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -210,7 +210,7 @@ Import skill
 type="button"
 id="import-export-btn"
 onclick="if (window.__requireOnlineNav) { window.__requireOnlineNav('/import-export'); } else { window.location.href = '/import-export'; }"
-class="hidden xl:block whitespace-nowrap px-3 py-2 text-sm font-medium rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
+class="hidden xl:block whitespace-nowrap px-3 py-2 text-sm font-medium rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 dark:focus-visible:ring-blue-300 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-800"
 data-i18n="nav.importExport"
 >
 Import/Export
@@ -219,7 +219,7 @@ Import/Export
 type="button"
 id="backup-btn"
 onclick="if (window.__requireOnlineNav) { window.__requireOnlineNav('/backup-management'); } else { window.location.href = '/backup-management'; }"
-class="hidden xl:block whitespace-nowrap px-3 py-2 text-sm font-medium rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
+class="hidden xl:block whitespace-nowrap px-3 py-2 text-sm font-medium rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 dark:focus-visible:ring-blue-300 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-800"
 data-i18n="nav.backupManagement"
 >
 Backup
@@ -227,7 +227,7 @@ Backup
 <a
 href="http://localhost:7876"
 data-docs-portal-link
-class="hidden xl:block whitespace-nowrap px-3 py-2 text-sm font-medium rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
+class="hidden xl:block whitespace-nowrap px-3 py-2 text-sm font-medium rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 dark:focus-visible:ring-blue-300 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-800"
 data-i18n="nav.documentation"
 >
 Documentation
@@ -240,7 +240,7 @@ id="more-menu-btn"
 aria-haspopup="menu"
 aria-expanded="false"
 aria-controls="more-menu"
-class="inline-flex items-center gap-1 whitespace-nowrap px-3 py-2 text-sm font-medium rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
+class="inline-flex items-center gap-1 whitespace-nowrap px-3 py-2 text-sm font-medium rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 dark:focus-visible:ring-blue-300 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-800"
 >
 <span data-i18n="nav.more">More</span>
 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -298,7 +298,7 @@ data-i18n="[aria-label]nav.language"
 type="button"
 id="profile-btn"
 onclick="window.location.href = '/auth/profile'"
-class="hidden md:block whitespace-nowrap px-3 py-2 text-sm font-medium rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
+class="hidden md:block whitespace-nowrap px-3 py-2 text-sm font-medium rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 dark:focus-visible:ring-blue-300 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-800"
 data-i18n="nav.profile"
 >
 Profile
@@ -307,7 +307,7 @@ Profile
 type="button"
 id="admin-btn"
 onclick="window.location.href = '/admin/users'"
-class="hidden md:block whitespace-nowrap px-3 py-2 text-sm font-medium rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
+class="hidden md:block whitespace-nowrap px-3 py-2 text-sm font-medium rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 dark:focus-visible:ring-blue-300 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-800"
 data-i18n="nav.admin"
 style="display: none"
 >
@@ -317,7 +317,7 @@ Admin
 <button
 type="button"
 id="mobile-search-toggle"
-class="md:hidden inline-flex items-center justify-center w-11 h-11 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
+class="md:hidden inline-flex items-center justify-center w-11 h-11 rounded-lg bg-gray-100 text-gray-900 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 dark:focus-visible:ring-blue-300 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-800"
 aria-label="Search prompts"
 aria-haspopup="true"
 aria-expanded="false"
@@ -332,7 +332,7 @@ data-i18n="[aria-label]nav.searchPlaceholder"
 <button
 type="button"
 id="mobile-menu-toggle"
-class="md:hidden inline-flex items-center justify-center w-11 h-11 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
+class="md:hidden inline-flex items-center justify-center w-11 h-11 rounded-lg bg-gray-100 text-gray-900 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 dark:focus-visible:ring-blue-300 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-800"
 aria-label="Open menu"
 aria-haspopup="true"
 aria-expanded="false"
@@ -347,7 +347,7 @@ data-i18n="[aria-label]accessibility.labels.openMenu"
 <button
 type="button"
 id="logout-btn"
-class="hidden md:block whitespace-nowrap px-3 py-2 text-sm font-medium rounded-lg bg-red-600 text-white hover:bg-red-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-500"
+class="hidden md:block whitespace-nowrap px-3 py-2 text-sm font-medium rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-gray-600 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 dark:focus-visible:ring-blue-300 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-800"
 data-i18n="nav.logout"
 >
 Logout
@@ -370,13 +370,9 @@ aria-label="Prompt filters and navigation"
 data-i18n="[aria-label]accessibility.labels.promptFiltersNavigation"
 >
 <div class="p-4">
-<h1 class="sr-only">Prompts Dashboard</h1>
 <h2 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4" data-i18n="nav.filters">Filters</h2>
 <!-- Filters Section -->
 <div class="mb-6">
-<h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3" data-i18n="nav.filters">
-Filters
-</h3>
 <!-- Search Input -->
 <div class="relative mb-3">
 <input
@@ -387,7 +383,7 @@ placeholder="Search prompts..."
 aria-label="Search prompts"
 data-i18n="[aria-label]nav.searchPlaceholder"
 data-i18n-placeholder="nav.searchPlaceholder"
-class="w-full pl-3 pr-10 py-2 text-sm border border-gray-400 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 dark:placeholder-gray-400 disabled:bg-gray-50 dark:bg-gray-900 disabled:text-gray-700 dark:text-gray-300 disabled:cursor-not-allowed text-gray-900 dark:text-gray-100"
+class="w-full pl-3 pr-10 py-2 text-base border border-gray-400 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-500 dark:placeholder-gray-400 disabled:bg-gray-50 dark:bg-gray-900 disabled:text-gray-700 dark:text-gray-300 disabled:cursor-not-allowed text-gray-900 dark:text-gray-100"
 />
 <svg class="search-input-icon absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none w-5 h-5 transition-colors"
 fill="none"
@@ -483,14 +479,14 @@ All Tags
 </div>
 <!-- Management Links -->
 <div class="mt-6 border-t border-gray-200 dark:border-gray-700 pt-4">
-<h3 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4" data-i18n="management.manage">
+<h2 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4" data-i18n="management.manage">
 Manage
-</h3>
+</h2>
 <div class="space-y-2">
 <button
 type="button"
 onclick="if (window.__requireOnlineNav) { window.__requireOnlineNav('/manage-categories'); } else { window.location.href = '/manage-categories'; }"
-class="w-full px-4 py-2 text-sm font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
+class="w-full px-4 py-2 text-sm font-medium rounded-lg bg-blue-50 text-blue-800 hover:bg-blue-100 dark:bg-blue-900/40 dark:text-blue-100 dark:hover:bg-blue-900/70 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
 data-i18n="categories.manage"
 >
 Manage Categories
@@ -498,7 +494,7 @@ Manage Categories
 <button
 type="button"
 onclick="if (window.__requireOnlineNav) { window.__requireOnlineNav('/manage-tags'); } else { window.location.href = '/manage-tags'; }"
-class="w-full px-4 py-2 text-sm font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
+class="w-full px-4 py-2 text-sm font-medium rounded-lg bg-blue-50 text-blue-800 hover:bg-blue-100 dark:bg-blue-900/40 dark:text-blue-100 dark:hover:bg-blue-900/70 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
 data-i18n="tags.manage"
 >
 Manage Tags
@@ -828,21 +824,21 @@ data-i18n="[aria-label]actions.close"
 <main id="main-content" role="main" class="flex-1 w-full">
 <div class="p-6 max-w-7xl mx-auto">
 <!-- Search Results Info -->
-<h3 class="sr-only">Search Results</h3>
+<h2 class="sr-only">Search Results</h2>
 <div
 id="search-results-info"
-class="mb-4 px-4 py-3 bg-blue-50 text-blue-800 rounded-lg text-sm hidden"
+class="mb-4 px-4 py-3 bg-blue-50 text-blue-900 dark:bg-blue-900/40 dark:text-blue-100 rounded-lg text-sm hidden"
 role="status"
 aria-live="polite"
 ></div>
 <!-- Bulk Actions Toolbar -->
-<h3 class="sr-only">Bulk Actions</h3>
+<h2 class="sr-only">Bulk Actions</h2>
 <div
 id="bulk-actions-toolbar"
-class="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-center justify-between"
+class="mb-4 p-4 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 rounded-lg flex items-center justify-between"
 style="display: none"
 >
-<span id="selected-count" class="text-sm font-semibold text-amber-900">0 selected</span>
+<span id="selected-count" class="text-sm font-semibold text-amber-900 dark:text-amber-100">0 selected</span>
 <div class="flex gap-2 items-center">
 <button
 type="button"
@@ -871,7 +867,7 @@ class="px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 dark:bg-gray-700 tex
 </div>
 </div>
 <!-- Prompts List Header -->
-<div class="flex items-center justify-between mb-4">
+<div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 mb-4">
 <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">
 <span data-i18n="nav.prompts">Prompts</span>
 </h1>
@@ -898,10 +894,15 @@ class="text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white d
 </select>
 </div>
 </div>
+<!-- Load failure: replaces the skeleton, announced, with a retry action -->
+<div id="prompts-error-state" role="alert" class="hidden mb-6 p-6 rounded-lg border border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/30 text-center">
+<p class="text-base font-semibold text-red-900 dark:text-red-100 mb-4" data-i18n="messages.loadPromptsFailed">We couldn't load your prompts. Check your connection and try again.</p>
+<button type="button" id="prompts-retry-btn" class="px-4 py-2 text-sm font-semibold rounded-lg bg-blue-700 text-white hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500 transition-colors focus-ring" data-i18n="actions.retry">Try again</button>
+</div>
 <!-- Empty State for Prompts -->
 <div id="prompts-empty-state" class="hidden text-center p-12 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
 <div class="text-5xl text-gray-400 mb-4">📝</div>
-<h3 class="sr-only">No prompts available</h3>
+<h2 class="sr-only">No prompts available</h2>
 <p class="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2" data-i18n="emptyStates.noPrompts.title">No prompts yet</p>
 <p class="text-sm text-gray-700 dark:text-gray-300 mb-6" data-i18n="emptyStates.noPrompts.description">Create your first prompt to get started</p>
 <button
@@ -916,7 +917,7 @@ Create Prompt
 <!-- Empty State for Search Results -->
 <div id="search-empty-state" class="hidden text-center p-12 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
 <div class="text-5xl text-gray-400 mb-4">🔍</div>
-<h3 class="sr-only">No search results</h3>
+<h2 class="sr-only">No search results</h2>
 <p class="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2" data-i18n="emptyStates.noSearchResults.title">No results found</p>
 <p class="text-sm text-gray-700 dark:text-gray-300 mb-6" data-i18n="emptyStates.noSearchResults.description">Try adjusting your search or filters</p>
 <button
@@ -952,7 +953,7 @@ data-i18n="[aria-label]actions.refreshPrompts"
 </button>
 </div>
 <!-- Prompts Grid (populated by JS) -->
-<h3 class="sr-only">Prompts List</h3>
+<h2 class="sr-only">Prompts List</h2>
 <div
 id="prompts-list"
 class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
@@ -1008,8 +1009,9 @@ data is rendered here for auth-enabled sessions.
 <button
 type="button"
 id="load-more-btn"
-class="px-6 py-2.5 text-sm font-semibold rounded-lg bg-gray-100 text-gray-900 hover:bg-gray-200 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+class="px-6 py-2.5 text-sm font-semibold rounded-lg bg-gray-100 text-gray-900 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
 aria-live="polite"
+data-i18n="actions.loadMore"
 >
 Load More
 </button>
@@ -1237,10 +1239,10 @@ data-i18n="[aria-label]actions.newPromptFab"
 <footer class="bg-gray-100 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-700 mt-8 py-6 px-4" role="contentinfo" aria-label="Site footer">
 <div class="max-w-7xl mx-auto">
 <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-<p class="text-sm text-gray-700 dark:text-gray-300">PromptVault is licensed under <a href="https://www.mozilla.org/en-US/MPL/2.0/" class="text-blue-600 hover:text-blue-800 underline" target="_blank" rel="noopener noreferrer">Mozilla Public License 2.0</a>.
+<p class="text-sm text-gray-700 dark:text-gray-300">PromptVault is licensed under <a href="https://www.mozilla.org/en-US/MPL/2.0/" class="text-blue-700 hover:text-blue-900 dark:text-blue-300 dark:hover:text-blue-200 underline" target="_blank" rel="noopener noreferrer">Mozilla Public License 2.0</a>.
 </p>
 <nav class="contents" aria-label="Footer links">
-<a href="https://github.com/Medenor/PromptVault" class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 transition" target="_blank" rel="noopener noreferrer" aria-label="PromptVault on GitHub">
+<a href="https://github.com/Medenor/PromptVault" class="inline-flex items-center gap-2 text-blue-700 hover:text-blue-900 dark:text-blue-300 dark:hover:text-blue-200 transition" target="_blank" rel="noopener noreferrer" aria-label="PromptVault on GitHub">
 <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" focusable="false"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
 Source code on GitHub
 </a>
