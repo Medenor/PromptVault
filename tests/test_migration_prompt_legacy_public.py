@@ -53,11 +53,11 @@ def _insert_prompt(engine, title: str) -> int:
         result = conn.execute(
             sa.text(
                 "INSERT INTO prompts (title, prompt, favorite, user_id) "
-                "VALUES (:title, 'content', false, :user_id)"
+                "VALUES (:title, 'content', false, :user_id) RETURNING id"
             ),
             {"title": title, "user_id": user_id},
         )
-        return result.lastrowid if result.lastrowid else None
+        return int(result.scalar_one())
 
 
 def _get_legacy_public(engine, title: str):

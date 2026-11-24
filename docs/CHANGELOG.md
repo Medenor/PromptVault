@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **PyJWT upgraded to 2.15.1** (from 2.13.0). A token with deeply nested JSON in its header or payload made PyJWT raise an uncaught `RecursionError`, so `/api/auth/refresh`, `/api/auth/logout` and the 2FA challenge exchange answered an unauthenticated request with a server error instead of a 401 (GHSA-8wjv-2p76-3863, GHSA-42vr-xj54-vc7v). The other PyJWT advisories fixed in these releases concern HMAC keys, `PyJWK` and `PyJWKClient`, which PromptVault does not use (it only accepts ES256 tokens).
 - **Tokens sent in a request body are capped at 4096 characters** on those three endpoints, so oversized input is rejected with a 422 before it reaches the token parser.
 
+### Changed
+
+- **PostgreSQL driver moved from psycopg2 to psycopg v3** (#127): the image now installs `psycopg[binary]`, SQLAlchemy's default driver since 2.1. A `DATABASE_URL` that says `postgresql://` or the older `postgresql+psycopg2://` keeps working unchanged; both are loaded with psycopg v3. SQLite is unaffected.
+- **CI now runs the PostgreSQL tests** against a real `postgres:15` server (`test-postgres` job, `make test-postgres`): full-text search, the migrations and the `pg_dump`/`psql` backup round trip, which previously only ran on SQLite. This is the check that would have caught #126.
+
 ### Fixed
 
 - **PostgreSQL deployments crashed at startup with `No module named 'psycopg'`** (#126): since the SQLAlchemy 2.1 upgrade (#86) a plain `postgresql://` URL loads the psycopg v3 driver, but PromptVault ships psycopg2. The web server, Alembic and the backup job store now pin a bare `postgresql://` URL to `postgresql+psycopg2://`; a URL that names a driver is used as written. `pg_dump` and `psql` still receive a plain `postgresql://` URI, so backups keep working with either form. No change to `DATABASE_URL` is needed. SQLite is unaffected. Moving to psycopg v3 is tracked in #127.
