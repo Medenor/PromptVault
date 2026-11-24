@@ -256,7 +256,7 @@ APP_BASE_URL=https://your-domain.com
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USE_TLS=true
-SMTP_USERNAME=your-email@gmail.com
+SMTP_USERNAME=smtp-user@example.com
 SMTP_PASSWORD=your-app-password
 ```
 

@@ -32,7 +32,7 @@ import secrets
 import string
 from pathlib import Path
 from typing import Dict, Optional, List, Tuple
-from urllib.parse import quote_plus
+from urllib.parse import quote_plus, urlsplit
 
 import click
 
@@ -66,6 +66,9 @@ class EnvConfigurator:
     configuration file writing with profile-specific defaults.
     """
 
+    # Former hardcoded production database password. Rejected by validate().
+    LEGACY_DEFAULT_DB_PASSWORD = 'changeme'
+
     # Profile-specific defaults
     PROFILE_DEFAULTS = {
         'development': {
@@ -77,7 +80,8 @@ class EnvConfigurator:
             'REDIS_URL': 'redis://localhost:6379/0',
         },
         'production': {
-            'DATABASE_URL': 'postgresql://promptvault:changeme@localhost:5432/promptvault',
+            # No DATABASE_URL default: production requires an operator-supplied
+            # URL (prompted for, or provided via --from-file / .env.example).
             'ENVIRONMENT': 'production',
             'LOG_LEVEL': 'WARNING',
             'AUDIT_LOG_LEVEL': 'INFO',
@@ -115,6 +119,14 @@ class EnvConfigurator:
             for key, value in self.PROFILE_DEFAULTS[self.profile].items():
                 template[key] = value
 
+            # .env.example carries the development SQLite URL; production must
+            # not inherit it, so validate() demands an operator-supplied one.
+            # A non-SQLite URL supplied through the template is kept.
+            if self.profile == 'production' and urlsplit(
+                template.get('DATABASE_URL', '')
+            ).scheme.startswith('sqlite'):
+                template.pop('DATABASE_URL')
+
             return template
         except FileNotFoundError as e:
             self.console.error(f"Template not found: {e}")
@@ -134,9 +146,6 @@ class EnvConfigurator:
 
         self.console.info("Database Configuration")
         self.console.console.print()
-
-        # Get default from profile
-        default_url = self.PROFILE_DEFAULTS[self.profile]['DATABASE_URL']
 
         if self.profile == 'development':
             self.console.info("Development profile: Using SQLite database")
@@ -497,6 +506,22 @@ class EnvConfigurator:
             if not is_valid:
                 errors.append(f"DATABASE_URL: {error}")
 
+        # Production must carry an operator-supplied database URL, and must
+        # never accept the legacy hardcoded password default.
+        if self.profile == 'production':
+            db_url = self.config.get('DATABASE_URL', '')
+            if not db_url:
+                errors.append(
+                    "DATABASE_URL: required for the production profile. "
+                    "Provide a database URL with your own credentials "
+                    "(run interactively, or set it in the config file)."
+                )
+            elif urlsplit(db_url).password == self.LEGACY_DEFAULT_DB_PASSWORD:
+                errors.append(
+                    "DATABASE_URL: uses the legacy default password 'changeme', "
+                    "which is not allowed in production. Use your own credentials."
+                )
+
         # Validate ports
         for port_key in ['SMTP_PORT', 'DB_POOL_SIZE']:
             if port_key in self.config:
@@ -735,10 +760,10 @@ def main(profile: str, from_file: Optional[str], validate_only: bool, non_intera
         for error in errors:
             console.console.print(f"  - {error}", style="red")
 
-        if not non_interactive:
-            if not console.confirm("Continue anyway?", default=False):
-                sys.exit(1)
-        else:
+        # Production never proceeds with an invalid configuration, even interactively.
+        if non_interactive or profile == 'production':
+            sys.exit(1)
+        if not console.confirm("Continue anyway?", default=False):
             sys.exit(1)
     else:
         console.success("Configuration validation passed")
