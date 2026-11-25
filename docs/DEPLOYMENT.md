@@ -338,10 +338,9 @@ If your production settings live in a separate `.env.production` (recommended, s
 git checkout main
 git pull origin main
 
-# 2. Create database backup (CRITICAL!) and tag the running image for rollback
+# 2. Create database backup (CRITICAL!) and tag the running image for rollback by the container's image ID, not `:latest`, which may already be a newer build
 docker-compose exec -T db pg_dump -U promptvault -d promptvault --verbose | gzip > \
   data/backups/promptvault-backup-$(date +%Y%m%d_%H%M%S).sql.gz
-# Tag by the container's image ID, not `:latest`, which may already be a newer build
 docker tag "$(docker inspect promptvault-web --format '{{.Image}}')" promptvault-web:pre-update
 
 # 3. Build new Docker image with latest code
