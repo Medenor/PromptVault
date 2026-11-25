@@ -13,7 +13,7 @@ original file.
 import logging
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
+from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
@@ -154,6 +154,7 @@ async def get_prompt(
 @limiter.limit(write_limit)
 async def create_prompt(
     request: Request,
+    response: Response,
     title: str = Form(...),
     prompt: str = Form(...),
     category: str = Form(""),
@@ -467,6 +468,7 @@ async def update_prompt_visibility(
     prompt_id: int,
     body: PromptVisibilityUpdateRequest,
     request: Request,
+    response: Response,
     user: User = Depends(get_current_user_or_default),
     db: Session = Depends(get_db),
 ):
@@ -549,6 +551,7 @@ async def update_prompt_visibility(
 @limiter.limit(bulk_limit)
 async def bulk_delete_prompts(
     request: Request,
+    response: Response,
     body: BulkDeleteRequest,
     admin: User | None = Depends(get_admin_or_bypass),
     db: Session = Depends(get_db),
@@ -656,6 +659,7 @@ async def bulk_delete_prompts(
 async def delete_prompt(
     prompt_id: int,
     request: Request,
+    response: Response,
     user: User = Depends(get_current_user_or_default),
     db: Session = Depends(get_db),
 ):
