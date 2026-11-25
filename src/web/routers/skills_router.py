@@ -91,6 +91,7 @@ async def _read_upload(archive: UploadFile) -> bytes:
 @limiter.limit(expensive_limit)
 async def import_skill(
     request: Request,
+    response: Response,
     archive: UploadFile = File(...),
     category: str = Form(""),
     tags: str = Form(""),
@@ -230,6 +231,7 @@ async def update_skill(
 async def replace_skill_archive(
     skill_id: int,
     request: Request,
+    response: Response,
     archive: UploadFile = File(...),
     user: User = Depends(get_current_user_or_default),
 ):

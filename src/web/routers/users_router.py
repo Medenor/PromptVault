@@ -12,7 +12,7 @@ composing a share needs to find recipients). When ``AUTH_ENABLED=false`` this
 route is not mounted at all (see routing_setup.py).
 """
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 
 from src.db.models.user import User
 from src.db.repositories.user_repository import UserRepository
@@ -52,6 +52,7 @@ router = APIRouter(
 @limiter.limit(read_limit)
 async def search_users(
     request: Request,
+    response: Response,
     q: str = Query(..., description="Username or email prefix, min 2 chars"),
     user: User = Depends(get_current_user_or_default),
     db=Depends(get_db),

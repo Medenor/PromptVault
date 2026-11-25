@@ -14,7 +14,7 @@ these routes are not mounted at all (see routing_setup.py), so requests
 naturally 404 — the feature is inactive in anonymous mode.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
@@ -151,6 +151,7 @@ async def grant_share(
 async def list_shares(
     prompt_id: int,
     request: Request,
+    response: Response,
     user: User = Depends(get_current_user_or_default),
     db: Session = Depends(get_db),
 ):
@@ -190,6 +191,7 @@ async def revoke_share(
     prompt_id: int,
     user_id: str,
     request: Request,
+    response: Response,
     user: User = Depends(get_current_user_or_default),
     db: Session = Depends(get_db),
 ):

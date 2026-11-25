@@ -12,7 +12,7 @@ import json
 import uuid
 from datetime import UTC, datetime, timedelta
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Request
+from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response
 from fastapi.responses import JSONResponse
 
 from src.db.models.user import User
@@ -81,6 +81,7 @@ async def get_backups(
 @limiter.limit(expensive_limit)
 async def create_manual_backup(
     request: Request,
+    response: Response,
     name: str = Form(None),
     encrypt: bool = Form(False),
     passphrase: str = Form(None),
@@ -145,6 +146,7 @@ async def create_manual_backup(
 async def restore_preview(
     backup_id: str,
     request: Request,
+    response: Response,
 ):
     """Preview what would change if this backup were restored."""
 
@@ -172,6 +174,7 @@ async def restore_preview(
 async def restore_backup(
     backup_id: str,
     request: Request,
+    response: Response,
     current_user: User | None = Depends(get_admin_or_bypass),
 ):
     """Restore from a specific backup. Supports selective restore via prompt_ids."""
@@ -249,7 +252,7 @@ async def delete_backup(backup_id: str):
     responses={429: {"description": "Rate limit exceeded"}},
 )
 @limiter.limit(bulk_limit)
-async def delete_all_backups(request: Request, confirm: str = ""):
+async def delete_all_backups(request: Request, response: Response, confirm: str = ""):
     """Delete all backups.
 
     Requires ?confirm=DELETE_ALL to guard against accidental/scripted calls
@@ -287,7 +290,9 @@ async def delete_all_backups(request: Request, confirm: str = ""):
     responses={429: {"description": "Rate limit exceeded"}},
 )
 @limiter.limit(bulk_limit)
-async def compress_backups(request: Request, days_threshold: int = Form(7)):
+async def compress_backups(
+    request: Request, response: Response, days_threshold: int = Form(7)
+):
     """Compress old backups with validation."""
     service = _get_backup_service()
     try:
@@ -595,7 +600,7 @@ async def get_backup_audit_log(
     responses={429: {"description": "Rate limit exceeded"}},
 )
 @limiter.limit(expensive_limit)
-async def verify_backup(backup_id: str, request: Request):
+async def verify_backup(backup_id: str, request: Request, response: Response):
     """Verify backup integrity by recomputing SHA-256 checksum."""
 
     import hashlib
@@ -690,6 +695,7 @@ async def update_backup_tags(backup_id: str, request: Request):
 @limiter.limit(bulk_limit)
 async def cleanup_backups_retention(
     request: Request,
+    response: Response,
     retention_days: int | None = Form(None),
     dry_run: bool = Form(True),
 ):
