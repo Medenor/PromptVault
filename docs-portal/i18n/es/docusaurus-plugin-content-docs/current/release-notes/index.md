@@ -9,6 +9,11 @@ Aspectos destacados de las versiones recientes de PromptVault. Para el historial
 
 Consulte [Actualizar PromptVault](../installation/update.md) para ver los pasos de actualización.
 
+## 1.17.1
+
+- **Corrección de la API**. Con la limitación de solicitudes activada, la creación y eliminación de prompts y la importación y sustitución de archivos de habilidades devuelven el estado esperado y las cabeceras de limitación.
+- **Despliegue**. La guía de producción explica cómo usar un archivo `.env.production` separado, cambiar la contraseña predeterminada de la base de datos y volver a la imagen anterior.
+
 ## 1.17.0
 
 - **Corrección**: las instalaciones con PostgreSQL en la versión 1.16.0 no arrancaban (`No module named 'psycopg'`). PromptVault ahora incluye el controlador psycopg v3. Su `DATABASE_URL` no necesita cambios: funcionan tanto `postgresql://` como `postgresql+psycopg2://`. SQLite no se ve afectado.

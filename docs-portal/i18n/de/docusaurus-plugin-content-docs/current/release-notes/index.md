@@ -9,6 +9,11 @@ Highlights der letzten PromptVault-Releases. Die vollständige, ungekürzte Hist
 
 Die Schritte zum Aktualisieren finden Sie unter [PromptVault aktualisieren](../installation/update.md).
 
+## 1.17.1
+
+- **API-Korrektur**. Bei aktivierter Ratenbegrenzung liefern das Erstellen und Löschen von Prompts sowie das Importieren und Ersetzen von Skill-Archiven jetzt den erwarteten HTTP-Status und die Header zur Ratenbegrenzung.
+- **Bereitstellung**. Der Produktionsleitfaden erklärt jetzt, wie Sie eine separate `.env.production` verwenden, das Standardpasswort der Datenbank ändern und zum vorherigen Image zurückkehren.
+
 ## 1.17.0
 
 - **Korrektur**: PostgreSQL-Installationen mit 1.16.0 starteten nicht mehr (`No module named 'psycopg'`). PromptVault liefert jetzt den Treiber psycopg v3 mit. Ihre `DATABASE_URL` muss nicht geändert werden: `postgresql://` und `postgresql+psycopg2://` funktionieren beide. SQLite ist nicht betroffen.

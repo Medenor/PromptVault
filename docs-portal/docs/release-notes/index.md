@@ -9,6 +9,11 @@ Highlights from recent PromptVault releases. For the complete, unabridged histor
 
 For upgrade steps, see [Update PromptVault](../installation/update.md).
 
+## 1.17.1
+
+- **API fix**. Creating or deleting prompts and importing or replacing skill archives now return the expected status and rate-limit headers when rate limiting is enabled.
+- **Deployment**. The production guide now explains how to use a separate `.env.production`, replace the default database password, and roll back using the previous image.
+
 ## 1.17.0
 
 - **Fix**: PostgreSQL installations running 1.16.0 failed to start with `No module named 'psycopg'`. PromptVault now ships the psycopg v3 driver. Your `DATABASE_URL` does not need to change: both `postgresql://` and `postgresql+psycopg2://` work. SQLite is not affected.

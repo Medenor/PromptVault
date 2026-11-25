@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.17.1] - 2026-11-25
+
 ### Fixed
 
 - **Successful rate-limited API requests return their expected status and rate-limit headers** (#134). Prompt creation and deletion, skill imports and archive replacement, and affected backup, sharing, and user search endpoints no longer return HTTP 500 when SlowAPI adds headers.
