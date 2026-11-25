@@ -329,86 +329,37 @@ docker-compose exec -T db psql -U promptvault -d promptvault -c "SELECT COUNT(*)
 
 ### Update with Docker Compose (Recommended)
 
-This is the safest approach with proper database migration handling. The build step rebuilds both the `web` and `docs` images, and step 6 recreates both containers, so the documentation portal (default: <http://localhost:7876>) stays in step with the application.
+Run this from the existing production checkout. The commands assume you started the stack with `.env.production`. If you used a different environment file or Compose project name, use the same file and project name throughout. The update recreates `web` and `docs` while the running PostgreSQL and Redis services stay in place.
 
-If your production settings live in a separate `.env.production` (recommended, see [Production Environment File](#production-environment-file)), add `--env-file .env.production` to **every** `docker-compose` command below. Without it, Compose reads `.env` and your development values (such as `ENVIRONMENT=development` or `DISABLE_RATE_LIMITING=true`) replace the production ones.
+Replace `vX.Y.Z` with the release tag you want to deploy. Stop if any command fails.
 
 ```bash
-# 1. Pull latest code from main branch
-git checkout main
-git pull origin main
+(
+set -euo pipefail
 
-# 2. Create database backup (CRITICAL!) and tag the running image for rollback by the container's image ID, not `:latest`, which may already be a newer build
-docker-compose exec -T db pg_dump -U promptvault -d promptvault --verbose | gzip > \
-  data/backups/promptvault-backup-$(date +%Y%m%d_%H%M%S).sql.gz
+# Back up PostgreSQL and keep the running images for rollback.
+mkdir -p data/backups
+backup="data/backups/promptvault-backup-$(date +%Y%m%d_%H%M%S).sql.gz"
+docker compose --env-file .env.production exec -T db pg_dump -U promptvault -d promptvault | gzip > "$backup"
+gzip -t "$backup"
 docker tag "$(docker inspect promptvault-web --format '{{.Image}}')" promptvault-web:pre-update
+docker tag "$(docker inspect promptvault-docs --format '{{.Image}}')" promptvault-docs:pre-update
 
-# 3. Build new Docker image with latest code
-docker-compose build --no-cache
+# Build and deploy the selected release.
+git fetch origin tag vX.Y.Z
+git switch --detach vX.Y.Z
+docker compose --env-file .env.production build web docs
+docker compose --env-file .env.production up -d --no-deps web docs
+docker compose --env-file .env.production exec -T web alembic upgrade head
 
-# 4. Stop web service (keep db/redis running)
-docker-compose stop web
-docker-compose rm web
-
-# 5. Ensure database is fully ready
-docker-compose up -d db redis
-sleep 15  # CRITICAL: Give database time to initialize
-
-# 6. Start the updated web and docs services
-# The docs portal is compiled into its image, so it only shows the new
-# release notes once the docs container is recreated from the rebuilt image.
-docker-compose up -d web docs
-
-# 7. Run pending database migrations
-# NOTE: This MUST happen after starting the web service
-docker-compose exec web alembic upgrade head
-
-# 8. Verify update was successful
-docker-compose logs web | head -50
-curl http://localhost:8001/api/health
-docker exec promptvault-web python -c "import importlib.metadata as m; print(m.version('promptvault'))"
+# Verify the app can reach PostgreSQL and is at the migration head.
+docker compose --env-file .env.production exec -T web alembic current
+curl -fsS http://localhost:8001/api/health
+docker compose --env-file .env.production exec -T web python -c "import importlib.metadata as m; print(m.version('promptvault'))"
+)
 ```
 
-### Important: Database Migrations
-
-**Why is the sleep command critical?**
-
-When you restart the database container, it needs time to:
-
-- Initialize the PostgreSQL cluster
-- Load all data from persistent volumes
-- Become fully responsive to connections
-
-If migrations run too soon, they may:
-
-- ❌ Appear to succeed but silently fail
-- ❌ Not actually apply, leaving schema out of sync
-- ❌ Cause API errors like "column does not exist"
-
-**Solution:** Always include `sleep 15` between starting database and running migrations.
-
-**Verify migrations ran:**
-
-```bash
-# Check which migrations were applied
-docker-compose exec -T db psql -U promptvault -d promptvault -c \
-  "SELECT version_num FROM alembic_version ORDER BY version_num DESC LIMIT 5;"
-
-# Expected: Should show latest migration versions (e.g., b7a1c2d3e4f5, c8d9e0f1a2b3)
-```
-
-### One-Command Update (Quick)
-
-For experienced users, here's a single command that handles everything:
-
-```bash
-git checkout main && git pull && \
-docker-compose build --no-cache && \
-docker-compose stop web && docker-compose rm web && \
-docker-compose up -d && sleep 15 && \
-docker-compose exec web alembic upgrade head && \
-docker-compose logs web --tail=20
-```
+`alembic current` should report `(head)`, and the installed version should match the selected tag. Open the portal at <http://localhost:7876/release-notes/> and check that it shows the new version.
 
 ### Manual Deployment Update
 
@@ -437,119 +388,51 @@ systemctl restart promptvault
 
 ### Verify Update Success
 
-After update completes, verify:
+The health endpoint checks that the web process responds. To verify database access, run Alembic from the web container using the same connection settings as the app.
 
 ```bash
-# 1. Health endpoint returns 200
-curl -i http://localhost:8001/api/health
+curl -fsS http://localhost:8001/api/health
+docker compose --env-file .env.production exec -T web alembic current
+docker compose --env-file .env.production logs --tail=30 web
+```
 
-# 2. Expected response (the timestamp differs)
-{
-  "status": "healthy",
-  "timestamp": "2026-11-24T18:40:10.185871",
-  "service": "PromptVault API"
-}
-# The endpoint does not report the version or the database state. Check the
-# version of the running image instead:
-docker exec promptvault-web python -c "import importlib.metadata as m; print(m.version('promptvault'))"
+If Alembic reports `password authentication failed`, check that the web container was created with the production environment file and that it contains the existing database password. Recreate only `web` with the correct settings, then rerun the migration and check its revision.
 
-# 2b. Check the settings the container actually runs with
-docker inspect promptvault-web --format '{{range .Config.Env}}{{println .}}{{end}}' \
-  | grep -E '^(ENVIRONMENT|LOG_LEVEL|DISABLE_RATE_LIMITING)='
-
-# 3. Check logs for errors
-docker-compose logs web | grep -i error
-
-# 4. Verify database is accessible
-docker-compose exec -T db psql -U promptvault -d promptvault -c "SELECT COUNT(*) FROM prompts;"
-
-# 5. Test basic functionality in UI
-# Visit: http://localhost:8001
-# Create/read/update a prompt to ensure everything works
-
-# 6. Check that the documentation portal is up to date
-# Visit: http://localhost:7876/release-notes/
-# The newest release must be listed first. If it is missing, the docs
-# container still runs the old image: run `docker-compose up -d docs`.
+```bash
+docker compose --env-file .env.production up -d --no-deps web
+docker compose --env-file .env.production exec -T web alembic upgrade head
+docker compose --env-file .env.production exec -T web alembic current
 ```
 
 ### Troubleshooting Update Issues
 
-#### Migration Failed Silently
-
-**Problem:** First `alembic upgrade head` showed no output, second one applied migrations
-
-**Cause:** Database wasn't fully initialized when migrations ran
-
-**Solution:**
-
-```bash
-# Stop everything
-docker-compose down
-
-# Start only database, wait longer
-docker-compose up -d db
-sleep 30  # Longer wait
-
-# Run migrations
-docker-compose exec web alembic upgrade head
-
-# Start web and docs services
-docker-compose up -d web docs
-```
-
-#### "Column does not exist" Errors
-
-**Problem:** API returns errors like `column categories.updated_at does not exist`
-
-**Cause:** Migrations weren't applied despite appearing to succeed
-
-**Solution:**
-
-```bash
-# Check which migrations have been applied
-docker-compose exec -T db psql -U promptvault -d promptvault -c \
-  "SELECT version_num FROM alembic_version ORDER BY version_num DESC;"
-
-# If migrations are missing, run again
-docker-compose exec web alembic upgrade head
-
-# If still failing, check for migration locks
-docker-compose exec -T db psql -U promptvault -d promptvault -c \
-  "SELECT * FROM alembic_version_table WHERE locked = true;"
-
-# Force reset if stuck (use with caution!)
-docker-compose exec -T db psql -U promptvault -d promptvault -c \
-  "UPDATE alembic_version_table SET locked = false WHERE locked = true;"
-docker-compose exec web alembic upgrade head
-```
-
 #### Rollback to Previous Version
 
-If the update causes critical issues, go back to the image you tagged before the update (`promptvault-web:pre-update`, see the Pre-Deployment Checklist). Do **not** roll back by checking out the old commit and rebuilding with `--no-cache`: the image installs dependencies with `pip install -e .`, which resolves them again and ignores `uv.lock`, so the result can differ from the image you ran before. Some releases cannot be rebuilt at all: any image built from the 1.16.0 source crashes on PostgreSQL with `No module named 'psycopg'` (fixed in 1.17.0).
+If the update causes critical issues, use the web and docs images tagged before the update. Do **not** roll back by checking out the old commit and rebuilding with `--no-cache`: the image installs dependencies with `pip install -e .`, which resolves them again and ignores `uv.lock`, so the result can differ from the image you ran before. Some releases cannot be rebuilt at all: any image built from the 1.16.0 source crashes on PostgreSQL with `No module named 'psycopg'` (fixed in 1.17.0).
 
 ```bash
-# 1. Put the previous web image back and recreate the container without rebuilding
+# 1. Restore the previous web and docs images and recreate the containers without rebuilding
 docker tag promptvault-web:pre-update promptvault-web:latest
-docker-compose up -d --no-build web
+docker tag promptvault-docs:pre-update promptvault-docs:latest
+docker compose --env-file .env.production up -d --no-build --no-deps web docs
 
 # 2. Verify
-docker-compose logs web | tail -20
+docker compose --env-file .env.production logs --tail=20 web
 docker exec promptvault-web python -c "import importlib.metadata as m; print(m.version('promptvault'))"
 ```
 
 Restore the database only if the update ran database migrations (check the release's section in `CHANGELOG.md`; many releases have none). Restoring replaces **all** data written since the backup:
 
 ```bash
-docker-compose stop web
-docker-compose exec -T db psql -U promptvault postgres -c "DROP DATABASE promptvault;"
-docker-compose exec -T db psql -U promptvault postgres -c "CREATE DATABASE promptvault;"
+docker compose --env-file .env.production stop web
+docker compose --env-file .env.production exec -T db psql -U promptvault postgres -c "DROP DATABASE promptvault;"
+docker compose --env-file .env.production exec -T db psql -U promptvault postgres -c "CREATE DATABASE promptvault;"
 gunzip -c data/backups/promptvault-backup-YYYYMMDD_HHMMSS.sql.gz | \
-  docker-compose exec -T db psql -U promptvault -d promptvault
-docker-compose up -d --no-build web
+  docker compose --env-file .env.production exec -T db psql -v ON_ERROR_STOP=1 -U promptvault -d promptvault
+docker compose --env-file .env.production up -d --no-build --no-deps web
 ```
 
-If you have no tagged image, check out the previous release tag (`git checkout vX.Y.Z`, not a commit hash) and rebuild with `docker-compose build`, then check the result as in step 2. Docker's layer cache may reuse the old dependencies, but nothing guarantees it, so confirm the version and that the app starts before you rely on it.
+If you have no tagged image, check out the previous release tag (`git checkout vX.Y.Z`, not a commit hash) and rebuild with `docker compose --env-file .env.production build`, then check the result as in step 2. Docker's layer cache may reuse the old dependencies, but nothing guarantees it, so confirm the version and that the app starts before you rely on it.
 
 ---
 
@@ -1081,9 +964,9 @@ docker inspect promptvault-web --format '{{range .Config.Env}}{{println .}}{{end
 
 ### Production Environment File
 
-Docker Compose reads the `.env` next to `docker-compose.yml` and substitutes it into the compose file. That is the same file you use for local development, so development values reach a production stack started from the same directory. Compose only takes these variables from it: `ENVIRONMENT`, `LOG_LEVEL`, `POSTGRES_PASSWORD`, `DISABLE_RATE_LIMITING`, `JWT_ACCESS_TOKEN_EXPIRE_SECONDS`, `JWT_REFRESH_TOKEN_EXPIRE_SECONDS`, `DOCS_APP_URL` and `VITE_DOCS_PORTAL_URL`. The `.env` file itself is not copied into the image (`.dockerignore` excludes it).
+Docker Compose reads the `.env` next to `docker-compose.yml` and substitutes it into the compose file. That is the same file you use for local development, so development values reach a production stack started from the same directory. Compose only takes these variables from it: `ENVIRONMENT`, `LOG_LEVEL`, `POSTGRES_PASSWORD`, `DISABLE_RATE_LIMITING`, `UVICORN_RELOAD`, `JWT_ACCESS_TOKEN_EXPIRE_SECONDS`, `JWT_REFRESH_TOKEN_EXPIRE_SECONDS`, `DOCS_APP_URL` and `VITE_DOCS_PORTAL_URL`. The `.env` file itself is not copied into the image (`.dockerignore` excludes it).
 
-Keep a separate file for production and pass it on every command:
+Keep a separate file for production and pass it on every command. The Compose web service defaults to `UVICORN_RELOAD=false`, which disables the file watcher.
 
 ```bash
 # .env.production must be gitignored before it holds secrets
@@ -1098,13 +981,13 @@ sed -i.bak \
 grep -E '^(ENVIRONMENT|LOG_LEVEL|DISABLE_RATE_LIMITING)=' .env.production
 
 # Preview what Compose will use, then start
-docker-compose --env-file .env.production config | grep -E "ENVIRONMENT|LOG_LEVEL|DISABLE_RATE|POSTGRES_PASSWORD"
+docker compose --env-file .env.production config --quiet
 docker-compose --env-file .env.production up -d
 ```
 
 Pass `--env-file .env.production` on **every** later `docker-compose` command (`up`, `build`, `ps`, `exec`), otherwise Compose goes back to `.env`. To avoid repeating it, run `export COMPOSE_ENV_FILES=.env.production` once in each terminal window you use for production (Docker Compose 2.24 or later): every `docker-compose` command in that window then uses the file. `docker-compose config` prints `POSTGRES_PASSWORD` in clear text, so do not paste its output anywhere.
 
-`ENVIRONMENT=production` can enforce stricter behavior than development (for example requirements around HTTPS and cookies). After switching, read `docker-compose logs --tail 30 web` and fix anything it reports.
+`ENVIRONMENT=production` can enforce stricter behavior than development (for example requirements around HTTPS and cookies). After switching, read `docker compose --env-file .env.production logs --tail=30 web` and fix anything it reports.
 
 ### Changing the Database Password
 
