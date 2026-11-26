@@ -373,3 +373,50 @@ class TestCreatePromptAnonymous:
         )
         assert retrieved_admin.status_code == 200
         assert retrieved_admin.json()["title"] == "Anonymous Prompt"
+
+
+@pytest.mark.parametrize(
+    "url",
+    ["/api/prompts/search?search=API&ranked=false", "/api/prompts"],
+    ids=["search", "list"],
+)
+def test_prompt_reads_resume_after_access_token_expires(api_client, url):
+    from src.config import auth_config
+    from src.services.auth.jwt_service import JWTService
+
+    login = api_client.post(
+        "/api/auth/login",
+        json={"username_or_email": "apiuser", "password": "ApiUserP@ssw0rd123"},
+    )
+    assert login.status_code == 200
+    initial_response = api_client.get(url)
+    assert initial_response.status_code == 200
+    expected_ids = set(initial_response.json()["prompts"])
+    assert expected_ids
+
+    expired_config = auth_config.auth_settings.model_copy(
+        update={"jwt_access_token_expire_seconds": -60}
+    )
+    expired_token = JWTService(expired_config).generate_access_token(
+        user_id="api-test-user-id",
+        username="apiuser",
+        email="api@example.com",
+        role="editor",
+    )
+    api_client.cookies.set(
+        "access_token", expired_token, domain="testserver.local", path="/"
+    )
+
+    response = api_client.get(url)
+    assert response.status_code == 401, (
+        f"Expected an authentication challenge, got HTTP {response.status_code} "
+        f"with total_count={response.json().get('total_count')}"
+    )
+
+    refresh = api_client.post(
+        "/api/auth/refresh", json={"refresh_token": login.json()["refresh_token"]}
+    )
+    assert refresh.status_code == 200
+    response = api_client.get(url)
+    assert response.status_code == 200
+    assert set(response.json()["prompts"]) == expected_ids

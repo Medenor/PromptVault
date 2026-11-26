@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Prompt search and listing resume automatically after inactivity when the session can still be renewed. An expired access token no longer appears as an empty result set.
 - Production update and rollback commands use the production environment file and verify database access from the web container. Docker Compose disables the Uvicorn file watcher by default.
 
 ## [1.17.1] - 2026-11-25
