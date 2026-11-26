@@ -4,15 +4,14 @@
 
 """Prompt read/search routes (public with optional authentication).
 
-Split out from the original ``prompts.py`` god-file. Contains the list and
-search endpoints. Behavior, route paths, methods, and response shapes are
-unchanged.
+Contains the list and search endpoints. When authentication is enabled,
+invalid credentials return HTTP 401 so clients can refresh and retry.
 """
 
 import logging
 from typing import Literal
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from src.config.auth_config import auth_settings
@@ -28,6 +27,26 @@ from src.web.routers.prompts_shared import (
     _prompt_to_dict,
     normalize_pagination,
 )
+
+
+async def _get_prompt_reader(
+    request: Request,
+    user: User | None = Depends(get_current_user_or_none),
+) -> User | None:
+    """Allow anonymous reads, but let clients recover from stale credentials."""
+    if (
+        auth_settings.auth_enabled
+        and user is None
+        and (
+            request.headers.get("authorization") or request.cookies.get("access_token")
+        )
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired access token",
+            headers={"WWW-Authenticate": 'Bearer error="invalid_token"'},
+        )
+    return user
 
 
 def _visibility_scope(user: User | None) -> str | None:
@@ -78,8 +97,9 @@ router = APIRouter(
     List all prompts with optional personalization for authenticated users.
 
     **Public Access:**
-    - Anyone can view prompts
-    - No authentication required
+    - Anonymous requests see an empty list when authentication is enabled
+    - When authentication is disabled, all prompts are visible
+    - Invalid credentials return HTTP 401 when authentication is enabled
 
     **Personalized Results (Optional):**
     - If authenticated, user's own prompts are marked
@@ -97,6 +117,7 @@ router = APIRouter(
     """,
     responses={
         200: {"description": "Prompts retrieved successfully"},
+        401: {"description": "Invalid or expired access token"},
     },
 )
 async def list_prompts(
@@ -104,7 +125,7 @@ async def list_prompts(
     limit: int = DEFAULT_PAGE_SIZE,
     filter: str | None = None,
     item_type: ItemTypeFilter = "all",
-    user: User | None = Depends(get_current_user_or_none),
+    user: User | None = Depends(_get_prompt_reader),
     db: Session = Depends(get_db),
 ):
     """List prompts with offset pagination (public access with optional personalization).
@@ -199,11 +220,13 @@ async def list_prompts(
 
     **Authentication:**
     - Optional for general search
+    - Invalid credentials return HTTP 401 when authentication is enabled
     - Required for favorites filter
     """,
     responses={
         200: {"description": "Search results retrieved successfully"},
         400: {"description": "Invalid search parameters"},
+        401: {"description": "Invalid or expired access token"},
     },
 )
 async def search_prompts(
@@ -217,7 +240,7 @@ async def search_prompts(
     limit: int = DEFAULT_PAGE_SIZE,
     filter: str | None = None,
     item_type: ItemTypeFilter = "all",
-    user: User | None = Depends(get_current_user_or_none),
+    user: User | None = Depends(_get_prompt_reader),
     db: Session = Depends(get_db),
 ):
     """Search and filter prompts with offset pagination.
